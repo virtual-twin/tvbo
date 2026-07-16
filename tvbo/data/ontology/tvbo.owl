@@ -17,12 +17,12 @@
      xmlns:clinical="https://w3id.org/tvbo/clinical/"
      xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#">
     <owl:Ontology rdf:about="https://w3id.org/tvbo/tvbo.owl">
-        <owl:versionIRI rdf:resource="https://w3id.org/tvbo/2026-07-09/tvbo.owl"/>
+        <owl:versionIRI rdf:resource="https://w3id.org/tvbo/struct/0.4.0"/>
         <terms:contributor>The Virtual Brain Ontology contributors</terms:contributor>
         <terms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-01-01</terms:created>
         <terms:description>Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.</terms:description>
         <terms:license rdf:resource="https://spdx.org/licenses/EUPL-1.2"/>
-        <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-07-09</terms:modified>
+        <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-07-13</terms:modified>
         <terms:publisher rdf:resource="https://www.thevirtualbrain.org/"/>
         <terms:title>The Virtual Brain Data Model</terms:title>
         <pav:version>0.4.0</pav:version>
@@ -288,6 +288,15 @@
     
 
 
+    <!-- https://w3id.org/tvbo/canonicalCode -->
+
+    <owl:AnnotationProperty rdf:about="https://w3id.org/tvbo/canonicalCode">
+        <rdfs:comment xml:lang="en">Backend-independent short code for a special-point type (e.g. &quot;LP&quot;, &quot;HB&quot;, &quot;BP&quot;). The Python special-point label map derives (altLabel → canonicalCode) from these annotations.</rdfs:comment>
+        <rdfs:label xml:lang="en">canonical code</rdfs:label>
+    </owl:AnnotationProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/enabledByCouplingSlot -->
 
     <owl:AnnotationProperty rdf:about="https://w3id.org/tvbo/enabledByCouplingSlot">
@@ -331,6 +340,15 @@
         <skos:definition>Coarse classification of this model (mean_field, neural_mass, phase_oscillator, phenomenological, spiking, generic, field). Used for filtering in Dynamics.list_db(model_type=...).</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>model_type</skos:notation>
+    </owl:AnnotationProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/realisedByBackend -->
+
+    <owl:AnnotationProperty rdf:about="https://w3id.org/tvbo/realisedByBackend">
+        <rdfs:comment xml:lang="en">Backend(s) whose codegen currently lowers this analysis observable to a concrete implementation.</rdfs:comment>
+        <rdfs:label xml:lang="en">realised by backend</rdfs:label>
     </owl:AnnotationProperty>
     
 
@@ -1076,7 +1094,7 @@
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/env">
         <rdfs:label>env (slot)</rdfs:label>
-        <skos:definition>Environment variables exported before task execution (e.g. XLA_PYTHON_CLIENT_PREALLOCATE=false).</skos:definition>
+        <skos:definition>Environment variables exported before the task command on every engine (e.g. XLA_PYTHON_CLIENT_PREALLOCATE=false). An ordered list of {name, value}; values are shell-quoted at emit time.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>env</skos:notation>
     </owl:ObjectProperty>
@@ -1231,10 +1249,49 @@
     
 
 
+    <!-- https://w3id.org/tvbo/graph_representation -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/graph_representation">
+        <rdfs:label>graph_representation (slot)</rdfs:label>
+        <skos:definition>Representation used to evaluate coupling over this network&apos;s connectivity (``auto`` | ``dense`` | ``sparse``). ``auto`` lets the backend choose by connection density. This names whether to exploit edge sparsity, not a concrete data structure, so it is backend-independent; the delayed-vs-instantaneous graph kind is decided separately from the couplings&apos; conduction delays.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>graph_representation</skos:notation>
+    </owl:ObjectProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/hasAttractor -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/hasAttractor">
         <rdfs:label xml:lang="en">has attractor</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/hasBranchGeometry -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/hasBranchGeometry">
+        <rdfs:range rdf:resource="https://w3id.org/tvbo/BranchGeometry"/>
+        <rdfs:label xml:lang="en">has branch geometry</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/hasCodimension -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/hasCodimension">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:range rdf:resource="https://w3id.org/tvbo/Codimension"/>
+        <rdfs:label xml:lang="en">has codimension</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/hasEigenvalueSignature -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/hasEigenvalueSignature">
+        <rdfs:range rdf:resource="https://w3id.org/tvbo/EigenvalueSignature"/>
+        <rdfs:label xml:lang="en">has eigenvalue signature</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -1764,12 +1821,6 @@
     
 
 
-    <!-- https://w3id.org/tvbo/outsym -->
-
-    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/outsym"/>
-    
-
-
     <!-- https://w3id.org/tvbo/over -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/over">
@@ -1909,12 +1960,34 @@
     
 
 
+    <!-- https://w3id.org/tvbo/query -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/query">
+        <rdfs:label>query (slot)</rdfs:label>
+        <skos:definition>BIDS entity filter that selects one per-subject file under the experiment&apos;s ``dataset.bids_root`` when ``source`` is dataset-sourced (``dataset.subject.&lt;measure&gt;``). The active subject fills the ``sub-`` entity at resolution time; the remaining entities (e.g. ``desc: FCavg, atlas: Schaefer1000, suffix: relmat``) disambiguate among the subject&apos;s several networks/measurements. The same filter enumerates the cohort for the per-subject workflow fan-out, so one declaration drives both discovery and resolution.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>query</skos:notation>
+    </owl:ObjectProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/random_state -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/random_state">
         <rdfs:label>random_state (slot)</rdfs:label>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>random_state</skos:notation>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/reconcile -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/reconcile">
+        <rdfs:label>reconcile (slot)</rdfs:label>
+        <skos:definition>How a dataset-sourced target&apos;s nodes are aligned to the model network before comparison. ``by_label`` selects the shared node labels on both sides by name (keyed ``.sel``), never by position, so a differing node count or order cannot silently misalign the comparison. Matching is alias-aware: a target label matches a model node when it equals that node&apos;s ``label`` or any of its ``alternateName`` entries, so a differing nomenclature reconciles without relabelling either side. ``none`` disables reconciliation (identical node sets).</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>reconcile</skos:notation>
     </owl:ObjectProperty>
     
 
@@ -3264,7 +3337,7 @@
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/cores">
         <rdfs:label>cores (slot)</rdfs:label>
-        <skos:definition>Total cores for local engines (e.g. Snakemake --cores).</skos:definition>
+        <skos:definition>Total cores for local engines (Snakemake --cores).</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>cores</skos:notation>
     </owl:DatatypeProperty>
@@ -3296,7 +3369,7 @@
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/cpus_per_task">
         <rdfs:label>cpus_per_task (slot)</rdfs:label>
-        <skos:definition>CPU cores requested per task.</skos:definition>
+        <skos:definition>CPU cores requested per task (Slurm --cpus-per-task).</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>cpus_per_task</skos:notation>
     </owl:DatatypeProperty>
@@ -3450,6 +3523,12 @@
     <!-- https://w3id.org/tvbo/derived_from -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/derived_from"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/desc -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/desc"/>
     
 
 
@@ -3636,6 +3715,12 @@
     <!-- https://w3id.org/tvbo/equation_type -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/equation_type"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/executor -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/executor"/>
     
 
 
@@ -4083,6 +4168,17 @@
     
 
 
+    <!-- https://w3id.org/tvbo/min_coverage -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/min_coverage">
+        <rdfs:label>min_coverage (slot)</rdfs:label>
+        <skos:definition>Minimum fraction of the model network&apos;s nodes that a ``by_label`` reconciliation must cover, else resolution raises. The realised coverage is always logged. Absent (``null``) means require full coverage (``1.0``) for a dataset-sourced target — silently fitting on a partial node subset must be an explicit opt-in (e.g. ``0.95`` to tolerate a few genuinely-missing empirical parcels), never the default.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>min_coverage</skos:notation>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/mode -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/mode"/>
@@ -4166,7 +4262,7 @@
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/n_parallel">
         <rdfs:label>n_parallel (slot)</rdfs:label>
-        <skos:definition>Parallel evaluations</skos:definition>
+        <skos:definition>Parallel evaluations / batch size for parameter exploration. Backends translate this into their own execution primitive (e.g. tvboptim&apos;s vectorised chunk size) without exposing any backend-specific names in the schema.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>n_parallel</skos:notation>
     </owl:DatatypeProperty>
@@ -4552,6 +4648,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/queue -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/queue"/>
+    
+
+
     <!-- https://w3id.org/tvbo/random_seed -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/random_seed">
@@ -4732,6 +4834,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/setup -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/setup"/>
+    
+
+
     <!-- https://w3id.org/tvbo/shape -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/shape"/>
@@ -4882,6 +4990,12 @@
     <!-- https://w3id.org/tvbo/subjects -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/subjects"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/suffix -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/suffix"/>
     
 
 
@@ -7503,6 +7617,8 @@
                     <rdf:Description rdf:about="https://w3id.org/tvbo/AggregationType#last"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/AggregationType#mean"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/AggregationType#none"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/AggregationType#std"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/AggregationType#variance"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/AggregationType#window"/>
                 </owl:unionOf>
             </owl:Class>
@@ -7516,6 +7632,8 @@
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/AggregationType#last"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/AggregationType#mean"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/AggregationType#none"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/AggregationType#std"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/AggregationType#variance"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/AggregationType#window"/>
     </owl:Class>
     
@@ -8069,6 +8187,16 @@
     
 
 
+    <!-- https://w3id.org/tvbo/AnalysisObservable -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/AnalysisObservable">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en">A quantity obtained by analysing the model, its solve, or a derived loss — the vocabulary of Analysis.type.</rdfs:comment>
+        <rdfs:label xml:lang="en">Analysis observable</rdfs:label>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/Argument -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/Argument">
@@ -8195,6 +8323,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/desc"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/hemi"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -8214,6 +8348,12 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/segmentation"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/suffix"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -8249,6 +8389,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/desc"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/hemi"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -8268,6 +8414,12 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/segmentation"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/suffix"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -8291,6 +8443,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/desc"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/hemi"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -8310,6 +8468,12 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/segmentation"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/suffix"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -8438,7 +8602,25 @@
 
     <owl:Class rdf:about="https://w3id.org/tvbo/BogdanovTakens">
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension2"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasEigenvalueSignature"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/DoubleZeroEigenvalue"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment xml:lang="en">Codim-2 point with a double-zero (nilpotent) eigenvalue, where fold, Hopf and homoclinic curves meet.</rdfs:comment>
         <rdfs:label xml:lang="en">Bogdanov-Takens</rdfs:label>
+        <skos:altLabel>BT</skos:altLabel>
+        <skos:altLabel>bogdanov takens</skos:altLabel>
+        <skos:altLabel>bogdanov-takens</skos:altLabel>
+        <skos:altLabel>bt</skos:altLabel>
+        <tvbo:canonicalCode>BT</tvbo:canonicalCode>
     </owl:Class>
     
 
@@ -8609,6 +8791,52 @@
         <skos:definition>A series whose values represent latitude</skos:definition>
         <skos:exactMatch rdf:resource="https://w3id.org/tvbo/BrainRegionSeries"/>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/BranchGeometry -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/BranchGeometry">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en">Local geometry of the solution branch at the special point in the (state, parameter) space.</rdfs:comment>
+        <rdfs:label xml:lang="en">Branch geometry</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/BranchPoint -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/BranchPoint">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/Bifurcation"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasBranchGeometry"/>
+                        <owl:hasValue rdf:resource="https://w3id.org/tvbo/BranchCrossingGeometry"/>
+                    </owl:Restriction>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                        <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension1"/>
+                    </owl:Restriction>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasEigenvalueSignature"/>
+                        <owl:hasValue rdf:resource="https://w3id.org/tvbo/RealEigenvalueZero"/>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:comment xml:lang="en">Branch point: two solution branches intersect transversally as a real eigenvalue crosses zero (e.g. transcritical, pitchfork). Distinct from a Fold, which turns back on the parameter.</rdfs:comment>
+        <rdfs:label xml:lang="en">Branch point</rdfs:label>
+        <skos:altLabel>BP</skos:altLabel>
+        <skos:altLabel>bp</skos:altLabel>
+        <skos:altLabel>branch point</skos:altLabel>
+        <skos:altLabel>branch-point</skos:altLabel>
+        <skos:altLabel>branchpoint</skos:altLabel>
+        <skos:prefLabel xml:lang="en">Branch point</skos:prefLabel>
+        <tvbo:canonicalCode>BP</tvbo:canonicalCode>
     </owl:Class>
     
 
@@ -8975,6 +9203,16 @@
         <skos:definition>Reference to a class that can be instantiated and called. Used for external library classes (e.g., tvboptim.Bold, custom monitors). The class is instantiated with constructor_args, then called with call_args. Generalizable pattern: works for tvboptim, TVB, or any Python class.</skos:definition>
         <skos:exactMatch rdf:resource="https://w3id.org/tvbo/ClassReference"/>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/Codimension -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/Codimension">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en">Number of parameters that must be tuned for the bifurcation to occur generically.</rdfs:comment>
+        <rdfs:label xml:lang="en">Codimension</rdfs:label>
     </owl:Class>
     
 
@@ -9670,12 +9908,6 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/outsym"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/parameters"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -9827,6 +10059,12 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/iri"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/outsym"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -10012,6 +10250,26 @@
     
 
 
+    <!-- https://w3id.org/tvbo/Cusp -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/Cusp">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension2"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment xml:lang="en">Codim-2 organising centre where two fold curves meet tangentially.</rdfs:comment>
+        <rdfs:label xml:lang="en">Cusp</rdfs:label>
+        <skos:altLabel>CP</skos:altLabel>
+        <skos:altLabel>cp</skos:altLabel>
+        <skos:altLabel>cusp</skos:altLabel>
+        <tvbo:canonicalCode>CP</tvbo:canonicalCode>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/DataSource -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/DataSource">
@@ -10165,6 +10423,26 @@
         <skos:definition>Specification for loading external/empirical data.</skos:definition>
         <skos:exactMatch rdf:resource="https://w3id.org/tvbo/DataSource"/>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/DenseDelayGraph -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/DenseDelayGraph">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en">Dense adjacency with a delay-history buffer, used when any coupling carries a conduction delay and graph_representation resolves to dense. Required for interpolated (differentiable) delays (§4.1b).</rdfs:comment>
+        <rdfs:label xml:lang="en">DenseDelayGraph</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/DenseGraph -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/DenseGraph">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en">Dense adjacency, instantaneous coupling. Used when graph_representation resolves to dense and no coupling carries a conduction delay.</rdfs:comment>
+        <rdfs:label xml:lang="en">DenseGraph</rdfs:label>
     </owl:Class>
     
 
@@ -11040,7 +11318,21 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/chunk"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                <owl:allValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:intersectionOf rdf:parseType="Collection">
+                            <rdf:Description rdf:about="http://www.w3.org/2001/XMLSchema#integer"/>
+                            <rdfs:Datatype>
+                                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                                <owl:withRestrictions rdf:parseType="Collection">
+                                    <rdf:Description>
+                                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</xsd:minInclusive>
+                                    </rdf:Description>
+                                </owl:withRestrictions>
+                            </rdfs:Datatype>
+                        </owl:intersectionOf>
+                    </rdfs:Datatype>
+                </owl:allValuesFrom>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -11964,6 +12256,16 @@
         <skos:definition>An edge in a network. Two modes: explicit (source+target set, scalar parameters in YAML) or template (no source/target, N×N matrix measure in HDF5). Both coexist in the same edges list.</skos:definition>
         <skos:exactMatch rdf:resource="https://w3id.org/tvbo/Edge"/>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/EigenvalueSignature -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/EigenvalueSignature">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en">Qualitative crossing of the Jacobian spectrum through the stability boundary at the bifurcation.</rdfs:comment>
+        <rdfs:label xml:lang="en">Eigenvalue signature</rdfs:label>
     </owl:Class>
     
 
@@ -13471,11 +13773,65 @@
     
 
 
+    <!-- https://w3id.org/tvbo/Fold -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/Fold">
+        <owl:equivalentClass rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/Bifurcation"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasBranchGeometry"/>
+                        <owl:hasValue rdf:resource="https://w3id.org/tvbo/LimitPointGeometry"/>
+                    </owl:Restriction>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                        <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension1"/>
+                    </owl:Restriction>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasEigenvalueSignature"/>
+                        <owl:hasValue rdf:resource="https://w3id.org/tvbo/RealEigenvalueZero"/>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:comment xml:lang="en">Saddle-node (limit / turning point): a pair of equilibria collide and annihilate as one real eigenvalue crosses zero and the branch folds back on the parameter.</rdfs:comment>
+        <rdfs:label xml:lang="en">Fold</rdfs:label>
+        <skos:altLabel>LP</skos:altLabel>
+        <skos:altLabel>fold</skos:altLabel>
+        <skos:altLabel>limit point</skos:altLabel>
+        <skos:altLabel>limitpoint</skos:altLabel>
+        <skos:altLabel>lp</skos:altLabel>
+        <skos:altLabel>saddle-node</skos:altLabel>
+        <skos:altLabel>saddlenode</skos:altLabel>
+        <skos:altLabel>sn</skos:altLabel>
+        <skos:prefLabel xml:lang="en">Fold</skos:prefLabel>
+        <tvbo:canonicalCode>LP</tvbo:canonicalCode>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/FoldOfLimitCycles -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/FoldOfLimitCycles">
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension1"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment xml:lang="en">Saddle-node of periodic orbits: two limit cycles collide and annihilate as a Floquet multiplier crosses +1.</rdfs:comment>
         <rdfs:label xml:lang="en">Fold of limit cycles</rdfs:label>
+        <skos:altLabel>LPC</skos:altLabel>
+        <skos:altLabel>cpc</skos:altLabel>
+        <skos:altLabel>fold of limit cycles</skos:altLabel>
+        <skos:altLabel>fold-of-limit-cycles</skos:altLabel>
+        <skos:altLabel>lpc</skos:altLabel>
+        <skos:altLabel>snpo</skos:altLabel>
+        <tvbo:canonicalCode>LPC</tvbo:canonicalCode>
     </owl:Class>
     
 
@@ -14203,6 +14559,28 @@
     
 
 
+    <!-- https://w3id.org/tvbo/GeneralizedHopf -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/GeneralizedHopf">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension2"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment xml:lang="en">Codim-2 point where a Hopf bifurcation switches between sub- and supercritical (first Lyapunov coefficient vanishes); a fold-of-limit-cycles curve emanates.</rdfs:comment>
+        <rdfs:label xml:lang="en">Generalized Hopf (Bautin)</rdfs:label>
+        <skos:altLabel>GH</skos:altLabel>
+        <skos:altLabel>bautin</skos:altLabel>
+        <skos:altLabel>generalised hopf</skos:altLabel>
+        <skos:altLabel>generalized hopf</skos:altLabel>
+        <skos:altLabel>gh</skos:altLabel>
+        <tvbo:canonicalCode>GH</tvbo:canonicalCode>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/GraphGenerator -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/GraphGenerator">
@@ -14385,6 +14763,30 @@
     
 
 
+    <!-- https://w3id.org/tvbo/GraphRepresentation -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/GraphRepresentation">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/GraphRepresentation#auto"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/GraphRepresentation#dense"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/GraphRepresentation#sparse"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>GraphRepresentation</rdfs:label>
+        <skos:definition>How a Network&apos;s connectivity is represented when evaluating coupling. This is a backend-independent performance contract, not a numerical one: both representations compute the same coupling, but a sparse representation sums over the existing edges (cost scales with the number of edges) while a dense representation operates on the full adjacency (cost scales with nodes-squared). A backend maps the choice onto its own primitives (edge gather / segment-sum vs matrix product). Orthogonal to whether the coupling reads *delayed* states — that is decided per coupling by its conduction delay — so the two dimensions together yield the four backend graph kinds: dense/sparse × instantaneous/delayed.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/GraphRepresentation#auto"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/GraphRepresentation#dense"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/GraphRepresentation#sparse"/>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/Hemisphere -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/Hemisphere">
@@ -14429,7 +14831,49 @@
     <!-- https://w3id.org/tvbo/Hopf -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/Hopf">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/Bifurcation"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                        <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension1"/>
+                    </owl:Restriction>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasEigenvalueSignature"/>
+                        <owl:hasValue rdf:resource="https://w3id.org/tvbo/ConjugatePairImaginary"/>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/HopfHopf -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/HopfHopf">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension2"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasEigenvalueSignature"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/TwoImaginaryPairs"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment xml:lang="en">Codim-2 point where two Hopf curves cross (two imaginary pairs simultaneously).</rdfs:comment>
+        <rdfs:label xml:lang="en">Hopf-Hopf (double Hopf)</rdfs:label>
+        <skos:altLabel>HH</skos:altLabel>
+        <skos:altLabel>double hopf</skos:altLabel>
+        <skos:altLabel>hh</skos:altLabel>
+        <skos:altLabel>hopf-hopf</skos:altLabel>
+        <tvbo:canonicalCode>HH</tvbo:canonicalCode>
     </owl:Class>
     
 
@@ -16129,6 +16573,29 @@
     
 
 
+    <!-- https://w3id.org/tvbo/NeimarkSacker -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/NeimarkSacker">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension1"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment xml:lang="en">Torus (Neimark-Sacker) bifurcation of a limit cycle: a complex pair of Floquet multipliers crosses the unit circle, birthing an invariant torus.</rdfs:comment>
+        <rdfs:label xml:lang="en">Neimark-Sacker</rdfs:label>
+        <skos:altLabel>TR</skos:altLabel>
+        <skos:altLabel>neimark sacker</skos:altLabel>
+        <skos:altLabel>neimark-sacker</skos:altLabel>
+        <skos:altLabel>ns</skos:altLabel>
+        <skos:altLabel>torus</skos:altLabel>
+        <skos:altLabel>tr</skos:altLabel>
+        <tvbo:canonicalCode>TR</tvbo:canonicalCode>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/Network -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/Network">
@@ -16209,6 +16676,12 @@
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/graph_generator"/>
                 <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/GraphGenerator"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/graph_representation"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/GraphRepresentation"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -16363,6 +16836,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/graph_representation"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/label"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -16454,6 +16933,12 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/graph_generator"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/graph_representation"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -16620,6 +17105,12 @@
         <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="http://uri.interlex.org/tgbugs/uris/readable/alternateName"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/description"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -16764,6 +17255,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="http://uri.interlex.org/tgbugs/uris/readable/alternateName"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/id"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:minCardinality>
             </owl:Restriction>
@@ -16803,6 +17300,28 @@
         <skos:definition>A node in a network with its own dynamics and properties</skos:definition>
         <skos:exactMatch rdf:resource="https://w3id.org/tvbo/Node"/>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/NodeReconciliation -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/NodeReconciliation">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/NodeReconciliation#by_label"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/NodeReconciliation#none"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>NodeReconciliation</rdfs:label>
+        <skos:definition>Strategy for aligning a dataset-sourced empirical target&apos;s nodes to the model network before comparison. Keyed alignment is the default so a differing node count or ordering (e.g. a 998-parcel empirical FC against a 1000-parcel model) cannot silently misalign the comparison.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/NodeReconciliation#by_label"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/NodeReconciliation#none"/>
     </owl:Class>
     
 
@@ -17140,6 +17659,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/dynamics"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/Dynamics"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/environment"/>
                 <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/software/SoftwareEnvironment"/>
             </owl:Restriction>
@@ -17178,6 +17703,18 @@
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/pipeline"/>
                 <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/FunctionCall"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/query"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/BidsEntities"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/reconcile"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/NodeReconciliation"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -17243,6 +17780,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/dynamics"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/environment"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -17280,6 +17823,18 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/pipeline"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/query"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/reconcile"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -17327,6 +17882,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/dynamics"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/environment"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -17357,6 +17918,18 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/query"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/reconcile"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/time_scale"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -17369,8 +17942,42 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/min_coverage"/>
+                <owl:allValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:intersectionOf rdf:parseType="Collection">
+                            <rdf:Description rdf:about="http://www.w3.org/2001/XMLSchema#float"/>
+                            <rdfs:Datatype>
+                                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+                                <owl:withRestrictions rdf:parseType="Collection">
+                                    <rdf:Description>
+                                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">0.0</xsd:minInclusive>
+                                    </rdf:Description>
+                                </owl:withRestrictions>
+                            </rdfs:Datatype>
+                            <rdfs:Datatype>
+                                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+                                <owl:withRestrictions rdf:parseType="Collection">
+                                    <rdf:Description>
+                                        <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#float">1.0</xsd:maxInclusive>
+                                    </rdf:Description>
+                                </owl:withRestrictions>
+                            </rdfs:Datatype>
+                        </owl:intersectionOf>
+                    </rdfs:Datatype>
+                </owl:allValuesFrom>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/period"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/record"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -17411,7 +18018,19 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/min_coverage"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/period"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/record"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -17459,7 +18078,19 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/min_coverage"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/period"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/record"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -18758,7 +19389,20 @@
 
     <owl:Class rdf:about="https://w3id.org/tvbo/PeriodDoubling">
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension1"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment xml:lang="en">Flip bifurcation of a limit cycle: a Floquet multiplier crosses -1 and a period-doubled cycle branches off.</rdfs:comment>
         <rdfs:label xml:lang="en">Period doubling</rdfs:label>
+        <skos:altLabel>PD</skos:altLabel>
+        <skos:altLabel>flip</skos:altLabel>
+        <skos:altLabel>pd</skos:altLabel>
+        <skos:altLabel>period doubling</skos:altLabel>
+        <skos:altLabel>period-doubling</skos:altLabel>
+        <tvbo:canonicalCode>PD</tvbo:canonicalCode>
     </owl:Class>
     
 
@@ -18988,8 +19632,9 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
     <!-- https://w3id.org/tvbo/Pitchfork -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/Pitchfork">
-        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/BranchPoint"/>
         <rdfs:label xml:lang="en">Pitchfork</rdfs:label>
+        <skos:altLabel>pitchfork</skos:altLabel>
     </owl:Class>
     
 
@@ -19970,6 +20615,55 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
     
 
 
+    <!-- https://w3id.org/tvbo/SchedulerDirective -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SchedulerDirective">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/name"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/value"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/name"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/value"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/name"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/value"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>SchedulerDirective</rdfs:label>
+        <skos:definition>One engine-native scheduler directive passed through verbatim by the engine&apos;s emitter (e.g. a Slurm ``#SBATCH --&lt;name&gt;=&lt;value&gt;`` line). The open extension point of WorkflowEngineConfig: it carries any directive the typed fields do not name, so a new scheduler flag needs no schema change.</skos:definition>
+        <skos:exactMatch rdf:resource="https://w3id.org/tvbo/SchedulerDirective"/>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/SexEnum -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/SexEnum">
@@ -20673,6 +21367,16 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
     
 
 
+    <!-- https://w3id.org/tvbo/SparseDelayGraph -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SparseDelayGraph">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en">Edge-list adjacency with a delay-history buffer, used when any coupling carries a conduction delay and graph_representation resolves to sparse.</rdfs:comment>
+        <rdfs:label xml:lang="en">SparseDelayGraph</rdfs:label>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/SparseFormat -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/SparseFormat">
@@ -20692,6 +21396,16 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/SparseFormat#coo"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/SparseFormat#csr"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/SparseFormat#dense"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/SparseGraph -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SparseGraph">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en">Edge-list adjacency, instantaneous coupling. Used when graph_representation resolves to sparse and no coupling carries a conduction delay.</rdfs:comment>
+        <rdfs:label xml:lang="en">SparseGraph</rdfs:label>
     </owl:Class>
     
 
@@ -21734,6 +22448,7 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
     <owl:Class rdf:about="https://w3id.org/tvbo/SubcriticalHopf">
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Hopf"/>
         <rdfs:label xml:lang="en">Subcritical Hopf</rdfs:label>
+        <skos:altLabel>subcritical hopf</skos:altLabel>
     </owl:Class>
     
 
@@ -22470,8 +23185,9 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
     <!-- https://w3id.org/tvbo/Transcritical -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/Transcritical">
-        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/BranchPoint"/>
         <rdfs:label xml:lang="en">Transcritical</rdfs:label>
+        <skos:altLabel>transcritical</skos:altLabel>
     </owl:Class>
     
 
@@ -23007,7 +23723,21 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/chunk"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                <owl:allValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:intersectionOf rdf:parseType="Collection">
+                            <rdf:Description rdf:about="http://www.w3.org/2001/XMLSchema#integer"/>
+                            <rdfs:Datatype>
+                                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                                <owl:withRestrictions rdf:parseType="Collection">
+                                    <rdf:Description>
+                                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</xsd:minInclusive>
+                                    </rdf:Description>
+                                </owl:withRestrictions>
+                            </rdfs:Datatype>
+                        </owl:intersectionOf>
+                    </rdfs:Datatype>
+                </owl:allValuesFrom>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -23019,7 +23749,21 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/retries"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                <owl:allValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:intersectionOf rdf:parseType="Collection">
+                            <rdf:Description rdf:about="http://www.w3.org/2001/XMLSchema#integer"/>
+                            <rdfs:Datatype>
+                                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                                <owl:withRestrictions rdf:parseType="Collection">
+                                    <rdf:Description>
+                                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">0</xsd:minInclusive>
+                                    </rdf:Description>
+                                </owl:withRestrictions>
+                            </rdfs:Datatype>
+                        </owl:intersectionOf>
+                    </rdfs:Datatype>
+                </owl:allValuesFrom>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -23133,6 +23877,12 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/executor"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/gres"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -23163,7 +23913,25 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/options"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/SchedulerDirective"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/partition"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/queue"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/setup"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -23187,6 +23955,12 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/options"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/time"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -23200,19 +23974,61 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/array_chunk"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                <owl:allValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:intersectionOf rdf:parseType="Collection">
+                            <rdf:Description rdf:about="http://www.w3.org/2001/XMLSchema#integer"/>
+                            <rdfs:Datatype>
+                                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                                <owl:withRestrictions rdf:parseType="Collection">
+                                    <rdf:Description>
+                                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</xsd:minInclusive>
+                                    </rdf:Description>
+                                </owl:withRestrictions>
+                            </rdfs:Datatype>
+                        </owl:intersectionOf>
+                    </rdfs:Datatype>
+                </owl:allValuesFrom>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/cores"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                <owl:allValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:intersectionOf rdf:parseType="Collection">
+                            <rdf:Description rdf:about="http://www.w3.org/2001/XMLSchema#integer"/>
+                            <rdfs:Datatype>
+                                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                                <owl:withRestrictions rdf:parseType="Collection">
+                                    <rdf:Description>
+                                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</xsd:minInclusive>
+                                    </rdf:Description>
+                                </owl:withRestrictions>
+                            </rdfs:Datatype>
+                        </owl:intersectionOf>
+                    </rdfs:Datatype>
+                </owl:allValuesFrom>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/cpus_per_task"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                <owl:allValuesFrom>
+                    <rdfs:Datatype>
+                        <owl:intersectionOf rdf:parseType="Collection">
+                            <rdf:Description rdf:about="http://www.w3.org/2001/XMLSchema#integer"/>
+                            <rdfs:Datatype>
+                                <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+                                <owl:withRestrictions rdf:parseType="Collection">
+                                    <rdf:Description>
+                                        <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</xsd:minInclusive>
+                                    </rdf:Description>
+                                </owl:withRestrictions>
+                            </rdfs:Datatype>
+                        </owl:intersectionOf>
+                    </rdfs:Datatype>
+                </owl:allValuesFrom>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -23236,6 +24052,12 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/cpus_per_task"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/executor"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -23277,6 +24099,18 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/queue"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/setup"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/venv"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -23302,6 +24136,12 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/cpus_per_task"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/executor"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -23337,15 +24177,49 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/queue"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/venv"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
         <rdfs:label>WorkflowEngineConfig</rdfs:label>
-        <skos:definition>Execution directives for one target workflow engine (Slurm, Snakemake, Nextflow). Every field is optional; each engine renders the subset it understands, so a single shape serves all three. Resource fields are engine-agnostic; scheduler fields (partition, account, …) pass through verbatim to the target scheduler.</skos:definition>
+        <skos:definition>Execution directives for a workflow engine. Every field is optional and each engine&apos;s emitter consumes the subset it supports, so one block may carry directives for more than one target. The generic resource fields (cpus_per_task, mem, time) map across engines; the remaining fields are named for the engine that reads them (Slurm: partition/account/gres/ mail_*/array_chunk; Snakemake: cores; Nextflow: executor/queue). Any directive not named here is passed through ``options`` verbatim, so the block stays extensible without a schema change.</skos:definition>
         <skos:exactMatch rdf:resource="https://w3id.org/tvbo/WorkflowEngineConfig"/>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/ZeroHopf -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/ZeroHopf">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/Bifurcation"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasCodimension"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/Codimension2"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hasEigenvalueSignature"/>
+                <owl:hasValue rdf:resource="https://w3id.org/tvbo/RealZeroAndImaginaryPair"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:comment xml:lang="en">Codim-2 point with a real zero eigenvalue and an imaginary pair simultaneously; a fold curve meets a Hopf curve.</rdfs:comment>
+        <rdfs:label xml:lang="en">Zero-Hopf (fold-Hopf)</rdfs:label>
+        <skos:altLabel>ZH</skos:altLabel>
+        <skos:altLabel>fold-hopf</skos:altLabel>
+        <skos:altLabel>gavrilov-guckenheimer</skos:altLabel>
+        <skos:altLabel>zero-hopf</skos:altLabel>
+        <skos:altLabel>zh</skos:altLabel>
+        <tvbo:canonicalCode>ZH</tvbo:canonicalCode>
     </owl:Class>
     
 
@@ -23394,6 +24268,30 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         <rdfs:label>none (AggregationType)</rdfs:label>
         <skos:definition>No aggregation</skos:definition>
         <skos:notation>none</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/AggregationType#std -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/AggregationType#std">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/AggregationType"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>std (AggregationType)</rdfs:label>
+        <skos:definition>Standard deviation over time (per node)</skos:definition>
+        <skos:notation>std</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/AggregationType#variance -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/AggregationType#variance">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/AggregationType"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>variance (AggregationType)</rdfs:label>
+        <skos:definition>Variance over time (per node)</skos:definition>
+        <skos:notation>variance</skos:notation>
     </owl:Class>
     
 
@@ -23989,6 +24887,42 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
     
 
 
+    <!-- https://w3id.org/tvbo/GraphRepresentation#auto -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/GraphRepresentation#auto">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/GraphRepresentation"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>auto (GraphRepresentation)</rdfs:label>
+        <skos:definition>Select by connection density: use the sparse representation when the adjacency is sparse enough that edge-wise evaluation is cheaper than the dense product, dense otherwise. Default. Lets the backend apply its own crossover without the recipe hard-coding a data structure.</skos:definition>
+        <skos:notation>auto</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/GraphRepresentation#dense -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/GraphRepresentation#dense">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/GraphRepresentation"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>dense (GraphRepresentation)</rdfs:label>
+        <skos:definition>Force the dense-adjacency representation. Preferred for densely connected or small networks, where dense linear algebra&apos;s constant-factor efficiency outweighs its nodes-squared scaling.</skos:definition>
+        <skos:notation>dense</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/GraphRepresentation#sparse -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/GraphRepresentation#sparse">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/GraphRepresentation"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>sparse (GraphRepresentation)</rdfs:label>
+        <skos:definition>Force the edge-list (sparse) representation. Preferred for large, sparsely connected networks (structural connectomes, power grids) where coupling cost then scales with the number of edges rather than nodes-squared.</skos:definition>
+        <skos:notation>sparse</skos:notation>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/Hemisphere#both -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/Hemisphere#both">
@@ -24257,6 +25191,30 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
     
 
 
+    <!-- https://w3id.org/tvbo/NodeReconciliation#by_label -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/NodeReconciliation#by_label">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/NodeReconciliation"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>by_label (NodeReconciliation)</rdfs:label>
+        <skos:definition>Restrict both sides to their shared node labels by name (keyed ``.sel``), preserving the model network&apos;s order. Never positional.</skos:definition>
+        <skos:notation>by_label</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/NodeReconciliation#none -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/NodeReconciliation#none">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/NodeReconciliation"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>none (NodeReconciliation)</rdfs:label>
+        <skos:definition>No reconciliation; the node sets are assumed identical.</skos:definition>
+        <skos:notation>none</skos:notation>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/NoiseType#brown -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/NoiseType#brown">
@@ -24423,7 +25381,7 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/ParallelMode"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
         <rdfs:label>pmap (ParallelMode)</rdfs:label>
-        <skos:definition>Cross-device parallel execution (jax.pmap). For multi-GPU/TPU.</skos:definition>
+        <skos:definition>Parallel execution across the local devices of a single node (jax.pmap over the several GPUs/TPUs visible to that task). Intra-task only — it never spans nodes; inter-node parallelism is scheduler fan-out (DistributionConfig.chunk), not pmap. On a one-GPU (or CPU) task this degenerates to vmap.</skos:definition>
         <skos:notation>pmap</skos:notation>
     </owl:Class>
     
@@ -27965,6 +28923,15 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
     
 
 
+    <!-- https://w3id.org/tvbo/BranchCrossingGeometry -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/BranchCrossingGeometry">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BranchGeometry"/>
+        <rdfs:label xml:lang="en">branch crossing (transversal intersection of solution branches)</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/BuiltinModelLibrary -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/BuiltinModelLibrary">
@@ -27984,7 +28951,7 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CakanObermayer">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2972"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3102"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
@@ -28031,7 +28998,7 @@ Defaults are taken verbatim from ``neurolib/models/aln/loadDefaultParams.py``. N
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/CakanObermayer/state_variables/mu_si"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2972">
+    <rdf:Description rdf:nodeID="genid3102">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -28054,6 +29021,24 @@ Defaults are taken verbatim from ``neurolib/models/aln/loadDefaultParams.py``. N
     
 
 
+    <!-- https://w3id.org/tvbo/Codimension1 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Codimension1">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Codimension"/>
+        <rdfs:label xml:lang="en">codimension 1</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/Codimension2 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Codimension2">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Codimension"/>
+        <rdfs:label xml:lang="en">codimension 2</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/ConductionSpeedInference -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ConductionSpeedInference">
@@ -28062,6 +29047,15 @@ Defaults are taken verbatim from ``neurolib/models/aln/loadDefaultParams.py``. N
         <tvbo:requiresCapability rdf:resource="https://w3id.org/tvbo/StaticDelayBuffer"/>
         <rdfs:comment xml:lang="en">Gradient-based optimisation or parameter exploration of conduction speed / per-edge conduction delays.</rdfs:comment>
         <rdfs:label xml:lang="en">Conduction-speed inference</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/ConjugatePairImaginary -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ConjugatePairImaginary">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/EigenvalueSignature"/>
+        <rdfs:label xml:lang="en">a complex-conjugate pair crosses the imaginary axis</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -28079,7 +29073,7 @@ Defaults are taken verbatim from ``neurolib/models/aln/loadDefaultParams.py``. N
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CoombesByrne">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2973"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3103"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -28107,7 +29101,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/CoombesByrne/state_variables/r"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2973">
+    <rdf:Description rdf:nodeID="genid3103">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -28118,7 +29112,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CoombesByrne2D">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2974"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3104"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -28137,7 +29131,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/CoombesByrne2D/state_variables/r"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2974">
+    <rdf:Description rdf:nodeID="genid3104">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -28213,6 +29207,17 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
     
 
 
+    <!-- https://w3id.org/tvbo/DenseCoupling -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DenseCoupling">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BackendCapability"/>
+        <rdfs:comment xml:lang="en">Evaluate network coupling as a product over the full nodes-by-nodes adjacency. Preferred for densely-connected or small networks, where dense linear algebra&apos;s constant-factor efficiency outweighs its nodes-squared scaling.</rdfs:comment>
+        <rdfs:label xml:lang="en">Dense (full-adjacency) coupling evaluation</rdfs:label>
+        <tvbo:enabledByGraphParameter>graph_representation</tvbo:enabledByGraphParameter>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/Deterministic -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Deterministic"/>
@@ -28228,11 +29233,20 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
     
 
 
+    <!-- https://w3id.org/tvbo/DoubleZeroEigenvalue -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DoubleZeroEigenvalue">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/EigenvalueSignature"/>
+        <rdfs:label xml:lang="en">a double-zero (nilpotent) eigenvalue</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/DumontGutkin -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/DumontGutkin">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2975"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3105"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -28268,7 +29282,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/DumontGutkin/state_variables/s_ii"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2975">
+    <rdf:Description rdf:nodeID="genid3105">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -28291,8 +29305,8 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Epileptor">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2976"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2977"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3106"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3107"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -28338,13 +29352,13 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/Epileptor/state_variables/z"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2976">
-        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
-    </rdf:Description>
-    <rdf:Description rdf:nodeID="genid2977">
+    <rdf:Description rdf:nodeID="genid3106">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/HomoclinicBifurcation"/>
+    </rdf:Description>
+    <rdf:Description rdf:nodeID="genid3107">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     
 
@@ -28353,7 +29367,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Epileptor2D">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2978"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3108"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -28391,7 +29405,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/Epileptor2D/state_variables/z"/>
         <tvbo:model_type>phenomenological</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2978">
+    <rdf:Description rdf:nodeID="genid3108">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -28429,7 +29443,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Epileptor5D">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2979"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3109"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -28488,7 +29502,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/Epileptor5D/state_variables/z"/>
         <tvbo:model_type>phenomenological</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2979">
+    <rdf:Description rdf:nodeID="genid3109">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -28599,7 +29613,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/EpileptorRestingState">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2980"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3110"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -28662,7 +29676,7 @@ This model, its motivation and derivation can be found in the published article 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/EpileptorRestingState/state_variables/z"/>
         <tvbo:model_type>phenomenological</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2980">
+    <rdf:Description rdf:nodeID="genid3110">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -28732,6 +29746,17 @@ This model, its motivation and derivation can be found in the published article 
     
 
 
+    <!-- https://w3id.org/tvbo/FiniteDifferenceAnalysis -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/FiniteDifferenceAnalysis">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/AnalysisObservable"/>
+        <rdfs:comment xml:lang="en">Seed-averaged central finite-difference sensitivity of a target with respect to a parameter; the mean is the gradient estimate, the sem its standard error. Parameters: delta, seeds, seed_base, stat. Binds via target + wrt.</rdfs:comment>
+        <rdfs:label xml:lang="en">Finite-difference analysis</rdfs:label>
+        <tvbo:realisedByBackend>tvboptim</tvbo:realisedByBackend>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/FixedPoint -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/FixedPoint"/>
@@ -28751,7 +29776,7 @@ This model, its motivation and derivation can be found in the published article 
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/GastSchmidtKnosche_SD">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2981"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3111"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -28795,7 +29820,7 @@ This model, its motivation and derivation can be found in the published article 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/GastSchmidtKnosche_SD/state_variables/r"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2981">
+    <rdf:Description rdf:nodeID="genid3111">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -28806,7 +29831,7 @@ This model, its motivation and derivation can be found in the published article 
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/GastSchmidtKnosche_SF">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2982"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3112"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -28833,7 +29858,7 @@ This model, its motivation and derivation can be found in the published article 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/GastSchmidtKnosche_SF/state_variables/r"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2982">
+    <rdf:Description rdf:nodeID="genid3112">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -28844,8 +29869,8 @@ This model, its motivation and derivation can be found in the published article 
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Generic2dOscillator">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2983"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2984"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3113"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3114"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Excitable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -28875,11 +29900,11 @@ This model, its motivation and derivation can be found in the published article 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/Generic2dOscillator/state_variables/W"/>
         <tvbo:model_type>generic</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2983">
+    <rdf:Description rdf:nodeID="genid3113">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
-    <rdf:Description rdf:nodeID="genid2984">
+    <rdf:Description rdf:nodeID="genid3114">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -28902,6 +29927,17 @@ This model, its motivation and derivation can be found in the published article 
         <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/GenericLinear/parameters/gamma"/>
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/GenericLinear/state_variables/x"/>
         <tvbo:model_type>generic</tvbo:model_type>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/GradientAnalysis -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/GradientAnalysis">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/AnalysisObservable"/>
+        <rdfs:comment xml:lang="en">Autodiff (forward/reverse) gradient of a target observable or loss with respect to named parameters — the untruncated sensitivity of the full solve. Parameters: mode. Binds via target + wrt.</rdfs:comment>
+        <rdfs:label xml:lang="en">Gradient analysis</rdfs:label>
+        <tvbo:realisedByBackend>tvboptim</tvbo:realisedByBackend>
     </owl:NamedIndividual>
     
 
@@ -29043,7 +30079,7 @@ Note:
     <!-- https://w3id.org/tvbo/Jansen1995 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Jansen1995">
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2985"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3115"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -29060,7 +30096,7 @@ Note:
         <rdfs:label xml:lang="en">Jansen 1995</rdfs:label>
         <skos:prefLabel xml:lang="en">Jansen 1995</skos:prefLabel>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2985">
+    <rdf:Description rdf:nodeID="genid3115">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -29071,7 +30107,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2986"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3116"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -29115,7 +30151,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/JansenRit/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2986">
+    <rdf:Description rdf:nodeID="genid3116">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -29126,7 +30162,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/JansenRit1995">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2987"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3117"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -29156,7 +30192,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/JansenRit1995/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2987">
+    <rdf:Description rdf:nodeID="genid3117">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -29176,7 +30212,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/KIonEx">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2988"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3118"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -29264,7 +30300,7 @@ The model is derived as the mathematical limit of an infinite number of all-to-a
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/KIonEx/state_variables/x"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2988">
+    <rdf:Description rdf:nodeID="genid3118">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -29330,7 +30366,7 @@ The model is derived as the mathematical limit of an infinite number of all-to-a
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LarterBreakspear">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2989"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3119"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Chaotic"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -29406,7 +30442,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/LarterBreakspear/state_variables/Z"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2989">
+    <rdf:Description rdf:nodeID="genid3119">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -29419,6 +30455,15 @@ Note:
     
 
 
+    <!-- https://w3id.org/tvbo/LimitPointGeometry -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LimitPointGeometry">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BranchGeometry"/>
+        <rdfs:label xml:lang="en">limit point (turning point; branch tangent to the parameter axis)</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/Linear -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Linear">
@@ -29427,6 +30472,17 @@ Note:
         <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/Linear/parameters/gamma"/>
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/Linear/state_variables/x"/>
         <tvbo:model_type>generic</tvbo:model_type>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/LyapunovAnalysis -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/LyapunovAnalysis">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/AnalysisObservable"/>
+        <rdfs:comment xml:lang="en">Benettin QR estimate of the tangent-dynamics Lyapunov spectrum: the leading exponents lambda_i (rate of trajectory divergence, chaos when lambda_1 &gt; 0) and, for the leading direction, the per-node Lyapunov vector xi_i (which nodes drive the instability). Parameters: n_exponents, n_steps (rescaling segments), segment_time, mode (tangent-space jvp / two-trajectory sim). Independent per operating point, so it fans out across a parameter axis.</rdfs:comment>
+        <rdfs:label xml:lang="en">Lyapunov analysis</rdfs:label>
+        <tvbo:realisedByBackend>tvboptim</tvbo:realisedByBackend>
     </owl:NamedIndividual>
     
 
@@ -29462,8 +30518,8 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/MontbrioPazoRoxin">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2990"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2991"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3120"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3121"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
@@ -29486,13 +30542,13 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/MontbrioPazoRoxin/state_variables/r"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2990">
-        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
-    </rdf:Description>
-    <rdf:Description rdf:nodeID="genid2991">
+    <rdf:Description rdf:nodeID="genid3120">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+    </rdf:Description>
+    <rdf:Description rdf:nodeID="genid3121">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     
 
@@ -29601,6 +30657,24 @@ Note:
         <rdf:type rdf:resource="https://w3id.org/tvbo/SimulationTask"/>
         <rdfs:comment xml:lang="en">Forward integration of a random differential equation: parameters drawn from a distribution (Bayesian / ensemble simulation).</rdfs:comment>
         <rdfs:label xml:lang="en">RDE integration</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/RealEigenvalueZero -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/RealEigenvalueZero">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/EigenvalueSignature"/>
+        <rdfs:label xml:lang="en">one real eigenvalue crosses zero</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/RealZeroAndImaginaryPair -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/RealZeroAndImaginaryPair">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/EigenvalueSignature"/>
+        <rdfs:label xml:lang="en">a real zero eigenvalue together with an imaginary pair</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -29848,6 +30922,18 @@ The total synaptic input x combines local excitatory recurrence (w), external in
     
 
 
+    <!-- https://w3id.org/tvbo/SparseCoupling -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/SparseCoupling">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BackendCapability"/>
+        <rdfs:comment xml:lang="en">Evaluate network coupling by summing over the existing edges only (cost scales with the number of edges) rather than over the full dense adjacency (cost scales with nodes-squared). Numerically identical to the dense evaluation; a pure performance optimisation for sparsely-connected networks.</rdfs:comment>
+        <rdfs:label xml:lang="en">Sparse (edge-list) coupling evaluation</rdfs:label>
+        <tvbo:boundConstraint>edges &lt;&lt; nodes^2  (connection density below the backend&apos;s sparse/dense crossover)</tvbo:boundConstraint>
+        <tvbo:enabledByGraphParameter>graph_representation</tvbo:enabledByGraphParameter>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/StaticDelayBuffer -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/StaticDelayBuffer">
@@ -29984,7 +31070,7 @@ The total synaptic input x combines local excitatory recurrence (w), external in
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/SupHopf">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2992"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3122"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -30004,7 +31090,7 @@ This normal form has a supercritical bifurcation at &apos;a=0&apos; with &apos;a
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/SupHopf/state_variables/y"/>
         <tvbo:model_type>generic</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2992">
+    <rdf:Description rdf:nodeID="genid3122">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SupercriticalHopf"/>
     </rdf:Description>
@@ -30085,6 +31171,15 @@ This normal form has a supercritical bifurcation at &apos;a=0&apos; with &apos;a
     
 
 
+    <!-- https://w3id.org/tvbo/TwoImaginaryPairs -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/TwoImaginaryPairs">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/EigenvalueSignature"/>
+        <rdfs:label xml:lang="en">two distinct imaginary pairs</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/VectorizedRNG -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/VectorizedRNG">
@@ -30098,8 +31193,8 @@ This normal form has a supercritical bifurcation at &apos;a=0&apos; with &apos;a
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/WilsonCowan">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2993"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2994"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3123"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3124"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
@@ -30165,11 +31260,11 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/WilsonCowan/state_variables/I"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2993">
+    <rdf:Description rdf:nodeID="genid3123">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
-    <rdf:Description rdf:nodeID="genid2994">
+    <rdf:Description rdf:nodeID="genid3124">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -30180,7 +31275,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2995"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3125"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -30299,7 +31394,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/ZerlautAdaptationFirstOrder/state_variables/ou_drift"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2995">
+    <rdf:Description rdf:nodeID="genid3125">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -30400,7 +31495,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/ZetterbergJansen">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid2996"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid3126"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/LimitCycle"/>
@@ -30447,7 +31542,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/ZetterbergJansen/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid2996">
+    <rdf:Description rdf:nodeID="genid3126">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -49790,10 +50885,21 @@ to a task-appropriate range (e.g. omega in Hz).
         <rdfs:label xml:lang="en">Fixed point</rdfs:label>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/HomoclinicBifurcation">
+        <rdfs:comment xml:lang="en">Global bifurcation where a limit cycle collides with a saddle equilibrium, forming a homoclinic orbit of infinite period.</rdfs:comment>
         <rdfs:label xml:lang="en">Homoclinic</rdfs:label>
+        <skos:altLabel>hom</skos:altLabel>
+        <skos:altLabel>homoclinic</skos:altLabel>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/Hopf">
+        <rdfs:comment xml:lang="en">Andronov-Hopf: an equilibrium loses stability as a complex-conjugate eigenvalue pair crosses the imaginary axis, giving birth to a limit cycle.</rdfs:comment>
         <rdfs:label xml:lang="en">Hopf</rdfs:label>
+        <skos:altLabel>HB</skos:altLabel>
+        <skos:altLabel>andronov hopf</skos:altLabel>
+        <skos:altLabel>andronov-hopf</skos:altLabel>
+        <skos:altLabel>hb</skos:altLabel>
+        <skos:altLabel>hopf</skos:altLabel>
+        <skos:prefLabel xml:lang="en">Hopf</skos:prefLabel>
+        <tvbo:canonicalCode>HB</tvbo:canonicalCode>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/LimitCycle">
         <rdfs:label xml:lang="en">Limit cycle</rdfs:label>
@@ -49808,13 +50914,15 @@ to a task-appropriate range (e.g. omega in Hz).
         <rdfs:label xml:lang="en">Quiescent</rdfs:label>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/SaddleNode">
-        <rdfs:label xml:lang="en">Saddle-node</rdfs:label>
+        <skos:altLabel>saddle-node</skos:altLabel>
+        <skos:altLabel>sn</skos:altLabel>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/StrangeAttractor">
         <rdfs:label xml:lang="en">Strange attractor</rdfs:label>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/SupercriticalHopf">
         <rdfs:label xml:lang="en">Supercritical Hopf</rdfs:label>
+        <skos:altLabel>supercritical hopf</skos:altLabel>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/Torus">
         <rdfs:label xml:lang="en">Torus</rdfs:label>
@@ -49827,7 +50935,7 @@ to a task-appropriate range (e.g. omega in Hz).
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/account">
         <rdfs:label>account (slot)</rdfs:label>
-        <skos:definition>Accounting allocation to charge the tasks against.</skos:definition>
+        <skos:definition>Accounting allocation to charge the tasks against (Slurm).</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>account</skos:notation>
     </rdf:Description>
@@ -49964,6 +51072,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>derived_from</skos:notation>
     </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/desc">
+        <rdfs:label>desc (slot)</rdfs:label>
+        <skos:definition>BIDS desc- entity (e.g., FCavg, SC), for disambiguating derived data variants</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>desc</skos:notation>
+    </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/description">
         <rdfs:label>description (slot)</rdfs:label>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
@@ -49997,6 +51111,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:definition>Type of equation: &apos;differential&apos; (default) means dx/dt = rhs, &apos;algebraic&apos; means 0 = rhs or x ~ rhs (DAE constraint). Algebraic equations are used by ModelingToolkit.jl backend.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>equation_type</skos:notation>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/executor">
+        <rdfs:label>executor (slot)</rdfs:label>
+        <skos:definition>Executor to run the pipeline through (Nextflow process.executor).</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>executor</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/experiment_yaml_hash">
         <rdfs:label>experiment_yaml_hash (slot)</rdfs:label>
@@ -50239,7 +51359,7 @@ to a task-appropriate range (e.g. omega in Hz).
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/partition">
         <rdfs:label>partition (slot)</rdfs:label>
-        <skos:definition>Scheduler partition or queue to submit to.</skos:definition>
+        <skos:definition>Scheduler partition to submit to (Slurm).</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>partition</skos:notation>
     </rdf:Description>
@@ -50272,6 +51392,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>quantity_kind</skos:notation>
     </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/queue">
+        <rdfs:label>queue (slot)</rdfs:label>
+        <skos:definition>Scheduler queue for the executor (Nextflow process.queue).</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>queue</skos:notation>
+    </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/reconstruction">
         <rdfs:label>reconstruction (slot)</rdfs:label>
         <skos:definition>BIDS rec- entity (e.g., dTOR)</skos:definition>
@@ -50281,7 +51407,7 @@ to a task-appropriate range (e.g. omega in Hz).
     <rdf:Description rdf:about="https://w3id.org/tvbo/record">
         <rdfs:label>record (slot)</rdfs:label>
         <skos:definition>Names of observations to compute and record at EACH grid point, stacked over the sweep into one array per name. Entries may be derived observations (e.g. `loss`) or `analysis` diagnostics (e.g. `ad_gradient`, `fd_gradient`, `lyapunov`) — this is how a sweep of the diagnostics themselves is declared, replacing any per-point Python driver. Complementary to `observable` (a single scalar reduction); when both are absent the full observation Bunch is recorded.</skos:definition>
-        <skos:definition>Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). Set false to suppress recording.</skos:definition>
+        <skos:definition>Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). On an observation it forces (true) or suppresses (false) persistence in the result; left unset, a terminal observation (one not consumed by another observation or a loss) is recorded and an intermediate one is not. Set false to suppress recording.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>record</skos:notation>
     </rdf:Description>
@@ -50338,6 +51464,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>session_id</skos:notation>
     </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/setup">
+        <rdfs:label>setup (slot)</rdfs:label>
+        <skos:definition>Shell lines run verbatim before the task command, after ``set -euo pipefail`` and any module/venv activation. The general hook for environment setup the typed fields do not cover, e.g. activating a conda env (``conda activate &lt;name&gt;``), sourcing a profile, or exporting a computed path. Ordered; each line is emitted as-is.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>setup</skos:notation>
+    </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/source">
         <rdfs:label>source (slot)</rdfs:label>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
@@ -50384,6 +51516,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:definition>Ordered list of subject IDs (e.g. HCP-YA 6-digit IDs). Each ``measures/&lt;name&gt;`` array in the h5 companion is indexed by this order.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>subjects</skos:notation>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/suffix">
+        <rdfs:label>suffix (slot)</rdfs:label>
+        <skos:definition>BIDS suffix (e.g., relmat), the trailing name component before the extension</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>suffix</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/symbol">
         <rdfs:label>symbol (slot)</rdfs:label>

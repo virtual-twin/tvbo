@@ -19,6 +19,7 @@ Functions:
 """
 
 import operator
+import re
 from typing import Any, Sequence
 
 import pandas as pd
@@ -27,20 +28,45 @@ from tvbo.data import db
 
 _EMPTY_MARKERS = {"", "—", "-", "None", "nan"}
 
+_MATHRM_RE = re.compile(r"\\mathrm\{([^}]*)\}")
+_CMD_RE = re.compile(r"\\[a-zA-Z]+")
+_MARKUP_RE = re.compile(r"[{}\\_^$]")
+
+
+def _visual_width(cell: Any) -> int:
+    """Approximate the *rendered* character width of a markdown/LaTeX cell.
+
+    A cell like ``$\\mathrm{s}$`` renders as a single ``s``, so its raw source
+    length badly over-states how wide it is on the page. This strips the math
+    delimiters, ``\\mathrm`` wrappers and control sequences so column sizing
+    tracks what the reader sees, not the LaTeX source length.
+    """
+    s = _MATHRM_RE.sub(r"\1", str(cell))
+    s = _CMD_RE.sub("x", s)
+    s = _MARKUP_RE.sub("", s)
+    return max(len(s.strip()), 1)
+
 
 def md_table(
     headers: Sequence[str],
     rows: Sequence[Sequence[Any]],
     aligns: Sequence[str] | None = None,
-    empty: str = "—",
+    empty: str = "",
+    col_cap: int = 44,
 ) -> str:
     """Render a GitHub-markdown table, omitting columns with no data.
 
     A column is dropped when every one of its data cells is empty (blank,
     ``None``, or one of the placeholder markers). Kept columns render their
-    empty cells as ``empty``. This keeps auto-generated report tables narrow:
-    a parameter set with no ``default``/``domain``/``flags`` values shows only
-    the columns that carry information.
+    empty cells as ``empty`` (blank by default — no ``—`` placeholder). This
+    keeps auto-generated report tables narrow: a parameter set with no
+    ``default``/``domain``/``flags`` values shows only the columns that carry
+    information.
+
+    When only a single column survives the drop, the result is **not** a table
+    but a plain-text comma-separated list of that column's values — a lone
+    ``| Term |`` / ``| c_grid |`` table reads as clutter, so it collapses to
+    ``c_grid``. The caller's section header supplies the context.
 
     Args:
         headers: Column titles.
@@ -49,7 +75,8 @@ def md_table(
         empty: Placeholder rendered for an empty cell in a kept column.
 
     Returns:
-        The markdown table as a string (header, rule, and body rows).
+        The markdown table as a string (header, rule, and body rows), or a
+        plain-text list when a single column remains.
     """
     n = len(headers)
     norm = [[("" if c is None else str(c)).strip() for c in row] for row in rows]
@@ -58,11 +85,31 @@ def md_table(
         return cell in _EMPTY_MARKERS
 
     keep = [j for j in range(n) if any(not _blank(r[j]) for r in norm)] if norm else list(range(n))
+
+    # A single surviving column is a list, not a table: emit plain text.
+    if norm and len(keep) == 1:
+        j = keep[0]
+        return ", ".join(r[j] for r in norm if not _blank(r[j]))
+
     aligns = list(aligns) if aligns else ["l"] * n
-    rule = {"l": ":---", "r": "---:", "c": ":--:"}
+
+    # Size each kept column's separator to its (capped) rendered content width, so
+    # pandoc/LaTeX allocates PDF column widths *proportional to content* instead of
+    # equally: a lone name column no longer hogs space while a long description is
+    # squished. Columns under `col_cap` keep their natural width (headers/short cells
+    # never wrap); only over-long cells are capped so they can't starve the rest.
+    def _sep(j):
+        widths = [_visual_width(headers[j])] + [_visual_width(r[j]) for r in norm]
+        width = max(3, min(max(widths), col_cap))
+        a = aligns[j] if j < len(aligns) else "l"
+        if a == "r":
+            return "-" * (width - 1) + ":"
+        if a == "c":
+            return ":" + "-" * (width - 2) + ":"
+        return ":" + "-" * (width - 1)
 
     head = "| " + " | ".join(headers[j] for j in keep) + " |"
-    sep = "|" + "|".join(rule.get(aligns[j], ":---") for j in keep) + "|"
+    sep = "|" + "|".join(_sep(j) for j in keep) + "|"
     body = "\n".join(
         "| " + " | ".join((r[j] if not _blank(r[j]) else empty) for j in keep) + " |"
         for r in norm
@@ -85,6 +132,32 @@ def present(value):
     return value not in (None, "", [], {})
 
 
+def format_number(value, decimals=4):
+    """APA-style numeric formatting for report-table cells.
+
+    Rounds to at most ``decimals`` decimal places and strips trailing zeros, so raw
+    floats render publication-clean — ``0.8333333333`` → ``0.8333``,
+    ``314.1592653589793`` → ``314.1593``, ``40000.0`` → ``40000``, ``0.0`` → ``0`` —
+    while very large or very small magnitudes fall back to scientific notation
+    (``1e-06``). Non-numeric values (strings, symbolic expressions, arrays) and
+    booleans pass through unchanged.
+    """
+    if isinstance(value, bool):
+        return value
+    try:
+        x = float(value)
+    except (TypeError, ValueError):
+        return value
+    if x != x or x in (float("inf"), float("-inf")):  # nan / inf
+        return value
+    if x == 0:
+        return "0"
+    if abs(x) >= 1e6 or abs(x) < 10.0 ** (-decimals):
+        mant, _, exp = f"{x:.{decimals}e}".partition("e")
+        return f"{mant.rstrip('0').rstrip('.')}e{int(exp):+d}"
+    return f"{x:.{decimals}f}".rstrip("0").rstrip(".")
+
+
 def name_items(collection):
     """Yield ``(name, obj)`` pairs from a name-keyed dict, list, or ``None``."""
     if not collection:
@@ -100,7 +173,7 @@ def unit_text(unit):
     from tvbo.utils.units import unit_to_latex
 
     unit_ltx = unit_to_latex(unit) if unit else ""
-    return "$" + unit_ltx + "$" if unit_ltx else "—"
+    return "$" + unit_ltx + "$" if unit_ltx else ""
 
 
 def range_text(range_obj):
@@ -109,15 +182,15 @@ def range_text(range_obj):
         return ""
     values = slot(range_obj, "explored_values", None)
     if values:
-        values = [str(v) for v in values]
+        values = [str(format_number(v)) for v in values]
         return "{" + ", ".join(values[:8]) + ("..." if len(values) > 8 else "") + "}"
     lo, hi = slot(range_obj, "lo"), slot(range_obj, "hi")
     step, n_points = slot(range_obj, "step"), slot(range_obj, "n")
     parts = []
     if lo is not None or hi is not None:
-        parts.append(f"[{lo if lo is not None else '-inf'}, {hi if hi is not None else 'inf'}]")
+        parts.append(f"[{format_number(lo) if lo is not None else '-inf'}, {format_number(hi) if hi is not None else 'inf'}]")
     if step is not None:
-        parts.append(f"step={step}")
+        parts.append(f"step={format_number(step)}")
     if n_points is not None:
         parts.append(f"n={n_points}")
     if slot(range_obj, "log_scale", False):
@@ -154,7 +227,7 @@ def metadata_text(obj):
             bits.append(f"enforce={enf}")
     if present(slot(obj, "distribution")):
         bits.append(distribution_text(slot(obj, "distribution")))
-    return "; ".join(bit for bit in bits if bit) or "—"
+    return "; ".join(bit for bit in bits if bit) or ""
 
 
 def flag_text(obj, flags=None):
@@ -175,7 +248,7 @@ def flag_text(obj, flags=None):
         if attr == "shape" and not any(ch.isdigit() for ch in str(val)):
             continue
         labels.append(f"{key}={val}")
-    return ", ".join(labels) or "—"
+    return ", ".join(labels) or ""
 
 
 _STATE_VAR_FLAGS = [("coupling_variable", "coupling"), ("stimulation_variable", "stimulation"), ("record", "recorded")]
@@ -187,7 +260,7 @@ def state_variable_table(svars):
     from sympy import Symbol, latex
 
     rows = [
-        [f"${latex(Symbol(name))}$", slot(sv, "initial_value", ""), unit_text(slot(sv, "unit")),
+        [f"${latex(Symbol(name))}$", format_number(slot(sv, "initial_value", "")), unit_text(slot(sv, "unit")),
          f"{slot(sv, 'equation_type', 'differential')} (order {slot(sv, 'equation_order', 1)})",
          metadata_text(sv), flag_text(sv, _STATE_VAR_FLAGS),
          slot(sv, "description", "") or slot(sv, "definition", "") or ""]
@@ -219,7 +292,7 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
         return f"${latex(Symbol(name))}$" if symbolic else str(name)
 
     rows = [
-        [_name(name), slot(p, "value", ""), slot(p, "default", ""), unit_text(slot(p, "unit")),
+        [_name(name), format_number(slot(p, "value", "")), format_number(slot(p, "default", "")), unit_text(slot(p, "unit")),
          metadata_text(p), flag_text(p, flags),
          slot(p, "description", "") or slot(p, "definition", "") or ""]
         for name, p in name_items(collection)
@@ -231,6 +304,58 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
 def parameter_table(params):
     """Markdown model Parameters table (empty columns dropped) from a name->obj map."""
     return param_table(params, name_header="Parameter")
+
+
+def model_delta(model, baseline):
+    """Names of what *model* adds or changes relative to *baseline*.
+
+    Compares two related models (e.g. a controlled variant against its
+    uncontrolled base) and returns the subsets that are new or redefined, so a
+    report can render only the **delta** instead of repeating every shared state
+    variable, parameter, derived variable and coupling input.
+
+    Returns a :class:`~types.SimpleNamespace` with:
+
+    - ``eq_svars`` — state variables whose *equation* is new or changed (shown
+      in *State Equations*).
+    - ``new_svars`` — state variables absent from the baseline (shown in the
+      *State Variables* table; a merely re-tuned equation is not a new variable).
+    - ``dvars`` — derived variables that are new or redefined.
+    - ``params`` — parameters that are new or whose value/equation changed.
+    - ``coupling_inputs`` — coupling inputs absent from the baseline.
+    - ``base_label`` — a human label for the baseline, for the "relative to" note.
+    """
+    from types import SimpleNamespace
+
+    def _keyed(coll):
+        if not coll:
+            return {}
+        if hasattr(coll, "items"):
+            return dict(coll.items())
+        return {slot(v, "name", i): v for i, v in enumerate(coll)}
+
+    b_eqs, m_eqs = baseline.get_equations(), model.get_equations()
+
+    def _rhs(eqs, key):
+        eq = eqs.get(key)
+        return str(getattr(eq, "rhs", eq))
+
+    def _psig(p):
+        return (str(slot(p, "value", "")), str(slot(slot(p, "equation"), "rhs", "")))
+
+    b_sv, m_sv = _keyed(slot(baseline, "state_variables", {})), _keyed(slot(model, "state_variables", {}))
+    b_dv, m_dv = _keyed(slot(baseline, "derived_variables", {})), _keyed(slot(model, "derived_variables", {}))
+    b_p, m_p = _keyed(slot(baseline, "parameters", {})), _keyed(slot(model, "parameters", {}))
+    b_ci = set(_keyed(slot(baseline, "coupling_inputs", {})))
+
+    return SimpleNamespace(
+        eq_svars={k for k in m_sv if k not in b_sv or _rhs(m_eqs, k) != _rhs(b_eqs, k)},
+        new_svars={k for k in m_sv if k not in b_sv},
+        dvars={k for k in m_dv if k not in b_dv or _rhs(m_eqs, k) != _rhs(b_eqs, k)},
+        params={k for k, p in m_p.items() if k not in b_p or _psig(p) != _psig(b_p[k])},
+        coupling_inputs={k for k in _keyed(slot(model, "coupling_inputs", {})) if k not in b_ci},
+        base_label=slot(baseline, "label", None) or slot(baseline, "name", "the base model"),
+    )
 
 
 def parameter_report(param_setting, decimals=3, format="latex", **kwargs):

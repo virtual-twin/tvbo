@@ -853,8 +853,16 @@ def run_${algo_name}(
             _new_history = _new_history.at[-result.data.shape[0]:, :, :].set(result.data[:, 0:1, :])
             _${obs}_monitor = eqx.tree_at(history_accessor, _${obs}_monitor, _new_history)
 % else:
-        # ${obs} requires observation pipeline (not simple aggregation)
-        pass
+<%
+    _why = ("is not declared in the experiment's observations" if obs_def is None
+            else "is declared but is neither a mean-aggregation of a recorded variable nor a pipeline")
+    raise ValueError(
+        f"Algorithm observation '{obs}' {_why}. Algorithm observations must resolve to either "
+        f"`source: [<recorded variable>], aggregation: mean` or a `pipeline:` in the experiment's "
+        f"`observations:` block; otherwise the tuning loop references an undefined value. "
+        f"Recorded variables available: {var_names}."
+    )
+%>\
 % endif
 % endfor
 % endif

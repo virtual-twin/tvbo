@@ -65,9 +65,17 @@ if 'experiment' in context.keys():
 else:
     model = context.get('dynamics', context.get('model'))
 
-state_equations = [eq for k, eq in model.get_equations().items() if k in model.state_variables]
+# Optional baseline diff: when a `baseline` model is passed, render only what this
+# model adds or changes relative to it. report.model_delta does the comparison in
+# Python; the template just filters its collections by the returned name sets.
+_baseline = context.get('baseline', None)
+_delta = report.model_delta(model, _baseline) if _baseline is not None else None
 
-derived_variables = [eq for k, eq in model.get_equations().items() if k in model.derived_variables]
+state_equations = [eq for k, eq in model.get_equations().items()
+                   if k in model.state_variables and (_delta is None or k in _delta.eq_svars)]
+
+derived_variables = [eq for k, eq in model.get_equations().items()
+                     if k in model.derived_variables and (_delta is None or k in _delta.dvars)]
 
 derived_parameters = [
     Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
@@ -86,8 +94,11 @@ functions = [
 ]
 
 outputs = list(model.output or [])
+# coupling_inputs is the supported surface; coupling_terms duplicated the same names
+# (each input IS a term) and is no longer rendered.
 coupling_inputs = getattr(model, 'coupling_inputs', {}) or {}
-coupling_terms = getattr(model, 'coupling_terms', {}) or {}
+if _delta is not None:
+    coupling_inputs = {n: o for n, o in report.name_items(coupling_inputs) if n in _delta.coupling_inputs}
 model_summary = []
 if getattr(model, 'model_type', None):
     model_summary.append(f"type: {model.model_type}")
@@ -136,6 +147,10 @@ ${model.description}
 % endif
 ${'; '.join(model_summary)}.
 
+% if _delta is not None:
+Shown **relative to the base model** (${_delta.base_label}) — only new or changed state variables, parameters, derived variables and couplings are listed; everything else is inherited unchanged.
+
+% endif
 % if state_equations:
 **State Equations**
 
@@ -154,32 +169,36 @@ with
 ${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in functions])}
 
 % endif
-% if model.state_variables:
+<%
+_svars_show = model.state_variables if _delta is None else {n: s for n, s in report.name_items(model.state_variables) if n in _delta.new_svars}
+%>\
+% if _svars_show:
 **State Variables**
 
-${report.state_variable_table(model.state_variables)}
+${report.state_variable_table(_svars_show)}
 
 % endif
-% if model.parameters:
+<%
+_params_show = model.parameters if _delta is None else {n: p for n, p in report.name_items(model.parameters) if n in _delta.params}
+%>\
+% if _params_show:
 **Parameters**
 
-${report.parameter_table(model.parameters)}
+${report.parameter_table(_params_show)}
 
 % endif
 % if coupling_inputs:
+<%
+# One md_table (empty columns dropped; a scalar-only input list collapses to plain
+# text) instead of a hand-rolled table — a trivial dimension=1 carries no information.
+ci_rows = [[nm, report.slot(o, "source", ""),
+            ("" if report.slot(o, "dimension", "") in (1, "1", None, "") else report.slot(o, "dimension", "")),
+            ", ".join(report.slot(o, "keys", []) or []), report.slot(o, "description", "") or ""]
+           for nm, o in coupling_inputs.items()]
+%>\
 **Coupling Inputs**
 
-| Input | Source | Dimension | Keys | Description |
-|:------|:-------|----------:|:-----|:------------|
-% for input_name, input_obj in coupling_inputs.items():
-| ${input_name} | ${_slot(input_obj, 'source', '—') or '—'} | ${_slot(input_obj, 'dimension', 1)} | ${', '.join(_slot(input_obj, 'keys', []) or []) or '—'} | ${_slot(input_obj, 'description', '') or ''} |
-% endfor
-
-% endif
-% if coupling_terms:
-**Coupling Terms**
-
-${report.param_table(coupling_terms, name_header='Term')}
+${report.md_table(["Input", "Source", "Dimension", "Keys", "Description"], ci_rows, aligns=["l", "l", "r", "l", "l"])}
 
 % endif
 % if derived_parameters:

@@ -105,7 +105,9 @@ def _resolve_code_source(code_source, source_file):
         base = _fetch_git_code_source(git, ref)
     elif path:
         base = Path(path)
-        if not base.is_absolute() and source_file:
+        if not base.is_absolute():
+            if not source_file:
+                raise ValueError(f"CodeSource: relative path {path!r} needs a recipe file to anchor to")
             base = Path(source_file).resolve().parent / base
     else:
         return None
@@ -120,12 +122,15 @@ def _fetch_git_code_source(url, ref=None):
 
     Cached by ``sha1(url@ref)`` under ``$TVBO_CACHE`` (default ``~/.cache/tvbo``)
     so a re-run reuses the clone. A branch/tag uses ``--branch``; a bare commit
-    (which ``--branch`` rejects) falls back to a full clone + ``checkout``.
+    (which ``--branch`` rejects) falls back to a full clone + ``checkout``. The
+    cache is never refreshed, so a **mutable ref (branch) is pinned to its
+    first-clone state** — pin a tag or commit for reproducibility, or delete the
+    cache dir to re-fetch.
     """
     import hashlib, os, shutil, subprocess
     from pathlib import Path
 
-    key = hashlib.sha1(f"{url}@{ref or 'HEAD'}".encode()).hexdigest()[:16]
+    key = hashlib.sha1(f"{url}@{ref or 'HEAD'}".encode(), usedforsecurity=False).hexdigest()[:16]
     cache = Path(os.environ.get("TVBO_CACHE", Path.home() / ".cache" / "tvbo")) / "code_sources" / key
     if (cache / ".git").is_dir():
         return cache
