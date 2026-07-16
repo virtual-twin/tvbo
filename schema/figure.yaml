@@ -35,25 +35,6 @@ enums:
       rule:    {description: "Reference line / span (threshold, stimulus window, vline)."}
       band:    {description: "Filled band between two series (error/CI)."}
 
-  RenderBackend:
-    description: "The renderer a panel is drawn by (per-panel, so one figure may mix backends). New backends are added when their leaf is implemented."
-    permissible_values:
-      matplotlib: {description: "bsplot + matplotlib (the MVP renderer)."}
-
-  ColorbarPlacement:
-    permissible_values:
-      right: {}
-      bottom: {}
-      left: {}
-      top: {}
-      inset: {description: "An inset colorbar pinned inside the panel."}
-
-  GuardCondition:
-    description: "When a panel renders a labelled placeholder instead of data (honest-placeholder policy, never source-replot as reproduction)."
-    permissible_values:
-      missing:    {description: "The referenced container/output is absent."}
-      degenerate: {description: "Present but below a meaningfulness threshold."}
-
 # -------------------------------------------------------------------------- classes
 
 classes:
@@ -126,7 +107,7 @@ classes:
         description: "Panels keyed by their mosaic label."
 
   Panel:
-    description: "One cell of the figure, or a sub-panel placed at a bbox inside another panel (an inset). kind selects grammar vs escape-hatch; all kinds share label/guard/insets/post-hook machinery. Reuses label (human title)."
+    description: "One cell of the figure. kind selects grammar (cartesian/heatmap) vs escape-hatch (image/custom); every kind shares the label, placeholder, legend and annotation machinery. Reuses label (human title)."
     slots:
       - label
     attributes:
@@ -135,52 +116,25 @@ classes:
         range: string
         annotations:
           collection_key: true
-        description: "Mosaic label this panel binds to (matches a letter in Figure.layout), or the inset key."
+        description: "Mosaic label this panel binds to (matches a letter in Figure.layout)."
       kind:
         range: PanelKind
         required: true
-      backend:
-        range: RenderBackend
-        ifabsent: string(matplotlib)
-        description: "Renderer for THIS panel (per-panel; enables mixed-backend figures)."
-      panel_label:
-        range: string
-        description: "Panel letter (A/B/...) override; auto-assigned from the mosaic key if unset."
       number_loc:
         range: string
         description: "Per-panel override of the figure's panel_number_loc ('upper left'|'upper right'|'lower left'|'lower right') — e.g. wide top panels upper-right, grid panels upper-left."
-      guard:
-        range: Guard
-        inlined: true
+      placeholder:
+        range: string
+        description: "Honest-placeholder text drawn when this panel's data is missing or degenerate (never a source-replot). Setting it wraps the draw so a missing container falls back to this label instead of erroring."
       layers:
         range: Layer
         multivalued: true
         inlined: true
         inlined_as_list: true
         description: "Marks sharing this panel's axes (overlay). Grammar kinds only."
-      colorbar:
-        range: ColorbarSpec
-        inlined: true
       legend:
         range: boolean
         description: "Show a legend for this panel."
-      insets:
-        range: Panel
-        multivalued: true
-        inlined: true
-        description: "Sub-panels placed at a bbox (per-node mini-plots, marginals, zooms). Bounded: an inset does not itself carry insets."
-      bbox:
-        range: float
-        multivalued: true
-        description: "[x, y, w, h] in parent-axes fraction, set when this panel is used as an inset."
-      zoom_of:
-        range: Argument
-        multivalued: true
-        inlined: true
-        description: "If set, this inset zooms the parent to the given selection and draws connector lines."
-      connector:
-        range: boolean
-        description: "Draw connector lines from the parent to a zoom inset."
       path:
         range: string
         description: "External image file (image kind)."
@@ -192,15 +146,12 @@ classes:
         multivalued: true
         inlined: true
         description: "Keyword options for the custom callable (reuses Argument; typed values)."
-      post:
-        range: string
-        description: "Name of a registered raw-Axes hook run after the panel draws (annotations, arrows)."
       annotations:
         range: Annotation
         multivalued: true
         inlined: true
         inlined_as_list: true
-        description: "Positioned text labels drawn on the panel (e.g. 'K≈272') — a declarative alternative to a custom callable or the post hook."
+        description: "Positioned text labels drawn on the panel (e.g. 'K≈272') — a declarative alternative to a custom callable."
 
   Layer:
     description: "One mark bound to one data reference, with its encoding."
@@ -245,31 +196,6 @@ classes:
       y: {range: string}
       color: {range: string}
       detail: {range: string, description: "Non-visual grouping dim (e.g. the hue/iterate dim)."}
-
-  Guard:
-    description: "Render a labelled placeholder when data is missing/degenerate."
-    attributes:
-      when:
-        range: GuardCondition
-        required: true
-      placeholder:
-        range: string
-        description: "Placeholder label to draw."
-      threshold:
-        range: float
-        description: "Meaningfulness threshold for the degenerate condition."
-
-  ColorbarSpec:
-    description: "A heatmap panel's colorbar. Reuses label (defaults to the color channel's name)."
-    slots:
-      - label
-    attributes:
-      show:
-        range: boolean
-        ifabsent: "True"
-      placement:
-        range: ColorbarPlacement
-        ifabsent: string(right)
 
   Annotation:
     description: "A positioned text label on a panel, in axes-fraction coordinates."

@@ -128,11 +128,11 @@ def main():
     fig, axd = bsplot.figure.subplots(**${repr(subplots_kwargs)})
 
 % for p in panels:
-% if p['guard']:
+% if p['placeholder']:
     try:
         _panel_${p['key']}(fig, axd[${repr(p['key'])}])
     except (FileNotFoundError, OSError, KeyError, ValueError, IndexError):
-        _placeholder(axd[${repr(p['key'])}], ${repr(p['guard'])})
+        _placeholder(axd[${repr(p['key'])}], ${repr(p['placeholder'])})
 % else:
     _panel_${p['key']}(fig, axd[${repr(p['key'])}])
 % endif

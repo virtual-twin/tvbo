@@ -362,7 +362,6 @@ def build_context(figure, base_dir, outfile: str) -> dict:
     for key, panel in _items(figure.panels):
         layers = [_resolve_layer(l, panel.kind, base_dir)
                   for l in (getattr(panel, "layers", None) or [])]
-        guard = getattr(panel, "guard", None)
         # ``custom`` routes Panel.opts to its callable; grammar panels read the axis subset.
         ctx = ({"layers": layers, "opts": _panel_opts(panel), "key": key}
                if panel.kind == "custom" else None)
@@ -377,7 +376,7 @@ def build_context(figure, base_dir, outfile: str) -> dict:
             "title": getattr(panel, "label", None),
             "path": getattr(panel, "path", None),
             "render": getattr(panel, "render", None),
-            "guard": (getattr(guard, "placeholder", None) or "no data") if guard else None,
+            "placeholder": getattr(panel, "placeholder", None),
             "layers": layers,
             "axopts": axopts,
             "ctx": ctx,
