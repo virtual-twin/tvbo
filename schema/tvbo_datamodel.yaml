@@ -35,6 +35,7 @@ imports:
     - tvbo_study
     - tvb_dbs
     - software
+    - figure
 
 default_prefix: tvbo
 default_range: string
@@ -4508,6 +4509,55 @@ classes:
                 multivalued: true
                 inlined_as_list: true
                 range: SimulationExperiment
+            figures:
+                multivalued: true
+                inlined_as_list: true
+                range: Figure
+                description: >-
+                    Declarative Figure specs rendered from this study's experiment
+                    results — closes the replication loop (a study is its experiments
+                    plus the figures that read them).
+            code_source:
+                range: CodeSource
+                inlined: true
+                description: >-
+                    Where this study's callable code lives — the builders and
+                    transform/observation callables it references by bare
+                    ``module:`` name. Decouples the specification from its code:
+                    a local directory (relative to the recipe YAML or absolute)
+                    or a git repository fetched and cached at load time. When
+                    absent, the conventional ``<recipe-dir>/code/`` is used.
+
+    CodeSource:
+        class_uri: tvbo:CodeSource
+        description: >-
+            Location of a recipe's callable code so the specification is decoupled
+            from where the code lives. Either a local directory or a git
+            repository; the resolved directory (optionally a ``subdir`` within it)
+            is placed on the import path at load time so ``module:`` references
+            resolve by bare name. ``path`` and ``git`` are mutually exclusive.
+        attributes:
+            path:
+                range: string
+                description: >-
+                    Local directory holding the code, relative to the recipe YAML
+                    or absolute. Mutually exclusive with ``git``.
+            git:
+                range: string
+                description: >-
+                    Git repository URL to fetch the code from (shallow-cloned and
+                    cached under ``~/.cache/tvbo/code_sources``). Mutually
+                    exclusive with ``path``.
+            ref:
+                range: string
+                description: >-
+                    Git branch, tag, or commit to check out (``git`` sources only).
+                    Defaults to the repository's default branch.
+            subdir:
+                range: string
+                description: >-
+                    Subdirectory within the source to place on the import path
+                    (defaults to the source root).
 
     TimeSeries:
         class_uri: tvbo:TimeSeries

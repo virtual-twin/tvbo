@@ -64,9 +64,11 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
 
         study = yaml_loader.load(filepath, cls)
         study._source_file = str(Path(filepath).resolve())
-        # Make the recipe's code/ subdir importable, so custom builders/callables
-        # resolve by bare module name without a PYTHONPATH prefix.
-        register_recipe_code_paths(study._source_file)
+        # Make the recipe's callable code importable so custom builders/callables
+        # resolve by bare module name without a PYTHONPATH prefix: an explicit
+        # code_source (local dir or git repo) when declared, else the code/
+        # subdir beside the YAML.
+        register_recipe_code_paths(study._source_file, getattr(study, "code_source", None))
         # Keep the raw (anchor-resolved) experiment dicts so experiments can be
         # materialised through SimulationExperiment.from_string — that path
         # iri-sources dynamics/coupling from the registry, which loading the
