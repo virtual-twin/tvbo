@@ -403,17 +403,11 @@ tvbo:Chaotic      a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:labe
 tvbo:Quiescent    a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Quiescent"@en .
 tvbo:Bursting     a owl:Class ; rdfs:subClassOf tvbo:DynamicalRegime ; rdfs:label "Bursting"@en .
 
-# Bifurcation classes.
-tvbo:SaddleNode             a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Saddle-node"@en .
-tvbo:Hopf                   a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Hopf"@en .
-tvbo:SubcriticalHopf        a owl:Class ; rdfs:subClassOf tvbo:Hopf ;        rdfs:label "Subcritical Hopf"@en .
-tvbo:SupercriticalHopf      a owl:Class ; rdfs:subClassOf tvbo:Hopf ;        rdfs:label "Supercritical Hopf"@en .
-tvbo:Pitchfork              a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Pitchfork"@en .
-tvbo:Transcritical          a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Transcritical"@en .
-tvbo:HomoclinicBifurcation  a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Homoclinic"@en .
-tvbo:FoldOfLimitCycles      a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Fold of limit cycles"@en .
-tvbo:PeriodDoubling         a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Period doubling"@en .
-tvbo:BogdanovTakens         a owl:Class ; rdfs:subClassOf tvbo:Bifurcation ; rdfs:label "Bogdanov-Takens"@en .
+# Bifurcation type taxonomy (Fold/SaddleNode, BranchPoint, Hopf, PeriodDoubling,
+# NeimarkSacker, codim-2 organising centres, ...) is defined — with codimension /
+# eigenvalue-signature / branch-geometry axioms and backend label anchoring — in the
+# dedicated module `ontology/tvb-o-bifurcation.ttl`, merged alongside this file.
+# The parent `tvbo:Bifurcation` class remains declared above (§ DynamicalProperty).
 
 # Attractor classes.
 tvbo:FixedPoint       a owl:Class ; rdfs:subClassOf tvbo:Attractor ; rdfs:label "Fixed point"@en .
