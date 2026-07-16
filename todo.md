@@ -1441,3 +1441,29 @@ the figure's `used` containers (provenance graph = DAG), resources = `Figure.wor
 `WorkflowConfig`, added) over study `workflow`; `tvbo workflow submit/snakemake <study>` emits figure rules
 alongside experiment rules so heavy renders run as their own SLURM jobs after their experiments. Emitted
 `plot.py` stays user-editable.
+
+**BUILT (2026-07): walking skeleton + fidelity + workflow emitter.** `tvbo/adapters/bsplot.py`
+(resolve context, `TRANSFORMS` up/down/order_by_branch, `CUSTOM_PANELS` registry, `sel`, axopts) +
+`tvbo/templates/bsplot/*.mako` (emits self-contained `plot.py`; cartesian/heatmap/image/custom; guard→placeholder).
+`tvbo/adapters/figure_workflow.py` + `tvbo/templates/workflow/snakemake/` emit figure Snakemake rules
+(`used`→`input:`, `workflow_overrides`→`resources:`). **Taher2019 Fig 5 reproduced — 8 panels, plotted data
+bit-identical to the hand-written `_sweep_figure`**; Jansen1995 image montage. Rendering contract in the schema:
+`Figure.{width,height (mm), dpi, font_size (pt, real), auto_format, panel_numbers, panel_number_format,
+panel_number_loc}` + `Panel.annotations` (Annotation class) + legend via `Panel.opts.legend`. Pipeline HTML schema at `docs/Replication/pipeline.qmd`.
+
+**MVP FINALIZED (2026-07).** CLI `tvbo figure render <spec>` (`tvbo/cli/figures.py`) loads a Figure/Study YAML and
+renders each figure; `tvbo workflow snakemake <study>` now appends figure rules (`figures.smk` + `plot_<name>.py`) when
+`study.figures` present. Rendering contract fields (physical mm/pt sizing, real font, dpi, auto_format toggle,
+panel_numbers + format + loc), `Panel.annotations` (Annotation class), study `.mplstyle` support (`plt.style.use` for
+paths, `bsplot.style.use` for names — bsplot can't take paths). **17 figure-codegen tests** (`tests/test_figure_codegen.py`)
++ datamodel green. PROOF-OF-CONCEPT: Taher2019 **Fig 5 reproduced declaratively, data bit-identical**, closely matching the
+paper (structure, LaTeX labels, (a)-(h), circled K) — `dev/figure-demo/ab_fig5_final.png`.
+
+By design, NOT gaps: cross-container x/y merge + data-derived shared ranges live in `custom` callables (the escape hatch —
+grammar can't express them). Out of scope: λ₁ magnitude paper-vs-run gap (a sim/analysis issue, pre-existing).
+PIXEL-PARITY POLISH DONE: legends conditional (paper has none), `Figure.height_ratios`/`width_ratios` layout control added,
+panel-label collision fixed (K≈ moved to the opposite corner from the panel letter), study `.mplstyle` via `plt.style.use`.
+`dev/figure-demo/{fig5_final,ab_fig5_final}.png` — Taher Fig 5 declaratively, closely matches the paper. 277 tests green.
+REMAINING (minor/deferred): λ₁ magnitude sim gap (not rendering); a negligible ylabel clip on the tall top panel;
+slurm/nextflow figure emitters (snakemake primary); a `Figure.render()` method (funcs + CLI already cover it); kit
+`OUT_DIR` vs local `output/nc/` path reconciliation.

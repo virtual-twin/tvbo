@@ -1,0 +1,305 @@
+id: https://w3id.org/tvbo/figure
+name: figure
+title: TVB-O Figure Spec (DRAFT)
+description: "Declarative, backend-independent specification of a publication figure rendered from TVBO result containers. A Figure is a mosaic of Panels; grammar panels (cartesian/heatmap) bind container fields to visual channels via mark + encoding, while custom and image panels are peer escape-hatch kinds. Data binding (Layer.used) doubles as the PROV provenance edge. It reuses shared slots/classes (name, description, label, iri, Provenance, Argument); those resolve in the merged schema because this file is generated only as part of tvbo_datamodel.yaml, which imports it (so it does not import tvbo_datamodel back, avoiding a cycle). Design write-up: dev/figure-spec-design.md."
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+  tvbo: https://w3id.org/tvbo/
+  schema: http://schema.org/
+  prov: http://www.w3.org/ns/prov#
+
+default_prefix: tvbo
+
+imports:
+  - linkml:types
+  - common
+
+# ---------------------------------------------------------------------------- enums
+
+enums:
+
+  PanelKind:
+    description: "What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding); image (external file) and custom (registered callable) are peer escape-hatch kinds. New kinds (surface, network) are added when their bsplot leaf exists."
+    permissible_values:
+      cartesian: {description: "Line/scatter/rule/band marks in a 2-D cartesian frame."}
+      heatmap:   {description: "A 2-D array field drawn as pcolormesh/imshow."}
+      image:     {description: "An external raster/vector file placed in the grid cell."}
+      custom:    {description: "A registered callable fn(container, ax, **opts)."}
+
+  MarkType:
+    description: "The cartesian primitive a grammar layer draws (heatmap is implied by a heatmap panel, not a mark)."
+    permissible_values:
+      line:    {description: "Connected line (timeseries, bifurcation branch, trajectory)."}
+      scatter: {description: "Points (fixed points, special points, per-node profiles)."}
+      rule:    {description: "Reference line / span (threshold, stimulus window, vline)."}
+      band:    {description: "Filled band between two series (error/CI)."}
+
+  RenderBackend:
+    description: "The renderer a panel is drawn by (per-panel, so one figure may mix backends). New backends are added when their leaf is implemented."
+    permissible_values:
+      matplotlib: {description: "bsplot + matplotlib (the MVP renderer)."}
+
+  ColorbarPlacement:
+    permissible_values:
+      right: {}
+      bottom: {}
+      left: {}
+      top: {}
+      inset: {description: "An inset colorbar pinned inside the panel."}
+
+  GuardCondition:
+    description: "When a panel renders a labelled placeholder instead of data (honest-placeholder policy, never source-replot as reproduction)."
+    permissible_values:
+      missing:    {description: "The referenced container/output is absent."}
+      degenerate: {description: "Present but below a meaningfulness threshold."}
+
+# -------------------------------------------------------------------------- classes
+
+classes:
+
+  Figure:
+    class_uri: schema:ImageObject
+    description: "A publication figure, a mosaic of panels rendered from result containers. Reuses name (identifier) and description (caption)."
+    slots:
+      - name
+      - description
+    attributes:
+      layout:
+        range: string
+        description: "bsplot mosaic string; letters = panel keys, slash (or newline) = new row, repeated letters span cells, dot = empty. e.g. aab/ccb."
+      style:
+        range: string
+        multivalued: true
+        description: "Passed to bsplot.style.use, style names and/or .mplstyle paths, layered left to right. Owns figure sizing/DPI."
+      format:
+        range: string
+        description: "Output format (pdf/svg/png). Unset defers to the renderer default."
+      width:
+        range: float
+        description: "Figure width in mm (physical print size). Font size is in points and independent of this, so a smaller figure makes text relatively larger."
+      height:
+        range: float
+        description: "Figure height in mm (physical print size)."
+      dpi:
+        range: integer
+        description: "Raster resolution (dots per inch); scales pixel output only, not the physical size or the font size."
+      font_size:
+        range: float
+        description: "Base font size in points (physical: 1 pt = 1/72 inch). The real text size, unchanged by figure size or dpi; set it (or the width) so labels are legible at print size."
+      auto_format:
+        range: boolean
+        description: "Apply bsplot's format_fig (tick/label normalisation + panel numbers). Set false to keep full manual control, e.g. when a study's own .mplstyle already defines the look."
+      panel_numbers:
+        range: boolean
+        description: "Draw automatic panel letters (a, b, ...). Independent of auto_format so a study can keep its own tick styling and still get numbered panels."
+      panel_number_format:
+        range: string
+        description: "Python format string applied to each panel letter: '{}' -> 'a', '({})' -> '(a)', '{}.' -> 'a.'. Defaults to '{}'. Match the target journal's convention."
+      panel_number_loc:
+        range: string
+        description: "Where the panel letter sits: 'upper left' (default), 'upper right', 'lower left', 'lower right'. Many journals (and Taher Fig 5) use 'upper right'."
+      height_ratios:
+        range: float
+        multivalued: true
+        description: "Relative heights of the mosaic rows, e.g. [1.15, 1, 1, 1] to make the top panel taller. Length = number of rows."
+      width_ratios:
+        range: float
+        multivalued: true
+        description: "Relative widths of the mosaic columns."
+      spines:
+        range: string
+        description: "Axes spine style: 'box' (all 4 spines, closed boxes — e.g. Taher) or 'open' (left+bottom only). Unset defers to the active style. Pair 'box' with auto_format: false — bsplot's format_fig otherwise detaches and trims spines (the open 'nature' look)."
+      provenance:
+        range: Provenance
+        inlined: true
+        slot_uri: prov:wasGeneratedBy
+        description: "Reuses the shared Provenance class (generated_by = tvbo agent+version; derived_from = the spec/experiments)."
+      workflow_overrides:
+        range: WorkflowConfig
+        inlined: true
+        description: "Per-figure HPC/workflow resource refinement (reuses WorkflowConfig, same pattern as SimulationExperiment.workflow_overrides); lets a heavy render request its own resources when figures are emitted as workflow jobs. The figure's Layer.used edges become the render rule's input dependencies."
+      panels:
+        range: Panel
+        multivalued: true
+        inlined: true
+        description: "Panels keyed by their mosaic label."
+
+  Panel:
+    description: "One cell of the figure, or a sub-panel placed at a bbox inside another panel (an inset). kind selects grammar vs escape-hatch; all kinds share label/guard/insets/post-hook machinery. Reuses label (human title)."
+    slots:
+      - label
+    attributes:
+      panel_key:
+        key: true
+        range: string
+        annotations:
+          collection_key: true
+        description: "Mosaic label this panel binds to (matches a letter in Figure.layout), or the inset key."
+      kind:
+        range: PanelKind
+        required: true
+      backend:
+        range: RenderBackend
+        ifabsent: string(matplotlib)
+        description: "Renderer for THIS panel (per-panel; enables mixed-backend figures)."
+      panel_label:
+        range: string
+        description: "Panel letter (A/B/...) override; auto-assigned from the mosaic key if unset."
+      number_loc:
+        range: string
+        description: "Per-panel override of the figure's panel_number_loc ('upper left'|'upper right'|'lower left'|'lower right') — e.g. wide top panels upper-right, grid panels upper-left."
+      guard:
+        range: Guard
+        inlined: true
+      layers:
+        range: Layer
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        description: "Marks sharing this panel's axes (overlay). Grammar kinds only."
+      colorbar:
+        range: ColorbarSpec
+        inlined: true
+      legend:
+        range: boolean
+        description: "Show a legend for this panel."
+      insets:
+        range: Panel
+        multivalued: true
+        inlined: true
+        description: "Sub-panels placed at a bbox (per-node mini-plots, marginals, zooms). Bounded: an inset does not itself carry insets."
+      bbox:
+        range: float
+        multivalued: true
+        description: "[x, y, w, h] in parent-axes fraction, set when this panel is used as an inset."
+      zoom_of:
+        range: Argument
+        multivalued: true
+        inlined: true
+        description: "If set, this inset zooms the parent to the given selection and draws connector lines."
+      connector:
+        range: boolean
+        description: "Draw connector lines from the parent to a zoom inset."
+      path:
+        range: string
+        description: "External image file (image kind)."
+      render:
+        range: string
+        description: "Name of a registered custom-panel callable fn(container, ax, **opts) (custom kind)."
+      opts:
+        range: Argument
+        multivalued: true
+        inlined: true
+        description: "Keyword options for the custom callable (reuses Argument; typed values)."
+      post:
+        range: string
+        description: "Name of a registered raw-Axes hook run after the panel draws (annotations, arrows)."
+      annotations:
+        range: Annotation
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        description: "Positioned text labels drawn on the panel (e.g. 'K≈272') — a declarative alternative to a custom callable or the post hook."
+
+  Layer:
+    description: "One mark bound to one data reference, with its encoding."
+    attributes:
+      used:
+        range: DataRef
+        inlined: true
+        slot_uri: prov:used
+        required: true
+      transform:
+        range: string
+        description: "Optional presentation-only reduction. Prefer declaring an Observation upstream; else name a declarative postprocessing (tvbo schema) or a registered callable fn(da)->da."
+      mark:
+        range: MarkType
+        description: "Cartesian mark; omitted for heatmap panels (implied by the panel kind)."
+      encoding:
+        range: Encoding
+        inlined: true
+      style:
+        range: Style
+        inlined: true
+
+  DataRef:
+    class_uri: prov:Entity
+    description: "A pointer to a result-container field (a PROV entity used by a layer). Reuses the shared iri slot as the experiment/result/dataset pointer."
+    slots:
+      - iri
+    attributes:
+      output:
+        range: string
+        description: "Recorded state var OR observation__<name> OR external variable in the container at iri."
+      sel:
+        range: Argument
+        multivalued: true
+        inlined: true
+        description: "Label-based selector (xarray .sel), keyed by dim (reuses Argument; name = dim, value = coordinate label). Never positional."
+
+  Encoding:
+    description: "Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel may later accept a scale object without breaking this string form."
+    attributes:
+      x: {range: string}
+      y: {range: string}
+      color: {range: string}
+      detail: {range: string, description: "Non-visual grouping dim (e.g. the hue/iterate dim)."}
+
+  Guard:
+    description: "Render a labelled placeholder when data is missing/degenerate."
+    attributes:
+      when:
+        range: GuardCondition
+        required: true
+      placeholder:
+        range: string
+        description: "Placeholder label to draw."
+      threshold:
+        range: float
+        description: "Meaningfulness threshold for the degenerate condition."
+
+  ColorbarSpec:
+    description: "A heatmap panel's colorbar. Reuses label (defaults to the color channel's name)."
+    slots:
+      - label
+    attributes:
+      show:
+        range: boolean
+        ifabsent: "True"
+      placement:
+        range: ColorbarPlacement
+        ifabsent: string(right)
+
+  Annotation:
+    description: "A positioned text label on a panel, in axes-fraction coordinates."
+    attributes:
+      text:
+        range: string
+        required: true
+      x:
+        range: float
+        description: "x in axes fraction (0 = left, 1 = right); defaults to 0.5."
+      y:
+        range: float
+        description: "y in axes fraction (0 = bottom, 1 = top); defaults to 0.95."
+      loc:
+        range: string
+        description: "Named corner ('upper right', 'upper left', 'center', ...) as an alternative to x/y."
+
+  Style:
+    description: "Layer/panel styling, portable intent plus a namespaced backend passthrough. Reuses Argument for the passthrough (matplotlib implicit in the MVP)."
+    attributes:
+      color:
+        range: string
+        description: "Semantic colour or palette name."
+      colormap:
+        range: string
+        description: "Named colormap (routed through the cmap resolver)."
+      opacity:
+        range: float
+      opts:
+        range: Argument
+        multivalued: true
+        inlined: true
+        description: "Raw backend passthrough (e.g. linewidth, linestyle); matplotlib implicit until a second backend lands."

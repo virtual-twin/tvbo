@@ -610,9 +610,9 @@ def _study_figures(study) -> list:
     """
     if study is None:
         return []
-    from .figures import _as_figure_list
+    from tvbo.utils import as_list
 
-    return _as_figure_list(getattr(study, "figures", None))
+    return as_list(getattr(study, "figures", None))
 
 
 def _figure_base_dir(study, out_dir: Path) -> str:

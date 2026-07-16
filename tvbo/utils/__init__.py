@@ -164,6 +164,12 @@ def as_list(obj) -> list:
     return list(obj)
 
 
+def sanitize_name(name) -> str:
+    """Sanitise a name into a filesystem- and rule-safe token (keep alnum, ``_``, ``-``)."""
+    import re
+    return re.sub(r"[^0-9A-Za-z_-]+", "_", str(name))
+
+
 def is_array_valued(value) -> bool:
     """Return True if a parameter value is an array constant rather than a scalar.
 
