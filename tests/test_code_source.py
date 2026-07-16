@@ -82,6 +82,12 @@ def test_path_and_git_mutually_exclusive():
         _resolve_code_source(p.CodeSource(path="a", git="b"), None)
 
 
+def test_relative_path_without_source_file_errors():
+    """A relative path with no recipe file to anchor to errors, not a silent CWD resolve."""
+    with pytest.raises(ValueError, match="needs a recipe file to anchor"):
+        _resolve_code_source(p.CodeSource(path="./recipe"), None)
+
+
 def test_absent_code_source_falls_back_to_none(tmp_path):
     """A study without code_source and without a code/ dir registers nothing."""
     assert register_recipe_code_paths(str(tmp_path / "Study.yaml")) == []
