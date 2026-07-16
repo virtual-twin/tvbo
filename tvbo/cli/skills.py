@@ -14,6 +14,7 @@ See :mod:`tvbo.skills._render` for the canonical schema.
 """
 from __future__ import annotations
 
+import shutil
 from enum import Enum
 from pathlib import Path
 
@@ -24,6 +25,7 @@ from tvbo.skills import (
     CANONICAL_PACKAGE_DIR,
     CANONICAL_REPO_DIR,
     Skill,
+    is_asset_noise,
     is_managed_file,
     load_canonical,
     render_agents_md,
@@ -154,7 +156,6 @@ def sync(
 def _sync_check(skills: list[Skill], claude_dir: Path, copilot_dir: Path, agents_md: Path) -> None:
     """Render in-memory, compare to on-disk; non-zero exit if anything differs."""
     import io
-    import shutil
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -175,11 +176,35 @@ def _sync_check(skills: list[Skill], claude_dir: Path, copilot_dir: Path, agents
             if ax != bx:
                 drift.append(label)
 
+        def _cmp_tree(a: Path, b: Path, label: str) -> None:
+            """Compare two directory trees byte-for-byte, recording per-file drift.
+
+            Byte-compiled and OS-noise files are ignored on both sides (they are
+            never rendered), so a locally-run asset script cannot spoof drift.
+            """
+            def _files(root: Path) -> dict[Path, bytes]:
+                if not root.exists():
+                    return {}
+                return {
+                    rel: p.read_bytes()
+                    for p in root.rglob("*")
+                    if p.is_file() and not is_asset_noise(rel := p.relative_to(root))
+                }
+            af, bf = _files(a), _files(b)
+            for rel in sorted(set(af) | set(bf), key=str):
+                if af.get(rel) != bf.get(rel):
+                    drift.append(f"{label}/{rel}")
+
         for skill in skills:
             _cmp(
                 tmp_path / "claude" / skill.name / "SKILL.md",
                 claude_dir / skill.name / "SKILL.md",
                 f".claude/skills/{skill.name}/SKILL.md",
+            )
+            _cmp_tree(
+                tmp_path / "claude" / skill.name / "assets",
+                claude_dir / skill.name / "assets",
+                f".claude/skills/{skill.name}/assets",
             )
             if skill.audience in {"maintainer", "both"}:
                 _cmp(
@@ -347,12 +372,17 @@ def uninstall(
         for path in candidates:
             if not is_managed_file(path):
                 continue
+            assets = path.parent / "assets"  # only meaningful for claude-code
             if dry_run:
                 typer.echo(f"  would remove: {path}")
+                if t is Target.claude_code and assets.is_dir():
+                    typer.echo(f"  would remove: {assets}/")
             else:
                 path.unlink()
-                # for claude-code, also drop the now-empty parent dir
+                # for claude-code, also drop our assets/ and the now-empty parent dir
                 if t is Target.claude_code:
+                    if assets.is_dir():
+                        shutil.rmtree(assets)
                     try:
                         path.parent.rmdir()
                     except OSError:

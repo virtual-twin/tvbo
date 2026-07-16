@@ -8,6 +8,23 @@ description: "How to specify a Dynamics in TVBO \u2014 the YAML and Python forms
 
 A **Dynamics** is the smallest building block: a set of named parameters and state variables governed by ODE equations. It can be written as YAML or constructed directly in Python.
 
+## First: is it already curated? (don't rewrite from a paper)
+
+TVBO ships 100+ curated models. Check before transcribing equations by hand — a
+match is one `from_db` call and is already unit-checked:
+
+```python
+from tvbo import Dynamics
+Dynamics.list_db()                        # every model name
+Dynamics.list_db(model_type="neural_mass")# JansenRit, Epileptor, WilsonCowan, …
+Dynamics.db_overview()                    # DataFrame: name, type, description
+dyn = Dynamics.from_db("JansenRit")       # load one
+```
+
+Only write a new `Dynamics` when the catalog has no match. See the
+`running-simulations` skill for discovering networks, atlases, coupling, and
+whole curated experiments the same way.
+
 ## YAML form
 
 ```yaml

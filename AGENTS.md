@@ -90,7 +90,8 @@ Install with: `tvbo skills install --target claude-code` (or `--target cursor` /
 |-------|-------------|------------------|
 | `tvbo-overview` | What TVBO is — the three pillars (LinkML datamodel, ontology, Python package) plus the Odoo platform. Use when working with the tvbo library or deciding whether to reach for it. | `tvbo/skills/canonical/overview/SKILL.md` |
 | `tvbo-platform` | How to use the Odoo-based TVBO platform at tvbo.charite.de — retrieve curated knowledge, manage your account, share SimulationExperiments and Studies (public or with API key), and load them back into Python. | `tvbo/skills/canonical/platform/SKILL.md` |
-| `tvbo-running-simulations` | How to run a SimulationExperiment in TVBO — choosing a backend, calling run/plot, and what each optional extra (jax, tvb, pyrates, julia) provides. | `tvbo/skills/canonical/running-simulations/SKILL.md` |
+| `tvbo-replicating-studies` | How to replicate a published study in TVBO — turn a paper into ONE declarative, fully tvbo-native recipe (all or selected experiments) + simple plotting + an honest, fully-computed report. Encodes the hard-won rules so the replication is fast and trustworthy. Composes the atomic skills (writing-models, running-simulations). | `tvbo/skills/canonical/replicating-studies/SKILL.md` |
+| `tvbo-running-simulations` | How to run a SimulationExperiment in TVBO — discovering curated components, reusing a curated experiment, choosing a backend, and calling run/plot. Read this before grepping the repo for models, networks, or how to run something. | `tvbo/skills/canonical/running-simulations/SKILL.md` |
 | `tvbo-writing-models` | How to specify a Dynamics in TVBO — the YAML and Python forms, parameter / state-variable / equation conventions, and common pitfalls. | `tvbo/skills/canonical/writing-models/SKILL.md` |
 
 <!-- END SKILLS INDEX -->

@@ -1,0 +1,15 @@
+# <Study> — replication targets & validation criteria (Phase 1)
+
+Version of record: `original_study/<Study>.md`. Key params copied **verbatim**.
+
+| ID | Target | Fig(s) | Key params (verbatim) | Validation criterion (pass/fail) | Tier |
+|----|--------|--------|-----------------------|----------------------------------|------|
+| T1 | <topology / counts>        | 1     | N=…, lines=…            | counts exact                     | core |
+| T2 | <operating point / profile>| 5c–e  | K=…, α=…, transient=…   | <metric> within <tol>            | core |
+| T3 | <control timeseries>       | 8     | τ=…, g=…, window=…      | <metric> → 0; persists after off | core |
+| T5 | <Lyapunov / λ₁>            | 5b    | Benettin, units …       | sign structure + hysteresis      | extended |
+| …  | …                          | …     | …                       | …                                | …    |
+
+**Ground-truth note.** If the printed equation disagrees with what the figures show
+(normalization typos, unit conventions), record the quantity the *figures* use, with the
+discrepancy noted — that is what the recipe must reproduce.

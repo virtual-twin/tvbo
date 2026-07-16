@@ -29,13 +29,15 @@ pip install tvbo
 tvbo skills install --target claude-code     # default: Claude Code, user scope
 ```
 
-That writes four files under `~/.claude/skills/tvbo-*/SKILL.md`:
+That writes five skills under `~/.claude/skills/tvbo-*/` (each a `SKILL.md`,
+plus an `assets/` dir where the skill ships templates):
 
 | Skill | What it teaches the AI |
 |---|---|
 | `tvbo-overview` | The three pillars (LinkML datamodel, ontology, Python package) |
 | `tvbo-writing-models` | How to specify a `Dynamics` in YAML or Python |
 | `tvbo-running-simulations` | How to run an experiment, choose a backend |
+| `tvbo-replicating-studies` | How to replicate a published study as one recipe + report |
 | `tvbo-platform` | How to use [tvbo.charite.de](https://tvbo.charite.de) |
 
 Skills load **on demand** — they cost nothing when you're not working with TVBO.
@@ -58,7 +60,7 @@ tvbo skills install
 
 | Target | Produces | Default location |
 |---|---|---|
-| `claude-code` | `<dest>/tvbo-<name>/SKILL.md` | `~/.claude/skills/` (user) or `./.claude/skills/` (project) |
+| `claude-code` | `<dest>/tvbo-<name>/SKILL.md` (+ `assets/` if the skill ships any) | `~/.claude/skills/` (user) or `./.claude/skills/` (project) |
 | `cursor` | `<dest>/tvbo-<name>.mdc` | `~/.cursor/rules/` or `./.cursor/rules/` |
 | `copilot` | `<dest>/<name>.instructions.md` | `.github/instructions/` (repo-only; maintainer) |
 | `agents-md` | Updates the skills-index region of `AGENTS.md` | `./AGENTS.md` |
@@ -67,7 +69,7 @@ tvbo skills install
 
 ### Audiences
 
-By default only the four **user-audience** skills are installed (the ones in
+By default only the five **user-audience** skills are installed (the ones in
 the table above). The **maintainer** skills (`git`, `writing-code`,
 `linkml-schema`, `codegen-templates`, `tests-and-backends`, `grill-me`) are
 relevant only when working inside a clone of the `tvbo` repository. Opt in
