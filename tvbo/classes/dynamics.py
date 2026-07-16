@@ -3286,6 +3286,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
         template_name="tvbo-report-model",
         outputfile=None,
         derivative_notation: str = "dot",
+        baseline=None,
     ):
         """Render a human-readable report of the model.
 
@@ -3298,6 +3299,11 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
             template_name: Base name of the report Mako template.
             outputfile: If given, path the report is written to.
             derivative_notation: Notation for time derivatives, e.g. `"dot"`.
+            baseline: Another `Dynamics` to diff against. When given, the report
+                lists only the state variables, parameters, derived variables and
+                couplings that are new or changed relative to it (a "relative to"
+                note replaces the shared rows) — e.g. a controlled variant shown
+                against its uncontrolled base without repeating every shared term.
 
         Returns:
             The rendered Markdown report string.
@@ -3312,7 +3318,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
 
         md_template = templates.lookup.get_template(f"{template_name}.md.mako")
         md_render = (
-            md_template.render(model=self, derivative_notation=derivative_notation)
+            md_template.render(model=self, derivative_notation=derivative_notation, baseline=baseline)
             .replace(r"\mathcal{lo}_{coupling}", "c_{local}")
             .replace("c_{pop0}", "c_{global}")
         )
