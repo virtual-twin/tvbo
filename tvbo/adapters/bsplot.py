@@ -345,7 +345,8 @@ def _resolve_layer(layer, panel_kind, base_dir):
     return {
         "container": _container_path(getattr(used, "iri", None), base_dir),
         "output": used.output,
-        "mark": layer.mark or ("heatmap" if panel_kind == "heatmap" else "line"),
+        # str() collapses the MarkType enum (dataclass flavor) to a plain string the template compares.
+        "mark": str(layer.mark) if layer.mark else ("heatmap" if panel_kind == "heatmap" else "line"),
         "x": getattr(enc, "x", None),
         "y": getattr(enc, "y", None),
         "transform": getattr(layer, "transform", None),
@@ -360,19 +361,20 @@ def build_context(figure, base_dir, outfile: str) -> dict:
     base_dir = Path(base_dir)
     panels = []
     for key, panel in _items(figure.panels):
-        layers = [_resolve_layer(l, panel.kind, base_dir)
+        kind = str(panel.kind)                      # datamodel enum -> plain string (flavor-agnostic)
+        layers = [_resolve_layer(l, kind, base_dir)
                   for l in (getattr(panel, "layers", None) or [])]
         # ``custom`` routes Panel.opts to its callable; grammar panels read the axis subset.
         ctx = ({"layers": layers, "opts": _panel_opts(panel), "key": key}
-               if panel.kind == "custom" else None)
+               if kind == "custom" else None)
         # Default the axis labels to the first layer's x-dim / output; opts override them.
         axopts = _axopts(panel)
-        if panel.kind in ("cartesian", "heatmap") and layers:
+        if kind in ("cartesian", "heatmap") and layers:
             axopts.setdefault("xlabel", layers[0]["x"] or "")
             axopts.setdefault("ylabel", layers[0]["y"] or layers[0]["output"])
         panels.append({
             "key": key,
-            "kind": panel.kind,
+            "kind": kind,
             "title": getattr(panel, "label", None),
             "path": getattr(panel, "path", None),
             "render": getattr(panel, "render", None),
@@ -393,7 +395,8 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         place = {"option": "numbers"}               # label is given verbatim, no int->letter conversion
         loc = p["number_loc"] or fig_loc
         if loc:                                     # only override placement when a corner was asked for
-            place.update(_PANEL_NUM_LOC.get(loc, _PANEL_NUM_LOC["upper left"]))
+            # loc is a Corner enum whose str() is the corner text in both datamodel flavors.
+            place.update(_PANEL_NUM_LOC.get(str(loc), _PANEL_NUM_LOC["upper left"]))
         if font_size:
             place["fontsize"] = font_size
         p["number_kwargs"] = place                  # resolved here; the template just splats it
