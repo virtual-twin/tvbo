@@ -12,8 +12,8 @@ description: "How to replicate a published study in TVBO \u2014 turn a paper int
 You are reproducing a published paper as a **single declarative TVBO recipe** plus
 minimal plotting, with a report whose every number is computed from the run — never
 typed by hand. This skill owns the *replication-specific* layer; for the atomic
-how-to it defers to **writing-models** (Dynamics YAML), **running-simulations**
-(sourcing / CLI / backends), and **codegen-templates** (render internals).
+how-to it defers to **writing-models** (Dynamics YAML) and **running-simulations**
+(sourcing / CLI / backends).
 
 Work the phases in order. Each has a REQUIRED output. Do not skip ahead — the
 scorecard in Phase 6 maps 1:1 to the criteria you write in Phase 1, and Phase 7
@@ -30,10 +30,15 @@ attractor.
    a result container (`output/nc/exp*/…h5`) or the recipe metadata — solitary counts,
    ⟨Δω⟩, decay times, N_c, topology counts, K/α/τ. If you typed a number into prose,
    it is a bug. (Papers are not ground truth; your own asserted numbers are not either.)
-3. **Backend-independent metadata, backend chosen by fit.** The YAML states *intent*,
+3. **A panel shows TVBO output or an honest placeholder — NEVER the paper's replotted
+   source data.** Replotting the source arrays is a dev check that plotting *works*; it is
+   never a deliverable panel (it passes off the paper's own numbers as your reproduction).
+   If a panel's TVBO data isn't ready, render a labelled placeholder holding its slot in the
+   paper's layout. This is the integrity line — do not cross it "just to fill the figure".
+4. **Backend-independent metadata, backend chosen by fit.** The YAML states *intent*,
    never one backend's mechanism. The execution backend is picked in Phase 1.5 from the
    targets' feature needs, not defaulted.
-4. **FAIR layout, spec separate from code** (copy `assets/skeleton/`): the recipe
+5. **FAIR layout, spec separate from code** (copy `assets/skeleton/`): the recipe
    `<Study>.yaml` sits at the **study root** — the spec is not hidden inside `code/`.
    Its callables live in `code/recipe/`, reached declaratively via
    `code_source: ./code/recipe` (a local path, or a git repo — see **running-simulations**),
@@ -41,7 +46,7 @@ attractor.
    script, analysis callables, one reference integration, and `figures/plot.py`;
    `original_study/` the paper + analysis; `input/` the data provenance; `report/` the
    report source.
-5. **Nothing large or upstream is vendored — gitignore it and document exact retrieval.**
+6. **Nothing large or upstream is vendored — gitignore it and document exact retrieval.**
    Git tracks only what you author: the spec, `code/`, `input/DATA.md`, and the report
    source (`report.qmd` + `references.bib` + the prose writeup). **Everything else is
    gitignored:** `output/` and all generated artifacts (figures, `report.pdf`/logs,
@@ -49,13 +54,14 @@ attractor.
    the paper's own material under `original_study/`, and raw third-party inputs under
    `input/sourcedata/`. Planning/working docs go to a gitignored `_dev/`. A fresh clone
    is small and reproducible; `DATA.md` says how to obtain every ignored input.
-6. **Replication, stated honestly.** Frame it as *replication* (independent code +
+7. **Replication, stated honestly.** Frame it as *replication* (independent code +
    independently-sourced data → same conclusions), not bit-exact *reproduction*. Ship a
-   **scorecard** (met / partial / out-of-scope) and name the **accepted limitations**
-   (e.g. unpublished-seed realization dependence) up front.
-7. **One plotting script**, `code/figures/plot.py`, one `main()` (topology → sweeps →
+   **scorecard** (met / partial / out-of-scope) with a **fidelity tier per target**
+   (mechanism-level vs decimal-level, Phase 1.5) and name the **accepted limitations**
+   (unavailable exact SC, unpublished-seed realization dependence) up front.
+8. **One plotting script**, `code/figures/plot.py`, one `main()` (topology → sweeps →
    control → compose). Simple matplotlib next to the recipe.
-8. **Verify against an independent reference** (Phase 7) before trusting any figure.
+9. **Verify against an independent reference** (Phase 7) before trusting any figure.
 
 ---
 
@@ -92,6 +98,19 @@ its target — flag it as a framework/schema enhancement before you build, and m
 target `partial`/`out` in the eventual scorecard. This early gap-finding is what sets
 honest expectations instead of surprising you mid-YAML.
 
+**Data obtainability + fidelity tier — decide BEFORE building (the biggest time-saver).**
+Tag every target with a **fidelity tier**: *mechanism-level* (a sign / pattern / ordering
+that reproduces on any reasonable input — the paper's central claim) vs *decimal-level* (a
+specific number that needs the paper's exact input). Then confirm that exact input is
+actually obtainable *now* — papers routinely deposit only raw login-walled data (no derived
+matrix), link a code repo that 404s, or name the wrong author. If the exact input
+(connectome, empirical FC, seeds) is not obtainable, choose a **documented substitute** and
+downgrade its decimal-level targets to mechanism-level up front — do not start a hunt for a
+file that may not exist. (Koller: the exact HCP-S900 Schaefer-1000 SC was unobtainable → we
+used the dTOR Schaefer-1000 SC, which reproduces the in-strength→wave *mechanism* but caps
+the edge-level FC number; deciding this early would have saved a long fruitless hunt and set
+honest Fig-8 expectations from the start.)
+
 ## Phase 2 — Source the data → `DATA.md` (tracked) + gitignored data dirs
 
 Write `input/DATA.md` (from `assets/DATA.md.tmpl`) as the **one tracked pointer** to every
@@ -112,6 +131,16 @@ Place data by provenance:
 
 `code/`'s prep script reads the raw source and emits the tvbo-ready `Network` (+ small
 CSV/npz for inspection) into a gitignored location; do NOT hand-edit derived artifacts.
+
+**Pin the parcellation AND its order variant up front, then verify the mapping.** An atlas
+often ships in several orderings of the *same* parcels (Schaefer-1000 `7Networks` vs
+`17Networks` = identical parcels, different node order); using the wrong one silently
+scrambles every brain map and correlation without erroring. Fix the paper's exact atlas +
+order variant, align every array **by parcel label** (never by position — guards hemisphere
+swaps), and **verify with a self-consistency correlation**: a quantity mapped against itself
+under your alignment must give +1.000 (e.g. in-strength computed from the SC vs the paper's
+published in-strength). A silent order bug is among the costliest — it yields plausible,
+wrong figures.
 
 ## Phase 3 — The recipe: one tvbo-native `<Study>.yaml`
 
@@ -145,6 +174,14 @@ paper's connectome/observable to your node order, match **by label**, never by p
 run on the host (plain NumPy is fine); only what you put under `record:` runs inside the
 jitted/vmapped grid and must be backend-traceable (a non-traceable recording raises).
 
+Two scale/ensemble traps: (1) a **trial ensemble needs per-cell reseeding** — add an
+`execution.random_seed` sweep axis so each trial draws a fresh PRNG key; a codegen-constant
+key makes every "trial" identical (a degenerate ensemble that silently reads as zero
+variance). (2) **At grid scale, record a reduced/streaming observable, never raw
+trajectories** — a full θ/voltage trace over a 15k-point grid is terabytes; a streaming
+reduction (e.g. effective frequency accumulated online) keeps resident memory ~constant
+(block-size, not trajectory-length), so the whole grid vmaps on one GPU with no sharding.
+
 ## Phase 5 — Plotting: one `code/figures/plot.py`
 
 Copy `assets/plot.py.tmpl` (one `main()`: topology → sweeps → control → compose) and
@@ -169,6 +206,10 @@ Copy `assets/report.qmd.tmpl`. It carries the three things that took us the long
 - model/coupling equations rendered from metadata via `EXP.dynamics.render("markdown")`
   and `coupling.render("markdown")` — generated, not transcribed. Render the controlled
   variant `relative to` the base (`dynamics.render(baseline=…)`) so only the delta shows.
+- **per-figure status callouts, three colours, no emoji:** green = what reproduced, yellow
+  = what is *missing* (data/target not yet available), red = what was *attempted and failed
+  to match*. One or two sentences each. A placeholder panel (rule #3) gets a **yellow
+  "missing"** callout — never a green one, and never dressed up as a result.
 
 PDF-targeted `.qmd`: write math as LaTeX, never Unicode (xelatex drops it). Avoid a
 closing `$` immediately followed by a digit (breaks pandoc math). Edit the finished prose
@@ -183,6 +224,13 @@ reference integration** of the paper's governing equation in `code/<study>_refer
 stated tolerance). Where feasible, also cross-check via `render_code('tvb')` vs
 `render_code('tvboptim')`. This is what catches modelling bugs a PDF can't: e.g.
 per-step vs per-stage coupling evaluation converging to a *different attractor*.
+
+**Attribute a residual gap to data vs implementation with a head-to-head.** When a metric
+misses the paper's number, install the paper's *own* tooling and run it on your *exact*
+inputs before blaming your code. (Koller: running his native `tvb-library` model on the same
+substitute SC gave FC r=0.27 — the same as tvboptim's 0.32 — proving the shortfall was the
+connectome, not the engine; without it we'd have chased an implementation bug that wasn't
+there.)
 
 ---
 
@@ -204,14 +252,29 @@ per-step vs per-stage coupling evaluation converging to a *different attractor*.
   N-node grid the per-step dense N×N coupling matmul dominates; `network.graph_representation:
   sparse` (with a factored/angle-addition coupling) turned a multi-hour sweep into minutes
   locally, numerically identical (~1e-16). Assess this first — often no cluster is needed.
+  For a big *parameter* grid, pair this with a streaming reduced observable (Phase 4) so vmap
+  memory stays bounded and the whole grid fits one GPU.
+- **Metastable / FC metrics are duration-, trial-, and regime-sensitive — don't call a
+  ceiling early.** A single short run's FC/PLV/order-parameter is noise-dominated (one lucky
+  trial read 0.17; the 8-trial mean was 0.09). Match the paper's **full duration and trial
+  count**, and locate its **operating regime** (the near-critical (K, v) pocket a paper's 2-D
+  grid exists to find) before concluding "structure-limited". We twice declared a gap that
+  duration/trials/regime then closed.
+- **Reconcile the coupling scale with the paper's weight normalization.** A global K that
+  looks orders of magnitude off is usually a normalization convention, not a bug: a coupling
+  `a·gx/N` on *raw* SC (in-strength ~1e4) puts the operating point near K~1e-6, vs the paper's
+  K~0.03 on *normalized* SC. Match how the paper normalizes weights before sweeping K, or the
+  sweep hunts the wrong decade.
 
 ## Pitfalls we hit (so you don't)
 
-- **A metric's *definition* is part of the claim.** t_c (1/e vs exponential-fit),
-  ⟨Δω⟩ (std about the mean vs the median), λ₁ units — pick a documented definition, state
-  it, and compute it. A magnitude that differs from the paper may be a unit/rescaling
-  convention rather than a physics gap — but **confirm that from the methods**, don't
-  assume it (we labelled it "likely" and it stayed unverified).
+- **A metric's *definition and the empirical modality it's compared against* are part of the
+  claim — read them from the METHODS, not the figure caption.** t_c (1/e vs exponential-fit),
+  ⟨Δω⟩ (std about the mean vs the median), λ₁ units; and *what* the sim is compared to
+  (Koller's Fig-8 "FC" is band-specific **MEG-PLV**, not fMRI — sim FC is PLV on the
+  off-diagonal). Pick a documented definition, state it, compute it. A magnitude that differs
+  may be a unit/rescaling convention rather than a physics gap — but **confirm that from the
+  methods**, don't assume it (we labelled it "likely" and it stayed unverified).
 
 - **Coupling evaluated once per step** silently integrates a different, multistable
   attractor. Use `Integrator.coupling_evaluation: per_stage` for chaotic/multistable
@@ -222,6 +285,10 @@ per-step vs per-stage coupling evaluation converging to a *different attractor*.
 - **Realization dependence.** Exact solitary counts / magnitudes depend on unpublished
   seeds — count median-relative, state the difference as an accepted limitation, don't
   chase the integer.
+- **Some targets are irreproducible from the paper's OWN source data.** A panel can be
+  internally inconsistent in the published workbook (Koller Fig 2e: the per-node spread
+  disagrees across the steady-state vs transient windows) — a source-data defect, not a
+  model gap. Identify these, scope them `out`, say why; don't chase them.
 - **Redundant scripts.** One prep script (emits the tvbo Network directly), one plot
   script. Don't split what one `main()` can do.
 - **No dead vendored cruft.** Keep ONE pristine copy of the paper's own code under
