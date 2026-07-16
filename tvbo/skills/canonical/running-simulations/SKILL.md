@@ -7,7 +7,7 @@ metadata:
     - "**/*.py"
     - "**/*.ipynb"
   tags: [simulation, backends, jax, tvb, discovery]
-  requires_extras: ["jax"]
+  requires_extras: []
 ---
 
 # Running Simulations
@@ -133,7 +133,7 @@ be passed to `run()` to override the integration length.
 
 | Backend (`format`) | Extras to install | Use when |
 |---|---|---|
-| `jax` | in core / `pip install tvbo[jax]` | Default forward sim; differentiable; fast on GPU/TPU |
+| `jax` | in core | Default forward sim; differentiable; fast on GPU/TPU |
 | `tvboptim` | `pip install tvbo[tvboptim]` | JAX-based optimisation / parameter fitting |
 | `tvb` | `pip install tvbo[tvb]` | TVB's curated neural-mass models & monitors |
 | `pyrates` | `pip install tvbo[pyrates]` | Rate-coded models + numerical continuation |

@@ -5,3 +5,14 @@ logs/
 kit*/
 *.tar.gz
 __pycache__/
+.ipynb_checkpoints/
+
+# Data & upstream material — never vendored; obtain per input/DATA.md.
+input/sourcedata/          # third-party raw inputs (connectomes, atlases, …)
+original_study/*           # the paper's own material + its published data (workbook, source_data, code)
+!original_study/analysis/  # …but keep OUR analysis (targets.md, figures.md, backend-fit.md)
+
+# Generated report artifacts + working notes.
+report/*.pdf
+report/*.log
+_dev/
