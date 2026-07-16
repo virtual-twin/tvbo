@@ -26,6 +26,16 @@ cpl = coupling
 cpl_label = getattr(cpl, "label", None) or getattr(cpl, "name", "Coupling")
 cpl_desc = getattr(cpl, "description", "") or ""
 
+def _md_escape(s):
+    """Escape markdown emphasis characters so a free-text label renders
+    literally inside the surrounding ``**...**`` — an odd number of
+    underscores or asterisks in the label would otherwise break the bold
+    span (e.g. ``sum_j (A+I)_ij (theta_j(t-tau_ij) - theta_i)``)."""
+    s = str(s)
+    for ch in ("\\", "`", "*", "_"):
+        s = s.replace(ch, "\\" + ch)
+    return s
+
 incoming = list(getattr(cpl, "incoming_states", None) or [])
 local = list(getattr(cpl, "local_states", None) or [])
 
@@ -64,12 +74,16 @@ for attr, label in (
     if value:
         coupling_meta.append(f"{label}: {value}")
 
-# Full equation (indexed-symbolic form preserves sign ordering).
+# Full equation (indexed-symbolic form preserves sign ordering). A delayed coupling
+# must show its delay -- theta_j(t - tau_ij) -- otherwise it reads identically to its
+# instantaneous twin, so pass the coupling's own `delayed` flag through.
 full_latex = ""
 try:
-    sym = cpl.symbolic()
+    sym = cpl.symbolic(delays=bool(getattr(cpl, "delayed", False)))
     if sym is not None:
-        full_latex = latex(sym, mul_symbol="dot")
+        # order="none" keeps the constructed term order (e.g. theta_j - theta_i) instead
+        # of sympy's canonical reordering to -theta_i + theta_j.
+        full_latex = latex(sym, mul_symbol="dot", order="none")
 except Exception:
     try:
         eq = cpl.equation
@@ -77,8 +91,18 @@ except Exception:
             full_latex = latex(eq, mul_symbol="dot")
     except Exception:
         full_latex = ""
+
+# Factored / vectorized couplings: define gx_k = Sum_j w_ij (c_pre)_k so the post's
+# gx_0, gx_1, ... are mathematically precise, not bare symbols.
+try:
+    gx_defs = cpl.summed_inputs(delays=bool(getattr(cpl, "delayed", False)))
+except Exception:
+    gx_defs = []
+gx_line = ", ".join(
+    f"${latex(g)} = {latex(s, mul_symbol='dot', order='none')}$" for g, s in gx_defs
+)
 %>\
-**Coupling: ${cpl_label}**
+**Coupling: ${_md_escape(cpl_label)}**
 
 % if cpl_desc:
 ${cpl_desc.strip()}
@@ -98,6 +122,10 @@ ${'; '.join(coupling_meta)}.
 % endif
 % if post_rhs:
 **Post-synaptic:** $c_{\text{post}} = ${_safe_latex(post_rhs)}$
+
+% endif
+% if gx_line:
+with ${gx_line} — the pre-synaptic components summed over the graph, which the post-synaptic term recombines.
 
 % endif
 <%

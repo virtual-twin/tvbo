@@ -92,17 +92,24 @@ def ${name}(x, weights, p):
 ## linearise (Jacobian A). Emitted ONCE — the covariance/psd/fisher observables below are all
 ## linear-algebra solves on this shared A, so the FP settle and eig assembly run a single time.
 ## Binds _lr_fp (fixed point) and _lr_A (Jacobian) using _lr_weights/_lr_params/_lr_x0 (set by
-## the caller). Reuses the module-level ${vf}/${jac}.
-<%def name="lr_operating_point(ctx, dt=0.1, n_settle=200000, vf='_lr_vf', jac='_lr_jacobian')">\
+## the caller). Reuses the module-level ${vf}/${jac}. The Jacobian carries the model's native
+## rate units (per-ms by convention); rescaling it to per-second HERE (once) makes every
+## downstream quantity — stationary covariance, power spectrum (Hz), Fisher information —
+## physical, rather than each observable re-deriving the unit conversion. `time_scale` is
+## seconds per model time unit (from integration.unit), so this is metadata-driven, not hardcoded.
+<%def name="lr_operating_point(ctx, dt=0.1, n_settle=200000, vf='_lr_vf', jac='_lr_jacobian', time_scale=1.0e-3)">\
 def _lr_settle(_x, _):
     return _x + ${dt} * ${vf}(_x, _lr_weights, _lr_params), None
 _lr_fp = jax.lax.scan(_lr_settle, _lr_x0, None, length=${n_settle})[0]
-_lr_A = ${jac}(_lr_fp, _lr_weights, _lr_params)
+_lr_A = ${jac}(_lr_fp, _lr_weights, _lr_params) / ${time_scale}   # per-(model time unit) -> per-second
 </%def>\
 ##
 ## Continuous Lyapunov Σ solve on the shared A (Deco 2014 Fig 5, Eq 24): A Σ + Σ Aᵀ + Q = 0,
 ## Q = σ² I, by eigendecomposition Σ = V M Vᴴ, M = -(V⁻¹QV⁻ᴴ)/(λᵢ+λ̄ⱼ) — backend-independent
-## (jnp.linalg.eig/inv), no scipy. Returns the excitatory-block covariance P[:N,:N].
+## (jnp.linalg.eig/inv), no scipy. Returns the excitatory-block covariance P[:N,:N]. A stationary
+## covariance exists only when A is Hurwitz (all eigenvalues in the left half-plane); past a
+## bifurcation the operating point is unstable, so the result is masked to NaN (jittable guard,
+## survives vmap over a grid) rather than returning a meaningless non-PSD matrix.
 <%def name="lr_covariance(ctx, name, sigma, return_='covariance')">\
 def ${name}(A):
     _n = A.shape[0]; _N = _n // ${ctx['n_sv']}
@@ -111,6 +118,7 @@ def ${name}(A):
     _Vi = jnp.linalg.inv(_V)
     _M = -(_Vi @ _Q.astype(_V.dtype) @ _Vi.conj().T) / (_lam[:, None] + jnp.conj(_lam)[None, :])
     _P = (_V @ _M @ _V.conj().T).real[:_N, :_N]
+    _P = jnp.where(jnp.max(_lam.real) < 0.0, _P, jnp.nan)   # no stationary covariance if A not Hurwitz
 % if return_ == 'correlation':
     _d = jnp.sqrt(jnp.diag(_P))          # Pearson correlation of the excitatory gating (Deco 'Q')
     return _P / jnp.outer(_d, _d)
@@ -121,13 +129,18 @@ def ${name}(A):
 ##
 ## Analytic power spectrum on the shared A (Deco 2014 Fig 5, Eq 28): per excitatory node,
 ## Φ_k(ω) = σ² Σ_l |(iωI − A)⁻¹_{kl}|², over a log-frequency grid (Hz). Returns [n_freq, N].
+## A is already per-second (rescaled at the operating point), so ω = 2πf with f in Hz is consistent.
 <%def name="lr_psd(ctx, name, sigma, f_lo=0.1, f_hi=50.0, n_freq=128)">\
 def ${name}(A):
     _n = A.shape[0]; _N = _n // ${ctx['n_sv']}
     _freqs = jnp.geomspace(${f_lo}, ${f_hi}, ${n_freq})
+    _A = A.astype(jnp.complex128)
     _I = jnp.eye(_n, dtype=jnp.complex128)
     def _phi(_f):
-        _M = jnp.linalg.inv(1j * (2.0 * jnp.pi * _f) * _I - A.astype(jnp.complex128))
+        _M = jnp.linalg.inv(1j * (2.0 * jnp.pi * _f) * _I - _A)
         return (${sigma} ** 2) * jnp.sum(jnp.abs(_M[:_N]) ** 2, axis=1)
-    return jax.vmap(_phi)(_freqs)
+    _psd = jax.vmap(_phi)(_freqs)
+    # The linear-response spectrum is defined only at a stable operating point; mask past a
+    # bifurcation (A not Hurwitz), consistent with the covariance guard above.
+    return jnp.where(jnp.max(jnp.linalg.eigvals(A).real) < 0.0, _psd, jnp.nan)
 </%def>\

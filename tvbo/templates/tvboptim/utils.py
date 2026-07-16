@@ -1047,6 +1047,7 @@ def render_analysis_observations(
     dt: float,
     solver_kwargs: str = "",
     model: Any = None,
+    time_si_factor: float = 1.0e-3,
 ) -> str:
     """Render the body of the generated ``compute_analysis_observations()`` function.
 
@@ -1058,8 +1059,11 @@ def render_analysis_observations(
     the template only interpolates the returned block. Analysis solves drop the
     differentiation-truncation window (an optimization knob, not part of these
     diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling-
-    evaluation config. Returns a string whose lines are indented for a function body
-    (4 spaces), empty string if there are no analysis observations.
+    evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the
+    linear-response operating point rescales the Jacobian A to per-second with it, so every
+    downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose
+    lines are indented for a function body (4 spaces), empty string if there are no analysis
+    observations.
     """
     window = f"t0=0.0 + {transient_time}, t1={transient_time} + {t1_default}, dt={dt}"
     solver_kwargs = _analysis_solver_kwargs(solver_kwargs)
@@ -1094,7 +1098,8 @@ def render_analysis_observations(
         ]
         lines += _emit_partial("lr_vf", ctx=_lr_ctx)
         lines += _emit_partial("lr_jacobian", ctx=_lr_ctx)
-        lines += _emit_partial("lr_operating_point", ctx=_lr_ctx)  # binds _lr_fp, _lr_A
+        # A is rescaled to per-second here (once), so covariance/psd/fisher are all physical.
+        lines += _emit_partial("lr_operating_point", ctx=_lr_ctx, time_scale=time_si_factor)  # binds _lr_fp, _lr_A
 
     # Finite-difference observations that share the exact same per-seed computation
     # (same target, wrt, delta, seeds, seed_base) reuse ONE ``jax.lax.map`` — matching the
@@ -1202,7 +1207,8 @@ def render_analysis_observations(
                 f"obs.{name} = _cov_{name}(_lr_A)",
             ]
         elif atype == "psd":
-            # Analytic power spectrum per excitatory node on the shared A — Deco Fig 5, Eq 28.
+            # Analytic power spectrum per excitatory node on the shared (per-second) A — Deco
+            # Fig 5, Eq 28. The frequency axis is physical Hz because A is already per-second.
             _sigma = float(params.get("sigma", 0.01))
             _flo = float(params.get("f_lo", 0.1))
             _fhi = float(params.get("f_hi", 50.0))

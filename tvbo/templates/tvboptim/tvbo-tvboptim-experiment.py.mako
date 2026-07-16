@@ -146,6 +146,11 @@ method = (integration.method or 'euler').lower()
 solver_class = SOLVER_MAP.get(method)
 assert solver_class, f"Unknown solver method: {method}. Valid: {list(SOLVER_MAP.keys())}"
 dt = float(integration.step_size)
+# Seconds per model time unit (ms -> 0.001). The Jacobian A inherits the model's native
+# rate units (per-ms by tvbo convention); analytic-frequency diagnostics (PSD in Hz)
+# convert A to per-second with this factor so the physical frequency axis is consistent.
+from tvbo.utils.units import unit_to_si_factor
+time_si_factor = unit_to_si_factor(getattr(integration, 'unit', None) or 'ms')
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
@@ -2062,7 +2067,7 @@ def compute_analysis_observations(state, network, result_transient=None):
     diagnostics fully metadata-derived. Analysis solves use a plain solver — the truncation
     window is an optimization knob, not part of these diagnostics."""
     obs = Bunch()
-${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt, solver_kwargs_str, model=model)}
+${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor)}
     return obs
 % endif
 
@@ -3660,6 +3665,19 @@ def run_experiment(
             results['algorithms'] = {algorithm_name: algo_result}
             results[algorithm_name] = algo_result
             results['algorithm'] = Bunch(name=algorithm_name)
+% if analysis_observations_dict:
+
+        # Re-evaluate the operating-point analysis observations at the TUNED state. A tuning
+        # algorithm (e.g. FIC) moves the operating point, so the base-run diagnostics — computed
+        # at the pre-tuning state — are stale. Write onto main_result.observations (the Bunch that
+        # result.observations exposes; SimulationResult may hold its own copy) so it reflects the
+        # operating point the experiment actually settled to. The exploration path already observes
+        # the tuned state.
+        if main_result is not None and getattr(main_result, 'observations', None) is not None \
+                and algo_result is not None and getattr(algo_result, 'state', None) is not None:
+            for _an_name, _an_val in compute_analysis_observations(algo_result.state, network, transient).items():
+                main_result.observations[_an_name] = _an_val
+% endif
     % endif
 
     % if has_optimization:
