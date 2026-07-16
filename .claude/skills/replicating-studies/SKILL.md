@@ -33,17 +33,29 @@ attractor.
 3. **Backend-independent metadata, backend chosen by fit.** The YAML states *intent*,
    never one backend's mechanism. The execution backend is picked in Phase 1.5 from the
    targets' feature needs, not defaulted.
-4. **FAIR layout** (copy `assets/skeleton/`): `original_study/` (paper + analysis),
-   `input/` (open data + `DATA.md`), `code/` (one prep script, analysis callables,
-   one reference integration, `figures/plot.py`), `figures/`, `report/`. `output/` is
-   gitignored (regenerable).
-5. **Replication, stated honestly.** Frame it as *replication* (independent code +
+4. **FAIR layout, spec separate from code** (copy `assets/skeleton/`): the recipe
+   `<Study>.yaml` sits at the **study root** — the spec is not hidden inside `code/`.
+   Its callables live in `code/recipe/`, reached declaratively via
+   `code_source: ./code/recipe` (a local path, or a git repo — see **running-simulations**),
+   so `tvbo run <Study>.yaml` finds them without a driver. `code/` also holds the prep
+   script, analysis callables, one reference integration, and `figures/plot.py`;
+   `original_study/` the paper + analysis; `input/` the data provenance; `report/` the
+   report source.
+5. **Nothing large or upstream is vendored — gitignore it and document exact retrieval.**
+   Git tracks only what you author: the spec, `code/`, `input/DATA.md`, and the report
+   source (`report.qmd` + `references.bib` + the prose writeup). **Everything else is
+   gitignored:** `output/` and all generated artifacts (figures, `report.pdf`/logs,
+   KPI/targets tables — write them to `output/`, never commit them at the study root),
+   the paper's own material under `original_study/`, and raw third-party inputs under
+   `input/sourcedata/`. Planning/working docs go to a gitignored `_dev/`. A fresh clone
+   is small and reproducible; `DATA.md` says how to obtain every ignored input.
+6. **Replication, stated honestly.** Frame it as *replication* (independent code +
    independently-sourced data → same conclusions), not bit-exact *reproduction*. Ship a
    **scorecard** (met / partial / out-of-scope) and name the **accepted limitations**
    (e.g. unpublished-seed realization dependence) up front.
-6. **One plotting script**, `code/figures/plot.py`, one `main()` (topology → sweeps →
+7. **One plotting script**, `code/figures/plot.py`, one `main()` (topology → sweeps →
    control → compose). Simple matplotlib next to the recipe.
-7. **Verify against an independent reference** (Phase 7) before trusting any figure.
+8. **Verify against an independent reference** (Phase 7) before trusting any figure.
 
 ---
 
@@ -66,8 +78,8 @@ the *figures* actually show, with the discrepancy noted.
 ## Phase 1.5 — Scope, then backend-fit + gaps → `backend-fit.md`
 
 **Scope.** Pick which targets to replicate: **all** (default) or a **selected subset**
-(`{T1,T2,T7}`). Only selected targets become experiments in Phase 3. Use `/grill-me`
-if the scope is contested.
+(`{T1,T2,T7}`). Only selected targets become experiments in Phase 3. If the scope is
+contested, settle it with the user before continuing — do not guess.
 
 **Backend-fit + gaps** (`original_study/analysis/backend-fit.md`). For the selected
 targets, build a feature matrix (delays? Lyapunov/Benettin? adiabatic sweep? noise?
@@ -80,20 +92,37 @@ its target — flag it as a framework/schema enhancement before you build, and m
 target `partial`/`out` in the eventual scorecard. This early gap-finding is what sets
 honest expectations instead of surprising you mid-YAML.
 
-## Phase 2 — Source the data → `input/` + `DATA.md`
+## Phase 2 — Source the data → `DATA.md` (tracked) + gitignored data dirs
 
-Prefer **open data**; carry it self-contained in `input/` (a zip is fine) and write
-`input/DATA.md` from `assets/DATA.md.tmpl`: exact source (author, year, DOI, licence),
-the sheet/column → paper-quantity map, checksums, and **which quantities are synthesised
-vs sourced**. Name the true upstream source, never a derived intermediate. `code/`'s
-prep script reads the raw open data and emits the tvbo-ready `Network` (+ small
-CSV/npz for inspection); do NOT hand-edit derived artifacts.
+Write `input/DATA.md` (from `assets/DATA.md.tmpl`) as the **one tracked pointer** to every
+input: exact upstream source (author, year, DOI, licence), the sheet/column → paper-quantity
+map, checksums, **exact download + regenerate steps**, and which quantities are synthesised
+vs sourced. Name the true upstream source, never a derived intermediate.
+
+**Do not vendor sizable or upstream data into git — gitignore it and document how to fetch it.**
+Place data by provenance:
+
+- the **paper's own published data** (its source-data workbook/arrays, and your extraction
+  of them into `.nc`/etc.) → `original_study/`, with the rest of the paper's material
+  (gitignored — it is the paper's content, regenerable from the raw per `DATA.md`), *not*
+  `input/derivatives/`;
+- **third-party raw inputs** you feed the model (connectomes, atlases) → `input/sourcedata/`
+  (gitignored);
+- only genuinely small, freely-redistributable open inputs may be carried in git.
+
+`code/`'s prep script reads the raw source and emits the tvbo-ready `Network` (+ small
+CSV/npz for inspection) into a gitignored location; do NOT hand-edit derived artifacts.
 
 ## Phase 3 — The recipe: one tvbo-native `<Study>.yaml`
 
 See **writing-models** for the Dynamics form and **running-simulations** for sourcing
 (inline vs YAML vs `iri`) and the CLI. Replication-specific rules:
 
+- **Spec at the root, callables in `code/recipe/` via `code_source`.** The study declares
+  `code_source: ./code/recipe` (a local path) or a `{git, ref, subdir}` repo; tvbo puts that
+  dir on the import path so `callable: {module: <study>_analysis}` resolves with no driver and
+  no vendored package (falls back to a `code/` convention if unset). This keeps the spec at the
+  top level while its code lives under `code/`.
 - One file; shared `&dynamics` / `&params` / `&network` anchors; per-experiment `<<:`
   overrides. Order experiments so a `from_experiment` source precedes its dependents
   (operating point before its control runs) — then bare `tvbo run <Study>.yaml`
@@ -123,6 +152,11 @@ Copy `assets/plot.py.tmpl` (one `main()`: topology → sweeps → control → co
 `ab_fig{N}.png`). Read the native result containers directly. Always draw the paper's
 full multi-panel layout; a not-yet-run panel renders a labelled placeholder.
 
+Keep any extracted **paper source arrays label-keyed** (`xarray` with named coords), not
+encoded into filenames — tvbo's declarative figure spec (`dev/figure-spec-design.md`) will
+bind figure data by IRI + `output` + `sel`, so a flat per-panel `.nc` set is a fine stopgap,
+but an elaborate filesystem-keyed tree is throwaway. Don't over-build it before the renderer.
+
 ## Phase 6 — Report: `report/report.qmd` (every number computed)
 
 Copy `assets/report.qmd.tmpl`. It carries the three things that took us the longest:
@@ -137,8 +171,9 @@ Copy `assets/report.qmd.tmpl`. It carries the three things that took us the long
   variant `relative to` the base (`dynamics.render(baseline=…)`) so only the delta shows.
 
 PDF-targeted `.qmd`: write math as LaTeX, never Unicode (xelatex drops it). Avoid a
-closing `$` immediately followed by a digit (breaks pandoc math). Run the finished prose
-through the **anti-ai-slop** skill before you call it done.
+closing `$` immediately followed by a digit (breaks pandoc math). Edit the finished prose
+for AI-slop filler — hollow hedges, fake enthusiasm, recycled structure — before you call
+it done.
 
 ## Phase 7 — Verify against an independent reference
 
@@ -189,5 +224,12 @@ per-step vs per-stage coupling evaluation converging to a *different attractor*.
   chase the integer.
 - **Redundant scripts.** One prep script (emits the tvbo Network directly), one plot
   script. Don't split what one `main()` can do.
+- **No dead vendored cruft.** Keep ONE pristine copy of the paper's own code under
+  `original_study/` — never duplicate its package (`modules/`, `setup.py`, …) into `code/`.
+  If nothing in your pipeline imports it, it is dead weight: a study that loads all its
+  experiments *without* the vendored package doesn't need it — delete it.
+- **Generated files never land in git at the study root.** KPI/targets tables, extracted
+  arrays, the report PDF/logs → write them into `output/` (gitignored). A generated file
+  tracked at the root reads as a hand-curated deliverable and silently drifts stale.
 - **Cross-references.** The report must stand alone — no "as in the sibling X study".
 - **Framework gaps surface late** if you skip Phase 1.5. Find them before the YAML.
