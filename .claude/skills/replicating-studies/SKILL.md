@@ -1,9 +1,10 @@
 ---
 name: replicating-studies
 description: "How to replicate a published study in TVBO \u2014 turn a paper into\
-  \ ONE declarative, fully tvbo-native recipe (all or selected experiments) + simple\
-  \ plotting + an honest, fully-computed report. Encodes the hard-won rules so the\
-  \ replication is fast and trustworthy. Composes the atomic skills (writing-models,\
+  \ ONE declarative, fully tvbo-native `SimulationStudy` (any kind: single-node bifurcation\
+  \ to whole-brain network; forward simulation, parameter sweep, or fit to data) +\
+  \ simple plotting + an honest, fully-computed report. Encodes the hard-won rules\
+  \ so the replication is fast and trustworthy. Composes the atomic skills (writing-models,\
   \ running-simulations)."
 ---
 
@@ -15,10 +16,22 @@ typed by hand. This skill owns the *replication-specific* layer; for the atomic
 how-to it defers to **writing-models** (Dynamics YAML) and **running-simulations**
 (sourcing / CLI / backends).
 
-Work the phases in order. Each has a REQUIRED output. Do not skip ahead — the
-scorecard in Phase 6 maps 1:1 to the criteria you write in Phase 1, and Phase 7
-verification is what stops you trusting figures that silently integrate the wrong
-attractor.
+**It covers any study expressible as a TVBO `SimulationStudy`** — locate yours on three
+axes (do this in Phase 1.5; it decides which phases and backend features apply):
+
+- **Scale** — single node (bifurcation / phase portrait, *no network or coupling*) ·
+  few-node motif · large network (abstract graph or brain connectome).
+- **Mode** — forward simulation · parameter **sweep / bifurcation / continuation** ·
+  **fit / inference** to data (an optimisation experiment, not just forward runs).
+- **Data** — self-contained (all params from the paper's equations/tables, *no external
+  inputs*) · external inputs required (a network, empirical target, stimulus).
+
+The invariants (MUST-rules) hold for every kind; the examples below are illustrations,
+not requirements. Work the *applicable* phases in order — a self-contained bifurcation
+study skips the data phase, a fit adds an inference experiment, a single-node study has
+no network. Each phase you do has a REQUIRED output. The scorecard in Phase 6 maps 1:1
+to the criteria you write in Phase 1, and Phase 7 verification is what stops you trusting
+figures that silently integrate the wrong attractor.
 
 ## The non-negotiables (MUST)
 
@@ -27,9 +40,10 @@ attractor.
    drivers.** `tvbo run <Study>.yaml` runs everything in dependency order; add
    `--experiment 2,3` to run a subset.
 2. **Nothing hardcoded in the report.** Every reported value is computed inline from
-   a result container (`output/nc/exp*/…h5`) or the recipe metadata — solitary counts,
-   ⟨Δω⟩, decay times, N_c, topology counts, K/α/τ. If you typed a number into prose,
-   it is a bug. (Papers are not ground truth; your own asserted numbers are not either.)
+   a result container (`output/nc/exp*/…h5`) or the recipe metadata — counts, ⟨Δω⟩,
+   decay times, bifurcation thresholds, scaling exponents, spectral peaks, fitted params,
+   correlations, whatever the paper reports. If you typed a number into prose, it is a
+   bug. (Papers are not ground truth; your own asserted numbers are not either.)
 3. **A panel shows TVBO output or an honest placeholder — NEVER the paper's replotted
    source data.** Replotting the source arrays is a dev check that plotting *works*; it is
    never a deliverable panel (it passes off the paper's own numbers as your reproduction).
@@ -59,8 +73,9 @@ attractor.
    **scorecard** (met / partial / out-of-scope) with a **fidelity tier per target**
    (mechanism-level vs decimal-level, Phase 1.5) and name the **accepted limitations**
    (unavailable exact SC, unpublished-seed realization dependence) up front.
-8. **One plotting script**, `code/figures/plot.py`, one `main()` (topology → sweeps →
-   control → compose). Simple matplotlib next to the recipe.
+8. **One plotting script**, `code/figures/plot.py`, one `main()` whose sections mirror
+   the paper's figure *types* (time series / phase portraits / bifurcation diagrams /
+   spectra / sweeps / spatial maps), then compose A/B. Simple matplotlib next to the recipe.
 9. **Verify against an independent reference** (Phase 7) before trusting any figure.
 
 ---
@@ -113,6 +128,11 @@ honest Fig-8 expectations from the start.)
 
 ## Phase 2 — Source the data → `DATA.md` (tracked) + gitignored data dirs
 
+**Skip this phase if your study is self-contained** — a bifurcation / phase-portrait /
+normal-form study whose every parameter comes from the paper's equations and tables needs no
+external data; then `DATA.md` is one line ("no external inputs; all parameters from <paper>
+§X / Table N"). Otherwise, for studies with a network, empirical target, or stimulus input:
+
 Write `input/DATA.md` (from `assets/DATA.md.tmpl`) as the **one tracked pointer** to every
 input: exact upstream source (author, year, DOI, licence), the sheet/column → paper-quantity
 map, checksums, **exact download + regenerate steps**, and which quantities are synthesised
@@ -132,8 +152,8 @@ Place data by provenance:
 `code/`'s prep script reads the raw source and emits the tvbo-ready `Network` (+ small
 CSV/npz for inspection) into a gitignored location; do NOT hand-edit derived artifacts.
 
-**Pin the parcellation AND its order variant up front, then verify the mapping.** An atlas
-often ships in several orderings of the *same* parcels (Schaefer-1000 `7Networks` vs
+**(Network studies) pin the parcellation AND its order variant up front, then verify the
+mapping.** An atlas often ships in several orderings of the *same* parcels (Schaefer-1000 `7Networks` vs
 `17Networks` = identical parcels, different node order); using the wrong one silently
 scrambles every brain map and correlation without erroring. Fix the paper's exact atlas +
 order variant, align every array **by parcel label** (never by position — guards hemisphere
@@ -147,6 +167,12 @@ wrong figures.
 See **writing-models** for the Dynamics form and **running-simulations** for sourcing
 (inline vs YAML vs `iri`) and the CLI. Replication-specific rules:
 
+- **Encode what the study IS; only `Dynamics` is mandatory.** A single-node study carries no
+  `network`/`coupling`; a multi-node study adds them (abstract graph or brain connectome). A
+  parameter sweep / bifurcation diagram is an `Exploration` over the swept parameter with a
+  fixed-point / eigenvalue / peak observation; a **fit to data is an inference / optimisation
+  experiment** (see **running-simulations**) whose target is the recovered parameter +
+  goodness-of-fit, not a trajectory. Match the paper's structure, not a template's shape.
 - **Spec at the root, callables in `code/recipe/` via `code_source`.** The study declares
   `code_source: ./code/recipe` (a local path) or a `{git, ref, subdir}` repo; tvbo puts that
   dir on the import path so `callable: {module: <study>_analysis}` resolves with no driver and
@@ -165,10 +191,11 @@ See **writing-models** for the Dynamics form and **running-simulations** for sou
 
 ## Phase 4 — Analysis callables (only for non-closed-form pipelines)
 
-Order parameters, solitary-node ordering, control masks, custom reductions → pure,
-backend-agnostic, independently-testable functions in `code/<study>_analysis.py`,
-referenced from the recipe via `callable: {name, module: <study>_analysis}`. Keep them
-NumPy; carry data as **labelled xarrays**, never positional reshapes. When aligning a
+Study-specific reductions — order parameters, bifurcation / fixed-point detection, spectral
+peaks, control masks, fit residuals — → pure, backend-agnostic, independently-testable
+functions in `code/<study>_analysis.py`, referenced from the recipe via
+`callable: {name, module: <study>_analysis}`. Keep them NumPy; carry data as **labelled
+xarrays**, never positional reshapes. When aligning a
 paper's connectome/observable to your node order, match **by label**, never by position
 (guards silent hemisphere/order swaps). Note the host/grid split: *declared* observations
 run on the host (plain NumPy is fine); only what you put under `record:` runs inside the
@@ -184,7 +211,8 @@ reduction (e.g. effective frequency accumulated online) keeps resident memory ~c
 
 ## Phase 5 — Plotting: one `code/figures/plot.py`
 
-Copy `assets/plot.py.tmpl` (one `main()`: topology → sweeps → control → compose) and
+Copy `assets/plot.py.tmpl` (one `main()`, one section per paper figure *type* — time series /
+phase portrait / bifurcation diagram / spectrum / sweep / spatial map — then compose) and
 `assets/compose_ab.py` (pairs each reproduction with the paper original into
 `ab_fig{N}.png`). Read the native result containers directly. Always draw the paper's
 full multi-panel layout; a not-yet-run panel renders a labelled placeholder.
