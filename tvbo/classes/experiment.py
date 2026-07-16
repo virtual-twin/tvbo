@@ -2828,9 +2828,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def _find_subject_file(self, root: Path, subject: str, query) -> Path:
         """Resolve the single per-subject file under *root* matching *query*."""
-        sub = str(subject).replace("sub-", "")
         ents, suffix = self._bids_query_dict(query)
-        files = sorted((root / f"sub-{sub}").glob("*.yaml"))
+        return self._find_subject_file_by_entities(root, subject, ents, suffix)
+
+    def _find_subject_file_by_entities(self, root: Path, subject: str,
+                                       ents: dict, suffix: str | None) -> Path:
+        """Resolve the single per-subject file under *root* matching *ents* + *suffix*.
+
+        The entity-level entry point behind :meth:`_find_subject_file`: callers that
+        need to tighten or override the query entities (a kit bundling one atlas
+        variant out of several) build the ``(ents, suffix)`` pair themselves.
+        """
+        sub = str(subject).replace("sub-", "")
+        files = sorted((Path(root) / f"sub-{sub}").glob("*.yaml"))
         matches = [f for s, f in self._match_subject_files(files, ents, suffix) if s == sub]
         if not matches:
             raise ValueError(
@@ -2850,12 +2860,21 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return str(getattr(m, "value", m) or "by_label")
 
     def _dataset_bids_root(self) -> Path:
-        """``dataset.bids_root`` as a Path, or a clear error if a dataset target needs it."""
+        """``dataset.bids_root`` as a Path, or a clear error if a dataset target needs it.
+
+        A relative root resolves against the spec file's directory (exactly like a
+        network ``data_file``), so a kit that bundles its per-subject data under
+        ``spec/dataset`` and records ``bids_root: dataset`` resolves on any host
+        regardless of the working directory it is run from.
+        """
         ds = getattr(self, "dataset", None)
         root = getattr(ds, "bids_root", None) if ds is not None else None
         if not root:
             raise ValueError("A dataset-sourced observation needs experiment.dataset.bids_root.")
-        return Path(root)
+        root = Path(root)
+        if not root.is_absolute() and getattr(self, "_source_file", None):
+            root = Path(self._source_file).parent / root
+        return root
 
     def _target_canonical_labels(self, target_net) -> list:
         """Each target node's label mapped to the model's canonical label, target order.
@@ -3047,10 +3066,91 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return cached
         query = getattr(self.observations[next(iter(targets))], "query", None)
         ents, suffix = self._bids_query_dict(query)
-        files = sorted(Path(root).glob("sub-*/*.yaml"))
+        files = sorted(self._dataset_bids_root().glob("sub-*/*.yaml"))
         found = sorted({s for s, _ in self._match_subject_files(files, ents, suffix)})
         self._subject_ids_from_query = found
         return found
+
+    @staticmethod
+    def _sidecar_companions(sidecar: Path) -> list:
+        """Data files a network sidecar references, resolved next to the sidecar.
+
+        A per-subject FC file is a YAML sidecar plus its payload (``data_file``, an
+        HDF5 matrix); some networks instead reference ``nodes``/``edges`` tables or an
+        ``edge_matrix_files`` map. Return every companion the sidecar points at so a
+        bundle copies the sidecar together with the bytes it needs — nothing more.
+        """
+        import yaml
+
+        try:
+            meta = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
+        except Exception:
+            return []
+        if not isinstance(meta, dict):   # a malformed (non-mapping) sidecar has no companions
+            return []
+        refs: list = []
+        for key in ("data_file", "nodes", "edges"):
+            v = meta.get(key)
+            if isinstance(v, str):
+                refs.append(v)
+        emf = meta.get("edge_matrix_files")
+        if isinstance(emf, dict):
+            refs += [v for v in emf.values() if isinstance(v, str)]
+        elif isinstance(emf, list):
+            refs += [v for v in emf if isinstance(v, str)]
+        return [sidecar.parent / r for r in refs]
+
+    def dataset_bundle_files(self, entity_overrides: dict | None = None) -> dict:
+        """Per enumerated subject, the source file(s) a self-contained kit must carry.
+
+        For each dataset-sourced observation, resolve the subject's matching sidecar
+        under ``dataset.bids_root`` and pair it with the payload(s) it references, so a
+        workflow kit can bundle exactly the empirical targets its fan-out consumes and
+        drop its dependence on a machine-specific data tree. *entity_overrides* pins or
+        tightens the BIDS entities used for selection (e.g. ``{'atlas': 'HCPMMP1',
+        'suffix': 'relmat'}``) — the exact variant is chosen when a subject directory
+        holds several. ``suffix`` overrides the trailing filename component; every
+        other key overrides a ``key-value`` entity. The overrides disambiguate among
+        the variants a subject already has; the cohort itself is still enumerated by
+        the observation's own query (:meth:`dataset_subject_ids`).
+
+        Returns ``{subject_id: [sidecar, payload, …]}`` (existing files, de-duplicated
+        in first-seen order); empty when the experiment has no dataset target.
+        """
+        targets = self.dataset_observation_targets
+        if not targets:
+            return {}
+        root = self._dataset_bids_root()
+        overrides = dict(entity_overrides or {})
+        suffix_override = overrides.pop("suffix", None)
+        out: dict = {}
+        for subject in self.dataset_subject_ids():
+            picked: list = []
+            for name in targets:
+                obs = self.observations[name]
+                ents, suffix = self._bids_query_dict(getattr(obs, "query", None))
+                ents = {**ents, **overrides}
+                if suffix_override is not None:
+                    suffix = suffix_override
+                sidecar = self._find_subject_file_by_entities(root, subject, ents, suffix)
+                picked.append(sidecar)
+                picked.extend(self._sidecar_companions(sidecar))
+            seen: set = set()
+            unique: list = []
+            for f in picked:
+                if f in seen:
+                    continue
+                seen.add(f)
+                if not f.exists():
+                    # A referenced payload absent from the tree would bundle a sidecar
+                    # without its data — surface it now, not as a load failure on a node.
+                    raise FileNotFoundError(
+                        f"sub-{subject}: dataset target references {f.name}, absent under "
+                        f"{f.parent} — the source tree is incomplete."
+                    )
+                unique.append(f)
+            out[subject] = unique
+        return out
 
     def _resolve_events(self) -> None:
         """Lower declarative stimulus/stimulation Event fields into the form the

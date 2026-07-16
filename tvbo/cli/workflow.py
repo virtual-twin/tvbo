@@ -174,7 +174,8 @@ def _network_has_matrices(net) -> bool:
         return False
 
 
-def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None = None) -> str:
+def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None = None,
+                      dataset_bids_root: str | None = None) -> str:
     """Render the experiment as a self-contained YAML spec next to *spec_dir*.
 
     When the experiment has a connectome, its matrices are saved as an HDF5
@@ -186,6 +187,10 @@ def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None 
     *workflow_spec* is the effective merged workflow config (study < experiment <
     ``--set``). When given, the frozen spec's ``workflow`` block is rewritten to it,
     so the spec records exactly what ran and re-emits identically without the flags.
+
+    *dataset_bids_root* rewrites the frozen ``dataset.bids_root`` (e.g. to a relative
+    ``dataset`` once the per-subject data is bundled under ``spec/dataset``), so the
+    spec points at the bundled tree instead of the author's machine-specific path.
     """
     from tvbo import datamodel as dm
     from tvbo.classes.network import Network
@@ -195,6 +200,10 @@ def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None 
 
     original_net = getattr(experiment, "network", None)
     original_wf = getattr(experiment, "workflow", None)
+    ds = getattr(experiment, "dataset", None)
+    original_ds_root = getattr(ds, "bids_root", None) if ds is not None else None
+    if dataset_bids_root is not None and ds is not None:
+        ds.bids_root = dataset_bids_root
     if workflow_spec:
         effective = _wf.workflow_config_from_spec(workflow_spec)
         if effective is not None:
@@ -232,6 +241,8 @@ def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None 
         experiment.network = original_net
         if workflow_spec:
             experiment.workflow = original_wf
+        if dataset_bids_root is not None and ds is not None:
+            ds.bids_root = original_ds_root
 
 
 def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
@@ -270,7 +281,68 @@ def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
     return bool(bundled)
 
 
-def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
+def _parse_bundle_select(items: list[str]) -> dict[str, str]:
+    """Parse ``--bundle-select atlas=HCPMMP1`` entries into a BIDS-entity dict.
+
+    Each key is a BIDS entity as it appears in the target filename (``atlas``,
+    ``desc``, ``cohort``, ``tpl`` …) or ``suffix``; the pairs pin exactly which
+    per-subject file a bundle copies when a subject directory holds several variants.
+    """
+    out: dict[str, str] = {}
+    for raw in items:
+        s = raw.lstrip("-")
+        if "=" not in s:
+            raise typer.BadParameter(
+                f"--bundle-select {raw!r} must be KEY=VALUE (e.g. atlas=HCPMMP1)."
+            )
+        k, _, v = s.partition("=")
+        out[k.strip()] = v.strip()
+    return out
+
+
+def _bundle_dataset(experiment, dest_dir: Path, entity_overrides: dict | None) -> str | None:
+    """Copy the fan-out's per-subject dataset files into the kit; return the new root.
+
+    Resolves each enumerated subject's empirical target (sidecar + payload) through the
+    experiment's dataset query — tightened by *entity_overrides* — and copies it under
+    *dest_dir* as ``sub-<id>/<file>``, so a kit carries exactly the data its fan-out
+    consumes and nothing else. *dest_dir* is a sibling of the frozen spec, so its bare
+    name is the relative ``dataset.bids_root`` to record. Returns that name, or None
+    when there is no dataset-sourced target to bundle.
+
+    A *requested* bundle that cannot be resolved (a missing file, an over-tight
+    ``--bundle-select``) is a hard error: silently keeping the machine-specific root
+    would ship a kit that fails on every node — the exact hazard this removes.
+    """
+    import shutil
+
+    try:
+        manifest = experiment.dataset_bundle_files(entity_overrides)
+    except (FileNotFoundError, ValueError) as exc:
+        _common.die(f"--bundle-dataset: {exc}")
+    if not manifest:
+        _common.warn("--bundle-dataset: experiment has no dataset-sourced target to bundle.")
+        return None
+    n_files = n_bytes = 0
+    for subject, files in manifest.items():
+        subdir = dest_dir / f"sub-{subject}"
+        subdir.mkdir(parents=True, exist_ok=True)
+        for f in files:
+            dst = subdir / f.name
+            shutil.copytree(f, dst, dirs_exist_ok=True) if f.is_dir() else shutil.copy2(f, dst)
+            n_files += 1
+            n_bytes += (sum(p.stat().st_size for p in dst.rglob("*") if p.is_file())
+                        if dst.is_dir() else dst.stat().st_size)
+    _common.info(
+        f"bundled dataset: {len(manifest)} subject(s), {n_files} file(s), "
+        f"{n_bytes / 1e6:.1f} MB → {dest_dir.name}/ "
+        f"(dataset.bids_root rewritten to relative '{dest_dir.name}')"
+    )
+    return dest_dir.name
+
+
+def _emit_kit(*, engine: str, plan, experiment, out_dir: Path,
+              bundle_select: dict | None = None) -> Path:
     """Write a self-contained reproducibility kit under *out_dir*.
 
     Layout::
@@ -293,11 +365,17 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path) -> Path:
     #    a single node. Instead the network is written as an HDF5 companion
     #    (network.h5) + YAML sidecar (network.yaml) and referenced from the spec
     #    via ``network.data_file`` — the mechanism resolve_spec loads on the node.
+    spec_dir = out_dir / "spec"
+    # A requested per-subject data bundle runs BEFORE the (error-swallowing) spec
+    # freeze: if bundling fails it is a hard error the user must see, not a kit that
+    # falls back to the raw recipe / a machine-specific bids_root and fails on a node.
+    bundle_root = (_bundle_dataset(experiment, spec_dir / "dataset", bundle_select)
+                   if bundle_select is not None else None)
     spec_relpath = None
     bundled_code = False
     try:
-        spec_dir = out_dir / "spec"
-        yaml_text = _freeze_spec_yaml(experiment, spec_dir, workflow_spec=plan.workflow_spec)
+        yaml_text = _freeze_spec_yaml(experiment, spec_dir, workflow_spec=plan.workflow_spec,
+                                      dataset_bids_root=bundle_root)
         spec_path = spec_dir / f"{plan.experiment_key}.yaml"
         spec_path.write_text(yaml_text, encoding="utf-8")
         spec_relpath = str(spec_path.relative_to(out_dir))
@@ -523,8 +601,34 @@ def _study_experiments(spec: str, experiment: str | None):
     return obj, resolved, getattr(obj, "key", None) or "study"
 
 
+def _study_figures(study) -> list:
+    """The study's ``Figure`` objects as a list, or ``[]`` when it declares none.
+
+    A bare-experiment SPEC (``study is None``) never carries figures, so the
+    figure emission is skipped and existing experiment-rule emission is
+    untouched.
+    """
+    if study is None:
+        return []
+    from .figures import _as_figure_list
+
+    return _as_figure_list(getattr(study, "figures", None))
+
+
+def _figure_base_dir(study, out_dir: Path) -> str:
+    """Root the figures' ``used`` containers resolve against.
+
+    Prefers the study's source-file directory (where ``output/nc/`` lives at
+    author time); falls back to the kit dir. ``bsplot`` resolves each layer's
+    IRI to ``<base>/output/nc/<exp>/*.h5``.
+    """
+    src = getattr(study, "_source_file", None)
+    return str(Path(src).parent) if src else str(out_dir)
+
+
 def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
-                          output: Path | None, override: list[str], stdout: bool = False):
+                          output: Path | None, override: list[str], stdout: bool = False,
+                          bundle_select: dict | None = None):
     """Emit one Snakefile that fans every experiment (and, per experiment, every
     subject / sweep cell) into its own job. In kit mode each experiment is frozen
     into a self-contained ``spec/<key>/`` so a rule runs ``tvbo run
@@ -568,7 +672,10 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             spec_relpath, select = spec, key
         else:
             edir = out_dir / "spec" / key
-            yaml_text = _freeze_spec_yaml(exp, edir, workflow_spec=spec_dict)
+            bundle_root = (_bundle_dataset(exp, edir / "dataset", bundle_select)
+                           if bundle_select is not None else None)
+            yaml_text = _freeze_spec_yaml(exp, edir, workflow_spec=spec_dict,
+                                          dataset_bids_root=bundle_root)
             (edir / "experiment.yaml").write_text(yaml_text, encoding="utf-8")
             # Custom callable/builder modules the recipe references travel with the
             # kit (shared code/ dir), so `tvbo run` resolves them on the node.
@@ -591,14 +698,36 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
 
     text = _render_template("snakemake/study.smk.mako", exp_plans=exp_plans,
                             block=block, bundled_code=bundled_code)
+    figs = _study_figures(study)
     if stdout:
         typer.echo(text)
+        if figs:
+            from tvbo.adapters import figure_workflow
+
+            typer.echo(figure_workflow.emit_figure_rules(
+                figs, base_dir=_figure_base_dir(study, out_dir),
+                workflow=getattr(study, "workflow", None), include_all=True))
         return None
     (out_dir / "Snakefile").write_text(text, encoding="utf-8")
     _common.info(f"wrote Snakefile ({len(exp_plans)} experiment rule(s))")
     _write_snakemake_profile(out_dir, block)
     if last_plan is not None:
         _write_readme(out_dir, engine="snakemake", plan=last_plan, script_relpath=None)
+    if figs:
+        # A study is its experiments PLUS the figures that read their results:
+        # freeze each figure's self-contained plot.py + the render rules, then
+        # wire them into the Snakefile. Additive — `rule all` (the experiments)
+        # stays the default target; figures run via `snakemake all_figures`
+        # (the aggregate is named `all_figures`, so there is no rule-name clash).
+        from tvbo.adapters import figure_workflow
+
+        figure_workflow.write_figure_kit(
+            figs, base_dir=_figure_base_dir(study, out_dir), out_dir=out_dir,
+            workflow=getattr(study, "workflow", None), include_all=True)
+        with (out_dir / "Snakefile").open("a", encoding="utf-8") as fh:
+            fh.write('\n\ninclude: "figures.smk"\n')
+        _common.info(f"wrote figures.smk + {len(figs)} figure plot script(s) "
+                     f"(run: `snakemake all_figures`)")
     return out_dir
 
 
@@ -702,10 +831,12 @@ def _finalize_kit(out_dir: Path, *, pack: bool) -> Path:
 
 
 def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
-          output: Path | None, override: list[str], stdout: bool, pack: bool = False) -> None:
+          output: Path | None, override: list[str], stdout: bool, pack: bool = False,
+          bundle_select: dict | None = None) -> None:
     if engine == "snakemake":
         out_dir = _emit_snakemake_study(spec=spec, backend=backend, experiment=experiment,
-                                        output=output, override=override, stdout=stdout)
+                                        output=output, override=override, stdout=stdout,
+                                        bundle_select=bundle_select)
         return _finalize_kit(out_dir, pack=pack) if out_dir is not None else None
     plan, exp = _build_plan(spec, engine=engine, backend=backend,
                             experiment=experiment, overrides=override)
@@ -722,7 +853,8 @@ def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
         parts = ([plan.experiment_key] if plan.study_key == plan.experiment_key
                  else [plan.study_key, plan.experiment_key])
         out_dir = Path("output").joinpath(*parts, engine)
-    _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir)
+    _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir,
+              bundle_select=bundle_select)
     return _finalize_kit(out_dir, pack=pack)
 
 
@@ -815,10 +947,23 @@ def slurm(
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
     pack: bool = typer.Option(False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."),
+    bundle_dataset: bool = typer.Option(
+        False, "--bundle-dataset",
+        help="Copy the fan-out's per-subject dataset files into the kit (spec/dataset/) "
+             "and point dataset.bids_root at them, so the kit is self-contained — no "
+             "separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects.",
+    ),
+    bundle_select: list[str] = typer.Option(
+        [], "--bundle-select",
+        help="Override: add a BIDS entity to disambiguate when a subject directory holds "
+             "several files matching the observation's query (not needed when the query "
+             "already names one file). Repeatable. Implies --bundle-dataset.",
+    ),
 ) -> None:
     """Emit a self-contained sbatch kit (`run.sbatch` + scripts + frozen spec)."""
+    sel = _parse_bundle_select(bundle_select) if (bundle_dataset or bundle_select) else None
     _emit("slurm", spec=spec, backend=backend, experiment=experiment,
-          output=output, override=override, stdout=stdout, pack=pack)
+          output=output, override=override, stdout=stdout, pack=pack, bundle_select=sel)
 
 
 @app.command("snakemake", help="Emit a self-contained Snakemake kit (Snakefile + scripts + spec).")
@@ -830,10 +975,23 @@ def snakemake(
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
     pack: bool = typer.Option(False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."),
+    bundle_dataset: bool = typer.Option(
+        False, "--bundle-dataset",
+        help="Copy the fan-out's per-subject dataset files into the kit (spec/<exp>/dataset/) "
+             "and point dataset.bids_root at them, so the kit is self-contained — no "
+             "separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects.",
+    ),
+    bundle_select: list[str] = typer.Option(
+        [], "--bundle-select",
+        help="Override: add a BIDS entity to disambiguate when a subject directory holds "
+             "several files matching the observation's query (not needed when the query "
+             "already names one file). Repeatable. Implies --bundle-dataset.",
+    ),
 ) -> None:
     """Emit a self-contained Snakemake kit (`Snakefile` + scripts + frozen spec)."""
+    sel = _parse_bundle_select(bundle_select) if (bundle_dataset or bundle_select) else None
     _emit("snakemake", spec=spec, backend=backend, experiment=experiment,
-          output=output, override=override, stdout=stdout, pack=pack)
+          output=output, override=override, stdout=stdout, pack=pack, bundle_select=sel)
 
 
 @app.command("nextflow", help="Emit a self-contained Nextflow kit (main.nf + scripts + spec).")
@@ -845,10 +1003,23 @@ def nextflow(
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
     pack: bool = typer.Option(False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."),
+    bundle_dataset: bool = typer.Option(
+        False, "--bundle-dataset",
+        help="Copy the fan-out's per-subject dataset files into the kit (spec/dataset/) "
+             "and point dataset.bids_root at them, so the kit is self-contained — no "
+             "separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects.",
+    ),
+    bundle_select: list[str] = typer.Option(
+        [], "--bundle-select",
+        help="Override: add a BIDS entity to disambiguate when a subject directory holds "
+             "several files matching the observation's query (not needed when the query "
+             "already names one file). Repeatable. Implies --bundle-dataset.",
+    ),
 ) -> None:
     """Emit a self-contained Nextflow kit (`main.nf` + scripts + frozen spec)."""
+    sel = _parse_bundle_select(bundle_select) if (bundle_dataset or bundle_select) else None
     _emit("nextflow", spec=spec, backend=backend, experiment=experiment,
-          output=output, override=override, stdout=stdout, pack=pack)
+          output=output, override=override, stdout=stdout, pack=pack, bundle_select=sel)
 
 
 @app.command("finalize", help="Reassemble an array run's shard outputs into one keyed result artifact.")
