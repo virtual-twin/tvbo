@@ -175,3 +175,56 @@ exp = SimulationExperiment(
 bif_result2 = exp.run("bifurcationkit.jl")
 bif_result2.continuations["jr_mu"].plot(VOI="y0")
 ```
+
+## Network (whole-brain) continuation
+
+The examples above continue a **single node**. When the experiment carries a multi-node
+`Network`, `exp.run("bifurcationkit.jl")` continues the **coupled system** instead: the state is
+laid out as `n_nodes` blocks per state variable, each long-range coupling term becomes a
+connectivity matvec `c = W · s` evaluated once per step (with `W` taken from
+`network.weights_matrix`), and the per-node right-hand side runs in a loop. This is the vector field
+a whole-brain equilibrium diagram — e.g. the global-coupling `G` bifurcation of a Wong–Wang network
+— is continued along.
+
+No special flag is needed: attach a network and continue in the coupling parameter. The recorded
+observables become per-node summaries (`<state>_max`, `<state>_mean` across nodes), so the branch
+plots the maximum firing across the network against `G`, as in Deco et al. (2014) Fig. 2c.
+
+```{python}
+#| eval: false
+from tvbo import Continuation, Dynamics, SimulationExperiment
+from tvbo.classes.network import Network
+
+model = Dynamics.from_ontology("ReducedWongWangExcInh")
+
+cont = Continuation.from_string(
+    """\
+name: eq_G
+dynamics: ReducedWongWangExcInh
+free_parameters:
+    - name: G
+      domain: {lo: 0.0, hi: 6.0}
+ds: 0.005
+ds_max: 0.05
+max_steps: 2500
+detect_fold: true
+detect_bifurcation: 2
+initial_state: {method: time_integration, duration: 5000.0}
+bothside: true
+"""
+)
+
+exp = SimulationExperiment(dynamics=model, continuations=[cont])
+exp.network = Network.from_matrix(weights, lengths)  # e.g. a 66-region connectome
+
+bif = exp.run("bifurcationkit.jl")
+bif.continuations["eq_G"].plot(VOI="S_e_max")  # max excitatory gating across nodes vs G
+```
+
+**Heterogeneous parameters.** A per-node parameter — for example the feedback-inhibition weights
+`J_i` fitted per region (FIC) — is supplied as a length-`n_nodes` array; it is emitted as a Julia
+vector and gathered per node inside the loop. Scalar parameters (such as the feed-forward-inhibition
+switch `lambda`) stay scalar. Special points are classified through the ontology's bifurcation
+taxonomy (see `ontology/tvb-o-bifurcation.ttl`): a saddle-node fold is reported as a **limit point
+(LP)** even when the backend labels it a generic branch point, by testing whether the continuation
+parameter turns around at that point.
