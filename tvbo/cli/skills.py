@@ -14,7 +14,9 @@ See :mod:`tvbo.skills._render` for the canonical schema.
 """
 from __future__ import annotations
 
+import re
 import shutil
+import tomllib
 from enum import Enum
 from pathlib import Path
 
@@ -140,7 +142,7 @@ def sync(
     agents_md = repo_root / "AGENTS.md"
 
     if check:
-        return _sync_check(skills, claude_dir, copilot_dir, agents_md)
+        return _sync_check(skills, claude_dir, copilot_dir, agents_md, repo_root)
 
     written: list[Path] = []
     for skill in skills:
@@ -152,10 +154,140 @@ def sync(
 
     typer.echo(f"synced {len(skills)} skills → {len(written)} files")
 
+    # Warn, never repair: an unrecognised file may be someone's local work, and
+    # a bad reference or extra is a content decision the maintainer has to make.
+    _report(_lint(skills, claude_dir, copilot_dir, repo_root))
 
-def _sync_check(skills: list[Skill], claude_dir: Path, copilot_dir: Path, agents_md: Path) -> None:
-    """Render in-memory, compare to on-disk; non-zero exit if anything differs."""
-    import io
+
+def _references(body: str, name: str) -> bool:
+    """True if *body* points at the skill *name*.
+
+    Matches the three forms the corpus actually uses — ``**name**``, ``/name``,
+    and ``` `name` skill ``` — rather than a bare substring, so a skill named
+    ``git`` is not matched by every mention of ``gitignore``.
+    """
+    n = re.escape(name)
+    return any(
+        re.search(p, body)
+        for p in (rf"\*\*{n}\*\*", rf"/{n}\b", rf"`{n}`\s+skill")
+    )
+
+
+def _find_leaked_refs(skills: list[Skill]) -> list[str]:
+    """Shipped user skills that point at maintainer skills.
+
+    ``install`` renders only the user root, so a maintainer skill named in a
+    shipped body is a dead pointer for everyone outside this repo. It looks
+    fine here because ``sync`` renders both audiences side by side.
+    """
+    maintainer = {s.name for s in skills if s.audience == "maintainer"}
+    return [
+        f"{skill.source}: references maintainer skill {name!r}"
+        for skill in skills
+        if skill.audience != "maintainer"
+        for name in sorted(maintainer)
+        if _references(skill.body, name)
+    ]
+
+
+def _find_bad_extras(skills: list[Skill], repo_root: Path) -> list[str]:
+    """``requires_extras`` entries naming no real optional-dependency group."""
+    pyproject = repo_root / "pyproject.toml"
+    if not pyproject.is_file():
+        return []
+    with pyproject.open("rb") as fh:
+        data = tomllib.load(fh)
+    real = set((data.get("project") or {}).get("optional-dependencies") or {})
+    return [
+        f"{skill.source}: requires_extras {extra!r} is not a group in "
+        f"[project.optional-dependencies]"
+        for skill in skills
+        for extra in skill.requires_extras
+        if extra not in real
+    ]
+
+
+def _lint(
+    skills: list[Skill], claude_dir: Path, copilot_dir: Path, repo_root: Path
+) -> list[tuple[str, list[str], str]]:
+    """Content problems that re-rendering cannot fix, as (title, items, hint).
+
+    Distinct from drift: these live in the canonical sources, or in what
+    surrounds the rendered output, so they are reported for a human to resolve
+    rather than silently repaired.
+    """
+    findings: list[tuple[str, list[str], str]] = []
+    if stray := _find_orphans(skills, claude_dir, copilot_dir):
+        findings.append((
+            "orphaned rendered skills (no canonical source):",
+            stray,
+            "Either add a canonical source under skills/ (maintainer) or "
+            "tvbo/skills/canonical/ (user), or delete the rendered file. "
+            "Personal skills belong in ~/.claude/skills/, not the project dir.",
+        ))
+    if leaks := _find_leaked_refs(skills):
+        findings.append((
+            "shipped user skills referencing maintainer skills:",
+            leaks,
+            "`tvbo skills install` ships only the user root, so these pointers are "
+            "dead outside this repo. Inline the guidance, or drop the reference.",
+        ))
+    if bad := _find_bad_extras(skills, repo_root):
+        findings.append((
+            "requires_extras naming no real optional-dependency group:",
+            bad,
+            "Name a group from [project.optional-dependencies] in pyproject.toml, "
+            "or use [] if the skill needs no extra.",
+        ))
+    return findings
+
+
+def _report(findings: list[tuple[str, list[str], str]]) -> None:
+    """Print lint findings. Never deletes — removal is the maintainer's call."""
+    for title, items, hint in findings:
+        typer.echo(title, err=True)
+        for item in items:
+            typer.echo(f"  - {item}", err=True)
+        typer.echo(f"\n{hint}\n", err=True)
+
+
+def _find_orphans(skills: list[Skill], claude_dir: Path, copilot_dir: Path) -> list[str]:
+    """Rendered skill files that no canonical source accounts for.
+
+    The rendered directories hold generated output only, so anything in them
+    without a canonical source behind it is a stray — typically a personal
+    skill committed by accident. Those belong in a user-scope directory
+    (``~/.claude/skills/``) instead.
+    """
+    claude_known = {s.name for s in skills}
+    copilot_known = {s.name for s in skills if s.audience in {"maintainer", "both"}}
+
+    stray = [
+        f".claude/skills/{md.parent.name}/"
+        for md in sorted(claude_dir.glob("*/SKILL.md"))
+        if md.parent.name not in claude_known
+    ]
+    stray += [
+        f".github/instructions/{inst.name}"
+        for inst in sorted(copilot_dir.glob("*.instructions.md"))
+        if inst.name.removesuffix(".instructions.md") not in copilot_known
+    ]
+    return stray
+
+
+def _sync_check(
+    skills: list[Skill],
+    claude_dir: Path,
+    copilot_dir: Path,
+    agents_md: Path,
+    repo_root: Path,
+) -> None:
+    """Render in-memory, compare to on-disk; non-zero exit if anything differs.
+
+    Two independent failure modes: *drift*, where a committed copy no longer
+    matches what its canonical source renders to (fix by re-running sync), and
+    the :func:`_lint` findings, which sync cannot fix.
+    """
     import tempfile
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -214,11 +346,14 @@ def _sync_check(skills: list[Skill], claude_dir: Path, copilot_dir: Path, agents
                 )
         _cmp(tmp_path / "AGENTS.md", agents_md, "AGENTS.md")
 
+    findings = _lint(skills, claude_dir, copilot_dir, repo_root)
     if drift:
-        typer.echo("skills sync drift detected:", err=True)
-        for d in drift:
-            typer.echo(f"  - {d}", err=True)
-        typer.echo("\nRun `tvbo skills sync` to regenerate.", err=True)
+        findings.insert(
+            0,
+            ("skills sync drift detected:", drift, "Run `tvbo skills sync` to regenerate."),
+        )
+    if findings:
+        _report(findings)
         raise typer.Exit(1)
     typer.echo("skills sync: up to date")
 
