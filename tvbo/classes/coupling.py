@@ -597,11 +597,78 @@ class Coupling(tvbo_datamodel.Coupling):
         with sp.evaluate(False):
             pre_expr = parse_eq(self.pre_expression, local_dict=local_dict)
             post_expr = parse_eq(self.post_expression, local_dict=local_dict)
-            pre_indexed = pre_expr.subs(subs_map)
+            if not isinstance(pre_expr, (list, tuple)):
+                pre_indexed = pre_expr.subs(subs_map)
 
-        # Full coupling: Sum(w[i,j] * pre, (j, 0, N-1)), substituted into post
+        # Factored / vectorized coupling: the pre-expression is a *list* whose k-th
+        # component is summed into gx_k and the post recombines the gx_k. When the post
+        # is linear in the gx_k (the usual case) collapse to the canonical single sum
+        #     c = Sum_j w[i,j] * sum_k a_k(x_i) * pre_k(x_j)
+        # and let ``trigsimp`` fold the per-edge term (cos(x_i)sin(x_j) - sin(x_i)cos(x_j)
+        # -> sin(x_j - x_i)); otherwise keep the explicit gx_k = Sum(w * pre_k) form.
+        # Built outside the evaluate(False) block so the sum, coeff and trigsimp evaluate.
+        if isinstance(pre_expr, (list, tuple)):
+            # A bare state name in a summed pre refers to the summed (j) node, even when
+            # declared `local` (e.g. [sin(theta), cos(theta)]); explicit `_i` stays local.
+            pre_subs = dict(subs_map)
+            for sn in set(incoming) | set(local):
+                pre_subs[Symbol(sn)] = _incoming(sn)
+            pre_k = [comp.subs(pre_subs) for comp in pre_expr]
+            gxk = [Symbol(f"gx_{k}") for k in range(len(pre_k))]
+            post_indexed = post_expr.subs(subs_map)
+            coeffs = [post_indexed.coeff(g) for g in gxk]
+            if sp.expand(post_indexed - sum(a * g for a, g in zip(coeffs, gxk))) == 0:
+                edge = sp.trigsimp(sum(a * p for a, p in zip(coeffs, pre_k)))
+                # Show a folded odd-trig term in the physics convention f(incoming - local):
+                # sympy canonicalises f(x_j - x_i) to -f(x_i - x_j), so rebuild f(x_j - x_i)
+                # as a positive-first, unevaluated Add (the report renders with order='none').
+                c0, rest = edge.as_coeff_Mul()
+                odd = (sp.sin, sp.tan, sp.sinh, sp.tanh)
+                if c0 == -1 and getattr(rest, "func", None) in odd and rest.args[0].is_Add:
+                    terms = sorted((-t for t in rest.args[0].as_ordered_terms()),
+                                   key=lambda t: t.could_extract_minus_sign())
+                    with sp.evaluate(False):
+                        edge = rest.func(sp.Add(*terms, evaluate=False))
+                return Sum(w[i, j] * edge, (j, 0, N - 1))
+            return post_indexed.subs({g: Sum(w[i, j] * p, (j, 0, N - 1)) for g, p in zip(gxk, pre_k)})
+
+        # Scalar pre: Sum(w[i,j] * pre, (j, 0, N-1)), substituted into post
         gx_sum = Sum(w[i, j] * pre_indexed, (j, 0, N - 1))
         return post_expr.subs({gx: gx_sum})
+
+    def summed_inputs(self, delays=False):
+        """Summed inputs ``gx_k`` of a factored / vectorized coupling.
+
+        A factored coupling emits a *list* pre-expression whose k-th component is summed
+        over the graph into ``gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)``, which the
+        post-expression then recombines. Returns ``[(gx_k, sum_expr), ...]`` so a report
+        can state precisely what ``gx_0``, ``gx_1``, … mean; empty for a scalar coupling.
+        """
+        import sympy as sp
+        from sympy import IndexedBase, Symbol, symbols, Sum
+        from tvbo.parse.expression import parse_eq
+
+        with sp.evaluate(False):
+            pre = parse_eq(self.pre_expression)
+        if not isinstance(pre, (list, tuple)):
+            return []
+
+        i, j, N = symbols("i j N")
+        w = IndexedBase("w")
+        states = {str(s) for s in (self.incoming_states or [])} | {str(s) for s in (self.local_states or [])}
+        t, tau = Symbol("t"), IndexedBase("tau")
+
+        def _incoming(sn):
+            base = IndexedBase(sn)
+            return base[j, t - tau[i, j]] if delays else base[j]
+
+        # In a summed pre a bare state (or its `_j` alias) is the incoming (j) node.
+        subs = {}
+        for sn in states:
+            subs[Symbol(sn)] = _incoming(sn)
+            subs[Symbol(f"{sn}_j")] = _incoming(sn)
+        return [(Symbol(f"gx_{k}"), Sum(w[i, j] * comp.subs(subs), (j, 0, N - 1)))
+                for k, comp in enumerate(pre)]
 
     def plot(self, weights=None, node_idx=0, xs=None, ax=None, **kwargs):
         """Plot the coupling output against a single input state component.
