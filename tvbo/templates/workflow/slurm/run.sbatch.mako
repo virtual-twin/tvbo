@@ -112,12 +112,21 @@ bids_root_override=()
 if [ -n "${'$'}{TVBO_BIDS_ROOT:-}" ]; then
     bids_root_override=(--set "dataset.bids_root=${'$'}{TVBO_BIDS_ROOT}")
 fi
+## If this experiment warm-starts (initial_state.from_experiment), its source run's
+## result is searched under --results-root. Point it at the source run's output via
+## $TVBO_RESULTS_ROOT (e.g. the group-fit results for a per-subject warm-start); unset
+## → defaults to the output dir's parent.
+results_root_override=()
+if [ -n "${'$'}{TVBO_RESULTS_ROOT:-}" ]; then
+    results_root_override=(--results-root "${'$'}{TVBO_RESULTS_ROOT}")
+fi
 exec ${prefix}tvbo run ${run_target} \
     --backend=${plan.backend.name} \
 % if plan.experiment_selector and not spec_relpath:
     --experiment="${plan.experiment_selector}" \
 % endif
     ${'$'}{bids_root_override[@]+"${'$'}{bids_root_override[@]}"} \
+    ${'$'}{results_root_override[@]+"${'$'}{results_root_override[@]}"} \
     --subject="${'$'}{SUBJECT}" \
     -o ${out_pat}
 % else:

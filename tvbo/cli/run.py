@@ -33,6 +33,13 @@ def run(
     out_dir: Path = typer.Option(
         None, "--out-dir", "-o", help="Directory to write results into."
     ),
+    results_root: Path = typer.Option(
+        None, "--results-root",
+        help="Directory searched for a sibling run's saved result when this experiment's "
+             "initial_state.method=from_experiment (state / parameter warm-start). Defaults "
+             "to the output dir's parent; set it to point at another run's output — e.g. the "
+             "group fit's results dir for a per-subject warm-start (Run A → Run B).",
+    ),
     experiment: str = typer.Option(
         None, "--experiment", help="When SPEC is a Study, run only this named experiment."
     ),
@@ -106,6 +113,8 @@ def run(
         kwargs["active_subject"] = subject
     kwargs["compress"] = compress
     kwargs["record_only"] = not save_all
+    if results_root is not None:
+        kwargs["results_root"] = str(results_root)
 
     chunk_i = chunk_n = None
     if shard:
@@ -295,7 +304,8 @@ def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> N
     record_only = kwargs.pop("record_only", True)
     # initial_state.from_experiment seeds from a sibling experiment's saved result;
     # search the output dir's parent (covers results/<key> and output/nc/exp<id> alike).
-    results_root = out_dir.parent if out_dir is not None else None
+    # Explicit --results-root (in kwargs) wins; else default to the output dir's parent.
+    results_root = kwargs.pop("results_root", None) or (out_dir.parent if out_dir is not None else None)
     result = experiment.run(format=backend, results_root=results_root, **kwargs)
     _common.info(f"done: {type(result).__name__}")
     if out_dir is not None:
