@@ -389,6 +389,18 @@ enums:
             first: { description: "First value in window" }
             window: { description: "Sliding window aggregation" }
             none: { description: "No aggregation" }
+    AxisReductionStatistic:
+        description: >-
+            Statistic used to collapse an exploration/sweep axis into a single
+            reduced value in the result container (see ExplorationAxis.reduce).
+            Applied across the named grid dimension of every observation that
+            carries it.
+        permissible_values:
+            mean: { description: "Arithmetic mean across the axis." }
+            sum: { description: "Sum across the axis." }
+            std: { description: "Standard deviation across the axis." }
+            sem: { description: "Standard error of the mean: std across the axis divided by sqrt(n)." }
+            median: { description: "Median across the axis." }
     EventType:
         description: "Type of event triggering mechanism."
         permissible_values:
@@ -658,6 +670,23 @@ classes:
                     to explicitly link a domain to a specific element of a heterogeneous
                     parameter (e.g., element: 0 for node 0). Required when used in
                     element_domains to avoid ambiguous positional indexing.
+
+    AxisReduction:
+        class_uri: tvbo:AxisReduction
+        description: >-
+            Marks an exploration/sweep axis to be collapsed by a statistic in
+            the result container. When set on an ExplorationAxis, that axis's
+            named grid dimension is reduced across every observation that carries
+            it (e.g. an `execution.random_seed` trial ensemble becomes a
+            first-class reduced observation). Backend-independent: states the
+            reduction intent; the result layer applies it by dimension name.
+        attributes:
+            statistic:
+                range: AxisReductionStatistic
+                ifabsent: "string(mean)"
+                description: >-
+                    Statistic used to collapse the axis (mean, sum, std, sem,
+                    median). Defaults to mean.
 
     Equation:
         class_uri: tvbo:Equation
@@ -3030,6 +3059,17 @@ classes:
             unit:
                 range: string
                 description: "Optional axis unit (defaults to the referenced Parameter's unit)."
+            reduce:
+                range: AxisReduction
+                inlined: true
+                description: >-
+                    Optional marker to collapse this axis by a statistic in the
+                    result container instead of keeping it as a grid dimension.
+                    Use for an ensemble axis (e.g. `execution.random_seed`, a
+                    trial ensemble) so the reduced observation (mean/sem/…)
+                    becomes first-class. The named grid dim is reduced across
+                    every observation that carries it; observations without that
+                    dim are left untouched.
 
     FreeParameter:
         class_uri: tvbo:FreeParameter

@@ -108,6 +108,10 @@ classes:
         range: WorkflowConfig
         inlined: true
         description: "Per-figure HPC/workflow resource refinement (reuses WorkflowConfig, same pattern as SimulationExperiment.workflow_overrides); lets a heavy render request its own resources when figures are emitted as workflow jobs. The figure's Layer.used edges become the render rule's input dependencies."
+      code_modules:
+        range: string
+        multivalued: true
+        description: "Importable module names whose import registers this figure's custom panels / transforms (via bsplot.register_panel / register_transform). The emitted plot.py imports them, so a study ships its bespoke figure code in its code_source instead of in core tvbo. The modules must be importable when the figure renders (loading the study puts its code/ dir on the path)."
       panels:
         range: Panel
         multivalued: true

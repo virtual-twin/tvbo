@@ -313,6 +313,84 @@ def test_build_context_dataclass_flavor_kind_mark_loc():
     assert "imread" in code         # image
 
 
+def test_register_panel_and_transform():
+    """The register_* decorators populate the shared registries, so a study's
+    code_source module adds its own custom panels/transforms the same way the
+    built-ins do; the emitted plot.py looks them up by name in these dicts.
+    """
+    # the built-ins registered themselves via the decorator
+    assert {"lyapunov_vs_k", "node_profile", "lyapunov_vector"} <= set(bsplot.CUSTOM_PANELS)
+    assert {"up_branch", "down_branch", "order_by_branch"} <= set(bsplot.TRANSFORMS)
+
+    @bsplot.register_panel("_test_panel")
+    def _panel(fig, ax, ctx):
+        return "drawn"
+
+    @bsplot.register_transform("_test_tf")
+    def _tf(da):
+        return da
+
+    try:
+        assert bsplot.CUSTOM_PANELS["_test_panel"] is _panel
+        assert bsplot.TRANSFORMS["_test_tf"] is _tf
+        assert _panel(None, None, None) == "drawn"      # decorator returns the fn unchanged
+    finally:                                            # keep the module-level registries clean for other tests
+        bsplot.CUSTOM_PANELS.pop("_test_panel", None)
+        bsplot.TRANSFORMS.pop("_test_tf", None)
+
+
+def test_render_code_emits_study_code_module_imports():
+    """A figure declaring code_modules emits an import for each, so a study's
+    code_source panels/transforms register when plot.py runs (the study load
+    puts code/ on the path; importing the module fires the @register_* decorators).
+    A figure with none emits no such import.
+    """
+    fig = P.Figure(
+        name="withcode", layout="a", code_modules=["taher2019_figures", "myextra"],
+        panels={"a": P.Panel(panel_key="a", kind="custom", render="lyapunov_vs_k")},
+    )
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "import taher2019_figures" in code
+    assert "import myextra" in code
+    # no code_modules -> no study-import block
+    assert "registers this study" not in bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
+
+
+def test_study_code_module_roundtrip(tmp_path, monkeypatch):
+    """End-to-end proof of the register API + code_modules + emit-wiring together:
+    a study module registers a panel core tvbo never knew about; the emitted
+    plot.py imports the module (firing the decorator), so the panel dispatches
+    and the figure draws.
+    """
+    import sys
+    import textwrap
+
+    (tmp_path / "study_demo_panels.py").write_text(textwrap.dedent('''
+        from tvbo.adapters import bsplot
+
+        @bsplot.register_panel("demo_roundtrip_panel")
+        def demo(fig, ax, ctx):
+            ax.text(0.5, 0.5, "study", ha="center", va="center", transform=ax.transAxes)
+            ax.set_xticks([]); ax.set_yticks([])
+    '''))
+    monkeypatch.syspath_prepend(str(tmp_path))          # a study load would put its code/ dir here
+    assert "demo_roundtrip_panel" not in bsplot.CUSTOM_PANELS    # core tvbo does not know it
+
+    fig = P.Figure(
+        name="rt", layout="a", code_modules=["study_demo_panels"],
+        panels={"a": P.Panel(panel_key="a", kind="custom", render="demo_roundtrip_panel")},
+    )
+    out = tmp_path / "rt.png"
+    try:
+        bsplot.render(fig, str(tmp_path), str(out))     # emitted plot.py imports the module...
+        assert "demo_roundtrip_panel" in bsplot.CUSTOM_PANELS   # ...which registered the panel...
+        assert out.is_file() and out.stat().st_size > 0         # ...and it drew.
+    finally:
+        bsplot.CUSTOM_PANELS.pop("demo_roundtrip_panel", None)
+        sys.modules.pop("study_demo_panels", None)
+
+
 # --------------------------------------------------------------------------- render_code validity
 
 def _emit(**fig_kw) -> str:
