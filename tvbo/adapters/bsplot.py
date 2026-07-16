@@ -27,10 +27,37 @@ def _open_ds(path):
 _TEMPLATE = "bsplot/tvbo-bsplot-figure.py.mako"
 
 
-# --------------------------------------------------------------------------- transforms
-# Generic, presentation-only reductions usable as a layer `transform`. Registered here
-# so the emitted plot.py can import them; a study can register its own the same way.
+# --------------------------------------------------------------------------- registries
+# Extension points for the layer `transform` and the `custom` panel escape hatch. A study
+# ships figure-specific transforms/panels in its code_source module and decorates them with
+# these; the emitted plot.py imports that module so the registration fires before lookup.
+# The built-ins below register themselves the same way.
 
+TRANSFORMS: dict = {}       # name -> fn(da) -> da       presentation-only layer reductions
+CUSTOM_PANELS: dict = {}    # name -> fn(fig, ax, ctx)   bespoke `custom` panel drawers
+
+
+def register_transform(name):
+    """Register a presentation-only layer transform ``fn(da) -> da`` under *name* (decorator)."""
+    def deco(fn):
+        TRANSFORMS[name] = fn
+        return fn
+    return deco
+
+
+def register_panel(name):
+    """Register a ``custom``-panel callable ``fn(fig, ax, ctx)`` under *name* (decorator)."""
+    def deco(fn):
+        CUSTOM_PANELS[name] = fn
+        return fn
+    return deco
+
+
+# --------------------------------------------------------------------------- transforms
+# The built-in presentation-only reductions usable as a layer `transform`; a study
+# registers its own the same way from its code_source module.
+
+@register_transform("up_branch")
 def up_branch(da):
     """The up-sweep half of a hysteresis scan (up to the sweep reversal at argmax of the swept coord)."""
     import numpy as np
@@ -40,6 +67,7 @@ def up_branch(da):
     return da.isel({dim: slice(0, n)})
 
 
+@register_transform("down_branch")
 def down_branch(da):
     """The down-sweep half of a hysteresis scan (from the reversal onward)."""
     import numpy as np
@@ -49,6 +77,7 @@ def down_branch(da):
     return da.isel({dim: slice(n - 1, None)})
 
 
+@register_transform("order_by_branch")
 def order_by_branch(da):
     """Restore a branch-restart run's source traversal order (sort by ``branch_point``).
 
@@ -60,10 +89,6 @@ def order_by_branch(da):
     if "branch_point" in da.dims or "branch_point" in da.coords:
         return da.sortby("branch_point")
     return da
-
-
-TRANSFORMS = {"up_branch": up_branch, "down_branch": down_branch,
-              "order_by_branch": order_by_branch}
 
 
 def _style_entries(figure) -> list:
@@ -204,6 +229,7 @@ def _sweep_axis(da):
     return K, int(np.argmax(K)) + 1
 
 
+@register_panel("lyapunov_vs_k")
 def lyapunov_vs_k(fig, ax, ctx):
     """(b) largest Lyapunov exponent lambda_1 vs K, up/down branches, sampled K circled.
 
@@ -236,6 +262,7 @@ def lyapunov_vs_k(fig, ax, ctx):
         ax.set_xlabel(o["xlabel"])
 
 
+@register_panel("node_profile")
 def node_profile(fig, ax, ctx):
     """(c-e) per-node time-mean profile <omega_i>_t at one sampled K.
 
@@ -271,6 +298,7 @@ def node_profile(fig, ax, ctx):
         ax.set_yticklabels([])
 
 
+@register_panel("lyapunov_vector")
 def lyapunov_vector(fig, ax, ctx):
     """(f-h) covariant Lyapunov vector xi_i at one sampled K.
 
@@ -301,13 +329,6 @@ def lyapunov_vector(fig, ax, ctx):
         ax.set_ylabel(o.get("ylabel", r"$\xi_i$"))
     else:
         ax.set_yticklabels([])
-
-
-CUSTOM_PANELS = {
-    "lyapunov_vs_k": lyapunov_vs_k,
-    "node_profile": node_profile,
-    "lyapunov_vector": lyapunov_vector,
-}
 
 
 def _items(coll):
@@ -430,6 +451,8 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         "font_size": font_size,
         "auto_format": getattr(figure, "auto_format", None) is not False,
         "panel_numbers": getattr(figure, "panel_numbers", None) is not False,
+        # study-shipped custom panels/transforms register when plot.py imports these
+        "code_modules": [str(m) for m in (getattr(figure, "code_modules", None) or [])],
     }
 
 
