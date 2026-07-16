@@ -19,8 +19,9 @@ from compose_ab import compose_ab   # A/B pairing (same dir)
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
-INPUT, FIGS, OUT = ROOT / "input", ROOT / "figures", ROOT / "output"
-FIGS.mkdir(exist_ok=True)
+INPUT, OUT = ROOT / "input", ROOT / "output"
+FIGS = OUT / "figures"          # all generated figures live under the gitignored output/
+FIGS.mkdir(parents=True, exist_ok=True)
 
 
 def _open(exp):

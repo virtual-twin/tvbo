@@ -102,7 +102,14 @@ print(EXP.dynamics.render("markdown"))
 
 ![**Fig. N — <title>.** **A** original (<Author> et al. <Year>); **B** TVBO reproduction.
 <caption>. Operating point $K =$ `{python} fmt(M['K'],0)` MW; the grid has
-`{python} fmt(M['n_nodes'],0)` nodes. <Every number here is inline-computed from M.>](../figures/ab_figN.png){#fig-N width=100%}
+`{python} fmt(M['n_nodes'],0)` nodes. <Every number here is inline-computed from M.>](../output/figures/ab_figN.png){#fig-N width=100%}
+
+<!-- Per-figure status callout: three colours, no emoji (callout-icon:false above).
+     green (tip) = reproduced · yellow (warning) = MISSING (data/target not yet available)
+     · red (important) = attempted and failed to match. A placeholder panel gets yellow. -->
+::: {.callout-tip title="Reproduced"}
+<what this figure reproduces, with an inline-computed number, e.g. ρ = `{python} fmt(M['rho'],2)`>.
+:::
 
 # Reproduction vs. replication
 
@@ -115,14 +122,16 @@ depending on unpublished realizations or rendering choices differ, as expected.
 
 # Replication scorecard
 
-Against the criteria in `original_study/analysis/targets.md`. Status: **yes** =
-reproduced · **partial** = realization-dependent/incomplete · **out** = out of scope.
+Against the criteria in `original_study/analysis/targets.md`. **Status:** yes =
+reproduced · partial = realization-dependent/incomplete · out = out of scope. **Tier**
+(set in Phase 1.5): *mech* = mechanism-level (sign / pattern / ordering) · *dec* =
+decimal-level (needs the paper's exact input).
 
-| Criterion | Status | Note |
-|---|:---:|---|
-| <T1 criterion, e.g. topology counts> | **yes** | `{python} fmt(M['n_nodes'],0)` nodes … |
-| <T2 criterion> | **partial** | <realization-dependent; computed vs paper> |
-| <extended targets> | **out** | <deferred / data gap / framework gap> |
+| Criterion | Tier | Status | Note |
+|---|:---:|:---:|---|
+| <T1 criterion, e.g. topology counts> | mech | **yes** | `{python} fmt(M['n_nodes'],0)` nodes … |
+| <T2 criterion> | dec | **partial** | <needs the exact input; mechanism holds, number caps> |
+| <extended targets> | dec | **out** | <deferred / data gap / framework gap> |
 
 **Bottom line:** <which tier is replicated; which is partial; what is out of scope>.
 

@@ -2,13 +2,17 @@
 
 Version of record: `original_study/<Study>.md`. Key params copied **verbatim**.
 
-| ID | Target | Fig(s) | Key params (verbatim) | Validation criterion (pass/fail) | Tier |
-|----|--------|--------|-----------------------|----------------------------------|------|
-| T1 | <topology / counts>        | 1     | N=…, lines=…            | counts exact                     | core |
-| T2 | <operating point / profile>| 5c–e  | K=…, α=…, transient=…   | <metric> within <tol>            | core |
-| T3 | <control timeseries>       | 8     | τ=…, g=…, window=…      | <metric> → 0; persists after off | core |
-| T5 | <Lyapunov / λ₁>            | 5b    | Benettin, units …       | sign structure + hysteresis      | extended |
-| …  | …                          | …     | …                       | …                                | …    |
+**Scope** = core | extended (do we attempt it, Phase 1). **Fidelity** = mech | dec
+(mechanism-level vs decimal-level, set Phase 1.5 — decides how exact a match to expect).
+
+| ID | Target | Fig(s) | Key params (verbatim) | Validation criterion (pass/fail) | Scope | Fidelity |
+|----|--------|--------|-----------------------|----------------------------------|-------|----------|
+| T1 | <count / topology>          | 1     | N=…                     | counts exact                     | core     | dec  |
+| T2 | <operating point / profile> | 5c–e  | K=…, α=…, transient=…   | <metric> within <tol>            | core     | dec  |
+| T3 | <bifurcation point / type>  | 3     | sweep param, range …    | onset within <tol>; type matches | core     | mech |
+| T4 | <control / perturbation>    | 8     | τ=…, g=…, window=…      | <metric> → 0; persists after off | core     | mech |
+| T5 | <Lyapunov / λ₁ / spectrum>  | 5b    | Benettin, units …       | sign structure + hysteresis      | extended | mech |
+| …  | …                           | …     | …                       | …                                | …        | …    |
 
 **Ground-truth note.** If the printed equation disagrees with what the figures show
 (normalization typos, unit conventions), record the quantity the *figures* use, with the

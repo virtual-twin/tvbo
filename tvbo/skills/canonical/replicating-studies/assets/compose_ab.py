@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Compose side-by-side A/B images: A = the original paper figure on a light-grey
-panel; B = the TVBO reproduction on white. Writes ``figures/ab_fig{N}.png``.
+panel; B = the TVBO reproduction on white. Writes ``output/figures/ab_fig{N}.png``.
 
 Reusable as-is across replications. Point ``_REPRO`` at each paper figure's
 reproduction image (produced by ``plot.py``) and drop the paper originals into
@@ -14,10 +14,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent           # <study>/  (code/figures/ -> <study>/)
-FIGS = ROOT / "figures"
+FIGS = ROOT / "output" / "figures"  # generated figures live under the gitignored output/
+FIGS.mkdir(parents=True, exist_ok=True)
 ORIG = ROOT / "original_study" / "img"
 
-# paper figure number -> its reproduction PNG under figures/ (edit for your study).
+# paper figure number -> its reproduction PNG under output/figures/ (edit for your study).
 _REPRO = {
     1: FIGS / "fig01_topology.png",
     # 5: FIGS / "tvbo_fig5.png",
