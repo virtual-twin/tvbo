@@ -296,6 +296,107 @@ def test_experiment_result_roundtrips_via_sidecar(tmp_path):
     assert filecmp.cmp(yaml_a, yaml_b, shallow=False), "sidecar YAML not byte-identical"
 
 
+# A 2-node delayed Kuramoto network with a `network.conduction_speed` exploration
+# axis. Unlike _MINI_EXPERIMENT (zero tract lengths -> inert), the edges carry a
+# distance, so delay = distance / conduction_speed is non-zero and the swept speed
+# genuinely changes the dynamics. Exercises the DenseLengthGraph + live graph.speed
+# codegen path for a network-scope axis.
+_MINI_DELAYED_EXPERIMENT = """
+id: 8
+dynamics:
+  name: Kuramoto
+  label: Kuramoto
+  parameters:
+    omega: {name: omega, value: 0.0628, unit: rad_per_ms}
+  coupling_inputs:
+    c: {name: c, description: "coupling"}
+  state_variables:
+    theta:
+      name: theta
+      unit: rad
+      equation: {lhs: "Derivative(theta, t)", rhs: "omega + c"}
+      variable_of_interest: true
+      coupling_variable: true
+  output: [theta]
+  number_of_modes: 1
+network:
+  number_of_nodes: 2
+  parameters:
+    conduction_speed: {name: conduction_speed, value: 3.0, unit: mm_per_ms}
+  nodes:
+    - {id: 0, label: r0}
+    - {id: 1, label: r1}
+  edges:
+    - source: 0
+      target: 1
+      parameters:
+        weight: {value: 0.5}
+        distance: {value: 30.0}
+    - source: 1
+      target: 0
+      parameters:
+        weight: {value: 0.5}
+        distance: {value: 30.0}
+coupling:
+  name: KuramotoCoupling
+  label: KuramotoCoupling
+  delayed: true
+  parameters:
+    a: {name: a, value: 0.01}
+    N: {name: N, value: 1.0}
+  pre_expression: {rhs: "sin(theta_j - theta_i)"}
+  post_expression: {rhs: "a * gx / N"}
+  incoming_states: [theta]
+  local_states: [theta]
+integration:
+  method: RungeKutta4thOrder
+  duration: 200.0
+  step_size: 1.0
+  transient_time: 50.0
+explorations:
+  sweep:
+    name: sweep
+    mode: product
+    space:
+      - parameter: network.conduction_speed
+        explored_values: [2.0, 4.0]
+"""
+
+
+def test_network_conduction_speed_axis_sweeps(tmp_path):
+    """A `network.conduction_speed` axis actually varies the delays.
+
+    Guards two failure modes the delay-graph codegen must avoid: (1) the axis must
+    be classified network-scope even when given as ``explored_values`` — otherwise
+    it is swept as a non-existent dynamics parameter and every cell comes out
+    identical (a silently-inert sweep); (2) sweeping the ``DenseLengthGraph.speed``
+    leaf under vmap must match running each speed on its own (no cross-contamination).
+    """
+    import copy
+
+    import yaml
+
+    spec = yaml.safe_load(_MINI_DELAYED_EXPERIMENT)
+
+    def run(vals):
+        d = copy.deepcopy(spec)
+        d["explorations"]["sweep"]["space"][0]["explored_values"] = vals
+        p = tmp_path / f"delayed_{len(vals)}_{vals[0]}.yaml"
+        p.write_text(yaml.safe_dump(d))
+        exp = SimulationExperiment.from_file(str(p))
+        exp.configure()
+        return np.asarray(exp.run("tvboptim").explorations.sweep.results)
+
+    grid = run([2.0, 4.0])
+    assert grid.shape[0] == 2, f"expected 2 cells, got {grid.shape}"
+    assert np.all(np.isfinite(grid)), "sweep produced non-finite values"
+    # Different conduction speeds => different delays => different dynamics.
+    assert not np.allclose(grid[0], grid[1]), "conduction_speed sweep is inert (is_network lost?)"
+    # Each swept cell equals running that single speed alone.
+    assert_identical("speed=2.0 cell", grid[0], run([2.0])[0])
+    assert_identical("speed=4.0 cell", grid[1], run([4.0])[0])
+
+
 def test_rww_optimization_runs():
     exp = _load_landscape(2000.0, 500.0)
     for opt in (exp.optimizations or {}).values():
