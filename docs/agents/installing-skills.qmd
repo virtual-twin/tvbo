@@ -90,8 +90,8 @@ when you want maximum coverage in a single command.
 ## Audience filtering
 
 By default, `tvbo skills install` writes **user-audience skills only** —
-the four end-user skills (`overview`, `writing-models`, `running-simulations`,
-`platform`).
+the five end-user skills (`overview`, `writing-models`, `running-simulations`,
+`replicating-studies`, `platform`).
 
 The maintainer skills (`git`, `writing-code`, `linkml-schema`,
 `codegen-templates`, `tests-and-backends`, `grill-me`) are **only relevant

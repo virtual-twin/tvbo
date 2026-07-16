@@ -18,7 +18,7 @@ behavioural rules, just scoped to library *usage* rather than library
 
 ## User skills
 
-These are the four skills `pip install tvbo && tvbo skills install` puts on
+These are the five skills `pip install tvbo && tvbo skills install` puts on
 your machine.
 
 ### `tvbo-overview`
@@ -66,6 +66,24 @@ Teaches:
 - Which extra to install per backend (`tvbo[jax]`, `tvbo[tvb]`,
   `tvbo[pyrates]`, `tvbo[julia]`, `tvbo[neuroml]`, `tvbo[tvboptim]`)
 - Intel-Mac pinning quirks (numba/llvmlite/jax)
+
+### `tvbo-replicating-studies`
+
+::: {.callout-note}
+**Fires when:** Reproducing a published study — building a `<Study>.yaml`, its `report.qmd`, or replication plotting.
+:::
+
+Turns a paper into **one declarative, tvbo-native recipe** (all or selected
+experiments) plus simple plotting and an honest, fully-computed report.
+Composes `writing-models` and `running-simulations`, then adds the
+replication-specific rules:
+
+- One `<Study>.yaml` for every targeted experiment — no Python drivers
+- Every reported number computed from a result container, never typed by hand
+- Backend chosen by feature-fit, not defaulted; framework gaps surfaced early
+- Replication (independent code + data) stated honestly, with a scorecard
+- Ships an `assets/` dir — report/plot templates and a FAIR skeleton —
+  installed alongside the skill
 
 ### `tvbo-platform`
 
@@ -189,3 +207,17 @@ metadata:
 `metadata:` to satisfy VS Code's SKILL.md schema linter, which only
 allows a known set of top-level attributes (plus a free-form
 `metadata` block). The renderer reads both forms.
+
+## Bundled assets
+
+A skill directory may carry an `assets/` sibling of its `SKILL.md` — helper
+scripts, templates, or a skeleton tree the skill tells the assistant to copy.
+`replicating-studies` is the first to use it, shipping report/plot templates
+and a FAIR study layout.
+
+Only the directory-shaped **claude-code** target can hold assets: `install`
+and `sync` mirror `assets/` next to the rendered `SKILL.md` (so an installed
+skill lives at `~/.claude/skills/tvbo-<name>/SKILL.md` **and**
+`~/.claude/skills/tvbo-<name>/assets/`), and `uninstall` removes it. The flat
+targets (Cursor, Copilot, raw prompt) carry the skill body only. Byte-compiled
+files (`__pycache__`, `*.pyc`) are never mirrored.

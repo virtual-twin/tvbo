@@ -22,11 +22,12 @@ tvbo skills install --target claude-code
 
 (Replace `claude-code` with `cursor` if you use Cursor.)
 
-That writes four small files under `~/.claude/skills/` (or `~/.cursor/rules/`):
+That installs five skills under `~/.claude/skills/` (or `~/.cursor/rules/`):
 
 - `tvbo-overview` — what TVBO is, the three pillars
 - `tvbo-writing-models` — how to specify a `Dynamics` in YAML or Python
 - `tvbo-running-simulations` — how to run an experiment, pick a backend
+- `tvbo-replicating-studies` — how to replicate a published study end-to-end
 - `tvbo-platform` — how to use [tvbo.charite.de](https://tvbo.charite.de)
 
 These do **not** auto-fire on every prompt. Claude Code (for instance) loads a

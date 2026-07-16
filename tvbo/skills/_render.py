@@ -33,15 +33,31 @@ User-target installs (``claude-code`` / ``cursor`` invoked by
 ``tvbo skills install``) add a ``tvbo-`` prefix to the on-disk name and stamp
 ``managed-by: tvbo`` + ``tvbo-version: …`` into the frontmatter so we can
 safely overwrite our own files on upgrade without clobbering user edits.
+
+A skill directory may carry an ``assets/`` sibling of its ``SKILL.md`` (helper
+scripts, templates, a skeleton). Only the directory-shaped ``claude-code``
+target can hold it: the renderer mirrors ``assets/`` next to the rendered
+``SKILL.md`` and prunes it on uninstall. The flat targets (``cursor``,
+``copilot``, ``prompt``, ``agents-md``) carry the body only.
 """
 from __future__ import annotations
 
+import fnmatch
 import re
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
 import yaml
+
+ASSET_IGNORE = ("__pycache__", "*.py[cod]", ".DS_Store")
+"""Byte-compiled / OS-noise names never carried into a rendered ``assets/`` mirror."""
+
+
+def is_asset_noise(rel: Path) -> bool:
+    """True if any component of a mirrored-asset relative path is :data:`ASSET_IGNORE`."""
+    return any(fnmatch.fnmatch(part, pat) for part in rel.parts for pat in ASSET_IGNORE)
 
 CANONICAL_PACKAGE_DIR = Path(__file__).parent / "canonical"
 """User-skill canonical root (ships in the wheel as package data)."""
@@ -65,6 +81,8 @@ class Skill:
     requires_extras: list[str] = field(default_factory=list)
     body: str = ""
     source: Path | None = None
+    assets_dir: Path | None = None
+    """Sibling ``assets/`` directory of ``SKILL.md``, if present."""
 
     @property
     def install_name(self) -> str:
@@ -119,6 +137,7 @@ def parse_skill(path: Path) -> Skill:
     audience = _field("audience", "both")
     if audience not in {"maintainer", "user", "both"}:
         raise ValueError(f"{path}: audience must be maintainer|user|both, got {audience!r}")
+    assets = path.parent / "assets"
     return Skill(
         name=name,
         description=description,
@@ -128,6 +147,7 @@ def parse_skill(path: Path) -> Skill:
         requires_extras=list(_field("requires_extras") or []),
         body=body.rstrip() + "\n",
         source=path,
+        assets_dir=assets if assets.is_dir() else None,
     )
 
 
@@ -154,6 +174,23 @@ def _dump_frontmatter(data: dict) -> str:
 
 def _wrap(fm: dict, body: str) -> str:
     return f"---\n{_dump_frontmatter(fm)}\n---\n\n{body.lstrip()}"
+
+
+def _sync_assets(assets_dir: Path | None, dest_skill_dir: Path) -> None:
+    """Mirror a skill's ``assets/`` dir next to its rendered ``SKILL.md``.
+
+    Idempotent: the destination ``assets/`` is rebuilt from source on every
+    render, so files removed upstream do not linger. A skill with no ``assets/``
+    leaves the destination without one (and prunes a stale copy if present).
+    """
+    dest_assets = dest_skill_dir / "assets"
+    if dest_assets.exists():
+        shutil.rmtree(dest_assets)
+    if assets_dir is not None and assets_dir.is_dir():
+        # Skip byte-compiled / OS noise so the mirror (and wheel) stay deterministic.
+        shutil.copytree(
+            assets_dir, dest_assets, ignore=shutil.ignore_patterns(*ASSET_IGNORE)
+        )
 
 
 def render_claude_code(
@@ -184,6 +221,7 @@ def render_claude_code(
     out = dest_dir / target_name / "SKILL.md"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(_wrap(fm, skill.body), encoding="utf-8")
+    _sync_assets(skill.assets_dir, out.parent)
     return out
 
 

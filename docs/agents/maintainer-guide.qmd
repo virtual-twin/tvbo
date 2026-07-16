@@ -33,7 +33,8 @@ tvbo/                                # repo root
             ├── overview/SKILL.md
             ├── writing-models/SKILL.md
             ├── running-simulations/SKILL.md
-            └── platform/SKILL.md
+            ├── platform/SKILL.md
+            └── replicating-studies/  # SKILL.md + assets/ (templates, skeleton)
 ```
 
 ## The pipeline
@@ -108,6 +109,8 @@ This:
 
 - Parses every canonical `SKILL.md` from both roots.
 - Writes `.claude/skills/<name>/SKILL.md` for every skill.
+- Mirrors each skill's `assets/` dir, if it has one, next to that
+  `.claude/skills/<name>/SKILL.md`.
 - Writes `.github/instructions/<name>.instructions.md` for every
   *maintainer-tagged* skill.
 - Regenerates the skills-index region of `AGENTS.md`.
@@ -115,7 +118,7 @@ This:
 Output:
 
 ```
-synced 11 skills → 19 files
+synced 12 skills → 20 files
 ```
 
 ### 4. Verify
@@ -139,6 +142,30 @@ Do **not** edit the adapter outputs:
 
 Sync will overwrite them. Edits there are silently lost.
 
+## Bundling assets with a skill
+
+A canonical skill may ship an `assets/` directory beside its `SKILL.md` —
+templates, helper scripts, or a skeleton tree the skill instructs the
+assistant to copy:
+
+```
+tvbo/skills/canonical/<name>/
+├── SKILL.md
+└── assets/
+    ├── report.qmd.tmpl
+    └── skeleton/...
+```
+
+`sync` and `install` mirror `assets/` next to the rendered `SKILL.md`, but
+**only for the directory-shaped `claude-code` target** (the flat Cursor /
+Copilot / prompt outputs carry the body alone). `uninstall` removes it and
+`sync --check` diffs the tree. Assets ship in the wheel through the same
+`tvbo/skills/canonical/**` inclusion as `SKILL.md` — no extra packaging config.
+
+Syntax-check an asset `.py` with `ast.parse` (writes nothing), **not**
+`py_compile` — the latter drops a `__pycache__/*.pyc` under the canonical
+source. Sync ignores bytecode when mirroring, but keep the source clean.
+
 ## Releasing the wheel
 
 `tvbo/skills/canonical/**` is bundled by the standard
@@ -150,7 +177,8 @@ hatch build
 unzip -l dist/tvbo-*.whl | grep skills/canonical
 ```
 
-You should see all four user `SKILL.md` files inside the wheel.
+You should see all five user `SKILL.md` files inside the wheel, plus any
+`assets/` a skill ships (e.g. `replicating-studies/assets/...`).
 
 ## Versioning the marker
 
