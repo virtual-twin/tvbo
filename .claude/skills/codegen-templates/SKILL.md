@@ -31,7 +31,7 @@ Adapters wrap *external* simulators (TVB, Julia, NeuroML, PyRates, BifurcationKi
 
 1. Add the adapter under `tvbo/adapters/<backend>.py` extending the base class.
 2. Add the template tree under `tvbo/templates/<backend>/`.
-3. Add a `backend_<backend>` pytest marker in `[tool.pytest.ini_options].markers` (see the `tests-and-backends` skill).
+3. Register a `backend_<backend>` pytest marker (see the `tests-and-backends` skill).
 4. Wire dispatch in `tvbo/codegen/templater.py`.
 5. Ensure the optional dependency lives in `pyproject.toml` under `[project.optional-dependencies]`.
 
