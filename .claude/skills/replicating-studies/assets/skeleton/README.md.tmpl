@@ -22,7 +22,7 @@ the report's scorecard). Backend chosen by fit — see `original_study/analysis/
 ```
 ## Reproduce
 ```bash
-python code/prepare_<study>.py            # raw source (per input/DATA.md) -> tvbo-ready Network
+python code/prepare_<study>.py            # (only if the study has external inputs) raw source -> tvbo-ready Network
 tvbo run <Study>.yaml                      # all experiments in dependency order (--experiment for a subset)
 python code/figures/plot.py               # all figures + A/B composites -> output/figures/
 quarto render report/report.qmd --to pdf  # every number computed, no hardcoding
