@@ -16,6 +16,9 @@ import matplotlib.pyplot as plt
 import bsplot
 from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import TRANSFORMS as _TF, CUSTOM_PANELS as _CP
+% for m in code_modules:
+import ${m}  # noqa: F401 — registers this study's custom panels/transforms into _CP / _TF
+% endfor
 
 
 @functools.lru_cache(maxsize=None)
