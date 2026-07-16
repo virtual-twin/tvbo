@@ -12,5 +12,8 @@ listing:
 
 Computational replications of published neuroscience studies using TVB-O.
 
+See **[the replication pipeline](pipeline.qmd)** for how a study becomes generated
+simulations, figures, and HPC jobs from one declarative spec.
+
 ::: {#replication-listing}
 :::
