@@ -158,6 +158,68 @@ sweep coordinates (`--compress` gzip-deflates the HDF5). A single-task run
 (`chunk: 1`, the GPU profile below) writes the whole result directly, so it needs
 no finalize step.
 
+## Per-subject dataset fan-out
+
+When an experiment fits against **per-subject** empirical data, it declares a
+`dataset:` block and an observation whose `source` is `dataset.subject.<measure>`
+(the target selected by a BIDS `query` under `dataset.bids_root`). The planner
+lowers this to one array task per subject: `$SLURM_ARRAY_TASK_ID` indexes the
+subject list, and each task resolves that subject's target before its fit.
+
+```yaml
+dataset:
+  dataset_id: hcpya
+  bids_root: /data/hcp/functional_connectomes   # per-subject FC tree
+  subjects: [100206, 100307, 100408]            # optional: a curated subset (else: all)
+observations:
+  empirical_fc:
+    source: [dataset.subject.fc]
+    query: {atlas: HCPMMP1, desc: FCavg, suffix: relmat}
+    reconcile: by_label
+```
+
+An explicit `dataset.subjects` list **scopes** the fan-out — one entry for a
+single-subject kit, a handful for a pilot, omitted to sweep the whole cohort.
+
+The per-subject data itself reaches the compute node one of two ways:
+
+**Reference it (large cohorts).** By default the kit records the absolute
+`dataset.bids_root`. That tree is machine-specific, so stage it on the cluster and
+point each task at it with `$TVBO_BIDS_ROOT` — the `run.sbatch` reads it with no
+hand-edit (unset → keeps the baked value):
+
+```bash
+export TVBO_BIDS_ROOT=/cephfs/hcp/functional_connectomes
+tvbo workflow submit cohort_kit.tar.gz
+```
+
+**Bundle it (self-contained kit).** `--bundle-dataset` copies each enumerated
+subject's target (sidecar **+** its payload) into `spec/dataset/` and rewrites
+`dataset.bids_root` to a relative path that resolves against the frozen spec. The
+kit then carries exactly the files its fan-out consumes — no upload, no
+`$TVBO_BIDS_ROOT`. It resolves **from the spec itself**: the observation's own
+`query` (`{atlas: HCPMMP1, desc: FCavg, suffix: relmat}` above) already names the
+file, so no extra flags are needed:
+
+```bash
+tvbo workflow slurm study.yaml --experiment 30 --bundle-dataset --pack -o cohort_kit
+# → cohort_kit.tar.gz carries spec/dataset/sub-<id>/… for the scoped subjects only
+```
+
+`--bundle-select KEY=VALUE` is only an override for when a subject directory holds
+**several** files matching the query — the bundler otherwise raises a clear
+"ambiguous … add entities to disambiguate" error naming the candidates, so you add
+just the entity that separates them:
+
+```bash
+tvbo workflow slurm study.yaml --experiment 30 \
+  --bundle-dataset --bundle-select acquisition=run1 --pack -o cohort_kit
+```
+
+A *requested* bundle that cannot be resolved (a missing file, an over-tight or
+mismatched `--bundle-select`) fails loudly at emit time — a self-contained kit is
+never shipped silently pointing at data it does not carry.
+
 ## CPU and GPU: pick the tier that fits the resource
 
 The two tiers trade off against node availability.
