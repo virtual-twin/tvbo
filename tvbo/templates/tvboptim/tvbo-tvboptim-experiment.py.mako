@@ -1179,11 +1179,12 @@ import optax
 from tvboptim.types import Parameter, BoundedParameter
 from tvboptim.optim.optax import OptaxOptimizer
 from tvboptim.optim.callbacks import MultiCallback, SavingLossCallback, SavingParametersCallback
-from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback, progress_ticker
+from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
+from tvbo.templates.tvboptim.callbacks import progress_ticker   # grid-batch / lyapunov sweep progress
 % endif
 % if has_nsga2:
 # Multi-objective search (Exploration.strategy == 'nsga2') + Pareto-seeded refinement.
@@ -1555,16 +1556,49 @@ def _apply_seed_dynamics(state):
 # it to build per-cell (swept value, settled state) pairs. None (the default) is a no-op.
 _BRANCH_SEED = None
 
-# Runtime PARAMETER seed (InitialState.seed_parameters, from_experiment): per-node
-# model-parameter values loaded from the source run (e.g. a control mask g), keyed
-# by parameter name -> (n_nodes,), handed in as run_experiment(seed_params=...).
+# Runtime PARAMETER seed (from_experiment Parameter.measure): model-parameter values
+# loaded from the source run's operating point — a recorded observation (e.g. a control
+# mask g) or a tuned free parameter (estimate__<param>, e.g. wLRE/wFFI). Keyed by
+# parameter name; per-node vectors AND per-edge matrices. Handed in as
+# run_experiment(seed_params=...).
 _SEED_PARAMS = None
+<%
+    _seed_coupling_home = {}
+    for _ck, _cobj in (all_couplings or {}).items():
+        _cparams = getattr(_cobj, "parameters", None) or {}
+        _pnames = list(_cparams.keys()) if hasattr(_cparams, "keys") \
+            else [getattr(_p, "name", None) for _p in _cparams]
+        for _pn in _pnames:
+            if _pn:
+                _seed_coupling_home[_pn] = _ck
+%>\
+% if _seed_coupling_home:
+
+# Coupling home for each seedable coupling parameter (dynamics params route to dynamics).
+_SEED_PARAM_COUPLING = {
+% for _pn, _ck in _seed_coupling_home.items():
+    ${repr(_pn)}: ${repr(_ck)},
+% endfor
+}
+
+def _apply_seed_params(state):
+    if _SEED_PARAMS is not None:
+        for _name, _vals in _SEED_PARAMS.items():
+            _v = jnp.asarray(_vals)
+            _ck = _SEED_PARAM_COUPLING.get(_name)
+            if _ck is not None:
+                setattr(state.coupling[_ck], _name, _v)   # per-edge coupling param (e.g. wLRE)
+            else:
+                state.dynamics[_name] = _v                 # per-node dynamics param (e.g. g)
+    return state
+% else:
 
 def _apply_seed_params(state):
     if _SEED_PARAMS is not None:
         for _name, _vals in _SEED_PARAMS.items():
             state.dynamics[_name] = jnp.asarray(_vals)
     return state
+% endif
 
 def run_simulation(
     network: Network,

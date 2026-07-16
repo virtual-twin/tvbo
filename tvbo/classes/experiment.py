@@ -1859,47 +1859,73 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         }
 
     def _resolve_from_experiment_params(self, results_root=None):
-        """Load per-node model PARAMETERS sourced from the from_experiment operating point.
+        """Load model PARAMETERS sourced from the from_experiment operating point.
 
-        A heterogeneous parameter that declares ``measure: <observation>`` in a
-        ``method=from_experiment`` experiment takes its per-node values from that
-        named observation of the source run's operating point — the parameter
-        analogue of the state IC seed, and the same ``Parameter.source``/``measure``
-        mechanism ``P`` uses to source per-node net power from a network. (Here the
-        source is the operating point another experiment recorded, e.g. ``g`` from
-        its ``control_mask``.) Returns ``{param_name: (n_nodes,)}``, or ``None`` when
-        no parameter sources a value this way.
+        A parameter (dynamics **or** coupling) that declares ``measure: <name>`` in a
+        ``method=from_experiment`` experiment takes its value from the source run's
+        operating point. Two flavours share one path: a recorded per-node observation
+        (e.g. ``g`` from a ``control_mask``), or a tuned free parameter the source fit
+        persisted as ``estimate__<name>`` (warm-start / prior location, e.g. ``wLRE``).
+        Per-node **vectors and per-edge matrices** are both handled; when the source
+        array carries node-label coordinates (``node`` / ``node_i``+``node_j``) it is
+        reconciled to THIS experiment's network **by label** — alias-aware, on every
+        node axis — via the same `.sel` path the dataset targets use. An unlabelled
+        source array is taken in model order (legacy behaviour). Returns
+        ``{param_name: ndarray}``, or ``None`` when no parameter sources a value.
         """
         ini = getattr(self, "initial_state", None)
         if ini is None or str(getattr(ini, "method", "") or "") != "from_experiment":
             return None
-        params = self.dynamics.parameters
-        pitems = params.items() if hasattr(params, "items") else [(getattr(p, "name", None), p) for p in params]
-        wanted = {(getattr(p, "name", None) or key): str(getattr(p, "measure", "") or "")
-                  for key, p in pitems if getattr(p, "measure", None)}
+
+        # Parameters that source from the operating point — dynamics + coupling.
+        def _items(params):
+            if params is None:
+                return []
+            return list(params.items()) if hasattr(params, "items") \
+                else [(getattr(p, "name", None), p) for p in params]
+
+        def _couplings(obj):
+            if obj is None:
+                return []
+            if hasattr(obj, "values"):
+                return list(obj.values())
+            return list(obj) if isinstance(obj, (list, tuple)) else [obj]
+
+        wanted: dict = {}
+        param_sets = [getattr(getattr(self, "dynamics", None), "parameters", None)]
+        net = getattr(self, "network", None)
+        for c in _couplings(getattr(net, "coupling", None)) + _couplings(getattr(self, "coupling", None)):
+            param_sets.append(getattr(c, "parameters", None))
+        for ps in param_sets:
+            for key, p in _items(ps):
+                m = str(getattr(p, "measure", "") or "")
+                nm = getattr(p, "name", None) or key
+                if m and nm and nm not in wanted:
+                    wanted[nm] = m
         if not wanted:
             return None
+
         src = getattr(ini, "source_experiment", None)
         if src is None:
             raise ValueError("initial_state.method=from_experiment requires source_experiment")
         source_id = int(getattr(src, "id", src))
-
         src_h5 = self._locate_source_result(results_root, source_id)
+
         n_nodes = len(self.network.nodes) if self.network.nodes else None
         point = str(getattr(ini, "source_point", "") or "endpoint")
         # 'branch' has no single point for a parameter value; fall back to the settled
         # endpoint rather than crash on int('branch').
         sel = -1 if point in ("", "endpoint", "branch") else int(point)
 
-        def _node_dim(da):
+        def _node_dims(da):
+            labelled = [d for d in da.dims if str(d).startswith("node")]
+            if labelled:
+                return labelled
             if n_nodes is not None:
-                for d in da.dims:
-                    if da.sizes[d] == n_nodes:
-                        return d
-            for d in da.dims:
-                if "node" in str(d).lower():
-                    return d
-            return da.dims[-1]
+                by_size = [d for d in da.dims if da.sizes[d] == n_nodes]
+                if by_size:
+                    return by_size[:1]
+            return [da.dims[-1]]
 
         def _measure_key(ds, measure):
             for k in ds.data_vars:
@@ -1907,18 +1933,37 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     return k
             raise KeyError(
                 f"initial_state.from_experiment: source experiment {source_id} does not record "
-                f"the observation '{measure}' needed to source a parameter. Have the source "
-                f"experiment record it (e.g. a per-node control mask)."
+                f"'{measure}' (looked for an observation or estimate__{measure}). Have the source "
+                f"record it — a per-node observation, or a tuned free parameter."
             )
+
+        _recon: dict = {}   # cache the network-invariant alias map + model labels
+        def _reconcile(da, node_dims):
+            # Relabel each LABELLED node axis source->canonical, then select this model's
+            # node order (both axes for a matrix). Unlabelled axes are assumed already in
+            # model order (legacy). Reuses the dataset-target `.sel` reconcile path. The
+            # alias map + labels depend only on self.network, so compute them once (lazily,
+            # to keep the all-unlabelled case free of an atlas load) and reuse across params.
+            labelled = [d for d in node_dims if d in da.coords]
+            if not labelled:
+                return np.asarray(da.values)
+            if not _recon:
+                _recon["amap"] = self.network.region_alias_map()
+                _recon["labels"] = self._resolve_model_node_labels()
+            for d in labelled:
+                da = da.assign_coords({d: [_recon["amap"].get(str(l), str(l)) for l in da[d].values]})
+                da = da.sel({d: _recon["labels"]})
+            return np.asarray(da.values)
 
         ds = xr.open_dataset(src_h5, engine="h5netcdf")
         try:
             out = {}
             for pname, measure in wanted.items():
                 da = ds[_measure_key(ds, measure)]
-                for d in [d for d in da.dims if d != _node_dim(da)]:
-                    da = da.isel({d: sel})
-                out[pname] = jnp.asarray(np.asarray(da.values).ravel())
+                node_dims = _node_dims(da)
+                for d in [d for d in da.dims if d not in node_dims]:
+                    da = da.isel({d: sel})     # settle any swept dims to the operating point
+                out[pname] = jnp.asarray(_reconcile(da, node_dims))
         finally:
             ds.close()
         return out

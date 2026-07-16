@@ -389,6 +389,92 @@ regression. Not blocking the RC paper — flagged here for after that
 schema PR lands.
 
 
+## Operating-point primitive: constraint-defined parameters + linear-response observations
+
+**One capability, driven by Deco 2014 Figs 2c/5/6, but use-case-independent.** The unifying
+insight: FIC's `J_i` and the Fig 5/6 analytic observables (covariance, PSD, Fisher) are *the same
+kind of thing* — **symbolic quantities defined by a relation, resolved at a computed operating
+point**. Build the primitive once; both fall out.
+
+### First-class `OperatingPoint`
+- A declared, resolvable fixed point of the (deterministic) vector field:
+  `operating_point: {method: time_integration | newton}`. Reuses the existing
+  `initial_state: time_integration` machinery; `newton` solves `f(x*,p)=0` directly (noise off).
+- BOTH free-parameter constraints (below) AND observations (below) are evaluated **relative to
+  it**. It is the shared object, resolved per-backend (Julia time-integration for continuation;
+  JAX `solve_fp`/newton for observations).
+
+### FIC = constraint-defined `DerivedParameter` (NO control law)
+- `J_i` is already declared `free: true` (a *derived* parameter — value determined by tuning, not
+  the user). Its set-point is already declared as the FIC `Algorithm`'s `TuningObjective`
+  (`activity_target`, `target_variable: S_e`, `target_value`). **Reuse both — zero new schema.**
+- Continuation realization: extend the **network-continuation** codegen (`_build_network_context`
+  + the `network_mode` branch already built) so `free` params become **extra unknown blocks whose
+  defining equation is the `TuningObjective` residual** (`H_e − target = 0`), not an ODE. This is a
+  defining-function / extended-system continuation. `J_i(G)` falls out of the equilibrium; the
+  Deco "FIC diverges at G>4.45" appears as a **feasibility-boundary bifurcation** of the
+  constrained system. Faithful to Deco's `fsolve` (algebraic tuning), no fake timescale, no
+  spurious slow eigenvalue.
+- Generalizes for free to EIB `wLRE`/`wFFI` and any future tuned parameter.
+- **Parked (separate, optional):** a genuinely *dynamical* homeostasis mode — the same law as a
+  co-integrated slow state `dJ_i/dt = η·S_i·(H_e−ρ)` (Vogels/Schirner live plasticity). Same
+  equilibrium; build only when a live-plasticity model needs it. NOT for faithful Deco.
+
+### Operating-point-relative observations (Figs 5/6) — closes E1/E2
+- Observation callables must receive **(resolved model params, operating-point state,
+  `network.weight`)** as **symbols via `render_expression`** (`tvbo/codegen/code.py:1216`), jnp
+  output — NOT `numpy`, NOT `jnp.array(repr(...))`. **Supersedes the reverted numpy
+  `_network_weights` block** in `tvbo-tvboptim-observation.py.mako` (working-tree revert pending).
+- Runs on **tvboptim/JAX** (host-observation path — the analytic observables are differentiable
+  linear-response quantities at the FP; see `reference-tvbo-observation-host-grid-split`).
+
+### Symbolic solver spec (backend-abstracted printer primitives)
+**This is the linear-algebra layer for the observables above — declare symbolic, emit per-backend,
+implement only the backend a use-case needs.** Follows
+`feedback-codegen-backend-abstracted-printer-primitives` (cf. `~/tools/tvbo-arrayops`).
+- **Jacobian `A` — fully symbolic, no autodiff.** The dfun is already symbolic, so
+  `A = sympy.Matrix(dfun_rhs).jacobian(state_vars)`; print via `render_expression`. Backend-
+  independent by construction (emits `jnp` on JAX, `ForwardDiff`/analytic on Julia). Noise `Q`
+  from the declared noise (`nsig`/`sigma` → diagonal), also symbolic.
+- **Solve/inverse primitives** — the only true numerical-linear-algebra ops. Add as ONE
+  sympy-printer handler each, dispatching to per-printer primitives:
+  - `lyapunov(A, Q)` → continuous Lyapunov `AΣ+ΣAᵀ+Q=0` (covariance, Eq 24).
+    JAX: `jax.scipy.linalg.solve_continuous_lyapunov`. Julia: **stub** (add when needed).
+  - `matrix_inverse(M)` → for PSD `(iωI−A)⁻¹ Q (iωI−A)⁻ᴴ` (Eq 28), swept over ω.
+    JAX: `jnp.linalg.inv` / `jnp.linalg.solve`. Julia: **stub**.
+  - (Fisher Eq 33/34 = trace/quadratic forms over the above — reuse `matrix_inverse` + existing
+    reduce/trace primitives; no new primitive.)
+- Implement the **JAX emission now** (Figs 5/6 target JAX); leave Julia emission stubbed with a
+  clear `NotImplementedError` so the general structure exists without gold-plating an unused
+  backend. Register the primitives in the arrayops printer table, not ad hoc in the template.
+- **Definition of done:** `render_expression` of a Lyapunov/PSD relation over the symbolic Jacobian
+  emits valid jnp; the numbers match the current `deco2014_plot.py` `solve_fp`/moments/PSD/Fisher
+  values (bit-close), with the whole thing declared in the recipe — no hand-rolled plotter math.
+
+Full narrative dev-plan + phase gates:
+`…/replication_studies/Deco2014/docs_Replication_Deco2014/DEV_PLAN_recipe_native.md`.
+
+## Unify by-label node reconcile as a backend-printed arrayops primitive
+
+**Status:** someday / generalization (deferred 2026-07-15). Backend-portable **indexing**,
+not symbolic math — sympy is only the delivery vehicle (printer primitive), the op is a gather.
+
+Every by-label node alignment in tvbo computes a gather index in Python (`region_alias_map()`
++ shared-labels) and applies it ad hoc:
+- dataset-FC reconcile — `resolve_dataset_observations` / `dataset_reconcile_index` (`.sel` / numpy take),
+- the `from_experiment` free-parameter warm-start — `estimate__<param>` → reconciled seed
+  (reuses the dataset reconcile machinery today; see `dev/from-experiment-parameter-warmstart-design.md`),
+- any future node-map / atlas-crosswalk alignment.
+
+Generalize into ONE backend-abstracted arrayops primitive
+`gather_by_label(arr, src_labels, dst_labels, alias_map)` (vector → 1 axis; square matrix → both
+axes), registered in the arrayops printer table (numpy / jax / julia), so all three share it.
+**Not needed for the warm-start itself** — that seed is a resolve-time constant, so the existing
+Python reconcile is reused. Worth doing when a second consumer needs a *backend-portable*
+label-gather (inside the emitted/differentiable path), or purely to dedup the three ad-hoc paths.
+Register in the arrayops printer table, not ad hoc in a template
+(`feedback-codegen-backend-abstracted-printer-primitives`).
+
 ## Improve Observations
 
 - **Stateful Observations** (BOLD / balloon-Windkessel pattern). Some
@@ -534,89 +620,71 @@ observation renders on jax/numpy but not Julia until this is fixed. Low priority
 (DM circuit runs on jax/numpy), but it's a genuine printer bug in the
 `argmax`-times-scalar path.
 
-### Codegen-emit streaming reducers (drop hardcoded `tvboptim` factories)
+### Codegen-emit streaming reducers (tvbo emits, tvboptim ships none)
 
-**Motivation.** Windowed pipeline reducers (`compute_fc` → an incremental FC
-accumulator, dFC/FCD, metastability) are today realised by **hand-written
-factories that live in `tvboptim`** and are referenced by fully-qualified string
-in `tvbo/codegen/streaming_reducers.py` (`tvboptim.observations.observation.
-windowed_cov`, `…windowed_fcd`). The generated experiment calls that factory
-directly, so tvbo is coupled to a *specific tvboptim build*. This drifted: the
-streaming feature named `windowed_cov`, but the locked, PyPI-released
-`tvboptim==0.2.4` exposes only `compute_fc` — CI raised
-`AttributeError: module 'tvboptim.observations.observation' has no attribute
-'windowed_cov'` (`Native (tvboptim)` + `Container (tvboptim)`, 2026-07-13). The
-hardcoded realisation is the wrong layer: the reducer's math is
-backend-independent and should be **specified symbolically in metadata and
-emitted by codegen for each backend**, not imported from one backend's package.
+**Principle.** Windowed pipeline reducers (`compute_fc` → an incremental FC
+accumulator, dFC/FCD, metastability) are backend-independent math. tvbo EMITS the
+concrete reducer into the generated experiment; the backend provides only the
+framework the reducer plugs into (tvboptim's sliding-window loop drives an
+`add/evict/emit/resync` protocol). Realizes the global "tvbo extends backends via
+codegen" principle. (Origin: referencing tvboptim's unreleased `windowed_cov` by
+string broke CI on the pinned `0.2.4` — hand-writing a realization in one backend
+was the wrong layer.)
 
-**Stopgap shipped (2026-07-13, commit on this PR).**
-`lookup_streaming_reducer` now resolves the factory via `_factory_available`
-(memoised `importlib` check) and returns `None` — i.e. falls back to the
-**byte-identical recompute path** already documented as the fallback — when the
-factory is absent in the installed backend. Keeps every tvboptim version green
-without changing generated code where the factory *is* present. This only masks
-the coupling; it does not remove it. Once reducers are codegen-emitted (below),
-there is no external factory to resolve and the `_factory_available` guard +
-`StreamingReducerSpec.factory` string both disappear.
+**Stage 1 — DONE (2026-07-14).** The *algorithm* streaming path (mechanism A) now
+emits the reducer instead of importing a tvboptim factory:
+- `StreamingReducerSpec.factory` (tvboptim import string) → `.emitter` (name of a
+  tvbo-emitted factory, `_make_windowed_fc_reducer`).
+- `_factory_available` + the `importlib` guard **deleted** — no external factory
+  to resolve, so the `0.2.4` CI-breakage stopgap is gone by construction.
+- `tvbo-tvboptim-algorithm.py.mako` emits `_make_windowed_fc_reducer` locally (a
+  `SimpleNamespace` with `add/evict/emit/resync`) carrying the **numerically-stable
+  mean-centred** co-moment: Welford `add` + reverse-Welford `evict` downdate +
+  two-pass `resync`. NOT the naive one-pass form → byte-identical to `compute_fc`
+  incl. DC offset (8.3e-17 vs the naive 8.5e-4; proof
+  `scratchpad/verify_windowed_cov.py`). So the precision issue (old finding #1) is
+  fixed **by construction** — no separate windowed_cov fix needed.
+- Generated EI_Tuning code: 0 `windowed_cov` references; `test_experiment_runs
+  [EI_Tuning]` passes. tvboptim's `windowed_cov`/`windowed_fcd` are now
+  unreferenced → **delete them from tvboptim** (its own branch); the uncommitted
+  `windowed_cov` WIP mis-parked on `differentiable-delays` should be **dropped, not
+  fixed**. `types/spaces.py` (Space array-axis) is unrelated — its own tvboptim PR.
+- Files: `tvbo/codegen/streaming_reducers.py`, `tvbo-tvboptim-algorithm.py.mako`.
 
-**Target — symbolic `StreamingReducer` realisation.** Express the reducer's
-`(init, add, evict, emit, finalize, resync)` protocol as symbolic recurrences
-over the sliding window (windowed covariance ≈ running-sum / Welford update on
-`add`, subtract on `evict`; Pearson normalisation on `emit`), authored once in
-metadata, and lower it through the **same** sympy → `JaxPrinter` / `JuliaPrinter`
-/ numpy pipeline every other equation uses. Each backend then emits its own
-`windowed_cov`-equivalent; tvbo ships no reducer realisation and depends on no
-tvboptim reducer API.
+**Stage 2 — DONE: symbolic, use-case-independent, multi-backend lowering.** (2026-07-14)
+- **Recipe is metadata**: the reducer is a declarative `StreamingReducerSpec` authored as
+  YAML in `tvbo/database/reducers/*.yaml` (`state` + `add`/`evict`/`resync` assignment
+  strings + `emit`); `streaming_reducers.py` loads and registers them. **No use case is
+  hardcoded** — adding a reducer is a YAML file. Sequential reassignment encodes the data
+  flow (no `new_*` temporaries).
+- **General resolver**: `tvbo/codegen/reducers.py::resolve_streaming_reducer(spec, fmt)`
+  parses any spec's strings to sympy against its vocabulary and prints per backend. No
+  reducer-specifics.
+- **General template**: `tvbo-tvboptim-algorithm.py.mako` iterates the resolved
+  state/assignments into backend scaffolding with generic comments (0 FC-specific words).
+- **Printer array-ops**: `outer`/`diag`/`zero_diagonal`/`matmul` added to the printers +
+  parse vocabulary (`expression.py`); Julia `global_mean` (axis-mean) wired. The SAME spec
+  now lowers cleanly to **jax and julia** (byte-identical to `compute_fc` incl. DC offset).
 
-**Unify with `Observation.dynamics` (the co-integration slot).** A windowed FC
-reducer *is* a co-integrated state recurrence — running accumulators that advance
-in lock-step with the model and read out a reduced value at emit. That is exactly
-the `Observation.dynamics` (auxiliary co-integrated Dynamics / online reduction)
-mechanism being added on the Observation class. Prefer **one** engine: lower the
-streaming reducer as a co-integrated auxiliary Dynamics rather than maintaining a
-second, string-referenced registry. The `emit_kind: window|stride` distinction
-(step-wise FC vs. per-window dFC/FCD) becomes `period`-driven read-out on that
-Dynamics.
+Remaining Stage-2 follow-ons:
+- **Julia streaming *path*** (not just the reducer math): needs a Julia algorithm template
+  that emits the generic scaffolding + `using LinearAlgebra`/`Statistics`, and a Julia
+  runtime to validate. The reducer math is ready.
+- **Unify with `Observation.dynamics`/`resolve_reduction`** (extend that declarative-
+  recurrence engine with sliding-window `evict`) so there is one reduction engine, not two
+  — gated on that WIP.
+- FCD (`compute_fcd`) YAML with a `stride` emit when the template's stride branch lands
+  (dropped from the registry meanwhile; `is_windowed_reducer(compute_fcd)` is now False).
 
-**Validation.** Byte-identity against (a) the current tvboptim
-`windowed_cov`/`windowed_fcd` reducers where present, and (b) the recompute
-reference via `TVBO_STREAMING_REDUCERS=0`. Re-verify the online-tuning
-experiments (`EI_Tuning_FIC_EIB_Optimization`, `RWW_BOLD_FC_Optimization`).
+**Stage 2 — FCD.** `_make_windowed_fcd_reducer` is registered (stride emit_kind)
+but not yet emitted; `streaming_capable` reports False so it is inert (not broken).
+The stride branch (emit per-window into a growing stream, `finalize` once) is the
+documented follow-on. When wired, `finalize` must take a stacked array, not a
+Python `list` (won't trace under the jitted scan).
 
-**Scope / files.** `tvbo/codegen/streaming_reducers.py` (retire
-`factory`-as-string + `_factory_available`); the streaming branch in
-`tvbo/templates/tvboptim/tvbo-tvboptim-algorithm.py.mako` (emit the lowered
-recurrence instead of calling an imported factory); the reducer symbolic specs in
-metadata (co-located with the `Observation.dynamics` design); a numpy/julia
-emission path so `tvb`/`pyrates`/`julia` gain streaming instead of only the
-recompute fallback. Depends on the `Observation.dynamics` slot + the generic
-procedure/equation engine (see `NetworkGenerator` §, same sympy-printer
-extension). Not blocking — the recompute fallback is correct meanwhile.
-
-#### `windowed_cov` numerical stability (byte-identity precision fix)
-
-The sliding-window streaming FC reducer `windowed_cov` (in the tvboptim worktree,
-`observations/observation.py`) accumulates the **naive one-pass** covariance
-`comoment = sum_xxT − outer(sum_x, sum_x) / count`, which suffers **catastrophic
-cancellation** when the signal mean is large relative to its variance — exactly
-the BOLD/neural case (a large DC baseline on a small fluctuation). `compute_fc`
-(`jnp.corrcoef`, mean-centred) and the sibling `welford_cov` (Chan/Welford merge,
-mean-centred) do **not**; so `windowed_cov` can diverge from `compute_fc` by
-**≫ the 1e-12** the streaming path is swapped in to preserve. `resync`
-(`x.T @ x`, `sum(x)`) is un-centred too, so it does not reset the drift.
-
-**Fix:** rebase `windowed_cov`'s accumulator onto `welford_cov`'s mean-centred
-approach — carry `(count, mean, comoment)` and extend it with the sliding-window
-`evict` (a Chan *downdate*: reverse the mean/comoment merge for the leaving
-sample), rather than the naive sum-of-squares. Then `windowed_cov`, `welford_cov`,
-and `compute_fc` share one numerically-stable co-moment definition instead of two
-divergent ones. Validate byte-identity on a DC-offset BOLD case, not just the
-existing zero-mean-ish test data. **Do this on windowed_cov's own branch off
-`main`** (it is currently uncommitted WIP mis-parked on `differentiable-delays`),
-NOT on the delay branch. Surfaced by the 2026-07-14 `/code-review` (finding #1);
-also flagged: dead `windowed_fcd(n_diag=…)` param, and `windowed_fcd.finalize`'s
-`jnp.stack(list(...))` won't compose under the jitted stride scan.
+**Validation.** Byte-identity against the recompute reference
+(`TVBO_STREAMING_REDUCERS=0`) on the online-tuning experiments (EI_Tuning,
+RWW_BOLD_FC). Stage 1 verified; Stage 2 must re-verify per backend.
 
 ### Explorations: Observations should be also available in Explorations
 
@@ -1289,3 +1357,87 @@ engine-specific lines.
 Context: per-engine `setup` hook + `tvbo workflow submit` landed 2026-07-13. The
 per-engine model is consistent with `env`/`venv`/`modules`; this only removes the
 multi-engine duplication.
+
+## tvboptim: sparse coupling for delayed / nonlinear per-edge `pre` (framework gap)
+
+Instantaneous *vectorized* (source-only) sparse coupling is DONE tvbo-side: the factored
+angle-addition form (`pre=[sin,cos]`, `post` recombine) + `Network.graph_representation:
+sparse` emits `SparseGraph` in the experiment codegen (Taher2019 sweeps: ~7.7× faster,
+byte-identical, tested in `tests/test_codegen_sparse_graph.py`). What remains is a genuine
+**tvboptim** primitive gap for the two cases that must stay per-edge:
+
+- a **delayed** difference coupling — θ_j(t−τ_ij) is edge-indexed, so it can't reduce to a
+  per-node mat-vec; and
+- any **nonlinear per-edge `pre`** (sigmoidal Jansen-Rit, hyperbolic tangent, …).
+
+tvboptim's sparse per-edge path (`experimental/network_dynamics/coupling/base.py`,
+`_compute_sparse_incoming` → `_sparse_pre` → `jsparse.sparsify(self.pre)`) requires `pre`
+to be sparsity-preserving, so a nonlinear `pre` (e.g. `cos`) raises
+`NotImplementedError: sparse rule for cos … would result in dense output`.
+
+**Fix (small, local, general):** in the sparse per-edge path, replace
+`jsparse.sparsify(pre)` with an element-wise-over-`nnz` evaluation — gather source/target
+states at the edge indices (the dense edge-gather already exists in
+`_sparse_weighted_sum(..., is_bcoo=False)`), apply `pre` element-wise, then scatter-sum
+`pre_vals * weights.data`. This unblocks *every* nonlinear coupling on sparse graphs; tvbo
+needs nothing beyond emitting the factored `pre`/`post` (already supported).
+
+Not on the critical path for Taher — its delayed control runs are single sims (cheap,
+local) and correctly fall back to dense via the `use_sparse` gate (instantaneous +
+vectorized only). Surfaced 2026-07-15 while adding the sparse codegen.
+
+## Progress logging for exploration / sweep `lax.scan` (JAX-native `io_callback`)
+
+PR#63 (central logging) wired `LoggingProgressCallback` into the OPTIMIZER path only
+(optax loops, `tvbo/templates/tvboptim/callbacks.py`). The EXPLORATION / sweep path —
+`adiabatic_scan` (hysteresis + operating point), `lyapunov_branch` (Benettin), and the
+vmapped exploration grid — runs as one JIT-compiled `jax.lax.scan`, so it logs
+`STEP 2 > <exploration>` and then nothing until it returns. For a long sweep (Taher exp 30
+was ~8 h before the sparse win) the .out stays empty the whole run — the cluster
+"empty log" complaint.
+
+**Fix (JAX-native, no JIT break):** `jax.experimental.io_callback` (already in the env)
+fires a host callback from *inside* a `lax.scan`. Carry an iteration counter in the scan
+carry and call `io_callback(log_progress, ..., k, total)` every N steps → stream
+"K 42/181 …" through the central `tvbo.run` logger, gated by `TVBO_LOG_LEVEL`. This is the
+`jax_tqdm` pattern (~15 lines; jax_tqdm itself need not be a dependency). Wire it into the
+sweep / Lyapunov / grid codegen partials (`tvbo-tvboptim-sweep.py.mako`, the exploration
+`<%def>`s). Surfaced 2026-07-15 running the Taher Lyapunov + hysteresis sweeps (they went
+silent after `> lyapunov_branch` / `> hysteresis_sweep` despite finishing in ~15–25 min).
+
+## Figure spec — declarative figures from result containers
+
+Close the last open end of full study replication: **map result data → publication
+figures** declaratively. Design agreed + schema stub drafted 2026-07-16 — full write-up
+in `dev/figure-spec-design.md`.
+
+LinkML-native `Figure/Panel/Layer/DataRef` (+ Encoding/Guard/ColorbarSpec/Style) in `schema/`
+(stub: `schema/figure.yaml`, /simplify-reviewed to 8 classes reusing tvbo's name/description/
+label/iri + Provenance/Argument; wired into tvbo_datamodel + regen; SimulationStudy.figures
+added). Rendering is **codegen** (not a runtime interpreter): a bsplot adapter
+(`tvbo/adapters/bsplot.py`) resolves context + a Mako tree (`tvbo/templates/bsplot/`) emits a
+self-contained `plot.py` — same machinery as sims/reports; the emitted script IS the
+replication deliverable. `figure.render_code('bsplot')`/`.render('bsplot')` mirror
+`experiment.render_code`/`.run`. 2nd backend = new template tree, not a rewrite. Turns each
+study's hand-written `plot.py` into a generated one + a registered escape hatch (`custom`
+panel callable / `transform`) for the bespoke.
+
+Resolved: unified `Panel` with `kind` enum (`cartesian`/`heatmap` grammar + `custom`/`image`
+peers; `surface`/`network` reserved); data binding `used: {experiment: IRI, output, sel}`
+(= PROV `used`, label-keyed); compute ladder Observation → declarative-postproc → callable;
+**per-panel** backend (mixed-backend figures prepared, MVP all mpl); lightweight
+PROV-by-`slot_uri`; **insets/colorbar/legend** first-class (per-node mini-plots, marginals,
+zoom, pinned inset colorbars).
+
+Build (walking skeleton): (1) ✅ wire `schema/figure.yaml` in + LinkML regen + SimulationStudy.figures;
+(2) codegen — `tvbo/adapters/bsplot.py` (resolve context) + `tvbo/templates/bsplot/` Mako tree
+(`<%def>` partials `panel_cartesian`/`panel_heatmap`/`panel_image`/`panel_custom`, mosaic via
+`bsplot.figure.subplots`, `style.use`, `format_fig`, guard→placeholder, insets) emitting `plot.py`;
+(3) IRI→container binding (skip `*_network.h5`, `observation__`, `sel`, sidecar params);
+(4) **PROOF**: `render_code('bsplot')` a Jansen1995 figure, run vs `output/nc/*`, diff the original;
+(5) widen to Taher2019 (bifurcation/sweep/A-B/placeholder/insets); (6) registries + `tvbo figure render`;
+(7) **workflow/HPC**: figure-rule `<%def>` in `tvbo/templates/workflow/{snakemake,slurm,nextflow}/` — inputs =
+the figure's `used` containers (provenance graph = DAG), resources = `Figure.workflow_overrides` (reuses
+`WorkflowConfig`, added) over study `workflow`; `tvbo workflow submit/snakemake <study>` emits figure rules
+alongside experiment rules so heavy renders run as their own SLURM jobs after their experiments. Emitted
+`plot.py` stays user-editable.

@@ -1546,6 +1546,47 @@ class ObservationResult(Bunch):
         return getattr(self, "ts", None)
 
 
+def _free_param_names(source) -> set:
+    """Names of the model's free (tunable) parameters — dynamics + coupling.
+
+    These are the parameters an algorithm tunes (e.g. wLRE / wFFI / J_i for EIB); their
+    fitted values are the operating point a ``from_experiment`` warm-start reloads as a
+    prior location (persisted as ``estimate__<param>`` in :meth:`ExperimentResult.save`).
+    State variables are never parameters, so filtering to these can never collide with
+    the settled ``<sv>_final`` state observations. Empty set when *source* is absent.
+    """
+    names: set = set()
+    if source is None:
+        return names
+
+    def _vals(coll):
+        if coll is None:
+            return []
+        return list(coll.values()) if hasattr(coll, "values") else list(coll)
+
+    def _add_free(params):
+        for p in _vals(params):
+            if getattr(p, "free", False) and getattr(p, "name", None):
+                names.add(p.name)
+
+    def _couplings(obj):
+        # network.coupling is a name->Coupling dict; experiment.coupling is a single
+        # Coupling. Accept dict / list / single object so either shape resolves.
+        if obj is None:
+            return []
+        if hasattr(obj, "values"):
+            return list(obj.values())
+        if isinstance(obj, (list, tuple)):
+            return list(obj)
+        return [obj]
+
+    _add_free(getattr(getattr(source, "dynamics", None), "parameters", None))
+    net = getattr(source, "network", None)
+    for c in _couplings(getattr(net, "coupling", None)) + _couplings(getattr(source, "coupling", None)):
+        _add_free(getattr(c, "parameters", None))
+    return names
+
+
 class ExperimentResult:
     """Result from a complete experiment run.
 
@@ -1833,6 +1874,43 @@ class ExperimentResult:
             if fitted is not None:
                 for name, da in _numeric_leaves(f"optimization__{_san(opt_name)}__fitted", fitted):
                     data_vars[name] = da
+
+        # Persist each tuned FREE parameter's fitted value as ``estimate__<param>`` so a
+        # from_experiment warm-start can reload it as a prior location (point prior). Kept
+        # on LABELLED node axes (``node`` for vectors, ``node_i``+``node_j`` for per-edge
+        # matrices) — the same convention FC matrices use — so the consumer reconciles by
+        # label with the existing `.sel` path, no bespoke reindex. Container-layer only
+        # (values already live in AlgorithmResult.state) → no codegen change; free params
+        # only, so it can't shadow a ``<sv>_final`` key; first-writer-wins per param.
+        free_names = _free_param_names(self.source) if self.algorithms else set()
+        if free_names:   # nothing tunable → skip the flatten entirely
+            # Use the RESOLVED node labels (hydrates `bids:` placeholders like region_<i>)
+            # so the estimate coords match what the consumer's _resolve_model_node_labels
+            # produces — else the warm-start `.sel` reconcile can't align. Fall back to the
+            # raw labels when the source can't resolve (e.g. an inline-network source).
+            _get = getattr(self.source, "_resolve_model_node_labels", None)
+            src_labels = (_get() if callable(_get) else None) \
+                or getattr(getattr(self.source, "network", None), "node_labels", None)
+            src_labels = [str(l) for l in src_labels] if src_labels else None
+            nn = len(src_labels) if src_labels else None
+            for algo in self.algorithms.values():
+                for dotted, arr in OptimizationResult._flatten_params(getattr(algo, "state", None)).items():
+                    param = dotted.rsplit(".", 1)[-1]
+                    key = f"estimate__{_san(param)}"
+                    if param not in free_names or key in data_vars:
+                        continue
+                    a = np.asarray(getattr(arr, "values", arr))
+                    if a.dtype == object or a.size == 0:
+                        continue
+                    # Label per-node vectors / per-edge matrices so the consumer reconciles
+                    # by label with `.sel`; anything else (scalar) stays unlabelled.
+                    label_dims = {1: ["node"], 2: ["node_i", "node_j"]}.get(a.ndim)
+                    if nn and label_dims and all(s == nn for s in a.shape):
+                        da = xr.DataArray(a, dims=label_dims, coords={d: src_labels for d in label_dims})
+                    else:
+                        da = _numeric_da(key, a)
+                    if da is not None:
+                        data_vars[key] = da
 
         # Continuation branches (bifurcation results) persist through the SAME native
         # Dataset — no per-figure array dump. Each branch keeps its own ``step``
