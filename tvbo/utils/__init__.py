@@ -47,36 +47,107 @@ def domain_enforcement(domain) -> str:
     return str(enf).rsplit(".", 1)[-1]
 
 
-def register_recipe_code_paths(source_file) -> list:
-    """Make a recipe's ``code/`` subdir importable.
+def register_recipe_code_paths(source_file, code_source=None) -> list:
+    """Make a recipe's callable code importable — the ``code/`` convention, or a
+    declared :class:`CodeSource` (a local directory or a git repository).
 
     A recipe references custom builders and analysis callables by bare module
-    name (e.g. ``module: taher2019_analysis``). By convention those modules live
-    in a ``code/`` subdir next to the recipe rather than as installed packages,
-    so that directory must be on ``sys.path`` for ``import`` to resolve them.
-    Registering it at load time, once and left in place (callables resolve lazily
-    during a run, not just at load), lets ``tvbo run`` / ``tvbo workflow`` and
-    notebooks load a recipe without a ``PYTHONPATH=code`` prefix. The emitted
-    reproducibility kit puts ``code`` on the compute node's path the same way.
+    name (e.g. ``module: taher2019_analysis``); their directory must be on
+    ``sys.path`` for ``import`` to resolve them. Resolution:
 
-    The dir goes to the front of ``sys.path`` (matching how ``PYTHONPATH`` is
-    searched) and is skipped when already present, so repeated loads don't
-    duplicate it. Only ``code/`` is added, not the recipe's own directory: a
-    builder sitting beside the YAML is already resolved by Network._resolve's
-    scoped ``source_dir`` injection, and prepending the whole recipe dir would
-    risk shadowing stdlib/site-packages. Returns the path if newly inserted.
+    1. **Explicit ``code_source``** (a ``CodeSource`` or dict on the study) —
+       decouples the specification from where its code lives:
+         * ``path`` — a directory (relative to the recipe YAML, or absolute); or
+         * ``git`` — a repository shallow-cloned and cached under
+           ``~/.cache/tvbo/code_sources/<url+ref hash>``, checked out at ``ref``.
+       An optional ``subdir`` narrows which directory of the source is used.
+    2. **Convention** (no ``code_source``) — the ``code/`` subdir beside the
+       recipe YAML.
+
+    Registering at load time, once and left in place (callables resolve lazily
+    during a run), lets ``tvbo run`` / ``tvbo workflow`` and notebooks load a
+    recipe without a ``PYTHONPATH`` prefix. The dir goes to the front of
+    ``sys.path`` (matching ``PYTHONPATH``) and is skipped when already present.
+    Returns the paths newly inserted.
     """
     import sys
     from pathlib import Path
 
-    if not source_file:
-        return []
-    code_dir = Path(source_file).resolve().parent / "code"
-    entry = str(code_dir)
-    if code_dir.is_dir() and entry not in sys.path:
-        sys.path.insert(0, entry)
-        return [entry]
-    return []
+    entries = []
+    if code_source is not None:
+        resolved = _resolve_code_source(code_source, source_file)
+        if resolved:
+            entries = [str(resolved)]
+    if not entries and source_file:  # no (or empty) code_source -> code/ convention
+        code_dir = Path(source_file).resolve().parent / "code"
+        if code_dir.is_dir():
+            entries = [str(code_dir)]
+
+    inserted = []
+    for entry in entries:
+        if entry not in sys.path:
+            sys.path.insert(0, entry)
+            inserted.append(entry)
+    return inserted
+
+
+def _resolve_code_source(code_source, source_file):
+    """Resolve a ``CodeSource`` (local ``path`` or ``git`` repo) to a directory on
+    disk, applying an optional ``subdir``. ``path``/``git`` are mutually exclusive.
+    """
+    from pathlib import Path
+
+    get = code_source.get if isinstance(code_source, dict) else (lambda k: getattr(code_source, k, None))
+    path, git, ref, subdir = get("path"), get("git"), get("ref"), get("subdir")
+    if path and git:
+        raise ValueError("CodeSource: 'path' and 'git' are mutually exclusive")
+    if git:
+        base = _fetch_git_code_source(git, ref)
+    elif path:
+        base = Path(path)
+        if not base.is_absolute() and source_file:
+            base = Path(source_file).resolve().parent / base
+    else:
+        return None
+    resolved = (Path(base) / subdir if subdir else Path(base)).resolve()
+    if not resolved.is_dir():
+        raise FileNotFoundError(f"CodeSource resolved to a non-directory: {resolved}")
+    return resolved
+
+
+def _fetch_git_code_source(url, ref=None):
+    """Shallow-clone (and cache) a git code source; return the local clone dir.
+
+    Cached by ``sha1(url@ref)`` under ``$TVBO_CACHE`` (default ``~/.cache/tvbo``)
+    so a re-run reuses the clone. A branch/tag uses ``--branch``; a bare commit
+    (which ``--branch`` rejects) falls back to a full clone + ``checkout``.
+    """
+    import hashlib, os, shutil, subprocess
+    from pathlib import Path
+
+    key = hashlib.sha1(f"{url}@{ref or 'HEAD'}".encode()).hexdigest()[:16]
+    cache = Path(os.environ.get("TVBO_CACHE", Path.home() / ".cache" / "tvbo")) / "code_sources" / key
+    if (cache / ".git").is_dir():
+        return cache
+    shutil.rmtree(cache, ignore_errors=True)  # clear any partial/corrupt leftover
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cmd = ["git", "clone", "--depth", "1"] + (["--branch", ref] if ref else []) + [url, str(cache)]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        return cache
+    except FileNotFoundError as e:
+        raise RuntimeError(f"CodeSource git fetch needs `git` on PATH ({url})") from e
+    except subprocess.CalledProcessError as e:
+        shutil.rmtree(cache, ignore_errors=True)
+        if not ref:
+            raise RuntimeError(f"CodeSource git fetch failed ({url}): {e.stderr}") from e
+        try:  # ref may be a bare commit — clone then checkout
+            subprocess.run(["git", "clone", url, str(cache)], check=True, capture_output=True, text=True)
+            subprocess.run(["git", "-C", str(cache), "checkout", ref], check=True, capture_output=True, text=True)
+            return cache
+        except subprocess.CalledProcessError as e2:
+            shutil.rmtree(cache, ignore_errors=True)
+            raise RuntimeError(f"CodeSource git fetch failed ({url}@{ref}): {e2.stderr}") from e2
 
 
 def as_list(obj) -> list:
