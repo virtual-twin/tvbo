@@ -43,6 +43,11 @@ import numpy as np
 # would silently serve one parameter's array for another's.
 _CACHE: dict[tuple, Any] = {}
 
+# On-disk home for materialised produced constants, alongside the network cache
+# (`~/.tvbo/networks`). A derived constant is deterministic in its producing call, so it
+# is cached across runs and shared by every parameter naming that call.
+CACHE_DIR = Path.home() / ".tvbo" / "constants"
+
 
 def clear_cache() -> None:
     """Drop every resolved array. Mainly for tests and long-lived processes."""
@@ -226,15 +231,8 @@ def _argument_values(producer: Any, context: Any, where: str) -> dict:
     return out
 
 
-def _call_producer(producer: Any, param_name: str, context: Any) -> Any:
-    """Import and call the producer, then select its ``output`` entry.
-
-    The callable resolves by bare module name against the recipe's ``code_source``
-    (already on ``sys.path`` once the study is loaded), so a study's own code produces
-    its own derived constants without that code living in core tvbo.
-    """
-    import importlib
-
+def _producer_spec(producer: Any, param_name: str, context: Any) -> tuple:
+    """The producer's ``(module, name, kwargs)`` — its identity and its inputs."""
     call = _slot(producer, "callable", None)
     if call is None:
         raise ValueError(
@@ -247,21 +245,43 @@ def _call_producer(producer: Any, param_name: str, context: Any) -> Any:
             f"(got module={module!r}, name={name!r})."
         )
     kwargs = _argument_values(producer, context, f"Parameter {param_name!r} producer")
-    output = _slot(producer, "output", None)
-    key = _producer_key(module, name, kwargs)
+    return module, name, kwargs
 
+
+def _producer_bundle(producer: Any, param_name: str, context: Any) -> Any:
+    """Everything the producer returns, cached on the CALL — no output selection.
+
+    Kept separate from selection so a caller that needs the whole result (writing the
+    cache artifact) gets every named array, not just the one entry some parameter asked
+    for; writing only that entry would make each sibling output a fresh re-run.
+
+    The callable resolves by bare module name against the recipe's ``code_source``
+    (already on ``sys.path`` once the study is loaded), so a study's own code produces
+    its own derived constants without that code living in core tvbo.
+    """
+    import importlib
+
+    module, name, kwargs = _producer_spec(producer, param_name, context)
+    key = _producer_key(module, name, kwargs)
     if key in _CACHE:
-        produced = _CACHE[key]
-    else:
-        try:
-            fn = getattr(importlib.import_module(module), name)
-        except (ImportError, AttributeError) as exc:
-            raise ValueError(
-                f"Parameter {param_name!r}: cannot import producer {module}.{name} — is the "
-                f"study's `code_source` registered? ({exc})"
-            ) from exc
-        produced = _readonly(fn(**kwargs))
-        _CACHE[key] = produced
+        return _CACHE[key]
+    try:
+        fn = getattr(importlib.import_module(module), name)
+    except (ImportError, AttributeError) as exc:
+        raise ValueError(
+            f"Parameter {param_name!r}: cannot import producer {module}.{name} — is the "
+            f"study's `code_source` registered? ({exc})"
+        ) from exc
+    produced = _readonly(fn(**kwargs))
+    _CACHE[key] = produced
+    return produced
+
+
+def _call_producer(producer: Any, param_name: str, context: Any) -> Any:
+    """The producer's result, narrowed to this parameter's ``output`` entry."""
+    module, name, _ = _producer_spec(producer, param_name, context)
+    produced = _producer_bundle(producer, param_name, context)
+    output = _slot(producer, "output", None)
 
     if output:
         # A callable returning several named arrays (e.g. a bundle of mesh operators)
@@ -294,6 +314,92 @@ def is_lazy(param: Any) -> bool:
     return _slot(param, "value") is None and bool(
         _slot(param, "source") or _slot(param, "producer")
     )
+
+
+def materialise(
+    param: Any,
+    source_dir: Optional[Path] = None,
+    context: Any = None,
+    cache_dir: Optional[Path] = None,
+) -> tuple:
+    """The ``(file, key)`` a backend reads this parameter's array from.
+
+    Codegen emits this pair rather than the bytes, so a large constant never enters the
+    spec or the generated source and is read at run time instead. Generated modules are
+    ``exec``'d in memory as often as they are written to disk, so the path is absolute
+    (resolved against the declaring spec's directory) — the same way ``bids_dir`` is
+    emitted. A kit stays correct without rewriting code: its emitter rewrites the *spec*
+    to point at the companion it staged and re-renders, exactly as it already does for
+    ``network.h5``.
+
+    A ``source:`` parameter already lives in a file, so nothing is written. A
+    ``producer:`` parameter is computed once and cached content-addressed under
+    ``~/.tvbo/constants``, keyed by the producing call — so it survives across runs and
+    every parameter naming that producer shares the one artifact.
+
+    Raises for a literal (there is nothing to read; it inlines) or for a parameter with
+    no declared value.
+    """
+    name = str(_slot(param, "name", "<unnamed>"))
+    if not is_lazy(param):
+        raise ValueError(
+            f"Parameter {name!r} declares no `source`/`producer`; it has no file to read "
+            f"(a literal `value:` is inlined instead)."
+        )
+
+    source = _slot(param, "source")
+    if source:
+        path = _resolve_path(str(source), source_dir)
+        if path is None:
+            raise ValueError(
+                f"Parameter {name!r}: source {source!r} does not resolve to an existing "
+                f"file (source_dir={source_dir})."
+            )
+        measure = _slot(param, "measure")
+        if not measure:
+            raise ValueError(
+                f"Parameter {name!r}: a sourced constant must name its array with "
+                f"`measure:` for a backend to read it back."
+            )
+        return path, str(measure)
+
+    # Produced: materialise once, content-addressed on the producing call so an edited
+    # argument (a different k_ring) is a different artifact rather than a stale hit.
+    import hashlib
+
+    producer = _slot(param, "producer")
+    module, fname, kwargs = _producer_spec(producer, name, context)
+    digest = hashlib.sha256(
+        repr(_producer_key(module, fname, kwargs)).encode()
+    ).hexdigest()[:16]
+
+    root = Path(cache_dir).expanduser() if cache_dir else CACHE_DIR
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / f"{module}.{fname}.{digest}.h5"
+    key = str(_slot(producer, "output", None) or "value")
+
+    if not path.exists():
+        _write_bundle(path, _producer_bundle(producer, name, context), key)
+    return path, key
+
+
+def _write_bundle(path: Path, produced: Any, key: str) -> None:
+    """Write a producer's result to its cache artifact.
+
+    The whole bundle is written, not just the requested entry: one precompute typically
+    emits every operator, and writing them together means the next parameter naming a
+    sibling output is a cache hit rather than a re-run.
+    """
+    import h5py
+
+    arrays = produced if isinstance(produced, dict) else {key: produced}
+    tmp = path.with_suffix(".h5.tmp")
+    with h5py.File(tmp, "w") as f:
+        for k, v in arrays.items():
+            f.create_dataset(str(k), data=np.asarray(v))
+    # Rename last: a concurrent reader (a cluster shard racing on the same artifact)
+    # must never observe a half-written file at the real path.
+    tmp.replace(path)
 
 
 def resolve(param: Any, source_dir: Optional[Path] = None, context: Any = None) -> Any:

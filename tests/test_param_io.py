@@ -258,6 +258,85 @@ def test_a_produced_array_is_read_only(producer_module):
         got[0, 0] = 99.0
 
 
+# ------------------------------------------- materialise: the (file, key) codegen emits
+
+def test_a_sourced_parameter_materialises_to_its_own_file(store, tmp_path):
+    """Nothing is written: the bytes already live in the declared store."""
+    p = Parameter(name="grad_op", source=store.name, measure="ops/grad_op")
+
+    path, key = param_io.materialise(p, source_dir=tmp_path)
+
+    assert path == store
+    assert key == "ops/grad_op"
+
+
+def test_a_sourced_parameter_without_measure_cannot_be_materialised(store, tmp_path):
+    """A backend needs a key to read back; refuse rather than guess."""
+    p = Parameter(name="grad_op", source=store.name)
+
+    with pytest.raises(ValueError, match="measure"):
+        param_io.materialise(p, source_dir=tmp_path)
+
+
+def test_a_produced_parameter_is_written_to_a_content_addressed_artifact(
+    producer_module, tmp_path
+):
+    p = Parameter(name="grad_op", producer=_producer("grad_op"))
+
+    path, key = param_io.materialise(p, cache_dir=tmp_path, context=None)
+
+    assert path.exists() and key == "grad_op"
+    import h5py
+
+    with h5py.File(path) as f:
+        np.testing.assert_array_equal(f["grad_op"][()], np.full((2, 2), 2.0))
+
+
+def test_the_whole_bundle_is_written_so_a_sibling_output_is_a_cache_hit(
+    producer_module, tmp_path
+):
+    """One precompute emits every operator; siblings must not re-run it."""
+    path, _ = param_io.materialise(
+        Parameter(name="grad_op", producer=_producer("grad_op")), cache_dir=tmp_path
+    )
+    import h5py
+
+    with h5py.File(path) as f:
+        assert sorted(f) == ["boundary", "grad_op"]
+
+
+def test_a_materialised_artifact_is_reused_across_processes(producer_module, tmp_path):
+    """The point of the on-disk cache: the producer does not re-run for a fresh process."""
+    p = Parameter(name="grad_op", producer=_producer("grad_op"))
+    param_io.materialise(p, cache_dir=tmp_path)
+    assert _CALLS == [2]
+
+    param_io.clear_cache()  # a new process has no in-memory cache
+    param_io.materialise(p, cache_dir=tmp_path)
+
+    assert _CALLS == [2]  # served from disk, not recomputed
+
+
+def test_differing_producer_arguments_materialise_to_different_artifacts(
+    producer_module, tmp_path
+):
+    """Content-addressed: an edited argument is a new artifact, never a stale hit."""
+    two, _ = param_io.materialise(
+        Parameter(name="g", producer=_producer("grad_op", k_ring=2)), cache_dir=tmp_path
+    )
+    three, _ = param_io.materialise(
+        Parameter(name="g", producer=_producer("grad_op", k_ring=3)), cache_dir=tmp_path
+    )
+
+    assert two != three
+
+
+def test_a_literal_parameter_cannot_be_materialised():
+    """A literal inlines; asking for a file it does not have is a caller error."""
+    with pytest.raises(ValueError, match="no file to read"):
+        param_io.materialise(Parameter(name="a", value=0.5))
+
+
 def test_rebinding_a_bundle_key_cannot_poison_the_cache(producer_module):
     """A producer read whole (no `output`) hands back a copy: its dict is the cache entry."""
     whole = _producer("grad_op")
