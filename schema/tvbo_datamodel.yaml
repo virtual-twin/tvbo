@@ -140,15 +140,22 @@ slots:
             where available.
     derived_from:
         slot_uri: prov:wasDerivedFrom
+    provenance:
+        range: Provenance
+        inlined: true
+        # Defined once and shared: LinkML maps every slot of a given name onto one
+        # property, so per-class copies would merge into a bare `tvbo:provenance` and
+        # drop their annotations. Close, not exact: `prov:wasGeneratedBy` relates an
+        # entity to the prov:Activity that generated it, whereas this points at a
+        # record *describing* that generation.
+        close_mappings:
+            - prov:wasGeneratedBy
+        description: >-
+            W3C PROV-O aligned provenance for this entity — what it was derived
+            from, which agent produced it, and when.
     source:
         slot_uri: dcterms:source
         range: string
-    dataset_path:
-        range: string
-        description: >-
-            Dataset path for array-valued parameters. When set,
-            the parameter value is stored in the binary companion file
-            (HDF5 or Zarr) at this path. The value slot is omitted.
     record:
         range: boolean
         description: >-
@@ -1015,7 +1022,11 @@ classes:
                 range: string
             generated_by:
                 range: string
-                description: "Software/agent identifier (prov:wasGeneratedBy)"
+                # An agent identifier, so the PROV relation is attribution, not generation:
+                # `prov:wasGeneratedBy` ranges over a prov:Activity, never a prov:Agent.
+                close_mappings:
+                    - prov:wasAttributedTo
+                description: "Software/agent identifier: the prov:Agent this artifact is attributed to."
             experiment_yaml_hash:
                 range: string
                 description: >-
@@ -1092,6 +1103,7 @@ classes:
         slots:
             - label
             - description
+            - provenance
         attributes:
             dataset_id:
                 range: string
@@ -1141,10 +1153,6 @@ classes:
             cohort:
                 range: string
                 description: "Cohort label (e.g. 'HCPYA', 'PPMI')."
-            provenance:
-                range: Provenance
-                inlined: true
-                description: "W3C PROV-O metadata for the source of these scores."
 
     MeasureSpec:
         class_uri: tvbo:MeasureSpec
@@ -1256,6 +1264,7 @@ classes:
             - label
             - description
             - parameters
+            - provenance
         attributes:
             # New node/edge-based representation
             nodes:
@@ -1396,10 +1405,6 @@ classes:
                 multivalued: true
                 description: "BEP017 measure names for observational targets (e.g., BoldCorrelation)"
 
-            provenance:
-                range: Provenance
-                inlined: true
-                description: "W3C PROV-O aligned provenance"
             parent_network:
                 range: string
                 description: >-
@@ -1940,6 +1945,12 @@ classes:
                     integration so a batched parameter sweep carries only the accumulator,
                     not a per-cell trajectory. An alternative to the post-scan ``pipeline``
                     / ``class_reference`` for observations expressible as a time recurrence.
+                    Its ``parameters`` are the observer's named constants, bound by name in
+                    every recurrence expression exactly as a model Dynamics' parameters are
+                    — scalar or array-valued (``value`` a nested list, ``shape`` declaring
+                    its extent), so a fixed operator the reduction consumes (a mesh gradient,
+                    a template matrix) is declared as data on the observer rather than
+                    hidden inside a backend callable.
 
             # Direct class reference (alternative to pipeline)
             class_reference:
@@ -2268,7 +2279,6 @@ classes:
             - description
             - equation
             - unit
-            - dataset_path
             - grounding
         attributes:
             comment:
@@ -2284,24 +2294,53 @@ classes:
                 range: uriorcurie
                 required: false
                 description: >-
-                    Data source for this parameter's value. When set, the
-                    value is loaded from the referenced entity rather than
-                    being a YAML literal. The referent is typically a Network
-                    with per-node parameters (dscalar pattern) or a flat
-                    dataset (HDF5, TSV). Combine with `measure:` when the
-                    source exposes multiple named measures. Distinct from
-                    the global `iri:` slot, which is reserved for ontology
-                    grounding.
+                    WHERE this parameter's value comes from — a curated entity's
+                    IRI, or a path (resolved against the declaring spec's directory
+                    when relative, as `Network.bids_dir` / `Network.data_file` are).
+                    The referent is typically a Network with per-node parameters
+                    (dscalar pattern) or a binary store (HDF5, Zarr, TSV). Combine
+                    with `measure:` to pick one array out of a source that holds
+                    several. A sourced value is never inlined into generated code:
+                    it is resolved lazily and the backend reads it from storage, so
+                    an array of any size costs nothing in the spec or the emitted
+                    module. Mutually exclusive with `value:` (a YAML literal, which
+                    IS materialised) and with `producer:` (bytes that are computed
+                    rather than read). Distinct from the global `iri:` slot, which
+                    is reserved for ontology grounding.
             measure:
                 range: string
                 required: false
                 description: >-
-                    Selector into the source. When `source` points at a
-                    Network with per-node parameters (or a dscalar with
-                    multiple maps), picks which named measure to load. Aligns
-                    with names listed in Network.structural_measures /
-                    Network.observational_measures. Ignored when the source
-                    resolves to a scalar/array dataset.
+                    WHICH array to select out of `source`. The address space is the
+                    source's own: a per-node measure name for a Network (aligning
+                    with Network.structural_measures / observational_measures), a
+                    dataset key for an HDF5/Zarr store, a recorded measure for an
+                    experiment result. Omit when the source resolves to a single
+                    array.
+            producer:
+                range: FunctionCall
+                inlined: true
+                required: false
+                # PROV-O: *prospective* provenance — the plan, not the run. Strictly the
+                # value `prov:wasGeneratedBy` an `prov:Activity` that `prov:hadPlan` this
+                # FunctionCall; naming the plan directly collapses that Activity node, so
+                # this is a close (not exact) mapping and carries no OWL range obligation.
+                # The complementary *retrospective* record — which software ran, when, over
+                # which input hashes — is the `Provenance` class.
+                close_mappings:
+                    - prov:wasGeneratedBy
+                description: >-
+                    HOW to compute this parameter's value, when it is derived rather
+                    than obtained — the callable that produces it, its arguments, and
+                    (via `output:`) which entry to take from a callable returning
+                    several named arrays. The callable resolves against the recipe's
+                    `code_source`. Use instead of `source:` for a value that is a
+                    deterministic function of the spec's own inputs (a mesh operator,
+                    a template matrix): declaring the producer keeps the spec the
+                    single source of truth, where pointing at a pre-built file would
+                    let the two drift apart silently. The result is cached and
+                    invalidated by the artifact fingerprint, so it is computed once
+                    rather than per run. Mutually exclusive with `value:`/`source:`.
             free:
                 range: boolean
             shape:
@@ -2483,6 +2522,11 @@ classes:
                 inlined: true
     FunctionCall:
         class_uri: tvbo:FunctionCall
+        # A FunctionCall is a specification of an invocation — what PROV-O calls a Plan
+        # (the prospective recipe an Activity follows when it runs). True of every use:
+        # a pipeline step, a loss, an observation's producer.
+        exact_mappings:
+            - prov:Plan
         description: >-
             Invocation of a function in a pipeline. Can reference a defined Function by name,
             OR inline a callable directly for external library functions,
@@ -4307,11 +4351,15 @@ classes:
                     Random-seed policy across shards. ``deterministic`` (the default
                     when unset) derives each task's seed from its shard index so the
                     fan-out is reproducible.
-            provenance:
+            emit_provenance:
                 range: boolean
                 description: >-
                     Whether to emit provenance sidecars alongside results. Unset
-                    means enabled.
+                    means enabled. Named apart from the ``provenance`` slot carrying
+                    PROV-O metadata (Network, Figure, ...): LinkML maps every slot of
+                    a given name onto one property, so a boolean here and a
+                    ``Provenance`` object there would make ``tvbo:provenance`` both an
+                    owl:DatatypeProperty and an owl:ObjectProperty — not OWL-DL.
             chunk:
                 range: integer
                 minimum_value: 1

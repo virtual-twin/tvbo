@@ -498,7 +498,7 @@ def plan(
         container=(spec.get("container") or None),
         retries=int(spec.get("retries") or 0),
         rng=str(spec.get("rng") or "deterministic"),
-        provenance=bool(spec.get("provenance", True)),
+        provenance=bool(spec.get("emit_provenance", True)),
         vectorize_axes=vectorize,
         workflow_axes=workflow,
         chunk=max(1, chunk),
@@ -525,7 +525,7 @@ def workflow_config_from_spec(spec: dict) -> Any:
     if not spec:
         return None
     wc = dm.WorkflowConfig()
-    for key in ("out_dir", "container", "retries", "rng", "provenance", "chunk"):
+    for key in ("out_dir", "container", "retries", "rng", "emit_provenance", "chunk"):
         if spec.get(key) is not None:
             setattr(wc, key, spec[key])
     dist = spec.get("distribute")

@@ -453,7 +453,7 @@ def _matrix_summary(matrix):
     dtype = _p(matrix, 'dtype', None)
     if dtype:
         parts.append(f"dtype={dtype}")
-    location = _p(matrix, 'dataLocation', None) or _p(matrix, 'dataset_path', None)
+    location = _p(matrix, 'dataLocation', None)
     if location:
         parts.append(f"data={location}")
     return ', '.join(parts)
