@@ -28,10 +28,10 @@ _TEMPLATE = "bsplot/tvbo-bsplot-figure.py.mako"
 
 
 # --------------------------------------------------------------------------- registries
-# Extension points for the layer `transform` and the `custom` panel escape hatch. A study
-# ships figure-specific transforms/panels in its code_source module and decorates them with
-# these; the emitted plot.py imports that module so the registration fires before lookup.
-# The built-ins below register themselves the same way.
+# Extension points for the layer `transform` and the `custom` panel escape hatch. Core ships
+# no built-ins: a study ships figure-specific transforms/panels in its code_source module and
+# decorates them with these; the emitted plot.py imports that module so the registration fires
+# before lookup (see Figure.code_modules).
 
 TRANSFORMS: dict = {}       # name -> fn(da) -> da       presentation-only layer reductions
 CUSTOM_PANELS: dict = {}    # name -> fn(fig, ax, ctx)   bespoke `custom` panel drawers
@@ -53,57 +53,57 @@ def register_panel(name):
     return deco
 
 
-# --------------------------------------------------------------------------- transforms
-# The built-in presentation-only reductions usable as a layer `transform`; a study
-# registers its own the same way from its code_source module.
+def registered(registry, name, kind):
+    """Look a spec-declared name up in a registry, or raise an actionable error (public API).
 
-@register_transform("up_branch")
-def up_branch(da):
-    """The up-sweep half of a hysteresis scan (up to the sweep reversal at argmax of the swept coord)."""
-    import numpy as np
-    dim = da.dims[0]
-    coord = da[dim].values if dim in da.coords else np.arange(da.sizes[dim])
-    n = int(np.argmax(coord)) + 1
-    return da.isel({dim: slice(0, n)})
-
-
-@register_transform("down_branch")
-def down_branch(da):
-    """The down-sweep half of a hysteresis scan (from the reversal onward)."""
-    import numpy as np
-    dim = da.dims[0]
-    coord = da[dim].values if dim in da.coords else np.arange(da.sizes[dim])
-    n = int(np.argmax(coord)) + 1
-    return da.isel({dim: slice(n - 1, None)})
-
-
-@register_transform("order_by_branch")
-def order_by_branch(da):
-    """Restore a branch-restart run's source traversal order (sort by ``branch_point``).
-
-    A paired Lyapunov/branch-following experiment records its points in solve order,
-    not in the swept-coordinate order. Sorting by the ``branch_point`` ordinal realigns
-    it to the hysteresis scan's up-then-down K traversal so it can be read against that
-    K axis.
+    Shared by the adapter and the emitted plot.py, which imports it, so both report a miss
+    the same way. The registries are empty until a figure's code_modules are imported and
+    their register_* decorators run, so a miss almost always means code_modules is missing
+    the module, or importing it failed.
     """
-    if "branch_point" in da.dims or "branch_point" in da.coords:
-        return da.sortby("branch_point")
-    return da
+    try:
+        return registry[name]
+    except KeyError:
+        known = ", ".join(sorted(registry)) or "none — no code_modules registered anything"
+        raise KeyError(
+            f"{kind} {name!r} is not registered (registered: {known}). Declare the module "
+            f"that defines it in the figure's code_modules; it must be importable from here."
+        ) from None
 
 
-def _style_entries(figure) -> list:
+def resolve_path(p, base_dir):
+    """Resolve a spec-relative file reference against *base_dir* (the study dir) — public API.
+
+    A file a figure points at (an ``image`` panel's path, a study .mplstyle) is written
+    relative to the spec that declares it, so the spec stays portable; the emitted plot.py
+    runs from an arbitrary cwd and needs an absolute one. An absolute path is passed
+    through untouched. Returns *p* unchanged when it is empty.
+
+    A ``custom`` panel resolving its own study-relative input (``ctx["opts"]`` naming a
+    tvbo Network yaml, say) should call this with ``ctx["base_dir"]`` so it follows the
+    same rule as the rest of the spec rather than re-implementing the join.
+    """
+    if not p:
+        return p
+    p = str(p)
+    return p if Path(p).is_absolute() else str((Path(base_dir) / p).resolve())
+
+
+def _style_entries(figure, base_dir) -> list:
     """Classify each figure style as a bsplot named style or an .mplstyle path.
 
     bsplot.style.use only knows its registered names; a study's own .mplstyle is a
     filesystem path, applied via matplotlib's plt.style.use instead. This lets a
-    study carry its own design rules (Figure.style: ['<path>/study.mplstyle']).
+    study carry its own design rules (Figure.style: ['<path>/study.mplstyle']). Only
+    the path form is resolved against base_dir — a named style is not a filesystem
+    reference.
     """
     styles = list(getattr(figure, "style", None) or []) or ["tvbo"]
     out = []
     for s in styles:
         s = str(s)
         is_path = s.endswith(".mplstyle") or "/" in s or "\\" in s
-        out.append({"path": is_path, "value": s})
+        out.append({"path": is_path, "value": resolve_path(s, base_dir) if is_path else s})
     return out
 
 
@@ -211,124 +211,23 @@ def _container_path(iri, base_dir: Path) -> str:
 # a callable opens the container(s) itself and draws exactly what the paper needs. A study
 # registers its own the same way it registers a transform.
 
-def _load_layer(layer: dict):
-    """Open a resolved-layer dict into a DataArray (transform + selector applied)."""
+def load_layer(layer: dict):
+    """Open a custom panel's resolved layer into a DataArray (public API).
+
+    A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer
+    dicts (container path, output, transform, selector — all resolved by ``build_context``);
+    it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray
+    ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. The shared
+    container cache means opening the same file across panels is free.
+    """
+    name = layer.get("transform")
+    fn = registered(TRANSFORMS, name, "transform") if name else None   # spec error before any IO
     da = _open_ds(layer["container"])[layer["output"]]
-    if layer.get("transform"):
-        da = TRANSFORMS[layer["transform"]](da)
+    if fn:
+        da = fn(da)
     if layer.get("sel"):
         da = da.sel(layer["sel"], method=layer.get("sel_method"))
     return da
-
-
-def _sweep_axis(da):
-    """The swept coordinate of a hysteresis scan and its reversal index ``n_up``."""
-    import numpy as np
-    dim = da.dims[0]
-    K = np.asarray(da[dim].values) if dim in da.coords else np.arange(da.sizes[dim])
-    return K, int(np.argmax(K)) + 1
-
-
-@register_panel("lyapunov_vs_k")
-def lyapunov_vs_k(fig, ax, ctx):
-    """(b) largest Lyapunov exponent lambda_1 vs K, up/down branches, sampled K circled.
-
-    Cross-experiment: ``layers[0]`` supplies the K axis + reversal (the hysteresis scan),
-    ``layers[1]`` supplies lambda_1 from the paired branch-restart run, already reordered to
-    the K traversal by the ``order_by_branch`` transform. This x-from-one-run / y-from-another
-    merge is why the panel is a callable and not a grammar layer.
-    """
-    import numpy as np
-    o = ctx["opts"]
-    k_targets = list(o.get("k_targets", []))
-    k_max = float(o.get("k_max", np.inf))
-    color = o.get("color", "#ff7f0e")
-    K, nup = _sweep_axis(_load_layer(ctx["layers"][0]))
-    lam = np.asarray(_load_layer(ctx["layers"][1]).values).ravel()
-    upK, dnK = K[:nup], K[nup:]
-    um, dm = upK <= k_max, dnK <= k_max
-    ax.axhline(0.0, color="0.6", lw=0.7, ls=":")            # lambda_1 = 0 stability threshold
-    ax.plot(upK[um], lam[:nup][um], "-", color=color, lw=1.3, label="up-sweep")
-    ax.plot(dnK[dm], lam[nup:][dm], "--", color=color, lw=1.3, label="down-sweep")
-    for kt in k_targets:
-        j = int(np.argmin(np.abs(upK - kt)))
-        ax.plot(upK[j], lam[:nup][j], "o", mfc="none", mec="k", ms=7, mew=1.1)
-    ax.set_xlim(0, k_max if np.isfinite(k_max) else float(K.max()))
-    if o.get("legend"):
-        ax.legend(frameon=False,
-                  loc=o["legend"] if isinstance(o["legend"], str) else "upper left")
-    ax.set_ylabel(o.get("ylabel", r"$\lambda_1$"))
-    if o.get("xlabel"):
-        ax.set_xlabel(o["xlabel"])
-
-
-@register_panel("node_profile")
-def node_profile(fig, ax, ctx):
-    """(c-e) per-node time-mean profile <omega_i>_t at one sampled K.
-
-    ``opts.col`` selects which of ``opts.k_targets`` this cell shows; the shared y-range is
-    derived across all three so the columns are directly comparable (the paper's convention).
-    """
-    import numpy as np
-    o = ctx["opts"]
-    k_targets = list(o.get("k_targets", []))
-    col = int(o.get("col", 0))
-    color = o.get("color", "#1f77b4")
-    da = _load_layer(ctx["layers"][0])
-    K, nup = _sweep_axis(da)
-    upK, vals = K[:nup], np.asarray(da.values)
-    prof_at = [(float(upK[int(np.argmin(np.abs(upK - kt)))]),
-                vals[int(np.argmin(np.abs(upK - kt)))]) for kt in k_targets]
-    allp = np.concatenate([p for _, p in prof_at])
-    lo, hi = float(allp.min()), float(allp.max())
-    pad = 0.08 * ((hi - lo) or 1.0)
-    kk, p = prof_at[col]
-    n = p.size
-    ax.plot(np.arange(n), p, ".", color=color, ms=2.2)
-    if o.get("k_title"):                                     # column header, once per column (dedup)
-        ax.set_title(r"$K\approx%.0f$" % kk)
-    ax.set_ylim(lo - pad, hi + pad)
-    ax.set_xlim(0, n)
-    ax.set_xticks([1, n // 2, n])
-    ax.set_xticklabels([])
-    ax.tick_params(labelsize=6)
-    if col == 0:
-        ax.set_ylabel(o.get("ylabel", r"$\langle\omega_i\rangle_t$ (Hz)"))
-    else:
-        ax.set_yticklabels([])
-
-
-@register_panel("lyapunov_vector")
-def lyapunov_vector(fig, ax, ctx):
-    """(f-h) covariant Lyapunov vector xi_i at one sampled K.
-
-    ``layers[0]`` fixes the K axis (hysteresis scan); ``layers[1]`` is xi_i from the paired
-    branch-restart run (``order_by_branch``-sorted). Shared 0-based y-range across the three K.
-    """
-    import numpy as np
-    o = ctx["opts"]
-    k_targets = list(o.get("k_targets", []))
-    col = int(o.get("col", 0))
-    color = o.get("color", "#ff7f0e")
-    K, nup = _sweep_axis(_load_layer(ctx["layers"][0]))
-    upK = K[:nup]
-    xi_up = np.asarray(_load_layer(ctx["layers"][1]).values)[:nup]
-    xi_at = [(float(upK[int(np.argmin(np.abs(upK - kt)))]),
-              xi_up[int(np.argmin(np.abs(upK - kt)))]) for kt in k_targets]
-    allx = np.concatenate([x for _, x in xi_at])
-    top = (float(allx.max()) * 1.08) or 1.0
-    kk, xv = xi_at[col]
-    n = xv.size
-    ax.plot(np.arange(n), xv, ".", color=color, ms=2.2)
-    ax.set_ylim(0.0, top)
-    ax.set_xlim(0, n)
-    ax.set_xticks([1, n // 2, n])
-    ax.set_xlabel(o.get("xlabel", r"Index $i$"))
-    ax.tick_params(labelsize=6)
-    if col == 0:
-        ax.set_ylabel(o.get("ylabel", r"$\xi_i$"))
-    else:
-        ax.set_yticklabels([])
 
 
 def _items(coll):
@@ -386,7 +285,8 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         layers = [_resolve_layer(l, kind, base_dir)
                   for l in (getattr(panel, "layers", None) or [])]
         # ``custom`` routes Panel.opts to its callable; grammar panels read the axis subset.
-        ctx = ({"layers": layers, "opts": _panel_opts(panel), "key": key}
+        # base_dir lets a panel resolve study-relative inputs (e.g. a tvbo Network yaml).
+        ctx = ({"layers": layers, "opts": _panel_opts(panel), "key": key, "base_dir": str(base_dir)}
                if kind == "custom" else None)
         # Default the axis labels to the first layer's x-dim / output; opts override them.
         axopts = _axopts(panel)
@@ -397,7 +297,7 @@ def build_context(figure, base_dir, outfile: str) -> dict:
             "key": key,
             "kind": kind,
             "title": getattr(panel, "label", None),
-            "path": getattr(panel, "path", None),
+            "path": resolve_path(getattr(panel, "path", None), base_dir),
             "render": getattr(panel, "render", None),
             "placeholder": getattr(panel, "placeholder", None),
             "layers": layers,
@@ -433,6 +333,12 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         if ratios:
             subplots_kwargs[key] = ratios
 
+    # fig.savefig kwargs, resolved here so the template just splats them. Trimming re-crops
+    # to content, so it is what makes a saved figure's aspect drift from the declared w×h.
+    savefig_kwargs = {"dpi": dpi}
+    if getattr(figure, "trim_margins", None) is not False:
+        savefig_kwargs["bbox_inches"] = "tight"
+
     spines = getattr(figure, "spines", None)
     spine_rcparams = {}
     if spines == "box":
@@ -442,7 +348,7 @@ def build_context(figure, base_dir, outfile: str) -> dict:
 
     return {
         "name": figure.name or "figure",
-        "style": _style_entries(figure),
+        "style": _style_entries(figure, base_dir),
         "outfile": outfile,
         "panels": panels,
         "subplots_kwargs": subplots_kwargs,
@@ -451,6 +357,7 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         "font_size": font_size,
         "auto_format": getattr(figure, "auto_format", None) is not False,
         "panel_numbers": getattr(figure, "panel_numbers", None) is not False,
+        "savefig_kwargs": savefig_kwargs,
         # study-shipped custom panels/transforms register when plot.py imports these
         "code_modules": [str(m) for m in (getattr(figure, "code_modules", None) or [])],
     }
