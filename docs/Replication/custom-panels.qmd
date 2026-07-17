@@ -21,19 +21,31 @@ A panel with `kind: custom` names a registered callable instead of a mark + enco
 panels:
   b:
     kind: custom
-    render: lyapunov_vs_k      # a registered panel callable
+    render: lambda_vs_k        # a registered panel callable (defined below)
 ```
 
 The callable has the signature `fn(fig, ax, ctx)`. `ctx` carries the panel's resolved
 layers (container paths, transforms and selectors already resolved by `build_context`)
 and its `opts`, so the function opens the container(s) itself and draws exactly what the
-paper needs.
+paper needs. It opens a resolved layer with `bsplot.load_layer`, which returns an xarray
+`DataArray` with that layer's declared `transform` and `.sel` already applied:
+
+```python
+from tvbo.adapters import bsplot
+
+@bsplot.register_panel("lambda_vs_k")
+def lambda_vs_k(fig, ax, ctx):
+    da = bsplot.load_layer(ctx["layers"][0])   # container opened; transform + selector applied
+    ax.plot(da.coords["K"].values, da.values)
+    ax.set_ylabel(ctx["opts"].get("ylabel", r"$\lambda_1$"))
+```
 
 ## Registering a panel or transform
 
 A study decorates its callables with `register_panel` / `register_transform` from the
-bsplot adapter. The same two decorators register the built-ins, so a study extends the
-figure system the same way TVBO ships it:
+bsplot adapter. Core ships no panels or transforms of its own — these two registries start
+empty and are filled entirely by the studies that declare them, so the figure system has no
+privileged built-ins to compete with your own:
 
 ```python
 # my_study/code/figures.py
@@ -66,8 +78,8 @@ figures:
       b: {kind: cartesian, layers: [...]}
 ```
 
-The emitted script imports each declared module right after the adapter import, so a
-study-registered name resolves against the same registry as the built-ins:
+The emitted script imports each declared module right after the adapter import, so every
+registration fires before the first panel is drawn and the spec's names resolve:
 
 ```python
 from tvbo.adapters.bsplot import TRANSFORMS as _TF, CUSTOM_PANELS as _CP

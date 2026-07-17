@@ -5,8 +5,8 @@ Covers the two figure adapters:
 * ``tvbo.adapters.bsplot`` — resolves a declarative :class:`Figure` into a
   codegen context (``build_context``), emits a self-contained ``plot.py``
   (``render_code``), and emits + execs it under matplotlib Agg (``render``),
-  plus the presentation-only ``TRANSFORMS`` and the ``_container_path`` PROV
-  resolver.
+  plus the register/lookup API a study extends the engine through and the
+  ``_container_path`` PROV resolver.
 * ``tvbo.adapters.figure_workflow`` — lowers a figure's PROV ``used`` edges into
   a Snakemake render rule (``emit_figure_rules``).
 
@@ -19,9 +19,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-import numpy as np
 import pytest
-import xarray as xr
 
 import tvbo.datamodel.pydantic as P
 from tvbo.adapters import bsplot
@@ -69,10 +67,13 @@ def _cartesian_figure(iri=EXP3_IRI, output="delta_omega", **fig_kw):
 # --------------------------------------------------------------------------- public surface
 
 def test_public_surface():
-    """The documented adapter surface is importable and well-typed."""
-    assert set(bsplot.TRANSFORMS) == {"up_branch", "down_branch", "order_by_branch"}
-    assert all(callable(fn) for fn in bsplot.TRANSFORMS.values())
+    """The documented adapter surface is importable and well-typed. Core ships no built-in
+    transforms/panels — the registries are filled by studies through the register API."""
+    assert isinstance(bsplot.TRANSFORMS, dict)
     assert isinstance(bsplot.CUSTOM_PANELS, dict)
+    assert callable(bsplot.register_transform)
+    assert callable(bsplot.register_panel)
+    assert callable(bsplot.load_layer)
     assert callable(bsplot._style_kwargs)
     assert callable(bsplot._annotations)
 
@@ -97,58 +98,6 @@ def test_container_path_unresolved_returns_empty():
     assert bsplot._container_path("", TAHER_BASE) == ""
     # Even a plausible-looking IRI under a base with no output/ tree stays empty.
     assert bsplot._container_path(EXP3_IRI, Path("/nonexistent/base/dir")) == ""
-
-
-# --------------------------------------------------------------------------- transforms
-
-def _hysteresis_da():
-    """Synthetic up-then-down hysteresis scan: coord rises to 4.0 then falls to 0.0."""
-    up = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
-    down = np.array([3.0, 2.0, 1.0, 0.0])
-    coord = np.concatenate([up, down])
-    return xr.DataArray(np.arange(coord.size, dtype=float), dims=["K"], coords={"K": coord})
-
-
-def test_up_down_branch_split_at_argmax():
-    """``up_branch``/``down_branch`` split the scan at the sweep reversal (argmax of coord)."""
-    da = _hysteresis_da()
-    nup = int(np.argmax(da["K"].values)) + 1  # reversal is inclusive on both halves
-
-    ub = bsplot.up_branch(da)
-    db = bsplot.down_branch(da)
-
-    # up half is 0..reversal; down half is reversal..end; together they re-cover the scan.
-    assert ub["K"].values.tolist() == [0.0, 1.0, 2.0, 3.0, 4.0]
-    assert db["K"].values.tolist() == [4.0, 3.0, 2.0, 1.0, 0.0]
-    assert ub.sizes["K"] == nup
-    assert db.sizes["K"] == da.sizes["K"] - nup + 1  # reversal point shared by both halves
-    # The shared reversal point is the peak of the coordinate.
-    assert float(ub["K"].values[-1]) == float(db["K"].values[0]) == float(da["K"].values.max())
-
-
-def test_up_down_branch_without_coord():
-    """With no coordinate on the dim the transforms fall back to the positional index."""
-    da = xr.DataArray(np.arange(6.0), dims=["K"])  # monotone index 0..5, argmax at the end
-    ub = bsplot.up_branch(da)
-    db = bsplot.down_branch(da)
-    assert ub.sizes["K"] == 6  # whole thing is the up-sweep
-    assert db.sizes["K"] == 1  # only the reversal point remains
-
-
-def test_order_by_branch_sorts_and_noop():
-    """``order_by_branch`` sorts by ``branch_point`` when present, else is a no-op."""
-    scrambled = xr.DataArray(
-        [3.0, 1.0, 2.0], dims=["branch_point"], coords={"branch_point": [3, 1, 2]}
-    )
-    ordered = bsplot.order_by_branch(scrambled)
-    assert ordered["branch_point"].values.tolist() == [1, 2, 3]
-    assert ordered.values.tolist() == [1.0, 2.0, 3.0]
-
-    # No branch_point dim/coord -> returned unchanged.
-    plain = xr.DataArray([9.0, 8.0], dims=["K"], coords={"K": [0, 1]})
-    out = bsplot.order_by_branch(plain)
-    assert out.dims == plain.dims
-    assert out.values.tolist() == plain.values.tolist()
 
 
 # --------------------------------------------------------------------------- build_context
@@ -259,6 +208,23 @@ def test_build_context_resolves_everything():
     assert d["layers"][0]["container"] == ""
 
 
+def test_build_context_image_path_resolved_against_base_dir(tmp_path):
+    """An ``image`` panel's path is spec-relative, so the spec stays portable; the emitted
+    plot.py runs from an arbitrary cwd, so it must be resolved against base_dir (an
+    absolute path is passed through). Same contract as a study .mplstyle."""
+    figure = P.Figure(
+        name="img",
+        layout="ab",
+        panels={
+            "a": P.Panel(panel_key="a", kind="image", path="original_study/img/fig5.png"),
+            "b": P.Panel(panel_key="b", kind="image", path="/abs/elsewhere.png"),
+        },
+    )
+    panels = {p["key"]: p for p in bsplot.build_context(figure, tmp_path, "out.png")["panels"]}
+    assert panels["a"]["path"] == str(tmp_path / "original_study" / "img" / "fig5.png")
+    assert panels["b"]["path"] == "/abs/elsewhere.png"
+
+
 def test_build_context_default_letter_format():
     """With no ``panel_number_format`` the letter is the bare index letter."""
     ctx = bsplot.build_context(_cartesian_figure(), TAHER_BASE, "out.png")
@@ -279,7 +245,7 @@ def test_build_context_dataclass_flavor_kind_mark_loc():
     fig = D.Figure(
         name="dc", layout="ab/cd", panel_number_loc="upper right",
         panels={
-            "a": D.Panel(panel_key="a", kind="custom", render="lyapunov_vs_k"),
+            "a": D.Panel(panel_key="a", kind="custom", render="custom_panel"),
             "b": D.Panel(panel_key="b", kind="image", path="/tmp/x.png"),
             "c": D.Panel(
                 panel_key="c", kind="cartesian", number_loc="lower left",
@@ -308,20 +274,16 @@ def test_build_context_dataclass_flavor_kind_mark_loc():
     # the emitted plot.py parses and dispatches each kind
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     ast.parse(code)
-    assert "_CP[" in code           # custom-panel callable dispatch
+    assert "_registered(_CP," in code   # custom-panel callable dispatch
     assert "pcolormesh" in code     # heatmap
     assert "imread" in code         # image
 
 
 def test_register_panel_and_transform():
     """The register_* decorators populate the shared registries, so a study's
-    code_source module adds its own custom panels/transforms the same way the
-    built-ins do; the emitted plot.py looks them up by name in these dicts.
+    code_source module adds its own custom panels/transforms; the emitted plot.py
+    looks them up by name in these dicts.
     """
-    # the built-ins registered themselves via the decorator
-    assert {"lyapunov_vs_k", "node_profile", "lyapunov_vector"} <= set(bsplot.CUSTOM_PANELS)
-    assert {"up_branch", "down_branch", "order_by_branch"} <= set(bsplot.TRANSFORMS)
-
     @bsplot.register_panel("_test_panel")
     def _panel(fig, ax, ctx):
         return "drawn"
@@ -339,6 +301,25 @@ def test_register_panel_and_transform():
         bsplot.TRANSFORMS.pop("_test_tf", None)
 
 
+def test_unregistered_name_error_points_at_code_modules():
+    """Core ships no panels/transforms, so "declared a name but never registered it" (a
+    missing or unimportable code_modules entry) is THE common failure. It must name the
+    culprit and the fix rather than surfacing a bare KeyError from a generated file."""
+    fig = P.Figure(
+        name="oops", layout="a",
+        panels={"a": P.Panel(panel_key="a", kind="custom", render="never_registered")},
+    )
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    with pytest.raises(KeyError) as exc:
+        exec(compile(code, "plot.py", "exec"), {"__name__": "__main__"})
+    msg = str(exc.value)
+    assert "never_registered" in msg and "code_modules" in msg
+
+    # The adapter's own load_layer path carries the same guidance for a transform.
+    with pytest.raises(KeyError, match="code_modules"):
+        bsplot.load_layer({"container": "x.h5", "output": "y", "transform": "nope"})
+
+
 def test_render_code_emits_study_code_module_imports():
     """A figure declaring code_modules emits an import for each, so a study's
     code_source panels/transforms register when plot.py runs (the study load
@@ -347,7 +328,7 @@ def test_render_code_emits_study_code_module_imports():
     """
     fig = P.Figure(
         name="withcode", layout="a", code_modules=["taher2019_figures", "myextra"],
-        panels={"a": P.Panel(panel_key="a", kind="custom", render="lyapunov_vs_k")},
+        panels={"a": P.Panel(panel_key="a", kind="custom", render="custom_panel")},
     )
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     ast.parse(code)
@@ -411,6 +392,15 @@ def test_render_code_font_size_emitted():
     """``font.size`` is set iff a physical ``font_size`` is declared."""
     assert "font.size" in _emit(font_size=9)
     assert "font.size" not in _emit()
+
+
+def test_render_code_trim_margins_toggle():
+    """Trimming re-crops to content, so the saved aspect can drift from width/height;
+    ``trim_margins: false`` is the opt-out that preserves the declared proportions.
+    Default (unset) trims."""
+    assert "'bbox_inches': 'tight'" in _emit()
+    assert "'bbox_inches': 'tight'" in _emit(trim_margins=True)
+    assert "bbox_inches" not in _emit(trim_margins=False)
 
 
 def test_render_code_panel_numbers_toggle():

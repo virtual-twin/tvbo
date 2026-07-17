@@ -15,7 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import bsplot
 from bsplot import panels as _bpanels
-from tvbo.adapters.bsplot import TRANSFORMS as _TF, CUSTOM_PANELS as _CP
+from tvbo.adapters.bsplot import TRANSFORMS as _TF, CUSTOM_PANELS as _CP, registered as _registered
 % for m in code_modules:
 import ${m}  # noqa: F401 — registers this study's custom panels/transforms into _CP / _TF
 % endfor
@@ -74,13 +74,13 @@ def _panel_${p['key']}(fig, ax):
     ax.imshow(plt.imread(${repr(p['path'])}), origin="upper")
     ax.axis("off")
 % elif p['kind'] == 'custom':
-    _CP[${repr(p['render'])}](fig, ax, ${repr(p['ctx'])})
+    _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
 % else:
 % for L in p['layers']:
     _ds = _open(${repr(L['container'])})
     _da = _ds[${repr(L['output'])}]
 % if L['transform']:
-    _da = _TF[${repr(L['transform'])}](_da)
+    _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
 % endif
 % if L['sel'] is not None:
     _da = _da.sel(${repr(L['sel'])}, method=${repr(L['sel_method'])})
@@ -156,7 +156,7 @@ def main():
     _bpanels.add_panel_number(axd[${repr(p['key'])}], ${repr(p['letter'])}, **${repr(p['number_kwargs'])})
 % endfor
 % endif
-    fig.savefig(${repr(outfile)}, dpi=${dpi}, bbox_inches="tight")
+    fig.savefig(${repr(outfile)}, **${repr(savefig_kwargs)})
     print("wrote", ${repr(outfile)})
     return fig
 
