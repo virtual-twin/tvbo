@@ -217,6 +217,15 @@ phase portrait / bifurcation diagram / spectrum / sweep / spatial map — then c
 `ab_fig{N}.png`). Read the native result containers directly. Always draw the paper's
 full multi-panel layout; a not-yet-run panel renders a labelled placeholder.
 
+**Render spatial data in the paper's coordinate/surface convention**, not a convenient
+substitute — e.g. plot brain-region values at the paper's surface parcel centres (Koller uses
+the fsaverage5-*inflated* COM), not the raw MNI centroid; the convention changes the figure's
+look and can misalign, so derive the coordinates from the paper's surface and verify the
+mapping **by label**. And **guard a multi-panel figure by data-requirement, not per figure**:
+a group-level panel often reproduces from group data while its per-subject sibling stays
+blocked on per-subject data — split the guard so the reproducible panels ship and only the
+blocked ones are placeholders.
+
 Keep any extracted **paper source arrays label-keyed** (`xarray` with named coords), not
 encoded into filenames — tvbo's declarative figure spec (`dev/figure-spec-design.md`) will
 bind figure data by IRI + `output` + `sel`, so a flat per-panel `.nc` set is a fine stopgap,
@@ -313,16 +322,36 @@ there.)
 - **Realization dependence.** Exact solitary counts / magnitudes depend on unpublished
   seeds — count median-relative, state the difference as an accepted limitation, don't
   chase the integer.
+- **Geometry / eigenmode decompositions: match the *invariant*, not the magnitudes.**
+  Reproduce the paper's exact operator (e.g. an `igl` cotangent-Laplacian at the paper's mesh
+  resolution — parcel-level, not a dense-surface substitute); the reproduced result is the
+  modal *structure* and where power concentrates (a field living in the lowest spatial-frequency
+  modes), while absolute scales (wavelengths) track the surface mesh — inflated meshes differ
+  ~1.3× across sources. Report it mechanism-level with the scale caveat.
+- **Large or derived array constants: declare their provenance, never inline them.** A mesh
+  operator, an empirical matrix, or any precomputed array a model/observation consumes is a
+  `Parameter` declared by *where it comes from*, not a literal: `source:` (WHERE) + `measure:`
+  (WHICH key) for an existing file, or `producer:` (a `FunctionCall` — HOW to compute it) for
+  one derived from the study's own inputs (arguments may reference `network.nodes.position` /
+  `network.mesh.*`). Sourced/produced values are resolved lazily and materialised to a
+  content-addressed companion — never baked into generated source (a 66 MB operator inlined is
+  a source file that will not compile). Reserve inline `value:` for genuine scalars/small
+  arrays. This keeps the spec the single source of truth (a pre-built file drifts from the mesh
+  it came from) and the emitted code self-contained.
 - **Some targets are irreproducible from the paper's OWN source data.** A panel can be
   internally inconsistent in the published workbook (Koller Fig 2e: the per-node spread
   disagrees across the steady-state vs transient windows) — a source-data defect, not a
   model gap. Identify these, scope them `out`, say why; don't chase them.
 - **Redundant scripts.** One prep script (emits the tvbo Network directly), one plot
   script. Don't split what one `main()` can do.
-- **No dead vendored cruft.** Keep ONE pristine copy of the paper's own code under
-  `original_study/` — never duplicate its package (`modules/`, `setup.py`, …) into `code/`.
-  If nothing in your pipeline imports it, it is dead weight: a study that loads all its
-  experiments *without* the vendored package doesn't need it — delete it.
+- **No dead vendored cruft — but a *live* dependency is not cruft.** Keep ONE pristine copy
+  of the paper's own code under `original_study/`; don't duplicate it into `code/`. If the
+  paper's algorithm is reused at runtime (e.g. a Helmholtz–Hodge flow-potential), *reference*
+  that one copy (put its dir on `sys.path`), don't re-vendor. **Before deleting vendored code
+  as "unused", confirm it against the actual RUN paths — run a representative experiment
+  END-TO-END, not just `from_file` load.** Loading a study does not import a
+  flow-potential/observation callable, so a load-only check will wrongly call a live
+  dependency dead (this cost us a broken flow-potential path).
 - **Generated files never land in git at the study root.** KPI/targets tables, extracted
   arrays, the report PDF/logs → write them into `output/` (gitignored). A generated file
   tracked at the root reads as a hand-curated deliverable and silently drifts stale.
