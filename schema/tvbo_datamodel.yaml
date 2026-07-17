@@ -2661,6 +2661,15 @@ classes:
                 multivalued: true
                 range: Case
                 inlined: true
+            surrogate:
+                range: Surrogate
+                inlined: true
+                description: >-
+                  Optional permutation-significance test: this derived variable's value is the
+                  exceedance p-value of a named statistic under permutations of a field (a
+                  general surrogate null — any permutation test, not wave-specific — emitted as
+                  a vmap-fold over the captured permutations; the wrapped statistic stays
+                  symbolic). When set, the variable's own ``equation`` may be omitted.
         slots:
             - name
             - label
@@ -2673,6 +2682,39 @@ classes:
         slot_usage:
             record:
                 ifabsent: false
+
+    Surrogate:
+        class_uri: tvbo:Surrogate
+        description: >-
+          A permutation-significance test: re-evaluate a named statistic under n_perm fixed
+          permutations of a field and report the per-element exceedance p-value. General (any
+          permutation null — spatial nulls, FC significance, wave detection, …). Codegen emits
+          ``(vmap(lambda p: stat(field[p]))(perms) <cmp> stat(field)).mean(axis over perms)``;
+          the wrapped statistic is an ordinary symbolic derived variable, so only the
+          permutation fold is structural.
+        attributes:
+            statistic:
+                range: string
+                required: true
+                description: "Name of the derived variable to re-evaluate under permutation."
+            permute:
+                range: string
+                required: true
+                description: >-
+                  The symbol whose entries are permuted (the observation source, or a
+                  parameter such as an in-strength vector).
+            permutations:
+                range: string
+                required: true
+                description: >-
+                  Name of the observer parameter holding the fixed ``(n_perm, n)`` permutation-
+                  index array (a produced/sourced constant, reused across the window and grid).
+            direction:
+                range: string
+                ifabsent: string(greater_equal)
+                description: >-
+                  Exceedance direction: ``greater_equal`` (fraction of permutations whose
+                  statistic ≥ the observed) or ``less_equal`` (one-sided negative test).
 
     Noise:
         class_uri: tvbo:Noise
