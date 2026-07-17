@@ -621,12 +621,14 @@ if network_obs_keys:
 <%def name="render_reduction(red, name, s_idx, dt)">\
 <%
     from tvbo.codegen import render_expression
+    from tvbo.templates.tvboptim.utils import render_jax_default
     _is_median = red.get('statistic', 'mean') == 'median'
     _snames = [s['name'] for s in red['states']]
     _mem = [s for s in red['states'] if not s['is_accumulator']]   # memory-only states
     _mnames = [s['name'] for s in _mem]
     _src = red['source']
-    _rparams = _snames + [_src, 'dt', 'count']
+    _rpars = red.get('parameters') or {}   # observer constants, bound by name below
+    _rparams = _snames + list(_rpars) + [_src, 'dt', 'count']
     _rufuncs = {f: f for f in red['functions']}
     _jc = lambda e, ps=_rparams: render_expression(e, format='jax', user_functions=_rufuncs, parameters=ps)
     _h = red.get('histogram')   # guaranteed present for median (resolve_reduction requires it)
@@ -635,6 +637,13 @@ if network_obs_keys:
     _mem_ini = "".join("jnp.full((n,), %r), " % s['init'] for s in _mem)
 %>\
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0):
+% if _rpars:
+    # Observer constants (Dynamics.parameters) — scalars and array-valued operators
+    # alike, bound by name in the closure the init/update/finalize triple shares.
+% for _pname, _pdef in _rpars.items():
+    ${_pname} = ${render_jax_default(_pdef['value'])}
+% endfor
+% endif
 % for _fname, _fdef in red['functions'].items():
     def ${_fname}(${", ".join(_fdef['args'])}):
         return ${_jc(_fdef['expr'], _fdef['args'])}

@@ -241,7 +241,7 @@ def flag_text(obj, flags=None):
     """
     flags = _PARAM_FLAGS if flags is None else flags
     labels = [label for name, label in flags if slot(obj, name, False)]
-    for attr, key in (("shape", "shape"), ("dataset_path", "data"), ("reported_optimum", "optimum")):
+    for attr, key in (("shape", "shape"), ("source", "data"), ("reported_optimum", "optimum")):
         val = slot(obj, attr)
         if val is None or val == "":
             continue
