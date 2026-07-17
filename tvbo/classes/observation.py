@@ -963,6 +963,102 @@ class ObservationModel:
             return fig
 
 
+def populate_observation_from_iri(obs, functions_sink=None) -> bool:
+    """Fill an observation's missing fields from the curated model its ``iri`` names.
+
+    When an observation declares ``iri: tvbo:BOLD_TVB`` (or any curated entry under
+    ``tvbo/database/observation_models/``), its metadata — ``pipeline``, ``parameters``,
+    ``class_reference``, ``imaging_modality``, ``label``/``description`` — is loaded from
+    that model and merged **non-destructively**: a field the recipe set locally always
+    wins, so ``source``/``period`` overrides stay in force while the curated hemodynamic
+    pipeline fills in. Mirrors :func:`tvbo.classes.coupling._load_coupling_from_database`.
+
+    When ``functions_sink`` (a mutable name→Function mapping) is given, the model's
+    ``functions`` block is merged into it too — the helper functions a functional
+    pipeline calls by name, which codegen reads from ``experiment.functions``.
+
+    Returns True if a curated model was found and merged, False otherwise.
+    """
+    iri = getattr(obs, "iri", None)
+    if not iri:
+        return False
+    from tvbo.data.registry import local_name, resolve
+
+    name = local_name(iri) if ":" in str(iri) else str(iri)
+    try:
+        path = resolve("Observation", name)
+    except Exception:
+        return False
+    if path is None or not path.exists():
+        return False
+
+    import yaml as _yaml
+
+    data = _yaml.safe_load(path.read_text()) or {}
+
+    # Scalar fields: adopt the curated value only where the recipe left it empty.
+    for field in ("label", "description", "imaging_modality", "period",
+                  "downsample_period", "time_scale"):
+        if data.get(field) is not None and not getattr(obs, field, None):
+            setattr(obs, field, data[field])
+
+    # source: a list — take the curated one only if the recipe declared none.
+    if data.get("source") and not getattr(obs, "source", None):
+        obs.source = list(data["source"])
+
+    # pipeline: the heart of a curated observation model. Fill only if absent so a
+    # recipe that hand-declares its own pipeline is never silently overridden.
+    if data.get("pipeline") and not getattr(obs, "pipeline", None):
+        # A pipeline step is a FunctionCall (it may reference a function by name,
+        # inline a callable, or carry its own equation/source_code) — not a bare
+        # Function. Building it as Function drops `function:`/`callable:` steps.
+        obs.pipeline = [
+            step if isinstance(step, tvbo_datamodel.FunctionCall)
+            else tvbo_datamodel.FunctionCall(**step)
+            for step in data["pipeline"]
+        ]
+
+    # class_reference: a monitor/class handle (e.g. tvb Bold). Fill if absent.
+    if data.get("class_reference") is not None and not getattr(obs, "class_reference", None):
+        cr = data["class_reference"]
+        obs.class_reference = (
+            cr if isinstance(cr, tvbo_datamodel.ClassReference)
+            else tvbo_datamodel.ClassReference(**cr)
+        )
+
+    # parameters: keyed collection — fill each missing key, keep recipe overrides.
+    if data.get("parameters"):
+        params = obs.parameters if getattr(obs, "parameters", None) else {}
+        for pname, pval in data["parameters"].items():
+            if pname in params:
+                continue
+            if isinstance(pval, dict):
+                pval = {"name": pname, **pval}
+                params[pname] = tvbo_datamodel.Parameter(**pval)
+            else:
+                params[pname] = tvbo_datamodel.Parameter(name=pname, value=pval)
+        obs.parameters = params
+
+    # functions: a curated model may ship the helper functions its pipeline calls
+    # by name (an HRF kernel, a downsample, a convolution). Observation carries no
+    # `functions` slot — codegen reads them from the experiment — so hand them to the
+    # caller's sink to merge into `experiment.functions` (non-destructively: a
+    # function the experiment already declares wins).
+    if data.get("functions") and functions_sink is not None:
+        for fname, fdef in data["functions"].items():
+            if fname in functions_sink:
+                continue
+            if isinstance(fdef, tvbo_datamodel.Function):
+                functions_sink[fname] = fdef
+            else:
+                # The dict key is the function's name; a redundant inner ``name``
+                # (against the keyed-collection convention) must not double the
+                # keyword. Merge with the key winning.
+                functions_sink[fname] = tvbo_datamodel.Function(**{**fdef, "name": fname})
+
+    return True
+
+
 class Observation(tvbo_datamodel.Observation):
     """Wrapper around the LinkML Observation datamodel with convenience
     factory methods for loading from file, database, or TVB monitors."""

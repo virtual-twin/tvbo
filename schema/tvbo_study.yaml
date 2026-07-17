@@ -150,6 +150,17 @@ classes:
         description: >-
           Path to BIDS dataset root directory. When set, subject networks
           and empirical data paths are resolved relative to this root.
+      bundle:
+        range: boolean
+        description: >-
+          When true, emitting a self-contained kit copies this dataset's
+          per-subject files into the kit (``spec/<exp>/dataset/``) and rewrites
+          ``bids_root`` to that bundled copy, so the kit needs no external mount
+          or ``$TVBO_BIDS_ROOT`` at run time. The exact files are resolved from
+          the dataset-sourced observation's BIDS query (atlas, desc, …) — the
+          same query that scopes the fan-out — so no CLI selection is needed.
+          Declares the packaging intent in metadata instead of a ``--bundle-dataset``
+          flag; a subset is scoped via ``subjects``.
       conditions:
         multivalued: true
         range: string
