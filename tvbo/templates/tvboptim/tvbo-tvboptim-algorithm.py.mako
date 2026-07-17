@@ -1003,7 +1003,18 @@ def run_${algo_name}(
         # Compute ALL observations from post-tuning simulation (in dependency order)
         # This uses the experiment-level compute_all_observations function
         # Pass history as result_transient for BOLD pipeline continuity
+% if external_inputs:
+        # Score against THIS call's targets, not the module-level constants:
+        # the in-loop path already reads the `${', '.join(external_inputs)}`
+        # argument(s), so post-tuning must use the same values or a per-subject
+        # run would be scored against the process-wide default target.
+        post_tuning_observations = compute_all_observations(
+            post_tuning, state, history,
+            network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}},
+        )
+% else:
         post_tuning_observations = compute_all_observations(post_tuning, state, history)
+% endif
     else:
         post_tuning = None
         post_tuning_observations = None

@@ -451,6 +451,22 @@ implement only the backend a use-case needs.** Follows
   emits valid jnp; the numbers match the current `deco2014_plot.py` `solve_fp`/moments/PSD/Fisher
   values (bit-close), with the whole thing declared in the recipe — no hand-rolled plotter math.
 
+### Cleaner Fisher (deferred; current `lr_fisher` is the forward-only interim)
+Status: `lr_fisher` (`_linear_response.py.mako`) is SHIPPED — a self-contained partial that sweeps the
+stimulus event's ΔI, re-settles the operating point (settle + Newton polish) per ΔI, and builds
+`FI = μ'ᵀP⁻¹μ' + ½Tr[(P'P⁻¹)²]` by **finite differences**. It is metadata-driven (regions/variable/ΔI
+from the `locc_stim` event + `analysis: {type: fisher}` params), not a use-case hack, and sits at the
+same level as `lr_covariance`/`lr_psd`. Kept as-is by decision (2026-07). Two clean-ups when revisited:
+- **Factor a general `moments(θ)` primitive** — μ(θ), P(θ) at a swept parameter — reusable for *any*
+  parametric analysis of the linear-noise moments (sensitivity, identifiability, …), with `lr_fisher`
+  becoming a thin reduction on top. Removes the sweep/re-settle duplication between cov/psd and Fisher.
+- **Differentiable Lyapunov ⇒ autodiff Fisher.** The finite-difference scheme is a *direct consequence*
+  of the forward-only covariance choice (JAX eig has no eigenvector gradient, #2748). Add the
+  `custom_vjp` adjoint-Lyapunov (`AᵀS+SA+P̄=0` → `Ā=SPᵀ+SᵀP`, `Q̄=S`; validated exact to 5e-7 vs FD)
+  so μ′, P′ come from `jax.jacobian(moments)(θ)` — no sweep bookkeeping, closest to a symbolic FI
+  reduction, and makes the whole moments stack differentiable/optimisable. Reopens the forward-only
+  decision, so gated on a use-case that needs gradients through the moments.
+
 Full narrative dev-plan + phase gates:
 `…/replication_studies/Deco2014/docs_Replication_Deco2014/DEV_PLAN_recipe_native.md`.
 

@@ -103,6 +103,28 @@ def jacobian_terms(model):
     }
 
 
+def constraint_expr(model, var_name):
+    """Unfolded symbolic expression of a derived variable (e.g. the FIC constraint variable
+    ``I_E``), in state variables, network-coupling inputs and parameters — same unfolding as
+    :func:`_dfun_symbols` uses for the RHS (derived-variable chain inlined, local coupling
+    zeroed), so it prints against the same symbol set (``ctx['syms']``). Used to emit the
+    constraint residual of a constraint-defined operating point (Deco FIC: ``I_E = target``,
+    with ``J_i`` the free parameter), solved deterministically alongside the fixed point.
+    """
+    from tvbo.classes.equation import substitute_function_in_state_equations
+
+    cpl_inputs = dict(getattr(model, "coupling_inputs", {}) or {})
+    local_cpls = [c for c, ci in cpl_inputs.items() if getattr(ci, "local", False)]
+    dvars = {n: sp.sympify(dv.equation.rhs)
+             for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
+    if var_name not in dvars:
+        raise KeyError(f"constraint variable '{var_name}' is not a derived variable of the model")
+    expr = {var_name: sp.sympify(dvars[var_name])}
+    for _ in range(len(dvars) + 1):
+        substitute_function_in_state_equations(expr, dvars)
+    return expr[var_name].subs({sp.Symbol(c): 0 for c in local_cpls})
+
+
 def linear_response_context(model):
     """Resolution for the linear-response codegen: symbolic terms + layout, NO code.
 

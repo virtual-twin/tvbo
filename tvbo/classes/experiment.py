@@ -468,6 +468,34 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if val is not None and not isinstance(val, _EventCls):
                     val.__class__ = _EventCls
 
+        # Resolve observations that reference a curated model by `iri` (e.g.
+        # `iri: tvbo:BOLD_TVB`): merge the model's pipeline/parameters/class_reference
+        # in non-destructively so locally declared source/period overrides still win.
+        obss = getattr(self, "observations", None)
+        if obss and hasattr(obss, "values"):
+            from tvbo.classes.observation import populate_observation_from_iri
+            # A curated model may ship the helper functions its pipeline calls; collect
+            # them into a fresh sink so an experiment with no iri-referenced model keeps
+            # its functions table untouched (reassigning it re-wraps the type downstream).
+            _iri_funcs: dict = {}
+            for val in obss.values():
+                if val is not None and getattr(val, "iri", None):
+                    populate_observation_from_iri(val, functions_sink=_iri_funcs)
+            if _iri_funcs:
+                # Keep experiment.functions a plain name->Function dict (the YAML-loaded
+                # form). Assigning through the LinkML setter re-wraps it into a JsonObj
+                # that mangles the Function values and breaks `dict(experiment.functions)`
+                # in codegen — so mutate the existing dict in place, and for an
+                # experiment with none, install a plain dict via object.__setattr__
+                # (bypassing that setter). Add only functions the experiment lacks.
+                funcs = getattr(self, "functions", None)
+                if funcs is None:
+                    funcs = {}
+                    object.__setattr__(self, "functions", funcs)
+                for k, v in _iri_funcs.items():
+                    if k not in funcs:
+                        funcs[k] = v
+
         if not getattr(self, "network", None):
             self.network = Network()
         else:
@@ -1468,6 +1496,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # the resolved state persists on the experiment so YAML re-serialization
         # and metadata export reflect what was actually executed.
         _resolve_coupling(self)
+
+        # Lower declarative stimulus events (target_variable -> name, target_regions
+        # -> node indices) into the fields codegen consumes — same idempotent boundary.
+        self._resolve_events()
 
         # Disable delayed logic if the connectome has no path lengths or conduction speed is infinite
         try:
@@ -3434,7 +3466,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def render_code(self, format="tvb", **kwargs):
         """Render generated code in *format* (back-compat shim around the registry)."""
-        # Backend codegen requires resolved coupling/delay metadata. Idempotent.
+        # Backend codegen requires resolved coupling/delay/stimulus metadata (configure
+        # lowers coupling + stimulus events; idempotent).
         self.configure()
         from tvbo import export as _export
         return _export.render(self, format, **kwargs)

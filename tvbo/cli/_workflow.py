@@ -489,6 +489,34 @@ def plan(
             _sid = getattr(_src, "id", None)
             depends_on.append(str(_sid if _sid is not None else (getattr(_src, "name", None) or _src)))
 
+    # A post-hoc experiment (e.g. Fig 4 input-statistics) reads a prior fit's
+    # recorded parameters/observations by sourcing ``<study>.exp<id>`` on one of its
+    # observations or parameters. That is a result dependency exactly like
+    # ``from_experiment``, so record the referenced experiment id here — otherwise a
+    # DAG engine schedules the analysis before the fit it consumes.
+    # Match ``exp<id>`` as a whole dotted segment: the bare ref (``…exp30``) and a
+    # sub-reference into a prior result (``…exp30.observations.fc``) both depend on
+    # experiment 30. Anchoring on ``$`` alone would miss the dotted sub-reference.
+    _exp_ref = re.compile(r"(?:^|\.)exp(\d+)(?:\.|$)")
+
+    def _record_source_deps(container):
+        _items = container.values() if hasattr(container, "values") else (container or [])
+        for _it in _items:
+            _src = getattr(_it, "source", None)
+            if not _src:
+                continue
+            for _s in (_src if isinstance(_src, (list, tuple)) else [_src]):
+                _sn = _s if isinstance(_s, str) else (getattr(_s, "name", None) or str(_s))
+                _m = _exp_ref.search(str(_sn))
+                if _m and _m.group(1) != str(getattr(experiment, "id", "")) and _m.group(1) not in depends_on:
+                    depends_on.append(_m.group(1))
+
+    _record_source_deps(getattr(experiment, "observations", None))
+    _dyn = getattr(experiment, "dynamics", None)
+    if _dyn is not None:
+        _record_source_deps(getattr(_dyn, "parameters", None))
+    _record_source_deps(getattr(experiment, "parameters", None))
+
     return WorkflowPlan(
         study_key=study_key,
         experiment_key=experiment_key,
