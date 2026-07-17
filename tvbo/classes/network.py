@@ -2476,6 +2476,24 @@ class Network(tvbo_datamodel.Network):
                     W[i, j] = w
         return W
 
+    def node_positions(self) -> np.ndarray:
+        """Node coordinates as an ``(n_nodes, 3)`` array, in declared node order.
+
+        A missing ``z`` defaults to 0; a node with no position at all raises, since a
+        partial coordinate matrix (a mesh, a distance calc) is silently wrong rather
+        than merely incomplete. Use ``_get_node_position`` for a tolerant per-node lookup.
+        """
+        out = []
+        for node in (self.nodes or []):
+            pos = getattr(node, "position", None)
+            if pos is None:
+                raise ValueError(
+                    f"node {getattr(node, 'id', '?')!r} has no position; a full "
+                    f"(n_nodes, 3) coordinate array cannot be built."
+                )
+            out.append([pos.x, pos.y, getattr(pos, "z", 0.0) or 0.0])
+        return np.asarray(out, dtype=float)
+
     def _get_node_position(self, node_id: int) -> Optional[Tuple[float, float, float]]:
         """Get (x, y, z) position for a node by ID."""
         if not self.nodes:

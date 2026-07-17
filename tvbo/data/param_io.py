@@ -43,10 +43,11 @@ import numpy as np
 # would silently serve one parameter's array for another's.
 _CACHE: dict[tuple, Any] = {}
 
-# On-disk home for materialised produced constants, alongside the network cache
-# (`~/.tvbo/networks`). A derived constant is deterministic in its producing call, so it
-# is cached across runs and shared by every parameter naming that call.
-CACHE_DIR = Path.home() / ".tvbo" / "constants"
+def _default_cache_dir() -> Path:
+    """On-disk home for materialised produced constants, alongside the network cache
+    (``~/.tvbo/networks``). Resolved per call, not at import, so a harness that sets
+    ``HOME`` after importing tvbo still writes where it expects."""
+    return Path.home() / ".tvbo" / "constants"
 
 
 def clear_cache() -> None:
@@ -84,19 +85,25 @@ def _source_key(path: Path, measure: Optional[str]) -> tuple:
 
 
 def _readonly(value: Any) -> Any:
-    """Mark a cached array read-only.
+    """A read-only view of a resolved array (recursing into a bundle dict).
 
     One buffer is shared by every parameter naming the same array, so an in-place write
     by one consumer would silently corrupt the others — action at a distance that would
-    surface in an unrelated run. A resolved constant is conceptually immutable (it IS
-    the declared value), so flagging it turns that into a ValueError at the offending
-    line. A caller that genuinely needs to modify copies explicitly.
+    surface in an unrelated run. A resolved constant is conceptually immutable (it IS the
+    declared value), so a read-only view turns an accidental write into a ValueError at
+    the offending line.
+
+    Crucially this returns a *view* and does not freeze the input in place: a producer
+    may hand back an array the recipe still owns (a module-level cache, or an echoed
+    argument), and setting ``write=False`` on that object would break the recipe's own
+    later use of it from a line that never asked for a constant.
     """
     if isinstance(value, np.ndarray):
-        value.setflags(write=False)
-    elif isinstance(value, dict):
-        for v in value.values():
-            _readonly(v)
+        view = value.view()
+        view.setflags(write=False)
+        return view
+    if isinstance(value, dict):
+        return {k: _readonly(v) for k, v in value.items()}
     return value
 
 
@@ -106,19 +113,6 @@ def _readonly(value: Any) -> Any:
 # (a bare `weight` is a state variable, not the connectome) — the same rule the pipeline
 # argument path uses, so a producer and a pipeline step read arguments identically.
 _REF_PREFIX = "network."
-
-
-def _network_positions(net: Any) -> np.ndarray:
-    """Node coordinates as (n_nodes, 3), in declared node order."""
-    out = []
-    for node in (_slot(net, "nodes", None) or []):
-        pos = _slot(node, "position")
-        if pos is None:
-            raise ValueError(
-                f"network.nodes.position: node {_slot(node, 'id', '?')!r} has no position."
-            )
-        out.append([pos.x, pos.y, getattr(pos, "z", 0.0) or 0.0])
-    return np.asarray(out, dtype=float)
 
 
 def _mesh_array(net: Any, field: str) -> np.ndarray:
@@ -160,7 +154,9 @@ def _resolve_ref(ref: str, context: Any, where: str) -> Any:
 
     rest = ref[len(_REF_PREFIX):]
     if rest == "nodes.position":
-        return _network_positions(net)
+        if not hasattr(net, "node_positions"):
+            raise ValueError(f"{where}: {ref!r} needs a Network, got {type(net).__name__}.")
+        return net.node_positions()
     if rest.startswith("mesh."):
         return _mesh_array(net, rest.split(".", 1)[1])
     if rest.startswith("edges."):
@@ -248,12 +244,18 @@ def _producer_spec(producer: Any, param_name: str, context: Any) -> tuple:
     return module, name, kwargs
 
 
-def _producer_bundle(producer: Any, param_name: str, context: Any) -> Any:
+def _producer_bundle(
+    producer: Any, param_name: str, context: Any, spec: Optional[tuple] = None
+) -> Any:
     """Everything the producer returns, cached on the CALL — no output selection.
 
     Kept separate from selection so a caller that needs the whole result (writing the
     cache artifact) gets every named array, not just the one entry some parameter asked
     for; writing only that entry would make each sibling output a fresh re-run.
+
+    ``spec`` is an already-resolved ``_producer_spec``; pass it when the caller has one,
+    since resolving arguments again would rebuild every referenced array (a whole node
+    position matrix) only to discard the copy.
 
     The callable resolves by bare module name against the recipe's ``code_source``
     (already on ``sys.path`` once the study is loaded), so a study's own code produces
@@ -261,7 +263,7 @@ def _producer_bundle(producer: Any, param_name: str, context: Any) -> Any:
     """
     import importlib
 
-    module, name, kwargs = _producer_spec(producer, param_name, context)
+    module, name, kwargs = spec or _producer_spec(producer, param_name, context)
     key = _producer_key(module, name, kwargs)
     if key in _CACHE:
         return _CACHE[key]
@@ -279,8 +281,9 @@ def _producer_bundle(producer: Any, param_name: str, context: Any) -> Any:
 
 def _call_producer(producer: Any, param_name: str, context: Any) -> Any:
     """The producer's result, narrowed to this parameter's ``output`` entry."""
-    module, name, _ = _producer_spec(producer, param_name, context)
-    produced = _producer_bundle(producer, param_name, context)
+    spec = _producer_spec(producer, param_name, context)
+    module, name, _ = spec
+    produced = _producer_bundle(producer, param_name, context, spec)
     output = _slot(producer, "output", None)
 
     if output:
@@ -304,6 +307,25 @@ def _call_producer(producer: Any, param_name: str, context: Any) -> Any:
 
 # ------------------------------------------------------------------------------- API
 
+def _provenance(param: Any) -> Optional[str]:
+    """Which of ``value``/``source``/``producer`` this parameter declares.
+
+    The schema states the three are mutually exclusive; enforce it here rather than let
+    each entry point pick its own precedence. Two that disagreed (``resolve`` preferring
+    the producer while ``materialise`` preferred the source) would hand the host and the
+    generated code different values for one parameter, silently.
+    """
+    declared = [n for n in ("value", "source", "producer") if _slot(param, n) is not None]
+    if len(declared) > 1:
+        raise ValueError(
+            f"Parameter {str(_slot(param, 'name', '<unnamed>'))!r} declares "
+            f"{declared}; value/source/producer are mutually exclusive — a literal, "
+            f"bytes to read, and a recipe to compute are three different claims about "
+            f"where the value comes from."
+        )
+    return declared[0] if declared else None
+
+
 def is_lazy(param: Any) -> bool:
     """True when this parameter's value is resolved rather than inlined.
 
@@ -311,9 +333,19 @@ def is_lazy(param: Any) -> bool:
     obtained (``source``) or derived (``producer``) is read at run time and must never
     be embedded in generated source.
     """
-    return _slot(param, "value") is None and bool(
-        _slot(param, "source") or _slot(param, "producer")
-    )
+    return _provenance(param) in ("source", "producer")
+
+
+def _source_file(param: Any, source_dir: Optional[Path], name: str) -> Path:
+    """The existing file a ``source:`` parameter names, resolved against the spec dir."""
+    source = _slot(param, "source")
+    path = _resolve_path(str(source), source_dir)
+    if path is None:
+        raise ValueError(
+            f"Parameter {name!r}: source {source!r} does not resolve to an existing "
+            f"file (source_dir={source_dir})."
+        )
+    return path
 
 
 def materialise(
@@ -341,27 +373,22 @@ def materialise(
     no declared value.
     """
     name = str(_slot(param, "name", "<unnamed>"))
-    if not is_lazy(param):
+    kind = _provenance(param)
+    if kind not in ("source", "producer"):
         raise ValueError(
             f"Parameter {name!r} declares no `source`/`producer`; it has no file to read "
             f"(a literal `value:` is inlined instead)."
         )
 
-    source = _slot(param, "source")
-    if source:
-        path = _resolve_path(str(source), source_dir)
-        if path is None:
-            raise ValueError(
-                f"Parameter {name!r}: source {source!r} does not resolve to an existing "
-                f"file (source_dir={source_dir})."
-            )
+    if kind == "source":
+        path = _source_file(param, source_dir, name)
         measure = _slot(param, "measure")
         if not measure:
             raise ValueError(
                 f"Parameter {name!r}: a sourced constant must name its array with "
                 f"`measure:` for a backend to read it back."
             )
-        return path, str(measure)
+        return path, _checked_key(path, str(measure), name)
 
     # Produced: materialise once, content-addressed on the producing call so an edited
     # argument (a different k_ring) is a different artifact rather than a stale hit.
@@ -373,33 +400,70 @@ def materialise(
         repr(_producer_key(module, fname, kwargs)).encode()
     ).hexdigest()[:16]
 
-    root = Path(cache_dir).expanduser() if cache_dir else CACHE_DIR
+    root = Path(cache_dir).expanduser() if cache_dir else _default_cache_dir()
     root.mkdir(parents=True, exist_ok=True)
     path = root / f"{module}.{fname}.{digest}.h5"
-    key = str(_slot(producer, "output", None) or "value")
 
     if not path.exists():
-        _write_bundle(path, _producer_bundle(producer, name, context), key)
-    return path, key
+        _write_bundle(path, _producer_bundle(producer, name, context, (module, fname, kwargs)))
+    return path, _checked_key(path, _slot(producer, "output", None), name)
 
 
-def _write_bundle(path: Path, produced: Any, key: str) -> None:
-    """Write a producer's result to its cache artifact.
+def _checked_key(path: Path, key: Optional[str], name: str) -> str:
+    """The dataset ``key`` names in ``path``, verified to exist.
 
-    The whole bundle is written, not just the requested entry: one precompute typically
-    emits every operator, and writing them together means the next parameter naming a
-    sibling output is a cache hit rather than a re-run.
+    Checked here rather than left to run time: codegen bakes this key into the generated
+    module, so an unverified one turns a typo into a failure inside a simulation, far
+    from the declaration that caused it. A cache hit skips the write entirely, so this is
+    the only place the key is ever seen against the artifact.
     """
     import h5py
 
-    arrays = produced if isinstance(produced, dict) else {key: produced}
-    tmp = path.with_suffix(".h5.tmp")
-    with h5py.File(tmp, "w") as f:
-        for k, v in arrays.items():
-            f.create_dataset(str(k), data=np.asarray(v))
-    # Rename last: a concurrent reader (a cluster shard racing on the same artifact)
-    # must never observe a half-written file at the real path.
-    tmp.replace(path)
+    with h5py.File(path, "r") as f:
+        keys = sorted(f)
+        if key is None:
+            # No `output`/`measure`: unambiguous only when the artifact holds one array.
+            if len(keys) == 1:
+                return keys[0]
+            raise ValueError(
+                f"Parameter {name!r}: {path.name} holds {len(keys)} arrays {keys}; name "
+                f"the one to read with `output:` (produced) or `measure:` (sourced)."
+            )
+        if str(key) not in f:
+            raise ValueError(
+                f"Parameter {name!r}: {path.name} has no array {str(key)!r} "
+                f"(it holds {keys})."
+            )
+    return str(key)
+
+
+def _write_bundle(path: Path, produced: Any) -> None:
+    """Write a producer's result to its cache artifact.
+
+    The whole bundle is written, not just one entry: a precompute typically emits every
+    operator at once, so writing them together makes the next parameter naming a sibling
+    output a cache hit rather than a re-run.
+    """
+    import os
+
+    import h5py
+
+    arrays = produced if isinstance(produced, dict) else {"value": produced}
+    # A temp path unique to this process: several cluster shards materialise the same
+    # artifact concurrently, and a shared temp would let one truncate another's file
+    # mid-write and then both rename, publishing a corrupt artifact that every later
+    # shard reads as a valid cache hit. The rename itself is atomic, so readers only
+    # ever see a complete file.
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    try:
+        with h5py.File(tmp, "w") as f:
+            for k, v in arrays.items():
+                f.create_dataset(str(k), data=np.asarray(v))
+        tmp.replace(path)
+    finally:
+        # A failed write must not strand a temp file in the cache dir.
+        if tmp.exists():
+            tmp.unlink()
 
 
 def resolve(param: Any, source_dir: Optional[Path] = None, context: Any = None) -> Any:
@@ -414,25 +478,17 @@ def resolve(param: Any, source_dir: Optional[Path] = None, context: Any = None) 
     arrays are cached and returned **read-only**: they are shared, and a resolved
     constant is not the caller's to modify.
     """
-    value = _slot(param, "value")
-    if value is not None:
-        return value
-
-    name = str(_slot(param, "name", "<unnamed>"))
-    producer = _slot(param, "producer")
-    if producer is not None:
-        return _call_producer(producer, name, context)
-
-    source = _slot(param, "source")
-    if not source:
+    kind = _provenance(param)
+    if kind == "value":
+        return _slot(param, "value")
+    if kind is None:
         return None
 
-    path = _resolve_path(str(source), source_dir)
-    if path is None:
-        raise ValueError(
-            f"Parameter {name!r}: source {source!r} does not resolve to an existing "
-            f"file (source_dir={source_dir})."
-        )
+    name = str(_slot(param, "name", "<unnamed>"))
+    if kind == "producer":
+        return _call_producer(_slot(param, "producer"), name, context)
+
+    path = _source_file(param, source_dir, name)
     measure = _slot(param, "measure")
     key = _source_key(path, measure)
     if key not in _CACHE:
