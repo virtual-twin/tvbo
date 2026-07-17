@@ -1802,7 +1802,19 @@ classes:
             - time_scale
             - record
             - unit
+            - references
         attributes:
+            # Helper functions this observation's pipeline calls by name (an HRF kernel,
+            # a downsampler, a fused strided convolution, …). Emitted as module-level defs
+            # and merged non-destructively into experiment.functions when the model is
+            # referenced by `iri` — the runtime already consumes them
+            # (tvbo.classes.observation.populate_observation_from_iri), the schema now
+            # declares them. Same shape as Dynamics.functions.
+            functions:
+                multivalued: true
+                range: Function
+                inlined: true
+
             # Source specification - what this observation derives from.
             # Each entry is either a state-variable name/ref (raw observation
             # of an integrated trajectory) or another observation's name/ref

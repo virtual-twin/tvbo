@@ -852,6 +852,54 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
             continue
         derived.append({"name": str(dname), "expr": _parse(str(drhs), f"derived variable {dname!r}")})
 
+    # Permutation-significance surrogates: a derived variable may declare a `surrogate`
+    # (re-evaluate a named statistic DV under permutations of a field, report the exceedance
+    # p-value). Resolve each to the statistic EXPANDED for its permute symbol — DVs that
+    # depend on the permuted symbol are inlined so the statistic becomes a self-contained
+    # function of it, while DVs that don't (a captured observed value, e.g. U w.r.t. an
+    # in-strength permutation) stay as symbols the renderer binds in-step. General; the wave
+    # detector is one consumer.
+    dv_expr = {d["name"]: d["expr"] for d in derived}
+
+    def _dv_deps(expr, target, seen=frozenset()):
+        for s in (str(x) for x in expr.free_symbols):
+            if s == target:
+                return True
+            if s in dv_expr and s not in seen and _dv_deps(dv_expr[s], target, seen | {s}):
+                return True
+        return False
+
+    def _expand_stat(stat_name, permute):
+        expr = dv_expr[stat_name]
+        for _ in range(100):
+            pend = {n for n in ({str(s) for s in expr.free_symbols} & set(dv_expr))
+                    if _dv_deps(dv_expr[n], permute)}
+            if not pend:
+                return expr
+            expr = expr.subs({sp.Symbol(n): dv_expr[n] for n in pend})
+        raise ValueError(f"surrogate statistic {stat_name!r} expansion did not converge (cyclic derived variables?)")
+
+    surrogates = []
+    for dname, dvobj in dv_map.items():
+        surr = get_attr(dvobj, "surrogate")
+        if surr is None:
+            continue
+        stat_name = str(get_attr(surr, "statistic"))
+        if stat_name not in dv_expr:
+            raise ValueError(
+                f"surrogate on derived variable {str(dname)!r} names statistic {stat_name!r}, "
+                f"which is not a derived variable with an equation ({sorted(dv_expr)})."
+            )
+        permute = str(get_attr(surr, "permute"))
+        direction = str(get_attr(surr, "direction") or "greater_equal")
+        surrogates.append({
+            "name": str(dname),
+            "expr": _expand_stat(stat_name, permute),   # statistic as a function of `permute`
+            "permute": permute,
+            "perms": str(get_attr(surr, "permutations")),
+            "compare": ">=" if direction == "greater_equal" else "<=",
+        })
+
     outs = as_list(get_attr(dyn, "output"))
     output = None
     output_name = str(outs[0]) if outs else None
@@ -892,6 +940,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
         "source": source,
         "states": states,
         "derived": derived,       # per-step DV chain (sympy Exprs, declaration order); [] for a simple observer
+        "surrogates": surrogates, # permutation-significance tests {name, expr(function of permute), permute, perms, compare}; [] if none
         "output_name": output_name,  # the output DV's name (stays inlined at finalize; excluded from the per-step chain)
         "parameters": parameters,  # {name: {value (scalar|nested list), shape}} — named constants
         "output": output,
