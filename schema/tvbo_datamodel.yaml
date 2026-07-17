@@ -1795,11 +1795,13 @@ classes:
             - acronym
             - label
             - description
+            - iri
             - equation
             - parameters
             - environment
             - time_scale
             - record
+            - unit
         attributes:
             # Source specification - what this observation derives from.
             # Each entry is either a state-variable name/ref (raw observation
