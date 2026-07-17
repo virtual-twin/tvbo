@@ -49,7 +49,8 @@ ENV UV_SYSTEM_PYTHON=1 \
 COPY pyproject.toml /app/pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml --extra neuron --extra tvb \
-        jupyterlab uvicorn fastapi tvboptim
+        jupyterlab uvicorn fastapi \
+        "tvboptim @ git+https://github.com/virtual-twin/tvboptim.git@main"
 
 # 2. Pre-warm Julia. juliacall just needs juliapkg.json on sys.path.
 ENV JULIA_DEPOT_PATH="/opt/julia-depot" \

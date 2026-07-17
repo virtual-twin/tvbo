@@ -300,6 +300,22 @@ def _parse_bundle_select(items: list[str]) -> dict[str, str]:
     return out
 
 
+def _bundle_selection(experiment, cli_select: dict | None) -> dict | None:
+    """Resolve whether to bundle this experiment's dataset, and with what selection.
+
+    Bundling is requested either on the command line (``--bundle-dataset``, which
+    passes at least ``{}``) or declaratively in the recipe (``dataset.bundle: true``).
+    The metadata flag makes a self-contained kit the recipe's own intent, so the
+    packaging command needs no bundle flag. Returns the entity-override dict to pass
+    to :func:`_bundle_dataset` (``{}`` = resolve purely from the observation's BIDS
+    query), or ``None`` when neither source requests a bundle.
+    """
+    if cli_select is not None:
+        return cli_select
+    ds = getattr(experiment, "dataset", None)
+    return {} if (ds is not None and getattr(ds, "bundle", None)) else None
+
+
 def _bundle_dataset(experiment, dest_dir: Path, entity_overrides: dict | None) -> str | None:
     """Copy the fan-out's per-subject dataset files into the kit; return the new root.
 
@@ -369,8 +385,9 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path,
     # A requested per-subject data bundle runs BEFORE the (error-swallowing) spec
     # freeze: if bundling fails it is a hard error the user must see, not a kit that
     # falls back to the raw recipe / a machine-specific bids_root and fails on a node.
-    bundle_root = (_bundle_dataset(experiment, spec_dir / "dataset", bundle_select)
-                   if bundle_select is not None else None)
+    _sel = _bundle_selection(experiment, bundle_select)
+    bundle_root = (_bundle_dataset(experiment, spec_dir / "dataset", _sel)
+                   if _sel is not None else None)
     spec_relpath = None
     bundled_code = False
     try:
@@ -672,8 +689,9 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             spec_relpath, select = spec, key
         else:
             edir = out_dir / "spec" / key
-            bundle_root = (_bundle_dataset(exp, edir / "dataset", bundle_select)
-                           if bundle_select is not None else None)
+            _sel = _bundle_selection(exp, bundle_select)
+            bundle_root = (_bundle_dataset(exp, edir / "dataset", _sel)
+                           if _sel is not None else None)
             yaml_text = _freeze_spec_yaml(exp, edir, workflow_spec=spec_dict,
                                           dataset_bids_root=bundle_root)
             (edir / "experiment.yaml").write_text(yaml_text, encoding="utf-8")
@@ -710,7 +728,11 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
         return None
     (out_dir / "Snakefile").write_text(text, encoding="utf-8")
     _common.info(f"wrote Snakefile ({len(exp_plans)} experiment rule(s))")
-    _write_snakemake_profile(out_dir, block)
+    # Match the Snakefile's global `container:` directive (keyed on the first
+    # experiment): when it is emitted, enable Apptainer in the profile so the run
+    # needs no extra flag; when it is not, leave the profile container-free.
+    _kit_container = exp_plans[0].get("container") if exp_plans else None
+    _write_snakemake_profile(out_dir, block, container=_kit_container)
     if last_plan is not None:
         _write_readme(out_dir, engine="snakemake", plan=last_plan, script_relpath=None)
     if figs:
@@ -731,7 +753,7 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
     return out_dir
 
 
-def _write_snakemake_profile(out_dir: Path, block: dict) -> None:
+def _write_snakemake_profile(out_dir: Path, block: dict, container: str | None = None) -> None:
     """Ship a SLURM profile so the kit runs from a login node with one command.
 
     Snakemake 8+/9 submits to the scheduler via an executor plugin: the lightweight
@@ -750,8 +772,17 @@ def _write_snakemake_profile(out_dir: Path, block: dict) -> None:
         "executor: slurm",
         "jobs: 100                      # max SLURM jobs queued/running at once",
         "slurm-logdir: logs             # per-rule SLURM logs -> <kit>/logs/rule_<name>/ (visible, not .snakemake/)",
-        "default-resources:",
     ]
+    if container:
+        # A `container:` directive is declared, so run every rule inside it. Snakemake
+        # converts the docker:// image to a SIF and executes via Apptainer (provided on
+        # the compute nodes) — no venv/module activation needed. The CLI option is
+        # nargs="+" (a set of deployment methods), so the profile value must be a YAML
+        # list, not a scalar.
+        lines.append("# run each rule inside the declared container: (docker:// -> SIF)")
+        lines.append("software-deployment-method:")
+        lines.append("  - apptainer")
+    lines.append("default-resources:")
     if partition:
         lines.append(f"  slurm_partition: {partition}")
     if account:

@@ -124,6 +124,17 @@ ARRAY_FUNCTIONS = {
     "diag": Function("diag"),                # diag(M) → the main diagonal of M as a vector
     "zero_diagonal": Function("zero_diagonal"),  # zero_diagonal(M) → M with its main diagonal set to 0
     "matmul": Function("matmul"),            # matmul(A, B) → ordinary matrix product A @ B
+    "strided_convolve": Function("strided_convolve"),  # strided_convolve(X, k, s) → 'valid' conv of X⊛k evaluated only at the [s::s] output indices (fuses convolve+subsample; no full FFT)
+    # General array ops for per-timestep detectors / permutation-significance tests: a
+    # 2-D gather, a single-axis reduction, and Pearson correlation — expressible in any
+    # backend's array algebra so a wave / graph / significance observable is authored as
+    # declarative equations, not backend source_code.
+    "take": Function("take"),          # take(x, idx) → gather x by an int index array (result has idx.shape)
+    "sum_axis": Function("sum_axis"),  # sum_axis(x, axis) → reduce one axis ({np,jnp}.sum(x, axis=..))
+    "pearson": Function("pearson"),    # pearson(x, y) → Pearson r of two FLAT/1-D operands (reduces all elements; the per-step node-collapsing corr — NOT a columnwise 2-D corr, and distinct from the loss-helper `correlation`)
+    "clip": Function("clip"),          # clip(x, lo, hi) → bound x to [lo, hi] ({np,jnp}.clip); e.g. clip(cos_sim, -1, 1) before acos
+    "any": Function("any"),            # any(x) → True if any element is truthy ({np,jnp}.any); e.g. any(p_div <= sig)
+    "all": Function("all"),            # all(x) → True if every element is truthy ({np,jnp}.all)
 }
 
 

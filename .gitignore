@@ -149,3 +149,6 @@ tvbo/datamodel/tvbo_datamodel.schema.json
 # Build artifacts
 dist/
 *.egg-info/
+
+# stray compiled bifurcation module (build artifact; the tracked copy lives in BifurcationTutorial/)
+docs/Usage/*.so
