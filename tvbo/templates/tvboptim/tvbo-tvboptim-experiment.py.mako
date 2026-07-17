@@ -13,9 +13,10 @@ from tvbo.templates.tvboptim.utils import (
     parse_exploration, get_param_info, get_node_param_overrides,
     normalize_coupling_aliases, resolve_coupling_input_map,
     get_node_state_overrides, render_jax_default, get_mode_layout,
-    get_all_observations_from_algo,
+    get_all_observations_from_algo, network_axis_leaf,
 )
 import numpy as np
+import re
 
 # Must have experiment
 assert 'experiment' in context.keys(), "experiment required for experiment template"
@@ -154,7 +155,7 @@ time_si_factor = unit_to_si_factor(getattr(integration, 'unit', None) or 'ms')
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
-from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, resolve_reduction, edge_label, edge_const
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, resolve_reduction, edge_label, edge_const, node_label, node_const
 solver_kwargs_str = resolve_solver_kwargs(integration, dt)
 # Warm-start/adiabatic scans run a plain forward solver but must honour the
 # coupling_evaluation choice (recompute_coupling_per_stage); gradient kwargs
@@ -653,6 +654,13 @@ for expl in exploration_list:
         explored_values = axis.explored_values
         _el_domains = getattr(axis, 'element_domains', None) or []
         _builder = getattr(axis, 'builder', None)
+        # ExplorationAxis.reduce: collapse this axis by a statistic in the result
+        # container instead of keeping it as a grid dim (e.g. an execution.random_seed
+        # trial ensemble → a mean/sem observation). Carried through into the axis
+        # metadata so ExplorationResult knows which named dim to reduce, and how.
+        _reduce = getattr(axis, 'reduce', None)
+        _reduce_stat = (str(getattr(_reduce, 'statistic', None) or 'mean')
+                        if _reduce is not None else None)
         # element_domains satisfy the axis whether they carry explored_values OR
         # lo/hi/n bounds — the hetero auto-expansion below reads either per element.
         assert domain or explored_values or _el_domains or _builder is not None or from_experiment_branch, \
@@ -668,14 +676,28 @@ for expl in exploration_list:
         source_key = None
         is_coupling_param = False
         is_network_param = False
-        if '.' in pname:
-            prefix, pname = pname.rsplit('.', 1)
+        graph_leaf = None
+        if pname.startswith('network.'):
             # `network` is the reserved singleton-network scope (one Network per
-            # experiment): e.g. `network.conduction_speed`. Its axis is swept on
-            # grid_state.graph.speed (the DenseLengthGraph's live conduction-speed leaf).
-            is_network_param = (prefix == 'network')
-            is_coupling_param = (not is_network_param) and (prefix in all_couplings)
-            source_key = _to_ci_key(prefix) if is_coupling_param else (None if is_network_param else prefix)
+            # experiment): `network.conduction_speed`, `network.edges.<label>`.
+            # Split on the FIRST dot so the remainder stays a full attribute path
+            # — rsplit would turn `network.edges.weight` into prefix
+            # 'network.edges', which no longer matches the scope and would fall
+            # through to the dynamics branch as a silent wrong-scope write.
+            # network_axis_leaf() resolves the path to the graph leaf the axis
+            # sweeps (and raises on an unsweepable attribute).
+            is_network_param = True
+            graph_leaf = network_axis_leaf(pname)
+            # The grid path is the resolved leaf, so `pname` only names the axis'
+            # `n_<name>` override kwarg; sanitize the attribute path into an
+            # identifier (`edges.weight` -> `edges_weight`, leaving the existing
+            # `conduction_speed` untouched). `_axis_label` keeps the declared
+            # dotted path, so grid coords stay named as written in the recipe.
+            pname = re.sub(r'\W', '_', pname[len('network.'):])
+        elif '.' in pname:
+            prefix, pname = pname.rsplit('.', 1)
+            is_coupling_param = (prefix in all_couplings)
+            source_key = _to_ci_key(prefix) if is_coupling_param else prefix
         # from_experiment:branch axis — the swept-parameter VALUES come from the source run's
         # recorded branch (loaded at runtime as _BRANCH_SEED), not from a domain here. This axis
         # carries only its identity (parameter path); the branch-analysis body binds each cell's
@@ -690,6 +712,7 @@ for expl in exploration_list:
                 'dynamics_key': source_key if (not is_coupling_param and source_key) else None,
                 'element_idx': None,
                 'is_branch': True,
+                'reduce': _reduce_stat,
             })
             continue
         # Builder axis: values materialized at runtime by a callable (ExplorationAxis.builder) —
@@ -720,10 +743,13 @@ for expl in exploration_list:
                 'name': pname,
                 'label': _axis_label,
                 'is_coupling': is_coupling_param,
+                'is_network': is_network_param,
+                'graph_leaf': graph_leaf,
                 'coupling_key': source_key if is_coupling_param else None,
                 'dynamics_key': source_key if not is_coupling_param and source_key else None,
                 'element_idx': None,
                 'builder_expr': "%s.%s(%s)" % (_bc.module, _bc.name, ", ".join(_arg_strs)),
+                'reduce': _reduce_stat,
             })
             continue
         # `execution.random_seed` → a per-cell NOISE-SEED axis. Each grid cell reseeds
@@ -745,12 +771,17 @@ for expl in exploration_list:
                 'element_idx': None,
                 'values': _seed_vals,
                 'n': len(_seed_vals),
+                'reduce': _reduce_stat,
             })
             continue
         # Auto-expand heterogeneous parameters: if pname matches a dynamics param
         # with shape containing 'n_nodes', expand to n_nodes element axes automatically.
         # e.g., K with shape "(n_nodes,)" → K_el0, K_el1, ... K_el(n_nodes-1)
-        is_hetero_param = (not is_coupling_param and pname in dyn_param_shapes
+        # A `network.`-scoped axis is never a dynamics parameter, so it must not be
+        # expanded here even when a Dynamics happens to declare a same-named
+        # per-node parameter — the axis sweeps the graph leaf, not the model.
+        is_hetero_param = (not is_coupling_param and not is_network_param
+                           and pname in dyn_param_shapes
                            and 'n_nodes' in dyn_param_shapes[pname])
         if is_hetero_param:
             _n = n_nodes
@@ -769,6 +800,7 @@ for expl in exploration_list:
                     'coupling_key': None,
                     'dynamics_key': source_key if source_key else None,
                     'element_idx': _ei,
+                    'reduce': _reduce_stat,
                 }
                 # Per-element explored_values from element_domains override shared ones
                 _dom_ei = _el_dom_map.get(_ei, None)
@@ -801,9 +833,11 @@ for expl in exploration_list:
                     'n': len(vals),
                     'is_coupling': is_coupling_param,
                     'is_network': is_network_param,
+                    'graph_leaf': graph_leaf,
                     'coupling_key': source_key if is_coupling_param else None,
                     'dynamics_key': source_key if not is_coupling_param and source_key else None,
                     'element_idx': None,
+                    'reduce': _reduce_stat,
                 })
             else:
                 assert domain.lo is not None, f"domain.lo required for {axis.parameter}"
@@ -822,9 +856,11 @@ for expl in exploration_list:
                         'n': n,
                         'is_coupling': is_coupling_param,
                         'is_network': is_network_param,
+                        'graph_leaf': graph_leaf,
                         'coupling_key': source_key if is_coupling_param else None,
                         'dynamics_key': source_key if not is_coupling_param and source_key else None,
                         'element_idx': None,
+                        'reduce': _reduce_stat,
                     })
                 else:
                     exp_info['axes'].append({
@@ -835,9 +871,11 @@ for expl in exploration_list:
                         'n': n,
                         'is_coupling': is_coupling_param,
                         'is_network': is_network_param,
+                        'graph_leaf': graph_leaf,
                         'coupling_key': source_key if is_coupling_param else None,
                         'dynamics_key': source_key if (not is_coupling_param and not is_network_param and source_key) else None,
                         'element_idx': None,
+                        'reduce': _reduce_stat,
                     })
     observable = expl.observable
     if observable:
@@ -1616,6 +1654,16 @@ def run_simulation(
 ) -> Bunch:
     solver = get_solver()
     result_transient = None
+    % if has_noise:
+    # config.noise.key is a live runtime PRNG leaf (tvboptim reads it per solve), so honour
+    # a runtime random_seed — run(random_seed=N) or a trial ensemble — instead of the
+    # codegen-baked key. Unset → the experiment's execution.random_seed (${random_seed}),
+    # i.e. byte-identical to the previously baked jax.random.key(${random_seed}).
+    # jnp.asarray (not int()) so an array- or tracer-valued seed — a trial ensemble
+    # binding one seed per cell — coerces instead of raising.
+    _rs = kwargs.get('random_seed')
+    _noise_key = jax.random.key(jnp.asarray(${random_seed} if _rs is None else _rs, dtype=jnp.uint32))
+    % endif
 
     % if has_transient:
     # Run transient simulation to settle network dynamics
@@ -1629,6 +1677,10 @@ def run_simulation(
         state_init = _apply_seed_params(_apply_seed_dynamics(_apply_node_overrides(state_init)))
         % if stochastic_param_info:
         _inject_stochastic_trajectories(state_init, t_transient, dt, key=jax.random.key(${list(stochastic_param_info.values())[0]['seed']}))
+        % endif
+        % if has_noise:
+        if getattr(state_init, 'noise', None) is not None:
+            state_init.noise.key = _noise_key
         % endif
         result_transient = model_fn_init(state_init)
         # tvboptim >= 0.2.7: NativeSolution carries variable_names; update_history
@@ -1680,6 +1732,10 @@ def run_simulation(
     result = None
     observations = None
     if run_main:
+        % if has_noise:
+        if getattr(state, 'noise', None) is not None:
+            state.noise.key = _noise_key
+        % endif
         result = model_fn(state)
         observations = Bunch()
 % for obs_name in observation_names:
@@ -1887,7 +1943,7 @@ def _windowed_corr(_reduce, _ts, **_kw):
     return _reduce(_ts, **_kw)
 
 
-def compute_all_observations(result, state, result_transient=None, only=None):
+def compute_all_observations(result, state, result_transient=None, only=None, network_obs=None):
     # ``only`` (a set of observation names) restricts computation to those observations
     # plus, by the caller's closure, whatever they derive from. Default None computes
     # every declared observation (unchanged behaviour). The jitted per-grid-point
@@ -1895,9 +1951,14 @@ def compute_all_observations(result, state, result_transient=None, only=None):
     # ``solitary`` needed only by the base run — never execute inside the trace.
     obs = Bunch()
 
-    # Network observations (static data from BIDS)
+    # Network observations (empirical targets carried by the Network). A
+    # `network_obs` entry wins over the module-level constant, so a caller
+    # scoring against its own target — one subject of a batched cohort, whose
+    # target is a traced leaf rather than a process-wide value — is not
+    # silently scored against whatever `_bind_network_observations` last bound.
+    _no = network_obs or {}
 % for obs_name in sorted(network_observation_names):
-    obs.${obs_name} = ${obs_name}  # Module-level constant
+    obs.${obs_name} = _no['${obs_name}'] if '${obs_name}' in _no else ${obs_name}
 % endfor
 
     # Simulated observations (computed from result) - these derive from simulation state
@@ -2006,6 +2067,12 @@ def compute_all_observations(result, state, result_transient=None, only=None):
                         # string literal. Keeps derived observations (source = another
                         # observation) consistent with the non-derived source path.
                         pipeline_args.append(f"{arg_name}={edge_const(_edge_lab)}")
+                    elif val_str.startswith('network.') and (_node_lab := node_label(val_str)):
+                        # network.positions/instrength → the per-node vector embedded as a
+                        # module constant by the included observation template
+                        # (utils.collect_network_node_arrays), the node-level analogue of
+                        # the edge-matrix branch above.
+                        pipeline_args.append(f"{arg_name}={node_const(_node_lab)}")
                     elif '.' in val_str:
                         prefix = val_str.split('.')[0]
                         if prefix in (src_obs_list + list(observation_names) + list(derived_observation_names)):
@@ -2067,7 +2134,27 @@ def compute_analysis_observations(state, network, result_transient=None):
     diagnostics fully metadata-derived. Analysis solves use a plain solver — the truncation
     window is an optimization knob, not part of these diagnostics."""
     obs = Bunch()
-${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor)}
+<%
+    # A tuning algorithm with an activity-target objective (Deco FIC) defines the operating point by
+    # a CONSTRAINT: the objective's target_variable = target_value, with the update rule's
+    # target_parameter free. For the LINEAR-RESPONSE analysis obs (which linearise around the
+    # deterministic fixed point), solve that constraint deterministically — the paper's fsolve on the
+    # steady state — rather than the stochastic tuning loop. `None` => plain noise-off settle. The
+    # stochastic algorithm itself is untouched (still used for the actual BOLD/rate simulations).
+    _op_constraint = None
+    for _alg in (experiment.algorithms.values() if experiment.algorithms else []):
+        _obj = getattr(_alg, 'objective', None)
+        _rules = list(getattr(_alg, 'update_rules', None) or [])
+        if _obj is not None and getattr(_obj, 'target_variable', None) is not None and getattr(_obj, 'target_value', None) is not None and _rules:
+            _tp = _rules[0].target_parameter
+            _op_constraint = {
+                'constraint_variable': str(_obj.target_variable),
+                'target': float(_obj.target_value),
+                'free_parameter': str(getattr(_tp, 'name', _tp)),
+            }
+            break
+%>
+${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, transient_time, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor, events=(dict(experiment.events) if experiment.events else {}), op_constraint=_op_constraint)}
     return obs
 % endif
 
@@ -2435,6 +2522,8 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     _grp_${ax['name']} = "${ax['name']}" if _axisvals_${ax['name']}.ndim > 1 else None
     % if ax.get('is_coupling'):
     grid_state.coupling.${ax['coupling_key']}.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
+    % elif ax.get('is_network'):
+    grid_state.graph.${ax['graph_leaf']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
     % else:
     grid_state.dynamics.${ax['name']} = DataAxis(_axisvals_${ax['name']}, group=_grp_${ax['name']})
     % endif
@@ -2458,14 +2547,15 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     grid_state.coupling.${ax['coupling_key']}.${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
     % endif
     % elif ax.get('is_network'):
-    ## Network-scope axis (conduction_speed): the base graph is a DenseLengthGraph
-    ## (built above from tract lengths), so sweep its live `speed` leaf directly.
-    ## delays = lengths / speed is recomputed each forward pass — no per-cell graph
-    ## or Network rebuild, and speed stays a differentiable pytree leaf.
+    ## Network-scope axis: sweep the graph's live `${ax['graph_leaf']}` leaf
+    ## directly (resolved from the declared path by network_axis_leaf). Every
+    ## dependent quantity is recomputed each forward pass — delays = lengths /
+    ## speed, couplings from weights — so there is no per-cell graph or Network
+    ## rebuild, and the leaf stays a differentiable pytree leaf.
     % if 'values' in ax:
-    grid_state.graph.speed = DataAxis(${ax['values']})
+    grid_state.graph.${ax['graph_leaf']} = DataAxis(${ax['values']})
     % else:
-    grid_state.graph.speed = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    grid_state.graph.${ax['graph_leaf']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
     % endif
     % else:
     % if 'values' in ax:
@@ -2928,6 +3018,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % if ax.get('element_idx') is not None:
             element_idx=${ax['element_idx']},
 % endif
+% if ax.get('reduce'):
+            reduce='${ax['reduce']}',
+% endif
         ),
 % endfor
     ]
@@ -3081,7 +3174,7 @@ def run_experiment(
     run_main = mode in ('simulation', 'all', None)
 
     # Run simulation to get model_fn and state (includes transient settling if configured)
-    sim_result = run_simulation(network, t1=${t1_default}, dt=${dt}, t_transient=${transient_time}, run_main=run_main)
+    sim_result = run_simulation(network, t1=${t1_default}, dt=${dt}, t_transient=${transient_time}, run_main=run_main, random_seed=kwargs.get('random_seed'))
     model_fn = sim_result.model_fn
     default_state = sim_result.state
     # Raw transient result for observation monitors (HRF warmup)

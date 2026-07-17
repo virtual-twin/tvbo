@@ -23,6 +23,7 @@ Usage in templates:
 """
 
 import ast
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from tvbo.utils import as_list
@@ -80,12 +81,14 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
         if isinstance(p.value, (list, tuple)):
             # Array-valued constant (e.g. a mode-coupling matrix): keep the nested
             # list; the codegen wraps it as a jnp.array, not a scalar default.
-            val = list(p.value)
+            param_defaults[p.name] = list(p.value)
         elif p.value is not None:
-            val = float(p.value)
-        else:
-            val = 1.0
-        param_defaults[p.name] = val
+            param_defaults[p.name] = float(p.value)
+        # A parameter with no literal `value` is simply ABSENT from the defaults: it
+        # may be free, or sourced/produced (resolved from storage, never inlined).
+        # Emission sites supply their own fallback via `.get(name, 1.0)`; inventing one
+        # here instead would erase the difference between "undeclared" and "1.0" and let
+        # a resolved operator silently emit as a scalar.
         shape = getattr(p, "shape", None)
         if shape:
             param_shapes[p.name] = str(shape)
@@ -692,7 +695,7 @@ def _reduction_init_value(sv: Any) -> float:
     return 0.0
 
 
-def resolve_reduction(obs: Any) -> Optional[Dict[str, Any]]:
+def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
     """Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction.
 
     An observation may declare a co-integrated auxiliary ``Dynamics`` (the observer)
@@ -708,8 +711,11 @@ def resolve_reduction(obs: Any) -> Optional[Dict[str, Any]]:
     when the observation declares no ``dynamics`` (the post-scan path runs).
 
     Every RHS is parsed to a **sympy** expression against the observer's symbolic
-    vocabulary (its states, the source, and the framework scalars ``dt``/``count``;
-    user functions become undefined ``Function``s). That makes the analysis symbolic,
+    vocabulary (its states, its ``parameters``, the source, and the framework scalars
+    ``dt``/``count``; user functions become undefined ``Function``s). An observer
+    parameter is a named constant exactly as a model Dynamics' parameters are, scalar
+    or array-valued (a mesh operator, a template matrix), and binds by name in the
+    rendered update. That makes the analysis symbolic,
     not string-based: accumulator classification is ``state_symbol in expr.free_symbols``,
     and an unknown symbol (a typo) is caught here rather than surfacing as a codegen
     error. The context carries sympy ``Expr`` objects; the partial renders them per
@@ -728,9 +734,62 @@ def resolve_reduction(obs: Any) -> Optional[Dict[str, Any]]:
     sv_pairs = list(svs.items()) if hasattr(svs, "items") else []
     sv_names = [str(n) for n, _ in sv_pairs]
 
-    # Symbolic vocabulary: observer states + source + framework scalars are Symbols;
-    # the observer's user functions are undefined Functions. Parse every RHS against it.
-    allowed = set(sv_names) | ({source} if source else set()) | {"dt", "count"}
+    # Derived variables (per-step intermediates). Their names join the symbolic vocabulary
+    # so a richer observer's DV can reference an earlier DV (a detector chain, e.g.
+    # ``pgn = pg / nrm``); a simple observer has none and this is inert.
+    dvs = get_attr(dyn, "derived_variables")
+    dv_map = dict(dvs.items()) if hasattr(dvs, "items") else {}
+    dv_names = [str(n) for n in dv_map]
+
+    # Named constants the observer's expressions bind by name — resolved exactly as a
+    # model Dynamics' parameters are (same helper), so a scalar and an array-valued
+    # constant (e.g. a mesh operator) declare identically and need no observer-specific
+    # provenance path.
+    from tvbo.data import param_io
+
+    param_map = get_attr(dyn, "parameters") or {}
+    param_objs = (dict(param_map.items()) if hasattr(param_map, "items")
+                  else {str(get_attr(p, "name")): p for p in param_map})
+    param_names, param_values, param_shapes = get_param_info(param_map)
+
+    # Resolve each constant to what the template emits: a literal binds inline; a
+    # sourced/produced one is materialised (codegen-time) to a content-addressed artifact
+    # and emitted as a lazy (file, key) the backend reads at run time, so a large operator
+    # never enters the generated source. The spec dir grounds a relative source path
+    # exactly as bids_dir is grounded.
+    #
+    # Materialisation runs the producer and writes to disk, so it happens ONLY when an
+    # experiment is supplied — i.e. at genuine emission. resolve_reduction is also called
+    # bare (no experiment) as a cheap "is this a streaming reducer?" predicate; that path
+    # must stay side-effect-free, so a lazy constant is left deferred (never materialised
+    # just to answer a boolean, and never triggering an igl precompute as a side effect).
+    src_file = get_attr(experiment, "_source_file", None) if experiment is not None else None
+    src_dir = Path(src_file).parent if src_file else None
+    parameters: Dict[str, Any] = {}
+    for n in param_names:
+        if n in param_values:
+            parameters[n] = {"value": param_values[n], "shape": param_shapes.get(n)}
+        elif experiment is None:
+            parameters[n] = {"lazy": None, "shape": param_shapes.get(n)}  # deferred
+        else:
+            path, key = param_io.materialise(
+                param_objs[n], source_dir=src_dir, context=experiment
+            )
+            parameters[n] = {"lazy": (str(path), key), "shape": param_shapes.get(n)}
+    # One symbol cannot denote both a per-step state and a fixed constant: the update
+    # would read whichever the renderer bound last, silently.
+    shadowed = sorted(set(param_names) & set(sv_names))
+    if shadowed:
+        raise ValueError(
+            f"Observation reduction observer declares {shadowed} as both a state "
+            f"variable and a parameter; a symbol must denote one or the other."
+        )
+
+    # Symbolic vocabulary: observer states + parameters + source + framework scalars are
+    # Symbols; the observer's user functions are undefined Functions. Parse every RHS
+    # against it.
+    allowed = (set(sv_names) | set(param_names) | set(dv_names)
+               | ({source} if source else set()) | {"dt", "count"})
     loc: Dict[str, Any] = {n: sp.Symbol(n) for n in allowed}
     loc["pi"] = sp.pi
     funcs = get_attr(dyn, "functions")
@@ -750,8 +809,8 @@ def resolve_reduction(obs: Any) -> Optional[Dict[str, Any]]:
         if unknown:
             raise ValueError(
                 f"Observation reduction {where}: unknown symbol(s) {sorted(unknown)}; "
-                f"available are the observer states {sv_names}, the source {source!r}, "
-                f"and dt/count."
+                f"available are the observer states {sv_names}, its parameters "
+                f"{param_names}, the source {source!r}, and dt/count."
             )
         return expr
 
@@ -781,10 +840,21 @@ def resolve_reduction(obs: Any) -> Optional[Dict[str, Any]]:
             "is_accumulator": sp.Symbol(name) in expr.free_symbols,
         })
 
+    # The derived-variable chain, resolved as sympy exprs in declaration order (a DV may
+    # reference earlier DVs, the source, states, and parameters). A simple observer has an
+    # empty chain and reads its value straight from ``output`` below; a detector observer
+    # computes this chain per step and the renderer emits it as sequential assignments.
+    derived = []
+    for dname, dvobj in dv_map.items():
+        deq = get_attr(dvobj, "equation")
+        drhs = get_attr(deq, "rhs") if deq is not None else None
+        if drhs is None:
+            continue
+        derived.append({"name": str(dname), "expr": _parse(str(drhs), f"derived variable {dname!r}")})
+
     outs = as_list(get_attr(dyn, "output"))
-    dvs = get_attr(dyn, "derived_variables")
-    dv_map = dict(dvs.items()) if hasattr(dvs, "items") else {}
     output = None
+    output_name = str(outs[0]) if outs else None
     if outs:
         out_name = str(outs[0])
         dv = dv_map.get(out_name)
@@ -821,6 +891,9 @@ def resolve_reduction(obs: Any) -> Optional[Dict[str, Any]]:
     return {
         "source": source,
         "states": states,
+        "derived": derived,       # per-step DV chain (sympy Exprs, declaration order); [] for a simple observer
+        "output_name": output_name,  # the output DV's name (stays inlined at finalize; excluded from the per-step chain)
+        "parameters": parameters,  # {name: {value (scalar|nested list), shape}} — named constants
         "output": output,
         "functions": functions,
         "statistic": statistic,   # 'mean' | 'median'
@@ -1038,6 +1111,55 @@ def _analysis_wrt_access(wrt: List[str], coupling_keys: Set[str]) -> Optional[st
     return resolve_config_access(wrt[0], coupling_keys) if wrt else None
 
 
+def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor):
+    """Resolve the linear-response analysis observations (covariance / psd / fisher) into the spec
+    the ``lr_analysis_block`` Mako orchestrator emits — resolution only, no code strings. Provides
+    the operating-point symbol layout (:func:`linear_response_context`), each observable's
+    parameters, the Fisher stimulus (event → per-node target ``nodes`` + a heterogeneous-variable
+    linearisation context), and — for a constraint-defined (Deco FIC) operating point — the
+    unfolded constraint expression. The template owns the structure and orchestration.
+    """
+    from tvbo.analysis.linear_response import linear_response_context, constraint_expr
+
+    ctx = linear_response_context(model)
+    obs_specs: List[Dict[str, Any]] = []
+    for name, aobs in lr_obs.items():
+        an = aobs.analysis
+        atype = str(an.type)
+        p = {str(k): (v.value if hasattr(v, "value") else v)
+             for k, v in (getattr(an, "parameters", None) or {}).items()}
+        if atype == "covariance":
+            obs_specs.append({"type": "covariance", "name": name,
+                              "sigma": float(p.get("sigma", 0.01)),
+                              "return": str(p.get("return", "covariance"))})
+        elif atype == "psd":
+            obs_specs.append({"type": "psd", "name": name,
+                              "sigma": float(p.get("sigma", 0.01)),
+                              "f_lo": float(p.get("f_lo", 0.1)), "f_hi": float(p.get("f_hi", 50.0)),
+                              "n_freq": int(p.get("n_freq", 128))})
+        elif atype == "fisher":
+            _target = str(getattr(an, "target", "") or "")
+            ev = (events or {}).get(_target)
+            if ev is None:
+                raise ValueError(
+                    f"fisher analysis observation '{name}' targets stimulus event '{_target}', "
+                    f"which is not defined on this experiment (available: {sorted((events or {}).keys())}). "
+                    f"Declare a stimulus event with that key (event_type: stimulus, target_variable, "
+                    f"target_regions)."
+                )
+            stim_var = str(getattr(ev, "name", None) or getattr(ev, "target_variable", None))
+            obs_specs.append({"type": "fisher", "name": name,
+                              "fisher_ctx": {**ctx, "pernode": set(ctx["pernode"]) | {stim_var}},
+                              "stim_var": stim_var,
+                              "nodes": [int(x) for x in (getattr(ev, "nodes", None) or [])],
+                              "sigma": float(p.get("sigma", 0.01)),
+                              "dI_lo": float(p.get("dI_lo", 0.02)), "dI_hi": float(p.get("dI_hi", 0.1)),
+                              "dI_step": float(p.get("dI_step", 0.006))})
+    cexpr = constraint_expr(model, str(op_constraint["constraint_variable"])) if op_constraint else None
+    return {"ctx": ctx, "op_constraint": op_constraint, "constraint_expr": cexpr,
+            "time_scale": time_si_factor, "obs": obs_specs}
+
+
 def render_analysis_observations(
     analysis_obs: Dict[str, Any],
     coupling_keys: Set[str],
@@ -1048,6 +1170,8 @@ def render_analysis_observations(
     solver_kwargs: str = "",
     model: Any = None,
     time_si_factor: float = 1.0e-3,
+    events: Optional[Dict[str, Any]] = None,
+    op_constraint: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Render the body of the generated ``compute_analysis_observations()`` function.
 
@@ -1069,37 +1193,23 @@ def render_analysis_observations(
     solver_kwargs = _analysis_solver_kwargs(solver_kwargs)
     lines: List[str] = []
 
-    # Linear-response analysis types (covariance / psd / fisher) are evaluated at the SAME
-    # deterministic operating point via the metadata-symbolic network vector field + Jacobian.
-    # Emit the vector field, the Jacobian, and the operating point (settle + A) ONCE — shared by
-    # every such observation — then each observation is just a linear-algebra solve on the shared
-    # ``_lr_A``. Structure comes from _linear_response.py.mako (backend-renderable); resolution
-    # from linear_response_context — no Python string-emit of the code bodies.
-    _LR_TYPES = {"covariance", "psd"}
-    _lr_ctx = _lr_tpl = None
-
-    def _emit_partial(_defname, **_kw):
-        return _lr_tpl.get_def(_defname).render(**_kw).strip("\n").split("\n")
-
-    if model is not None and any(
-        str(getattr(a.analysis, "type", "") or "") in _LR_TYPES for a in analysis_obs.values()
-    ):
+    # Linear-response analysis (covariance / psd / fisher): all share ONE deterministic operating
+    # point, so the whole block — vector field, Jacobian, operating point (a noise-off settle, or a
+    # constraint solve for a Deco-FIC-style tuned parameter), and each observable's linear algebra —
+    # is emitted by ONE Mako orchestrator (``lr_analysis_block``): the template owns the structure
+    # AND its orchestration (partial choice, ordering, per-observable loop). Python only RESOLVES
+    # the spec (``_lr_analysis_spec``) — no Python string-emit of code bodies.
+    _LR_TYPES = {"covariance", "psd", "fisher"}
+    _lr_obs = {n: a for n, a in analysis_obs.items()
+               if str(getattr(a.analysis, "type", "") or "") in _LR_TYPES}
+    if _lr_obs and model is None:
+        lines += [f"# {n}: {str(a.analysis.type)} analysis needs the model threaded — skipped."
+                  for n, a in _lr_obs.items()]
+    elif _lr_obs:
         from tvbo import templates as _templates
-        from tvbo.analysis.linear_response import linear_response_context
-
-        _lr_ctx = linear_response_context(model)
         _lr_tpl = _templates.lookup.get_template("_linear_response.py.mako")
-        _nsv = _lr_ctx["n_sv"]
-        lines += [
-            "_lr_weights = jnp.asarray(network.graph.weights)",
-            "_lr_params = state.dynamics",
-            f"_lr_x0 = jnp.broadcast_to(jnp.reshape(jnp.asarray(state.initial_state.dynamics), "
-            f"({_nsv}, -1)), ({_nsv}, _lr_weights.shape[0]))",
-        ]
-        lines += _emit_partial("lr_vf", ctx=_lr_ctx)
-        lines += _emit_partial("lr_jacobian", ctx=_lr_ctx)
-        # A is rescaled to per-second here (once), so covariance/psd/fisher are all physical.
-        lines += _emit_partial("lr_operating_point", ctx=_lr_ctx, time_scale=time_si_factor)  # binds _lr_fp, _lr_A
+        _spec = _lr_analysis_spec(_lr_obs, model, events, op_constraint, time_si_factor)
+        lines += _lr_tpl.get_def("lr_analysis_block").render(spec=_spec).strip("\n").split("\n")
 
     # Finite-difference observations that share the exact same per-seed computation
     # (same target, wrt, delta, seeds, seed_base) reuse ONE ``jax.lax.map`` — matching the
@@ -1125,6 +1235,8 @@ def render_analysis_observations(
     for name, aobs in analysis_obs.items():
         an = aobs.analysis
         atype = str(getattr(an, "type", "") or "")
+        if atype in _LR_TYPES:
+            continue  # linear-response types are emitted together by lr_analysis_block (above)
         params = {
             str(k): (v.value if hasattr(v, "value") else v)
             for k, v in (getattr(an, "parameters", None) or {}).items()
@@ -1191,33 +1303,6 @@ def render_analysis_observations(
             lines += [
                 f"# {name}: seed-averaged central finite-difference {stat} of '{target}' wrt {wrt[0]}",
                 f"obs.{name} = {reduce}",
-            ]
-        elif atype in ("covariance", "psd") and _lr_tpl is None:
-            lines.append(f"# {name}: {atype} analysis needs the model threaded to "
-                         f"render_analysis_observations — skipped.")
-        elif atype == "covariance":
-            # Stationary covariance (Lyapunov) on the shared operating point — Deco Fig 5, Eq 24.
-            # `return: correlation` gives Deco's Q (Pearson correlation of the excitatory gating).
-            _sigma = float(params.get("sigma", 0.01))
-            _ret = str(params.get("return", "covariance"))
-            lines += _emit_partial("lr_covariance", ctx=_lr_ctx, name=f"_cov_{name}",
-                                   sigma=_sigma, return_=_ret)
-            lines += [
-                f"# {name}: excitatory-block stationary {_ret} via the Lyapunov equation",
-                f"obs.{name} = _cov_{name}(_lr_A)",
-            ]
-        elif atype == "psd":
-            # Analytic power spectrum per excitatory node on the shared (per-second) A — Deco
-            # Fig 5, Eq 28. The frequency axis is physical Hz because A is already per-second.
-            _sigma = float(params.get("sigma", 0.01))
-            _flo = float(params.get("f_lo", 0.1))
-            _fhi = float(params.get("f_hi", 50.0))
-            _nf = int(params.get("n_freq", 128))
-            lines += _emit_partial("lr_psd", ctx=_lr_ctx, name=f"_psd_{name}",
-                                   sigma=_sigma, f_lo=_flo, f_hi=_fhi, n_freq=_nf)
-            lines += [
-                f"# {name}: analytic power spectrum per excitatory node (Eq 28)",
-                f"obs.{name} = _psd_{name}(_lr_A)",
             ]
         else:
             lines.append(f"# {name}: analysis type '{atype}' not yet lowered for this backend — skipped.")
@@ -2028,6 +2113,13 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
             is_coupling_param = prefix in all_couplings
             source_key = prefix
 
+        # ExplorationAxis.reduce: collapse this axis by a statistic in the result
+        # container instead of keeping it as a grid dim (statistic defaults to mean).
+        _reduce = getattr(axis, "reduce", None)
+        _reduce_stat = (
+            str(getattr(_reduce, "statistic", None) or "mean") if _reduce is not None else None
+        )
+
         exp_info["axes"].append(
             {
                 "name": pname,
@@ -2037,6 +2129,7 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
                 "is_coupling": is_coupling_param,
                 "coupling_key": source_key if is_coupling_param else None,
                 "dynamics_key": source_key if not is_coupling_param and source_key else None,
+                "reduce": _reduce_stat,
             }
         )
 
@@ -2199,6 +2292,56 @@ def edge_const(label: str) -> str:
     return "_network_edge_" + re.sub(r"\W", "_", label)
 
 
+# ---------------------------------------------------------------------------
+# `network.`-scoped exploration axes sweep a live leaf of the backend graph, so
+# every cell sees its own value without a Network or graph rebuild. Each entry
+# below names the graph leaf carrying an attribute; adding a sweepable edge
+# attribute is one entry here plus a graph leaf that holds it.
+_NETWORK_EDGE_GRAPH_LEAVES = {"weight": "weights", "length": "lengths"}
+_NETWORK_SCALAR_GRAPH_LEAVES = {"conduction_speed": "speed"}
+
+
+def network_axis_leaf(ref: Any) -> Optional[str]:
+    """Graph leaf swept by a ``network.``-scoped exploration axis, else None.
+
+    Accepts the canonical ``network.edges.<label>`` form and the
+    ``network.weight(s)``/``network.length(s)`` shortcuts (both via
+    ``edge_label``, so axes and observations resolve a matrix identically), plus
+    the network's own scalars (``network.conduction_speed``). Returns None for a
+    reference outside the ``network.`` scope, which callers route through the
+    dynamics/coupling path.
+
+    Raises:
+        ValueError: the reference is ``network.``-scoped but names an attribute
+            with no live graph leaf to sweep — failing at codegen rather than
+            silently writing the axis into the wrong scope.
+    """
+    if not isinstance(ref, str) or not ref.startswith("network."):
+        return None
+    attr = ref[len("network."):]
+    label = edge_label(ref)
+    if label is not None:
+        leaf = _NETWORK_EDGE_GRAPH_LEAVES.get(label)
+        if leaf is None:
+            raise ValueError(
+                f"exploration axis '{ref}': edge attribute '{label}' has no graph "
+                f"leaf to sweep (sweepable: "
+                f"{', '.join('network.edges.' + k for k in sorted(_NETWORK_EDGE_GRAPH_LEAVES))}). "
+                f"An edge attribute without a leaf can be referenced by an "
+                f"observation, but cannot be swept."
+            )
+        return leaf
+    leaf = _NETWORK_SCALAR_GRAPH_LEAVES.get(attr)
+    if leaf is None:
+        raise ValueError(
+            f"exploration axis '{ref}': unknown network attribute '{attr}' "
+            f"(sweepable: "
+            f"{', '.join('network.' + k for k in sorted(_NETWORK_SCALAR_GRAPH_LEAVES))}, "
+            f"{', '.join('network.edges.' + k for k in sorted(_NETWORK_EDGE_GRAPH_LEAVES))})."
+        )
+    return leaf
+
+
 def collect_network_edge_arrays(experiment: Any) -> Dict[str, list]:
     """Embed connectome matrices referenced by observations as ``{label: nested list}``.
 
@@ -2239,4 +2382,93 @@ def collect_network_edge_arrays(experiment: Any) -> Dict[str, list]:
             stage_args = get_attr(stage, "arguments", None) or {}
             for arg in (stage_args.values() if hasattr(stage_args, "values") else stage_args):
                 add(get_attr(arg, "value", None))
+    return arrays
+
+
+# ---------------------------------------------------------------------------
+# Network node references (network.positions/instrength → per-node vectors)
+# ---------------------------------------------------------------------------
+# Node-level analogue of the edge-matrix refs above: a callable argument or an
+# observer (Observation.dynamics) parameter may reference a per-node vector derived
+# from the network — its region centroids (for mesh building) or its in-strength
+# (weighted in-degree). Both embed once as a module constant, exactly like a
+# connectome matrix, so any backend consumes them without a live Network object.
+_NETWORK_NODE_MEASURES = ("positions", "instrength")
+
+
+def node_label(ref: Any) -> Optional[str]:
+    """Canonical per-node vector name for a ``network.<measure>`` reference, else None.
+
+    Recognises ``network.positions`` (region centroids, ``(n_nodes, 3)``) and
+    ``network.instrength`` (weighted in-degree, ``(n_nodes,)``). Accepts BOTH the
+    fully-qualified ``network.positions`` form (observation source / collect scan)
+    and the bare ``positions`` key that ``parse_reference`` hands ``ref_to_code``
+    (it splits ``network.X`` into ``('network', 'X')``) — mirroring ``edge_label``,
+    so the emitted constant name and the resolved reference cannot disagree.
+    Returns None for everything else (edge matrices, state variables,
+    ``network.observations.*``), which callers route through their normal path.
+    """
+    if not isinstance(ref, str):
+        return None
+    measure = ref[len("network."):] if ref.startswith("network.") else ref
+    return measure if measure in _NETWORK_NODE_MEASURES else None
+
+
+def node_const(label: str) -> str:
+    """Module-constant identifier holding the embedded per-node vector for ``label``."""
+    import re
+    return "_network_node_" + re.sub(r"\W", "_", label)
+
+
+def collect_network_node_arrays(experiment: Any) -> Dict[str, list]:
+    """Embed per-node vectors referenced by observations as ``{measure: nested list}``.
+
+    Scans every observation's ``source``, its pipeline-step arguments, AND its
+    observer (``dynamics``) parameters for a ``network.positions`` /
+    ``network.instrength`` reference, resolving each once against the network:
+    ``positions`` → ``Network.node_positions()``; ``instrength`` → the weighted
+    in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller
+    convention, ``koller2024_networks.instrength_normalize``). Raises if a
+    referenced vector cannot be built.
+    """
+    import numpy as np
+    net = get_attr(experiment, "network", None)
+    obs_map = get_attr(experiment, "observations", None) or {}
+    obs_iter = obs_map.values() if hasattr(obs_map, "values") else obs_map
+    arrays: Dict[str, list] = {}
+
+    def _resolve(measure: str):
+        if net is None:
+            return None
+        if measure == "positions":
+            return np.asarray(net.node_positions(), dtype=float)
+        if measure == "instrength":
+            w = net.matrix("weight")
+            return np.asarray(w, dtype=float).sum(axis=1) if w is not None else None
+        return None
+
+    def add(val: Any) -> None:
+        name = val if isinstance(val, str) else get_attr(val, "name", None)
+        lab = node_label(name)
+        if not lab or lab in arrays:
+            return
+        vec = _resolve(lab)
+        if vec is None:
+            raise ValueError(
+                f"An observation references network.{lab} but it cannot be built from "
+                f"the network (node positions absent, or Network.matrix('weight') is None)."
+            )
+        arrays[lab] = vec.tolist()
+
+    for obs in obs_iter:
+        for src in (get_attr(obs, "source", None) or []):
+            add(src)
+        for stage in (get_attr(obs, "pipeline", None) or []):
+            stage_args = get_attr(stage, "arguments", None) or {}
+            for arg in (stage_args.values() if hasattr(stage_args, "values") else stage_args):
+                add(get_attr(arg, "value", None))
+        dyn = get_attr(obs, "dynamics", None)
+        pmap = (get_attr(dyn, "parameters", None) or {}) if dyn is not None else {}
+        for p in (pmap.values() if hasattr(pmap, "values") else pmap):
+            add(get_attr(p, "source", None))
     return arrays

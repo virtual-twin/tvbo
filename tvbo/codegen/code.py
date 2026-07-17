@@ -65,6 +65,8 @@ ARRAY_FUNCTION_MAPPINGS = {
         "ones": "jnp.ones",
         "where": "jnp.where",
         "clip": "jnp.clip",
+        "any": "jnp.any",
+        "all": "jnp.all",
         "dot": "jnp.dot",
         "matmul": "jnp.matmul",
     },
@@ -100,6 +102,8 @@ ARRAY_FUNCTION_MAPPINGS = {
         "ones": "np.ones",
         "where": "np.where",
         "clip": "np.clip",
+        "any": "np.any",
+        "all": "np.all",
         "dot": "np.dot",
         "matmul": "np.matmul",
     },
@@ -307,6 +311,45 @@ def _afp_matmul(p, expr):
     return p._matmul(p._print(expr.args[0]), p._print(expr.args[1]))
 
 
+def _afp_strided_convolve(p, expr):
+    """``strided_convolve(X, k, s)`` -> the ``'valid'`` convolution of ``X`` (leading
+    time axis) with kernel ``k``, evaluated ONLY at output indices ``[s::s]``.
+
+    Fuses a full convolution and a strided subsample: computing just the retained
+    outputs is a small ``(n_kept, len(k))`` window matmul instead of an FFT over the
+    whole signal, so it avoids the FFT buffer entirely. Trailing axes are preserved
+    (per-node), matching ``fftconvolve(..., 'valid')[s::s]``.
+    """
+    return p._strided_convolve(p._print(expr.args[0]), p._print(expr.args[1]), p._print(expr.args[2]))
+
+
+def _afp_take(p, expr):
+    """``take(x, idx)`` -> gather ``x`` by an integer index array; the result takes the
+    shape of ``idx`` (a 2-D k-ring neighbour gather, a scatter-read, …)."""
+    return p._gather(p._print(expr.args[0]), p._print(expr.args[1]))
+
+
+def _afp_sum_axis(p, expr):
+    """``sum_axis(x, axis)`` -> reduce a single axis (e.g. the numerator of an axis-1
+    masked mean). ``axis`` must be an integer literal (a compile-time array axis)."""
+    axis = expr.args[1]
+    if not getattr(axis, "is_Integer", False):
+        raise ValueError(
+            f"sum_axis(x, axis): axis must be an integer literal, got {axis!r}."
+        )
+    return p._reduce_axis("sum", p._print(expr.args[0]), int(axis))
+
+
+def _afp_pearson(p, expr):
+    """``pearson(x, y)`` -> Pearson correlation of two FLAT/1-D operands (the reduction
+    is over all elements). This is the per-step, node-collapsing correlation an observer
+    needs (e.g. corr(in-strength, flow-potential) for one timestep); it is NOT a
+    columnwise correlation of 2-D operands. Distinct from the loss-helper ``correlation``
+    in ``codegen/functions.py``, which is a preserved call to a generated function, not an
+    inline-expanded expression primitive."""
+    return p._pearson(p._print(expr.args[0]), p._print(expr.args[1]))
+
+
 _ARRAY_FUNCTION_PRINTERS = {
     "concatenate": _afp_concatenate,
     "window_mean": _afp_window_mean,
@@ -322,6 +365,10 @@ _ARRAY_FUNCTION_PRINTERS = {
     "diag": _afp_diag,
     "zero_diagonal": _afp_zero_diagonal,
     "matmul": _afp_matmul,
+    "strided_convolve": _afp_strided_convolve,
+    "take": _afp_take,
+    "sum_axis": _afp_sum_axis,
+    "pearson": _afp_pearson,
 }
 
 # Ops Julia renders natively (slice/stride family + shape, the mode-axis
@@ -388,14 +435,42 @@ class _ArrayFunctionPrinterMixin:
         return f"({base} - {self._afn('diag')}({self._afn('diag')}({base})))"
 
     def _matmul(self, a, b):
-        return f"({a} @ {b})"
+        # Parenthesize both operands: `@` and `/`/`*` share precedence and left-associate,
+        # so `A @ B/c` would parse as `(A @ B)/c`. matmul(hhd, pg/nrm) must stay hhd @ (pg/nrm).
+        return f"(({a}) @ ({b}))"
 
     def _reduce_axis(self, fn, base, axis, keepdims=False):
         kw = ", keepdims=True" if keepdims else ""
         return f"{self._afn(fn)}({base}, axis={axis}{kw})"
 
+    def _gather(self, base, idx):
+        # numpy/jax: `take` with an int index array returns the index array's shape
+        # (a fancy-index gather). JuliaPrinter overrides for 1-based indexing.
+        return f"{self._afn('take')}({base}, {idx})"
+
+    def _pearson(self, x, y):
+        # Pearson r over the shared axis, expanded into the reduction primitives so it
+        # is backend-agnostic: sum(xc*yc) / sqrt(sum(xc^2)*sum(yc^2)), xc = x - mean(x).
+        xc = f"({x} - {self._afn('mean')}({x}))"
+        yc = f"({y} - {self._afn('mean')}({y}))"
+        num = f"{self._afn('sum')}({xc} * {yc})"
+        den = f"{self._afn('sqrt')}({self._afn('sum')}({xc}**2) * {self._afn('sum')}({yc}**2))"
+        return f"({num} / {den})"
+
     def _window_mean(self, X, w):
         return f"{self._afn('mean')}({X}.reshape(-1, {w}, *{X}.shape[1:]), axis=1)"
+
+    def _strided_convolve(self, X, k, s):
+        # 'valid' convolution X⊛k sampled only at the [s::s] output indices. Build the
+        # retained windows by gathering the leading (time) axis with the index grid
+        # kept[:, None] + arange(len(k)), then contract the reversed kernel over the
+        # window axis; trailing axes (nodes, …) ride along via tensordot. Equivalent to
+        # fftconvolve(X, k, 'valid')[s::s] to FFT roundoff, and byte-identical to a
+        # direct full 'valid' convolution then [s::s] — no FFT buffer.
+        af = self._afn
+        kept = f"{af('arange')}({s}, {X}.shape[0] - {k}.shape[0] + 1, {s})"
+        idx = f"({kept}[:, None] + {af('arange')}({k}.shape[0])[None, :])"
+        return f"{af('tensordot')}({k}[::-1], {X}[{idx}], axes=([0], [1]))"
 
     def _shape(self, base, axis):
         return f"{base}.shape[{axis}]"
@@ -800,7 +875,9 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         return f"({base} - Diagonal(diag({base})))"
 
     def _matmul(self, a, b):
-        return f"({a} * {b})"
+        # Parenthesize both operands (see the numpy/jax _matmul): Julia's `*`/`/` also
+        # left-associate, so matmul(A, B/c) must render A * (B/c), not (A * B)/c.
+        return f"(({a}) * ({b}))"
 
     def _reduce_axis(self, fn, base, axis, keepdims=False):
         jl_fn = {"sum": "sum", "mean": "Statistics.mean"}.get(fn, fn)

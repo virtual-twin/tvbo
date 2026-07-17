@@ -1191,6 +1191,14 @@ class ExplorationResult(Bunch):
             for k, v in (observations or {}).items()
         }
 
+        # Collapse any axis marked ``ExplorationAxis.reduce`` by its statistic. An
+        # ensemble axis (e.g. an ``execution.random_seed`` trial ensemble) is reduced
+        # in place across every observation carrying its named grid dim, so the reduced
+        # observation (mean/sem/…) becomes first-class and the collapsed dim — and its
+        # axis metadata — drop out. Keyed by dim name (never positional); observations
+        # without the dim are untouched. No reduce axes ⇒ a no-op (behaviour unchanged).
+        self._apply_axis_reductions()
+
         # Compute expected grid shape from axes
         self._grid_shape = tuple(
             ax.get("n", getattr(ax, "n", None)) for ax in self.axes if (isinstance(ax, dict) and "n" in ax) or hasattr(ax, "n")
@@ -1238,6 +1246,61 @@ class ExplorationResult(Bunch):
     def _axis_values(ax):
         """Swept coordinate values for one axis (``Bunch`` or plain dict)."""
         return ax.get("explored_values") if isinstance(ax, dict) else getattr(ax, "explored_values", None)
+
+    @staticmethod
+    def _axis_reduce(ax):
+        """Reduction statistic for one axis (``ExplorationAxis.reduce.statistic``), or ``None``."""
+        return ax.get("reduce") if isinstance(ax, dict) else getattr(ax, "reduce", None)
+
+    @staticmethod
+    def _reduce_dataarray(da, dim, stat):
+        """Collapse ``da`` along the named ``dim`` by ``stat`` (keyed by dim name).
+
+        Supports ``mean``, ``sum``, ``std``, ``median`` and ``sem`` (the standard
+        error of the mean, ``std`` along the dim divided by ``sqrt(n)``).
+        """
+        stat = str(stat).lower()
+        if stat == "mean":
+            return da.mean(dim=dim)
+        if stat == "sum":
+            return da.sum(dim=dim)
+        if stat == "std":
+            return da.std(dim=dim)
+        if stat == "median":
+            return da.median(dim=dim)
+        if stat == "sem":
+            return da.std(dim=dim) / np.sqrt(da.sizes[dim])
+        raise ValueError(
+            f"unknown ExplorationAxis.reduce statistic {stat!r}; "
+            "expected one of: mean, sum, std, sem, median"
+        )
+
+    def _apply_axis_reductions(self):
+        """Collapse every axis marked ``reduce`` across the observations it labels.
+
+        For each axis whose ``reduce`` statistic is set, the matching named grid
+        dimension is reduced across every observation ``DataArray`` that carries it
+        (keyed by dim name), the reduced observations keep their names, and the axis
+        is dropped from ``self.axes`` so the shape metadata stays consistent.
+        Observations without the dim are left untouched. A no-op when no axis sets
+        ``reduce`` (result is byte-identical to a run without the feature).
+        """
+        if not any(self._axis_reduce(ax) for ax in self.axes):
+            return
+        for ax in self.axes:
+            stat = self._axis_reduce(ax)
+            if not stat:
+                continue
+            dim = self._axis_name(ax)
+            if not dim:
+                continue
+            for k, da in list(self.observations.items()):
+                if da is None or not hasattr(da, "dims") or dim not in da.dims:
+                    continue  # skip observations that don't carry this dim
+                self.observations[k] = self._reduce_dataarray(da, dim, stat)
+        # Drop the collapsed axes from the axis metadata so downstream shape
+        # computation (``_grid_shape``) and labelling exclude them.
+        self.axes = [ax for ax in self.axes if not self._axis_reduce(ax)]
 
     def as_grid(self):
         """Reshape the flat results into a grid **labeled by parameter name**.

@@ -18,8 +18,8 @@ Layout
         ├── J_i       (n_nodes,)         float32
         └── ...
 
-Cache invalidation (per /grill-me Q8 = C.3)
--------------------------------------------
+Cache invalidation
+------------------
 
 - ``provenance.experiment_yaml_hash`` — SHA-256 of the normalised YAML
   that produced this sidecar.

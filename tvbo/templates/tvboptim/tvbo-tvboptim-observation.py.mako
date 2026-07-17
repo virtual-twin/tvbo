@@ -6,6 +6,7 @@ from tvbo.templates.tvboptim.utils import (
     get_attr, to_numeric, get_recorded_variable_names,
     adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values,
     edge_label as _edge_label, edge_const as _edge_const, collect_network_edge_arrays,
+    node_label as _node_label, node_const as _node_const, collect_network_node_arrays,
 )
 
 model = experiment.dynamics
@@ -122,6 +123,12 @@ def ref_to_code(ref_type, ref_val, state_idx=None):
         _label = _edge_label(ref_val)
         if _label:
             return _edge_const(_label)
+        # network.positions/instrength → the per-node vector embedded once as a module
+        # constant (network_node_arrays below), mirroring the edge-matrix path, so a
+        # callable or observer parameter can receive region centroids / in-strength.
+        _nlabel = _node_label(ref_val)
+        if _nlabel:
+            return _node_const(_nlabel)
         # For other network properties, use kwargs
         return f"kwargs.get('{ref_val}')"
     if ref_type == 'integration':
@@ -472,7 +479,7 @@ for obs_name, obs in observations.items():
         'agg_params': dict(iter_parameter_values(get_attr(obs, 'parameters'))),
         # An Observation.dynamics observer resolves to a streaming reducer (init, update,
         # finalize). None when the observation has no dynamics — the pipeline path applies.
-        'reduction': resolve_reduction(obs),
+        'reduction': resolve_reduction(obs, experiment),
     }
 
     # Check for class_reference first (takes precedence over pipeline)
@@ -589,6 +596,11 @@ for obs in obs_list:
 # template (which includes this module). See utils.collect_network_edge_arrays.
 network_edge_arrays = collect_network_edge_arrays(experiment)
 
+# Embed per-node vectors referenced by observations (network.positions/instrength) as
+# module constants, the node-level analogue of the connectome matrices above. See
+# utils.collect_network_node_arrays.
+network_node_arrays = collect_network_node_arrays(experiment)
+
 # Get BIDS directory from experiment network (resolve to absolute path)
 bids_dir = None
 if network_obs_keys:
@@ -628,7 +640,12 @@ if network_obs_keys:
     _mnames = [s['name'] for s in _mem]
     _src = red['source']
     _rpars = red.get('parameters') or {}   # observer constants, bound by name below
-    _rparams = _snames + list(_rpars) + [_src, 'dt', 'count']
+    _derived = red.get('derived', [])      # per-step derived-variable chain (sympy Exprs)
+    # Non-output DVs are computed per step (they feed states / the median's per-step sample);
+    # the output DV itself stays inlined at finalize, so it is excluded here. Inert (empty)
+    # for a simple observer whose only DV IS its output.
+    _step_dvs = [d for d in _derived if d['name'] != red.get('output_name')]
+    _rparams = _snames + [d['name'] for d in _derived] + list(_rpars) + [_src, 'dt', 'count']
     _rufuncs = {f: f for f in red['functions']}
     _jc = lambda e, ps=_rparams: render_expression(e, format='jax', user_functions=_rufuncs, parameters=ps)
     _h = red.get('histogram')   # guaranteed present for median (resolve_reduction requires it)
@@ -638,10 +655,18 @@ if network_obs_keys:
 %>\
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0):
 % if _rpars:
-    # Observer constants (Dynamics.parameters) — scalars and array-valued operators
-    # alike, bound by name in the closure the init/update/finalize triple shares.
+    # Observer constants (Dynamics.parameters), bound by name in the closure the
+    # init/update/finalize triple shares. A literal inlines; a sourced/produced operator
+    # was materialised to a companion at codegen and is read once here (a large array
+    # never enters this source), becoming a captured constant for the traced reduction.
 % for _pname, _pdef in _rpars.items():
+% if _pdef.get('lazy'):
+    ${_pname} = _load_constant(${repr(_pdef['lazy'][0])}, ${repr(_pdef['lazy'][1])})
+% elif 'value' in _pdef:
     ${_pname} = ${render_jax_default(_pdef['value'])}
+% else:
+<% raise ValueError("observer constant %r reached render unmaterialised; call resolve_reduction(obs, experiment) so a sourced/produced constant is written before emission" % _pname) %>
+% endif
 % endfor
 % endif
 % for _fname, _fdef in red['functions'].items():
@@ -663,6 +688,9 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0):
             ${_mem_pre}_counts, _gstep = carry
             ${_src} = s_row[s_var]
             _accumulate = _gstep > skip
+% for _d in _step_dvs:
+            ${_d['name']} = ${_jc(_d['expr'])}
+% endfor
             _q_step = ${_jc(red['output'])}
             _b = jnp.clip(((_q_step - _hlo) / _hbw).astype(jnp.int32), 0, _hbins - 1)
             _counts = _counts.at[_b, jnp.arange(_counts.shape[1])].add(jnp.where(_accumulate, 1.0, 0.0))
@@ -690,6 +718,9 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0):
             ${", ".join(_snames)}, _count, _gstep = carry
             ${_src} = s_row[s_var]
             _accumulate = _gstep > skip
+% for _d in _step_dvs:
+            ${_d['name']} = ${_jc(_d['expr'])}
+% endfor
 % for s in red['states']:
             _new_${s['name']} = ${_jc(s['update'])}
 % endfor
@@ -719,6 +750,17 @@ from tvboptim.experimental.network_dynamics.result import NativeSolution
 from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor
 from tvbo.data.types import ObservationResult
 
+
+def _load_constant(path, key):
+    """Load a lazily-stored observer constant (a sourced/produced operator too large to
+    inline) as a jax array. Read once when the reducer is built, so it is captured as a
+    concrete constant in the traced update — never re-read per step. Reuses tvbo's
+    array store, so an h5 or zarr companion is read the same way the network is."""
+    from pathlib import Path
+    from tvbo.data.matrix_io import LazyArrayStore
+    return jnp.asarray(LazyArrayStore(Path(path), {}).read_dataset(key))
+
+
 % if network_obs_keys and bids_dir:
 from tvbo.classes.network import Network as _TvboNetwork
 
@@ -730,6 +772,14 @@ _bids_network = _TvboNetwork.from_bids('${bids_dir}', observational_measures=${l
 # network.edges.<label> (embedded once; shared by observation sources and callable args).
 % for _label in sorted(network_edge_arrays):
 ${_edge_const(_label)} = jnp.array(${repr(network_edge_arrays[_label])})
+% endfor
+% endif
+
+% if network_node_arrays:
+# Per-node vectors referenced by observations via network.positions/instrength
+# (embedded once; shared by observation sources, callable args, and observer parameters).
+% for _label in sorted(network_node_arrays):
+${_node_const(_label)} = jnp.array(${repr(network_node_arrays[_label])})
 % endfor
 % endif
 
