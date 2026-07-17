@@ -258,6 +258,31 @@ def test_a_produced_array_is_read_only(producer_module):
         got[0, 0] = 99.0
 
 
+_OWNED = np.zeros((2, 2))
+
+
+def _echo_owned(k_ring=1):
+    """A producer that hands back an array the recipe still owns (a module-level cache)."""
+    return {"grad_op": _OWNED}
+
+
+def test_readonly_does_not_freeze_the_producers_own_array():
+    """Freezing the returned object in place would break the recipe's own later use of
+    an array it still holds — so resolve must hand back a read-only VIEW, not freeze it."""
+    p = Parameter(
+        name="g",
+        producer=FunctionCall(
+            callable=Callable(name="_echo_owned", module=__name__), output="grad_op"
+        ),
+    )
+
+    got = param_io.resolve(p)
+
+    assert not got.flags.writeable       # the handed-out view is protected
+    assert _OWNED.flags.writeable        # the recipe's own array is untouched
+    _OWNED[0, 0] = 7.0                   # and still writable by its owner
+
+
 # ------------------------------------------- materialise: the (file, key) codegen emits
 
 def test_a_sourced_parameter_materialises_to_its_own_file(store, tmp_path):
@@ -335,6 +360,75 @@ def test_a_literal_parameter_cannot_be_materialised():
     """A literal inlines; asking for a file it does not have is a caller error."""
     with pytest.raises(ValueError, match="no file to read"):
         param_io.materialise(Parameter(name="a", value=0.5))
+
+
+def test_the_returned_key_names_an_array_that_exists(producer_module, tmp_path):
+    """The pair codegen emits must be readable: a key absent from the artifact would
+    fail inside a simulation, far from the declaration that caused it."""
+    import h5py
+
+    p = Parameter(name="grad_op", producer=_producer("grad_op"))
+    path, key = param_io.materialise(p, cache_dir=tmp_path)
+
+    with h5py.File(path) as f:
+        assert key in f
+
+
+def test_an_outputless_producer_returning_a_bundle_is_refused(producer_module, tmp_path):
+    """Ambiguous: the artifact holds several arrays and nothing says which to read."""
+    prod = _producer("grad_op")
+    prod.output = None
+    p = Parameter(name="ops", producer=prod)
+
+    with pytest.raises(ValueError, match="name the one to read"):
+        param_io.materialise(p, cache_dir=tmp_path)
+
+
+def test_a_typo_output_is_caught_at_materialise_not_at_run_time(producer_module, tmp_path):
+    p = Parameter(name="y", producer=_producer("TYPO"))
+
+    with pytest.raises(ValueError, match="no array 'TYPO'"):
+        param_io.materialise(p, cache_dir=tmp_path)
+
+
+def test_a_typo_output_is_caught_even_on_a_cache_hit(producer_module, tmp_path):
+    """The write is skipped on a hit, so validation must not live in the write path."""
+    param_io.materialise(
+        Parameter(name="ok", producer=_producer("grad_op")), cache_dir=tmp_path
+    )
+    param_io.clear_cache()
+
+    with pytest.raises(ValueError, match="no array 'TYPO'"):
+        param_io.materialise(Parameter(name="y", producer=_producer("TYPO")), cache_dir=tmp_path)
+
+
+def test_a_typo_measure_is_caught_at_materialise(store, tmp_path):
+    p = Parameter(name="x", source=store.name, measure="ops/TYPO")
+
+    with pytest.raises(ValueError, match="no array 'ops/TYPO'"):
+        param_io.materialise(p, source_dir=tmp_path)
+
+
+# ------------------------------------------------ provenance is mutually exclusive
+
+def test_source_and_producer_together_are_refused(producer_module, tmp_path, store):
+    """Two claims about where the value comes from; resolve() and materialise() would
+    otherwise each pick their own and hand back different values for one parameter."""
+    p = Parameter(
+        name="x", source=store.name, measure="ops/grad_op", producer=_producer("grad_op")
+    )
+
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        param_io.resolve(p, source_dir=tmp_path)
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        param_io.materialise(p, source_dir=tmp_path, cache_dir=tmp_path)
+
+
+def test_value_and_source_together_are_refused(store, tmp_path):
+    p = Parameter(name="x", value=1.0, source=store.name, measure="ops/grad_op")
+
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        param_io.resolve(p, source_dir=tmp_path)
 
 
 def test_rebinding_a_bundle_key_cannot_poison_the_cache(producer_module):
