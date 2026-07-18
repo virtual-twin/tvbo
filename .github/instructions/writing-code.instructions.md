@@ -64,6 +64,16 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Readable Over Annotated
+
+**Let names, structure, and docstrings carry intent — heavy comments disturb readability more than they help.**
+
+- Document a function with a proper docstring, not a stack of leading `#` lines.
+- A block of explanatory comments above code is a smell: extract a well-named helper, or simplify the code, so the comment isn't needed.
+- Reserve inline `#` for a single genuinely non-obvious line (a subtle invariant, a workaround) — not a running narration. If it takes a paragraph, the code is too clever; rewrite the code.
+- Same budget in codegen templates (Mako `##` / `<% %>`): terse code beats an annotated wall.
+- Aim for maximally readable: someone should follow the code without the comments.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

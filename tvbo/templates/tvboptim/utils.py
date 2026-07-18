@@ -368,20 +368,11 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     if not vectorized and local_states and not incoming_states:
         vectorized = True
     vec_states = list(dict.fromkeys(incoming_states + local_states))
-    # A vectorized coupling reads its source states from the node-message axis
-    # (tvboptim's incoming-only path: pre() gets ``incoming_states`` and reduces
-    # via ``pre @ weights``). The legacy spelling declares the sources under
-    # ``local_states`` with a ``local_states``/``incoming_states`` identity
-    # sentinel in pre_expression, meaning "return the sources unchanged"; carry
-    # them as incoming_states and flag the identity so the template emits a clean
-    # ``return incoming_states`` instead of stacking the raw message array.
+    # Identity source-only pre() ("return incoming_states"): no pre_expr, or the
+    # legacy `local_states`/`incoming_states` sentinel meaning "sources unchanged".
     vec_identity = vectorized and (not pre_expr or _pre_rhs0 in ("local_states", "incoming_states"))
-
-    # Edge (graph-shaped) coupling parameters: a 2-D ``(n_nodes, n_nodes)`` layout
-    # is per-edge, which tvboptim requires declared in ``EDGE_PARAMS`` so it aligns
-    # them to the message axes before pre(). 1-D (per-node) and scalar params are
-    # left off. Detected from the declared shape string, not runtime values, so the
-    # declaration is stable across free/optimised heterogeneous weights.
+    # Graph-shaped (n_nodes, n_nodes) params are per-edge; tvboptim requires them
+    # declared in EDGE_PARAMS. Read from the declared shape so it holds for optimised weights.
     edge_params = tuple(sorted(n for n in param_names if _shape_ndim(param_shapes.get(n)) == 2))
 
     class_name = coupling_key.replace(" ", "").replace("-", "")

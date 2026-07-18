@@ -163,16 +163,11 @@ class ${class_name}(${base_class}):
         % endif
 
     % if vectorized and vec_identity:
-## Identity source-only pre(): the tvboptim incoming-only path hands pre() the
-## source node messages [n_states, n_source] (local_states is None here) and the
-## base class reduces them with a single matmul `pre @ weights` (Σⱼ wᵢⱼ·stateⱼ).
+## Incoming-only path: return the source messages; the base class reduces `pre @ weights`.
     def pre(self, incoming_states, local_states, params):
         return incoming_states
     % elif vectorized:
-## Source-only vectorized pre(): evaluate each pre term on the incoming source
-## node message [n_states, n_source] (local_states is None on the incoming-only
-## path) and stack to [n_pre, n_source] so the base class reduces with a single
-## matmul `pre @ weights` — the W-sum turns per-node sin/cos into Σⱼ wᵢⱼ·f(stateⱼ).
+## Source-only pre: stack f(stateⱼ) per node into [n_pre, n_source]; base class W-reduces.
     def pre(self, incoming_states, local_states, params):
         % for name in param_names:
         ${name} = params.${name}
@@ -193,10 +188,8 @@ class ${class_name}(${base_class}):
         ${state_name} = incoming_states[${i}]
         % endif
         % endfor
-## Assign local state variables (skip when name collides with incoming)
-## incoming_states are per-edge: [N_target, N_source] (both Delayed and Instantaneous).
-## local_states are per-node: [N_nodes].  Reshape to [N_nodes, 1] for correct
-## broadcasting: result[j,k] = f(local_j, incoming_j_k).
+## Local states: the base class aligns them to the message axes (dense [N_target, 1]),
+## so index straight in — pre() stays elementwise, no reshape.
         % for i, state_name in enumerate(local_states):
         % if state_name not in incoming_states:
         ${state_name} = local_states[${i}]

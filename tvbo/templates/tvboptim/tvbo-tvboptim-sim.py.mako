@@ -54,9 +54,7 @@ coupling_param_defaults = {p.name: float(p.value) if p.value is not None else 1.
 incoming_states = list(getattr(coupling, 'incoming_states', None) or [])
 local_states = list(getattr(coupling, 'local_states', None) or [])
 
-# Delay-graph selection (see graph_selection): tract lengths → DenseLengthGraph
-# (delays = lengths / conduction_speed, speed a live sweepable/differentiable leaf);
-# a network carrying only explicit per-edge "delay" attributes → DenseDelayGraph.
+# tract lengths → DenseLengthGraph, explicit per-edge delays → DenseDelayGraph.
 from tvbo.templates.tvboptim.utils import graph_selection
 
 use_length_graph, use_delay_graph = graph_selection(network, has_delay)
@@ -193,15 +191,14 @@ def create_network(
     the build-speed max delay.
     """
     % if use_length_graph:
-    # tract lengths → DenseLengthGraph derives delays = lengths / conduction_speed;
-    # conduction speed stays a live, sweepable and differentiable graph leaf.
+    # delays = lengths / speed each forward pass, so speed stays a live graph leaf.
     if distances is None:
         distances = jnp.zeros_like(weights)
     _speed = ${conduction_speed}
     _max_delay_bound = max_delay if max_delay is not None else (float(jnp.max(distances)) / _speed if _speed > 0 else 0.0)
     graph = DenseLengthGraph(weights, distances, speed=_speed, region_labels=region_labels, max_delay_bound=_max_delay_bound)
     % elif use_delay_graph:
-    # explicit per-edge delays (no tract lengths) → DenseDelayGraph directly.
+    # per-edge delays used directly; non-edge entries arrive as NaN, so zero-fill.
     if delays is None:
         delays = jnp.zeros_like(weights)
     delays = jnp.nan_to_num(delays)
