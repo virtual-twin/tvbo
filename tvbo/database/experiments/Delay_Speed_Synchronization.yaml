@@ -1,14 +1,6 @@
-# =============================================================================
-# Delays Shape Synchronization — conduction-speed sweep of coupled phase
-# oscillators on a structural connectome (Petkoski & Jirsa 2019).
-#
 # tvbo-native port of tvboptim's docs/workflows/Delay_Speed_Synchronization.qmd.
-# Transmission delays are a DERIVED quantity here: the network carries tract
-# lengths and a conduction speed, so the tvboptim backend builds a
-# DenseLengthGraph and derives delays = lengths / conduction_speed each forward
-# pass. The conduction speed is therefore a live graph leaf that the exploration
-# sweeps directly (the delay-domain twin of the coupling gain G).
-# =============================================================================
+# The connectome carries tract lengths, so delays are derived (DenseLengthGraph)
+# and the swept conduction speed is a live graph leaf.
 id: 20
 label: "Delays Shape Synchronization"
 description: >

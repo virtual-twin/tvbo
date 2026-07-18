@@ -116,10 +116,7 @@ has_delay = any(c.delayed for c in all_couplings.values() if c)
 # uses the stock delay graph that derives max_delay from the delays.
 interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in all_couplings.values() if c)
 
-# Delay-graph selection (see graph_selection): tract lengths → DenseLengthGraph
-# (delays = lengths / conduction_speed, so conduction speed is a live sweepable
-# and differentiable leaf); only explicit per-edge "delay" attributes (no lengths)
-# → DenseDelayGraph over those delays directly.
+# tract lengths → DenseLengthGraph, explicit per-edge delays → DenseDelayGraph.
 use_length_graph, use_delay_graph = graph_selection(network, has_delay)
 
 # Sparse coupling opt-in (Network.graph_representation: sparse): sparsify the weight matrix to
@@ -1400,21 +1397,15 @@ def create_network(
 % endif
 
     % if use_length_graph:
-    # DenseLengthGraph: tvboptim derives delays = lengths / conduction_speed every
-    # forward pass, so conduction speed stays a live, sweepable and differentiable
-    # leaf (the delay-domain twin of the coupling gain G). max_delay_bound sizes the
-    # (static) history buffer; default to the build-speed max delay, which a sweep or
-    # gradient step to a slower speed widens without re-preparing.
+    # delays = lengths / speed each forward pass, so speed stays a live graph leaf.
+    # max_delay_bound sizes the static history buffer (default: the build-speed max delay).
     if distances is None:
         distances = jnp.zeros_like(weights)
     _speed = ${conduction_speed}
     _max_delay_bound = max_delay if max_delay is not None else (float(jnp.max(distances)) / _speed if _speed > 0 else 0.0)
     graph = DenseLengthGraph(weights, distances, speed=_speed, region_labels=region_labels, max_delay_bound=_max_delay_bound)
     % elif use_delay_graph:
-    # Explicit per-edge delays (no tract lengths): DenseDelayGraph over the delay
-    # matrix directly. max_delay_bound (opt-in) decouples the history-buffer length
-    # from the delay values (e.g. for differentiable/swept delays); None derives it
-    # from max(delays). Non-edge entries arrive as NaN, so zero-fill first.
+    # Per-edge delays used directly; non-edge entries arrive as NaN, so zero-fill first.
     if delays is None:
         delays = jnp.zeros_like(weights)
     delays = jnp.nan_to_num(delays)
@@ -2444,19 +2435,15 @@ def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
     _network = kwargs.get('network')
 % if _has_network_axis:
     if _network is not None and hasattr(_network.graph, 'lengths'):
-        # A network-scope conduction_speed axis sweeps the DenseLengthGraph's live
-        # `speed` leaf (delays = lengths / speed, recomputed each forward pass). The
-        # base graph is already a DenseLengthGraph, so reuse its lengths and rebuild
-        # once here (outside jit/vmap, so it never traces) with a max_delay_bound
-        # sized for the SLOWEST swept speed — its largest delay — giving the sweep
-        # history headroom without a re-prepare.
+        # Rebuild the base DenseLengthGraph once (outside jit/vmap) so its buffer is
+        # sized for the slowest swept speed; the conduction_speed axis then sweeps its
+        # live `speed` leaf.
         _v_build = ${conduction_speed}
         _lengths = _network.graph.lengths
         _length_graph = DenseLengthGraph(
             _network.graph.weights, _lengths, speed=_v_build,
             region_labels=_network.graph.region_labels,
-            # min() guards a sweep whose speeds are all faster than the build speed,
-            # where the build-speed delay is the binding one.
+            # min(): the binding speed is the build speed when every swept speed is faster.
             max_delay_bound=float(jnp.max(_lengths)) / min(_v_build, ${_v_min}),
         )
         _network = type(_network)(

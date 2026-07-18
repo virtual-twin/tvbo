@@ -17,23 +17,15 @@ if TYPE_CHECKING:
 
 
 def _build_graph(network: "Network", delays: bool = True, max_delay: float | None = None):
-    """Build a tvboptim graph from a tvbo Network.
+    """Build a tvboptim graph from a tvbo Network, by what the network measures.
 
-    Graph type follows what the network measures:
+    - tract lengths present → ``DenseLengthGraph`` (delays = lengths /
+      conduction_speed, so conduction speed is a live sweepable/differentiable leaf);
+    - only explicit per-edge delays → ``DenseDelayGraph``;
+    - no delays (or *delays* False) → ``DenseGraph``.
 
-    - **tract lengths present** → ``DenseLengthGraph`` owning ``lengths`` and a
-      scalar ``speed``, so tvboptim derives ``delays = lengths / conduction_speed``
-      each forward pass and the conduction speed stays a live, sweepable and
-      differentiable graph leaf (the delay-domain twin of the coupling gain ``G``).
-    - **only explicit per-edge delays** (no lengths) → ``DenseDelayGraph`` over the
-      delay matrix directly.
-    - **no delays** (or *delays* is False) → ``DenseGraph``.
-
-    ``max_delay`` is forwarded as the graph's ``max_delay_bound`` to size the
-    (static) history buffer explicitly. Pass it as a concrete upper bound when the
-    delays are meant to vary differentiably (e.g. ``speed`` optimised, lowering it
-    raises delays), so the buffer length stays static. When ``None`` it defaults to
-    the build-speed maximum delay.
+    ``max_delay`` sets the graph's ``max_delay_bound`` (static history-buffer size);
+    ``None`` defaults it to the build-speed maximum delay.
     """
     import jax.numpy as jnp
     from tvboptim.experimental.network_dynamics.graph import DenseGraph
