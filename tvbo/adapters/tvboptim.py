@@ -19,31 +19,63 @@ if TYPE_CHECKING:
 def _build_graph(network: "Network", delays: bool = True, max_delay: float | None = None):
     """Build a tvboptim graph from a tvbo Network.
 
-    Returns a ``DenseDelayGraph`` when *delays* is True and the network
-    has non-zero tract lengths, otherwise a ``DenseGraph``.
+    Graph type follows what the network measures:
 
-    ``max_delay`` is forwarded to ``DenseDelayGraph`` as its ``max_delay_bound``
-    to size the (static) history buffer explicitly. Pass it as a concrete upper
-    bound when the delays are meant to vary differentiably (e.g.
-    ``delays = lengths / speed`` with ``speed`` optimised), so the buffer length
-    stays static while the delays may become JAX tracers.
+    - **tract lengths present** → ``DenseLengthGraph`` owning ``lengths`` and a
+      scalar ``speed``, so tvboptim derives ``delays = lengths / conduction_speed``
+      each forward pass and the conduction speed stays a live, sweepable and
+      differentiable graph leaf (the delay-domain twin of the coupling gain ``G``).
+    - **only explicit per-edge delays** (no lengths) → ``DenseDelayGraph`` over the
+      delay matrix directly.
+    - **no delays** (or *delays* is False) → ``DenseGraph``.
+
+    ``max_delay`` is forwarded as the graph's ``max_delay_bound`` to size the
+    (static) history buffer explicitly. Pass it as a concrete upper bound when the
+    delays are meant to vary differentiably (e.g. ``speed`` optimised, lowering it
+    raises delays), so the buffer length stays static. When ``None`` it defaults to
+    the build-speed maximum delay.
     """
     import jax.numpy as jnp
     from tvboptim.experimental.network_dynamics.graph import DenseGraph
-    from tvboptim.experimental.network_dynamics.graph.base import DenseDelayGraph
+    from tvboptim.experimental.network_dynamics.graph.base import (
+        DenseDelayGraph,
+        DenseLengthGraph,
+    )
 
     weights = jnp.asarray(np.asarray(network.weights_matrix, dtype=float))
     labels = network.node_labels
-    lengths = network.lengths_matrix
 
-    if delays and lengths is not None and np.any(lengths > 0):
-        delay_matrix = jnp.asarray(np.asarray(network.calculate_delays(), dtype=float))
+    if not delays:
+        return DenseGraph(weights=weights, region_labels=labels)
+
+    lengths = network.lengths_matrix
+    if lengths is not None and np.any(np.asarray(lengths) > 0):
+        lengths = jnp.asarray(np.asarray(lengths, dtype=float))
+        cs = getattr(network, "conduction_speed", None)
+        speed = float(getattr(cs, "value", cs)) if cs is not None else 3.0
+        bound = max_delay if max_delay is not None else (float(jnp.max(lengths)) / speed if speed > 0 else 0.0)
+        return DenseLengthGraph(
+            weights=weights,
+            lengths=lengths,
+            speed=speed,
+            region_labels=labels,
+            max_delay_bound=bound,
+        )
+
+    # No tract lengths: use explicit per-edge delays if the network carries them.
+    try:
+        edge_delays = network._delays_from_edges()
+    except Exception:
+        edge_delays = None
+    if edge_delays is not None:
+        delay_matrix = jnp.nan_to_num(jnp.asarray(np.asarray(edge_delays, dtype=float)))
         return DenseDelayGraph(
             weights=weights,
             delays=delay_matrix,
             region_labels=labels,
             max_delay_bound=max_delay,
         )
+
     return DenseGraph(weights=weights, region_labels=labels)
 
 

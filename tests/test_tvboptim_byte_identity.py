@@ -765,6 +765,10 @@ def test_ei_trajectory(eager):
     class EIBcoup(InstantaneousCoupling):
         N_OUTPUT_STATES = 2
         DEFAULT_PARAMS = Bunch(wLRE=1.0, wFFI=1.0)
+        # wLRE/wFFI are per-edge (n_nodes, n_nodes) weight matrices; the tvboptim
+        # 0.4.0 contract requires graph-shaped params declared so the base class
+        # aligns them to the message axes before pre().
+        EDGE_PARAMS = ("wLRE", "wFFI")
 
         def __init__(self, **kwargs):
             super().__init__(incoming_states=["S_e"], **kwargs)
@@ -1095,3 +1099,145 @@ def test_ei_optimization_runs():
 
     lv = _final_loss(r)
     assert lv is None or np.isfinite(lv), f"EI optimization loss not finite: {lv}"
+
+
+# ---------------------------------------------------------------------------
+# Delays Shape Synchronization: length-graph delayed coupling (DenseLengthGraph)
+# ---------------------------------------------------------------------------
+def test_delay_speed_trajectory(eager):
+    """Delayed Kuramoto on a DenseLengthGraph: tvbo codegen == native tvboptim.
+
+    Guards the length-graph delay path. Because the connectome carries tract
+    lengths, tvbo lowers the delayed coupling onto a ``DenseLengthGraph`` (delays
+    = lengths / conduction_speed, so the conduction speed is a live graph leaf).
+    The generated trajectory must be byte-identical to a hand-written native
+    tvboptim delayed-Kuramoto run over the same length graph.
+    """
+    import jax.numpy as jnp
+
+    from tvboptim.experimental.network_dynamics import Network, prepare
+    from tvboptim.experimental.network_dynamics.coupling import DelayedKuramotoCoupling
+    from tvboptim.experimental.network_dynamics.dynamics.tvb import Kuramoto
+    from tvboptim.experimental.network_dynamics.graph import DenseLengthGraph
+    from tvboptim.experimental.network_dynamics.solvers import Heun
+
+    T1 = 200.0
+
+    # --- tvbo-native ---
+    exp = _load_sim("Delay_Speed_Synchronization", T1, 0.0)
+    W = np.asarray(exp.network.weights_matrix)  # already W / W_max
+    L = np.asarray(exp.network.lengths_matrix)
+    labels = [n.label for n in exp.network.nodes]
+    omega = float(exp.dynamics.parameters["omega"].value)
+    G = float(exp.network.coupling["DelayedKuramotoCoupling"].parameters["G"].value)
+    cs = exp.network.conduction_speed
+    speed = float(getattr(cs, "value", cs))
+    theta_tvbo = np.asarray(exp.run("tvboptim", mode="simulation").integration.data)
+
+    # --- tvboptim-native reference over the same DenseLengthGraph ---
+    Wj, Lj = jnp.asarray(W), jnp.asarray(L)
+    graph = DenseLengthGraph(
+        Wj, Lj, speed=speed, region_labels=labels,
+        max_delay_bound=float(jnp.max(Lj)) / speed,
+    )
+    net = Network(
+        dynamics=Kuramoto(omega=omega),
+        coupling={"delayed": DelayedKuramotoCoupling(incoming_states="theta", local_states="theta", G=G)},
+        graph=graph,
+        noise=None,
+    )
+    mf, st = prepare(net, Heun(), t0=0.0, t1=T1, dt=0.5)
+    theta_ref = np.asarray(mf(st).ys)
+
+    n = min(theta_tvbo.shape[0], theta_ref.shape[0])
+    assert_identical("delay-speed Kuramoto trajectory", theta_tvbo[:n], theta_ref[:n])
+
+
+def test_delay_speed_sweep_runs():
+    """The conduction_speed sweep drives the DenseLengthGraph `speed` leaf.
+
+    Not a byte-identity assertion (eager pmap under jax.disable_jit is prohibitively
+    slow): confirms the generated exploration code runs, and that varying the
+    conduction speed varies the order parameter (the sweep is not silently inert).
+    """
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Delay_Speed_Synchronization.yaml"))
+    exp.integration.duration = 200.0
+    exp.integration.transient_time = 0.0
+    exp.explorations["speed_sweep"].space["network.conduction_speed"].domain.n = 4
+    exp.configure()
+    grid = np.asarray(exp.run("tvboptim", mode="exploration").explorations.speed_sweep.results)
+    assert np.all(np.isfinite(grid)), "order-parameter sweep produced non-finite values"
+    assert not np.allclose(grid.ravel(), grid.ravel()[0]), "conduction_speed sweep is inert"
+
+
+# A 2-node network whose edges carry explicit `delay` attributes and NO tract
+# lengths. This is the DenseDelayGraph branch of graph selection: with no lengths
+# to derive delays from a conduction speed, tvbo uses the per-edge delays directly.
+_DELAY_ONLY_EXPERIMENT = """
+id: 9
+dynamics:
+  name: Kuramoto
+  parameters: {omega: {value: 0.1, unit: rad_per_ms}}
+  coupling_inputs: {c: {name: c}}
+  state_variables:
+    theta: {unit: rad, equation: {rhs: "omega + c"}, coupling_variable: true, initial_value: 0.1}
+  output: [theta]
+  number_of_modes: 1
+network:
+  number_of_nodes: 2
+  nodes: [{id: 0, label: r0}, {id: 1, label: r1}]
+  edges:
+    - {source: 0, target: 1, parameters: {weight: {value: 0.5}, delay: {value: 12.0}}}
+    - {source: 1, target: 0, parameters: {weight: {value: 0.5}, delay: {value: 12.0}}}
+coupling:
+  name: KuramotoCoupling
+  delayed: true
+  parameters: {a: {value: 0.05}, N: {value: 1.0}}
+  pre_expression: {rhs: "sin(theta_j - theta_i)"}
+  post_expression: {rhs: "a * gx / N"}
+  incoming_states: [theta]
+  local_states: [theta]
+integration: {method: Heun, duration: 100.0, step_size: 0.5, transient_time: 0.0}
+"""
+
+
+def test_delay_only_graph_trajectory(eager, tmp_path):
+    """Delay-only network (explicit edge delays, no lengths): DenseDelayGraph path.
+
+    Complements the length-graph tests: when the network carries only per-edge
+    `delay` attributes, tvbo must select a ``DenseDelayGraph`` over those delays
+    (not a length graph). The generated trajectory must be byte-identical to a
+    native tvboptim ``DenseDelayGraph`` run with the same delays.
+    """
+    import yaml
+
+    import jax.numpy as jnp
+
+    from tvboptim.experimental.network_dynamics import Network, prepare
+    from tvboptim.experimental.network_dynamics.coupling import DelayedKuramotoCoupling
+    from tvboptim.experimental.network_dynamics.dynamics.tvb import Kuramoto
+    from tvboptim.experimental.network_dynamics.graph.base import DenseDelayGraph
+    from tvboptim.experimental.network_dynamics.solvers import Heun
+
+    p = tmp_path / "delay_only.yaml"
+    p.write_text(_DELAY_ONLY_EXPERIMENT)
+    exp = SimulationExperiment.from_file(str(p))
+    exp.configure()
+    assert float(np.asarray(exp.network.lengths_matrix).max()) == 0.0, "fixture must have no lengths"
+    theta_tvbo = np.asarray(exp.run("tvboptim", mode="simulation").integration.data)[:, 0, :]
+
+    W = jnp.asarray(np.asarray(exp.network.weights_matrix))
+    D = jnp.nan_to_num(jnp.asarray(np.asarray(exp.network.calculate_delays())))
+    a = float(exp.network.coupling["KuramotoCoupling"].parameters["a"].value)
+    omega = float(exp.dynamics.parameters["omega"].value)
+    net = Network(
+        dynamics=Kuramoto(omega=omega),
+        coupling={"delayed": DelayedKuramotoCoupling(incoming_states="theta", local_states="theta", G=a)},
+        graph=DenseDelayGraph(W, D, region_labels=["r0", "r1"]),
+        noise=None,
+    )
+    mf, st = prepare(net, Heun(), t0=0.0, t1=100.0, dt=0.5)
+    theta_ref = np.asarray(mf(st).ys)[:, 0, :]
+
+    n = min(theta_tvbo.shape[0], theta_ref.shape[0])
+    assert_identical("delay-only Kuramoto trajectory", theta_tvbo[:n], theta_ref[:n])

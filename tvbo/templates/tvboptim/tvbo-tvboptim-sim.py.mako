@@ -54,6 +54,13 @@ coupling_param_defaults = {p.name: float(p.value) if p.value is not None else 1.
 incoming_states = list(getattr(coupling, 'incoming_states', None) or [])
 local_states = list(getattr(coupling, 'local_states', None) or [])
 
+# Delay-graph selection (see graph_selection): tract lengths → DenseLengthGraph
+# (delays = lengths / conduction_speed, speed a live sweepable/differentiable leaf);
+# a network carrying only explicit per-edge "delay" attributes → DenseDelayGraph.
+from tvbo.templates.tvboptim.utils import graph_selection
+
+use_length_graph, use_delay_graph = graph_selection(network, has_delay)
+
 # Extract state variable bounds (for BoundedSolver)
 from tvbo.templates.tvboptim.utils import get_state_bounds
 state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
@@ -115,7 +122,7 @@ from tvboptim.experimental.network_dynamics.external_input.base import AbstractE
 % endif
 % if has_delay:
 from tvboptim.experimental.network_dynamics.coupling.base import DelayedCoupling
-from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
+from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph, DenseLengthGraph
 % else:
 from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCoupling
 from tvboptim.experimental.network_dynamics.graph import DenseGraph
@@ -164,34 +171,41 @@ model = None
 
 def create_network(
     weights: jnp.ndarray,
-    % if has_delay:
+    % if use_length_graph:
+    distances: jnp.ndarray = None,
+    % elif use_delay_graph:
     delays: jnp.ndarray = None,
     % endif
     region_labels: list = None,
     dynamics_params: dict = None,
     coupling_params: dict = None,
     noise_sigma: float = ${noise_sigma[0]},
-    % if interpolate_delays:
+    % if has_delay:
     max_delay: float = None,
     % endif
 ) -> Network:
     """Create configured Network instance.
 
     ``max_delay`` (delayed coupling only) is the ``max_delay_bound``: a static
-    history-buffer length decoupled from the ``delays`` values. Pass it when
-    ``delays`` are JAX tracers (e.g. ``delays = tract_lengths / v`` with conduction
-    speed ``v`` optimised by gradient): the buffer stays a fixed shape while
-    per-edge delays vary differentiably. When None it is derived from ``delays``
-    (concrete) as usual.
+    history-buffer length decoupled from the delay values. Pass it when the delays
+    vary differentiably (e.g. ``delays = tract_lengths / v`` with conduction speed
+    ``v`` optimised) so the buffer keeps a fixed shape. When None it is derived from
+    the build-speed max delay.
     """
-    % if has_delay:
+    % if use_length_graph:
+    # tract lengths → DenseLengthGraph derives delays = lengths / conduction_speed;
+    # conduction speed stays a live, sweepable and differentiable graph leaf.
+    if distances is None:
+        distances = jnp.zeros_like(weights)
+    _speed = ${conduction_speed}
+    _max_delay_bound = max_delay if max_delay is not None else (float(jnp.max(distances)) / _speed if _speed > 0 else 0.0)
+    graph = DenseLengthGraph(weights, distances, speed=_speed, region_labels=region_labels, max_delay_bound=_max_delay_bound)
+    % elif use_delay_graph:
+    # explicit per-edge delays (no tract lengths) → DenseDelayGraph directly.
     if delays is None:
         delays = jnp.zeros_like(weights)
-    % if interpolate_delays:
+    delays = jnp.nan_to_num(delays)
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay_bound=max_delay)
-    % else:
-    graph = DenseDelayGraph(weights, delays, region_labels=region_labels)
-    % endif
     % else:
     graph = DenseGraph(weights, region_labels=region_labels)
     % endif
@@ -280,12 +294,16 @@ def run_experiment(weights, distances=None, delays=None, region_labels=None):
     global model
 
     weights = jnp.array(weights)
-    % if has_delay:
+    % if use_length_graph:
+    # tract lengths → DenseLengthGraph derives delays = lengths / conduction_speed.
+    network = create_network(weights, distances=distances, region_labels=region_labels, noise_sigma=NOISE_SIGMA)
+    % elif use_delay_graph:
+    # explicit per-edge delays → DenseDelayGraph over the delay matrix directly.
     if delays is None:
         delays = jnp.array(distances) / CONDUCTION_SPEED if (distances is not None and CONDUCTION_SPEED > 0) else jnp.zeros_like(weights)
     else:
         delays = jnp.array(delays)
-    network = create_network(weights, delays, region_labels=region_labels, noise_sigma=NOISE_SIGMA)
+    network = create_network(weights, delays=delays, region_labels=region_labels, noise_sigma=NOISE_SIGMA)
     % else:
     network = create_network(weights, region_labels=region_labels, noise_sigma=NOISE_SIGMA)
     % endif
