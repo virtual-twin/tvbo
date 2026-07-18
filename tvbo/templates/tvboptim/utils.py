@@ -249,6 +249,53 @@ def parse_list_elements(rhs_str: str) -> List[str]:
     return elements
 
 
+def _shape_ndim(shape_str) -> int:
+    """Rank of a declared parameter shape string, e.g. ``"(n_nodes, n_nodes)"`` → 2.
+
+    Counts the comma-separated dimensions inside the parentheses so a graph-shaped
+    (2-D, per-edge) parameter can be told apart from a per-node (1-D) or scalar one.
+    Returns 0 for an absent/empty shape.
+    """
+    if not shape_str:
+        return 0
+    inner = str(shape_str).strip().strip("()").strip()
+    if not inner:
+        return 0
+    return len([p for p in inner.split(",") if p.strip()])
+
+
+def graph_selection(network, has_delay: bool) -> Tuple[bool, bool]:
+    """Pick the tvboptim graph type for a (possibly delayed) network.
+
+    Returns ``(use_length_graph, use_delay_graph)``:
+
+    - **tract lengths present** → ``DenseLengthGraph`` (delays = lengths /
+      conduction_speed, so the conduction speed is a live, sweepable and
+      differentiable graph leaf) → ``(True, False)``.
+    - **only explicit per-edge ``delay`` attributes** (no lengths) →
+      ``DenseDelayGraph`` over those delays → ``(False, True)``.
+    - **no delays** (``has_delay`` False) → ``DenseGraph`` → ``(False, False)``.
+
+    Lengths win over edge delays: a network that measures tract lengths derives
+    its delays from the swept/optimised conduction speed.
+    """
+    if not has_delay:
+        return False, False
+    has_lengths = False
+    try:
+        lengths = network.lengths_matrix
+        if lengths is not None:
+            has_lengths = bool(float(lengths.max()) > 0)
+    except Exception:
+        has_lengths = False
+    try:
+        has_edge_delays = network._delays_from_edges() is not None
+    except Exception:
+        has_edge_delays = False
+    use_delay_graph = has_edge_delays and not has_lengths
+    return (not use_delay_graph), use_delay_graph
+
+
 def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, func_to_ci, n_modes=1) -> Dict[str, Any]:
     """Resolve every derived field a tvboptim coupling class needs from a Coupling.
 
@@ -321,6 +368,21 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     if not vectorized and local_states and not incoming_states:
         vectorized = True
     vec_states = list(dict.fromkeys(incoming_states + local_states))
+    # A vectorized coupling reads its source states from the node-message axis
+    # (tvboptim's incoming-only path: pre() gets ``incoming_states`` and reduces
+    # via ``pre @ weights``). The legacy spelling declares the sources under
+    # ``local_states`` with a ``local_states``/``incoming_states`` identity
+    # sentinel in pre_expression, meaning "return the sources unchanged"; carry
+    # them as incoming_states and flag the identity so the template emits a clean
+    # ``return incoming_states`` instead of stacking the raw message array.
+    vec_identity = vectorized and (not pre_expr or _pre_rhs0 in ("local_states", "incoming_states"))
+
+    # Edge (graph-shaped) coupling parameters: a 2-D ``(n_nodes, n_nodes)`` layout
+    # is per-edge, which tvboptim requires declared in ``EDGE_PARAMS`` so it aligns
+    # them to the message axes before pre(). 1-D (per-node) and scalar params are
+    # left off. Detected from the declared shape string, not runtime values, so the
+    # declaration is stable across free/optimised heterogeneous weights.
+    edge_params = tuple(sorted(n for n in param_names if _shape_ndim(param_shapes.get(n)) == 2))
 
     class_name = coupling_key.replace(" ", "").replace("-", "")
     base_class = "DelayedCoupling" if has_delay else "InstantaneousCoupling"
@@ -375,6 +437,8 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
         "n_pre": n_pre,
         "vectorized": vectorized,
         "vec_states": vec_states,
+        "vec_identity": vec_identity,
+        "edge_params": edge_params,
         "class_name": class_name,
         "base_class": base_class,
         "interp_kw": interp_kw,

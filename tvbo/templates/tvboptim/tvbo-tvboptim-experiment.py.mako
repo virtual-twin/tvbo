@@ -13,7 +13,7 @@ from tvbo.templates.tvboptim.utils import (
     parse_exploration, get_param_info, get_node_param_overrides,
     normalize_coupling_aliases, resolve_coupling_input_map,
     get_node_state_overrides, render_jax_default, get_mode_layout,
-    get_all_observations_from_algo, network_axis_leaf,
+    get_all_observations_from_algo, network_axis_leaf, graph_selection,
 )
 import numpy as np
 import re
@@ -113,8 +113,14 @@ has_delay = any(c.delayed for c in all_couplings.values() if c)
 # Differentiable (interpolated) delays are OPT-IN: only experiments whose
 # coupling sets `interpolate_delays: true` use the decoupled-max_delay graph
 # API (which needs the differentiable-delays tvboptim build). Everything else
-# uses the stock DenseDelayGraph that derives max_delay from the delays.
+# uses the stock delay graph that derives max_delay from the delays.
 interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in all_couplings.values() if c)
+
+# Delay-graph selection (see graph_selection): tract lengths → DenseLengthGraph
+# (delays = lengths / conduction_speed, so conduction speed is a live sweepable
+# and differentiable leaf); only explicit per-edge "delay" attributes (no lengths)
+# → DenseDelayGraph over those delays directly.
+use_length_graph, use_delay_graph = graph_selection(network, has_delay)
 
 # Sparse coupling opt-in (Network.graph_representation: sparse): sparsify the weight matrix to
 # BCOO so the `pre @ weights` reduction runs as an edge-sum (O(nnz)) instead of a dense NxN
@@ -1365,14 +1371,16 @@ _TVBO_DYNAMICS_CLS = ${dynamics_class}
 
 def create_network(
     weights: jnp.ndarray,
-    % if has_delay:
+    % if use_length_graph:
+    distances: jnp.ndarray = None,
+    % elif use_delay_graph:
     delays: jnp.ndarray = None,
     % endif
     region_labels: list = None,
     dynamics_params: dict = None,
     coupling_params: dict = None,
     noise_sigma: float = ${noise_sigma_value},
-    % if interpolate_delays:
+    % if has_delay:
     max_delay: float = None,
     % endif
 ) -> Network:
@@ -1391,17 +1399,26 @@ def create_network(
     % endfor
 % endif
 
-    % if has_delay:
+    % if use_length_graph:
+    # DenseLengthGraph: tvboptim derives delays = lengths / conduction_speed every
+    # forward pass, so conduction speed stays a live, sweepable and differentiable
+    # leaf (the delay-domain twin of the coupling gain G). max_delay_bound sizes the
+    # (static) history buffer; default to the build-speed max delay, which a sweep or
+    # gradient step to a slower speed widens without re-preparing.
+    if distances is None:
+        distances = jnp.zeros_like(weights)
+    _speed = ${conduction_speed}
+    _max_delay_bound = max_delay if max_delay is not None else (float(jnp.max(distances)) / _speed if _speed > 0 else 0.0)
+    graph = DenseLengthGraph(weights, distances, speed=_speed, region_labels=region_labels, max_delay_bound=_max_delay_bound)
+    % elif use_delay_graph:
+    # Explicit per-edge delays (no tract lengths): DenseDelayGraph over the delay
+    # matrix directly. max_delay_bound (opt-in) decouples the history-buffer length
+    # from the delay values (e.g. for differentiable/swept delays); None derives it
+    # from max(delays). Non-edge entries arrive as NaN, so zero-fill first.
     if delays is None:
         delays = jnp.zeros_like(weights)
-    % if interpolate_delays:
-    # Differentiable delays (opt-in): max_delay_bound sizes the (static) history
-    # buffer independently of `delays`, so the delays may be JAX tracers (e.g. a
-    # gradient-optimised conduction speed v); None derives the bound from max(delays).
+    delays = jnp.nan_to_num(delays)
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay_bound=max_delay)
-    % else:
-    graph = DenseDelayGraph(weights, delays, region_labels=region_labels)
-    % endif
     % elif use_sparse:
     # Sparse coupling: the weight matrix is sparsified to BCOO so the vectorized
     # `pre @ weights` reduction is an O(nnz) edge-sum, not a dense NxN matmul.
@@ -2426,22 +2443,20 @@ def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
     """${expl['label']} - ${grid_desc}."""
     _network = kwargs.get('network')
 % if _has_network_axis:
-    if _network is not None:
-        # Network-scope conduction_speed axis: swap the delay graph for a
-        # DenseLengthGraph so `speed` is a live, sweepable pytree leaf
-        # (delays = lengths / speed, recomputed each forward pass). Built once
-        # here, outside jit/vmap, so the one-time Network reconstruction never
-        # traces. max_delay_bound sizes the history buffer for the slowest swept
-        # speed (its largest delay), giving the sweep headroom without a re-prepare.
+    if _network is not None and hasattr(_network.graph, 'lengths'):
+        # A network-scope conduction_speed axis sweeps the DenseLengthGraph's live
+        # `speed` leaf (delays = lengths / speed, recomputed each forward pass). The
+        # base graph is already a DenseLengthGraph, so reuse its lengths and rebuild
+        # once here (outside jit/vmap, so it never traces) with a max_delay_bound
+        # sized for the SLOWEST swept speed — its largest delay — giving the sweep
+        # history headroom without a re-prepare.
         _v_build = ${conduction_speed}
-        _base_delays = _network.graph.delays
-        _lengths = _base_delays * _v_build
+        _lengths = _network.graph.lengths
         _length_graph = DenseLengthGraph(
             _network.graph.weights, _lengths, speed=_v_build,
             region_labels=_network.graph.region_labels,
-            # Buffer sized for the slowest speed used at build OR sweep time (its
-            # largest delay); min() guards a sweep whose speeds are all faster than
-            # the build speed, where the build-speed delay is the binding one.
+            # min() guards a sweep whose speeds are all faster than the build speed,
+            # where the build-speed delay is the binding one.
             max_delay_bound=float(jnp.max(_lengths)) / min(_v_build, ${_v_min}),
         )
         _network = type(_network)(
@@ -3159,12 +3174,16 @@ def run_experiment(
 
     _log("STEP 1: Running simulation...")
 
-    % if has_delay:
+    % if use_length_graph:
+    # tract lengths → DenseLengthGraph derives delays = lengths / conduction_speed.
+    network = create_network(weights, distances=distances, region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    % elif use_delay_graph:
+    # explicit per-edge delays → DenseDelayGraph over the delay matrix directly.
     if delays is None:
         delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
     else:
         delays = jnp.array(delays)
-    network = create_network(weights, delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, delays=delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
     network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
@@ -3820,7 +3839,13 @@ def run_experiment(
 % else:
             # No depends_on: start from FRESH network (not modified by algorithms)
             # Create fresh network and run fresh transient for BOLD history
+            % if use_length_graph:
+            opt_network = create_network(weights, distances=distances, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            % elif use_delay_graph:
+            opt_network = create_network(weights, delays=delays, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            % else:
             opt_network = create_network(weights, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            % endif
             opt_model_init, opt_state_init = prepare(opt_network, get_solver(), t1=${opt_t1}, dt=${opt_dt})
             opt_transient = opt_model_init(opt_state_init)  # Fresh BOLD history
             # Prepare optimization state from fresh network
