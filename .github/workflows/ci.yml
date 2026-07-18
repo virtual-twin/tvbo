@@ -421,29 +421,38 @@ jobs:
             - name: Refresh editable link (cache hit)
               if: steps.venv-cache.outputs.cache-hit == 'true'
               run: uv pip install -e . --no-deps
-            - name: Cache Julia depot (Julia + precompiled packages)
+            - name: Restore Julia depot (Julia + precompiled packages)
               id: cache-julia-depot
-              uses: actions/cache@v5
+              uses: actions/cache/restore@v5
               with:
                   path: ${{ env.JULIA_DEPOT_PATH }}
-                  key: julia-depot-1.10-${{ hashFiles('tvbo/juliapkg.json') }}
+                  # -v2: escape depot caches an earlier run left in a partial /
+                  # poisoned state. GitHub caches are immutable per key, so an
+                  # incomplete depot saved under the old key could never be
+                  # overwritten and was served on every run — the recurring failure.
+                  key: julia-depot-v2-1.10-${{ hashFiles('tvbo/juliapkg.json') }}
                   restore-keys: |
-                      julia-depot-1.10-
+                      julia-depot-v2-1.10-
             - name: Pre-warm Julia (resolve + precompile declared packages)
-              # Importing juliacall makes juliapkg resolve tvbo/juliapkg.json and
-              # install/precompile the stack into JULIA_DEPOT_PATH. On a cache hit
-              # this is a fast no-op; on a miss it populates the depot we cache.
               run: |
-                  # When juliapkg.json changes, the exact depot key misses and the
-                  # restore-keys fallback restores a depot resolved for the *previous*
-                  # juliapkg.json. juliacall's implicit resolve can't reconcile that
-                  # partial restore (PythonCall.jl ends up "not installed"), so on any
-                  # non-exact-hit force a clean re-resolve first — this instantiates
-                  # every declared package (incl. PythonCall) via a Julia subprocess,
-                  # independent of loading PythonCall.jl.
-                  if [ "${{ steps.cache-julia-depot.outputs.cache-hit }}" != "true" ]; then
-                      python -c "import juliapkg; juliapkg.resolve(force=True)"
-                  fi
+                  # The Julia *project* (Project.toml/Manifest.toml under
+                  # .venv/julia_env) and the Julia *depot* (package sources +
+                  # precompiled artifacts under .julia-depot) are cached under two
+                  # independent keys — the .venv cache (pyproject/ci.yml hash) and
+                  # this depot cache (juliapkg.json hash). A restore can therefore
+                  # pair a Manifest with a depot that predates it, leaving the
+                  # Manifest referencing a transitive source (e.g. Moshi) the depot
+                  # lacks; precompile then dies with "Package X is required but does
+                  # not seem to be installed / Run Pkg.instantiate()". A forced
+                  # juliapkg resolve is the one operation guaranteed to reconcile
+                  # them: it rewrites Project.toml, drops the stale Manifest, then
+                  # runs Pkg.add + Pkg.resolve + Pkg.precompile, pulling any missing
+                  # sources. It runs as a plain Julia subprocess without loading
+                  # PythonCall.jl, so it can't trip over the inconsistency it
+                  # repairs, and the restored depot still supplies precompiled
+                  # artifacts for unchanged packages — keeping this off the
+                  # cold-compile hot path on a warm cache.
+                  python -c "import juliapkg; juliapkg.resolve(force=True)"
                   python -c "import tvbo, juliacall; juliacall.Main.seval('using NetworkDynamics, OrdinaryDiffEq'); print('Julia depot ready')"
             - name: Run Julia backend tests
               run: |
@@ -452,3 +461,13 @@ jobs:
                       --override-ini="addopts=" \
                       tests/functional/test_simulation_backends_julia.py \
                       tests/test_networkdynamics_comparison.py
+            - name: Save Julia depot (Julia + precompiled packages)
+              # Persist the depot only when the job succeeded (never cache a
+              # half-built depot) and only when the exact key was absent (an exact
+              # hit is already saved, and GitHub caches are immutable). This is what
+              # stops a poisoned depot from ever being written back.
+              if: success() && steps.cache-julia-depot.outputs.cache-hit != 'true'
+              uses: actions/cache/save@v5
+              with:
+                  path: ${{ env.JULIA_DEPOT_PATH }}
+                  key: julia-depot-v2-1.10-${{ hashFiles('tvbo/juliapkg.json') }}
