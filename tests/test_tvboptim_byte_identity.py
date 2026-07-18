@@ -79,7 +79,7 @@ def _load_sim(name, t1, transient):
 def test_rww_trajectory_and_bold(eager):
     from tvboptim.experimental.network_dynamics import Network, prepare
     from tvboptim.experimental.network_dynamics.dynamics.tvb import ReducedWongWang
-    from tvboptim.experimental.network_dynamics.coupling import FastLinearCoupling
+    from tvboptim.experimental.network_dynamics.coupling import LinearCoupling
     from tvboptim.experimental.network_dynamics.graph import DenseGraph
     from tvboptim.experimental.network_dynamics.solvers import Heun
     from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
@@ -98,7 +98,7 @@ def test_rww_trajectory_and_bold(eager):
     # --- tvboptim-native (hand-written, matching the YAML's parameters) ---
     net = Network(
         dynamics=ReducedWongWang(w=0.5, I_o=0.32, INITIAL_STATE=(0.3,)),
-        coupling={"instant": FastLinearCoupling(local_states=["S"], G=0.5)},
+        coupling={"instant": LinearCoupling(incoming_states=["S"], G=0.5)},
         graph=DenseGraph(W, region_labels=labels),
         noise=AdditiveNoise(sigma=0.00283, apply_to=["S"], key=jax.random.key(0)),
     )
@@ -885,7 +885,7 @@ def _hopf_ref(exp, t1):
     """Hand-written tvboptim reference matching the Hopf YAML (shared warm-up)."""
     from tvboptim.experimental.network_dynamics import Network, prepare
     from tvboptim.experimental.network_dynamics.dynamics.tvb import SupHopf
-    from tvboptim.experimental.network_dynamics.coupling import FastLinearCoupling
+    from tvboptim.experimental.network_dynamics.coupling import LinearCoupling
     from tvboptim.experimental.network_dynamics.graph import DenseGraph
     from tvboptim.experimental.network_dynamics.solvers import Heun
     from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
@@ -895,7 +895,7 @@ def _hopf_ref(exp, t1):
     omega = np.asarray(list(exp.dynamics.parameters["omega"].value))
     net = Network(
         dynamics=SupHopf(a=0.01, omega=jnp.asarray(omega), INITIAL_STATE=(0.1, 0.0)),
-        coupling={"instant": FastLinearCoupling(local_states=["x"], G=0.025)},
+        coupling={"instant": LinearCoupling(incoming_states=["x"], G=0.025)},
         graph=DenseGraph(W),
         noise=AdditiveNoise(sigma=0.01, apply_to=["x", "y"], key=jax.random.key(0)),
     )
