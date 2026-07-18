@@ -4,6 +4,8 @@ subtitle: "*<Paper title>* (<venue>), replicated with a single declarative tvbo 
 format:
   pdf:
     toc: true
+    toc-depth: 2
+    number-sections: true
     fig-width: 7
     geometry: margin=0.7in
     colorlinks: true
@@ -17,19 +19,59 @@ execute:
 ```{python}
 #| label: setup
 #| echo: false
-import sys, numpy as np, xarray as xr, yaml, matplotlib.pyplot as plt
+import os, sys, numpy as np, xarray as xr, yaml, matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 from pathlib import Path
 sys.path.insert(0, str(Path("../code").resolve()))   # builder + analysis callables
 OUT = Path("../output"); INPUT = Path("../input")
+ORIG = Path("../original_study/img")                  # paper's figures (git-ignored, © author)
+FIGS = OUT / "figures"                                # our reproduction figures (git-ignored)
 
+# --- INTERNAL vs PUBLIC build (copyright-safe single source) ------------------------
+# Showing the paper's own published figures is copyright-restricted, so ONE report.qmd
+# renders two ways, selected by a Quarto profile:
+#   PUBLIC   (default):  quarto render report.qmd --to pdf
+#                        -> report.pdf, ONLY our reproduction (no copyrighted originals).
+#   INTERNAL (opt-in):   quarto render report.qmd --to pdf --profile internal
+#                        -> report_internal.pdf, adds the paper figure beside each
+#                           reproduction for A/B validation. Local-only, git-ignored.
+# `--profile internal` sets QUARTO_PROFILE (read here) and the profile file renames the
+# output, so the internal (© author) build can never overwrite the public report.pdf.
+# Needs report/_quarto.yml + report/_quarto-internal.yml (copy the .tmpl assets).
+INTERNAL = "internal" in os.environ.get("QUARTO_PROFILE", "").split(",")
+
+def ab(orig, repl, h=4.0, lab="<substrate>"):
+    """Show our reproduction figure; in the INTERNAL build draw the paper original beside it.
+
+    ``orig`` is the paper figure under original_study/img/ (read ONLY when INTERNAL, so no
+    copyrighted image is ever embedded in the public build); ``repl`` is our reproduction
+    under output/figures/.
+    """
+    r = FIGS / repl
+    if INTERNAL:
+        fig, ax = plt.subplots(1, 2, figsize=(11, h))
+        axl, axr = ax
+        axl.axis("off"); axl.set_title("Original — <Author> <Year>", fontsize=9)
+        o = ORIG / orig
+        if o.exists():
+            axl.imshow(mpimg.imread(str(o)))
+    else:
+        fig, axr = plt.subplots(1, 1, figsize=(6.4, h))
+    axr.axis("off"); axr.set_title(f"TVBO replication ({lab})", fontsize=9)
+    if r.exists():
+        axr.imshow(mpimg.imread(str(r)))
+    else:
+        axr.text(0.5, 0.5, f"{repl}\n(run: python code/figures/plot.py)", ha="center", va="center")
+    plt.tight_layout(); plt.show()
+
+# ---- Every reported number is computed here from the result container or metadata. ----
+# No value below this line may be typed into prose/captions. Reference M[...] via inline
+# `{python} ...`. Papers are not ground truth; your own asserted numbers are not either.
 from tvbo.classes.study import SimulationStudy
 STUDY = SimulationStudy.from_file("../<Study>.yaml")
 EXP  = STUDY.get_experiment(<base_exp_id>)     # e.g. the uncontrolled/base variant
 # CTRL = STUDY.get_experiment(<ctrl_exp_id>)   # e.g. a controlled variant, if any
 
-# ---- Every reported number is computed here from the result container or metadata. ----
-# No value below this line may be typed into prose/captions. Reference M[...] via inline
-# `{python} ...`. Papers are not ground truth; your own asserted numbers are not either.
 def _open(exp):
     d = OUT / "nc" / exp
     fs = [f for f in d.glob("*.h5") if "network" not in f.name] if d.exists() else []
@@ -67,10 +109,6 @@ def grid_counts():
     d = np.load(str(p), allow_pickle=True)
     return dict(n_nodes=int(np.asarray(d["A"]).shape[0]))   # + n_lines, n_gen, ... as needed
 
-# def solitary_count(exp, thr=0.1): ...  # deviation from the locked-bulk median
-# def decay_time(exp): ...               # e.g. time for the recorded obs to fall to 1/e
-# def critical_nc(exp, thr): ...         # smallest N_c driving the metric below thr
-
 # One dict, computed once. The prose/captions reference these via inline code.
 M = dict(
     K=param(<base_exp_id>, "K"),
@@ -79,61 +117,121 @@ M = dict(
 )
 ```
 
-# Overview
+```{python}
+#| label: internal-banner
+#| output: asis
+if INTERNAL:
+    print("::: {.callout-important}\n"
+          "**Internal A/B validation build — do not distribute.** This render embeds the "
+          "© <Year> <Author> original figures beside the reproduction for side-by-side "
+          "checking; it is local-only and must never be committed. The public build "
+          "(`quarto render report.qmd --to pdf`) omits every original.\n:::\n")
+```
 
-<One paragraph: the paper's core result and that the whole study is a single
-declarative recipe (`<Study>.yaml`); the only custom code is data preprocessing,
-one plotting script, and analysis callables.>
+<!-- Canonical report STRUCTURE — a real paper (IMRAD), not a figure walk:
+     Abstract · Introduction · Methods · Results · Discussion · Conclusion · References.
+     Keep every number computed from M; write math as LaTeX (xelatex drops Unicode). -->
 
-# Model and parameters
+# Abstract {.unnumbered}
 
-The model is **generated from the recipe** (`EXP.dynamics.render("markdown")`) — the
-equations and parameters shown are exactly what runs on the backend.
+<One paragraph: the paper's core result; that the whole study is a single declarative
+recipe (`<Study>.yaml`) whose equations are rendered and run from the same metadata; the
+headline that reproduces; and — stated honestly up front — the one thing that does not.
+Every number inline-computed from M, none typed by hand.>
+
+# Introduction
+
+<Motivate: the paper's question and contribution; why replicate it in TVBO (declarative,
+native equations, backend-independent); the scope (which figures/targets, Phase 1.5).
+Preview the reproduction-vs-replication framing and any negative result — establishing it
+rigorously is part of an honest replication, not something to hide.>
+
+# Methods
+
+## Model and equations (rendered natively from the recipe)
+
+The model is **generated from the recipe** (`EXP.dynamics.render("markdown")`, or
+`EXP.dynamics.generate_report(format="markdown")` for the full parameter table) — the
+equations and parameters shown are exactly what runs on the backend, not a hand-transcribed
+copy, so they can be checked one-to-one against the paper's equations.
 
 ```{python}
 #| output: asis
 #| echo: false
 print(EXP.dynamics.render("markdown"))
+# Full model card incl. the parameter table (Deco-style audit against the paper's Table N):
+# print(EXP.dynamics.generate_report(format="markdown"))
 # For a controlled/extended variant, render only the delta vs the base:
 # print(CTRL.dynamics.render("markdown", baseline=EXP.dynamics))
 ```
 
-# Results (Figs …)
+<Then the non-equation methods, each a short subsection: variants, coupling, network +
+data provenance / substitute (Phase 1.5 fidelity tier), analyses (native `analysis`
+observations where applicable), backend (Phase 1.5), and the Phase-7 verification against
+an independent reference integration. Callouts (`.callout-note`) carry proxies/caveats.>
 
-![**Fig. N — <title>.** **A** original (<Author> et al. <Year>); **B** TVBO reproduction.
-<caption>. Operating point $K =$ `{python} fmt(M['K'],0)` MW; the grid has
-`{python} fmt(M['n_nodes'],0)` nodes. <Every number here is inline-computed from M.>](../output/figures/ab_figN.png){#fig-N width=100%}
+# Results
+
+<Open with the computed scorecard/comparison table (below), then one subsection per paper
+figure. Each subsection: a sentence or two of what the panel shows, the `ab()` call, and a
+three-colour status callout. A NEGATIVE result is STATED here (with the evidence) and
+INTERPRETED in the Discussion.>
+
+```{python}
+#| label: tbl-comparison
+from IPython.display import Markdown
+# Build each row from computed values (M / result containers); paper column is the
+# published target, verdict DERIVED from the data, never asserted.
+rows = [
+    ("<quantity>", "<paper value>", fmt(M.get("K"), 0), "yes"),
+]
+hdr = "| Quantity | Paper | This replication | |\n|:--|:--:|:--:|:--:|\n"
+Markdown(hdr + "\n".join("| " + " | ".join(map(str, r)) + " |" for r in rows))
+```
+
+## Fig. N — <title>
+
+<what the figure shows — one or two sentences; every number inline from M.>
+
+```{python}
+ab("fig_0N.png", "FigN_<study>.png", h=4.5)
+```
 
 <!-- Per-figure status callout: three colours, no emoji (callout-icon:false above).
-     green (tip) = reproduced · yellow (warning) = MISSING (data/target not yet available)
-     · red (important) = attempted and failed to match. A placeholder panel gets yellow. -->
-::: {.callout-tip title="Reproduced"}
-<what this figure reproduces, with an inline-computed number, e.g. ρ = `{python} fmt(M['rho'],2)`>.
+     green (tip)=reproduced · yellow (warning)=MISSING (data/target not yet available)
+     · red (important)=attempted and failed to match. A placeholder panel gets yellow. -->
+::: {.callout-note}
+**Reproduced:** <what reproduced, with an inline-computed number, e.g. r = `{python} fmt(M.get('rho'),2)`>.
+**Does not match / missing:** <the honest gap, if any>.
 :::
 
-# Reproduction vs. replication
+# Discussion
 
-This study is a **replication**, not a bit-exact reproduction. In the NASEM (2019)
-terminology, *reproduction* re-runs the same code on the same data; *replication*
-re-derives a paper's findings with **independent methods and independently sourced
-data** — which is what this is (independent tvbo → backend implementation on open data).
-It reproduces the paper's *qualitative claims and structural invariants*; quantities
-depending on unpublished realizations or rendering choices differ, as expected.
+<Interpret. Lead with what reproduced and why it is robust (scale/seed-invariant, across
+several read-outs). Then any negative result: state the mechanism/cause and its downstream
+consequences (often one modelling fact explains several panel mismatches — say so rather
+than listing them as independent failures). Then the reproduction-vs-replication framing
+(below) and the accepted limitations.>
 
-# Replication scorecard
+**Reproduction vs. replication.** In the NASEM (2019) terminology, *reproduction* re-runs
+the same code on the same data; *replication* re-derives a paper's findings with
+**independent methods and independently-sourced data** — which is what this is. Separate
+**mechanism-level** targets (a sign / pattern / ordering that any reasonable input
+reproduces) from **decimal-level** targets (a number needing the paper's exact input): the
+former reproduce; the latter are capped by unavailable inputs and stated as limitations,
+never claimed as matches.
 
-Against the criteria in `original_study/analysis/targets.md`. **Status:** yes =
-reproduced · partial = realization-dependent/incomplete · out = out of scope. **Tier**
-(set in Phase 1.5): *mech* = mechanism-level (sign / pattern / ordering) · *dec* =
-decimal-level (needs the paper's exact input).
+## Replication scorecard
+
+Against the criteria in `original_study/analysis/targets.md`. **Status:** yes = reproduced ·
+partial = realization-dependent/incomplete · out = out of scope. **Tier** (Phase 1.5):
+*mech* = mechanism-level · *dec* = decimal-level (needs the paper's exact input).
 
 | Criterion | Tier | Status | Note |
 |---|:---:|:---:|---|
-| <T1 criterion, e.g. topology counts> | mech | **yes** | `{python} fmt(M['n_nodes'],0)` nodes … |
-| <T2 criterion> | dec | **partial** | <needs the exact input; mechanism holds, number caps> |
+| <T1 criterion> | mech | **yes** | `{python} fmt(M.get('n_nodes'),0)` nodes … |
+| <T2 criterion> | dec | **partial** | <mechanism holds, number caps on the substitute input> |
 | <extended targets> | dec | **out** | <deferred / data gap / framework gap> |
-
-**Bottom line:** <which tier is replicated; which is partial; what is out of scope>.
 
 ## Accepted limitations
 
@@ -141,9 +239,21 @@ decimal-level (needs the paper's exact input).
   the picture reproduces, the integer cannot match.>
 - <out-of-scope tiers / open-data gaps / framework gaps (with a pointer to the todo).>
 
-# Running the study
+# Conclusion
 
+<Short: what the replication establishes; the headline reproduces; a negative result is
+documented and pinned to its cause. An honest replication reproduces what is real and
+explains what is not.>
+
+# References {.unnumbered}
+
+- <Author> et al. (<Year>). <Paper title>. *<venue>*.
+- National Academies of Sciences, Engineering, and Medicine (2019). *Reproducibility and
+  Replicability in Science*. Washington, DC: The National Academies Press.
+- <the connectome / empirical-data / substitute-input sources, and any positive-control paper>
+
+<!-- Running the study:
 `tvbo run <Study>.yaml` runs every experiment in dependency order (each `from_experiment`
-source before its dependents). Add `--experiment <ids>` for a subset. Each writes a
-native `<stem>_result.h5` (+ a `.yaml` provenance sidecar). Figures + report:
-`python code/figures/plot.py && quarto render report/report.qmd --to pdf`.
+source before its dependents). `python code/figures/plot.py` writes output/figures/.
+PUBLIC report:   quarto render report/report.qmd --to pdf
+INTERNAL A/B:    quarto render report/report.qmd --to pdf --profile internal  (local-only) -->

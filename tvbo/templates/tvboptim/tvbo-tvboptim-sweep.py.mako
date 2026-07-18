@@ -37,6 +37,9 @@ metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmst
     path = ("coupling.%s.%s" % (axis['coupling_key'], name)) if axis.get('is_coupling') \
            else ("dynamics.%s" % name)
     bothways = expl['sweep_direction'] == 'bidirectional'
+    # Total scan points for the progress ticker: n per branch, doubled when bidirectional.
+    # Mirrors the n resolution used in the _adiabatic_scan call (runtime n_<name> override).
+    n_total_expr = ("2 * " if bothways else "") + ("kwargs.get('n_%s', %s)" % (name, axis['n']))
 %>\
 % if a:
     # -- Adiabatic bifurcation scan (delegates to tvboptim adiabatic_scan) --
@@ -45,6 +48,10 @@ metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmst
     # of the observed signal at each value. The up/down branches expose any hysteresis.
     def _adia_observe(_r):
         return ${a['signal_code']}
+    # observe() runs once per swept value inside adiabatic_scan's lax.scan (sequential
+    # warm-start, no batch axis for the grid-path ticker), so wrapping it streams the
+    # JAX-native "<name> i/N" tick per point instead of going silent until the scan returns.
+    _adia_observe = progress_ticker(${n_total_expr}, label="${expl['name']}")(_adia_observe)
     _adia_stats = {"mean": lambda _a: _a.mean(), "lo": lambda _a: _a.min(axis=0).mean(), "hi": lambda _a: _a.max(axis=0).mean()}
     _adia_res = _adiabatic_scan(
         _network, ${solver_class}(${solver_kwargs}),
@@ -73,6 +80,9 @@ metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmst
     # bidirectional (up then back down) exposes hysteresis / multistability.
     def _ws_observe(_r):
         return _r.ys
+    # Per-value progress: observe() is called once per swept value inside adiabatic_scan's
+    # lax.scan, so the ticker fires the JAX-native "<name> i/N" line as each point settles.
+    _ws_observe = progress_ticker(${n_total_expr}, label="${expl['name']}")(_ws_observe)
     _ws_stats = {
 % for r in expl['warmstart_records']:
         '${r['name']}': (lambda _a, _f=${r['call']}, _i=${r['var_idx']}: _f(_a[:, _i, :])),
