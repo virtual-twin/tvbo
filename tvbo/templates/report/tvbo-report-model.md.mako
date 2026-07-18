@@ -23,12 +23,18 @@ from tvbo.utils import report
 
 derivative_notation = context.get('derivative_notation', 'd')
 
+# Per-symbol display overrides {identifier Symbol -> LaTeX string}, populated from the
+# model's `symbol` slots once `model` is resolved (see _collect_symbols below). Passed to
+# every sympy.latex call so rendered equations use the source's own notation (fully
+# sympy-native): e.g. identifier ``w_plus`` renders as ``w_+``, ``S_e`` as ``S^{(E)}``.
+symbol_names = {}
+
 def _dot_lhs(deriv, mul_symbol='*'):
     try:
         t = Symbol("t")
         order = sum(1 for v in deriv.variables if v == t)
         base = deriv.expr
-        base_latex = latex(base, mul_symbol=mul_symbol)
+        base_latex = latex(base, mul_symbol=mul_symbol, symbol_names=symbol_names)
         if order == 1:
             return f"\\dot{{{base_latex}}}"
         if order == 2:
@@ -37,14 +43,14 @@ def _dot_lhs(deriv, mul_symbol='*'):
             return f"\\dddot{{{base_latex}}}"
         return f"\\frac{{d^{order}}}{{d t^{order}}} {base_latex}"
     except Exception:
-        return latex(deriv, mul_symbol=mul_symbol)
+        return latex(deriv, mul_symbol=mul_symbol, symbol_names=symbol_names)
 
 def latex_equation(eq, mul_symbol='*'):
     if derivative_notation == 'dot' and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
         lhs = _dot_lhs(eq.lhs, mul_symbol=mul_symbol)
-        rhs = latex(eq.rhs, mul_symbol=mul_symbol)
+        rhs = latex(eq.rhs, mul_symbol=mul_symbol, symbol_names=symbol_names)
         return f"{lhs} = {rhs}"
-    return latex(eq, mul_symbol=mul_symbol)
+    return latex(eq, mul_symbol=mul_symbol, symbol_names=symbol_names)
 
 def _slot(obj, name, default=None):
     return getattr(obj, name, default) if obj is not None else default
@@ -64,6 +70,10 @@ if 'experiment' in context.keys():
     model = context.get('experiment').dynamics
 else:
     model = context.get('dynamics', context.get('model'))
+
+# Display-symbol overrides {identifier Symbol -> LaTeX}; resolution lives on the model
+# (Dynamics.symbol_map), the template only consumes it.
+symbol_names.update(model.symbol_map())
 
 # Optional baseline diff: when a `baseline` model is passed, render only what this
 # model adds or changes relative to it. report.model_delta does the comparison in

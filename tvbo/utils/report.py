@@ -132,6 +132,38 @@ def present(value):
     return value not in (None, "", [], {})
 
 
+_SYMBOL_LATEX_FNS = None
+
+
+def _symbol_latex(text):
+    """Render ``text`` as an inline-LaTeX symbol via sympy, imported lazily once.
+
+    sympy is a heavy import deliberately kept out of this module's import path (as
+    are the other local imports here), so the ``(Symbol, latex)`` pair is cached on
+    first use rather than re-imported per table row.
+    """
+    global _SYMBOL_LATEX_FNS
+    if _SYMBOL_LATEX_FNS is None:
+        from sympy import Symbol, latex
+
+        _SYMBOL_LATEX_FNS = (Symbol, latex)
+    Symbol, latex = _SYMBOL_LATEX_FNS
+    return latex(Symbol(text))
+
+
+def display_symbol(obj, name):
+    """Inline-LaTeX symbol for a report row, preferring an explicit ``symbol`` override.
+
+    When a parameter / variable carries a ``symbol`` slot (e.g. ``w_+`` for an
+    identifier ``w_plus``, or ``S^{(E)}`` for ``S_e``), render *that* symbol so the
+    report matches the source's own notation; otherwise fall back to the element's
+    name. Fully sympy-native — the override string is itself rendered via
+    ``sympy.latex(Symbol(...))``, so it inherits Greek/subscript/superscript handling.
+    """
+    sym = slot(obj, "symbol", None)
+    return _symbol_latex(sym) if sym else _symbol_latex(name)
+
+
 def format_number(value, decimals=4):
     """APA-style numeric formatting for report-table cells.
 
@@ -257,10 +289,8 @@ _PARAM_FLAGS = [("free", "free"), ("heterogeneous", "heterogeneous")]
 
 def state_variable_table(svars):
     """Markdown State-Variables table (empty columns dropped) from a name->obj map."""
-    from sympy import Symbol, latex
-
     rows = [
-        [f"${latex(Symbol(name))}$", format_number(slot(sv, "initial_value", "")), unit_text(slot(sv, "unit")),
+        [f"${display_symbol(sv, name)}$", format_number(slot(sv, "initial_value", "")), unit_text(slot(sv, "unit")),
          f"{slot(sv, 'equation_type', 'differential')} (order {slot(sv, 'equation_order', 1)})",
          metadata_text(sv), flag_text(sv, _STATE_VAR_FLAGS),
          slot(sv, "description", "") or slot(sv, "definition", "") or ""]
@@ -286,13 +316,11 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
         flags: ``(attr, label)`` pairs for :func:`flag_text`; defaults to the
             standard parameter flags.
     """
-    from sympy import Symbol, latex
-
-    def _name(name):
-        return f"${latex(Symbol(name))}$" if symbolic else str(name)
+    def _name(name, p):
+        return f"${display_symbol(p, name)}$" if symbolic else str(name)
 
     rows = [
-        [_name(name), format_number(slot(p, "value", "")), format_number(slot(p, "default", "")), unit_text(slot(p, "unit")),
+        [_name(name, p), format_number(slot(p, "value", "")), format_number(slot(p, "default", "")), unit_text(slot(p, "unit")),
          metadata_text(p), flag_text(p, flags),
          slot(p, "description", "") or slot(p, "definition", "") or ""]
         for name, p in name_items(collection)

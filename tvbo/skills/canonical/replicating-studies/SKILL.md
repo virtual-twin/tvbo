@@ -220,10 +220,15 @@ reduction (e.g. effective frequency accumulated online) keeps resident memory ~c
 ## Phase 5 — Plotting: one `code/figures/plot.py`
 
 Copy `assets/plot.py.tmpl` (one `main()`, one section per paper figure *type* — time series /
-phase portrait / bifurcation diagram / spectrum / sweep / spatial map — then compose) and
-`assets/compose_ab.py` (pairs each reproduction with the paper original into
-`ab_fig{N}.png`). Read the native result containers directly. Always draw the paper's
-full multi-panel layout; a not-yet-run panel renders a labelled placeholder.
+phase portrait / bifurcation diagram / spectrum / sweep / spatial map). `plot.py` writes only
+**our reproduction** figures (`FigN_<study>.png`) to `output/figures/`. The A/B pairing with
+the paper original is a **report-render concern**, gated for copyright by the Phase-6
+internal/public profile (the report's `ab()` helper draws the original only in the internal
+build) — do **not** bake the copyrighted original into a committed/shared image. (`assets/
+compose_ab.py` pre-composes an `ab_fig{N}.png`; if you use it, that composite embeds the ©
+original, so treat it exactly like the internal build — git-ignored, never in the public
+report.) Read the native result containers directly. Always draw the paper's full multi-panel
+layout; a not-yet-run panel renders a labelled placeholder.
 
 **Render spatial data in the paper's coordinate/surface convention**, not a convenient
 substitute — e.g. plot brain-region values at the paper's surface parcel centres (Koller uses
@@ -241,7 +246,7 @@ but an elaborate filesystem-keyed tree is throwaway. Don't over-build it before 
 
 ## Phase 6 — Report: `report/report.qmd` (every number computed)
 
-Copy `assets/report.qmd.tmpl`. It carries the three things that took us the longest:
+Copy `assets/report.qmd.tmpl`. It carries the things that took us the longest:
 
 - a **metrics cell** that opens each result container and computes every quantity once
   into a dict `M`, referenced in prose/captions via inline `` `{python} …` `` (works in
@@ -251,10 +256,48 @@ Copy `assets/report.qmd.tmpl`. It carries the three things that took us the long
 - model/coupling equations rendered from metadata via `EXP.dynamics.render("markdown")`
   and `coupling.render("markdown")` — generated, not transcribed. Render the controlled
   variant `relative to` the base (`dynamics.render(baseline=…)`) so only the delta shows.
+  For a full parameter audit against the paper's tables, `EXP.dynamics.generate_report(
+  format="markdown")` emits the equations **and** the parameter table from the same
+  metadata — put it in Methods so each auxiliary equation checks one-to-one against the paper.
 - **per-figure status callouts, three colours, no emoji:** green = what reproduced, yellow
   = what is *missing* (data/target not yet available), red = what was *attempted and failed
   to match*. One or two sentences each. A placeholder panel (rule #3) gets a **yellow
   "missing"** callout — never a green one, and never dressed up as a result.
+
+**Structure it as a real paper (IMRAD), not a figure walk.** The canonical section order for
+every study is **Abstract · Introduction · Methods · Results · Discussion · Conclusion ·
+References** (`number-sections: true`; Abstract/References `{.unnumbered}`). Map the pieces:
+the native equation render + variants + coupling + network/data-provenance + analyses +
+backend + the Phase-7 verification all live in **Methods**; the computed scorecard table and
+the per-figure `ab()` calls + status callouts in **Results**; the NASEM framing, the
+mechanism/consequences of any negative result, and the accepted limitations in
+**Discussion**. **State a negative result in Results (with its evidence) and interpret it in
+Discussion** — do not soften an honest non-reproduction into a success, and when one
+modelling fact explains several panel mismatches, say so once rather than listing them as
+independent failures.
+
+**Copyright-safe internal/public split — ONE `report.qmd`, never two.** The report shows
+side-by-side A/B panels (the paper's published figure beside our reproduction) for
+validation, but the paper's figures are copyright-restricted and must never be committed or
+shared (they live under the git-ignored `original_study/`). Do **not** keep a second
+report file. Instead, a single `report.qmd` renders both, selected by a **Quarto profile**:
+
+- The `ab()` figure helper reads `INTERNAL = "internal" in os.environ.get("QUARTO_PROFILE",
+  "").split(",")` and draws the paper original **only when `INTERNAL`** — so the public build
+  never even opens the copyrighted file.
+- Copy `assets/_quarto.yml.tmpl` → `report/_quarto.yml` (a minimal base project, needed so the
+  profile's output rename applies) and `assets/_quarto-internal.yml.tmpl` →
+  `report/_quarto-internal.yml` (sets `output-file: report_internal.pdf`).
+- **PUBLIC** (default, shareable): `quarto render report.qmd --to pdf` → `report.pdf`,
+  reproduction only. **INTERNAL** (opt-in, git-ignored): `quarto render report.qmd --to pdf
+  --profile internal` → `report_internal.pdf`, with the originals. `--profile internal` can
+  only ever write `report_internal.pdf`, so it can never put copyrighted content into
+  `report.pdf` — safe by construction. (Quarto's project step removes the stale `report.pdf`
+  when the internal build runs; re-run the public command to regenerate it — both PDFs are
+  git-ignored anyway.) Track `report.qmd` + the two `_quarto*.yml`; gitignore `report/*.pdf`.
+- Verify by rendering **both** and confirming the public PDF embeds no wide A/B image (extract
+  images with pymupdf: public figure-image aspect ratios stay narrow ~1.0–1.5; the internal
+  A/B composites are wide ~2.2+).
 
 PDF-targeted `.qmd`: write math as LaTeX, never Unicode (xelatex drops it). Avoid a
 closing `$` immediately followed by a digit (breaks pandoc math). Edit the finished prose

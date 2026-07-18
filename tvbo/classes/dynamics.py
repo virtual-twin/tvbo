@@ -1377,6 +1377,34 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
         return scope
 
+    def symbol_map(self):
+        """Display-symbol overrides for report rendering: ``{identifier Symbol: LaTeX str}``.
+
+        For each element that declares a ``symbol`` (e.g. ``w_+`` for the identifier
+        ``w_plus``, or ``S^{(E)}`` for ``S_e``), map its identifier Symbol to the LaTeX
+        of that override, so ``sympy.latex(expr, symbol_names=model.symbol_map())``
+        renders the source's own notation. Elements without an override are omitted (they
+        render from their identifier). Fully sympy-native: the override is itself rendered
+        through ``sympy.latex(Symbol(...))``, inheriting Greek/sub/superscript handling.
+
+        Keyed by the canonical collection keys (the identifiers used in the equations),
+        over the same element collections as
+        [`get_symbolic_elements`](#tvbo.classes.dynamics.Dynamics.get_symbolic_elements).
+        """
+        collections = (
+            self.parameters,
+            self.state_variables,
+            self.derived_variables,
+            self.derived_parameters,
+            self.coupling_inputs,
+        )
+        return {
+            Symbol(str(key)): latex(Symbol(str(el.symbol)))
+            for coll in collections
+            for key, el in (coll or {}).items()
+            if getattr(el, "symbol", None)
+        }
+
     def update_metadata(self):
         """Normalize and finalize the model's equation metadata in place.
 

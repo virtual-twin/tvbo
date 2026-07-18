@@ -1,0 +1,19 @@
+# Copy to report/_quarto.yml. Makes report/ a self-contained Quarto project so the
+# `internal` profile can be applied (Quarto only merges `_quarto-<profile>.yml` when a base
+# project config is present) and so the profile can rename the output file. All format
+# options stay in report.qmd's front matter; this file intentionally carries none.
+#
+# PUBLIC build (default; the shareable artifact):
+#     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render report.qmd --to pdf
+#   -> report.pdf, reproduction figures only (no copyrighted originals).
+#
+# INTERNAL A/B build (opt-in, git-ignored):
+#     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render report.qmd --to pdf --profile internal
+#   -> report_internal.pdf, paper figures shown beside the reproduction.
+#
+# `--profile internal` can only ever write report_internal.pdf (the profile fixes its
+# output-file), so it can never put copyrighted content into report.pdf — safe by
+# construction. Quarto's project step does remove the stale report.pdf when the internal
+# build runs; just re-run the public command to regenerate it (both PDFs are git-ignored).
+project:
+  type: default
