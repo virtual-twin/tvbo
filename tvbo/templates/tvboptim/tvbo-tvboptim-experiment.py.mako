@@ -44,15 +44,18 @@ jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
 n_modes, state_names, var_slots = get_mode_layout(model)
 var_names = list(model.state_variables.keys())
 if n_modes > 1:
-    import warnings as _warnings
-    _warnings.warn(
-        f"number_of_modes={n_modes} (mode-coupled model '{getattr(model, 'name', '?')}') "
-        "on the tvboptim backend is EXPERIMENTAL: the per-node mode axis is folded into "
-        "the state axis (each variable occupies n_modes scalar slots). Validated against "
-        "TVB to machine precision for the Stefanescu-Jirsa ReducedSet models; other "
-        "multi-mode coupling topologies may not be faithful. Use the tvb backend for "
-        "reference results.",
-        stacklevel=2,
+    # Informational reliability notice on the run logger, not warnings.warn: it fires
+    # once per render and is a heads-up, not an API misuse. Users still see it at
+    # WARNING level; it stays out of pytest's warnings summary.
+    import logging as _logging
+    _logging.getLogger("tvbo.run").warning(
+        "number_of_modes=%s (mode-coupled model '%s') on the tvboptim backend is "
+        "EXPERIMENTAL: the per-node mode axis is folded into the state axis (each "
+        "variable occupies n_modes scalar slots). Validated against TVB to machine "
+        "precision for the Stefanescu-Jirsa ReducedSet models; other multi-mode "
+        "coupling topologies may not be faithful. Use the tvb backend for reference "
+        "results.",
+        n_modes, getattr(model, "name", "?"),
     )
 param_names = [p.name for p in model.parameters.values()]
 derived_param_names = [p.name for p in model.derived_parameters.values()] if model.derived_parameters else []

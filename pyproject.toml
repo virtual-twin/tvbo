@@ -254,6 +254,11 @@ files = ["tvbo"]
 
 [tool.pytest.ini_options]
 addopts = "-n 1 --dist=loadscope"
+filterwarnings = [
+    # jax's welch clamps nperseg to the signal length and warns; tests shrink
+    # durations below the PSD window, so this benign clamp is expected here.
+    "ignore:nperseg=.* is greater than input_length:UserWarning",
+]
 markers = [
     "backend_core: core backend-agnostic simulation tests",
     "backend_jax: JAX backend tests",
