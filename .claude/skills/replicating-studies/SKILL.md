@@ -5,7 +5,7 @@ description: "How to replicate a published study in TVBO \u2014 turn a paper int
   \ to whole-brain network; forward simulation, parameter sweep, or fit to data) +\
   \ simple plotting + an honest, fully-computed report. Encodes the hard-won rules\
   \ so the replication is fast and trustworthy. Composes the atomic skills (writing-models,\
-  \ running-simulations)."
+  \ running-simulations, writing-reports)."
 ---
 
 # Replicating a study in TVBO
@@ -13,8 +13,8 @@ description: "How to replicate a published study in TVBO \u2014 turn a paper int
 You are reproducing a published paper as a **single declarative TVBO recipe** plus
 minimal plotting, with a report whose every number is computed from the run — never
 typed by hand. This skill owns the *replication-specific* layer; for the atomic
-how-to it defers to **writing-models** (Dynamics YAML) and **running-simulations**
-(sourcing / CLI / backends).
+how-to it defers to **writing-models** (Dynamics YAML), **running-simulations**
+(sourcing / CLI / backends), and **writing-reports** (the IMRAD report itself).
 
 **It covers any study expressible as a TVBO `SimulationStudy`** — locate yours on three
 axes (do this in Phase 1.5; it decides which phases and backend features apply):
@@ -238,63 +238,32 @@ but an elaborate filesystem-keyed tree is throwaway. Don't over-build it before 
 
 ## Phase 6 — Report: `report/report.qmd` (every number computed)
 
-Copy `assets/report.qmd.tmpl`. It carries the things that took us the longest:
+See **writing-reports** for the report mechanics: the IMRAD structure, the metrics cell
+that computes every number from the containers (nothing hand-typed), the native
+`EXP.dynamics.generate_report(...)` equation and parameter render, the three-colour status
+callouts, the copyright-safe internal/public profile split, the xelatex/LaTeX rules, and
+the anti-slop prose standard. The templates it copies ship in this skill's `assets/`:
+`report.qmd.tmpl` plus `_quarto.yml.tmpl` and `_quarto-internal.yml.tmpl`. Copy all three
+into `report/`.
 
-- a **metrics cell** that opens each result container and computes every quantity once
-  into a dict `M`, referenced in prose/captions via inline `` `{python} …` `` (works in
-  figure captions too). **No hand-typed numbers.**
-- the **reproduction-vs-replication** section (NASEM framing) + a **scorecard** table
-  (criterion → met / partial / out) mapping 1:1 to `targets.md`.
-- model/coupling equations rendered from metadata via `EXP.dynamics.render("markdown")`
-  and `coupling.render("markdown")` — generated, not transcribed. Render the controlled
-  variant `relative to` the base (`dynamics.render(baseline=…)`) so only the delta shows.
-  For a full parameter audit against the paper's tables, `EXP.dynamics.generate_report(
-  format="markdown")` emits the equations **and** the parameter table from the same
-  metadata — put it in Methods so each auxiliary equation checks one-to-one against the paper.
-- **per-figure status callouts, three colours, no emoji:** green = what reproduced, yellow
-  = what is *missing* (data/target not yet available), red = what was *attempted and failed
-  to match*. One or two sentences each. A placeholder panel (rule #3) gets a **yellow
-  "missing"** callout — never a green one, and never dressed up as a result.
+Replication-specific rules on top of that mechanics:
 
-**Structure it as a real paper (IMRAD), not a figure walk.** The canonical section order for
-every study is **Abstract · Introduction · Methods · Results · Discussion · Conclusion ·
-References** (`number-sections: true`; Abstract/References `{.unnumbered}`). Map the pieces:
-the native equation render + variants + coupling + network/data-provenance + analyses +
-backend + the Phase-7 verification all live in **Methods**; the computed scorecard table and
-the per-figure `ab()` calls + status callouts in **Results**; the NASEM framing, the
-mechanism/consequences of any negative result, and the accepted limitations in
-**Discussion**. **State a negative result in Results (with its evidence) and interpret it in
-Discussion** — do not soften an honest non-reproduction into a success, and when one
-modelling fact explains several panel mismatches, say so once rather than listing them as
-independent failures.
-
-**Copyright-safe internal/public split — ONE `report.qmd`, never two.** The report shows
-side-by-side A/B panels (the paper's published figure beside our reproduction) for
-validation, but the paper's figures are copyright-restricted and must never be committed or
-shared (they live under the git-ignored `original_study/`). Do **not** keep a second
-report file. Instead, a single `report.qmd` renders both, selected by a **Quarto profile**:
-
-- The `ab()` figure helper reads `INTERNAL = "internal" in os.environ.get("QUARTO_PROFILE",
-  "").split(",")` and draws the paper original **only when `INTERNAL`** — so the public build
-  never even opens the copyrighted file.
-- Copy `assets/_quarto.yml.tmpl` → `report/_quarto.yml` (a minimal base project, needed so the
-  profile's output rename applies) and `assets/_quarto-internal.yml.tmpl` →
-  `report/_quarto-internal.yml` (sets `output-file: report_internal.pdf`).
-- **PUBLIC** (default, shareable): `quarto render report.qmd --to pdf` → `report.pdf`,
-  reproduction only. **INTERNAL** (opt-in, git-ignored): `quarto render report.qmd --to pdf
-  --profile internal` → `report_internal.pdf`, with the originals. `--profile internal` can
-  only ever write `report_internal.pdf`, so it can never put copyrighted content into
-  `report.pdf` — safe by construction. (Quarto's project step removes the stale `report.pdf`
-  when the internal build runs; re-run the public command to regenerate it — both PDFs are
-  git-ignored anyway.) Track `report.qmd` + the two `_quarto*.yml`; gitignore `report/*.pdf`.
-- Verify by rendering **both** and confirming the public PDF embeds no wide A/B image (extract
-  images with pymupdf: public figure-image aspect ratios stay narrow ~1.0–1.5; the internal
-  A/B composites are wide ~2.2+).
-
-PDF-targeted `.qmd`: write math as LaTeX, never Unicode (xelatex drops it). Avoid a
-closing `$` immediately followed by a digit (breaks pandoc math). Edit the finished prose
-for AI-slop filler — hollow hedges, fake enthusiasm, recycled structure — before you call
-it done.
+- **The scorecard maps 1:1 to `targets.md`.** Every criterion `T1..Tn` from Phase 1 is one
+  row (met / partial / out), tagged with its Phase-1.5 **fidelity tier**: *mechanism-level*
+  (a sign or ordering that any reasonable input reproduces) vs *decimal-level* (a number that
+  needs the paper's exact input). Derive the verdict from the data, never assert it.
+- **Reproduction vs. replication (NASEM framing).** Frame the study as replication, not
+  bit-exact reproduction, and split the mechanism-level targets (they reproduce) from the
+  decimal-level ones (capped by unavailable inputs, stated as accepted limitations). This
+  section ties the Discussion's claims back to the Phase-1.5 tiers.
+- **The negative result is the integrity test (rule #3).** State it in Results with its
+  evidence and interpret it in Discussion; a not-yet-run panel is a labelled placeholder with
+  a yellow "missing" callout, never the paper's replotted data passed off as a result.
+- **Methods sections map to the earlier phases:** the native equation render, variants,
+  coupling, and network/data-provenance (Phase 2), the analyses (Phase 4), the backend
+  (Phase 1.5), and the Phase-7 verification. Results holds the scorecard and the per-figure
+  `ab()` calls; Discussion holds the NASEM framing, the mechanism of any negative result, and
+  the accepted limitations.
 
 ## Phase 7 — Verify against an independent reference
 
