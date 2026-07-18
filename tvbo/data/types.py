@@ -2014,15 +2014,11 @@ class ExperimentResult:
             # for max write speed. complevel 4 is the deflate speed/size sweet spot.
             encoding = ({name: {"zlib": True, "complevel": 4} for name in ds.data_vars}
                         if compress else None)
-            try:
-                ds.to_netcdf(h5, engine="h5netcdf", encoding=encoding)
-                written.append(h5)
-            except Exception:
-                npz = os.path.join(out_dir, f"{stem}.npz")
-                np.savez(npz, **{k: np.asarray(v.values) for k, v in data_vars.items()})
-                written.append(npz)
+            # Single self-describing format; a write failure raises, no lossy fallback.
+            ds.to_netcdf(h5, engine="h5netcdf", encoding=encoding)
+            written.append(h5)
 
-        if (not is_shard and written and written[0].endswith(".h5")
+        if (not is_shard and written
                 and self.source is not None and hasattr(self.source, "freeze_yaml")):
             try:
                 # Self-contained provenance: spec + connectome companion
