@@ -107,7 +107,7 @@ ${syn_xml}
     seg_attrs = ''.join(f' {sk}="{conn[sk]}"' for sk in _SEG_KEYS if conn.get(sk) is not None)
 %>\
 % if conn.get('weight') is not None or conn.get('delay') is not None:
-            <connectionWD id="${cidx}" preCellId="${pre}" postCellId="${post}" weight="${conn.get('weight', 1.0) or 1.0}" delay="${conn.get('delay', '0ms') or '0ms'}"${seg_attrs}/>
+            <connectionWD id="${cidx}" preCellId="${pre}" postCellId="${post}" weight="${1.0 if conn.get('weight') is None else conn['weight']}" delay="${conn.get('delay', '0ms') or '0ms'}"${seg_attrs}/>
 % else:
             <connection id="${cidx}" preCellId="${pre}" postCellId="${post}"${seg_attrs}/>
 % endif
@@ -127,7 +127,7 @@ ${syn_xml}
     post = _cell_ref_no_prefix(tp_pop, tp, conn['to_idx'])
 %>\
 % if conn.get('weight') is not None or conn.get('delay') is not None:
-        <synapticConnectionWD from="${pre}" to="${post}" synapse="${syn}" destination="synapses" weight="${conn.get('weight', 1.0) or 1.0}" delay="${conn.get('delay', '0ms') or '0ms'}"/>
+        <synapticConnectionWD from="${pre}" to="${post}" synapse="${syn}" destination="synapses" weight="${1.0 if conn.get('weight') is None else conn['weight']}" delay="${conn.get('delay', '0ms') or '0ms'}"/>
 % else:
         <synapticConnection from="${pre}" to="${post}" synapse="${syn}" destination="synapses"/>
 % endif
