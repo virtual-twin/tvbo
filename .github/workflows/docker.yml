@@ -263,11 +263,18 @@ jobs:
             xla_device_count: "8"
             test_timeout: "900"
           # Replication studies
+          # The Jansen1995 replication runs 6 experiments, each a small parameter
+          # sweep. xla_device_count=1 keeps those grids on a single (v)mapped
+          # device: on a 4-core runner, splitting a handful of grid points across
+          # 8 forced host devices is pure pmap overhead, and it pushed this doc
+          # over the 900s wall. Pure vmap is faster there and numerically
+          # identical. test_timeout=1800 matches the Julia shard's headroom for
+          # slow container cold-compiles.
           - shard: replication
             doc_pattern: "Replication"
             extra_args: ""
-            xla_device_count: "8"
-            test_timeout: "900"
+            xla_device_count: "1"
+            test_timeout: "1800"
           # Core: Usage, Specification, api, examples (non-NeuroML), OpenMINDS, BIDS, root index
           # Negative catch-all: everything not covered by the specialised shards above.
         #   - shard: core
