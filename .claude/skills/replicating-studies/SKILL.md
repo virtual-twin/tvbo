@@ -173,6 +173,13 @@ See **writing-models** for the Dynamics form and **running-simulations** for sou
   fixed-point / eigenvalue / peak observation; a **fit to data is an inference / optimisation
   experiment** (see **running-simulations**) whose target is the recovered parameter +
   goodness-of-fit, not a trajectory. Match the paper's structure, not a template's shape.
+- **A swept *branch* is not a plain grid — read `assets/sweeps.md` first.** If the paper's
+  sweep tracks a hysteresis / partial-sync branch, a continuation, or a per-value analysis
+  (λ₁(K), eigenvalues), that file covers warm-start branch tracking (`sweep_seeding:
+  from_previous` + `bidirectional`), restarting a per-point analysis over the recorded branch
+  (`from_experiment` / `source_point: branch`, shardable), and IC-seed ensembles
+  (`distribution.seed` vs `execution.random_seed`). A product grid over independent cells needs
+  none of it.
 - **Spec at the root, callables in `code/recipe/` via `code_source`.** The study declares
   `code_source: ./code/recipe` (a local path) or a `{git, ref, subdir}` repo; tvbo puts that
   dir on the import path so `callable: {module: <study>_analysis}` resolves with no driver and
