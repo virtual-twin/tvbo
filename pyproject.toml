@@ -41,7 +41,12 @@ dependencies = [
     "sympy>=1.13.0",
 
     # Visualization
-    "bsplot>=0.0.4",
+    # >=0.0.7: format_fig no longer force-sets the "compressed" layout engine,
+    # which raised RuntimeError on figures built with layout="tight" once a
+    # colorbar existed (the tvboptim docs, e.g. RWW_tvboptim). Bumping the floor
+    # also busts the Docker deps-layer cache (keyed on pyproject.toml) so the
+    # container image stops shipping the stale bsplot that carried the bug.
+    "bsplot>=0.0.7",
     "networkx>=3.4.2",
     "pydot>=3.0.3",
 
@@ -257,7 +262,13 @@ addopts = "-n 1 --dist=loadscope"
 filterwarnings = [
     # jax's welch clamps nperseg to the signal length and warns; tests shrink
     # durations below the PSD window, so this benign clamp is expected here.
-    "ignore:nperseg=.* is greater than input_length:UserWarning",
+    # Module-scoped so it survives jax rewording the message.
+    "ignore::UserWarning:jax._src.third_party.scipy.signal_helper",
+    # tvbo's own multi-mode "EXPERIMENTAL" notice, raised on every render of a
+    # ReducedSet model the tvboptim tests exercise on purpose. The `number_of_modes=`
+    # / `EXPERIMENTAL` anchors must match the warnings.warn text in
+    # tvbo/templates/tvboptim/tvbo-tvboptim-experiment.py.mako (n_modes > 1).
+    "ignore:number_of_modes=.*EXPERIMENTAL:UserWarning",
 ]
 markers = [
     "backend_core: core backend-agnostic simulation tests",
