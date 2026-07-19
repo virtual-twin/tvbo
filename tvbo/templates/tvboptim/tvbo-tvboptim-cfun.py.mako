@@ -123,18 +123,21 @@ if coupling_inputs_info and all_couplings:
     all_symbols = spec['all_symbols']
     description = spec['description']
     jaxcode = lambda expr: render_expression(expr, format='jax', parameters=all_symbols)
-    # pre() reads a TARGET-LOCAL state iff the expression references x_i / <state>_i / the
-    # literal local_states. local_states alone is not enough — it is auto-mirrored from
-    # incoming for some couplings (e.g. Linear) whose pre() only uses the source. The new
-    # tvboptim contract needs PRE_USES_LOCAL declared exactly when pre() uses target-local.
-    _pre_rhs_str = str(pre_expr.rhs) if pre_expr else ''
-    _uses_local = bool(_state_aliases_i) or ('x_i' in _pre_rhs_str) or ('local_states' in _pre_rhs_str)
+    _uses_local = spec['uses_local']    # pre() reads a target-local state (resolved in resolve_coupling_spec)
+    # tvboptim 0.4.0 validates pre().shape[0] == N_OUTPUT_STATES: the number of message
+    # components pre() emits and the base class reduces over edges. That is n_pre (the
+    # pre_expression term count), which equals n_output for a single term, a mode-coupled
+    # pre, or a multi-output list (each reduction its own output) — but NOT for a factored
+    # pre that post() recombines into one coupling input (n_pre > 1, n_output == 1, e.g. the
+    # Kuramoto angle-addition [sinθ, cosθ] → sin(θⱼ−θᵢ)). Same gate as the post() recombination
+    # below, so N_OUTPUT_STATES tracks pre()'s leading axis in every case.
+    n_output_states = n_pre if (n_pre > 1 and n_output == 1) else n_output
 %>
 
 class ${class_name}(${base_class}):
     """${class_name} coupling function."""
 
-    N_OUTPUT_STATES = ${n_output}
+    N_OUTPUT_STATES = ${n_output_states}
     % if _uses_local and not vectorized:
     PRE_USES_LOCAL = True    # pre() reads target-local state (x_i/<state>_i); base class aligns local_states to the message axes
     % endif
@@ -153,7 +156,11 @@ class ${class_name}(${base_class}):
 
     def __init__(self, **kwargs):
         % if vectorized:
-        super().__init__(${_interp_kw}incoming_states=${vec_states}, **kwargs)
+## A source-only/factored pre folds declared local_states into vec_states, registered as
+## incoming for the edge reduction. When post() recombines via a target-local alias (θ_i,
+## post_aliases_i non-empty) those states must ALSO be registered as local_states, because
+## 0.4.0 keeps incoming (source) and local (target) distinct and post() reads only local.
+        super().__init__(${_interp_kw}incoming_states=${vec_states}${''.join([', local_states=' + str(vec_states)] if _post_aliases_i else [])}, **kwargs)
         % elif incoming_states:
         super().__init__(${_interp_kw}incoming_states=${incoming_states}${''.join([', local_states=' + str(local_states)] if local_states else [])}, **kwargs)
         % elif local_states:

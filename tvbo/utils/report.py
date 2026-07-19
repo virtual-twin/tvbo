@@ -141,6 +141,13 @@ def _symbol_latex(text):
     sympy is a heavy import deliberately kept out of this module's import path (as
     are the other local imports here), so the ``(Symbol, latex)`` pair is cached on
     first use rather than re-imported per table row.
+
+    sympy renders a symbol *name* verbatim, so a LaTeX-active character in the
+    source notation (``% # & $``) survives unescaped and would corrupt the
+    enclosing ``$...$`` cell — ``%`` silently comments out the rest of the line,
+    ``$`` closes math mode. sympy never emits these for a symbol, so they are
+    escaped after rendering: a no-op for ordinary notation (Greek, sub/superscripts,
+    ``\\`` commands), whose ``\\ { } _ ^`` sympy emits legitimately and must keep.
     """
     global _SYMBOL_LATEX_FNS
     if _SYMBOL_LATEX_FNS is None:
@@ -148,7 +155,7 @@ def _symbol_latex(text):
 
         _SYMBOL_LATEX_FNS = (Symbol, latex)
     Symbol, latex = _SYMBOL_LATEX_FNS
-    return latex(Symbol(text))
+    return re.sub(r"(?<!\\)([%#&$])", r"\\\1", latex(Symbol(text)))
 
 
 def display_symbol(obj, name):

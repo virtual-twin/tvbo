@@ -23,6 +23,7 @@ Usage in templates:
 """
 
 import ast
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
@@ -361,16 +362,22 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     pre_terms = parse_list_elements(_pre_rhs0) if pre_is_list else ([_pre_rhs0] if _pre_rhs0 else [])
     n_pre = len(pre_terms)
 
-    # Vectorized (matmul) vs per-edge reduction. Only the legacy local-states-only
-    # identity case is auto-vectorized; source-only phase couplings stay per-edge
-    # (exact for any connectome) unless the coupling opts in with vectorized: true.
+    # Vectorized (matmul) vs per-edge reduction. The identity-sentinel pre() — no
+    # pre_expr, or the bare `local_states`/`incoming_states` keyword meaning "sources
+    # unchanged" — is a pure linear incoming sum (gx = W @ source): it takes the
+    # vectorized incoming-identity path however its states are declared — local-only
+    # (FastLinearCoupling), incoming-only, or both (e.g. c_glob: incoming+local same
+    # cvar). Source-only phase couplings with a real pre-expression stay per-edge (exact
+    # for any connectome) unless the coupling opts in with `vectorized: true`.
     vectorized = getattr(coupling, "vectorized", False)
-    if not vectorized and local_states and not incoming_states:
+    vec_identity_sentinel = (not pre_expr) or (_pre_rhs0 in ("local_states", "incoming_states"))
+    if not vectorized and (incoming_states or local_states) and (
+        vec_identity_sentinel or (local_states and not incoming_states)
+    ):
         vectorized = True
     vec_states = list(dict.fromkeys(incoming_states + local_states))
-    # Identity source-only pre() ("return incoming_states"): no pre_expr, or the
-    # legacy `local_states`/`incoming_states` sentinel meaning "sources unchanged".
-    vec_identity = vectorized and (not pre_expr or _pre_rhs0 in ("local_states", "incoming_states"))
+    # Identity source-only pre(): the sentinel resolves to "return incoming_states".
+    vec_identity = vectorized and vec_identity_sentinel
     # Graph-shaped (n_nodes, n_nodes) params are per-edge; tvboptim requires them
     # declared in EDGE_PARAMS. Read from the declared shape so it holds for optimised weights.
     edge_params = tuple(sorted(n for n in param_names if _shape_ndim(param_shapes.get(n)) == 2))
@@ -402,6 +409,8 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
             if f"{s}_i" in _pre_rhs_str:
                 state_aliases_i.append((f"{s}_i", idx))
     alias_symbols = [a[0] for a in state_aliases_j] + [a[0] for a in state_aliases_i]
+    # pre() reads a target-local state: a <state>_i alias, or x_i / local_states as whole tokens.
+    uses_local = bool(state_aliases_i) or bool(re.search(r"\bx_i\b", _pre_rhs0)) or bool(re.search(r"\blocal_states\b", _pre_rhs0))
     gx_symbols = ["gx_%d" % k for k in range(n_pre)] if n_pre > 1 else []
     post_alias_symbols = [a[0] for a in post_aliases_i]
 
@@ -437,6 +446,7 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
         "post_is_list": post_is_list,
         "state_aliases_j": state_aliases_j,
         "state_aliases_i": state_aliases_i,
+        "uses_local": uses_local,
         "gx_symbols": gx_symbols,
         "all_symbols": all_symbols,
         "description": description,

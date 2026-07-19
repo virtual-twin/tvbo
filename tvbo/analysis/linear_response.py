@@ -46,6 +46,8 @@ from typing import Any
 import numpy as np
 import sympy as sp
 
+from tvbo.parse.expression import parse_eq
+
 
 def _dfun_symbols(model):
     """Return (state_syms, net_coupling_names, source_var, per-node f expressions).
@@ -65,14 +67,18 @@ def _dfun_symbols(model):
 
     from tvbo.classes.equation import substitute_function_in_state_equations
 
-    dvars = {n: sp.sympify(dv.equation.rhs)
+    # Parse every rhs against the model's symbol scope (the canonical parse path, as in
+    # Dynamics) so parameter names that collide with sympy builtins — e.g. `gamma`,
+    # `beta` — resolve to Symbols, not functions.
+    scope = model.get_symbolic_elements()
+    dvars = {n: parse_eq(dv.equation, local_dict=scope)
              for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
     zero_local = {sp.Symbol(c): 0 for c in local_cpls}
 
     # Inline the derived-variable chain into the state equations with the codebase's
     # canonical inliner, iterated to unfold nested references (a derived var may
     # reference another), then zero local (non-network) coupling inputs.
-    sv_eqs = {v: sp.sympify(model.state_variables[v].equation.rhs) for v in svs}
+    sv_eqs = {v: parse_eq(model.state_variables[v].equation, local_dict=scope) for v in svs}
     for _ in range(len(dvars) + 1):
         substitute_function_in_state_equations(sv_eqs, dvars)
     state_syms = [sp.Symbol(v) for v in svs]
@@ -115,11 +121,13 @@ def constraint_expr(model, var_name):
 
     cpl_inputs = dict(getattr(model, "coupling_inputs", {}) or {})
     local_cpls = [c for c, ci in cpl_inputs.items() if getattr(ci, "local", False)]
-    dvars = {n: sp.sympify(dv.equation.rhs)
+    # Parse against the model scope (canonical path) — builtin-colliding names stay Symbols.
+    scope = model.get_symbolic_elements()
+    dvars = {n: parse_eq(dv.equation, local_dict=scope)
              for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
     if var_name not in dvars:
         raise KeyError(f"constraint variable '{var_name}' is not a derived variable of the model")
-    expr = {var_name: sp.sympify(dvars[var_name])}
+    expr = {var_name: dvars[var_name]}
     for _ in range(len(dvars) + 1):
         substitute_function_in_state_equations(expr, dvars)
     return expr[var_name].subs({sp.Symbol(c): 0 for c in local_cpls})
