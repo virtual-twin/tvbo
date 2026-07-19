@@ -260,14 +260,11 @@ files = ["tvbo"]
 [tool.pytest.ini_options]
 addopts = "-n 1 --dist=loadscope"
 filterwarnings = [
-    # jax's welch clamps nperseg to the signal length and warns; tests shrink
-    # durations below the PSD window, so this benign clamp is expected here.
-    # Module-scoped so it survives jax rewording the message.
+    # jax's welch clamps nperseg to the shrunk-test signal and warns (benign);
+    # module-scoped to survive jax rewording the message.
     "ignore::UserWarning:jax._src.third_party.scipy.signal_helper",
-    # tvbo's own multi-mode "EXPERIMENTAL" notice, raised on every render of a
-    # ReducedSet model the tvboptim tests exercise on purpose. The `number_of_modes=`
-    # / `EXPERIMENTAL` anchors must match the warnings.warn text in
-    # tvbo/templates/tvboptim/tvbo-tvboptim-experiment.py.mako (n_modes > 1).
+    # tvbo's own multi-mode EXPERIMENTAL notice; anchors must match the warn text in
+    # tvbo-tvboptim-experiment.py.mako (n_modes>1).
     "ignore:number_of_modes=.*EXPERIMENTAL:UserWarning",
 ]
 markers = [

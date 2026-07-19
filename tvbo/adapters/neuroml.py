@@ -2008,11 +2008,51 @@ def _build_std_cell_context(experiment):
     }
 
 
+def _connectivity_pairs(rule, src_size, tgt_size):
+    """Expand a population-level connectivity rule into ``(src_idx, tgt_idx)`` pairs.
+
+    Given the ``ConnectivityRule`` (or its string value) and the source/target
+    population sizes, yields the local cell-index pairs a NeuroML
+    ``<projection>`` (or per-cell input list) enumerates.  This is the
+    "allToAll lowering": the user declares one population-to-population Edge and
+    the adapter generates the i x j connection set, so no O(N**2) explicit edges
+    ever appear in the input.
+
+    Self-connection filtering (the diagonal of a self-projection) is applied by
+    the caller on the resolved global cell indices, so this helper simply yields
+    the raw pattern.
+
+    Args:
+        rule: Connectivity pattern (``all_to_all`` or ``one_to_one``).
+        src_size: Number of cells in the source population.
+        tgt_size: Number of cells in the target population.
+
+    Yields:
+        ``(src_idx, tgt_idx)`` local cell indices.
+    """
+    rule_name = str(rule).lower().replace("-", "_")
+    src_size = int(src_size)
+    tgt_size = int(tgt_size)
+    if rule_name == "one_to_one":
+        for i in range(min(src_size, tgt_size)):
+            yield i, i
+        return
+    # Default / all_to_all: fully connected projection.
+    for i in range(src_size):
+        for j in range(tgt_size):
+            yield i, j
+
+
 def _build_std_network_context(experiment):
     """Build context for a multi-population standard NeuroML network template.
 
     Mirrors the logic of ``_render_network_standard_neuroml_lems()`` but
     returns structured data instead of a rendered XML string.
+
+    Population nodes (``Node.size`` > 1) map to a single ``<population>`` of that
+    many cells; Edges carrying a ``connectivity`` rule (e.g. ``all_to_all``) are
+    lowered into ``<projection>`` elements whose ``<connection>`` set is
+    generated here from the rule and the population sizes.
     """
     from collections import OrderedDict
 
@@ -2050,6 +2090,7 @@ def _build_std_network_context(experiment):
 
     populations = []
     node_pop_map = {}
+    node_size_map = {}  # node_id -> number of cells (Node.size), for rule expansion
     input_nodes = {}
     output_pops = []
 
@@ -2124,6 +2165,7 @@ def _build_std_network_context(experiment):
                 comp_id = safe_id(dyn_name)
                 pop_id = f"{safe_id(dyn_name)}_pop"
                 node_pop_map[nid] = (pop_id, 0)
+                node_size_map[nid] = 1
                 populations.append(
                     {
                         "id": pop_id,
@@ -2173,12 +2215,21 @@ def _build_std_network_context(experiment):
 
         pop_id = safe_id(dyn_name) + "_pop"
         node_ids = []
+        _base = 0
         for idx, node in enumerate(group_nodes):
             nid = getattr(node, "id", idx)
-            node_pop_map[nid] = (pop_id, idx)
+            _nsize = int(getattr(node, "size", 1) or 1)
+            node_pop_map[nid] = (pop_id, _base)
+            node_size_map[nid] = _nsize
             node_ids.append(nid)
+            _base += _nsize
+        pop_size = _base
 
-        has_positions = any(getattr(n, "position", None) is not None for n in group_nodes)
+        # Node positions map one-to-one onto cells, so a populationList is only
+        # meaningful when every node in the group is a single cell (size == 1).
+        has_positions = pop_size == len(group_nodes) and any(
+            getattr(n, "position", None) is not None for n in group_nodes
+        )
         node_positions = []
         if has_positions:
             for node in group_nodes:
@@ -2194,7 +2245,7 @@ def _build_std_network_context(experiment):
             {
                 "id": pop_id,
                 "component": cell_id,
-                "size": len(group_nodes),
+                "size": pop_size,
                 "node_ids": node_ids,
                 "dyn_name": dyn_name,
                 "is_populationlist": has_positions,
@@ -2204,7 +2255,8 @@ def _build_std_network_context(experiment):
         )
         recorded_nodes = [n for n in group_nodes if getattr(n, "record", None) is not False]
         if recorded_nodes:
-            output_pops.append((pop_id, len(recorded_nodes), sv_var))
+            recorded_size = sum(int(getattr(n, "size", 1) or 1) for n in recorded_nodes)
+            output_pops.append((pop_id, recorded_size, sv_var))
 
     # ── Process edges → synapses + connections + inputs ──
     synapse_set = {}
@@ -2229,7 +2281,7 @@ def _build_std_network_context(experiment):
             if tgt not in node_pop_map:
                 continue
             inp_info = input_nodes[src]
-            tgt_pop, tgt_idx = node_pop_map[tgt]
+            tgt_pop, tgt_base = node_pop_map[tgt]
             inp_edge_params = _normalize_edge_params(getattr(edge, "parameters", None))
             inp_weight = None
             inp_segmentId = None
@@ -2243,23 +2295,33 @@ def _build_std_network_context(experiment):
                     inp_segmentId = int(float(val))
                 elif pn_str == "fractionAlong" and val is not None:
                     inp_fractionAlong = float(val)
-            explicit_inputs.append(
-                {
-                    "input_id": inp_info["id"],
-                    "target_pop": tgt_pop,
-                    "target_idx": tgt_idx,
-                    "weight": inp_weight,
-                    "segmentId": inp_segmentId,
-                    "fractionAlong": inp_fractionAlong,
-                }
-            )
+            # A connectivity rule on an input edge attaches an independent copy
+            # of the input component to every target cell (rule expansion over a
+            # size-1 "source"); otherwise the input hits the node's base cell.
+            edge_rule = getattr(edge, "connectivity", None)
+            if edge_rule:
+                tgt_size = node_size_map.get(tgt, 1)
+                tgt_indices = [tgt_base + j for _i, j in _connectivity_pairs(edge_rule, 1, tgt_size)]
+            else:
+                tgt_indices = [tgt_base]
+            for _ti in tgt_indices:
+                explicit_inputs.append(
+                    {
+                        "input_id": inp_info["id"],
+                        "target_pop": tgt_pop,
+                        "target_idx": _ti,
+                        "weight": inp_weight,
+                        "segmentId": inp_segmentId,
+                        "fractionAlong": inp_fractionAlong,
+                    }
+                )
             continue
 
         if src not in node_pop_map or tgt not in node_pop_map:
             continue
 
-        src_pop, src_idx = node_pop_map[src]
-        tgt_pop, tgt_idx = node_pop_map[tgt]
+        src_pop, src_base = node_pop_map[src]
+        tgt_pop, tgt_base = node_pop_map[tgt]
 
         edge_coupling = getattr(edge, "coupling", None)
         if not edge_coupling:
@@ -2346,21 +2408,48 @@ def _build_std_network_context(experiment):
         if conn_class == "continuous":
             pre_component = f"silent_{syn_id}"
 
-        connections.append(
-            {
-                "from_pop": src_pop,
-                "from_idx": src_idx,
-                "to_pop": tgt_pop,
-                "to_idx": tgt_idx,
-                "synapse": syn_id,
-                "syn_type": syn_type,
-                "weight": weight,
-                "delay": delay,
-                "conn_class": conn_class,
-                "pre_component": pre_component,
-                **_seg_targeting,
-            }
-        )
+        # ── allToAll lowering ──
+        # An Edge with a connectivity rule is a population-to-population
+        # projection: expand it here into the individual cell-to-cell
+        # connections (size_src x size_tgt for all_to_all), skipping the
+        # diagonal of a self-projection when allow_self_connections is False.
+        # Without a rule the Edge is a single explicit cell-to-cell connection
+        # (the original per-cell edge semantics), preserved unchanged.
+        edge_rule = getattr(edge, "connectivity", None)
+        if edge_rule:
+            src_size = node_size_map.get(src, 1)
+            tgt_size = node_size_map.get(tgt, 1)
+            allow_self = getattr(edge, "allow_self_connections", True)
+            same_pop = src_pop == tgt_pop
+            index_pairs = _connectivity_pairs(edge_rule, src_size, tgt_size)
+            from_rule = True
+        else:
+            index_pairs = [(0, 0)]
+            allow_self = True
+            same_pop = False
+            from_rule = False
+
+        for _si, _tj in index_pairs:
+            from_idx = src_base + _si
+            to_idx = tgt_base + _tj
+            if same_pop and from_idx == to_idx and not allow_self:
+                continue
+            connections.append(
+                {
+                    "from_pop": src_pop,
+                    "from_idx": from_idx,
+                    "to_pop": tgt_pop,
+                    "to_idx": to_idx,
+                    "synapse": syn_id,
+                    "syn_type": syn_type,
+                    "weight": weight,
+                    "delay": delay,
+                    "conn_class": conn_class,
+                    "pre_component": pre_component,
+                    "from_rule": from_rule,
+                    **_seg_targeting,
+                }
+            )
 
     # ── Detect PyNN types ──
     _PYNN_TYPES = {
@@ -2425,9 +2514,14 @@ def _build_std_network_context(experiment):
     elec_conns = [c for c in connections if c["conn_class"] == "electrical"]
     cont_conns = [c for c in connections if c["conn_class"] == "continuous"]
 
-    # Chemical projection grouping
+    # Chemical projection grouping. Rule-expanded (all_to_all) connections are
+    # emitted as <projection>/<connection> — the allToAll lowering — as are
+    # segment-targeted connections. Plain explicit edges keep the flat
+    # <synapticConnection> form.
     _SEG_KEYS = {"preSegmentId", "preFractionAlong", "postSegmentId", "postFractionAlong"}
-    needs_projection = any(any(conn.get(sk) is not None for sk in _SEG_KEYS) for conn in chem_conns) if chem_conns else False
+    _has_seg_targeting = any(any(conn.get(sk) is not None for sk in _SEG_KEYS) for conn in chem_conns)
+    _has_rule_chem = any(conn.get("from_rule") for conn in chem_conns)
+    needs_projection = bool(chem_conns) and (_has_seg_targeting or _has_rule_chem)
 
     chem_projs = OrderedDict()
     if chem_conns and needs_projection:
@@ -2542,7 +2636,8 @@ def _build_network_context(experiment):
 
     cell_types = {}  # dyn_name -> Dynamics object
     populations = []  # list of {id, component, size, node_ids}
-    node_pop_map = {}  # node_id -> (pop_id, index_within_pop)
+    node_pop_map = {}  # node_id -> (pop_id, base_index_within_pop)
+    node_size_map = {}  # node_id -> number of cells (Node.size), for rule expansion
     input_nodes = {}  # node_id -> {type, params, id}  (for current sources)
 
     # Group nodes by their dynamics name
@@ -2602,6 +2697,7 @@ def _build_network_context(experiment):
                 comp_id = safe_id(dyn_name)
                 pop_id = f"{safe_id(dyn_name)}_pop"
                 node_pop_map[nid] = (pop_id, 0)
+                node_size_map[nid] = 1
                 spike_children = _render_event_children(dyn_obj, ts)
                 populations.append(
                     {
@@ -2630,16 +2726,20 @@ def _build_network_context(experiment):
 
         pop_id = safe_id(dyn_name) + "_pop"
         node_ids = []
+        _base = 0
         for idx, node in enumerate(group_nodes):
             nid = getattr(node, "id", idx)
-            node_pop_map[nid] = (pop_id, idx)
+            _nsize = int(getattr(node, "size", 1) or 1)
+            node_pop_map[nid] = (pop_id, _base)
+            node_size_map[nid] = _nsize
             node_ids.append(nid)
+            _base += _nsize
 
         populations.append(
             {
                 "id": pop_id,
                 "component": safe_id(dyn_name) + "_inst",
-                "size": len(group_nodes),
+                "size": _base,
                 "node_ids": node_ids,
                 "dyn_name": dyn_name,
             }
@@ -2665,30 +2765,40 @@ def _build_network_context(experiment):
             if tgt not in node_pop_map:
                 continue
             inp_info = input_nodes[src]
-            tgt_pop, tgt_idx = node_pop_map[tgt]
+            tgt_pop, tgt_base = node_pop_map[tgt]
             # Edge params may override input weight
             edge_params = _normalize_edge_params(getattr(edge, "parameters", None))
             inp_weight = None
             for pn, pv in edge_params.items():
                 if str(pn) == "weight":
                     inp_weight = float(getattr(pv, "value", pv))
-            inputs.append(
-                {
-                    "id": inp_info["id"],
-                    "type": inp_info["type"],
-                    "params": inp_info["params"],
-                    "target_pop": tgt_pop,
-                    "target_idx": tgt_idx,
-                    "weight": inp_weight,
-                }
-            )
+            # A connectivity rule attaches an independent input copy per target
+            # cell (rule expansion over a size-1 source); otherwise the input
+            # hits the node's base cell.
+            edge_rule = getattr(edge, "connectivity", None)
+            if edge_rule:
+                tgt_size = node_size_map.get(tgt, 1)
+                tgt_indices = [tgt_base + j for _i, j in _connectivity_pairs(edge_rule, 1, tgt_size)]
+            else:
+                tgt_indices = [tgt_base]
+            for _ti in tgt_indices:
+                inputs.append(
+                    {
+                        "id": inp_info["id"],
+                        "type": inp_info["type"],
+                        "params": inp_info["params"],
+                        "target_pop": tgt_pop,
+                        "target_idx": _ti,
+                        "weight": inp_weight,
+                    }
+                )
             continue
 
         if src not in node_pop_map or tgt not in node_pop_map:
             continue
 
-        src_pop, src_idx = node_pop_map[src]
-        tgt_pop, tgt_idx = node_pop_map[tgt]
+        src_pop, src_base = node_pop_map[src]
+        tgt_pop, tgt_base = node_pop_map[tgt]
 
         # Get edge coupling/synapse info
         edge_coupling = getattr(edge, "coupling", None)
@@ -2765,18 +2875,40 @@ def _build_network_context(experiment):
             )
         syn_id = synapse_set[syn_key]
 
-        connections.append(
-            {
-                "from_pop": src_pop,
-                "from_idx": src_idx,
-                "to_pop": tgt_pop,
-                "to_idx": tgt_idx,
-                "synapse": syn_id,
-                "weight": float(weight) if weight is not None else None,
-                "delay": float(delay) if delay is not None else None,
-                "delay_unit": delay_unit,
-            }
-        )
+        # ── allToAll lowering ──
+        # An Edge with a connectivity rule is a population-to-population
+        # projection: expand into the individual cell-to-cell connections here,
+        # skipping the diagonal of a self-projection when allow_self_connections
+        # is False. Without a rule the Edge is a single explicit connection.
+        edge_rule = getattr(edge, "connectivity", None)
+        if edge_rule:
+            src_size = node_size_map.get(src, 1)
+            tgt_size = node_size_map.get(tgt, 1)
+            allow_self = getattr(edge, "allow_self_connections", True)
+            same_pop = src_pop == tgt_pop
+            index_pairs = _connectivity_pairs(edge_rule, src_size, tgt_size)
+        else:
+            index_pairs = [(0, 0)]
+            allow_self = True
+            same_pop = False
+
+        for _si, _tj in index_pairs:
+            from_idx = src_base + _si
+            to_idx = tgt_base + _tj
+            if same_pop and from_idx == to_idx and not allow_self:
+                continue
+            connections.append(
+                {
+                    "from_pop": src_pop,
+                    "from_idx": from_idx,
+                    "to_pop": tgt_pop,
+                    "to_idx": to_idx,
+                    "synapse": syn_id,
+                    "weight": float(weight) if weight is not None else None,
+                    "delay": float(delay) if delay is not None else None,
+                    "delay_unit": delay_unit,
+                }
+            )
 
     # ── Extract input specifications ──
     # Current-source inputs have already been populated from edges above.
@@ -3615,7 +3747,9 @@ class NeuroMLAdapter(BaseAdapter):
                 if not recorded:
                     continue
                 pop_id = safe_id(dname) + "_pop"
-                pop_size = len(recorded)
+                # Node.size makes one node a population of N cells, so the
+                # recorded column count is the sum of sizes, not the node count.
+                pop_size = sum(int(getattr(n, "size", 1) or 1) for n in recorded)
                 _std_net_output_pops.append((pop_id, pop_size, "v"))
 
             sv_names = ["v"]

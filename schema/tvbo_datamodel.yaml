@@ -452,6 +452,27 @@ enums:
                     matrix. Parameters: source (IRI to another Network),
                     preserve (binary_mask | degree | weight_distribution), seed.
                     Used for null-model controls (e.g. shuffled SC).
+    ConnectivityRule:
+        description: >-
+            Rule for expanding a population-level Edge into individual
+            cell-to-cell connections. Names a connectivity pattern between the
+            source and target populations so a network of populations declares
+            its projections once, without enumerating every connection; each
+            backend expands the rule into its native connection set (e.g. the
+            NeuroML exporter emits one <projection> with size_src x size_tgt
+            <connection> elements). Backend-independent: it states the
+            connectivity pattern, not how any simulator stores it.
+        permissible_values:
+            all_to_all:
+                description: >-
+                    Fully connected projection: every source cell connects to
+                    every target cell. For a self-projection (same source and
+                    target population) the diagonal i->i is governed by the
+                    Edge's allow_self_connections flag.
+            one_to_one:
+                description: >-
+                    Index-aligned projection: source cell i connects to target
+                    cell i (min of the two population sizes).
     DimensionType:
         description: "Dimensions along which operations can be applied"
         permissible_values:
@@ -1625,6 +1646,17 @@ classes:
                 required: true
                 slot_uri: dcterms:identifier
                 description: "Unique node identifier"
+            size:
+                range: integer
+                ifabsent: integer(1)
+                description: >-
+                    Number of identical cells this node represents as a
+                    population. The default (1) is a single unit; size>1 makes
+                    the node a population of N cells sharing this node's
+                    dynamics, addressed by index 0..N-1 when a connectivity
+                    rule on an incident Edge is expanded. Maps to a NeuroML
+                    <population size="N">. Backend-independent: it states the
+                    population's cardinality, not a storage layout.
             dynamics:
                 range: Dynamics
                 required: false
@@ -1732,6 +1764,26 @@ classes:
                 range: boolean
                 ifabsent: false
                 description: "Whether the edge is directed. If false, represents a symmetric/bidirectional connection."
+            connectivity:
+                range: ConnectivityRule
+                required: false
+                description: >-
+                    Connectivity rule for a population-level Edge. When set,
+                    this Edge is a projection between the source and target
+                    population nodes (see Node.size); the backend expands it
+                    into the individual cell-to-cell connections
+                    (e.g. all_to_all -> size_src x size_tgt connections) so the
+                    user never enumerates them. When unset, the Edge is a single
+                    explicit connection between the source and target node
+                    indices (the original per-cell edge semantics).
+            allow_self_connections:
+                range: boolean
+                ifabsent: boolean(true)
+                description: >-
+                    For a self-projection (source and target are the same
+                    population) expanded under a connectivity rule, whether to
+                    include the diagonal i->i self connections. Ignored when the
+                    source and target populations differ.
             source_network:
                 range: string
                 required: false

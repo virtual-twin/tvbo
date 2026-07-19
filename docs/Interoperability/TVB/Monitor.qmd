@@ -373,7 +373,10 @@ bold_variants = [n for n in Observation.list_db() if 'bold' in n.lower()]
 for name in bold_variants:
     obs = Observation.from_db(name)
     cr = obs.class_reference
-    hrf = next((a.value for a in (cr.constructor_args or []) if str(a.name) == 'hrf_kernel'), '—')
+    # Not every BOLD observation maps to a TVB monitor class: streaming/strided
+    # variants (e.g. bold_hrf_strided) carry no class_reference, so there is no
+    # constructor to read an HRF kernel from — show a dash for those.
+    hrf = next((a.value for a in (cr.constructor_args or []) if str(a.name) == 'hrf_kernel'), '—') if cr else '—'
     print(f"  {str(obs.name):30s}  HRF={hrf}")
 ```
 
