@@ -23,6 +23,14 @@ website:
                   - text: "Examples"
                     href: examples/index.qmd
 
+              - section: "How-To Guides"
+                href: How-To/index.qmd
+                contents:
+                  - text: "Model Across Scales"
+                    href: How-To/MultiScaleModelling.qmd
+                  - text: "Build a Connectome from Tractography"
+                    href: How-To/BuildConnectomeFromTractography.qmd
+
               - section: "Usage"
                 href: Usage/index.qmd
                 contents:
@@ -93,7 +101,7 @@ website:
                         href: Usage/CrossBackendParity.qmd
                   - section: "Advanced"
                     contents:
-                      - text: "Creating Custom Networks"
+                      - text: "Hierarchical & Surface Networks"
                         href: Usage/CreatingNetworks.qmd
                       - text: "PDE Simulation"
                         href: Usage/PDESimulation.qmd

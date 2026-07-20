@@ -11,6 +11,7 @@ project:
     - datamodel/*.qmd
     - datamodel/**/*.qmd
     - Usage/*.qmd
+    - How-To/*.qmd
     - CLI/*.qmd
     - examples/**/*.qmd
     - Specification/*.qmd

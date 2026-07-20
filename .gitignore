@@ -25,6 +25,10 @@ docs/auto_examples/
 docs/**/*.ipynb
 docs/**/*.py
 !docs/Replication/**/*.py
+# Hand-written build toolchain (TOC generators, prerender helpers). These are
+# source, not quartodoc-generated output, and must be tracked — the replication
+# publication gate lives here and is ineffective if it does not reach CI.
+!docs/scripts/*.py
 docs/gen_modules/
 docs/_api/
 docs/apidocs/
