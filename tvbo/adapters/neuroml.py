@@ -3440,6 +3440,19 @@ def build_lems_context(experiment):
                 has_i_exposure = "i" in ct_dvs or any(str(k) == "i" for k in ct_svs)
                 has_v_req = any(str(ci) == "v" for ci in ct_coupling_inputs)
 
+                # Ground the synapse's base type and its inherited exposures /
+                # parameters / requirements in the NeuroML ontology contract, so a
+                # conductance-based synapse (extends baseConductanceBasedSynapse,
+                # exposing g) emits as well as the current-based baseSynapse default.
+                syn_extends = _extends_base(getattr(ct_dyn, "iri", "")) or "baseSynapse"
+                syn_contract = _base_type_meta(syn_extends)
+                syn_exposure_names = set(syn_contract.get("exposures", {})) or {"i"}
+                syn_inherited_params = set(syn_contract.get("inherited_params", set()))
+                # v is inherited down the voltage-dependent base chain; only declare
+                # an InstanceRequirement when the base does not already require it.
+                if "v" in syn_contract.get("requirements", {}):
+                    has_v_req = False
+
                 # Use real LEMS dimensions so jNeuroML outputs SI.
                 syn_needs_sec = True  # synapse CTs always need SEC
 
@@ -3470,6 +3483,9 @@ def build_lems_context(experiment):
                     "has_i_exposure": has_i_exposure,
                     "has_v_req": has_v_req,
                     "external_event_names": external_event_names,
+                    "synapse_extends": syn_extends,
+                    "synapse_inherited_params": syn_inherited_params,
+                    "synapse_exposure_names": syn_exposure_names,
                     "has_threshold_events": False,
                     "threshold_event_names": [],
                 }
