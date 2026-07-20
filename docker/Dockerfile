@@ -48,7 +48,7 @@ ENV UV_SYSTEM_PYTHON=1 \
 #    SimpleDict-shorthand fixes; remove once 1.11.0 is on PyPI.
 COPY pyproject.toml /app/pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml --extra neuron --extra tvb \
+    uv pip install -r pyproject.toml --extra julia --extra pyrates --extra neuroml --extra neuron --extra tvb --extra docs \
         jupyterlab uvicorn fastapi \
         "tvboptim @ git+https://github.com/virtual-twin/tvboptim.git@main"
 
