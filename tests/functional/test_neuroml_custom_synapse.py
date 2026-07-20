@@ -97,6 +97,24 @@ integration:
 """
 
 
+def _norm(text: str) -> str:
+    """Collapse whitespace so assertions survive printer spacing changes."""
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _time_derivative(component: str, variable: str) -> str:
+    """The TimeDerivative expression for *variable*, whitespace-normalised."""
+    m = re.search(r'<TimeDerivative variable="%s" value="([^"]+)"' % variable, component)
+    assert m, f"no TimeDerivative for {variable} in:\n{component}"
+    return _norm(m.group(1))
+
+
+def _render(tmp_path, yaml_text: str) -> str:
+    path = tmp_path / "column.yaml"
+    path.write_text(yaml_text)
+    return SimulationExperiment.from_file(str(path)).render("lems")
+
+
 @pytest.fixture(scope="module")
 def rendered_lems(tmp_path_factory) -> str:
     path = tmp_path_factory.mktemp("nmda") / "column.yaml"
@@ -129,14 +147,25 @@ class TestCustomConductanceSynapseEmission:
         assert "<InstanceRequirement" not in nmda_component
 
     def test_saturating_two_ode_gate(self, nmda_component):
-        """Deco Eqs 3-4: the saturating alpha*x*(1-s) term and the rise ODE."""
-        assert "alpha*x*(1 - s)" in nmda_component
-        assert re.search(r'<TimeDerivative variable="x" value="\(-x/tauRise\)', nmda_component)
+        """Deco Eqs 3-4: the saturating gate and the spike-driven rise ODE.
+
+        Asserted on the parsed expression rather than an exact string, so a
+        change in the symbolic printer's term order or spacing does not fail a
+        run that is still semantically correct.
+        """
+        decay = _time_derivative(nmda_component, "s")
+        assert "-s/tauDecay" in decay, decay
+        assert "alpha" in decay and "1 - s" in decay, decay  # the saturating term
+        rise = _time_derivative(nmda_component, "x")
+        assert "-x/tauRise" in rise, rise
 
     def test_spike_driven_onevent(self, nmda_component):
         """Presynaptic spike increments the rise variable (no linear proxy)."""
-        assert "<OnEvent port=\"in\">" in nmda_component
-        assert re.search(r'<StateAssignment variable="x" value="1 \+ x"', nmda_component)
+        assert '<OnEvent port="in">' in nmda_component
+        m = re.search(r'<OnEvent port="in">(.*?)</OnEvent>', nmda_component, re.S)
+        assign = re.search(r'<StateAssignment variable="x" value="([^"]+)"', m.group(1))
+        assert assign, m.group(1)
+        assert set(_norm(assign.group(1)).replace("+", " ").split()) == {"1", "x"}
 
     def test_mg_voltage_block(self, nmda_component):
         assert "mgFactor*exp(-v/scalingVolt)" in nmda_component
@@ -173,3 +202,43 @@ class TestCustomConductanceSynapseEmission:
             name = model.component_types[name].extends
         assert "baseConductanceBasedSynapse" in chain
         assert "baseStandalone" in chain  # resolves all the way to the root
+
+
+# A synapse with no base-type IRI keeps the historical current-based default.
+CURRENT_SYNAPSE_YAML = NMDA_COLUMN_YAML.replace(
+    """    NMDA:
+      iri: "extends:baseConductanceBasedSynapse\"""",
+    """    NMDA:""",
+).replace(
+    """      description: Deco (2014) Eqs 3-4 saturating NMDA gate with Mg2+ voltage block.
+""",
+    "",
+)
+
+
+class TestCurrentBasedSynapseUnchanged:
+    """The default path must not shift when no base type is declared.
+
+    Nothing in the tvbo database exercises the synapse emitter, so this pins the
+    pre-existing current-based behaviour that the ontology grounding defaults to.
+    """
+
+    @pytest.fixture(scope="class")
+    def component(self, tmp_path_factory) -> str:
+        xml = _render(tmp_path_factory.mktemp("cur"), CURRENT_SYNAPSE_YAML)
+        m = re.search(r'<ComponentType name="syn_edge0".*?</ComponentType>', xml, re.S)
+        assert m, "synapse ComponentType was not emitted"
+        return m.group(0)
+
+    def test_defaults_to_base_synapse(self, component):
+        assert 'extends="baseSynapse"' in component
+
+    def test_declares_own_parameters(self, component):
+        """baseSynapse inherits no parameters, so none are skipped."""
+        assert '<Parameter name="gbase"' in component
+        assert '<Parameter name="erev"' in component
+
+    def test_exposes_current_and_requires_voltage(self, component):
+        assert re.search(r'<DerivedVariable name="i"[^>]*exposure="i"', component)
+        # v is not inherited from baseSynapse, so it is declared explicitly.
+        assert '<InstanceRequirement name="v" type="voltage"/>' in component

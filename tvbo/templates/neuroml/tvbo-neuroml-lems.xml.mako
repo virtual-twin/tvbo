@@ -370,12 +370,14 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   ct_parse_piecewise = ct['_parse_piecewise']
   ct_lems_dim = ct.get('lems_dim', lems_dim)
   ct_lems_sym = ct.get('lems_sym', lems_sym)
-  ct_has_i = ct.get('has_i_exposure', False)
   ct_has_v = ct.get('has_v_req', False)
   ct_ext_evs = set(ct.get('external_event_names', []))
   ct_synapse_extends = ct.get('synapse_extends', 'baseSynapse')
   ct_syn_inherited = set(ct.get('synapse_inherited_params', ()))
   ct_exposure_names = set(ct.get('synapse_exposure_names', ('i',)))
+  # A state or derived variable named for one of the base type's exposures
+  # fulfils that exposure (LEMS requires the subtype to provide it).
+  ct_expose = lambda n: ' exposure="%s"' % n if n in ct_exposure_names else ''
 %>\
 
   <!-- ── Synapse ComponentType: ${ct_dyn_id} (extends ${ct_synapse_extends}) ── -->
@@ -397,7 +399,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 
     <Dynamics>
 % for sv_name, sv in ct_svs.items():
-      <StateVariable name="${sv_name}" dimension="${ct_lems_dim(getattr(sv, 'unit', None))}"/>
+      <StateVariable name="${sv_name}" dimension="${ct_lems_dim(getattr(sv, 'unit', None))}"${ct_expose(sv_name)}/>
 % endfor
 % for dv_name, dv in ct_dvs.items():
 <%
@@ -405,14 +407,13 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   rhs = getattr(eq, 'rhs', None) if eq else None
   dv_dim = ct_lems_dim(getattr(dv, 'unit', None))
   pw_cases = ct_parse_piecewise(rhs) if rhs else None
-  dv_exposure = ' exposure="%s"' % dv_name if dv_name in ct_exposure_names else ''
 %>\
 % if rhs:
 % if pw_cases:
 % if len(pw_cases) == 1 and pw_cases[0][0] is None:
-      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${dv_exposure} value="${pw_cases[0][1]}"/>
+      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)} value="${pw_cases[0][1]}"/>
 % else:
-      <ConditionalDerivedVariable name="${dv_name}" dimension="${dv_dim}"${dv_exposure}>
+      <ConditionalDerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)}>
 % for (cond_str, val_str) in pw_cases:
 % if cond_str is not None:
         <Case condition="${cond_str}" value="${val_str}"/>
@@ -423,7 +424,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
       </ConditionalDerivedVariable>
 % endif
 % else:
-      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${dv_exposure} value="${ct_lems_expr(rhs)}"/>
+      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)} value="${ct_lems_expr(rhs)}"/>
 % endif
 % endif
 % endfor

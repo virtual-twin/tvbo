@@ -1409,7 +1409,7 @@ def _resolve_base_type_name(ref: str) -> str:
     (``.../neuroml/<name>``) and the direct NeuroML IRI (``...neuroml2#<name>``),
     so a Dynamics may point at a base type by any of them interchangeably.
     """
-    ref = ref.strip()
+    ref = (ref or "").strip()
     if ref.startswith("extends:"):
         ref = ref.split(":", 1)[1]
     if "#" in ref:
@@ -1437,6 +1437,7 @@ def _extends_base(iri: str) -> str | None:
     return None
 
 
+@functools.lru_cache(maxsize=None)
 def _base_type_meta(extends: str) -> dict:
     """Emission contract for a NeuroML base type.
 
@@ -1444,6 +1445,9 @@ def _base_type_meta(extends: str) -> dict:
     slots a custom ComponentType inherits from *extends*. Built-in cell/channel/
     gate/rate bases use their fixed emission structure; every other base type is
     grounded in the ingested NeuroML ontology contract index.
+
+    The returned mapping is cached and shared between callers — treat it as
+    read-only.
     """
     name = _resolve_base_type_name(extends)
     if name in _BUILTIN_BASE_META:
@@ -3437,7 +3441,6 @@ def build_lems_context(experiment):
                     k for k, ev in ct_events.items() if not getattr(getattr(ev, "condition", None), "rhs", None)
                 ]
                 # Exposure / InstanceRequirement detection
-                has_i_exposure = "i" in ct_dvs or any(str(k) == "i" for k in ct_svs)
                 has_v_req = any(str(ci) == "v" for ci in ct_coupling_inputs)
 
                 # Ground the synapse's base type and its inherited exposures /
@@ -3480,7 +3483,6 @@ def build_lems_context(experiment):
                     "lems_sym": syn_lems_sym_fn,
                     # Synapse-specific extras
                     "is_synapse": True,
-                    "has_i_exposure": has_i_exposure,
                     "has_v_req": has_v_req,
                     "external_event_names": external_event_names,
                     "synapse_extends": syn_extends,
