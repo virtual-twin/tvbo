@@ -204,6 +204,43 @@ class TestCustomConductanceSynapseEmission:
         assert "baseStandalone" in chain  # resolves all the way to the root
 
 
+class TestUnknownBaseTypeWarns:
+    """A base type tvbo cannot resolve must not fail silently.
+
+    Emitting against an unknown type yields a ComponentType extending something
+    NeuroML has never heard of; without this warning the failure only surfaces
+    much later inside jNeuroML, with nothing pointing at the bad reference.
+    """
+
+    @staticmethod
+    def _resolve(ref):
+        from tvbo.adapters.neuroml import _base_type_meta
+
+        # The contract lookup is cached per name, so a warning fires only once
+        # per process for a given type.
+        _base_type_meta.cache_clear()
+        return _base_type_meta(ref)
+
+    def test_typo_warns_and_suggests_the_intended_type(self):
+        with pytest.warns(UserWarning, match="Unknown NeuroML base type") as rec:
+            meta = self._resolve("extends:baseConductnceBasedSynapse")
+        assert meta == {}
+        assert "baseConductanceBasedSynapse" in str(rec[0].message)
+
+    def test_unrecognisable_name_still_warns(self):
+        with pytest.warns(UserWarning, match="totallyBogusType"):
+            self._resolve("extends:totallyBogusType")
+
+    def test_known_base_types_are_silent(self):
+        import warnings as _w
+
+        with _w.catch_warnings(record=True) as caught:
+            _w.simplefilter("always")
+            for ref in ("baseConductanceBasedSynapse", "baseSynapse", "baseCellMembPot"):
+                self._resolve(ref)
+        assert [str(c.message) for c in caught] == []
+
+
 # A synapse with no base-type IRI keeps the historical current-based default.
 CURRENT_SYNAPSE_YAML = NMDA_COLUMN_YAML.replace(
     """    NMDA:
