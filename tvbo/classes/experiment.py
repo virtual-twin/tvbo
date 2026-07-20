@@ -298,7 +298,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
         ```
 
-    See the [Usage / Simulation Experiments](../../../Usage/SimulationExperiments.qmd)
+    See the [Simulation experiments](/Simulation/SimulationExperiments.qmd)
     page for the full constructor surface and the
     [`running-simulations`](../../../skills/running-simulations/SKILL.md) skill
     for backend choices.

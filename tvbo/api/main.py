@@ -2,7 +2,7 @@
 
 Defines the top-level `app`, wires in the network, dynamics, and experiment
 sub-routers, and provides ontology search/query endpoints plus routes to
-configure and run [`SimulationExperiment`](../classes/experiment.qmd) instances.
+configure and run [`SimulationExperiment`](/api/classes/experiment.qmd) instances.
 """
 
 from typing import List, Optional

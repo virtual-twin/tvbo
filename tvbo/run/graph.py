@@ -1,9 +1,9 @@
 """Graph-based simulation of a connectome as a network of coupled local models.
 
-This module provides [`GraphRunner`](graph.qmd#GraphRunner), which turns a
+This module provides [`GraphRunner`](/api/run/graph.qmd#GraphRunner), which turns a
 connectome into a `networkx` graph, attaches a local dynamics model to each
 node and a coupling to each edge, and integrates the resulting network in time
-using the helpers in [`tvbo.run.compgraph`](compgraph.qmd).
+using the helpers in [`tvbo.run.compgraph`](/api/run/compgraph.qmd).
 """
 
 import copy
@@ -23,7 +23,7 @@ class GraphRunner:
     A `GraphRunner` holds a `networkx` graph snapshot built from a connectome.
     Node attributes carry the local dynamics model, its integrated state and
     optional stimulus; edge attributes carry the coupling. After the local
-    models, couplings and stimuli have been attached, [`run`](graph.qmd#GraphRunner.run)
+    models, couplings and stimuli have been attached, [`run`](/api/run/graph.qmd#GraphRunner.run)
     compiles per-node and per-edge functions and integrates the network in time.
 
     Args:

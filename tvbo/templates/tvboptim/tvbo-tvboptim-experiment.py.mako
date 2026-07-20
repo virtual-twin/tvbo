@@ -120,18 +120,31 @@ interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in 
 # tract lengths → DenseLengthGraph, explicit per-edge delays → DenseDelayGraph.
 use_length_graph, use_delay_graph = graph_selection(network, has_delay)
 
-# Sparse coupling opt-in (Network.graph_representation: sparse): sparsify the weight matrix to
-# BCOO so the `pre @ weights` reduction runs as an edge-sum (O(nnz)) instead of a dense NxN
-# matmul. Requires EVERY coupling to be instantaneous AND vectorized (source-only `pre`, same
-# rule as resolve_coupling_spec): a per-edge `pre` (e.g. sin(x_j - x_i)) or a delayed one would
-# hit jsparse.sparsify on a nonlinear term and crash, so such networks fall back to dense.
-_is_vectorized_coupling = lambda c: bool(getattr(c, 'vectorized', False)) or (
-    bool(getattr(c, 'local_states', None)) and not getattr(c, 'incoming_states', None))
-use_sparse = (
-    str(getattr(network, 'graph_representation', 'auto') or 'auto') == 'sparse'
-    and not has_delay
-    and all(_is_vectorized_coupling(c) for c in all_couplings.values() if c)
-)
+# Sparse coupling opt-in (Network.graph_representation: sparse): store the connectome as BCOO
+# so each coupling reduction runs as an O(nnz) edge-sum (jax.ops.segment_sum over prepared
+# edge indices) instead of a dense NxN matmul.
+#
+# Both of the old restrictions are gone: tvboptim's sparse path gathers per edge
+# (`incoming_states[:, source_e]`, with `target_messages` for a pre that reads the target),
+# so a per-edge `pre` like sin(x_j - x_i) is native rather than a sparsify-on-a-nonlinear-term
+# crash, and SparseDelayGraph carries per-edge delays on the same sparsity pattern. So sparse
+# now covers instantaneous AND explicitly-delayed networks, with any coupling form.
+#
+# Tract lengths remain the exception: delays there are lengths / conduction_speed recomputed
+# each pass, which needs DenseLengthGraph's live `speed` leaf (the thing a
+# `network.conduction_speed` axis sweeps and gradients flow through). tvboptim has no sparse
+# counterpart, so the combination is rejected below rather than silently downgraded.
+use_sparse = str(getattr(network, 'graph_representation', 'auto') or 'auto') == 'sparse'
+if use_sparse and use_length_graph:
+    raise ValueError(
+        "network.graph_representation: sparse is not available for a network with tract "
+        "lengths: delays are derived as lengths / conduction_speed on every forward pass, "
+        "which requires DenseLengthGraph's live `speed` leaf (swept by a "
+        "`network.conduction_speed` axis and differentiable), and tvboptim has no sparse "
+        "length-graph counterpart. Either drop graph_representation to keep the live "
+        "conduction speed, or supply explicit per-edge `delay` edge attributes instead of "
+        "lengths, which sparse does support (SparseDelayGraph)."
+    )
 
 # Collect all coupling parameters (for optimization)
 all_coupling_params = {}  # (coupling_key, param_name) -> param_obj
@@ -756,11 +769,43 @@ for expl in exploration_list:
                 'reduce': _reduce_stat,
             })
             continue
-        # `execution.random_seed` → a per-cell NOISE-SEED axis. Each grid cell reseeds
+        # `execution.random_seed` → a per-cell SEED axis. Each grid cell reseeds
         # the stochastic solver's PRNG key (config.noise.key, a runtime leaf), so a
         # random-seed sweep becomes a real per-trial noise ensemble rather than a no-op
         # parameter. Values are integer seeds; the wrapper below turns each into a key.
         if source_key == 'execution' and pname == 'random_seed':
+            # The swept seed only reaches the model through a consumer, and only on the
+            # plain grid path. Reseeding the solver's PRNG key is the sole consumer, so
+            # the axis is inert both when the integration has no noise and when the
+            # exploration uses a strategy whose body never reaches the grid-binding block
+            # (nsga2, warm-start, branch analysis). Either way every cell comes out
+            # identical while the result container still reports a genuine-looking
+            # ensemble dimension, so fail at codegen rather than ship a fake ensemble.
+            _expl_strategy = str(getattr(expl, 'strategy', None) or 'grid')
+            _seeding = str(getattr(expl, 'sweep_seeding', None) or '')
+            _bypasses_grid = (
+                _expl_strategy != 'grid'
+                or _seeding == 'from_previous'
+                or bool(getattr(expl, 'branch_seed', None))
+            )
+            if not has_noise or _bypasses_grid:
+                _why = (
+                    "this experiment's integration declares no noise (every state's "
+                    "sigma is 0)" if not has_noise else
+                    "this exploration's strategy (%r) never reaches the per-cell grid "
+                    "binding that applies the seed" % _expl_strategy
+                )
+                raise ValueError(
+                    "exploration axis 'execution.random_seed' has no consumer in "
+                    "exploration %r: the seed reseeds the stochastic solver's PRNG key, "
+                    "but %s, so every cell would produce an identical result. Either "
+                    "make the seed reachable (give the integration noise, and use the "
+                    "default grid strategy), or drop the axis and vary the ensemble "
+                    "through a mechanism that does apply here (e.g. Exploration.n_trials "
+                    "with a StateVariable.distribution for an initial-condition "
+                    "ensemble)."
+                    % (str(getattr(expl, 'name', None) or '<unnamed>'), _why)
+                )
             if explored_values:
                 _seed_vals = [int(v) for v in explored_values]
             else:
@@ -1405,6 +1450,14 @@ def create_network(
     _speed = ${conduction_speed}
     _max_delay_bound = max_delay if max_delay is not None else (float(jnp.max(distances)) / _speed if _speed > 0 else 0.0)
     graph = DenseLengthGraph(weights, distances, speed=_speed, region_labels=region_labels, max_delay_bound=_max_delay_bound)
+    % elif use_delay_graph and use_sparse:
+    # Sparse + per-edge delays: weights and delays share one BCOO sparsity pattern, so the
+    # delayed gather runs per edge (O(nnz)) instead of over a dense NxN history slice.
+    # Non-edge entries arrive as NaN, so zero-fill before sparsifying.
+    if delays is None:
+        delays = jnp.zeros_like(weights)
+    delays = jnp.nan_to_num(delays)
+    graph = SparseDelayGraph(weights, delays, region_labels=region_labels, max_delay_bound=max_delay)
     % elif use_delay_graph:
     # Per-edge delays used directly; non-edge entries arrive as NaN, so zero-fill first.
     if delays is None:
@@ -1412,8 +1465,8 @@ def create_network(
     delays = jnp.nan_to_num(delays)
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay_bound=max_delay)
     % elif use_sparse:
-    # Sparse coupling: the weight matrix is sparsified to BCOO so the vectorized
-    # `pre @ weights` reduction is an O(nnz) edge-sum, not a dense NxN matmul.
+    # Sparse coupling: the connectome is stored as BCOO so the reduction is an O(nnz)
+    # edge-sum (segment_sum over prepared edges), not a dense NxN matmul.
     graph = SparseGraph(weights, region_labels=region_labels)
     % else:
     graph = DenseGraph(weights, region_labels=region_labels)

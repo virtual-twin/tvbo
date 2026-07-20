@@ -103,3 +103,16 @@ def test_no_seed_axis_is_unaffected_without_noise():
     ]
     code = SimulationExperiment(**spec).render_code("tvboptim")
     assert "grid_state.dynamics.a" in code
+
+
+def test_seed_axis_is_rejected_under_a_strategy_that_bypasses_the_grid():
+    """Noise alone is not enough: the seed must also reach the per-cell grid binding.
+
+    nsga2 / warm-start / branch-analysis bodies never execute the grid-binding block that
+    applies the swept seed, so the axis is inert there even on a stochastic experiment —
+    the same fake ensemble, just arrived at a different way.
+    """
+    spec = _with_noise(copy.deepcopy(MINI_EXP))
+    spec["explorations"]["seed_sweep"]["strategy"] = "nsga2"
+    with pytest.raises(ValueError, match="has no consumer"):
+        SimulationExperiment(**spec).render_code("tvboptim")
