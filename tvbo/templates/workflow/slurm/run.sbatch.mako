@@ -94,7 +94,8 @@ export PYTHONPATH="code:${'$'}{PYTHONPATH:-}"
     subject_axis = next((ax for ax in plan.workflow_axes if ax.kind == "subjects"), None)
     single_task = plan.n_array_tasks == 1
     out_pat = plan.out_dir if (single_task or subject_axis) else plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
-    prefix = ("singularity exec " + plan.container + " ") if plan.container else ""
+    prefix = ("singularity exec " + (plan.container_exec_flags + " " if plan.container_exec_flags else "")
+              + plan.container + " ") if plan.container else ""
     run_target = spec_relpath if spec_relpath else plan.run_spec
 %>\
 % if subject_axis:

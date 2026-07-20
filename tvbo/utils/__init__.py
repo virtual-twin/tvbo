@@ -161,12 +161,22 @@ def as_list(obj) -> list:
     TVBO keyed collections (``parameters``, ``space``, …) are dicts keyed by
     each member's identifier, but may also appear as plain lists. Returns the
     member values in either case (``None`` -> ``[]``).
+
+    A scalar becomes a one-element list. Strings especially: they are iterable, so
+    ``list("/data")`` would silently yield one entry *per character* — which is how a
+    single ``--set container_binds=/data/cephfs-1`` turned into a bind of
+    ``/,d,a,t,a,…``. No caller ever wants a string split into characters.
     """
     if obj is None:
         return []
+    if isinstance(obj, (str, bytes)):
+        return [obj]
     if hasattr(obj, "values"):
         return list(obj.values())
-    return list(obj)
+    try:
+        return list(obj)
+    except TypeError:      # a genuine scalar (int, float, LinkML leaf, …)
+        return [obj]
 
 
 def sanitize_name(name) -> str:
