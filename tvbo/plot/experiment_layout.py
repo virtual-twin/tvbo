@@ -57,8 +57,16 @@ def _plot_exploration_timeseries_overlay(exploration, panel, ax):
     label_fmt = panel.get("label_fmt", "{value:.2f}")
     component = int(panel.get("component", 0))
 
+    results = exploration.results
+    lead_dim = results.dims[0] if hasattr(results, "dims") and results.dims else None
     for idx, value in enumerate(values):
-        data = np.asarray(exploration.results[idx]).squeeze()
+        # Select the run by its named leading dim (the swept parameter, trial, or
+        # flat point) rather than by position, so a change in layout cannot quietly
+        # read the wrong slice.
+        run = results.isel({lead_dim: idx}) if lead_dim else results[idx]
+        if hasattr(run, "dims") and "variable" in run.dims:
+            run = run.isel(variable=component)
+        data = np.asarray(run).squeeze()
         if data.ndim > 1:
             data = data[:, component]
         line_kwargs = dict(plot_kwargs)
