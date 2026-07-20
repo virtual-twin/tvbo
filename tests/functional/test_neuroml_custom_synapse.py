@@ -37,9 +37,10 @@ network:
         thresh: {value: -50.0, unit: mV}
         reset: {value: -55.0, unit: mV}
         v0: {value: -70.0, unit: mV}
+      coupling_inputs: [iSyn]
       state_variables:
         v:
-          equation: {rhs: "(gL * (EL - v)) / C"}
+          equation: {rhs: "(gL * (EL - v) + iSyn) / C"}
           initial_value: -70.0
           unit: mV
       events:
@@ -202,6 +203,25 @@ class TestCustomConductanceSynapseEmission:
             name = model.component_types[name].extends
         assert "baseConductanceBasedSynapse" in chain
         assert "baseStandalone" in chain  # resolves all the way to the root
+
+
+class TestSynapticTransmissionWiring:
+    """The synapse must actually reach the postsynaptic membrane equation.
+
+    A valid synapse ComponentType is not enough: the cell has to host it and sum
+    its current, or the synapse is emitted but inert.
+    """
+
+    def test_cell_hosts_and_sums_attached_synapses(self, rendered_lems):
+        cell = re.search(r'<ComponentType name="LIFCell".*?</ComponentType>', rendered_lems, re.S)
+        assert cell, "cell ComponentType was not emitted"
+        cell = cell.group(0)
+        assert '<Attachments name="synapses" type="basePointCurrent"/>' in cell
+        assert re.search(r'<DerivedVariable name="iSyn"[^>]*select="synapses\[\*\]/i"[^>]*reduce="add"', cell)
+        assert "iSyn" in _time_derivative(cell, "v")
+
+    def test_connection_targets_the_synapse(self, rendered_lems):
+        assert re.search(r'synapse="syn_edge0"[^>]*destination="synapses"', rendered_lems)
 
 
 class TestUnknownBaseTypeWarns:
