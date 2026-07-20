@@ -16,14 +16,9 @@ nextflow.enable.dsl = 2
 
 % if plan.container:
 process.container = '${plan.container}'
-## Nextflow ignores process.container (and every singularity.* setting) unless a
-## container runtime is switched on, so without this the tasks would run straight on
-## the host and the declared image would be silently inert. Singularity/Apptainer to
-## match the Slurm emitter, which builds its own `singularity exec` call.
+## process.container takes effect only while a container runtime is enabled.
 singularity.enabled = true
-## Registry references are pulled and converted; a path to a prebuilt image is used
-## as-is. autoMounts binds the host paths Nextflow stages into, as the other engines get
-## from their runtime defaults.
+## Binds the work directories Nextflow stages each task through.
 singularity.autoMounts = true
 % if plan.container_exec_flags:
 ## Host paths the task must see beyond the runtime's defaults (container_binds/args).
