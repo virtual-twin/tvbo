@@ -28,6 +28,7 @@ TARGETS = {
     "atlases": "BrainAtlas",
     "software": "SimulationTool",
     "continuations": "Continuation",
+    "graph_generators": "GraphGenerator",
 }
 
 

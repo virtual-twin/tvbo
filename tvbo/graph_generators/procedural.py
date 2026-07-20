@@ -16,7 +16,7 @@ multiplication (``eigvals(M)`` -> ``M*eigvals``) with no error. Building nodes d
 makes all three unreachable. The single exception is the ``equation`` step, whose ``rhs``
 is author-written algebra — which is what the parser is actually for.
 
-**The deterministic/stochastic split is derived, not declared.** ``partition`` computes
+**The deterministic/stochastic split is inferred, not declared.** ``partition`` computes
 which steps transitively depend on the generator's seed. A backend evaluates the
 deterministic prefix once and traces only the stochastic suffix per realisation, so
 sweeping N network realisations costs N x (the seeded tail), not N x (the whole
@@ -26,7 +26,7 @@ answer.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import sympy as sp
 
@@ -35,12 +35,23 @@ from tvbo.parse.expression import parse_eq
 # Sampler head per Distribution.name, and the order its parameters are passed.
 # Mirrors the backend sampler table in dev/GenericProcedureEngine.md §2.3; the
 # vocabulary is numpyro / Distributions.jl aligned.
-_SAMPLERS: Dict[str, Tuple[str, Tuple[str, ...]]] = {
-    "normal": ("sample_normal", ("mean", "std")),
-    "uniform": ("sample_uniform", ("lo", "hi")),
-    "lognormal": ("sample_lognormal", ("mu", "sigma")),
-    "beta": ("sample_beta", ("a", "b")),
-    "exponential": ("sample_exponential", ("scale",)),
+# Each entry maps a family to its sampler head and its parameters IN CALL ORDER, each
+# with the value of that family's standard form. A parameter a spec omits falls back to
+# the standard form (Normal(0, 1), Uniform(0, 1), ...) rather than erroring, because that
+# is what the family means without further qualification — and because omitting one is
+# how these have always been written. Typos do NOT fall back: `_sampler` rejects any
+# parameter name the family does not define, so `mena: 0.5` is an error rather than a
+# silent mean of 0.
+_SAMPLERS: Dict[str, Tuple[str, Tuple[Tuple[str, float], ...]]] = {
+    "normal": ("sample_normal", (("mean", 0.0), ("std", 1.0))),
+    # `Gaussian` is the same family under the name `distribution_pdf` already accepts;
+    # registering it here keeps one spelling from resolving on one step type and failing
+    # on another.
+    "gaussian": ("sample_normal", (("mean", 0.0), ("std", 1.0))),
+    "uniform": ("sample_uniform", (("lo", 0.0), ("hi", 1.0))),
+    "lognormal": ("sample_lognormal", (("mu", 0.0), ("sigma", 1.0))),
+    "beta": ("sample_beta", (("a", 1.0), ("b", 1.0))),
+    "exponential": ("sample_exponential", (("scale", 1.0),)),
 }
 
 _COMPARISONS = {"le": sp.Le, "lt": sp.Lt, "ge": sp.Ge, "gt": sp.Gt}
@@ -77,7 +88,7 @@ def _host_env() -> Dict[str, Any]:
     documented, not re-implemented as a procedure step carrying a string literal that no
     expression language can represent.
     """
-    from tvbo.graph_generators.engine import load_matrix
+    from tvbo.graph_generators.catalog import load_matrix
 
     return {"load_matrix": load_matrix}
 
@@ -126,6 +137,24 @@ def _get(spec: Any, field: str, default: Any = None) -> Any:
     return getattr(spec, field, default)
 
 
+def _steps(spec: Mapping[str, Any]) -> List[Tuple[str, Any]]:
+    """``Procedure.steps`` as ordered ``(name, fields)`` pairs.
+
+    ``steps`` is a keyed collection: the key is the step's name, and insertion order is
+    evaluation order. A sequence is not an accepted serialisation — the schema rejects it
+    — so it is reported here by name rather than surfacing later as an ``AttributeError``
+    from inside a step builder.
+    """
+    steps = spec.get("steps")
+    if steps is None:
+        return []
+    if not isinstance(steps, Mapping):
+        raise ProceduralError(
+            f"`steps` must be a mapping keyed by step name, got {type(steps).__name__}."
+        )
+    return list(steps.items())
+
+
 def _dist_param(spec: Any, name: str) -> Any:
     """A Distribution parameter's value, unwrapping the Parameter object if present."""
     params = _get(spec, "parameters") or {}
@@ -152,15 +181,22 @@ def _sampler(
             f"step {step!r}: distribution {_get(spec, 'name')!r} has no sampler "
             f"(known: {', '.join(sorted(_SAMPLERS))})."
         )
-    head, param_names = _SAMPLERS[name]
+    head, defaults = _SAMPLERS[name]
+    known = {pname for pname, _ in defaults}
+    declared = _get(spec, "parameters") or {}
+    unknown = sorted(set(declared) - known) if isinstance(declared, Mapping) else []
+    if unknown:
+        # A name the family does not define is a typo, not a preference: without this the
+        # value is dropped and the parameter it was meant for silently takes its standard
+        # form, so the draw comes from a different distribution than the spec describes.
+        raise ProceduralError(
+            f"step {step!r}: distribution {name!r} has no parameter(s) "
+            f"{', '.join(repr(u) for u in unknown)} (defines: {', '.join(sorted(known))})."
+        )
     params = []
-    for pname in param_names:
+    for pname, fallback in defaults:
         value = _dist_param(spec, pname)
-        if value is None:
-            raise ProceduralError(
-                f"step {step!r}: distribution {name!r} requires parameter {pname!r}."
-            )
-        params.append(_number(value, step, pname))
+        params.append(_number(fallback if value is None else value, step, pname))
     return sp.Function(head)(KEY, sp.Integer(int(substream)), *params, *shape)
 
 
@@ -236,8 +272,37 @@ def _step_sample(fields, env, ctx, step):
 
     Distinct from ``stochastic_mask``, which compares a draw against something and yields
     a boolean. This yields the draw itself (the substrate of a random reservoir).
+
+    ``of`` names a Distribution-valued generator parameter. A ``sample`` step consumes no
+    array, so ``of`` carries its only input here — which is what lets a curated generator
+    expose its randomness as a *choice* (RandomReservoir's ``weight_distribution``) while
+    the inline ``distribution`` states the family it defaults to.
     """
-    dist = _get(fields, "distribution")
+    of = _get(fields, "of")
+    inline = _get(fields, "distribution")
+    dist = inline
+    if of is not None:
+        name = str(of)
+        if name not in ctx["parameters"] and name in env:
+            # On every other step type `of` names an intermediate, so reaching for one
+            # here is the natural mistake. Falling back to the default distribution would
+            # build a plausible network from the wrong family without saying so.
+            raise ProceduralError(
+                f"step {step!r}: `of` names the intermediate {name!r}, but a `sample` "
+                f"step draws from a Distribution-valued parameter, not from an array."
+            )
+        supplied = ctx["parameters"].get(name)
+        # An unset optional parameter is absent or None, and a *declared* one (the curated
+        # entry's `{datatype: Distribution, ...}` interface block) carries no family name.
+        # Neither is a distribution to draw from, so both fall through to the default.
+        if supplied is not None and _dist_name(supplied):
+            dist = supplied
+        elif inline is None:
+            raise ProceduralError(
+                f"step {step!r}: `of` names parameter {name!r}, which is not set to a "
+                f"Distribution, and the step declares no inline `distribution` to fall "
+                f"back to."
+            )
     if dist is None:
         raise ProceduralError(f"step {step!r}: `distribution` is required.")
     return _sampler(dist, step, (N_NODES, N_NODES), _get(fields, "seed_offset") or 0)
@@ -279,10 +344,11 @@ _SEEDED_TYPES = {"stochastic_mask"}
 
 
 def build(spec: Mapping[str, Any]) -> List[Tuple[str, sp.Expr]]:
-    """Resolve a Procedural spec's ``derived`` DAG to ordered ``(name, expression)`` pairs.
+    """Resolve a ``Procedure``'s ``steps`` DAG to ordered ``(name, expression)`` pairs.
 
-    ``spec`` carries ``derived`` (an ordered mapping of typed steps), optional
-    ``parameters``, and an optional ``layout`` whose positions are bound as ``layout``.
+    ``spec`` is a ``Procedure`` block — ``steps`` (an ordered mapping of typed
+    ``ProcedureStep``s, keyed by name) and ``output`` — plus the generator's
+    ``parameters``. Node positions are not a special slot: a layout is an ordinary step.
     """
     parameters = dict(spec.get("parameters") or {})
     ctx = {"parameters": parameters}
@@ -299,7 +365,7 @@ def build(spec: Mapping[str, Any]) -> List[Tuple[str, sp.Expr]]:
     env["n_nodes"] = N_NODES
 
     resolved: List[Tuple[str, sp.Expr]] = []
-    for name, fields in (spec.get("derived") or {}).items():
+    for name, fields in _steps(spec):
         step_type = str(_get(fields, "type") or "equation")
         builder = _STEP_BUILDERS.get(step_type)
         if builder is None:
@@ -343,7 +409,7 @@ def materialize(
     params: Optional[Mapping[str, Any]] = None,
     seed: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Evaluate a Procedural DAG eagerly, in numpy, and return its ``outputs``.
+    """Evaluate a Procedure's DAG eagerly, in numpy, and return its ``output`` values.
 
     The evaluation goes through the SAME primitive tables the other backends emit from:
     each step is rendered by the numpy printer and evaluated. There is deliberately no
@@ -351,26 +417,32 @@ def materialize(
     definition per backend is what keeps eager materialisation and emitted JAX from
     drifting apart, which a parallel evaluator cannot guarantee.
 
-    Only genuinely non-expression operations stay host-side (see ``_HOST_ENV``): resolving
+    Only genuinely non-expression operations stay host-side (see ``_host_env``): resolving
     a Network IRI is I/O, not array algebra, and no printer should ever emit it.
     """
     import numpy as np
 
     from tvbo.codegen.code import render_expression
 
-    env: Dict[str, Any] = _host_env()
+    # Supplied values win over the spec's own, and the merge happens BEFORE `build` so a
+    # step that selects its distribution by parameter name (`of`) sees the override. The
+    # resolver and the evaluator must read one parameter set, not two.
+    merged = {**(spec.get("parameters") or {}), **(params or {})}
+    spec = {**spec, "parameters": merged}
+
+    host = _host_env()
+    env: Dict[str, Any] = dict(host)
     env["np"] = np
-    env.update(dict(spec.get("parameters") or {}))
-    env.update(dict(params or {}))
+    env.update(merged)
     # A generator's PRNG state. numpy's Generator is the host analogue of the pure key a
     # traced backend threads; the DAG only ever says *that* a step is seeded.
     env[KEY.name] = 0 if seed is None else int(seed)
-    if "n_nodes" not in env:
+    if env.get("n_nodes") is None:
         raise ProceduralError(
             "materialize: `n_nodes` must be supplied (from Network.number_of_nodes)."
         )
 
-    symbol_names: List[str] = [k for k in env if k not in _host_env() and k != "np"]
+    symbol_names: List[str] = [k for k in env if k not in host and k != "np"]
     for name, expr in build(spec):
         symbol_names.append(name)
         source = render_expression(expr, format="numpy")
@@ -383,7 +455,7 @@ def materialize(
             ) from exc
 
     outputs: Dict[str, Any] = {}
-    for key, entry in (spec.get("outputs") or {}).items():
+    for key, entry in (spec.get("output") or {}).items():
         rhs = _get(_get(entry, "equation"), "rhs") if entry is not None else None
         if rhs is None:
             raise ProceduralError(f"output {key!r}: requires `equation.rhs`.")
@@ -392,7 +464,62 @@ def materialize(
         outputs[key] = eval(source, {"__builtins__": {}}, env)  # noqa: S307
     if "weights" in outputs:
         outputs["weights"] = np.asarray(outputs["weights"], dtype=float)
+    for key, value in outputs.items():
+        _reject_nan(value, key)
     return outputs
+
+
+def _reject_nan(value: Any, key: str) -> None:
+    """A generator must not emit a NaN connectome.
+
+    Degenerate constructions divide by a quantity the DAG itself produced — a spectral
+    radius of 0 when every sampled edge was masked out — and the result is a NaN adjacency
+    matrix that simulates happily and yields NaN trajectories far from here. Checking the
+    outputs catches that for every generator, where a per-generator guard step could only
+    cover one construction at a time.
+
+    NaN specifically, not every non-finite value: ``pairwise_distance`` documents
+    ``diagonal: inf`` as the way to suppress self-connections, so an infinity in a
+    distance-like output is a declared intent rather than a failed divide. A degenerate
+    divide still surfaces here, because scaling a matrix that has any zero entry by an
+    infinite factor produces NaN at those entries.
+    """
+    import numpy as np
+
+    array = np.asarray(value)
+    if array.dtype.kind not in "fc" or not np.isnan(array).any():
+        return
+    raise ProceduralError(
+        f"output {key!r} contains {int(np.isnan(array).sum())} NaN of {array.size} values. "
+        f"A step divided by a degenerate quantity — for a sparse random construction this "
+        f"is typically a spectral radius or normalisation sum of 0, meaning the draw "
+        f"produced no surviving edges; increase the connection density or the number of "
+        f"nodes."
+    )
+
+
+def draw(
+    distribution: Any,
+    shape: Sequence[int],
+    seed: Optional[int] = None,
+    substream: int = 0,
+) -> Any:
+    """Sample ``shape`` values from ``distribution``, through the same printer sampler.
+
+    A construction that needs one array of draws rather than a whole DAG — a per-unit
+    downward projection, say — still goes through the printer table, so it cannot drift
+    from what a `sample` step produces for the same distribution and seed.
+    """
+    from tvbo.codegen.code import render_expression
+
+    dims = tuple(sp.Integer(int(s)) for s in shape)
+    expr = _sampler(distribution, "draw", dims, substream)
+    source = render_expression(expr, format="numpy")
+    import numpy as np
+
+    return eval(  # noqa: S307 — rendered by the numpy printer
+        source, {"__builtins__": {}}, {"np": np, KEY.name: 0 if seed is None else int(seed)}
+    )
 
 
 def partition(spec: Mapping[str, Any]) -> Tuple[List[str], List[str]]:

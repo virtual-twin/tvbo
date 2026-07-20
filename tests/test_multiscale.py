@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from tvbo import multiscale
-from tvbo.graph_generators import engine
+from tvbo.graph_generators import catalog, procedural
 
 R = 3   # macro regions
 N = 4   # reservoir units per region
@@ -39,7 +39,7 @@ def _minimal_experiment():
                     "graph_generator": {
                         "seed": 0,
                         "parameters": {
-                            "n": {"value": N},
+                            "n_nodes": {"value": N},
                             "weight_distribution": {
                                 "distribution": {
                                     "name": "Normal",
@@ -68,15 +68,15 @@ def _minimal_experiment():
 def patched_engine(monkeypatch):
     """Replace the heavy engine calls with deterministic synthetic arrays."""
     def fake_run_generator(name, params, seed=None):
-        n = int(params["n"])
+        n = int(params["n_nodes"])
         return {"weights": np.full((n, n), 0.1)}
 
     # SC with no self-connections
     sc = np.ones((R, R)) - np.eye(R)
-    monkeypatch.setattr(engine, "run_generator", fake_run_generator)
-    monkeypatch.setattr(engine, "load_matrix", lambda source: sc)
-    monkeypatch.setattr(engine, "sample",
-                        lambda dist, shape=None, seed=None: np.ones(shape))
+    monkeypatch.setattr(catalog, "run_generator", fake_run_generator)
+    monkeypatch.setattr(catalog, "load_matrix", lambda source: sc)
+    monkeypatch.setattr(procedural, "draw",
+                        lambda dist, shape, seed=None, substream=0: np.ones(shape))
     return sc
 
 
@@ -99,6 +99,20 @@ def test_n_override_shrinks_reservoir(patched_engine):
     fr = multiscale.flatten_reservoir(_minimal_experiment(), n_override=2)
     assert fr.n_units == 2
     assert fr.weights.shape == (R * 2, R * 2)
+
+
+def test_the_legacy_size_parameter_is_rejected_not_silently_defaulted(patched_engine):
+    """`n` was the size parameter until it was replaced by `n_nodes`.
+
+    Ignoring it would leave the size to fall through to the hardcoded 100-unit default:
+    a spec asking for 500 units would build 100, run to completion, and produce a
+    plausible reservoir with no indication the size was wrong.
+    """
+    spec = _minimal_experiment()
+    params = spec["network"]["node_template"]["subnetwork"]["graph_generator"]["parameters"]
+    params["n"] = params.pop("n_nodes")
+    with pytest.raises(ValueError, match=r"`n`.*no longer the size parameter"):
+        multiscale.flatten_reservoir(spec)
 
 
 def test_size_guard_raises_before_allocation(patched_engine):
