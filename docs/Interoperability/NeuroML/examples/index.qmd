@@ -107,6 +107,20 @@ Each example notebook below:
 3. **Runs the original** NeuroML2 LEMS file via jNeuroML as reference
 4. **Runs the TVBO version** via `NeuroMLAdapter.run()`
 5. **Compares** time-series numerically (RMSE, correlation, max error)
+
+::: {.callout-note}
+## How to read "validated"
+
+The pass criterion is **correlation-based**: an example passes when its trace tracks the
+jNeuroML reference in shape (r ≈ 1). Two caveats follow from that, and both are visible
+in the generated results table:
+
+- **Scale errors can still pass.** [Ex22 (Pinsky-Rinzel)](Ex22_PinskyRinzel.qmd) reports a
+  worst NRMSE of ≈ 787 yet is marked PASS on correlation alone.
+- **The XML is equivalent, not identical.** Every example reports
+  `Canonical XML Exact = False` — TVBO emits standard NeuroML2 types that run to the same
+  result, not a byte-for-byte copy of the canonical file.
+:::
 6. **Plots** overlaid reference vs. TVBO traces
 
 ### Example categories

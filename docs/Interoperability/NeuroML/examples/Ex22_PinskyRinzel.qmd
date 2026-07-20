@@ -13,6 +13,16 @@ The Pinsky & Rinzel (1994) two-compartment CA3 pyramidal cell model with:
 
 10 state variables: $V_s, V_d, Ca_d, h_s, n_s, s_d, c_d, q_d, S_i, W_i$.
 
+::: {.callout-warning}
+## Known numerical deviation
+
+This example tracks the reference trace in *shape* (correlation r ≈ 1) but not in
+*scale*: its worst normalized RMSE is ≈ 787, by far the largest in the suite. The
+automated comparison marks it PASS because that check is correlation-based, so the
+error is not caught by the pass criterion. Treat the agreement here as qualitative
+until the discrepancy is traced.
+:::
+
 ---
 
 ## 1. Define in TVBO

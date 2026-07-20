@@ -10,8 +10,9 @@ cells via different synapse types (expOneSynapse, expTwoSynapse, alphaSynapse).
 
 Cell types use standard NeuroML types (`pointCellCondBased`) with hierarchical
 `components:` composition trees.  Synapses use standard NeuroML synapse types
-on network edges.  This gives exact numerical identity with the reference
-jNeuroML simulation.
+on network edges.  The simulated traces match the reference jNeuroML simulation to
+correlation r ≈ 1; the emitted XML is equivalent, not byte-identical, to the canonical
+NeuroML file.
 
 ---
 

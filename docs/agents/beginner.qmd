@@ -7,7 +7,7 @@ subtitle: "Use your AI assistant as a guided tour through TVBO"
 
 You'll need:
 
-- Python 3.11+
+- Python 3.12+
 - Any AI coding assistant that reads skill files. Most common:
   - [Claude Code](https://claude.com/claude-code) (recommended)
   - [Cursor](https://cursor.com)

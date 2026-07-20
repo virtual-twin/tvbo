@@ -36,13 +36,13 @@ website:
                 contents:
                   - section: "Fundamentals"
                     contents:
-                      - text: "Getting Started"
+                      - text: "Getting Started (draft)"
                         href: Usage/GettingStarted.qmd
                       - text: "Defining Dynamical Systems"
                         href: Usage/DefineDynamicalSystem.qmd
                       - text: "Defining Networks"
                         href: Specification/Network.qmd
-                      - text: "Coupling Functions"
+                      - text: "Coupling Functions (draft)"
                         href: Usage/CouplingFunctions.qmd
                       - text: "Integrators"
                         href: Usage/Integrators.qmd
@@ -60,7 +60,7 @@ website:
                         href: Specification/Algorithms.qmd
                       - text: "Loss Functions"
                         href: Specification/LossFunction.qmd
-                      - text: "Parameter Exploration"
+                      - text: "Parameter Exploration (draft)"
                         href: Usage/ParameterExploration.qmd
                       - text: "Distributed Workflows (HPC)"
                         href: Usage/DistributedWorkflows.qmd
@@ -68,24 +68,26 @@ website:
                         href: Usage/ModelFitting.qmd
                       - text: "Bifurcation Analysis"
                         href: Usage/BifurcationAnalysis.qmd
-                      - section: "Bifurcation Tutorial"
+                      # Labelled by Diátaxis slot: only 01–02 are tutorials; 03–06 are
+                      # recipes and 07 is explanation. Previews the topic-first layout.
+                      - section: "Bifurcation & Stability Analysis"
                         href: Usage/BifurcationTutorial/index.qmd
                         contents:
-                          - text: "1. Linear Stability"
+                          - text: "Learn 1: Linear Stability"
                             href: Usage/BifurcationTutorial/01-LinearStability.qmd
-                          - text: "2. 2D Phase Portraits"
+                          - text: "Learn 2: 2D Phase Portraits"
                             href: Usage/BifurcationTutorial/02-PhasePortrait2D.qmd
-                          - text: "3. Saddle-Node"
+                          - text: "Do: Saddle-Node"
                             href: Usage/BifurcationTutorial/03-SaddleNode.qmd
-                          - text: "4. Pitchfork"
+                          - text: "Do: Pitchfork"
                             href: Usage/BifurcationTutorial/04-Pitchfork.qmd
-                          - text: "5. Hysteresis"
+                          - text: "Do: Hysteresis"
                             href: Usage/BifurcationTutorial/05-Hysteresis.qmd
-                          - text: "6. Hopf"
+                          - text: "Do: Hopf"
                             href: Usage/BifurcationTutorial/06-Hopf.qmd
-                          - text: "7. Numerical Continuation"
+                          - text: "Understand: Numerical Continuation"
                             href: Usage/BifurcationTutorial/07-NumericalContinuation.qmd
-                      - text: "Visualization"
+                      - text: "Visualization (draft)"
                         href: Usage/Visualization.qmd
                       - text: "Output Specification"
                         href: Specification/Output.qmd
@@ -93,7 +95,7 @@ website:
                     contents:
                       - text: "Initial Conditions & Initial State"
                         href: Usage/InitialConditions.qmd
-                      - text: "Events & Stimulation"
+                      - text: "Events & Stimulation (draft)"
                         href: Usage/Events.qmd
                       - text: "Noise & Stochastic Integration"
                         href: Usage/Noise.qmd
@@ -137,6 +139,8 @@ website:
                         href: CLI/config.qmd
                       - text: "tvbo skills"
                         href: CLI/skills.qmd
+                      - text: "tvbo network"
+                        href: CLI/network.qmd
                   - section: "Workflows & HPC"
                     contents:
                       - text: "tvbo workflow"
@@ -338,6 +342,10 @@ website:
               - section: "Replication Studies"
                 href: Replication/index.qmd
                 contents:
+                  - text: "The replication pipeline"
+                    href: Replication/pipeline.qmd
+                  - text: "Custom figure panels"
+                    href: Replication/custom-panels.qmd
                   - text: "Jansen & Rit (1995)"
                     href: Replication/Jansen1995/Run_Jansen1995.qmd
 # END:replication-autogen

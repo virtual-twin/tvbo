@@ -46,13 +46,19 @@ website:
         logo: _static/tvbo_favicon.png
         logo-alt: "TVB-O logo"
 
+        # Keep in step with the sidebar in _toc.yml — the two menus should tell the
+        # same story about what the site contains.
         left:
             - href: index.qmd
               text: Home
+            - text: "How-To"
+              href: How-To/index.qmd
             - text: "Usage"
               href: Usage/index.qmd
             - text: "CLI"
               href: CLI/index.qmd
+            - text: "Interoperability"
+              href: Interoperability/index.qmd
             - text: "Data Model"
               href: datamodel/index.qmd
             - text: "Platform"
