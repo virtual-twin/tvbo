@@ -33,40 +33,6 @@ _RULE_TEMPLATE = "tvbo-figure-rule.smk.mako"
 
 # --------------------------------------------------------------------------- helpers
 
-def _mem_mb(mem):
-    """'8G'/'8GB'/'512M'/'2000' -> integer megabytes (Snakemake ``mem_mb``)."""
-    if not mem:
-        return None
-    s = str(mem).strip().upper().rstrip("B")
-    try:
-        if s.endswith("G"):
-            return int(float(s[:-1]) * 1000)
-        if s.endswith("M"):
-            return int(float(s[:-1]))
-        if s.endswith("K"):
-            return max(1, int(float(s[:-1]) / 1000))
-        return int(float(s))
-    except ValueError:
-        return None
-
-
-def _runtime_min(t):
-    """'02:00:00' (HH:MM:SS) or '120' -> integer minutes (Snakemake ``runtime``)."""
-    if not t:
-        return None
-    s = str(t).strip()
-    try:
-        if ":" in s:
-            p = [int(x) for x in s.split(":")]
-            if len(p) == 3:
-                return p[0] * 60 + p[1] + (1 if p[2] else 0)
-            if len(p) == 2:
-                return p[0] + (1 if p[1] else 0)
-        return int(float(s))
-    except ValueError:
-        return None
-
-
 def _figure_block(workflow, overrides, engine: str = "snakemake"):
     """Merge ``figure.workflow_overrides`` over the study ``workflow`` -> (spec, block).
 
@@ -109,11 +75,13 @@ def _rule_resources(block: dict) -> dict:
     r: dict = {}
     if block.get("cpus_per_task"):
         r["cpus_per_task"] = str(int(block["cpus_per_task"]))
-    mb = _mem_mb(block.get("mem"))
-    if mb:
+    # `is not None`, not truthiness: a declared 0 is a value the figure chose, and
+    # dropping it silently hands the job the partition default instead.
+    mb = _wf.mem_mb(block.get("mem"))
+    if mb is not None:
         r["mem_mb"] = str(mb)
-    rt = _runtime_min(block.get("time"))
-    if rt:
+    rt = _wf.runtime_minutes(block.get("time"))
+    if rt is not None:
         r["runtime"] = str(rt)
     if block.get("partition"):
         r["slurm_partition"] = repr(str(block["partition"]))
