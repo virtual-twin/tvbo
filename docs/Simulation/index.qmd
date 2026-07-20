@@ -1,0 +1,31 @@
+---
+title: "Simulation & Observation"
+description: "Run a model on a network, measure it the way an experiment would, and explore parameters."
+---
+
+With a model and a network in hand, this topic covers running the simulation, deciding
+what to *measure* from it (BOLD, EEG, functional connectivity), and sweeping parameters
+to see how behaviour changes.
+
+## Learn
+
+- [Simulation experiments](SimulationExperiments.qmd) — assemble dynamics, network and
+  integrator, run on a backend, and inspect the result.
+
+## Do
+
+- [Observation models](ObservationModels.qmd) — define what to measure: BOLD, FC, PSD.
+- [Parameter exploration](ParameterExploration.qmd) *(draft)* — grid sweeps and parallel
+  execution.
+- [Visualization](Visualization.qmd) *(draft)* — plot time series, networks, and matrices.
+
+## Look up
+
+- [The experiment result](Results.qmd) — the result container and how to index it.
+- [Output specification](../Specification/Output.qmd) —
+  [`Observation`](../datamodel/classes/Observation.qmd) and what `record` means.
+
+## Related
+
+- [Fitting & inference](../Fitting/index.qmd) — fit these observations to empirical data.
+- [Scale-out & reproducibility](../ScaleOut/index.qmd) — run large sweeps on a cluster.

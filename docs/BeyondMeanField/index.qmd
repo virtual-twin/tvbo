@@ -1,0 +1,32 @@
+---
+title: "Beyond the Mean Field"
+description: "When one averaged unit per region is not enough: spiking cells, ion channels, and multi-scale models."
+---
+
+Most TVBO models put a single averaged unit — a neural mass — at each region. This
+topic covers what to do when that is not enough: modelling individual spiking cells
+and their channels, and coupling a detailed patch to a whole-brain model.
+
+## Do
+
+- Single neurons, ion channels and synapses are available by reference: set
+  `iri: neuroml:<TypeName>` on a dynamics and TVBO pulls the equations from the
+  NeuroML2 library. See [IRI vs. inline YAML](../Interoperability/NeuroML/IRI_vs_YAML.qmd)
+  and the [example gallery](../Interoperability/NeuroML/examples/index.qmd).
+
+## Understand
+
+- [Multi-scale modelling](MultiScaleModelling.qmd) — what it means to run two scales
+  together, which pairings TVBO supports today, and an honest status for each.
+
+## Look up
+
+- [`subnetwork`](../datamodel/slots/subnetwork.qmd) ·
+  [`source_network`](../datamodel/slots/source_network.qmd) ·
+  [`target_network`](../datamodel/slots/target_network.qmd) — the layered-network slots.
+- [NeuroML component mapping](../Interoperability/NeuroML/index.qmd).
+
+## Related
+
+- [Networks & connectomes](../Networks/index.qmd) — the macro network a detailed patch
+  attaches to.

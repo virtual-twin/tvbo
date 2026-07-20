@@ -1,0 +1,106 @@
+---
+title: Code Generation & Export
+sidebar: usage
+jupyter: python3
+# Redirect the pre-restructure URL so existing links keep resolving.
+aliases:
+  - /Usage/CodeGeneration.html
+---
+
+Generate standalone simulation code in multiple languages and export experiments to standard formats.
+
+## Code Generation
+
+View the generated source code for any backend:
+
+```{python}
+from tvbo import Dynamics, SimulationExperiment
+
+model = Dynamics.from_db("Generic2dOscillator")
+exp = SimulationExperiment(dynamics=model)
+```
+
+### JAX
+
+```{python}
+print(exp.render_code('jax'))
+```
+
+### Python (SciPy)
+
+```{python}
+print(model.render_code('python'))
+```
+
+### Julia
+
+```{python}
+print(model.render_code('julia'))
+```
+
+## All Code Generation Targets
+
+### From `Dynamics.render_code(format)`
+
+| Format | Output |
+|--------|--------|
+| `'tvb'` | TVB model class |
+| `'python'` / `'scipy'` | SciPy ODE function |
+| `'autodiff'` / `'jax'` | JAX dfun kernel |
+| `'julia'` | DifferentialEquations.jl |
+| `'bifurcation-julia'` | BifurcationKit.jl |
+| `'bifurcation-numcont'` | MatCont-style |
+| `'bifurcation-auto7p'` | AUTO-07p |
+| `'pde-fem'` | scikit-fem PDE solver |
+
+### From `SimulationExperiment.render_code(format)`
+
+| Format | Output |
+|--------|--------|
+| `'jax'` / `'autodiff'` | Full JAX simulation |
+| `'tvboptim'` | tvboptim experiment |
+| `'tvb'` | TVB model class |
+| `'networkdynamics'` | NetworkDynamics.jl |
+| `'mtk'` | ModelingToolkit.jl |
+| `'rateml'` | RateML Python + Numba |
+| `'cuda'` | CUDA kernel |
+| `'pde'` | scikit-fem PDE |
+
+## Export Formats
+
+### YAML
+
+```{python}
+yaml_str = exp.to_yaml()
+print(yaml_str[:300])
+```
+
+### BIDS
+
+Export as a [BEP034](https://bids.neuroimaging.io/) computational modeling derivative:
+
+```python
+exp.to_bids("output/derivatives/tvbo")
+```
+
+### [OpenMINDS](https://openminds.ebrains.eu/)
+
+```python
+exp.to_openminds("output/experiment.jsonld")
+```
+
+## Model Reports
+
+Generate formatted documentation of a model:
+
+```{python}
+from IPython.display import Markdown
+report = model.generate_report(format="markdown")
+Markdown(report)
+```
+
+## See Also
+
+- [Simulation Experiments](../Simulation/SimulationExperiments.qmd) — running experiments
+- [BIDS Export](/Interoperability/BIDS/BIDS_Export.qmd) — detailed BIDS workflow
+- [OpenMINDS](/Interoperability/OpenMINDS.qmd) — OpenMINDS JSON-LD export

@@ -10,8 +10,13 @@ project:
     - api/**/*.qmd
     - datamodel/*.qmd
     - datamodel/**/*.qmd
-    - Usage/*.qmd
-    - How-To/*.qmd
+    - Models/*.qmd
+    - Simulation/*.qmd
+    - ScaleOut/*.qmd
+    - Bifurcation/*.qmd
+    - Networks/*.qmd
+    - BeyondMeanField/*.qmd
+    - Fitting/*.qmd
     - CLI/*.qmd
     - examples/**/*.qmd
     - Specification/*.qmd
@@ -51,10 +56,10 @@ website:
         left:
             - href: index.qmd
               text: Home
-            - text: "How-To"
-              href: How-To/index.qmd
-            - text: "Usage"
-              href: Usage/index.qmd
+            - text: "Networks"
+              href: Networks/index.qmd
+            - text: "Models"
+              href: Models/index.qmd
             - text: "CLI"
               href: CLI/index.qmd
             - text: "Interoperability"

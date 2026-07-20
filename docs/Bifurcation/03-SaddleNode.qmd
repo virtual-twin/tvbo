@@ -1,0 +1,134 @@
+---
+title: "3. Saddle-Node"
+sidebar: usage
+jupyter: python3
+# Redirect the pre-restructure URL so external links keep resolving.
+aliases:
+  - /Usage/BifurcationTutorial/03-SaddleNode.html
+---
+
+The saddle-node (also "fold" or "tangent") bifurcation is the simplest
+codimension-1 local bifurcation:
+
+$$
+\dot x = a - x^2.
+$$
+
+* For $a < 0$: no real equilibrium, $\dot x < 0$ everywhere — every
+  trajectory escapes to $-\infty$.
+* For $a = 0$: a single non-hyperbolic fixed point at $x = 0$,
+  $f'(0) = 0$.
+* For $a > 0$: two fixed points $x_{\pm} = \pm\sqrt a$, the upper one
+  stable ($f'(x_+) = -2\sqrt a < 0$), the lower one unstable.
+
+The two equilibria *collide and annihilate* at $a = 0$ — the codim-1
+**saddle-node bifurcation**. Beyond it, the system has *no* attractors at
+all in this neighbourhood.
+
+```{python}
+from tvbo import Dynamics, Continuation, SimulationExperiment
+
+SN_YAML = """
+name: SaddleNode
+description: Canonical saddle-node $\\dot x = a - x^2$.
+parameters:
+  a:
+    name: a
+    value: 1.0
+state_variables:
+  x:
+    name: x
+    domain: { lo: -2.0, hi: 2.0 }
+    equation:
+      lhs: Derivative(x, t)
+      rhs: a - x**2
+    initial_value: 1.0
+"""
+
+CONT_YAML = """
+name: sn_in_a
+dynamics: SaddleNode
+free_parameters:
+  - name: a
+    domain: { lo: -2.0, hi: 2.0 }
+max_steps: 200
+ds: 0.01
+bothside: true
+"""
+
+dyn = Dynamics.from_string(SN_YAML)
+cont = Continuation.from_string(CONT_YAML)
+exp = SimulationExperiment(dynamics=dyn, continuations=[cont])
+```
+
+## Phase line $f(x)$ across the bifurcation
+
+For a 1-D ODE, the *phase line* is just the graph of $f(x) = a - x^2$ with
+arrows showing the sign of $\dot x$. As $a$ increases through $0$, the
+parabola lifts above the $x$-axis and two equilibria are born from a single
+tangency point.
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(-2, 2, 400)
+fig, axes = plt.subplots(1, 3, figsize=(12, 3.6), sharey=True)
+for ax, a in zip(axes, [-0.5, 0.0, 0.5]):
+    f = a - x**2
+    ax.axhline(0, color="0.7", lw=0.8)
+    ax.plot(x, f, lw=2, color="C0")
+    roots = np.roots([-1, 0, a])
+    for r in roots[np.isreal(roots)].real:
+        slope = -2*r
+        ax.plot(r, 0, "o", color="tab:green" if slope < 0 else "tab:red", ms=8, mec="k")
+    ax.set_xlim(-2, 2); ax.set_ylim(-2.5, 1.0)
+    ax.set_xlabel("$x$"); ax.set_title(f"$a = {a}$")
+axes[0].set_ylabel(r"$\dot x = a - x^2$")
+plt.tight_layout(); plt.show()
+```
+
+Green = stable, red = unstable. At $a = 0$ the two markers merge into a
+single half-stable point (tangent to the $x$-axis).
+
+## BifurcationKit.jl
+
+```{python}
+result_jl = exp.run("bifurcationkit.jl")
+result_jl.continuations["sn_in_a"].plot(VOI="x")
+plt.gca().set_xlim(-2, 2); plt.gca().set_ylim(-2, 2); plt.show()
+```
+
+## PyRates / PyCoBi
+
+PyRates itself can represent the 1-D system fine, and AUTO-07p continues it
+without trouble — but PyCoBi's summary builder requires `NDIM >= 2` and
+raises `KeyError('U(1)')` on scalar ODEs. The adapter detects this and
+raises a clear `NotImplementedError`:
+
+```{python}
+try:
+    result_py = exp.run("pyrates-bifurcation")
+    result_py.continuations["sn_in_a"].plot(VOI="x")
+except NotImplementedError as e:
+    print(e)
+```
+
+For 1-D toy systems use `auto-07p` (below) or `bifurcationkit.jl`.
+
+## AUTO-07p (NumCont)
+
+This is the backend used by the original standalone `SaddleNode.py` example:
+an AUTO-07p Fortran binary built on-the-fly from the YAML, then continued
+bidirectionally (`bothside: true` ↔ standalone `DS=-0.01`).
+
+```{python}
+result_auto = exp.run("auto-07p")
+result_auto.continuations["sn_in_a"].plot(VOI="x")
+plt.gca().set_xlim(-2, 2); plt.gca().set_ylim(-2, 2); plt.show()
+```
+
+The fold point appears at $a = 0$ in all three backends. The upper branch is
+stable, the lower branch unstable. Beyond the fold the equilibria simply
+disappear — there is no continuous deformation back; only a *topological
+change*. This is the prototype for **regime shifts** in nonlinear systems.
