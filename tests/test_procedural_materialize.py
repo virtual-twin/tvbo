@@ -7,9 +7,12 @@ parallel numpy implementation could drift from the printer silently — the two 
 disagree on some untested edge, and the generated network would differ between a local
 run and a swept one.
 
-The fixture is RandomReservoir's construction, so the properties asserted are the ones
-the generator actually promises: the post-hoc spectral-radius rescale, the sparsity, and
-within-backend reproducibility.
+The fixture mirrors RandomReservoir's construction, so the properties asserted are the
+ones the generator actually promises: the post-hoc spectral-radius rescale, the sparsity,
+and within-backend reproducibility. It is declared inline rather than loaded from the
+database, which keeps these resolver-level: they stay meaningful if the curated entry
+changes. That the SHIPPED entry still produces these values is a separate question, asked
+by tests/test_curated_graph_generators.py.
 """
 
 from pathlib import Path
@@ -25,7 +28,7 @@ from tvbo.graph_generators.procedural import (
 
 RESERVOIR = {
     "parameters": {"sparsity": 0.1, "spectral_radius": 0.95, "n_nodes": 60},
-    "derived": {
+    "steps": {
         # `seed_offset` selects the sub-stream. It must be stated: two seeded steps
         # sharing an offset would be perfectly correlated, and drawing them sequentially
         # from one stream (rather than from offset-derived ones) changes every value.
@@ -46,7 +49,7 @@ RESERVOIR = {
         # evaluated separately. This is what makes the migration bit-identical.
         "scale": {"equation": {"rhs": "spectral_radius / rho"}},
     },
-    "outputs": {"weights": {"equation": {"rhs": "masked * scale"}}},
+    "output": {"weights": {"equation": {"rhs": "masked * scale"}}},
 }
 
 
@@ -133,13 +136,53 @@ def test_a_failing_step_reports_which_step_and_what_was_rendered():
     """A broken procedure must name the step and show the emitted source, not raise
     an opaque NameError from inside an eval."""
     spec = {"parameters": {"n_nodes": 4},
-            "derived": {"bad": {"equation": {"rhs": "normalize(nope, 0)"}}}}
+            "steps": {"bad": {"equation": {"rhs": "normalize(nope, 0)"}}}}
     with pytest.raises(ProceduralError, match=r"step 'bad' failed to evaluate"):
         materialize(spec, seed=1)
 
 
+def test_the_fixture_still_represents_the_shipped_generator():
+    """The fixture restates RandomReservoir's DAG, so it must not drift from the artefact.
+
+    Without this the two can diverge silently: every assertion above keeps passing against
+    a spec no user gets, and only the separate curated-golden test notices — which is the
+    wrong place to find out that this file stopped describing anything real.
+    """
+    from tvbo.graph_generators import random_reservoir
+
+    np.testing.assert_array_equal(
+        _weights(seed=11),
+        random_reservoir(n_nodes=60, sparsity=0.1, spectral_radius=0.95, seed=11)["weights"],
+    )
+
+
+def test_a_legitimate_infinity_is_not_mistaken_for_a_degenerate_divide():
+    """`diagonal: inf` is how a distance kernel suppresses self-connections.
+
+    The NaN guard exists to catch a divide by a spectral radius of 0; rejecting every
+    non-finite value would also reject a declared infinity, which is a stated intent.
+    """
+    spec = {
+        "parameters": {"n_nodes": 4},
+        "steps": {
+            "layout": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
+            "d_ij": {"type": "pairwise_distance", "of": "layout", "diagonal": "inf"},
+        },
+        "output": {"lengths": {"equation": {"rhs": "d_ij"}}},
+    }
+    lengths = materialize(spec, seed=0)["lengths"]
+    assert np.isinf(np.diag(lengths)).all()
+    assert np.isfinite(lengths[~np.eye(4, dtype=bool)]).all()
+
+
+def test_a_degenerate_spectral_radius_is_still_rejected():
+    """The guard must keep catching what it was added for."""
+    with pytest.raises(ProceduralError, match="NaN"):
+        _weights(sparsity=0.0, n_nodes=3)
+
+
 def test_two_seeded_steps_use_distinct_substreams():
     """Sharing a seed_offset makes two draws perfectly correlated, not independent."""
-    same = {**RESERVOIR, "derived": {**RESERVOIR["derived"],
-            "mask": {**RESERVOIR["derived"]["mask"], "seed_offset": 0}}}
+    same = {**RESERVOIR, "steps": {**RESERVOIR["steps"],
+            "mask": {**RESERVOIR["steps"]["mask"], "seed_offset": 0}}}
     assert not np.array_equal(_weights(), materialize(same, seed=42)["weights"])

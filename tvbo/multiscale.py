@@ -101,7 +101,7 @@ def flatten_reservoir(
     once the memory is known to be available.
     """
     # Local imports keep this module import-light.
-    from tvbo.graph_generators import engine
+    from tvbo.graph_generators import catalog
 
     net = exp["network"]
     subnet = _pluck(net, "node_template", "subnetwork")
@@ -122,19 +122,29 @@ def flatten_reservoir(
     tau = float(_param_value(inner.get("parameters", {}), "tau", 1.0))
     noise_sigma = float(_pluck(state_spec, "noise", "parameters", "sigma", "value", default=0.0) or 0.0)
 
-    # --- reservoir recurrence W_int (via the generic procedure engine) --------
+    # --- reservoir recurrence W_int (via the typed-DAG resolver) --------------
     gg = subnet["graph_generator"]
     gg_params = {k: _param_value(gg.get("parameters", {}), k)
                  for k in (gg.get("parameters") or {})}
     # weight_distribution carries its spec under `.distribution`
     wd = _pluck(gg, "parameters", "weight_distribution", "distribution")
-    n = int(n_override or gg_params.get("n") or 100)
-    gg_params["n"] = n
-    gg_params["weight_distribution"] = _dist_from_spec(wd)
-    W_int = engine.run_generator("RandomReservoir", gg_params, seed=gg.get("seed"))["weights"]
+    # Size is the subnetwork's node count, as it is for every generator; `n_nodes` on the
+    # generator is the standalone form used when there is no Network to read it from.
+    if "n" in gg_params:
+        raise ValueError(
+            "flatten_reservoir: the reservoir generator declares `n`, which is no longer "
+            "the size parameter. Rename it to `n_nodes`, or set the subnetwork's "
+            "`number_of_nodes`. Accepting it silently would build the default 100-unit "
+            "reservoir instead of the size the spec asks for, and the run would look fine."
+        )
+    n = int(n_override or subnet.get("number_of_nodes") or gg_params.get("n_nodes") or 100)
+    gg_params["n_nodes"] = n
+    if wd is not None:
+        gg_params["weight_distribution"] = wd
+    W_int = catalog.run_generator("RandomReservoir", gg_params, seed=gg.get("seed"))["weights"]
 
     # --- macro SC + long-range coupling gain kappa ----------------------------
-    SC = np.asarray(engine.load_matrix(net["iri"]), dtype=float)
+    SC = np.asarray(catalog.load_matrix(net["iri"]), dtype=float)
     for tr in (net.get("transforms") or []):
         rhs = _pluck(tr, "equation", "rhs") or ""
         if "max(W)" in rhs.replace(" ", "").replace("/max(W)", "/max(W)"):
@@ -202,20 +212,6 @@ def flatten_reservoir(
     return fr
 
 
-def _dist_from_spec(spec: Optional[dict]):
-    """Build an engine inline-distribution from a YAML `{name, parameters}` dict."""
-    if not isinstance(spec, dict):
-        return None
-    from tvbo.graph_generators import engine
-
-    name = (spec.get("name") or "Normal").lower()
-    params = {k: _param_value(spec.get("parameters", {}), k)
-              for k in (spec.get("parameters") or {})}
-    ctor = {"normal": engine._Normal, "uniform": engine._Uniform,
-            "lognormal": engine._LogNormal, "beta": engine._Beta}.get(name)
-    return ctor(**{k: float(v) for k, v in params.items() if v is not None}) if ctor else None
-
-
 def _gain_param_name(coupling_spec: dict) -> str:
     """The scalar gain parameter referenced by the macro post_expression (e.g. kappa, G)."""
     post = _pluck(coupling_spec, "post_expression", "rhs") or ""
@@ -227,15 +223,15 @@ def _gain_param_name(coupling_spec: dict) -> str:
 
 def _project_weights(subnet: dict, n: int) -> np.ndarray:
     """Materialise the per-unit downward projection W_in from the sc_drive edge."""
-    from tvbo.graph_generators import engine
+    from tvbo.graph_generators import procedural
 
     for edge in (subnet.get("edges") or []):
         if edge.get("source_network") in ("..", "parent"):
             wparams = _pluck(edge, "coupling", "parameters") or {}
             for pname, pspec in wparams.items():
-                dist = _dist_from_spec(pspec.get("distribution")) if isinstance(pspec, dict) else None
-                if dist is not None:
+                dist = pspec.get("distribution") if isinstance(pspec, dict) else None
+                if dist:
                     seed = _pluck(pspec, "distribution", "seed")
-                    return engine.sample(dist, shape=(n,), seed=seed)
+                    return procedural.draw(dist, (n,), seed=seed)
     # default: unit projection
     return np.ones(n)

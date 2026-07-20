@@ -161,7 +161,6 @@ def plot_phase_portrait(trials, color_trajectory_by="theta", color_ic_by=None,
     color_trajectory_by: "theta" or "omega" — colors lines by that IC value
     color_ic_by: "theta" or "omega" — colors IC dots (None = black)
     """
-    var_map = {"theta": 0, "omega": 1}
     label_map = {"theta": r"$\theta_0$", "omega": r"$\omega_0$"}
 
     if ax is None:
@@ -169,24 +168,46 @@ def plot_phase_portrait(trials, color_trajectory_by="theta", color_ic_by=None,
     else:
         fig = ax.figure
     ax.set_box_aspect(1)
-    n_trials = trials.shape[1]
+
+    # `trials` is a labelled DataArray with dims (trial, time, variable, node),
+    # so every axis is selected by name — no positional indices to drift out of
+    # sync if the intrinsic rank changes.
+    #
+    # The exploration records the declared outputs (x, y). The pendulum geometry
+    # is x = L sin(theta), y = -L cos(theta), so the phase-plane coordinates come
+    # back exactly: theta = atan2(x, -y), and omega = d(theta)/dt.
+    dt = float(trials.coords["time"].values[1] - trials.coords["time"].values[0])
+
+    def state_of(tid):
+        run = trials.sel(trial=tid)
+        x = run.sel(variable="x").squeeze(drop=True).values
+        y = run.sel(variable="y").squeeze(drop=True).values
+        theta = np.unwrap(np.arctan2(x, -y))
+        omega = np.gradient(theta, dt)
+        return theta, omega
+
+    trial_ids = trials.coords["trial"].values
+    states = {int(t): state_of(t) for t in trial_ids}
+    var_pos = {"theta": 0, "omega": 1}
+
+    def ic_of(var):
+        """Initial value of `var` for each trial."""
+        k = var_pos[var]
+        return np.array([states[int(t)][k][0] for t in trial_ids])
 
     # Trajectory colors
-    traj_idx = var_map[color_trajectory_by]
-    traj_ics = [float(trials[0, i, 0, traj_idx, 0]) for i in range(n_trials)]
-    traj_norm = plt.Normalize(min(traj_ics), max(traj_ics))
+    traj_ics = ic_of(color_trajectory_by)
+    traj_norm = plt.Normalize(float(traj_ics.min()), float(traj_ics.max()))
     traj_cm = plt.colormaps[cmap]
 
     # IC dot colors
     if color_ic_by is not None:
-        ic_idx = var_map[color_ic_by]
-        ic_vals = [float(trials[0, i, 0, ic_idx, 0]) for i in range(n_trials)]
-        ic_norm = plt.Normalize(min(ic_vals), max(ic_vals))
+        ic_vals = ic_of(color_ic_by)
+        ic_norm = plt.Normalize(float(ic_vals.min()), float(ic_vals.max()))
         ic_cm = plt.colormaps[ic_cmap or cmap]
 
-    for i in range(n_trials):
-        theta = trials[0, i, :, 0, 0]
-        omega = trials[0, i, :, 1, 0]
+    for i, tid in enumerate(trial_ids):
+        theta, omega = states[int(tid)]
         ax.plot(theta, omega, lw=0.6, alpha=0.7, color=traj_cm(traj_norm(traj_ics[i])))
         dot_color = ic_cm(ic_norm(ic_vals[i])) if color_ic_by else "black"
         ax.plot(theta[0], omega[0], "o", ms=4, color=dot_color, zorder=5)
@@ -204,7 +225,7 @@ def plot_phase_portrait(trials, color_trajectory_by="theta", color_ic_by=None,
     return fig
 
 
-trials = result.exploration.ICs.results
+trials = result.exploration.ICs.as_grid()   # labelled: (trial, time, variable, node)
 plot_phase_portrait(trials, color_trajectory_by="theta", color_ic_by="omega",
                     cmap="coolwarm", ic_cmap="plasma")
 ```

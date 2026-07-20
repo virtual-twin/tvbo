@@ -63,7 +63,7 @@ functions:
     subsample_bold:
         description: Subsample to BOLD TR
         equation:
-            rhs: "X[::stepsize]"
+            rhs: "subsample(X, stepsize)"
         arguments:
             - {name: stepsize, value: 10000}
         apply_on_dimension: time
@@ -71,6 +71,7 @@ functions:
 observations:
     - name: bold
       source: S
+      period: 2000
       pipeline:
           - function: hrf_kernel
           - callable:
@@ -89,6 +90,8 @@ print(exp.render_code('jax')[-1500:])
 ```
 
 The generated code shows each function definition followed by the pipeline composition. No Python functions are hardcoded — everything is generated from the YAML specification.
+
+Note the emitted call `subsample_bold(..., stepsize=20000)`. That count is not the `value: 10000` written under `arguments:` — sampling steps are resolved from the observation's declared `period` (the BOLD TR, 2000 ms) divided by the integration `step_size` (0.1 ms). Declaring the TR in physical units keeps the pipeline correct when `step_size` changes; the literal under `arguments:` only supplies the function's standalone default. Every backend routes through the same resolver, so the sample count is identical across `jax`, `tvboptim`, and `tvb`.
 
 ## Pipeline Architecture
 

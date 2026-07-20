@@ -33,7 +33,7 @@ def _normal_field(mean):
 KOLLER_SHEET = {
     "parameters": {"sigma": 10.0, "alpha": 2.0, "beta": 4.0,
                    "nx": 30, "ny": 30, "x_extent": 140.0, "y_extent": 140.0},
-    "derived": {
+    "steps": {
         # The layout is an ordinary named intermediate, not a special generator slot:
         # positions are produced by a primitive and referenced by name like anything else.
         "layout": {"equation": {"rhs": "grid_positions(nx, ny, x_extent, y_extent)"}},
@@ -67,7 +67,7 @@ def _named(spec):
 # --------------------------------------------------------------------------- #
 def test_every_step_resolves_to_a_sympy_expression():
     resolved = build(KOLLER_SHEET)
-    assert [n for n, _ in resolved] == list(KOLLER_SHEET["derived"])
+    assert [n for n, _ in resolved] == list(KOLLER_SHEET["steps"])
     for name, expr in resolved:
         assert isinstance(expr, sp.Basic), f"{name} did not resolve to a SymPy object"
 
@@ -129,7 +129,7 @@ def test_jax_render_uses_pure_prng():
 
 
 # --------------------------------------------------------------------------- #
-# The derived deterministic / stochastic split                                 #
+# The inferred deterministic / stochastic split                                 #
 # --------------------------------------------------------------------------- #
 def test_seed_dependence_is_transitive():
     """a_masked is not itself a draw, but it references the mask, so it is seeded."""
@@ -149,19 +149,19 @@ def test_geometry_stays_deterministic():
 
 def test_partition_covers_the_dag_exactly_once():
     deterministic, stochastic = partition(KOLLER_SHEET)
-    assert sorted(deterministic + stochastic) == sorted(KOLLER_SHEET["derived"])
+    assert sorted(deterministic + stochastic) == sorted(KOLLER_SHEET["steps"])
     assert not set(deterministic) & set(stochastic)
 
 
 def test_partition_preserves_dag_order():
     deterministic, stochastic = partition(KOLLER_SHEET)
-    order = list(KOLLER_SHEET["derived"])
+    order = list(KOLLER_SHEET["steps"])
     for part in (deterministic, stochastic):
         assert part == [n for n in order if n in part]
 
 
 def test_a_dag_with_no_randomness_has_an_empty_suffix():
-    spec = {"derived": {k: v for k, v in KOLLER_SHEET["derived"].items()
+    spec = {"steps": {k: v for k, v in KOLLER_SHEET["steps"].items()
                         if k in ("layout", "d_ij", "a_ij")},
             "parameters": KOLLER_SHEET["parameters"]}
     deterministic, stochastic = partition(spec)
@@ -180,7 +180,7 @@ def test_a_sampler_inside_an_equation_step_is_still_seeded():
     Detection keys off the sampler HEAD, not the PRNG symbol's name, so the step is caught
     however its key argument is spelled (here a plain `anykey`).
     """
-    spec = {"derived": {
+    spec = {"steps": {
         "raw": {"equation": {"rhs": "sample_normal(anykey, 0, 1, n_nodes, n_nodes)"}},
         "scaled": {"equation": {"rhs": "raw * 2"}},
         "geom": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
@@ -192,7 +192,7 @@ def test_a_sampler_inside_an_equation_step_is_still_seeded():
 
 def test_sample_step_yields_the_draw_not_a_mask():
     """`sample` is the draw itself; `stochastic_mask` is a comparison over one."""
-    spec = {"derived": {"raw": {"type": "sample",
+    spec = {"steps": {"raw": {"type": "sample",
                                 "distribution": {"name": "Normal",
                                                  "parameters": {"mean": 0.0, "std": 1.0}}}}}
     expr = dict(build(spec))["raw"]
@@ -200,10 +200,38 @@ def test_sample_step_yields_the_draw_not_a_mask():
     assert not isinstance(expr, sp.Rel)
 
 
+def test_sample_selects_its_distribution_by_parameter_name():
+    """`of` on a `sample` step names the Distribution-valued parameter to draw from.
+
+    That is how a curated generator exposes its randomness as a choice
+    (RandomReservoir's `weight_distribution`) while the inline `distribution` states the
+    family it falls back to.
+    """
+    fields = {"type": "sample", "of": "wd",
+              "distribution": {"name": "Normal",
+                               "parameters": {"mean": 0.0, "std": 1.0}}}
+    supplied = {"name": "Uniform", "parameters": {"lo": -1.0, "hi": 1.0}}
+    assert dict(build({"steps": {"raw": fields}}))["raw"].func.__name__ == "sample_normal"
+    chosen = dict(build({"parameters": {"wd": supplied}, "steps": {"raw": fields}}))["raw"]
+    assert chosen.func.__name__ == "sample_uniform"
+
+
+def test_sample_rejects_an_of_that_names_an_intermediate():
+    """On every other step type `of` is an array, so reaching for one here is the natural
+    mistake — and silently falling back to the default family would build a plausible
+    network from the wrong distribution without saying so."""
+    with pytest.raises(ProceduralError, match="not from an array"):
+        build({"steps": {
+            "geom": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
+            "raw": {"type": "sample", "of": "geom",
+                    "distribution": {"name": "Normal",
+                                     "parameters": {"mean": 0.0, "std": 1.0}}}}})
+
+
 def test_an_undefined_layout_is_a_dangling_reference():
     """No name is magically pre-bound: a layout must be defined like any other step."""
     with pytest.raises(ProceduralError, match="not a previously-defined"):
-        build({"derived": {"d": {"type": "pairwise_distance", "of": "layout"}}})
+        build({"steps": {"d": {"type": "pairwise_distance", "of": "layout"}}})
 
 
 # --------------------------------------------------------------------------- #
@@ -211,31 +239,56 @@ def test_an_undefined_layout_is_a_dangling_reference():
 # --------------------------------------------------------------------------- #
 def test_unknown_step_type_is_rejected():
     with pytest.raises(ProceduralError, match="unknown type"):
-        build({"derived": {"x": {"type": "no_such_step"}}})
+        build({"steps": {"x": {"type": "no_such_step"}}})
 
 
 def test_forward_reference_is_rejected():
     """Steps are ordered; referencing a later name is a recipe error, not a silent nan."""
     with pytest.raises(ProceduralError, match="not a previously-defined"):
-        build({"derived": {"a": {"type": "normalize", "of": "b", "axis": 0},
+        build({"steps": {"a": {"type": "normalize", "of": "b", "axis": 0},
                            "b": {"equation": {"rhs": "1"}}}})
 
 
 def test_unknown_distribution_is_rejected():
     with pytest.raises(ProceduralError, match="no sampler"):
-        build({"derived": {"m": {"type": "stochastic_mask", "of": "n_nodes",
+        build({"steps": {"m": {"type": "stochastic_mask", "of": "n_nodes",
                                  "distribution": {"name": "Cauchy", "parameters": {"scale": 1.0}}}}})
 
 
-def test_missing_distribution_parameter_is_rejected():
-    with pytest.raises(ProceduralError, match="requires parameter"):
-        build({"derived": {"m": {"type": "stochastic_mask", "of": "n_nodes",
-                                 "distribution": {"name": "Exponential", "parameters": {}}}}})
+def test_an_omitted_parameter_falls_back_to_the_families_standard_form():
+    """`Normal` without a mean means Normal(0, 1) — the family's own standard form.
+
+    Erroring instead would reject the ordinary way these are written, and the deleted
+    engine supplied exactly these defaults through its distribution constructors.
+    """
+    expr = dict(build({"steps": {"m": {"type": "sample",
+                                       "distribution": {"name": "Normal",
+                                                        "parameters": {"std": 0.5}}}}}))["m"]
+    assert expr.args[2] == sp.Float(0.0)   # mean, defaulted
+    assert expr.args[3] == sp.Float(0.5)   # std, as given
+
+
+def test_an_unknown_distribution_parameter_is_rejected():
+    """A typo must not be dropped: the parameter it meant would take its standard form,
+    so the draw would silently come from a different distribution than the spec states."""
+    with pytest.raises(ProceduralError, match="has no parameter"):
+        build({"steps": {"m": {"type": "sample",
+                               "distribution": {"name": "Normal",
+                                                "parameters": {"mena": 0.5, "std": 1.0}}}}})
+
+
+def test_gaussian_is_the_same_family_as_normal_for_sampling():
+    """`distribution_pdf` already accepts `Gaussian`; one spelling must not resolve on
+    one step type and fail on another."""
+    for family in ("Normal", "Gaussian"):
+        expr = dict(build({"steps": {"m": {"type": "sample",
+                                           "distribution": {"name": family}}}}))["m"]
+        assert expr.func.__name__ == "sample_normal"
 
 
 def test_distribution_pdf_rejects_a_non_normal_family():
     with pytest.raises(ProceduralError, match="defined for Normal"):
-        build({"derived": {
+        build({"steps": {
             "layout": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
             "f": {"type": "distribution_pdf", "of": "layout",
                   "distribution": {"name": "Exponential", "parameters": {"scale": 1.0}}}}})
@@ -243,7 +296,7 @@ def test_distribution_pdf_rejects_a_non_normal_family():
 
 def test_minmax_rescale_requires_a_target_range():
     with pytest.raises(ProceduralError, match="target_range"):
-        build({"derived": {"g": {"type": "equation", "equation": {"rhs": "1"}},
+        build({"steps": {"g": {"type": "equation", "equation": {"rhs": "1"}},
                            "r": {"type": "minmax_rescale", "of": "g"}}})
 
 
@@ -257,7 +310,7 @@ def test_reserved_prng_parameter_name_is_rejected():
     """
     with pytest.raises(ProceduralError, match="reserved"):
         build({"parameters": {"_prng_key": 1.0},
-               "derived": {"a": {"equation": {"rhs": "_prng_key * 2"}}}})
+               "steps": {"a": {"equation": {"rhs": "_prng_key * 2"}}}})
 
 
 @pytest.mark.parametrize(

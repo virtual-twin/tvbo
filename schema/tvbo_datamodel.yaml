@@ -497,15 +497,16 @@ enums:
             RandomReservoir:
                 description: >-
                     Sparse random recurrent adjacency with post-hoc spectral-
-                    radius rescaling. Parameters: n, sparsity, spectral_radius,
-                    weight_distribution, seed. Canonical Echo State Network
+                    radius rescaling. Parameters: sparsity, spectral_radius,
+                    weight_distribution, seed (the size comes from
+                    Network.number_of_nodes). Canonical Echo State Network
                     substrate (Jaeger 2001) for reservoir computing.
             WeightShuffle:
                 description: >-
                     Derived generator: permute the non-zero entries of a source
                     matrix. Parameters: source (IRI to another Network),
-                    preserve (binary_mask | degree | weight_distribution), seed.
-                    Used for null-model controls (e.g. shuffled SC).
+                    preserve (binary_mask), seed. Used for null-model controls
+                    (e.g. shuffled SC).
     ConnectivityRule:
         description: >-
             Rule for expanding a population-level Edge into individual
@@ -1617,8 +1618,12 @@ classes:
             steps:
                 range: ProcedureStep
                 multivalued: true
-                inlined_as_list: true
-                description: "Ordered intermediate steps."
+                inlined: true
+                description: >-
+                    Ordered intermediate steps, keyed by name — the same keyed-collection
+                    form as ``output``, so a step's name is its key rather than a field
+                    repeated inside it. Order is the evaluation order: a step may only
+                    reference names defined before it.
             output:
                 range: ProcedureStep
                 multivalued: true
@@ -1655,10 +1660,13 @@ classes:
             of:
                 range: string
                 description: >-
-                    Name of the intermediate this step consumes — the positions
-                    for `pairwise_distance` / `distribution_pdf`, the matrix for
-                    `normalize`, the compared quantity for `stochastic_mask`.
-                    Steps are ordered, so it must already be defined.
+                    Name of the input this step consumes — the positions for
+                    `pairwise_distance` / `distribution_pdf`, the matrix for
+                    `normalize`, the compared quantity for `stochastic_mask`, and
+                    for `sample` (which consumes no array) the Distribution-valued
+                    generator parameter to draw from. It names either a previously
+                    defined step or a generator parameter; steps are ordered, so a
+                    referenced step must already be defined.
             axis:
                 range: integer
                 description: "Array axis a `normalize` step reduces over (0 = columns)."
@@ -1672,10 +1680,12 @@ classes:
                 range: Distribution
                 inlined: true
                 description: >-
-                    Distribution sampled by a `stochastic_mask` step, or whose
-                    density a `distribution_pdf` step evaluates. Reuses the
+                    Distribution sampled by a `sample` / `stochastic_mask` step, or
+                    whose density a `distribution_pdf` step evaluates. Reuses the
                     Distribution class, so a generator's randomness is declared
-                    exactly like any other sampled quantity in TVBO.
+                    exactly like any other sampled quantity in TVBO. On a `sample`
+                    step it is the family the generator defaults to, which the
+                    parameter named by `of` overrides when one is supplied.
             comparison:
                 range: ComparisonOperator
                 ifabsent: "string(le)"

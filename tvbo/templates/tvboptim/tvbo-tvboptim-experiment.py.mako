@@ -63,9 +63,19 @@ derived_param_names = [p.name for p in model.derived_parameters.values()] if mod
 model_output_vars = getattr(model, 'output', None) or []
 if isinstance(model_output_vars, str):
     model_output_vars = [model_output_vars]
-model_derived_outputs = [v for v in model_output_vars if v in (model.derived_variables or {})]
-model_state_outputs = [v for v in model_output_vars if v in state_names]
 has_model_output = bool(model_output_vars)
+# Resolve each declared output to its channel in the recorded ordering. Outputs may
+# be state variables, auxiliaries, or a mix, so the position follows the layout
+# rather than the kind.
+from tvbo.templates.tvboptim.utils import (
+    resolve_model_output_indices, format_channel_index, get_recorded_variable_names,
+)
+model_output_indices, model_output_names = resolve_model_output_indices(model, experiment)
+_, _, _recorded_var_names = get_recorded_variable_names(model, experiment)
+model_output_channel_index = (
+    format_channel_index(model_output_indices, len(_recorded_var_names))
+    if model_output_indices else ''
+)
 
 # Extract state variable bounds (for BoundedSolver)
 # Uses SymPy oo so code printers emit the correct backend literal
@@ -2766,11 +2776,6 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
 %>
 % if not obs_name:
-<%
-    n_aux = len([v for v in (model_output_vars or []) if v in (model.derived_variables or {}).keys()])
-    if not n_aux and model.derived_variables:
-        n_aux = len(model.derived_variables)
-%>
 % if bundles_observations:
     # Observations declared: observable_fn returns only the reduced
     # observation values per grid point (no trajectory). Output size is
@@ -2781,18 +2786,18 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     def observable_fn(s):
         result = _expl_model_fn(s)
         return compute_all_observations(result, s, result_transient)
-% elif has_model_output and n_aux == 1:
+% elif has_model_output and len(model_output_indices) == 1:
     # Single model output — extract as (T, n_nodes) dropping the variable dimension
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
-        return result.data[:, ${len(state_names)}, ...]
-% elif has_model_output and n_aux > 1:
+        return result.data[:, ${model_output_channel_index}, ...]
+% elif has_model_output and len(model_output_indices) > 1:
     # Multiple model outputs — keep variable dimension (T, n_out, n_nodes)
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
-        return result.data[:, ${len(state_names)}:, ...]
+        return result.data[:, ${model_output_channel_index}, ...]
 % else:
     # No observable specified, no model output, no observations — return full simulation data
     @jax.jit
@@ -3145,10 +3150,10 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % if has_axes:
         cell_coords=_cell_coords,
 % endif
-<% _obs_label = obs_name if obs_name else (', '.join(model_output_vars) if has_model_output else obs_func) %>\
+<% _obs_label = obs_name if obs_name else (', '.join(model_output_names) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},
-        output_names=${model_output_vars if has_model_output and not obs_name else []},
+        output_names=${model_output_names if has_model_output and not obs_name else []},
         observations=_observations_xr,
 % if expl.get('n_trials', 1) > 1:
         n_trials=${expl['n_trials']},
