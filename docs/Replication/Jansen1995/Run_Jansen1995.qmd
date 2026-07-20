@@ -2,6 +2,10 @@
 title: "Jansen & Rit (1995)"
 description: "Replication of electroencephalogram and evoked potential simulations from the Jansen-Rit neural mass model."
 jupyter: python3
+# Publication gate (see docs/scripts/update_toc_replication.py): replication
+# results are embargoed until the source work is published. This study
+# replicates the already-published Jansen & Rit (1995), so it may ship.
+publish: true
 ---
 
 Replication of the simulation experiments from @Jansen1995.
