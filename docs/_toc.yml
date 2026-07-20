@@ -860,6 +860,8 @@ website:
                         href: datamodel/slots/colormap.qmd
                       - text: "comment"
                         href: datamodel/slots/comment.qmd
+                      - text: "comparison"
+                        href: datamodel/slots/comparison.qmd
                       - text: "compile"
                         href: datamodel/slots/compile.qmd
                       - text: "concept_iri"
@@ -888,6 +890,10 @@ website:
                         href: datamodel/slots/contacts.qmd
                       - text: "container"
                         href: datamodel/slots/container.qmd
+                      - text: "container_args"
+                        href: datamodel/slots/container_args.qmd
+                      - text: "container_binds"
+                        href: datamodel/slots/container_binds.qmd
                       - text: "container_image"
                         href: datamodel/slots/container_image.qmd
                       - text: "continuation"
@@ -990,6 +996,8 @@ website:
                         href: datamodel/slots/development_status.qmd
                       - text: "diagnosis"
                         href: datamodel/slots/diagnosis.qmd
+                      - text: "diagonal"
+                        href: datamodel/slots/diagonal.qmd
                       - text: "differentiation"
                         href: datamodel/slots/differentiation.qmd
                       - text: "digital Identifier"
@@ -1438,6 +1446,8 @@ website:
                         href: datamodel/slots/observed.qmd
                       - text: "ode_solver"
                         href: datamodel/slots/ode_solver.qmd
+                      - text: "of"
+                        href: datamodel/slots/of.qmd
                       - text: "on_region"
                         href: datamodel/slots/on_region.qmd
                       - text: "ontology Identifier"
@@ -1638,6 +1648,8 @@ website:
                         href: datamodel/slots/score.qmd
                       - text: "seed"
                         href: datamodel/slots/seed.qmd
+                      - text: "seed_offset"
+                        href: datamodel/slots/seed_offset.qmd
                       - text: "segmentation"
                         href: datamodel/slots/segmentation.qmd
                       - text: "sel"
@@ -1764,6 +1776,8 @@ website:
                         href: datamodel/slots/target_network.qmd
                       - text: "target_parameter"
                         href: datamodel/slots/target_parameter.qmd
+                      - text: "target_range"
+                        href: datamodel/slots/target_range.qmd
                       - text: "target_regions"
                         href: datamodel/slots/target_regions.qmd
                       - text: "target_structure"
@@ -1918,6 +1932,8 @@ website:
                         href: datamodel/enums/AxisReductionStatistic.qmd
                       - text: "Boundary Condition Type"
                         href: datamodel/enums/BoundaryConditionType.qmd
+                      - text: "Comparison Operator"
+                        href: datamodel/enums/ComparisonOperator.qmd
                       - text: "Connectivity Rule"
                         href: datamodel/enums/ConnectivityRule.qmd
                       - text: "Continuation Algorithm"
@@ -1970,6 +1986,8 @@ website:
                         href: datamodel/enums/ParallelMode.qmd
                       - text: "Physical Dimension"
                         href: datamodel/enums/PhysicalDimension.qmd
+                      - text: "Procedure Step Type"
+                        href: datamodel/enums/ProcedureStepType.qmd
                       - text: "Programming Language Enum"
                         href: datamodel/enums/ProgrammingLanguageEnum.qmd
                       - text: "Reduction Type"

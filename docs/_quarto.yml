@@ -116,6 +116,14 @@ fig-align: center
 
 # Cache notebook execution results. 'auto' only re-executes when source changes.
 # Cached results stored in _freeze/ — commit this directory to share across machines.
+# Pin the Jupyter kernel project-wide. Without this, a page that omits
+# `jupyter:` in its front matter gets whichever kernel Quarto happens to pick
+# first from the user's registered kernelspecs — on a machine with unrelated
+# kernels registered that can be an entirely different virtualenv, which then
+# fails with ModuleNotFoundError for tvbo's own dependencies. Pinning makes the
+# build reproducible regardless of what a developer has installed.
+jupyter: python3
+
 execute:
     enabled: true
     cache: true

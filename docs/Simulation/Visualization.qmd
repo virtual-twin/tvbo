@@ -193,11 +193,29 @@ not supply — the coupling inputs. By default these are evaluated at $0$, givin
 **isolated-node** field; pass `inputs={"c_glob": ...}` to draw the flow at a fixed
 coupling drive, as on the right above.
 
+`plot_graph` has two rendering backends. The default `networkx` one is shown above;
+`format="bsplot"` draws the same graph through bsplot's edge renderer, which gives curved
+edges and the house styling:
+
+```{python}
+#| label: fig-graph-bsplot
+#| fig-cap: "The same thresholded connectome through the bsplot backend."
+#| code-fold: true
+# The bsplot backend builds its own Figure outside pyplot's registry, so return it
+# rather than calling plt.show() — which would have nothing to display.
+net.plot_graph(
+    format="bsplot",
+    threshold_percentile=98,
+    node_labels=False,
+    edge_labels=False,
+)
+```
+
 ::: {.callout-note}
-## The bsplot graph backend
-`plot_graph(format="bsplot")` currently raises `NameError: name 'colormaps' is not
-defined` from inside `bsplot/graph/edges.py`. The default `format="networkx"` backend
-shown above is unaffected.
+## Requires bsplot ≥ 0.0.8
+Older bsplot releases raise `NameError: name 'colormaps' is not defined` from
+`bsplot/graph/edges.py`, which lacked the matplotlib colormap-registry import. If you hit
+that, upgrade bsplot; the default `networkx` backend is unaffected either way.
 :::
 
 ## Related
