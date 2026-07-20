@@ -80,13 +80,19 @@ def locate_core_types(dest: str) -> str:
     import pyneuroml
 
     libdir = os.path.join(os.path.dirname(pyneuroml.__file__), "lib")
-    jars = sorted(glob.glob(os.path.join(libdir, "jNeuroML-*-jar-with-dependencies.jar")))
+    jars = glob.glob(os.path.join(libdir, "jNeuroML-*-jar-with-dependencies.jar"))
     if not jars:
         raise FileNotFoundError(
             f"No jNeuroML-*-jar-with-dependencies.jar under {libdir}. "
             "Install the neuroml extra: pip install tvbo[neuroml]."
         )
-    jar = jars[-1]
+
+    def _version(path):
+        """Numeric version tuple, so 0.14.0 sorts above 0.9.0 (lexically it does not)."""
+        m = re.search(r"jNeuroML-([0-9]+(?:\.[0-9]+)*)", os.path.basename(path))
+        return tuple(int(p) for p in m.group(1).split(".")) if m else ()
+
+    jar = max(jars, key=_version)
     with zipfile.ZipFile(jar) as z:
         members = [n for n in z.namelist() if n.startswith("NeuroML2CoreTypes/") and n.endswith(".xml")]
         z.extractall(dest, members=members)
