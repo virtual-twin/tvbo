@@ -398,6 +398,43 @@ def test_per_experiment_partition_reaches_its_own_rule():
     assert 'slurm_partition="short"' not in long_rule
 
 
+def test_snakemake_rule_activates_declared_venv_and_modules():
+    """A rule's shell runs in a clean shell on the compute node.
+
+    The kit is emitted by one interpreter and executed by another, so a declared
+    `venv:`/`modules:` must be activated inside the rule or the job dies on
+    `tvbo: command not found` seconds after it starts. The Slurm emitter has always
+    done this; the Snakemake emitter silently ignored both.
+    """
+    from tvbo.cli.workflow import _render_template
+
+    smk = _render_template(
+        "snakemake/study.smk.mako", block={}, bundled_code=False,
+        exp_plans=[{"key": "30", "rule_name": "exp_30", "spec_relpath": "spec/30/experiment.yaml",
+                    "select": None, "backend": "tvboptim", "out_dir": "results",
+                    "result_stem": "result", "container": None, "axes": [], "depends_on": [],
+                    "block": {"venv": "/work/env", "modules": ["python/3.12"],
+                              "setup": ["export FOO=1"]}}])
+    shell = smk[smk.index("    shell:"):]
+    assert "module load python/3.12 && " in shell
+    assert "source /work/env/bin/activate && " in shell
+    # Order matters: modules, then venv, then setup.
+    assert shell.index("module load") < shell.index("source /work/env") < shell.index("export FOO=1")
+
+
+def test_venv_path_with_a_space_is_shell_quoted():
+    """An unquoted path splits into two shell words and `source` reads the wrong file."""
+    from tvbo.cli.workflow import _render_template
+
+    smk = _render_template(
+        "snakemake/study.smk.mako", block={}, bundled_code=False,
+        exp_plans=[{"key": "30", "rule_name": "exp_30", "spec_relpath": "spec/30/experiment.yaml",
+                    "select": None, "backend": "tvboptim", "out_dir": "results",
+                    "result_stem": "result", "container": None, "axes": [], "depends_on": [],
+                    "block": {"venv": "/work/my env"}}])
+    assert "source '/work/my env'/bin/activate && " in smk
+
+
 def test_experiment_override_does_not_clear_inherited_list():
     """An override replaces only the slots its author filled in.
 

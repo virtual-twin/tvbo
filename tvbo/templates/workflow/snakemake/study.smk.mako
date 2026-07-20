@@ -46,17 +46,29 @@ def _expand_kwargs(ep):
     return ", ".join("%s=%s" % (a["name"], ep["rule_name"].upper() + "_" + a["name"].upper())
                      for a in ep["axes"])
 
+import shlex
+
 from tvbo.cli._workflow import mem_mb as _mem_mb, runtime_minutes as _runtime_min
+
+def _activation(block):
+    """Shell lines that put the declared environment in place, in activation order.
+
+    A rule's shell is a fresh non-login shell on the compute node and inherits
+    nothing from the environment that emitted the kit, so ``modules``/``venv`` are
+    activated per rule ahead of the verbatim ``setup`` lines. The venv path is
+    shell-quoted; ``setup`` is passed through as authored.
+    """
+    lines = ["module load %s" % m for m in (block.get("modules") or [])]
+    if block.get("venv"):
+        lines.append("source %s/bin/activate" % shlex.quote(str(block["venv"])))
+    return lines + list(block.get("setup") or [])
 
 def _rule_resources(block):
     """Intrinsic per-rule resources for the Snakemake job → dict of {key: python-literal}.
 
     The SLURM executor reads cpus_per_task/mem_mb/runtime plus slurm_partition and
-    slurm_account. Partition and account are emitted PER RULE, not only as the
-    profile's default-resources: they are declarable per experiment
-    (``workflow_overrides.slurm.partition``), and a study whose long experiment needs
-    a longer-walltime partition than its first experiment would otherwise be submitted
-    to the wrong one and killed at that partition's cap. The profile keeps them as the
+    slurm_account. Partition and account are per-rule because they are declarable per
+    experiment (``workflow_overrides.slurm.partition``); the profile carries the
     study-wide default for rules that declare none. options[] passes through verbatim.
     """
     r = {}
@@ -153,7 +165,7 @@ rule ${ep["rule_name"]}:
 % endfor
 % endif
     shell:
-% for _line in (_b.get("setup") or []):
+% for _line in _activation(_b):
         ${repr(_line + " && ")}
 % endfor
 % if context.get("bundled_code"):
