@@ -373,12 +373,17 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   ct_has_i = ct.get('has_i_exposure', False)
   ct_has_v = ct.get('has_v_req', False)
   ct_ext_evs = set(ct.get('external_event_names', []))
+  ct_synapse_extends = ct.get('synapse_extends', 'baseSynapse')
+  ct_syn_inherited = set(ct.get('synapse_inherited_params', ()))
+  ct_exposure_names = set(ct.get('synapse_exposure_names', ('i',)))
 %>\
 
-  <!-- ── Synapse ComponentType: ${ct_dyn_id} (extends baseSynapse) ── -->
-  <ComponentType name="${ct_dyn_id}" extends="baseSynapse">
+  <!-- ── Synapse ComponentType: ${ct_dyn_id} (extends ${ct_synapse_extends}) ── -->
+  <ComponentType name="${ct_dyn_id}" extends="${ct_synapse_extends}">
 % for pname, p in ct_params.items():
+% if pname not in ct_syn_inherited:
     <Parameter name="${pname}" dimension="${ct_lems_dim(getattr(p, 'unit', None))}"/>
+% endif
 % endfor
 % for sv_name in ct_svs:
     <Parameter name="${sv_name}_0" dimension="${ct_lems_dim(getattr(ct_svs[sv_name], 'unit', None))}"/>
@@ -400,14 +405,14 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   rhs = getattr(eq, 'rhs', None) if eq else None
   dv_dim = ct_lems_dim(getattr(dv, 'unit', None))
   pw_cases = ct_parse_piecewise(rhs) if rhs else None
-  is_i = (dv_name == 'i')
+  dv_exposure = ' exposure="%s"' % dv_name if dv_name in ct_exposure_names else ''
 %>\
 % if rhs:
 % if pw_cases:
 % if len(pw_cases) == 1 and pw_cases[0][0] is None:
-      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ ' exposure="i"' if is_i else ''} value="${pw_cases[0][1]}"/>
+      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${dv_exposure} value="${pw_cases[0][1]}"/>
 % else:
-      <ConditionalDerivedVariable name="${dv_name}" dimension="${dv_dim}"${ ' exposure="i"' if is_i else ''}>
+      <ConditionalDerivedVariable name="${dv_name}" dimension="${dv_dim}"${dv_exposure}>
 % for (cond_str, val_str) in pw_cases:
 % if cond_str is not None:
         <Case condition="${cond_str}" value="${val_str}"/>
@@ -418,7 +423,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
       </ConditionalDerivedVariable>
 % endif
 % else:
-      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ ' exposure="i"' if is_i else ''} value="${ct_lems_expr(rhs)}"/>
+      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${dv_exposure} value="${ct_lems_expr(rhs)}"/>
 % endif
 % endif
 % endfor
