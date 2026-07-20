@@ -1,0 +1,258 @@
+---
+title: Distributed Workflows (HPC)
+sidebar: usage
+# Redirect the pre-restructure URL so existing links keep resolving.
+aliases:
+  - /Usage/DistributedWorkflows.html
+---
+
+Run a parameter sweep across a cluster by emitting a self-contained kit for a
+workflow engine (Slurm, Snakemake, or Nextflow). The kit is declared in the
+experiment itself, so the same YAML reproduces the run on any machine.
+
+## Two tiers of parallelism
+
+A sweep is distributed on two independent tiers. Keeping them apart is the key
+to using CPU and GPU nodes well.
+
+| Tier | Knob | What it does |
+|------|------|--------------|
+| **Inter-node** | `workflow.distribute.chunk` | Splits the sweep into *N* independent scheduler tasks (a Slurm array). Each task runs on its own node. |
+| **Intra-node** | `explorations.<name>.n_parallel` and `parallel_mode` | Batches cells inside one task with `vmap`, and across the local GPUs of that task with `pmap`. |
+
+`pmap` spans only the devices visible to one task. It never crosses nodes:
+inter-node parallelism is always the scheduler fan-out (`distribute.chunk`), not
+`pmap`. On a one-GPU or CPU task, `pmap` degenerates to `vmap`.
+
+## The `workflow` block
+
+Declare distribution on the study (defaults for every experiment) or on a single
+experiment (refines the study block by field). A Kuramoto grid on Slurm:
+
+```yaml
+workflow:
+  distribute:
+    chunk: 40                     # 40 array shards; task i runs the Space[i::40] slice
+  slurm:
+    partition: medium
+    cpus_per_task: 2
+    mem: 32G
+    time: "24:00:00"
+    env:
+      - {name: XLA_PYTHON_CLIENT_PREALLOCATE, value: "false"}
+      - {name: OMP_NUM_THREADS, value: "1"}
+    options:
+      - {name: qos, value: normal}   # any further #SBATCH directive
+```
+
+`WorkflowEngineConfig` names the directives the three engines read (Slurm:
+`partition`, `account`, `gres`, `array_chunk`, `mail_*`; Snakemake: `cores`;
+Nextflow: `executor`, `queue`) plus the shared resource fields `cpus_per_task`,
+`mem`, and `time`. Anything else goes through `options` and is emitted verbatim,
+so a new scheduler flag needs no schema change.
+
+`env` and `options` are name-keyed lists. A `--set slurm.env.X=v` at emit time
+overrides one entry and keeps the rest, rather than replacing the whole list.
+Values in `env` are shell-quoted automatically.
+
+Both render in every engine's native form: `env` becomes shell `export` lines
+ahead of the task command, while `options` becomes Slurm `#SBATCH --<name>=<value>`
+directives, Snakemake `resources:` entries, or Nextflow `process.<name>`
+assignments. Name each option for the target engine (e.g. `slurm_partition` for
+Snakemake, `clusterOptions` for Nextflow).
+
+## The kit lifecycle: emit → submit → finalize
+
+A kit passes through three `tvbo workflow` subcommands. Each stands alone, so you
+can emit on a laptop, ship the kit, and submit on a login node.
+
+```bash
+# 1. EMIT — write a self-contained kit (spec + network + backend script + run.sbatch)
+tvbo workflow slurm study.yaml --experiment <id> -o kit/
+
+# 2. SUBMIT — run an already-emitted kit as a unit (no recipe, no re-emit)
+tvbo workflow submit kit/
+
+# 3. FINALIZE — only for a sharded (multi-task) run: reassemble the shards
+tvbo workflow finalize kit/results --compress
+```
+
+### Emit
+
+`tvbo workflow <engine>` (`slurm`, `snakemake`, `nextflow`) freezes the run. Override
+any field at emit time with `--set`, e.g. `--set slurm.mem=64G` or
+`--set distribute.chunk=8`. The kit is a self-contained provenance record:
+`spec/<name>.yaml` is the **effective** config after merging study, experiment, and
+every `--set`, next to the connectome (`spec/network.yaml` + `spec/network.h5`) and
+any custom callable/builder modules the recipe references, bundled into `code/`.
+Re-emitting from the frozen spec reproduces the run with no flags:
+
+```bash
+tvbo workflow slurm kit/spec/<name>.yaml        # same partition, chunk, env, …
+```
+
+### Submit
+
+`tvbo workflow submit kit/` runs a bundled kit **as a unit**. It auto-detects the
+engine from the kit's contents (`run.sbatch` → Slurm, `Snakefile` → Snakemake,
+`main.nf` → Nextflow) and shells out the scheduler command. Because the kit is
+self-contained, this is the whole story: the generated `run.sbatch` already exports
+`PYTHONPATH="code:…"` so the bundled modules resolve on the compute node — you never
+set it yourself. This is why a kit is bundled: emit once, ship it, and run it
+anywhere with one command.
+
+`submit` also accepts a **packaged archive** of a kit (`.tar.gz` / `.tgz` / `.tar` /
+`.zip`). It extracts next to the archive and submits the kit inside, so a shipped
+kit needs no manual unzip; a re-submit reuses the already-extracted kit rather than
+clobbering its `results/`.
+
+```bash
+tvbo workflow submit kit/                          # a kit directory
+tvbo workflow submit koller2024_exp40_gpu.tar.gz   # …or its packaged archive (auto-extracts)
+tvbo workflow submit kit/ --array 0                # one shard as a smoke test
+tvbo workflow submit kit/ --array 0-3 --array-throttle 1   # 4 tasks, 1 at a time
+tvbo workflow submit kit/ --engine slurm           # force the engine if ambiguous
+```
+
+The submitting host needs only the scheduler command (`sbatch` / `snakemake` /
+`nextflow`) on `$PATH`; emission and submission themselves run in-process. The
+**compute node** that executes each task needs `tvbo` installed — provision it from
+the kit's `requirements.txt` / `environment.yml`.
+
+### Two ways to reach the cluster
+
+The kit lifecycle supports two deployment styles; pick by where `tvbo` and the
+connectome data already live.
+
+1. **Ground truth on the cluster.** Put the full `SimulationStudy` / `Simulation‑
+   Experiment` YAML (plus the networks it resolves, or db access) on the cluster and
+   emit there: `tvbo workflow run slurm study.yaml --experiment <id> <--set …>`. Best
+   when the cluster already has tvbo and the data, and you want to sweep straight
+   from the recipe.
+2. **Package a kit, then ship it.** Emit locally, package the kit dir, and copy the
+   single archive over. The compute nodes never see the recipe or the db — the kit
+   carries the frozen spec, the baked `network.h5`, and the code. Submit the archive
+   directly, no unzip:
+
+   ```bash
+   # locally
+   tvbo workflow slurm study.yaml --experiment <id> <--set …> -o kit/
+   tar czf kit.tar.gz -C kit/.. kit
+   scp kit.tar.gz <cluster>:~
+   # on the cluster
+   tvbo workflow submit ~/kit.tar.gz
+   ```
+
+   Best when the cluster lacks the recipe or the connectome database, or when you
+   want a frozen, shippable provenance artefact.
+
+Emit and submit together in one call when you are already on the login node:
+
+```bash
+tvbo workflow run slurm study.yaml --experiment <id>   # emit + submit
+tvbo run study.yaml --engine slurm --experiment <id>   # equivalent via `tvbo run`
+```
+
+### Finalize
+
+A multi-task run (`distribute.chunk > 1`) writes one shard per array task. `tvbo
+workflow finalize <results-dir>` merges them into a single result keyed by the
+sweep coordinates (`--compress` gzip-deflates the HDF5). A single-task run
+(`chunk: 1`, the GPU profile below) writes the whole result directly, so it needs
+no finalize step.
+
+## Per-subject dataset fan-out
+
+When an experiment fits against **per-subject** empirical data, it declares a
+`dataset:` block and an observation whose `source` is `dataset.subject.<measure>`
+(the target selected by a BIDS `query` under `dataset.bids_root`). The planner
+lowers this to one array task per subject: `$SLURM_ARRAY_TASK_ID` indexes the
+subject list, and each task resolves that subject's target before its fit.
+
+```yaml
+dataset:
+  dataset_id: hcpya
+  bids_root: /data/hcp/functional_connectomes   # per-subject FC tree
+  subjects: [100206, 100307, 100408]            # optional: a curated subset (else: all)
+observations:
+  empirical_fc:
+    source: [dataset.subject.fc]
+    query: {atlas: HCPMMP1, desc: FCavg, suffix: relmat}
+    reconcile: by_label
+```
+
+An explicit `dataset.subjects` list **scopes** the fan-out — one entry for a
+single-subject kit, a handful for a pilot, omitted to sweep the whole cohort.
+
+The per-subject data itself reaches the compute node one of two ways:
+
+**Reference it (large cohorts).** By default the kit records the absolute
+`dataset.bids_root`. That tree is machine-specific, so stage it on the cluster and
+point each task at it with `$TVBO_BIDS_ROOT` — the `run.sbatch` reads it with no
+hand-edit (unset → keeps the baked value):
+
+```bash
+export TVBO_BIDS_ROOT=/cephfs/hcp/functional_connectomes
+tvbo workflow submit cohort_kit.tar.gz
+```
+
+**Bundle it (self-contained kit).** `--bundle-dataset` copies each enumerated
+subject's target (sidecar **+** its payload) into `spec/dataset/` and rewrites
+`dataset.bids_root` to a relative path that resolves against the frozen spec. The
+kit then carries exactly the files its fan-out consumes — no upload, no
+`$TVBO_BIDS_ROOT`. It resolves **from the spec itself**: the observation's own
+`query` (`{atlas: HCPMMP1, desc: FCavg, suffix: relmat}` above) already names the
+file, so no extra flags are needed:
+
+```bash
+tvbo workflow slurm study.yaml --experiment 30 --bundle-dataset --pack -o cohort_kit
+# → cohort_kit.tar.gz carries spec/dataset/sub-<id>/… for the scoped subjects only
+```
+
+`--bundle-select KEY=VALUE` is only an override for when a subject directory holds
+**several** files matching the query — the bundler otherwise raises a clear
+"ambiguous … add entities to disambiguate" error naming the candidates, so you add
+just the entity that separates them:
+
+```bash
+tvbo workflow slurm study.yaml --experiment 30 \
+  --bundle-dataset --bundle-select acquisition=run1 --pack -o cohort_kit
+```
+
+A *requested* bundle that cannot be resolved (a missing file, an over-tight or
+mismatched `--bundle-select`) fails loudly at emit time — a self-contained kit is
+never shipped silently pointing at data it does not carry.
+
+## CPU and GPU: pick the tier that fits the resource
+
+The two tiers trade off against node availability.
+
+**CPU** nodes are plentiful, so fan the grid across many of them. Pin JAX to a
+single host device so each task batches with `vmap`:
+
+```yaml
+workflow:
+  distribute: {chunk: 40}
+  slurm:
+    partition: medium
+    cpus_per_task: 2
+    mem: 32G
+    env:
+      - {name: XLA_FLAGS, value: "--xla_force_host_platform_device_count=1"}
+```
+
+**GPU** nodes are scarce, so keep the whole grid on one node and batch it
+on-device with `vmap` (`chunk: 1`). Splitting into 40 array tasks here would
+claim 40 GPUs. Let JAX grow GPU memory on demand:
+
+```bash
+tvbo workflow slurm study.yaml --experiment <id> \
+  --set distribute.chunk=1 \
+  --set slurm.partition=gpu --set slurm.gres=gpu:1 \
+  --set slurm.env.XLA_PYTHON_CLIENT_PREALLOCATE=false
+```
+
+If a single `vmap` batch exceeds VRAM, lower `explorations.<name>.n_parallel`
+(the batch size) or set `parallel_mode: lax_map`, which runs the batch
+sequentially with memory bounded by one cell. A multi-GPU node uses all its
+GPUs through `pmap` automatically (`--set slurm.gres=gpu:2`).

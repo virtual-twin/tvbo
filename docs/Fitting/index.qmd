@@ -1,0 +1,47 @@
+---
+title: "Fitting & Inference"
+description: "Fit a model to empirical data, tune it, and infer parameters — with the theory that explains when it works."
+---
+
+Simulating a model is one thing; making it *match data* is another. This topic covers
+fitting model parameters to empirical measurements, tuning a network into a target
+regime, and inferring parameter distributions — plus the background on when gradient
+optimization is trustworthy.
+
+These workflows run on the **tvboptim** JAX backend (JIT-compiled, autodiff,
+GPU-capable). If you arrived wanting to know how TVBO relates to tvboptim as a *tool*,
+see [coming from tvboptim](../Interoperability/tvboptim/index.qmd).
+
+## Do
+
+| Goal | Guide |
+|---|---|
+| Match empirical BOLD functional connectivity | [Reduced Wong-Wang](RWW_tvboptim.qmd) |
+| Match a MEG frequency gradient | [Jansen-Rit](JR_tvboptim.qmd) |
+| Drive regions to a target firing rate (E/I balance) | [EI tuning](EI_Tuning_tvboptim.qmd) |
+| Estimate posteriors over parameters | [Bayesian inference](Bayesian_tvboptim.qmd) |
+| Trade off competing objectives | [Multi-objective (Hopf-Pareto)](Hopf_Pareto_tvboptim.qmd) |
+| Fit conduction speed / delays | [Delay & speed synchronization](Delay_Speed_Synchronization_tvboptim.qmd) |
+
+## Understand
+
+- [Model fitting](ModelFitting.qmd) — how losses and gradients work in TVBO, and what
+  makes a model differentiable.
+- [Gradient stability & truncated BPTT](TBPTT_tvboptim.qmd) — why gradients through long
+  chaotic trajectories explode, and what truncation buys you.
+
+## Look up
+
+- [`Optimization`](../datamodel/classes/Optimization.qmd) ·
+  [`Inference`](../datamodel/classes/Inference.qmd) ·
+  [`LossFunction`](../datamodel/classes/LossFunction.qmd) ·
+  [`Algorithm`](../datamodel/classes/Algorithm.qmd)
+- [Loss function specification](../Specification/LossFunction.qmd) ·
+  [Algorithms (FIC, EIB)](../Specification/Algorithms.qmd)
+
+## Related
+
+- [Simulation & observation](../Simulation/ObservationModels.qmd) — the observations you fit
+  *against* (FC, BOLD, spectra).
+- [Bifurcation & stability](../Bifurcation/index.qmd) — where a fitted parameter set sits
+  in the model's dynamical regime.

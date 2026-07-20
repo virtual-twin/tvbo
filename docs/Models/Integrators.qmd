@@ -1,0 +1,49 @@
+---
+title: "Integrators"
+subtitle: "Numerical integration schemes for ODE and SDE simulation"
+# Redirect the pre-restructure URL so existing links keep resolving.
+aliases:
+  - /Usage/Integrators.html
+---
+
+::: {.callout-note}
+## Placeholder
+This page is under construction.
+:::
+
+## Overview
+
+The integrator determines how differential equations are stepped forward in time.
+TVBO supports deterministic and stochastic integration schemes.
+
+## Available Integrators
+
+| Integrator | Order | Stochastic | Use Case |
+|------------|-------|------------|----------|
+| Euler | 1 | No | Fast, simple |
+| Heun | 2 | No | Better accuracy |
+| EulerMaruyama | 1 | Yes | Additive noise |
+| HeunStochastic | 2 | Yes | Multiplicative noise |
+
+## YAML Specification
+
+```yaml
+integration:
+  integrator:
+    name: Heun
+  dt: 0.1
+  duration: 1000
+```
+
+## Choosing an Integrator
+
+- **Deterministic simulations**: Use `Heun` for a good accuracy/speed trade-off
+- **Stochastic simulations**: Use `HeunStochastic` for multiplicative noise,
+  `EulerMaruyama` for additive noise
+- **Step size (`dt`)**: Smaller is more accurate but slower
+
+## See Also
+
+- [Noise & Stochastic Integration](Noise.qmd) — configuring noise
+- [Simulation Experiments](../Simulation/SimulationExperiments.qmd) — full experiment setup
+- [`Integrator`](../datamodel/classes/Integrator.qmd) — data model reference

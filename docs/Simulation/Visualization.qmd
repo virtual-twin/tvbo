@@ -1,0 +1,208 @@
+---
+title: "Visualization"
+subtitle: "Built-in plots for results, networks, and models"
+jupyter: python3
+# Redirect the pre-restructure URL so existing links keep resolving.
+aliases:
+  - /Usage/Visualization.html
+---
+
+Most objects in TVBO know how to draw themselves. A result can plot its own time series,
+a network its connectivity, a model its trajectories — so the common views need no
+plotting code at all. Everything below returns ordinary Matplotlib objects, so any figure
+can be captured and restyled.
+
+```{python}
+#| label: setup
+#| code-fold: true
+#| code-summary: "Run a small experiment to plot"
+import warnings; warnings.filterwarnings("ignore")
+import numpy as np
+import matplotlib.pyplot as plt
+import bsplot
+from tvbo import SimulationExperiment, Network, Dynamics, Coupling
+
+bsplot.style.use("tvbo")
+
+res = SimulationExperiment.from_string("""
+label: "Visualization demo"
+dynamics:
+  iri: tvbo:Generic2dOscillator
+network:
+  number_of_nodes: 8
+integration:
+  method: Heun
+  step_size: 0.1
+  duration: 800.0
+  transient_time: 100.0
+""").run()
+
+sim = res.integration
+print("result:", dict(zip(sim.data.dims, sim.data.shape)))
+```
+
+## Plotting a result
+
+`sim.plot()` draws the simulation. A `type` argument switches the view:
+
+| `type` | Shows |
+|---|---|
+| `timeseries` *(default)* | state variables against time |
+| `raster` | all nodes as an image — good for many regions |
+| `power_spectrum` | frequency content |
+| `eeg` | stacked, offset traces in the EEG idiom |
+
+```{python}
+#| label: fig-types
+#| fig-cap: "The same simulation in four built-in views."
+#| code-fold: true
+fig, axes = plt.subplots(2, 2, figsize=(11, 6))
+for ax, kind in zip(axes.ravel(), ["timeseries", "raster", "power_spectrum", "eeg"]):
+    sim.plot(type=kind, ax=ax)
+    ax.set_title(kind, loc="left", fontsize=10)
+plt.tight_layout()
+plt.show()
+```
+
+Passing `ax=` places a plot into an existing axis, which is how the panel above is built.
+Without it, each call makes its own figure.
+
+## Plotting a network
+
+A connectome has several standard views. `plot_matrix()` is the quickest look; the
+per-property helpers take an explicit axis so they can be composed.
+
+```{python}
+#| label: fig-network
+#| fig-cap: "Structural connectivity of the Desikan-Killiany connectome: streamline counts (log-scaled) and tract lengths."
+#| code-fold: true
+net = Network.from_db(atlas="DesikanKilliany", rec="dTOR")
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+net.plot_weights(axes[0], log=True)     # note: these take `ax` positionally
+net.plot_lengths(axes[1])
+axes[0].set_title("weights (log)", fontsize=10)
+axes[1].set_title("tract lengths", fontsize=10)
+plt.tight_layout()
+plt.show()
+```
+
+`plot_overview()` assembles a multi-panel summary — one row per edge property, each
+pairing a brain surface with its matrix — and `plot_brain_surface()` renders the surface
+alone. Both are heavier calls that build their own figure:
+
+```python
+net.plot_overview(log_weights=True)   # brain surface + matrices, one row per property
+net.plot_brain_surface()              # surface only
+```
+
+## Plotting a model
+
+A `Dynamics` can draw its own trajectories. Passing state-variable names selects the
+projection — one name gives a time course, two give a phase portrait:
+
+```{python}
+#| label: fig-dynamics
+#| fig-cap: "The Generic2dOscillator drawn by the model itself: V against time, and the V-W phase plane."
+#| code-fold: true
+d = Dynamics.from_db("Generic2dOscillator")
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 3.6))
+d.plot("V", ax=axes[0])
+d.plot("V", "W", ax=axes[1])
+axes[0].set_title("V(t)", loc="left", fontsize=10)
+axes[1].set_title("phase plane", loc="left", fontsize=10)
+plt.tight_layout()
+plt.show()
+```
+
+Two structural views are also available, useful when a model is unfamiliar:
+
+```python
+d.plot_dependency_tree()   # how variables and parameters depend on each other
+d.plot_ontology()          # the model's place in the ontology
+```
+
+A coupling likewise plots its own transfer function — see
+[coupling functions](../Networks/CouplingFunctions.qmd) for what that curve means:
+
+```python
+Coupling.from_db("Sigmoidal").plot()
+```
+
+## Restyling
+
+Every helper returns Matplotlib objects, so nothing is a dead end: capture the axis and
+treat it like any other plot.
+
+```{python}
+#| label: fig-restyle
+#| fig-cap: "A built-in plot, restyled after the fact."
+#| code-fold: true
+fig, ax = plt.subplots(figsize=(9, 2.8))
+sim.plot(type="timeseries", ax=ax)
+ax.set_title("Generic2dOscillator, 8 nodes", loc="left")
+ax.set_xlabel("time (ms)")
+ax.grid(alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+`bsplot.style.use("tvbo")` (applied at the top of this page) sets the house style for
+every subsequent figure.
+
+## The network as a graph
+
+`plot_graph()` draws the connectome as a node-link diagram rather than a matrix, which
+makes hub structure legible. Thresholding keeps the strongest edges:
+
+```{python}
+#| label: fig-graph
+#| fig-cap: "The Desikan-Killiany connectome as a graph, showing only the strongest 2% of edges. Node size and colour follow in-strength."
+#| code-fold: true
+fig, ax = plt.subplots(figsize=(7, 6))
+net.plot_graph(
+    ax=ax,
+    threshold_percentile=98,     # strongest 2% of edges
+    node_labels=False,
+    edge_labels=False,
+)
+plt.tight_layout()
+plt.show()
+```
+
+## Vector fields and phase planes
+
+For a two-variable model, `vector_field` draws the flow the trajectory moves through:
+
+```{python}
+#| label: fig-vector
+#| fig-cap: "Vector field of the Generic2dOscillator with the simulated trajectory overlaid. Coupling inputs are evaluated at zero — the isolated-node flow."
+#| code-fold: true
+fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+sim.plot(type="vector_field", ax=axes[0])
+axes[0].set_title("isolated node", loc="left", fontsize=10)
+sim.plot(type="vector_field", inputs={"c_glob": 0.3}, ax=axes[1])
+axes[1].set_title("with coupling drive $c_{glob}=0.3$", loc="left", fontsize=10)
+plt.tight_layout()
+plt.show()
+```
+
+A phase plane needs values for anything the model's equations expect but the plane does
+not supply — the coupling inputs. By default these are evaluated at $0$, giving the
+**isolated-node** field; pass `inputs={"c_glob": ...}` to draw the flow at a fixed
+coupling drive, as on the right above.
+
+::: {.callout-note}
+## The bsplot graph backend
+`plot_graph(format="bsplot")` currently raises `NameError: name 'colormaps' is not
+defined` from inside `bsplot/graph/edges.py`. The default `format="networkx"` backend
+shown above is unaffected.
+:::
+
+## Related
+
+- [The experiment result](Results.qmd) — the object being plotted, and how to index it.
+- [Bifurcation & stability](../Bifurcation/index.qmd) — phase portraits and continuation diagrams.
+- [Networks & connectomes](../Networks/index.qmd) — where connectomes come from.
+- [Parameter exploration](ParameterExploration.qmd) — plotting a swept grid.

@@ -1,0 +1,136 @@
+---
+title: "7. Numerical Continuation"
+sidebar: usage
+jupyter: python3
+# Redirect the pre-restructure URL so external links keep resolving.
+aliases:
+  - /Usage/BifurcationTutorial/07-NumericalContinuation.html
+---
+
+The previous chapters used `SimulationExperiment.run("auto-07p" | "bifurcationkit.jl" | "pyrates-bifurcation")` as a black box. This chapter explains
+*what those backends actually do* and which numerical machinery TVBO routes
+your YAML system through.
+
+## Equilibria as roots
+
+Continuation tracks **equilibria** of $\dot x = f(x, a)$, i.e. solutions of
+
+$$
+f(x, a) = 0
+$$
+
+as the parameter $a$ varies. For each $a$ this is a nonlinear root-finding
+problem in $x$. The basic tool is **Newton's method**:
+
+$$
+x^{(k+1)} = x^{(k)} - J(x^{(k)}, a)^{-1} f(x^{(k)}, a),
+\qquad J = \partial f / \partial x.
+$$
+
+Newton converges quadratically when started close enough to a root and when
+$J$ is non-singular. *Both conditions fail at fold points* — exactly where
+bifurcations occur.
+
+## Pseudo-arclength continuation
+
+To get past folds (where $J$ becomes singular and a naive parameter sweep
+fails), continuation methods reformulate the problem so that the *arclength*
+$s$ along the solution branch — not the parameter $a$ — is the independent
+variable. The augmented system is:
+
+$$
+\begin{cases}
+f(x, a) = 0 \\[4pt]
+\dot x(s)^\top \,(x - x_{\text{prev}}) + \dot a(s)\,(a - a_{\text{prev}}) - \Delta s = 0
+\end{cases}
+$$
+
+The second equation is the **pseudo-arclength constraint**: it pins the
+*projection* of the new point onto the previous tangent vector to a fixed
+step $\Delta s$. The augmented Jacobian remains non-singular *through* the
+fold, allowing the solver to turn around smoothly.
+
+## Predictor-corrector
+
+Each continuation step has two stages:
+
+1. **Predictor** — extrapolate along the tangent of the previous solution:
+   $\;(x_p, a_p) = (x_{\text{prev}}, a_{\text{prev}}) + \Delta s\,(\dot x, \dot a)$.
+2. **Corrector** — Newton-iterate on the augmented system until convergence.
+
+This is the **pseudo-arclength predictor-corrector** algorithm at the heart
+of AUTO-07p, MATCONT, BifurcationKit.jl, and (indirectly via AUTO) PyCoBi.
+
+## Detecting bifurcations
+
+Each backend monitors **test functions** along the branch:
+
+| Bifurcation | Test function | Meaning |
+|-------------|---------------|---------|
+| Fold (saddle-node, `LP`) | $\det J = 0$       | one real eigenvalue crosses 0 |
+| Hopf (`HB`)              | $\mathrm{Re}\,\lambda_{1,2}(J) = 0$, $\mathrm{Im} \neq 0$ | complex pair crosses imaginary axis |
+| Branch point (`BP`)      | rank drop in $\big[\,J\;\partial f/\partial a\,\big]$ | branches intersect |
+| Period-doubling (`PD`)   | Floquet $\mu = -1$ | period of a limit cycle doubles |
+| Torus / Neimark-Sacker (`TR`) | Floquet $|\mu| = 1$, $\mu \neq \pm 1$ | quasiperiodic torus emerges |
+
+These appear as **labelled markers** on every `BifurcationResult.plot()`
+output in this tutorial. The `BIF_STYLES` registry in
+`tvbo/analysis/bifurcation.py` defines the marker shape and colour for each
+type — *consistently across all backends*.
+
+## Branch switching
+
+When a `BP` is detected, continuation can *switch* onto the new branch by
+restarting the Newton corrector with the eigenvector of the singular
+Jacobian as the search direction. In TVBO this is requested declaratively
+via `branches:` in the `Continuation` YAML:
+
+```yaml
+branches:
+  - name: po_from_hopf
+    source_point: "hopf:all"
+    bothside: true
+```
+
+`source_point` accepts:
+
+* `"hopf:all"` — switch onto the periodic orbit from every detected Hopf.
+* `"hopf:<index>"` — only the $i$-th Hopf.
+* `"bp:<index>"` — switch at a specific branch point (e.g. for the pitchfork).
+* `"lp:<index>"` — restart from a fold.
+
+## Backend landscape
+
+| Backend | Language | Strengths | Caveats |
+|---------|----------|-----------|---------|
+| **AUTO-07p** | Fortran | mature, robust, periodic-orbit continuation, two-parameter | requires Fortran toolchain; clunky scripting |
+| **PyCoBi / PyRates** | Python wrapper around AUTO-07p | declarative model spec | requires `NDIM >= 2` |
+| **BifurcationKit.jl** | Julia | modern, GPU-friendly, large-scale, BifurcationKit's Newton-Krylov solvers | needs Julia + juliacall |
+| **MatCont** | MATLAB | normal-form coefficients, codim-2 detection | not free, not auto-callable from TVBO |
+
+TVBO's `SimulationExperiment.run(backend)` selects between them at runtime
+*from the same YAML*. The continuation methodology is identical across
+backends; only the numerics, the bifurcation-detection thresholds, and the
+ergonomics differ.
+
+## Two-parameter continuation
+
+Once a codim-1 bifurcation point is located, it can be *itself* continued in
+a second parameter — tracing out a curve of fold or Hopf points in
+$(a_1, a_2)$ space. This is the gateway to **codim-2** bifurcations
+(cusps `CP`, Bautin `GH`, Bogdanov-Takens `BT`, zero-Hopf `ZH`,
+double-Hopf `HH`), each of which appears as a labelled point in
+`BIF_STYLES`. Two-parameter continuation is supported by all three TVBO
+backends but its YAML syntax is left as a follow-up topic.
+
+## Reading the bifurcation diagram
+
+Every plot in this tutorial follows the same conventions:
+
+* **Solid line** — stable branch (real part of all eigenvalues $< 0$).
+* **Dashed line** — unstable branch.
+* **Marker** — labelled bifurcation point (see `BIF_STYLES`).
+* **Tube / wireframe** — limit cycle in 3-D, with `min`-`max` envelope.
+
+These are produced *uniformly* across all backends because TVBO normalises
+the result into a single `BifurcationResult` data class before plotting.

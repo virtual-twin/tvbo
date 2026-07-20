@@ -32,7 +32,7 @@ its own page: see [Workflow kits anatomy](workflow-kits.qmd).
 | `--set KEY=VALUE` | _(none, repeatable)_ | Override a workflow spec key. Dotted keys nest, e.g. `--set slurm.account=foo`. Booleans/numbers are coerced. |
 | `--stdout` | _(off)_ | Print the artefact text only and skip kit creation. |
 | `--pack` | _(off)_ | Emit **only** `<kit>.tar.gz` (the kit dir at top level) and remove the loose dir, ready to `scp` + [`tvbo workflow submit`](#run-and-submit). Omit `--pack` for the loose dir. |
-| `--bundle-dataset` | _(off)_ | Copy the fan-out's per-subject dataset files (sidecar + payload) into `spec/dataset/` and rewrite `dataset.bids_root` to a relative path, so the kit is **self-contained** — no separate FC upload, no `$TVBO_BIDS_ROOT`. Selection is driven by the observation's declared `query`; scope subjects via `dataset.subjects`. See [Per-subject dataset fan-out](../Usage/DistributedWorkflows.qmd#per-subject-dataset-fan-out). |
+| `--bundle-dataset` | _(off)_ | Copy the fan-out's per-subject dataset files (sidecar + payload) into `spec/dataset/` and rewrite `dataset.bids_root` to a relative path, so the kit is **self-contained** — no separate FC upload, no `$TVBO_BIDS_ROOT`. Selection is driven by the observation's declared `query`; scope subjects via `dataset.subjects`. See [Per-subject dataset fan-out](../ScaleOut/DistributedWorkflows.qmd#per-subject-dataset-fan-out). |
 | `--bundle-select KEY=VALUE` | _(none, repeatable)_ | Override to add BIDS entities **only** when a subject directory holds several files matching the query (the bundler otherwise errors with the ambiguous candidates). Not needed when the `query` already names one file. Implies `--bundle-dataset`. |
 
 ## `tvbo workflow plan`
