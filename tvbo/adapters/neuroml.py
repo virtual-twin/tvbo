@@ -12,10 +12,12 @@ Simulation can be run via pyNeuroML (jnml).
 
 from __future__ import annotations
 
+import difflib
 import functools
 import json
 import os
 import re
+import warnings
 from typing import TYPE_CHECKING
 
 from tvbo.adapters.base import BaseAdapter
@@ -1452,8 +1454,20 @@ def _base_type_meta(extends: str) -> dict:
     name = _resolve_base_type_name(extends)
     if name in _BUILTIN_BASE_META:
         return _BUILTIN_BASE_META[name]
-    contract = _load_neuroml_contracts().get(name)
+    contracts = _load_neuroml_contracts()
+    contract = contracts.get(name)
     if not contract:
+        # Emitting against an unknown base type produces a ComponentType that
+        # extends something NeuroML has never heard of, and the failure would
+        # otherwise only surface much later inside jNeuroML with no pointer back
+        # to the reference that was wrong.
+        close = difflib.get_close_matches(name, contracts, n=3)
+        hint = f" Did you mean {' or '.join(repr(c) for c in close)}?" if close else ""
+        warnings.warn(
+            f"Unknown NeuroML base type {name!r} — not in the ingested NeuroML ontology. "
+            f"The emitted ComponentType will extend a type that does not exist.{hint}",
+            stacklevel=2,
+        )
         return {}
     children = contract.get("children") or {}
     plural = [(n, c["type"]) for n, c in children.items() if c.get("multiple")]
