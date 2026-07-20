@@ -4,4 +4,20 @@ sidebar: usage
 jupyter: python3
 ---
 
-# Time-based Events in TVB-O
+::: {.callout-note}
+## Placeholder
+This page is under construction.
+
+In the meantime:
+
+- [`Event`](../datamodel/classes/Event.qmd) and
+  [`Stimulus`](../datamodel/classes/Stimulus.qmd) document the specification itself,
+  including the `continuous`, `discrete`, `preset_time` and `stimulus` event types.
+- [Jansen & Rit (1995)](../Replication/Jansen1995/Run_Jansen1995.qmd) is the canonical
+  worked example of a stimulus driving a simulation.
+:::
+
+# Time-based events in TVBO
+
+Events modify simulation state at a threshold crossing, at preset times, or as an
+external stimulus.

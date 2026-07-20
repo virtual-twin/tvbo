@@ -4,4 +4,19 @@ sidebar: usage
 jupyter: python3
 ---
 
+::: {.callout-note}
+## Placeholder
+This page is under construction.
+
+In the meantime:
+
+- [`Exploration`](../datamodel/classes/Exploration.qmd) and
+  [`ExplorationAxis`](../datamodel/classes/ExplorationAxis.qmd) document the sweep
+  specification itself.
+- [Parameter sweeps on the PyRates backend](../Interoperability/Pyrates/PyRates_Analysis.qmd)
+  shows a worked grid search.
+- [CLI recipes](../CLI/recipes.qmd) and [HPC patterns](../CLI/hpc.qmd) cover running
+  large sweeps in parallel.
+:::
+
 Systematically explore how parameters affect simulation dynamics using grid sweeps and parallel execution.

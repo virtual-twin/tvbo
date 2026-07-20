@@ -22,9 +22,20 @@ else
     echo "[pre-render][WARN] source bib not found: $BIB_SRC" >&2
 fi
 
+# ── Replication publication gate ──
+# Replication results are embargoed until the source work is published. Locally the
+# gate only warns about `publish: false` drafts so they can be worked on; in CI and
+# any deploy job it runs --strict, so a withheld study fails the build instead of
+# reaching a published site. A study page missing `publish:` always hard-fails.
+REPL_GATE_ARGS=""
+if [ -n "$CI" ] || [ "$TVBO_DOCS_STRICT" = "1" ]; then
+    REPL_GATE_ARGS="--strict"
+    echo "[pre-render] replication gate: strict (CI)"
+fi
+
 python scripts/tvbo_package_struct.py
 python -m quartodoc build --config api/_quartodoc_config.yml
 python scripts/update_toc_api.py
-python scripts/update_toc_replication.py
+python scripts/update_toc_replication.py $REPL_GATE_ARGS
 python scripts/generate_datamodel_docs.py
 python scripts/update_toc_datamodel.py

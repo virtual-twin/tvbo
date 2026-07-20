@@ -1,6 +1,6 @@
 ---
 title: "NeuroML / LEMS Integration"
-subtitle: "Export TVBO models to LEMS XML for simulation with jNeuroML, NEURON, Brian2, and NEST"
+subtitle: "Export TVBO models to LEMS XML for simulation with jNeuroML, NEURON, Brian2, NetPyNE, and EDEN"
 bibliography: ../../references.bib
 ---
 
