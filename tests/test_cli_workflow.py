@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 import subprocess
+from types import SimpleNamespace
 
 import pytest
 from typer.testing import CliRunner
@@ -111,6 +113,397 @@ def test_workflow_snakemake_emits_kit(tmp_path: Path):
     # A rule runs the frozen spec through `tvbo run` (the resolution layer needed
     # for per-subject targets), not the raw backend script.
     assert "tvbo run spec/" in smk
+    # The README's Layout must describe where the specs actually are. The snakemake
+    # emitter always writes spec/<key>/experiment.yaml — including for one
+    # experiment — so a flat `spec/<key>.yaml` claim would send the reader nowhere.
+    readme = (out / "README.md").read_text()
+    assert "spec/<experiment>/experiment.yaml" in readme
+    assert not any(line.startswith(f"- `spec/{p.parent.name}.yaml`")
+                   for p in frozen for line in readme.splitlines())
+
+
+def test_study_rules_do_not_share_one_experiments_resources():
+    """Declared resources belong to the rule that declared them, and to no other.
+
+    Both directions have shipped broken: with no per-rule block every rule inherited
+    whichever experiment the freeze loop ended on, and with an empty block treated as
+    "unset" a heavyweight experiment's 128G/24h leaked onto every trivial sibling.
+    """
+    from tvbo.cli.workflow import _render_template
+
+    heavy = {"cpus_per_task": 2, "mem": "128G", "time": "24:00:00",
+             "env": [{"name": "OMP_NUM_THREADS", "value": "1"}]}
+
+    def ep(key, block):
+        return {"key": key, "rule_name": f"exp_{key}", "spec_relpath": f"spec/{key}/experiment.yaml",
+                "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
+                "container": None, "block": block, "axes": [], "depends_on": []}
+
+    smk = _render_template("snakemake/study.smk.mako",
+                           exp_plans=[ep("40", heavy), ep("1", {})], block={}, bundled_code=False)
+
+    grid = smk[smk.index("rule exp_40:"):smk.index("rule exp_1:")]
+    sheet = smk[smk.index("rule exp_1:"):]
+    # 128 GiB, not 128_000 MB: Slurm sizes are binary, so a decimal conversion would
+    # reserve ~2.4% less than the recipe declared.
+    assert "mem_mb=131072" in grid and "runtime=1440" in grid
+    assert "OMP_NUM_THREADS" in grid
+    # The sheet experiment declared nothing: no reservation, no borrowed env.
+    assert "mem_mb" not in sheet, f"exp 1 inherited exp 40's memory:\n{sheet}"
+    assert "OMP_NUM_THREADS" not in sheet
+    assert "threads: 1" in sheet
+
+
+@pytest.mark.parametrize("walltime,minutes", [
+    ("3-00:00:00", 4320),   # days-hours:minutes:seconds — the sbatch form that silently parsed to None
+    ("7-00:00:00", 10080),
+    ("1-06:30", 1830),      # days-hours:minutes
+    ("2-12", 3600),         # days-hours
+    ("08:00:00", 480),      # hours:minutes:seconds
+    ("30:00", 30),          # minutes:seconds
+    ("480", 480),           # bare minutes
+    ("00:00:30", 1),        # a sub-minute request still reserves a whole minute
+    (None, None),
+    ("garbage", None),
+])
+def test_runtime_minutes_accepts_every_sbatch_walltime_spelling(walltime, minutes):
+    """A declared walltime must survive into Snakemake's ``runtime`` resource.
+
+    The day-prefixed spellings are the ones that matter: when ``3-00:00:00`` parsed
+    to None the resource was omitted entirely and every job silently inherited the
+    partition's default limit instead of the 3 days the study asked for.
+    """
+    from tvbo.cli._workflow import runtime_minutes
+
+    assert runtime_minutes(walltime) == minutes
+
+
+def test_declared_walltime_reaches_the_snakemake_rule():
+    """End-to-end: a day-prefixed `time:` lands in the rule as `runtime=`."""
+    from tvbo.cli.workflow import _render_template
+
+    smk = _render_template(
+        "snakemake/study.smk.mako", block={}, bundled_code=False,
+        exp_plans=[{"key": "30", "rule_name": "exp_30", "spec_relpath": "spec/30/experiment.yaml",
+                    "select": None, "backend": "tvboptim", "out_dir": "results",
+                    "result_stem": "result", "container": None, "axes": [], "depends_on": [],
+                    "block": {"cpus_per_task": 2, "mem": "8G", "time": "3-00:00:00"}}])
+    assert "runtime=4320" in smk
+
+
+def test_fanout_snakefile_is_executable_python():
+    """The emitted Snakefile must actually *run*, not merely contain the right text.
+
+    Paths are built with f-strings (to interpolate OUT_DIR), and an f-string eats
+    single braces — so a wildcard written as `{subject}` is evaluated as a Python
+    name and the Snakefile dies at parse time with `NameError: name 'subject' is not
+    defined`, before Snakemake sees a single rule. Text assertions sail straight past
+    that, so execute the module instead. `expand`/`f-string` must yield the literal
+    `{subject}` a wildcard needs.
+    """
+    from tvbo.cli.workflow import _render_template
+
+    smk = _render_template(
+        "snakemake/study.smk.mako", block={}, bundled_code=False,
+        exp_plans=[{"key": "30", "rule_name": "exp_30", "spec_relpath": "spec/30/experiment.yaml",
+                    "select": None, "backend": "tvboptim", "out_dir": "results",
+                    "result_stem": "result", "container": None, "block": {}, "depends_on": [],
+                    "axes": [{"name": "subject", "parameter": "dataset.active_subject",
+                              "values": ["100206", "100307"]}]}])
+
+    # Evaluate every path f-string the Snakefile builds, with only OUT_DIR bound —
+    # exactly the namespace Snakemake parses them in. A wildcard that leaked a single
+    # brace resolves as a Python name here and raises NameError.
+    literals = re.findall(r'f"[^"\n]*"', smk)
+    assert literals, "expected f-string paths in the emitted Snakefile"
+    resolved = [eval(lit, {"OUT_DIR": "results"}) for lit in literals]
+
+    # ...and the wildcard must survive that evaluation as a literal for expand()/output:.
+    assert "results/30/sub-{subject}_result.h5" in resolved
+
+
+@pytest.mark.parametrize("engine,expected_tail", [
+    ("snakemake", "--dry-run"),
+    ("slurm", "--test-only"),
+])
+def test_submit_dry_run_reports_without_queueing(tmp_path: Path, monkeypatch, engine, expected_tail):
+    """`--dry-run` must reach the engine and must not queue anything.
+
+    Validating a kit before a large submission is the whole point, so the Slurm
+    path must also skip the `finalize.sbatch` afterok chain — there is no array job
+    id to depend on when nothing was submitted.
+    """
+    calls = []
+
+    def _fake_run(cmd, check=True, cwd=None, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
+
+    monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
+    # Pretend the launcher is installed; keep the basename so argv[0] stays recognisable.
+    monkeypatch.setattr("shutil.which", lambda n: f"/usr/bin/{n}")
+
+    out = tmp_path / "kit"
+    assert runner.invoke(app, ["workflow", engine, EXP, "--backend", "jax",
+                               "-o", str(out)]).exit_code == 0
+    r = runner.invoke(app, ["workflow", "submit", str(out), "--dry-run"])
+    assert r.exit_code == 0, r.stdout
+
+    submits = [c for c in calls if c and Path(c[0]).name in {"sbatch", "snakemake", "nextflow"}]
+    assert submits, "expected submit to invoke the engine"
+    assert expected_tail in submits[0], f"{expected_tail} missing from {submits[0]}"
+    assert not any("--dependency=afterok" in a for c in submits for a in c)
+
+
+def test_scalar_set_override_lands_as_one_bind(tmp_path: Path):
+    """`--set container_binds=/data/cephfs-1` is ONE bind, not one per character.
+
+    A `--set` override arrives as a string into a multivalued slot. Strings are
+    iterable, so a naive `list()` expands `/data/cephfs-1` into 14 single-character
+    binds and the emitted flag reads `--bind /,d,a,t,a,…` — which apptainer accepts
+    as nonsense mounts rather than failing loudly.
+    """
+    from tvbo.utils import as_list
+
+    assert as_list("/data/cephfs-1") == ["/data/cephfs-1"]
+    assert as_list(["/a", "/b"]) == ["/a", "/b"]
+    assert as_list(None) == []
+
+    from tvbo.cli.workflow import _write_snakemake_profile
+
+    _write_snakemake_profile(tmp_path, {}, plan=_container_plan(binds=["/data/cephfs-1"]))
+    cfg = (tmp_path / "profile" / "config.yaml").read_text()
+    assert 'apptainer-args: "--bind /data/cephfs-1"' in cfg
+
+
+def _container_plan(image="docker://ghcr.io/virtual-twin/tvbo:dev",
+                    binds=("/data/cephfs-1",), args=None):
+    """Minimal stand-in for the container fields the profile writer reads."""
+    from tvbo.cli._workflow import WorkflowPlan
+
+    return SimpleNamespace(
+        container=image, container_binds=list(binds), container_args=args,
+        container_exec_flags=WorkflowPlan.container_exec_flags.fget(
+            SimpleNamespace(container_binds=list(binds), container_args=args)),
+    )
+
+
+def test_profile_carries_container_binds(tmp_path: Path):
+    """``container_binds`` is what makes the container usable at a site.
+
+    A container sees only ``$HOME`` and ``$PWD`` by default, so a home directory
+    that symlinks into another filesystem dangles inside it — and a library that
+    touches such a path at import time fails before the task starts. The binds
+    reach the run as ``apptainer-args``.
+    """
+    from tvbo.cli.workflow import _write_snakemake_profile
+
+    _write_snakemake_profile(tmp_path, {"partition": "medium"}, plan=_container_plan())
+    cfg = (tmp_path / "profile" / "config.yaml").read_text()
+    assert 'apptainer-args: "--bind /data/cephfs-1"' in cfg
+    assert "slurm_partition: medium" in cfg
+
+
+@pytest.mark.parametrize("mem,mib", [
+    ("8G", 8192),        # binary, not 8000 — Slurm's --mem=8G is 8 GiB
+    ("8GB", 8192),
+    ("128G", 131072),
+    ("512M", 512),
+    ("1T", 1048576),     # every sbatch suffix parses; an unknown one used to vanish
+    ("2000", 2000),      # bare number is already MiB
+    ("512K", 1),         # sub-mebibyte rounds up; 0 would reserve nothing
+    (None, None),
+    ("garbage", None),
+    ("8X", None),        # unrecognised suffix -> None, never a wrong number
+])
+def test_mem_mb_uses_binary_units_and_every_sbatch_suffix(mem, mib):
+    """A declared memory size must reach Slurm as the size that was declared.
+
+    Two failure modes this pins: a decimal conversion under-reserves against a
+    binary ``--mem`` and OOM-kills a task sized to its own limit, and an
+    unrecognised suffix returning None drops the resource entirely so the job
+    silently inherits the partition default.
+    """
+    from tvbo.cli._workflow import mem_mb
+
+    assert mem_mb(mem) == mib
+
+
+def test_bind_paths_survive_spaces_and_commas():
+    """Binds reach the runtime as distinct, shell-safe arguments.
+
+    A comma cannot be escaped inside one ``--bind``, and the Slurm emitters splice
+    these flags straight into a command line — so comma-joining or leaving a space
+    unquoted turns one bind into two bogus arguments.
+    """
+    from tvbo.cli._workflow import WorkflowPlan
+
+    flags = WorkflowPlan.container_exec_flags.fget(
+        SimpleNamespace(container_binds=["/data/cephfs-1", "/my scratch"],
+                        container_args=None))
+    assert flags == "--bind /data/cephfs-1 --bind '/my scratch'"
+
+
+def test_profile_quotes_container_args_containing_a_quote():
+    """`container_args` is the verbatim escape hatch, so it may contain a quote.
+
+    Interpolated raw into a double-quoted YAML scalar it closes the scalar early
+    and the whole profile fails to parse.
+    """
+    import yaml
+
+    from tvbo.cli.workflow import _write_snakemake_profile
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        plan = _container_plan(binds=["/data"], args='--env FOO="bar"')
+        _write_snakemake_profile(Path(td), {"partition": "medium"}, plan=plan)
+        cfg = yaml.safe_load((Path(td) / "profile" / "config.yaml").read_text())
+    assert cfg["apptainer-args"] == '--bind /data --env FOO="bar"'
+
+
+def test_profile_omits_default_resources_when_nothing_to_put_in_it():
+    """A `default-resources:` key whose only content is a comment parses as null."""
+    import yaml
+    import tempfile
+
+    from tvbo.cli.workflow import _write_snakemake_profile
+
+    with tempfile.TemporaryDirectory() as td:
+        _write_snakemake_profile(Path(td), {}, plan=_container_plan(image=None))
+        cfg = yaml.safe_load((Path(td) / "profile" / "config.yaml").read_text())
+    assert "default-resources" not in cfg
+
+
+def test_per_experiment_partition_reaches_its_own_rule():
+    """Partition is declarable per experiment, so it cannot live only in the profile.
+
+    The profile carries one study-wide default; an experiment that overrides it
+    (a long sweep needing a longer-walltime partition) must carry its own, or it
+    is submitted to a sibling's partition and killed at that partition's cap.
+    """
+    from tvbo.cli.workflow import _render_template
+
+    def ep(key, block):
+        return {"key": key, "rule_name": f"exp_{key}", "spec_relpath": f"spec/{key}/experiment.yaml",
+                "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
+                "container": None, "block": block, "axes": [], "depends_on": []}
+
+    smk = _render_template(
+        "snakemake/study.smk.mako", block={}, bundled_code=False,
+        exp_plans=[ep("1", {"partition": "short"}),
+                   ep("30", {"partition": "medium", "time": "24:00:00"})])
+    long_rule = smk[smk.index("rule exp_30:"):]
+    assert 'slurm_partition="medium"' in long_rule
+    assert 'slurm_partition="short"' not in long_rule
+
+
+def test_experiment_override_does_not_clear_inherited_list():
+    """An override replaces only the slots its author filled in.
+
+    LinkML gives an unfilled multivalued slot an empty list, not None — so an
+    experiment that overrides just its walltime still carries
+    `container_binds: []`. Merged naively that wipes the study's binds, and only
+    that experiment's tasks run unbound: they die at import time, far from the
+    walltime override that caused it.
+    """
+    from tvbo.cli._workflow import merge_workflow_spec
+    from types import SimpleNamespace as NS
+
+    study = NS(workflow=NS(container="img", container_binds=["/data/cephfs-1"],
+                           container_args=None, requirements=[]))
+    exp = NS(workflow=NS(container=None, container_binds=[], container_args=None,
+                         requirements=[], slurm=NS(time="48:00:00")))
+
+    merged = merge_workflow_spec(study, exp)
+    assert merged["container_binds"] == ["/data/cephfs-1"]
+    assert merged["container"] == "img"
+    assert merged["slurm"]["time"] == "48:00:00"
+
+
+def test_nextflow_enables_the_container_runtime():
+    """`process.container` is inert unless a runtime is switched on.
+
+    Without `singularity.enabled` Nextflow runs the task on the bare host and the
+    declared image — and every bind — is silently ignored.
+    """
+    from tvbo.cli.workflow import _render_template
+
+    plan = SimpleNamespace(
+        container="docker://ghcr.io/virtual-twin/tvbo:dev",
+        container_exec_flags="--bind /data/cephfs-1",
+        backend=SimpleNamespace(name="tvboptim"), study_key="s", experiment_key="30",
+        wildcards=[], vectorize_axes=[], workflow_axes=[], out_dir="results",
+        n_array_tasks=1, chunk=1,
+    )
+    nf = _render_template("nextflow/main.nf.mako", plan=plan, block={}, bundled_code=False)
+    assert "singularity.enabled = true" in nf
+    assert "singularity.runOptions = '--bind /data/cephfs-1'" in nf
+
+
+def test_profile_accepts_prebuilt_image_path(tmp_path: Path):
+    """A path to an image already built on the target is a valid ``container``.
+
+    It pins the exact image and needs no pull, which is why the schema carries no
+    staging-directory slot: where a registry reference gets materialised is a
+    run-time concern (``--apptainer-prefix``), not part of the study.
+    """
+    from tvbo.cli.workflow import _write_snakemake_profile
+
+    plan = _container_plan(image="/data/containers/tvbo-dev.sif")
+    _write_snakemake_profile(tmp_path, {}, plan=plan)
+    cfg = (tmp_path / "profile" / "config.yaml").read_text()
+    assert "software-deployment-method:\n  - apptainer" in cfg
+    assert 'apptainer-args: "--bind /data/cephfs-1"' in cfg
+    assert "apptainer-prefix" not in cfg
+
+
+def test_profile_omits_apptainer_keys_when_no_container(tmp_path: Path):
+    """No `container:` directive means no Apptainer section to configure."""
+    from tvbo.cli.workflow import _write_snakemake_profile
+
+    _write_snakemake_profile(tmp_path, {}, plan=_container_plan(image=None))
+    cfg = (tmp_path / "profile" / "config.yaml").read_text()
+    assert "apptainer" not in cfg
+
+
+def test_study_readme_covers_every_experiment():
+    """A whole-study README must describe the whole study, not its last experiment.
+
+    ``_emit_snakemake_study`` freezes each experiment in a loop; deriving the README
+    from the loop variable made an 18-experiment kit announce itself as its final
+    experiment with ``workflow cells: 1``.
+    """
+    from types import SimpleNamespace as NS
+
+    from tvbo.cli.workflow import _write_readme
+
+    def plan(key, jobs, vec_cells):
+        return NS(study_key="Koller2024", experiment_key=key, backend=NS(name="tvboptim", label="tvboptim"),
+                  container=None, n_workflow_cells=jobs, n_vectorize_cells=vec_cells, chunk=1,
+                  n_array_tasks=1, vectorize_axes=[], workflow_axes=[NS(name="K")], overrides=[])
+
+    # Exp 40/48 vectorize their whole 4x39x10 grid into one job; exp 52 is a single run.
+    plans = [plan("40", 1, 1560), plan("48", 1, 1560), plan("52", 1, 1)]
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td)
+        _write_readme(out, engine="snakemake", plans=plans, script_relpath=None,
+                      spec_layout="spec/<experiment>/experiment.yaml")
+        readme = (out / "README.md").read_text()
+
+    # Titled by the study, never "study / <last experiment>".
+    assert readme.startswith("# Koller2024\n")
+    assert "# Koller2024 / 52" not in readme
+    # Every experiment is named, and the cell count is the total, not the last one's.
+    for key in ("40", "48", "52"):
+        assert f"`{key}`" in readme
+    assert "experiments   : 3" in readme
+    # A vectorized grid must not be reported as a single cell: 3 jobs, 3121 sims.
+    assert "3121 simulation cells" in readme
+    assert "| `40` | 1 | 1560 |" in readme
 
 
 def test_workflow_slurm_emits_kit(tmp_path: Path):
@@ -266,9 +659,12 @@ def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, eng
     assert (out / expected_file).is_file()
     # Filter to the engine's submission commands — a globally-patched subprocess.run
     # also captures an incidental platform `uname -p` (jax init) on some hosts.
-    submits = [c for c in calls if c["cmd"] and c["cmd"][0] in {"sbatch", "snakemake", "nextflow"}]
+    submits = [c for c in calls
+               if c["cmd"] and Path(c["cmd"][0]).name in {"sbatch", "snakemake", "nextflow"}]
     assert submits, "expected workflow run to execute engine command"
-    assert submits[0]["cmd"] == expected_cmd
+    # argv[0] is an absolute path when the launcher is installed beside this
+    # interpreter, so compare the program name plus the arguments.
+    assert [Path(submits[0]["cmd"][0]).name, *submits[0]["cmd"][1:]] == expected_cmd
     assert Path(submits[0]["cwd"]) == out
     # EXP is a single array task (chunk=1): that one task IS the whole result, so
     # slurm submits just the array — no gather job to reassemble a single shard.
@@ -330,7 +726,9 @@ def test_workflow_submit_accepts_packaged_archive(tmp_path: Path, monkeypatch):
     r = runner.invoke(app, ["workflow", "submit", str(archive)])
     assert r.exit_code == 0, r.stdout
     assert (ship / "kit" / "Snakefile").is_file(), "archive must auto-extract beside itself"
-    submits = [c for c in calls if c and c[0] == "snakemake"]
+    # The launcher is resolved to an absolute path when one is found, so match on the
+    # program name rather than the exact argv[0].
+    submits = [c for c in calls if c and Path(c[0]).name == "snakemake"]
     assert submits, "expected the extracted kit to be submitted"
 
 

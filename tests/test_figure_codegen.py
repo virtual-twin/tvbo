@@ -473,9 +473,10 @@ def test_emit_figure_rules_resources():
 
     assert "rule fig_taher_fig1:" in text
     assert "resources:" in text
-    # 8G -> 8000 MB, 02:00:00 -> 120 min, cpus_per_task passed through, partition surfaced.
+    # 8G -> 8192 MiB (Slurm sizes are binary), 02:00:00 -> 120 min, cpus_per_task
+    # passed through, partition surfaced.
     assert "cpus_per_task=4" in text
-    assert "mem_mb=8000" in text
+    assert "mem_mb=8192" in text
     assert "runtime=120" in text
     assert "slurm_partition='gpu'" in text
     assert "output:" in text
