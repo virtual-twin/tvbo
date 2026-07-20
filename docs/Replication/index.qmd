@@ -3,6 +3,10 @@ title: "Replication Studies"
 listing:
   id: replication-listing
   contents: "*/Run_*.qmd"
+  # Publication gate: enforced by docs/scripts/update_toc_replication.py, not by a
+  # listing filter. That script hard-fails the build when a study page does not
+  # declare `publish:`, and `--strict` (CI/deploy) fails on `publish: false` — so a
+  # deployable build contains published studies only, and this glob cannot leak one.
   type: grid
   image-height: "200"
   grid-columns: 3
@@ -10,7 +14,13 @@ listing:
   fields: [image, title, description]
 ---
 
-Computational replications of published neuroscience studies using TVB-O.
+Computational replications of published neuroscience studies using TVBO.
+
+Only studies whose source work is already published appear here. TVBO's study
+database holds many more replication specifications whose results are still
+embargoed; those are deliberately not rendered. To build or run a replication
+yourself, use the **`replicating-studies` skill**, which turns a paper into a
+single declarative `SimulationStudy` plus an honest, fully computed report.
 
 See **[the replication pipeline](pipeline.qmd)** for how a study becomes generated
 simulations, figures, and HPC jobs from one declarative spec, and

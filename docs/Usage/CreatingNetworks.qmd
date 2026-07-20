@@ -1,266 +1,27 @@
 ---
-title: Creating Custom Networks
-description: Build brain networks from tractogram data using MRtrix and custom parcellations
+title: Hierarchical & Surface Networks
+description: Build layered TVBO networks where a fine mesh references a coarse parent network
 sidebar: usage
 ---
 
-TVBO ships with pre-built connectomes (see [Defining Networks](../Specification/Network.qmd)),
-but you can also create networks from your own tractography data.
-This guide walks through the full pipeline: building a parcellation atlas,
-running streamline-based tractography with [MRtrix3](https://www.mrtrix.org/),
-and packaging the result as a schema-compliant TVBO network.
+TVBO supports **hierarchical multi-layer networks** where a fine-grained
+network (e.g. surface vertices) references a coarser parent network
+(e.g. brain regions or lobes). This page covers that layered construction.
 
-## Prerequisites
+Two related topics live elsewhere:
 
-- **MRtrix3** installed (`tck2connectome` in PATH)
-- A **tractogram** in `.tck` format (e.g. the [dTOR](https://doi.org/10.1038/s41597-022-01760-x) group-average tractogram)
-- Python packages: `nibabel`, `numpy`, `templateflow`
-
-## Pipeline Overview
-
-The workflow has three steps:
-
-1. **Build a parcellation atlas** — a NIfTI image where each voxel is labeled
-   with a region index (1, 2, …, $N$).
-2. **Run `tck2connectome`** — count streamlines and compute mean tract
-   lengths between regions, producing $N \times N$ weight and length matrices.
-3. **Create a TVBO `Network`** — wrap the matrices and metadata into
-   a schema-valid HDF5 + YAML pair.
-
-## Step 1: Build a Parcellation Atlas
-
-You can use any atlas available via [TemplateFlow](https://www.templateflow.org/),
-or create a custom one by remapping existing regions.
-
-### Example: Lobar Atlas from DKT31
-
-This example merges the 35 cortical + subcortical regions of the
-Desikan-Killiany (DKT31) atlas into **17 anatomical brain lobes**:
-
-- 6 cortical lobes per hemisphere (Frontal, Parietal, Temporal, Occipital,
-  Cingulate, Insular)
-- 2 subcortical groups per hemisphere (Subcortical, Cerebellum)
-- 1 midline structure (Brain-Stem)
-
-```python
-import nibabel as nib
-import numpy as np
-from pathlib import Path
-from templateflow.conf import TF_HOME
-
-# Load DKT31 atlas from TemplateFlow cache
-atlas_path = (
-    Path(TF_HOME)
-    / "tpl-MNI152NLin2009cAsym"
-    / "tpl-MNI152NLin2009cAsym_res-02_desc-DKT31_dseg.nii.gz"
-)
-img = nib.load(atlas_path)
-data = np.asarray(img.dataobj, dtype=np.int32)
-affine = img.affine
-
-# Define region → lobe mapping
-DK_REGION_TO_LOBE = {
-    "caudalmiddlefrontal": "Frontal",
-    "lateralorbitofrontal": "Frontal",
-    "precentral": "Frontal",
-    "superiorfrontal": "Frontal",
-    # ... (full mapping in scripts/create_lobar_network.py)
-    "inferiorparietal": "Parietal",
-    "postcentral": "Parietal",
-    "precuneus": "Parietal",
-    "bankssts": "Temporal",
-    "superiortemporal": "Temporal",
-    # ... etc.
-}
-
-# Lobe ordering — this becomes the node order in the network
-LOBE_ORDER = [
-    "LH_Frontal", "LH_Parietal", "LH_Temporal", "LH_Occipital",
-    "LH_Cingulate", "LH_Insular", "LH_Subcortical", "LH_Cerebellum",
-    "RH_Frontal", "RH_Parietal", "RH_Temporal", "RH_Occipital",
-    "RH_Cingulate", "RH_Insular", "RH_Subcortical", "RH_Cerebellum",
-    "BrainStem",
-]
-```
-
-The key step is remapping each voxel from its original FreeSurfer label
-to the corresponding lobe index (1–17):
-
-```python
-lobar = np.zeros_like(data, dtype=np.int32)
-
-for region_name, lobe_name in DK_REGION_TO_LOBE.items():
-    fs_idx = DK_FS_INDEX[region_name]
-    for hemi_prefix, hemi_offset in [("LH", 1000), ("RH", 2000)]:
-        fs_label = hemi_offset + fs_idx
-        lobe_label = f"{hemi_prefix}_{lobe_name}"
-        lobe_idx = LOBE_ORDER.index(lobe_label) + 1
-        lobar[data == fs_label] = lobe_idx
-
-# Save as NIfTI (int32 dtype for tck2connectome)
-lobar_img = nib.Nifti1Image(lobar.astype(np.int32), affine, img.header)
-nib.save(lobar_img, "lobar_atlas.nii.gz")
-```
-
-Compute MNI centroids for each lobe (used as node positions):
-
-```python
-centroids = {}
-for idx, lobe_label in enumerate(LOBE_ORDER, start=1):
-    voxels = np.argwhere(lobar == idx)
-    centroid_vox = voxels.mean(axis=0)
-    centroid_mni = affine @ np.array([*centroid_vox, 1.0])
-    centroids[lobe_label] = tuple(float(v) for v in centroid_mni[:3])
-```
-
-## Step 2: Run `tck2connectome`
-
-MRtrix's `tck2connectome` assigns each streamline to a source–target
-region pair based on the parcellation atlas, producing a connectivity
-matrix.
-
-Two passes are needed: one for **streamline counts** (weights) and one
-for **mean tract lengths**:
-
-```bash
-# Streamline counts
-tck2connectome tractogram.tck lobar_atlas.nii.gz weights.csv \
-    -symmetric -zero_diagonal
-
-# Mean tract lengths
-tck2connectome tractogram.tck lobar_atlas.nii.gz lengths.csv \
-    -scale_length -stat_edge mean -symmetric -zero_diagonal
-```
-
-Or programmatically via `subprocess`:
-
-```python
-import subprocess
-
-def run_tck2connectome(tractogram, atlas, weights_csv, lengths_csv):
-    subprocess.run([
-        "tck2connectome", str(tractogram), str(atlas), str(weights_csv),
-        "-symmetric", "-zero_diagonal", "-force",
-    ], check=True)
-
-    subprocess.run([
-        "tck2connectome", str(tractogram), str(atlas), str(lengths_csv),
-        "-scale_length", "-stat_edge", "mean",
-        "-symmetric", "-zero_diagonal", "-force",
-    ], check=True)
-```
-
-Load the resulting CSV matrices:
-
-```python
-weights = np.loadtxt("weights.csv", delimiter=",")
-lengths = np.loadtxt("lengths.csv", delimiter=",")
-```
-
-## Step 3: Create a TVBO Network
-
-Use `Network.from_matrix()` to build a network from the connectivity
-matrices, then attach metadata:
-
-```python
-from tvbo import Network
-
-network = Network.from_matrix(
-    weights=weights,
-    lengths=lengths,
-    labels=LOBE_ORDER,
-)
-```
-
-### Set Node Positions
-
-Assign MNI coordinates from the atlas centroids:
-
-```python
-for node in network.nodes:
-    c = centroids.get(node.label)
-    if c:
-        node.position = {
-            "x": float(round(c[0], 4)),
-            "y": float(round(c[1], 4)),
-            "z": float(round(c[2], 4)),
-        }
-```
-
-### Set Metadata
-
-Provide essential metadata for reproducibility and BIDS compliance:
-
-```python
-network.label = "Lobar (dTOR)"
-network.descriptor = "SC"
-network.distance_unit = "mm"
-network.time_unit = "ms"
-network.number_of_nodes = len(LOBE_ORDER)
-
-network.parcellation = {
-    "atlas": {
-        "name": "Lobar",
-        "coordinateSpace": "MNI152NLin2009cAsym",
-    }
-}
-network.tractogram = {"name": "dTOR"}
-network.bids = {
-    "template": "MNI152NLin2009cAsym",
-    "cohort": "HCPYA",
-    "reconstruction": "dTOR",
-    "atlas": "Lobar",
-}
-```
-
-### Save
-
-The `save()` method creates both files — YAML sidecar and HDF5 companion:
-
-```python
-network.save("my_network.yaml")
-# Creates: my_network.yaml  (metadata)
-#          my_network.h5     (matrices)
-```
-
-The BIDS-compliant filename is available programmatically:
-
-```python
-print(network.bids_filename)
-# tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-SC_relmat
-```
-
-### Node Subgroup Mapping
-
-For networks with hierarchical structure (e.g. regions within lobes),
-set a node-to-group mapping:
-
-```python
-groups = []
-mapping = []
-for label in LOBE_ORDER:
-    if label.startswith(("LH_", "RH_")):
-        group = label.split("_", 1)[1]
-    else:
-        group = label
-    if group not in groups:
-        groups.append(group)
-    mapping.append(groups.index(group))
-
-network.set_node_mapping(
-    name="lobes",
-    group_names=groups,
-    mapping=mapping,
-)
-```
+- To build the coarse structural network from tractography, see
+  [Build a Connectome from Tractography](../How-To/BuildConnectomeFromTractography.qmd).
+- To wrap connectivity matrices you already have, or load a built-in connectome,
+  see [Defining Networks](../Specification/Network.qmd).
+- To give regions a detailed spiking or reservoir patch, see
+  [Model Across Scales](../How-To/MultiScaleModelling.qmd).
 
 ## Multi-Layer Networks: Surface Mapping
 
-TVBO supports **hierarchical multi-layer networks** where a fine-grained
-network (e.g. surface vertices) references a coarser parent network
-(e.g. brain regions or lobes). This avoids redundant storage — the
-surface network stores only the mesh geometry and a vertex→region mapping,
-while the parent network holds the connectivity matrices.
+A hierarchical network avoids redundant storage — the surface network stores
+only the mesh geometry and a vertex→region mapping, while the parent network
+holds the connectivity matrices.
 
 ### Architecture
 
@@ -281,7 +42,9 @@ vertex→region index array.
 ### Creating a Surface Network
 
 Load a cortical surface mesh (e.g. fsLR 32k from TemplateFlow) and
-map each vertex to its parent region by sampling the parcellation atlas:
+map each vertex to its parent region by sampling the parcellation atlas.
+This reuses the `lobar_atlas.nii.gz` and the saved SC `Network` produced in
+[Build a Connectome from Tractography](../How-To/BuildConnectomeFromTractography.qmd):
 
 ```python
 import nibabel as nib
@@ -370,32 +133,8 @@ The surface network produces:
 No connectivity matrices are duplicated — the surface network references
 the parent SC network for all edge data.
 
-## Complete Script
-
-The full pipeline is implemented in
-`scripts/create_lobar_network.py`, which creates both the SC and surface
-networks with caching of intermediate files:
-
-```bash
-python scripts/create_lobar_network.py \
-    --tractogram /path/to/dTOR.tck
-
-# With persistent cache (skips tck2connectome if CSVs exist)
-python scripts/create_lobar_network.py \
-    --tractogram /path/to/dTOR.tck \
-    --cache-dir /tmp/lobar_cache
-```
-
 ## Tips
 
-- **Atlas dtype:** Use `int32` for the parcellation NIfTI to avoid
-  floating-point warnings from tck2connectome.
-- **Large tractograms:** The dTOR group-average tractogram (~12 GB) takes
-  significant time per `tck2connectome` pass. Use `--cache-dir` to avoid
-  re-running.
-- **Custom parcellations:** Any integer-labeled NIfTI in the same
-  template space as the tractogram works — you're not limited to
-  TemplateFlow atlases.
 - **Surface coverage:** Cortical surfaces (fsLR, fsaverage) cover only
   cortical regions — subcortical and cerebellar vertices won't be mapped.
   Unmapped vertices get index -1 in the region mapping.
