@@ -138,21 +138,39 @@ def _load_from_file(path: Path) -> tuple[str, Any]:
     looks_like_study = "simulation_experiments" in text or (
         "experiments:" in text and "title:" in text
     )
+    # Each fallback's error is kept: when they all fail, the last one (Dynamics) is
+    # about the least likely interpretation, so reporting only that sends the reader
+    # chasing a "bad Dynamics" that was never what the file is. A spec the running
+    # tvbo is too old to parse looked exactly like a malformed Dynamics until the
+    # earlier errors were surfaced.
+    attempts: list[tuple[str, Exception]] = []
     if looks_like_study:
         try:
             obj = tvbo.SimulationStudy.from_file(str(path))
             return "study", obj
-        except Exception:
-            pass
+        except Exception as e:
+            attempts.append(("study", e))
 
     try:
         obj = tvbo.SimulationExperiment.from_file(str(path))
         return "experiment", obj
-    except Exception:
-        pass
+    except Exception as e:
+        attempts.append(("experiment", e))
 
-    obj = tvbo.Dynamics.from_file(str(path))
-    return "dynamics", obj
+    try:
+        obj = tvbo.Dynamics.from_file(str(path))
+        return "dynamics", obj
+    except Exception as e:
+        attempts.append(("dynamics", e))
+
+    # Report the most specific interpretation the file actually looked like — the
+    # first one tried — and list the rest so nothing is hidden.
+    kind, primary = attempts[0]
+    detail = "\n".join(f"  - as {k}: {type(x).__name__}: {x}" for k, x in attempts)
+    raise typer.BadParameter(
+        f"Could not load {path} as a study, experiment or dynamics.\n{detail}\n"
+        f"The {kind} error above is the most likely one to act on."
+    ) from primary
 
 
 def _load_from_db(cls_name: str, name: str) -> tuple[str, Any]:
