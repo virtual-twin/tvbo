@@ -18,6 +18,8 @@ modules (OWL statements LinkML cannot express).
 | `tvb-o-biology.ttl` | generated — `make gen-abox` (`--bio-output`) | Biological grounding for the A-box. |
 | `tvb-o-axioms.ttl` | hand-authored | OWL axioms LinkML cannot capture: subclass hierarchies, equivalences, disjointness. Layered on `tvb-o-struct.owl`. |
 | `tvb-o-bifurcation.ttl` | hand-authored | Axiomatised bifurcation / special-point taxonomy, defined by codimension, eigenvalue signature, and branch geometry (single source of truth for the backend label maps). |
+| `tvb-o-neuroml.ttl` | generated — `make gen-neuroml` from the jNeuroML core types | The NeuroML2 core LEMS `ComponentType` hierarchy as OWL classes (`extends`→`subClassOf`), each `skos:exactMatch`-linked to its canonical NeuroML IRI. The reference from `tvbo.owl` to NeuroML-core, beside the GO link. Companion `tvbo/data/ontology/neuroml_contracts.json` (the accumulated contract index) is emitted in the same pass and loaded by the NeuroML adapter. |
+| `tvb-o-neuroml-mappings.ttl` | hand-authored | tvbo-core ↔ NeuroML/LEMS alignment: meta-model correspondences (`Dynamics`↔`ComponentType`, `StateVariable`/`Parameter`/`DerivedVariable`/`Event`↔LEMS peers) and role correspondences (synapse/cell/population/input branches), via SKOS mapping relations. |
 | `tvb-o-clinical.ttl` | generated from a PubMed + full-text survey (2026) | Clinical-applications addon: published TVB studies → clinical domains (ICD-11, MeSH) → the neural-mass model each uses. |
 | `tvb-o-clinical-nmm.ttl` | hand-authored | `tvbc:NeuralMassModel ⊑ tvbo:Dynamics` plus clinical-NMM links. |
 | `tvbo.owl` | generated — `make gen-merged` | Merge of every module above. The complete ontology; also copied to `tvbo/data/ontology/tvbo.owl`, which the runtime loads. |
@@ -39,10 +41,11 @@ modules (OWL statements LinkML cannot express).
 ## Generation
 
 ```bash
-make gen-owl     # → tvb-o-struct.owl   (T-box from the schema)
-make gen-shacl   # → tvb-o.shacl.ttl    (SHACL shapes from the schema)
-make gen-abox    # → tvb-o-data.ttl + tvb-o-biology.ttl (A-box from YAML)
-make gen-merged  # → tvbo.owl           (merge + reason; also packaged for runtime)
+make gen-owl      # → tvb-o-struct.owl   (T-box from the schema)
+make gen-shacl    # → tvb-o.shacl.ttl    (SHACL shapes from the schema)
+make gen-abox     # → tvb-o-data.ttl + tvb-o-biology.ttl (A-box from YAML)
+make gen-neuroml  # → tvb-o-neuroml.ttl + neuroml_contracts.json (NeuroML-core; needs the neuroml extra)
+make gen-merged   # → tvbo.owl           (merge + reason; also packaged for runtime)
 ```
 
 The generated outputs are checked in so external consumers need no LinkML or
