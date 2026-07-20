@@ -369,7 +369,7 @@ class Network(tvbo_datamodel.Network):
         )
         ```
 
-    See the [Network specification](../../../Specification/Network.qmd) for
+    See the [Network specification](/Specification/Network.qmd) for
     the slot-by-slot reference and the
     [`Connectome`](#tvbo.classes.network.Connectome) subclass for matrix-style
     networks without an explicit parcellation.
@@ -2979,6 +2979,14 @@ class Network(tvbo_datamodel.Network):
         # Filter out template edges (no source/target) — those represent
         # matrix measures stored in the HDF5 companion, not graph edges.
         explicit_edges = [e for e in (self.edges or []) if getattr(e, "source", None) is not None]
+        # Nodes above are keyed by ``node.id``, but ``edge.source`` / ``edge.target``
+        # are positional indices into ``self.nodes``. Mapping between them keeps the
+        # graph in one key space; without it the graph gains a phantom set of
+        # index-keyed nodes (N+1 nodes for N regions) and any lookup by node key
+        # fails — e.g. plot_graph raising ``KeyError: 0``.
+        index_to_id = {
+            i: (node.id if node.id is not None else i) for i, node in enumerate(self.nodes or [])
+        }
         if explicit_edges:
             # Use explicit edges
             for edge in explicit_edges:
@@ -2994,7 +3002,11 @@ class Network(tvbo_datamodel.Network):
                         if param.unit:
                             edge_attrs[f"{name}_unit"] = param.unit
 
-                G.add_edge(edge.source, edge.target, **edge_attrs)
+                G.add_edge(
+                    index_to_id.get(edge.source, edge.source),
+                    index_to_id.get(edge.target, edge.target),
+                    **edge_attrs,
+                )
 
                 # If undirected, add reverse edge
                 if not edge_attrs["directed"]:
@@ -3047,7 +3059,14 @@ class Network(tvbo_datamodel.Network):
                                     (v for v in edge_attrs.values() if isinstance(v, float) and v != 0),
                                     1.0,
                                 )
-                            G.add_edge(i, j, **edge_attrs)
+                            # Matrix rows/columns are positional; the nodes added
+                            # above are keyed by ``node.id``. Map so both live in
+                            # one key space (see index_to_id above).
+                            G.add_edge(
+                                index_to_id.get(i, i),
+                                index_to_id.get(j, j),
+                                **edge_attrs,
+                            )
 
         return G
 
@@ -3615,6 +3634,14 @@ class Network(tvbo_datamodel.Network):
                 }
                 G.add_node(node_id, **node_attrs)
 
+            # Nodes are keyed in the graph by ``node.id``, but ``edge.source`` /
+            # ``edge.target`` are positional indices into ``nodes``. Without this
+            # mapping the graph ends up with two disjoint key spaces (ids 1..N and
+            # indices 0..N-1), which silently produces N+1 nodes and breaks any
+            # consumer that looks a node up by key — e.g. plot_graph raising
+            # ``KeyError: 0`` because the layout has no entry for index 0.
+            index_to_id = {i: getattr(node, "id", i) for i, node in enumerate(nodes)}
+
             if edges:
                 for edge in edges:
                     source = getattr(edge, "source", None)
@@ -3622,6 +3649,9 @@ class Network(tvbo_datamodel.Network):
 
                     if source is None or target is None:
                         continue
+
+                    source = index_to_id.get(source, source)
+                    target = index_to_id.get(target, target)
 
                     weight = self._get_edge_param(edge, "weight") or 0.0
                     if weight <= weight_threshold:

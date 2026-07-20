@@ -31,8 +31,12 @@ def _normal_field(mean):
 
 
 KOLLER_SHEET = {
-    "parameters": {"sigma": 10.0, "alpha": 2.0, "beta": 4.0},
+    "parameters": {"sigma": 10.0, "alpha": 2.0, "beta": 4.0,
+                   "nx": 30, "ny": 30, "x_extent": 140.0, "y_extent": 140.0},
     "derived": {
+        # The layout is an ordinary named intermediate, not a special generator slot:
+        # positions are produced by a primitive and referenced by name like anything else.
+        "layout": {"equation": {"rhs": "grid_positions(nx, ny, x_extent, y_extent)"}},
         "d_ij": {"type": "pairwise_distance", "of": "layout", "diagonal": "inf"},
         "a_ij": {"equation": {"rhs": "(1 / (2*sigma)) * exp(-d_ij / sigma)"}},
         "mask_ij": {
@@ -81,9 +85,10 @@ def test_stochastic_mask_is_a_relational_over_a_sampler():
     assert isinstance(mask, sp.LessThan)
     sampler = mask.args[1]
     assert sampler.func.__name__ == "sample_exponential"
-    # key first (JAX is pure), then the scale, then the sample shape.
-    assert str(sampler.args[0]) == "key"
-    assert sampler.args[1] == sp.Float(17.0)
+    # key first (JAX is pure), then the sub-stream index, the scale, then the shape.
+    assert str(sampler.args[0]) == "_prng_key"
+    assert sampler.args[1] == sp.Integer(0)
+    assert sampler.args[2] == sp.Float(17.0)
 
 
 def test_no_abs_wrapper_is_needed_around_an_exponential_draw():
@@ -157,10 +162,48 @@ def test_partition_preserves_dag_order():
 
 def test_a_dag_with_no_randomness_has_an_empty_suffix():
     spec = {"derived": {k: v for k, v in KOLLER_SHEET["derived"].items()
-                        if k in ("d_ij", "a_ij")}, "parameters": KOLLER_SHEET["parameters"]}
+                        if k in ("layout", "d_ij", "a_ij")},
+            "parameters": KOLLER_SHEET["parameters"]}
     deterministic, stochastic = partition(spec)
     assert stochastic == []
-    assert deterministic == ["d_ij", "a_ij"]
+    assert deterministic == ["layout", "d_ij", "a_ij"]
+
+
+def test_a_sampler_inside_an_equation_step_is_still_seeded():
+    """Seededness comes from the resolved expression, not the declared step type.
+
+    An `equation` step may call a sampler head directly. Trusting `type` would classify it
+    as deterministic and hoist it out of the per-realisation loop, so every "independent"
+    realisation would silently share one draw — the worst failure this module can have,
+    because the ensemble still runs and still produces plausible numbers.
+
+    Detection keys off the sampler HEAD, not the PRNG symbol's name, so the step is caught
+    however its key argument is spelled (here a plain `anykey`).
+    """
+    spec = {"derived": {
+        "raw": {"equation": {"rhs": "sample_normal(anykey, 0, 1, n_nodes, n_nodes)"}},
+        "scaled": {"equation": {"rhs": "raw * 2"}},
+        "geom": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
+    }}
+    deterministic, stochastic = partition(spec)
+    assert stochastic == ["raw", "scaled"]
+    assert deterministic == ["geom"]
+
+
+def test_sample_step_yields_the_draw_not_a_mask():
+    """`sample` is the draw itself; `stochastic_mask` is a comparison over one."""
+    spec = {"derived": {"raw": {"type": "sample",
+                                "distribution": {"name": "Normal",
+                                                 "parameters": {"mean": 0.0, "std": 1.0}}}}}
+    expr = dict(build(spec))["raw"]
+    assert expr.func.__name__ == "sample_normal"
+    assert not isinstance(expr, sp.Rel)
+
+
+def test_an_undefined_layout_is_a_dangling_reference():
+    """No name is magically pre-bound: a layout must be defined like any other step."""
+    with pytest.raises(ProceduralError, match="not a previously-defined"):
+        build({"derived": {"d": {"type": "pairwise_distance", "of": "layout"}}})
 
 
 # --------------------------------------------------------------------------- #
@@ -192,12 +235,43 @@ def test_missing_distribution_parameter_is_rejected():
 
 def test_distribution_pdf_rejects_a_non_normal_family():
     with pytest.raises(ProceduralError, match="defined for Normal"):
-        build({"derived": {"f": {"type": "distribution_pdf", "of": "layout",
-                                 "distribution": {"name": "Exponential",
-                                                  "parameters": {"scale": 1.0}}}}})
+        build({"derived": {
+            "layout": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
+            "f": {"type": "distribution_pdf", "of": "layout",
+                  "distribution": {"name": "Exponential", "parameters": {"scale": 1.0}}}}})
 
 
 def test_minmax_rescale_requires_a_target_range():
     with pytest.raises(ProceduralError, match="target_range"):
         build({"derived": {"g": {"type": "equation", "equation": {"rhs": "1"}},
                            "r": {"type": "minmax_rescale", "of": "g"}}})
+
+
+def test_reserved_prng_parameter_name_is_rejected():
+    """The PRNG symbol is reserved; a parameter of that name would be silently clobbered.
+
+    The resolver binds the generator's PRNG state into the evaluation namespace under this
+    name and detects seededness partly by looking for it. A parameter sharing it would be
+    overwritten by the seed (wrong values, no error) and would make every step look seeded,
+    disabling the deterministic-prefix hoisting.
+    """
+    with pytest.raises(ProceduralError, match="reserved"):
+        build({"parameters": {"_prng_key": 1.0},
+               "derived": {"a": {"equation": {"rhs": "_prng_key * 2"}}}})
+
+
+@pytest.mark.parametrize(
+    "rhs, signature",
+    [
+        ("gaussian_pdf(p, m)", "gaussian_pdf"),
+        ("minmax_rescale(x, 0)", "minmax_rescale"),
+        ("pairwise_distance(p, q)", "pairwise_distance"),
+        ("fill_diagonal(M)", "fill_diagonal"),
+        ("eigvals(M, 1)", "eigvals"),
+        ("grid_positions(1, 2, 3.0)", "grid_positions"),
+    ],
+)
+def test_wrong_arity_names_the_primitive(rhs, signature):
+    """A miscounted argument must name the primitive, not raise a bare IndexError."""
+    with pytest.raises(ValueError, match=signature):
+        render_expression(rhs, format="numpy")

@@ -28,7 +28,7 @@ class TVBOPlatform:
     Wraps an authenticated `requests` session against a TVBO platform instance,
     exposing helpers to list, fetch, load, and push saved models and
     experiments. Load helpers return live `tvbo` objects (a `Dynamics` or a
-    [SimulationExperiment](../classes/experiment.qmd)); push helpers accept YAML
+    [SimulationExperiment](/api/classes/experiment.qmd)); push helpers accept YAML
     text, a `dict`, or a `tvbo` object and serialize it for upload.
 
     Args:
@@ -172,7 +172,7 @@ class TVBOPlatform:
         """Load an experiment from the platform into a `SimulationExperiment`.
 
         Fetches the experiment's YAML and parses it via
-        [SimulationExperiment.from_string](../classes/experiment.qmd).
+        [SimulationExperiment.from_string](/api/classes/experiment.qmd).
 
         Args:
             experiment_id: Identifier of the experiment to load.

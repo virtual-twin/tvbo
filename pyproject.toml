@@ -46,7 +46,12 @@ dependencies = [
     # colorbar existed (the tvboptim docs, e.g. RWW_tvboptim). Bumping the floor
     # also busts the Docker deps-layer cache (keyed on pyproject.toml) so the
     # container image stops shipping the stale bsplot that carried the bug.
-    "bsplot>=0.0.7",
+    # >=0.0.9: bsplot/graph/edges.py gained the missing matplotlib colormap-registry
+    # import; below this, any graph drawn through the bsplot backend (the
+    # Visualization doc) dies with "NameError: name 'colormaps' is not defined".
+    # A >=0.0.7 floor is satisfied by an already-installed 0.0.7, so the stale
+    # build survives an env that is never explicitly upgraded.
+    "bsplot>=0.0.9",
     "networkx>=3.4.2",
     "pydot>=3.0.3",
 
@@ -108,6 +113,10 @@ docs = [
     "black>=25.9.0",
     "jupyter",
     "nbclient>=0.10.0",
+    # Specification/Network.qmd renders the fsaverage head surface via
+    # mne.datasets.fetch_fsaverage; the import is unguarded, so without this the
+    # page fails to execute with ModuleNotFoundError.
+    "mne>=1.6.0",
 ]
 
 # PyRates dynamical systems modeling + continuation

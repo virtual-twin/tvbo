@@ -228,14 +228,18 @@ class ${class_name}(AbstractDynamics):
         ${key_name} = coupling.${ci_name}[${idx}] if hasattr(coupling, '${ci_name}') else 0.0
         % endfor
         % elif ci_dim == 1:
-        ${ci_name} = coupling.${ci_name}[0] if hasattr(coupling, '${ci_name}') else 0.0
+        ## `hasattr` only proves the attribute exists. An unsatisfied coupling input
+        ## (e.g. local_coupling in a region simulation) arrives as a scalar rather than
+        ## an array, and subscripting it raises "'int' object is not subscriptable".
+        ## atleast_1d makes the scalar case indexable and is a no-op for real arrays.
+        ${ci_name} = jnp.atleast_1d(coupling.${ci_name})[0] if hasattr(coupling, '${ci_name}') else 0.0
         % else:
         ${ci_name} = coupling.${ci_name} if hasattr(coupling, '${ci_name}') else jnp.zeros(${ci_dim})
         % endif
         % endfor
 
         % for ei_name in external_inputs_dict:
-        ${ei_name} = external.${ei_name}[0] if hasattr(external, '${ei_name}') else 0.0
+        ${ei_name} = jnp.atleast_1d(external.${ei_name})[0] if hasattr(external, '${ei_name}') else 0.0
         % endfor
 
         % if model.functions:
