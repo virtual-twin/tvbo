@@ -1,0 +1,220 @@
+---
+title: "How-To Guides"
+description: "Start from a goal — model across scales, build a connectome, fit to data — and follow a recipe."
+sidebar: howto
+page-layout: full
+---
+
+Start from what you want to do. Each guide takes one goal and walks it end to
+end. For the concepts behind a component see [Usage](../Usage/index.qmd); for how
+TVBO lines up with a tool you already know see
+[Interoperability](../Interoperability/index.qmd).
+
+```{=html}
+<style>
+.howto-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.howto-filters button {
+  padding: 0.3rem 0.9rem;
+  border: 1px solid #aaa;
+  border-radius: 2rem;
+  background: #f8f8f8;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s;
+}
+.howto-filters button.active,
+.howto-filters button:hover {
+  background: #1a1a2e;
+  color: #fff;
+  border-color: #1a1a2e;
+}
+.howto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.2rem;
+  margin-bottom: 2.5rem;
+}
+.howto-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  transition: box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.howto-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+.howto-card a { text-decoration: none; color: inherit; }
+.howto-card .card-visual {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+.howto-card .card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  color: #fff;
+}
+.howto-card .card-body { padding: 0.8rem 1rem; flex: 1; }
+.howto-card .card-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.35rem; }
+.howto-card .card-desc { font-size: 0.82rem; color: #555; line-height: 1.4; margin-bottom: 0.5rem; }
+.howto-card .card-where { font-size: 0.72rem; color: #888; margin-bottom: 0.5rem; }
+.howto-card .card-cats { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.howto-card .cat-tag {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 1rem;
+  background: #eef0f8;
+  color: #444;
+  cursor: pointer;
+}
+.howto-card.hidden { display: none; }
+</style>
+
+<div class="howto-filters" id="howto-filters">
+  <button class="active" data-cat="all">All</button>
+</div>
+
+<div class="howto-grid" id="howto-gallery"></div>
+
+<script>
+const PAGES = [
+  { title: "Model Across Scales",
+    href: "MultiScaleModelling.html",
+    slug: "MultiScaleModelling",
+    desc: "Couple a whole-brain mean-field network with a spiking, reservoir, or biophysical patch.",
+    where: "How-To",
+    cats: ["simulate","networks","multi-scale"] },
+  { title: "Build a Connectome from Tractography",
+    href: "BuildConnectomeFromTractography.html",
+    slug: "BuildConnectomeFromTractography",
+    desc: "Turn a tractogram and a parcellation atlas into a schema-compliant structural network.",
+    where: "How-To",
+    cats: ["networks","data"] },
+  { title: "Fit a Model to Data",
+    href: "../Interoperability/tvboptim/RWW_tvboptim.html",
+    slug: "ModelFitting",
+    desc: "Tune a mean-field model so its functional connectivity matches empirical BOLD.",
+    where: "tvboptim backend",
+    cats: ["fit","analysis"] },
+  { title: "Infer Parameters (Bayesian)",
+    href: "../Interoperability/tvboptim/Bayesian_tvboptim.html",
+    slug: "Bayesian",
+    desc: "Estimate posteriors over model parameters with MCMC.",
+    where: "tvboptim backend",
+    cats: ["fit","inference"] },
+  { title: "Tune E/I Balance",
+    href: "../Interoperability/tvboptim/EI_Tuning_tvboptim.html",
+    slug: "Algorithms",
+    desc: "Drive each region to a target firing rate by tuning excitation/inhibition.",
+    where: "tvboptim backend",
+    cats: ["fit","tuning"] },
+  { title: "Explore a Parameter Space",
+    href: "../Usage/ParameterExploration.html",
+    slug: "ParameterExploration",
+    desc: "Run systematic sweeps and grid searches across model parameters.",
+    where: "Usage",
+    cats: ["analysis","sweeps"] },
+  { title: "Analyze Stability & Bifurcations",
+    href: "../Usage/BifurcationAnalysis.html",
+    slug: "BifurcationAnalysis",
+    desc: "Find fixed points, assess stability, and trace bifurcation diagrams.",
+    where: "Usage",
+    cats: ["analysis","stability"] },
+  { title: "Reproduce a Published Study",
+    href: "../Replication/index.html",
+    slug: "SimulationExperiments",
+    desc: "Turn a paper into one declarative, fully computed replication study.",
+    where: "Replication",
+    cats: ["reproduce","fit"] },
+];
+
+// Enrich with icon/gradient from the shared global registry.
+PAGES.forEach(p => {
+  const info = (window.TVBO_ICONS && TVBO_ICONS[p.slug]) || {};
+  p.icon = info.icon || "fa-solid fa-file";
+  p.gradient = info.gradient || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+});
+
+// Filter buttons from the union of categories.
+const allCats = [...new Set(PAGES.flatMap(p => p.cats))].sort();
+const filterBar = document.getElementById('howto-filters');
+filterBar.querySelector('[data-cat="all"]').addEventListener('click', () => setFilter('all'));
+allCats.forEach(cat => {
+  const btn = document.createElement('button');
+  btn.textContent = cat;
+  btn.dataset.cat = cat;
+  btn.addEventListener('click', () => setFilter(cat));
+  filterBar.appendChild(btn);
+});
+
+// Build cards.
+const gallery = document.getElementById('howto-gallery');
+PAGES.forEach(p => {
+  const card = document.createElement('div');
+  card.className = 'howto-card';
+  card.dataset.cats = JSON.stringify(p.cats);
+
+  const imgWrap = document.createElement('a');
+  imgWrap.href = p.href;
+  const visual = document.createElement('div');
+  visual.className = 'card-visual';
+  const ph = document.createElement('div');
+  ph.className = 'card-img-placeholder';
+  ph.style.background = p.gradient;
+  ph.innerHTML = `<i class="${p.icon}" aria-hidden="true"></i>`;
+  visual.appendChild(ph);
+  imgWrap.appendChild(visual);
+  card.appendChild(imgWrap);
+
+  const body = document.createElement('div');
+  body.className = 'card-body';
+  const title = document.createElement('a');
+  title.href = p.href;
+  title.innerHTML = `<div class="card-title">${p.title}</div>`;
+  body.appendChild(title);
+  const desc = document.createElement('div');
+  desc.className = 'card-desc';
+  desc.textContent = p.desc;
+  body.appendChild(desc);
+  const where = document.createElement('div');
+  where.className = 'card-where';
+  where.textContent = p.where;
+  body.appendChild(where);
+  const cats = document.createElement('div');
+  cats.className = 'card-cats';
+  p.cats.forEach(c => {
+    const tag = document.createElement('span');
+    tag.className = 'cat-tag';
+    tag.textContent = c;
+    tag.addEventListener('click', () => setFilter(c));
+    cats.appendChild(tag);
+  });
+  body.appendChild(cats);
+  card.appendChild(body);
+  gallery.appendChild(card);
+});
+
+let activeFilter = 'all';
+function setFilter(cat) {
+  activeFilter = cat;
+  document.querySelectorAll('.howto-filters button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === cat);
+  });
+  document.querySelectorAll('.howto-card').forEach(card => {
+    const cardCats = JSON.parse(card.dataset.cats);
+    card.classList.toggle('hidden', cat !== 'all' && !cardCats.includes(cat));
+  });
+}
+</script>
+```

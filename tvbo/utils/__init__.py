@@ -543,7 +543,13 @@ def add_to_parameters_collection(key, value, path, parameters):
         if part == "parameters":
             continue
         part_key = str(part) if isinstance(part, int) else part
-        if part_key not in current_level:
+        # A path component must map to a sub-Bunch to navigate into. Nest when the slot
+        # is absent OR already holds a scalar leaf: a Parameter that carries both a
+        # ``value`` AND a nested ``distribution`` (e.g. omega_mean_hz = 10 Hz + Normal(mean,
+        # std)) stores its scalar first, then the distribution's sub-parameters navigate
+        # through the same name — without this guard that dereferences the scalar
+        # (an ``extended_float``) and raises "argument of type '…' is not iterable".
+        if not isinstance(current_level.get(part_key), Bunch):
             current_level[part_key] = Bunch()
         if part != key:
             current_level = current_level[part_key]
