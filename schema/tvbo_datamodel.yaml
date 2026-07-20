@@ -408,6 +408,60 @@ enums:
             std: { description: "Standard deviation across the axis." }
             sem: { description: "Standard error of the mean: std across the axis divided by sqrt(n)." }
             median: { description: "Median across the axis." }
+    ProcedureStepType:
+        description: >-
+            The operation a ProcedureStep performs. `equation` is the general
+            case (author-written algebra over previously-named intermediates);
+            the others are named graph-construction operations whose options are
+            fields rather than call syntax, so each lowers to a backend-native
+            primitive without an expression string having to survive a parser.
+        permissible_values:
+            equation:
+                description: >-
+                    Evaluate `equation.rhs` over previously-named intermediates
+                    and the generator's parameters. The default.
+            pairwise_distance:
+                description: >-
+                    Distance matrix between the rows of the positions named by
+                    `of` (euclidean). `diagonal` optionally overwrites the
+                    self-distance, e.g. to infinity so a decaying distance kernel
+                    evaluates to zero there and no node connects to itself.
+            distribution_pdf:
+                description: >-
+                    Evaluate `distribution`'s density at the positions named by
+                    `of` — a spatial field (e.g. a Gaussian sink/source whose
+                    difference forms an in-strength gradient).
+            sample:
+                description: >-
+                    A random matrix drawn from `distribution` — the draw itself,
+                    e.g. the substrate of a random reservoir. Distinct from
+                    `stochastic_mask`, which compares a draw and yields a boolean.
+            stochastic_mask:
+                description: >-
+                    Boolean connection mask: compare the quantity named by `of`
+                    against a draw from `distribution` using `comparison`. The
+                    declarative form of a distance-dependent connection
+                    probability.
+            normalize:
+                description: >-
+                    Divide the intermediate named by `of` by its sum along
+                    `axis` (axis 0 gives uniform in-strength).
+            minmax_rescale:
+                description: >-
+                    Affinely rescale the intermediate named by `of` from its own
+                    min/max onto `target_range`.
+
+    ComparisonOperator:
+        description: >-
+            Comparison used by a `stochastic_mask` step. Named rather than
+            written as an operator so the step stays metadata: `!=` in particular
+            cannot survive expression parsing (it evaluates to a plain boolean).
+        permissible_values:
+            le: { description: "less than or equal (<=)" }
+            lt: { description: "strictly less than (<)" }
+            ge: { description: "greater than or equal (>=)" }
+            gt: { description: "strictly greater than (>)" }
+
     EventType:
         description: "Type of event triggering mechanism."
         permissible_values:
@@ -1574,16 +1628,73 @@ classes:
     ProcedureStep:
         class_uri: tvbo:ProcedureStep
         description: >-
-            A single named step (or output) in a Procedure, carrying the
-            Equation that defines it.
+            A single named step (or output) in a Procedure: one typed operation
+            producing one named intermediate.
+
+            `type` selects the operation and therefore which of the fields below
+            apply; it defaults to `equation`, the general case, so a Procedure
+            written purely as equations needs no type annotations. The remaining
+            fields carry each operation's options as *metadata* rather than as
+            call syntax, which is what lets a step lower directly to a
+            backend-native primitive: expression parsing cannot represent keyword
+            arguments at all, so any option written as one would be unresolvable.
         slots:
             - name
             - description
         attributes:
+            type:
+                range: ProcedureStepType
+                ifabsent: "string(equation)"
+                description: "Which operation this step performs. Defaults to `equation`."
             equation:
                 range: Equation
                 inlined: true
-                description: "The equation defining this step/output."
+                description: >-
+                    The equation defining this step/output. Used by `equation`
+                    steps (and by every output expression).
+            of:
+                range: string
+                description: >-
+                    Name of the intermediate this step consumes — the positions
+                    for `pairwise_distance` / `distribution_pdf`, the matrix for
+                    `normalize`, the compared quantity for `stochastic_mask`.
+                    Steps are ordered, so it must already be defined.
+            axis:
+                range: integer
+                description: "Array axis a `normalize` step reduces over (0 = columns)."
+            diagonal:
+                range: ScalarValue
+                description: >-
+                    Value written onto the diagonal of a `pairwise_distance`
+                    result, e.g. infinity to suppress self-connections. Omitted
+                    leaves the true zero self-distance in place.
+            distribution:
+                range: Distribution
+                inlined: true
+                description: >-
+                    Distribution sampled by a `stochastic_mask` step, or whose
+                    density a `distribution_pdf` step evaluates. Reuses the
+                    Distribution class, so a generator's randomness is declared
+                    exactly like any other sampled quantity in TVBO.
+            comparison:
+                range: ComparisonOperator
+                ifabsent: "string(le)"
+                description: "Comparison a `stochastic_mask` applies between `of` and the draw."
+            seed_offset:
+                range: integer
+                ifabsent: int(0)
+                description: >-
+                    Sub-stream this step draws from, offset from the generator's
+                    seed. Two seeded steps must use different offsets to be
+                    independent. Stated here rather than inferred from step order
+                    so it is a property of the generator that every backend
+                    derives identically (numpy re-seeds, jax folds the offset into
+                    the key) — and so inserting or reordering steps cannot
+                    silently change an existing generator's output.
+            target_range:
+                range: Range
+                inlined: true
+                description: "Target interval for a `minmax_rescale` step (e.g. lo -1, hi 1)."
 
     File:
         class_uri: tvbo:File
@@ -4448,8 +4559,28 @@ classes:
             container:
                 range: string
                 description: >-
-                    Container image wrapping each task (Apptainer/Singularity/Docker
-                    reference); tasks run as ``<runtime> exec <image> …``.
+                    Container image wrapping each task; tasks run as ``<runtime>
+                    exec <image> …``. Either a registry reference the engine
+                    resolves and materialises itself (``docker://…``) or a path to an
+                    image file already built on the target, which pins the exact image
+                    and needs no pull.
+            container_binds:
+                multivalued: true
+                range: string
+                description: >-
+                    Host paths that must be visible inside the container beyond the
+                    ones its runtime binds by default (typically ``$HOME`` and the
+                    working directory). Required whenever a task reads or writes a
+                    site filesystem outside those defaults — a shared cache, a data
+                    tree, or a scratch area a symlink resolves into. Rendered into
+                    each runtime's own flag (``--bind`` for Apptainer/Singularity).
+            container_args:
+                range: string
+                description: >-
+                    Additional arguments passed verbatim to the container runtime
+                    when it executes a task. The extension point for runtime flags
+                    the typed fields do not cover, mirroring
+                    ``WorkflowEngineConfig.options`` for scheduler directives.
             retries:
                 range: integer
                 minimum_value: 0
