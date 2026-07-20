@@ -12,6 +12,9 @@ Simulation can be run via pyNeuroML (jnml).
 
 from __future__ import annotations
 
+import functools
+import json
+import os
 import re
 from typing import TYPE_CHECKING
 
@@ -1342,13 +1345,19 @@ def _render_event_children(dyn_obj, time_scale="ms", indent=8):
 # biological types).  The adapter generates custom ComponentTypes that
 # extend the LEMS base types for type-system compatibility.
 #
-# The lookup tables below encode the LEMS *type-system infrastructure*
-# (what Child/Children/Attachments slots each base type declares, which
-# parameters are inherited, etc.).  This is NOT biological knowledge —
-# it's the equivalent of knowing that an abstract base class has certain
-# methods.
+# Emitting a custom ComponentType needs its base type's contract: the
+# quantities it exposes and requires, its inherited parameters, and the
+# Child/Children/Attachments slots it carries. ``_base_type_meta`` returns that
+# contract for any NeuroML base type, grounded in the ingested NeuroML ontology
+# (``neuroml_contracts.json``) — no per-type entry needed.
+#
+# ``_BUILTIN_BASE_META`` covers only the abstract cell/channel/gate/rate bases
+# the standard biological emitter drives. NeuroML declares their synapse-
+# hosting, gate-children and initial-value structure on concrete descendants
+# (``iafCell``, ``ionChannelHH``, ...), not on the abstract base, so the
+# canonical structure a custom cell/channel/gate emits is fixed here.
 
-_BASE_TYPE_META = {
+_BUILTIN_BASE_META = {
     "baseCellMembPot": {
         "inherited_params": set(),
         "exposures": {"v": "voltage"},
@@ -1379,6 +1388,82 @@ _BASE_TYPE_META = {
         "requirements": {"v": "voltage"},
     },
 }
+
+
+@functools.lru_cache(maxsize=1)
+def _load_neuroml_contracts() -> dict:
+    """Load the ingested NeuroML base-type contract index (cached).
+
+    Generated from the NeuroML core types by ``scripts/ontology/gen_neuroml.py``
+    and shipped at ``tvbo/data/ontology/neuroml_contracts.json``.
+    """
+    path = os.path.join(os.path.dirname(__file__), "..", "data", "ontology", "neuroml_contracts.json")
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def _resolve_base_type_name(ref: str) -> str:
+    """Normalise a base-type reference to a bare NeuroML type name.
+
+    Accepts the ``extends:`` shorthand, the tvbo-scoped IRI
+    (``.../neuroml/<name>``) and the direct NeuroML IRI (``...neuroml2#<name>``),
+    so a Dynamics may point at a base type by any of them interchangeably.
+    """
+    ref = ref.strip()
+    if ref.startswith("extends:"):
+        ref = ref.split(":", 1)[1]
+    if "#" in ref:
+        ref = ref.rsplit("#", 1)[-1]
+    if "/" in ref:
+        ref = ref.rsplit("/", 1)[-1]
+    return ref
+
+
+def _extends_base(iri: str) -> str | None:
+    """Bare base-type name if *iri* references a NeuroML base type to extend.
+
+    Recognises the ``extends:`` shorthand, the tvbo-scoped IRI
+    (``.../neuroml/<name>`` or ``tvbo:neuroml/<name>``) and the direct NeuroML
+    IRI (``...neuroml2#<name>``). Returns ``None`` otherwise — in particular for
+    the ``neuroml:<name>`` standard-type reference, which is not an extension.
+    """
+    iri = (iri or "").strip()
+    if iri.startswith("extends:"):
+        return iri.split(":", 1)[1]
+    if "neuroml.org/schema/neuroml2#" in iri:
+        return iri.rsplit("#", 1)[-1]
+    if "/tvbo/neuroml/" in iri or iri.startswith("tvbo:neuroml/"):
+        return iri.rsplit("/", 1)[-1]
+    return None
+
+
+def _base_type_meta(extends: str) -> dict:
+    """Emission contract for a NeuroML base type.
+
+    Returns the exposures, requirements, inherited parameters and structural
+    slots a custom ComponentType inherits from *extends*. Built-in cell/channel/
+    gate/rate bases use their fixed emission structure; every other base type is
+    grounded in the ingested NeuroML ontology contract index.
+    """
+    name = _resolve_base_type_name(extends)
+    if name in _BUILTIN_BASE_META:
+        return _BUILTIN_BASE_META[name]
+    contract = _load_neuroml_contracts().get(name)
+    if not contract:
+        return {}
+    children = contract.get("children") or {}
+    plural = [(n, c["type"]) for n, c in children.items() if c.get("multiple")]
+    meta = {
+        "exposures": contract.get("exposures", {}),
+        "requirements": contract.get("requirements", {}),
+        "inherited_params": set(contract.get("parameters", {})),
+        "on_start_refs": dict(contract.get("on_start", {})),
+        "attachments": [(n, t) for n, t in (contract.get("attachments") or {}).items()],
+        "child_roles": {n: c["type"] for n, c in children.items() if not c.get("multiple")},
+    }
+    if plural:
+        meta["children"] = plural[0]
+    return meta
 
 
 def _hier_format_attr_value(param):
@@ -1436,7 +1521,7 @@ def _hier_build_dynamics(dyn, extends, all_params):
     Reads state_variables, derived_variables, and events from the
     Dynamics object and converts them to LEMS template data.
     """
-    meta = _BASE_TYPE_META.get(extends, {})
+    meta = _base_type_meta(extends)
     exposures = meta.get("exposures", {})
 
     # Collect all symbol names for expression conversion
@@ -1623,19 +1708,18 @@ def _build_hier_custom_context(experiment):
     type_defs = OrderedDict()
     type_order = []
 
-    root_extends = dyn.iri.split(":", 1)[1]
+    root_extends = _extends_base(dyn.iri)
     root_type_name = getattr(dyn, "label", None) or f"custom{root_extends}"
-    root_meta = _BASE_TYPE_META.get(root_extends, {})
+    root_meta = _base_type_meta(root_extends)
 
     channels = []
     channel_pops = []
 
     for ch_key, ch_dyn in (dyn.modes or {}).items():
-        ch_iri = getattr(ch_dyn, "iri", "") or ""
-        if not ch_iri.startswith("extends:"):
+        ch_extends = _extends_base(getattr(ch_dyn, "iri", ""))
+        if ch_extends is None:
             continue
-        ch_extends = ch_iri.split(":", 1)[1]
-        ch_meta = _BASE_TYPE_META.get(ch_extends, {})
+        ch_meta = _base_type_meta(ch_extends)
         ch_type_name = getattr(ch_dyn, "label", None) or f"custom{ch_extends}"
         ch_params = ch_dyn.parameters or {}
 
@@ -1651,11 +1735,10 @@ def _build_hier_custom_context(experiment):
         # ── Process gates (Children of channel) ──
         gate_instances = []
         for g_key, g_dyn in (ch_dyn.modes or {}).items():
-            g_iri = getattr(g_dyn, "iri", "") or ""
-            if not g_iri.startswith("extends:"):
+            g_extends = _extends_base(getattr(g_dyn, "iri", ""))
+            if g_extends is None:
                 continue
-            g_extends = g_iri.split(":", 1)[1]
-            g_meta = _BASE_TYPE_META.get(g_extends, {})
+            g_meta = _base_type_meta(g_extends)
             g_type_name = getattr(g_dyn, "label", None) or f"custom{g_extends}"
             g_params = g_dyn.parameters or {}
             g_inherited = g_meta.get("inherited_params", set())
@@ -1664,11 +1747,10 @@ def _build_hier_custom_context(experiment):
             # ── Process rates (Child of gate) ──
             rate_children = OrderedDict()
             for r_key, r_dyn in (g_dyn.modes or {}).items():
-                r_iri = getattr(r_dyn, "iri", "") or ""
-                if not r_iri.startswith("extends:"):
+                r_extends = _extends_base(getattr(r_dyn, "iri", ""))
+                if r_extends is None:
                     continue
-                r_extends = r_iri.split(":", 1)[1]
-                r_meta = _BASE_TYPE_META.get(r_extends, {})
+                r_meta = _base_type_meta(r_extends)
                 r_type_name = getattr(r_dyn, "label", None) or f"custom{r_extends}"
                 r_params = r_dyn.parameters or {}
                 r_inherited = r_meta.get("inherited_params", set())
@@ -1877,8 +1959,9 @@ def build_std_lems_context(experiment):
 
     iri = getattr(dyn, "iri", None) or ""
 
-    # Hierarchical custom types: iri starts with "extends:"
-    if iri.startswith("extends:"):
+    # Hierarchical custom types: iri references a NeuroML base type to extend
+    # (extends: shorthand, tvbo-scoped IRI, or direct NeuroML IRI).
+    if _extends_base(iri) is not None:
         return _build_hier_custom_context(experiment)
 
     if not iri.startswith("neuroml:"):
