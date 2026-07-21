@@ -88,3 +88,33 @@ def test_collect_raises_when_vector_unbuildable():
              observations={"a": NS(source=["network.instrength"], pipeline=[], dynamics=None)})
     with pytest.raises(ValueError):
         collect_network_node_arrays(exp)
+
+
+def test_host_pipeline_callable_invocation_uses_the_node_constant_not_the_literal():
+    """The pipeline-monitor's callable invocation must pass the EMBEDDED node constant for a
+    `network.positions`/`instrength` argument — not the raw string. That render path
+    re-implemented argument resolution by hand with no network-ref branch, so the ref fell
+    through to a string literal and the host callable received 'network.positions' (crashing
+    on np.asarray(..., float)). `collect_network_node_arrays` embedding the constant is not
+    enough; the invocation has to reference it."""
+    from tvbo import SimulationExperiment
+
+    nodes = [{"id": i, "label": f"n{i}", "position": {"x": float(i), "y": 0.0, "z": 0.0}}
+             for i in range(3)]
+    exp = SimulationExperiment(
+        id=1, label="node-ref-callable",
+        dynamics={"name": "Osc", "system_type": "continuous", "output": ["x"],
+                  "parameters": {"a": {"value": 1.0}},
+                  "state_variables": {"x": {"equation": {"rhs": "-a*x"}, "initial_value": 0.1}}},
+        network={"number_of_nodes": 3, "nodes": nodes},
+        integration={"method": "heun", "step_size": 0.1, "duration": 1.0,
+                     "transient_time": 0.0, "unit": "s"},
+        observations={"probe": {
+            "source": ["x"],
+            "pipeline": [{"callable": {"name": "wave", "module": "some_helper"},
+                          "arguments": [{"name": "theta_result", "value": "integration.result"},
+                                        {"name": "positions", "value": "network.positions"}]}]}},
+    )
+    code = exp.render_code("tvboptim")
+    assert "positions=_network_node_positions" in code
+    assert "positions='network.positions'" not in code and 'positions="network.positions"' not in code
