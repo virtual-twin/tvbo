@@ -56,7 +56,7 @@ def default_container_ref() -> str:
     return f"docker://{image}:{_default_container_tag()}"
 
 
-def resolve_container_ref(raw: Any, *, has_requirements: bool) -> str | None:
+def resolve_container_ref(raw: Any) -> str | None:
     """Resolve a recipe's declared ``container`` into an engine-ready reference.
 
     A concrete image — a local ``.sif``/``.simg`` path or a registry reference that
@@ -68,13 +68,14 @@ def resolve_container_ref(raw: Any, *, has_requirements: bool) -> str | None:
     - the symbolic requests ``tvbo`` / ``default``;
     - a tvbo registry reference with no tag (``docker://…/tvbo``).
 
-    With no container declared, ``requirements`` still imply container-based
-    execution (the deps layer onto a base image), so the base defaults to the
-    tvbo image; without either, tasks run bare and this returns ``None``.
+    No container declared ⇒ ``None``: tasks run in the surrounding environment (bare, or
+    the requirements venv ``setup.sh`` provisions — see :attr:`WorkflowPlan.needs_env_layer`).
+    ``requirements`` are provisioned by whichever substrate the ``container`` field selects;
+    they do NOT force a container of their own.
     """
     val = str(raw or "").strip()
     if not val:
-        return default_container_ref() if has_requirements else None
+        return None
     if val in ("tvbo", "default"):
         return default_container_ref()
     if val.startswith("docker://"):
@@ -209,23 +210,34 @@ class WorkflowPlan:
         return out
 
     @property
-    def needs_container_layer(self) -> bool:
-        """Whether the kit must layer declared requirements onto a prebuilt container.
+    def needs_env_layer(self) -> bool:
+        """Whether the kit must provision declared ``requirements`` into a run environment.
 
-        A ``container`` names a base image the tasks ``exec`` into; ``requirements``
-        names what the study's code needs (e.g. a callable that imports ``igl``). When
-        both are set, the image is not guaranteed to carry those deps, and a study should
-        not have to rebuild the image to add one. So the kit provisions the declared
-        requirements into a ``--system-site-packages`` venv layered on the image at setup
-        time (``setup.sh``) and exposes it to each task via ``PYTHONPATH`` — pip resolves
-        against the image (installing only the delta) and compiles native wheels with the
-        image's own interpreter, so the layer is ABI-correct without touching the image.
+        ``requirements`` names what the study's code needs (e.g. a callable that imports
+        ``igl``) beyond a bare tvbo. ``setup.sh`` provisions them into a
+        ``--system-site-packages`` venv and each task prepends it to ``PYTHONPATH`` — pip
+        resolves against the surrounding interpreter (installing only the delta) and
+        compiles native wheels with it, so the layer is ABI-correct. This holds whether the
+        tasks run bare (a native venv) or inside a ``container`` (the venv is built via
+        ``singularity exec`` on the image, layering the deps without rebuilding it). So a
+        study declares its deps ONCE and ``tvbo workflow submit`` builds the right
+        environment — no manual ``pip install`` on the target.
+        """
+        return bool(self.pip_specs)
+
+    @property
+    def needs_container_layer(self) -> bool:
+        """A :attr:`needs_env_layer` that layers onto a declared ``container`` specifically.
+
+        The Slurm emitter injects the layer into the task's ``singularity exec`` via
+        ``--env`` (container-only); the Snakemake emitter's plain ``PYTHONPATH`` prepend is
+        substrate-agnostic and keys on :attr:`needs_env_layer` instead.
         """
         return bool(self.container and self.pip_specs)
 
     @property
     def container_extras_venv(self) -> str:
-        """Kit-relative dir for the layered-requirements venv (see needs_container_layer)."""
+        """Kit-relative dir for the requirements venv (see :attr:`needs_env_layer`)."""
         return ".tvbo-extras-venv"
 
     @property
@@ -744,7 +756,7 @@ def plan(
         backend=bk,
         engine=engine,
         out_dir=out_dir,
-        container=resolve_container_ref(spec.get("container"), has_requirements=bool(_reqs)),
+        container=resolve_container_ref(spec.get("container")),
         container_binds=[str(b) for b in _as_list(spec.get("container_binds") or [])],
         container_args=(spec.get("container_args") or None),
         retries=int(spec.get("retries") or 0),

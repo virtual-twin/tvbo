@@ -166,8 +166,14 @@ tvb = [
 # pymoo backs the NSGA-II multi-objective exploration strategy (Exploration.strategy: nsga2).
 tvboptim = ["tvboptim", "pymoo>=0.6.0"]
 
+# Distributed workflow orchestration. `tvbo workflow submit` shells out to Snakemake to
+# dispatch a kit's per-cell rules; the SLURM executor plugin turns each rule into an sbatch
+# job. These are the ORCHESTRATOR (needed wherever `submit` runs); a study's own runtime
+# deps travel declaratively via `environment.requirements` and are provisioned by setup.sh.
+workflow = ["snakemake>=8.0.0", "snakemake-executor-plugin-slurm>=0.11.0"]
+
 # Full install (all features)
-all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2]"]
+all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow]"]
 
 [project.urls]
 homepage = "https://tvbo.charite.de"
