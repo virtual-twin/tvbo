@@ -67,6 +67,11 @@ def _rule_resources(block):
     for _key, _slot in (("partition", "slurm_partition"), ("account", "slurm_account")):
         if block.get(_key):
             r[_slot] = '"%s"' % block[_key]
+    if block.get("gres"):
+        # The SLURM executor has no first-class gres field, so a GPU (or any generic
+        # resource) request rides slurm_extra as a raw sbatch flag. The inner single
+        # quotes are the executor's required form for a passthrough flag.
+        r["slurm_extra"] = "\"'--gres=%s'\"" % block["gres"]
     for opt in (block.get("options") or []):
         v = str(opt["value"])
         # numeric -> bare int; plain string -> "quoted"; anything with a quote -> repr (safely escaped)
