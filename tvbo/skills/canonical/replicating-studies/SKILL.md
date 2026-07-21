@@ -296,6 +296,64 @@ substitute SC gave FC r=0.27 — the same as tvboptim's 0.32 — proving the sho
 connectome, not the engine; without it we'd have chased an implementation bug that wasn't
 there.)
 
+## Phase 8 — Scale out to a cluster (ONLY when one node genuinely won't do)
+
+**Skip this phase unless the work is irreducibly large** — a per-subject cohort (one
+independent fit × N subjects) or a fit whose single run is itself heavy. First try NOT
+to need it: a big *graph* → `graph_representation: sparse` + vectorized coupling; a big
+*parameter grid* → a streaming reduced observable (Phase 4). Both routinely turn a
+"needs HPC" run into minutes on one GPU, numerically identical (~1e-16). Assess this
+before packaging anything.
+
+REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site facts).
+
+- **The kit is the same recipe, one command — no drivers, no bash.** `tvbo workflow
+  snakemake <Study>.yaml -o <out> --pack` emits the whole study as ONE Snakemake DAG
+  (one rule per experiment; dataset experiments fan out per subject; a `from_experiment`
+  dependency becomes the DAG edge). Everything stays declarative in the recipe's
+  `workflow:` block: runtime env via `workflow.container: docker://…` (each rule runs
+  inside it via Apptainer — no venv/module activation); per-subject inputs via
+  `Dataset.bundle: true` (`--pack` copies them in and rewrites `bids_root` relative);
+  custom builders/analysis via `code_source:`; per-rule resources
+  (`cpus_per_task`/`mem`/`time`/`partition`) via `workflow.slurm`. The kit is one
+  `.tar.gz`; `tvbo workflow submit <kit>` runs it. This is invariant #1 (one recipe,
+  no drivers) extended to the cluster — never hand-write sbatch.
+- **A dry run does NOT execute anything — smoke-test ONE experiment in the container
+  FIRST.** `tvbo workflow submit --dry-run` (snakemake `-n`) only resolves the DAG
+  (wildcards, inputs, resources); no `tvbo run` executes, so it cannot catch a runtime
+  bug. A per-rule bug fails all N jobs identically (we once launched 1106 that all died
+  the same way). Before the real submit, run a single experiment end-to-end inside the
+  SIF (`apptainer exec --bind … <sif> tvbo run spec/<id>/experiment.yaml`), then its
+  dependents, then the full submit. This is Phase 7's "run END-TO-END, not `from_file`"
+  at cluster scale.
+- **The container filesystem is READ-ONLY — a bug class that ONLY bites in-container.**
+  Anything writing into the installed package or `$HOME/.cache` at import/run time
+  fails only inside the SIF, never locally or in a dry run: codegen compiling templates
+  into the package dir, `templateflow`/`matplotlib` writing caches, a `$HOME` that
+  symlinks into another filesystem (the link dangles in-container). Fixes: writable
+  temp dirs for codegen caches, and **bind the site filesystem** (`--bind /data/…`,
+  declared in `workflow.slurm` container args). The single-experiment smoke test
+  surfaces every one at once.
+- **Know which fixes need a container rebuild vs a re-emit.** The container runs the
+  *pushed* branch; your emitter is your *working tree*. A schema or codegen-**template**
+  change takes effect only after push → image rebuild → SIF re-pull; an emit-side change
+  (freezing/packaging in the CLI) just needs a re-emit of the kit. Confirm a fix is
+  actually live before assuming — and when you re-pull an image, assert the fix is
+  present (a tag can rebuild to stale cached content; a SIF is named by the URL hash, so
+  it lands at the same path — force the pull).
+- **Run the orchestrator on a COMPUTE node, not the login node.** Login nodes are
+  cgroup-capped (a per-user memory limit that OOM-kills a long `snakemake`); DAG
+  resolution that takes seconds on a compute node crawls or dies on a starved login
+  node. Wrap `tvbo workflow submit` in a long-partition job — it is resumable
+  (snakemake skips completed outputs, so a walltime cap just means resubmit). Never
+  install or build on the login node.
+- **Big, flaky transfers: chunk + checksum.** A multi-hundred-MB kit over an unreliable
+  link won't survive one `scp`/`rsync` stream (macOS ships `openrsync`, which doesn't
+  resume); split into ~32 MB chunks, size-verify each with retries, reassemble, then
+  **sha256 the result against the source** — a stale-but-right-sized kit passes a
+  byte-count glance (we shipped one twice before checking the hash). Iterate with small
+  (spec-only) uploads, not the full kit.
+
 ---
 
 ## Dynamical & numerical traps (these cost us the most time)
@@ -318,6 +376,19 @@ there.)
   locally, numerically identical (~1e-16). Assess this first — often no cluster is needed.
   For a big *parameter* grid, pair this with a streaming reduced observable (Phase 4) so vmap
   memory stays bounded and the whole grid fits one GPU.
+- **A fit at the paper's real length: EVERY long-running observable must stream, and
+  the pre-tuning base sim is spurious.** The Phase-4 streaming rule is not just for
+  parameter grids. A fit runs the paper's actual simulation length (long, for stable
+  FC/statistics), and a post-hoc observation that stacks the full trajectory at that
+  length is enormous: Schirner's 10 h × dt=1 ms × 379 nodes × 4 states ≈ 440 GB for ONE
+  FC evaluation → OOM even on a highmem node. Compute BOLD/FC/moments as **streaming
+  reductions** (fold-in-carry over a block scan) that never materialize the trajectory —
+  the result is byte-identical. Two materialization traps specifically: (1) a fitting
+  experiment's *pre-tuning* forward sim is not a deliverable (the tuning algorithm is);
+  don't run a full-length materialized base sim before it. (2) the *post-tuning*
+  evaluation must stream too. Neither shows in a short smoke test — reason about
+  resident memory = `n_steps × n_nodes × n_states × 8 B` up front, and if a needed
+  streaming observable doesn't exist yet, that's a Phase-1.5 framework gap.
 - **Metastable / FC metrics are duration-, trial-, and regime-sensitive — don't call a
   ceiling early.** A single short run's FC/PLV/order-parameter is noise-dominated (one lucky
   trial read 0.17; the 8-trial mean was 0.09). Match the paper's **full duration and trial
