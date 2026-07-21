@@ -4763,12 +4763,6 @@ class Network(tvbo_datamodel.Network):
             "np": jnp,
             "jsp": jsp,
         }
-        # ``specrad(X)`` — spectral radius (largest |eigenvalue|) of a matrix expression,
-        # for rescaling a connectome to a fixed coupling strength independent of any
-        # per-region normalisation, e.g. ``0.30 * W / roi_size / specrad(W / roi_size)``.
-        env["specrad"] = lambda X: jnp.max(jnp.abs(jnp.linalg.eigvals(X)))
-        if getattr(M, "ndim", 0) == 2 and M.shape[0] == M.shape[1]:
-            env["W_specrad"] = env["M_specrad"] = env["specrad"](M)
         # Expose declared per-node parameters as (n, 1) column vectors, so a symbolic
         # weight transform can normalise per target region — e.g. ``W / roi_size`` divides
         # each target row by that region's size (Deco's fibers-per-neuron SC). Column
