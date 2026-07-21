@@ -233,6 +233,9 @@ def write_full_qdoc_config(sections, out_path):
             "sidebar": "./_sidebar.auto.yml",   # quartodoc will write this
             "parser": "google",
             "style": "pkgdown",
+            # Custom markdown renderer (../_renderer.py) that teaches quartodoc
+            # to render ``Yields:`` sections; the stock renderer errors on them.
+            "renderer": "_renderer.py",
             "dir": ".",
             "package": "tvbo",
             "title": "TVB-O API Documentation",

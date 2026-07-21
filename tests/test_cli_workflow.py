@@ -122,6 +122,20 @@ def test_workflow_snakemake_emits_kit(tmp_path: Path):
                    for p in frozen for line in readme.splitlines())
 
 
+def test_snakemake_rule_emits_the_resolved_backend_never_none(tmp_path: Path):
+    """Emitting WITHOUT `--backend` must pin the plan's resolved backend on each rule,
+    not the raw ``None``. The plan resolves an unset backend to the experiment's
+    ``execution.backend`` (else tvboptim); if the raw None leaks through, the rule
+    renders ``--backend=None`` and every cell dies at backend resolution
+    (``experiment.run(format="None")`` -> ValueError)."""
+    out = tmp_path / "kit"
+    r = runner.invoke(app, ["workflow", "snakemake", EXP, "-o", str(out)])
+    assert r.exit_code == 0, r.stdout
+    smk = (out / "Snakefile").read_text()
+    assert "--backend=None" not in smk
+    assert "--backend=tvboptim" in smk  # EXP self-selects tvboptim when none is given
+
+
 def test_study_rules_do_not_share_one_experiments_resources():
     """Declared resources belong to the rule that declared them, and to no other.
 
