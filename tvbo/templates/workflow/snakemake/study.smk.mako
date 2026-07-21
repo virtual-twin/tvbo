@@ -147,6 +147,15 @@ rule ${ep["rule_name"]}:
 % endif
     output:
         f"{OUT_DIR}/${ep['key']}/${_cell_out(ep)}"
+% if ep.get("benchmark"):
+    ## Engine-native benchmarking (`--benchmark` / `--set benchmark=true`): Snakemake times
+    ## the rule and writes a TSV — wall time (s and h:m:s), max_rss / max_vms / max_uss /
+    ## max_pss (MB), io_in/io_out, mean_load, cpu_time — next to the cell's output. One row
+    ## per run; a fanned sweep benchmarks every cell (wildcards match the output). The SLURM
+    ## executor still wraps the rule's shell, so this measures the job the same way locally.
+    benchmark:
+        f"{OUT_DIR}/${ep['key']}/${_cell_out(ep)[:-3]}.benchmark.tsv"
+% endif
 % if ep.get("container") and ep["container"] != (exp_plans[0].get("container") if exp_plans else None):
     # This experiment declares its own image; a rule-level `container:` overrides the
     # global one above (which is keyed on the first experiment).

@@ -744,6 +744,10 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
         _max_iter = spec_dict.pop("max_iterations", None)
         if spec_dict.pop("smoke", False) and _max_iter is None:
             _max_iter = 1
+        # Engine-native benchmarking: `--benchmark` / `--set benchmark=true` makes each rule
+        # carry Snakemake's `benchmark:` directive. Like the smoke cap it is a run modifier,
+        # not a workflow-block field, so pop it before the plan/freeze.
+        _benchmark = bool(spec_dict.pop("benchmark", False))
         plan = _wf.plan(study_key=str(study_key), experiment=exp, backend=backend,
                         engine="snakemake", workflow_spec=spec_dict,
                         overrides=parsed["records"], source_spec=spec, experiment_selector=key)
@@ -781,6 +785,8 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             "backend": backend,
             # Smoke iteration cap threaded to the rule's `tvbo run --max-iterations` (None => uncapped).
             "max_iterations": _max_iter,
+            # Engine-native benchmarking: attach Snakemake's `benchmark:` directive to the rule.
+            "benchmark": _benchmark,
             "out_dir": plan.out_dir,
             "result_stem": result_stem,
             "container": plan.container,
@@ -1151,6 +1157,21 @@ def snakemake(
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
     pack: bool = typer.Option(False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."),
+    benchmark: bool = typer.Option(
+        False, "--benchmark",
+        help="Attach Snakemake's native `benchmark:` directive to every rule: a per-cell TSV "
+             "(wall time, max_rss/max_vms/max_uss/max_pss MB, CPU time, I/O) written next to "
+             "each output — locally or as a SLURM job. Sugar for --set benchmark=true.",
+    ),
+    smoke: bool = typer.Option(
+        False, "--smoke",
+        help="Cap every rule's `tvbo run` to one tuning iteration (reach the post-tuning "
+             "evaluation fast, e.g. to verify a fit streams within memory). --set smoke=true.",
+    ),
+    max_iterations: int = typer.Option(
+        None, "--max-iterations", min=1,
+        help="Cap every rule's `tvbo run` to N tuning iterations. --set max_iterations=N.",
+    ),
     bundle_dataset: bool = typer.Option(
         False, "--bundle-dataset",
         help="Copy the fan-out's per-subject dataset files into the kit (spec/<exp>/dataset/) "
@@ -1166,6 +1187,14 @@ def snakemake(
 ) -> None:
     """Emit a self-contained Snakemake kit (`Snakefile` + scripts + frozen spec)."""
     sel = _parse_bundle_select(bundle_select) if (bundle_dataset or bundle_select) else None
+    # Run-modifier flags are sugar for the equivalent `--set` overrides (threaded into the
+    # rule at emit): keep the kit the single source of truth, no separate config.
+    override = [
+        *override,
+        *(["benchmark=true"] if benchmark else []),
+        *(["smoke=true"] if smoke else []),
+        *([f"max_iterations={max_iterations}"] if max_iterations is not None else []),
+    ]
     _emit("snakemake", spec=spec, backend=backend, experiment=experiment,
           output=output, override=override, stdout=stdout, pack=pack, bundle_select=sel)
 
