@@ -994,6 +994,62 @@ generator and delete the builder module entirely. Tier 1 can land
 incrementally as needed by individual interop plans.
 
 
+## Small-scale simulator backends: shared lowering core + native Brian2
+
+Turn the one working small-scale backend (NeuroML/LEMS) into a **shared core +
+thin backends** layer so Brian2 (native, next) and later NEST/Jaxley plug in with
+zero duplicated network-lowering or synapse logic. Full plan + paste-ready handoff
+prompt: `dev/Interoperability/Small-Scale-Simulators/Small-Scale-Adapter-Layer-Plan.md`
+and `…/HANDOFF-SmallScale-Core-and-Brian2.md`. Motivation (July 2026 Deco port):
+NeuroML is a *specification/interchange* standard, not a network *execution* one —
+jNeuroML→Brian2 refuses networks, →NEURON/→NetPyNE error, EDEN 0.2.3 rejects
+`<Attachments>`/`select-reduce`, and jLEMS runs the 71,640-conn Deco column at
+~190 s per 100 ms. So TVB-O must own its fast small-scale backends, via one shared
+core (`tvbo/adapters/smallscale/lowering.py`) — not N copies of the lowering now
+welded inside `neuroml.py`.
+
+**Phase 1 (extract shared core, refactor NeuroML onto it, behavior-preserving)
+MUST also close these findings from the 2026-07-21 pre-commit review of the
+NeuroML diff** — they live in `_build_network_context` only, so the extraction
+brings the duplicated `_build_std_network_context` (std-types path) up to parity
+for free:
+- [ ] **#1 (highest):** id-collision (`_unique_component_id`), ComponentReference
+      satisfaction (Poisson background), and per-connection dedup exist ONLY in
+      `_build_network_context`, NOT `_build_std_network_context`. A *standard-types*
+      network with a repeated input or a `poissonFiringSynapse` background still
+      hits the bugs already fixed for the custom path. Route BOTH builders through
+      the shared core.
+- [ ] **#8:** event-source `dyn_params = _normalize_edge_params(...)` is recomputed
+      per-node inside the loop (both builders); hoist in shared `build_populations`.
+- [ ] **#3:** `input_components` is a new context key only `_build_network_context`
+      produces; the template's `net_ctx.get('input_components', [])` silently emits
+      no inputs if a context lacks it. Return it uniformly; drop the silent fallback.
+- [ ] **#6:** the input-ComponentReference type→instance redirect works only because
+      `input_components` aliases the same `params` dict as `inputs`. Make it explicit.
+- [ ] **#4/#5:** the custom-synapse edge-override overlay `copy.copy(param);
+      _p.value=…` mutates a LinkML object (writing-models footgun) and nulls the
+      param if the override dict lacks a `value` key. Construct a fresh Parameter;
+      guard `if "value" in _pinfo and _pinfo["value"] is not None`.
+- [ ] **#2:** per-connection `weight` is applied only to a DerivedVariable literally
+      named `i`; a conductance synapse inheriting `i` from its base would lose weight
+      silently. In Brian2 synapse rendering apply weight to the output current
+      generically (Brian2 does this natively).
+- [ ] **#9:** the two `<Component ..._inst>` param-emission blocks in the LEMS
+      template are copy-pasted; fold into a Mako `<%def>`.
+
+Phase 2 = native `run(format="brian2")` on the shared core (all_to_all →
+`Synapses.connect(condition='i!=j')`; weight outside the saturating gate; oracle =
+3-way Deco Brian2-vs-NumPy-vs-LEMS with the RESET-JUMP detector). Retires the
+hand-written `deco_column.py`. Phase 3 = NEST or Jaxley proves the core unchanged.
+
+**Prereq before branching the new worktree from dev:** the July 2026 NeuroML fixes
+(weight-in-current + `Property name="weight"` jLEMS-load fix, id-collision,
+ComponentReference satisfaction, tests) were uncommitted on the
+`feat/neuroml-ontology-ingestion` worktree as of 2026-07-21 and are NOT in PR #64.
+Commit + merge them to dev first, or the new session builds on a regressed base
+(without the Property-weight fix the Deco column will not even load in jLEMS).
+
+
 ## vbjax interoperability backend
 
 Add `vbjax` (Sanz-Leon / Woodman, JAX-based virtual brain library) as a
