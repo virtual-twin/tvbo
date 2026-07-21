@@ -37,10 +37,12 @@ rule all_figures:
 % for f in figures:
 rule ${f["rule_name"]}:
 % if f["inputs"]:
-    # PROV used -> workflow input: the containers this figure's layers read.
+    # PROV used -> workflow input: the results this figure's layers read — an expand()
+    # over a fanned experiment's whole grid (raw, so Snakemake evaluates it) or a single
+    # container path. The used-edge IS the dep-edge, so the render waits for its data.
     input:
 % for _in in f["inputs"]:
-        ${_q(_in)}${"," if not loop.last else ""}
+        ${_in["value"] if _in["raw"] else _q(_in["value"])}${"," if not loop.last else ""}
 % endfor
 % endif
     output:
@@ -59,6 +61,12 @@ rule ${f["rule_name"]}:
 % endfor
 % endif
     shell:
+% if f.get("pythonpath_code"):
+        ## The figure's custom-panel code_modules are bundled into code/; put it on
+        ## PYTHONPATH so `import <code_module>` resolves when plot.py runs. Doubled braces
+        ## survive Snakemake's own {…} wildcard expansion into a literal ${PYTHONPATH:-}.
+        "export PYTHONPATH=code:${'$'}{{PYTHONPATH:-}} && "
+% endif
 % for _line in (f.get("setup") or []):
         ${repr(_line + " && ")}
 % endfor

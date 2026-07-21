@@ -527,6 +527,58 @@ def runtime_minutes(t) -> int | None:
         return None
 
 
+def _wildcard(name: str) -> str:
+    """A Snakemake wildcard placeholder, doubled for the f-string that carries it.
+
+    Every emitted path lands inside an f-string that interpolates ``OUT_DIR``; a single
+    brace would make the f-string evaluate the wildcard name as a Python variable. Doubling
+    leaves the literal ``{name}`` that Snakemake's ``expand()`` / ``output:`` need.
+    """
+    return "{{" + name + "}}"
+
+
+def cell_out_relpath(ep: dict) -> str:
+    """Per-cell output path under ``results/<key>/`` — exactly the file ``tvbo run`` writes.
+
+    A dataset (subject) fan-out writes ``sub-<subject>_<stem>.h5``; an exploration fan writes
+    one nested ``<axis>=<val>/…/<stem>.h5`` per cell; a group run writes ``<stem>.h5``.
+    Wildcards are doubled (see :func:`_wildcard`) so the carrying f-string leaves them intact.
+    This is the single source of truth for the fanned-cell path — the Snakefile's ``rule all``
+    and each figure rule that depends on a fanned experiment resolve to the same pattern.
+    """
+    axes = ep["axes"]
+    stem = ep["result_stem"]
+    if len(axes) == 1 and axes[0]["parameter"] == "dataset.active_subject":
+        return "sub-" + _wildcard("subject") + "_" + stem + ".h5"
+    if axes:
+        return "/".join("%s=%s" % (a["name"], _wildcard(a["name"])) for a in axes) + "/" + stem + ".h5"
+    return stem + ".h5"
+
+
+def fan_expand_kwargs(ep: dict) -> str:
+    """``axis=EXP_<RULE>_<AXIS>`` kwargs binding an ``expand()`` to the fan's value lists.
+
+    The value lists (``EXP_<RULE>_<AXIS> = [...]``) are emitted at the top of the Snakefile,
+    so any rule in the same Snakefile (including an ``include:``-d figure rule) can reference
+    them to expand a fanned experiment's whole grid of cells.
+    """
+    return ", ".join("%s=%s" % (a["name"], ep["rule_name"].upper() + "_" + a["name"].upper())
+                     for a in ep["axes"])
+
+
+def fan_input_expr(ep: dict) -> str:
+    """A Snakemake input expression matching ALL of *ep*'s output files.
+
+    A group run (no axes) is the single ``f"{OUT_DIR}/<key>/<stem>.h5"``; a fanned experiment
+    is the ``expand()`` over its wildcard-value lists — every cell. Emitted verbatim into a
+    rule's ``input:``, so a figure that reads a fanned experiment depends on its whole grid.
+    """
+    single = 'f"{OUT_DIR}/%s/%s"' % (ep["key"], cell_out_relpath(ep))
+    if not ep["axes"]:
+        return single
+    return "expand(%s, %s)" % (single, fan_expand_kwargs(ep))
+
+
 def plan(
     *,
     study_key: str,

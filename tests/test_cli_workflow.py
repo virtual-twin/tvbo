@@ -381,6 +381,28 @@ def test_full_container_env_override_wins_verbatim(monkeypatch):
             == "docker://mirror.local/tvbo:pinned")
 
 
+def test_fan_input_expr_expands_over_every_fanned_cell():
+    """A figure (or cross-experiment dep) that reads a FANNED experiment must depend on
+    ALL its cells, so it waits for the whole sweep — the input is the `expand()` over the
+    fan's value lists. A group run (no axes) is its single result path."""
+    from tvbo.cli._workflow import fan_input_expr
+
+    fanned = {"key": "41", "rule_name": "exp_41",
+              "result_stem": "exp-41_desc-Kuramoto_result",
+              "axes": [{"name": "a", "parameter": "K.a", "values": [1, 2]},
+                       {"name": "conduction_speed",
+                        "parameter": "network.conduction_speed", "values": [6]}]}
+    expr = fan_input_expr(fanned)
+    assert expr.startswith("expand(")
+    # the cell pattern (doubled wildcards for the carrying f-string) + the fan value lists
+    assert ('f"{OUT_DIR}/41/a={{a}}/conduction_speed={{conduction_speed}}/'
+            'exp-41_desc-Kuramoto_result.h5"') in expr
+    assert "a=EXP_41_A" in expr and "conduction_speed=EXP_41_CONDUCTION_SPEED" in expr
+
+    group = {"key": "9", "rule_name": "exp_9", "result_stem": "exp-9_result", "axes": []}
+    assert fan_input_expr(group) == 'f"{OUT_DIR}/9/exp-9_result.h5"'
+
+
 def test_setup_sh_layers_requirements_onto_the_image_via_system_site_venv():
     """setup.sh must build the venv WITH --system-site-packages (so pip installs only the
     delta and reuses the image's packages) and install with the IMAGE's own pip (so a
