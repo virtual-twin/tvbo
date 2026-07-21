@@ -15,6 +15,7 @@ requires.
 """
 from __future__ import annotations
 
+import os
 import re
 import shlex
 from dataclasses import dataclass, field
@@ -23,6 +24,66 @@ from typing import Any, Iterable
 import numpy as np
 
 from ._backends import BackendSpec, axis_kind_of, resolve_backend
+
+
+# Canonical published tvbo image. CI (``.github/workflows/docker.yml``) pushes this
+# on every ``main``/``dev`` commit, tagged ``:<branch>``, ``:<version>``, ``:<sha>``
+# and ``:latest`` (default branch), so a registry reference tracks the source rather
+# than a local file that goes stale.
+DEFAULT_CONTAINER_IMAGE = "ghcr.io/virtual-twin/tvbo"
+
+
+def _default_container_tag() -> str:
+    """Tag matching the running CLI, so a kit pulls the image built from its source.
+    Overridable with ``TVBO_CONTAINER_TAG``."""
+    from tvbo import __version__
+    return os.environ.get("TVBO_CONTAINER_TAG") or __version__
+
+
+def default_container_ref() -> str:
+    """The tvbo container reference used when a recipe asks for container-based
+    execution without pinning a concrete image.
+
+    The tag matches the running CLI's version (see :func:`_default_container_tag`) so
+    a kit runs against the image built from the same source it was emitted with.
+    Every part is overridable from the environment: ``TVBO_CONTAINER`` supplies a
+    full reference verbatim, otherwise ``TVBO_CONTAINER_IMAGE`` sets the repository.
+    """
+    full = os.environ.get("TVBO_CONTAINER")
+    if full:
+        return full
+    image = os.environ.get("TVBO_CONTAINER_IMAGE") or DEFAULT_CONTAINER_IMAGE
+    return f"docker://{image}:{_default_container_tag()}"
+
+
+def resolve_container_ref(raw: Any, *, has_requirements: bool) -> str | None:
+    """Resolve a recipe's declared ``container`` into an engine-ready reference.
+
+    A concrete image — a local ``.sif``/``.simg`` path or a registry reference that
+    already carries a ``:tag`` or ``@digest`` — passes through unchanged: the author
+    pinned it. Anything that leaves the version open is filled in with
+    :func:`default_container_ref` so an unpinned reference pulls the version-matched
+    image rather than failing to resolve:
+
+    - the symbolic requests ``tvbo`` / ``default``;
+    - a tvbo registry reference with no tag (``docker://…/tvbo``).
+
+    With no container declared, ``requirements`` still imply container-based
+    execution (the deps layer onto a base image), so the base defaults to the
+    tvbo image; without either, tasks run bare and this returns ``None``.
+    """
+    val = str(raw or "").strip()
+    if not val:
+        return default_container_ref() if has_requirements else None
+    if val in ("tvbo", "default"):
+        return default_container_ref()
+    if val.startswith("docker://"):
+        # A tag or digest lives in the final path segment; its absence means the
+        # reference names an image stream without pinning a version.
+        last = val[len("docker://"):].rsplit("/", 1)[-1]
+        if ":" not in last and "@" not in last:
+            return f"{val}:{_default_container_tag()}"
+    return val
 
 
 # ---------------------------------------------------------------------------
@@ -631,7 +692,7 @@ def plan(
         backend=bk,
         engine=engine,
         out_dir=out_dir,
-        container=(spec.get("container") or None),
+        container=resolve_container_ref(spec.get("container"), has_requirements=bool(_reqs)),
         container_binds=[str(b) for b in _as_list(spec.get("container_binds") or [])],
         container_args=(spec.get("container_args") or None),
         retries=int(spec.get("retries") or 0),

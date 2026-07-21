@@ -314,6 +314,59 @@ def test_container_layer_predicate_needs_both_container_and_requirements():
     assert _layer_plan(reqs=()).needs_container_layer is False
 
 
+def test_concrete_container_reference_passes_through_unchanged():
+    """A pinned image — local .sif path or a tagged/digested registry ref — is the
+    author's exact choice and must survive resolution verbatim."""
+    from tvbo.cli._workflow import resolve_container_ref
+
+    for ref in ("~/work/tvbo-dev.sif", "/abs/img.simg",
+                "docker://ghcr.io/virtual-twin/tvbo:dev",
+                "docker://ghcr.io/virtual-twin/tvbo:0.5.3",
+                "docker://ghcr.io/virtual-twin/tvbo@sha256:abc"):
+        assert resolve_container_ref(ref, has_requirements=False) == ref
+        assert resolve_container_ref(ref, has_requirements=True) == ref
+
+
+def test_unpinned_reference_resolves_to_version_matched_image(monkeypatch):
+    """A reference that leaves the version open — the symbolic `tvbo`, or a tvbo
+    registry ref with no tag — pulls the image matching the running CLI, so the kit
+    runs the tvbo it was emitted with instead of failing to resolve."""
+    from tvbo.cli import _workflow
+
+    monkeypatch.delenv("TVBO_CONTAINER", raising=False)
+    monkeypatch.delenv("TVBO_CONTAINER_IMAGE", raising=False)
+    monkeypatch.setenv("TVBO_CONTAINER_TAG", "9.9.9")
+    want = "docker://ghcr.io/virtual-twin/tvbo:9.9.9"
+    assert _workflow.resolve_container_ref("tvbo", has_requirements=False) == want
+    assert _workflow.resolve_container_ref("default", has_requirements=False) == want
+    assert _workflow.resolve_container_ref(
+        "docker://ghcr.io/virtual-twin/tvbo", has_requirements=False) == want
+
+
+def test_container_defaults_from_requirements_but_stays_bare_otherwise(monkeypatch):
+    """Requirements imply container-based execution (the deps layer onto a base), so an
+    undeclared container defaults to the tvbo image; with neither, tasks run bare."""
+    from tvbo.cli import _workflow
+
+    monkeypatch.delenv("TVBO_CONTAINER", raising=False)
+    monkeypatch.delenv("TVBO_CONTAINER_IMAGE", raising=False)
+    monkeypatch.setenv("TVBO_CONTAINER_TAG", "9.9.9")
+    assert _workflow.resolve_container_ref(None, has_requirements=False) is None
+    assert _workflow.resolve_container_ref("", has_requirements=False) is None
+    assert (_workflow.resolve_container_ref(None, has_requirements=True)
+            == "docker://ghcr.io/virtual-twin/tvbo:9.9.9")
+
+
+def test_full_container_env_override_wins_verbatim(monkeypatch):
+    """TVBO_CONTAINER supplies a complete reference — a site mirror, a pinned digest —
+    that overrides both the default repository and tag."""
+    from tvbo.cli import _workflow
+
+    monkeypatch.setenv("TVBO_CONTAINER", "docker://mirror.local/tvbo:pinned")
+    assert (_workflow.resolve_container_ref("tvbo", has_requirements=True)
+            == "docker://mirror.local/tvbo:pinned")
+
+
 def test_setup_sh_layers_requirements_onto_the_image_via_system_site_venv():
     """setup.sh must build the venv WITH --system-site-packages (so pip installs only the
     delta and reuses the image's packages) and install with the IMAGE's own pip (so a

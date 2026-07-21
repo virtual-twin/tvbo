@@ -4617,10 +4617,16 @@ classes:
                 range: string
                 description: >-
                     Container image wrapping each task; tasks run as ``<runtime>
-                    exec <image> …``. Either a registry reference the engine
-                    resolves and materialises itself (``docker://…``) or a path to an
-                    image file already built on the target, which pins the exact image
-                    and needs no pull.
+                    exec <image> …``. A concrete image passes through as given —
+                    either a registry reference the engine resolves and materialises
+                    itself (``docker://…:tag``) or a path to an image file already
+                    built on the target, which pins the exact image and needs no
+                    pull. A reference that leaves the version open is resolved to the
+                    tvbo image matching the running CLI: the symbolic value ``tvbo``,
+                    or a tvbo registry reference with no ``:tag``. Left unset while
+                    ``requirements`` are declared, the base still defaults to that
+                    tvbo image (the deps layer onto it); unset with no requirements,
+                    tasks run bare.
             container_binds:
                 multivalued: true
                 range: string
