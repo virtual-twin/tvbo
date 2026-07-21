@@ -12,6 +12,7 @@ Simulation can be run via pyNeuroML (jnml).
 
 from __future__ import annotations
 
+import copy
 import difflib
 import functools
 import json
@@ -256,6 +257,37 @@ def safe_id(s):
     """Make a string safe for XML id attribute."""
     s = re.sub(r"[^a-zA-Z0-9_]", "_", str(s or "id0"))
     return ("_" + s) if s[0].isdigit() else s
+
+
+def _unique_component_id(name, taken, kind="component"):
+    """A component id derived from *name* that no other component already holds.
+
+    Components are named after their Dynamics, so two differently parameterised
+    uses of one Dynamics would collide and the second would be dropped.
+
+    Args:
+        name: the Dynamics name to derive the id from.
+        taken: ids already assigned; the returned id is added to it.
+        kind: what is being named, for the disambiguation warning.
+
+    Returns:
+        ``safe_id(name)``, or that with a numeric suffix when it is taken.
+    """
+    base = safe_id(name)
+    ident = base
+    n = 2
+    while ident in taken:
+        ident = f"{base}_{n}"
+        n += 1
+    if ident != base:
+        warnings.warn(
+            f"{kind} {base!r} is used with more than one set of parameters; "
+            f"emitting the additional one as {ident!r}. Give each parameterisation "
+            f"its own entry in the dynamics library to choose the names yourself.",
+            stacklevel=2,
+        )
+    taken.add(ident)
+    return ident
 
 
 def _dynamics_has_physical_units(params, svs, td_param_names=None):
@@ -1404,6 +1436,19 @@ def _load_neuroml_contracts() -> dict:
         return json.load(fh)
 
 
+def _component_references(nml_type: str) -> dict:
+    """ComponentReferences a standard NeuroML type declares (name -> target type).
+
+    Reads the concrete type's own contract. An input component *instantiates* a
+    NeuroML type rather than extending one, so a name missing from the ingested
+    index is simply a type tvbo has no contract for — not the "extends a type
+    that does not exist" error :func:`_base_type_meta` reports, which would be
+    both alarming and untrue here.
+    """
+    contract = _load_neuroml_contracts().get(_resolve_base_type_name(nml_type)) or {}
+    return contract.get("component_references") or {}
+
+
 def _resolve_base_type_name(ref: str) -> str:
     """Normalise a base-type reference to a bare NeuroML type name.
 
@@ -1478,6 +1523,8 @@ def _base_type_meta(extends: str) -> dict:
         "on_start_refs": dict(contract.get("on_start", {})),
         "attachments": [(n, t) for n, t in (contract.get("attachments") or {}).items()],
         "child_roles": {n: c["type"] for n, c in children.items() if not c.get("multiple")},
+        "component_references": dict(contract.get("component_references") or {}),
+        "chain": list(contract.get("chain") or ()),
     }
     if plural:
         meta["children"] = plural[0]
@@ -2740,6 +2787,8 @@ def _build_network_context(experiment):
     node_pop_map = {}  # node_id -> (pop_id, base_index_within_pop)
     node_size_map = {}  # node_id -> number of cells (Node.size), for rule expansion
     input_nodes = {}  # node_id -> {type, params, id}  (for current sources)
+    input_ids = {}  # (dynamics name, param values) -> component id
+    assigned_input_ids = set()  # every input id handed out, to keep them unique
 
     # Group nodes by their dynamics name
     from collections import OrderedDict
@@ -2764,15 +2813,25 @@ def _build_network_context(experiment):
         if is_current_input:
             # Current injection sources are NOT populations.
             # Each becomes a standalone component + explicitInput.
+            # Node parameters override the library's. Nodes agreeing on every value
+            # share a component; differing ones need their own.
+            dyn_params = _normalize_edge_params(getattr(_dyn_lib_obj, "parameters", None))
             for node in group_nodes:
                 nid = getattr(node, "id", 0)
                 node_params = _normalize_edge_params(getattr(node, "parameters", None))
                 param_strs = {}
-                for pn, pv in node_params.items():
+                for pn, pv in {**dyn_params, **node_params}.items():
                     val = getattr(pv, "value", pv)
+                    if val is None:
+                        continue
                     unit = getattr(pv, "unit", None) or ""
-                    param_strs[str(pn)] = f"{val}{unit}"
-                input_id = safe_id(dyn_name)
+                    nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit)) if unit else ""
+                    param_strs[str(pn)] = f"{val} {nml_unit}" if nml_unit else str(val)
+                input_key = (dyn_name, tuple(sorted(param_strs.items())))
+                input_id = input_ids.get(input_key)
+                if input_id is None:
+                    input_id = _unique_component_id(dyn_name, assigned_input_ids, kind="input")
+                    input_ids[input_key] = input_id
                 input_nodes[nid] = {
                     "type": _nml_type,
                     "id": input_id,
@@ -2788,13 +2847,15 @@ def _build_network_context(experiment):
             ts = str(getattr(integration, "time_scale", "ms") or "ms") if integration else "ms"
             for sub_idx, node in enumerate(group_nodes):
                 nid = getattr(node, "id", sub_idx)
+                dyn_params = _normalize_edge_params(getattr(dyn_obj, "parameters", None))
                 node_params = _normalize_edge_params(getattr(node, "parameters", None))
                 param_strs = {}
-                for pn, pv in node_params.items():
+                for pn, pv in {**dyn_params, **node_params}.items():
                     val = getattr(pv, "value", pv)
-                    unit = getattr(pv, "unit", None) or ""
                     if val is not None:
-                        param_strs[str(pn)] = f"{val}{unit}"
+                        unit = getattr(pv, "unit", None) or ""
+                        nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit)) if unit else ""
+                        param_strs[str(pn)] = f"{val} {nml_unit}" if nml_unit else str(val)
                 comp_id = safe_id(dyn_name)
                 pop_id = f"{safe_id(dyn_name)}_pop"
                 node_pop_map[nid] = (pop_id, 0)
@@ -2850,6 +2911,7 @@ def _build_network_context(experiment):
     synapses = []  # list of {id, type, params}
     connections = []  # list of {from_pop, from_idx, to_pop, to_idx, synapse, weight, delay}
     synapse_set = {}  # dedup key -> synapse_id
+    assigned_syn_ids = set()  # every synapse id handed out, to keep them unique
     inputs = []  # list of {id, type, params, target_pop, target_idx}
 
     for edge_idx, edge in enumerate(edges):
@@ -2941,20 +3003,39 @@ def _build_network_context(experiment):
 
         # Resolve edge dynamics to a Dynamics object
         resolved_edge_dyn = None
+        edge_dyn_name = None
         if edge_dynamics:
-            dyn_name = getattr(edge_dynamics, "name", None) or str(edge_dynamics)
-            if dyn_name in dynamics_lib:
-                resolved_edge_dyn = dynamics_lib[dyn_name]
-            elif dyn_name:
+            edge_dyn_name = getattr(edge_dynamics, "name", None) or str(edge_dynamics)
+            if edge_dyn_name in dynamics_lib:
+                resolved_edge_dyn = dynamics_lib[edge_dyn_name]
+            elif edge_dyn_name:
                 try:
-                    resolved_edge_dyn = Dynamics.from_db(dyn_name)
+                    resolved_edge_dyn = Dynamics.from_db(edge_dyn_name)
                 except Exception:
                     pass
 
+        # Name the synapse after the dynamics it comes from, so identical edges
+        # share one component and the emitted id is meaningful; fall back to the
+        # edge index only when the edge names no dynamics at all.
         if syn_type is None and edge_dynamics:
-            syn_type = getattr(edge_dynamics, "name", None) or f"syn_edge{edge_idx}"
+            syn_type = edge_dyn_name or f"syn_edge{edge_idx}"
         if syn_type is None:
             syn_type = f"syn{edge_idx}"
+
+        # The NeuroML ComponentType a standard synapse instantiates. Distinct from
+        # the synapse's own id: an edge referencing a library entry by name carries
+        # the type on that entry's `iri`, not in the edge.
+        syn_nml_type = None
+        _syn_iri = getattr(resolved_edge_dyn, "iri", "") or ""
+        if _syn_iri.startswith("neuroml:"):
+            syn_nml_type = _syn_iri.split(":", 1)[1]
+            # A standard synapse carries its values on the library entry; the edge
+            # supplies only per-connection weight/delay, so without this the
+            # component would be emitted with no parameters at all.
+            for pn, pv in _normalize_edge_params(getattr(resolved_edge_dyn, "parameters", None)).items():
+                val = getattr(pv, "value", pv)
+                if val is not None and str(pn) not in syn_params:
+                    syn_params[str(pn)] = {"value": val, "unit": getattr(pv, "unit", None)}
 
         # Build synapse dedup key — include param values (not units) for dedup
         syn_key = (
@@ -2962,12 +3043,12 @@ def _build_network_context(experiment):
             tuple(sorted((k, pinfo["value"] if isinstance(pinfo, dict) else pinfo) for k, pinfo in syn_params.items())),
         )
         if syn_key not in synapse_set:
-            syn_id = safe_id(syn_type)
+            syn_id = _unique_component_id(syn_type, assigned_syn_ids, kind="synapse")
             synapse_set[syn_key] = syn_id
             synapses.append(
                 {
                     "id": syn_id,
-                    "type": syn_type,
+                    "type": syn_nml_type or syn_type,
                     "params": syn_params,  # {name: {'value': v, 'unit': u}}
                     "edge_dynamics": edge_dynamics,
                     "edge_coupling": edge_coupling,
@@ -3015,11 +3096,64 @@ def _build_network_context(experiment):
     # Current-source inputs have already been populated from edges above.
     # Additional inputs from experiment.stimulation could be added here.
 
+    # An input's ComponentReference target (poissonFiringSynapse's synapse) hangs
+    # off no node or edge, so emit it here or the reference dangles. Only wired
+    # inputs are emitted, so only those are checked.
+    wired_inputs = OrderedDict((inp["id"], inp) for inp in inputs)
+    for inp in wired_inputs.values():
+        refs = _component_references(inp["type"])
+        for ref_name, ref_type in refs.items():
+            target = str(inp["params"].get(ref_name, "")).strip()
+            if not target:
+                warnings.warn(
+                    f"NeuroML type {inp['type']!r} (component {inp['id']!r}) requires a "
+                    f"{ref_name!r} reference to a {ref_type!r} component, but none was given. "
+                    f"Declare it as a parameter, e.g. {ref_name}: {{value: <DynamicsName>}}.",
+                    stacklevel=2,
+                )
+                continue
+            # Compare on the emitted form: ids are safe_id-normalised, so a raw
+            # name needing normalisation would never match one already emitted.
+            if safe_id(target) in assigned_syn_ids:
+                continue
+            ref_dyn = dynamics_lib.get(target)
+            if ref_dyn is None:
+                warnings.warn(
+                    f"{inp['id']!r} references {ref_name}={target!r}, which is not in the "
+                    f"network's dynamics library — the reference will not resolve.",
+                    stacklevel=2,
+                )
+                continue
+            ref_iri = getattr(ref_dyn, "iri", "") or ""
+            ref_nml_type = ref_iri.split(":", 1)[1] if ref_iri.startswith("neuroml:") else target
+            ref_params = {}
+            for pn, pv in _normalize_edge_params(getattr(ref_dyn, "parameters", None)).items():
+                val = getattr(pv, "value", pv)
+                if val is not None:
+                    ref_params[str(pn)] = {"value": val, "unit": getattr(pv, "unit", None)}
+            synapses.append(
+                {
+                    "id": _unique_component_id(target, assigned_syn_ids, kind="synapse"),
+                    "type": ref_nml_type,
+                    "params": ref_params,
+                    "edge_dynamics": None,
+                    "edge_coupling": None,
+                    "resolved_dyn": ref_dyn,
+                }
+            )
+
+    # ``inputs`` holds one entry per target, so the component is emitted from this
+    # deduped view and only the explicitInputs repeat.
+    input_components = OrderedDict()
+    for inp in inputs:
+        input_components.setdefault(inp["id"], {"id": inp["id"], "type": inp["type"], "params": inp["params"]})
+
     return {
         "populations": populations,
         "synapses": synapses,
         "connections": connections,
         "inputs": inputs,
+        "input_components": list(input_components.values()),
         "cell_types": cell_types,
         "node_pop_map": node_pop_map,
     }
@@ -3395,7 +3529,9 @@ def build_lems_context(experiment):
 
             # Use real LEMS dimensions so jNeuroML outputs SI.
             ct_time_scale = str(getattr(getattr(ct_dyn, "time_scale", None), "value", time_scale) or time_scale)
-            ct_needs_sec = ct_time_scale != "s"
+            # SEC supplies the time scale only for purely numeric equations; with
+            # dimensioned time constants it double-counts.
+            ct_needs_sec = ct_time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs)
 
             def ct_lems_dim(u):
                 """Return the LEMS dimension name for a cell ComponentType unit."""
@@ -3430,10 +3566,25 @@ def build_lems_context(experiment):
         # ── Also build cell_contexts for edge dynamics (synapse ComponentTypes) ──
         for syn in net_ctx.get("synapses", []):
             rdyn = syn.get("resolved_dyn")
-            if rdyn and syn["id"] not in cell_contexts:
+            # A Dynamics that only parameterises a standard NeuroML type is
+            # emitted as that built-in component; a custom ComponentType is for
+            # one that brings its own equations.
+            has_own_dynamics = bool(
+                getattr(rdyn, "state_variables", None) or getattr(rdyn, "derived_variables", None)
+            )
+            if rdyn and has_own_dynamics and syn["id"] not in cell_contexts:
                 ct_dyn = rdyn
                 ct_name = syn["id"]
-                ct_params = ct_dyn.parameters or {}
+                # Edge parameters override the library Dynamics' values.
+                ct_params = dict(ct_dyn.parameters or {})
+                for _pn, _pinfo in (syn.get("params") or {}).items():
+                    if _pn not in ct_params or not isinstance(_pinfo, dict):
+                        continue
+                    _p = copy.copy(ct_params[_pn])
+                    _p.value = _pinfo.get("value")
+                    if _pinfo.get("unit") is not None:
+                        _p.unit = _pinfo["unit"]
+                    ct_params[_pn] = _p
                 ct_svs = ct_dyn.state_variables or {}
                 ct_dvs = getattr(ct_dyn, "derived_variables", None) or {}
                 ct_events = getattr(ct_dyn, "events", None) or {}
@@ -3463,6 +3614,9 @@ def build_lems_context(experiment):
                 # exposing g) emits as well as the current-based baseSynapse default.
                 syn_extends = _extends_base(getattr(ct_dyn, "iri", "")) or "baseSynapse"
                 syn_contract = _base_type_meta(syn_extends)
+                # baseSynapse descendants carry a per-connection `weight`; it scales
+                # the emitted current, keeping it outside a saturating gate.
+                syn_weighted_exposure = "i" if "baseSynapse" in (syn_contract.get("chain") or ()) else None
                 syn_exposure_names = set(syn_contract.get("exposures", {})) or {"i"}
                 syn_inherited_params = set(syn_contract.get("inherited_params", set()))
                 # v is inherited down the voltage-dependent base chain; only declare
@@ -3471,7 +3625,10 @@ def build_lems_context(experiment):
                     has_v_req = False
 
                 # Use real LEMS dimensions so jNeuroML outputs SI.
-                syn_needs_sec = True  # synapse CTs always need SEC
+                # Same rule as cells: a synapse whose gate equations carry
+                # dimensioned time constants (tauDecay, alpha) is already
+                # dimensionally complete and must not be divided by SEC.
+                syn_needs_sec = time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs)
 
                 def syn_lems_dim(u):
                     """Return the LEMS dimension name for a synapse ComponentType unit."""
@@ -3502,11 +3659,27 @@ def build_lems_context(experiment):
                     "synapse_extends": syn_extends,
                     "synapse_inherited_params": syn_inherited_params,
                     "synapse_exposure_names": syn_exposure_names,
+                    "weighted_exposure": syn_weighted_exposure,
                     "has_threshold_events": False,
                     "threshold_event_names": [],
                 }
         # Re-store with synapse contexts included
         ctx["cell_contexts"] = cell_contexts
+
+        # `synapse=` resolves against components, so a custom synapse must name its
+        # "<id>_inst" Component. Built-in synapses already are components.
+        custom_syn_ids = {sid for sid, sctx in cell_contexts.items() if sctx.get("is_synapse")}
+        for conn in net_ctx.get("connections", []):
+            if conn.get("synapse") in custom_syn_ids:
+                conn["synapse"] = f"{conn['synapse']}_inst"
+        # An input's ComponentReference resolves against components too, so it
+        # follows the same type→instance redirect as a connection.
+        for inp in net_ctx.get("inputs", []):
+            refs = _component_references(inp.get("type", ""))
+            params = inp.get("params") or {}
+            for ref_name in refs:
+                if str(params.get(ref_name, "")).strip() in custom_syn_ids:
+                    params[ref_name] = f"{str(params[ref_name]).strip()}_inst"
 
     return ctx
 

@@ -10,6 +10,7 @@
         "type": "Line"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -38,6 +39,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out",
       "spike_in_E": "in",
@@ -86,6 +88,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out",
       "spike_in_E": "in",
@@ -130,6 +133,7 @@
         "type": "EventSelection"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -143,6 +147,7 @@
       "EventSelection"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -158,6 +163,7 @@
       "baseVoltageDepRate"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "r": "per_time"
@@ -181,6 +187,7 @@
       "baseVoltageDepVariable"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "x": "none"
@@ -204,6 +211,7 @@
       "baseVoltageDepRate"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "r": "per_time"
@@ -227,6 +235,7 @@
       "baseVoltageDepVariable"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "x": "none"
@@ -250,6 +259,7 @@
       "baseVoltageDepRate"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "r": "per_time"
@@ -273,6 +283,7 @@
       "baseVoltageDepVariable"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "x": "none"
@@ -301,6 +312,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out",
       "spike_in_E": "in",
@@ -348,6 +360,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out",
       "spike_in_E": "in",
@@ -390,6 +403,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out",
       "spike_in_E": "in",
@@ -431,6 +445,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out",
       "spike_in_E": "in",
@@ -470,6 +485,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out",
       "spike_in_E": "in",
@@ -501,6 +517,7 @@
       "KSState"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "occupancy": "none",
@@ -519,6 +536,7 @@
       "KSTransition"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "rf": "per_time",
@@ -535,6 +553,7 @@
       "Line"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -551,6 +570,7 @@
       "Meta"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -564,6 +584,7 @@
       "OutputColumn"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -582,6 +603,7 @@
         "type": "OutputColumn"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -612,6 +634,9 @@
         "type": "OutputFile"
       }
     },
+    "component_references": {
+      "target": "Component"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -629,6 +654,7 @@
       "baseSpikeSource"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in",
       "spike": "out"
@@ -661,6 +687,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -698,6 +725,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -727,6 +755,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -753,6 +782,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -778,6 +808,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -802,6 +833,7 @@
       "baseBlockMechanism"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "blockFactor": "none"
@@ -818,6 +850,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": "baseStandalone",
@@ -834,6 +867,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -855,6 +889,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -879,6 +914,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -896,6 +932,9 @@
       "baseChannelDensity"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "iDensity": "currentDensity"
@@ -914,6 +953,9 @@
       "baseChannelDensity"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "gDensity": "conductanceDensity",
@@ -937,6 +979,9 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "i": "current"
@@ -958,6 +1003,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -985,6 +1031,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -1009,6 +1056,7 @@
       "baseConductanceScaling"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "factor": "none"
@@ -1027,6 +1075,7 @@
       "baseConductanceScaling"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "factor": "none"
@@ -1048,6 +1097,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -1065,6 +1115,7 @@
       "baseGate"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fcond": "none",
@@ -1086,6 +1137,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -1104,6 +1156,7 @@
       "baseVoltageDepRate"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "r": "per_time"
@@ -1126,6 +1179,7 @@
       "baseVoltageDepVariable"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "x": "none"
@@ -1151,6 +1205,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -1176,6 +1231,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -1199,6 +1255,7 @@
       "baseIonChannel"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fopen": "none",
@@ -1219,6 +1276,7 @@
       "basePlasticityMechanism"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -1237,6 +1295,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "i": "current"
@@ -1252,6 +1311,7 @@
       "basePointCurrentDL"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "I": "none"
@@ -1268,6 +1328,9 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {
+      "component": "baseCell"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": "baseStandalone",
@@ -1285,6 +1348,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out",
       "spike_in_E": "in",
@@ -1316,6 +1380,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out",
       "spike_in_E": "in",
@@ -1353,6 +1418,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out",
       "spike_in_E": "in",
@@ -1390,6 +1456,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -1411,6 +1478,7 @@
       "baseQ10Settings"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "q10": "none"
@@ -1428,6 +1496,7 @@
       "baseSpikeSource"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -1447,6 +1516,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -1462,6 +1532,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -1477,6 +1548,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -1496,6 +1568,7 @@
       "basePointCurrentDL"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "I": "none"
@@ -1514,6 +1587,7 @@
       "baseVoltageDepRate"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "r": "per_time"
@@ -1533,6 +1607,7 @@
       "baseVoltageDepTime"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "t": "time"
@@ -1552,6 +1627,7 @@
       "baseVoltageDepVariable"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "x": "none"
@@ -1572,6 +1648,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "i": "current"
@@ -1590,6 +1667,7 @@
       "basePointCurrentDL"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "I": "none"
@@ -1610,6 +1688,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -1630,6 +1709,7 @@
       "baseVoltageDepRate"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "r": "per_time"
@@ -1650,6 +1730,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -1669,6 +1750,7 @@
       "baseVoltageDepTime"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "t": "time"
@@ -1686,6 +1768,7 @@
       "baseVoltageDepVariable"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "x": "none"
@@ -1712,6 +1795,7 @@
         "type": "membraneProperties"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "totSpecCap": "specificCapacitance"
@@ -1736,6 +1820,7 @@
         "type": "membraneProperties2CaPools"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "totSpecCap": "specificCapacitance"
@@ -1766,6 +1851,7 @@
         "type": "basePlasticityMechanism"
       }
     },
+    "component_references": {},
     "event_ports": {
       "in": "in",
       "relay": "out"
@@ -1807,6 +1893,7 @@
         "type": "morphology"
       }
     },
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -1852,6 +1939,7 @@
         "type": "morphology"
       }
     },
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -1882,6 +1970,9 @@
       "baseChannelDensity"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "gDensity": "conductanceDensity",
@@ -1904,6 +1995,9 @@
       "baseChannelDensity"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "iDensity": "currentDensity"
@@ -1928,6 +2022,9 @@
       "baseChannelDensity"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "gDensity": "conductanceDensity",
@@ -1953,6 +2050,9 @@
       "baseChannelDensity"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "erev": "voltage",
@@ -1979,6 +2079,9 @@
       "baseChannelDensity"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "erev": "voltage",
@@ -2009,6 +2112,9 @@
         "type": "variableParameter"
       }
     },
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "iDensity": "currentDensity"
@@ -2034,6 +2140,9 @@
         "type": "variableParameter"
       }
     },
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "iDensity": "currentDensity"
@@ -2057,6 +2166,9 @@
         "type": "variableParameter"
       }
     },
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "iDensity": "currentDensity"
@@ -2077,6 +2189,9 @@
       "baseChannelDensity"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "gDensity": "conductanceDensity",
@@ -2103,6 +2218,9 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "i": "current"
@@ -2127,6 +2245,9 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {
+      "ionChannel": "baseIonChannel"
+    },
     "event_ports": {},
     "exposures": {
       "erev": "voltage",
@@ -2151,6 +2272,7 @@
       "KSState"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "occupancy": "none",
@@ -2176,6 +2298,7 @@
         "type": "basePointCurrent"
       }
     },
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -2199,6 +2322,7 @@
         "type": "basePointCurrentDL"
       }
     },
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -2216,6 +2340,7 @@
       "concentrationModel"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "concentration": "concentration",
@@ -2236,6 +2361,7 @@
       "connection"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2250,6 +2376,7 @@
       "connection"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": "connection",
@@ -2266,6 +2393,10 @@
       "continuousConnection"
     ],
     "children": {},
+    "component_references": {
+      "postComponent": "baseGradedSynapse",
+      "preComponent": "baseGradedSynapse"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2279,6 +2410,10 @@
       "continuousConnectionInstance"
     ],
     "children": {},
+    "component_references": {
+      "postComponent": "baseGradedSynapse",
+      "preComponent": "baseGradedSynapse"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2293,6 +2428,10 @@
       "continuousConnectionInstance"
     ],
     "children": {},
+    "component_references": {
+      "postComponent": "baseGradedSynapse",
+      "preComponent": "baseGradedSynapse"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": "continuousConnectionInstance",
@@ -2317,6 +2456,10 @@
         "type": "continuousConnection"
       }
     },
+    "component_references": {
+      "postsynapticPopulation": "population",
+      "presynapticPopulation": "population"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2331,6 +2474,7 @@
       "concentrationModel"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "concentration": "concentration",
@@ -2357,6 +2501,7 @@
       "point3DWithDiam"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": "point3DWithDiam",
@@ -2375,6 +2520,7 @@
       "distalDetails"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2392,6 +2538,10 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {
+      "synapse1": "baseSynapse",
+      "synapse2": "baseSynapse"
+    },
     "event_ports": {
       "in": "in",
       "relay": "out"
@@ -2412,6 +2562,9 @@
       "electricalConnection"
     ],
     "children": {},
+    "component_references": {
+      "synapse": "gapJunction"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2425,6 +2578,9 @@
       "electricalConnectionInstance"
     ],
     "children": {},
+    "component_references": {
+      "synapse": "gapJunction"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2439,6 +2595,9 @@
       "electricalConnectionInstance"
     ],
     "children": {},
+    "component_references": {
+      "synapse": "gapJunction"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": "electricalConnectionInstance",
@@ -2463,6 +2622,10 @@
         "type": "electricalConnection"
       }
     },
+    "component_references": {
+      "postsynapticPopulation": "population",
+      "presynapticPopulation": "population"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2481,6 +2644,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -2509,6 +2673,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -2535,6 +2700,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -2564,6 +2730,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -2596,6 +2763,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -2621,6 +2789,7 @@
       "explicitConnection"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2634,6 +2803,9 @@
       "explicitInput"
     ],
     "children": {},
+    "component_references": {
+      "input": "basePointCurrent"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2651,6 +2823,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -2681,6 +2854,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -2702,6 +2876,7 @@
       "concentrationModel"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "concentration": "concentration",
@@ -2728,6 +2903,7 @@
       "concentrationModel"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "concentration": "concentration",
@@ -2754,6 +2930,7 @@
       "baseVoltageDepTime"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "t": "time"
@@ -2773,6 +2950,7 @@
       "foaf_account"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2786,6 +2964,7 @@
       "foaf_fundedBy"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2799,6 +2978,7 @@
       "foaf_homepage"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2812,6 +2992,7 @@
       "foaf_mbox"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2825,6 +3006,7 @@
       "foaf_name"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2838,6 +3020,7 @@
       "foaf_publications"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2851,6 +3034,7 @@
       "foaf_thumbnail"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2864,6 +3048,7 @@
       "foaf_weblog"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2883,6 +3068,7 @@
         "type": "baseHHRate"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "rf": "per_time",
@@ -2899,6 +3085,7 @@
       "from"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -2915,6 +3102,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -2937,6 +3125,7 @@
       "baseGate"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fcond": "none",
@@ -2966,6 +3155,7 @@
         "type": "subGate"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fcond": "none",
@@ -2992,6 +3182,7 @@
         "type": "baseVoltageDepVariable"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fcond": "none",
@@ -3027,6 +3218,7 @@
         "type": "baseVoltageDepRate"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "alpha": "per_time",
@@ -3069,6 +3261,7 @@
         "type": "baseVoltageDepVariable"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "alpha": "per_time",
@@ -3111,6 +3304,7 @@
         "type": "baseVoltageDepTime"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "alpha": "per_time",
@@ -3157,6 +3351,7 @@
         "type": "baseVoltageDepTime"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "alpha": "per_time",
@@ -3195,6 +3390,7 @@
         "type": "baseVoltageDepTime"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fcond": "none",
@@ -3230,6 +3426,7 @@
         "type": "KSTransition"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fcond": "none",
@@ -3253,6 +3450,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -3287,6 +3485,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -3334,6 +3533,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -3368,6 +3568,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -3399,6 +3600,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -3427,6 +3629,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -3450,6 +3653,7 @@
       "include"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -3472,6 +3676,7 @@
         "type": "proximalDetails"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -3485,6 +3690,7 @@
       "inhomogeneousValue"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -3498,6 +3704,7 @@
       "initMembPotential"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -3513,6 +3720,7 @@
       "input"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -3531,6 +3739,9 @@
         "type": "input"
       }
     },
+    "component_references": {
+      "component": "basePointCurrent"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -3545,6 +3756,7 @@
       "input"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": "input",
@@ -3565,6 +3777,7 @@
         "type": "location"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -3587,6 +3800,7 @@
         "type": "species"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "caConc": "concentration",
@@ -3613,6 +3827,7 @@
         "type": "species"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "caConc": "concentration",
@@ -3642,6 +3857,7 @@
         "type": "gate"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fopen": "none",
@@ -3672,6 +3888,7 @@
         "type": "gate"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fopen": "none",
@@ -3702,6 +3919,7 @@
         "type": "gateKS"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fopen": "none",
@@ -3734,6 +3952,7 @@
         "type": "gate"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fopen": "none",
@@ -3766,6 +3985,7 @@
         "type": "gate"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "fopen": "none",
@@ -3794,6 +4014,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -3831,6 +4052,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -3860,6 +4082,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -3881,6 +4104,7 @@
       "location"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -3898,6 +4122,7 @@
       "member"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -3932,6 +4157,7 @@
         "type": "spikeThresh"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "iCa": "current",
@@ -3973,6 +4199,7 @@
         "type": "spikeThresh"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "iCa": "current",
@@ -4002,6 +4229,7 @@
         "type": "segment"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4049,6 +4277,7 @@
         "type": "explicitConnection"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": "baseStandalone",
@@ -4097,6 +4326,7 @@
         "type": "explicitConnection"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": "network",
@@ -4113,6 +4343,7 @@
       "KSState"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "occupancy": "none",
@@ -4131,6 +4362,7 @@
       "orcid_id"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4144,6 +4376,7 @@
       "parent"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4166,6 +4399,7 @@
         "type": "to"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4183,6 +4417,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -4233,6 +4468,7 @@
       "point3DWithDiam"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4263,6 +4499,7 @@
         "type": "baseChannelPopulation"
       }
     },
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -4302,6 +4539,7 @@
         "type": "baseChannelPopulation"
       }
     },
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -4331,6 +4569,9 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
     "event_ports": {
       "in": "in",
       "spike": "out"
@@ -4359,6 +4600,9 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {
+      "component": "baseCell"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": "basePopulation",
@@ -4380,6 +4624,9 @@
         "multiple": true,
         "type": "instance"
       }
+    },
+    "component_references": {
+      "component": "baseCell"
     },
     "event_ports": {},
     "exposures": {},
@@ -4403,6 +4650,9 @@
         "type": "connectionWD"
       }
     },
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4417,6 +4667,7 @@
       "point3DWithDiam"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": "point3DWithDiam",
@@ -4435,6 +4686,7 @@
       "proximalDetails"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4450,6 +4702,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -4472,6 +4725,7 @@
       "basePointCurrentDL"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -4494,6 +4748,7 @@
       "baseConductanceScaling"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "factor": "none"
@@ -4515,6 +4770,7 @@
       "baseQ10Settings"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "q10": "none"
@@ -4536,6 +4792,7 @@
       "baseQ10Settings"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "q10": "none"
@@ -4557,6 +4814,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -4581,6 +4839,7 @@
       "basePointCurrentDL"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -4604,6 +4863,7 @@
       "rectangularExtent"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4629,6 +4889,7 @@
         "type": "rectangularExtent"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4642,6 +4903,7 @@
       "resistivity"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4663,6 +4925,7 @@
         "type": "baseHHRate"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "rf": "per_time",
@@ -4692,6 +4955,7 @@
         "type": "proximal"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "length": "length",
@@ -4730,6 +4994,7 @@
         "type": "subTree"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -4747,6 +5012,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -4768,6 +5034,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -4792,6 +5059,7 @@
       "basePointCurrentDL"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -4815,6 +5083,9 @@
       "species"
     ],
     "children": {},
+    "component_references": {
+      "concentrationModel": "concentrationModel"
+    },
     "event_ports": {},
     "exposures": {
       "concentration": "concentration",
@@ -4834,6 +5105,7 @@
       "specificCapacitance"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "specCap": "specificCapacitance"
@@ -4852,6 +5124,7 @@
       "baseSpikeSource"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -4878,6 +5151,7 @@
         "type": "spike"
       }
     },
+    "component_references": {},
     "event_ports": {
       "in": "in",
       "spike": "out"
@@ -4897,6 +5171,7 @@
       "baseSpikeSource"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -4918,6 +5193,7 @@
       "baseSpikeSource"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -4941,6 +5217,7 @@
       "baseSpikeSource"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -4965,6 +5242,7 @@
       "baseSpikeSource"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "spike": "out"
     },
@@ -4988,6 +5266,7 @@
       "spikeThresh"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -5009,6 +5288,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -5046,6 +5326,7 @@
         "type": "baseVoltageDepTime"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "inf": "none",
@@ -5073,6 +5354,7 @@
         "type": "from"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -5087,6 +5369,9 @@
       "explicitConnection"
     ],
     "children": {},
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": "explicitConnection",
@@ -5102,6 +5387,9 @@
       "explicitConnection"
     ],
     "children": {},
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
     "event_ports": {},
     "exposures": {},
     "extends": "synapticConnection",
@@ -5128,6 +5416,7 @@
         "type": "baseVoltageDepTime"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "rf": "per_time",
@@ -5153,6 +5442,9 @@
         "type": "spike"
       }
     },
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
     "event_ports": {
       "in": "in",
       "spike": "out"
@@ -5174,6 +5466,7 @@
       "to"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -5191,6 +5484,9 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {
+      "synapse": "baseSynapse"
+    },
     "event_ports": {
       "in": "in",
       "spike": "out"
@@ -5220,6 +5516,7 @@
       "basePlasticityMechanism"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -5242,6 +5539,7 @@
       "basePlasticityMechanism"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -5263,6 +5561,7 @@
       "KSTransition"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "rf": "per_time",
@@ -5292,6 +5591,7 @@
         "type": "inhomogeneousValue"
       }
     },
+    "component_references": {},
     "event_ports": {},
     "exposures": {},
     "extends": null,
@@ -5308,6 +5608,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -5335,6 +5636,7 @@
       "baseStandalone"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {
       "in": "in"
     },
@@ -5363,6 +5665,7 @@
       "baseBlockMechanism"
     ],
     "children": {},
+    "component_references": {},
     "event_ports": {},
     "exposures": {
       "blockFactor": "none"
