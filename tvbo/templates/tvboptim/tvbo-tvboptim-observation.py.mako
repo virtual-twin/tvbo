@@ -631,6 +631,68 @@ if network_obs_keys:
 ## states (e.g. the previous phase) advance every step so the boundary increment is exact.
 ## Every expression is a sympy Expr rendered via render_expression — backend-independent.
 <%def name="render_reduction(red, name, s_idx, dt)">\
+% if red.get('kind') == 'convolution':
+${render_convolution_reduction(red, name, s_idx, dt)}\
+% else:
+${render_recurrence_reduction(red, name, s_idx, dt)}\
+% endif
+</%def>\
+## Streaming HRF-Volterra BOLD reducer (Observation.reduce == 'streaming'). Recasts the
+## post-scan bold pipeline (HRF kernel -> stride decimation -> prepend downsampled
+## transient -> 'valid' HRF convolution -> Volterra scaling -> subsample at the TR) as a
+## block reducer: a downsampled-history ring buffer folds each integration block, and
+## strided_convolve (a backend-abstracted printer primitive) evaluates the 'valid'
+## convolution ONLY at the TR boundaries, so the full trajectory is never held. The
+## portable array ops (subsample / concatenate / strided_convolve / Volterra scaling) are
+## rendered via render_expression; the ring/buffer scaffolding is the backend template's
+## concern, exactly as the recurrence reducer mixes jax.lax.scan with printed exprs.
+## Byte-identical to the materialised pipeline to f64 rounding (strided_convolve is ~1e-12
+## vs the FFT fftconvolve). `warm_history` seeds the ring from the downsampled transient
+## (HRF warm-up); None -> zeros (a transient-free run, e.g. the Schirner group fit).
+<%def name="render_convolution_reduction(red, name, s_idx, dt)">\
+<%
+    from tvbo.codegen import render_expression
+    _cv = ['_block_voi', '_ds', '_ring', '_block_ds', '_signal', '_kernel', '_tr', '_conv', 'k_1', 'V_0']
+    _rc = lambda e: render_expression(e, format='jax', parameters=_cv)
+%>\
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None):
+    k_1 = ${repr(red['k_1'])}
+    V_0 = ${repr(red['V_0'])}
+    _kernel = ${red['kernel_call']}   # HRF kernel array [K] (the pipeline's kernel function)
+    _K = _kernel.shape[0]
+    _ds = ${red['ds_steps']}          # decimation stride (raw integration steps / downsampled sample)
+    _tr = ${red['tr_stride']}         # TR stride (downsampled samples / BOLD sample)
+    def _init(template, n_steps):
+        n = template.shape[-1]
+        _n_ds = len(range(_ds - 1, n_steps, _ds))     # downsampled samples over the run
+        _n_bold = len(range(_tr, _n_ds + 1, _tr))     # BOLD samples at TR boundaries
+        if warm_history is None:
+            _ring0 = jnp.zeros((_K, n))
+        else:
+            # Fit the downsampled transient to one kernel length, front-zero-padded when
+            # short — the HRF warm-up, matching prepend_history / HRFBold._process_history.
+            _wh = jnp.asarray(warm_history)
+            _ring0 = (jnp.vstack([jnp.zeros((_K - _wh.shape[0], n), _wh.dtype), _wh])
+                      if _wh.shape[0] < _K else _wh[-_K:])
+        return (_ring0, jnp.zeros((_n_bold, n)), jnp.array(0))
+    def _update(acc, block):
+        _ring, _bold, _ds_count = acc
+        _block_voi = block[:, s_var, :]                     # source column -> [block_len, n]
+        _block_ds = ${_rc("subsample(_block_voi, _ds - 1, _ds)")}   # SubSampling decimation
+        _m_b = _block_ds.shape[0]
+        _signal = ${_rc("concatenate(_ring, _block_ds)")}          # [_K + m_b, n]
+        _conv = ${_rc("strided_convolve(_signal, _kernel, _tr)")}  # 'valid' conv at TR boundaries
+        _samples = ${_rc("k_1 * V_0 * (_conv - 1.0)")}             # Volterra BOLD scaling
+        _start = _ds_count // _tr
+        _bold = jax.lax.dynamic_update_slice(_bold, _samples, (_start, 0))
+        _ring = _signal[-_K:]
+        return (_ring, _bold, _ds_count + _m_b)
+    def _finalize(acc):
+        _ring, _bold, _ds_count = acc
+        return _bold
+    return (_init, _update, _finalize)
+</%def>\
+<%def name="render_recurrence_reduction(red, name, s_idx, dt)">\
 <%
     from tvbo.codegen import render_expression
     from tvbo.templates.tvboptim.utils import render_jax_default
@@ -935,6 +997,30 @@ class ${class_name}(eqx.Module):
 class ${class_name}(AbstractMonitor):
     """${obs['label'] or obs_name} observation (dynamics observer)."""
     dt: float = eqx.field(static=True, default=${dt})
+% if obs['reduction'].get('kind') == 'convolution':
+    _history: jax.Array = None
+
+    def __init__(self, history=None, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
+        self.voi = voi
+        self.period = period if period is not None else dt
+        self.dt = dt
+        if history is not None:
+            _h = history.data if hasattr(history, 'data') else history
+            # Source-column transient, decimated to the downsampled grid — the HRF warm-up
+            # the reducer seeds its ring with (matches the pipeline's prepend_history).
+            self._history = _h[:, ${state_idx}, :][${obs['reduction']['ds_steps'] - 1}::${obs['reduction']['ds_steps']}]
+        else:
+            self._history = None
+
+    def __call__(self, result):
+        # One big block over the whole trajectory == the in-carry value the grid streams;
+        # seeded with the downsampled transient so the HRF warm-up matches the pipeline.
+        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, warm_history=self._history)
+        _data = result.data if hasattr(result, 'data') else result
+        _acc = _init(_data[0], _data.shape[0])
+        _acc = _update(_acc, _data)
+        return _finalize(_acc)
+% else:
 
     def __init__(self, history=None, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
         self.voi = voi
@@ -948,6 +1034,7 @@ class ${class_name}(AbstractMonitor):
         _acc = _init(_data[0], _data.shape[0])
         _acc = _update(_acc, _data)
         return _finalize(_acc)
+% endif
 
 % else:
 ## =============================================================================

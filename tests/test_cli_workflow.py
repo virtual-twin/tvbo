@@ -360,6 +360,49 @@ def test_snakemake_rule_prepends_the_container_layer_to_pythonpath():
     assert "container:" in smk and "/w/tvbo-dev.sif" in smk
 
 
+def test_snakemake_fans_a_model_param_axis_via_pin_not_set():
+    """A fanned exploration axis must emit `--pin`, not `--set`: `--pin` sets the base
+    parameter AND drops the axis so the cell is a single point (its host observation lands
+    there), whereas `--set` on a swept model param neither resolves nor collapses the sweep.
+    The dataset subject axis keeps `--subject`."""
+    from tvbo.cli.workflow import _render_template
+
+    ep = {"key": "fig6", "rule_name": "exp_fig6", "spec_relpath": "spec/fig6/experiment.yaml",
+          "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
+          "container": None, "block": {}, "depends_on": [],
+          "axes": [{"name": "omega_mean_hz", "parameter": "Kuramoto.omega_mean_hz", "values": [10, 20]},
+                   {"name": "conduction_speed", "parameter": "network.conduction_speed", "values": [3, 6]}]}
+    smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep], block={}, bundled_code=False)
+    assert "--pin=Kuramoto.omega_mean_hz={wildcards.omega_mean_hz}" in smk
+    assert "--pin=network.conduction_speed={wildcards.conduction_speed}" in smk
+    assert "--set=" not in smk
+
+
+def test_submit_provisions_the_container_layer_before_submitting(tmp_path, monkeypatch):
+    """`tvbo workflow submit <archive>` must run setup.sh itself, so the whole cluster step
+    is one command (no manual `bash setup.sh`). A layer failure aborts the submit."""
+    from tvbo.cli import workflow as wf
+
+    kit = tmp_path / "kit"
+    kit.mkdir()
+    (kit / "setup.sh").write_text("#!/bin/bash\necho layered\n")
+    calls = []
+    monkeypatch.setattr(wf.subprocess, "run",
+                        lambda *a, **k: calls.append((a, k)) or type("R", (), {"returncode": 0})())
+    wf._provision_container_layer(kit, dry_run=False)
+    assert calls and calls[0][0][0] == ["bash", "setup.sh"] and calls[0][1]["cwd"] == str(kit)
+
+
+def test_submit_without_a_layer_provisions_nothing(tmp_path, monkeypatch):
+    """No setup.sh (kit declares no layer) → submit runs nothing extra."""
+    from tvbo.cli import workflow as wf
+
+    ran = []
+    monkeypatch.setattr(wf.subprocess, "run", lambda *a, **k: ran.append(a))
+    wf._provision_container_layer(tmp_path, dry_run=False)   # empty dir, no setup.sh
+    assert not ran
+
+
 def test_snakemake_rule_without_layer_has_no_pythonpath_injection():
     """The layer is strictly opt-in: an experiment that declares no layer emits a bare rule."""
     from tvbo.cli.workflow import _render_template

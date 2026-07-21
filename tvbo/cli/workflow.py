@@ -1351,7 +1351,35 @@ def submit_kit(
         )
     if array is not None and array_throttle is not None:
         array = f"{array}%{array_throttle}"
+    # Provision the container-requirements layer BEFORE submitting, so a containerized kit
+    # runs with `tvbo workflow submit <archive>` and nothing else — no manual setup step.
+    # setup.sh is emitted only when a `container` + `requirements` are both declared; it is
+    # idempotent (the --system-site-packages venv is reused), so it is cheap to re-run.
+    _provision_container_layer(kit, dry_run=dry_run)
     _execute_emitted(eng, kit, slurm_array=array, dry_run=dry_run)
+
+
+def _provision_container_layer(kit: Path, *, dry_run: bool) -> None:
+    """Run the kit's one-time setup.sh (layers declared requirements onto the container).
+
+    No-op when the kit declares no layer (no setup.sh). On a dry run it only reports the
+    step. A failure is fatal: without the layer, every task crashes on the first import of a
+    declared dependency, far from here — better to stop at submit with a clear message.
+    """
+    setup = kit / "setup.sh"
+    if not setup.exists():
+        return
+    if dry_run:
+        _common.info(f"[dry-run] would run {setup.name} (layer declared requirements onto the container)")
+        return
+    _common.info("provisioning the container-requirements layer (setup.sh)…")
+    result = subprocess.run(["bash", setup.name], cwd=str(kit))
+    if result.returncode != 0:
+        _common.die(
+            f"setup.sh failed (exit {result.returncode}). The requirements layer is not in "
+            f"place, so every task would crash on its first import — refusing to submit. "
+            f"Check that the container image and `apptainer`/`singularity` are available here."
+        )
 
 
 @app.command("backends", help="List backends and their ontology-derived capabilities.")

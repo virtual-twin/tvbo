@@ -28,7 +28,10 @@ def _cell_out(ep):
     return ep["result_stem"] + ".h5"
 
 def _run_flags(ep):
-    """Per-cell `tvbo run` flags: --subject for the dataset fan-out, --set for others.
+    """Per-cell `tvbo run` flags: --subject for the dataset fan-out, --pin for a fanned
+    exploration axis. --pin sets the axis's parameter AND drops it from the sweep, so the
+    cell is a single point (its base run — and every declared observation — computed there);
+    a plain --set of a swept model parameter would neither resolve nor collapse the sweep.
     Shell directives reference wildcards as ``{wildcards.<name>}``."""
     out = []
     for a in ep["axes"]:
@@ -36,7 +39,7 @@ def _run_flags(ep):
         if a["parameter"] == "dataset.active_subject":
             out.append("--subject=" + wc)
         else:
-            out.append("--set=%s=%s" % (a["parameter"], wc))
+            out.append("--pin=%s=%s" % (a["parameter"], wc))
     return out
 
 # key -> plan, so a from_experiment dependency can reference the source's output.

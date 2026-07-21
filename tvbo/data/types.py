@@ -696,6 +696,9 @@ class AlgorithmResult:
                 observations=post_tuning_observations or Bunch(),
                 state_names=state_names,
             )
+        elif post_tuning is None and post_tuning_observations:
+            # Streaming post-eval yields observations without a trajectory; expose them.
+            self.post_tuning = SimulationResult(data=None, observations=post_tuning_observations)
         else:
             self.post_tuning = post_tuning
 
@@ -2056,9 +2059,14 @@ class ExperimentResult:
             if obs_name not in keep_obs:
                 continue
             key = f"observation__{_san(obs_name)}"
-            da = _numeric_da(key, getattr(obs, "data", obs))
-            if da is not None and key not in data_vars:
-                data_vars[key] = da
+            # Flatten via _numeric_leaves, not _numeric_da: an observation may return a
+            # nested pytree (e.g. a per-hemisphere wave metric {lh:{...}, rh:{...}}), which
+            # _numeric_da drops whole (np.asarray(dict) raises → None → silently unsaved).
+            # For an array value _numeric_leaves yields the single leaf unchanged, so this is
+            # a superset — the same flattening already used for optimization fitted params.
+            for var, da in _numeric_leaves(key, getattr(obs, "data", obs)):
+                if var not in data_vars:
+                    data_vars[var] = da
         for opt_name, opt in (self.optimizations or {}).items():
             for field in ("final_loss", "loss_trajectory"):
                 da = _numeric_da(field, getattr(opt, field, None))
