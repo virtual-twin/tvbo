@@ -284,8 +284,11 @@ def format_channel_index(indices: List[int], n_channels: int) -> str:
     A single channel yields a scalar index (dropping the variable dimension);
     a contiguous run yields a slice, so the common all-auxiliaries case emits the
     same ``n_states:`` slice as before; anything else yields an explicit index
-    list, which preserves the declared output order under advanced indexing.
+    list, which preserves the declared output order under advanced indexing. An
+    empty selection yields ``:`` (all channels) rather than raising.
     """
+    if not indices:
+        return ":"
     if len(indices) == 1:
         return str(indices[0])
     lo, hi = indices[0], indices[-1] + 1

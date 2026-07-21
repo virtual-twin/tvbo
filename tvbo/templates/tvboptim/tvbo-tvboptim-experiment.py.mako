@@ -2786,14 +2786,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     def observable_fn(s):
         result = _expl_model_fn(s)
         return compute_all_observations(result, s, result_transient)
-% elif has_model_output and len(model_output_indices) == 1:
-    # Single model output — extract as (T, n_nodes) dropping the variable dimension
-    @jax.jit
-    def observable_fn(s):
-        result = _expl_model_fn(s)
-        return result.data[:, ${model_output_channel_index}, ...]
-% elif has_model_output and len(model_output_indices) > 1:
-    # Multiple model outputs — keep variable dimension (T, n_out, n_nodes)
+% elif has_model_output and model_output_indices:
+    # Model outputs — ``model_output_channel_index`` is a scalar for a single
+    # output (dropping the variable dim) or a slice/list for several (keeping it).
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
@@ -3236,7 +3231,21 @@ def run_experiment(
 
     # Determine if we need to run main simulation or just transient.
     # For algorithm/optimization/exploration modes, we only need transient - main simulation runs after
+<%doc>
+    ## An algorithm (e.g. FIC/EIB tuning) runs its own simulations and IS the
+    ## experiment's deliverable, so a full-length base forward-sim before it is
+    ## spurious — it integrates the UNTUNED operating point whose observations no
+    ## one consumes, yet materializes the whole trajectory. At Schirner's fitting
+    ## length (10 h biological time, 36M steps) that base sim alone is ~440 GB and
+    ## OOMs before tuning even starts. `run_simulation` still returns model_fn/state
+    ## for the algorithm when run_main is False; only the materialized `result` is
+    ## skipped. 'simulation' mode still forces it (an explicit forward-sim request).
+</%doc>
+    % if has_algorithms:
+    run_main = mode in ('simulation',)
+    % else:
     run_main = mode in ('simulation', 'all', None)
+    % endif
 
     # Run simulation to get model_fn and state (includes transient settling if configured)
     sim_result = run_simulation(network, t1=${t1_default}, dt=${dt}, t_transient=${transient_time}, run_main=run_main, random_seed=kwargs.get('random_seed'))

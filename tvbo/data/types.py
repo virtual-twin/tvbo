@@ -1257,6 +1257,51 @@ class ExplorationResult(Bunch):
         """The raw array behind a labelled payload (JAX-native, no copy)."""
         return data.data if hasattr(data, "dims") else data
 
+    def _has_trial_axis(self, tail_first) -> bool:
+        """Whether the dim after the run axis is a per-point ``trial`` ensemble.
+
+        True only for a swept exploration carried *with* trials, where the payload
+        keeps a trial axis between the grid axis and time. A trials-only ensemble
+        already spends its leading axis on ``trial`` and is excluded by the caller.
+        """
+        n_trials = int(getattr(self, "n_trials", 0) or 0)
+        return n_trials > 1 and tail_first == n_trials
+
+    def _intrinsic_dims(self, tail_shape, *, trial_first: bool = False):
+        """Names + coords for the intrinsic dims that follow the leading run axis.
+
+        ``tail_shape`` is the payload shape after the run axis (the swept
+        parameter, ``point``, or ``trial``). Returns ``(dims, coords)`` following
+        the TVB convention ``time[, variable][, node][, mode]``, optionally
+        prefixed with a per-point ``trial`` axis. Single home for the labelling
+        rule so :meth:`_label_payload` and :meth:`as_grid` never disagree.
+        """
+        dims: list = []
+        coords: dict = {}
+        tail = list(tail_shape)
+        if trial_first and tail:
+            dims.append("trial")
+            coords["trial"] = np.arange(tail[0])
+            tail = tail[1:]
+        if not tail:
+            return dims, coords
+        dims.append("time")
+        if self.dt:
+            coords["time"] = np.arange(tail[0]) * self.dt
+        # tvboptim drops the `variable` dim for a single model output, so only
+        # label the leading spatial dim `variable` when it matches the output
+        # count; the rest map to (node, mode). Unknown output count → assume
+        # `variable` is present.
+        spatial = tail[1:]
+        n_out = len(self.output_names) if self.output_names else None
+        if spatial and (n_out is None or spatial[0] == n_out):
+            dims.append("variable")
+            if self.output_names and len(self.output_names) == spatial[0]:
+                coords["variable"] = list(self.output_names)
+            spatial = spatial[1:]
+        dims += ["node", "mode"][: len(spatial)]
+        return dims, coords
+
     def _label_payload(self, data):
         """Name the dims of the results payload **without reshaping it**.
 
@@ -1294,17 +1339,15 @@ class ExplorationResult(Bunch):
         dims = [lead]
 
         if self.is_timeseries and ndim > 1:
-            dims.append("time")
-            if self.dt:
-                coords["time"] = np.arange(data.shape[1]) * self.dt
-            spatial = list(data.shape[2:])
-            n_out = len(self.output_names) if self.output_names else None
-            if spatial and (n_out is None or spatial[0] == n_out):
-                dims.append("variable")
-                if self.output_names and len(self.output_names) == spatial[0]:
-                    coords["variable"] = list(self.output_names)
-                spatial = spatial[1:]
-            dims += ["node", "mode"][: len(spatial)]
+            tail = data.shape[1:]
+            # A trials-only ensemble already spent its leading axis on `trial`;
+            # only a swept run carries a separate trial axis in the tail.
+            trial_first = lead != "trial" and self._has_trial_axis(tail[0])
+            intrinsic, intrinsic_coords = self._intrinsic_dims(
+                tail, trial_first=trial_first
+            )
+            dims += intrinsic
+            coords.update(intrinsic_coords)
 
         # Any dim the layout does not account for still gets a name, so the result
         # is labelled even when the producer emits an unexpected rank.
@@ -1425,22 +1468,18 @@ class ExplorationResult(Bunch):
             # is already labelled with its own dims, so hand that back.
             return labelled
         try:
+            intrinsic_coords = {}
             if self.is_timeseries:
                 if data.shape[0] != n_grid:
                     return labelled
                 data = data.reshape(grid_shape + tuple(data.shape[1:]))
-                # Intrinsic (post-grid) layout is (time, *spatial) following the TVB
-                # convention (variable, node, mode). tvboptim drops the `variable` dim
-                # for a single model output, so only label it `variable` when the
-                # leading spatial dim actually matches the output count; the rest map
-                # to (node, mode). Unknown output count → assume `variable` is present.
-                spatial = list(data.shape[len(names) + 1:])
-                n_out = len(self.output_names) if self.output_names else None
-                intrinsic = ["time"]
-                if spatial and (n_out is None or spatial[0] == n_out):
-                    intrinsic.append("variable")
-                    spatial = spatial[1:]
-                intrinsic += ["node", "mode"][: len(spatial)]
+                # Intrinsic (post-grid) dims follow the same rule as the flat
+                # payload — resolved once in `_intrinsic_dims` so the two agree.
+                tail = data.shape[len(names):]
+                trial_first = bool(tail) and self._has_trial_axis(tail[0])
+                intrinsic, intrinsic_coords = self._intrinsic_dims(
+                    tail, trial_first=trial_first
+                )
                 dims = names + intrinsic
             else:
                 if data.size != n_grid:
@@ -1453,11 +1492,7 @@ class ExplorationResult(Bunch):
                 vals = self._axis_values(ax)
                 if vals is not None and len(vals) == sizes.get(nm):
                     coords[nm] = np.asarray(vals)  # coordinate labels, like TimeSeries' time
-            if self.is_timeseries and "time" in dims and self.dt:
-                coords["time"] = np.arange(data.shape[dims.index("time")]) * self.dt
-            if self.is_timeseries and "variable" in dims and self.output_names \
-                    and len(self.output_names) == data.shape[dims.index("variable")]:
-                coords["variable"] = list(self.output_names)
+            coords.update(intrinsic_coords)
             return xr.DataArray(data, dims=dims, coords=coords, name=self.observable or None)
         except Exception:
             # Never degrade to a bare array — the labelled payload is still correct,

@@ -193,6 +193,11 @@ The `knowledge` extra needs a manual install:
 pip install git+https://github.com/neurommsig/neurommsig-knowledge.git
 ```
 
+The `auto7p` extra (bifurcation continuation, pulled in by `pyrates`) installs
+the `pycobi` wrapper, but the AUTO-07p engine is a Fortran program that is not on
+PyPI: build it separately, set `AUTO_DIR`, and link its `python/` front-end onto
+your environment. See [Installation → AUTO-07p continuation](https://virtual-twin.github.io/tvbo/installation.html#auto-07p-continuation-auto7p).
+
 ## Citation
 
 A manuscript describing `tvbo` is in preparation. Until it appears, please cite the software via this repository and [tvbo.charite.de](https://tvbo.charite.de).
