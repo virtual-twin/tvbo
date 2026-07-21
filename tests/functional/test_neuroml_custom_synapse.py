@@ -531,6 +531,68 @@ class TestInputFanOut:
         assert rendered.count("<explicitInput") == 4
 
 
+# A *standard-types* network (iri: neuroml:*) driving the same input onto several
+# cells. This exercises the standard-NeuroML builder, not the custom-LEMS one, so
+# it pins the input de-duplication the shared small-scale lowering brings to that
+# path — the parity fix from routing both builders through one core.
+STD_SHARED_INPUT_YAML = """
+label: "Standard-types column with a shared input"
+network:
+  dynamics:
+    FNCell:
+      iri: "neuroml:fitzHughNagumoCell"
+      parameters: {I: {value: 0.0}}
+      state_variables:
+        V: {equation: {rhs: "V - V**3/3 - W + I"}, initial_value: 0.0, variable_of_interest: true}
+        W: {equation: {rhs: "0.08*(V + 0.7 - 0.8*W)"}, initial_value: 0.0}
+    Drive:
+      iri: "neuroml:pulseGenerator"
+      parameters:
+        delay: {value: 50.0, unit: ms}
+        duration: {value: 100.0, unit: ms}
+        amplitude: {value: 0.5, unit: nA}
+  nodes:
+    - {id: 0, dynamics: Drive}
+    - {id: 1, dynamics: Drive}
+    - {id: 2, dynamics: FNCell}
+    - {id: 3, dynamics: FNCell}
+  edges:
+    - {source: 0, target: 2}
+    - {source: 1, target: 3}
+integration: {method: euler, step_size: 0.01, duration: 10.0, time_scale: s}
+"""
+
+
+class TestStandardPathInputDedup:
+    """The standard-NeuroML builder must de-duplicate inputs like the custom one.
+
+    Two input nodes with identical parameters share one component; two with
+    differing parameters each get a unique id. Before the shared lowering, the
+    standard-types path used a bare ``safe_id(name)`` with no de-duplication, so a
+    repeated input emitted the same id twice (a duplicate component) and a
+    differing one silently collided — the fixes that already lived only in the
+    custom-LEMS builder. Routing both builders through the shared core closes it.
+    """
+
+    def test_identical_inputs_share_one_component(self, tmp_path):
+        rendered = _render(tmp_path, STD_SHARED_INPUT_YAML)
+        assert "<population" in rendered  # confirms the standard-types builder ran
+        assert rendered.count('<pulseGenerator id="Drive"') == 1
+        assert rendered.count("<explicitInput") == 2
+
+    def test_differing_inputs_get_unique_ids(self, tmp_path):
+        # Give node 1's Drive a different amplitude so it cannot share a component.
+        yaml_text = STD_SHARED_INPUT_YAML.replace(
+            "- {id: 1, dynamics: Drive}",
+            "- {id: 1, dynamics: Drive, parameters: {amplitude: {value: 0.9, unit: nA}}}",
+        )
+        with pytest.warns(UserWarning, match="more than one set of parameters"):
+            rendered = _render(tmp_path, yaml_text)
+        ids = sorted(set(re.findall(r'<pulseGenerator id="([^"]+)"', rendered)))
+        assert ids == ["Drive", "Drive_2"], ids
+        assert rendered.count("<explicitInput") == 2
+
+
 class TestDeclaredRefractoryPeriod:
     """A model's own refractory period must not be overwritten by the default.
 
