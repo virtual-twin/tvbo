@@ -151,6 +151,11 @@ def _render_lems(exp, **kw):
     return NeuroMLAdapter(exp).render_code(**kw)
 
 
+def _render_brian2(exp, **kw):
+    from tvbo.adapters.brian2 import Brian2Adapter
+    return Brian2Adapter(exp).render_code(**kw)
+
+
 def _render_rateml_python(exp, **kw):
     from tvbo.classes.experiment import templates, format_code
     template = templates.lookup.get_template("rateml/tvbo-rateml-python.py.mako")
@@ -201,6 +206,8 @@ _BUILTINS = [
                  _render_jax, aliases=("autodiff",)),
     ExportFormat("pde", "PDE-FEM Python", ".py", "text/x-python",
                  _render_pde, aliases=("pde-fem", "pde-python")),
+    ExportFormat("brian2", "Brian2 Python (spiking)", ".py", "text/x-python",
+                 _render_brian2, aliases=("brian",)),
     # code: julia
     ExportFormat("julia", "Julia (DifferentialEquations.jl)", ".jl", "text/plain",
                  _render_julia, aliases=("diffeq", "differentialequations")),

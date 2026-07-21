@@ -73,6 +73,9 @@ tvbo = "tvbo.cli:app"
 # NeuroML/LEMS support (pyNeuroML + LEMS engine)
 neuroml = ["PyLEMS>=0.6.7", "pyNeuroML>=0.7.0"]
 
+# Brian2 native small-scale spiking backend
+brian2 = ["Brian2>=2.5.0"]
+
 # NEURON simulator (required for multi-compartment NeuroML export backend)
 neuron = ["neuron"]
 
@@ -164,7 +167,7 @@ tvb = [
 tvboptim = ["tvboptim", "pymoo>=0.6.0"]
 
 # Full install (all features)
-all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p]"]
+all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2]"]
 
 [project.urls]
 homepage = "https://tvbo.charite.de"
@@ -305,6 +308,7 @@ markers = [
     "backend_networkdynamics: NetworkDynamics.jl backend tests",
     "backend_mtk: ModelingToolkit.jl backend tests",
     "backend_neuroml: NeuroML/LEMS backend tests",
+    "backend_brian2: Brian2 backend tests",
     "docs: mark test as documentation test (tests that execute .qmd notebooks)",
     "julia: mark test as requiring a Julia runtime via juliacall",
     "slow: long-running tests excluded by default (use --run-slow to include)",

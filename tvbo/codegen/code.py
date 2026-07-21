@@ -1503,6 +1503,51 @@ class PythonCodePrinter(_PythonCodePrinter):
         return f"(1 if {arg} > 0 else (-1 if {arg} < 0 else 0))"
 
 
+class Brian2Printer(PythonCodePrinter):
+    """Code printer for Brian2 equation strings.
+
+    Brian2's equation DSL is Python-like but expects **unqualified** function
+    names (``exp``, ``sin``, ``abs`` …), not the ``math.``-prefixed forms SymPy's
+    ``PythonCodePrinter`` emits — Brian2 resolves them against its own runtime
+    functions so the same equation compiles under any codegen target. Otherwise
+    the plain-Python scalar printing (including the nested-conditional
+    ``Piecewise``, which Brian2 accepts) is exactly what a per-neuron Brian2
+    equation needs. Units are not printed here — they are carried by the Brian2
+    namespace and the ``: dimension`` annotations the template adds.
+    """
+
+    # SymPy function name -> Brian2 function name (all unqualified).
+    _BRIAN2_FUNCTIONS = {
+        "exp": "exp",
+        "log": "log",
+        "log10": "log10",
+        "sqrt": "sqrt",
+        "sin": "sin",
+        "cos": "cos",
+        "tan": "tan",
+        "sinh": "sinh",
+        "cosh": "cosh",
+        "tanh": "tanh",
+        "asin": "arcsin",
+        "acos": "arccos",
+        "atan": "arctan",
+        "floor": "floor",
+        "ceiling": "ceil",
+        "ceil": "ceil",
+        "Abs": "abs",
+        "sign": "sign",
+    }
+
+    def __init__(self, settings=None):
+        super().__init__(settings=settings)
+        # Override the math.-qualified names inherited from PythonCodePrinter.
+        self.known_functions.update(self._BRIAN2_FUNCTIONS)
+
+    def _print_sign(self, expr):
+        # Brian2 has a native sign().
+        return f"sign({self._print(expr.args[0])})"
+
+
 def get_printer(format, parameters=None, order=None):
     """Return a code printer instance for the given target format.
 
@@ -1535,6 +1580,8 @@ def get_printer(format, parameters=None, order=None):
         return FortranPrinter(settings=extra) if extra else FortranPrinter()
     elif format == "python":
         return PythonCodePrinter(settings=extra) if extra else PythonCodePrinter()
+    elif format == "brian2":
+        return Brian2Printer(settings=extra) if extra else Brian2Printer()
     elif format == "lems":
         return LEMSPrinter(settings={"parameters": parameters or [], **extra})
     elif format in ["sympy", "symbolic", "pyrates"]:
