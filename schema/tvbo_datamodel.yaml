@@ -4536,6 +4536,14 @@ classes:
             account:
                 range: string
                 description: "Accounting allocation to charge the tasks against (Slurm)."
+            comment:
+                range: string
+                description: >-
+                    Free-text provenance tag on each submitted job (Slurm
+                    ``--comment``), visible in ``squeue -o %k``. Unset means an
+                    auto-generated ``tvbo:<study>/exp_<experiment>`` tag so a queued
+                    job maps back to its experiment; set it to override with a custom
+                    string.
             cores:
                 range: integer
                 minimum_value: 1
