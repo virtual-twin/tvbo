@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-all all check-runtime-onto
+.PHONY: help build save run docs-quarto docs-jupyter docs-to-py docs-rm-py docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-render docs-clean docs-publish docs-publish-changed pypi-release release gen-linkml gen-openminds gen-owl gen-shacl gen-neuroml gen-all all check-runtime-onto
 
 help: ## Show this help
 	@echo "TVBO Makefile"
@@ -76,6 +76,9 @@ ABOX_OUT = ontology/tvb-o-data.ttl
 BIOLOGY_OUT = ontology/tvb-o-biology.ttl
 AXIOMS_TTL = ontology/tvb-o-axioms.ttl
 BIFURCATION_TTL = ontology/tvb-o-bifurcation.ttl
+NEUROML_TTL = ontology/tvb-o-neuroml.ttl
+NEUROML_MAPPINGS = ontology/tvb-o-neuroml-mappings.ttl
+NEUROML_CONTRACTS = tvbo/data/ontology/neuroml_contracts.json
 CLINICAL_TTL = ontology/tvb-o-clinical.ttl
 CLINICAL_NMM = ontology/tvb-o-clinical-nmm.ttl
 MERGED_OUT = ontology/tvbo.owl
@@ -113,12 +116,22 @@ gen-abox: gen-studies
 	@python scripts/ontology/gen_abox.py -o $(ABOX_OUT) --bio-output $(BIOLOGY_OUT)
 	@echo "✓ A-box written to $(ABOX_OUT) (+ biology grounding to $(BIOLOGY_OUT))"
 
+# Ingest the NeuroML2 core LEMS ComponentTypes into a mergeable ontology module
+# plus the accumulated contract index the NeuroML adapter loads. Needs the
+# neuroml extra (jNeuroML jar + pylems); the committed outputs are consumed by
+# gen-merged without regenerating, so a merge does not require the jar.
+gen-neuroml:
+	@echo "Ingesting NeuroML-core ComponentTypes into the ontology..."
+	@mkdir -p ontology
+	@python scripts/ontology/gen_neuroml.py -o $(NEUROML_TTL) --contracts $(NEUROML_CONTRACTS)
+	@echo "✓ NeuroML module written to $(NEUROML_TTL) (+ contract index $(NEUROML_CONTRACTS))"
+
 crosswalk:
 	@echo "Refreshing crosswalk + boundary-matrix from schema/api/odoo..."
 	@python scripts/ontology/backfill_crosswalk.py
 	@echo "✓ dev/OntologicalRestructuring/{crosswalk,boundary-matrix}.md updated"
 
-gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox gen-merged
+gen-all: gen-linkml gen-openminds gen-owl gen-shacl gen-abox gen-neuroml gen-merged
 	@echo "✓ All schemas generated"
 
 gen-merged: gen-owl gen-abox
@@ -128,6 +141,8 @@ gen-merged: gen-owl gen-abox
 		--input $(OWL_OUT) \
 		--input $(AXIOMS_TTL) \
 		--input $(BIFURCATION_TTL) \
+		--input $(NEUROML_TTL) \
+		--input $(NEUROML_MAPPINGS) \
 		--input $(ABOX_OUT) \
 		--input $(BIOLOGY_OUT) \
 		--input $(CLINICAL_TTL) \
