@@ -2125,6 +2125,28 @@ class ExperimentResult:
         is_shard = any(getattr(e, "cell_coords", None) is not None
                        for e in (self.explorations or {}).values())
 
+        # De-conflict dim names that appear with incompatible sizes across data-variables.
+        # An experiment with several explorations (e.g. Jansen1995 exp-5 → Figs 8/9/10) writes
+        # one ``<expl>__results`` variable each; heterogeneous zip/grid sweeps of the same
+        # parameter then share a sweep dim name (``point``, ``K[0]``, …) at different lengths,
+        # and ``xr.Dataset`` requires a dim name to have a single size (else AlignmentError).
+        # Rename the colliding dim per-variable so the explorations coexist in one container,
+        # each keeping its own coordinate. Only triggers on a real conflict, so single-
+        # exploration and single-sweep experiments are untouched.
+        if len(data_vars) > 1:
+            from collections import defaultdict
+            _dim_sizes: dict = defaultdict(set)
+            for _da in data_vars.values():
+                for _d, _s in zip(_da.dims, _da.shape):
+                    _dim_sizes[_d].add(int(_s))
+            _conflicting = {_d for _d, _sizes in _dim_sizes.items() if len(_sizes) > 1}
+            if _conflicting:
+                data_vars = {
+                    _vn: (_da.rename({_d: f"{_vn}__{_d}" for _d in _da.dims if _d in _conflicting})
+                          if any(_d in _conflicting for _d in _da.dims) else _da)
+                    for _vn, _da in data_vars.items()
+                }
+
         written = []
         if data_vars:
             ds = xr.Dataset(data_vars, attrs={"tvbo_class": "tvbo:ExperimentResult",

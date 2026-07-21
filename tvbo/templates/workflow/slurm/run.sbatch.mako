@@ -94,10 +94,24 @@ export PYTHONPATH="code:${'$'}{PYTHONPATH:-}"
     subject_axis = next((ax for ax in plan.workflow_axes if ax.kind == "subjects"), None)
     single_task = plan.n_array_tasks == 1
     out_pat = plan.out_dir if (single_task or subject_axis) else plan.out_dir + "/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID"
+    # When requirements are layered onto the image (see WorkflowPlan.needs_container_layer),
+    # `setup.sh` built a --system-site-packages venv; expose its site-packages to the task
+    # via PYTHONPATH inside the container. The `python*` glob resolves the venv's own
+    # interpreter version, computed just below so the exec line stays a single string.
+    _extras_env = ("--env PYTHONPATH=\"${TVBO_EXTRAS}${PYTHONPATH:+:$PYTHONPATH}\" "
+                   if plan.needs_container_layer else "")
     prefix = ("singularity exec " + (plan.container_exec_flags + " " if plan.container_exec_flags else "")
-              + plan.container + " ") if plan.container else ""
+              + _extras_env + plan.container + " ") if plan.container else ""
     run_target = spec_relpath if spec_relpath else plan.run_spec
 %>\
+% if plan.needs_container_layer:
+## Requirements layered onto ${plan.container} by setup.sh (run it once first).
+if [ ! -d ${plan.container_extras_venv} ]; then
+    echo "ERROR: run setup.sh once before submitting — the requirements layer is missing." >&2
+    exit 1
+fi
+TVBO_EXTRAS=$(echo ${plan.container_extras_venv}/lib/python*/site-packages)
+% endif
 % if subject_axis:
 ## Per-subject dataset fan-out: one array task per subject. $SLURM_ARRAY_TASK_ID
 ## indexes SUBJECTS; `tvbo run --subject <id>` resolves that subject's empirical

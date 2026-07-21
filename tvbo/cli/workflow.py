@@ -470,6 +470,15 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path,
         (out_dir / "environment.yml").write_text(
             _render_template("environment.yml.mako", plan=plan), encoding="utf-8")
         _common.info("wrote requirements.txt + environment.yml")
+    # 3c) When a container AND requirements are both declared, emit a one-time setup.sh
+    #     that layers the declared deps onto the base image (see needs_container_layer) —
+    #     so a study adds `igl` without rebuilding the SIF. Engine-independent: the Slurm
+    #     run.sbatch and every Snakemake rule both prepend the layer to PYTHONPATH.
+    if plan.needs_container_layer:
+        setup = out_dir / "setup.sh"
+        setup.write_text(_render_template("setup.sh.mako", plan=plan), encoding="utf-8")
+        setup.chmod(0o755)
+        _common.info("wrote setup.sh (layers declared requirements onto the container)")
 
     # 4) README
     _write_readme(out_dir, engine=engine, plans=[plan],
@@ -703,6 +712,10 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             "out_dir": plan.out_dir,
             "result_stem": result_stem,
             "container": plan.container,
+            # Whether this rule's `tvbo run` must prepend the layered-requirements venv
+            # (setup.sh built it on the image) to PYTHONPATH — see needs_container_layer.
+            "needs_container_layer": plan.needs_container_layer,
+            "container_extras_venv": plan.container_extras_venv,
             # Resources are declared per experiment (a per-subject fit and a group
             # analysis need different walltime/memory), so each rule carries its own
             # block rather than sharing one study-wide dict.
@@ -726,6 +739,22 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
         return None
     (out_dir / "Snakefile").write_text(text, encoding="utf-8")
     _common.info(f"wrote Snakefile ({len(exp_plans)} experiment rule(s))")
+    # Environment + the container-requirements layer (setup.sh) — the study path builds
+    # its own artefacts (it does not go through _emit_kit), so mirror steps 3b/3c here.
+    # Keyed on the kit plan (plans[0]); a study whose experiments declare divergent
+    # requirements is warned like divergent binds are.
+    _kit0 = plans[0] if plans else None
+    if _kit0 is not None and _kit0.pip_specs:
+        (out_dir / "requirements.txt").write_text(
+            _render_template("requirements.txt.mako", plan=_kit0), encoding="utf-8")
+        (out_dir / "environment.yml").write_text(
+            _render_template("environment.yml.mako", plan=_kit0), encoding="utf-8")
+        _common.info("wrote requirements.txt + environment.yml")
+    if _kit0 is not None and _kit0.needs_container_layer:
+        setup = out_dir / "setup.sh"
+        setup.write_text(_render_template("setup.sh.mako", plan=_kit0), encoding="utf-8")
+        setup.chmod(0o755)
+        _common.info("wrote setup.sh (layers declared requirements onto the container)")
     # Match the Snakefile's global `container:` directive (keyed on the first
     # experiment): when it is emitted, enable Apptainer in the profile so the run
     # needs no extra flag; when it is not, leave the profile container-free.
