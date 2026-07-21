@@ -782,7 +782,10 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             "rule_name": "exp_" + key.replace("-", "_").replace(".", "_"),
             "spec_relpath": spec_relpath,
             "select": select,
-            "backend": backend,
+            # The plan resolves an unset backend to the experiment's execution.backend
+            # (else tvboptim); emit that resolved name, never the raw None — otherwise the
+            # rule renders `--backend=None` and every cell dies at backend resolution.
+            "backend": plan.backend.name,
             # Smoke iteration cap threaded to the rule's `tvbo run --max-iterations` (None => uncapped).
             "max_iterations": _max_iter,
             # Engine-native benchmarking: attach Snakemake's `benchmark:` directive to the rule.
