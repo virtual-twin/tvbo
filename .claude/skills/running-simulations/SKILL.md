@@ -150,6 +150,31 @@ tvbo export jax <SPEC>                                    # render code, no exec
 tvbo workflow snakemake <SPEC> -o ./kit                   # emit an HPC/pipeline kit
 ```
 
+## Running at scale: the `tvbo workflow` family
+
+For a cohort or a heavy fit that won't fit one process, the **same** experiment/study
+emits a self-contained cluster kit — no driver, no hand-written sbatch:
+
+```bash
+tvbo workflow plan      <SPEC>                  # show the resolved DAG (no artefact emitted)
+tvbo workflow snakemake <SPEC> -o ./kit --pack  # emit the whole study as one Snakemake DAG, one .tar.gz
+tvbo workflow submit    ./kit.tar.gz            # run it (engine auto-detected); --dry-run validates first
+```
+
+`snakemake` / `slurm` / `nextflow` choose the engine; one rule per experiment, dataset
+experiments fan out per subject, and a `from_experiment` dependency becomes a DAG edge.
+The **run environment is declared in the recipe's `workflow:` block** — `container:
+docker://…` runs every rule inside that image via Apptainer (no venv / module load),
+per-subject inputs travel via `Dataset.bundle: true`, and per-rule resources
+(`cpus_per_task` / `mem` / `time` / `partition`) via `workflow.slurm`. So the recipe that
+runs locally scales out unchanged.
+
+`--dry-run` only resolves the DAG — it does **not** execute a rule, so it cannot catch a
+runtime bug; smoke-test one experiment in the container before launching a whole cohort.
+For the full scale-out discipline (compute-node orchestration, the read-only-container
+bug class + binds, streaming observables for long fits), see the **replicating-studies**
+skill, Phase 8.
+
 ## Parameter sweeps, optimization & inference
 
 Sweeps and gradient-based fits are **declared on the experiment** as

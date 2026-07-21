@@ -562,6 +562,27 @@ enums:
             none:
                 description: "No reduction (return per-element values)"
 
+    ObservationReductionMode:
+        description: >-
+            How an observation is evaluated over the trajectory (see
+            Observation.reduce). Absent (the default) keeps the post-scan pipeline:
+            the observation is computed from a materialised trajectory. `streaming`
+            opts the observation into an incremental reducer that is folded into the
+            integrator carry via prepare(reduce=...), so the trajectory is never
+            held — byte-identical to the post-scan value (to f64 rounding), but with
+            O(block) instead of O(n_time) peak memory. Required for whole-brain fits
+            whose per-stage simulation is long enough that the full trajectory would
+            not fit in memory (e.g. the Schirner 2023 BOLD/FC group fit).
+        permissible_values:
+            streaming:
+                description: >-
+                    Fold this observation into the integrator carry as an
+                    (init, update, finalize) reducer; never materialise the
+                    trajectory. Supported for the HRF-Volterra BOLD pipeline
+                    (hemodynamic convolution), whose kernel / downsample stride /
+                    TR stride / Volterra scaling the resolver lifts from the
+                    declared pipeline.
+
     ContinuationAlgorithm:
         description: >-
             Predictor-corrector algorithm for numerical continuation.
@@ -2138,6 +2159,23 @@ classes:
                     its extent), so a fixed operator the reduction consumes (a mesh gradient,
                     a template matrix) is declared as data on the observer rather than
                     hidden inside a backend callable.
+
+            # Opt-in streaming evaluation of a post-scan pipeline observation.
+            reduce:
+                range: ObservationReductionMode
+                description: >-
+                    Opt into streaming evaluation of this observation: fold it into
+                    the integrator carry as an (init, update, finalize) reducer via
+                    prepare(reduce=...) instead of computing it post-scan from a
+                    materialised trajectory. Byte-identical to the pipeline value (to
+                    f64 rounding) but with O(block) instead of O(n_time) peak memory,
+                    so a fit whose per-stage simulation is too long to hold the
+                    trajectory (e.g. the Schirner 2023 group fit) can still evaluate
+                    it. Currently supported for the HRF-Volterra BOLD pipeline: the
+                    resolver lifts the HRF kernel, downsample stride, TR stride and
+                    Volterra k_1/V_0 from the declared pipeline. Absent (the default)
+                    keeps the post-scan pipeline unchanged — no other observation or
+                    experiment is affected.
 
             # Direct class reference (alternative to pipeline)
             class_reference:

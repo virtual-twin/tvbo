@@ -1215,14 +1215,24 @@ class ExplorationResult(Bunch):
             # A producer may hand over an already-labelled payload; take the raw
             # array so the shape detection below sees the same thing either way.
             results_arr = jnp.asarray(self._payload(results))
-            n_grid_dims = len(self._grid_shape) if self._grid_shape else 1
+            # Grid occupies the leading dim(s); anything after is intrinsic (time/node), so
+            # an extra dim ⇒ time series. Grid layout is either a flat cell dim (prod of axes,
+            # the runner's) or one dim per axis — resolve from the shape (comparing ndim to
+            # len(grid_shape) unconditionally mis-flattened >2-axis timeseries sweeps).
+            n_grid = int(np.prod(self._grid_shape)) if self._grid_shape else None
+            n_axes = len(self._grid_shape) if self._grid_shape else 0
+            shp = tuple(results_arr.shape)
+            if n_grid is not None and shp and shp[0] == n_grid:
+                n_grid_dims = 1                                   # flat cell product (runner layout)
+            elif n_axes and shp[:n_axes] == tuple(self._grid_shape):
+                n_grid_dims = n_axes                              # one dim per axis
+            else:
+                n_grid_dims = n_axes or 1                         # fallback (prior behaviour)
             if results_arr.ndim > n_grid_dims:
-                # Time series: shape (n_grid, n_time, ...) — preserve structure
-                self.results = results_arr
+                self.results = results_arr                        # time series: preserve structure
                 self.is_timeseries = True
             else:
-                # Scalar: flatten for backward compatibility
-                self.results = results_arr.flatten()
+                self.results = results_arr.flatten()             # scalar per grid point
                 self.is_timeseries = False
 
             # Trials-only explorations (no sweep axes) can be emitted as
@@ -2125,14 +2135,10 @@ class ExperimentResult:
         is_shard = any(getattr(e, "cell_coords", None) is not None
                        for e in (self.explorations or {}).values())
 
-        # De-conflict dim names that appear with incompatible sizes across data-variables.
-        # An experiment with several explorations (e.g. Jansen1995 exp-5 → Figs 8/9/10) writes
-        # one ``<expl>__results`` variable each; heterogeneous zip/grid sweeps of the same
-        # parameter then share a sweep dim name (``point``, ``K[0]``, …) at different lengths,
-        # and ``xr.Dataset`` requires a dim name to have a single size (else AlignmentError).
-        # Rename the colliding dim per-variable so the explorations coexist in one container,
-        # each keeping its own coordinate. Only triggers on a real conflict, so single-
-        # exploration and single-sweep experiments are untouched.
+        # Several explorations in one experiment each write a `<expl>__results` variable;
+        # their sweep dims can share a name (`point`, `K[0]`, …) at different sizes, which
+        # `xr.Dataset` rejects. Rename the colliding dim per-variable so they coexist. Fires
+        # only on a real conflict, so single-exploration/single-sweep experiments are untouched.
         if len(data_vars) > 1:
             from collections import defaultdict
             _dim_sizes: dict = defaultdict(set)
