@@ -5,11 +5,21 @@ from tvbo.codegen import render_expression
 from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, is_external_observation,
-    get_include_info, get_all_observations_from_algo, get_all_hyperparams
+    get_include_info, get_all_observations_from_algo, get_all_hyperparams,
+    streaming_post_eval_plan,
 )
 
 # Backend key this template targets — used for streaming-reducer registry lookups.
 _STREAMING_BACKEND = 'tvboptim'
+
+# Streaming post-tuning evaluation plan (shared with the experiment template — same
+# resolver — so the two sides cannot drift). Non-empty `names` => post_model_fn was built
+# with prepare(reduce=...) folding those observations, so it returns their streamed values
+# (a tuple), not a trajectory; the FC deliverable is computed from them without a
+# materialised trajectory. Empty => the materialise post-eval path is unchanged.
+_pp = streaming_post_eval_plan(experiment)
+_pp_names = _pp['names']
+_pp_deliverables = _pp['deliverables']
 
 # Define jaxcode locally
 _exp_functions = experiment.functions or {}
@@ -991,6 +1001,32 @@ def run_${algo_name}(
     # (it made identical-weight post sims score far below the base sim).
     # Skipped entirely when run as a nested inner loop (only the state is needed).
     if run_post_tuning:
+% if _pp_names:
+        # Streaming post-tuning evaluation: post_model_fn was built with prepare(reduce=...)
+        # folding ${', '.join(_pp_names)} into the integrator carry, so it returns the streamed
+        # value(s) — NOT a trajectory (the full-length fit trajectory is never materialised).
+        # The FC deliverable(s) ${', '.join(_pp_deliverables)} are computed from the streamed BOLD
+        # alone; observations that need the raw trajectory are absent (unavailable at fit scale).
+        if post_model_fn is not None and post_state is not None:
+            import copy
+            _post_state = copy.deepcopy(post_state)
+            _post_state.dynamics = state.dynamics
+            _post_state.coupling = state.coupling
+            _streamed = post_model_fn(_post_state)
+            _stream_vals = {_n: _v for _n, _v in zip(
+                ${repr(_pp_names)}, _streamed if isinstance(_streamed, (tuple, list)) else (_streamed,))}
+            post_tuning = None
+            post_tuning_observations = compute_all_observations(
+                None, state, history,
+                only=${repr(set(_pp_names) | set(_pp_deliverables))}, precomputed=_stream_vals,
+% if external_inputs:
+                network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}},
+% endif
+            )
+        else:
+            post_tuning = None
+            post_tuning_observations = None
+% else:
         if post_model_fn is not None and post_state is not None:
             import copy
             _post_state = copy.deepcopy(post_state)
@@ -1014,6 +1050,7 @@ def run_${algo_name}(
         )
 % else:
         post_tuning_observations = compute_all_observations(post_tuning, state, history)
+% endif
 % endif
     else:
         post_tuning = None

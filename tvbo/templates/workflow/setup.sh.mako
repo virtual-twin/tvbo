@@ -2,8 +2,9 @@
 ## are both declared. Layers the study's declared requirements onto the base image without
 ## rebuilding it, via a `--system-site-packages` venv (pip resolves against the image and
 ## installs only the delta; native wheels compile with the image's own interpreter, so the
-## layer is ABI-correct). Run ONCE from the kit dir before running the workflow:
-##   `bash setup.sh`  — it is idempotent. Each task then prepends the venv to PYTHONPATH.
+## layer is ABI-correct). `tvbo workflow submit` runs this automatically before submitting,
+## so the whole cluster step is one command; it is also runnable by hand (`bash setup.sh`)
+## and idempotent. Each task then prepends the venv to PYTHONPATH.
 ## Inputs: plan (WorkflowPlan), now (str).
 <%
     prefix = "singularity exec " + (plan.container_exec_flags + " " if plan.container_exec_flags else "") + plan.container

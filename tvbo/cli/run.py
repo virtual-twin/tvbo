@@ -77,6 +77,15 @@ def run(
              "Repeatable; dotted keys traverse attributes and keyed collections. Lets one "
              "recipe stay the single source of truth while the CLI runs it with test settings.",
     ),
+    pin: list[str] = typer.Option(
+        [], "--pin",
+        help="Pin an exploration axis to a single value for THIS run, e.g. "
+             "--pin Kuramoto.omega_mean_hz=20 --pin network.conduction_speed=6. The workflow "
+             "fan-out emits one --pin per fanned axis per cell: it sets the axis's parameter "
+             "AND drops the axis from the sweep, so the cell is a single run at that point (its "
+             "base run — and every declared observation — computed there). The model-scope "
+             "sibling of --subject. Repeatable.",
+    ),
     compress: bool = typer.Option(
         True, "--compress/--no-compress",
         help="gzip-deflate the result HDF5 (default on; grids compress well). "
@@ -148,11 +157,13 @@ def run(
                         "their directory or set PYTHONPATH."
                     )
             _apply_metadata_overrides(exp, set_)
+            _apply_axis_pins(exp, pin)
             _run_one(exp, backend, out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
     if kind == "experiment":
         _apply_metadata_overrides(obj, set_)
+        _apply_axis_pins(obj, pin)
         _run_one(obj, backend, out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
@@ -229,6 +240,109 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
             except Exception:
                 setattr(cur, leaf, value)
         _common.info(f"--set {path} = {value!r}")
+
+
+def _apply_axis_pins(experiment, pins: list[str]) -> None:
+    """Pin fanned exploration axes to single values for THIS run — the workflow fan-out's
+    per-cell restriction (the model-scope sibling of ``--subject``).
+
+    For each ``parameter=value``: set the axis's parameter on the experiment so the base
+    (representative) run uses it — every DECLARED observation, host or not, is computed on
+    that run, so this is what makes a fanned cell's host observation land at the cell's
+    coordinates — AND drop that axis from every exploration so the sweep does not re-expand
+    it. An exploration left with no axes is removed, collapsing the run to a single point.
+    """
+    for raw in pins:
+        s = raw.lstrip("-")
+        if "=" not in s:
+            raise typer.BadParameter(f"--pin {raw!r} must be of the form parameter=value")
+        parameter, _, val = s.partition("=")
+        value = _coerce_scalar(val)
+        _set_axis_parameter(experiment, parameter, value)
+        _drop_exploration_axis(experiment, parameter)
+        _common.info(f"--pin {parameter} = {value!r}")
+
+
+def _set_axis_parameter(experiment, parameter: str, value) -> None:
+    """Write an exploration axis's value onto its parameter target on the experiment.
+
+    Mirrors the codegen axis classifier (tvbo-tvboptim-experiment.py.mako): ``network.<p>``
+    is a network scalar; ``<coupling-name>.<p>`` is a coupling parameter; anything else
+    ``<x>.<p>`` (or a bare ``<p>``) is a dynamics parameter; and an experiment-scoped path
+    (``execution.random_seed``, ``integration.<p>``) falls back to the ``--set`` attribute
+    walk, which resolves those correctly. Kept in step with that classifier so a pinned run
+    and the swept grid write the same target.
+    """
+    def _set_in(coll, name) -> bool:
+        if coll is None:
+            return False
+        try:
+            entry = coll[name] if name in coll else None
+        except TypeError:
+            entry = getattr(coll, name, None)
+        if entry is None:
+            return False
+        setattr(entry, "value", value)
+        return True
+
+    if parameter.startswith("network."):
+        leaf = parameter[len("network."):]
+        net = getattr(experiment, "network", None)
+        if net is not None and _set_in(getattr(net, "parameters", None), leaf):
+            return
+        _common.die(f"--pin: cannot resolve network parameter {leaf!r} on the network.")
+    if "." in parameter:
+        prefix, name = parameter.rsplit(".", 1)
+        cpl = getattr(experiment, "coupling", None)
+        if cpl is not None and getattr(cpl, "name", None) == prefix \
+                and _set_in(getattr(cpl, "parameters", None), name):
+            return
+        net = getattr(experiment, "network", None)
+        net_cpl = getattr(net, "coupling", None) if net is not None else None
+        entry = net_cpl.get(prefix) if hasattr(net_cpl, "get") else None
+        if entry is not None and _set_in(getattr(entry, "parameters", None), name):
+            return
+        dyn = getattr(experiment, "dynamics", None)
+        if dyn is not None and _set_in(getattr(dyn, "parameters", None), name):
+            return
+        # Experiment-scoped axis (execution.random_seed, integration.<p>, initial_conditions):
+        # its parameter path IS an attribute path, so the --set walk resolves it.
+        _apply_metadata_overrides(experiment, [f"{parameter}={value}"])
+        return
+    dyn = getattr(experiment, "dynamics", None)
+    if dyn is not None and _set_in(getattr(dyn, "parameters", None), parameter):
+        return
+    _common.die(f"--pin: cannot resolve axis parameter {parameter!r}.")
+
+
+def _drop_exploration_axis(experiment, parameter: str) -> None:
+    """Remove the axis with this ``parameter`` from every exploration; drop an exploration
+    left with no axes so a fully-pinned run collapses to a single point (no empty sweep)."""
+    explorations = getattr(experiment, "explorations", None) or {}
+    expl_items = list(explorations.items()) if hasattr(explorations, "items") \
+        else list(enumerate(list(explorations)))
+    emptied = []
+    for key, expl in expl_items:
+        space = getattr(expl, "space", None)
+        if not space:
+            continue
+        if hasattr(space, "items"):        # keyed by parameter (LinkML keyed collection)
+            for axk in list(space.keys()):
+                if str(getattr(space[axk], "parameter", axk)) == parameter:
+                    del space[axk]
+            if len(space) == 0:
+                emptied.append(key)
+        else:                              # plain list of axes
+            expl.space = [ax for ax in space if str(getattr(ax, "parameter", None)) != parameter]
+            if len(expl.space) == 0:
+                emptied.append(key)
+    # Reverse order so deleting by positional index from a list-form explorations does not
+    # shift later indices (dict keys are order-independent).
+    for key in reversed(emptied):
+        try:
+            del explorations[key]
+        except Exception:
+            pass
 
 
 def _run_one(experiment, backend: str, out_dir: Path | None,

@@ -197,6 +197,62 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
     return state_names, requested_aux, all_var_names
 
 
+def state_only_recorded_aux(model: Any, experiment: Any = None) -> List[Tuple[str, int]]:
+    """Recorded derived variables that are provably functions of the state alone.
+
+    Returns ``[(name, aux_offset), ...]`` for each recorded derived variable whose
+    expression — expanded through referenced derived variables and parameters —
+    references no coupling input, external input, or ``local_coupling``; ``aux_offset``
+    is the variable's index within the recorded-auxiliary block (trajectory channel
+    ``len(state_names) + aux_offset``). These can be recomputed from the recorded
+    post-step state to undo the solver's one-step auxiliary lag; coupling-dependent
+    ones cannot (they need the in-scan coupling) and are omitted. Conservative: a
+    variable whose dependencies cannot be resolved is omitted.
+    """
+    _, requested_aux, _ = get_recorded_variable_names(model, experiment)
+    if not requested_aux or not getattr(model, "derived_variables", None):
+        return []
+
+    from tvbo.classes.equation import sympify as _sympify
+
+    dvars = model.derived_variables or {}
+    dparams = getattr(model, "derived_parameters", None) or {}
+    tainted = {"local_coupling"}
+    tainted |= set((getattr(model, "coupling_inputs", None) or {}).keys())
+    tainted |= set((getattr(model, "external_inputs", None) or {}).keys())
+
+    def _free_symbols(obj):
+        """Free-symbol names of ``obj``'s equation rhs, or ``None`` if absent/unparseable."""
+        eq = getattr(obj, "equation", None)
+        rhs = getattr(eq, "rhs", None) if eq is not None else None
+        if rhs is None:
+            return None
+        try:
+            return {str(s) for s in _sympify(str(rhs)).free_symbols}
+        except Exception:
+            return None
+
+    syms = {name: _free_symbols(dv) for name, dv in dvars.items()}
+    syms.update({name: _free_symbols(dp) for name, dp in dparams.items()})
+
+    def _depends_on_coupling(name, seen=frozenset()):
+        s = syms.get(name)
+        if s is None:                       # unresolved dependency → assume tainted
+            return True
+        if s & tainted:
+            return True
+        return any(
+            dep not in seen and dep in syms and _depends_on_coupling(dep, seen | {dep})
+            for dep in s
+        )
+
+    return [
+        (name, offset)
+        for offset, name in enumerate(requested_aux)
+        if name in dvars and not _depends_on_coupling(name)
+    ]
+
+
 def get_output_channels(model: Any, experiment: Any = None) -> Tuple[List[int], List[str], bool]:
     """Resolve the ``sv.record``-honoring output channels for the presented result.
 
@@ -829,11 +885,143 @@ def _reduction_init_value(sv: Any) -> float:
     return 0.0
 
 
+def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
+    """Lift a streaming ``(init, update, finalize)`` BOLD reducer from an HRF-Volterra
+    pipeline observation marked ``reduce: streaming``.
+
+    The materialised ``bold`` pipeline (HRF kernel -> stride decimation -> prepend the
+    downsampled transient -> ``'valid'`` HRF convolution -> Volterra scaling -> subsample
+    at the TR) is recast as a block reducer: a downsampled-history ring buffer folds each
+    integration block, ``strided_convolve`` evaluates the HRF convolution ONLY at the TR
+    boundaries, and the Volterra-scaled samples are written into a preallocated BOLD
+    buffer — so the full trajectory is never held. Byte-identical to the pipeline value
+    to f64 rounding (``strided_convolve`` is ~1e-12 vs the FFT ``fftconvolve``), with no
+    FFT buffer. Recast is faithful only when the decimation is a pure integer stride
+    (``temporal_average`` with ``period_samples == 1`` — identity — or a ``SubSample``);
+    an averaging ``temporal_average`` is NOT streamable and raises.
+
+    Returns a reduction dict tagged ``kind: 'convolution'`` carrying the lifted constants
+    (source, HRF-kernel call, decimation stride, TR stride, Volterra ``k_1``/``V_0``); the
+    convolution branch of ``render_reduction`` emits the reducer from it. Called bare (no
+    ``experiment``) only as the ``is this streaming?`` predicate — that path stays
+    side-effect-free and returns the tag without resolving function defaults.
+    """
+    name = str(get_attr(obs, "name", "observation"))
+    src = as_list(get_attr(obs, "source"))
+    source = str(src[0]) if src else None
+    red: Dict[str, Any] = {"kind": "convolution", "source": source}
+    if experiment is None:
+        # Predicate call ("is this a streaming reduction?"): stay side-effect-free and
+        # skip the function-default lookups that need the experiment. Non-None is enough.
+        return red
+
+    pipeline = as_list(get_attr(obs, "pipeline"))
+    if not pipeline:
+        raise ValueError(
+            f"Observation {name!r} declares reduce: streaming but has no pipeline; "
+            "streaming is currently supported for the HRF-Volterra BOLD pipeline only."
+        )
+    exp_funcs = get_attr(experiment, "functions")
+
+    def _func(fname):
+        if exp_funcs is None:
+            return None
+        if hasattr(exp_funcs, "get"):
+            return exp_funcs.get(fname)
+        for f in exp_funcs:
+            if str(get_attr(f, "name", "")) == fname:
+                return f
+        return None
+
+    def _fname_of(step):
+        fn = get_attr(step, "function")
+        return str(get_attr(fn, "name", fn)) if fn is not None else None
+
+    def _step_by_func(fname):
+        return next((st for st in pipeline if _fname_of(st) == fname), None)
+
+    def _arg_val(argcoll, key):
+        if not argcoll:
+            return None
+        items = (argcoll.items() if hasattr(argcoll, "items")
+                 else ((str(get_attr(a, "name", "")), a) for a in argcoll))
+        for k, a in items:
+            if str(k) == key:
+                return get_attr(a, "value", a)
+        return None
+
+    def _step_or_func_arg(fname, key, default=None):
+        st = _step_by_func(fname)
+        v = _arg_val(get_attr(st, "arguments"), key) if st is not None else None
+        if v is None:
+            v = _arg_val(get_attr(_func(fname), "arguments"), key)
+        return default if v is None else v
+
+    # HRF kernel: the kernel-generator step (its Function carries a `time_range`). Reuse
+    # the emitted kernel function so the streaming kernel is byte-identical to the
+    # pipeline's; forward the step's literal arguments, else the function's own defaults.
+    kernel_step = next(
+        (st for st in pipeline
+         if _func(_fname_of(st)) is not None and get_attr(_func(_fname_of(st)), "time_range")),
+        None,
+    )
+    if kernel_step is None:
+        raise ValueError(
+            f"Observation {name!r} declares reduce: streaming but its pipeline has no HRF "
+            "kernel generator (a Function with a time_range); cannot lift a streaming BOLD reducer."
+        )
+    kernel_fname = _fname_of(kernel_step)
+    _kw = []
+    for _k, _a in ((get_attr(kernel_step, "arguments") or {}).items()
+                   if hasattr(get_attr(kernel_step, "arguments") or {}, "items") else []):
+        _v = get_attr(_a, "value", None)
+        if _v is not None and not isinstance(_v, str):
+            _kw.append(f"{_k}={_v}")
+    red["kernel_call"] = f"{kernel_fname}({', '.join(_kw)})"
+
+    # Decimation stride (raw integration steps per downsampled sample). Only a pure
+    # stride is streamable: temporal_average(period_samples=1) is identity; anything
+    # that averages loses the block-additivity the reducer relies on.
+    _dec = _step_or_func_arg("temporal_average", "period_samples", None)
+    if _dec is not None:
+        ds_steps = int(to_numeric(_dec))
+        if ds_steps != 1:
+            raise ValueError(
+                f"Observation {name!r}: reduce: streaming requires a pure-stride decimation, but "
+                f"temporal_average uses period_samples={ds_steps} (averaging), which is not streamable. "
+                "Use a SubSample decimation (uniform integer stride) or period_samples=1."
+            )
+    else:
+        ds_steps = int(to_numeric(_step_or_func_arg("subsample", "step", 1) or 1))
+    red["ds_steps"] = ds_steps
+
+    # TR stride (downsampled samples per BOLD repetition time), from the pipeline's
+    # subsample-at-TR step.
+    _tr = _step_or_func_arg("subsample_bold", "s", None)
+    if _tr is None:
+        raise ValueError(
+            f"Observation {name!r}: reduce: streaming could not determine the TR stride "
+            "(no subsample_bold step with an `s` argument in the pipeline)."
+        )
+    red["tr_stride"] = int(to_numeric(_tr))
+
+    # Volterra BOLD scaling k_1 * V_0 * (x - 1), from the volterra_transform function's
+    # equation parameters.
+    _vt = _func("volterra_transform")
+    _vpar = get_attr(get_attr(_vt, "equation"), "parameters") if _vt is not None else None
+    red["k_1"] = float(to_numeric(parameter_value(_vpar, "k_1", 5.6)))
+    red["V_0"] = float(to_numeric(parameter_value(_vpar, "V_0", 0.02)))
+    return red
+
+
 def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
     """Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction.
 
     An observation may declare a co-integrated auxiliary ``Dynamics`` (the observer)
     that computes it online as a time recurrence, instead of a post-scan ``pipeline``.
+    An observation may instead opt a post-scan ``pipeline`` into streaming via
+    ``reduce: streaming`` (currently the HRF-Volterra BOLD pipeline), in which case the
+    reducer is lifted by :func:`_resolve_bold_stream` (tagged ``kind: 'convolution'``).
     This resolves that Dynamics into clean context for the reduction partial: the
     source state variable read, and for each observer state its ``init`` value, its
     discrete update RHS (``equation.rhs`` with ``equation_type: recurrence``), and
@@ -856,6 +1044,12 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     backend via ``render_expression`` (which accepts sympy directly). Returns ``None``
     when the observation declares no ``dynamics`` (the post-scan path runs).
     """
+    # Opt-in streaming of a post-scan pipeline (currently HRF-Volterra BOLD): lifted to
+    # a block reducer instead of the dynamics-observer recurrence path below.
+    _rm = get_attr(obs, "reduce")
+    if _rm is not None and str(getattr(_rm, "value", _rm)) == "streaming":
+        return _resolve_bold_stream(obs, experiment)
+
     import sympy as sp
 
     dyn = get_attr(obs, "dynamics")
@@ -1083,6 +1277,82 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
         "histogram": histogram,
         "windowed": windowed,     # True if any state declares an evict_equation (sliding window)
     }
+
+
+def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
+    """Plan a streaming post-tuning evaluation for a fitting experiment.
+
+    A ``reduce: streaming`` observation (currently HRF-Volterra BOLD) is folded into the
+    integrator carry via ``prepare(reduce=...)`` in the algorithm post-tuning evaluation,
+    so the full-length fit trajectory is never materialised (the memory bomb an FC group
+    fit hits at the paper's real per-stage duration). This resolves, once for the whole
+    experiment:
+
+    - ``names``: the streaming observations to fold (empty => no streaming post-eval; the
+      materialise path is unchanged, so every non-opted-in experiment is untouched);
+    - ``deliverables``: the derived observations computable from the streamed values plus
+      the static network observations ALONE — i.e. WITHOUT the raw trajectory (the FC
+      family: ``fc`` from streamed ``bold``, then ``fc_corr``/``fc_rmse`` from ``fc`` and
+      the empirical target). Observations that need the raw trajectory (e.g. a post-scan
+      ``mean`` over a state variable) are intentionally absent — at fit scale they cannot
+      be materialised anyway;
+    - ``period_in_steps``: the block-size unit — a multiple of every reducer's
+      ``ds_steps * tr_stride`` — so BOLD TR boundaries align to integrator block
+      boundaries (a partial-TR block would misalign the reducer's slot writing).
+
+    Both the experiment template (which builds the streaming ``post_model_fn``) and the
+    algorithm template (which consumes it) call this, so the two sides cannot drift.
+    """
+    obs = get_attr(experiment, "observations") or {}
+    obs_by_name = (dict(obs.items()) if hasattr(obs, "items")
+                   else {str(get_attr(o, "name")): o for o in obs})
+
+    streaming = {}
+    for n, o in obs_by_name.items():
+        r = resolve_reduction(o, experiment)
+        if r is not None and r.get("kind") == "convolution":
+            streaming[str(n)] = r
+    if not streaming:
+        return {"names": [], "deliverables": [], "period_in_steps": None}
+
+    def _is_static_source(o):
+        s = as_list(get_attr(o, "source"))
+        s0 = str(get_attr(s[0], "name", s[0])) if s else ""
+        return s0.startswith("network.observations.") or s0.startswith("dataset.subject")
+
+    def _obs_sources(o):
+        return [str(get_attr(s, "name", s)) for s in as_list(get_attr(o, "source"))]
+
+    # Transitive closure of derived observations reachable from the streamed values and the
+    # static (trajectory-free) network observations: a derived obs is computable iff every
+    # observation it sources is already available.
+    available = set(streaming) | {str(n) for n, o in obs_by_name.items() if _is_static_source(o)}
+    deliverables: List[str] = []
+    changed = True
+    while changed:
+        changed = False
+        for n, o in obs_by_name.items():
+            n = str(n)
+            if n in available:
+                continue
+            srcs = _obs_sources(o)
+            obs_srcs = [s for s in srcs if s in obs_by_name]
+            # Trajectory-free only when EVERY source is an available observation or a
+            # static network/dataset ref; a bare state/column source needs the trajectory.
+            if obs_srcs and all(
+                s in available or s.startswith("network.") or s.startswith("dataset.")
+                for s in srcs
+            ):
+                available.add(n)
+                deliverables.append(n)
+                changed = True
+
+    import math
+    pis = 1
+    for r in streaming.values():
+        step = int(r["ds_steps"]) * int(r["tr_stride"])
+        pis = pis * step // math.gcd(pis, step)
+    return {"names": sorted(streaming), "deliverables": deliverables, "period_in_steps": pis}
 
 
 def _literal_code(value: Any) -> str:

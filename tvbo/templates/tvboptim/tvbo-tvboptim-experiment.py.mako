@@ -37,6 +37,8 @@ else:
 # JAX code generation helpers
 jaxcode = lambda expr, params=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params)
 jaxcode_obj = lambda obj: model.render_equation(obj, format='jax')
+# Functions inlined so the post-solve aux recompute is self-contained.
+realign_render = lambda obj: model.render_equation(obj, format='jax', inline_functions=True)
 
 # Extract key metadata from model. For number_of_modes>1 the per-node mode axis is
 # folded into the state axis: state_names is the solver's flat (variable, mode) slot
@@ -69,9 +71,12 @@ has_model_output = bool(model_output_vars)
 # rather than the kind.
 from tvbo.templates.tvboptim.utils import (
     resolve_model_output_indices, format_channel_index, get_recorded_variable_names,
+    state_only_recorded_aux,
 )
 model_output_indices, model_output_names = resolve_model_output_indices(model, experiment)
 _, _, _recorded_var_names = get_recorded_variable_names(model, experiment)
+# State-only recorded derived variables to realign post-solve (single-mode only).
+_state_only_aux = state_only_recorded_aux(model, experiment) if n_modes == 1 else []
 model_output_channel_index = (
     format_channel_index(model_output_indices, len(_recorded_var_names))
     if model_output_indices else ''
@@ -182,7 +187,7 @@ time_si_factor = unit_to_si_factor(getattr(integration, 'unit', None) or 'ms')
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
-from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, resolve_reduction, edge_label, edge_const, node_label, node_const
+from tvbo.templates.tvboptim.utils import resolve_solver_kwargs, resolve_optimizer_mode, render_analysis_observations, render_recorded_observable, render_inference, render_adiabatic_signal, resolve_reduction, streaming_post_eval_plan, edge_label, edge_const, node_label, node_const
 solver_kwargs_str = resolve_solver_kwargs(integration, dt)
 # Warm-start/adiabatic scans run a plain forward solver but must honour the
 # coupling_evaluation choice (recompute_coupling_per_stage); gradient kwargs
@@ -1715,6 +1720,33 @@ def _apply_seed_params(state):
     return state
 % endif
 
+% if _state_only_aux:
+def _realign_state_auxiliaries(sol, network):
+    """Recompute recorded state-only derived variables from the recorded post-step
+    state so they no longer lag it by one step. Coupling-dependent auxiliaries are
+    left to the solver.
+    """
+    _ys = sol.ys
+    _p = network.params.dynamics
+    t = sol.ts.reshape(-1, 1)
+    % for _name in dyn_param_names:
+    ${_name} = _p.${_name}
+    % endfor
+    % for _i, _sname in enumerate(state_names):
+    ${_sname} = _ys[:, ${_i}, :]
+    % endfor
+    % for _dp in (model.derived_parameters.values() if model.derived_parameters else []):
+    ${_dp.name} = ${realign_render(_dp)}
+    % endfor
+    % for _name, _offset in _state_only_aux:
+<%    _ch = len(state_names) + _offset %>\
+    _ys = _ys.at[:, ${_ch}, :].set(
+        jnp.broadcast_to(jnp.atleast_1d(${realign_render(model.derived_variables[_name])}), _ys[:, ${_ch}, :].shape))
+    % endfor
+    return NativeSolution(sol.ts, _ys, dt=sol.dt, variable_names=sol.variable_names)
+
+
+% endif
 def run_simulation(
     network: Network,
     t1: float = ${t1_default},
@@ -1809,6 +1841,9 @@ def run_simulation(
             state.noise.key = _noise_key
         % endif
         result = model_fn(state)
+        % if _state_only_aux:
+        result = _realign_state_auxiliaries(result, network)
+        % endif
         observations = Bunch()
 % for obs_name in observation_names:
 % if obs_name in network_observation_names:
@@ -2015,12 +2050,19 @@ def _windowed_corr(_reduce, _ts, **_kw):
     return _reduce(_ts, **_kw)
 
 
-def compute_all_observations(result, state, result_transient=None, only=None, network_obs=None):
+def compute_all_observations(result, state, result_transient=None, only=None, network_obs=None, precomputed=None):
     # ``only`` (a set of observation names) restricts computation to those observations
     # plus, by the caller's closure, whatever they derive from. Default None computes
     # every declared observation (unchanged behaviour). The jitted per-grid-point
     # observable passes it so non-recorded observations — e.g. a non-jittable
     # ``solitary`` needed only by the base run — never execute inside the trace.
+    #
+    # ``precomputed`` (name -> value) seeds observation values computed elsewhere and
+    # skips their raw computation — the streaming post-tuning evaluation folds
+    # reduce: streaming observations (e.g. ``bold``) into the integrator carry via
+    # prepare(reduce=...), then passes them here (with ``result=None`` and ``only`` the
+    # trajectory-free FC deliverables) so the derived observations are computed WITHOUT a
+    # materialised trajectory. Default None is the unchanged post-scan path.
     obs = Bunch()
 
     # Network observations (empirical targets carried by the Network). A
@@ -2032,6 +2074,11 @@ def compute_all_observations(result, state, result_transient=None, only=None, ne
 % for obs_name in sorted(network_observation_names):
     obs.${obs_name} = _no['${obs_name}'] if '${obs_name}' in _no else ${obs_name}
 % endfor
+
+    # Streamed/precomputed observation values (folded in-carry via prepare(reduce=...)):
+    # seeded so derived observations can be computed without a materialised trajectory.
+    for _pk, _pv in (precomputed or {}).items():
+        obs[_pk] = _pv
 
     # Simulated observations (computed from result) - these derive from simulation state
 % for obs_name in sorted_observation_names:
@@ -2064,7 +2111,7 @@ def compute_all_observations(result, state, result_transient=None, only=None, ne
                 pipeline_call = str(fname) if fname else None
 %>
 % if obs_name not in network_observation_names:
-    if only is None or '${obs_name}' in only:
+    if (only is None or '${obs_name}' in only) and '${obs_name}' not in (precomputed or {}):
         # ${obs_name}: observation derived from simulation state
         _${obs_name}_monitor = ${obs_class}(history=result_transient)
         _${obs_name}_result = _${obs_name}_monitor(result)
@@ -3597,15 +3644,43 @@ def run_experiment(
     # Get dependencies for this algorithm
     algo_deps = algorithms_deps.get(algo_name, [])
     has_deps = len(algo_deps) > 0
+
+    # Streaming post-tuning evaluation plan (shared with the algorithm template so the two
+    # sides cannot drift). Non-empty `names` => the post-tuning model folds the
+    # reduce: streaming observation(s) into the integrator carry via prepare(reduce=...),
+    # so the full-length trajectory is never materialised. Empty => materialise (unchanged).
+    _pp = streaming_post_eval_plan(experiment)
+    _pp_names = _pp['names']
+    _pp_bs = _pp['period_in_steps']
 %>
             if algorithm_name == '${algo_name}':
                 # Create algorithm-specific model_fn with simulation_period
                 # Use get_solver() to ensure consistent solver config (with BoundedSolver if needed)
                 algo_model_fn, algo_state = prepare(network, get_solver(), t1=${float(algo_sim_period)}, dt=${dt})
 
+% if _pp_names:
+                # Streaming post-tuning evaluation: fold the reduce: streaming observation(s)
+                # ${', '.join(_pp_names)} into the integrator carry via prepare(reduce=...), so the
+                # full-length ${t1_default}ms trajectory is NEVER materialised (the FC deliverable is
+                # computed from the streamed BOLD alone — see run_${algo_name}). Block size ${_pp_bs}
+                # (a multiple of the reducer period), so BOLD TR boundaries align to block boundaries.
+                # warm_history seeds each reducer's HRF ring from the (transient-free -> None) transient.
+                post_model_fn, post_state = prepare(
+                    network, get_solver(block_size=${_pp_bs}), t1=${t1_default}, dt=${dt},
+                    reduce=_compose_reducers(*[
+                        _STREAMING_REDUCERS[_n][0](
+                            _STREAMING_REDUCERS[_n][1], ${dt},
+                            warm_history=(None if transient is None
+                                          else (transient.data if hasattr(transient, 'data') else transient)[:, _STREAMING_REDUCERS[_n][1], :]),
+                        )
+                        for _n in ${repr(_pp_names)}
+                    ]),
+                )
+% else:
                 # Create post-tuning model_fn/state using experiment-level integration duration
                 # (needed for full-length BOLD simulation for FC computation)
                 post_model_fn, post_state = prepare(network, get_solver(), t1=${t1_default}, dt=${dt})
+% endif
 
                 # Determine source state: depends_on result or initial_state
 % if has_deps:

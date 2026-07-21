@@ -115,3 +115,62 @@ def test_unloadable_spec_reports_every_attempt(tmp_path: Path):
     assert "as dynamics:" in msg
     # ...and the original exception is chained rather than discarded.
     assert excinfo.value.__cause__ is not None
+
+
+# ---------------------------------------------------------------------------
+# --pin: the fanned-exploration-axis per-cell restriction (the --subject sibling)
+# ---------------------------------------------------------------------------
+def _exp_with_sweep():
+    """A 1-node experiment sweeping a dynamics param, so pinning is observable."""
+    from tvbo import SimulationExperiment
+
+    return SimulationExperiment(
+        id=1, label="pin",
+        dynamics={"name": "Osc", "system_type": "continuous", "output": ["x"],
+                  "parameters": {"a": {"value": 1.0}},
+                  "state_variables": {"x": {"equation": {"rhs": "-a*x"}, "initial_value": 0.1}}},
+        network={"number_of_nodes": 1},
+        integration={"method": "heun", "step_size": 0.1, "duration": 1.0,
+                     "transient_time": 0.0, "unit": "s"},
+        explorations={"sweep_a": {"name": "sweep_a", "mode": "product", "record": ["x"],
+                                  "space": [{"parameter": "Osc.a",
+                                             "domain": {"lo": 0.5, "hi": 1.5, "n": 3}}]}},
+    )
+
+
+def test_pin_sets_the_dynamics_param_and_drops_the_axis():
+    """--pin must BOTH set the base parameter (so the representative run uses it) AND remove
+    the axis from the sweep — else the exploration re-expands it and the cell is not a point."""
+    exp = _exp_with_sweep()
+    run_cli._apply_axis_pins(exp, ["Osc.a=0.5"])
+    assert exp.dynamics.parameters["a"].value == 0.5          # base param set
+    assert not (exp.explorations or {})                       # emptied exploration removed
+
+
+def test_pin_leaves_other_axes_sweeping():
+    """Pinning one axis of a multi-axis sweep collapses only that axis."""
+    from tvbo import SimulationExperiment
+
+    exp = SimulationExperiment(
+        id=1, label="pin2",
+        dynamics={"name": "Osc", "system_type": "continuous", "output": ["x"],
+                  "parameters": {"a": {"value": 1.0}, "b": {"value": 2.0}},
+                  "state_variables": {"x": {"equation": {"rhs": "-a*x + b"}, "initial_value": 0.1}}},
+        network={"number_of_nodes": 1},
+        integration={"method": "heun", "step_size": 0.1, "duration": 1.0,
+                     "transient_time": 0.0, "unit": "s"},
+        explorations={"g": {"name": "g", "mode": "product", "record": ["x"],
+                            "space": [{"parameter": "Osc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}},
+                                      {"parameter": "Osc.b", "domain": {"lo": 1.0, "hi": 3.0, "n": 3}}]}},
+    )
+    run_cli._apply_axis_pins(exp, ["Osc.a=0.5"])
+    assert exp.dynamics.parameters["a"].value == 0.5
+    remaining = list((exp.explorations["g"].space or {}))
+    assert remaining and all("Osc.a" not in str(getattr(exp.explorations["g"].space[k], "parameter", k))
+                             for k in remaining)
+
+
+def test_pin_rejects_a_malformed_arg():
+    exp = _exp_with_sweep()
+    with pytest.raises(Exception, match="parameter=value"):
+        run_cli._apply_axis_pins(exp, ["Osc.a"])   # no '='
