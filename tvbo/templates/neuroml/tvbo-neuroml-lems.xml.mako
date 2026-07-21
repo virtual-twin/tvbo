@@ -92,7 +92,9 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for pname, p in ct_params.items():
     <Parameter name="${pname}" dimension="${ct_lems_dim(getattr(p, 'unit', None))}"/>
 % endfor
-% if ct_regime_data:
+## The refractory regime reads `refract`, so default it in — unless the model
+## declares its own refractory period, which would otherwise be emitted twice.
+% if ct_regime_data and 'refract' not in ct_params:
     <Parameter name="refract" dimension="time"/>
 % endif
 % for sv_name in ct_svs:
@@ -339,9 +341,14 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <Component id="${ct_dyn_id}_inst" type="${ct_dyn_id}"\
 % for pname, p in ct_params.items():
 <% p_unit = ct_lems_sym(getattr(p, 'unit', None)) %>\
- ${pname}="${getattr(p, 'value', 0)}${(' ' + p_unit) if p_unit else ''}"\
+## A parameter with no value has nothing to assign. Omitting it lets LEMS name
+## the unset parameter ("no value supplied for parameter: X"); emitting the
+## attribute anyway would write the string "None" and fail on the quantity.
+% if getattr(p, 'value', None) is not None:
+ ${pname}="${p.value}${(' ' + p_unit) if p_unit else ''}"\
+% endif
 % endfor
-% if ct_regime_data:
+% if ct_regime_data and 'refract' not in ct_params:
  refract="0 ${time_scale}"\
 % endif
 % for sv_name, sv in ct_svs.items():
@@ -375,6 +382,9 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   ct_synapse_extends = ct.get('synapse_extends', 'baseSynapse')
   ct_syn_inherited = set(ct.get('synapse_inherited_params', ()))
   ct_exposure_names = set(ct.get('synapse_exposure_names', ('i',)))
+  # The per-connection weight scales the current the postsynaptic cell sums.
+  ct_weighted = ct.get('weighted_exposure')
+  ct_weigh = lambda n, v: 'weight * (%s)' % v if n == ct_weighted else v
   # A state or derived variable named for one of the base type's exposures
   # fulfils that exposure (LEMS requires the subtype to provide it).
   ct_expose = lambda n: ' exposure="%s"' % n if n in ct_exposure_names else ''
@@ -382,6 +392,12 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 
   <!-- ── Synapse ComponentType: ${ct_dyn_id} (extends ${ct_synapse_extends}) ── -->
   <ComponentType name="${ct_dyn_id}" extends="${ct_synapse_extends}">
+% if ct_weighted:
+## jLEMS does not surface baseSynapse's inherited `weight` Property to the
+## DerivedVariable checker, so re-declare it locally (as NeuroML's own
+## gradedSynapse does) to reference the per-connection weight in the current.
+    <Property name="weight" dimension="none" defaultValue="1"/>
+% endif
 % for pname, p in ct_params.items():
 % if pname not in ct_syn_inherited:
     <Parameter name="${pname}" dimension="${ct_lems_dim(getattr(p, 'unit', None))}"/>
@@ -411,7 +427,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % if rhs:
 % if pw_cases:
 % if len(pw_cases) == 1 and pw_cases[0][0] is None:
-      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)} value="${pw_cases[0][1]}"/>
+      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)} value="${ct_weigh(dv_name, pw_cases[0][1])}"/>
 % else:
       <ConditionalDerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)}>
 % for (cond_str, val_str) in pw_cases:
@@ -424,7 +440,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
       </ConditionalDerivedVariable>
 % endif
 % else:
-      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)} value="${ct_lems_expr(rhs)}"/>
+      <DerivedVariable name="${dv_name}" dimension="${dv_dim}"${ct_expose(dv_name)} value="${ct_weigh(dv_name, ct_lems_expr(rhs))}"/>
 % endif
 % endif
 % endfor
@@ -480,6 +496,23 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % endfor
     </Dynamics>
   </ComponentType>
+
+  <Component id="${ct_dyn_id}_inst" type="${ct_dyn_id}"\
+% for pname, p in ct_params.items():
+<% p_unit = ct_lems_sym(getattr(p, 'unit', None)) %>\
+## A parameter with no value has nothing to assign. Omitting it lets LEMS name
+## the unset parameter ("no value supplied for parameter: X"); emitting the
+## attribute anyway would write the string "None" and fail on the quantity.
+% if getattr(p, 'value', None) is not None:
+ ${pname}="${p.value}${(' ' + p_unit) if p_unit else ''}"\
+% endif
+% endfor
+% for sv_name, sv in ct_svs.items():
+<% iv = getattr(sv, 'initial_value', None) %>\
+<% sv_unit = ct_lems_sym(getattr(sv, 'unit', None)) %>\
+ ${sv_name}_0="${iv if iv is not None else 0.0}${(' ' + sv_unit) if sv_unit else ''}"\
+% endfor
+/>
 % endif
 % endfor
 
@@ -507,8 +540,8 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
   <!-- ════════════════════════════════════════════════════════════════
        Input Sources (pulseGenerator, spikeGenerator, spikeArray, etc.)
        ════════════════════════════════════════════════════════════════ -->
-## ── Current-injection sources (standalone components) ──
-% for inp in net_ctx.get('inputs', []):
+## ── Current-injection sources (standalone components, one per input) ──
+% for inp in net_ctx.get('input_components', []):
   <${inp['type']} id="${inp['id']}"\
 % for pk, pv in inp.get('params', {}).items():
  ${pk}="${pv}"\
@@ -556,14 +589,9 @@ ${spike_children_xml}
   conn_delay_unit = conn.get('delay_unit') or time_scale
 %>\
 % if has_wd:
-    <synapticConnectionWD from="${conn['from_pop']}[${conn['from_idx']}]" to="${conn['to_pop']}[${conn['to_idx']}]" synapse="${conn['synapse']}" destination="synapses"\
-% if conn.get('weight') is not None:
- weight="${conn['weight']}"\
-% endif
-% if conn.get('delay') is not None:
- delay="${conn['delay']}${conn_delay_unit}"\
-% endif
-/>
+## synapticConnectionWD requires BOTH weight and delay; supply the neutral
+## default for whichever the edge left unset.
+    <synapticConnectionWD from="${conn['from_pop']}[${conn['from_idx']}]" to="${conn['to_pop']}[${conn['to_idx']}]" synapse="${conn['synapse']}" destination="synapses" weight="${1.0 if conn.get('weight') is None else conn['weight']}" delay="${0 if conn.get('delay') is None else conn['delay']}${conn_delay_unit}"/>
 % else:
     <synapticConnection from="${conn['from_pop']}[${conn['from_idx']}]" to="${conn['to_pop']}[${conn['to_idx']}]" synapse="${conn['synapse']}" destination="synapses"/>
 % endif
