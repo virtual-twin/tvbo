@@ -134,10 +134,12 @@ def _accumulate(component_types, name):
         A contract dict: ``extends``, ``chain``, and the accumulated
         ``exposures`` / ``requirements`` / ``parameters`` (name→dimension),
         ``event_ports`` (name→direction), ``attachments`` (name→type),
-        ``children`` (name→{type, multiple}), and ``on_start`` (var→value).
+        ``children`` (name→{type, multiple}), ``component_references``
+        (name→type), and ``on_start`` (var→value).
     """
     exposures, requirements, parameters = {}, {}, {}
     event_ports, attachments, children, on_start = {}, {}, {}, {}
+    component_references = {}
     for ct in reversed(_chain(component_types, name)):
         for e in ct.exposures:
             exposures[e.name] = e.dimension
@@ -149,6 +151,9 @@ def _accumulate(component_types, name):
             event_ports[ev.name] = ev.direction
         for a in ct.attachments:
             attachments[a.name] = getattr(a, "type", None)
+        # A ComponentReference names another component by id; a Child nests one.
+        for cr in (getattr(ct, "component_references", None) or {}).values():
+            component_references[cr.name] = getattr(cr, "type", None)
         for ch in ct.children:
             if _is_plumbing(ch.name):
                 continue
@@ -170,6 +175,7 @@ def _accumulate(component_types, name):
         "event_ports": event_ports,
         "attachments": attachments,
         "children": children,
+        "component_references": component_references,
         "on_start": on_start,
     }
 
