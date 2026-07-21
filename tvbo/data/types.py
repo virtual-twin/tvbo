@@ -1117,7 +1117,7 @@ class ExplorationResult(Bunch):
     """Result of parameter exploration (grid search).
 
     A thin wrapper around tvboptim exploration outputs that provides:
-    - Access to raw results (flat or grid-shaped)
+    - Access to labelled results (flat or grid-shaped)
     - Axis information for parameter values
     - Utility methods for finding optimal points and slicing
     - Time series plotting for parameter sweeps (when observable returns time series)
@@ -1137,8 +1137,14 @@ class ExplorationResult(Bunch):
         Exploration name
     grid : Space
         Parameter grid specification (tvboptim Space object)
-    results : jnp.ndarray
-        Observable values at each grid point (flat for scalars, multi-dim for time series)
+    results : xr.DataArray
+        Observable values at each grid point (flat for scalars, multi-dim for time
+        series), carrying named dims: the leading run axis (the swept parameter,
+        ``trial``, or ``point``) followed by the intrinsic dims (time, variable,
+        node, mode). The payload stays JAX-native — only the labels are
+        materialised — and the shape is unchanged from what the backend emitted, so
+        it is addressed by key rather than by position. ``as_grid()`` reshapes the
+        flat run axis into one dim per exploration axis.
     axes : list
         List of axis info (Bunch with name, lo, hi, n, values)
     observable : str
