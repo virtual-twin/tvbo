@@ -22,6 +22,18 @@ import warnings
 from typing import TYPE_CHECKING
 
 from tvbo.adapters.base import BaseAdapter
+from tvbo.adapters.smallscale.lowering import (
+    assign_cell_population,
+    classify_node_role,
+    connectivity_pairs as _connectivity_pairs,
+    expand_edge_connections,
+    expand_input_targets,
+    group_nodes_by_dynamics,
+    merge_params,
+    normalize_edge_params as _normalize_edge_params,
+    safe_id,
+    unique_component_id as _unique_component_id,
+)
 
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult
@@ -253,41 +265,9 @@ def inline_model_functions(expr, dynamics, all_names):
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
-def safe_id(s):
-    """Make a string safe for XML id attribute."""
-    s = re.sub(r"[^a-zA-Z0-9_]", "_", str(s or "id0"))
-    return ("_" + s) if s[0].isdigit() else s
-
-
-def _unique_component_id(name, taken, kind="component"):
-    """A component id derived from *name* that no other component already holds.
-
-    Components are named after their Dynamics, so two differently parameterised
-    uses of one Dynamics would collide and the second would be dropped.
-
-    Args:
-        name: the Dynamics name to derive the id from.
-        taken: ids already assigned; the returned id is added to it.
-        kind: what is being named, for the disambiguation warning.
-
-    Returns:
-        ``safe_id(name)``, or that with a numeric suffix when it is taken.
-    """
-    base = safe_id(name)
-    ident = base
-    n = 2
-    while ident in taken:
-        ident = f"{base}_{n}"
-        n += 1
-    if ident != base:
-        warnings.warn(
-            f"{kind} {base!r} is used with more than one set of parameters; "
-            f"emitting the additional one as {ident!r}. Give each parameterisation "
-            f"its own entry in the dynamics library to choose the names yourself.",
-            stacklevel=2,
-        )
-    taken.add(ident)
-    return ident
+# ``safe_id`` and ``_unique_component_id`` moved to
+# ``tvbo.adapters.smallscale.lowering`` (imported above) — the shared small-scale
+# core owns identifier minting so every backend derives ids the same way.
 
 
 def _dynamics_has_physical_units(params, svs, td_param_names=None):
@@ -417,26 +397,8 @@ def _build_regime_data(events):
     return None
 
 
-def _normalize_edge_params(params):
-    """Normalize edge parameters to a flat ``{name: param_obj}`` dict.
-
-    Handles both the dict form ``{weight: {value: 1.0}}`` and the list form
-    ``[{weight: {value: 1.0}}, ...]`` that YAML may produce.
-    """
-    if not params:
-        return {}
-    if isinstance(params, list):
-        result = {}
-        for item in params:
-            if isinstance(item, dict):
-                for k, v in item.items():
-                    result[str(k)] = v
-        return result
-    # dict or dict-like (LinkML JsonObj)
-    try:
-        return {str(k): v for k, v in params.items()}
-    except AttributeError:
-        return {}
+# ``_normalize_edge_params`` moved to ``tvbo.adapters.smallscale.lowering``
+# (imported above as ``normalize_edge_params``).
 
 
 def validate_lems_xml(xml_string):
@@ -1323,6 +1285,14 @@ EVENT_SOURCE_TYPES = frozenset(
 
 ALL_INPUT_TYPES = CURRENT_INPUT_TYPES | EVENT_SOURCE_TYPES
 
+# The NeuroML role vocabulary handed to the shared small-scale lowering: which
+# resolved NeuroML types are current-injection sources vs event (spike) sources.
+# Anything else lowers to a cell population. A Brian2 backend supplies its own.
+_NEUROML_ROLE_VOCAB = {
+    "current_input": CURRENT_INPUT_TYPES,
+    "event_source": EVENT_SOURCE_TYPES,
+}
+
 
 def _render_compound_input_children(dyn_obj, indent=8):
     """Render child input components of a compoundInput from Dynamics.components.
@@ -2156,39 +2126,8 @@ def _build_std_cell_context(experiment):
     }
 
 
-def _connectivity_pairs(rule, src_size, tgt_size):
-    """Expand a population-level connectivity rule into ``(src_idx, tgt_idx)`` pairs.
-
-    Given the ``ConnectivityRule`` (or its string value) and the source/target
-    population sizes, yields the local cell-index pairs a NeuroML
-    ``<projection>`` (or per-cell input list) enumerates.  This is the
-    "allToAll lowering": the user declares one population-to-population Edge and
-    the adapter generates the i x j connection set, so no O(N**2) explicit edges
-    ever appear in the input.
-
-    Self-connection filtering (the diagonal of a self-projection) is applied by
-    the caller on the resolved global cell indices, so this helper simply yields
-    the raw pattern.
-
-    Args:
-        rule: Connectivity pattern (``all_to_all`` or ``one_to_one``).
-        src_size: Number of cells in the source population.
-        tgt_size: Number of cells in the target population.
-
-    Yields:
-        ``(src_idx, tgt_idx)`` local cell indices.
-    """
-    rule_name = str(rule).lower().replace("-", "_")
-    src_size = int(src_size)
-    tgt_size = int(tgt_size)
-    if rule_name == "one_to_one":
-        for i in range(min(src_size, tgt_size)):
-            yield i, i
-        return
-    # Default / all_to_all: fully connected projection.
-    for i in range(src_size):
-        for j in range(tgt_size):
-            yield i, j
+# ``_connectivity_pairs`` moved to ``tvbo.adapters.smallscale.lowering``
+# (imported above as ``connectivity_pairs``) — the shared allToAll lowering.
 
 
 def _build_std_network_context(experiment):
@@ -2220,15 +2159,8 @@ def _build_std_network_context(experiment):
     dyn_id = safe_id((experiment.dynamics.name if experiment.dynamics else None) or "network")
     sim_id = "sim_" + (safe_id(label) if label else dyn_id)
 
-    # ── Group nodes by dynamics name → populations ──
-    groups = OrderedDict()
-    for node in nodes:
-        node_dyn = getattr(node, "dynamics", None)
-        if node_dyn:
-            dyn_name = getattr(node_dyn, "name", None) or str(node_dyn)
-        else:
-            dyn_name = dyn_id
-        groups.setdefault(dyn_name, []).append(node)
+    # ── Group nodes by dynamics name → populations (shared lowering) ──
+    groups = group_nodes_by_dynamics(nodes, dyn_id)
 
     # ── Classify each group ──
     custom_types = {}
@@ -2240,23 +2172,26 @@ def _build_std_network_context(experiment):
     node_pop_map = {}
     node_size_map = {}  # node_id -> number of cells (Node.size), for rule expansion
     input_nodes = {}
+    input_ids = {}  # (dynamics name, param values) -> component id
+    assigned_input_ids = set()  # every input id handed out, to keep them unique
     output_pops = []
 
     for dyn_name, group_nodes in groups.items():
         _dyn_lib_obj = dynamics_lib.get(dyn_name)
-        _dyn_iri = getattr(_dyn_lib_obj, "iri", "") or ""
-        _nml_type = _dyn_iri.split(":", 1)[1] if _dyn_iri.startswith("neuroml:") else dyn_name
-        is_current_input = _nml_type in CURRENT_INPUT_TYPES
-        is_event_source = _nml_type in EVENT_SOURCE_TYPES
+        _role, _nml_type = classify_node_role(dyn_name, _dyn_lib_obj, _NEUROML_ROLE_VOCAB)
+        is_current_input = _role == "current_input"
+        is_event_source = _role == "event_source"
 
         if is_current_input:
+            # Node parameters override the library's. Nodes agreeing on every value
+            # share one component; differing ones get their own (unique id). The
+            # component XML is emitted once per unique component, not per node.
+            dyn_params = _normalize_edge_params(getattr(_dyn_lib_obj, "parameters", None))
             for node in group_nodes:
                 nid = getattr(node, "id", 0)
-                dyn_params = _normalize_edge_params(getattr(_dyn_lib_obj, "parameters", None))
                 node_params = _normalize_edge_params(getattr(node, "parameters", None))
-                merged_params = {**dyn_params, **node_params}
                 param_strs = {}
-                for pn, pv in merged_params.items():
+                for pn, pv in merge_params(dyn_params, node_params).items():
                     val = getattr(pv, "value", pv)
                     unit = getattr(pv, "unit", None) or ""
                     if val is None:
@@ -2268,28 +2203,32 @@ def _build_std_network_context(experiment):
                         param_strs[str(pn)] = f"{val} {nml_unit}"
                     else:
                         param_strs[str(pn)] = str(val)
-                input_id = safe_id(dyn_name)
+                input_key = (dyn_name, tuple(sorted(param_strs.items())))
+                input_id = input_ids.get(input_key)
+                if input_id is None:
+                    input_id = _unique_component_id(dyn_name, assigned_input_ids, kind="input")
+                    input_ids[input_key] = input_id
+                    # Render the input component XML once, for this unique component.
+                    attr_parts = [f'id="{input_id}"']
+                    for pk, pv_str in param_strs.items():
+                        attr_parts.append(f'{pk}="{pv_str}"')
+
+                    if _nml_type == "compoundInput":
+                        children_xml = _render_compound_input_children(_dyn_lib_obj, indent=8)
+                        input_xmls_all.append(f"    <{_nml_type} {' '.join(attr_parts)}>\n{children_xml}\n    </{_nml_type}>")
+                    elif _nml_type == "timedSynapticInput":
+                        spike_xml = _render_event_children(_dyn_lib_obj, time_scale)
+                        if spike_xml:
+                            input_xmls_all.append(f"    <{_nml_type} {' '.join(attr_parts)}>\n{spike_xml}\n    </{_nml_type}>")
+                        else:
+                            input_xmls_all.append(f"    <{_nml_type} {' '.join(attr_parts)}/>")
+                    else:
+                        input_xmls_all.append(f"    <{_nml_type} {' '.join(attr_parts)}/>")
                 input_nodes[nid] = {
                     "type": _nml_type,
                     "id": input_id,
                     "params": param_strs,
                 }
-                # Render the input component XML
-                attr_parts = [f'id="{input_id}"']
-                for pk, pv_str in param_strs.items():
-                    attr_parts.append(f'{pk}="{pv_str}"')
-
-                if _nml_type == "compoundInput":
-                    children_xml = _render_compound_input_children(_dyn_lib_obj, indent=8)
-                    input_xmls_all.append(f"    <{_nml_type} {' '.join(attr_parts)}>\n{children_xml}\n    </{_nml_type}>")
-                elif _nml_type == "timedSynapticInput":
-                    spike_xml = _render_event_children(_dyn_lib_obj, time_scale)
-                    if spike_xml:
-                        input_xmls_all.append(f"    <{_nml_type} {' '.join(attr_parts)}>\n{spike_xml}\n    </{_nml_type}>")
-                    else:
-                        input_xmls_all.append(f"    <{_nml_type} {' '.join(attr_parts)}/>")
-                else:
-                    input_xmls_all.append(f"    <{_nml_type} {' '.join(attr_parts)}/>")
             continue
 
         if is_event_source:
@@ -2361,17 +2300,9 @@ def _build_std_network_context(experiment):
         else:
             return None
 
-        pop_id = safe_id(dyn_name) + "_pop"
-        node_ids = []
-        _base = 0
-        for idx, node in enumerate(group_nodes):
-            nid = getattr(node, "id", idx)
-            _nsize = int(getattr(node, "size", 1) or 1)
-            node_pop_map[nid] = (pop_id, _base)
-            node_size_map[nid] = _nsize
-            node_ids.append(nid)
-            _base += _nsize
-        pop_size = _base
+        pop_id, node_ids, pop_size = assign_cell_population(
+            dyn_name, group_nodes, node_pop_map, node_size_map
+        )
 
         # Node positions map one-to-one onto cells, so a populationList is only
         # meaningful when every node in the group is a single cell (size == 1).
@@ -2444,14 +2375,11 @@ def _build_std_network_context(experiment):
                 elif pn_str == "fractionAlong" and val is not None:
                     inp_fractionAlong = float(val)
             # A connectivity rule on an input edge attaches an independent copy
-            # of the input component to every target cell (rule expansion over a
-            # size-1 "source"); otherwise the input hits the node's base cell.
-            edge_rule = getattr(edge, "connectivity", None)
-            if edge_rule:
-                tgt_size = node_size_map.get(tgt, 1)
-                tgt_indices = [tgt_base + j for _i, j in _connectivity_pairs(edge_rule, 1, tgt_size)]
-            else:
-                tgt_indices = [tgt_base]
+            # of the input component to every target cell; otherwise the input
+            # hits the node's base cell (shared fan-out).
+            tgt_indices = expand_input_targets(
+                tgt_base, node_size_map.get(tgt, 1), getattr(edge, "connectivity", None)
+            )
             for _ti in tgt_indices:
                 explicit_inputs.append(
                     {
@@ -2556,32 +2484,20 @@ def _build_std_network_context(experiment):
         if conn_class == "continuous":
             pre_component = f"silent_{syn_id}"
 
-        # ── allToAll lowering ──
+        # ── allToAll lowering (shared) ──
         # An Edge with a connectivity rule is a population-to-population
-        # projection: expand it here into the individual cell-to-cell
-        # connections (size_src x size_tgt for all_to_all), skipping the
-        # diagonal of a self-projection when allow_self_connections is False.
-        # Without a rule the Edge is a single explicit cell-to-cell connection
-        # (the original per-cell edge semantics), preserved unchanged.
-        edge_rule = getattr(edge, "connectivity", None)
-        if edge_rule:
-            src_size = node_size_map.get(src, 1)
-            tgt_size = node_size_map.get(tgt, 1)
-            allow_self = getattr(edge, "allow_self_connections", True)
-            same_pop = src_pop == tgt_pop
-            index_pairs = _connectivity_pairs(edge_rule, src_size, tgt_size)
-            from_rule = True
-        else:
-            index_pairs = [(0, 0)]
-            allow_self = True
-            same_pop = False
-            from_rule = False
-
-        for _si, _tj in index_pairs:
-            from_idx = src_base + _si
-            to_idx = tgt_base + _tj
-            if same_pop and from_idx == to_idx and not allow_self:
-                continue
+        # projection expanded into individual cell-to-cell connections, with the
+        # self-projection diagonal filtered; without a rule it is one explicit
+        # cell-to-cell connection (the original per-cell edge semantics).
+        for from_idx, to_idx, from_rule in expand_edge_connections(
+            edge,
+            src_pop=src_pop,
+            src_base=src_base,
+            tgt_pop=tgt_pop,
+            tgt_base=tgt_base,
+            src_size=node_size_map.get(src, 1),
+            tgt_size=node_size_map.get(tgt, 1),
+        ):
             connections.append(
                 {
                     "from_pop": src_pop,
@@ -2790,25 +2706,18 @@ def _build_network_context(experiment):
     input_ids = {}  # (dynamics name, param values) -> component id
     assigned_input_ids = set()  # every input id handed out, to keep them unique
 
-    # Group nodes by their dynamics name
+    # Group nodes by their dynamics name (shared small-scale lowering).
     from collections import OrderedDict
 
-    groups = OrderedDict()  # dyn_name -> [node_obj, ...]
-    for node in nodes:
-        node_dyn = getattr(node, "dynamics", None)
-        if node_dyn:
-            dyn_name = getattr(node_dyn, "name", None) or str(node_dyn)
-        else:
-            dyn_name = getattr(default_dyn, "name", None) or "dynamics"
-        groups.setdefault(dyn_name, []).append(node)
+    groups = group_nodes_by_dynamics(nodes, getattr(default_dyn, "name", None) or "dynamics")
 
     for dyn_name, group_nodes in groups.items():
-        # Resolve NeuroML type from dynamics library IRI
+        # Resolve the node role (cell / current-input / event-source) and its
+        # NeuroML type from the dynamics-library IRI, via the shared vocabulary.
         _dyn_lib_obj = dynamics_lib.get(dyn_name)
-        _dyn_iri = getattr(_dyn_lib_obj, "iri", "") or ""
-        _nml_type = _dyn_iri.split(":", 1)[1] if _dyn_iri.startswith("neuroml:") else dyn_name
-        is_current_input = _nml_type in CURRENT_INPUT_TYPES
-        is_event_source = _nml_type in EVENT_SOURCE_TYPES
+        _role, _nml_type = classify_node_role(dyn_name, _dyn_lib_obj, _NEUROML_ROLE_VOCAB)
+        is_current_input = _role == "current_input"
+        is_event_source = _role == "event_source"
 
         if is_current_input:
             # Current injection sources are NOT populations.
@@ -2886,16 +2795,9 @@ def _build_network_context(experiment):
             dyn_obj = Dynamics.from_db(dyn_name)
         cell_types[dyn_name] = dyn_obj
 
-        pop_id = safe_id(dyn_name) + "_pop"
-        node_ids = []
-        _base = 0
-        for idx, node in enumerate(group_nodes):
-            nid = getattr(node, "id", idx)
-            _nsize = int(getattr(node, "size", 1) or 1)
-            node_pop_map[nid] = (pop_id, _base)
-            node_size_map[nid] = _nsize
-            node_ids.append(nid)
-            _base += _nsize
+        pop_id, node_ids, _base = assign_cell_population(
+            dyn_name, group_nodes, node_pop_map, node_size_map
+        )
 
         populations.append(
             {
@@ -2936,14 +2838,10 @@ def _build_network_context(experiment):
                 if str(pn) == "weight":
                     inp_weight = float(getattr(pv, "value", pv))
             # A connectivity rule attaches an independent input copy per target
-            # cell (rule expansion over a size-1 source); otherwise the input
-            # hits the node's base cell.
-            edge_rule = getattr(edge, "connectivity", None)
-            if edge_rule:
-                tgt_size = node_size_map.get(tgt, 1)
-                tgt_indices = [tgt_base + j for _i, j in _connectivity_pairs(edge_rule, 1, tgt_size)]
-            else:
-                tgt_indices = [tgt_base]
+            # cell; otherwise the input hits the node's base cell (shared fan-out).
+            tgt_indices = expand_input_targets(
+                tgt_base, node_size_map.get(tgt, 1), getattr(edge, "connectivity", None)
+            )
             for _ti in tgt_indices:
                 inputs.append(
                     {
@@ -3057,28 +2955,20 @@ def _build_network_context(experiment):
             )
         syn_id = synapse_set[syn_key]
 
-        # ── allToAll lowering ──
+        # ── allToAll lowering (shared) ──
         # An Edge with a connectivity rule is a population-to-population
-        # projection: expand into the individual cell-to-cell connections here,
-        # skipping the diagonal of a self-projection when allow_self_connections
-        # is False. Without a rule the Edge is a single explicit connection.
-        edge_rule = getattr(edge, "connectivity", None)
-        if edge_rule:
-            src_size = node_size_map.get(src, 1)
-            tgt_size = node_size_map.get(tgt, 1)
-            allow_self = getattr(edge, "allow_self_connections", True)
-            same_pop = src_pop == tgt_pop
-            index_pairs = _connectivity_pairs(edge_rule, src_size, tgt_size)
-        else:
-            index_pairs = [(0, 0)]
-            allow_self = True
-            same_pop = False
-
-        for _si, _tj in index_pairs:
-            from_idx = src_base + _si
-            to_idx = tgt_base + _tj
-            if same_pop and from_idx == to_idx and not allow_self:
-                continue
+        # projection expanded into individual cell-to-cell connections, with the
+        # self-projection diagonal filtered; without a rule it is one explicit
+        # connection.
+        for from_idx, to_idx, _from_rule in expand_edge_connections(
+            edge,
+            src_pop=src_pop,
+            src_base=src_base,
+            tgt_pop=tgt_pop,
+            tgt_base=tgt_base,
+            src_size=node_size_map.get(src, 1),
+            tgt_size=node_size_map.get(tgt, 1),
+        ):
             connections.append(
                 {
                     "from_pop": src_pop,
