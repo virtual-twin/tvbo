@@ -979,9 +979,9 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
             _kw.append(f"{_k}={_v}")
     red["kernel_call"] = f"{kernel_fname}({', '.join(_kw)})"
 
-    # Decimation stride (raw integration steps per downsampled sample). Streaming needs a
-    # pure subsample stride; temporal_average is an averaging window (even period_samples=1
-    # shifts by one sample) and is not block-additive, so it cannot be streamed faithfully.
+    # The decimation MUST be a pure subsample stride; temporal_average is an averaging
+    # window (even period_samples=1 shifts by one sample) and is not block-additive, so it
+    # cannot be streamed faithfully.
     if _step_by_func("temporal_average") is not None:
         raise ValueError(
             f"Observation {name!r}: reduce: streaming requires a subsample decimation, but the "
@@ -989,23 +989,56 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
             "shifts by one sample). Replace it with a subsample step, e.g. a function "
             "`subsample: {equation: {rhs: 'subsample(data, step - 1, step)'}}` and `step: <stride>`."
         )
-    ds_steps = int(to_numeric(_step_or_func_arg("subsample", "step", 1) or 1))
-    red["ds_steps"] = ds_steps
 
-    # TR stride (downsampled samples per BOLD repetition time), from the pipeline's
-    # subsample-at-TR step.
-    _tr = _step_or_func_arg("subsample_bold", "s", None)
-    if _tr is None:
-        raise ValueError(
-            f"Observation {name!r}: reduce: streaming could not determine the TR stride "
-            "(no subsample_bold step with an `s` argument in the pipeline)."
-        )
-    red["tr_stride"] = int(to_numeric(_tr))
+    # Decimation stride (ds_steps, raw integration steps per downsampled sample) and TR
+    # stride (downsampled samples per BOLD repetition time) are GRID-DERIVED: the HRF kernel
+    # is sampled on the model's `downsample_period` grid, so on an integration grid with a
+    # different `dt` the neural signal must be decimated to that same grid before convolving,
+    # and the TR subsample counts downsampled samples. A pipeline's hardcoded subsample
+    # `step` / strided `stride` are grid-specific (they assume one dt) and wrong on another
+    # grid — so derive from `downsample_period`, the observation's TR (`period`) and `dt`
+    # when available, falling back to the declared strides only when they are not.
+    _dt = get_attr(get_attr(experiment, "integration"), "step_size")
+    _dt = float(to_numeric(_dt)) if _dt else None
+    _dsp = get_attr(obs, "downsample_period")
+    _dsp = float(to_numeric(_dsp)) if _dsp else None
+    _period = get_attr(obs, "period")
+    _period = float(to_numeric(_period)) if _period is not None else None
 
-    # Volterra BOLD scaling k_1 * V_0 * (x - 1), from the volterra_transform function's
-    # equation parameters.
+    if _dsp is not None and _dt:
+        ds_steps = int(round(_dsp / _dt))
+    else:
+        ds_steps = int(to_numeric(_step_or_func_arg("subsample", "step", 1) or 1))
+    red["ds_steps"] = max(1, ds_steps)
+
+    if _period is not None and _dt:
+        red["tr_stride"] = int(round(_period / (red["ds_steps"] * _dt)))
+    else:
+        # Un-fused pipeline subsamples at the TR with a `subsample_bold` step (arg `s`); the
+        # fused strided pipeline folds it into the strided convolution `stride`.
+        _tr = (_step_or_func_arg("subsample_bold", "s", None)
+               or _step_or_func_arg("strided_hrf", "stride", None)
+               or _step_or_func_arg("strided_convolve", "stride", None))
+        if _tr is None:
+            raise ValueError(
+                f"Observation {name!r}: reduce: streaming could not determine the TR stride "
+                "(no `period`+`dt`, nor a subsample_bold `s` / strided `stride`, available)."
+            )
+        red["tr_stride"] = int(to_numeric(_tr))
+
+    # Volterra BOLD scaling k_1 * V_0 * (x - 1). The scaling constants live on a
+    # `volterra_transform` step — either a referenced Function's equation parameters, or an
+    # inline `equation` on the step itself (the fused strided pipeline uses the latter).
     _vt = _func("volterra_transform")
     _vpar = get_attr(get_attr(_vt, "equation"), "parameters") if _vt is not None else None
+    if _vpar is None:
+        _vstep = next(
+            (st for st in pipeline
+             if str(get_attr(st, "name", "")) == "volterra_transform"
+             or _fname_of(st) == "volterra_transform"),
+            None,
+        )
+        _vpar = get_attr(get_attr(_vstep, "equation"), "parameters") if _vstep is not None else None
     red["k_1"] = float(to_numeric(parameter_value(_vpar, "k_1", 5.6)))
     red["V_0"] = float(to_numeric(parameter_value(_vpar, "V_0", 0.02)))
     return red

@@ -104,6 +104,31 @@ functions = [
 ]
 
 outputs = list(model.output or [])
+
+# Events (discrete condition -> affect updates, e.g. a spike threshold/reset or a
+# spike-driven increment). Rendered from the model's own event declarations so the
+# native report is complete for spiking models, not just continuous ODEs.
+events_lines = []
+for _en, _ev in (getattr(model, 'events', None) or {}).items():
+    _cond = _slot(_slot(_ev, 'condition', None), 'rhs', None)
+    _aff = _slot(_slot(_ev, 'affect', None), 'rhs', None)
+    _parts = []
+    if _present(_cond):
+        try:
+            _c = latex(sympify(str(_cond), strict=False), mul_symbol='*', symbol_names=symbol_names)
+        except Exception:
+            _c = str(_cond)
+        _parts.append(f"when $ {_c} $")
+    if _present(_aff) and '=' in str(_aff):
+        _l, _r = str(_aff).split('=', 1)
+        try:
+            _a = (f"{latex(Symbol(_l.strip()), symbol_names=symbol_names)} \\leftarrow "
+                  f"{latex(sympify(_r, strict=False), mul_symbol='*', symbol_names=symbol_names)}")
+        except Exception:
+            _a = str(_aff)
+        _parts.append(f"$ {_a} $")
+    events_lines.append(f"- *{_en}*: " + ", ".join(_parts))
+
 # coupling_inputs is the supported surface; coupling_terms duplicated the same names
 # (each input IS a term) and is no longer rendered.
 coupling_inputs = getattr(model, 'coupling_inputs', {}) or {}
@@ -126,6 +151,8 @@ if model.derived_parameters:
     model_summary.append(f"derived parameters: {len(model.derived_parameters)}")
 if model.functions:
     model_summary.append(f"functions: {len(model.functions)}")
+if events_lines:
+    model_summary.append(f"events: {len(events_lines)}")
 if outputs:
     model_summary.append("outputs: " + ", ".join(outputs))
 
@@ -209,6 +236,12 @@ ci_rows = [[nm, report.slot(o, "source", ""),
 **Coupling Inputs**
 
 ${report.md_table(["Input", "Source", "Dimension", "Keys", "Description"], ci_rows, aligns=["l", "l", "r", "l", "l"])}
+
+% endif
+% if events_lines:
+**Events**
+
+${'\n'.join(events_lines)}
 
 % endif
 % if derived_parameters:

@@ -35,6 +35,13 @@ description: >-
 
 imaging_modality: BOLD
 
+# The HRF kernel is sampled on this grid (5000 samples over the 20000 ms support = 4 ms).
+# On an integration grid with a different dt the neural signal is decimated to this same
+# grid before the strided convolution, and the TR subsample counts these downsampled
+# samples — so streaming derives its decimation stride (downsample_period / dt) and TR
+# stride (TR / downsample_period) from this, not from a grid-specific hardcoded stride.
+downsample_period: 4.0
+
 references:
     - Schirner2023
 
@@ -70,18 +77,22 @@ functions:
                 value: 20000.0
                 description: "HRF kernel duration in ms"
 
-    temporal_average:
+    subsample:
         description: >-
-            Downsample by averaging over non-overlapping windows of `period_samples`
-            samples (centered indices, t0-independent) — reproduces tvboptim
-            TemporalAverage exactly.
-        source_code: "jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) + (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0]) + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0], period_samples).shape[0]]"
+            Pure-stride temporal decimation: `data[step-1::step]` (SubSampling). This is
+            the stream-safe decimation `streaming_hrf_bold` requires — unlike an averaging
+            `temporal_average` window, a stride is block-additive, so the strided BOLD is
+            byte-identical whether or not it is folded in-carry (reduce: streaming). At
+            step=1 it is a TRUE identity (no one-sample shift). Backend-independent (the
+            `subsample` array-op).
+        equation:
+            rhs: "subsample(data, step - 1, step)"
         arguments:
             data:
                 description: "Input time series (time, nodes)"
-            period_samples:
+            step:
                 value: 1
-                description: "Samples per window = round(downsample_period / dt)"
+                description: "Decimation stride = round(downsample_period / dt)"
 
     prepend_history:
         description: >-
@@ -125,18 +136,18 @@ pipeline:
 
     # Downsample neural activity (and transient history) to the BOLD grid
     - output: downsampled_data
-      function: temporal_average
+      function: subsample
       arguments:
           data:
               value: integration.result
-          period_samples:
+          step:
               value: 1
     - output: downsampled_history
-      function: temporal_average
+      function: subsample
       arguments:
           data:
               value: integration.transient
-          period_samples:
+          step:
               value: 1
 
     # Prepend transient history (zero-padded to one kernel length)

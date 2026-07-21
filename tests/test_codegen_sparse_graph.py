@@ -109,6 +109,33 @@ MINI_EXP_DELAYED["network"]["edges"] = [
 MINI_EXP_DELAYED["network"]["coupling"]["c"]["delayed"] = True
 
 
+# A DIRECT (non-factored) local-in-pre coupling: sin(x_j - x_i) reads the target-local
+# x_i inside pre(), the exact form the extended grid model uses (E_j*sin(theta_j-theta_i)).
+# Its per-edge message is 1-D (nnz) on a SparseGraph, so pre() must add the leading
+# n_output axis rank-agnostically. Distinct initial phases are required: with all nodes
+# at theta=0, sin(x_j - x_i)=0 makes the coupling inert and the run vacuous.
+MINI_EXP_DIRECT_PRE = copy.deepcopy(MINI_EXP)
+MINI_EXP_DIRECT_PRE["network"]["edges"] = [
+    {"source": 0, "target": 1, "parameters": {"weight": {"value": 0.5}}},
+    {"source": 1, "target": 0, "parameters": {"weight": {"value": 0.4}}},
+    {"source": 2, "target": 3, "parameters": {"weight": {"value": 0.3}}},
+    {"source": 3, "target": 2, "parameters": {"weight": {"value": 0.6}}},
+]
+MINI_EXP_DIRECT_PRE["network"]["coupling"]["c"] = {
+    "delayed": False,
+    "incoming_states": ["theta"],
+    "local_states": ["theta"],
+    "pre_expression": {"rhs": "sin(x_j - x_i)"},
+    "post_expression": {"rhs": "gx"},
+}
+MINI_EXP_DIRECT_PRE["dynamics"]["state_variables"]["theta"] = {
+    "equation": {"rhs": "K * c"},
+    "coupling_variable": True,
+    "distribution": {"name": "Uniform", "domain": {"lo": 0.0, "hi": 6.283185}},
+}
+MINI_EXP_DIRECT_PRE["execution"] = {"random_seed": 0}
+
+
 def test_sparse_delayed_network_emits_sparsedelaygraph():
     """Explicit per-edge delays + sparse -> SparseDelayGraph.
 
@@ -146,6 +173,34 @@ def test_sparse_delayed_run_matches_dense():
     sparse_ys = np.asarray(sparse_res.integration.data)
     dense_ys = np.asarray(dense_res.integration.data)
     assert sparse_ys.shape == dense_ys.shape
+    np.testing.assert_allclose(sparse_ys, dense_ys, rtol=1e-6, atol=1e-8)
+
+
+def test_sparse_instantaneous_local_pre_run_matches_dense():
+    """A single-term local-in-pre coupling (sin(x_j - x_i)) must RUN on a sparse graph.
+
+    pre() reads the target-local x_i, so the emitted per-edge message is 1-D (nnz) on a
+    SparseGraph; the leading n_output axis has to be added rank-agnostically. A fixed 2-D
+    reshape (``coupling_term[:, :, None]``) indexes a 1-D array with three axes and
+    crashes — the failure the extended grid model hit. The delayed variant of this branch
+    was the only one executed; this pins the INSTANTANEOUS one and checks sparse agrees
+    with the dense emit, so a revert to the fixed-rank reshape can't pass silently.
+    """
+    import numpy as np
+
+    sparse_spec = copy.deepcopy(MINI_EXP_DIRECT_PRE)
+    dense_spec = copy.deepcopy(MINI_EXP_DIRECT_PRE)
+    dense_spec["network"].pop("graph_representation")
+
+    sparse_res = SimulationExperiment(**sparse_spec).run(format="tvboptim")
+    dense_res = SimulationExperiment(**dense_spec).run(format="tvboptim")
+
+    sparse_ys = np.asarray(sparse_res.integration.data)
+    dense_ys = np.asarray(dense_res.integration.data)
+    assert sparse_ys.shape == dense_ys.shape
+    # A degenerate all-equal run would pass a dense/sparse check vacuously; require the
+    # coupling to have actually done something (distinct initial phases evolved).
+    assert float(np.ptp(sparse_ys)) > 1e-6, "coupling inert — test is vacuous"
     np.testing.assert_allclose(sparse_ys, dense_ys, rtol=1e-6, atol=1e-8)
 
 
