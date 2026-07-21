@@ -1032,6 +1032,33 @@ class Network(tvbo_datamodel.Network):
                 except Exception:  # noqa: BLE001
                     object.__setattr__(self, "parcellation", loaded_parc)
 
+        self._attach_node_attributes(bids_dir)
+
+    def _attach_node_attributes(self, bids_dir) -> None:
+        """Attach per-node attributes from ``*_desc-regionSize.tsv`` sidecars as Node
+        parameters, keyed by label. Every column beyond ``label`` becomes a node
+        parameter of that name — so a symbolic weight transform can reference it (e.g.
+        ``W / roi_size`` to normalise each target region by its size). Silent when no
+        such sidecar or no matching labels."""
+        import csv
+        nodes = self.nodes or []
+        by_label = {str(getattr(n, "label", "")): n for n in nodes}
+        for f in sorted(Path(bids_dir).glob("*_desc-regionSize.tsv")):
+            with open(f) as fh:
+                reader = csv.DictReader(fh, delimiter="\t")
+                cols = [c for c in (reader.fieldnames or []) if c != "label"]
+                for row in reader:
+                    node = by_label.get(row.get("label", ""))
+                    if node is None:
+                        continue
+                    if node.parameters is None:
+                        node.parameters = {}
+                    for c in cols:
+                        try:
+                            node.parameters[c] = tvbo_datamodel.Parameter(name=c, value=float(row[c]))
+                        except (TypeError, ValueError):
+                            pass
+
     def _resolve_from_parcellation(self) -> None:
         """Populate self from a parcellation + tractogram normative DB lookup."""
         parc = self.parcellation
@@ -4736,6 +4763,12 @@ class Network(tvbo_datamodel.Network):
             "np": jnp,
             "jsp": jsp,
         }
+        # ``specrad(X)`` — spectral radius (largest |eigenvalue|) of a matrix expression,
+        # for rescaling a connectome to a fixed coupling strength independent of any
+        # per-region normalisation, e.g. ``0.30 * W / roi_size / specrad(W / roi_size)``.
+        env["specrad"] = lambda X: jnp.max(jnp.abs(jnp.linalg.eigvals(X)))
+        if getattr(M, "ndim", 0) == 2 and M.shape[0] == M.shape[1]:
+            env["W_specrad"] = env["M_specrad"] = env["specrad"](M)
         # Expose declared per-node parameters as (n, 1) column vectors, so a symbolic
         # weight transform can normalise per target region — e.g. ``W / roi_size`` divides
         # each target row by that region's size (Deco's fibers-per-neuron SC). Column
