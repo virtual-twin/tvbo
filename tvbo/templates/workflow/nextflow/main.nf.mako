@@ -16,6 +16,14 @@ nextflow.enable.dsl = 2
 
 % if plan.container:
 process.container = '${plan.container}'
+## process.container takes effect only while a container runtime is enabled.
+singularity.enabled = true
+## Binds the work directories Nextflow stages each task through.
+singularity.autoMounts = true
+% if plan.container_exec_flags:
+## Host paths the task must see beyond the runtime's defaults (container_binds/args).
+singularity.runOptions = '${plan.container_exec_flags}'
+% endif
 % endif
 % if block.get("executor"):
 process.executor  = '${block["executor"]}'

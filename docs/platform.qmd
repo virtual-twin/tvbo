@@ -34,4 +34,4 @@ For programmatic access and full simulation capabilities, install the `tvbo` Pyt
 pip install tvbo
 ```
 
-See the [Installation](installation.md) and [Usage](Usage/index.qmd) guides to get started.
+See the [Installation](installation.md) and [Usage](GettingStarted.qmd) guides to get started.

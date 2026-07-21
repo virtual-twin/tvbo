@@ -228,6 +228,75 @@ def get_output_channels(model: Any, experiment: Any = None) -> Tuple[List[int], 
     return output_indices, output_names, is_subset
 
 
+def resolve_model_output_indices(model: Any, experiment: Any = None) -> Tuple[List[int], List[str]]:
+    """Resolve ``model.output`` entries to channel indices in the recorded ordering.
+
+    ``model.output`` may name state variables, auxiliary (derived) variables, or a
+    mix of the two. The recorded ordering is the state channels followed by the
+    auxiliaries that were actually requested (:func:`get_recorded_variable_names`),
+    so an output's position cannot be inferred from its kind — a state output sits
+    *before* the auxiliaries, not after them. Multi-mode state variables expand to
+    all of their ``v__mode{m}`` slots.
+
+    Returns ``(indices, names)`` in the declared output order, so the emitted
+    channel order and the reported ``output_names`` always agree.
+
+    Args:
+        model: Dynamics object (with state_variables and derived_variables).
+        experiment: Optional SimulationExperiment, forwarded to the layout resolver.
+
+    Raises:
+        ValueError: if an output names neither a recorded state nor a recorded
+            auxiliary. Model construction already rejects unknown output names and
+            every listed auxiliary is recorded by construction, so this guards the
+            invariant against future changes to the recorded layout rather than a
+            reachable input.
+    """
+    _, _, all_var_names = get_recorded_variable_names(model, experiment)
+    n_modes, _, _ = get_mode_layout(model)
+    state_vars = (model.state_variables or {}) if model else {}
+
+    output_vars = getattr(model, "output", None) or []
+    if isinstance(output_vars, str):
+        output_vars = [output_vars]
+
+    indices: List[int] = []
+    names: List[str] = []
+    for var in output_vars:
+        if n_modes > 1 and var in state_vars:
+            slots = [f"{var}__mode{m}" for m in range(n_modes)]
+        else:
+            slots = [var]
+        for slot in slots:
+            if slot not in all_var_names:
+                raise ValueError(
+                    f"output {var!r} is neither a state variable nor a recorded "
+                    f"derived variable; recorded channels are {all_var_names}"
+                )
+            indices.append(all_var_names.index(slot))
+            names.append(slot)
+    return indices, names
+
+
+def format_channel_index(indices: List[int], n_channels: int) -> str:
+    """Render axis-1 channel indices as the narrowest correct index expression.
+
+    A single channel yields a scalar index (dropping the variable dimension);
+    a contiguous run yields a slice, so the common all-auxiliaries case emits the
+    same ``n_states:`` slice as before; anything else yields an explicit index
+    list, which preserves the declared output order under advanced indexing. An
+    empty selection yields ``:`` (all channels) rather than raising.
+    """
+    if not indices:
+        return ":"
+    if len(indices) == 1:
+        return str(indices[0])
+    lo, hi = indices[0], indices[-1] + 1
+    if indices == list(range(lo, hi)):
+        return f"{lo}:" if hi == n_channels else f"{lo}:{hi}"
+    return "[" + ", ".join(str(i) for i in indices) + "]"
+
+
 def parse_list_elements(rhs_str: str) -> List[str]:
     """Split a ``[a, b, c]`` list-literal string into top-level element strings,
     respecting nested brackets/parens (so ``[f(x, y), g(z)]`` yields two elements)."""

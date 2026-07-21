@@ -4,7 +4,8 @@
 ## Inputs: plan (WorkflowPlan), block (dict = engine block), now (str).
 <%
 sb = block
-prefix = ("singularity exec " + plan.container + " ") if plan.container else ""
+prefix = ("singularity exec " + (plan.container_exec_flags + " " if plan.container_exec_flags else "")
+          + plan.container + " ") if plan.container else ""
 %>\
 #!/bin/bash
 #SBATCH --job-name=${plan.study_key}-${plan.experiment_key}-finalize

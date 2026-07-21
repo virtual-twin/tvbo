@@ -110,7 +110,19 @@ def build_sampling_overrides(resolved_pipeline, sampling):
             count = sampling.interim_istep if kind == 'window' else sampling.output_interim_count
         else:
             count = sampling.output_istep
-        arg_map = {name: int(count) for name in _sampling_arg_names(func)}
+        sampling_args = _sampling_arg_names(func)
+        if sampling_args and int(count) <= 0:
+            # A resolved count of 0 means the observation declared no output period,
+            # so there is nothing to derive the stride from. Emitting it anyway would
+            # produce `X[::0]`, which raises deep inside the generated pipeline with
+            # no trace back to the missing declaration.
+            raise ValueError(
+                f"observation pipeline step {getattr(func, 'name', func)!r} needs a "
+                f"sampling stride, but the observation declares no output period. "
+                f"Add `period: <ms>` (or a `TR` parameter) to the observation so the "
+                f"stride resolves from the integration step size."
+            )
+        arg_map = {name: int(count) for name in sampling_args}
         # TVB emits the first subsample at step % istep == 0 (1-indexed), i.e.
         # array index istep - 1. Honour an explicit ``start`` argument so the jax
         # subsample aligns with tvboptim/tvb instead of starting at index 0.

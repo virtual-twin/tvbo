@@ -243,6 +243,20 @@ source .venv/bin/activate
 pip install -e ".[all]"
 ```
 
+The `[all]` extra installs `pycobi`, but the AUTO-07p continuation engine it wraps
+is a native Fortran build that pip cannot place. Provision it once — the link
+lives in the venv, so re-run this after recreating `.venv`:
+
+```bash
+tvbo install auto7p            # links an existing $AUTO_DIR install
+tvbo install auto7p --build    # or builds AUTO-07p from source first
+```
+
+Without it, the bifurcation-continuation pages and PyRates continuation examples
+fail with `ModuleNotFoundError: No module named 'auto'`. See
+[Installation → AUTO-07p continuation](https://virtual-twin.github.io/tvbo/installation.html#auto-07p-continuation-auto7p)
+for the manual equivalent.
+
 ### Running Tests
 
 ```bash

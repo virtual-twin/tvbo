@@ -16,6 +16,7 @@ requires.
 from __future__ import annotations
 
 import re
+import shlex
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
@@ -56,6 +57,8 @@ class WorkflowPlan:
     engine: str                       # local | slurm | snakemake | nextflow
     out_dir: str                      # template; may contain ``{wildcard}``
     container: str | None
+    container_binds: list[str]
+    container_args: str | None
     retries: int
     rng: str
     provenance: bool
@@ -72,6 +75,27 @@ class WorkflowPlan:
     experiment_selector: str | None = None  # --experiment value picking this experiment in a study
     workflow_spec: dict[str, Any] = field(default_factory=dict)  # effective merged workflow config (study < experiment < --set)
     depends_on: list[str] = field(default_factory=list)  # experiment keys whose result seeds this run (initial_state.from_experiment)
+
+    @property
+    def container_exec_flags(self) -> str:
+        """``container_binds``/``container_args`` as flags for an ``exec`` call.
+
+        Apptainer and Singularity share this command line, so the Slurm and
+        Nextflow emitters (which build the exec call themselves) and the
+        Snakemake emitter (which hands the same string to ``--apptainer-args``)
+        render them identically. Empty when nothing is declared, so callers can
+        concatenate unconditionally.
+
+        Each bind gets its own ``--bind`` rather than joining them with the
+        comma separator: a comma is not escapable inside one ``--bind``, so a
+        path containing one could not be expressed at all. Paths are shell-quoted
+        because the Slurm emitters interpolate this straight into a command line,
+        where an unquoted space would split one bind into two arguments.
+        """
+        parts = ["--bind " + shlex.quote(b) for b in self.container_binds]
+        if self.container_args:
+            parts.append(self.container_args)
+        return " ".join(parts)
 
     # ---- derived helpers --------------------------------------------------
 
@@ -362,6 +386,66 @@ def _as_lines(raw) -> list[str]:
     return [str(raw)]
 
 
+#: Slurm's ``--mem`` suffixes, as multiples of a mebibyte. Slurm sizes are
+#: binary (``--mem=8G`` reserves 8 GiB = 8192 MiB), and Snakemake's ``mem_mb``
+#: is handed back to it as a bare number in the same unit — so a decimal
+#: conversion would reserve ~2.4% less than the recipe asked for and OOM-kill a
+#: task sized to its own declared limit.
+_MEM_UNIT_MIB = {"K": 1 / 1024, "M": 1, "G": 1024, "T": 1024 ** 2, "P": 1024 ** 3}
+
+
+def mem_mb(mem) -> int | None:
+    """``'8G'``/``'8GB'``/``'512M'``/``'2000'`` -> integer mebibytes.
+
+    Feeds Snakemake's ``mem_mb`` resource, which the SLURM executor renders as
+    ``--mem``. Every suffix ``sbatch --mem`` accepts is understood; an
+    unrecognised one returns ``None`` rather than a wrong number, and the caller
+    omits the resource. A sub-mebibyte request rounds up to 1, since 0 would
+    reserve nothing.
+    """
+    if not mem:
+        return None
+    s = str(mem).strip().upper().rstrip("B")
+    factor = _MEM_UNIT_MIB.get(s[-1:], None)
+    try:
+        if factor is not None:
+            return max(1, int(float(s[:-1]) * factor))
+        return max(1, int(float(s)))
+    except ValueError:
+        return None
+
+
+def runtime_minutes(t) -> int | None:
+    """A SLURM walltime -> integer minutes, for Snakemake's ``runtime`` resource.
+
+    Accepts every spelling ``sbatch --time`` documents: ``minutes``,
+    ``minutes:seconds``, ``hours:minutes:seconds``, ``days-hours``,
+    ``days-hours:minutes`` and ``days-hours:minutes:seconds``. The day-prefixed
+    forms matter — without them a ``3-00:00:00`` walltime parses as nothing, the
+    ``runtime`` resource is omitted, and jobs silently inherit the partition
+    default instead of the declared limit. Any leftover seconds round up to a
+    whole minute. Returns ``None`` when unset or unparseable.
+    """
+    if not t:
+        return None
+    s = str(t).strip()
+    day_part, sep, clock = s.partition("-")
+    try:
+        days = int(day_part) if sep else 0
+        parts = [int(x) for x in (clock if sep else s).split(":")]
+        if sep:                          # days-hours[:minutes[:seconds]]
+            hours, minutes, seconds = (parts + [0, 0])[:3]
+        elif len(parts) == 3:            # hours:minutes:seconds
+            hours, minutes, seconds = parts
+        elif len(parts) == 2:            # minutes:seconds
+            hours, minutes, seconds = 0, parts[0], parts[1]
+        else:                            # bare minutes
+            hours, minutes, seconds = 0, parts[0], 0
+        return days * 1440 + hours * 60 + minutes + (1 if seconds else 0)
+    except (ValueError, IndexError):
+        return None
+
+
 def plan(
     *,
     study_key: str,
@@ -524,6 +608,8 @@ def plan(
         engine=engine,
         out_dir=out_dir,
         container=(spec.get("container") or None),
+        container_binds=[str(b) for b in _as_list(spec.get("container_binds") or [])],
+        container_args=(spec.get("container_args") or None),
         retries=int(spec.get("retries") or 0),
         rng=str(spec.get("rng") or "deterministic"),
         provenance=bool(spec.get("emit_provenance", True)),
@@ -553,7 +639,8 @@ def workflow_config_from_spec(spec: dict) -> Any:
     if not spec:
         return None
     wc = dm.WorkflowConfig()
-    for key in ("out_dir", "container", "retries", "rng", "emit_provenance", "chunk"):
+    for key in ("out_dir", "container", "container_binds", "container_args",
+                "retries", "rng", "emit_provenance", "chunk"):
         if spec.get(key) is not None:
             setattr(wc, key, spec[key])
     dist = spec.get("distribute")
@@ -615,13 +702,28 @@ def merge_workflow_spec(study, experiment=None) -> dict[str, Any]:
 def _as_plain_dict(obj) -> dict[str, Any]:
     """Convert a (possibly nested) LinkML object into a plain dict tree.
 
-    Unset scalar fields (``None``) are dropped so an experiment's ``workflow``
-    block overrides only the keys it names when merged onto the study default;
-    empty multivalued fields serialize as ``[]`` and are harmless. Always returns
-    a dict (an empty one for ``None``).
+    Unset fields are dropped so an experiment's ``workflow`` block overrides only
+    the keys it names when merged onto the study default. LinkML spells an unset
+    scalar ``None`` and an unset multivalued slot ``[]`` — both mean "not
+    declared", and both must be dropped: an experiment that overrides only its
+    walltime still carries ``container_binds: []``, which would otherwise replace
+    the study's binds with nothing and strip the mounts off that experiment's
+    tasks. An empty container is therefore never distinguishable from an absent
+    one here, so a list cannot be *cleared* by an override, only replaced.
+    Always returns a dict (an empty one for ``None``).
     """
     plain = _plainify(obj)
     return plain if isinstance(plain, dict) else {}
+
+
+def _unset(v) -> bool:
+    """True when *v* carries no declaration — ``None``, or an empty container.
+
+    See :func:`_as_plain_dict`: an override must not overwrite an inherited value
+    with a slot its author never filled in, and LinkML gives an unfilled
+    multivalued slot an empty list rather than ``None``.
+    """
+    return v is None or (isinstance(v, (list, tuple, dict)) and not v)
 
 
 def _plainify(obj):
@@ -629,12 +731,12 @@ def _plainify(obj):
     if obj is None or isinstance(obj, (str, int, float, bool)):
         return obj
     if isinstance(obj, dict):
-        return {k: _plainify(v) for k, v in obj.items() if v is not None}
+        return {k: _plainify(v) for k, v in obj.items() if not _unset(v)}
     if isinstance(obj, (list, tuple)):
         return [_plainify(v) for v in obj]
     if hasattr(obj, "__dict__"):
         return {k: _plainify(v) for k, v in vars(obj).items()
-                if not k.startswith("_") and v is not None}
+                if not k.startswith("_") and not _unset(v)}
     return obj
 
 

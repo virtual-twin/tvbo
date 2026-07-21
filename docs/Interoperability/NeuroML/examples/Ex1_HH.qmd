@@ -15,8 +15,9 @@ $$\frac{dx}{dt} = \alpha_x(v)(1-x) - \beta_x(v)\,x \quad \text{for } x \in \{m, 
 The NeuroML2 example uses a `pointCellCondBased` with separate ion channel populations.
 By annotating the TVBO dynamics with `iri: neuroml:pointCellCondBased` and structuring
 the ion channels as `components`, TVBO emits standard NeuroML2 types that preserve the
-jLEMS child-before-parent RK4 evaluation order — giving exact numerical identity with
-the reference simulation.
+jLEMS child-before-parent RK4 evaluation order, so the simulated traces match the
+reference simulation to correlation r ≈ 1. The emitted XML is equivalent, not
+byte-identical, to the canonical NeuroML file.
 
 ---
 
@@ -143,7 +144,7 @@ This example uses `iri: neuroml:pointCellCondBased` with nested `components` for
 channels (`ionChannelHH`, `ionChannelPassive`) and gates (`gateHHrates`). TVBO's adapter
 detects these annotations and emits standard NeuroML2 XML elements rather than custom
 `ComponentType` definitions. This preserves the hierarchical RK4 evaluation order in
-jLEMS, giving exact numerical identity with the reference simulation at the original
+jLEMS, so the traces match the reference simulation to correlation r ≈ 1 at the original
 step size (0.01 ms) — no `gate_rate_scale` hack needed.
 :::
 
@@ -457,7 +458,7 @@ print(f"Components: {list(exp_custom.dynamics.components.keys())}")
 This version uses `iri: extends:baseCellMembPot` instead of `iri: neuroml:pointCellCondBased`.
 Every equation — rate functions, gating kinetics, channel conductance — is defined explicitly
 in the YAML. The adapter generates custom LEMS `ComponentType` definitions that extend base
-infrastructure types, achieving exact numerical identity with the standard version.
+infrastructure types, reproducing the standard version's traces to correlation r ≈ 1.
 :::
 
 ### 7. Run Custom Version

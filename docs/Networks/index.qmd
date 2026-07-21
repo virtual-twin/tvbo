@@ -1,0 +1,37 @@
+---
+title: "Networks & Connectomes"
+description: "Build the network a brain model runs on: connectomes, parcellations, coupling, and heterogeneity."
+---
+
+A whole-brain model is dynamics on a **network**. This topic covers getting that
+network: where the connectome comes from, how regions are parcellated, how
+connections couple, and how to vary behaviour across nodes and edges.
+
+## Learn
+
+- [Surface & PDE simulation](PDESimulation.qmd) — build a surface-based model and
+  solve on it with finite elements.
+
+## Do
+
+- [Build a connectome from tractography](BuildConnectomeFromTractography.qmd) —
+  tractogram + parcellation atlas → a schema-compliant TVBO network.
+- [Hierarchical & surface networks](HierarchicalSurfaceNetworks.qmd) — a fine mesh
+  layered onto a coarse parent network.
+- [Coupling functions](CouplingFunctions.qmd) — the rule that turns one node's state
+  into the signal its neighbours receive.
+- [Heterogeneous nodes](HeterogeneousNodes.qmd) /
+  [heterogeneous edges](HeterogeneousEdges.qmd) — give regions and connections their
+  own behaviour.
+
+## Look up
+
+- [`Network`](../datamodel/classes/Network.qmd) · [`Node`](../datamodel/classes/Node.qmd) ·
+  [`Edge`](../datamodel/classes/Edge.qmd) — the schema itself.
+- [Network specification](../Specification/Network.qmd) — constructors, storage format,
+  and the built-in connectome catalogue.
+
+## Related
+
+- [Beyond the mean field](../BeyondMeanField/index.qmd) — give a region finer internal
+  detail instead of a single averaged unit.

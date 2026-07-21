@@ -89,7 +89,11 @@ def _resolve_positions(G, pos, network=None, plot_brain=None):
                     x = getattr(node_pos, "x", None)
                     y = getattr(node_pos, "y", None)
                     if x is not None and y is not None:
-                        node_id = getattr(node, "id", i) or i
+                        # `or i` would discard a legitimate id of 0, silently
+                        # re-keying the first node; test for None explicitly.
+                        node_id = getattr(node, "id", None)
+                        if node_id is None:
+                            node_id = i
                         positions_from_nodes[node_id] = [float(x), float(y)]
             if len(positions_from_nodes) == len(nodes_obj):
                 nodes_have_positions = True

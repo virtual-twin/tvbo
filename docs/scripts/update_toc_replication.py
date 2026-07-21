@@ -145,11 +145,24 @@ def enforce_gate(strict: bool) -> list[Path]:
     return published
 
 
+# Section-level pages that are not studies. They live directly in Replication/ and
+# would otherwise be orphaned: rendered by the glob but absent from the sidebar.
+SECTION_PAGES = [
+    ("The replication pipeline", "Replication/pipeline.qmd"),
+    ("Custom figure panels", "Replication/custom-panels.qmd"),
+]
+
+
 def build_block(published: list[Path]) -> str:
     lines: list[str] = [BEGIN_MARKER]
     lines.append(f'{L1}- section: "Replication Studies"')
     lines.append(f'{L1}  href: Replication/index.qmd')
     lines.append(f'{L1}  contents:')
+
+    for text, href in SECTION_PAGES:
+        if (DOCS_DIR / href).is_file():
+            lines.append(f'{L2}- text: "{text}"')
+            lines.append(f'{L2}  href: {href}')
 
     for qmd in published:
         title = extract_title(qmd) or qmd.stem.replace("_", " ").title()

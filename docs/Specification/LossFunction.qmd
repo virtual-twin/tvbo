@@ -22,7 +22,7 @@ from tvbo import Function, LossFunction
 
 ## Example: Correlation Function
 
-From [JR_tvboptim.qmd](../Interoperability/tvboptim/JR_tvboptim.qmd):
+From [JR_tvboptim.qmd](../Fitting/JR_tvboptim.qmd):
 
 ```{python}
 # YAML specification for correlation function

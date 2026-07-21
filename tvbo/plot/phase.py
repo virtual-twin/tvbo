@@ -86,7 +86,17 @@ def plot_phase(result, x_var=None, y_var=None, region=0, mode=0, ax=None, colorb
 
 
 def plot_vector_field(
-    result, x_var=None, y_var=None, region=0, mode=0, grid_n=20, ax=None, stream=True, trajectory=True, **kwargs
+    result,
+    x_var=None,
+    y_var=None,
+    region=0,
+    mode=0,
+    grid_n=20,
+    ax=None,
+    stream=True,
+    trajectory=True,
+    inputs=None,
+    **kwargs,
 ):
     """Vector field (streamplot or quiver) from the dynamics RHS.
 
@@ -105,6 +115,11 @@ def plot_vector_field(
         If True use streamplot, otherwise quiver.
     trajectory : bool
         Overlay the simulation trajectory.
+    inputs : dict, optional
+        Values for symbols the dfun expects but the phase plane does not supply —
+        typically coupling inputs such as ``c_glob``. Anything unspecified is
+        evaluated at ``0``, giving the isolated-node vector field. Pass e.g.
+        ``inputs={"c_glob": 0.3}`` to draw the field at a fixed coupling drive.
     **kwargs
         Forwarded to ``streamplot`` / ``quiver``.
     """
@@ -112,14 +127,31 @@ def plot_vector_field(
 
     time, traj_x, traj_y, xlabel, ylabel = _extract_2d(result, x_var, y_var, region, mode)
 
-    # Try to get dynamics from the ExperimentResult's source
-    source = getattr(result, "_source", None) or getattr(result, "source", None)
-    if source is None:
+    # Walk back to the object that owns the dynamics. A SimulationResult links to
+    # its ExperimentResult, which in turn links to the SimulationExperiment — so a
+    # single hop lands on a container that has no `.dynamics`. Follow the chain
+    # instead of falling back to the container itself, which used to surface as
+    # "'ExperimentResult' has no attribute 'state_variables'".
+    dynamics = None
+    seen = set()
+    candidate = result
+    while candidate is not None and id(candidate) not in seen:
+        seen.add(id(candidate))
+        found = getattr(candidate, "dynamics", None)
+        if found is not None and hasattr(found, "state_variables"):
+            dynamics = found
+            break
+        if hasattr(candidate, "state_variables"):
+            dynamics = candidate
+            break
+        candidate = getattr(candidate, "_source", None) or getattr(candidate, "source", None)
+
+    if dynamics is None:
         raise ValueError(
-            "Vector field requires access to the dynamics equations. "
-            "Plot from the ExperimentResult level or pass source= explicitly."
+            "Vector field requires access to the dynamics equations, but none were "
+            "reachable from this result. Plot from the ExperimentResult level, or "
+            "pass the experiment explicitly."
         )
-    dynamics = getattr(source, "dynamics", source)
 
     # Build lambdified RHS for the two selected variables
     all_svs = dynamics.state_variables
@@ -166,6 +198,18 @@ def plot_vector_field(
     rhs_y_sub = rhs_y.subs({sym_dict[k]: v for k, v in subs.items() if k in sym_dict})
 
     x_sym, y_sym = sym_dict[xlabel], sym_dict[ylabel]
+
+    # Anything still free after substitution is an input the dfun expects but the
+    # phase plane does not supply — coupling inputs such as `c_glob` /
+    # `local_coupling`, which are network quantities rather than model parameters.
+    # Evaluate them at `inputs`(default 0), i.e. draw the *isolated-node* vector
+    # field. Leaving them symbolic makes lambdify return an expression, which then
+    # fails with "Cannot convert expression to float".
+    residual = (rhs_x_sub.free_symbols | rhs_y_sub.free_symbols) - {x_sym, y_sym}
+    if residual:
+        fill = {s: float(inputs.get(str(s), 0.0)) if inputs else 0.0 for s in residual}
+        rhs_x_sub = rhs_x_sub.subs(fill)
+        rhs_y_sub = rhs_y_sub.subs(fill)
     fx = lambdify((x_sym, y_sym), rhs_x_sub, modules="numpy")
     fy = lambdify((x_sym, y_sym), rhs_y_sub, modules="numpy")
 

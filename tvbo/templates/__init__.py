@@ -13,11 +13,32 @@ Templates
 Templates for generating code.
 """
 
+import os
 import subprocess
+import tempfile
 from mako.lookup import TemplateLookup
 from os.path import join, abspath, dirname
 
 root = abspath(dirname(__file__))
+
+
+def _mako_module_dir() -> str:
+    """A writable directory for mako's compiled-template cache.
+
+    Mako compiles each template to a ``.py`` module and caches it here. The obvious
+    home — a ``modules/`` dir beside the templates — is read-only whenever tvbo is
+    installed read-only, most sharply inside a container: the first render at runtime
+    then dies with ``OSError: [Errno 30] Read-only file system`` (and only at runtime,
+    since the package dir is writable during local dev). Default to a per-user dir
+    under the system temp instead, which is writable and, under SLURM, node-local so
+    concurrent jobs on different nodes don't share it. ``TVBO_MAKO_CACHE`` overrides.
+    """
+    override = os.environ.get("TVBO_MAKO_CACHE")
+    if override:
+        return override
+    return join(tempfile.gettempdir(), f"tvbo-mako-{os.getuid()}")
+
+
 lookup = TemplateLookup(
     directories=[
         root,
@@ -37,7 +58,7 @@ lookup = TemplateLookup(
         join(root, "bsplot"),
         join(root, "workflow", "snakemake"),
     ],
-    module_directory=join(root, "modules"),
+    module_directory=_mako_module_dir(),
 )
 
 

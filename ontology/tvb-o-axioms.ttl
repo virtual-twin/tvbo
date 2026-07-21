@@ -346,6 +346,39 @@ tvbo:FiniteDifferenceAnalysis a tvbo:AnalysisObservable ;
 
 #
 # ─────────────────────────────────────────────────────────────────
+# §4.1e Coupling-stage evaluation vs auxiliary-recording alignment.
+# ─────────────────────────────────────────────────────────────────
+#
+# A recorded auxiliary (a derived variable listed in `output` or flagged
+# `record: true`) is an algebraic function of the state at its recorded instant,
+# so at every sample it must equal that function of the state recorded alongside
+# it. Native multi-stage solvers (Heun, RK4) freeze the coupling once per step
+# (`coupling_evaluation: per_step`, the default), so the coupling term an
+# auxiliary sees is the step-START value — one integration step behind the
+# recorded post-step state. For an auxiliary whose equation reads a coupling
+# input, exact alignment of its state and coupling therefore requires the
+# coupling to be re-evaluated at the recorded state, i.e. `coupling_evaluation:
+# per_stage`. State-only auxiliaries are unaffected. This layer makes the
+# requirement explicit and machine-checkable, so a SimulationExperiment that
+# records a coupling-dependent auxiliary can materialise `per_stage` at
+# configure() time instead of silently recording a one-step-stale coupling.
+
+tvbo:enabledByIntegrationSlot a owl:AnnotationProperty ;
+    rdfs:label   "enabled by integration slot"@en ;
+    rdfs:comment "Name (optionally followed by ':' and the required value) of the Integration/Integrator metadata slot a SimulationExperiment must set to realise this capability; read at configure() time to materialise the slot."@en .
+
+tvbo:PerStageCouplingEvaluation a tvbo:BackendCapability ;
+    rdfs:label   "Per-stage coupling evaluation"@en ;
+    rdfs:comment "The network coupling is re-evaluated at every stage of a multi-stage integrator (a full part of the vector field) instead of being frozen once per step. Backend-independent numerical contract carried by `Integration.coupling_evaluation: per_stage` (tvboptim maps this to recompute_coupling_per_stage=True; diffrax recomputes the whole RHS per stage regardless)."@en ;
+    tvbo:enabledByIntegrationSlot "coupling_evaluation:per_stage" .
+
+tvbo:CouplingDependentAuxiliaryRecording a tvbo:SimulationTask ;
+    rdfs:label   "Coupling-dependent auxiliary recording"@en ;
+    rdfs:comment "Recording (via `output` or `record: true`) a derived/auxiliary variable whose equation reads a coupling input, with the auxiliary aligned to the state it is recorded alongside. Under the default per-step (frozen) coupling the recorded auxiliary carries the step-start coupling — one integration step behind the recorded post-step state — so exact state/coupling alignment requires per-stage coupling evaluation."@en ;
+    tvbo:requiresCapability tvbo:PerStageCouplingEvaluation .
+
+#
+# ─────────────────────────────────────────────────────────────────
 # §4.2 Biological substrate axioms.
 # ─────────────────────────────────────────────────────────────────
 #

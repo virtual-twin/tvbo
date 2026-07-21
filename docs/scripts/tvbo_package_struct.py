@@ -256,15 +256,25 @@ def main(argv=None):
     package_name = "tvbo"
     package_path = os.path.dirname(tvbo.__file__)
 
-    # Freshness check: skip if config already exists and *neither* the
-    # tvbo package nor this generator script has changed since last run.
-    # Without the script-mtime check, edits to ``build_sections`` would
-    # not be picked up until someone happened to touch ``tvbo/__init__.py``.
+    # Freshness check: skip if the config already exists and nothing it is built
+    # from has changed since the last run.
+    #
+    # The generated config embeds the *docstring of every module* in the package,
+    # so the freshness input must be every ``.py`` file — not just
+    # ``tvbo/__init__.py``. Watching only the package root meant a docstring-only
+    # edit anywhere else (say a doc link in ``tvbo/run/graph.py``) was reported as
+    # "unchanged" and silently never reached the rendered API docs. The generator
+    # script itself is included so edits to ``build_sections`` are picked up too.
     stamp_file = os.path.join("api", ".struct_stamp")
     script_path = os.path.abspath(__file__)
     input_mtime = max(
-        os.path.getmtime(os.path.join(package_path, "__init__.py")),
-        os.path.getmtime(script_path),
+        [os.path.getmtime(script_path)]
+        + [
+            os.path.getmtime(os.path.join(root, f))
+            for root, _dirs, files in os.walk(package_path)
+            for f in files
+            if f.endswith(".py")
+        ]
     )
     if os.path.exists(QDOC_CONFIG_PATH) and os.path.exists(stamp_file):
         stamp_mtime = os.path.getmtime(stamp_file)

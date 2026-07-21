@@ -20,6 +20,7 @@ from . import (
     formats as _formats_cmd,
     info as _info_cmd,
     import_ as _import_cmd,
+    install as _install_cmd,
     network as _network_cmd,
     run as _run_cmd,
     save as _save_cmd,
@@ -70,6 +71,7 @@ app.add_typer(_network_cmd.app, name="network", help="Build connectomes from a t
 app.add_typer(_figures_cmd.app, name="figure", help="Render declarative figures (Figure / SimulationStudy YAML) via bsplot codegen.")
 app.add_typer(_workflow_cmd.app, name="workflow", help="Plan / emit HPC + pipeline artefacts (slurm, snakemake, nextflow).")
 app.add_typer(_skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally.")
+app.add_typer(_install_cmd.app, name="install", help="Provision optional native components pip cannot place (e.g. AUTO-07p).")
 
 
 @app.callback()

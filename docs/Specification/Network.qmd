@@ -856,7 +856,7 @@ processing required at load time.
 
 ::: {.callout-tip}
 For details on how observation pipelines use the gain matrix during
-simulation, see [Observation Models](../Usage/ObservationModels.qmd)
+simulation, see [Observation Models](../Simulation/ObservationModels.qmd)
 and [TVB Monitor Round-Trip](../Interoperability/TVB/Monitor.qmd).
 :::
 
@@ -928,7 +928,7 @@ Optionally, overlay a translucent **head surface** from MNE's
 fsaverage BEM model using `extra_surfaces`:
 
 ```{python}
-##| code-fold: true
+#| code-fold: true
 # | code-summary: "Load MNE fsaverage head surface and render with network"
 import mne
 import nibabel as nib

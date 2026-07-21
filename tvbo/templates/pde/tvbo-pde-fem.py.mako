@@ -3,7 +3,7 @@ Minimal FEM diffusion solver (implicit Euler) generated from a TVB-O experiment.
 Relies only on attributes of the 'experiment' datamodel passed to render_template(experiment=...).
 
 Requirements:
-    pip install scikit-fem meshio nibabel numpy scipy matplotlib
+    pip install "tvbo[pde]"   # scikit-fem, meshio, nibabel
 """
 
 from typing import Optional, Callable

@@ -298,7 +298,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
         ```
 
-    See the [Usage / Simulation Experiments](../../../Usage/SimulationExperiments.qmd)
+    See the [Simulation experiments](/Simulation/SimulationExperiments.qmd)
     page for the full constructor surface and the
     [`running-simulations`](../../../skills/running-simulations/SKILL.md) skill
     for backend choices.
@@ -3188,8 +3188,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Lower declarative stimulus/stimulation Event fields into the form the
         (shared) tvboptim codegen already consumes — done in Python at load
         time, exactly like graph-generator resolution, so no template change is
-        needed and distribution handling stays consistent with
-        ``graph_generators.builtins._resolve_distribution`` (koller2024).
+        needed and a sampled ``weight_distribution`` goes through the same
+        printer-backed sampler a graph generator's `sample` step does.
 
         Per stimulus-type event:
         - ``event_type: stimulation`` is normalised to ``stimulus`` (synonym),
@@ -3206,10 +3206,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         events = self.events
         if not events:
             return
-        try:
-            from tvbo.graph_generators.builtins import _resolve_distribution
-        except Exception:
-            _resolve_distribution = None
+        from tvbo.graph_generators.procedural import draw
 
         n_nodes = (
             getattr(self.network, "number_of_nodes", None)
@@ -3246,10 +3243,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # weight_distribution -> weights array (canonical, seeded resolver)
             wd = getattr(ev, "weight_distribution", None)
             weighting = list(getattr(ev, "weights", None) or getattr(ev, "weighting", None) or [])
-            if wd is not None and not weighting and _resolve_distribution is not None:
+            if wd is not None and not weighting:
                 n = len(regions) if regions else int(n_nodes)
-                rng = np.random.default_rng(getattr(wd, "seed", None))
-                weighting = [float(x) for x in _resolve_distribution(wd, rng, (n,))]
+                try:
+                    samples = draw(wd, (n,), seed=getattr(wd, "seed", None))
+                except ValueError as exc:
+                    # The sampler names a graph-generator step, which says nothing about
+                    # which stimulus is unresolvable. Fail — dropping the weighting
+                    # silently is the bug this replaced — but name the event and field.
+                    raise ValueError(
+                        f"event {_key!r}: `weight_distribution` cannot be sampled: {exc}"
+                    ) from exc
+                weighting = [float(x) for x in samples]
                 if not regions:
                     regions = list(range(int(n_nodes)))
             if regions:
