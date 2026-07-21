@@ -255,11 +255,12 @@ class ${class_name}(${base_class}):
         % if pre_is_list:
 ## Stacked list pre: already 3D [n_pre, N_target, N_source].
         return coupling_term
-        % elif incoming_states and local_states:
-## Per-edge output: ensure 3D [n_output, N_target, N_source] for weighted sum
-        return coupling_term[jnp.newaxis, :, :]
-        % elif has_delay:
-        return coupling_term[jnp.newaxis, :, :]
+        % elif (incoming_states and local_states) or has_delay:
+## Per-edge message (a pre() that reads target-local state, or a delayed coupling):
+## prepend the n_output axis over the message whatever its rank — dense
+## [N_target, N_source] or sparse [nnz] — so the base class reduces every output
+## component over the edges.
+        return jnp.expand_dims(coupling_term, axis=0)
         % elif mode_coupling:
 ## Mode-fold: coupling_term already carries the leading per-mode axis [n_modes, n_source].
         return coupling_term

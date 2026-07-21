@@ -350,6 +350,114 @@ def _afp_pearson(p, expr):
     return p._pearson(p._print(expr.args[0]), p._print(expr.args[1]))
 
 
+def _afp_arity(expr, n, signature):
+    """Check a graph-construction primitive's argument count.
+
+    Indexing ``expr.args`` blind raises a bare ``IndexError: tuple index out of range``
+    from inside the printer, naming neither the primitive nor the step that wrote it.
+    """
+    if len(expr.args) != n:
+        raise ValueError(
+            f"{signature} expects {n} argument(s), got {len(expr.args)}."
+        )
+    return expr.args
+
+
+def _afp_grid_positions(p, expr):
+    """``grid_positions(nx, ny, x_extent, y_extent)`` -> the [nx*ny, 2] coordinates of a
+    regular 2-D lattice spanning [0, x_extent] x [0, y_extent].
+
+    Node ORDER is part of the contract, not an implementation detail: row ``k`` is
+    ``(x[k // ny], y[k % ny])`` (x-major). A connectome's row order is its node identity,
+    so a layout that ordered nodes differently would silently permute every downstream
+    per-node quantity.
+    """
+    args = _afp_arity(expr, 4, "grid_positions(nx, ny, x_extent, y_extent)")
+    return p._grid_positions(*[p._print(a) for a in args])
+
+
+def _afp_pairwise_distance(p, expr):
+    """``pairwise_distance(pos)`` -> the [n, n] euclidean distance matrix between the rows
+    of ``pos`` ([n, d] positions). The distance kernel every spatially-embedded generator
+    starts from (Koller's 2-D sheet, Roberts 2019, Pang 2023)."""
+    args = _afp_arity(expr, 1, "pairwise_distance(pos)")
+    return p._pairwise_distance(p._print(args[0]))
+
+
+def _afp_fill_diagonal(p, expr):
+    """``fill_diagonal(M, v)`` -> ``M`` with its main diagonal replaced by ``v``.
+
+    The declarative form of "no self-connections": a generator sets the diagonal to
+    ``inf`` before a decaying distance kernel (so the kernel evaluates to 0 there) or to
+    0 after one. Generalises ``zero_diagonal``, which is the v=0 special case.
+    """
+    args = _afp_arity(expr, 2, "fill_diagonal(M, value)")
+    return p._fill_diagonal(p._print(args[0]), p._print(args[1]))
+
+
+def _afp_gaussian_pdf(p, expr):
+    """``gaussian_pdf(pos, mean, cov)`` -> isotropic multivariate-normal density evaluated
+    at each row of ``pos``. ``mean`` is a coordinate tuple and ``cov`` an isotropic scalar
+    variance, matching the sink/source Gaussian fields that build a spatial gradient."""
+    args = _afp_arity(expr, 3, "gaussian_pdf(pos, mean, cov)")
+    return p._gaussian_pdf(p._print(args[0]), p._print(args[1]), p._print(args[2]))
+
+
+def _afp_normalize(p, expr):
+    """``normalize(M, axis)`` -> ``M`` divided by its sum along ``axis`` (column-normalised
+    in-strength when axis=0). ``axis`` must be an integer literal, as for ``sum_axis``."""
+    args = _afp_arity(expr, 2, "normalize(M, axis)")
+    axis = args[1]
+    if not getattr(axis, "is_Integer", False):
+        raise ValueError(
+            f"normalize(M, axis): axis must be an integer literal, got {axis!r}."
+        )
+    return p._normalize(p._print(args[0]), int(axis))
+
+
+def _afp_minmax_rescale(p, expr):
+    """``minmax_rescale(x, lo, hi)`` -> ``x`` affinely mapped from its own [min, max] onto
+    [lo, hi] (e.g. a difference-of-Gaussians field rescaled to [-1, 1] as a gradient
+    template)."""
+    args = _afp_arity(expr, 3, "minmax_rescale(x, lo, hi)")
+    return p._minmax_rescale(p._print(args[0]), p._print(args[1]), p._print(args[2]))
+
+
+def _afp_eigvals(p, expr):
+    """``eigvals(M)`` -> the eigenvalues of ``M`` (spectral-radius rescaling of a
+    reservoir substrate reads ``max(abs(eigvals(M)))``)."""
+    args = _afp_arity(expr, 1, "eigvals(M)")
+    return p._eigvals(p._print(args[0]))
+
+
+def _afp_sample(distribution, n_params):
+    """Build the handler for one distribution's sampler.
+
+    ``sample_<d>(key, <n_params params>, *shape)``. The PRNG state leads because JAX is
+    functionally pure — there is no ambient RNG a rendered expression could reach — so
+    every backend receives the state explicitly and derives the same sub-streams. The
+    trailing arguments are the sample shape.
+    """
+
+    def handler(p, expr):
+        args = expr.args
+        if len(args) < 2 + n_params:
+            raise ValueError(
+                f"sample_{distribution}(key, substream, ...) expects a key, a substream "
+                f"index and {n_params} distribution parameter(s), got {len(args)} "
+                f"argument(s)."
+            )
+        key = p._print(args[0])
+        substream = p._print(args[1])
+        params = [p._print(a) for a in args[2 : 2 + n_params]]
+        shape = [p._print(a) for a in args[2 + n_params :]]
+        return p._sample(distribution, key, substream, params, shape)
+
+    handler.__name__ = f"_afp_sample_{distribution}"
+    handler.__doc__ = f"``sample_{distribution}(key, ...)`` -> a draw from {distribution}."
+    return handler
+
+
 _ARRAY_FUNCTION_PRINTERS = {
     "concatenate": _afp_concatenate,
     "window_mean": _afp_window_mean,
@@ -369,6 +477,19 @@ _ARRAY_FUNCTION_PRINTERS = {
     "take": _afp_take,
     "sum_axis": _afp_sum_axis,
     "pearson": _afp_pearson,
+    # Graph-construction primitives (Procedural GraphGenerator DAG).
+    "grid_positions": _afp_grid_positions,
+    "pairwise_distance": _afp_pairwise_distance,
+    "fill_diagonal": _afp_fill_diagonal,
+    "gaussian_pdf": _afp_gaussian_pdf,
+    "normalize": _afp_normalize,
+    "minmax_rescale": _afp_minmax_rescale,
+    "eigvals": _afp_eigvals,
+    "sample_normal": _afp_sample("normal", 2),
+    "sample_uniform": _afp_sample("uniform", 2),
+    "sample_lognormal": _afp_sample("lognormal", 2),
+    "sample_beta": _afp_sample("beta", 2),
+    "sample_exponential": _afp_sample("exponential", 1),
 }
 
 # Ops Julia renders natively (slice/stride family + shape, the mode-axis
@@ -447,6 +568,106 @@ class _ArrayFunctionPrinterMixin:
         # numpy/jax: `take` with an int index array returns the index array's shape
         # (a fancy-index gather). JuliaPrinter overrides for 1-based indexing.
         return f"{self._afn('take')}({base}, {idx})"
+
+    # --- graph-construction primitives (Procedural GraphGenerator DAG) ---------
+    # Expanded from the reduction/array primitives above wherever possible, so a
+    # backend that already implements those inherits these for free and only a
+    # genuinely different syntax needs an override.
+    def _pairwise_distance(self, pos):
+        # ||p_i - p_j||: broadcast [n,1,d] against [1,n,d] and reduce the coordinate axis.
+        # Built from expand_dims rather than literal `[:, None, :]` slicing so the
+        # expansion carries no Python indexing syntax — a backend that spells broadcasting
+        # differently overrides `_expand_dims` alone instead of re-deriving the formula.
+        rows = self._expand_dims(pos, 1)
+        cols = self._expand_dims(pos, 0)
+        return f"{self._afn('sqrt')}({self._afn('sum')}(({rows} - {cols})**2, axis=-1))"
+
+    def _expand_dims(self, base, axis):
+        return f"{self._afn('expand_dims')}({base}, {axis})"
+
+    def _grid_positions(self, nx, ny, x_extent, y_extent):
+        """Coordinates of a regular lattice, ordered x-major (row k = (x[k//ny], y[k%ny])).
+
+        Built from a flat index rather than meshgrid+reshape so the expansion needs only
+        arange/stack, which every backend's function table already carries.
+
+        The spacing denominators are floored at 1 because a degenerate axis (nx or ny of
+        1 — a line of nodes, the standard 1-D neural-field layout) otherwise divides by
+        zero. With nx=1 every ``k // ny`` is 0, so the coordinate is 0 regardless of the
+        spacing, which is exactly what ``linspace(0, extent, 1)`` returns.
+        """
+        k = f"{self._afn('arange')}({nx} * {ny})"
+        dx = f"({x_extent} / {self._afn('maximum')}({nx} - 1, 1))"
+        dy = f"({y_extent} / {self._afn('maximum')}({ny} - 1, 1))"
+        px = f"(({k} // {ny}) * {dx})"
+        py = f"(({k} % {ny}) * {dy})"
+        return f"{self._afn('stack')}([{px}, {py}], axis=-1)"
+
+    def _fill_diagonal(self, base, value):
+        """``base`` with its main diagonal replaced by ``value``, off-diagonal untouched.
+
+        Written as a ``where`` over an identity mask rather than an in-place scatter so it
+        stays functional and therefore valid under jax tracing.
+        """
+        eye = f"{self._afn('eye')}({self._shape(base, 0)})"
+        return self._where3(f"{eye} > 0", value, base)
+
+    def _gaussian_pdf(self, pos, mean, cov):
+        """Isotropic multivariate-normal density at each row of ``pos``.
+
+        ``exp(-||p - mu||^2 / 2c) / (2*pi*c)^(d/2)``, with ``cov`` the isotropic scalar
+        variance (covariance matrix ``cov * I``).
+        """
+        d = f"({pos} - {self._afn('asarray')}({mean}))"
+        sq = f"{self._afn('sum')}({d}**2, axis=-1)"
+        norm = f"(2 * {self._afn('pi')} * {cov})**({self._shape(pos, -1)} / 2)"
+        return f"({self._afn('exp')}(-{sq} / (2 * {cov})) / {norm})"
+
+    def _normalize(self, base, axis):
+        """``base`` divided by its sum along ``axis``.
+
+        A zero sum is divided by 1 instead, leaving that slice as zeros. Without the
+        guard an unconnected node — which a stochastic connection mask produces routinely
+        at low density — yields an all-NaN column that propagates silently into the
+        connectome instead of a harmless zero column.
+        """
+        total = self._reduce_axis("sum", base, axis, keepdims=True)
+        return f"({base} / {self._where3(f'{total} == 0', '1', total)})"
+
+    def _minmax_rescale(self, x, lo, hi):
+        """``x`` affinely mapped from its own [min, max] onto [lo, hi].
+
+        A constant input has zero span; it maps to the MIDPOINT of the target interval
+        rather than dividing by zero. That keeps a degenerate field neutral (a flat field
+        rescaled to [-1, 1] becomes 0, matching what a hand-written generator special-cases
+        it to) instead of emitting NaN everywhere.
+        """
+        xmin, xmax = f"{self._afn('min')}({x})", f"{self._afn('max')}({x})"
+        span = f"({xmax} - {xmin})"
+        safe = self._where3(f"{span} == 0", "1", span)
+        scaled = f"({lo} + (({x} - {xmin}) / {safe}) * ({hi} - {lo}))"
+        midpoint = f"(({lo} + {hi}) / 2)"
+        return self._where3(f"{span} == 0", midpoint, scaled)
+
+    def _eigvals(self, base):
+        return f"{self._linalg('eigvals')}({base})"
+
+    def _linalg(self, name):
+        """Module path for a linear-algebra routine (``np.linalg.eigvals``)."""
+        return f"{self._module}.linalg.{name}"
+
+    def _sample(self, distribution, key, substream, params, shape):
+        """A draw from ``distribution`` given explicit PRNG state and a sub-stream index.
+
+        ``substream`` selects an independent stream derived from the generator's base
+        seed, so two draws in one procedure are independent *and* every backend derives
+        them the same structural way (here a freshly-seeded Generator; under jax a folded
+        key). Without it, backends would differ in how draws decorrelate — the silent
+        cross-backend divergence the RNG contract exists to prevent.
+        """
+        shape_arg = f", size=({', '.join(shape)},)" if shape else ""
+        rng = f"{self._module}.random.default_rng({key} + {substream})"
+        return f"{rng}.{distribution}({', '.join(params)}{shape_arg})"
 
     def _pearson(self, x, y):
         # Pearson r over the shared axis, expanded into the reduction primitives so it
@@ -553,6 +774,38 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
         self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["jax"])
         # Context for broadcasting inference
         self._index_context = None  # Set by top-level print to enable broadcasting
+
+    def _sample(self, distribution, key, substream, params, shape):
+        """Draw from ``distribution`` with an explicit, functionally-pure PRNG key.
+
+        ``substream`` is folded into the key, the jax-native way to derive an independent
+        stream from an integer — structurally the same derivation numpy performs by
+        re-seeding, which is what the RNG contract requires of every backend.
+
+        jax.random exposes standardised variates, so location/scale families are composed
+        from the standard draw rather than passed as parameters — which is also what keeps
+        the draw differentiable with respect to those parameters. The shape is required
+        (there is no implicit scalar draw), so an empty shape renders as ``()``.
+        """
+        shape_arg = f"({', '.join(shape)},)" if shape else "()"
+        rnd = "jax.random"
+        key = f"jax.random.fold_in({key}, {substream})"
+        if distribution == "normal":
+            mean, std = params
+            return f"({mean} + {std} * {rnd}.normal({key}, {shape_arg}))"
+        if distribution == "uniform":
+            lo, hi = params
+            return f"{rnd}.uniform({key}, {shape_arg}, minval={lo}, maxval={hi})"
+        if distribution == "lognormal":
+            mu, sigma = params
+            return f"{self._afn('exp')}({mu} + {sigma} * {rnd}.normal({key}, {shape_arg}))"
+        if distribution == "beta":
+            a, b = params
+            return f"{rnd}.beta({key}, {a}, {b}, {shape_arg})"
+        if distribution == "exponential":
+            (scale,) = params
+            return f"({scale} * {rnd}.exponential({key}, {shape_arg}))"
+        raise ValueError(f"jax sampler for distribution {distribution!r} is not defined.")
 
     def _analyze_indices(self, expr):
         """Analyze all indexed expressions to build index context.

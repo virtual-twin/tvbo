@@ -1,0 +1,35 @@
+---
+title: "Scale-Out & Reproducibility"
+description: "Take a working experiment to a cluster, generate standalone code, and make the result reproducible."
+---
+
+A model that runs on a laptop still has to survive a parameter sweep, a cluster, and
+somebody else's machine a year later. This topic covers generating code, distributing
+work, and shipping an experiment that reproduces.
+
+## Do
+
+- [Distributed workflows](DistributedWorkflows.qmd) — emit, submit and finalize work
+  across a cluster.
+- [Code generation & export](CodeGeneration.qmd) — render an experiment to standalone
+  JAX, Julia, CUDA, LEMS, BIDS or openMINDS.
+- [HPC patterns](../CLI/hpc.qmd) and [CLI recipes](../CLI/recipes.qmd) — end-to-end
+  cluster runs from the command line.
+
+## Understand
+
+- [Backends & capability matrix](../CLI/backends.qmd) — what each backend supports and
+  how work is dispatched.
+- [Workflow kits](../CLI/workflow-kits.qmd) — what a packaged cluster kit contains and
+  why it is structured that way.
+
+## Look up
+
+- [`tvbo workflow`](../CLI/workflow.qmd) and the [CLI reference](../CLI/index.qmd).
+- [`WorkflowConfig`](../datamodel/classes/WorkflowConfig.qmd) ·
+  [`ExecutionConfig`](../datamodel/classes/ExecutionConfig.qmd).
+
+## Related
+
+- [Replication studies](../Replication/index.qmd) — reproducing a published paper from a
+  single declarative spec.

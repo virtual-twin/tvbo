@@ -135,6 +135,34 @@ ARRAY_FUNCTIONS = {
     "clip": Function("clip"),          # clip(x, lo, hi) → bound x to [lo, hi] ({np,jnp}.clip); e.g. clip(cos_sim, -1, 1) before acos
     "any": Function("any"),            # any(x) → True if any element is truthy ({np,jnp}.any); e.g. any(p_div <= sig)
     "all": Function("all"),            # all(x) → True if every element is truthy ({np,jnp}.all)
+    # Graph-construction primitives — the vocabulary a `Procedural` GraphGenerator's
+    # typed DAG lowers to, so a paper's network construction (distance kernel, stochastic
+    # connection mask, Gaussian field, axis normalisation) is authored as metadata and
+    # emitted natively per backend instead of living in per-generator Python.
+    #
+    # Every argument is POSITIONAL: SymPy's parser forwards `f(x, axis=0)` into Basic's
+    # options and raises `ValueError: Unknown options`, so a primitive can never carry a
+    # keyword. Options that would be keywords (metric, axis, target range, distribution,
+    # seed) are schema FIELDS on the DAG step and are lowered here into positional
+    # arguments — which is the reason the DAG is typed rather than free-form.
+    "grid_positions": Function("grid_positions"),        # grid_positions(nx, ny, x_extent, y_extent) → [nx*ny, 2] regular-lattice node coordinates, x-major
+    "pairwise_distance": Function("pairwise_distance"),  # pairwise_distance(pos) → [n,n] euclidean distances between rows of pos
+    "fill_diagonal": Function("fill_diagonal"),          # fill_diagonal(M, v) → M with its main diagonal set to v (v=inf suppresses self-connections)
+    "gaussian_pdf": Function("gaussian_pdf"),            # gaussian_pdf(pos, mean, cov) → isotropic multivariate-normal density at each row of pos
+    "normalize": Function("normalize"),                  # normalize(M, axis) → M divided by its sum along `axis` (axis must be a literal int)
+    "minmax_rescale": Function("minmax_rescale"),        # minmax_rescale(x, lo, hi) → x affinely rescaled from its own min/max onto [lo, hi]
+    "eigvals": Function("eigvals"),                      # eigvals(M) → eigenvalues of M (e.g. spectral-radius rescaling)
+    # Distribution samplers. One head per distribution, mirroring the backend sampler
+    # table in dev/GenericProcedureEngine.md §2.3 (numpy rng.<d> | jax.random.<d> |
+    # Distributions.jl). The PRNG state is the FIRST argument because JAX is functionally
+    # pure — a key cannot be threaded implicitly through a rendered expression — and the
+    # trailing arguments are the sample shape. Cross-backend bit-identical draws are NOT
+    # guaranteed (numpy PCG64 != jax Threefry); see the RNG contract in §4.
+    "sample_normal": Function("sample_normal"),            # sample_normal(key, mean, std, *shape)
+    "sample_uniform": Function("sample_uniform"),          # sample_uniform(key, lo, hi, *shape)
+    "sample_lognormal": Function("sample_lognormal"),      # sample_lognormal(key, mu, sigma, *shape)
+    "sample_beta": Function("sample_beta"),                # sample_beta(key, a, b, *shape)
+    "sample_exponential": Function("sample_exponential"),  # sample_exponential(key, scale, *shape)
 }
 
 

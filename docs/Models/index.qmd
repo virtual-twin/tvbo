@@ -1,0 +1,40 @@
+---
+title: "Models & Dynamics"
+description: "Specify the dynamical system at each node: equations, parameters, noise, events, and units."
+---
+
+Every TVBO simulation starts with a **dynamical system** — the equations that govern a
+single node. TVBO ships 39 neural-mass models and lets you declare your own in YAML.
+This topic covers writing that specification and everything that shapes how it
+integrates.
+
+## Learn
+
+- [Defining dynamical systems](DefineDynamicalSystem.qmd) — write a model from scratch,
+  from a damped pendulum to a neural mass.
+
+## Do
+
+- [Events & stimulation](Events.qmd) *(draft)* — threshold events, preset-time events,
+  and external stimuli.
+- [Noise & stochastic integration](Noise.qmd) — additive and multiplicative noise.
+- [Initial conditions](InitialConditions.qmd) — set and resolve starting state.
+- [Unit-aware computations](UnitValidation.qmd) — keep a model dimensionally consistent.
+
+## Understand
+
+- [Cross-backend numerical parity](CrossBackendParity.qmd) — why two backends can
+  disagree, and the four things that break parity.
+
+## Look up
+
+- [Integrators](Integrators.qmd) — available methods and when to use them.
+- [`Dynamics`](../datamodel/classes/Dynamics.qmd) ·
+  [`StateVariable`](../datamodel/classes/StateVariable.qmd) ·
+  [`Parameter`](../datamodel/classes/Parameter.qmd) — the schema.
+- [Model gallery](../examples/dynamics_from_db.qmd) — every model in the database.
+
+## Related
+
+- [Networks & connectomes](../Networks/index.qmd) — wire these nodes into a brain.
+- [Bifurcation & stability](../Bifurcation/index.qmd) — analyse a model's regimes.

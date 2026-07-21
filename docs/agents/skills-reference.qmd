@@ -31,7 +31,7 @@ The three-pillar mental model:
 
 1. **LinkML datamodel** — structured metadata in `schema/*.yaml`, generated
    Python types in `tvbo/datamodel/` (never hand-edited).
-2. **Ontology** — `tvb-o.owl` carries axioms about `SimulationExperiment`,
+2. **Ontology** — `tvbo.owl` carries axioms about `SimulationExperiment`,
    `SimulationStudy`, `Network`, `DynamicalSystem`, `Software`.
 3. **TVBO Python package** — specifies models, loads experiments, generates
    code for every backend, and executes them.

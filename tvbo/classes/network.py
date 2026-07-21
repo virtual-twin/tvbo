@@ -369,7 +369,7 @@ class Network(tvbo_datamodel.Network):
         )
         ```
 
-    See the [Network specification](../../../Specification/Network.qmd) for
+    See the [Network specification](/Specification/Network.qmd) for
     the slot-by-slot reference and the
     [`Connectome`](#tvbo.classes.network.Connectome) subclass for matrix-style
     networks without an explicit parcellation.
@@ -756,13 +756,42 @@ class Network(tvbo_datamodel.Network):
         entry = cls._db_generator_entry(gg) or {}
         return ((entry.get("bindings") or {}).get("python")) or None
 
+    @staticmethod
+    def _callable_kwargs(fn, kwargs, defaults):
+        """Drop declared defaults a builder's signature cannot accept.
+
+        A curated entry's declared defaults describe the generator's interface, so they
+        apply to whichever route builds it. A Callable builder, though, may implement only
+        part of that interface — and passing it a default it never declared is a TypeError
+        at the call, blaming the recipe for something the database supplied.
+
+        Only DEFAULT-sourced keys are filtered. A parameter the recipe states explicitly
+        is passed through even when the signature has no place for it, so a typo or a
+        parameter the builder genuinely does not support still fails loudly instead of
+        being dropped on the floor.
+        """
+        import inspect
+
+        try:
+            params = inspect.signature(fn).parameters
+        except (TypeError, ValueError):
+            return kwargs  # builtins / C callables expose no signature
+        if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+            return kwargs
+        return {
+            name: value
+            for name, value in kwargs.items()
+            if name in params or name not in defaults
+        }
+
     @classmethod
     def _db_procedure_for(cls, gg):
-        """The symbolic ``procedure:`` block of `gg`'s curated entry, if any.
+        """The typed ``procedure:`` DAG of `gg`'s curated entry, if any.
 
-        ``procedure`` is not a schema slot on ``GraphGenerator`` (like
-        ``bindings``), so it is read from the raw curated YAML and interpreted by
-        the generic engine in ``tvbo/graph_generators/engine.py``.
+        Read from the raw curated YAML and resolved by
+        ``tvbo/graph_generators/procedural.py``, which builds the SymPy tree and
+        renders it through the printer tables — the same expressions every other
+        backend emits from.
         """
         entry = cls._db_generator_entry(gg) or {}
         return entry.get("procedure") or None
@@ -771,22 +800,28 @@ class Network(tvbo_datamodel.Network):
         """Materialise the GraphGenerator and copy its result onto self.
 
         Three routes, in priority order:
-        * **Symbolic `procedure:`** (preferred) — the curated entry's
-          backend-independent procedure block, interpreted by the generic engine
-          in ``tvbo/graph_generators/engine.py`` (numpy/eager mode). No
-          per-generator Python.
+        * **Typed `procedure:` DAG** (preferred) — the curated entry's
+          backend-independent steps, resolved to SymPy and rendered through the
+          printer tables. No per-generator Python.
         * **Explicit `graph_generator.builder`** — a user-supplied inline Callable.
-        * **`bindings.python.callable`** — the legacy / library-wrapper escape hatch.
+        * **`bindings.python.callable`** — the library-wrapper / documented escape
+          hatch for constructions the primitive set cannot express.
 
         Each route yields a `Network`, a dict with at least a `weights` key, or a
         tuple `(weights, lengths)` / `(weights, lengths, node_params)`.
         `source_dir` is forwarded so Python builders can load companion artefacts.
         """
-        gg = self.graph_generator
+        from tvbo.graph_generators.catalog import declared_defaults
 
-        # Flatten the GraphGenerator's Parameter list to a plain kwargs dict,
-        # shared by the engine and the Python-callable routes.
-        kwargs: Dict[str, Any] = {}
+        gg = self.graph_generator
+        entry = self._db_generator_entry(gg) or {}
+
+        # Flatten the GraphGenerator's Parameter list to a plain kwargs dict, shared by
+        # the DAG and the Python-callable routes. The curated entry's declared defaults
+        # sit underneath, so an optional parameter a recipe omits resolves to the value
+        # the generator documents rather than to a NameError deep inside a step.
+        defaults = declared_defaults(entry)
+        kwargs: Dict[str, Any] = dict(defaults)
         for p in (gg.parameters or {}).values():
             pname = getattr(p, "name", None)
             if pname is None:
@@ -796,7 +831,12 @@ class Network(tvbo_datamodel.Network):
                 # Distribution-valued parameters (e.g. weight_distribution)
                 # carry their spec in the `distribution` slot.
                 val = getattr(p, "distribution", None)
-            kwargs[pname] = val
+            # A Parameter entry carrying neither a value nor a distribution states no
+            # value, so the declared default stands. The datamodel cannot distinguish
+            # that from an explicit null, and "unset means default" is the reading that
+            # matches how a curated entry documents its parameters.
+            if val is not None:
+                kwargs[pname] = val
         seed = getattr(gg, "seed", None)
         if seed is not None:
             kwargs.setdefault("seed", seed)
@@ -805,16 +845,23 @@ class Network(tvbo_datamodel.Network):
         procedure = None if cb is not None else self._db_procedure_for(gg)
 
         if procedure is not None:
-            # Preferred path: interpret the symbolic procedure (no per-generator Python).
-            from tvbo.graph_generators.engine import materialize
+            # Preferred path: resolve the typed DAG (no per-generator Python).
+            from tvbo.graph_generators.procedural import materialize
 
-            entry = self._db_generator_entry(gg) or {}
-            result = materialize(
-                procedure,
-                kwargs,
-                seed=seed,
-                declared_params=(entry.get("parameters") or {}),
-            )
+            # Size is the network's, never the generator's: a generator parameter for it
+            # would be a second source of truth that can disagree with the network it
+            # builds. `_resolve` sets number_of_nodes before reaching here.
+            # `not` rather than `is None`: a declared 0 would otherwise reach the DAG and
+            # fail deep inside a step on an empty matrix, naming the step rather than the
+            # empty network that caused it.
+            if not self.number_of_nodes:
+                raise ValueError(
+                    f"GraphGenerator {gg.type!r} builds an n_nodes x n_nodes network, so "
+                    f"`network.number_of_nodes` must be set to a positive count "
+                    f"(got {self.number_of_nodes!r})."
+                )
+            kwargs["n_nodes"] = int(self.number_of_nodes)
+            result = materialize(procedure, kwargs, seed=seed)
         else:
             # Escape hatch: inline Callable or curated python binding.
             if cb is not None:
@@ -851,7 +898,7 @@ class Network(tvbo_datamodel.Network):
             with _source_dir_on_path(source_dir):
                 mod = importlib.import_module(module_name)
                 fn = getattr(mod, func_name)
-                result = fn(**kwargs)
+                result = fn(**self._callable_kwargs(fn, kwargs, defaults))
 
         # Accept a Network, a dict, or a (weights, lengths[, node_params]) tuple.
         if isinstance(result, Network):
@@ -2979,6 +3026,14 @@ class Network(tvbo_datamodel.Network):
         # Filter out template edges (no source/target) — those represent
         # matrix measures stored in the HDF5 companion, not graph edges.
         explicit_edges = [e for e in (self.edges or []) if getattr(e, "source", None) is not None]
+        # Nodes above are keyed by ``node.id``, but ``edge.source`` / ``edge.target``
+        # are positional indices into ``self.nodes``. Mapping between them keeps the
+        # graph in one key space; without it the graph gains a phantom set of
+        # index-keyed nodes (N+1 nodes for N regions) and any lookup by node key
+        # fails — e.g. plot_graph raising ``KeyError: 0``.
+        index_to_id = {
+            i: (node.id if node.id is not None else i) for i, node in enumerate(self.nodes or [])
+        }
         if explicit_edges:
             # Use explicit edges
             for edge in explicit_edges:
@@ -2994,7 +3049,11 @@ class Network(tvbo_datamodel.Network):
                         if param.unit:
                             edge_attrs[f"{name}_unit"] = param.unit
 
-                G.add_edge(edge.source, edge.target, **edge_attrs)
+                G.add_edge(
+                    index_to_id.get(edge.source, edge.source),
+                    index_to_id.get(edge.target, edge.target),
+                    **edge_attrs,
+                )
 
                 # If undirected, add reverse edge
                 if not edge_attrs["directed"]:
@@ -3047,7 +3106,14 @@ class Network(tvbo_datamodel.Network):
                                     (v for v in edge_attrs.values() if isinstance(v, float) and v != 0),
                                     1.0,
                                 )
-                            G.add_edge(i, j, **edge_attrs)
+                            # Matrix rows/columns are positional; the nodes added
+                            # above are keyed by ``node.id``. Map so both live in
+                            # one key space (see index_to_id above).
+                            G.add_edge(
+                                index_to_id.get(i, i),
+                                index_to_id.get(j, j),
+                                **edge_attrs,
+                            )
 
         return G
 
@@ -3615,6 +3681,14 @@ class Network(tvbo_datamodel.Network):
                 }
                 G.add_node(node_id, **node_attrs)
 
+            # Nodes are keyed in the graph by ``node.id``, but ``edge.source`` /
+            # ``edge.target`` are positional indices into ``nodes``. Without this
+            # mapping the graph ends up with two disjoint key spaces (ids 1..N and
+            # indices 0..N-1), which silently produces N+1 nodes and breaks any
+            # consumer that looks a node up by key — e.g. plot_graph raising
+            # ``KeyError: 0`` because the layout has no entry for index 0.
+            index_to_id = {i: getattr(node, "id", i) for i, node in enumerate(nodes)}
+
             if edges:
                 for edge in edges:
                     source = getattr(edge, "source", None)
@@ -3622,6 +3696,9 @@ class Network(tvbo_datamodel.Network):
 
                     if source is None or target is None:
                         continue
+
+                    source = index_to_id.get(source, source)
+                    target = index_to_id.get(target, target)
 
                     weight = self._get_edge_param(edge, "weight") or 0.0
                     if weight <= weight_threshold:

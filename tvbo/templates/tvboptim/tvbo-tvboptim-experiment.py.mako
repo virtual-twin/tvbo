@@ -63,9 +63,19 @@ derived_param_names = [p.name for p in model.derived_parameters.values()] if mod
 model_output_vars = getattr(model, 'output', None) or []
 if isinstance(model_output_vars, str):
     model_output_vars = [model_output_vars]
-model_derived_outputs = [v for v in model_output_vars if v in (model.derived_variables or {})]
-model_state_outputs = [v for v in model_output_vars if v in state_names]
 has_model_output = bool(model_output_vars)
+# Resolve each declared output to its channel in the recorded ordering. Outputs may
+# be state variables, auxiliaries, or a mix, so the position follows the layout
+# rather than the kind.
+from tvbo.templates.tvboptim.utils import (
+    resolve_model_output_indices, format_channel_index, get_recorded_variable_names,
+)
+model_output_indices, model_output_names = resolve_model_output_indices(model, experiment)
+_, _, _recorded_var_names = get_recorded_variable_names(model, experiment)
+model_output_channel_index = (
+    format_channel_index(model_output_indices, len(_recorded_var_names))
+    if model_output_indices else ''
+)
 
 # Extract state variable bounds (for BoundedSolver)
 # Uses SymPy oo so code printers emit the correct backend literal
@@ -120,18 +130,31 @@ interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in 
 # tract lengths → DenseLengthGraph, explicit per-edge delays → DenseDelayGraph.
 use_length_graph, use_delay_graph = graph_selection(network, has_delay)
 
-# Sparse coupling opt-in (Network.graph_representation: sparse): sparsify the weight matrix to
-# BCOO so the `pre @ weights` reduction runs as an edge-sum (O(nnz)) instead of a dense NxN
-# matmul. Requires EVERY coupling to be instantaneous AND vectorized (source-only `pre`, same
-# rule as resolve_coupling_spec): a per-edge `pre` (e.g. sin(x_j - x_i)) or a delayed one would
-# hit jsparse.sparsify on a nonlinear term and crash, so such networks fall back to dense.
-_is_vectorized_coupling = lambda c: bool(getattr(c, 'vectorized', False)) or (
-    bool(getattr(c, 'local_states', None)) and not getattr(c, 'incoming_states', None))
-use_sparse = (
-    str(getattr(network, 'graph_representation', 'auto') or 'auto') == 'sparse'
-    and not has_delay
-    and all(_is_vectorized_coupling(c) for c in all_couplings.values() if c)
-)
+# Sparse coupling opt-in (Network.graph_representation: sparse): store the connectome as BCOO
+# so each coupling reduction runs as an O(nnz) edge-sum (jax.ops.segment_sum over prepared
+# edge indices) instead of a dense NxN matmul.
+#
+# Both of the old restrictions are gone: tvboptim's sparse path gathers per edge
+# (`incoming_states[:, source_e]`, with `target_messages` for a pre that reads the target),
+# so a per-edge `pre` like sin(x_j - x_i) is native rather than a sparsify-on-a-nonlinear-term
+# crash, and SparseDelayGraph carries per-edge delays on the same sparsity pattern. So sparse
+# now covers instantaneous AND explicitly-delayed networks, with any coupling form.
+#
+# Tract lengths remain the exception: delays there are lengths / conduction_speed recomputed
+# each pass, which needs DenseLengthGraph's live `speed` leaf (the thing a
+# `network.conduction_speed` axis sweeps and gradients flow through). tvboptim has no sparse
+# counterpart, so the combination is rejected below rather than silently downgraded.
+use_sparse = str(getattr(network, 'graph_representation', 'auto') or 'auto') == 'sparse'
+if use_sparse and use_length_graph:
+    raise ValueError(
+        "network.graph_representation: sparse is not available for a network with tract "
+        "lengths: delays are derived as lengths / conduction_speed on every forward pass, "
+        "which requires DenseLengthGraph's live `speed` leaf (swept by a "
+        "`network.conduction_speed` axis and differentiable), and tvboptim has no sparse "
+        "length-graph counterpart. Either drop graph_representation to keep the live "
+        "conduction speed, or supply explicit per-edge `delay` edge attributes instead of "
+        "lengths, which sparse does support (SparseDelayGraph)."
+    )
 
 # Collect all coupling parameters (for optimization)
 all_coupling_params = {}  # (coupling_key, param_name) -> param_obj
@@ -756,11 +779,43 @@ for expl in exploration_list:
                 'reduce': _reduce_stat,
             })
             continue
-        # `execution.random_seed` → a per-cell NOISE-SEED axis. Each grid cell reseeds
+        # `execution.random_seed` → a per-cell SEED axis. Each grid cell reseeds
         # the stochastic solver's PRNG key (config.noise.key, a runtime leaf), so a
         # random-seed sweep becomes a real per-trial noise ensemble rather than a no-op
         # parameter. Values are integer seeds; the wrapper below turns each into a key.
         if source_key == 'execution' and pname == 'random_seed':
+            # The swept seed only reaches the model through a consumer, and only on the
+            # plain grid path. Reseeding the solver's PRNG key is the sole consumer, so
+            # the axis is inert both when the integration has no noise and when the
+            # exploration uses a strategy whose body never reaches the grid-binding block
+            # (nsga2, warm-start, branch analysis). Either way every cell comes out
+            # identical while the result container still reports a genuine-looking
+            # ensemble dimension, so fail at codegen rather than ship a fake ensemble.
+            _expl_strategy = str(getattr(expl, 'strategy', None) or 'grid')
+            _seeding = str(getattr(expl, 'sweep_seeding', None) or '')
+            _bypasses_grid = (
+                _expl_strategy != 'grid'
+                or _seeding == 'from_previous'
+                or bool(getattr(expl, 'branch_seed', None))
+            )
+            if not has_noise or _bypasses_grid:
+                _why = (
+                    "this experiment's integration declares no noise (every state's "
+                    "sigma is 0)" if not has_noise else
+                    "this exploration's strategy (%r) never reaches the per-cell grid "
+                    "binding that applies the seed" % _expl_strategy
+                )
+                raise ValueError(
+                    "exploration axis 'execution.random_seed' has no consumer in "
+                    "exploration %r: the seed reseeds the stochastic solver's PRNG key, "
+                    "but %s, so every cell would produce an identical result. Either "
+                    "make the seed reachable (give the integration noise, and use the "
+                    "default grid strategy), or drop the axis and vary the ensemble "
+                    "through a mechanism that does apply here (e.g. Exploration.n_trials "
+                    "with a StateVariable.distribution for an initial-condition "
+                    "ensemble)."
+                    % (str(getattr(expl, 'name', None) or '<unnamed>'), _why)
+                )
             if explored_values:
                 _seed_vals = [int(v) for v in explored_values]
             else:
@@ -1405,6 +1460,14 @@ def create_network(
     _speed = ${conduction_speed}
     _max_delay_bound = max_delay if max_delay is not None else (float(jnp.max(distances)) / _speed if _speed > 0 else 0.0)
     graph = DenseLengthGraph(weights, distances, speed=_speed, region_labels=region_labels, max_delay_bound=_max_delay_bound)
+    % elif use_delay_graph and use_sparse:
+    # Sparse + per-edge delays: weights and delays share one BCOO sparsity pattern, so the
+    # delayed gather runs per edge (O(nnz)) instead of over a dense NxN history slice.
+    # Non-edge entries arrive as NaN, so zero-fill before sparsifying.
+    if delays is None:
+        delays = jnp.zeros_like(weights)
+    delays = jnp.nan_to_num(delays)
+    graph = SparseDelayGraph(weights, delays, region_labels=region_labels, max_delay_bound=max_delay)
     % elif use_delay_graph:
     # Per-edge delays used directly; non-edge entries arrive as NaN, so zero-fill first.
     if delays is None:
@@ -1412,8 +1475,8 @@ def create_network(
     delays = jnp.nan_to_num(delays)
     graph = DenseDelayGraph(weights, delays, region_labels=region_labels, max_delay_bound=max_delay)
     % elif use_sparse:
-    # Sparse coupling: the weight matrix is sparsified to BCOO so the vectorized
-    # `pre @ weights` reduction is an O(nnz) edge-sum, not a dense NxN matmul.
+    # Sparse coupling: the connectome is stored as BCOO so the reduction is an O(nnz)
+    # edge-sum (segment_sum over prepared edges), not a dense NxN matmul.
     graph = SparseGraph(weights, region_labels=region_labels)
     % else:
     graph = DenseGraph(weights, region_labels=region_labels)
@@ -2713,11 +2776,6 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
 %>
 % if not obs_name:
-<%
-    n_aux = len([v for v in (model_output_vars or []) if v in (model.derived_variables or {}).keys()])
-    if not n_aux and model.derived_variables:
-        n_aux = len(model.derived_variables)
-%>
 % if bundles_observations:
     # Observations declared: observable_fn returns only the reduced
     # observation values per grid point (no trajectory). Output size is
@@ -2728,18 +2786,13 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     def observable_fn(s):
         result = _expl_model_fn(s)
         return compute_all_observations(result, s, result_transient)
-% elif has_model_output and n_aux == 1:
-    # Single model output — extract as (T, n_nodes) dropping the variable dimension
+% elif has_model_output and model_output_indices:
+    # Model outputs — ``model_output_channel_index`` is a scalar for a single
+    # output (dropping the variable dim) or a slice/list for several (keeping it).
     @jax.jit
     def observable_fn(s):
         result = _expl_model_fn(s)
-        return result.data[:, ${len(state_names)}, ...]
-% elif has_model_output and n_aux > 1:
-    # Multiple model outputs — keep variable dimension (T, n_out, n_nodes)
-    @jax.jit
-    def observable_fn(s):
-        result = _expl_model_fn(s)
-        return result.data[:, ${len(state_names)}:, ...]
+        return result.data[:, ${model_output_channel_index}, ...]
 % else:
     # No observable specified, no model output, no observations — return full simulation data
     @jax.jit
@@ -3092,10 +3145,10 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % if has_axes:
         cell_coords=_cell_coords,
 % endif
-<% _obs_label = obs_name if obs_name else (', '.join(model_output_vars) if has_model_output else obs_func) %>\
+<% _obs_label = obs_name if obs_name else (', '.join(model_output_names) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},
-        output_names=${model_output_vars if has_model_output and not obs_name else []},
+        output_names=${model_output_names if has_model_output and not obs_name else []},
         observations=_observations_xr,
 % if expl.get('n_trials', 1) > 1:
         n_trials=${expl['n_trials']},
@@ -3178,7 +3231,21 @@ def run_experiment(
 
     # Determine if we need to run main simulation or just transient.
     # For algorithm/optimization/exploration modes, we only need transient - main simulation runs after
+<%doc>
+    ## An algorithm (e.g. FIC/EIB tuning) runs its own simulations and IS the
+    ## experiment's deliverable, so a full-length base forward-sim before it is
+    ## spurious — it integrates the UNTUNED operating point whose observations no
+    ## one consumes, yet materializes the whole trajectory. At Schirner's fitting
+    ## length (10 h biological time, 36M steps) that base sim alone is ~440 GB and
+    ## OOMs before tuning even starts. `run_simulation` still returns model_fn/state
+    ## for the algorithm when run_main is False; only the materialized `result` is
+    ## skipped. 'simulation' mode still forces it (an explicit forward-sim request).
+</%doc>
+    % if has_algorithms:
+    run_main = mode in ('simulation',)
+    % else:
     run_main = mode in ('simulation', 'all', None)
+    % endif
 
     # Run simulation to get model_fn and state (includes transient settling if configured)
     sim_result = run_simulation(network, t1=${t1_default}, dt=${dt}, t_transient=${transient_time}, run_main=run_main, random_seed=kwargs.get('random_seed'))

@@ -1117,7 +1117,7 @@ class ExplorationResult(Bunch):
     """Result of parameter exploration (grid search).
 
     A thin wrapper around tvboptim exploration outputs that provides:
-    - Access to raw results (flat or grid-shaped)
+    - Access to labelled results (flat or grid-shaped)
     - Axis information for parameter values
     - Utility methods for finding optimal points and slicing
     - Time series plotting for parameter sweeps (when observable returns time series)
@@ -1137,8 +1137,14 @@ class ExplorationResult(Bunch):
         Exploration name
     grid : Space
         Parameter grid specification (tvboptim Space object)
-    results : jnp.ndarray
-        Observable values at each grid point (flat for scalars, multi-dim for time series)
+    results : xr.DataArray
+        Observable values at each grid point (flat for scalars, multi-dim for time
+        series), carrying named dims: the leading run axis (the swept parameter,
+        ``trial``, or ``point``) followed by the intrinsic dims (time, variable,
+        node, mode). The payload stays JAX-native — only the labels are
+        materialised — and the shape is unchanged from what the backend emitted, so
+        it is addressed by key rather than by position. ``as_grid()`` reshapes the
+        flat run axis into one dim per exploration axis.
     axes : list
         List of axis info (Bunch with name, lo, hi, n, values)
     observable : str
@@ -1206,7 +1212,9 @@ class ExplorationResult(Bunch):
 
         # Detect whether results are time series or scalar per grid point
         if results is not None:
-            results_arr = jnp.asarray(results)
+            # A producer may hand over an already-labelled payload; take the raw
+            # array so the shape detection below sees the same thing either way.
+            results_arr = jnp.asarray(self._payload(results))
             n_grid_dims = len(self._grid_shape) if self._grid_shape else 1
             if results_arr.ndim > n_grid_dims:
                 # Time series: shape (n_grid, n_time, ...) — preserve structure
@@ -1234,9 +1242,123 @@ class ExplorationResult(Bunch):
             self.results = None
             self.is_timeseries = False
 
+        # Label the payload so every result carries named dims, whatever the
+        # producer handed over. Consumers then select by key instead of by
+        # position, which is what keeps a layout change from silently reading the
+        # wrong channel.
+        self.results = self._label_payload(self.results)
+
         # Shape is the expected grid shape from axes
         self.shape = self._grid_shape
         self._find_optimal()
+
+    @staticmethod
+    def _payload(data):
+        """The raw array behind a labelled payload (JAX-native, no copy)."""
+        return data.data if hasattr(data, "dims") else data
+
+    def _has_trial_axis(self, tail_first) -> bool:
+        """Whether the dim after the run axis is a per-point ``trial`` ensemble.
+
+        True only for a swept exploration carried *with* trials, where the payload
+        keeps a trial axis between the grid axis and time. A trials-only ensemble
+        already spends its leading axis on ``trial`` and is excluded by the caller.
+        """
+        n_trials = int(getattr(self, "n_trials", 0) or 0)
+        return n_trials > 1 and tail_first == n_trials
+
+    def _intrinsic_dims(self, tail_shape, *, trial_first: bool = False):
+        """Names + coords for the intrinsic dims that follow the leading run axis.
+
+        ``tail_shape`` is the payload shape after the run axis (the swept
+        parameter, ``point``, or ``trial``). Returns ``(dims, coords)`` following
+        the TVB convention ``time[, variable][, node][, mode]``, optionally
+        prefixed with a per-point ``trial`` axis. Single home for the labelling
+        rule so :meth:`_label_payload` and :meth:`as_grid` never disagree.
+        """
+        dims: list = []
+        coords: dict = {}
+        tail = list(tail_shape)
+        if trial_first and tail:
+            dims.append("trial")
+            coords["trial"] = np.arange(tail[0])
+            tail = tail[1:]
+        if not tail:
+            return dims, coords
+        dims.append("time")
+        if self.dt:
+            coords["time"] = np.arange(tail[0]) * self.dt
+        # tvboptim drops the `variable` dim for a single model output, so only
+        # label the leading spatial dim `variable` when it matches the output
+        # count; the rest map to (node, mode). Unknown output count → assume
+        # `variable` is present.
+        spatial = tail[1:]
+        n_out = len(self.output_names) if self.output_names else None
+        if spatial and (n_out is None or spatial[0] == n_out):
+            dims.append("variable")
+            if self.output_names and len(self.output_names) == spatial[0]:
+                coords["variable"] = list(self.output_names)
+            spatial = spatial[1:]
+        dims += ["node", "mode"][: len(spatial)]
+        return dims, coords
+
+    def _label_payload(self, data):
+        """Name the dims of the results payload **without reshaping it**.
+
+        The leading dim is the flat run axis: the swept parameter when exactly one
+        axis is explored, ``trial`` for a trials-only ensemble, otherwise ``point``
+        (the flattened grid product, which :meth:`as_grid` reshapes into one dim per
+        axis). Intrinsic dims follow the TVB convention (time, variable, node, mode)
+        and pick up coordinates from ``dt`` and ``output_names``.
+
+        Shapes are left untouched, so positional consumers keep working while keyed
+        access becomes possible.
+        """
+        if data is None or hasattr(data, "dims"):
+            return data
+        ndim = getattr(data, "ndim", 0)
+        if ndim == 0:
+            return xr.DataArray(data, name=self.observable or None)
+
+        names = [self._axis_name(ax) for ax in self.axes]
+        n_trials = int(getattr(self, "n_trials", 0) or 0)
+        coords = {}
+
+        if len(names) == 1 and names[0] and data.shape[0] == (
+            int(self._grid_shape[0]) if self._grid_shape else -1
+        ):
+            lead = names[0]
+            vals = self._axis_values(self.axes[0])
+            if vals is not None and len(vals) == data.shape[0]:
+                coords[lead] = np.asarray(vals)
+        elif not self.axes and n_trials and data.shape[0] == n_trials:
+            lead = "trial"
+            coords[lead] = np.arange(data.shape[0])
+        else:
+            lead = "point"
+        dims = [lead]
+
+        if self.is_timeseries and ndim > 1:
+            tail = data.shape[1:]
+            # A trials-only ensemble already spent its leading axis on `trial`;
+            # only a swept run carries a separate trial axis in the tail.
+            trial_first = lead != "trial" and self._has_trial_axis(tail[0])
+            intrinsic, intrinsic_coords = self._intrinsic_dims(
+                tail, trial_first=trial_first
+            )
+            dims += intrinsic
+            coords.update(intrinsic_coords)
+
+        # Any dim the layout does not account for still gets a name, so the result
+        # is labelled even when the producer emits an unexpected rank.
+        while len(dims) < ndim:
+            dims.append(f"dim_{len(dims)}")
+        try:
+            return xr.DataArray(
+                data, dims=dims[:ndim], coords=coords, name=self.observable or None
+            )
+        except Exception:
+            return xr.DataArray(data, name=self.observable or None)
 
     @staticmethod
     def _axis_name(ax):
@@ -1311,9 +1433,11 @@ class ExplorationResult(Bunch):
         are **independent of axis order**. The data stays a JAX array (the DataArray
         is a registered JAX pytree); only the coordinate labels are materialised. A
         time-series observable keeps its intrinsic dims (time, variable, node, mode)
-        after the grid dims. Falls back to the positional array if it cannot be
-        labelled; ``None`` when empty. A sharded result (``cell_coords`` set) is
-        a subset of grid points, not a full product, so it is labelled with a
+        after the grid dims. ``None`` when empty; otherwise always labelled — a
+        payload that cannot be reshaped into the grid is returned with the dim names
+        it already carries (see :meth:`_label_payload`) rather than as a bare array,
+        so no consumer is handed positional data. A sharded result (``cell_coords``
+        set) is a subset of grid points, not a full product, so it is labelled with a
         single ``point`` dim carrying each axis's value — reassemble across
         shards by parameter value.
         """
@@ -1328,55 +1452,52 @@ class ExplorationResult(Bunch):
                 if r.ndim > t_dim:
                     intrinsic_ts = np.arange(r.shape[t_dim]) * self.dt
             return _stacked_to_dataarray(
-                self.results, self.axes, intrinsic_ts=intrinsic_ts,
+                self._payload(self.results), self.axes, intrinsic_ts=intrinsic_ts,
                 n_trials=n_trials, name=self.observable or None,
                 cell_coords=self.cell_coords,
             )
-        data = self.results  # keep JAX-native; never np.asarray the payload
+        labelled = self.results  # already carries named dims
+        data = self._payload(labelled)  # keep JAX-native; never np.asarray the payload
         names = [self._axis_name(ax) for ax in self.axes]
         grid_shape = tuple(self._grid_shape or ())
         n_grid = 1
         for _s in grid_shape:
             n_grid *= int(_s)
+        if not all(names) or not grid_shape:
+            # No named grid to lay out (trials-only, or a nameless axis): the payload
+            # is already labelled with its own dims, so hand that back.
+            return labelled
         try:
+            intrinsic_coords = {}
             if self.is_timeseries:
-                if not (grid_shape and data.shape[0] == n_grid):
-                    return data  # trials-only / unshaped: leave positional
+                if data.shape[0] != n_grid:
+                    return labelled
                 data = data.reshape(grid_shape + tuple(data.shape[1:]))
-                # Intrinsic (post-grid) layout is (time, *spatial) following the TVB
-                # convention (variable, node, mode). tvboptim drops the `variable` dim
-                # for a single model output, so only label it `variable` when the
-                # leading spatial dim actually matches the output count; the rest map
-                # to (node, mode). Unknown output count → assume `variable` is present.
-                spatial = list(data.shape[len(names) + 1:])
-                n_out = len(self.output_names) if self.output_names else None
-                intrinsic = ["time"]
-                if spatial and (n_out is None or spatial[0] == n_out):
-                    intrinsic.append("variable")
-                    spatial = spatial[1:]
-                intrinsic += ["node", "mode"][: len(spatial)]
+                # Intrinsic (post-grid) dims follow the same rule as the flat
+                # payload — resolved once in `_intrinsic_dims` so the two agree.
+                tail = data.shape[len(names):]
+                trial_first = bool(tail) and self._has_trial_axis(tail[0])
+                intrinsic, intrinsic_coords = self._intrinsic_dims(
+                    tail, trial_first=trial_first
+                )
                 dims = names + intrinsic
             else:
-                if not grid_shape or data.size != n_grid:
-                    return data  # nothing to lay out
+                if data.size != n_grid:
+                    return labelled
                 data = data.reshape(grid_shape)
                 dims = list(names)
-            if not all(dims):
-                return data  # a nameless axis — positional fallback
             sizes = dict(zip(dims, data.shape))
             coords = {}
             for ax, nm in zip(self.axes, names):
                 vals = self._axis_values(ax)
                 if vals is not None and len(vals) == sizes.get(nm):
                     coords[nm] = np.asarray(vals)  # coordinate labels, like TimeSeries' time
-            if self.is_timeseries and "time" in dims and self.dt:
-                coords["time"] = np.arange(data.shape[dims.index("time")]) * self.dt
-            if self.is_timeseries and "variable" in dims and self.output_names \
-                    and len(self.output_names) == data.shape[dims.index("variable")]:
-                coords["variable"] = list(self.output_names)
+            coords.update(intrinsic_coords)
             return xr.DataArray(data, dims=dims, coords=coords, name=self.observable or None)
         except Exception:
-            return data
+            # Never degrade to a bare array — the labelled payload is still correct,
+            # just not reshaped into the grid.
+            return labelled
 
     def _find_optimal(self):
         """Find optimal point in the grid (scalar results only)."""
@@ -1384,7 +1505,7 @@ class ExplorationResult(Bunch):
         if self.is_timeseries or self.results is None or self.results.size == 0:
             return
         # Find argmin in flat results (assumes lower is better for loss functions)
-        flat = self.results.flatten()
+        flat = self._payload(self.results).flatten()
         flat_idx = int(jnp.argmin(flat))
         self.optimal.flat_index = flat_idx
         self.optimal.value = float(flat[flat_idx])

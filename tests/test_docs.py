@@ -42,8 +42,14 @@ def get_doc_name(path: str) -> str:
 # Discover all testable qmd files
 qmd_files = [f for f in get_all_qmd_files() if has_python_cells(f)]
 
-# Directories whose doc tests are slow and excluded by default (use --run-slow)
-SLOW_DIRS = {"Interoperability/tvboptim"}
+# Docs whose tests are slow and excluded by default (use --run-slow). Matched as a
+# substring of the doc's path relative to docs/.
+#
+# The heavy pages are the tvboptim optimization workflows. They moved from
+# Interoperability/tvboptim/ into the Fitting/ topic, so match them by their
+# `_tvboptim` filename rather than by directory: keying on "Fitting" alone would
+# also mark neighbours like Fitting/ModelFitting.qmd, which is not slow.
+SLOW_DIRS = {"Interoperability/tvboptim", "_tvboptim"}
 
 # TODO: Re-enable Koller2024 once the replication is tuned and validated.
 # Currently times out in CI; needs investigation of runtime / convergence

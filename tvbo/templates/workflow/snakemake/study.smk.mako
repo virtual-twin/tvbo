@@ -4,7 +4,15 @@
 ##                   axes (list of {name, parameter, values}), container}.
 <%
 def _wildcard(name):
-    return "{" + name + "}"
+    """A Snakemake wildcard placeholder, doubled for the f-string that carries it.
+
+    Every path built from this lands inside an f-string (they interpolate OUT_DIR),
+    and an f-string eats single braces: `f"{OUT_DIR}/sub-{subject}"` evaluates
+    `subject` as a Python name and dies with NameError before Snakemake ever sees a
+    wildcard. Doubling leaves the literal `{subject}` that `expand()` and the rule's
+    `output:` need.
+    """
+    return "{{" + name + "}}"
 
 def _values(vals):
     return ", ".join(repr(v) for v in vals)
@@ -38,46 +46,45 @@ def _expand_kwargs(ep):
     return ", ".join("%s=%s" % (a["name"], ep["rule_name"].upper() + "_" + a["name"].upper())
                      for a in ep["axes"])
 
-def _mem_mb(mem):
-    """'8G'/'8GB'/'512M'/'2000' -> integer megabytes (Snakemake mem_mb)."""
-    if not mem:
-        return None
-    s = str(mem).strip().upper().rstrip("B")
-    try:
-        if s.endswith("G"): return int(float(s[:-1]) * 1000)
-        if s.endswith("M"): return int(float(s[:-1]))
-        if s.endswith("K"): return max(1, int(float(s[:-1]) / 1000))
-        return int(float(s))
-    except ValueError:
-        return None
+import shlex
 
-def _runtime_min(t):
-    """'08:00:00' (HH:MM:SS) or '480' -> integer minutes (Snakemake runtime)."""
-    if not t:
-        return None
-    s = str(t).strip()
-    try:
-        if ":" in s:
-            p = [int(x) for x in s.split(":")]
-            if len(p) == 3: return p[0] * 60 + p[1] + (1 if p[2] else 0)
-            if len(p) == 2: return p[0] + (1 if p[1] else 0)
-        return int(float(s))
-    except ValueError:
-        return None
+from tvbo.cli._workflow import mem_mb as _mem_mb, runtime_minutes as _runtime_min
+
+def _activation(block):
+    """Shell lines that put the declared environment in place, in activation order.
+
+    A rule's shell is a fresh non-login shell on the compute node and inherits
+    nothing from the environment that emitted the kit, so ``modules``/``venv`` are
+    activated per rule ahead of the verbatim ``setup`` lines. The venv path is
+    shell-quoted; ``setup`` is passed through as authored.
+    """
+    lines = ["module load %s" % m for m in (block.get("modules") or [])]
+    if block.get("venv"):
+        lines.append("source %s/bin/activate" % shlex.quote(str(block["venv"])))
+    return lines + list(block.get("setup") or [])
 
 def _rule_resources(block):
     """Intrinsic per-rule resources for the Snakemake job → dict of {key: python-literal}.
-    The SLURM executor reads cpus_per_task/mem_mb/runtime; partition/account live in the
-    shipped profile. options[] passes through any extra resources verbatim."""
+
+    The SLURM executor reads cpus_per_task/mem_mb/runtime plus slurm_partition and
+    slurm_account. Partition and account are per-rule because they are declarable per
+    experiment (``workflow_overrides.slurm.partition``); the profile carries the
+    study-wide default for rules that declare none. options[] passes through verbatim.
+    """
     r = {}
     if block.get("cpus_per_task"):
         r["cpus_per_task"] = int(block["cpus_per_task"])
+    # `is not None`, not truthiness: a declared 0 is a value the recipe chose, and
+    # dropping it silently hands the job the partition default instead.
     mb = _mem_mb(block.get("mem"))
-    if mb:
+    if mb is not None:
         r["mem_mb"] = mb
     rt = _runtime_min(block.get("time"))
-    if rt:
+    if rt is not None:
         r["runtime"] = rt
+    for _key, _slot in (("partition", "slurm_partition"), ("account", "slurm_account")):
+        if block.get(_key):
+            r[_slot] = '"%s"' % block[_key]
     for opt in (block.get("options") or []):
         v = str(opt["value"])
         # numeric -> bare int; plain string -> "quoted"; anything with a quote -> repr (safely escaped)
@@ -137,8 +144,18 @@ rule ${ep["rule_name"]}:
 % endif
     output:
         f"{OUT_DIR}/${ep['key']}/${_cell_out(ep)}"
-    threads: ${block.get("cpus_per_task") or block.get("cores") or 1}
-<% _res = _rule_resources(block) %>\
+% if ep.get("container") and ep["container"] != (exp_plans[0].get("container") if exp_plans else None):
+    # This experiment declares its own image; a rule-level `container:` overrides the
+    # global one above (which is keyed on the first experiment).
+    container:
+        "${ep['container']}"
+% endif
+## Each experiment's block already has the study defaults merged into it, so an empty
+## one means "this experiment declares no resources" — not "inherit a sibling's". Only
+## fall back when the caller supplied no block at all, never when it resolved to {}.
+<% _b = ep.get("block", block) %>\
+    threads: ${_b.get("cpus_per_task") or _b.get("cores") or 1}
+<% _res = _rule_resources(_b) %>\
 % if _res:
     # Intrinsic resources; the SLURM executor (via the shipped profile) turns these
     # into --cpus-per-task / --mem / --time on each submitted job.
@@ -148,7 +165,7 @@ rule ${ep["rule_name"]}:
 % endfor
 % endif
     shell:
-% for _line in (block.get("setup") or []):
+% for _line in _activation(_b):
         ${repr(_line + " && ")}
 % endfor
 % if context.get("bundled_code"):
@@ -156,7 +173,7 @@ rule ${ep["rule_name"]}:
         ## doubled to survive as a literal (single braces are wildcard fields, e.g. {output}).
         "export PYTHONPATH=code:${'$'}{{PYTHONPATH:-}} && "
 % endif
-% for _e in (block.get("env") or []):
+% for _e in (_b.get("env") or []):
         "export ${_e['name']}=${_e['value']} && "
 % endfor
         "tvbo run ${ep['spec_relpath']} "

@@ -1,5 +1,8 @@
 ---
 title: The Virtual Brain Ontology
+# The Usage guide dissolved into topics; keep its URL resolving.
+aliases:
+  - /Usage/index.html
 ---
 
 ## Welcome to `tvbo`!

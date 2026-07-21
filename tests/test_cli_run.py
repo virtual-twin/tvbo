@@ -84,3 +84,34 @@ def test_dispatch_to_engine_slurm_single_task_no_gather(monkeypatch, tmp_path: P
     assert submits[0]["cmd"] == ["sbatch", "--parsable", "run.sbatch"]
     assert Path(submits[0]["cwd"]) == kit_dir
     assert not (kit_dir / "finalize.sbatch").exists()
+
+
+def test_unloadable_spec_reports_every_attempt(tmp_path: Path):
+    """A spec that loads as nothing must say why, not blame the last fallback.
+
+    ``_load_from_file`` tries study -> experiment -> dynamics. It used to swallow
+    each failure, so the caller only ever saw the *dynamics* error — which, for a
+    file that is plainly an experiment (e.g. one written by a newer tvbo than the
+    one reading it), sends the reader chasing a malformed Dynamics that never was.
+    """
+    import typer
+
+    from tvbo.cli import _common
+
+    spec = tmp_path / "experiment.yaml"
+    spec.write_text(
+        "key: broken\n"
+        "dynamics:\n"
+        "  no_such_slot_for_any_class: 1\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(typer.BadParameter) as excinfo:
+        _common.resolve_spec(str(spec))
+
+    msg = str(excinfo.value)
+    # Every interpretation tried is named, so nothing is hidden...
+    assert "as experiment:" in msg
+    assert "as dynamics:" in msg
+    # ...and the original exception is chained rather than discarded.
+    assert excinfo.value.__cause__ is not None

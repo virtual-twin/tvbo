@@ -23,7 +23,8 @@ $$C\frac{dv}{dt} = -g_{Na}m^3 h(v - E_{Na}) - g_K n(v - E_K) + I_{\text{ext}}$$
 By annotating the dynamics with `iri: neuroml:pointCellCondBased` and structuring
 the ion channels as `components` (including `ionChannelKS` with `gateKS` and
 `vHalfTransition`), TVBO emits standard NeuroML2 types that preserve the jLEMS
-child-before-parent RK4 evaluation order — giving exact numerical identity.
+child-before-parent RK4 evaluation order, so the traces match the reference to
+correlation r ≈ 1.
 
 ---
 

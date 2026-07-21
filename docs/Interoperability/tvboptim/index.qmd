@@ -1,125 +1,63 @@
 ---
-title: "tvboptim Backend"
-subtitle: "JAX-based optimization and parameter fitting for brain network models"
+title: "Coming from tvboptim"
+subtitle: "How TVBO and the tvboptim JAX backend divide the work"
 ---
 
-## Overview
+If you already know **tvboptim**, this page explains where TVBO fits. If instead you
+want to *fit a model to data*, go straight to the
+[Fitting & Inference](../../Fitting/index.qmd) topic — that is where the workflows live.
 
-The **tvboptim** backend provides high-performance simulation and optimization capabilities using JAX. It enables:
+## The division of labour
 
-- **JIT-compiled simulations** for fast execution
-- **Automatic differentiation** for gradient-based optimization
-- **GPU acceleration** when available
-- **Declarative YAML specification** of optimization workflows
+tvboptim is a JAX framework for simulating and optimizing brain network models: it
+provides the solver, the `prepare` machinery, JIT compilation, automatic
+differentiation, and GPU execution.
 
-## Workflow Examples
+TVBO does not reimplement any of that. It supplies the **declarative specification** —
+a YAML model, network, loss, and optimization schedule — and generates the concrete
+tvboptim code from it. The backend stays the runtime; TVBO stays the spec layer:
 
-| Workflow | Model | Description |
-|----------|-------|-------------|
-| [Jansen-Rit](JR_tvboptim.qmd) | Jansen-Rit | MEG frequency optimization |
-| [Reduced Wong-Wang](RWW_tvboptim.qmd) | RWW | Functional connectivity fitting |
-| [EI Tuning](EI_Tuning_tvboptim.qmd) | RWW | Excitation-Inhibition balance tuning |
-| [TBPTT](TBPTT_tvboptim.qmd) | Jansen-Rit | Truncated backprop-through-time; gradient diagnostics |
-| [Hopf Pareto](Hopf_Pareto_tvboptim.qmd) | SupHopf | NSGA-II multi-objective (FC vs frequency gradient) + parallel refinement |
-| [Bayesian Inference](Bayesian_tvboptim.qmd) | Generic2dOscillator | numpyro MCMC; recover stimulus + excitability |
-| [Delays Shape Synchronization](Delay_Speed_Synchronization_tvboptim.qmd) | Kuramoto | Conduction-speed sweep of delay-organized synchronization; differentiable delays via `DenseLengthGraph` |
+| Concern | Owned by |
+|---|---|
+| Model, network, losses, optimization schedule | TVBO (YAML + schema) |
+| Code generation from that spec | TVBO (Mako templates, sympy printers) |
+| Solver, JIT, autodiff, GPU execution | tvboptim |
+| Result container and observation pipeline | TVBO |
 
-## Quick Start
+A practical consequence: TVBO-generated runs are checked to be numerically identical to
+the equivalent hand-written tvboptim workflow, so moving a model into TVBO does not
+change its numbers.
+
+## What this buys you
+
+- **One spec, several backends.** The same YAML also renders to TVB, PyRates, NeuroML,
+  and the Julia backends — see the [interoperability overview](../index.qmd).
+- **Declarative optimization.** Losses, free parameters, staged schedules and algorithms
+  are data, not code.
+- **Reproducibility.** The experiment is a file you can version, share, and re-run.
+
+## Where the workflows went
+
+The optimization workflows that used to sit on this page are now organized by *goal*
+rather than by backend, in [Fitting & Inference](../../Fitting/index.qmd):
+
+- [Reduced Wong-Wang](../../Fitting/RWW_tvboptim.qmd) — fit empirical BOLD functional connectivity
+- [Jansen-Rit](../../Fitting/JR_tvboptim.qmd) — fit a MEG frequency gradient
+- [EI tuning](../../Fitting/EI_Tuning_tvboptim.qmd) — excitation/inhibition balance
+- [Bayesian inference](../../Fitting/Bayesian_tvboptim.qmd) — numpyro MCMC
+- [Hopf-Pareto](../../Fitting/Hopf_Pareto_tvboptim.qmd) — NSGA-II multi-objective
+- [Delay & speed synchronization](../../Fitting/Delay_Speed_Synchronization_tvboptim.qmd)
+- [Gradient stability & TBPTT](../../Fitting/TBPTT_tvboptim.qmd) — the theory behind the above
+
+## Quick start
 
 ```python
 from tvbo import SimulationExperiment
 
-# Load experiment from YAML
 exp = SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization")
-
-# Run optimization
 results = exp.run()
-
-# Access results
 print(results)
 ```
 
-## Result Structure
-
-Results follow a declarative access pattern mirroring the YAML structure:
-
-```
-ExperimentResult:
-├── integration
-│   └── main
-│       ├── data: Array(duration, regions, state_vars)
-│       └── observations
-│           ├── bold: Array(...)
-│           └── fc: Array(regions, regions)
-├── algorithms
-│   └── fic
-│       ├── state: Final tuned parameters
-│       └── history: Per-iteration tracking
-└── optimization
-    └── global_optimization
-        ├── state: Optimized parameters
-        ├── loss: Final loss value
-        ├── history: Loss curve, parameters
-        └── simulation
-            ├── data: Post-optimization simulation
-            └── observations: BOLD, FC, etc.
-```
-
-## Key Features
-
-### Automatic Differentiation
-
-tvboptim uses JAX's autodiff to compute gradients through entire simulations:
-
-```yaml
-optimization:
-  global_optimization:
-    parameters:
-      - dynamics.G
-    loss_function: loss_fc
-    optimizer:
-      name: Adam
-      learning_rate: 0.01
-    max_steps: 100
-```
-
-### Smart Interval Defaults
-
-Print and save intervals are automatically set based on iteration count:
-- 1-10 iterations → every 1
-- 10-100 iterations → every 10
-- 100-1000 iterations → every 100
-
-### Multi-Stage Optimization
-
-Chain multiple optimization stages with different objectives:
-
-```yaml
-optimization:
-  stage1:
-    parameters: [dynamics.G]
-    loss_function: loss_fc
-    max_steps: 100
-  stage2:
-    parameters: [dynamics.J_i]
-    loss_function: loss_bold
-    max_steps: 50
-```
-
-### State Trajectory
-
-Track parameter evolution during optimization:
-
-```python
-trajectory = results.optimizations.global_optimization.state_trajectory
-for state in trajectory:
-    print(f"G={state.dynamics.G}")
-```
-
-## See Also
-
-- [Jansen-Rit Workflow](JR_tvboptim.qmd): Complete MEG optimization example
-- [RWW Workflow](RWW_tvboptim.qmd): Functional connectivity fitting
-- [EI Tuning](EI_Tuning_tvboptim.qmd): E/I balance optimization
-- [TBPTT](TBPTT_tvboptim.qmd): Truncated backprop-through-time + gradient diagnostics
-- [Hopf Pareto](Hopf_Pareto_tvboptim.qmd): NSGA-II multi-objective + parallel refinement
+Result objects follow the YAML structure (`integration`, `algorithms`, `optimization`);
+see [the experiment result](../../Simulation/Results.qmd) for the full container.

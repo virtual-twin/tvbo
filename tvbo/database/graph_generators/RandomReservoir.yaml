@@ -6,50 +6,65 @@ description: >-
   target spectral radius, and the weight distribution of the non-zero entries.
 iri: tvbo:RandomReservoir
 
+# Neither size nor seed is declared here. `n_nodes` always comes from
+# Network.number_of_nodes and the PRNG seed from the generator's own `seed:` slot,
+# so a parameter for either would be a second source of truth that can disagree
+# with the one that actually takes effect.
 parameters:
-  n:                  { datatype: integer, description: "Number of nodes" }
   sparsity:           { datatype: float,   description: "Fraction of non-zero weights in [0, 1]" }
   spectral_radius:    { datatype: float,   description: "Target spectral radius (post-rescaling)" }
   weight_distribution:
     datatype: Distribution
-    description: "Distribution from which non-zero weights are drawn. Default: Normal(0, 1)."
-  seed: { datatype: integer, required: false }
+    description: >-
+      Distribution the non-zero weights are drawn from. Overrides the standard
+      Normal that the `raw` step declares as its default.
 
-# Symbolic procedure — backend-independent. Each step is a named intermediate
-# expressed via canonical array primitives (sample, eigvals, max, abs, ...).
-# Backends that implement these primitives translate natively; backends that
-# don't fall back to the `bindings:` block below.
+# Typed DAG. Each step is a named intermediate carrying its options as schema
+# fields, which is what lets it lower straight onto a backend-native primitive:
+# the resolver in tvbo/graph_generators/procedural.py builds the SymPy tree and
+# the printer tables in tvbo/codegen/code.py render it per backend, so eager
+# numpy construction and emitted JAX are the same expressions rendered twice.
 procedure:
   steps:
-    - name: raw
-      description: "n×n matrix sampled from the weight distribution"
-      equation:
-        rhs: "sample(weight_distribution, shape=(n, n), seed=seed)"
-    - name: mask
-      description: "Bernoulli sparsity mask (1 with prob = sparsity)"
-      equation:
-        rhs: "sample(Uniform(0, 1), shape=(n, n), seed=seed + 1) < sparsity"
-    - name: masked
-      equation:
-        rhs: "raw * mask"
-    - name: rho
+    raw:
+      description: "n_nodes x n_nodes matrix drawn from the weight distribution"
+      type: sample
+      of: weight_distribution
+      seed_offset: 0
+      distribution:
+        name: Normal
+        parameters:
+          mean: { value: 0.0 }
+          std:  { value: 1.0 }
+    mask:
+      description: "Bernoulli sparsity mask — an edge survives with probability `sparsity`"
+      type: stochastic_mask
+      of: sparsity
+      comparison: gt
+      seed_offset: 1
+      distribution:
+        name: Uniform
+        parameters:
+          lo: { value: 0.0 }
+          hi: { value: 1.0 }
+    masked:
+      equation: { rhs: "raw * mask" }
+    rho:
       description: "Current spectral radius (largest absolute eigenvalue)"
-      equation:
-        rhs: "max(abs(eigvals(masked)))"
-    - name: rho_guard
-      description: >-
-        Fail loudly when the masked matrix has spectral radius 0 (e.g. sparsity
-        too low / n too small so every sampled edge was zeroed). Without this the
-        output step would divide by zero and silently emit an all-NaN connectome;
-        the legacy builtins.random_reservoir raised RuntimeError here.
-      equation:
-        rhs: "require(rho > 0, 'RandomReservoir: spectral radius of the masked matrix is 0 (no non-zero eigenvalues) — increase sparsity or n')"
+      equation: { rhs: "max(abs(eigvals(masked)))" }
+    scale:
+      description: "Rescaling factor onto the target spectral radius"
+      # A step of its own rather than a parenthesised sub-expression inside the output,
+      # and that is load-bearing: SymPy canonicalises `masked * (spectral_radius / rho)`
+      # into `masked*spectral_radius/rho`, and float multiplication is not associative,
+      # so a minority of entries would round differently. Each step is evaluated
+      # separately, so the DAG can carry an association expression syntax cannot.
+      equation: { rhs: "spectral_radius / rho" }
   output:
     weights:
-      equation:
-        rhs: "masked * (spectral_radius / rho)"
+      description: "Masked draw rescaled to the target spectral radius"
+      equation: { rhs: "masked * scale" }
 
-# No `bindings:` block — this generator is materialised entirely from the
-# symbolic `procedure:` above by the generic engine
-# (tvbo/graph_generators/engine.py), numpy/eager mode. The same primitive set
-# (sample, eigvals, max, abs, …) is the path future backends emit through.
+# A degenerate draw (every sampled edge masked out, so rho is 0) divides by zero here.
+# That is caught by the non-finite output check in `procedural.materialize` rather than
+# by a guard step, so every generator is covered rather than this one construction.
