@@ -174,3 +174,39 @@ def test_pin_rejects_a_malformed_arg():
     exp = _exp_with_sweep()
     with pytest.raises(Exception, match="parameter=value"):
         run_cli._apply_axis_pins(exp, ["Osc.a"])   # no '='
+
+
+# ── smoke iteration cap (`tvbo run --max-iterations` / `--smoke`) ─────────────────────────
+from types import SimpleNamespace
+
+
+def _algo(n_iterations, stages=None):
+    return SimpleNamespace(n_iterations=n_iterations, stages=stages or [])
+
+
+def test_max_iterations_caps_algorithms_and_stages_only_downward():
+    """`--max-iterations N` caps every algorithm's and stage's `n_iterations` to N, and
+    never RAISES a smaller count — it is a smoke ceiling, applied to the loaded object only."""
+    exp = SimpleNamespace(
+        algorithms={
+            "fic": _algo(200),
+            "fic_eib": _algo(2000, stages=[_algo(50000), _algo(50000)]),
+        },
+        optimizations={"grad": SimpleNamespace(max_iterations=66)},
+    )
+    run_cli._apply_max_iterations(exp, 1)
+    assert exp.algorithms["fic"].n_iterations == 1
+    assert exp.algorithms["fic_eib"].n_iterations == 1
+    assert [s.n_iterations for s in exp.algorithms["fic_eib"].stages] == [1, 1]
+    assert exp.optimizations["grad"].max_iterations == 1
+
+    # A count already below the cap is left untouched.
+    exp2 = SimpleNamespace(algorithms={"a": _algo(1)}, optimizations={})
+    run_cli._apply_max_iterations(exp2, 5)
+    assert exp2.algorithms["a"].n_iterations == 1
+
+
+def test_max_iterations_none_is_a_no_op():
+    exp = SimpleNamespace(algorithms={"a": _algo(200)}, optimizations={})
+    run_cli._apply_max_iterations(exp, None)
+    assert exp.algorithms["a"].n_iterations == 200
