@@ -219,32 +219,39 @@ class Brian2Adapter(BaseAdapter):
                 raise NotImplementedError(
                     f"Constant-current input {nml!r} (dynamics {dyn_name!r}) is not yet wired for Brian2."
                 )
-            # A cell population.
-            pop = safe_id(dyn_name)
-            size = sum(int(getattr(n, "size", 1) or 1) for n in gnodes)
+            # A cell population — ONE per node, so same-dynamics nodes in different
+            # areas stay separate (a two-area network keeps its two E pools distinct
+            # and its long-range projection connects only the right pair). The clean
+            # dynamics name is kept when a single node uses that dynamics; when several
+            # do, the node id disambiguates (ExcitatoryCell_2 / ExcitatoryCell_6) so the
+            # single-column output keys are unchanged.
             v_sv = (getattr(dyn_obj, "state_variables", None) or {}).get("v")
             if v_sv is None:
                 raise NotImplementedError(
                     f"Cell dynamics {dyn_name!r} declares no membrane variable 'v'; cannot build a NeuronGroup."
                 )
             v_rhs = render_expression(str(getattr(v_sv, "equation").rhs), format="brian2")
-            populations[pop] = {
-                "name": pop,
-                "dyn_name": dyn_name,
-                "dyn": dyn_obj,
-                "size": size,
-                "v_rhs": v_rhs,
-                "cell_params": _params(dyn_obj),
-                "gate_odes": {},        # var -> rhs (dimensionless)
-                "gate_increments": {},  # var -> rhs (in reset)
-                "derived": {},          # name -> rhs (dimensionless helpers)
-                "linked": {},           # S_var -> (hub name, hub field)
-                "current_terms": [],    # list of amp-expression strings summed into iSyn
-                "poisson": [],          # {"gate", "rate": (v,u), "weight"}
-                "namespace": {},        # const name -> (value, unit)
-            }
+            base = safe_id(dyn_name)
             for node in gnodes:
-                cell_pop_of_node[getattr(node, "id", 0)] = pop
+                node_id = getattr(node, "id", 0)
+                pop = base if len(gnodes) == 1 else f"{base}_{node_id}"
+                populations[pop] = {
+                    "name": pop,
+                    "dyn_name": dyn_name,
+                    "dyn": dyn_obj,
+                    "node_id": node_id,
+                    "size": int(getattr(node, "size", 1) or 1),
+                    "v_rhs": v_rhs,
+                    "cell_params": _params(dyn_obj),
+                    "gate_odes": {},        # var -> rhs (dimensionless)
+                    "gate_increments": {},  # var -> rhs (in reset)
+                    "derived": {},          # name -> rhs (dimensionless helpers)
+                    "linked": {},           # S_var -> (hub name, hub field)
+                    "current_terms": [],    # list of amp-expression strings summed into iSyn
+                    "poisson": [],          # {"gate", "rate": (v,u), "weight"}
+                    "namespace": {},        # const name -> (value, unit)
+                }
+                cell_pop_of_node[node_id] = pop
 
         hubs = {}  # hub name -> {"source_pop", "gate", "summed_var"}
 
@@ -315,56 +322,73 @@ class Brian2Adapter(BaseAdapter):
         pop["poisson"].append({"gate": gate, "rate": bp.get("averageRate", (2400.0, "Hz")), "weight": 1.0})
 
     def _add_conductance_synapse(self, populations, hubs, src_pop, tgt_pop, syn, prefix, weight):
-        """Reduce one all-to-all conductance synapse to gate + hub + current term."""
+        """Reduce one all-to-all conductance synapse to gate + hub + current term.
+
+        The gate lives on the *source* population (one per source pop and synapse
+        dynamics, shared across all of that source's projections of this dynamics —
+        e.g. an E pool's recurrent and long-range AMPA read the same pre-synaptic
+        gate). The *target*-side terms (summed gate ``S``, weight, current) are keyed
+        additionally by the source pop, so the same dynamics arriving at one pool from
+        two different sources (recurrent + long-range) don't overwrite each other.
+        """
         src = populations[src_pop]
         tgt = populations[tgt_pop]
         nml = _nml_type(syn)
         sparams = _params(syn)
 
-        def const(name):
-            return f"{name}_{prefix}"
+        gate_prefix = prefix                       # source-side (shared per source pop)
+        cur_prefix = f"{src_pop}__{prefix}"        # target-side (per incoming source)
+
+        def gconst(name):
+            return f"{name}_{gate_prefix}"
+
+        def cconst(name):
+            return f"{name}_{cur_prefix}"
 
         if nml in _EXP_ONE_TYPES:
             # Single-exponential conductance: dimensionless gate decays at tauDecay, a
             # pre-synaptic spike adds 1, current is w * gbase * (erev - v) * S.
-            gate = f"s_{prefix}"
+            gate = f"s_{gate_prefix}"
             summed_gate = gate
-            src["gate_odes"][gate] = f"-{gate} / {const('tauDecay')}"
+            src["gate_odes"][gate] = f"-{gate} / {gconst('tauDecay')}"
             src["gate_increments"].setdefault(gate, f"{gate} + 1")
-            src["namespace"][const("tauDecay")] = sparams["tauDecay"]
-            tgt["namespace"][const("gbase")] = sparams["gbase"]
-            tgt["namespace"][const("erev")] = sparams["erev"]
-            tgt["namespace"][const("w")] = (weight, "dimensionless")
-            current = f"{const('w')} * {const('gbase')} * ({const('erev')} - v) * S_{prefix}"
+            src["namespace"][gconst("tauDecay")] = sparams["tauDecay"]
+            tgt["namespace"][cconst("gbase")] = sparams["gbase"]
+            tgt["namespace"][cconst("erev")] = sparams["erev"]
+            tgt["namespace"][cconst("w")] = (weight, "dimensionless")
+            current = f"{cconst('w')} * {cconst('gbase')} * ({cconst('erev')} - v) * S_{cur_prefix}"
+            summed_var = f"S_{cur_prefix}"
         else:
-            r = self._reduce_custom(syn, sparams, prefix)
+            r = self._reduce_custom(syn, sparams, gate_prefix, cur_prefix)
             summed_gate = r["summed_gate"]
             src["gate_odes"].update(r["gate_odes"])
             for g, incr in r["increments"].items():
                 src["gate_increments"].setdefault(g, incr)
             src["namespace"].update(r["gate_consts"])
             tgt["namespace"].update(r["current_consts"])
-            tgt["namespace"][f"w_{prefix}"] = (weight, "dimensionless")
+            tgt["namespace"][f"w_{cur_prefix}"] = (weight, "dimensionless")
             current = r["current"]
+            summed_var = r["summed_var"]
 
-        # Hub: sum the summed gate over the source population; link into the target.
+        # Hub: sum the source's gate over the source population; link into the target.
         hub_name = f"hub_{src_pop}_{summed_gate}"
-        summed_var = f"S_{prefix}"
         field = f"Sig_{summed_gate}"
         hubs[hub_name] = {"source_pop": src_pop, "gate": summed_gate, "summed_var": field}
         tgt["linked"][summed_var] = (hub_name, field)
         tgt["current_terms"].append(current)
 
-    def _reduce_custom(self, syn, sparams, prefix):
+    def _reduce_custom(self, syn, sparams, gate_prefix, cur_prefix):
         """Reduce a custom conductance synapse's declared dynamics to Brian2 form.
 
-        Renames every synapse-local symbol with *prefix*, inlines the derived
-        variables into the current ``i`` once, and — because an all-to-all
-        conductance is delivered as a *population sum* — requires ``i`` to be
-        linear in the summed gate. Returns the gate ODEs / spike increments (on the
-        pre-synaptic side), the post-synaptic current (with the gate replaced by the
-        summed ``S`` and ``weight`` applied outside), and which namespace constants
-        belong to the gate vs the current, computed from the actual free symbols.
+        Renames the pre-synaptic gate ODEs / spike increments with *gate_prefix*
+        (they live on the source pop, shared across its projections of this dynamics)
+        and the post-synaptic current with *cur_prefix* (keyed by source pop, so two
+        sources of the same dynamics onto one target stay distinct). Inlines the
+        derived variables into the current ``i`` once, and — because an all-to-all
+        conductance is delivered as a *population sum* — requires ``i`` to be linear
+        in the summed gate. Returns the source gate ODEs/increments, the target
+        current (gate replaced by the summed ``S`` and ``weight`` applied outside),
+        the target linked-var name, and which constants belong to the gate vs current.
         """
         import sympy as sp
 
@@ -378,22 +402,23 @@ class Brian2Adapter(BaseAdapter):
 
         local = list(svs) + list(dvs) + list(sparams)
         syms = {n: sp.Symbol(n) for n in local + ["v"]}
-        rename = {syms[n]: sp.Symbol(f"{n}_{prefix}") for n in local}
-        rename[syms["v"]] = syms["v"]
+        # Gate side renames with gate_prefix; current side with cur_prefix.
+        gate_rename = {syms[n]: sp.Symbol(f"{n}_{gate_prefix}") for n in list(svs) + list(sparams)}
+        gate_rename[syms["v"]] = syms["v"]
 
         def parse(rhs):
             return sp.sympify(str(rhs), locals=syms)
 
-        # Gate ODEs + spike increments (renamed); track referenced constant names.
+        # Gate ODEs + spike increments (source side); track referenced constant names.
         gate_odes, increments, gate_ref = {}, {}, set()
 
         def _record(expr):
-            renamed = expr.subs(rename)
+            renamed = expr.subs(gate_rename)
             gate_ref.update(s.name for s in renamed.free_symbols)
             return render_expression(str(renamed), format="brian2")
 
         for n, sv in svs.items():
-            gate_odes[f"{n}_{prefix}"] = _record(parse(getattr(sv, "equation").rhs))
+            gate_odes[f"{n}_{gate_prefix}"] = _record(parse(getattr(sv, "equation").rhs))
         for ev in events.values():
             affect = getattr(getattr(ev, "affect", None), "rhs", None)
             if not affect:
@@ -401,7 +426,7 @@ class Brian2Adapter(BaseAdapter):
             for piece in str(affect).split(";"):
                 if "=" in piece:
                     lhs, rhs = piece.split("=", 1)
-                    increments[f"{lhs.strip()}_{prefix}"] = _record(parse(rhs))
+                    increments[f"{lhs.strip()}_{gate_prefix}"] = _record(parse(rhs))
 
         # Inline the derived variables into `i` (fixed point).
         dv_exprs = {n: parse(getattr(dv, "equation").rhs) for n, dv in dvs.items()}
@@ -426,20 +451,24 @@ class Brian2Adapter(BaseAdapter):
                 f"{summed[0]!r}; an all-to-all population sum requires linearity."
             )
 
-        cur_rename = dict(rename)
-        cur_rename[g] = sp.Symbol(f"S_{prefix}")
-        current_expr = sp.Symbol(f"w_{prefix}") * i_expr.subs(cur_rename)
+        # Current side: params -> cur_prefix, the gate -> the summed target var S_{cur_prefix}.
+        cur_rename = {syms[n]: sp.Symbol(f"{n}_{cur_prefix}") for n in sparams}
+        cur_rename[syms["v"]] = syms["v"]
+        cur_rename[g] = sp.Symbol(f"S_{cur_prefix}")
+        current_expr = sp.Symbol(f"w_{cur_prefix}") * i_expr.subs(cur_rename)
         current = render_expression(str(current_expr), format="brian2")
         current_ref = {s.name for s in current_expr.free_symbols}
 
-        all_consts = {f"{n}_{prefix}": sparams[n] for n in sparams}
+        gate_all = {f"{n}_{gate_prefix}": sparams[n] for n in sparams}
+        cur_all = {f"{n}_{cur_prefix}": sparams[n] for n in sparams}
         return {
-            "summed_gate": f"{summed[0]}_{prefix}",
+            "summed_gate": f"{summed[0]}_{gate_prefix}",
+            "summed_var": f"S_{cur_prefix}",
             "gate_odes": gate_odes,
             "increments": increments,
             "current": current,
-            "gate_consts": {k: v for k, v in all_consts.items() if k in gate_ref},
-            "current_consts": {k: v for k, v in all_consts.items() if k in current_ref},
+            "gate_consts": {k: v for k, v in gate_all.items() if k in gate_ref},
+            "current_consts": {k: v for k, v in cur_all.items() if k in current_ref},
         }
 
 
