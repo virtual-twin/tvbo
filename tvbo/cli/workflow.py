@@ -818,10 +818,10 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             "out_dir": plan.out_dir,
             "result_stem": result_stem,
             "container": plan.container,
-            # Whether this rule's `tvbo run` must prepend the layered-requirements venv
-            # (setup.sh built it on the image) to PYTHONPATH — see needs_container_layer.
-            "needs_container_layer": plan.needs_container_layer,
-            "container_extras_venv": plan.container_extras_venv,
+            # Whether this rule's `tvbo run` must prepend the requirements venv (setup.sh
+            # built it — native, or on the image) to PYTHONPATH — see needs_env_layer.
+            "needs_env_layer": plan.needs_env_layer,
+            "extras_venv": plan.container_extras_venv,
             # Resources are declared per experiment (a per-subject fit and a group
             # analysis need different walltime/memory), so each rule carries its own
             # block rather than sharing one study-wide dict.
@@ -875,11 +875,11 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
         (out_dir / "environment.yml").write_text(
             _render_template("environment.yml.mako", plan=_kit0), encoding="utf-8")
         _common.info("wrote requirements.txt + environment.yml")
-    if _kit0 is not None and _kit0.needs_container_layer:
+    if _kit0 is not None and _kit0.needs_env_layer:
         setup = out_dir / "setup.sh"
         setup.write_text(_render_template("setup.sh.mako", plan=_kit0), encoding="utf-8")
         setup.chmod(0o755)
-        _common.info("wrote setup.sh (layers declared requirements onto the container)")
+        _common.info("wrote setup.sh (provisions declared requirements into a venv)")
     # Match the Snakefile's global `container:` directive (keyed on the first
     # experiment): when it is emitted, enable Apptainer in the profile so the run
     # needs no extra flag; when it is not, leave the profile container-free.
@@ -1511,14 +1511,15 @@ def submit_kit(
         array = f"{array}%{array_throttle}"
     # Provision the container-requirements layer BEFORE submitting, so a containerized kit
     # runs with `tvbo workflow submit <archive>` and nothing else — no manual setup step.
-    # setup.sh is emitted only when a `container` + `requirements` are both declared; it is
-    # idempotent (the --system-site-packages venv is reused), so it is cheap to re-run.
-    _provision_container_layer(kit, dry_run=dry_run)
+    # setup.sh is emitted whenever `requirements` are declared; it provisions them into a
+    # --system-site-packages venv (native, or on the container) and is idempotent (the venv
+    # is reused), so it is cheap to re-run.
+    _provision_env_layer(kit, dry_run=dry_run)
     _execute_emitted(eng, kit, slurm_array=array, dry_run=dry_run)
 
 
-def _provision_container_layer(kit: Path, *, dry_run: bool) -> None:
-    """Run the kit's one-time setup.sh (layers declared requirements onto the container).
+def _provision_env_layer(kit: Path, *, dry_run: bool) -> None:
+    """Run the kit's one-time setup.sh (provisions declared requirements into a venv).
 
     No-op when the kit declares no layer (no setup.sh). On a dry run it only reports the
     step. A failure is fatal: without the layer, every task crashes on the first import of a
@@ -1528,15 +1529,15 @@ def _provision_container_layer(kit: Path, *, dry_run: bool) -> None:
     if not setup.exists():
         return
     if dry_run:
-        _common.info(f"[dry-run] would run {setup.name} (layer declared requirements onto the container)")
+        _common.info(f"[dry-run] would run {setup.name} (provision declared requirements into a venv)")
         return
-    _common.info("provisioning the container-requirements layer (setup.sh)…")
+    _common.info("provisioning the declared-requirements venv (setup.sh)…")
     result = subprocess.run(["bash", setup.name], cwd=str(kit))
     if result.returncode != 0:
         _common.die(
-            f"setup.sh failed (exit {result.returncode}). The requirements layer is not in "
+            f"setup.sh failed (exit {result.returncode}). The requirements venv is not in "
             f"place, so every task would crash on its first import — refusing to submit. "
-            f"Check that the container image and `apptainer`/`singularity` are available here."
+            f"For a containerized kit, check the image and `apptainer`/`singularity` are available here."
         )
 
 

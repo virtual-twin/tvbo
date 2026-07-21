@@ -315,16 +315,23 @@ def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=(
         backend=SimpleNamespace(name="tvboptim"),
         engine_block={"partition": "medium", "mem": "16G", "time": "02:00:00", "cpus_per_task": 4},
     )
-    for prop in ("pip_specs", "needs_container_layer", "container_extras_venv", "container_exec_flags"):
+    for prop in ("pip_specs", "needs_env_layer", "needs_container_layer",
+                 "container_extras_venv", "container_exec_flags"):
         setattr(p, prop, getattr(WorkflowPlan, prop).fget(p))
     return p
 
 
-def test_container_layer_predicate_needs_both_container_and_requirements():
-    """A study adds a dep (igl) onto a base image without rebuilding it — but ONLY when
-    both a container and requirements are declared; either alone is nothing to layer."""
+def test_env_layer_provisions_requirements_container_or_not():
+    """Requirements need provisioning wherever the tasks run: `needs_env_layer` is true as
+    soon as requirements exist (a native venv, or one layered on a container). The narrower
+    `needs_container_layer` only fires when a container is ALSO declared (the Slurm --env
+    path); with requirements but no container it stays a native venv."""
+    assert _layer_plan().needs_env_layer is True
+    assert _layer_plan(container=None).needs_env_layer is True          # native venv
+    assert _layer_plan(reqs=()).needs_env_layer is False                # nothing to provision
+
     assert _layer_plan().needs_container_layer is True
-    assert _layer_plan(container=None).needs_container_layer is False
+    assert _layer_plan(container=None).needs_container_layer is False   # no image to layer onto
     assert _layer_plan(reqs=()).needs_container_layer is False
 
 
@@ -337,8 +344,7 @@ def test_concrete_container_reference_passes_through_unchanged():
                 "docker://ghcr.io/virtual-twin/tvbo:dev",
                 "docker://ghcr.io/virtual-twin/tvbo:0.5.3",
                 "docker://ghcr.io/virtual-twin/tvbo@sha256:abc"):
-        assert resolve_container_ref(ref, has_requirements=False) == ref
-        assert resolve_container_ref(ref, has_requirements=True) == ref
+        assert resolve_container_ref(ref) == ref
 
 
 def test_unpinned_reference_resolves_to_version_matched_image(monkeypatch):
@@ -351,24 +357,19 @@ def test_unpinned_reference_resolves_to_version_matched_image(monkeypatch):
     monkeypatch.delenv("TVBO_CONTAINER_IMAGE", raising=False)
     monkeypatch.setenv("TVBO_CONTAINER_TAG", "9.9.9")
     want = "docker://ghcr.io/virtual-twin/tvbo:9.9.9"
-    assert _workflow.resolve_container_ref("tvbo", has_requirements=False) == want
-    assert _workflow.resolve_container_ref("default", has_requirements=False) == want
-    assert _workflow.resolve_container_ref(
-        "docker://ghcr.io/virtual-twin/tvbo", has_requirements=False) == want
+    assert _workflow.resolve_container_ref("tvbo") == want
+    assert _workflow.resolve_container_ref("default") == want
+    assert _workflow.resolve_container_ref("docker://ghcr.io/virtual-twin/tvbo") == want
 
 
-def test_container_defaults_from_requirements_but_stays_bare_otherwise(monkeypatch):
-    """Requirements imply container-based execution (the deps layer onto a base), so an
-    undeclared container defaults to the tvbo image; with neither, tasks run bare."""
+def test_no_container_means_none_even_with_requirements():
+    """Requirements do NOT force a container: an undeclared container stays None (the deps
+    are provisioned into a native venv by setup.sh), and no container + no requirements is
+    a bare run. The `container` field alone chooses the substrate."""
     from tvbo.cli import _workflow
 
-    monkeypatch.delenv("TVBO_CONTAINER", raising=False)
-    monkeypatch.delenv("TVBO_CONTAINER_IMAGE", raising=False)
-    monkeypatch.setenv("TVBO_CONTAINER_TAG", "9.9.9")
-    assert _workflow.resolve_container_ref(None, has_requirements=False) is None
-    assert _workflow.resolve_container_ref("", has_requirements=False) is None
-    assert (_workflow.resolve_container_ref(None, has_requirements=True)
-            == "docker://ghcr.io/virtual-twin/tvbo:9.9.9")
+    assert _workflow.resolve_container_ref(None) is None
+    assert _workflow.resolve_container_ref("") is None
 
 
 def test_full_container_env_override_wins_verbatim(monkeypatch):
@@ -377,8 +378,7 @@ def test_full_container_env_override_wins_verbatim(monkeypatch):
     from tvbo.cli import _workflow
 
     monkeypatch.setenv("TVBO_CONTAINER", "docker://mirror.local/tvbo:pinned")
-    assert (_workflow.resolve_container_ref("tvbo", has_requirements=True)
-            == "docker://mirror.local/tvbo:pinned")
+    assert _workflow.resolve_container_ref("tvbo") == "docker://mirror.local/tvbo:pinned"
 
 
 def test_fan_input_expr_expands_over_every_fanned_cell():

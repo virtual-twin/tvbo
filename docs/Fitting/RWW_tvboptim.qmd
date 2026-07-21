@@ -39,7 +39,7 @@ AABBCC
 DDEEFF
 GGHHII
 """
-fig, axes = plt.subplot_mosaic(mosaic, layout='tight', figsize=(8, 6))
+fig, axes = plt.subplot_mosaic(mosaic, layout='compressed', figsize=(8, 6))
 cmap = plt.cm.cividis
 
 fc_target = results.integration.observations.empirical_fc

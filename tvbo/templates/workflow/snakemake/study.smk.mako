@@ -162,13 +162,14 @@ rule ${ep["rule_name"]}:
 % for _line in _activation(_b):
         ${repr(_line + " && ")}
 % endfor
-% if ep.get("needs_container_layer"):
-        ## Declared requirements were layered onto the image by setup.sh (run it once first)
-        ## into a --system-site-packages venv; expose it to this rule's `tvbo run` — which
-        ## Snakemake executes INSIDE the container — via PYTHONPATH. The `python*` glob picks
-        ## the venv's interpreter version; the `${...}` braces are doubled so Snakemake's
-        ## `.format()` leaves them for the shell (single braces are wildcards).
-        "export PYTHONPATH=$(echo ${ep['container_extras_venv']}/lib/python*/site-packages):${'$'}{{PYTHONPATH:-}} && "
+% if ep.get("needs_env_layer"):
+        ## Declared requirements were provisioned by setup.sh (run it once first) into a
+        ## --system-site-packages venv — native, or on the image when a container is
+        ## declared; either way expose it to this rule's `tvbo run` via PYTHONPATH (a plain
+        ## shell prepend, substrate-agnostic). The `python*` glob picks the venv's
+        ## interpreter version; the `${...}` braces are doubled so Snakemake's `.format()`
+        ## leaves them for the shell (single braces are wildcards).
+        "export PYTHONPATH=$(echo ${ep['extras_venv']}/lib/python*/site-packages):${'$'}{{PYTHONPATH:-}} && "
 % endif
 % if context.get("bundled_code"):
         ## Snakemake .format()s the shell string, so the ${PYTHONPATH:-} braces must be
