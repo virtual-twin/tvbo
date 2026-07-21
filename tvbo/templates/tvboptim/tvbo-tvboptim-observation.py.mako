@@ -1250,6 +1250,15 @@ class ${class_name}(AbstractMonitor):
             elif arg_val in observations:
                 # Reference to another observation's data
                 call_parts.append(f"{arg_name}=_data")
+            elif _node_label(arg_val):
+                # network.positions / network.instrength → the per-node vector embedded once
+                # as a module constant (network_node_arrays), so a host callable receives the
+                # region centroids / in-strength. Without this the ref falls through to the
+                # string-literal branch below and the callable gets the raw 'network.positions'.
+                call_parts.append(f"{arg_name}={_node_const(_node_label(arg_val))}")
+            elif _edge_label(arg_val):
+                # network.weight(s)/length(s)/edges.<label> → the embedded connectome matrix.
+                call_parts.append(f"{arg_name}={_edge_const(_edge_label(arg_val))}")
             elif '.' in arg_val and not arg_val.replace('.', '').replace('-', '').isdigit():
                 # Dotted reference: check for observation.attribute pattern (e.g., simulated_psd.psd)
                 prefix, attr = arg_val.split('.', 1)

@@ -2000,7 +2000,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ds.close()
         return out
 
-    def run(self, format="tvboptim", initial_conditions=None, results_root=None, **kwargs):
+    def run(self, format=None, initial_conditions=None, results_root=None, **kwargs):
         """Configure, build, and run the experiment on a backend.
 
         Dispatches on `format` to the corresponding backend (`tvb`, `tvboptim`,
@@ -2008,7 +2008,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         and wraps the output in an [`ExperimentResult`](../data/types.qmd).
 
         Args:
-            format: Backend identifier selecting how to run the experiment.
+            format: Backend identifier selecting how to run the experiment. When
+                omitted, it is resolved from the experiment's declared
+                ``execution.backend`` (e.g. a spiking model that sets ``brian2``),
+                falling back to ``tvboptim``.
             initial_conditions: Optional history to seed the simulation
                 (used by the JAX backend); defaults to conditions collected
                 from the experiment.
@@ -2045,6 +2048,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         self.configure()
         Bunch()
+
+        # Resolve the backend declaratively when the caller passed none: the
+        # experiment's own ``execution.backend`` selects the engine (a spiking
+        # network declares ``brian2``), defaulting to ``tvboptim``.
+        if format is None:
+            format = getattr(getattr(self, "execution", None), "backend", None) or "tvboptim"
 
         if format.lower() == "tvb":
             _random_ic = kwargs.pop("random_initial_conditions", False)

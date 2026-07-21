@@ -896,9 +896,9 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
     boundaries, and the Volterra-scaled samples are written into a preallocated BOLD
     buffer — so the full trajectory is never held. Byte-identical to the pipeline value
     to f64 rounding (``strided_convolve`` is ~1e-12 vs the FFT ``fftconvolve``), with no
-    FFT buffer. Recast is faithful only when the decimation is a pure integer stride
-    (``temporal_average`` with ``period_samples == 1`` — identity — or a ``SubSample``);
-    an averaging ``temporal_average`` is NOT streamable and raises.
+    FFT buffer. Streamable only when the decimation is a pure ``subsample`` stride;
+    ``temporal_average`` is an averaging window (even ``period_samples == 1`` shifts by
+    one sample — it reproduces tvboptim TemporalAverage, not identity) and raises.
 
     Returns a reduction dict tagged ``kind: 'convolution'`` carrying the lifted constants
     (source, HRF-kernel call, decimation stride, TR stride, Volterra ``k_1``/``V_0``); the
@@ -979,20 +979,17 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
             _kw.append(f"{_k}={_v}")
     red["kernel_call"] = f"{kernel_fname}({', '.join(_kw)})"
 
-    # Decimation stride (raw integration steps per downsampled sample). Only a pure
-    # stride is streamable: temporal_average(period_samples=1) is identity; anything
-    # that averages loses the block-additivity the reducer relies on.
-    _dec = _step_or_func_arg("temporal_average", "period_samples", None)
-    if _dec is not None:
-        ds_steps = int(to_numeric(_dec))
-        if ds_steps != 1:
-            raise ValueError(
-                f"Observation {name!r}: reduce: streaming requires a pure-stride decimation, but "
-                f"temporal_average uses period_samples={ds_steps} (averaging), which is not streamable. "
-                "Use a SubSample decimation (uniform integer stride) or period_samples=1."
-            )
-    else:
-        ds_steps = int(to_numeric(_step_or_func_arg("subsample", "step", 1) or 1))
+    # Decimation stride (raw integration steps per downsampled sample). Streaming needs a
+    # pure subsample stride; temporal_average is an averaging window (even period_samples=1
+    # shifts by one sample) and is not block-additive, so it cannot be streamed faithfully.
+    if _step_by_func("temporal_average") is not None:
+        raise ValueError(
+            f"Observation {name!r}: reduce: streaming requires a subsample decimation, but the "
+            "pipeline decimates with temporal_average (an averaging window; even period_samples=1 "
+            "shifts by one sample). Replace it with a subsample step, e.g. a function "
+            "`subsample: {equation: {rhs: 'subsample(data, step - 1, step)'}}` and `step: <stride>`."
+        )
+    ds_steps = int(to_numeric(_step_or_func_arg("subsample", "step", 1) or 1))
     red["ds_steps"] = ds_steps
 
     # TR stride (downsampled samples per BOLD repetition time), from the pipeline's

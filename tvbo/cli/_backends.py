@@ -115,6 +115,13 @@ BACKENDS: dict[str, BackendSpec] = {
         capabilities=frozenset({"NumPyExecution"}),
         vectorize_axes=frozenset(),
     ),
+    "brian2": BackendSpec(
+        name="brian2", label="Brian2",
+        tasks=frozenset({"ODEIntegration", "EventDrivenIntegration"}),
+        capabilities=frozenset({"SpikingSimulation", "NumPyExecution", "CodeGeneration"}),
+        vectorize_axes=frozenset(),  # a sweep fans out into per-cell runs
+        aliases=("brian",),
+    ),
 }
 
 
