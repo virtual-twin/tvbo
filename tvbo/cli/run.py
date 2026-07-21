@@ -27,8 +27,9 @@ from . import _common
 def run(
     spec: str = typer.Argument(..., help="Path, CURIE, or DB name."),
     backend: str = typer.Option(
-        "tvboptim", "--backend", "-b",
-        help="Execution backend (tvboptim, tvb, jax, pyrates, networkdynamics, ...).",
+        None, "--backend", "-b",
+        help="Execution backend (tvboptim, tvb, jax, brian2, pyrates, networkdynamics, ...). "
+             "Default: each experiment's declared execution.backend, else tvboptim.",
     ),
     out_dir: Path = typer.Option(
         None, "--out-dir", "-o", help="Directory to write results into."
@@ -158,13 +159,13 @@ def run(
                     )
             _apply_metadata_overrides(exp, set_)
             _apply_axis_pins(exp, pin)
-            _run_one(exp, backend, out_dir, kwargs, chunk_i, chunk_n, limit)
+            _run_one(exp, _effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
     if kind == "experiment":
         _apply_metadata_overrides(obj, set_)
         _apply_axis_pins(obj, pin)
-        _run_one(obj, backend, out_dir, kwargs, chunk_i, chunk_n, limit)
+        _run_one(obj, _effective_backend(obj, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
     _common.die(f"`tvbo run` does not yet support kind={kind!r}.")
@@ -173,6 +174,19 @@ def run(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _effective_backend(experiment, cli_backend: str | None) -> str:
+    """Resolve which backend runs *experiment*.
+
+    An explicit ``--backend`` wins for the whole run; otherwise each experiment
+    self-selects via its declared ``execution.backend`` (e.g. a spiking network
+    sets ``brian2``), falling back to ``tvboptim``. This lets one study mix a
+    mean-field sweep and a spiking column and run each on the right engine.
+    """
+    if cli_backend:
+        return cli_backend
+    return getattr(getattr(experiment, "execution", None), "backend", None) or "tvboptim"
 
 def _parse_chunk(s: str) -> tuple[int, int]:
     if "/" not in s:

@@ -7,8 +7,9 @@ boundaries via ``strided_convolve`` (no FFT buffer), and writes the Volterra-sca
 samples into a preallocated buffer — so the full trajectory is never held. These tests pin:
 
 * the resolver lifts the kernel / decimation stride / TR stride / Volterra scaling from the
-  declared pipeline, is opt-in (absent ``reduce`` keeps the post-scan path), and rejects a
-  non-stream-safe averaging decimation;
+  declared pipeline, is opt-in (absent ``reduce`` keeps the post-scan path), and requires a
+  pure ``subsample`` decimation — a ``temporal_average`` window is rejected (even
+  ``period_samples=1`` shifts by one sample, reproducing tvboptim TemporalAverage);
 * the emitted reducer is byte-identical (to f64 rounding, ``strided_convolve`` ~1e-12 vs the
   FFT) to a from-scratch SubSampling BOLD — the decimation ``streaming_hrf_bold`` requires —
   both cold (zero ring) and warm-started, and identical across ANY period-aligned block
@@ -47,13 +48,23 @@ class _Exp:
         self._source_file = None
 
 
-def _bold_observation(period_samples=1, tr_stride=180, k_1=5.6, V_0=0.02, reduce="streaming"):
-    """An HRF-Volterra ``bold`` pipeline (kernel -> decimation -> volterra -> subsample-at-TR)."""
+def _bold_observation(ds_step=1, tr_stride=180, k_1=5.6, V_0=0.02, reduce="streaming",
+                      decimation="subsample"):
+    """An HRF-Volterra ``bold`` pipeline (kernel -> decimation -> volterra -> subsample-at-TR).
+
+    ``decimation`` selects the pipeline's downsampling step: ``subsample`` (backend-independent
+    pure stride, the only stream-safe form) or ``temporal_average`` (averaging window; rejected).
+    """
     functions = {
         "hrf_kernel": Function(name="hrf_kernel", time_range=Range(lo=0, hi=20000.0, n=5000)),
+        "subsample": Function(
+            name="subsample",
+            equation=Equation(rhs="subsample(data, step - 1, step)"),
+            arguments={"step": Argument(name="step", value=ds_step)},
+        ),
         "temporal_average": Function(
             name="temporal_average",
-            arguments={"period_samples": Argument(name="period_samples", value=period_samples)},
+            arguments={"period_samples": Argument(name="period_samples", value=ds_step)},
         ),
         "subsample_bold": Function(
             name="subsample_bold", arguments={"s": Argument(name="s", value=tr_stride)}
@@ -78,7 +89,7 @@ def _bold_observation(period_samples=1, tr_stride=180, k_1=5.6, V_0=0.02, reduce
             # Steps reference their Function by name (as a loaded YAML pipeline does); the
             # definitions (time_range, argument/equation defaults) live in experiment.functions.
             FunctionCall(function="hrf_kernel"),
-            FunctionCall(function="temporal_average", output="downsampled_data"),
+            FunctionCall(function=decimation, output="downsampled_data"),
             FunctionCall(function="volterra_transform"),
             FunctionCall(function="subsample_bold"),
         ],
@@ -112,9 +123,11 @@ def test_predicate_call_without_experiment_is_side_effect_free_and_truthy():
     assert red is not None and red["kind"] == "convolution"
 
 
-def test_averaging_decimation_is_rejected_as_not_streamable():
-    obs, exp = _bold_observation(period_samples=2)  # temporal_average that AVERAGES
-    with pytest.raises(ValueError, match="not streamable"):
+def test_temporal_average_decimation_is_rejected():
+    # temporal_average is not stream-safe even at period_samples=1 (it shifts by one sample,
+    # reproducing tvboptim TemporalAverage); streaming requires a pure subsample decimation.
+    obs, exp = _bold_observation(decimation="temporal_average")
+    with pytest.raises(ValueError, match="subsample decimation"):
         resolve_reduction(obs, exp)
 
 

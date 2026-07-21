@@ -28,7 +28,7 @@ EXP = "experiment:JR_MEG_FrequencyGradient_Optimization"
 
 def test_backends_match_ontology_keys():
     keys = {b.name for b in list_backends()}
-    assert keys == {"jax", "tvb", "pyrates", "tvboptim", "networkdynamics", "bifurcationkit", "numpy"}
+    assert keys == {"jax", "tvb", "pyrates", "tvboptim", "networkdynamics", "bifurcationkit", "numpy", "brian2"}
 
 
 def test_jax_vectorizes_parameters_and_seeds():
@@ -1103,3 +1103,25 @@ def test_pde_experiment_template_has_main_block():
 
     src = Path("tvbo/templates/pde/tvbo-pde-fem.py.mako").read_text()
     assert 'if __name__ == "__main__":' in src
+
+
+def test_bundler_carries_a_callables_local_helper_but_not_stdlib_or_installed(tmp_path, monkeypatch):
+    """A recipe callable often imports a LOCAL helper of its own (e.g. Koller's
+    wave_detection_methods, pulled in via a runtime sys.path insert). The kit must carry it
+    — else `import <helper>` fails on the node and the kit is not self-contained. But stdlib
+    and installed packages must NOT be swept in (they ship via requirements)."""
+    import sys
+    from tvbo.cli.workflow import _local_module_deps
+
+    (tmp_path / "helper_b.py").write_text("VALUE = 1\n")
+    (tmp_path / "helper_a.py").write_text("import os\nimport json\nimport helper_b\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    import importlib
+    a = importlib.import_module("helper_a")
+    try:
+        deps = dict(_local_module_deps(a, set()))
+        assert "helper_b" in deps and deps["helper_b"].endswith("helper_b.py")   # the local helper
+        assert "os" not in deps and "json" not in deps                            # stdlib excluded
+    finally:
+        for m in ("helper_a", "helper_b"):
+            sys.modules.pop(m, None)

@@ -4402,6 +4402,15 @@ classes:
                 range: string
                 ifabsent: string(cpu)
                 description: "Hardware accelerator: 'cpu', 'gpu', 'tpu'"
+            backend:
+                range: string
+                description: >-
+                    Execution backend this experiment runs on when no backend is
+                    passed explicitly (e.g. 'tvboptim', 'tvb', 'jax', 'julia',
+                    'brian2'). Declares the engine the experiment requires — a
+                    spiking point-neuron network sets 'brian2', a mean-field model
+                    leaves it unset. run(format=...) and ``tvbo run --backend``
+                    override it; when unset the default backend (tvboptim) is used.
             batch_size:
                 range: integer
                 description: "Batch size for vectorized operations (None = auto)"

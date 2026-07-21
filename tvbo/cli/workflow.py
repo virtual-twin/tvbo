@@ -277,7 +277,17 @@ def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
     names = set(re.findall(r'module:\s*["\']?([A-Za-z_][\w.]*)', spec_yaml_text))
     bundled: list[str] = []
     code_dir = out_dir / "code"
+    seen: set[str] = set()
+
+    def _copy(name: str, f: str) -> None:
+        code_dir.mkdir(exist_ok=True)
+        shutil.copy2(f, code_dir / Path(f).name)
+        bundled.append(Path(f).name)
+        seen.add(name)
+
     for name in sorted(names):
+        if name in seen:
+            continue
         try:
             mod = importlib.import_module(name)
         except Exception:
@@ -285,12 +295,62 @@ def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
         f = getattr(mod, "__file__", None) or ""
         if not f.endswith(".py") or "site-packages" in f or "dist-packages" in f:
             continue  # installed package — comes from the emitted requirements, not bundled
-        code_dir.mkdir(exist_ok=True)
-        shutil.copy2(f, code_dir / Path(f).name)
-        bundled.append(Path(f).name)
+        _copy(name, f)
+        # A callable often imports a LOCAL helper of its own (e.g. Koller's
+        # wave_detection_methods, pulled in via a runtime sys.path insert) — not a `module:`
+        # reference and not an installed package, so nothing else carries it and the kit is
+        # not self-contained. Follow those transitive local, standalone imports too.
+        for dep_name, dep_f in _local_module_deps(mod, seen):
+            _copy(dep_name, dep_f)
     if bundled:
         _common.info(f"bundled callable modules → code/: {', '.join(bundled)}")
     return bool(bundled)
+
+
+def _local_module_deps(mod, seen: set[str]):
+    """Yield (name, file) for the LOCAL, STANDALONE modules ``mod`` transitively imports.
+
+    Resolves each imported name through ``sys.modules`` (``mod`` is already imported, so its
+    dependencies are populated) and keeps only those backed by a plain local ``.py`` — NOT an
+    installed package (``site-packages``), NOT a package with an ``__init__`` (those ship via
+    requirements), and NOT ``tvbo`` itself. This is exactly the shape of a recipe's own helper
+    module, so following it makes the emitted kit self-contained without vendoring the helper
+    into the recipe tree.
+    """
+    import ast
+    import sys
+
+    src = getattr(mod, "__file__", None)
+    if not src or not src.endswith(".py"):
+        return
+    try:
+        tree = ast.parse(Path(src).read_text(encoding="utf-8"))
+    except Exception:
+        return
+    # Everything under the interpreter's own roots is stdlib or an installed dep (both live
+    # in the Python install / its site-packages); a recipe's helper lives in the study tree,
+    # outside them. That single check excludes the whole stdlib AND every installed package,
+    # so only genuine local helpers survive.
+    py_roots = tuple(str(Path(p).resolve()) for p in {sys.base_prefix, sys.prefix, sys.exec_prefix})
+    imported: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(a.name.split(".")[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            imported.add(node.module.split(".")[0])
+    for name in sorted(imported):
+        if name in seen or name == "tvbo" or name in sys.stdlib_module_names:
+            continue
+        dep = sys.modules.get(name)
+        f = getattr(dep, "__file__", None) if dep is not None else None
+        if not f or not f.endswith(".py") or Path(f).name == "__init__.py":
+            continue  # missing, a C-extension, or a package (provisioned via requirements)
+        rf = str(Path(f).resolve())
+        if rf.startswith(py_roots) or "site-packages" in rf or "dist-packages" in rf:
+            continue  # stdlib or installed — not a local recipe helper
+        seen.add(name)
+        yield name, f
+        yield from _local_module_deps(dep, seen)
 
 
 def _parse_bundle_select(items: list[str]) -> dict[str, str]:
@@ -520,7 +580,10 @@ def _write_readme(out_dir: Path, *, engine: str, plans, script_relpath: str | No
 @app.command("plan", help="Show the resolved workflow plan (no artefact emitted).")
 def plan_cmd(
     spec: str = typer.Argument(..., help="Path, CURIE, or DB name (Study or Experiment)."),
-    backend: str = typer.Option("tvboptim", "--backend", "-b"),
+    backend: str = typer.Option(
+        None, "--backend", "-b",
+        help="Execution backend; default: the experiment's declared execution.backend, else tvboptim.",
+    ),
     engine: str = typer.Option("local", "--engine", "-e"),
     experiment: str = typer.Option(None, "--experiment"),
     override: list[str] = typer.Option(
@@ -1039,7 +1102,10 @@ def _detect_engine_from_kit(kit_dir: Path) -> str | None:
 @app.command("slurm", help="Emit a self-contained sbatch kit (artefact + scripts + spec).")
 def slurm(
     spec: str = typer.Argument(...),
-    backend: str = typer.Option("tvboptim", "--backend", "-b"),
+    backend: str = typer.Option(
+        None, "--backend", "-b",
+        help="Execution backend; default: the experiment's declared execution.backend, else tvboptim.",
+    ),
     experiment: str = typer.Option(None, "--experiment"),
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
@@ -1067,7 +1133,10 @@ def slurm(
 @app.command("snakemake", help="Emit a self-contained Snakemake kit (Snakefile + scripts + spec).")
 def snakemake(
     spec: str = typer.Argument(...),
-    backend: str = typer.Option("tvboptim", "--backend", "-b"),
+    backend: str = typer.Option(
+        None, "--backend", "-b",
+        help="Execution backend; default: the experiment's declared execution.backend, else tvboptim.",
+    ),
     experiment: str = typer.Option(None, "--experiment"),
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
@@ -1095,7 +1164,10 @@ def snakemake(
 @app.command("nextflow", help="Emit a self-contained Nextflow kit (main.nf + scripts + spec).")
 def nextflow(
     spec: str = typer.Argument(...),
-    backend: str = typer.Option("tvboptim", "--backend", "-b"),
+    backend: str = typer.Option(
+        None, "--backend", "-b",
+        help="Execution backend; default: the experiment's declared execution.backend, else tvboptim.",
+    ),
     experiment: str = typer.Option(None, "--experiment"),
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),
@@ -1154,7 +1226,10 @@ def finalize(
 def run_workflow(
     engine: str = typer.Argument(..., help="Execution engine: slurm | snakemake | nextflow."),
     spec: str = typer.Argument(..., help="Path, CURIE, or DB name (Study or Experiment)."),
-    backend: str = typer.Option("tvboptim", "--backend", "-b"),
+    backend: str = typer.Option(
+        None, "--backend", "-b",
+        help="Execution backend; default: the experiment's declared execution.backend, else tvboptim.",
+    ),
     experiment: str = typer.Option(None, "--experiment"),
     output: Path = typer.Option(None, "-o", "--output", help="Output directory."),
     override: list[str] = typer.Option([], "--set"),

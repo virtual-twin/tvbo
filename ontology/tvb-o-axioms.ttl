@@ -162,6 +162,8 @@ tvbo:DelayHistoryBuffer   a tvbo:BackendCapability ; rdfs:label "Delay history b
     rdfs:comment "Storage and interpolation of past states required for DDE/SDDE integration."@en .
 tvbo:StochasticSolver     a tvbo:BackendCapability ; rdfs:label "Stochastic solver"@en .
 tvbo:StiffSolver          a tvbo:BackendCapability ; rdfs:label "Stiff solver"@en .
+tvbo:SpikingSimulation    a tvbo:BackendCapability ; rdfs:label "Spiking (point-neuron) simulation"@en ;
+    rdfs:comment "Integration of point-neuron populations with threshold-reset spiking and event-delivered synapses."@en .
 
 # Backends (instances) and their task / capability declarations.
 
@@ -208,6 +210,12 @@ tvbo:BifurcationKit a tvbo:Backend ;
     rdfs:label "BifurcationKit.jl"@en ;
     tvbo:supportsTask       tvbo:NumericalContinuation, tvbo:BifurcationAnalysis ;
     tvbo:providesCapability tvbo:ContinuationSolver, tvbo:JuliaJIT .
+
+tvbo:Brian2 a tvbo:Backend ;
+    rdfs:label "Brian2"@en ;
+    tvbo:supportsTask       tvbo:ODEIntegration, tvbo:EventDrivenIntegration ;
+    tvbo:providesCapability tvbo:SpikingSimulation, tvbo:NumPyExecution,
+                            tvbo:CodeGeneration .
 
 #
 # ─────────────────────────────────────────────────────────────────

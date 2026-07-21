@@ -144,6 +144,10 @@ class Brian2Adapter(BaseAdapter):
 
         if codegen_target:
             brian2.prefs.codegen.target = codegen_target
+        # An unset seed falls back to the experiment's declared execution.random_seed,
+        # so a run reproduces from the recipe without a manual seed argument.
+        if seed is None:
+            seed = getattr(getattr(self.experiment, "execution", None), "random_seed", None)
         model = self._build_context()
         net, meta = _instantiate(model, seed=seed, record_v=record_v)
         duration = model["duration_ms"]  # milliseconds

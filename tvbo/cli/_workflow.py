@@ -483,6 +483,10 @@ def plan(
     ``study.yaml`` (§4.10.1). Missing keys use sensible defaults.
     """
     spec = dict(workflow_spec or {})
+    # No explicit backend → the experiment self-selects via execution.backend
+    # (a spiking network declares 'brian2'), defaulting to tvboptim.
+    if not backend:
+        backend = getattr(getattr(experiment, "execution", None), "backend", None) or "tvboptim"
     bk = resolve_backend(backend)
 
     distribute = dict(spec.get("distribute") or {})
