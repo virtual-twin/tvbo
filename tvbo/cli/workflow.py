@@ -234,6 +234,18 @@ def _freeze_spec_yaml(experiment, spec_dir: Path, *, workflow_spec: dict | None 
         if getattr(net, "parameters", None):
             for k, v in dict(net.parameters).items():
                 ref.parameters[k] = v
+        # Carry the scalar identity + measure declarations. The measure lists in
+        # particular are not decoration: `Network.observations` (and the structural
+        # resolution) gate on them, so a companion h5 that holds `BoldCorrelation`
+        # data is invisible unless the reloaded network also declares
+        # `observational_measures: [BoldCorrelation]`. Copying every non-None scalar
+        # (rather than a hand-picked list) means the next such field survives the
+        # round-trip too, instead of silently dropping a measure the way this did.
+        for _f in ("label", "descriptor", "number_of_nodes", "distance_unit",
+                   "time_unit", "structural_measures", "observational_measures"):
+            _v = getattr(net, _f, None)
+            if _v is not None:
+                setattr(ref, _f, list(_v) if isinstance(_v, (list, tuple)) else _v)
 
         experiment.network = ref
         return experiment.to_yaml()
