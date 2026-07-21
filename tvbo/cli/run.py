@@ -98,6 +98,19 @@ def run(
              "recorded outputs are saved (leaves + `record: true`); this keeps the "
              "scaffolding (e.g. a raw BOLD feeding an FC) for debugging.",
     ),
+    max_iterations: int = typer.Option(
+        None, "--max-iterations", min=1,
+        help="Smoke cap: run at most N tuning iterations per algorithm AND per stage for "
+             "THIS run (the recipe is untouched). A fit's post-tuning evaluation — the "
+             "memory- and time-critical part of a long-horizon fit — is independent of how "
+             "many tuning iterations preceded it, so `--max-iterations 1` reaches it in "
+             "minutes to verify it runs/streams within memory.",
+    ),
+    smoke: bool = typer.Option(
+        False, "--smoke",
+        help="Shorthand for --max-iterations 1: the quickest run that still reaches the "
+             "post-tuning evaluation (verify a fit executes / streams end to end).",
+    ),
 ) -> None:
     """Run a SPEC (experiment or study) in the selected backend.
 
@@ -115,6 +128,9 @@ def run(
         return
 
     kind, obj = _common.resolve_spec(spec)
+
+    # --smoke is shorthand for --max-iterations 1; an explicit --max-iterations wins.
+    eff_max_iterations = max_iterations if max_iterations is not None else (1 if smoke else None)
 
     kwargs: dict = {}
     if duration is not None:
@@ -159,12 +175,14 @@ def run(
                     )
             _apply_metadata_overrides(exp, set_)
             _apply_axis_pins(exp, pin)
+            _apply_max_iterations(exp, eff_max_iterations)
             _run_one(exp, _effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
     if kind == "experiment":
         _apply_metadata_overrides(obj, set_)
         _apply_axis_pins(obj, pin)
+        _apply_max_iterations(obj, eff_max_iterations)
         _run_one(obj, _effective_backend(obj, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         return
 
@@ -254,6 +272,49 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
             except Exception:
                 setattr(cur, leaf, value)
         _common.info(f"--set {path} = {value!r}")
+
+
+def _apply_max_iterations(experiment, n: int) -> None:
+    """Cap every algorithm's and stage's ``n_iterations`` (and any optimization's
+    ``max_iterations``) to *n* for THIS run — a smoke override, the recipe untouched.
+
+    The post-tuning evaluation of a fit — the memory- and time-critical part of a
+    long-horizon run — is independent of how many tuning iterations preceded it, so a
+    handful of iterations is enough to verify the fit executes and its long-horizon
+    post-tuning observables stream within memory. Mirrors ``--set``: it mutates only the
+    loaded object, so one recipe stays the single source of truth.
+    """
+    if n is None:
+        return
+    _capped = 0
+
+    def _cap(holder):
+        nonlocal _capped
+        if isinstance(holder, dict):
+            cur = holder.get("n_iterations")
+            if isinstance(cur, int) and cur > n:
+                holder["n_iterations"] = n
+                _capped += 1
+        else:
+            cur = getattr(holder, "n_iterations", None)
+            if isinstance(cur, int) and cur > n:
+                setattr(holder, "n_iterations", n)
+                _capped += 1
+
+    algos = getattr(experiment, "algorithms", None) or {}
+    for algo in (algos.values() if hasattr(algos, "values") else algos):
+        _cap(algo)
+        for stage in (getattr(algo, "stages", None) or []):
+            _cap(stage)
+
+    opts = getattr(experiment, "optimizations", None) or {}
+    for opt in (opts.values() if hasattr(opts, "values") else opts):
+        cur = getattr(opt, "max_iterations", None)
+        if isinstance(cur, int) and cur > n:
+            setattr(opt, "max_iterations", n)
+            _capped += 1
+
+    _common.info(f"--max-iterations {n}: capped {_capped} iteration count(s)")
 
 
 def _apply_axis_pins(experiment, pins: list[str]) -> None:

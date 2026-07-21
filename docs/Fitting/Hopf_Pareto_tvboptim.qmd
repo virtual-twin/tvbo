@@ -46,9 +46,7 @@ exp = SimulationExperiment.from_db("Hopf_Pareto_ParallelOpt")
 # machinery is scale-independent — see tests/test_tvboptim_byte_identity.py.
 exp.integration.duration = 30000.0
 exp.integration.transient_time = 30000.0
-for _p in exp.explorations["ga_presearch"].parameters:
-    if _p.name == "num_generations":
-        _p.value = 12
+exp.explorations["ga_presearch"].parameters["num_generations"].value = 12
 exp.optimizations["refine"].max_iterations = 40
 
 results = exp.run("tvboptim", mode="all")

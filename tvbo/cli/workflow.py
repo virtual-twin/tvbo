@@ -737,6 +737,13 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
         key = _san(_common.experiment_key(exp))
         base = _wf.merge_workflow_spec(study, exp)
         spec_dict = _deep_merge(base, parsed["merged"])
+        # Smoke cap: `--set max_iterations=N` (or `--set smoke=true` => 1) makes each rule's
+        # `tvbo run` cap tuning iterations. It is a RUN modifier, not a workflow-block field,
+        # so pop it before the plan/freeze (it must never enter the frozen spec's workflow
+        # block) and carry it to the template as a `tvbo run --max-iterations` flag.
+        _max_iter = spec_dict.pop("max_iterations", None)
+        if spec_dict.pop("smoke", False) and _max_iter is None:
+            _max_iter = 1
         plan = _wf.plan(study_key=str(study_key), experiment=exp, backend=backend,
                         engine="snakemake", workflow_spec=spec_dict,
                         overrides=parsed["records"], source_spec=spec, experiment_selector=key)
@@ -772,6 +779,8 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             "spec_relpath": spec_relpath,
             "select": select,
             "backend": backend,
+            # Smoke iteration cap threaded to the rule's `tvbo run --max-iterations` (None => uncapped).
+            "max_iterations": _max_iter,
             "out_dir": plan.out_dir,
             "result_stem": result_stem,
             "container": plan.container,
