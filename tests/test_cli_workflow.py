@@ -417,6 +417,34 @@ def test_setup_sh_layers_requirements_onto_the_image_via_system_site_venv():
     assert 'VENV=".tvbo-extras-venv"' in sh and "-r requirements.txt" in sh
 
 
+def test_setup_sh_provisions_a_native_venv_when_no_container():
+    """With requirements but NO container, setup.sh builds a NATIVE --system-site-packages
+    venv (no `singularity exec` prefix) — so `tvbo workflow submit` provisions the study's
+    deps on the host with no manual `pip install`."""
+    from tvbo.cli.workflow import _render_template
+
+    sh = _render_template("setup.sh.mako", plan=_layer_plan(container=None, binds=()))
+    assert "python -m venv --system-site-packages" in sh
+    assert "-r requirements.txt" in sh and 'VENV=".tvbo-extras-venv"' in sh
+    assert "singularity exec" not in sh          # native: no container to exec into
+    assert ".sif" not in sh
+
+
+def test_snakemake_rule_prepends_the_native_venv_to_pythonpath():
+    """A native run (no container) still prepends the requirements venv to PYTHONPATH — the
+    Snakemake prepend is a plain shell export, substrate-agnostic — so a host observation's
+    `import igl` resolves without any manual install."""
+    from tvbo.cli.workflow import _render_template
+
+    ep = {"key": "fig6", "rule_name": "exp_fig6", "spec_relpath": "spec/fig6/experiment.yaml",
+          "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
+          "container": None, "needs_env_layer": True, "extras_venv": ".tvbo-extras-venv",
+          "block": {}, "axes": [], "depends_on": []}
+    smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep], block={}, bundled_code=False)
+    assert "export PYTHONPATH=$(echo .tvbo-extras-venv/lib/python*/site-packages):" in smk
+    assert "container:" not in smk               # native: no container directive
+
+
 def test_run_sbatch_exposes_the_layer_via_pythonpath_and_guards_on_setup():
     """Each task must see the layered deps (PYTHONPATH into the venv site-packages) and
     fail loudly if setup.sh was never run, rather than crashing mid-import on the node."""
@@ -439,8 +467,8 @@ def test_snakemake_rule_prepends_the_container_layer_to_pythonpath():
 
     ep = {"key": "fig6", "rule_name": "exp_fig6", "spec_relpath": "spec/fig6/experiment.yaml",
           "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
-          "container": "/w/tvbo-dev.sif", "needs_container_layer": True,
-          "container_extras_venv": ".tvbo-extras-venv", "block": {}, "axes": [], "depends_on": []}
+          "container": "/w/tvbo-dev.sif", "needs_env_layer": True,
+          "extras_venv": ".tvbo-extras-venv", "block": {}, "axes": [], "depends_on": []}
     smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep], block={}, bundled_code=False)
     assert ('"export PYTHONPATH=$(echo .tvbo-extras-venv/lib/python*/site-packages):'
             '${{PYTHONPATH:-}} && "') in smk
@@ -478,7 +506,7 @@ def test_submit_provisions_the_container_layer_before_submitting(tmp_path, monke
     calls = []
     monkeypatch.setattr(wf.subprocess, "run",
                         lambda *a, **k: calls.append((a, k)) or type("R", (), {"returncode": 0})())
-    wf._provision_container_layer(kit, dry_run=False)
+    wf._provision_env_layer(kit, dry_run=False)
     assert calls and calls[0][0][0] == ["bash", "setup.sh"] and calls[0][1]["cwd"] == str(kit)
 
 
@@ -488,7 +516,7 @@ def test_submit_without_a_layer_provisions_nothing(tmp_path, monkeypatch):
 
     ran = []
     monkeypatch.setattr(wf.subprocess, "run", lambda *a, **k: ran.append(a))
-    wf._provision_container_layer(tmp_path, dry_run=False)   # empty dir, no setup.sh
+    wf._provision_env_layer(tmp_path, dry_run=False)   # empty dir, no setup.sh
     assert not ran
 
 
