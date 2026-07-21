@@ -192,6 +192,11 @@ rule ${ep["rule_name"]}:
 % if ep.get("select"):
         "--experiment=${ep['select']} "
 % endif
+% if ep.get("max_iterations") is not None:
+        ## Smoke cap (`--set max_iterations=N` / `--set smoke=true` at emit): reach the
+        ## post-tuning evaluation quickly to verify a fit runs/streams within memory.
+        "--max-iterations ${ep['max_iterations']} "
+% endif
 % for _flag in _run_flags(ep):
         "${_flag} "
 % endfor
