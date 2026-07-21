@@ -1178,3 +1178,26 @@ def test_bundler_carries_a_callables_local_helper_but_not_stdlib_or_installed(tm
     finally:
         for m in ("helper_a", "helper_b"):
             sys.modules.pop(m, None)
+
+
+def test_benchmark_and_smoke_reach_the_snakemake_rule():
+    """`--benchmark` attaches Snakemake's native `benchmark:` directive (per-cell TSV next
+    to the output), and `--max-iterations`/`--smoke` threads `tvbo run --max-iterations`.
+    Both are run modifiers carried on the exp_plan, never in the frozen workflow block."""
+    from tvbo.cli.workflow import _render_template
+
+    ep = {"key": "34", "rule_name": "exp_34", "spec_relpath": "spec/34/experiment.yaml",
+          "select": None, "backend": "tvboptim", "out_dir": "results",
+          "result_stem": "result", "container": None, "axes": [], "depends_on": [],
+          "block": {"cpus_per_task": 2, "mem": "120G"},
+          "benchmark": True, "max_iterations": 1}
+    smk = _render_template("snakemake/study.smk.mako", block={}, bundled_code=False, exp_plans=[ep])
+    assert "benchmark:" in smk
+    assert "result.benchmark.tsv" in smk
+    assert "--max-iterations 1" in smk
+
+    # Off by default: no benchmark directive, no cap flag.
+    ep_off = {**ep, "benchmark": False, "max_iterations": None}
+    smk_off = _render_template("snakemake/study.smk.mako", block={}, bundled_code=False, exp_plans=[ep_off])
+    assert "benchmark:" not in smk_off
+    assert "--max-iterations" not in smk_off

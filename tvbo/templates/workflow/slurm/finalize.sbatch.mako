@@ -9,6 +9,9 @@ prefix = ("singularity exec " + (plan.container_exec_flags + " " if plan.contain
 %>\
 #!/bin/bash
 #SBATCH --job-name=${plan.study_key}-${plan.experiment_key}-finalize
+## Provenance tag visible in `squeue -o %k` (see run.sbatch); the gather step of
+## the same experiment, so it shares the tag with a :finalize suffix.
+#SBATCH --comment=tvbo:${plan.study_key}/exp_${plan.experiment_key}:finalize
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 % if sb.get("mem"):

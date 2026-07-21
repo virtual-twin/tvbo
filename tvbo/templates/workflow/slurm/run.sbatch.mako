@@ -5,6 +5,9 @@ sb = block
 %>\
 #!/bin/bash
 #SBATCH --job-name=${plan.study_key}-${plan.experiment_key}
+## Provenance tag visible in `squeue -o %k`, so a queued job maps back to its
+## study/experiment (mirrors what the Snakemake executor stamps as the rule name).
+#SBATCH --comment=tvbo:${plan.study_key}/exp_${plan.experiment_key}
 #SBATCH --array=0-${plan.n_array_tasks - 1}
 #SBATCH --ntasks=1
 % if sb.get("cpus_per_task"):
