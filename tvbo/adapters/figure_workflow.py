@@ -21,6 +21,7 @@ also freezes each figure's self-contained ``plot.py`` and the ``.smk`` snippet t
 from __future__ import annotations
 
 import datetime as _dt
+import re
 from pathlib import Path
 
 from tvbo.adapters import bsplot
@@ -96,26 +97,51 @@ def _rule_resources(block: dict) -> dict:
     return r
 
 
-def _figure_inputs(figure, base_dir: Path) -> list[str]:
-    """Deduped result-container paths this figure's layers ``used`` (first-seen order).
+def _exp_key_of(iri, keys) -> str | None:
+    """The kit experiment key a figure ``used.iri`` points at, or ``None`` for an
+    external reference. Mirrors ``bsplot._container_path``'s segment/digit extraction so
+    the IRI a figure renders from also resolves to the rule that produces its cells."""
+    if not iri:
+        return None
+    last = re.split(r"[:/#]", str(iri))[-1]
+    digits = re.sub(r"\D", "", last)
+    for cand in ([last, digits, f"exp{digits}", f"exp-{digits}"] if digits else [last]):
+        if cand in keys:
+            return cand
+    return None
 
-    Each layer's ``used.iri`` is resolved to its container with the same
-    ``bsplot._container_path`` the emitted ``plot.py`` reads, so the rule's inputs
-    are exactly the files the render will open. Unresolved (missing) containers are
-    dropped — a rule cannot depend on a file that does not exist.
+
+def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]:
+    """This figure's ``used`` result dependencies, deduped, as ``{value, raw}`` items.
+
+    A ``used`` edge to a KIT experiment resolves to that experiment's own output files —
+    the ``expand()`` over its fanned grid (so the figure waits for EVERY cell) or its single
+    group-run path — emitted RAW so Snakemake evaluates the ``expand``. A ``used`` edge to
+    something the kit does not produce (an external/author-time container) falls back to the
+    single resolved container path via the same ``bsplot._container_path`` the ``plot.py``
+    reads, emitted as a quoted string. Unresolved edges are dropped — a rule cannot depend
+    on a file that does not exist.
     """
     inputs, seen = [], set()
     for panel in as_list(getattr(figure, "panels", None)):
         for layer in (getattr(panel, "layers", None) or []):
-            used = getattr(layer, "used", None)
-            container = bsplot._container_path(getattr(used, "iri", None), base_dir)
-            if container and container not in seen:
-                seen.add(container)
-                inputs.append(container)
+            iri = getattr(getattr(layer, "used", None), "iri", None)
+            key = _exp_key_of(iri, exp_plans_by_key)
+            if key is not None:
+                item = {"value": _wf.fan_input_expr(exp_plans_by_key[key]), "raw": True}
+            else:
+                container = bsplot._container_path(iri, Path(base_dir))
+                if not container:
+                    continue
+                item = {"value": container, "raw": False}
+            dedup = (item["raw"], item["value"])
+            if dedup not in seen:
+                seen.add(dedup)
+                inputs.append(item)
     return inputs
 
 
-def _figure_context(figure, base_dir, workflow) -> dict:
+def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) -> dict:
     """Resolve one ``Figure`` into the template context for its render rule."""
     base_dir = Path(base_dir)
     name = figure.name or "figure"
@@ -124,10 +150,13 @@ def _figure_context(figure, base_dir, workflow) -> dict:
     return {
         "name": name,
         "rule_name": "fig_" + sanitize_name(name),
-        "inputs": _figure_inputs(figure, base_dir),
+        "inputs": _figure_inputs(figure, base_dir, exp_plans_by_key),
         "output": f"figures/{name}.{fmt}",
         "figures_dir": "figures",
         "script": f"figures/plot_{sanitize_name(name)}.py",
+        # The figure's custom-panel code_modules are bundled into the kit's code/, so put it
+        # on PYTHONPATH exactly as the experiment rules do when the kit carries bundled code.
+        "pythonpath_code": bool(bundled_code),
         "threads": int(block.get("cpus_per_task") or block.get("cores") or 1),
         "resources": _rule_resources(block),
         "container": _spec.get("container"),
@@ -136,10 +165,21 @@ def _figure_context(figure, base_dir, workflow) -> dict:
     }
 
 
+def figure_contexts(figures, base_dir=".", workflow=None, exp_plans=None,
+                    bundled_code=False) -> list[dict]:
+    """Per-figure template contexts (fan-aware inputs). ``exp_plans`` are the emitter's
+    per-experiment dicts; without them (author-time render) inputs fall back to
+    ``output/nc`` containers. Public so the study emitter can read the figure outputs it
+    must add to the default target before it renders the Snakefile."""
+    keys = {ep["key"]: ep for ep in (exp_plans or [])}
+    return [_figure_context(f, base_dir, workflow, keys, bundled_code) for f in figures]
+
+
 # --------------------------------------------------------------------------- emit
 
 def emit_figure_rules(figures, base_dir=".", workflow=None, kit_dir="kit",
-                      include_all: bool = False) -> str:
+                      include_all: bool = False, exp_plans=None,
+                      bundled_code: bool = False) -> str:
     """Render Snakemake render rules for *figures* — one rule per figure.
 
     Args:
@@ -152,20 +192,27 @@ def emit_figure_rules(figures, base_dir=".", workflow=None, kit_dir="kit",
             API symmetry; rule paths are kit-relative and independent of it).
         include_all: When True, prepend an aggregate ``all_figures`` target rule so
             the snippet is runnable standalone (``snakemake -s figures.smk``).
+        exp_plans: The emitter's per-experiment dicts; a figure ``used`` edge to one of
+            them becomes an ``expand()`` over that experiment's fanned cells (the whole
+            grid), so the render waits for the sweep. Without them, inputs fall back to
+            author-time ``output/nc`` containers.
+        bundled_code: Whether the kit carries a ``code/`` dir the figure's custom-panel
+            modules were bundled into (put on the rule's ``PYTHONPATH``).
 
     Returns:
         The Snakemake rule text. Each rule's ``input:`` is the figure's ``used``
-        containers and its ``resources:`` reflect ``workflow_overrides`` over
+        dependencies and its ``resources:`` reflect ``workflow_overrides`` over
         *workflow*; the rule runs the figure's frozen ``plot.py``.
     """
-    fig_ctxs = [_figure_context(f, base_dir, workflow) for f in figures]
+    fig_ctxs = figure_contexts(figures, base_dir, workflow, exp_plans, bundled_code)
     now = _dt.datetime.now().isoformat(timespec="seconds")
     return lookup.get_template(_RULE_TEMPLATE).render(
         figures=fig_ctxs, now=now, include_all=include_all)
 
 
 def write_figure_kit(figures, base_dir=".", out_dir="kit", workflow=None,
-                     include_all: bool = True) -> Path:
+                     include_all: bool = True, exp_plans=None,
+                     bundled_code: bool = False) -> Path:
     """Freeze a figure workflow kit to disk: per-figure ``plot.py`` + the ``.smk`` snippet.
 
     Layout::
@@ -189,6 +236,7 @@ def write_figure_kit(figures, base_dir=".", out_dir="kit", workflow=None,
                                   outfile=f"figures/{name}.{fmt}")
         script.write_text(code, encoding="utf-8")
     rules = emit_figure_rules(figures, base_dir, workflow=workflow,
-                              kit_dir=str(out_dir), include_all=include_all)
+                              kit_dir=str(out_dir), include_all=include_all,
+                              exp_plans=exp_plans, bundled_code=bundled_code)
     (out_dir / "figures.smk").write_text(rules, encoding="utf-8")
     return out_dir

@@ -270,14 +270,30 @@ def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
     ``code/``. Returns True if anything was bundled (the sbatch then puts ``code`` on
     ``PYTHONPATH``).
     """
-    import importlib
     import re
-    import shutil
 
     names = set(re.findall(r'module:\s*["\']?([A-Za-z_][\w.]*)', spec_yaml_text))
+    bundled = _bundle_modules(names, out_dir)
+    if bundled:
+        _common.info(f"bundled callable modules → code/: {', '.join(bundled)}")
+    return bool(bundled)
+
+
+def _bundle_modules(names, out_dir: Path, *, seen: set[str] | None = None) -> list[str]:
+    """Copy each LOCAL ``.py`` module in *names* (and its transitive local imports) into
+    the kit's ``code/``; return the bundled filenames.
+
+    A local module (not under ``site-packages``/``dist-packages`` — those are provisioned via
+    ``requirements``) is a study helper that must travel with the kit. *seen* threads across
+    calls so a study bundles its experiment callables and its figure ``code_modules`` into one
+    ``code/`` without copying a shared helper twice.
+    """
+    import importlib
+    import shutil
+
+    seen = seen if seen is not None else set()
     bundled: list[str] = []
     code_dir = out_dir / "code"
-    seen: set[str] = set()
 
     def _copy(name: str, f: str) -> None:
         code_dir.mkdir(exist_ok=True)
@@ -285,7 +301,7 @@ def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
         bundled.append(Path(f).name)
         seen.add(name)
 
-    for name in sorted(names):
+    for name in sorted(set(names)):
         if name in seen:
             continue
         try:
@@ -302,9 +318,7 @@ def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
         # not self-contained. Follow those transitive local, standalone imports too.
         for dep_name, dep_f in _local_module_deps(mod, seen):
             _copy(dep_name, dep_f)
-    if bundled:
-        _common.info(f"bundled callable modules → code/: {', '.join(bundled)}")
-    return bool(bundled)
+    return bundled
 
 
 def _local_module_deps(mod, seen: set[str]):
@@ -693,6 +707,17 @@ def _study_figures(study) -> list:
     return as_list(getattr(study, "figures", None))
 
 
+def _figure_code_modules(figs) -> set[str]:
+    """The ``code_modules`` every figure declares — modules whose import registers the
+    figures' custom panels/transforms. Bundled into the kit's ``code/`` so a figure's
+    ``plot.py`` can ``import`` them on a compute node (they are local study helpers, not
+    installed packages)."""
+    names: set[str] = set()
+    for fig in figs:
+        names.update(str(m) for m in (getattr(fig, "code_modules", None) or []))
+    return names
+
+
 def _figure_base_dir(study, out_dir: Path) -> str:
     """Root the figures' ``used`` containers resolve against.
 
@@ -806,17 +831,36 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             "depends_on": [_key_of.get(str(d), _san(str(d))) for d in plan.depends_on],
         })
 
-    text = _render_template("snakemake/study.smk.mako", exp_plans=exp_plans,
-                            block=block, bundled_code=bundled_code)
+    # Figures are resolved BEFORE the Snakefile renders: their outputs join the default
+    # target (so `tvbo workflow submit` renders them right after the grid) and their
+    # custom-panel code_modules bundle into code/ (so plot.py imports resolve on a node).
     figs = _study_figures(study)
+    fig_base = _figure_base_dir(study, out_dir)
+    fig_workflow = getattr(study, "workflow", None)
+    figure_outputs: list[str] = []
+    if figs:
+        from tvbo.adapters import figure_workflow
+
+        if not stdout:
+            fig_mods = _figure_code_modules(figs)
+            fig_bundled = _bundle_modules(fig_mods, out_dir) if fig_mods else []
+            if fig_bundled:
+                bundled_code = True
+                _common.info(f"bundled figure modules → code/: {', '.join(fig_bundled)}")
+        fig_ctxs = figure_workflow.figure_contexts(
+            figs, base_dir=fig_base, workflow=fig_workflow,
+            exp_plans=exp_plans, bundled_code=bundled_code)
+        figure_outputs = [c["output"] for c in fig_ctxs]
+
+    text = _render_template("snakemake/study.smk.mako", exp_plans=exp_plans,
+                            block=block, bundled_code=bundled_code,
+                            figure_outputs=figure_outputs)
     if stdout:
         typer.echo(text)
         if figs:
-            from tvbo.adapters import figure_workflow
-
             typer.echo(figure_workflow.emit_figure_rules(
-                figs, base_dir=_figure_base_dir(study, out_dir),
-                workflow=getattr(study, "workflow", None), include_all=True))
+                figs, base_dir=fig_base, workflow=fig_workflow, include_all=True,
+                exp_plans=exp_plans, bundled_code=bundled_code))
         return None
     (out_dir / "Snakefile").write_text(text, encoding="utf-8")
     _common.info(f"wrote Snakefile ({len(exp_plans)} experiment rule(s))")
@@ -859,16 +903,14 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
         _write_readme(out_dir, engine="snakemake", plans=plans, script_relpath=None,
                       spec_layout="spec/<experiment>/experiment.yaml")
     if figs:
-        # A study is its experiments PLUS the figures that read their results:
-        # freeze each figure's self-contained plot.py + the render rules, then
-        # wire them into the Snakefile. Additive — `rule all` (the experiments)
-        # stays the default target; figures run via `snakemake all_figures`
-        # (the aggregate is named `all_figures`, so there is no rule-name clash).
-        from tvbo.adapters import figure_workflow
-
+        # A study is its experiments PLUS the figures that read their results: freeze each
+        # figure's self-contained plot.py + the render rules, then wire them in. The figure
+        # outputs were already added to `rule all` (see figure_outputs above), so the default
+        # target renders them right after the grid — a fanned figure's `input:` is the
+        # expand() over its experiment's cells, so it waits for the whole sweep.
         figure_workflow.write_figure_kit(
-            figs, base_dir=_figure_base_dir(study, out_dir), out_dir=out_dir,
-            workflow=getattr(study, "workflow", None), include_all=True)
+            figs, base_dir=fig_base, out_dir=out_dir, workflow=fig_workflow,
+            include_all=True, exp_plans=exp_plans, bundled_code=bundled_code)
         with (out_dir / "Snakefile").open("a", encoding="utf-8") as fh:
             fh.write('\n\ninclude: "figures.smk"\n')
         _common.info(f"wrote figures.smk + {len(figs)} figure plot script(s) "

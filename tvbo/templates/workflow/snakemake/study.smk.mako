@@ -3,29 +3,8 @@
 ##   Each exp_plan: {key, rule_name, spec_relpath, backend, out_dir, result_stem,
 ##                   axes (list of {name, parameter, values}), container}.
 <%
-def _wildcard(name):
-    """A Snakemake wildcard placeholder, doubled for the f-string that carries it.
-
-    Every path built from this lands inside an f-string (they interpolate OUT_DIR),
-    and an f-string eats single braces: `f"{OUT_DIR}/sub-{subject}"` evaluates
-    `subject` as a Python name and dies with NameError before Snakemake ever sees a
-    wildcard. Doubling leaves the literal `{subject}` that `expand()` and the rule's
-    `output:` need.
-    """
-    return "{{" + name + "}}"
-
 def _values(vals):
     return ", ".join(repr(v) for v in vals)
-
-def _cell_out(ep):
-    """Per-cell output basename = exactly the file `tvbo run` writes for this cell."""
-    axes = ep["axes"]
-    is_subject_only = len(axes) == 1 and axes[0]["parameter"] == "dataset.active_subject"
-    if is_subject_only:
-        return "sub-" + _wildcard("subject") + "_" + ep["result_stem"] + ".h5"
-    if axes:
-        return "/".join("%s=%s" % (a["name"], _wildcard(a["name"])) for a in axes) + "/" + ep["result_stem"] + ".h5"
-    return ep["result_stem"] + ".h5"
 
 def _run_flags(ep):
     """Per-cell `tvbo run` flags: --subject for the dataset fan-out, --pin for a fanned
@@ -44,14 +23,14 @@ def _run_flags(ep):
 
 # key -> plan, so a from_experiment dependency can reference the source's output.
 _ep_by_key = {ep["key"]: ep for ep in exp_plans}
-
-def _expand_kwargs(ep):
-    return ", ".join("%s=%s" % (a["name"], ep["rule_name"].upper() + "_" + a["name"].upper())
-                     for a in ep["axes"])
+# Figures render as their own rules (in the included figures.smk) but must be built by
+# the default target too, so `tvbo workflow submit` renders them right after the grid.
+_figure_outputs = context.get('figure_outputs') or []
 
 import shlex
 
-from tvbo.cli._workflow import mem_mb as _mem_mb, runtime_minutes as _runtime_min
+from tvbo.cli._workflow import (mem_mb as _mem_mb, runtime_minutes as _runtime_min,
+                                cell_out_relpath as _cell_out, fan_expand_kwargs as _expand_kwargs)
 
 def _activation(block):
     """Shell lines that put the declared environment in place, in activation order.
@@ -128,6 +107,9 @@ rule all:
 % else:
         f"{OUT_DIR}/${ep['key']}/${_cell_out(ep)}",
 % endif
+% endfor
+% for _fig_out in _figure_outputs:
+        ${repr(_fig_out)},
 % endfor
 
 % for ep in exp_plans:
