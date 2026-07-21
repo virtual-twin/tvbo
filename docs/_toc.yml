@@ -788,6 +788,8 @@ website:
                         href: datamodel/slots/axesOrigin.qmd
                       - text: "axis"
                         href: datamodel/slots/axis.qmd
+                      - text: "backend"
+                        href: datamodel/slots/backend.qmd
                       - text: "baseline_value"
                         href: datamodel/slots/baseline_value.qmd
                       - text: "batch_size"
@@ -1978,6 +1980,8 @@ website:
                         href: datamodel/enums/NoiseType.qmd
                       - text: "Numerical Discretization Method"
                         href: datamodel/enums/NumericalDiscretizationMethod.qmd
+                      - text: "Observation Reduction Mode"
+                        href: datamodel/enums/ObservationReductionMode.qmd
                       - text: "Operator Type"
                         href: datamodel/enums/OperatorType.qmd
                       - text: "Panel Kind"
