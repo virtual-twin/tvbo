@@ -106,11 +106,16 @@ export PYTHONPATH="code:${'$'}{PYTHONPATH:-}"
 %>\
 % if plan.needs_container_layer:
 ## Requirements layered onto ${plan.container} by setup.sh (run it once first).
-if [ ! -d ${plan.container_extras_venv} ]; then
-    echo "ERROR: run setup.sh once before submitting — the requirements layer is missing." >&2
+## Resolve the layer's site-packages to an ABSOLUTE path: PYTHONPATH is evaluated
+## relative to the container's CWD, which is not guaranteed to be the kit dir. The
+## -d check then fails loudly when setup.sh never ran OR left a half-built venv — an
+## unmatched glob would otherwise stay the literal `python*` path and import-crash
+## the task mid-run instead.
+TVBO_EXTRAS=$(echo "$(pwd)/${plan.container_extras_venv}"/lib/python*/site-packages)
+if [ ! -d "${'$'}{TVBO_EXTRAS}" ]; then
+    echo "ERROR: run setup.sh once before submitting — the requirements layer under ${plan.container_extras_venv} is missing or incomplete." >&2
     exit 1
 fi
-TVBO_EXTRAS=$(echo ${plan.container_extras_venv}/lib/python*/site-packages)
 % endif
 % if subject_axis:
 ## Per-subject dataset fan-out: one array task per subject. $SLURM_ARRAY_TASK_ID
