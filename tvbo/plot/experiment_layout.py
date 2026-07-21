@@ -63,12 +63,17 @@ def _plot_exploration_timeseries_overlay(exploration, panel, ax):
         # Select the run by its named leading dim (the swept parameter, trial, or
         # flat point) rather than by position, so a change in layout cannot quietly
         # read the wrong slice.
-        run = results.isel({lead_dim: idx}) if lead_dim else results[idx]
-        if hasattr(run, "dims") and "variable" in run.dims:
-            run = run.isel(variable=component)
-        data = np.asarray(run).squeeze()
-        if data.ndim > 1:
-            data = data[:, component]
+        if lead_dim:
+            run = results.isel({lead_dim: idx})
+            # Variable is selected by name; do not also index it positionally.
+            if "variable" in run.dims:
+                run = run.isel(variable=component)
+            data = np.asarray(run).squeeze()
+        else:
+            # Unlabelled fallback: variable lives on axis 1, selected positionally.
+            data = np.asarray(results[idx]).squeeze()
+            if data.ndim > 1:
+                data = data[:, component]
         line_kwargs = dict(plot_kwargs)
         line_kwargs.setdefault("alpha", panel.get("alpha", 0.8))
         line_kwargs.setdefault("linewidth", panel.get("lw", 1.0))

@@ -79,6 +79,13 @@ neuron = ["neuron"]
 # Data formats (tractograms, HDF5)
 data = ["dipy>=1.10.0"]
 
+# Surface/volume PDE backend (finite-element diffusion via the generated
+# tvbo-pde-fem solver). scikit-fem is the FEM engine; meshio is the mesh-IO
+# layer (reads .msh/.vtk/.vtu/.obj/.ply and bridges into skfem via
+# skfem.io.from_meshio); nibabel loads GIFTI/FreeSurfer surfaces. All three are
+# imported unconditionally by tvbo/templates/pde/tvbo-pde-fem.py.mako.
+pde = ["scikit-fem>=8.0.0", "meshio>=5.3.0", "nibabel>=5.0.0"]
+
 # Knowledge base features
 knowledge = [
     "goatools>=1.4.12",
@@ -117,10 +124,21 @@ docs = [
     # mne.datasets.fetch_fsaverage; the import is unguarded, so without this the
     # page fails to execute with ModuleNotFoundError.
     "mne>=1.6.0",
+    # Networks/PDESimulation.qmd executes the FEM PDE backend end-to-end
+    # (imports meshio/skfem/nibabel directly), so the doc build needs the pde extra.
+    "tvbo[pde]",
 ]
 
-# PyRates dynamical systems modeling + continuation
-pyrates = ["pyrates>=1.0.0", "pycobi>=0.8.0"]
+# Bifurcation continuation via AUTO-07p.
+# Installs only pycobi, the Python wrapper. The AUTO-07p engine itself is a
+# Fortran program that is NOT distributed on PyPI: it is built once system-side
+# and its python/ front-end linked onto the environment. pip cannot place it, so
+# the extra covers the pip-installable half only — see docs/installation.md
+# ("AUTO-07p continuation") for the AUTO_DIR + path-link steps that complete it.
+auto7p = ["pycobi>=0.8.0"]
+
+# PyRates dynamical systems modeling + continuation (continuation needs auto7p)
+pyrates = ["pyrates>=1.0.0", "tvbo[auto7p]"]
 
 # Julia integration
 julia = ["juliacall>=0.9.20"]
@@ -146,7 +164,7 @@ tvb = [
 tvboptim = ["tvboptim", "pymoo>=0.6.0"]
 
 # Full install (all features)
-all = ["tvbo[neuroml,neuron,data,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia]"]
+all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p]"]
 
 [project.urls]
 homepage = "https://tvbo.charite.de"
