@@ -261,12 +261,6 @@ n_workers = int(exec_config.n_workers) if exec_config and exec_config.n_workers 
 n_threads = int(exec_config.n_threads) if exec_config and exec_config.n_threads else -1
 precision = str(exec_config.precision) if exec_config and exec_config.precision else 'float64'
 accelerator = str(exec_config.accelerator) if exec_config and exec_config.accelerator else 'cpu'
-# An explicitly declared accelerator pins the JAX platform before jax initialises
-# (emitted below, ahead of ``import jax``), so a cpu/gpu/tpu run selects its device
-# from the recipe rather than from jax auto-detection — and a cpu run on a GPU-built
-# jax never loads the accelerator plugin at all. Left unset, auto-detection is unchanged.
-_jax_platform = {'cpu': 'cpu', 'gpu': 'cuda', 'tpu': 'tpu'}.get(accelerator)
-accelerator_declared = bool(exec_config and exec_config.accelerator) and _jax_platform is not None
 enable_x64 = precision == 'float64'
 random_seed = int(exec_config.random_seed) if exec_config and exec_config.random_seed else 0
 
@@ -1259,11 +1253,6 @@ import logging
 # same way in-process and standalone (see the ``__main__`` block below).
 logger = logging.getLogger("tvbo.run")
 
-% if accelerator_declared:
-# execution.accelerator = ${accelerator}: pin the JAX platform before the backend
-# initialises. setdefault so an explicit JAX_PLATFORMS in the environment still wins.
-os.environ.setdefault("JAX_PLATFORMS", "${_jax_platform}")
-% endif
 import jax
 % if enable_x64:
 jax.config.update("jax_enable_x64", True)  # Required for stable gradient computation
@@ -3683,6 +3672,9 @@ def run_experiment(
                             _STREAMING_REDUCERS[_n][1], ${dt},
                             warm_history=(None if transient is None
                                           else (transient.data if hasattr(transient, 'data') else transient)[:, _STREAMING_REDUCERS[_n][1], :]),
+                            # JAX-native per-block progress: this post-eval is a single (non-vmapped)
+                            # long fold, so stream progress live from inside the scan.
+                            progress=True,
                         )
                         for _n in ${repr(_pp_names)}
                     ]),

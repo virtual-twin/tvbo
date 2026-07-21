@@ -655,7 +655,7 @@ ${render_recurrence_reduction(red, name, s_idx, dt)}\
     _cv = ['_block_voi', '_ds', '_ring', '_block_ds', '_signal', '_kernel', '_tr', '_conv', 'k_1', 'V_0']
     _rc = lambda e: render_expression(e, format='jax', parameters=_cv)
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None):
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
     k_1 = ${repr(red['k_1'])}
     V_0 = ${repr(red['V_0'])}
     _kernel = ${red['kernel_call']}   # HRF kernel array [K] (the pipeline's kernel function)
@@ -686,7 +686,22 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         _start = _ds_count // _tr
         _bold = jax.lax.dynamic_update_slice(_bold, _samples, (_start, 0))
         _ring = _signal[-_K:]
-        return (_ring, _bold, _ds_count + _m_b)
+        _ds_next = _ds_count + _m_b
+        if progress:
+            # JAX-native streaming progress: jax.debug.print fires from INSIDE the compiled
+            # block scan, so a long post-tuning fold (e.g. the 36e6-step group-fit eval)
+            # streams ~50 lines live instead of the log sitting silent until the whole scan
+            # returns. Gated to the non-vmapped post-eval (progress=True) so the vmapped
+            # exploration grid never floods; the guard is a plain Python bool, not traced.
+            _done = _ds_next // _tr
+            _ntot = _bold.shape[0]
+            _every = jnp.maximum(1, _ntot // 50)
+            jax.lax.cond(
+                (_done // _every) > ((_ds_count // _tr) // _every),
+                lambda: jax.debug.print("  post-eval: streamed {}/{} BOLD samples", _done, _ntot),
+                lambda: None,
+            )
+        return (_ring, _bold, _ds_next)
     def _finalize(acc):
         _ring, _bold, _ds_count = acc
         return _bold

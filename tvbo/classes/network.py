@@ -2523,6 +2523,26 @@ class Network(tvbo_datamodel.Network):
                     W[i, j] = w
         return W
 
+    @property
+    def node_parameter_vectors(self) -> Dict[str, np.ndarray]:
+        """Per-node parameters as ``{name: (n_nodes,) array}``, in declared node order.
+
+        Only parameters that *every* node declares are returned (a partial vector has no
+        well-defined value for the gaps). Consumed by symbolic weight/length transforms,
+        which expose each as an ``(n, 1)`` column so an expression like ``W / roi_size``
+        normalises per target region.
+        """
+        nodes = self.nodes or []
+        if not nodes:
+            return {}
+        names = set.intersection(*[set((getattr(nd, "parameters", None) or {}).keys()) for nd in nodes])
+        out: Dict[str, np.ndarray] = {}
+        for name in names:
+            vals = [getattr(nd.parameters[name], "value", None) for nd in nodes]
+            if all(v is not None for v in vals):
+                out[str(name)] = np.asarray([float(v) for v in vals], dtype=np.float64)
+        return out
+
     def node_positions(self) -> np.ndarray:
         """Node coordinates as an ``(n_nodes, 3)`` array, in declared node order.
 
@@ -4716,6 +4736,13 @@ class Network(tvbo_datamodel.Network):
             "np": jnp,
             "jsp": jsp,
         }
+        # Expose declared per-node parameters as (n, 1) column vectors, so a symbolic
+        # weight transform can normalise per target region — e.g. ``W / roi_size`` divides
+        # each target row by that region's size (Deco's fibers-per-neuron SC). Column
+        # shape mirrors ``W_rowsum`` and broadcasts across the source axis.
+        for _pn, _vec in self.node_parameter_vectors.items():
+            if _pn not in env and _vec.shape[0] == M.shape[0]:
+                env[_pn] = jnp.asarray(_vec).reshape(-1, 1)
         code_str = render_expression(exp, format="jax")
         if isinstance(code_str, str):
             M = eval(code_str, env)
