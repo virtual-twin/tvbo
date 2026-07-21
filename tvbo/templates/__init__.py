@@ -55,6 +55,7 @@ lookup = TemplateLookup(
         join(root, "networkdynamics"),
         join(root, "modelingtoolkit"),
         join(root, "neuroml"),
+        join(root, "brian2"),
         join(root, "bsplot"),
         join(root, "workflow", "snakemake"),
     ],

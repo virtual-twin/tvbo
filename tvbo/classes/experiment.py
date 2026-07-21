@@ -2372,11 +2372,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             return NeuroMLAdapter(self).run(**kwargs)
 
+        elif format.lower() in ["brian2", "brian"]:
+            from tvbo.adapters.brian2 import Brian2Adapter
+
+            return Brian2Adapter(self).run(**kwargs)
+
         else:
             raise ValueError(
                 f"Format {format} not supported. Valid formats: tvb, jax, python, pyrates, "
                 "networkdynamics, mtk, modelingtoolkit, bifurcationkit.jl, "
-                "pyrates-bifurcation, julia, neuroml, nml, lems"
+                "pyrates-bifurcation, julia, neuroml, nml, lems, brian2"
             )
 
     def _run_pyrates(
