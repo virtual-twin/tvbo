@@ -288,6 +288,100 @@ def _container_plan(image="docker://ghcr.io/virtual-twin/tvbo:dev",
     )
 
 
+def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=("/data/cephfs-1",)):
+    """A plan-like stand-in exposing exactly what the layer templates read."""
+    from tvbo.cli._workflow import WorkflowPlan
+
+    p = SimpleNamespace(
+        study_key="S", experiment_key="fig6", chunk=156, n_array_tasks=156,
+        n_workflow_cells=1560, n_vectorize_cells=1560, vectorize_axes=[], workflow_axes=[],
+        wildcards=[], overrides=[], container=container, container_binds=list(binds),
+        container_args=None, requirements=list(reqs), experiment_selector=None,
+        source_spec=None, out_dir="out/S/fig6", run_spec="experiment:fig6",
+        backend=SimpleNamespace(name="tvboptim"),
+        engine_block={"partition": "medium", "mem": "16G", "time": "02:00:00", "cpus_per_task": 4},
+    )
+    for prop in ("pip_specs", "needs_container_layer", "container_extras_venv", "container_exec_flags"):
+        setattr(p, prop, getattr(WorkflowPlan, prop).fget(p))
+    return p
+
+
+def test_container_layer_predicate_needs_both_container_and_requirements():
+    """A study adds a dep (igl) onto a base image without rebuilding it — but ONLY when
+    both a container and requirements are declared; either alone is nothing to layer."""
+    assert _layer_plan().needs_container_layer is True
+    assert _layer_plan(container=None).needs_container_layer is False
+    assert _layer_plan(reqs=()).needs_container_layer is False
+
+
+def test_setup_sh_layers_requirements_onto_the_image_via_system_site_venv():
+    """setup.sh must build the venv WITH --system-site-packages (so pip installs only the
+    delta and reuses the image's packages) and install with the IMAGE's own pip (so a
+    native wheel like igl is ABI-correct) — not rebuild the SIF."""
+    from tvbo.cli.workflow import _render_template
+
+    sh = _render_template("setup.sh.mako", plan=_layer_plan())
+    assert "python -m venv --system-site-packages" in sh
+    assert "/w/tvbo-dev.sif" in sh and "--bind /data/cephfs-1" in sh
+    # install runs through the container's interpreter, into the venv
+    assert 'singularity exec' in sh and '${VENV}/bin/pip" install' in sh
+    assert 'VENV=".tvbo-extras-venv"' in sh and "-r requirements.txt" in sh
+
+
+def test_run_sbatch_exposes_the_layer_via_pythonpath_and_guards_on_setup():
+    """Each task must see the layered deps (PYTHONPATH into the venv site-packages) and
+    fail loudly if setup.sh was never run, rather than crashing mid-import on the node."""
+    from tvbo.cli.workflow import _render_template
+
+    sb = _render_template("slurm/run.sbatch.mako", plan=_layer_plan(),
+                          block=_layer_plan().engine_block, spec_relpath=None, bundled_code=False)
+    assert 'if [ ! -d "${TVBO_EXTRAS}" ]' in sb            # guard: setup.sh must run first
+    assert 'TVBO_EXTRAS=$(echo "$(pwd)/.tvbo-extras-venv"/lib/python*/site-packages)' in sb
+    assert '--env PYTHONPATH="${TVBO_EXTRAS}${PYTHONPATH:+:$PYTHONPATH}"' in sb
+    assert "singularity exec" in sb and "tvbo run" in sb
+
+
+def test_snakemake_rule_prepends_the_container_layer_to_pythonpath():
+    """The Snakemake fan-out runs each cell's `tvbo run` INSIDE the container, so the
+    layered deps (setup.sh's venv) must reach it via PYTHONPATH on every rule — this is
+    the per-cell path a host (igl) observation needs, where slurm's --shard vmaps a chunk.
+    Double braces survive Snakemake's `.format()` (single braces are wildcards)."""
+    from tvbo.cli.workflow import _render_template
+
+    ep = {"key": "fig6", "rule_name": "exp_fig6", "spec_relpath": "spec/fig6/experiment.yaml",
+          "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
+          "container": "/w/tvbo-dev.sif", "needs_container_layer": True,
+          "container_extras_venv": ".tvbo-extras-venv", "block": {}, "axes": [], "depends_on": []}
+    smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep], block={}, bundled_code=False)
+    assert ('"export PYTHONPATH=$(echo .tvbo-extras-venv/lib/python*/site-packages):'
+            '${{PYTHONPATH:-}} && "') in smk
+    # the layer precedes the run and the rule execs in the image
+    assert smk.index("PYTHONPATH=$(echo .tvbo-extras") < smk.index("tvbo run spec/fig6")
+    assert "container:" in smk and "/w/tvbo-dev.sif" in smk
+
+
+def test_snakemake_rule_without_layer_has_no_pythonpath_injection():
+    """The layer is strictly opt-in: an experiment that declares no layer emits a bare rule."""
+    from tvbo.cli.workflow import _render_template
+
+    ep = {"key": "e", "rule_name": "exp_e", "spec_relpath": "spec/e/experiment.yaml",
+          "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
+          "container": None, "block": {}, "axes": [], "depends_on": []}
+    smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep], block={}, bundled_code=False)
+    assert ".tvbo-extras-venv" not in smk
+
+
+def test_no_container_layer_means_no_pythonpath_injection():
+    """Without a container the run line stays bare — the layer is strictly opt-in."""
+    from tvbo.cli.workflow import _render_template
+
+    plan = _layer_plan(container=None)
+    sb = _render_template("slurm/run.sbatch.mako", plan=plan, block=plan.engine_block,
+                          spec_relpath=None, bundled_code=False)
+    assert "TVBO_EXTRAS" not in sb and "--env PYTHONPATH" not in sb
+    assert "singularity exec" not in sb
+
+
 def test_profile_carries_container_binds(tmp_path: Path):
     """``container_binds`` is what makes the container usable at a site.
 

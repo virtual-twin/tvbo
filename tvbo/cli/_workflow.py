@@ -148,6 +148,26 @@ class WorkflowPlan:
         return out
 
     @property
+    def needs_container_layer(self) -> bool:
+        """Whether the kit must layer declared requirements onto a prebuilt container.
+
+        A ``container`` names a base image the tasks ``exec`` into; ``requirements``
+        names what the study's code needs (e.g. a callable that imports ``igl``). When
+        both are set, the image is not guaranteed to carry those deps, and a study should
+        not have to rebuild the image to add one. So the kit provisions the declared
+        requirements into a ``--system-site-packages`` venv layered on the image at setup
+        time (``setup.sh``) and exposes it to each task via ``PYTHONPATH`` — pip resolves
+        against the image (installing only the delta) and compiles native wheels with the
+        image's own interpreter, so the layer is ABI-correct without touching the image.
+        """
+        return bool(self.container and self.pip_specs)
+
+    @property
+    def container_extras_venv(self) -> str:
+        """Kit-relative dir for the layered-requirements venv (see needs_container_layer)."""
+        return ".tvbo-extras-venv"
+
+    @property
     def run_spec(self) -> str:
         """SPEC argument for ``tvbo run`` — the source recipe path/CURIE if known,
         else the ``experiment:<key>`` fallback."""
