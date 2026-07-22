@@ -836,7 +836,11 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
     # custom-panel code_modules bundle into code/ (so plot.py imports resolve on a node).
     figs = _study_figures(study)
     fig_base = _figure_base_dir(study, out_dir)
-    fig_workflow = getattr(study, "workflow", None)
+    # Figures inherit the study workflow WITH the `--set` overrides merged in (same effective
+    # config the experiment rules get), so a `--set slurm.venv=…`/partition/etc. reaches the
+    # render rule too — otherwise the figure runs in the wrong (system) interpreter.
+    fig_workflow = _deep_merge(_wf._as_plain_dict(getattr(study, "workflow", None)),
+                               parsed["merged"] or {})
     figure_outputs: list[str] = []
     if figs:
         from tvbo.adapters import figure_workflow

@@ -2608,6 +2608,35 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
 # =============================================================================
 
 
+def normalize_n_parallel(expl: Any):
+    """Normalise an ``Exploration.n_parallel`` to an int chunk size or ``"auto"``.
+
+    ``"auto"`` (the schema default) defers the vmap chunk width to runtime, where the
+    grid size is known — the generated script resolves it via
+    :func:`tvbo.templates.tvboptim.callbacks.resolve_n_vmap`. An explicit integer is
+    passed through unchanged (``1`` = fully sequential).
+
+    Raises:
+        ValueError: if ``n_parallel`` is a non-numeric string other than ``"auto"``
+            (the schema allows any string, so a typo like ``"sequential"`` reaches
+            here — fail with a clear message rather than a bare ``int()`` error).
+    """
+    v = getattr(expl, "n_parallel", None)
+    if v is None:
+        return "auto"
+    if isinstance(v, str):
+        s = v.strip()
+        if s.lower() == "auto":
+            return "auto"
+        try:
+            return int(s)  # numeric string (e.g. schema.py coerces an explicit int → "4")
+        except ValueError:
+            raise ValueError(
+                f"Exploration.n_parallel must be a positive integer or 'auto', got {v!r}."
+            ) from None
+    return int(v)
+
+
 def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn=None) -> Dict:
     """Parse exploration specification from YAML.
 
@@ -2617,7 +2646,7 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
         "name": getattr(expl, "name", ""),
         "label": getattr(expl, "label", "") or "",
         "mode": getattr(expl, "mode", None) or "product",
-        "n_parallel": int(getattr(expl, "n_parallel", 1) or 1),
+        "n_parallel": normalize_n_parallel(expl),
         "axes": [],
         # Named observations to compute + stack per grid point (e.g. `loss`, or the
         # `analysis` diagnostics). Declarative alternative to a single scalar observable.

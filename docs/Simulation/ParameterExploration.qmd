@@ -17,8 +17,9 @@ $$
 $$
 
 An **exploration** evaluates $\hat{y}(\theta)$ on a grid of $\theta$ values. TVBO declares
-that grid in the same YAML as the model, runs the cells in one vectorized pass, and
-returns the results as a labelled array indexed by the swept parameter.
+that grid in the same YAML as the model, evaluates the cells vectorized in parallel (see
+[Parallelization](#parallelization)), and returns the results as a labelled array indexed
+by the swept parameter.
 
 ## Declaring a sweep
 
@@ -182,19 +183,48 @@ explorations:
       network.conduction_speed:
         domain: {lo: 1.0, hi: 10.0, n: 5}
     mode: product
-    n_parallel: 4
 ```
 
 `network.conduction_speed` is special: changing it rebuilds the delay graph for every
 cell, so the sweep genuinely re-derives $\tau_{ij} = L_{ij}/v$ rather than reusing one set
 of delays.
 
+## Parallelization
+
+Grid cells are independent simulations, so TVBO evaluates them **vectorized** — one
+compiled kernel steps a batch of cells at once (`jax.vmap`), far faster than looping cell
+by cell. The batch width is `n_parallel`, and it defaults to `auto`:
+
+```yaml
+explorations:
+  my_sweep:
+    space: { ... }
+    n_parallel: auto   # the default — you rarely need to set it
+```
+
+- **`auto`** vectorizes the grid, bounded two ways: a **cell-count cap**
+  (`min(grid_size, 64)` — past the point where per-cell throughput saturates, so it keeps
+  the full speed-up) and a **memory budget** (default 2 GB). Vectorizing holds `n_vmap`
+  cells' working state at once — so `auto` does use more memory than a sequential run —
+  and the budget, sized against the per-cell output and live state, keeps that from
+  ballooning on a large-per-cell grid such as a whole-brain delay network. On a
+  big-memory machine, raise the count cap with `TVBO_NVMAP_AUTO_CAP` or the budget with
+  `TVBO_NVMAP_MEM_BUDGET_GB` (both are portable defaults, not hardware limits).
+- **An integer** fixes the chunk width and bypasses both bounds. `n_parallel: 1` is fully
+  sequential (slowest, smallest footprint); a larger value like `256` packs wider batches
+  (fewer kernel launches, more working memory) and only helps on a very large grid with
+  memory to spare.
+
+The result array — `grid_size × timepoints × …` — is materialized in full regardless of
+`n_parallel`; for a full-trajectory sweep that, not the batch width, is what bounds a grid
+on one machine.
+
 ::: {.callout-tip}
 ## Grids grow fast
 `mode: product` multiplies. Three axes of 10 points is 1000 simulations. Start coarse,
 find the interesting region, then refine — and move large grids to a cluster with
 [`tvbo workflow`](../CLI/workflow.qmd) and the [HPC patterns](../CLI/hpc.qmd) rather than
-running them locally. `n_parallel` sets how many cells are evaluated concurrently.
+running them locally.
 :::
 
 ## Where to go next

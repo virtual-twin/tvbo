@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import re
+import shlex
 from pathlib import Path
 
 from tvbo.adapters import bsplot
@@ -160,9 +161,22 @@ def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) 
         "threads": int(block.get("cpus_per_task") or block.get("cores") or 1),
         "resources": _rule_resources(block),
         "container": _spec.get("container"),
-        "setup": block.get("setup") or [],
+        # Activation runs in the rule shell before plot.py, exactly as the experiment rules
+        # do: a fresh compute-node shell inherits nothing, so `modules`/`venv` must be put in
+        # place or `python`/`bsplot` is the wrong (system) interpreter and the render fails.
+        "activation": _activation_lines(block),
         "env": block.get("env") or [],
     }
+
+
+def _activation_lines(block: dict) -> list[str]:
+    """Shell lines that put the declared environment in place (modules, then venv, then the
+    verbatim ``setup`` lines) — mirrors the experiment rules' ``_activation`` so a figure
+    renders in the same interpreter its data was produced with."""
+    lines = ["module load %s" % m for m in (block.get("modules") or [])]
+    if block.get("venv"):
+        lines.append("source %s/bin/activate" % shlex.quote(str(block["venv"])))
+    return lines + list(block.get("setup") or [])
 
 
 def figure_contexts(figures, base_dir=".", workflow=None, exp_plans=None,
