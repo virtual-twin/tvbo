@@ -26,144 +26,112 @@ website:
                     href: examples/index.qmd
 
               # ── Topic-first structure (audit §8) ──
-              # Domain topics at the top level; the four Diátaxis modes are the
-              # sub-structure inside each (Learn / Do / Understand / Look up).
-              # Slots are materialized only where content exists.
+              # Domain topics at the top level; pages listed directly under each
+              # topic — no abstract Diátaxis sub-headings. Ordered within a topic
+              # as learn → do → understand → reference.
               # Migration in progress: Usage/Interoperability still hold the topics
               # not yet stood up.
               - section: "Models & Dynamics"
                 href: Models/index.qmd
                 contents:
-                  - section: "Learn"
-                    contents:
-                      - text: "Defining dynamical systems"
-                        href: Models/DefineDynamicalSystem.qmd
-                  - section: "Do"
-                    contents:
-                      - text: "Events & stimulation"
-                        href: Models/Events.qmd
-                      - text: "Noise & stochastic integration"
-                        href: Models/Noise.qmd
-                      - text: "Initial conditions"
-                        href: Models/InitialConditions.qmd
-                      - text: "Unit-aware computations"
-                        href: Models/UnitValidation.qmd
-                  - section: "Understand"
-                    contents:
-                      - text: "Cross-backend numerical parity"
-                        href: Models/CrossBackendParity.qmd
-                  - section: "Look up"
-                    contents:
-                      - text: "Integrators"
-                        href: Models/Integrators.qmd
-                      - text: "Dynamics schema"
-                        href: datamodel/classes/Dynamics.qmd
+                  - text: "Defining dynamical systems"
+                    href: Models/DefineDynamicalSystem.qmd
+                  - text: "Events & stimulation"
+                    href: Models/Events.qmd
+                  - text: "Noise & stochastic integration"
+                    href: Models/Noise.qmd
+                  - text: "Initial conditions"
+                    href: Models/InitialConditions.qmd
+                  - text: "Unit-aware computations"
+                    href: Models/UnitValidation.qmd
+                  - text: "Cross-backend numerical parity"
+                    href: Models/CrossBackendParity.qmd
+                  - text: "Integrators"
+                    href: Models/Integrators.qmd
+                  - text: "Dynamics schema"
+                    href: datamodel/classes/Dynamics.qmd
 
               - section: "Networks & Connectomes"
                 href: Networks/index.qmd
                 contents:
-                  - section: "Learn"
-                    contents:
-                      - text: "Surface & PDE simulation"
-                        href: Networks/PDESimulation.qmd
-                  - section: "Do"
-                    contents:
-                      - text: "Build a connectome from tractography"
-                        href: Networks/BuildConnectomeFromTractography.qmd
-                      - text: "Hierarchical & surface networks"
-                        href: Networks/HierarchicalSurfaceNetworks.qmd
-                      - text: "Coupling functions"
-                        href: Networks/CouplingFunctions.qmd
-                      - text: "Heterogeneous nodes"
-                        href: Networks/HeterogeneousNodes.qmd
-                      - text: "Heterogeneous edges"
-                        href: Networks/HeterogeneousEdges.qmd
-                  - section: "Look up"
-                    contents:
-                      - text: "Network specification"
-                        href: Specification/Network.qmd
-                      - text: "Network schema"
-                        href: datamodel/classes/Network.qmd
+                  - text: "Surface & PDE simulation"
+                    href: Networks/PDESimulation.qmd
+                  - text: "Build a connectome from tractography"
+                    href: Networks/BuildConnectomeFromTractography.qmd
+                  - text: "Hierarchical & surface networks"
+                    href: Networks/HierarchicalSurfaceNetworks.qmd
+                  - text: "Coupling functions"
+                    href: Networks/CouplingFunctions.qmd
+                  - text: "Heterogeneous nodes"
+                    href: Networks/HeterogeneousNodes.qmd
+                  - text: "Heterogeneous edges"
+                    href: Networks/HeterogeneousEdges.qmd
+                  - text: "Network specification"
+                    href: Specification/Network.qmd
+                  - text: "Network schema"
+                    href: datamodel/classes/Network.qmd
 
               - section: "Beyond the Mean Field"
                 href: BeyondMeanField/index.qmd
                 contents:
-                  - section: "Understand"
-                    contents:
-                      - text: "Multi-scale modelling"
-                        href: BeyondMeanField/MultiScaleModelling.qmd
-                  - section: "Look up"
-                    contents:
-                      - text: "NeuroML component mapping"
-                        href: Interoperability/NeuroML/index.qmd
-                      - text: "subnetwork slot"
-                        href: datamodel/slots/subnetwork.qmd
+                  - text: "Multi-scale modelling"
+                    href: BeyondMeanField/MultiScaleModelling.qmd
+                  - text: "NeuroML component mapping"
+                    href: Interoperability/NeuroML/index.qmd
+                  - text: "subnetwork slot"
+                    href: datamodel/slots/subnetwork.qmd
 
               - section: "Simulation & Observation"
                 href: Simulation/index.qmd
                 contents:
-                  - section: "Learn"
-                    contents:
-                      - text: "Simulation experiments"
-                        href: Simulation/SimulationExperiments.qmd
-                  - section: "Do"
-                    contents:
-                      - text: "Observation models"
-                        href: Simulation/ObservationModels.qmd
-                      - text: "Parameter exploration"
-                        href: Simulation/ParameterExploration.qmd
-                      - text: "Visualization"
-                        href: Simulation/Visualization.qmd
-                  - section: "Look up"
-                    contents:
-                      - text: "The experiment result"
-                        href: Simulation/Results.qmd
-                      - text: "Output specification"
-                        href: Specification/Output.qmd
+                  - text: "Simulation experiments"
+                    href: Simulation/SimulationExperiments.qmd
+                  - text: "Observation models"
+                    href: Simulation/ObservationModels.qmd
+                  - text: "Parameter exploration"
+                    href: Simulation/ParameterExploration.qmd
+                  - text: "Visualization"
+                    href: Simulation/Visualization.qmd
+                  - text: "The experiment result"
+                    href: Simulation/Results.qmd
+                  - text: "Output specification"
+                    href: Specification/Output.qmd
 
               - section: "Fitting & Inference"
                 href: Fitting/index.qmd
                 contents:
-                  - section: "Do"
-                    contents:
-                      - text: "Fit functional connectivity (RWW)"
-                        href: Fitting/RWW_tvboptim.qmd
-                      - text: "Fit a MEG frequency gradient (Jansen-Rit)"
-                        href: Fitting/JR_tvboptim.qmd
-                      - text: "Tune E/I balance"
-                        href: Fitting/EI_Tuning_tvboptim.qmd
-                      - text: "Bayesian inference"
-                        href: Fitting/Bayesian_tvboptim.qmd
-                      - text: "Multi-objective (Hopf-Pareto)"
-                        href: Fitting/Hopf_Pareto_tvboptim.qmd
-                      - text: "Delay & speed synchronization"
-                        href: Fitting/Delay_Speed_Synchronization_tvboptim.qmd
-                  - section: "Understand"
-                    contents:
-                      - text: "Model fitting"
-                        href: Fitting/ModelFitting.qmd
-                      - text: "Gradient stability & TBPTT"
-                        href: Fitting/TBPTT_tvboptim.qmd
-                  - section: "Look up"
-                    contents:
-                      - text: "Loss functions"
-                        href: Specification/LossFunction.qmd
-                      - text: "Algorithms (FIC, EIB)"
-                        href: Specification/Algorithms.qmd
+                  - text: "Fit functional connectivity (RWW)"
+                    href: Fitting/RWW_tvboptim.qmd
+                  - text: "Fit a MEG frequency gradient (Jansen-Rit)"
+                    href: Fitting/JR_tvboptim.qmd
+                  - text: "Tune E/I balance"
+                    href: Fitting/EI_Tuning_tvboptim.qmd
+                  - text: "Bayesian inference"
+                    href: Fitting/Bayesian_tvboptim.qmd
+                  - text: "Multi-objective (Hopf-Pareto)"
+                    href: Fitting/Hopf_Pareto_tvboptim.qmd
+                  - text: "Delay & speed synchronization"
+                    href: Fitting/Delay_Speed_Synchronization_tvboptim.qmd
+                  - text: "Model fitting"
+                    href: Fitting/ModelFitting.qmd
+                  - text: "Gradient stability & TBPTT"
+                    href: Fitting/TBPTT_tvboptim.qmd
+                  - text: "Loss functions"
+                    href: Specification/LossFunction.qmd
+                  - text: "Algorithms (FIC, EIB)"
+                    href: Specification/Algorithms.qmd
 
               - section: "Bifurcation & Stability Analysis"
                 href: Bifurcation/index.qmd
                 contents:
-                  - section: "Learn"
+                  - text: "1. Linear stability"
+                    href: Bifurcation/01-LinearStability.qmd
+                  - text: "2. 2D phase portraits"
+                    href: Bifurcation/02-PhasePortrait2D.qmd
+                  - text: "Run a continuation"
+                    href: Bifurcation/BifurcationAnalysis.qmd
+                  - section: "Bifurcation types"
                     contents:
-                      - text: "1. Linear stability"
-                        href: Bifurcation/01-LinearStability.qmd
-                      - text: "2. 2D phase portraits"
-                        href: Bifurcation/02-PhasePortrait2D.qmd
-                  - section: "Do"
-                    contents:
-                      - text: "Run a continuation"
-                        href: Bifurcation/BifurcationAnalysis.qmd
                       - text: "Saddle-node"
                         href: Bifurcation/03-SaddleNode.qmd
                       - text: "Pitchfork"
@@ -172,30 +140,22 @@ website:
                         href: Bifurcation/05-Hysteresis.qmd
                       - text: "Hopf"
                         href: Bifurcation/06-Hopf.qmd
-                  - section: "Understand"
-                    contents:
-                      - text: "Numerical continuation"
-                        href: Bifurcation/07-NumericalContinuation.qmd
-                      - text: "Backend trade-offs"
-                        href: CLI/backends.qmd
-                  - section: "Look up"
-                    contents:
-                      - text: "Continuation schema"
-                        href: datamodel/classes/Continuation.qmd
+                  - text: "Numerical continuation"
+                    href: Bifurcation/07-NumericalContinuation.qmd
+                  - text: "Backend trade-offs"
+                    href: CLI/backends.qmd
+                  - text: "Continuation schema"
+                    href: datamodel/classes/Continuation.qmd
 
               - section: "Scale-Out & Reproducibility"
                 href: ScaleOut/index.qmd
                 contents:
-                  - section: "Do"
-                    contents:
-                      - text: "Distributed workflows"
-                        href: ScaleOut/DistributedWorkflows.qmd
-                      - text: "Code generation & export"
-                        href: ScaleOut/CodeGeneration.qmd
-                  - section: "Understand"
-                    contents:
-                      - text: "Backends & capability matrix"
-                        href: CLI/backends.qmd
+                  - text: "Distributed workflows"
+                    href: ScaleOut/DistributedWorkflows.qmd
+                  - text: "Code generation & export"
+                    href: ScaleOut/CodeGeneration.qmd
+                  - text: "Backends & capability matrix"
+                    href: CLI/backends.qmd
 
               - section: "Command-Line Interface"
                 href: CLI/index.qmd
