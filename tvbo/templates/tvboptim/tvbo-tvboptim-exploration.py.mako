@@ -13,6 +13,7 @@ Output:
 </%doc>
 <%
 from tvbo.utils import as_list
+from tvbo.templates.tvboptim.utils import normalize_n_parallel
 
 # Get experiment info
 model = experiment.dynamics
@@ -35,8 +36,9 @@ for expl in exploration_list:
         'name': getattr(expl, 'name', 'exploration'),
         'label': getattr(expl, 'label', ''),
         'mode': getattr(expl, 'mode', 'product'),
-        # n_parallel = backend-agnostic batch size → tvboptim n_vmap.
-        'n_parallel': getattr(expl, 'n_parallel', 1),
+        # n_parallel = backend-agnostic batch size → tvboptim n_vmap. 'auto' (default)
+        # resolves to min(grid.N, cap) at runtime; an explicit int passes through.
+        'n_parallel': normalize_n_parallel(expl),
         'axes': [],
     }
     axes_list = as_list(getattr(expl, 'space', None))
@@ -65,6 +67,7 @@ import jax.numpy as jnp
 
 from tvboptim.types import Space, GridAxis
 from tvboptim.execution import ParallelExecution
+from tvbo.templates.tvboptim.callbacks import resolve_n_vmap, estimate_per_cell_bytes   # n_parallel:auto → vmap width
 
 % for expl in explorations:
 <%
@@ -90,7 +93,11 @@ def run_${expl['name']}_exploration(state, observable_fn):
     grid = setup_${expl['name']}_grid(state)
     import jax as _jax
     _n_devices = _jax.device_count()
-    _n_vmap = ${expl['n_parallel']}  # schema: n_parallel = cells per vectorised chunk
+    # n_parallel 'auto' (default) caps n_vmap by both a cell count and a memory budget
+    # (using the per-cell working size) so a large-per-cell grid does not blow up peak
+    # memory; an explicit int passes through. See callbacks.resolve_n_vmap.
+    _per_cell_bytes = estimate_per_cell_bytes(observable_fn, state)
+    _n_vmap = resolve_n_vmap(${repr(expl['n_parallel'])}, grid.N, _per_cell_bytes)
     exec = ParallelExecution(observable_fn, grid, n_pmap=_n_devices, n_vmap=_n_vmap)
     results = exec.run()
     return grid, jnp.stack(results)

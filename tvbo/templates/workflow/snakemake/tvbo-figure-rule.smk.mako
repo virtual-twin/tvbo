@@ -61,15 +61,17 @@ rule ${f["rule_name"]}:
 % endfor
 % endif
     shell:
+% for _line in (f.get("activation") or []):
+        ## modules / venv / setup — put the declared environment in place first, so plot.py
+        ## runs in the same interpreter (bsplot, the study's code_modules) its data came from.
+        ${repr(_line + " && ")}
+% endfor
 % if f.get("pythonpath_code"):
         ## The figure's custom-panel code_modules are bundled into code/; put it on
         ## PYTHONPATH so `import <code_module>` resolves when plot.py runs. Doubled braces
         ## survive Snakemake's own {…} wildcard expansion into a literal ${PYTHONPATH:-}.
         "export PYTHONPATH=code:${'$'}{{PYTHONPATH:-}} && "
 % endif
-% for _line in (f.get("setup") or []):
-        ${repr(_line + " && ")}
-% endfor
 % for _e in (f.get("env") or []):
         "export ${_e['name']}=${_e['value']} && "
 % endfor

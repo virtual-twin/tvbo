@@ -10,7 +10,7 @@ from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
     safe_name, iter_parameter_values, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
-    parse_exploration, get_param_info, get_node_param_overrides,
+    parse_exploration, normalize_n_parallel, get_param_info, get_node_param_overrides,
     normalize_coupling_aliases, resolve_coupling_input_map,
     get_node_state_overrides, render_jax_default, get_mode_layout,
     get_all_observations_from_algo, network_axis_leaf, graph_selection,
@@ -650,7 +650,7 @@ else:
 has_explorations = len(exploration_list) > 0
 
 # Parse explorations - uses schema ifabsent defaults
-# Schema defaults: n_parallel=1, mode='product'
+# Schema defaults: n_parallel='auto', mode='product'
 explorations = []
 for expl in exploration_list:
     assert expl.name, "exploration.name required in YAML"
@@ -661,9 +661,10 @@ for expl in exploration_list:
         # mode has schema ifabsent: string(product)
         'mode': expl.mode or 'product',
         # n_parallel is the backend-agnostic batch size: how many sweep cells the
-        # backend processes as one vectorised chunk. The template translates this to
-        # tvboptim internals (n_vmap, n_pmap) without exposing those names.
-        'n_parallel': int(expl.n_parallel) if expl.n_parallel is not None else 1,
+        # backend processes as one vectorised chunk. 'auto' (default) defers the width
+        # to runtime (resolve_n_vmap); an explicit int is passed through. The template
+        # translates this to tvboptim internals (n_vmap, n_pmap) without exposing them.
+        'n_parallel': normalize_n_parallel(expl),
         # n_trials has schema ifabsent: integer(1)
         'n_trials': int(expl.n_trials) if expl.n_trials is not None else 1,
         # average: 'trials' to average over n_trials, None for individual results
@@ -1295,7 +1296,7 @@ from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
-from tvbo.templates.tvboptim.callbacks import progress_ticker   # grid-batch / lyapunov sweep progress
+from tvbo.templates.tvboptim.callbacks import progress_ticker, resolve_n_vmap, estimate_per_cell_bytes   # grid-batch progress; n_parallel:auto → vmap width
 % endif
 % if has_nsga2:
 # Multi-objective search (Exploration.strategy == 'nsga2') + Pareto-seeded refinement.
@@ -3078,13 +3079,18 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % else:
 % if has_axes:
     import jax as _jax
+    # n_parallel 'auto' (default) resolves here, where grid.N and the per-cell working
+    # size are known: it caps n_vmap by both a cell count and a memory budget so a
+    # large-per-cell grid does not blow up peak memory. An explicit int passes through.
+    _per_cell_bytes = estimate_per_cell_bytes(observable_fn, _expl_state)
+    _n_vmap = resolve_n_vmap(${repr(expl['n_parallel'])}, grid.N, _per_cell_bytes)
     # Stream "grid batch i/N" through the tvbo.run logger from inside the jitted
     # lax.map (JAX-native jax.debug.callback, fires once per n_vmap batch) so a long
     # grid does not go silent after "STEP 2 > ...". Identity wrap when INFO is off.
-    _n_batches = max(1, -(-grid.N // ${expl['n_parallel']}))
+    _n_batches = max(1, -(-grid.N // _n_vmap))
     exec_runner = ParallelExecution(
         progress_ticker(_n_batches, label="grid batch")(observable_fn),
-        grid, n_pmap=_jax.device_count(), n_vmap=${expl['n_parallel']},
+        grid, n_pmap=_jax.device_count(), n_vmap=_n_vmap,
     )
     _grid_outputs = list(exec_runner.run())
 % else:
