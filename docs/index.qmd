@@ -3,60 +3,130 @@ title: The Virtual Brain Ontology
 # The Usage guide dissolved into topics; keep its URL resolving.
 aliases:
   - /Usage/index.html
+# The hero owns the page; a one-item ("Quickstart") right-rail adds nothing.
+toc: false
 ---
 
-## Welcome to `tvbo`!
-
-:::: {.columns}
-
-::: {.column width='80%'}
-
-`tvbo` describes a whole brain-network simulation as one typed, ontology-grounded specification. From that single source it compiles runnable code across many backends and a methods report, and grounds every entity in a knowledge graph — so studies re-run without drift and models can be compared even when they share no notation.
-
-**Core Features:**
-
-- **Load:** Access curated models and studies from the knowledge database
-- **Specify:** Define dynamical systems and network models with simple specification language
-- **Build:** Configure brain network models
-- **Generate:** Produce optimized simulation code (Python, JAX, Julia)
-- **Share:** Export reproducible models with standardized metadata
-
-<button class="button">Get Started</button>
-<button class="button button_blue">Live-preview</button>
-
-:::
-
-::: {.column width="20%"}
-![](_static/tvbo_favicon.png)
-:::
-
-::::
-
-
-![One specification, two payoffs: from one typed specification, TVB-O compiles code and a methods report across backends (reproducible) and grounds every entity in a knowledge graph (comparable).](_static/tvbo_overview.png){fig-align="center" width="100%"}
+::: {.tvbo-home}
 
 ```{=html}
-<div class="button-container">
-    <a href="https://tvbo.charite.de" class="card-button">
-        <h3><i class="fa-solid fa-brain" aria-hidden="true"></i> TVB-O GUI</h3>
-        <p>Open the hosted web app to explore TVB‑O models, datasets, and simulations.</p>
-    </a>
-    <a href="/browser" class="card-button">
-        <h3><i class="fa-solid fa-compass" aria-hidden="true"></i> Model Browser</h3>
-        <p>Browse models, parameters, and equations. Inspect relationships and components interactively.</p>
-    </a>
-    <a href="/datamodel" class="card-button">
-        <h3><i class="fa-solid fa-diagram-project" aria-hidden="true"></i> Metadata Schema</h3>
-        <p>Explore the TVB‑O metadata schema: classes, fields, and constraints used across resources.</p>
-    </a>
+<section class="hero">
+  <div class="hero__intro">
+    <div class="hero__head">
+      <p class="eyebrow">The Virtual Brain Ontology</p>
+      <h1 class="hero__title">One specification for a whole <em>brain-network</em> simulation.</h1>
+      <p class="hero__lede">
+        From one typed, ontology-grounded spec, <code>tvbo</code> compiles runnable code
+        across many backends and a methods report — and grounds every parameter in a
+        knowledge graph. Studies re-run without drift; models compare even when they
+        share no notation.
+      </p>
+    </div>
+
+    <div class="hero__art" aria-hidden="true">
+    <svg class="connectome" viewBox="0 0 400 400" role="img">
+      <g class="edges">
+        <line class="edge" x1="200" y1="50"    x2="329.9" y2="125"   style="animation-delay:.05s"/>
+        <line class="edge" x1="329.9" y1="125" x2="329.9" y2="275"   style="animation-delay:.11s"/>
+        <line class="edge" x1="329.9" y1="275" x2="200" y2="350"     style="animation-delay:.17s"/>
+        <line class="edge" x1="200" y1="350"   x2="70.1" y2="275"    style="animation-delay:.23s"/>
+        <line class="edge" x1="70.1" y1="275"  x2="70.1" y2="125"    style="animation-delay:.29s"/>
+        <line class="edge" x1="70.1" y1="125"  x2="200" y2="50"      style="animation-delay:.35s"/>
+        <line class="edge edge--diag" x1="200" y1="50"    x2="329.9" y2="275" style="animation-delay:.30s"/>
+        <line class="edge edge--diag" x1="329.9" y1="125" x2="200" y2="350"   style="animation-delay:.36s"/>
+        <line class="edge edge--diag" x1="329.9" y1="275" x2="70.1" y2="275"  style="animation-delay:.42s"/>
+        <line class="edge edge--diag" x1="200" y1="350"   x2="70.1" y2="125"  style="animation-delay:.48s"/>
+        <line class="edge edge--diag" x1="70.1" y1="275"  x2="200" y2="50"    style="animation-delay:.54s"/>
+        <line class="edge edge--diag" x1="70.1" y1="125"  x2="329.9" y2="125" style="animation-delay:.60s"/>
+        <line class="edge" x1="200" y1="200" x2="200" y2="50"    style="animation-delay:.55s"/>
+        <line class="edge" x1="200" y1="200" x2="329.9" y2="125" style="animation-delay:.60s"/>
+        <line class="edge" x1="200" y1="200" x2="329.9" y2="275" style="animation-delay:.65s"/>
+        <line class="edge" x1="200" y1="200" x2="200" y2="350"   style="animation-delay:.70s"/>
+        <line class="edge" x1="200" y1="200" x2="70.1" y2="275"  style="animation-delay:.75s"/>
+        <line class="edge" x1="200" y1="200" x2="70.1" y2="125"  style="animation-delay:.80s"/>
+      </g>
+      <g class="pulses">
+        <circle class="pulse" r="4.5" style="offset-path:path('M70.1,125 L329.9,125'); animation-delay:0s"/>
+        <circle class="pulse" r="4.5" style="offset-path:path('M329.9,275 L70.1,275'); animation-delay:.9s"/>
+        <circle class="pulse" r="4.5" style="offset-path:path('M200,200 L329.9,275'); animation-delay:1.7s"/>
+        <circle class="pulse" r="4.5" style="offset-path:path('M200,50 L70.1,275'); animation-delay:2.5s"/>
+      </g>
+      <g class="nodes">
+        <circle class="node node--outer" cx="200" cy="50"    r="9"  style="animation-delay:.90s"/>
+        <circle class="node node--outer" cx="329.9" cy="125" r="9"  style="animation-delay:.95s"/>
+        <circle class="node node--outer" cx="329.9" cy="275" r="9"  style="animation-delay:1.00s"/>
+        <circle class="node node--outer" cx="200" cy="350"   r="9"  style="animation-delay:1.05s"/>
+        <circle class="node node--outer" cx="70.1" cy="275"  r="9"  style="animation-delay:1.10s"/>
+        <circle class="node node--outer" cx="70.1" cy="125"  r="9"  style="animation-delay:1.15s"/>
+        <circle class="node node--center" cx="200" cy="200"  r="44" style="animation-delay:1.25s"/>
+        <circle class="node node--hub"    cx="200" cy="200"  r="9"  style="animation-delay:1.32s"/>
+      </g>
+    </svg>
+    </div>
+  </div>
+
+  <div class="hero__bar">
+    <div class="hero__cta">
+      <a class="btn btn--primary" href="GettingStarted.html">Get started <span aria-hidden="true">&rarr;</span></a>
+      <a class="btn btn--ghost" href="platform.html">Explore the platform <span aria-hidden="true">&rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="pipeline">
+  <p class="section-eyebrow">From database to reproducible result</p>
+  <ol class="steps">
+    <li class="step"><span class="step__n">1</span><h3>Explore</h3><p>Find curated models, networks, and studies in the knowledge database.</p></li>
+    <li class="step"><span class="step__n">2</span><h3>Specify</h3><p>Define dynamical systems and networks as one typed spec.</p></li>
+    <li class="step"><span class="step__n">3</span><h3>Build</h3><p>Assemble the network model — nodes, coupling, noise.</p></li>
+    <li class="step"><span class="step__n">4</span><h3>Generate &amp; run</h3><p>Emit optimized code and execute on any backend.</p></li>
+    <li class="step"><span class="step__n">5</span><h3>Plot</h3><p>Compose multi-panel publication figures from results.</p></li>
+    <li class="step"><span class="step__n">6</span><h3>Share</h3><p>Export reproducible models with standardized metadata.</p></li>
+  </ol>
+  <div class="pipeline__targets">
+    <span class="step__n step__n--sm" aria-hidden="true">4</span>
+    <span class="chips__label">From one source</span>
+    <span class="targets__arrow" aria-hidden="true">&rarr;</span>
+    <ul class="chips">
+      <li>TVB</li><li>JAX</li><li>Julia</li><li>C / CUDA</li><li>AUTO</li><li>BifurcationKit</li>
+    </ul>
+  </div>
+</section>
+
+<figure class="overview">
+  <img src="_static/tvbo_overview.png" alt="From one specification, TVB-O compiles code and a methods report across backends and grounds every entity in a knowledge graph." />
+  <figcaption>One specification, two payoffs — TVB-O compiles code and a methods report across backends (reproducible) and grounds every entity in a knowledge graph (comparable).</figcaption>
+</figure>
+
+<div class="cards">
+  <a class="card" href="api/index.html">
+    <span class="card__icon"><i class="fa-brands fa-python" aria-hidden="true"></i></span>
+    <h3>Python Software</h3>
+    <p>The <code>tvbo</code> library — specify models, generate code across backends, and run simulations from Python.</p>
+    <span class="card__more">API reference &rarr;</span>
+  </a>
+  <a class="card" href="https://tvbo.charite.de">
+    <span class="card__icon"><i class="fa-solid fa-globe" aria-hidden="true"></i></span>
+    <h3>Platform</h3>
+    <p>The hosted web app — browse models &amp; networks, build experiments, and export, with no install.</p>
+    <span class="card__more">Open the app &#8599;</span>
+  </a>
+  <a class="card" href="datamodel/index.html">
+    <span class="card__icon"><i class="fa-solid fa-diagram-project" aria-hidden="true"></i></span>
+    <h3>Data Model</h3>
+    <p>The typed metadata schema behind every spec — classes, fields, and constraints.</p>
+    <span class="card__more">Explore the schema &rarr;</span>
+  </a>
 </div>
 ```
+
+:::
 
 ---
 
 ## Quickstart
 
-:::: {.panel-tabset}
+:::: {.panel-tabset .tvbo-quickstart}
 ### Python Installation
 ```bash
 pip install tvbo
