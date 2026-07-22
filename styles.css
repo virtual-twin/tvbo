@@ -1,75 +1,374 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 .navbar-brand img.navbar-logo {
     max-height: 28px;
 }
 
-.button {
-    background-color: #426666; /* Green */
-    border: none;
-    color: white;
-    padding: 15px 32px;
-    text-align: center;
-    text-decoration: none;
+/* ==========================================================================
+   TVB-O landing page (index.qmd)
+   Signature: a connectome (hexagonal complete-graph) — the brand mark itself —
+   with signal pulses traveling its edges, which is what tvbo simulates.
+   Palette derived from the logo: teal #366766 + slate #73ACCE, cool paper.
+   All rules scoped under .tvbo-home so the rest of the docs is untouched.
+   ========================================================================== */
+
+:root {
+    --tvbo-ink: #16302f;      /* deep teal-charcoal — headlines / body */
+    --tvbo-teal: #366766;     /* brand primary — actions, nodes */
+    --tvbo-teal-deep: #244c4b;
+    --tvbo-slate: #73acce;    /* connectome edges — secondary accent */
+    --tvbo-slate-deep: #4d84a8;
+    --tvbo-mist: #eef4f4;     /* cool surface tint */
+    --tvbo-wash: #f7fafa;     /* faint section wash */
+    --tvbo-line: #d9e4e4;     /* hairlines */
+    --tvbo-muted: #5c6f6e;    /* secondary text */
+    --tvbo-display: "Space Grotesk", "Source Sans Pro", system-ui, sans-serif;
+}
+
+/* Hide the default Quarto title block only on the home page — the hero owns the h1. */
+body:has(.tvbo-home) #title-block-header { display: none; }
+
+/* Give the hero room to breathe at the top of the page. */
+.tvbo-home { margin-top: -0.5rem; }
+.tvbo-home * { box-sizing: border-box; }
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.tvbo-home .hero {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 3rem;
+    align-items: center;
+    padding: 1.5rem 0 3rem;
+    border-bottom: 1px solid var(--tvbo-line);
+}
+
+.tvbo-home .eyebrow {
+    font-family: var(--tvbo-display);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--tvbo-slate-deep);
+    margin: 0 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.tvbo-home .eyebrow::before {
+    content: "";
+    width: 26px;
+    height: 2px;
+    background: var(--tvbo-slate);
     display: inline-block;
+}
+
+.tvbo-home .hero__title {
+    font-family: var(--tvbo-display);
+    font-weight: 700;
+    font-size: clamp(2.1rem, 3.8vw, 3rem);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+    text-wrap: balance;   /* even line lengths, no orphan words */
+    color: var(--tvbo-ink);
+    margin: 0 0 1.1rem;
+    border: none;      /* cancel Quarto's default h1 underline */
+    padding: 0;
+}
+.tvbo-home .hero__title em {
+    font-style: normal;
+    color: var(--tvbo-teal);
+    white-space: nowrap;   /* keep "brain-network" from breaking at the hyphen */
+}
+
+.tvbo-home .hero__lede {
+    font-size: 1.075rem;
+    line-height: 1.6;
+    color: var(--tvbo-muted);
+    max-width: 34em;
+    margin: 0 0 1.75rem;
+}
+.tvbo-home .hero__lede code {
+    background: var(--tvbo-mist);
+    color: var(--tvbo-teal-deep);
+    padding: 0.05em 0.35em;
     border-radius: 4px;
-    font-size: 16px;
-    transition-duration: 0.4s;
-    margin-right: 10px;
-    /* margin: 10px; */
+    font-weight: 600;
 }
 
-.button:hover {
-    background-color: #5f6760;
-    color: white;
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.tvbo-home .hero__cta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2.25rem; }
+.tvbo-home .btn {
+    font-family: var(--tvbo-display);
+    font-weight: 600;
+    font-size: 0.98rem;
+    padding: 0.72rem 1.4rem;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    border: 1.5px solid transparent;
+}
+.tvbo-home .btn span { transition: transform 0.18s ease; }
+.tvbo-home .btn:hover span { transform: translateX(3px); }
+.tvbo-home .btn--primary {
+    background: var(--tvbo-teal);
+    color: #fff;
+    box-shadow: 0 6px 16px -6px rgba(54, 103, 102, 0.6);
+}
+.tvbo-home .btn--primary:hover {
+    background: var(--tvbo-teal-deep);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px -8px rgba(54, 103, 102, 0.7);
+    color: #fff;
+}
+.tvbo-home .btn--ghost {
+    background: transparent;
+    color: var(--tvbo-teal-deep);
+    border-color: var(--tvbo-line);
+}
+.tvbo-home .btn--ghost:hover {
+    border-color: var(--tvbo-teal);
+    background: var(--tvbo-wash);
+    color: var(--tvbo-teal-deep);
 }
 
-
-.button-container {
-    display: flex; /* Flex display */
-    justify-content: space-around; /* Space around the cards */
-    align-items: stretch; /* Stretch the cards to be the same height */
-    flex-wrap: wrap; /* Wrap cards if necessary */
-    gap: 10px; /* Gap between cards */
+/* ── Backend chips: from one source → these targets ───────────────────── */
+.tvbo-home .hero__chips { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.55rem 0.75rem; }
+.tvbo-home .chips__label {
+    font-family: var(--tvbo-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--tvbo-muted);
+    font-weight: 500;
+}
+.tvbo-home .chips { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; }
+.tvbo-home .chips li {
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: 0.72rem;
+    color: var(--tvbo-teal-deep);
+    background: var(--tvbo-mist);
+    border: 1px solid var(--tvbo-line);
+    border-radius: 5px;
+    padding: 0.2rem 0.5rem;
+    white-space: nowrap;
 }
 
+/* ── Connectome signature ─────────────────────────────────────────────── */
+.tvbo-home .hero__art { display: flex; justify-content: center; align-items: center; }
+.tvbo-home .connectome { width: 100%; max-width: 420px; height: auto; overflow: visible; }
+.tvbo-home .connectome .edge {
+    stroke: var(--tvbo-slate);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-dashoffset: 0;      /* rest / reduced-motion: fully drawn */
+    opacity: 0.65;
+}
+.tvbo-home .connectome .edge--diag { opacity: 0.42; }
+.tvbo-home .connectome .node {
+    fill: var(--tvbo-teal);
+    stroke: #fff;
+    stroke-width: 2;
+}
+.tvbo-home .connectome .node--outer { fill: var(--tvbo-slate-deep); }
+.tvbo-home .connectome .node--center { fill: var(--tvbo-teal); }
+.tvbo-home .connectome .halo { fill: var(--tvbo-teal); opacity: 0.12; }
+.tvbo-home .connectome .pulse { fill: #fff; opacity: 0; }
 
-.button_blue {
-    background-color: #7FAACA; /* New color for button1 */
+/* Motion is deliberately spare: the graph assembles once on load, then a few
+   signal dots travel its edges — a brain-network simulation in miniature.
+   No perpetual node "breathing"; reduced-motion users get the final graph. */
+@media (prefers-reduced-motion: no-preference) {
+    /* `both` fill = hidden `from` during the delay, drawn `to` state held after.
+       The hidden start lives only in the keyframe, so the base rule above keeps
+       edges visible if the animation is ever dropped. */
+    .tvbo-home .connectome .edge {
+        stroke-dasharray: 540;
+        animation: tvbo-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .tvbo-home .connectome .node {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: tvbo-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .tvbo-home .connectome .pulse {
+        animation: tvbo-travel 3.4s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        offset-rotate: 0deg;
+    }
+    @keyframes tvbo-draw { from { stroke-dashoffset: 540; } to { stroke-dashoffset: 0; } }
+    @keyframes tvbo-pop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+    @keyframes tvbo-travel {
+        0%   { opacity: 0; offset-distance: 0%; }
+        12%  { opacity: 0.9; }
+        88%  { opacity: 0.9; }
+        100% { opacity: 0; offset-distance: 100%; }
+    }
 }
 
+/* ── Pipeline: the five-step workflow (a genuine sequence) ────────────── */
+.tvbo-home .pipeline { padding: 2.75rem 0 1.25rem; }
+.tvbo-home .section-eyebrow {
+    font-family: var(--tvbo-display);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--tvbo-slate-deep);
+    margin: 0 0 1.5rem;
+}
+.tvbo-home .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    position: relative;
+}
+.tvbo-home .steps::before {
+    content: "";
+    position: absolute;
+    top: 15px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--tvbo-slate) 0 6px, transparent 6px 12px);
+    opacity: 0.5;
+}
+.tvbo-home .step { position: relative; padding: 0 0.85rem; }
+.tvbo-home .step__n {
+    position: relative;
+    z-index: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--tvbo-teal);
+    color: var(--tvbo-teal);
+    font-family: var(--tvbo-display);
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.9rem;
+}
+.tvbo-home .step h3 {
+    font-family: var(--tvbo-display);
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--tvbo-ink);
+    margin: 0 0 0.35rem;
+    border: none;
+    padding: 0;
+}
+.tvbo-home .step p { font-size: 0.88rem; line-height: 1.5; color: var(--tvbo-muted); margin: 0; }
 
-.card-button {
-    /* background-color: #1e1e1e;  */
-    border: 1px solid #626262; /* Border color */
-    color: black;
-    padding: 20px; /* Padding for the card */
-    text-align: left; /* Left-align text */
-    text-decoration: none; /* Remove underline */
-    display: flex; /* Flex display */
-    flex-direction: column; /* Column direction */
-    justify-content: flex-start;
-    border-radius: 10px; /* Rounded corners */
-    font-size: 18px; /* Font size */
-    transition-duration: 0.4s; /* Transition for hover effects */
-    margin: 10px; /* Add space between cards */
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); /* Shadow effect */
-    flex: 1; /* Allow flex-grow to adjust size */
+/* ── Overview figure ─────────────────────────────────────────────────── */
+.tvbo-home .overview { margin: 2.5rem 0; }
+.tvbo-home .overview img {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--tvbo-line);
+    border-radius: 12px;
+    background: #fff;
+    padding: 0.75rem;
+}
+.tvbo-home .overview figcaption {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--tvbo-muted);
+    text-align: center;
+    margin-top: 0.85rem;
+    max-width: 60ch;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.card-button:hover {
-    background-color: #333; /* Darker background on hover */
-    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2); /* Larger shadow on hover */
-    color: white; /* Ensure text stays white */
+/* ── Destination cards ───────────────────────────────────────────────── */
+.tvbo-home .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 2.5rem 0;
+}
+.tvbo-home .card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid var(--tvbo-line);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: var(--tvbo-ink);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.tvbo-home .card:hover {
+    transform: translateY(-3px);
+    border-color: var(--tvbo-teal);
+    box-shadow: 0 14px 30px -18px rgba(22, 48, 47, 0.5);
+    color: var(--tvbo-ink);
+}
+.tvbo-home .card__icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--tvbo-mist);
+    color: var(--tvbo-teal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    margin-bottom: 1rem;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.tvbo-home .card:hover .card__icon { background: var(--tvbo-teal); color: #fff; }
+.tvbo-home .card h3 {
+    font-family: var(--tvbo-display);
+    font-size: 1.12rem;
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+    border: none;
+    padding: 0;
+}
+.tvbo-home .card p { font-size: 0.9rem; line-height: 1.5; color: var(--tvbo-muted); margin: 0 0 1rem; flex: 1; }
+.tvbo-home .card__more {
+    font-family: var(--tvbo-display);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--tvbo-slate-deep);
 }
 
-.card-button h3 {
-    margin: 0; /* Remove default margin */
-    font-size: 24px; /* Title font size */
-    font-weight: bold; /* Bold title */
+/* ── Quickstart tabs ─────────────────────────────────────────────────── */
+.tvbo-home + hr { margin-top: 1rem; }
+.tvbo-quickstart .nav-tabs { border-bottom: 1px solid var(--tvbo-line); }
+.tvbo-quickstart .nav-tabs .nav-link {
+    font-family: var(--tvbo-display);
+    font-weight: 500;
+    color: var(--tvbo-muted);
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+.tvbo-quickstart .nav-tabs .nav-link.active {
+    color: var(--tvbo-teal-deep);
+    background: transparent;
+    border-bottom-color: var(--tvbo-teal);
 }
 
-.card-button p {
-    margin: 10px 0 0 0; /* Margin for the paragraph */
-    font-size: 16px; /* Paragraph font size */
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .tvbo-home .hero { grid-template-columns: 1fr; gap: 1.5rem; text-align: left; }
+    .tvbo-home .hero__art { order: -1; }
+    .tvbo-home .connectome { max-width: 300px; }
+    .tvbo-home .steps { grid-template-columns: 1fr 1fr; gap: 1.75rem 0; }
+    .tvbo-home .steps::before { display: none; }
+    .tvbo-home .cards { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+    .tvbo-home .steps { grid-template-columns: 1fr; }
 }
 
 
