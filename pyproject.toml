@@ -141,7 +141,9 @@ docs = [
 auto7p = ["pycobi>=0.8.0"]
 
 # PyRates dynamical systems modeling + continuation (continuation needs auto7p)
-pyrates = ["pyrates>=1.0.0", "tvbo[auto7p]"]
+# networkx<=3.5: pyrates passes backend='fortran' to its ComputeGraph(MultiDiGraph);
+# networkx>=3.6 makes graph constructors backend-dispatchable and steals that kwarg.
+pyrates = ["pyrates>=1.0.0", "networkx<=3.5", "tvbo[auto7p]"]
 
 # Julia integration
 julia = ["juliacall>=0.9.20"]
