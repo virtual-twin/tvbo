@@ -71,12 +71,16 @@ has_model_output = bool(model_output_vars)
 # rather than the kind.
 from tvbo.templates.tvboptim.utils import (
     resolve_model_output_indices, format_channel_index, get_recorded_variable_names,
-    state_only_recorded_aux,
+    state_only_recorded_aux, state_only_derived_var_names,
 )
 model_output_indices, model_output_names = resolve_model_output_indices(model, experiment)
 _, _, _recorded_var_names = get_recorded_variable_names(model, experiment)
 # State-only recorded derived variables to realign post-solve (single-mode only).
 _state_only_aux = state_only_recorded_aux(model, experiment) if n_modes == 1 else []
+# All state-only derived variables, in dependency order — bound as locals in the
+# realign so a recorded auxiliary can reach the intermediate derived variables it
+# depends on (a firing rate built from a synaptic-current derived variable, etc.).
+_state_only_derived = state_only_derived_var_names(model) if _state_only_aux else []
 model_output_channel_index = (
     format_channel_index(model_output_indices, len(_recorded_var_names))
     if model_output_indices else ''
@@ -1738,10 +1742,15 @@ def _realign_state_auxiliaries(sol, network):
     % for _dp in (model.derived_parameters.values() if model.derived_parameters else []):
     ${_dp.name} = ${realign_render(_dp)}
     % endfor
+    ## Bind every state-only derived variable (in dependency order) so a recorded
+    ## auxiliary can reference the intermediate ones it is built from.
+    % for _name in _state_only_derived:
+    ${_name} = ${realign_render(model.derived_variables[_name])}
+    % endfor
     % for _name, _offset in _state_only_aux:
 <%    _ch = len(state_names) + _offset %>\
     _ys = _ys.at[:, ${_ch}, :].set(
-        jnp.broadcast_to(jnp.atleast_1d(${realign_render(model.derived_variables[_name])}), _ys[:, ${_ch}, :].shape))
+        jnp.broadcast_to(jnp.atleast_1d(${_name}), _ys[:, ${_ch}, :].shape))
     % endfor
     return NativeSolution(sol.ts, _ys, dt=sol.dt, variable_names=sol.variable_names)
 
