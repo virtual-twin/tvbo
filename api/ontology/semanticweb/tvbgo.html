@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../../datamodel/index.html"> 
@@ -276,7 +284,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.semanticweb.tvbgo.bel2label">bel2label</a></td>
-<td></td>
+<td>Build a <code>namespace:name</code> string label for a PyBEL node.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.semanticweb.tvbgo.get_annotated_parameters">get_annotated_parameters</a></td>
@@ -324,13 +332,71 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.ontology.semanticweb.tvbgo.bel2label" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.semanticweb.tvbgo.bel2label">bel2label</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ontology.semanticweb.tvbgo.bel2label(node)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build a <code>namespace:name</code> string label for a PyBEL node.</p>
+<p>Composite nodes are flattened into a single <code>AND</code>-joined label: <code>ComplexAbundance</code> and <code>CompositeAbundance</code> join their members, while a <code>Reaction</code> joins its reactants followed by its products. Any other node is labelled directly from its own entity namespace and name.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 6%">
+<col style="width: 77%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>node</td>
+<td></td>
+<td>A PyBEL DSL node whose entity (or members/reactants/products) carries a <code>namespace</code> and <code>name</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The node label, e.g.&nbsp;<code>"HGNC:GRIN1"</code>, with member entities joined by</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>" AND "</code> for complex, composite, and reaction nodes.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.semanticweb.tvbgo.get_annotated_parameters" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.semanticweb.tvbgo.get_annotated_parameters">get_annotated_parameters</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ontology.semanticweb.tvbgo.get_annotated_parameters()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Retrieve parameters that have been annotated.</p>
-<section id="returns" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
 <p>list List of annotated parameters.</p>
 </section>
 </section>
@@ -338,8 +404,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.ontology.semanticweb.tvbgo.get_go">get_go</h3>
 <div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ontology.semanticweb.tvbgo.get_go()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Retrieve the Gene Ontology DAG (Directed Acyclic Graph) from the online repository.</p>
-<section id="returns-1" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
 <p>go : GODag object The Gene Ontology DAG.</p>
 </section>
 </section>
@@ -347,12 +413,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.ontology.semanticweb.tvbgo.get_term">get_term</h3>
 <div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ontology.semanticweb.tvbgo.get_term(go_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This function retrieves the definition of a given Gene Ontology term, using EMBL-EBI’s QuickGO browser. Input: go_id - a valid Gene Ontology ID, e.g.&nbsp;GO:0048527.</p>
-<section id="parameters-1" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
 <p>go_id : str A valid Gene Ontology ID, e.g., GO:0048527.</p>
 </section>
-<section id="returns-2" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
 <p>dict Term information.</p>
 </section>
 <section id="raises" class="level4 doc-section doc-section-raises">
@@ -364,12 +430,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.ontology.semanticweb.tvbgo.go_term2id">go_term2id</h3>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ontology.semanticweb.tvbgo.go_term2id(term)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert a Gene Ontology term to its corresponding ID.</p>
-<section id="parameters-2" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
 <p>term : str The Gene Ontology term to convert.</p>
 </section>
-<section id="returns-3" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
 <p>str or None The corresponding GO ID or None if not found.</p>
 </section>
 </section>
@@ -377,12 +443,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.ontology.semanticweb.tvbgo.graph_from_table">graph_from_table</h3>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ontology.semanticweb.tvbgo.graph_from_table(df_tvbgo<span class="op">=</span>df_tvbgo)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate a graph based on a given table.</p>
-<section id="parameters-3" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
 <p>df_tvbgo : DataFrame, optional Data table used to generate the graph. Defaults to the module-level df_tvbgo.</p>
 </section>
-<section id="returns-4" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
 <p>NetworkX graph Generated graph.</p>
 </section>
 </section>
@@ -390,12 +456,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.ontology.semanticweb.tvbgo.rename2clust">rename2clust</h3>
 <div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ontology.semanticweb.tvbgo.rename2clust(kw)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Rename a keyword based on predefined clusters.</p>
-<section id="parameters-4" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
 <p>kw : str Keyword to rename.</p>
 </section>
-<section id="returns-5" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
 <p>str Renamed keyword.</p>
 </section>
 </section>
@@ -403,12 +469,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.ontology.semanticweb.tvbgo.retrieve_go_id">retrieve_go_id</h3>
 <div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ontology.semanticweb.tvbgo.retrieve_go_id(term)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Search for a Gene Ontology term and retrieve its ID.</p>
-<section id="parameters-5" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
 <p>term : str The Gene Ontology term to search.</p>
 </section>
-<section id="returns-6" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h4>
 <p>str or None The corresponding GO ID or None if not found.</p>
 </section>
 </section>
@@ -416,12 +482,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.ontology.semanticweb.tvbgo.rmv_extrachars">rmv_extrachars</h3>
 <div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ontology.semanticweb.tvbgo.rmv_extrachars(term)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Remove special characters from a term.</p>
-<section id="parameters-6" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
 <p>term : str The term from which special characters should be removed.</p>
 </section>
-<section id="returns-7" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h4>
+<section id="returns-8" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
 <p>str Term without special characters.</p>
 
 

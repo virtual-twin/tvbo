@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -174,6 +182,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#tvbo.classes.observation" id="toc-tvbo.classes.observation" class="nav-link active" data-scroll-target="#tvbo.classes.observation">observation</a>
   <ul class="collapse">
+  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   <li><a href="#classes" id="toc-classes" class="nav-link" data-scroll-target="#classes">Classes</a>
   <ul class="collapse">
   <li><a href="#tvbo.classes.observation.Function" id="toc-tvbo.classes.observation.Function" class="nav-link" data-scroll-target="#tvbo.classes.observation.Function">Function</a></li>
@@ -185,6 +194,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.classes.observation.expand_to_4d" id="toc-tvbo.classes.observation.expand_to_4d" class="nav-link" data-scroll-target="#tvbo.classes.observation.expand_to_4d">expand_to_4d</a></li>
   <li><a href="#tvbo.classes.observation.functioninstance2metadata" id="toc-tvbo.classes.observation.functioninstance2metadata" class="nav-link" data-scroll-target="#tvbo.classes.observation.functioninstance2metadata">functioninstance2metadata</a></li>
   <li><a href="#tvbo.classes.observation.instance2metadata" id="toc-tvbo.classes.observation.instance2metadata" class="nav-link" data-scroll-target="#tvbo.classes.observation.instance2metadata">instance2metadata</a></li>
+  <li><a href="#tvbo.classes.observation.populate_observation_from_iri" id="toc-tvbo.classes.observation.populate_observation_from_iri" class="nav-link" data-scroll-target="#tvbo.classes.observation.populate_observation_from_iri">populate_observation_from_iri</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -199,6 +209,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.observation" class="level1">
 <h1>observation</h1>
 <p><code>classes.observation</code></p>
+<p>Observation models that transform simulation output into observables.</p>
+<p>This module provides <a href="#tvbo.classes.observation.Function"><code>Function</code></a>, a named symbolic transformation, and <a href="#tvbo.classes.observation.ObservationModel"><code>ObservationModel</code></a>, a directed graph that chains such functions (e.g.&nbsp;BOLD HRF, filtering, functional connectivity) into an observation pipeline. Helper routines convert Python callables and curated ontology instances into the underlying datamodel shape.</p>
+<section id="attributes" class="level2">
+<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.classes.observation.logger">logger</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="classes" class="level2">
 <h2 class="anchored" data-anchor-id="classes">Classes</h2>
 <table class="caption-top table">
@@ -229,8 +258,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>A named symbolic transformation applied to simulation outputs.</p>
 <p><code>Function</code> wraps an <code>equation</code> (RHS string parseable by SymPy) plus parameters and metadata. Used as the building block of <a href="#tvbo.classes.observation.ObservationModel"><code>ObservationModel</code></a>s (e.g.&nbsp;BOLD HRF, sigmoid firing-rate, band-pass filter) and as derived quantities (e.g.&nbsp;coherence, PSD, FC).</p>
 <p>Construct from a callable, from the curated ontology by name, or by passing <code>equation=</code>, <code>parameters=</code>, etc. inline.</p>
-<section id="attributes" class="level4">
-<h4 class="anchored" data-anchor-id="attributes">Attributes</h4>
+<section id="attributes-1" class="level4">
+<h4 class="anchored" data-anchor-id="attributes-1">Attributes</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -265,6 +294,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.classes.observation.Function.apply">apply</a></td>
+<td>Execute the function and call it with the given arguments.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.observation.Function.execute">execute</a></td>
+<td>Compile the function into an executable callable.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.observation.Function.from_datamodel">from_datamodel</a></td>
 <td>Create Function from a datamodel instance.</td>
 </tr>
@@ -285,70 +322,538 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Create Function from a Python callable.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.classes.observation.Function.get_equation">get_equation</a></td>
+<td>Build the function as a SymPy equation.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.observation.Function.get_parameters">get_parameters</a></td>
+<td>Return the equation’s parameters as a name-to-value mapping.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.observation.Function.get_symbolic_function">get_symbolic_function</a></td>
+<td>Return the function as a callable SymPy <code>Lambda</code>.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.observation.Function.list_db">list_db</a></td>
 <td>List available observation models in the tvbo database.</td>
 </tr>
+<tr class="even">
+<td><a href="#tvbo.classes.observation.Function.plot">plot</a></td>
+<td>Plot the function’s output against its input.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.observation.Function.plot_metadata_graph">plot_metadata_graph</a></td>
+<td>Draw a graph of the function’s metadata.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.observation.Function.render_code">render_code</a></td>
+<td>Render the function’s equation as backend source code.</td>
+</tr>
 </tbody>
 </table>
+<section id="tvbo.classes.observation.Function.apply" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.apply">apply</h5>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.<span class="bu">apply</span>(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Execute the function and call it with the given arguments.</p>
+<section id="parameters" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 10%">
+<col style="width: 63%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Argument values passed to the compiled callable.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The result of evaluating the function.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.Function.execute" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.execute">execute</h5>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.execute(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'python'</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    fill_in_parameters<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>{},</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compile the function into an executable callable.</p>
+<p>Returns the recorded Python callable when one is available; otherwise lambdifies the symbolic equation for the requested backend. Supplied parameters that do not appear in the equation are discarded, and the function’s stored parameter values can optionally be substituted in before compilation.</p>
+<section id="parameters-1" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 4%">
+<col style="width: 75%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target backend for <code>lambdify</code> (e.g.&nbsp;<code>"python"</code>/<code>"numpy"</code>, <code>"jax"</code>); also selects the module used for numeric evaluation.</td>
+<td><code>'python'</code></td>
+</tr>
+<tr class="even">
+<td>fill_in_parameters</td>
+<td></td>
+<td>When <code>True</code>, substitute the function’s stored parameter values into the expression before compiling.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>parameters</td>
+<td></td>
+<td>Extra parameter values to substitute; entries whose symbol is absent from the equation are ignored.</td>
+<td><code>{}</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Backend options; for <code>format="jax"</code>, <code>jit=True</code> wraps the result in <code>jax.jit</code> with <code>stepsize</code> treated as static.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A callable evaluating the function over its arguments.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.classes.observation.Function.from_datamodel" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.from_datamodel">from_datamodel</h5>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.from_datamodel(datamodel_instance)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.from_datamodel(datamodel_instance)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create Function from a datamodel instance.</p>
 </section>
 <section id="tvbo.classes.observation.Function.from_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.from_db">from_db</h5>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load a Function by name from the tvbo database.</p>
 </section>
 <section id="tvbo.classes.observation.Function.from_file" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.from_file">from_file</h5>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.from_file(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.from_file(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create Function from a file.</p>
 </section>
 <section id="tvbo.classes.observation.Function.from_ontology" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.from_ontology">from_ontology</h5>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.from_ontology(ontology_instance, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.from_ontology(ontology_instance, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create Function from an ontology instance.</p>
 </section>
 <section id="tvbo.classes.observation.Function.from_python" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.from_python">from_python</h5>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.from_python(function_instance, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.from_python(function_instance, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create Function from a Python callable.</p>
+</section>
+<section id="tvbo.classes.observation.Function.get_equation" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.get_equation">get_equation</h5>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.get_equation()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build the function as a SymPy equation.</p>
+<p>Parses the stored right-hand-side string into an expression, treats the function’s arguments as <code>IndexedBase</code> symbols, and returns an equality whose left-hand side is the named function applied to its arguments.</p>
+<section id="returns-2" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A SymPy <code>Eq</code> relating the function call to its parsed expression.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.Function.get_parameters" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.get_parameters">get_parameters</h5>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.get_parameters(key_as_symbol<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the equation’s parameters as a name-to-value mapping.</p>
+<section id="parameters-2" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 6%">
+<col style="width: 72%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>key_as_symbol</td>
+<td></td>
+<td>When <code>True</code>, use SymPy <code>Symbol</code> objects as keys instead of plain parameter-name strings.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-3" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 79%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>Mapping from each parameter name (or <code>Symbol</code>) to its value.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.Function.get_symbolic_function" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.get_symbolic_function">get_symbolic_function</h5>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.get_symbolic_function()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the function as a callable SymPy <code>Lambda</code>.</p>
+<section id="returns-4" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A SymPy <code>Lambda</code> mapping the function’s arguments to its equation.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.observation.Function.list_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.list_db">list_db</h5>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>List available observation models in the tvbo database.</p>
+</section>
+<section id="tvbo.classes.observation.Function.plot" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.plot">plot</h5>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.plot(<span class="bu">format</span><span class="op">=</span><span class="st">'python'</span>, plotting_kwargs<span class="op">=</span>{}, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot the function’s output against its input.</p>
+<p>For a single-argument function, the input array (supplied via <code>kwargs</code> under the argument name) is plotted against the evaluated output; for multi-argument functions the output is plotted directly using the stored parameter values.</p>
+<section id="parameters-3" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 8%">
+<col style="width: 59%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Backend used to compile the function for evaluation.</td>
+<td><code>'python'</code></td>
+</tr>
+<tr class="even">
+<td>plotting_kwargs</td>
+<td></td>
+<td>Keyword arguments forwarded to <code>matplotlib</code>.</td>
+<td><code>{}</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Input values keyed by argument name.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.Function.plot_metadata_graph" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.plot_metadata_graph">plot_metadata_graph</h5>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.plot_metadata_graph(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    node_kwargs<span class="op">=</span>{},</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    edge_kwargs<span class="op">=</span>{},</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    edge_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Draw a graph of the function’s metadata.</p>
+<p>Builds a directed graph linking the function node to its equation, software requirements and arguments, then renders it with a radial layout.</p>
+<section id="parameters-4" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 5%">
+<col style="width: 76%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>Matplotlib axes to draw into; a new figure is created and returned when omitted.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>node_kwargs</td>
+<td></td>
+<td>Keyword arguments forwarded to the node renderer.</td>
+<td><code>{}</code></td>
+</tr>
+<tr class="odd">
+<td>edge_kwargs</td>
+<td></td>
+<td>Keyword arguments reserved for edge styling.</td>
+<td><code>{}</code></td>
+</tr>
+<tr class="even">
+<td>edge_labels</td>
+<td></td>
+<td>When <code>True</code>, annotate edges with their relation labels; otherwise fold the relation into the node labels.</td>
+<td><code>True</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-5" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The created figure when <code>ax</code> is not provided, otherwise <code>None</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.Function.render_code" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.Function.render_code">render_code</h5>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Function.render_code(<span class="bu">format</span><span class="op">=</span><span class="st">'python'</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render the function’s equation as backend source code.</p>
+<section id="parameters-5" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 9%">
+<col style="width: 62%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target backend passed to the expression renderer.</td>
+<td><code>'python'</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Additional options forwarded to the renderer.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-6" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The rendered code for the equation’s right-hand side.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 </section>
 </section>
 <section id="tvbo.classes.observation.Observation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.observation.Observation">Observation</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    acronym<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    equation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>empty_dict(),</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    time_scale<span class="op">=</span><span class="st">'ms'</span>,</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    source<span class="op">=</span>empty_list(),</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    aux_data<span class="op">=</span>empty_list(),</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    period<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    downsample_period<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    voi<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    imaging_modality<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    warmup_source<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    data_source<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    skip_t<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    tail_samples<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    aggregation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    window_size<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    pipeline<span class="op">=</span>empty_list(),</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    class_reference<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    analysis<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    acronym<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    iri<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    equation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span>empty_dict(),</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    environment<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    time_scale<span class="op">=</span><span class="st">'ms'</span>,</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    record<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    unit<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    references<span class="op">=</span>empty_list(),</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    functions<span class="op">=</span>empty_dict(),</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    source<span class="op">=</span>empty_list(),</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>    aux_data<span class="op">=</span>empty_list(),</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>    period<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    downsample_period<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>    voi<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    imaging_modality<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    warmup_source<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    data_source<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>    query<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>    reconcile<span class="op">=</span><span class="st">'by_label'</span>,</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>    min_coverage<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    skip_t<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    tail_samples<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>    aggregation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>    histogram<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    window_size<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>    pipeline<span class="op">=</span>empty_list(),</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>    <span class="bu">reduce</span><span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>    class_reference<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>    analysis<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Wrapper around the LinkML Observation datamodel with convenience factory methods for loading from file, database, or TVB monitors.</p>
 <section id="methods-1" class="level4">
 <h4 class="anchored" data-anchor-id="methods-1">Methods</h4>
@@ -388,56 +893,56 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.classes.observation.Observation.execute" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Observation.execute">execute</h5>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.execute(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.execute(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert this observation to a backend monitor object.</p>
-<section id="parameters" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<section id="parameters-6" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h6>
 <p>format : str Target backend. Currently <code>"tvb"</code> is supported.</p>
 </section>
-<section id="returns" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<section id="returns-7" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h6>
 <p>tvb.simulator.monitors.Monitor Configured TVB monitor instance.</p>
 </section>
 </section>
 <section id="tvbo.classes.observation.Observation.from_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Observation.from_db">from_db</h5>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load an Observation by name from the tvbo database.</p>
 </section>
 <section id="tvbo.classes.observation.Observation.from_file" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Observation.from_file">from_file</h5>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.from_file(path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.from_file(path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load an Observation from a YAML file.</p>
 </section>
 <section id="tvbo.classes.observation.Observation.list_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Observation.list_db">list_db</h5>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>List available observation models in the tvbo database.</p>
 </section>
 <section id="tvbo.classes.observation.Observation.plot" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Observation.plot">plot</h5>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.plot(ax<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.plot(ax<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plot a visual summary of this observation model.</p>
 <p>The plot type is derived purely from the pipeline structure:</p>
 <ul>
 <li><strong>kernel step present</strong> (step with <code>time_range</code>): evaluates and plots the kernel function.</li>
 <li><strong>all other cases</strong>: draws an annotated pipeline flowchart where each box is tagged with its structural operation type (projection, temporal, transform, callable, …).</li>
 </ul>
-<section id="parameters-1" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<section id="parameters-7" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h6>
 <p>ax : matplotlib Axes, optional Axes to draw into. A new figure is returned when <code>ax</code> is <code>None</code>. **kwargs Forwarded to the underlying plot call.</p>
 </section>
 </section>
 <section id="tvbo.classes.observation.Observation.render_code" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.Observation.render_code">render_code</h5>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.render_code(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>classes.observation.Observation.render_code(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate backend code that creates this monitor.</p>
-<section id="parameters-2" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h6>
+<section id="parameters-8" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h6>
 <p>format : str Target backend. Currently <code>"tvb"</code> is supported.</p>
 </section>
-<section id="returns-1" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
+<section id="returns-8" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h6>
 <p>str Executable Python code string.</p>
 </section>
 </section>
@@ -445,7 +950,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.observation.ObservationModel" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel">ObservationModel</h3>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel(data<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel(data<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A directed graph of <code>Function</code>s transforming simulation output to observables.</p>
 <p><code>ObservationModel</code> chains symbolic and numerical operations (e.g.&nbsp;BOLD HRF → low-pass filter → downsample → FC matrix) on a per-region time series. Nodes are <code>Function</code>s; edges describe data flow from <code>Input</code> to <code>Output</code>. Use <code>add_node(name, function, ...)</code>, <code>add_edge(src, dst)</code> and <code>run()</code> to evaluate the pipeline.</p>
 <section id="methods-2" class="level4">
@@ -459,17 +964,351 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.classes.observation.ObservationModel.add_data">add_data</a></td>
+<td>Attach a data array to a graph node.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.observation.ObservationModel.add_derivative">add_derivative</a></td>
+<td>Add a derivative <code>Function</code> node to the pipeline.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.observation.ObservationModel.add_function">add_function</a></td>
+<td>Add a <code>Function</code> node to the pipeline graph.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.observation.ObservationModel.add_projection_model">add_projection_model</a></td>
+<td>Add a projection <code>Function</code> node to the pipeline.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.observation.ObservationModel.apply">apply</a></td>
+<td>Run the pipeline on a time series and return the observable.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.classes.observation.ObservationModel.get_function_output">get_function_output</a></td>
 <td>Get the output of a specific function after execution.</td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.observation.ObservationModel.get_node_data">get_node_data</a></td>
+<td>Return a node’s stored data as a <code>TimeSeries</code>.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.observation.ObservationModel.plot_graph">plot_graph</a></td>
+<td>Draw the pipeline graph, including <code>Input</code> and <code>Output</code> nodes.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.observation.ObservationModel.plot_graph_data">plot_graph_data</a></td>
+<td>Plot the data stored at every pipeline node.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.observation.ObservationModel.plot_node_data">plot_node_data</a></td>
+<td>Plot a single node’s data onto the given axes.</td>
+</tr>
 </tbody>
 </table>
+<section id="tvbo.classes.observation.ObservationModel.add_data" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel.add_data">add_data</h5>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.add_data(node, data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Attach a data array to a graph node.</p>
+<p>Accepts a <code>TimeSeries</code> (whose values and time axis are extracted) or a raw array (for which an integer time axis is generated). Creates the node when it does not yet exist, otherwise updates its stored data.</p>
+<section id="parameters-9" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 67%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>node</td>
+<td></td>
+<td>Name of the graph node to attach the data to.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>data</td>
+<td></td>
+<td>A <code>TimeSeries</code> or array-like providing the node’s values.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.ObservationModel.add_derivative" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel.add_derivative">add_derivative</h5>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.add_derivative(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    function,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    argument_mapping<span class="op">=</span>{},</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Add a derivative <code>Function</code> node to the pipeline.</p>
+<p>Convenience wrapper around <a href="#tvbo.classes.observation.ObservationModel.add_function"><code>add_function</code></a> with <code>function_type="derivative"</code>, so the node is computed as a side branch rather than chained into <code>Output</code>.</p>
+<section id="parameters-10" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 9%">
+<col style="width: 56%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>function</td>
+<td></td>
+<td>The <code>Function</code> to add as a derivative node.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>argument_mapping</td>
+<td></td>
+<td>Mapping from argument names to source nodes.</td>
+<td><code>{}</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Additional options forwarded to <code>add_function</code>.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.ObservationModel.add_function" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel.add_function">add_function</h5>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.add_function(</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    function,</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    argument_mapping<span class="op">=</span>{},</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    function_type<span class="op">=</span><span class="st">''</span>,</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    select_state<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    select_region<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    select_mode<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    ensure_4d<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    apply_on_time<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    alt_name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Add a <code>Function</code> node to the pipeline graph.</p>
+<p>Registers the function as a graph node, records its execution options, overrides parameter values from <code>kwargs</code>, and wires edges from the nodes named in <code>argument_mapping</code> to this node. Unless the function is a derivative, it becomes the new tail feeding the <code>Output</code> node.</p>
+<section id="parameters-11" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 5%">
+<col style="width: 73%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>function</td>
+<td></td>
+<td>The <code>Function</code> to add as a node.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>argument_mapping</td>
+<td></td>
+<td>Mapping from each function argument name to the graph node supplying that argument.</td>
+<td><code>{}</code></td>
+</tr>
+<tr class="odd">
+<td>function_type</td>
+<td></td>
+<td>Role of the function (e.g.&nbsp;<code>"derivative"</code>, <code>"projection"</code>); non-derivatives are chained into <code>Output</code>.</td>
+<td><code>''</code></td>
+</tr>
+<tr class="even">
+<td>select_state</td>
+<td></td>
+<td>Optional state-variable index sliced from inputs.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>select_region</td>
+<td></td>
+<td>Optional region selection applied to inputs.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>select_mode</td>
+<td></td>
+<td>Mode index selected from inputs.</td>
+<td><code>0</code></td>
+</tr>
+<tr class="odd">
+<td>ensure_4d</td>
+<td></td>
+<td>When <code>True</code>, expand inputs to four dimensions.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>apply_on_time</td>
+<td></td>
+<td>When <code>True</code>, apply the function to the time axis.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>alt_name</td>
+<td></td>
+<td>Alternative name/acronym used for the node.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Parameter values; entries matching equation parameters override the function’s stored values.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.ObservationModel.add_projection_model" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel.add_projection_model">add_projection_model</h5>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.add_projection_model(</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    function,</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    argument_mapping<span class="op">=</span>{},</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Add a projection <code>Function</code> node to the pipeline.</p>
+<p>Convenience wrapper around <a href="#tvbo.classes.observation.ObservationModel.add_function"><code>add_function</code></a> with <code>function_type="projection"</code>.</p>
+<section id="parameters-12" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 9%">
+<col style="width: 56%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>function</td>
+<td></td>
+<td>The <code>Function</code> to add as a projection node.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>argument_mapping</td>
+<td></td>
+<td>Mapping from argument names to source nodes.</td>
+<td><code>{}</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Additional options forwarded to <code>add_function</code>.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.ObservationModel.apply" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel.apply">apply</h5>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.<span class="bu">apply</span>(timeseries, mode<span class="op">=</span><span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Run the pipeline on a time series and return the observable.</p>
+<p>Feeds the input into the <code>Input</code> node, evaluates every node in topological order, propagates each function’s output to its successors, and trims the final <code>Output</code> back to the input’s shape.</p>
+<section id="parameters-13" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-13">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 78%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>timeseries</td>
+<td></td>
+<td>A <code>TimeSeries</code> or array-like of simulation output; a raw array is wrapped in a <code>TimeSeries</code> with an integer time axis.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>mode</td>
+<td></td>
+<td>Mode index (currently unused in slicing).</td>
+<td><code>0</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-9" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-9">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A <code>TimeSeries</code> holding the pipeline’s output data and time axis.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.classes.observation.ObservationModel.get_function_output" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel.get_function_output">get_function_output</h5>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.get_function_output(function_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.get_function_output(function_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get the output of a specific function after execution.</p>
-<section id="parameters-3" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<section id="parameters-14" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-14">Parameters</h6>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 17%">
@@ -495,8 +1334,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-2" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h6>
+<section id="returns-10" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-10">Returns</h6>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -510,6 +1349,230 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td></td>
 <td>Any</td>
 <td>The result produced by the function.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.ObservationModel.get_node_data" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel.get_node_data">get_node_data</h5>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.get_node_data(node)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return a node’s stored data as a <code>TimeSeries</code>.</p>
+<section id="parameters-15" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-15">Parameters</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>node</td>
+<td></td>
+<td>Name of the graph node to read.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-11" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-11">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 79%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A <code>TimeSeries</code> pairing the node’s data with its time axis (a</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>generated integer axis is used when none was stored).</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.ObservationModel.plot_graph" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel.plot_graph">plot_graph</h5>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.plot_graph(</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    plot_edge_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    node_kwargs<span class="op">=</span>{},</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    edge_kwargs<span class="op">=</span>{},</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Draw the pipeline graph, including <code>Input</code> and <code>Output</code> nodes.</p>
+<p>Lays out the directed graph (falling back to a spring layout when Graphviz is unavailable) and annotates edges with their argument names and any selected state index.</p>
+<section id="parameters-16" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-16">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 6%">
+<col style="width: 71%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>Matplotlib axes to draw into; a new figure is created and returned when omitted.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>plot_edge_labels</td>
+<td></td>
+<td>When <code>True</code>, draw argument/state labels on edges.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>node_kwargs</td>
+<td></td>
+<td>Keyword arguments forwarded to the node renderer.</td>
+<td><code>{}</code></td>
+</tr>
+<tr class="even">
+<td>edge_kwargs</td>
+<td></td>
+<td>Keyword arguments forwarded to the edge renderer; <code>font_size</code> controls the edge-label size.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-12" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-12">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The created figure when <code>ax</code> is not provided, otherwise <code>None</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.ObservationModel.plot_graph_data" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel.plot_graph_data">plot_graph_data</h5>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.plot_graph_data(ax<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot the data stored at every pipeline node.</p>
+<p>Iterates the nodes in topological order (skipping the raw input nodes) and overlays each node’s time series, highlighting the <code>Output</code> trace.</p>
+<section id="parameters-17" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-17">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 75%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>Matplotlib axes to draw into; a new figure is created and returned when omitted.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-13" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-13">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The created figure when <code>ax</code> is not provided, otherwise <code>None</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.ObservationModel.plot_node_data" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.observation.ObservationModel.plot_node_data">plot_node_data</h5>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>classes.observation.ObservationModel.plot_node_data(node, ax)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot a single node’s data onto the given axes.</p>
+<section id="parameters-18" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-18">Parameters</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>node</td>
+<td></td>
+<td>Name of the graph node to plot.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>ax</td>
+<td></td>
+<td>Matplotlib axes to draw into.</td>
+<td><em>required</em></td>
 </tr>
 </tbody>
 </table>
@@ -538,18 +1601,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.observation.instance2metadata">instance2metadata</a></td>
-<td></td>
+<td>Normalize an ontology transformation instance into datamodel kwargs.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.observation.populate_observation_from_iri">populate_observation_from_iri</a></td>
+<td>Fill an observation’s missing fields from the curated model its <code>iri</code> names.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.classes.observation.expand_to_4d" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.observation.expand_to_4d">expand_to_4d</h3>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>classes.observation.expand_to_4d(array)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>classes.observation.expand_to_4d(array)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Expand dimensions of the input array to ensure it has 4 dimensions.</p>
 </section>
 <section id="tvbo.classes.observation.functioninstance2metadata" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.observation.functioninstance2metadata">functioninstance2metadata</h3>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>classes.observation.functioninstance2metadata(function_instance, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>classes.observation.functioninstance2metadata(function_instance, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Normalize a function/ontology instance into datamodel kwargs.</p>
 <ul>
 <li>For Python callables: infer arguments/parameters, capture source code, record callable path (module + qualname), and infer software requirements.</li>
@@ -558,7 +1625,74 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.observation.instance2metadata" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.observation.instance2metadata">instance2metadata</h3>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>classes.observation.instance2metadata(instance, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>classes.observation.instance2metadata(instance, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Normalize an ontology transformation instance into datamodel kwargs.</p>
+<p>Maps the instance’s name, arguments, equation, parameters and acronym onto the keyword arguments used to construct a datamodel object, nesting the argument and equation metadata under a <code>transformation</code> key.</p>
+<section id="parameters-19" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-19">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 79%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>instance</td>
+<td></td>
+<td>Ontology instance exposing <code>name</code>, <code>has_argument</code>, <code>equation</code>, <code>has_parameter</code> and <code>acronym</code> accessors.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Extra keyword arguments merged into the result; keys produced here take precedence over same-named incoming keys.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-14" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-14">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The merged keyword-argument mapping describing the transformation.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.observation.populate_observation_from_iri" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.classes.observation.populate_observation_from_iri">populate_observation_from_iri</h3>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>classes.observation.populate_observation_from_iri(obs, functions_sink<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Fill an observation’s missing fields from the curated model its <code>iri</code> names.</p>
+<p>When an observation declares <code>iri: tvbo:BOLD_TVB</code> (or any curated entry under <code>tvbo/database/observation_models/</code>), its metadata — <code>pipeline</code>, <code>parameters</code>, <code>class_reference</code>, <code>imaging_modality</code>, <code>label</code>/<code>description</code> — is loaded from that model and merged <strong>non-destructively</strong>: a field the recipe set locally always wins, so <code>source</code>/<code>period</code> overrides stay in force while the curated hemodynamic pipeline fills in. Mirrors :func:<code>tvbo.classes.coupling._load_coupling_from_database</code>.</p>
+<p>When <code>functions_sink</code> (a mutable name→Function mapping) is given, the model’s <code>functions</code> block is merged into it too — the helper functions a functional pipeline calls by name, which codegen reads from <code>experiment.functions</code>.</p>
+<p>Returns True if a curated model was found and merged, False otherwise.</p>
 
 
 </section>

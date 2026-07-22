@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -299,7 +307,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.ontology.adjust_arrow_end">adjust_arrow_end</a></td>
-<td></td>
+<td>Clip an arrow’s endpoint to the edge of the target node’s bounding box.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.compute_bezier_midpoint">compute_bezier_midpoint</a></td>
@@ -315,7 +323,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.ontology.create_adj_matrix">create_adj_matrix</a></td>
-<td></td>
+<td>Build an adjacency mapping of directed node pairs to their edge descriptors.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.create_colormap_legend">create_colormap_legend</a></td>
@@ -327,7 +335,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.draw_custom_edges">draw_custom_edges</a></td>
-<td></td>
+<td>Draw curved Bézier edges between connected node pairs on an axes.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.ontology.draw_custom_nodes">draw_custom_nodes</a></td>
@@ -351,7 +359,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.get_actual_bounds">get_actual_bounds</a></td>
-<td></td>
+<td>Compute the data-coordinate extent of all rendered text on an axes.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.ontology.get_ax">get_ax</a></td>
@@ -367,7 +375,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.get_default_params">get_default_params</a></td>
-<td></td>
+<td>Return the merged dictionary of all default plotting parameters.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.ontology.get_edge_color_mapping">get_edge_color_mapping</a></td>
@@ -375,7 +383,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.get_edge_info">get_edge_info</a></td>
-<td></td>
+<td>Return the edge counts and edge lists between two nodes in both directions.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.ontology.get_labels">get_labels</a></td>
@@ -399,7 +407,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.get_unique_node_pairs">get_unique_node_pairs</a></td>
-<td></td>
+<td>Return the set of unordered node pairs that share at least one edge.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.ontology.hierarchy_pos">hierarchy_pos</a></td>
@@ -415,11 +423,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.plot_edge">plot_edge</a></td>
-<td></td>
+<td>Draw a single edge as an arrow ending at the target node’s box edge.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.ontology.plot_hierarchy">plot_hierarchy</a></td>
-<td></td>
+<td>Plot the ontology class hierarchy around a given class as a tree.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.plot_model">plot_model</a></td>
@@ -475,6 +483,71 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.plot.ontology.adjust_arrow_end" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.adjust_arrow_end">adjust_arrow_end</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.adjust_arrow_end(start, end, bbox_end)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Clip an arrow’s endpoint to the edge of the target node’s bounding box.</p>
+<p>Computes where the line from <code>start</code> to <code>end</code> crosses the top or bottom edge of <code>bbox_end</code> (chosen by arrow direction) and clamps the crossing to the box’s horizontal extent, so the arrow stops at the node border instead of its center.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 8%">
+<col style="width: 67%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>start</td>
+<td></td>
+<td><code>(x, y)</code> start coordinate of the arrow.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>end</td>
+<td></td>
+<td><code>(x, y)</code> target coordinate at the node center.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>bbox_end</td>
+<td></td>
+<td>Bounding box of the target node, exposing a <code>.bounds</code> tuple.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The adjusted <code>(x, y)</code> endpoint on the target box edge.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.plot.ontology.compute_bezier_midpoint" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.compute_bezier_midpoint">compute_bezier_midpoint</h3>
@@ -494,8 +567,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.count_directed_edges">count_directed_edges</h3>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.count_directed_edges(G)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Count number of edges between each directed node pair (u, v), not treating (u, v) ≡ (v, u).</p>
-<section id="returns" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 7%">
@@ -522,6 +595,63 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.plot.ontology.create_adj_matrix" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.create_adj_matrix">create_adj_matrix</h3>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.create_adj_matrix(G)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build an adjacency mapping of directed node pairs to their edge descriptors.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 67%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td></td>
+<td>A networkx graph whose adjacency structure is traversed.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A dictionary mapping each <code>(node, neighbor)</code> pair to a list of dicts, one</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>per edge, each holding the edge <code>type</code> and a <code>direction</code> string.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.plot.ontology.create_colormap_legend" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.create_colormap_legend">create_colormap_legend</h3>
@@ -553,8 +683,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
 <span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Draw custom arrows on a graph <code>G</code> with given positions and styles.</p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 2%">
@@ -616,8 +746,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-1" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 6%">
@@ -671,6 +801,77 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    edge_radius<span class="op">=</span><span class="dv">0</span>,</span>
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Draw curved Bézier edges between connected node pairs on an axes.</p>
+<p>For every unique node pair, edges in each direction are fanned out with distinct curvature so that parallel and bidirectional edges stay distinguishable. Colors may be a single color or resolved from a colormap.</p>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 7%">
+<col style="width: 69%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td></td>
+<td>The graph whose edges are drawn.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>pos</td>
+<td></td>
+<td>Mapping of nodes to <code>(x, y)</code> positions.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>Target matplotlib axes.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>edge_labels</td>
+<td></td>
+<td>Whether to annotate each edge with its <code>type</code>.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>color_by</td>
+<td></td>
+<td>Edge attribute used to look up colors when <code>edge_colors</code> names a colormap.</td>
+<td><code>'type'</code></td>
+</tr>
+<tr class="even">
+<td>edge_colors</td>
+<td></td>
+<td>A single color, or the name of a colormap to map edge attributes onto.</td>
+<td><code>'#606060'</code></td>
+</tr>
+<tr class="odd">
+<td>edge_radius</td>
+<td></td>
+<td>Curvature used when a pair has a single edge.</td>
+<td><code>0</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Additional keyword arguments forwarded to <code>plot_curve</code>.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.plot.ontology.draw_custom_nodes" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.draw_custom_nodes">draw_custom_nodes</h3>
@@ -686,12 +887,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    edgecolor<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Custom function to draw nodes as text in a network graph.</p>
-<section id="parameters-1" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters:</h4>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters:</h4>
 <p>G : networkx.Graph The graph on which nodes will be drawn. pos : dict A dictionary with nodes as keys and positions as values. Positions should be tuples of (x, y) coordinates. labels : dict, optional A dictionary with node labels. If None, nodes are labeled with node names. font_size : int, optional The font size of the node labels (default is 10). ax : matplotlib.axes.Axes, optional Matplotlib axes object to draw the nodes on. If None, the current axes will be used (default is None). node_colors : dict or str, optional A dictionary specifying the color for each node or a single color for all nodes (default is None).</p>
 </section>
-<section id="returns-2" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns:</h4>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns:</h4>
 <p>list A list of text objects for the node labels.</p>
 </section>
 </section>
@@ -726,6 +927,65 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.plot.ontology.get_actual_bounds" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.get_actual_bounds">get_actual_bounds</h3>
 <div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.get_actual_bounds(ax, axis<span class="op">=</span><span class="st">'x'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compute the data-coordinate extent of all rendered text on an axes.</p>
+<p>Iterates over the non-empty text artists, transforms each one’s window extent into data coordinates, and returns the min and max along the requested axis. The axes must already be drawn so that text extents are available.</p>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 66%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>The matplotlib axes to inspect.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>axis</td>
+<td></td>
+<td>Either <code>"x"</code> or <code>"y"</code>, selecting which axis to bound.</td>
+<td><code>'x'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A <code>(min, max)</code> tuple of the text bounds along the selected axis.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.plot.ontology.get_ax" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.get_ax">get_ax</h3>
@@ -738,12 +998,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.get_categories_from_graph">get_categories_from_graph</h3>
 <div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.get_categories_from_graph(G)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Retrieve all unique categories from the graph’s nodes.</p>
-<section id="parameters-2" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters:</h4>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters:</h4>
 <p>G : networkx.Graph The graph from which categories are to be retrieved.</p>
 </section>
-<section id="returns-3" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns:</h4>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns:</h4>
 <p>list A sorted list of unique categories from the graph.</p>
 </section>
 </section>
@@ -751,35 +1011,130 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.get_category_from_graph">get_category_from_graph</h3>
 <div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.get_category_from_graph(G, node)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Retrieve the category of a given node from the graph.</p>
-<section id="parameters-3" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters:</h4>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters:</h4>
 <p>G : networkx.Graph The graph containing the node. node : hashable The node for which the category is to be retrieved.</p>
 </section>
-<section id="returns-4" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns:</h4>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns:</h4>
 <p>str The category of the node.</p>
 </section>
 </section>
 <section id="tvbo.plot.ontology.get_default_params" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.get_default_params">get_default_params</h3>
 <div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.get_default_params()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the merged dictionary of all default plotting parameters.</p>
+<p>Combines the module-level <code>node_params</code>, <code>edge_params</code>, <code>figure_params</code>, <code>color_params</code>, <code>logo_params</code>, <code>layout_params</code>, and <code>legend_params</code> into a single dictionary.</p>
+<section id="returns-8" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The combined default parameters, keyed by parameter name.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.plot.ontology.get_edge_color_mapping" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.get_edge_color_mapping">get_edge_color_mapping</h3>
 <div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.get_edge_color_mapping(G, colormap<span class="op">=</span><span class="st">'viridis'</span>, color_by<span class="op">=</span><span class="st">'type'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate a color mapping for edges in graph G based on their specified attribute.</p>
-<section id="parameters-4" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters:</h4>
+<section id="parameters-8" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters:</h4>
 <p>G : networkx.Graph The graph containing the edges with the specified attribute. colormap : str, optional The name of the colormap to use (default is ‘viridis’). color_by : str, optional The edge attribute to color by (default is ‘type’).</p>
 </section>
-<section id="returns-5" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns:</h4>
+<section id="returns-9" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-9">Returns:</h4>
 <p>edge_colors : dict A dictionary mapping edge attributes to colors.</p>
 </section>
 </section>
 <section id="tvbo.plot.ontology.get_edge_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.get_edge_info">get_edge_info</h3>
 <div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.get_edge_info(n1, n2, adj_matrix)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the edge counts and edge lists between two nodes in both directions.</p>
+<section id="parameters-9" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 5%">
+<col style="width: 78%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>n1</td>
+<td></td>
+<td>First node.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>n2</td>
+<td></td>
+<td>Second node.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>adj_matrix</td>
+<td></td>
+<td>Adjacency mapping from <code>(source, target)</code> pairs to lists of edge descriptors, as produced by <code>create_adj_matrix</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-10" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-10">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A 4-tuple <code>(num_edges_n1_n2, edges_n1_n2, num_edges_n2_n1, edges_n2_n1)</code></td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>giving the count and list of edges from <code>n1</code> to <code>n2</code> and from <code>n2</code> to <code>n1</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.plot.ontology.get_labels" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.get_labels">get_labels</h3>
@@ -798,12 +1153,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    use_precomputed_pos<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get the layout positions for the nodes in the graph.</p>
-<section id="parameters-5" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters:</h4>
+<section id="parameters-10" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters:</h4>
 <p>G : networkx.Graph The graph for which the layout positions are calculated. layout_type : str, optional The type of layout algorithm to use (‘spring’, ‘kamada’, etc.) (default is “spring”). k_factor : float, optional Scaling factor for the layout algorithm (default is 1). save_pos : str, optional Path to save the computed positions to a file (default is None). use_precomputed_pos : str, optional Path to a file with precomputed positions (default is None).</p>
 </section>
-<section id="returns-6" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns:</h4>
+<section id="returns-11" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-11">Returns:</h4>
 <p>dict A dictionary with nodes as keys and positions as values.</p>
 </section>
 </section>
@@ -823,12 +1178,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    return_categories<span class="op">=</span><span class="va">False</span>,</span>
 <span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate a color mapping for nodes in graph G based on their specified attribute.</p>
-<section id="parameters-6" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters:</h4>
+<section id="parameters-11" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters:</h4>
 <p>G : networkx.Graph The graph containing the nodes with the specified attribute. node_colors : str, optional The node attribute to color by (default is ‘math_type’). colors : str, optional The color scheme to use (default is ‘tvb’).</p>
 </section>
-<section id="returns-7" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns:</h4>
+<section id="returns-12" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-12">Returns:</h4>
 <p>node_color_dict : dict A dictionary mapping node attributes to colors. categories : dict A dictionary mapping nodes to their categories.</p>
 </section>
 </section>
@@ -842,6 +1197,59 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.plot.ontology.get_unique_node_pairs" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.get_unique_node_pairs">get_unique_node_pairs</h3>
 <div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.get_unique_node_pairs(G)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the set of unordered node pairs that share at least one edge.</p>
+<p>Each pair is sorted so that <code>(a, b)</code> and <code>(b, a)</code> collapse to a single entry; nodes are ordered by their string value or, for object nodes, their <code>name</code> attribute.</p>
+<section id="parameters-12" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 59%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td></td>
+<td>A networkx graph to extract edges from.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-13" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-13">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A set of node-pair tuples, one per connected pair regardless of direction.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.plot.ontology.hierarchy_pos" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.hierarchy_pos">hierarchy_pos</h3>
@@ -863,8 +1271,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.n1n2_edgecounts">n1n2_edgecounts</h3>
 <div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.n1n2_edgecounts(G, n1, n2, edge_counts<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return the number of edges between nodes n1 and n2, treating (n1, n2) ≡ (n2, n1).</p>
-<section id="parameters-7" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<section id="parameters-13" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-13">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 12%">
@@ -908,8 +1316,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-8" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
+<section id="returns-14" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-14">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 10%">
@@ -950,8 +1358,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Draw a quadratic Bézier arrow from <em>start</em> to <em>end</em> on <em>ax</em>.</p>
 <p>Used internally by the ontology-graph layout to render edges with smooth curvature controlled by <em>rad</em>. Optional <em>annotate</em> renders a midpoint label.</p>
-<section id="parameters-8" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
+<section id="parameters-14" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-14">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 11%">
@@ -1035,10 +1443,133 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.plot.ontology.plot_edge" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.plot_edge">plot_edge</h3>
 <div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.plot_edge(edge, pos, bbox_positions_data, ax, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Draw a single edge as an arrow ending at the target node’s box edge.</p>
+<section id="parameters-15" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-15">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 5%">
+<col style="width: 72%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>edge</td>
+<td></td>
+<td>A <code>(source, target)</code> node pair.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>pos</td>
+<td></td>
+<td>Mapping of nodes to <code>(x, y)</code> positions.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>bbox_positions_data</td>
+<td></td>
+<td>Mapping of nodes to their bounding boxes, used to trim the arrow so it stops at the target node’s border.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>ax</td>
+<td></td>
+<td>Target matplotlib axes.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Additional keyword arguments forwarded to <code>FancyArrowPatch</code>.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.plot.ontology.plot_hierarchy" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.plot_hierarchy">plot_hierarchy</h3>
 <div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.plot_hierarchy(cls, hierarchy_type<span class="op">=</span><span class="st">'ancestors'</span>, ax<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot the ontology class hierarchy around a given class as a tree.</p>
+<p>Builds an <code>is_a</code> graph relating <code>cls</code> to the requested set of related classes and lays it out top-down or bottom-up depending on the hierarchy direction.</p>
+<section id="parameters-16" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-16">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 4%">
+<col style="width: 79%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>cls</td>
+<td></td>
+<td>The ontology class at the center of the hierarchy.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>hierarchy_type</td>
+<td></td>
+<td>Which related classes to include; one of <code>"ancestors"</code>, <code>"parents"</code>/<code>"is_a"</code>/<code>"isa"</code>/<code>"superclasses"</code>, <code>"children"</code>/<code>"subclasses"</code>, or <code>"descendants"</code>.</td>
+<td><code>'ancestors'</code></td>
+</tr>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>Existing matplotlib axes; a new figure is created if <code>None</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Additional keyword arguments forwarded to <code>hierarchy_pos</code>.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-15" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-15">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The created figure when <code>ax</code> is <code>None</code>, otherwise nothing.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.plot.ontology.plot_model" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.plot_model">plot_model</h3>
@@ -1063,8 +1594,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render a <code>Dynamics</code> model as a directed graph: parameters → equations → state vars.</p>
 <p>The graph layout is computed via a force-directed algorithm tuned by <em>k_factor</em>. Node coloring is driven by the variable’s <code>math_type</code> (parameter / derived variable / state variable / function) unless overridden.</p>
-<section id="parameters-9" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
+<section id="parameters-17" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-17">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 16%">
@@ -1185,8 +1716,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.plot_multidigraph">plot_multidigraph</h3>
 <div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.plot_multidigraph(G, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">8</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plots a MultiDiGraph with curved edges to visualize multiple edges between two nodes.</p>
-<section id="parameters-10" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h4>
+<section id="parameters-18" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-18">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 11%">
@@ -1218,8 +1749,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-9" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-9">Returns</h4>
+<section id="returns-16" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-16">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -1258,8 +1789,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
 <span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plot the ontology graph using matplotlib.</p>
-<section id="parameters-11" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters</h4>
+<section id="parameters-19" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-19">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 12%">
@@ -1388,12 +1919,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.reverse_edges">reverse_edges</h3>
 <div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.reverse_edges(pos)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Reverse the coordinates of the positions in the pos dictionary.</p>
-<section id="parameters-12" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters:</h4>
+<section id="parameters-20" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-20">Parameters:</h4>
 <p>pos : dict A dictionary with nodes as keys and (x, y) coordinates as values.</p>
 </section>
-<section id="returns-10" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-10">Returns:</h4>
+<section id="returns-17" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-17">Returns:</h4>
 <p>dict A dictionary with nodes as keys and reversed (y, x) coordinates as values.</p>
 </section>
 </section>
@@ -1401,8 +1932,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.plot.ontology.set_axis_limits">set_axis_limits</h3>
 <div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>plot.ontology.set_axis_limits(pos, ax)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Set the axis limits based on node positions.</p>
-<section id="parameters-13" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-13">Parameters:</h4>
+<section id="parameters-21" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-21">Parameters:</h4>
 <p>pos : dict A dictionary with nodes as keys and positions as values. ax : matplotlib.axes.Axes The matplotlib axes object to set the limits on.</p>
 </section>
 </section>

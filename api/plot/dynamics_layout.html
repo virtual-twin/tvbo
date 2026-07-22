@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -209,7 +217,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.dynamics_layout.render_dynamics_panel">render_dynamics_panel</a></td>
-<td></td>
+<td>Render a single dynamics panel onto an axes according to its kind.</td>
 </tr>
 </tbody>
 </table>
@@ -229,8 +237,108 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.plot.dynamics_layout.render_dynamics_panel" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.dynamics_layout.render_dynamics_panel">render_dynamics_panel</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>plot.dynamics_layout.render_dynamics_panel(dynamics, panel, ax, cache)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render a single dynamics panel onto an axes according to its kind.</p>
+<p>Dispatches on <code>panel["kind"]</code> (default <code>"timeseries"</code>): standard plot kinds are drawn with <code>plot_dynamics</code>, <code>"bifurcation"</code>/<code>"continuation"</code> run a continuation and plot the result, and <code>"parameter_sweep_timeseries"</code> (or <code>"timeseries_parameter_sweep"</code>) overlays trajectories across a parameter range.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 3%">
+<col style="width: 86%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>dynamics</td>
+<td></td>
+<td>The <code>Dynamics</code> model to render; copied before running so the original is left unmodified.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>panel</td>
+<td></td>
+<td>Panel specification mapping. Recognized keys include <code>kind</code>, <code>dims</code>/<code>VOI</code>, <code>run</code>, <code>plot</code>, and <code>format</code>, plus kind-specific keys such as <code>parameter</code>, <code>values</code>, and <code>from_panel</code> for parameter sweeps.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>The Matplotlib axes to draw the panel on.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>cache</td>
+<td></td>
+<td>Mapping of previously rendered panel names to their results, used to resolve continuation parameters referenced via <code>from_panel</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The continuation/bifurcation result object for those kinds (so later</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>panels can reference it), or <code>None</code> for plot and parameter-sweep kinds.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 16%">
+<col style="width: 72%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If <code>kind</code> is not one of the supported panel kinds.</td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 </section>

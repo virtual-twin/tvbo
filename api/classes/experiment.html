@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -192,6 +200,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.experiment" class="level1">
 <h1>experiment</h1>
 <p><code>classes.experiment</code></p>
+<p>The <code>SimulationExperiment</code> host object that ties a whole simulation together.</p>
+<p>A <code>SimulationExperiment</code> binds local <a href="../../api/classes/dynamics.html"><code>Dynamics</code></a>, a <a href="../../api/classes/network.html"><code>Network</code></a>, coupling, integration settings, monitors, and stimulation into a single, YAML-round-trippable object. It is the entry point for constructing an experiment (from YAML, a file, the platform, or a TVB simulator), configuring and resolving its coupling/delay metadata, rendering backend code, and running it on any of the supported backends (<code>tvb</code>, <code>tvboptim</code>, <code>jax</code>, <code>pde</code>, <code>cuda</code>, <code>python</code>).</p>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
 <table class="caption-top table">
@@ -203,6 +213,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.classes.experiment.logger">logger</a></td>
+<td></td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.classes.experiment.sessionid">sessionid</a></td>
 <td></td>
 </tr>
@@ -252,7 +266,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>             <span class="st">"tractogram"</span>:   {<span class="st">"iri"</span>: <span class="st">"tvbo:dTOR"</span>}},</span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    integration<span class="op">=</span>{<span class="st">"method"</span>: <span class="st">"Heun"</span>, <span class="st">"duration"</span>: <span class="dv">10_000</span>, <span class="st">"noise"</span>: <span class="va">None</span>},</span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>See the <a href="../../../Usage/SimulationExperiments.qmd">Usage / Simulation Experiments</a> page for the full constructor surface and the <a href="../../../skills/running-simulations/SKILL.md"><code>running-simulations</code></a> skill for backend choices.</p>
+<p>See the <a href="../../Simulation/SimulationExperiments.html">Simulation experiments</a> page for the full constructor surface and the <a href="../../../skills/running-simulations/SKILL.md"><code>running-simulations</code></a> skill for backend choices.</p>
 </section>
 <section id="attributes-1" class="level4">
 <h4 class="anchored" data-anchor-id="attributes-1">Attributes</h4>
@@ -265,12 +279,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.dataset_observation_targets">dataset_observation_targets</a></td>
+<td>Map each dataset-sourced observation to its measure name.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.horizon">horizon</a></td>
 <td>Number of history steps needed given delays and dt, like the old <code>horizon</code> attribute.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.max_delay">max_delay</a></td>
 <td>Compute the maximum delay (ms) from the current network/connectome.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.metadata">metadata</a></td>
+<td>The experiment itself, exposed as its own metadata container.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.network_observation_measures">network_observation_measures</a></td>
@@ -279,6 +301,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.noise_sigma_array">noise_sigma_array</a></td>
 <td>Per-state-variable noise sigma values.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.parameters">parameters</a></td>
+<td>The full collection of experiment parameters as a nested <code>Bunch</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -294,20 +320,68 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.add_stimulus">add_stimulus</a></td>
+<td>Attach a stimulus to the experiment.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.bake_real_node_labels">bake_real_node_labels</a></td>
+<td>Replace the model network’s placeholder labels with real ones in place.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.collect_initial_conditions">collect_initial_conditions</a></td>
+<td>Build the initial-history <code>TimeSeries</code> for the simulation.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.collect_state">collect_state</a></td>
+<td>Assemble a <code>SimulationState</code> pytree for the JAX-style backends.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.configure">configure</a></td>
+<td>Resolve coupling declarations and normalize delay flags.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.copy">copy</a></td>
 <td>Return a deep copy of this experiment.</td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.dataset_bundle_files">dataset_bundle_files</a></td>
+<td>Per enumerated subject, the source file(s) a self-contained kit must carry.</td>
+</tr>
 <tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.dataset_reconcile_index">dataset_reconcile_index</a></td>
+<td>Indices into the model network’s nodes for <em>shared_labels</em> (keyed).</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.dataset_reconcile_indices">dataset_reconcile_indices</a></td>
+<td>Model-side gather index for each <code>by_label</code> dataset target (keyed).</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.dataset_subject_ids">dataset_subject_ids</a></td>
+<td>Enumerate the cohort for the per-subject workflow fan-out.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.execute">execute</a></td>
+<td>Render and build the executable object for a backend without running it.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.freeze_yaml">freeze_yaml</a></td>
+<td>Render a self-contained spec YAML with the connectome frozen alongside.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.from_bids">from_bids</a></td>
 <td>Load a SimulationExperiment and TimeSeries from a BIDS BEP034 dataset.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.from_datamodel">from_datamodel</a></td>
 <td>Create from a datamodel instance by copying its already-normalized</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.from_db">from_db</a></td>
 <td>Load a SimulationExperiment by name from the tvbo database.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.from_file">from_file</a></td>
+<td>Load a <code>SimulationExperiment</code> from a YAML file on disk.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.from_openminds">from_openminds</a></td>
@@ -330,8 +404,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Create a SimulationExperiment from a YAML string.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.from_tvb_simulator">from_tvb_simulator</a></td>
+<td>Build a <code>SimulationExperiment</code> from a configured TVB <code>Simulator</code>.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.generate_report">generate_report</a></td>
 <td>Backward-compatible alias for :meth:<code>report</code>.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.get_experiment_file_prefix">get_experiment_file_prefix</a></td>
+<td>Build a BIDS-style filename prefix for this experiment.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.get_parameters_collection">get_parameters_collection</a></td>
+<td>Collect all experiment parameters into a nested <code>Bunch</code>.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.get_result_stem">get_result_stem</a></td>
+<td>BIDS result basename (no extension), generated with pybids <code>build_path</code>.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.list_db">list_db</a></td>
@@ -362,71 +452,383 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Render a human-readable report for this experiment.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.resolve_dataset_observations">resolve_dataset_observations</a></td>
+<td>Resolve per-subject dataset-sourced targets for one subject.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.resolve_network_observations">resolve_network_observations</a></td>
 <td>Resolve network-sourced observations to their matrices.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.run">run</a></td>
+<td>Configure, build, and run the experiment on a backend.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.save">save</a></td>
 <td>Render via :meth:<code>render</code> and persist to disk.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.classes.experiment.SimulationExperiment.save_code">save_code</a></td>
+<td>Render the experiment as TVB Python code and write it to disk.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.save_model_specification">save_model_specification</a></td>
 <td>Save the LEMS simulation file to <em>dir</em>.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.setup_monitors">setup_monitors</a></td>
 <td>Populate monitors in metadata from simple inputs or runtime wrappers.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.supported_export_formats">supported_export_formats</a></td>
 <td>Return metadata for API/UI export format dropdowns.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.symbolic">symbolic</a></td>
 <td>Symbolic representation of the full experiment equations.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.to_bids">to_bids</a></td>
 <td>Export simulation experiment and results to BIDS-compliant format (BEP034 v1.0.0).</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.to_lems">to_lems</a></td>
 <td>Export this experiment as a LEMS Model object.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.to_openminds">to_openminds</a></td>
 <td>Export experiment to openMINDS JSON-LD format.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.experiment.SimulationExperiment.to_yaml">to_yaml</a></td>
 <td>Export the experiment to YAML format.</td>
 </tr>
 </tbody>
 </table>
+<section id="tvbo.classes.experiment.SimulationExperiment.add_stimulus" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.add_stimulus">add_stimulus</h5>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.add_stimulus(stimulus)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Attach a stimulus to the experiment.</p>
+<section id="parameters" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 4%">
+<col style="width: 82%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>stimulus</td>
+<td></td>
+<td>Either a <code>Stimulus</code> instance, or a name/ontology class (<code>str</code> or <code>owlready2.ThingClass</code>) resolved to a <code>Stimulus</code> via <code>Stimulus.from_ontology</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.bake_real_node_labels" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.bake_real_node_labels">bake_real_node_labels</h5>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.bake_real_node_labels()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Replace the model network’s placeholder labels with real ones in place.</p>
+<p>A network sourced by a <code>bids:</code> entity block carries only <code>region_N</code> placeholders until run time; freezing drops that block, so the real labels (hydrated from the db) are written onto the network’s nodes here. This keeps a frozen kit self-contained and label reconciliation (never positional) working on reload. Returns True when labels were applied.</p>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.collect_initial_conditions" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.collect_initial_conditions">collect_initial_conditions</h5>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.collect_initial_conditions(random<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build the initial-history <code>TimeSeries</code> for the simulation.</p>
+<p>Constructs a history buffer of shape <code>(horizon, n_state_vars, n_nodes, n_modes)</code> spanning the delay window <code>[-max_delay, 0]</code>. Values are drawn from each state variable’s <code>distribution</code> when one is set (or when <code>random</code> is requested), otherwise from its scalar <code>initial_value</code>.</p>
+<section id="parameters-1" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 6%">
+<col style="width: 78%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>random</td>
+<td></td>
+<td>Deprecated. Force randomized initial values instead of relying on per-state-variable distributions.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A <code>TimeSeries</code> whose time axis is the history window and whose data</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>is the seeded initial state.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.collect_state" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.collect_state">collect_state</h5>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.collect_state(initial_conditions<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Assemble a <code>SimulationState</code> pytree for the JAX-style backends.</p>
+<p>Gathers the parameter collection (expanding coupling parameters with shape annotations and wrapping array-valued parameters as ndarrays so the JAX backend receives real arrays), the network, integration step/step-count, and the noise wrapper into a single state object.</p>
+<section id="parameters-2" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 72%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>initial_conditions</td>
+<td>TimeSeries | None</td>
+<td>History to seed the state with. When omitted, initial conditions are collected from the experiment via <code>collect_initial_conditions</code>.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A <code>SimulationState</code> carrying initial conditions, network, <code>dt</code>,</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>step count, noise, and parameters.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.configure" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.configure">configure</h5>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.configure()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resolve coupling declarations and normalize delay flags.</p>
+<p>Runs at the execution boundary and is backend-agnostic and idempotent: the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero).</p>
+</section>
 <section id="tvbo.classes.experiment.SimulationExperiment.copy" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.copy">copy</h5>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.copy(<span class="op">**</span>overrides)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.copy(<span class="op">**</span>overrides)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return a deep copy of this experiment.</p>
 <p>Use keyword overrides to set attributes on the returned copy.</p>
 <p>Errors are not swallowed; if a field can’t be copied, an exception is raised.</p>
 </section>
+<section id="tvbo.classes.experiment.SimulationExperiment.dataset_bundle_files" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.dataset_bundle_files">dataset_bundle_files</h5>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.dataset_bundle_files(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    entity_overrides<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Per enumerated subject, the source file(s) a self-contained kit must carry.</p>
+<p>For each dataset-sourced observation, resolve the subject’s matching sidecar under <code>dataset.bids_root</code> and pair it with the payload(s) it references, so a workflow kit can bundle exactly the empirical targets its fan-out consumes and drop its dependence on a machine-specific data tree. <em>entity_overrides</em> pins or tightens the BIDS entities used for selection (e.g.&nbsp;<code>{'atlas': 'HCPMMP1', 'suffix': 'relmat'}</code>) — the exact variant is chosen when a subject directory holds several. <code>suffix</code> overrides the trailing filename component; every other key overrides a <code>key-value</code> entity. The overrides disambiguate among the variants a subject already has; the cohort itself is still enumerated by the observation’s own query (:meth:<code>dataset_subject_ids</code>).</p>
+<p>Returns <code>{subject_id: [sidecar, payload, …]}</code> (existing files, de-duplicated in first-seen order); empty when the experiment has no dataset target.</p>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.dataset_reconcile_index" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.dataset_reconcile_index">dataset_reconcile_index</h5>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.dataset_reconcile_index(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    shared_labels,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    model_labels<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Indices into the model network’s nodes for <em>shared_labels</em> (keyed).</p>
+<p>The simulated observation selects this sub-block so it aligns, label for label, with a <code>by_label</code>-reconciled empirical target. Pass <em>model_labels</em> to avoid re-resolving them.</p>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.dataset_reconcile_indices" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.dataset_reconcile_indices">dataset_reconcile_indices</h5>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.dataset_reconcile_indices()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Model-side gather index for each <code>by_label</code> dataset target (keyed).</p>
+<p>For every observation sourced from <code>dataset.subject.&lt;measure&gt;</code> with <code>reconcile: by_label</code>, returns the positions of the shared node labels within the model network’s node order — derived from the labels, never from position. The shared label set is identical across the cohort, so it is resolved once from the first cohort subject (reading only its node labels, not its matrix). Codegen uses this to gather the simulated observable onto the same shared labels as the reconciled empirical target before comparing them. Returns <code>{}</code> (no gather) when nothing is dataset-sourced or the data cannot be resolved.</p>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.dataset_subject_ids" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.dataset_subject_ids">dataset_subject_ids</h5>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.dataset_subject_ids()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Enumerate the cohort for the per-subject workflow fan-out.</p>
+<p>An explicit <code>dataset.subjects</code> list wins (a curated subset). Otherwise the subjects are discovered by querying <code>dataset.bids_root</code> with the first dataset-sourced observation’s <code>query</code> — the same filter that resolves each shard’s target, so discovery and resolution never diverge. Returns sorted subject IDs without the <code>sub-</code> prefix; empty when the experiment has no dataset-sourced observation.</p>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.execute" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.execute">execute</h5>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.execute(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render and build the executable object for a backend without running it.</p>
+<p>Calls <code>configure</code> to normalize coupling/delay metadata, renders the backend code, and executes it to produce a ready-to-run artefact. The return type depends on <code>format</code>:</p>
+<ul>
+<li><code>"tvb"</code>: a configured <code>tvb</code> <code>Simulator</code>.</li>
+<li><code>"tvboptim"</code> / <code>"tvb-optim"</code>: a <code>Bunch</code> namespace of the generated functions.</li>
+<li><code>"autodiff"</code> / <code>"jax"</code>: the JAX <code>kernel</code> callable (JIT-compiled unless <code>jit=False</code>).</li>
+<li><code>"pde"</code> / <code>"pde-fem"</code> / <code>"pde-python"</code>: the generated namespace.</li>
+</ul>
+<section id="parameters-3" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 4%">
+<col style="width: 85%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Backend identifier selecting what to build.</td>
+<td><code>'tvb'</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Backend-specific options. Forwarded to the TVB simulator factory, to <code>render_code</code>, or interpreted as JAX flags (<code>jit</code>, <code>_return_namespace</code>) depending on <code>format</code>.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The backend-specific executable object described above.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level6 doc-section doc-section-raises">
+<h6 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 16%">
+<col style="width: 71%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If <code>format</code> is not one of the supported backends.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.freeze_yaml" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.freeze_yaml">freeze_yaml</h5>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.freeze_yaml(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    out_dir,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    network_stem<span class="op">=</span><span class="st">'network'</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render a self-contained spec YAML with the connectome frozen alongside.</p>
+<p>When the experiment has a resolved multi-node network, its matrices are written as an HDF5 companion (<code>&lt;network_stem&gt;.h5</code> + <code>.yaml</code> sidecar) in <em>out_dir</em> and the returned YAML references them via <code>network.data_file</code> (inline coupling / transforms / parameters preserved). This makes the spec reproducible on reload without the original data sources — the same mechanism the workflow emitter uses. Without such a network the plain metadata YAML already round-trips and is returned unchanged.</p>
+</section>
 <section id="tvbo.classes.experiment.SimulationExperiment.from_bids" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.from_bids">from_bids</h5>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_bids(</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    bids_dir,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    subject<span class="op">=</span><span class="st">'01'</span>,</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    session<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    run_to_verify<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_bids(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    bids_dir,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    subject<span class="op">=</span><span class="st">'01'</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    session<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    run_to_verify<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load a SimulationExperiment and TimeSeries from a BIDS BEP034 dataset.</p>
 <p>This method ingests data exported via <code>to_bids()</code> and reconstructs: - The SimulationExperiment with model, network, and integration settings - The TimeSeries data (with 100% fidelity for HDF5 format)</p>
 <p>Automatically detects the time series format (HDF5, CIFTI, or TSV).</p>
-<section id="parameters" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<section id="parameters-4" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
 <p>bids_dir : str Path to the root BIDS dataset directory (e.g., ‘./derivatives/tvbo’) subject : str Subject identifier (with or without ‘sub-’ prefix). Default: ‘01’ session : str, optional Session identifier (with or without ‘ses-’ prefix). If not specified and sessions exist, uses the first one. run_to_verify : bool If True, re-run the simulation and compare with loaded TimeSeries. Useful for verifying reproducibility. Default: False.</p>
 </section>
-<section id="returns" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<section id="returns-3" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h6>
 <p>tuple[SimulationExperiment, TimeSeries] The reconstructed experiment and time series data.</p>
 </section>
 <section id="examples-1" class="level6 doc-section doc-section-examples">
@@ -472,25 +874,82 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.from_datamodel" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.from_datamodel">from_datamodel</h5>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_datamodel(dm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_datamodel(dm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create from a datamodel instance by copying its already-normalized state.</p>
 <p>This avoids the <code>_as_dict</code> → re-init round-trip which breaks on <code>inlined_as_dict</code> fields (the keyed dict is not valid <code>**kwargs</code> for the inner class constructor). Instead we directly copy the <code>__dict__</code> from the fully-normalised LinkML object and then set the convenience aliases that <code>__init__</code> would normally provide.</p>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.from_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.from_db">from_db</h5>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load a SimulationExperiment by name from the tvbo database.</p>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.from_file" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.from_file">from_file</h5>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_file(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Load a <code>SimulationExperiment</code> from a YAML file on disk.</p>
+<p>The resolved source path is recorded on the instance (as <code>_source_file</code>) so later serialization can reference its origin.</p>
+<section id="parameters-5" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 10%">
+<col style="width: 60%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>filepath</td>
+<td>str</td>
+<td>Path to a YAML file defining the experiment.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-4" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A new <code>SimulationExperiment</code> populated from the file.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.from_openminds" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.from_openminds">from_openminds</h5>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_openminds(source)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_openminds(source)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a SimulationExperiment from openMINDS JSON-LD.</p>
-<section id="parameters-1" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<section id="parameters-6" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h6>
 <p>source : str or dict Either a file path to a JSON-LD file, or a dict containing JSON-LD data.</p>
 </section>
-<section id="returns-1" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
+<section id="returns-5" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h6>
 <p>SimulationExperiment New instance constructed from the openMINDS data.</p>
 </section>
 <section id="example" class="level6 doc-section doc-section-example">
@@ -506,27 +965,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.from_platform" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.from_platform">from_platform</h5>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_platform(</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    name,</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    base_url<span class="op">=</span>TVBO_PLATFORM_URL,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_platform(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    name,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    base_url<span class="op">=</span>TVBO_PLATFORM_URL,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load a simulation experiment from the tvbo platform API.</p>
 <p>Fetches the full LinkML-valid YAML definition from the platform.</p>
-<section id="parameters-2" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h6>
+<section id="parameters-7" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h6>
 <p>name : str Experiment label/ID (e.g., “RWW_BOLD_FC_Optimization”). base_url : str Platform base URL.</p>
 </section>
-<section id="returns-2" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h6>
+<section id="returns-6" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h6>
 <p>SimulationExperiment Experiment loaded from the platform.</p>
 </section>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.from_pydantic" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.from_pydantic">from_pydantic</h5>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_pydantic(pyd_obj)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_pydantic(pyd_obj)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a SimulationExperiment from a Pydantic model instance.</p>
-<section id="parameters-3" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<section id="parameters-8" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h6>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 8%">
@@ -552,8 +1011,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-3" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h6>
+<section id="returns-7" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h6>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -574,15 +1033,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.from_pyrates" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.from_pyrates">from_pyrates</h5>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_pyrates(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_pyrates(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load a SimulationExperiment from a PyRates YAML template file.</p>
 <p>Parses all OperatorTemplates in the file and creates a keyed dict of Dynamics objects.</p>
-<section id="parameters-4" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
+<section id="parameters-9" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h6>
 <p>filepath : str Path to PyRates YAML file.</p>
 </section>
-<section id="returns-4" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h6>
+<section id="returns-8" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h6>
 <p>SimulationExperiment New instance with primary dynamics and network.dynamics for multi-operator files.</p>
 </section>
 <section id="example-1" class="level6 doc-section doc-section-example">
@@ -598,15 +1057,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.from_string" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.from_string">from_string</h5>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_string(yaml_string)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_string(yaml_string)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a SimulationExperiment from a YAML string.</p>
 <p>This is useful for defining experiments inline in notebooks or scripts using human-readable YAML syntax.</p>
-<section id="parameters-5" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
+<section id="parameters-10" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h6>
 <p>yaml_string : str YAML-formatted string defining the experiment.</p>
 </section>
-<section id="returns-5" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h6>
+<section id="returns-9" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-9">Returns</h6>
 <p>SimulationExperiment New instance populated from the YAML definition.</p>
 </section>
 <section id="example-2" class="level6 doc-section doc-section-example">
@@ -620,80 +1079,239 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </blockquote>
 </section>
 </section>
+<section id="tvbo.classes.experiment.SimulationExperiment.from_tvb_simulator" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.from_tvb_simulator">from_tvb_simulator</h5>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.from_tvb_simulator(tvb_simulator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build a <code>SimulationExperiment</code> from a configured TVB <code>Simulator</code>.</p>
+<p>Delegates to the <a href="../../api/adapters/tvb.html">TVB adapter</a> to capture the simulator’s model, connectivity, coupling, integrator, and monitors, then constructs an equivalent experiment from that datamodel.</p>
+<section id="parameters-11" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 9%">
+<col style="width: 59%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>tvb_simulator</td>
+<td></td>
+<td>A configured <code>tvb.simulator.simulator.Simulator</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-10" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-10">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A new <code>SimulationExperiment</code> mirroring the TVB simulator.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.classes.experiment.SimulationExperiment.generate_report" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.generate_report">generate_report</h5>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.generate_report(</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    template_name<span class="op">=</span><span class="st">'tvbo-report-experiment'</span>,</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    outputfile<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    derivative_notation<span class="op">=</span><span class="st">'dot'</span>,</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.generate_report(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    template_name<span class="op">=</span><span class="st">'tvbo-report-experiment'</span>,</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    outputfile<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    derivative_notation<span class="op">=</span><span class="st">'dot'</span>,</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Backward-compatible alias for :meth:<code>report</code>.</p>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.get_experiment_file_prefix" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.get_experiment_file_prefix">get_experiment_file_prefix</h5>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.get_experiment_file_prefix()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build a BIDS-style filename prefix for this experiment.</p>
+<section id="returns-11" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-11">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A string of the form <code>ses-&lt;id&gt;_desc-&lt;label&gt;</code>, where the</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>description falls back to the dynamics label, name, or</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td><code>"simulation"</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.get_parameters_collection" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.get_parameters_collection">get_parameters_collection</h5>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.get_parameters_collection(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Collect all experiment parameters into a nested <code>Bunch</code>.</p>
+<p>Traverses the experiment metadata, gathering parameters from the dynamics, coupling, network, and integration into a single container keyed by component.</p>
+<section id="parameters-12" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 4%">
+<col style="width: 84%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Traversal options. <code>keys_to_exclude</code> is a list of keys to skip; <code>connectivity</code> and <code>coupling_inputs</code> are always excluded when any exclusions are given.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-12" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-12">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 79%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A <code>Bunch</code> mapping component names to their parameter values.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.get_result_stem" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.get_result_stem">get_result_stem</h5>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.get_result_stem()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>BIDS result basename (no extension), generated with pybids <code>build_path</code>.</p>
+<p>Returns e.g.&nbsp;<code>exp-&lt;id&gt;_desc-&lt;label&gt;_result</code> — the shared stem for this experiment’s <code>&lt;stem&gt;.h5</code> data file and <code>&lt;stem&gt;.yaml</code> provenance sidecar, identical whether written by a local run or the HPC gather pass. The naming is driven by <code>tvbo.adapters.bids.RESULT_PATTERNS</code> (a pybids rule string), so it stays BIDS-compliant and customizable in one place.</p>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.list_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.list_db">list_db</h5>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>List available experiments in the tvbo database.</p>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.list_platform_experiments" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.list_platform_experiments">list_platform_experiments</h5>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.list_platform_experiments(</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    base_url<span class="op">=</span>TVBO_PLATFORM_URL,</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.list_platform_experiments(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    base_url<span class="op">=</span>TVBO_PLATFORM_URL,</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>List available experiments on the tvbo platform.</p>
-<section id="parameters-6" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h6>
+<section id="parameters-13" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-13">Parameters</h6>
 <p>base_url : str Platform base URL.</p>
 </section>
-<section id="returns-6" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h6>
+<section id="returns-13" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-13">Returns</h6>
 <p>list[dict] List of experiment summaries.</p>
 </section>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.plot" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.plot">plot</h5>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.plot(</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    layout<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    panels<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    run_kwargs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    auto<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.plot(</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    layout<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    panels<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    run_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    auto<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plot experiment outputs directly or compose multi-panel layouts.</p>
 <p>By default (<code>auto=True</code>), this runs the experiment once, infers task-aware panels, and renders a flexible subplot_mosaic layout.</p>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.render" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.render">render</h5>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.render(<span class="bu">format</span><span class="op">=</span><span class="st">'yaml'</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.render(<span class="bu">format</span><span class="op">=</span><span class="st">'yaml'</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Unified entry point for rendering the experiment in any output format.</p>
 <p>Dispatches via the :mod:<code>tvbo.export.registry</code>. All supported formats (YAML, openMINDS, markdown/PDF report, TVB, JAX, tvboptim, Julia, NeuroML/LEMS, …) are looked up by canonical key or alias.</p>
-<section id="parameters-7" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h6>
+<section id="parameters-14" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-14">Parameters</h6>
 <p>format : str Target output format. See :func:<code>tvbo.export.list_formats</code> for the current set. **kwargs Forwarded to the underlying renderer.</p>
 </section>
-<section id="returns-7" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h6>
+<section id="returns-14" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-14">Returns</h6>
 <p>str</p>
 </section>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.render_code" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.render_code">render_code</h5>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.render_code(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.render_code(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render generated code in <em>format</em> (back-compat shim around the registry).</p>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.render_yaml" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.render_yaml">render_yaml</h5>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.render_yaml()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.render_yaml()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Deprecated Render the YAML representation as a string. Use to_yaml(filepath=None) instead.</p>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.report" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.report">report</h5>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.report(</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>,</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    template_name<span class="op">=</span><span class="st">'tvbo-report-experiment'</span>,</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    outputfile<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    derivative_notation<span class="op">=</span><span class="st">'dot'</span>,</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.report(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>,</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    template_name<span class="op">=</span><span class="st">'tvbo-report-experiment'</span>,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    outputfile<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    derivative_notation<span class="op">=</span><span class="st">'dot'</span>,</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render a human-readable report for this experiment.</p>
 <ul>
 <li>Reuses the model/dynamics report template via Mako include to avoid redundancy.</li>
@@ -701,49 +1319,200 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <p>Parameters - format: optional explicit fallback format (‘markdown’ or ‘pdf’) - template_name: base name of the template without extension - outputfile: optional path to write the rendered report; when provided, extension defines output format (.md or .pdf)</p>
 </section>
+<section id="tvbo.classes.experiment.SimulationExperiment.resolve_dataset_observations" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.resolve_dataset_observations">resolve_dataset_observations</h5>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.resolve_dataset_observations(</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    active_subject,</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resolve per-subject dataset-sourced targets for one subject.</p>
+<p>For each observation whose <code>source</code> is <code>dataset.subject.&lt;measure&gt;</code>: query <code>dataset.bids_root</code> for the subject’s matching file, load it as a Network, read <code>&lt;measure&gt;</code>, and reconcile its nodes to the model network. <code>reconcile: by_label</code> maps each target node to the model’s canonical label (alias-aware — a divergent nomenclature such as <code>THALAMUS_LEFT</code> for <code>L_Thalamus</code> still matches via the atlas <code>alternateName</code> crosswalk), then selects the shared labels in the model’s order. Alignment is by name on both the empirical target and the simulated observable — never by row index — so a differing node count or order (or a swapped hemisphere block) cannot silently misalign the comparison. The realised coverage is logged, and falls back to requiring full coverage unless the observation sets <code>min_coverage</code>.</p>
+<p>Returns <code>{obs_name: xarray.DataArray}</code> keyed by canonical node label on both axes, restricted to the labels shared with the model network. The model-side gather (which model nodes the shared labels are) is available via :meth:<code>dataset_reconcile_index</code> so the simulated observation selects the same sub-block.</p>
+</section>
 <section id="tvbo.classes.experiment.SimulationExperiment.resolve_network_observations" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.resolve_network_observations">resolve_network_observations</h5>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.resolve_network_observations()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.resolve_network_observations()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve network-sourced observations to their matrices.</p>
 <p>Pairs :attr:<code>network_observation_measures</code> with the data the network carries (:attr:<code>Network.observations</code>), yielding <code>{obs_name: matrix}</code> ready to pass into the generated <code>run_experiment(network_observations=...)</code>. Raises a clear error if a declared measure’s data is absent.</p>
 </section>
+<section id="tvbo.classes.experiment.SimulationExperiment.run" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.run">run</h5>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.run(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    initial_conditions<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>    results_root<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Configure, build, and run the experiment on a backend.</p>
+<p>Dispatches on <code>format</code> to the corresponding backend (<code>tvb</code>, <code>tvboptim</code>, <code>jax</code>/<code>autodiff</code>, <code>cuda</code>, <code>python</code>, or <code>pde</code>), executes the simulation, and wraps the output in an <a href="../../api/data/types.html"><code>ExperimentResult</code></a>.</p>
+<section id="parameters-15" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-15">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 2%">
+<col style="width: 86%">
+<col style="width: 3%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Backend identifier selecting how to run the experiment. When omitted, it is resolved from the experiment’s declared <code>execution.backend</code> (e.g.&nbsp;a spiking model that sets <code>brian2</code>), falling back to <code>tvboptim</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>initial_conditions</td>
+<td></td>
+<td>Optional history to seed the simulation (used by the JAX backend); defaults to conditions collected from the experiment.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>results_root</td>
+<td></td>
+<td>Directory under which sibling experiments’ saved results are searched when this experiment’s <code>initial_state.method == from_experiment</code> (see <code>_resolve_from_experiment_seed</code>). Defaults to the current directory; the CLI passes the run’s output-directory parent.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Backend-specific run options. A <code>duration</code> value is applied to the integration settings before running; other keys (e.g.&nbsp;<code>benchmark</code>, <code>mode</code>) are passed through to the backend runner.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-15" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-15">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>An <code>ExperimentResult</code> holding the integrated time series and any</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>observations, with <code>source</code> set to this experiment.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.classes.experiment.SimulationExperiment.save" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.save">save</h5>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.save(</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    path,</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    metadata_only<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.save(</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>    path,</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>    metadata_only<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render via :meth:<code>render</code> and persist to disk.</p>
-<section id="parameters-8" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h6>
+<section id="parameters-16" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-16">Parameters</h6>
 <p>path : str or Path Output file path <strong>or</strong> directory. When a directory is given the filename is derived from :meth:<code>get_experiment_file_prefix</code> and the correct extension for <em>format</em> (BIDS-style). format : str, optional Export format key (e.g.&nbsp;<code>'yaml'</code>, <code>'tvb'</code>, <code>'neuroml'</code>). When omitted, inferred from <em>path</em> suffix. metadata_only : bool When <code>True</code> (default) only the textual/metadata artefact is written. When <code>False</code> and the experiment has a network, the network arrays are also saved as an HDF5 sidecar file next to <em>path</em>.</p>
+</section>
+</section>
+<section id="tvbo.classes.experiment.SimulationExperiment.save_code" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.save_code">save_code</h5>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.save_code(<span class="bu">dir</span>, file_name<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render the experiment as TVB Python code and write it to disk.</p>
+<section id="parameters-17" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-17">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 78%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>dir</td>
+<td></td>
+<td>Target directory (or full path when combined with a BIDS-style auto-generated filename).</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>file_name</td>
+<td></td>
+<td>Optional filename to write inside <code>dir</code>; when omitted, the path is derived from <code>get_experiment_file_prefix</code>.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-16" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-16">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The path of the written file, as a string.</td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.save_model_specification" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.save_model_specification">save_model_specification</h5>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.save_model_specification(<span class="bu">dir</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.save_model_specification(<span class="bu">dir</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Save the LEMS simulation file to <em>dir</em>.</p>
 <p>.. deprecated:: Use <code>NeuroMLAdapter(experiment).export(dir)</code> from <code>tvbo.adapters.neuroml</code> instead.</p>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.setup_monitors" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.setup_monitors">setup_monitors</h5>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.setup_monitors(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.setup_monitors(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Populate monitors in metadata from simple inputs or runtime wrappers.</p>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.supported_export_formats" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.supported_export_formats">supported_export_formats</h5>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.supported_export_formats()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.supported_export_formats()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return metadata for API/UI export format dropdowns.</p>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.symbolic" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.symbolic">symbolic</h5>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.symbolic(</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    integrate<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    indexed<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    delays<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.symbolic(</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    integrate<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    indexed<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    delays<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Symbolic representation of the full experiment equations.</p>
 <p>Produces different styles of mathematical output depending on the combination of flags:</p>
 <table class="caption-top table">
@@ -802,36 +1571,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<section id="parameters-9" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h6>
+<section id="parameters-18" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-18">Parameters</h6>
 <p>integrate : bool Substitute coupling expressions into state equations. indexed : bool Add node index <code>_i</code> to state / derived variables. delays : bool Show time delays on incoming coupling states. Implies <code>indexed=True</code>.</p>
 </section>
-<section id="returns-8" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h6>
+<section id="returns-17" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-17">Returns</h6>
 <p>dict Keys: <code>'state'</code>, <code>'coupling'</code>, <code>'functions'</code>, <code>'derived_parameters'</code>, <code>'derived'</code>, <code>'parameters'</code>.</p>
 </section>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.to_bids" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.to_bids">to_bids</h5>
-<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.to_bids(</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    output_dir,</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    subject<span class="op">=</span><span class="st">'01'</span>,</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    session<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="st">'tvbsim'</span>,</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    run<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    ts_label<span class="op">=</span><span class="st">'sim'</span>,</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    timeseries<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    run_simulation<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>run_kwargs,</span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.to_bids(</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>    output_dir,</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    subject<span class="op">=</span><span class="st">'01'</span>,</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    session<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="st">'tvbsim'</span>,</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>    run<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>    ts_label<span class="op">=</span><span class="st">'sim'</span>,</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>    timeseries<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>    run_simulation<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>run_kwargs,</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Export simulation experiment and results to BIDS-compliant format (BEP034 v1.0.0).</p>
 <p>This method creates a complete BIDS dataset containing: - Time series data in ts/ directory - Network connectivity in net/ directory - Model equations in eq/ directory - Coordinates in coord/ directory (if available) - JSON sidecar files with full metadata</p>
-<section id="parameters-10" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h6>
+<section id="parameters-19" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-19">Parameters</h6>
 <p>output_dir : str Root directory for the BIDS dataset. subject : str Subject identifier (without ‘sub-’ prefix). Default: ‘01’. session : str, optional Session identifier (without ‘ses-’ prefix). description : str Description label for the output files. Default: ‘tvbsim’. run : int, optional Run number. ts_label : str Time series label (e.g., ‘sim’, ‘bold’, ‘eeg’). Default: ‘sim’. timeseries : TimeSeries, optional Pre-computed TimeSeries. If not provided and run_simulation=True, the simulation will be executed. run_simulation : bool If True and no timeseries provided, run the simulation. Default: True. **run_kwargs Additional arguments passed to the run() method.</p>
 </section>
-<section id="returns-9" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-9">Returns</h6>
+<section id="returns-18" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-18">Returns</h6>
 <p>str Path to the created BIDS dataset root directory.</p>
 </section>
 <section id="examples-2" class="level6 doc-section doc-section-examples">
@@ -859,28 +1628,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.to_lems" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.to_lems">to_lems</h5>
-<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.to_lems(</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    initial_conditions<span class="op">=</span><span class="dv">1</span>,</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    out_path<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    out_file<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.to_lems(</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>    initial_conditions<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>    out_path<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>    out_file<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Export this experiment as a LEMS Model object.</p>
 <p>.. deprecated:: Use <code>NeuroMLAdapter(experiment).render_code()</code> from <code>tvbo.adapters.neuroml</code> instead. This method returns a <code>lems.Model</code> object; the adapter produces a validated XML string that covers all LEMS constructs including ConditionalDerivedVariable and Coupling.</p>
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.to_openminds" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.to_openminds">to_openminds</h5>
-<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.to_openminds(</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    filepath<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    base_id<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    include_context<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.to_openminds(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>    filepath<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>    base_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>    include_context<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Export experiment to openMINDS JSON-LD format.</p>
-<section id="parameters-11" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters</h6>
+<section id="parameters-20" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-20">Parameters</h6>
 <p>filepath : str, optional If provided, write JSON-LD to this file path. base_id : str, optional Base URI for generating <span class="citation" data-cites="id"><a href="#ref-id" role="doc-biblioref"><strong>id?</strong></a></span> values (e.g., “https://example.org/simulations”). include_context : bool Whether to include the <span class="citation" data-cites="context"><a href="#ref-context" role="doc-biblioref"><strong>context?</strong></a></span> in the output. Default True.</p>
 </section>
-<section id="returns-10" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-10">Returns</h6>
+<section id="returns-19" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-19">Returns</h6>
 <p>dict OpenMINDS-compatible JSON-LD dictionary.</p>
 </section>
 <section id="example-3" class="level6 doc-section doc-section-example">
@@ -896,14 +1665,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.experiment.SimulationExperiment.to_yaml" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.experiment.SimulationExperiment.to_yaml">to_yaml</h5>
-<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.to_yaml(filepath<span class="op">=</span><span class="va">None</span>, <span class="bu">format</span><span class="op">=</span><span class="st">'tvbo'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>classes.experiment.SimulationExperiment.to_yaml(filepath<span class="op">=</span><span class="va">None</span>, <span class="bu">format</span><span class="op">=</span><span class="st">'tvbo'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Export the experiment to YAML format.</p>
-<section id="parameters-12" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters</h6>
+<section id="parameters-21" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-21">Parameters</h6>
 <p>filepath : str, optional Path to write the YAML file. If None, returns the YAML string. format : str Output format: “tvbo” (default) or “pyrates”.</p>
 </section>
-<section id="returns-11" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-11">Returns</h6>
+<section id="returns-20" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-20">Returns</h6>
 <p>str YAML string or filepath if written to file.</p>
 
 

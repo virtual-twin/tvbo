@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -178,12 +186,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions:</a></li>
   <li><a href="#functions-1" id="toc-functions-1" class="nav-link" data-scroll-target="#functions-1">Functions</a>
   <ul class="collapse">
+  <li><a href="#tvbo.utils.report.display_symbol" id="toc-tvbo.utils.report.display_symbol" class="nav-link" data-scroll-target="#tvbo.utils.report.display_symbol">display_symbol</a></li>
+  <li><a href="#tvbo.utils.report.distribution_text" id="toc-tvbo.utils.report.distribution_text" class="nav-link" data-scroll-target="#tvbo.utils.report.distribution_text">distribution_text</a></li>
+  <li><a href="#tvbo.utils.report.flag_text" id="toc-tvbo.utils.report.flag_text" class="nav-link" data-scroll-target="#tvbo.utils.report.flag_text">flag_text</a></li>
+  <li><a href="#tvbo.utils.report.format_number" id="toc-tvbo.utils.report.format_number" class="nav-link" data-scroll-target="#tvbo.utils.report.format_number">format_number</a></li>
   <li><a href="#tvbo.utils.report.get_citation" id="toc-tvbo.utils.report.get_citation" class="nav-link" data-scroll-target="#tvbo.utils.report.get_citation">get_citation</a></li>
+  <li><a href="#tvbo.utils.report.md_table" id="toc-tvbo.utils.report.md_table" class="nav-link" data-scroll-target="#tvbo.utils.report.md_table">md_table</a></li>
+  <li><a href="#tvbo.utils.report.metadata_text" id="toc-tvbo.utils.report.metadata_text" class="nav-link" data-scroll-target="#tvbo.utils.report.metadata_text">metadata_text</a></li>
+  <li><a href="#tvbo.utils.report.model_delta" id="toc-tvbo.utils.report.model_delta" class="nav-link" data-scroll-target="#tvbo.utils.report.model_delta">model_delta</a></li>
   <li><a href="#tvbo.utils.report.model_report" id="toc-tvbo.utils.report.model_report" class="nav-link" data-scroll-target="#tvbo.utils.report.model_report">model_report</a></li>
+  <li><a href="#tvbo.utils.report.name_items" id="toc-tvbo.utils.report.name_items" class="nav-link" data-scroll-target="#tvbo.utils.report.name_items">name_items</a></li>
+  <li><a href="#tvbo.utils.report.param_table" id="toc-tvbo.utils.report.param_table" class="nav-link" data-scroll-target="#tvbo.utils.report.param_table">param_table</a></li>
   <li><a href="#tvbo.utils.report.parameter_report" id="toc-tvbo.utils.report.parameter_report" class="nav-link" data-scroll-target="#tvbo.utils.report.parameter_report">parameter_report</a></li>
+  <li><a href="#tvbo.utils.report.parameter_table" id="toc-tvbo.utils.report.parameter_table" class="nav-link" data-scroll-target="#tvbo.utils.report.parameter_table">parameter_table</a></li>
+  <li><a href="#tvbo.utils.report.present" id="toc-tvbo.utils.report.present" class="nav-link" data-scroll-target="#tvbo.utils.report.present">present</a></li>
+  <li><a href="#tvbo.utils.report.range_text" id="toc-tvbo.utils.report.range_text" class="nav-link" data-scroll-target="#tvbo.utils.report.range_text">range_text</a></li>
   <li><a href="#tvbo.utils.report.render_citation" id="toc-tvbo.utils.report.render_citation" class="nav-link" data-scroll-target="#tvbo.utils.report.render_citation">render_citation</a></li>
   <li><a href="#tvbo.utils.report.save_latex" id="toc-tvbo.utils.report.save_latex" class="nav-link" data-scroll-target="#tvbo.utils.report.save_latex">save_latex</a></li>
+  <li><a href="#tvbo.utils.report.slot" id="toc-tvbo.utils.report.slot" class="nav-link" data-scroll-target="#tvbo.utils.report.slot">slot</a></li>
+  <li><a href="#tvbo.utils.report.state_variable_table" id="toc-tvbo.utils.report.state_variable_table" class="nav-link" data-scroll-target="#tvbo.utils.report.state_variable_table">state_variable_table</a></li>
   <li><a href="#tvbo.utils.report.to_pdf" id="toc-tvbo.utils.report.to_pdf" class="nav-link" data-scroll-target="#tvbo.utils.report.to_pdf">to_pdf</a></li>
+  <li><a href="#tvbo.utils.report.unit_text" id="toc-tvbo.utils.report.unit_text" class="nav-link" data-scroll-target="#tvbo.utils.report.unit_text">unit_text</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -217,16 +240,64 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.utils.report.display_symbol">display_symbol</a></td>
+<td>Inline-LaTeX symbol for a report row, preferring an explicit <code>symbol</code> override.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.utils.report.distribution_text">distribution_text</a></td>
+<td>One-line summary of a sampling distribution (name, domain, axis, seed).</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.utils.report.flag_text">flag_text</a></td>
+<td>Flags cell: boolean flags + shape / dataset / reported optimum.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.utils.report.format_number">format_number</a></td>
+<td>APA-style numeric formatting for report-table cells.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.utils.report.get_citation">get_citation</a></td>
 <td>Retrieve a BibTeX entry by its citation key and render it as an APA-style plain text citation.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.utils.report.md_table">md_table</a></td>
+<td>Render a GitHub-markdown table, omitting columns with no data.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.utils.report.metadata_text">metadata_text</a></td>
+<td>Domain / Sampling cell: bounds + enforcement + distribution.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.utils.report.model_delta">model_delta</a></td>
+<td>Names of what <em>model</em> adds or changes relative to <em>baseline</em>.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.utils.report.model_report">model_report</a></td>
 <td>Generate a report for the model.</td>
 </tr>
+<tr class="even">
+<td><a href="#tvbo.utils.report.name_items">name_items</a></td>
+<td>Yield <code>(name, obj)</code> pairs from a name-keyed dict, list, or <code>None</code>.</td>
+</tr>
 <tr class="odd">
+<td><a href="#tvbo.utils.report.param_table">param_table</a></td>
+<td>Markdown table for any parameter-like collection, empty columns dropped.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.utils.report.parameter_report">parameter_report</a></td>
 <td>Generate a report of parameter settings.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.utils.report.parameter_table">parameter_table</a></td>
+<td>Markdown model Parameters table (empty columns dropped) from a name-&gt;obj map.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.utils.report.present">present</a></td>
+<td>True when a value carries information (not <code>None</code> / empty / <code>''</code>).</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.utils.report.range_text">range_text</a></td>
+<td>One-line summary of an explored range / domain (values, <code>[lo, hi]</code>, step, n).</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.utils.report.render_citation">render_citation</a></td>
@@ -237,14 +308,49 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Save a LaTeX report to a file.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.utils.report.slot">slot</a></td>
+<td>Safe attribute access on a report object (<code>getattr</code> with a default).</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.utils.report.state_variable_table">state_variable_table</a></td>
+<td>Markdown State-Variables table (empty columns dropped) from a name-&gt;obj map.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.utils.report.to_pdf">to_pdf</a></td>
-<td></td>
+<td>Convert Markdown text to a PDF file via pandoc.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.utils.report.unit_text">unit_text</a></td>
+<td>Render a unit as inline LaTeX, or the empty marker when absent.</td>
 </tr>
 </tbody>
 </table>
+<section id="tvbo.utils.report.display_symbol" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.display_symbol">display_symbol</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>utils.report.display_symbol(obj, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Inline-LaTeX symbol for a report row, preferring an explicit <code>symbol</code> override.</p>
+<p>When a parameter / variable carries a <code>symbol</code> slot (e.g.&nbsp;<code>w_+</code> for an identifier <code>w_plus</code>, or <code>S^{(E)}</code> for <code>S_e</code>), render <em>that</em> symbol so the report matches the source’s own notation; otherwise fall back to the element’s name. Fully sympy-native — the override string is itself rendered via <code>sympy.latex(Symbol(...))</code>, so it inherits Greek/subscript/superscript handling.</p>
+</section>
+<section id="tvbo.utils.report.distribution_text" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.distribution_text">distribution_text</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>utils.report.distribution_text(distribution)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>One-line summary of a sampling distribution (name, domain, axis, seed).</p>
+</section>
+<section id="tvbo.utils.report.flag_text" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.flag_text">flag_text</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>utils.report.flag_text(obj, flags<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Flags cell: boolean flags + shape / dataset / reported optimum.</p>
+<p><code>flags</code> is a list of <code>(attr, label)</code> pairs; it defaults to the standard parameter flags (<code>free</code>, <code>heterogeneous</code>). A purely symbolic shape such as <code>(n_nodes,)</code> is skipped: it names the broadcast dimension rather than a concrete size, so it carries no information for a reader and would otherwise keep an empty Flags column alive. A concrete shape like <code>(84, 84)</code> is kept.</p>
+</section>
+<section id="tvbo.utils.report.format_number" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.format_number">format_number</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>utils.report.format_number(value, decimals<span class="op">=</span><span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>APA-style numeric formatting for report-table cells.</p>
+<p>Rounds to at most <code>decimals</code> decimal places and strips trailing zeros, so raw floats render publication-clean — <code>0.8333333333</code> → <code>0.8333</code>, <code>314.1592653589793</code> → <code>314.1593</code>, <code>40000.0</code> → <code>40000</code>, <code>0.0</code> → <code>0</code> — while very large or very small magnitudes fall back to scientific notation (<code>1e-06</code>). Non-numeric values (strings, symbolic expressions, arrays) and booleans pass through unchanged.</p>
+</section>
 <section id="tvbo.utils.report.get_citation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.report.get_citation">get_citation</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>utils.report.get_citation(citation_key)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>utils.report.get_citation(citation_key)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Retrieve a BibTeX entry by its citation key and render it as an APA-style plain text citation.</p>
 <section id="parameters" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
@@ -292,30 +398,192 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 </section>
-<section id="tvbo.utils.report.model_report" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.utils.report.model_report">model_report</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>utils.report.model_report()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Generate a report for the model.</p>
+<section id="tvbo.utils.report.md_table" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.md_table">md_table</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>utils.report.md_table(headers, rows, aligns<span class="op">=</span><span class="va">None</span>, empty<span class="op">=</span><span class="st">''</span>, col_cap<span class="op">=</span><span class="dv">44</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render a GitHub-markdown table, omitting columns with no data.</p>
+<p>A column is dropped when every one of its data cells is empty (blank, <code>None</code>, or one of the placeholder markers). Kept columns render their empty cells as <code>empty</code> (blank by default — no <code>—</code> placeholder). This keeps auto-generated report tables narrow: a parameter set with no <code>default</code>/<code>domain</code>/<code>flags</code> values shows only the columns that carry information.</p>
+<p>When only a single column survives the drop, the result is <strong>not</strong> a table but a plain-text comma-separated list of that column’s values — a lone <code>| Term |</code> / <code>| c_grid |</code> table reads as clutter, so it collapses to <code>c_grid</code>. The caller’s section header supplies the context.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 25%">
+<col style="width: 56%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>headers</td>
+<td>Sequence[str]</td>
+<td>Column titles.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>rows</td>
+<td>Sequence[Sequence[Any]]</td>
+<td>One sequence of cell values per row.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>aligns</td>
+<td>Sequence[str] | None</td>
+<td>Per-column alignment, <code>'l'</code>/<code>'r'</code>/<code>'c'</code>; defaults to left.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>empty</td>
+<td>str</td>
+<td>Placeholder rendered for an empty cell in a kept column.</td>
+<td><code>''</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="returns-1" class="level4 doc-section doc-section-returns">
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>str</td>
+<td>The markdown table as a string (header, rule, and body rows), or a</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>str</td>
+<td>plain-text list when a single column remains.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.utils.report.metadata_text" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.metadata_text">metadata_text</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>utils.report.metadata_text(obj)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Domain / Sampling cell: bounds + enforcement + distribution.</p>
+</section>
+<section id="tvbo.utils.report.model_delta" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.model_delta">model_delta</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>utils.report.model_delta(model, baseline)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Names of what <em>model</em> adds or changes relative to <em>baseline</em>.</p>
+<p>Compares two related models (e.g.&nbsp;a controlled variant against its uncontrolled base) and returns the subsets that are new or redefined, so a report can render only the <strong>delta</strong> instead of repeating every shared state variable, parameter, derived variable and coupling input.</p>
+<p>Returns a :class:<code>~types.SimpleNamespace</code> with:</p>
+<ul>
+<li><code>eq_svars</code> — state variables whose <em>equation</em> is new or changed (shown in <em>State Equations</em>).</li>
+<li><code>new_svars</code> — state variables absent from the baseline (shown in the <em>State Variables</em> table; a merely re-tuned equation is not a new variable).</li>
+<li><code>dvars</code> — derived variables that are new or redefined.</li>
+<li><code>params</code> — parameters that are new or whose value/equation changed.</li>
+<li><code>coupling_inputs</code> — coupling inputs absent from the baseline.</li>
+<li><code>base_label</code> — a human label for the baseline, for the “relative to” note.</li>
+</ul>
+</section>
+<section id="tvbo.utils.report.model_report" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.model_report">model_report</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>utils.report.model_report()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Generate a report for the model.</p>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
 <p>None</p>
+</section>
+</section>
+<section id="tvbo.utils.report.name_items" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.name_items">name_items</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>utils.report.name_items(collection)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Yield <code>(name, obj)</code> pairs from a name-keyed dict, list, or <code>None</code>.</p>
+</section>
+<section id="tvbo.utils.report.param_table" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.param_table">param_table</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>utils.report.param_table(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    collection,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    name_header<span class="op">=</span><span class="st">'Parameter'</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    symbolic<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    flags<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Markdown table for any parameter-like collection, empty columns dropped.</p>
+<p>Renders the full column set (name, value, default, unit, domain/sampling, flags, description) and lets :func:<code>md_table</code> drop every column that is empty across all rows, so each collection shows only the columns that carry data. One builder serves model parameters, coupling terms, and the stimulation, integration, noise, and hyperparameter tables, instead of a hand-written table per section.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 6%">
+<col style="width: 71%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>collection</td>
+<td></td>
+<td>A name-&gt;obj map or a list of parameter-like objects.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>name_header</td>
+<td></td>
+<td>Title of the first (name) column, e.g.&nbsp;<code>Term</code>.</td>
+<td><code>'Parameter'</code></td>
+</tr>
+<tr class="odd">
+<td>symbolic</td>
+<td></td>
+<td>Render the name as inline-LaTeX <code>$symbol$</code> when true, else plain.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="even">
+<td>flags</td>
+<td></td>
+<td><code>(attr, label)</code> pairs for :func:<code>flag_text</code>; defaults to the standard parameter flags.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 <section id="tvbo.utils.report.parameter_report" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.report.parameter_report">parameter_report</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>utils.report.parameter_report(</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    param_setting,</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    decimals<span class="op">=</span><span class="dv">3</span>,</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'latex'</span>,</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>utils.report.parameter_report(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    param_setting,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    decimals<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'latex'</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate a report of parameter settings.</p>
-<section id="parameters-1" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
 <p>param_setting : object Parameter setting object. decimals : int, optional Number of decimal places for formatting. Default is 3. format : str, optional Format for the report: ‘latex’, ‘pandas’, or ‘markdown’. Default is ‘latex’. **kwargs : Additional keyword arguments.</p>
 </section>
-<section id="returns-2" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
 <p>pandas.DataFrame or str Report table if format is ‘pandas’, LaTeX string if format is ‘latex’, or markdown string if format is ‘markdown’.</p>
 </section>
 <section id="raises" class="level4 doc-section doc-section-raises">
@@ -323,12 +591,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>ValueError If the provided format is not recognized.</p>
 </section>
 </section>
+<section id="tvbo.utils.report.parameter_table" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.parameter_table">parameter_table</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>utils.report.parameter_table(params)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Markdown model Parameters table (empty columns dropped) from a name-&gt;obj map.</p>
+</section>
+<section id="tvbo.utils.report.present" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.present">present</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>utils.report.present(value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>True when a value carries information (not <code>None</code> / empty / <code>''</code>).</p>
+</section>
+<section id="tvbo.utils.report.range_text" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.range_text">range_text</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>utils.report.range_text(range_obj)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>One-line summary of an explored range / domain (values, <code>[lo, hi]</code>, step, n).</p>
+</section>
 <section id="tvbo.utils.report.render_citation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.report.render_citation">render_citation</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>utils.report.render_citation(citation, style<span class="op">=</span><span class="st">'apa'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>utils.report.render_citation(citation, style<span class="op">=</span><span class="st">'apa'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render an ontology citation instance as formatted text.</p>
-<section id="parameters-2" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 9%">
@@ -360,8 +643,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-3" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -382,20 +665,70 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.utils.report.save_latex" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.report.save_latex">save_latex</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>utils.report.save_latex(conf, fpath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>utils.report.save_latex(conf, fpath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Save a LaTeX report to a file.</p>
-<section id="parameters-3" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
 <p>conf : object Configuration object. fpath : str File path to save the LaTeX report.</p>
 </section>
-<section id="returns-4" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
 <p>None</p>
 </section>
 </section>
+<section id="tvbo.utils.report.slot" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.slot">slot</h3>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>utils.report.slot(obj, name, default<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Safe attribute access on a report object (<code>getattr</code> with a default).</p>
+</section>
+<section id="tvbo.utils.report.state_variable_table" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.state_variable_table">state_variable_table</h3>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>utils.report.state_variable_table(svars)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Markdown State-Variables table (empty columns dropped) from a name-&gt;obj map.</p>
+</section>
 <section id="tvbo.utils.report.to_pdf" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.report.to_pdf">to_pdf</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>utils.report.to_pdf(render, outputfile)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>utils.report.to_pdf(render, outputfile)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Convert Markdown text to a PDF file via pandoc.</p>
+<p>Uses <code>pypandoc</code> with the <code>xelatex</code> PDF engine and a 3.5 cm page margin to render the given Markdown source and write the result to disk.</p>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 10%">
+<col style="width: 57%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>render</td>
+<td></td>
+<td>Markdown-formatted source text to convert.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>outputfile</td>
+<td></td>
+<td>Path where the generated PDF is written.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.utils.report.unit_text" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.report.unit_text">unit_text</h3>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>utils.report.unit_text(unit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render a unit as inline LaTeX, or the empty marker when absent.</p>
 
 
 </section>

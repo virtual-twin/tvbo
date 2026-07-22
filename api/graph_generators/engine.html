@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -174,18 +182,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#tvbo.graph_generators.engine" id="toc-tvbo.graph_generators.engine" class="nav-link active" data-scroll-target="#tvbo.graph_generators.engine">engine</a>
   <ul class="collapse">
-  <li><a href="#rng-contract-genericprocedureengine.md-4" id="toc-rng-contract-genericprocedureengine.md-4" class="nav-link" data-scroll-target="#rng-contract-genericprocedureengine.md-4">RNG contract (<code>GenericProcedureEngine.md</code> §4)</a></li>
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
+  <li><a href="#tvbo.graph_generators.engine.declared_defaults" id="toc-tvbo.graph_generators.engine.declared_defaults" class="nav-link" data-scroll-target="#tvbo.graph_generators.engine.declared_defaults">declared_defaults</a></li>
   <li><a href="#tvbo.graph_generators.engine.load_matrix" id="toc-tvbo.graph_generators.engine.load_matrix" class="nav-link" data-scroll-target="#tvbo.graph_generators.engine.load_matrix">load_matrix</a></li>
-  <li><a href="#tvbo.graph_generators.engine.maslov_sneppen" id="toc-tvbo.graph_generators.engine.maslov_sneppen" class="nav-link" data-scroll-target="#tvbo.graph_generators.engine.maslov_sneppen">maslov_sneppen</a></li>
-  <li><a href="#tvbo.graph_generators.engine.materialize" id="toc-tvbo.graph_generators.engine.materialize" class="nav-link" data-scroll-target="#tvbo.graph_generators.engine.materialize">materialize</a></li>
-  <li><a href="#tvbo.graph_generators.engine.nonzero_positions" id="toc-tvbo.graph_generators.engine.nonzero_positions" class="nav-link" data-scroll-target="#tvbo.graph_generators.engine.nonzero_positions">nonzero_positions</a></li>
-  <li><a href="#tvbo.graph_generators.engine.permute" id="toc-tvbo.graph_generators.engine.permute" class="nav-link" data-scroll-target="#tvbo.graph_generators.engine.permute">permute</a></li>
-  <li><a href="#tvbo.graph_generators.engine.require" id="toc-tvbo.graph_generators.engine.require" class="nav-link" data-scroll-target="#tvbo.graph_generators.engine.require">require</a></li>
   <li><a href="#tvbo.graph_generators.engine.run_generator" id="toc-tvbo.graph_generators.engine.run_generator" class="nav-link" data-scroll-target="#tvbo.graph_generators.engine.run_generator">run_generator</a></li>
-  <li><a href="#tvbo.graph_generators.engine.sample" id="toc-tvbo.graph_generators.engine.sample" class="nav-link" data-scroll-target="#tvbo.graph_generators.engine.sample">sample</a></li>
-  <li><a href="#tvbo.graph_generators.engine.scatter" id="toc-tvbo.graph_generators.engine.scatter" class="nav-link" data-scroll-target="#tvbo.graph_generators.engine.scatter">scatter</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -200,14 +201,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.graph_generators.engine" class="level1">
 <h1>engine</h1>
 <p><code>graph_generators.engine</code></p>
-<p>Generic eager procedure engine for TVBO graph generators.</p>
-<p>Interprets the symbolic <code>procedure:</code> block of a curated <code>GraphGenerator</code> YAML — an ordered DAG of named intermediates plus <code>output:</code> expressions — and evaluates it once, at <code>Network</code> load time, in numpy, producing a concrete adjacency matrix. This is the engine that <em>replaces</em> the deleted per-generator Python materialisers (<code>builtins.py</code>): a generator is now <strong>pure YAML</strong> (its <code>procedure:</code> block) and this one engine is its numpy/eager interpreter.</p>
+<p>Resolving a curated GraphGenerator’s name, and reading a reference matrix.</p>
+<p>What is left here is the residue that no printer should ever emit. Graph construction itself lives in :mod:<code>tvbo.graph_generators.procedural</code>, which resolves a generator’s typed DAG to SymPy and renders it through the printer tables in <code>tvbo/codegen/code.py</code> — one primitive definition per backend. This module used to carry a second, numpy-only implementation of those same primitives (sampling, reductions, linear algebra) behind a restricted <code>eval</code>; that table is gone, because two implementations of one vocabulary can only ever agree by coincidence, and the disagreement would show up as a network that differs between a local run and a swept one.</p>
 <p>See <code>dev/GenericProcedureEngine.md</code> for the full design.</p>
-<p>Eager evaluation uses a restricted <code>eval</code> over a fixed numpy <em>primitive namespace</em> (<code>__builtins__</code> stripped): the procedure’s array expressions use ordinary Python operator / indexing / keyword-argument semantics on numpy arrays — exactly the syntax the curated procedures are written in (<code>sample(dist, shape=(n, n), seed=seed)</code>, <code>M[M != 0]</code>, <code>Uniform(0, 1)</code>). The procedure YAMLs are trusted, curated database artefacts, never user input. The <em>codegen</em> mode — emitting the <strong>same</strong> primitive set into jax / julia source via the printer tables in <code>tvbo/codegen/code.py</code> — is deferred (Stage 3).</p>
-<section id="rng-contract-genericprocedureengine.md-4" class="level2 doc-section doc-section-rng-contract-genericprocedureenginemd-4">
-<h2 class="doc-section doc-section-rng-contract-genericprocedureenginemd-4 anchored" data-anchor-id="rng-contract-genericprocedureengine.md-4">RNG contract (<code>GenericProcedureEngine.md</code> §4)</h2>
-<p>A generator with a fixed <code>seed</code> is deterministic <em>within numpy</em>. Any seed offsets a procedure needs (e.g.&nbsp;<code>seed</code> for the weights, <code>seed + 1</code> for the sparsity mask) are written <strong>explicitly</strong> in the <code>procedure:</code> so every backend derives sub-streams the same structural way. Cross-backend bit-identical sampling is <em>not</em> guaranteed (numpy PCG64 ≠ jax Threefry); within-backend reproducibility and statistical equivalence are. A missing seed defaults to 0 so <code>seed + 1</code> stays well-defined and reproducible.</p>
-</section>
 <section id="functions" class="level2">
 <h2 class="anchored" data-anchor-id="functions">Functions</h2>
 <table class="caption-top table">
@@ -219,99 +215,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.graph_generators.engine.declared_defaults">declared_defaults</a></td>
+<td>Default values from a curated entry’s <code>parameters:</code> interface block.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.graph_generators.engine.load_matrix">load_matrix</a></td>
 <td>Resolve <code>source</code> (IRI / path / bare DB name) into a 2-D adjacency matrix.</td>
 </tr>
-<tr class="even">
-<td><a href="#tvbo.graph_generators.engine.maslov_sneppen">maslov_sneppen</a></td>
-<td>Degree-preserving edge-swap null model (Maslov–Sneppen) on a weighted matrix.</td>
-</tr>
-<tr class="odd">
-<td><a href="#tvbo.graph_generators.engine.materialize">materialize</a></td>
-<td>Evaluate a <code>procedure:</code> block to <code>{weights[, lengths, node_parameters]}</code>.</td>
-</tr>
-<tr class="even">
-<td><a href="#tvbo.graph_generators.engine.nonzero_positions">nonzero_positions</a></td>
-<td>Row-major (i, j) indices of the non-zero entries of <code>M</code>.</td>
-</tr>
-<tr class="odd">
-<td><a href="#tvbo.graph_generators.engine.permute">permute</a></td>
-<td>Random permutation of <code>arr</code> (reproducible for a fixed <code>seed</code>).</td>
-</tr>
-<tr class="even">
-<td><a href="#tvbo.graph_generators.engine.require">require</a></td>
-<td>Declarative guard usable in a procedure step; raises if <code>condition</code> is false.</td>
-</tr>
 <tr class="odd">
 <td><a href="#tvbo.graph_generators.engine.run_generator">run_generator</a></td>
-<td>Materialise a curated generator by name from its YAML <code>procedure:</code> block.</td>
-</tr>
-<tr class="even">
-<td><a href="#tvbo.graph_generators.engine.sample">sample</a></td>
-<td>Sample <code>shape</code> values from a distribution (LinkML / inline / <code>None</code>→Normal).</td>
-</tr>
-<tr class="odd">
-<td><a href="#tvbo.graph_generators.engine.scatter">scatter</a></td>
-<td>Return a copy of <code>base</code> with <code>values</code> written at <code>positions</code>.</td>
+<td>Materialise a curated generator by name from its typed <code>procedure:</code> DAG.</td>
 </tr>
 </tbody>
 </table>
+<section id="tvbo.graph_generators.engine.declared_defaults" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.graph_generators.engine.declared_defaults">declared_defaults</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.declared_defaults(entry)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Default values from a curated entry’s <code>parameters:</code> interface block.</p>
+<p>A curated entry declares each parameter (<code>datatype</code>, <code>description</code>, <code>default</code>) while a concrete Network supplies its <code>value</code>. Only the defaults cross over into evaluation — the declaration itself is an interface, not a value, and binding it as one would hand a step a <code>{'datatype': ...}</code> dict where it expects a number.</p>
+</section>
 <section id="tvbo.graph_generators.engine.load_matrix" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.graph_generators.engine.load_matrix">load_matrix</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.load_matrix(source)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.load_matrix(source)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve <code>source</code> (IRI / path / bare DB name) into a 2-D adjacency matrix.</p>
-</section>
-<section id="tvbo.graph_generators.engine.maslov_sneppen" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.graph_generators.engine.maslov_sneppen">maslov_sneppen</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.maslov_sneppen(M, seed<span class="op">=</span><span class="va">None</span>, n_swaps_per_edge<span class="op">=</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Degree-preserving edge-swap null model (Maslov–Sneppen) on a weighted matrix.</p>
-<p>A reusable graph <em>primitive</em> (not generator-specific Python): repeatedly swaps two directed edges (i→j), (k→l) to (i→l), (k→j) when the targets are free, preserving per-row out-degree while rerandomising topology; weights ride along with their edges.</p>
-</section>
-<section id="tvbo.graph_generators.engine.materialize" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.graph_generators.engine.materialize">materialize</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.materialize(</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    procedure,</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    params,</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    seed<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    declared_params<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Evaluate a <code>procedure:</code> block to <code>{weights[, lengths, node_parameters]}</code>.</p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
-<p>procedure : dict The generator’s <code>procedure</code> block: <code>{steps: [{name, equation.rhs}],     output: {weights: {equation.rhs}, ...}}</code>. params : dict Concrete parameter values (<code>n</code>, <code>sparsity</code>, <code>source</code>, <code>weight_distribution</code>, …) supplied by the GraphGenerator. seed : int | None Fallback seed when <code>params</code> carries none (defaults to 0 so seed arithmetic in the procedure stays well-defined and reproducible). declared_params : Mapping[str, dict] | Iterable[str] | None The generator’s declared parameters. Any not present in <code>params</code> are bound so the procedure resolves them to a default rather than NameError: to the parameter’s <code>default</code> value when <code>declared_params</code> is a mapping of specs (e.g.&nbsp;<code>preserve</code> → <code>binary_mask</code>), otherwise to <code>None</code> (e.g.&nbsp;an optional <code>weight_distribution</code> → standard Normal).</p>
-</section>
-</section>
-<section id="tvbo.graph_generators.engine.nonzero_positions" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.graph_generators.engine.nonzero_positions">nonzero_positions</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.nonzero_positions(M)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Row-major (i, j) indices of the non-zero entries of <code>M</code>.</p>
-<p>Order matches numpy boolean extraction <code>M[M != 0]</code>, so values extracted that way scatter back to the same positions.</p>
-</section>
-<section id="tvbo.graph_generators.engine.permute" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.graph_generators.engine.permute">permute</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.permute(arr, seed<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Random permutation of <code>arr</code> (reproducible for a fixed <code>seed</code>).</p>
-</section>
-<section id="tvbo.graph_generators.engine.require" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.graph_generators.engine.require">require</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.require(condition, message)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Declarative guard usable in a procedure step; raises if <code>condition</code> is false.</p>
 </section>
 <section id="tvbo.graph_generators.engine.run_generator" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.graph_generators.engine.run_generator">run_generator</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.run_generator(name, params, seed<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Materialise a curated generator by name from its YAML <code>procedure:</code> block.</p>
-<p>Convenience entry point for scripts/notebooks (e.g.&nbsp;building a shuffled-SC control). <code>Network.resolve()</code> uses the same engine internally.</p>
-</section>
-<section id="tvbo.graph_generators.engine.sample" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.graph_generators.engine.sample">sample</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.sample(dist, shape<span class="op">=</span><span class="va">None</span>, seed<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Sample <code>shape</code> values from a distribution (LinkML / inline / <code>None</code>→Normal).</p>
-</section>
-<section id="tvbo.graph_generators.engine.scatter" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.graph_generators.engine.scatter">scatter</h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.scatter(base, positions, values)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Return a copy of <code>base</code> with <code>values</code> written at <code>positions</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>graph_generators.engine.run_generator(name, params, seed<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Materialise a curated generator by name from its typed <code>procedure:</code> DAG.</p>
+<p>Convenience entry point for scripts and notebooks. <code>Network._resolve</code> goes through the same resolver, so a generator built here matches the one a recipe builds value for value.</p>
 
 
 </section>

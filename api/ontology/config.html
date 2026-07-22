@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -366,7 +374,7 @@ Note
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.config.get_coupling_parameters">get_coupling_parameters</a></td>
-<td></td>
+<td>Collect the default parameters of a coupling function.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.config.get_default">get_default</a></td>
@@ -374,7 +382,7 @@ Note
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.config.get_model_configurations">get_model_configurations</a></td>
-<td></td>
+<td>List the configuration instances available for a model.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.config.get_param_config">get_param_config</a></td>
@@ -406,18 +414,85 @@ Note
 <section id="tvbo.ontology.config.get_coupling_parameters" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.config.get_coupling_parameters">get_coupling_parameters</h3>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ontology.config.get_coupling_parameters(CF)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Collect the default parameters of a coupling function.</p>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 82%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CF</td>
+<td></td>
+<td>The coupling function, either as an ontology coupling-function object or as a string identifier that is resolved via the ontology.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A dictionary mapping each parameter name to its default value. The</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>coupling-function acronym suffix (<code>_&lt;acronym&gt;</code>) is stripped from each</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>parameter label, and parameters without a default value fall back to</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>1</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.config.get_default" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.config.get_default">get_default</h3>
 <div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ontology.config.get_default(NMM)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Retrieve the default values for a given Neural Mass Model (NMM).</p>
 <p>If the provided NMM is a string identifier, it attempts to fetch the actual NMM instance. It then collects the default values for each descendant class of the NMM.</p>
-<section id="parameters-5" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
 <p>NMM : ontology.NMM or str An instance or identifier of the Neural Mass Model.</p>
 </section>
-<section id="returns-2" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
 <p>dict A dictionary with descendant classes of the NMM as keys and their corresponding default values as values.</p>
 </section>
 <section id="examples" class="level4 doc-section doc-section-examples">
@@ -434,6 +509,63 @@ Note
 <section id="tvbo.ontology.config.get_model_configurations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.config.get_model_configurations">get_model_configurations</h3>
 <div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ontology.config.get_model_configurations(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>List the configuration instances available for a model.</p>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 81%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>The Neural Mass Model, either as an ontology model object or as a string identifier that is resolved via the ontology.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A list of unique <code>ModelConfiguration</code> instances that declare the given</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>model among their classes.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.config.get_param_config" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.config.get_param_config">get_param_config</h3>
@@ -445,12 +577,12 @@ Note
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Retrieve the parameter configuration for a given configuration key.</p>
 <p>This function searches the ontology for the provided configuration key and returns a dictionary with the relevant parameter details. Additionally, it checks for ancestors related to Neural Mass Model (NMM) and fetches the relevant variables and instances associated with the configuration.</p>
-<section id="parameters-6" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
+<section id="parameters-8" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
 <p>config_key : str The key for which the configuration details are to be fetched. return_NMM : bool, optional If True, returns the Neural Mass Model associated with the configuration. Default is False. use_classes : bool, optional If True, the labels in the returned dictionary will use class objects instead of string labels. Default is False.</p>
 </section>
-<section id="returns-3" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
 <p>dict or tuple If <code>return_NMM</code> is False: A dictionary with the configuration details. If <code>return_NMM</code> is True: A tuple where the first element is the configuration details dictionary and the second is the NMM.</p>
 </section>
 <section id="examples-1" class="level4 doc-section doc-section-examples">
@@ -483,12 +615,12 @@ Note
 <div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>ontology.config.update_default(model_name, config_key<span class="op">=</span><span class="va">None</span>, config_dict<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Update the default configuration for a specific model using a given configuration key.</p>
 <p>This function first fetches the default values for the provided model using the ontology. If the config_key is “default”, it returns the fetched default values. Otherwise, it retrieves the parameter configuration associated with the config_key and updates the default values accordingly.</p>
-<section id="parameters-7" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<section id="parameters-9" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
 <p>model_name : str The name of the model for which the default values need to be updated. config_key : str The reference key for the parameter configuration that will be used to update the default values.</p>
 </section>
-<section id="returns-4" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
 <p>dict The updated default configuration values for the model. If config_key is “default”, the original default values are returned.</p>
 </section>
 <section id="examples-2" class="level4 doc-section doc-section-examples">

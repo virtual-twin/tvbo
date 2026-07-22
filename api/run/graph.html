@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -191,6 +199,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.run.graph" class="level1">
 <h1>graph</h1>
 <p><code>run.graph</code></p>
+<p>Graph-based simulation of a connectome as a network of coupled local models.</p>
+<p>This module provides <a href="../../api/run/graph.html#GraphRunner"><code>GraphRunner</code></a>, which turns a connectome into a <code>networkx</code> graph, attaches a local dynamics model to each node and a coupling to each edge, and integrates the resulting network in time using the helpers in <a href="../../api/run/compgraph.html"><code>tvbo.run.compgraph</code></a>.</p>
 <section id="classes" class="level2">
 <h2 class="anchored" data-anchor-id="classes">Classes</h2>
 <table class="caption-top table">
@@ -203,13 +213,48 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.run.graph.GraphRunner">GraphRunner</a></td>
-<td></td>
+<td>Assemble and integrate a connectome as a network of coupled local models.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.run.graph.GraphRunner" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner">GraphRunner</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner(connectome, normalize_weights<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Assemble and integrate a connectome as a network of coupled local models.</p>
+<p>A <code>GraphRunner</code> holds a <code>networkx</code> graph snapshot built from a connectome. Node attributes carry the local dynamics model, its integrated state and optional stimulus; edge attributes carry the coupling. After the local models, couplings and stimuli have been attached, <a href="../../api/run/graph.html#GraphRunner.run"><code>run</code></a> compiles per-node and per-edge functions and integrates the network in time.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 3%">
+<col style="width: 81%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>connectome</td>
+<td></td>
+<td>Connectome whose weights and node/edge structure define the network. Its <code>create_graph</code> method supplies the graph snapshot.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>normalize_weights</td>
+<td></td>
+<td>When <code>True</code>, normalize the connectome weights via the connectome’s schema-safe <code>normalize_weights</code> method before building the graph. Failures during normalization are ignored.</td>
+<td><code>True</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="methods" class="level4">
 <h4 class="anchored" data-anchor-id="methods">Methods</h4>
 <table class="caption-top table">
@@ -221,21 +266,293 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.run.graph.GraphRunner.add_coupling">add_coupling</a></td>
+<td>Attach a coupling function to the graph edges.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.run.graph.GraphRunner.add_local_model">add_local_model</a></td>
+<td>Attach a local dynamics model to the graph nodes.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.run.graph.GraphRunner.add_stimulus">add_stimulus</a></td>
+<td>Attach a stimulus to a single node.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.run.graph.GraphRunner.run">run</a></td>
+<td>Integrate the network in time and return the simulated time series.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.run.graph.GraphRunner.setup_cfuns">setup_cfuns</a></td>
+<td>Compile each edge’s coupling into callable coupling functions.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.run.graph.GraphRunner.setup_dfuns">setup_dfuns</a></td>
+<td>Compile each node’s model into a callable derivative function.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.run.graph.GraphRunner.setup_initial_conditions">setup_initial_conditions</a></td>
+<td>Initialize each node’s state from its model’s initial values.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.run.graph.GraphRunner.setup_stimulation">setup_stimulation</a></td>
+<td>Compile stimulus functions for every stimulated node.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.run.graph.GraphRunner.to_yaml">to_yaml</a></td>
 <td>Export Network to YAML format.</td>
 </tr>
 </tbody>
 </table>
-<section id="tvbo.run.graph.GraphRunner.to_yaml" class="level5">
-<h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.to_yaml">to_yaml</h5>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.to_yaml(<span class="bu">format</span><span class="op">=</span><span class="st">'tvbo'</span>, filepath<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Export Network to YAML format.</p>
-<section id="parameters" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
-<p>format : str Output format: “tvbo” (default) or “pyrates” for PyRates CircuitTemplate. filepath : str, optional Path to write the YAML file. If None, returns the YAML string.</p>
+<section id="tvbo.run.graph.GraphRunner.add_coupling" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.add_coupling">add_coupling</h5>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.add_coupling(coupling)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Attach a coupling function to the graph edges.</p>
+<p>Handles both simple graphs and multigraphs.</p>
+<section id="parameters-1" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>coupling</td>
+<td></td>
+<td>A <a href="../../api/classes/coupling.html#Coupling"><code>Coupling</code></a> instance, a deep copy of which is assigned to every edge; a bare datamodel <code>Coupling</code>, which is wrapped in a <code>Coupling</code> and then copied to every edge; or a dict mapping edges to per-edge couplings. For a dict on a multigraph, edges are looked up by <code>(src, tgt, key)</code> with fallback to <code>(src, tgt)</code>; on a simple graph, by <code>(src, tgt)</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.run.graph.GraphRunner.add_local_model" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.add_local_model">add_local_model</h5>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.add_local_model(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Attach a local dynamics model to the graph nodes.</p>
+<section id="parameters-2" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 81%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>A single <code>Model</code>/<code>Dynamics</code> instance applied to every node, or a dict mapping node identifiers to per-node model instances.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.run.graph.GraphRunner.add_stimulus" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.add_stimulus">add_stimulus</h5>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.add_stimulus(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    node,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    stimulus,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    stvar<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    as_derived_variable<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Attach a stimulus to a single node.</p>
+<section id="parameters-3" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 4%">
+<col style="width: 77%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>node</td>
+<td></td>
+<td>Identifier of the node to stimulate.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>stimulus</td>
+<td></td>
+<td>Stimulus to apply at that node.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>stvar</td>
+<td></td>
+<td>State variable name, or list of names, to mark as stimulation targets on the node’s model. Ignored when <code>as_derived_variable</code> is <code>True</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>as_derived_variable</td>
+<td></td>
+<td>When <code>True</code>, add the stimulus to the node’s model as a derived variable instead of storing it on the node and flagging state variables.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.run.graph.GraphRunner.run" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.run">run</h5>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.run(duration<span class="op">=</span><span class="dv">1000</span>, dt<span class="op">=</span><span class="dv">1</span>, <span class="bu">format</span><span class="op">=</span><span class="st">'graph'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Integrate the network in time and return the simulated time series.</p>
+<p>Sets up initial conditions, stimulation, node derivative functions and edge coupling functions, initializes the delay history buffer, then integrates the network dynamics with delays and collects the resulting time series.</p>
+<section id="parameters-4" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 9%">
+<col style="width: 64%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>duration</td>
+<td></td>
+<td>Total simulation time, in the model’s time units.</td>
+<td><code>1000</code></td>
+</tr>
+<tr class="even">
+<td>dt</td>
+<td></td>
+<td>Integration time step.</td>
+<td><code>1</code></td>
+</tr>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Reserved output-format selector; currently unused.</td>
+<td><code>'graph'</code></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="returns" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The collected per-node time series over the simulated interval.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.run.graph.GraphRunner.setup_cfuns" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.setup_cfuns">setup_cfuns</h5>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.setup_cfuns()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compile each edge’s coupling into callable coupling functions.</p>
+<p>For every edge, stores the compiled <code>python</code> coupling function under <code>"cfun"</code>, together with <code>"prefun"</code> and <code>"postfun"</code> lambdas obtained by substituting the coupling’s parameter values into its pre- and post-summation expressions. Handles both simple graphs and multigraphs.</p>
+</section>
+<section id="tvbo.run.graph.GraphRunner.setup_dfuns" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.setup_dfuns">setup_dfuns</h5>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.setup_dfuns()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compile each node’s model into a callable derivative function.</p>
+<p>Stores the compiled <code>python-network</code> derivative function under the <code>"dfun"</code> attribute of every node.</p>
+</section>
+<section id="tvbo.run.graph.GraphRunner.setup_initial_conditions" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.setup_initial_conditions">setup_initial_conditions</h5>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.setup_initial_conditions()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Initialize each node’s state from its model’s initial values.</p>
+<p>Stores, under each node’s <code>"state"</code> attribute, an array of the initial values of the model’s state variables.</p>
+</section>
+<section id="tvbo.run.graph.GraphRunner.setup_stimulation" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.setup_stimulation">setup_stimulation</h5>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.setup_stimulation(sampling_rate<span class="op">=</span><span class="dv">500</span>, duration<span class="op">=</span><span class="dv">2000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compile stimulus functions for every stimulated node.</p>
+<p>For each node that carries a non-<code>None</code> <code>"stimulus"</code>, compiles the stimulus to a <code>python</code> callable sampled at <code>sampling_rate</code> over the stimulus’s own duration and stores it under the node’s <code>"stimfun"</code> attribute.</p>
+<section id="parameters-5" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 8%">
+<col style="width: 63%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>sampling_rate</td>
+<td></td>
+<td>Sampling rate, in Hz, at which each stimulus is evaluated.</td>
+<td><code>500</code></td>
+</tr>
+<tr class="even">
+<td>duration</td>
+<td></td>
+<td>Unused; each stimulus is sampled over its own duration.</td>
+<td><code>2000</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.run.graph.GraphRunner.to_yaml" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.to_yaml">to_yaml</h5>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.to_yaml(<span class="bu">format</span><span class="op">=</span><span class="st">'tvbo'</span>, filepath<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Export Network to YAML format.</p>
+<section id="parameters-6" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h6>
+<p>format : str Output format: “tvbo” (default) or “pyrates” for PyRates CircuitTemplate. filepath : str, optional Path to write the YAML file. If None, returns the YAML string.</p>
+</section>
+<section id="returns-1" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
 <p>str YAML string (or filepath if written to file).</p>
 
 

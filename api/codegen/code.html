@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -177,6 +185,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   <li><a href="#classes" id="toc-classes" class="nav-link" data-scroll-target="#classes">Classes</a>
   <ul class="collapse">
+  <li><a href="#tvbo.codegen.code.Brian2Printer" id="toc-tvbo.codegen.code.Brian2Printer" class="nav-link" data-scroll-target="#tvbo.codegen.code.Brian2Printer">Brian2Printer</a></li>
   <li><a href="#tvbo.codegen.code.FortranPrinter" id="toc-tvbo.codegen.code.FortranPrinter" class="nav-link" data-scroll-target="#tvbo.codegen.code.FortranPrinter">FortranPrinter</a></li>
   <li><a href="#tvbo.codegen.code.JaxPrinter" id="toc-tvbo.codegen.code.JaxPrinter" class="nav-link" data-scroll-target="#tvbo.codegen.code.JaxPrinter">JaxPrinter</a></li>
   <li><a href="#tvbo.codegen.code.JuliaPrinter" id="toc-tvbo.codegen.code.JuliaPrinter" class="nav-link" data-scroll-target="#tvbo.codegen.code.JuliaPrinter">JuliaPrinter</a></li>
@@ -207,6 +216,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.codegen.code" class="level1">
 <h1>code</h1>
 <p><code>codegen.code</code></p>
+<p>SymPy expression printers that render symbolic model math to backend source code.</p>
+<p>Each printer subclasses a SymPy code printer and layers on TVBO’s array-function vocabulary (defined in <code>tvbo.parse.expression</code>), the backend-abstracted array primitives from <code>_ArrayFunctionPrinterMixin</code> (slicing, reductions, broadcasting), and per-backend syntax fixes. <code>get_printer</code> selects a printer by target format (<code>numpy</code>, <code>jax</code>, <code>julia</code>, <code>mtk</code>, <code>fortran</code>, <code>python</code>, <code>lems</code>, <code>sympy</code>), and <code>render_expression</code> is the high-level entry point that parses a string or SymPy expression and prints it for the chosen backend.</p>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
 <table class="caption-top table">
@@ -219,6 +230,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.codegen.code.ARRAY_FUNCTION_MAPPINGS">ARRAY_FUNCTION_MAPPINGS</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.codegen.code.logger">logger</a></td>
 <td></td>
 </tr>
 </tbody>
@@ -235,54 +250,157 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="#tvbo.codegen.code.FortranPrinter">FortranPrinter</a></td>
-<td></td>
+<td><a href="#tvbo.codegen.code.Brian2Printer">Brian2Printer</a></td>
+<td>Code printer for Brian2 equation strings.</td>
 </tr>
 <tr class="even">
-<td><a href="#tvbo.codegen.code.JaxPrinter">JaxPrinter</a></td>
-<td></td>
+<td><a href="#tvbo.codegen.code.FortranPrinter">FortranPrinter</a></td>
+<td>Fortran code printer for TVBO symbolic expressions.</td>
 </tr>
 <tr class="odd">
-<td><a href="#tvbo.codegen.code.JuliaPrinter">JuliaPrinter</a></td>
-<td></td>
+<td><a href="#tvbo.codegen.code.JaxPrinter">JaxPrinter</a></td>
+<td>JAX code printer for TVBO symbolic expressions.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.codegen.code.JuliaPrinter">JuliaPrinter</a></td>
+<td>Julia code printer for TVBO symbolic expressions.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.codegen.code.LEMSPrinter">LEMSPrinter</a></td>
 <td>Printer for LEMS (Low Entropy Model Specification) math expressions.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.codegen.code.MTKPrinter">MTKPrinter</a></td>
 <td>Printer for ModelingToolkit.jl <span class="citation" data-cites="mtkmodel"><a href="#ref-mtkmodel" role="doc-biblioref"><strong>mtkmodel?</strong></a></span> equations.</td>
 </tr>
-<tr class="even">
-<td><a href="#tvbo.codegen.code.NumPyPrinter">NumPyPrinter</a></td>
-<td></td>
-</tr>
 <tr class="odd">
+<td><a href="#tvbo.codegen.code.NumPyPrinter">NumPyPrinter</a></td>
+<td>NumPy code printer for TVBO symbolic expressions.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.codegen.code.PythonCodePrinter">PythonCodePrinter</a></td>
-<td></td>
+<td>Plain-Python code printer for TVBO symbolic expressions.</td>
 </tr>
 </tbody>
 </table>
+<section id="tvbo.codegen.code.Brian2Printer" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.codegen.code.Brian2Printer">Brian2Printer</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>codegen.code.Brian2Printer(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Code printer for Brian2 equation strings.</p>
+<p>Brian2’s equation DSL is Python-like but expects <strong>unqualified</strong> function names (<code>exp</code>, <code>sin</code>, <code>abs</code> …), not the <code>math.</code>-prefixed forms SymPy’s <code>PythonCodePrinter</code> emits — Brian2 resolves them against its own runtime functions so the same equation compiles under any codegen target. Otherwise the plain-Python scalar printing (including the nested-conditional <code>Piecewise</code>, which Brian2 accepts) is exactly what a per-neuron Brian2 equation needs. Units are not printed here — they are carried by the Brian2 namespace and the <code>: dimension</code> annotations the template adds.</p>
+</section>
 <section id="tvbo.codegen.code.FortranPrinter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.FortranPrinter">FortranPrinter</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>codegen.code.FortranPrinter(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>codegen.code.FortranPrinter(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Fortran code printer for TVBO symbolic expressions.</p>
+<p>Extends SymPy’s <code>FCodePrinter</code> with free-form source, the Fortran 2003 standard, and array contraction disabled. Symbolic constants (<code>pi</code>, <code>E</code>, …) are emitted as plain double-precision literals instead of <code>parameter</code> declarations, which would be invalid in an expression context.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 79%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>settings</td>
+<td></td>
+<td>Printer settings forwarded to the SymPy base printer; <code>source_format</code>, <code>standard</code>, and <code>contract</code> are defaulted.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.code.JaxPrinter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.JaxPrinter">JaxPrinter</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>codegen.code.JaxPrinter(settings<span class="op">=</span><span class="va">None</span>, module<span class="op">=</span><span class="st">'jnp'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>codegen.code.JaxPrinter(settings<span class="op">=</span><span class="va">None</span>, module<span class="op">=</span><span class="st">'jnp'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>JAX code printer for TVBO symbolic expressions.</p>
+<p>Extends SymPy’s <code>JaxPrinter</code> with the array-function vocabulary from <code>ARRAY_FUNCTION_MAPPINGS["jax"]</code> and the mixin’s array primitives, routing <code>erf</code>/<code>erfc</code> to <code>jsp.special</code>. When broadcasting inference is enabled it analyzes the index usage of indexed subexpressions to insert explicit axes so that <code>jnp</code> operations broadcast correctly.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 9%">
+<col style="width: 65%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>settings</td>
+<td></td>
+<td>Printer settings forwarded to the SymPy base printer.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>module</td>
+<td></td>
+<td>Module prefix used to qualify JAX names (e.g.&nbsp;<code>jnp</code>).</td>
+<td><code>'jnp'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.code.JuliaPrinter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.JuliaPrinter">JuliaPrinter</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>codegen.code.JuliaPrinter(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>codegen.code.JuliaPrinter(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Julia code printer for TVBO symbolic expressions.</p>
+<p>Extends SymPy’s <code>JuliaCodePrinter</code> with the <code>ARRAY_FUNCTION_MAPPINGS["julia"]</code> vocabulary and Julia-specific overrides of the mixin’s array primitives, which use 1-based, <code>end</code>-relative indexing. Runs non-strict so unknown constructs print partially rather than raising, maps the legacy <code>atan2</code> name onto Julia’s two-argument <code>atan</code>, and routes domain-restricted powers inside <code>Piecewise</code> branches through NaNMath.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 7%">
+<col style="width: 74%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>settings</td>
+<td></td>
+<td>Printer settings forwarded to the SymPy base printer; <code>strict</code> defaults to <code>False</code>.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.code.LEMSPrinter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.LEMSPrinter">LEMSPrinter</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>codegen.code.LEMSPrinter(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>codegen.code.LEMSPrinter(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Printer for LEMS (Low Entropy Model Specification) math expressions.</p>
 <p>Key differences from plain StrPrinter: - Powers use <code>^</code> instead of <code>**</code> - Natural log is <code>log</code> (both SymPy and LEMS <code>log</code> are natural log) - <code>abs</code> instead of <code>Abs</code> - <code>sign(x)</code> → <code>(H(x) - H(-1*x))</code> (Heaviside decomposition) - <code>Mod(x, y)</code> → <code>(x + y*ceil(-(x/y)))</code> - Relational operators use LEMS dot-notation: <code>.gt.</code>, <code>.geq.</code>, <code>.lt.</code>, <code>.leq.</code>, <code>.eq.</code>, <code>.neq.</code> - Boolean operators: <code>.and.</code>, <code>.or.</code>, <code>.not.</code> - <code>Piecewise</code> rendered via Heaviside trick (<code>H(cond)*val)</code></p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
 <p>settings : dict, optional Printer settings. Recognised key:</p>
 <pre><code>``parameters`` : list of str
     Model symbol names.  When a SymPy ``Function`` whose name matches
@@ -294,17 +412,81 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.code.MTKPrinter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.MTKPrinter">MTKPrinter</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>codegen.code.MTKPrinter(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>codegen.code.MTKPrinter(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Printer for ModelingToolkit.jl <span class="citation" data-cites="mtkmodel"><a href="#ref-mtkmodel" role="doc-biblioref"><strong>mtkmodel?</strong></a></span> equations.</p>
 <p>MTK equations are scalar symbolic, so we use plain <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code> instead of Julia’s element-wise <code>.+</code>, <code>.-</code>, <code>.*</code>, <code>./</code>, <code>.^</code>.</p>
 </section>
 <section id="tvbo.codegen.code.NumPyPrinter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.NumPyPrinter">NumPyPrinter</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>codegen.code.NumPyPrinter(settings<span class="op">=</span><span class="va">None</span>, module<span class="op">=</span><span class="st">'np'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>codegen.code.NumPyPrinter(settings<span class="op">=</span><span class="va">None</span>, module<span class="op">=</span><span class="st">'np'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>NumPy code printer for TVBO symbolic expressions.</p>
+<p>Extends SymPy’s <code>NumPyPrinter</code> with the array-function vocabulary from <code>ARRAY_FUNCTION_MAPPINGS["numpy"]</code> and the backend-abstracted array primitives supplied by <code>_ArrayFunctionPrinterMixin</code>. Known functions and constants are module-qualified with <code>module</code>, and <code>erf</code>/<code>erfc</code> are routed to <code>scipy.special</code>.</p>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 9%">
+<col style="width: 65%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>settings</td>
+<td></td>
+<td>Printer settings forwarded to the SymPy base printer.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>module</td>
+<td></td>
+<td>Module prefix used to qualify NumPy names (e.g.&nbsp;<code>np</code>).</td>
+<td><code>'np'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.code.PythonCodePrinter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.PythonCodePrinter">PythonCodePrinter</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>codegen.code.PythonCodePrinter(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>codegen.code.PythonCodePrinter(settings<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plain-Python code printer for TVBO symbolic expressions.</p>
+<p>Extends SymPy’s <code>PythonCodePrinter</code> to run non-strict (partial printing of unknown constructs) and adds <code>ceil</code>, <code>sign</code>, and the <code>ARRAY_FUNCTION_MAPPINGS["python"]</code> vocabulary. <code>Piecewise</code> is rendered as nested conditional expressions and <code>sign(x)</code> as an inline comparison, so the output depends only on <code>math</code> and the standard library.</p>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 7%">
+<col style="width: 74%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>settings</td>
+<td></td>
+<td>Printer settings forwarded to the SymPy base printer; <code>strict</code> defaults to <code>False</code>.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 </section>
 <section id="functions" class="level2">
@@ -319,7 +501,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.codegen.code.get_printer">get_printer</a></td>
-<td></td>
+<td>Return a code printer instance for the given target format.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.codegen.code.inline_functions">inline_functions</a></td>
@@ -345,18 +527,96 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.codegen.code.get_printer" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.get_printer">get_printer</h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>codegen.code.get_printer(<span class="bu">format</span>, parameters<span class="op">=</span><span class="va">None</span>, order<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</section>
-<section id="tvbo.codegen.code.inline_functions" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.codegen.code.inline_functions">inline_functions</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>codegen.code.inline_functions(expr, func_defs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Inline all function applications in an expression.</p>
-<section id="parameters-1" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
-<p>expr : sympy.Expr The expression containing function calls to inline. func_defs : dict Dictionary mapping function name -&gt; (arg_names, body_expr) where arg_names is a list of argument names and body_expr is the sympy expression for the function body.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>codegen.code.get_printer(<span class="bu">format</span>, parameters<span class="op">=</span><span class="va">None</span>, order<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return a code printer instance for the given target format.</p>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 79%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target output format. One of <code>numpy</code>, <code>jax</code>, <code>julia</code>, <code>mtk</code>, <code>fortran</code>, <code>python</code>, <code>lems</code>, or <code>sympy</code>/<code>symbolic</code>/<code>pyrates</code>.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>parameters</td>
+<td></td>
+<td>Parameter names passed to <code>LEMSPrinter</code>; used only for the <code>lems</code> format.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>order</td>
+<td></td>
+<td>Term ordering passed to the printer; <code>none</code> preserves source term order. When omitted the printer’s default ordering is used.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="returns" class="level4 doc-section doc-section-returns">
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A configured printer instance for <code>format</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If <code>format</code> is not a supported output format.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.codegen.code.inline_functions" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.codegen.code.inline_functions">inline_functions</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>codegen.code.inline_functions(expr, func_defs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Inline all function applications in an expression.</p>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<p>expr : sympy.Expr The expression containing function calls to inline. func_defs : dict Dictionary mapping function name -&gt; (arg_names, body_expr) where arg_names is a list of argument names and body_expr is the sympy expression for the function body.</p>
+</section>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
 <p>sympy.Expr Expression with all function calls replaced by their inlined bodies.</p>
 </section>
 <section id="example" class="level4 doc-section doc-section-example">
@@ -372,63 +632,63 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.code.print_Piecewise" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.print_Piecewise">print_Piecewise</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>codegen.code.print_Piecewise(Printer, expr, verbose<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>codegen.code.print_Piecewise(Printer, expr, verbose<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Print Piecewise expressions as nested np.where statements.</p>
 </section>
 <section id="tvbo.codegen.code.render_equation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.render_equation">render_equation</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>codegen.code.render_equation(</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    equation,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'jax'</span>,</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    local_dict<span class="op">=</span>{},</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    user_functions<span class="op">=</span>{},</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    replace<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    remove<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    inline_funcs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    preserve_order<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Render an equation to a target format.</p>
-<section id="parameters-2" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
-<p>equation : Equation The equation to render. format : str Target format: ‘jax’, ‘numpy’, ‘python’, ‘julia’, ‘fortran’, ‘latex’. local_dict : dict Dictionary of local symbols/functions for parsing. user_functions : dict Custom function mappings for the printer. replace : dict Symbol replacements {old_name: new_name}. remove : list Symbols to replace with zero. inline_funcs : dict, optional Dictionary mapping function name -&gt; (arg_names, body_expr) for inlining custom functions. The body_expr should be a sympy expression. Example: {‘Sigm’: ([‘v’], 2<em>e0/(1 + exp(r</em>(v0 - v))))} preserve_order : bool If True, keep the source term order (no SymPy canonicalization). **kwargs Additional arguments passed to parse_eq.</p>
-</section>
-<section id="returns-1" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
-<p>str The rendered equation string.</p>
-</section>
-</section>
-<section id="tvbo.codegen.code.render_equation_cse" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.codegen.code.render_equation_cse">render_equation_cse</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>codegen.code.render_equation_cse(</span>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>codegen.code.render_equation(</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    equation,</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'numpy'</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'jax'</span>,</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    local_dict<span class="op">=</span>{},</span>
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    user_functions<span class="op">=</span>{},</span>
 <span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    replace<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    remove<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    inline_funcs<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    preserve_order<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    symbol_prefix<span class="op">=</span><span class="st">'_cse'</span>,</span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render an equation to a target format.</p>
+<section id="parameters-8" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
+<p>equation : Equation The equation to render. format : str Target format: ‘jax’, ‘numpy’, ‘python’, ‘julia’, ‘fortran’, ‘latex’. local_dict : dict Dictionary of local symbols/functions for parsing. user_functions : dict Custom function mappings for the printer. replace : dict Symbol replacements {old_name: new_name}. remove : list Symbols to replace with zero. inline_funcs : dict, optional Dictionary mapping function name -&gt; (arg_names, body_expr) for inlining custom functions. The body_expr should be a sympy expression. Example: {‘Sigm’: ([‘v’], 2<em>e0/(1 + exp(r</em>(v0 - v))))} preserve_order : bool If True, keep the source term order (no SymPy canonicalization). **kwargs Additional arguments passed to parse_eq.</p>
+</section>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<p>str The rendered equation string.</p>
+</section>
+</section>
+<section id="tvbo.codegen.code.render_equation_cse" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.codegen.code.render_equation_cse">render_equation_cse</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>codegen.code.render_equation_cse(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    equation,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'numpy'</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    local_dict<span class="op">=</span>{},</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    user_functions<span class="op">=</span>{},</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    replace<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    remove<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    inline_funcs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    preserve_order<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    symbol_prefix<span class="op">=</span><span class="st">'_cse'</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render <code>equation</code> as <code>(setup, final)</code> with common subexpressions hoisted.</p>
 <p><code>setup</code> is a list of <code>(name, expr_str)</code> assignments (dependency order) and <code>final</code> is the return-expression string. Repeated subexpressions — notably repeated model-function calls such as <code>muV(fe, fi, ...)</code> — are computed once via :func:<code>sympy.cse</code>. Interpreted backends (numpy / TVB) would otherwise re-evaluate every occurrence; the jax path keeps the flat <code>render_equation</code> form and leans on XLA’s JIT-time CSE. <code>setup</code> is empty when nothing is shared.</p>
 </section>
 <section id="tvbo.codegen.code.render_expression" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.code.render_expression">render_expression</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>codegen.code.render_expression(</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    expression,</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'jax'</span>,</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    user_functions<span class="op">=</span>{},</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    infer_broadcasting<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    preserve_order<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>codegen.code.render_expression(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    expression,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'jax'</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    user_functions<span class="op">=</span>{},</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    infer_broadcasting<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    preserve_order<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render a SymPy expression or string to target format code.</p>
 <p>Uses parse_eq for proper handling of indexed expressions and Sum/Product.</p>
-<section id="parameters-3" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<section id="parameters-9" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
 <p>expression : str or sympy.Expr The expression to render. format : str Target format (‘jax’, ‘numpy’, ‘julia’, ‘python’, etc.) user_functions : dict Custom function name mappings for the printer. These are also passed to parse_eq so they’re recognized as functions (not implicit multiplication). parameters : list of str, optional Parameter names to define as Symbols. These OVERRIDE SymPy built-in functions (e.g., ‘gamma’ becomes Symbol(‘gamma’), not the gamma function). infer_broadcasting : bool If True, analyze indexed expressions and automatically add broadcasting dimensions (e.g., rmse[i] -&gt; rmse[:, None] when used with a[i,j]). This enables mathematically correct notation to generate correct array code. preserve_order : bool If True, keep the source term order (no SymPy Add/Mul canonicalization) so generated code matches reference code operation-for-operation.</p>
 
 

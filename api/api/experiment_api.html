@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -239,13 +247,72 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.api.experiment_api.RenderExperimentRequest">RenderExperimentRequest</a></td>
-<td></td>
+<td>Request body for rendering or saving an experiment from an inline payload.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.api.experiment_api.RenderExperimentRequest" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.experiment_api.RenderExperimentRequest">RenderExperimentRequest</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>api.experiment_api.RenderExperimentRequest()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Request body for rendering or saving an experiment from an inline payload.</p>
+<p>Describes a <a href="../../api/classes/experiment.html"><code>SimulationExperiment</code></a> to render (or persist) via the <code>POST /api/v1/experiments/render</code> endpoint. The experiment is supplied inline as a mapping rather than referenced by stored id.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 4%">
+<col style="width: 79%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>experiment</td>
+<td></td>
+<td>Mapping of <code>SimulationExperiment</code> constructor keyword arguments used to build the experiment to render.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>format</td>
+<td></td>
+<td>Export format key or alias to render into (e.g.&nbsp;<code>"yaml"</code>).</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>filename</td>
+<td></td>
+<td>Suggested download filename; falls back to a default derived from the format’s extension when omitted.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>save_path</td>
+<td></td>
+<td>Destination path to persist the rendered experiment to. When set, the experiment is saved there instead of being returned as a download.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>metadata_only</td>
+<td></td>
+<td>Whether to render only the experiment metadata rather than the fully expanded definition when saving.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>render_kwargs</td>
+<td></td>
+<td>Extra keyword arguments forwarded to the render or save call.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 </section>
 <section id="functions" class="level2">

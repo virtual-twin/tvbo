@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -206,31 +214,210 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.parse.lems_loader.import_lems_model">import_lems_model</a></td>
-<td></td>
+<td>Import a LEMS model file as ontology classes and return the created classes.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.parse.lems_loader.lems_model_info">lems_model_info</a></td>
-<td></td>
+<td>Extract model metadata from a parsed LEMS model into a plain dictionary.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.parse.lems_loader.load_lems_model">load_lems_model</a></td>
-<td></td>
+<td>Load a LEMS file and return its extracted model information.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.parse.lems_loader.import_lems_model" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.parse.lems_loader.import_lems_model">import_lems_model</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>parse.lems_loader.import_lems_model(lems_file, model_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Import a LEMS model file as ontology classes and return the created classes.</p>
+<p>Parses the LEMS file, creates a <code>NeuralMassModel</code> subclass named <code>model_name</code>, and registers its state variables, parameters, non-integrated variables, time derivatives, and coupling functions as ontology subclasses. Mathematical relationships are updated on the resulting model class before it is returned.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 7%">
+<col style="width: 69%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>lems_file</td>
+<td></td>
+<td>Path to the LEMS/XML file to import.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>model_name</td>
+<td></td>
+<td>Name and label used for the created model class and its derived acronym.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A tuple <code>(model_class, cf_class)</code> of the created model class and the</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>last coupling-function class registered for it.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.parse.lems_loader.lems_model_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.parse.lems_loader.lems_model_info">lems_model_info</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>parse.lems_loader.lems_model_info(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Extract model metadata from a parsed LEMS model into a plain dictionary.</p>
+<p>Reads the <code>derivatives</code> component type of a LEMS model and collects its constants (parameters), state variables, non-integrated (derived) variables, time derivatives, exposures, and any coupling-function component types.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 73%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>A parsed LEMS <code>Model</code> whose <code>component_types</code> include a <code>derivatives</code> entry.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A dictionary with keys <code>state_variables</code>, <code>parameters</code>,</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>non_integrated_variables</code>, <code>state_variable_dfuns</code>, <code>vois</code>,</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td><code>model_definition</code>, and <code>coupling_functions</code> describing the model.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.parse.lems_loader.load_lems_model" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.parse.lems_loader.load_lems_model">load_lems_model</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>parse.lems_loader.load_lems_model(lems_file)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Load a LEMS file and return its extracted model information.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 11%">
+<col style="width: 55%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>lems_file</td>
+<td></td>
+<td>Path to the LEMS/XML file to import.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The dictionary produced by <code>lems_model_info</code> for the parsed model.</td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 </section>

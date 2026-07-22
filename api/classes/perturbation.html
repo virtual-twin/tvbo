@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -174,6 +182,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#tvbo.classes.perturbation" id="toc-tvbo.classes.perturbation" class="nav-link active" data-scroll-target="#tvbo.classes.perturbation">perturbation</a>
   <ul class="collapse">
+  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   <li><a href="#classes" id="toc-classes" class="nav-link" data-scroll-target="#classes">Classes</a>
   <ul class="collapse">
   <li><a href="#tvbo.classes.perturbation.Stimulus" id="toc-tvbo.classes.perturbation.Stimulus" class="nav-link" data-scroll-target="#tvbo.classes.perturbation.Stimulus">Stimulus</a></li>
@@ -196,6 +205,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.perturbation" class="level1">
 <h1>perturbation</h1>
 <p><code>classes.perturbation</code></p>
+<p>Exogenous stimuli for simulation experiments.</p>
+<p>Provides the <a href="#tvbo.classes.perturbation.Stimulus"><code>Stimulus</code></a> class, which turns declarative stimulus metadata (from the datamodel, the ontology, or a YAML file) into backend code and executable stimulus functions, plus helpers to convert ontology classes to metadata and to replay audio files as stimuli.</p>
+<section id="attributes" class="level2">
+<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.classes.perturbation.logger">logger</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="classes" class="level2">
 <h2 class="anchored" data-anchor-id="classes">Classes</h2>
 <table class="caption-top table">
@@ -218,6 +246,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>An exogenous perturbation injected into a <code>SimulationExperiment</code>.</p>
 <p>A <code>Stimulus</code> describes <em>what</em> gets perturbed (target state variable), <em>where</em> (spatial pattern across nodes), <em>when</em> (temporal envelope), and <em>how much</em> (amplitude). The pattern and envelope are arbitrary symbolic expressions, so the same class covers DC steps, sinusoids, Gaussian pulses, and audio-file replay.</p>
 <p>Attach via <code>experiment.add_stimulus(stim)</code>; see <a href="#tvbo.classes.perturbation.load_acoustic_stimulus_from_audiofile"><code>load_acoustic_stimulus_from_audiofile</code></a> for the WAV/MP3 entry point.</p>
+<section id="attributes-1" class="level4">
+<h4 class="anchored" data-anchor-id="attributes-1">Attributes</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.classes.perturbation.Stimulus.metadata">metadata</a></td>
+<td>The stimulus itself, exposed as its own metadata.</td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="methods" class="level4">
 <h4 class="anchored" data-anchor-id="methods">Methods</h4>
 <table class="caption-top table">
@@ -229,17 +274,311 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.classes.perturbation.Stimulus.execute">execute</a></td>
+<td>Build an executable stimulus for the requested backend.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.perturbation.Stimulus.from_datamodel">from_datamodel</a></td>
+<td>Construct a <code>Stimulus</code> from a datamodel <code>Stimulus</code> instance.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.perturbation.Stimulus.from_file">from_file</a></td>
+<td>Load a <code>Stimulus</code> from a YAML metadata file.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.perturbation.Stimulus.from_ontology">from_ontology</a></td>
+<td>Construct a <code>Stimulus</code> from an ontology class or its label.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.perturbation.Stimulus.get_expression">get_expression</a></td>
 <td>Generate a sympy expression for the equation using metadata.</td>
 </tr>
+<tr class="even">
+<td><a href="#tvbo.classes.perturbation.Stimulus.plot">plot</a></td>
+<td>Plot the stimulus time course.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.perturbation.Stimulus.render_code">render_code</a></td>
+<td>Render the stimulus to backend source code.</td>
+</tr>
 </tbody>
 </table>
-<section id="tvbo.classes.perturbation.Stimulus.get_expression" class="level5">
-<h5 class="anchored" data-anchor-id="tvbo.classes.perturbation.Stimulus.get_expression">get_expression</h5>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.Stimulus.get_expression()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Generate a sympy expression for the equation using metadata.</p>
+<section id="tvbo.classes.perturbation.Stimulus.execute" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.perturbation.Stimulus.execute">execute</h5>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.Stimulus.execute(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    connectivity<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    region_indices<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    weighting<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build an executable stimulus for the requested backend.</p>
+<p>For <code>"tvb"</code>, evaluates the rendered stimulus equation, resolves a connectivity (creating a single-region one when needed) and a per-region weighting, and returns a TVB <code>StimuliRegion</code>. For <code>"python"</code>/<code>"jax"</code>, returns a callable stimulus function built from the symbolic equation, or from an audio file when the stimulus is defined by a <code>dataLocation</code>.</p>
+<section id="parameters" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 6%">
+<col style="width: 73%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target backend: <code>"tvb"</code>, <code>"python"</code>, or <code>"jax"</code>.</td>
+<td><code>'tvb'</code></td>
+</tr>
+<tr class="even">
+<td>connectivity</td>
+<td></td>
+<td>Connectivity for the TVB <code>StimuliRegion</code>; a one-region connectivity is created when omitted.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>region_indices</td>
+<td></td>
+<td>Indices of the stimulated regions; when omitted, a random permutation of all regions is used.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>weighting</td>
+<td></td>
+<td>Per-region weights; defaults to 1 on <code>region_indices</code> and 0 elsewhere.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Extra values forwarded to code rendering or audio loading (e.g.&nbsp;<code>sampling_rate</code>, <code>duration</code>).</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="returns" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A TVB <code>StimuliRegion</code> for <code>"tvb"</code>, or a callable stimulus function</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>for <code>"python"</code>/<code>"jax"</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.perturbation.Stimulus.from_datamodel" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.perturbation.Stimulus.from_datamodel">from_datamodel</h5>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.Stimulus.from_datamodel(instance)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Construct a <code>Stimulus</code> from a datamodel <code>Stimulus</code> instance.</p>
+<section id="parameters-1" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 20%">
+<col style="width: 60%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>instance</td>
+<td>tvbo_datamodel.Stimulus</td>
+<td>The datamodel stimulus whose fields are copied into the new <code>Stimulus</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A <code>Stimulus</code> initialised from the instance’s fields.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.perturbation.Stimulus.from_file" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.perturbation.Stimulus.from_file">from_file</h5>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.Stimulus.from_file(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Load a <code>Stimulus</code> from a YAML metadata file.</p>
+<section id="parameters-2" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 15%">
+<col style="width: 57%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>filepath</td>
+<td>os.PathLike</td>
+<td>Path to the YAML file describing the stimulus.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The <code>Stimulus</code> deserialised from the file.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.perturbation.Stimulus.from_ontology" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.perturbation.Stimulus.from_ontology">from_ontology</h5>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.Stimulus.from_ontology(ontoclass)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Construct a <code>Stimulus</code> from an ontology class or its label.</p>
+<p>When given a string, searches the ontology for a stimulus class with that label (raising if none is found and warning if several match), then converts the resolved class to metadata via <a href="#tvbo.classes.perturbation.class2metadata"><code>class2metadata</code></a>.</p>
+<section id="parameters-3" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 19%">
+<col style="width: 60%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ontoclass</td>
+<td>str | owl.ThingClass</td>
+<td>A stimulus label to look up, or an ontology stimulus class directly.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-3" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A <code>Stimulus</code> populated from the ontology class.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level6 doc-section doc-section-raises">
+<h6 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If no stimulus class matches the given label.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.perturbation.Stimulus.get_expression" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.perturbation.Stimulus.get_expression">get_expression</h5>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.Stimulus.get_expression()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Generate a sympy expression for the equation using metadata.</p>
+<section id="returns-4" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h6>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 9%">
@@ -268,6 +607,163 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 </section>
+<section id="tvbo.classes.perturbation.Stimulus.plot" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.perturbation.Stimulus.plot">plot</h5>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.Stimulus.plot(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    duration<span class="op">=</span><span class="dv">1000</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    dt<span class="op">=</span><span class="fl">0.1</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    plot_onset<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    cut_transient<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot the stimulus time course.</p>
+<p>Evaluates the python stimulus function over <code>[cut_transient, duration]</code> at step <code>dt</code> and draws it, optionally marking the <code>onset</code> parameter with a vertical line.</p>
+<section id="parameters-4" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 5%">
+<col style="width: 75%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>duration</td>
+<td></td>
+<td>End of the time window in milliseconds.</td>
+<td><code>1000</code></td>
+</tr>
+<tr class="even">
+<td>dt</td>
+<td></td>
+<td>Sampling step in milliseconds.</td>
+<td><code>0.1</code></td>
+</tr>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>Existing matplotlib axes to draw on; a new figure is created and returned when omitted.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>plot_onset</td>
+<td></td>
+<td>Whether to mark the <code>onset</code> parameter with a vertical line.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>cut_transient</td>
+<td></td>
+<td>Start of the time window in milliseconds.</td>
+<td><code>0</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Extra keyword arguments forwarded to <code>ax.plot</code> (plus <code>sampling_rate</code>, used for stimulus evaluation).</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-5" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The created matplotlib figure when <code>ax</code> was not supplied; otherwise</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>nothing.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.perturbation.Stimulus.render_code" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.perturbation.Stimulus.render_code">render_code</h5>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.Stimulus.render_code(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render the stimulus to backend source code.</p>
+<p>Selects the template for the requested backend, renders it with this stimulus, and formats the result.</p>
+<section id="parameters-5" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 79%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target backend: <code>"tvb"</code> for a TVB stimulus equation, or <code>"python"</code>/<code>"jax"</code> for a standalone stimulus function.</td>
+<td><code>'tvb'</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Extra values forwarded to the template.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-6" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The formatted source code as a string.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 </section>
 </section>
 </section>
@@ -283,27 +779,179 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.classes.perturbation.class2metadata">class2metadata</a></td>
-<td></td>
+<td>Build <code>Stimulus</code> metadata from an ontology stimulus class.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.perturbation.load_acoustic_stimulus_from_audiofile">load_acoustic_stimulus_from_audiofile</a></td>
-<td></td>
+<td>Load an audio file as a callable stimulus time course.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.classes.perturbation.class2metadata" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.perturbation.class2metadata">class2metadata</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.class2metadata(ontoclass)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.class2metadata(ontoclass)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build <code>Stimulus</code> metadata from an ontology stimulus class.</p>
+<p>Reads the class’s defining equation and, if it uses <code>where</code>, rewrites it into sympy form. The class name (identifier) and definition become the stimulus label and description, and every descendant <code>Parameter</code> is added with its default value and definition.</p>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 78%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ontoclass</td>
+<td></td>
+<td>An owlready2 stimulus class whose <code>value</code>, <code>definition</code> and parameter descendants describe the perturbation.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A datamodel <code>Stimulus</code> populated with the equation and parameters read</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>from the ontology class.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.perturbation.load_acoustic_stimulus_from_audiofile" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.perturbation.load_acoustic_stimulus_from_audiofile">load_acoustic_stimulus_from_audiofile</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.load_acoustic_stimulus_from_audiofile(</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    file_path,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    sampling_rate<span class="op">=</span><span class="dv">1000</span>,</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    duration<span class="op">=</span><span class="st">'full'</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>classes.perturbation.load_acoustic_stimulus_from_audiofile(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    file_path,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    sampling_rate<span class="op">=</span><span class="dv">1000</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    duration<span class="op">=</span><span class="st">'full'</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Load an audio file as a callable stimulus time course.</p>
+<p>Loads the waveform, resamples it to <code>sampling_rate</code>, normalises it to the <code>[-1, 1]</code> range, optionally truncates it to <code>duration</code>, and fits a smoothing spline over time (in milliseconds).</p>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 5%">
+<col style="width: 73%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>file_path</td>
+<td></td>
+<td>Path to the audio file to read (any format <code>librosa</code> supports).</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>sampling_rate</td>
+<td></td>
+<td>Target sampling rate in Hz used for resampling and for converting sample indices to milliseconds.</td>
+<td><code>1000</code></td>
+</tr>
+<tr class="odd">
+<td>duration</td>
+<td></td>
+<td><code>"full"</code> to keep the whole signal, or a length in milliseconds to truncate it to.</td>
+<td><code>'full'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-8" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A function of time (in milliseconds) that evaluates the interpolated,</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>normalised audio amplitude and returns 0 outside the signal’s span.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises-1" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-1">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 16%">
+<col style="width: 72%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ImportError</td>
+<td>If the optional <code>librosa</code> dependency is not installed.</td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 </section>

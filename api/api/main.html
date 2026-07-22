@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -205,6 +213,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.api.main" class="level1">
 <h1>main</h1>
 <p><code>api.main</code></p>
+<p>FastAPI application exposing the TVBO ontology and simulation experiment endpoints.</p>
+<p>Defines the top-level <code>app</code>, wires in the network, dynamics, and experiment sub-routers, and provides ontology search/query endpoints plus routes to configure and run <a href="../../api/classes/experiment.html"><code>SimulationExperiment</code></a> instances.</p>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
 <table class="caption-top table">
@@ -246,7 +256,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.api.main.SimulationMetadata">SimulationMetadata</a></td>
-<td></td>
+<td>Legacy request payload describing a simulation configuration.</td>
 </tr>
 </tbody>
 </table>
@@ -263,6 +273,53 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.api.main.SimulationMetadata" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.main.SimulationMetadata">SimulationMetadata</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>api.main.SimulationMetadata()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Legacy request payload describing a simulation configuration.</p>
+<p>Retained for backwards compatibility with clients that submit the model, connectivity, coupling, and integration blocks separately rather than as a single experiment dictionary.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 10%">
+<col style="width: 57%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>Dynamics/model configuration block.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>connectivity</td>
+<td></td>
+<td>Optional network connectivity configuration.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>coupling</td>
+<td></td>
+<td>Optional coupling configuration.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>integration</td>
+<td></td>
+<td>Optional integration scheme configuration.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 </section>
 <section id="functions" class="level2">
@@ -277,27 +334,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.api.main.configure_experiment">configure_experiment</a></td>
-<td></td>
+<td>Configure a simulation experiment from legacy metadata.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.api.main.get_child_connections">get_child_connections</a></td>
-<td></td>
+<td>Return the child connections of an ontology node.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.api.main.get_parent_connections">get_parent_connections</a></td>
-<td></td>
+<td>Return the parent connections of an ontology node.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.api.main.health">health</a></td>
-<td></td>
+<td>Report service liveness for health checks.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.api.main.query_nodes">query_nodes</a></td>
-<td></td>
+<td>Query the ontology for nodes matching a term.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.api.main.root">root</a></td>
-<td></td>
+<td>Return the API name and version at the root endpoint.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.api.main.run_experiment">run_experiment</a></td>
@@ -305,35 +362,274 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.api.main.search">search</a></td>
-<td></td>
+<td>Search the ontology for entries matching a term.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.api.main.configure_experiment" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.main.configure_experiment">configure_experiment</h3>
 <div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>api.main.configure_experiment(metadata<span class="op">=</span>Body(...))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Configure a simulation experiment from legacy metadata.</p>
+<p>Passes the submitted metadata to the ontology API to set up a simulation experiment.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 23%">
+<col style="width: 49%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>metadata</td>
+<td>SimulationMetadata</td>
+<td>Legacy simulation configuration payload.</td>
+<td><code>Body(...)</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A confirmation message that the experiment was configured.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.api.main.get_child_connections" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.main.get_child_connections">get_child_connections</h3>
 <div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>api.main.get_child_connections(node_id<span class="op">=</span>Path(..., description<span class="op">=</span><span class="st">'Node ID'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the child connections of an ontology node.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 7%">
+<col style="width: 50%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>node_id</td>
+<td>int</td>
+<td>Identifier of the node whose children are requested.</td>
+<td><code>Path(..., description='Node ID')</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The connections from the node to its child nodes.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.api.main.get_parent_connections" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.main.get_parent_connections">get_parent_connections</h3>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>api.main.get_parent_connections(node_id<span class="op">=</span>Path(..., description<span class="op">=</span><span class="st">'Node ID'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the parent connections of an ontology node.</p>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 7%">
+<col style="width: 50%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>node_id</td>
+<td>int</td>
+<td>Identifier of the node whose parents are requested.</td>
+<td><code>Path(..., description='Node ID')</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The connections from the node to its parent nodes.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.api.main.health" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.main.health">health</h3>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>api.main.health()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Report service liveness for health checks.</p>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A mapping with a <code>status</code> of <code>"healthy"</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.api.main.query_nodes" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.main.query_nodes">query_nodes</h3>
 <div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>api.main.query_nodes(</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    query_str<span class="op">=</span>Query(..., description<span class="op">=</span><span class="st">'Term to query in ontology'</span>),</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Query the ontology for nodes matching a term.</p>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 7%">
+<col style="width: 30%">
+<col style="width: 51%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>query_str</td>
+<td>str</td>
+<td>Term to query in the ontology.</td>
+<td><code>Query(..., description='Term to query in ontology')</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The ontology nodes matching the query.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.api.main.root" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.main.root">root</h3>
 <div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>api.main.root()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the API name and version at the root endpoint.</p>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 79%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A mapping with the API <code>message</code> label and <code>version</code> string.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.api.main.run_experiment" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.main.run_experiment">run_experiment</h3>
@@ -344,8 +640,55 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.api.main.search" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.main.search">search</h3>
 <div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>api.main.search(term<span class="op">=</span>Query(..., description<span class="op">=</span><span class="st">'Ontology term to search for'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Search the ontology for entries matching a term.</p>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 29%">
+<col style="width: 55%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>term</td>
+<td>str</td>
+<td>Ontology term to search for.</td>
+<td><code>Query(..., description='Ontology term to search for')</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The ontology search results for the given term.</td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 </section>

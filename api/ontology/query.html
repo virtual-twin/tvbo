@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -201,6 +209,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.ontology.query" class="level1">
 <h1>query</h1>
 <p><code>ontology.query</code></p>
+<p>SPARQL-based query helpers for the TVBO ontology.</p>
+<p>This module provides thin wrappers around owlready2’s SPARQL engine and the low-level triple store to look up ontology classes and individuals by label, synonym, acronym or symbol, traverse relationships (parents and children) and normalise IRIs to their prefixed form.</p>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
 <table class="caption-top table">
@@ -230,7 +240,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.ontology.query.build_filter">build_filter</a></td>
-<td></td>
+<td>Build a single SPARQL <code>FILTER</code> clause matching a variable against a label.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.query.convert_greek_to_latin">convert_greek_to_latin</a></td>
@@ -242,37 +252,108 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.query.get_children">get_children</a></td>
-<td></td>
+<td>Return the incoming edges of a class, i.e.&nbsp;entities that point to it.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.query.get_class_relationships">get_class_relationships</a></td>
-<td></td>
+<td>Return all direct predicate-object pairs for an ontology class.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.query.get_parents">get_parents</a></td>
-<td></td>
+<td>Return the outgoing edges of a class, i.e.&nbsp;entities it points to.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.query.instance_class_relationship">instance_class_relationship</a></td>
-<td></td>
+<td>Return classes linked to a subject through an OWL restriction.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.query.iri2prefix">iri2prefix</a></td>
-<td></td>
+<td>Abbreviate a full IRI to its prefixed (CURIE-like) form.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.query.label_search">label_search</a></td>
-<td></td>
+<td>Search the ontology for entities matching a label across several fields.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.query.sparql_query">sparql_query</a></td>
-<td></td>
+<td>Run a SPARQL query against an ontology world and collect the results.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.ontology.query.build_filter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.query.build_filter">build_filter</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ontology.query.build_filter(label, field, exact, case_sensitive)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build a single SPARQL <code>FILTER</code> clause matching a variable against a label.</p>
+<p>The clause guards the variable with <code>BOUND</code> and compares it to <code>label</code> using either equality (exact) or <code>CONTAINS</code> (substring), optionally lowercasing both sides for case-insensitive matching.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 7%">
+<col style="width: 64%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>label</td>
+<td>str</td>
+<td>The search term to match against.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>field</td>
+<td>str</td>
+<td>Name of the SPARQL variable (without the leading <code>?</code>) to test.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>exact</td>
+<td>bool</td>
+<td>If <code>True</code>, require an exact match; otherwise match a substring.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>case_sensitive</td>
+<td>bool</td>
+<td>If <code>False</code>, compare using <code>LCASE</code> on both operands.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>str</td>
+<td>A SPARQL boolean expression suitable for use inside a <code>FILTER</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.query.convert_greek_to_latin" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.query.convert_greek_to_latin">convert_greek_to_latin</h3>
@@ -285,8 +366,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.ontology.query.flatten_list">flatten_list</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ontology.query.flatten_list(nested_list)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Recursively flattens a list of lists.</p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 18%">
@@ -312,8 +393,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 10%">
@@ -340,22 +421,323 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.ontology.query.get_children" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.query.get_children">get_children</h3>
 <div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ontology.query.get_children(cl, onto<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the incoming edges of a class, i.e.&nbsp;entities that point to it.</p>
+<p>Scans the triple store for triples whose object is <code>cl</code> and returns each predicate together with the subject entity, giving the class’s immediate children in the relationship graph.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 83%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>cl</td>
+<td>Any</td>
+<td>The target class as an owlready2 entity, a label string, or an integer identifier (zero-padded to six digits and resolved by <code>identifier</code>).</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>onto</td>
+<td>Any</td>
+<td>The ontology to query. Defaults to the global runtime ontology.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 25%">
+<col style="width: 67%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>List[Tuple[str, Any]]</td>
+<td>A list of <code>(predicate, entity)</code> tuples, with predicates abbreviated to</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>List[Tuple[str, Any]]</td>
+<td>their prefixed form.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.query.get_class_relationships" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.query.get_class_relationships">get_class_relationships</h3>
 <div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ontology.query.get_class_relationships(class_iri)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return all direct predicate-object pairs for an ontology class.</p>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 14%">
+<col style="width: 67%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>class_iri</td>
+<td>Union[str, Any]</td>
+<td>Either the class IRI as a string, or an owlready2 entity whose <code>iri</code> attribute is used.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 25%">
+<col style="width: 67%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>List[Tuple[Any, Any]]</td>
+<td>A list of <code>(predicate, object)</code> rows for every triple whose subject is</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>List[Tuple[Any, Any]]</td>
+<td>the given class.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.query.get_parents" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.query.get_parents">get_parents</h3>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ontology.query.get_parents(cl, onto<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the outgoing edges of a class, i.e.&nbsp;entities it points to.</p>
+<p>Scans the triple store for triples whose subject is <code>cl</code> and returns each predicate together with the resolvable object entity, giving the class’s immediate parents in the relationship graph.</p>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 83%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>cl</td>
+<td>Any</td>
+<td>The source class as an owlready2 entity, a label string, or an integer identifier (zero-padded to six digits and resolved by <code>identifier</code>).</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>onto</td>
+<td>Any</td>
+<td>The ontology to query. Defaults to the global runtime ontology.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 25%">
+<col style="width: 67%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>List[Tuple[str, Any]]</td>
+<td>A list of <code>(predicate, entity)</code> tuples, with predicates abbreviated to</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>List[Tuple[str, Any]]</td>
+<td>their prefixed form; objects that do not resolve to an entity are</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>List[Tuple[str, Any]]</td>
+<td>skipped.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.query.instance_class_relationship" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.query.instance_class_relationship">instance_class_relationship</h3>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ontology.query.instance_class_relationship(subject_iri, predicate<span class="op">=</span><span class="st">'prov:used'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return classes linked to a subject through an OWL restriction.</p>
+<p>Follows <code>owl:Restriction</code> nodes attached to the subject and returns the classes referenced by their <code>owl:someValuesFrom</code>, optionally constrained to restrictions on a given <code>owl:onProperty</code>.</p>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 4%">
+<col style="width: 78%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>subject_iri</td>
+<td>str</td>
+<td>IRI of the subject class or individual to inspect.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>predicate</td>
+<td>str</td>
+<td>Prefixed property (e.g.&nbsp;<code>prov:used</code>) that the restriction must be <code>owl:onProperty</code> of; an empty string removes this constraint.</td>
+<td><code>'prov:used'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 27%">
+<col style="width: 65%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>List[Tuple[Any, Any]]</td>
+<td>A list of <code>(predicate, object)</code> rows describing the restriction</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>List[Tuple[Any, Any]]</td>
+<td>property and the class it points to.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.query.iri2prefix" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.query.iri2prefix">iri2prefix</h3>
 <div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ontology.query.iri2prefix(iri)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Abbreviate a full IRI to its prefixed (CURIE-like) form.</p>
+<p>Each known namespace base (<code>rdf</code>, <code>rdfs</code>, <code>owl</code>, <code>tvbo</code>) is replaced by its short prefix; an IRI with no matching namespace is returned unchanged.</p>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>iri</td>
+<td>str</td>
+<td>The absolute IRI to abbreviate.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 79%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>str</td>
+<td>The IRI with any known namespace base replaced by its prefix.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.query.label_search" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.query.label_search">label_search</h3>
@@ -370,12 +752,188 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    types<span class="op">=</span>[<span class="st">'owl:Class'</span>, <span class="st">'owl:NamedIndividual'</span>],</span>
 <span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    onto<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Search the ontology for entities matching a label across several fields.</p>
+<p>Builds a SPARQL query that tests <code>rdfs:label</code>, <code>skos:altLabel</code> and each included annotation property (e.g.&nbsp;<code>synonym</code>, <code>acronym</code>, <code>symbol</code>) against the search term, then returns the matching classes and/or individuals. Optionally restricts the results to descendants of a given root class.</p>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 12%">
+<col style="width: 54%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>label</td>
+<td>str</td>
+<td>The term to search for.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>include</td>
+<td>List[str]</td>
+<td>Extra annotation fields to match on. Bare names are prefixed with <code>tvbo:</code>; values containing <code>:</code> are used as-is.</td>
+<td><code>['synonym', 'acronym', 'symbol', 'tvbSourceVariable']</code></td>
+</tr>
+<tr class="odd">
+<td>exact_match</td>
+<td>Union[str, List[str]]</td>
+<td>Field name, list of field names, or <code>"all"</code> for which matching must be exact rather than substring-based.</td>
+<td><code>['symbol', 'acronym', 'synonym', 'tvbSourceVariable']</code></td>
+</tr>
+<tr class="even">
+<td>case_sensitive</td>
+<td>bool</td>
+<td>Whether comparisons are case sensitive.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>root_class</td>
+<td>Any</td>
+<td>If given, keep only results that are descendants of this class (an entity or a label string resolved via <code>search_one</code>).</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>greek_to_latin</td>
+<td>bool</td>
+<td>If <code>True</code>, transliterate Greek letters in <code>label</code> to their Latin names before searching.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>ignore_underscore</td>
+<td>bool</td>
+<td>If <code>True</code>, strip underscores from <code>label</code>.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>types</td>
+<td>List[str]</td>
+<td>The RDF types to restrict subjects to (e.g.&nbsp;<code>owl:Class</code>, <code>owl:NamedIndividual</code>).</td>
+<td><code>['owl:Class', 'owl:NamedIndividual']</code></td>
+</tr>
+<tr class="odd">
+<td>onto</td>
+<td>Any</td>
+<td>The ontology to query. Defaults to the global runtime ontology.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 27%">
+<col style="width: 65%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>List[owlready2.ThingClass]</td>
+<td>A de-duplicated list of matching ontology entities, optionally filtered</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>List[owlready2.ThingClass]</td>
+<td>to descendants of <code>root_class</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.query.sparql_query" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.query.sparql_query">sparql_query</h3>
 <div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ontology.query.sparql_query(query_string, flatten_result<span class="op">=</span><span class="va">True</span>, world<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Run a SPARQL query against an ontology world and collect the results.</p>
+<p>Undefined entities are tolerated (<code>error_on_undefined_entities=False</code>) so that optional clauses referencing annotation properties absent from the generated ontology match nothing instead of raising.</p>
+<section id="parameters-8" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 5%">
+<col style="width: 74%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>query_string</td>
+<td>str</td>
+<td>The SPARQL query to execute.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>flatten_result</td>
+<td>bool</td>
+<td>If <code>True</code>, recursively flatten the result rows into a single flat list; otherwise return the raw rows.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>world</td>
+<td>Any</td>
+<td>An owlready2 <code>World</code> to query. Defaults to the global runtime ontology’s world when <code>None</code>.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-8" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 14%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>List[Any]</td>
+<td>The query results, flattened into a single list when <code>flatten_result</code></td>
+</tr>
+<tr class="even">
+<td></td>
+<td>List[Any]</td>
+<td>is <code>True</code>, otherwise the raw list of result rows.</td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 </section>

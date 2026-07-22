@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -237,29 +245,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.cli.skills.Audience">Audience</a></td>
-<td></td>
+<td>Intended reader of a skill, used to filter which skills apply.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.cli.skills.Scope">Scope</a></td>
-<td></td>
+<td>Install location for rendered skill files.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.cli.skills.Target">Target</a></td>
-<td></td>
+<td>Output format a skill is rendered to.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.cli.skills.Audience" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.cli.skills.Audience">Audience</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>cli.skills.Audience()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Intended reader of a skill, used to filter which skills apply.</p>
+<p>A skill declares an <code>audience</code> of <code>user</code>, <code>maintainer</code>, or <code>both</code>; this enum selects the subset to act on, where <code>all</code> keeps every skill regardless of its declared audience.</p>
 </section>
 <section id="tvbo.cli.skills.Scope" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.cli.skills.Scope">Scope</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>cli.skills.Scope()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Install location for rendered skill files.</p>
+<p><code>user</code> writes to the per-user config directory (e.g.&nbsp;<code>~/.claude/skills</code>), while <code>project</code> writes to the current working directory (e.g. <code>./.claude/skills</code>).</p>
 </section>
 <section id="tvbo.cli.skills.Target" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.cli.skills.Target">Target</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>cli.skills.Target()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Output format a skill is rendered to.</p>
+<p>Selects which assistant-specific artifact <code>install</code> or <code>sync</code> produces: Claude Code skill files, GitHub Copilot instructions, Cursor rules, the <code>AGENTS.md</code> index, a plain prompt on stdout, or <code>all</code> of them at once.</p>
 </section>
 </section>
 <section id="functions" class="level2">

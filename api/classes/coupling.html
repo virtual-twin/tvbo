@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -253,6 +261,39 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Runtime Coupling that is also a direct instance of tvbo_datamodel.Coupling.</p>
 <p>If <code>iri</code> is set (e.g.&nbsp;<code>tvbo:SigmoidalJansenRit</code>), missing fields are automatically populated from the ontology/database. Use <code>Coupling.from_ontology(name)</code> for explicit ontology lookup.</p>
+<section id="attributes-1" class="level4">
+<h4 class="anchored" data-anchor-id="attributes-1">Attributes</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.classes.coupling.Coupling.equation">equation</a></td>
+<td>The full assembled global coupling equation (pre and post combined), or <code>None</code> if it cannot be built.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.coupling.Coupling.metadata">metadata</a></td>
+<td>The coupling’s own metadata, i.e.&nbsp;this object itself (back-compat accessor).</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.coupling.Coupling.ontoclass">ontoclass</a></td>
+<td>The ontology <code>Coupling</code> class matching this coupling’s name, or <code>None</code> if not found.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.coupling.Coupling.post">post</a></td>
+<td>The parsed post-summation expression of the coupling function.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.coupling.Coupling.pre">pre</a></td>
+<td>The parsed pre-summation expression of the coupling function.</td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="methods" class="level4">
 <h4 class="anchored" data-anchor-id="methods">Methods</h4>
 <table class="caption-top table">
@@ -264,102 +305,510 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.classes.coupling.Coupling.execute">execute</a></td>
+<td>Render, execute, and instantiate this coupling for a backend.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.classes.coupling.Coupling.from_datamodel">from_datamodel</a></td>
 <td>Create a Coupling instance from an existing tvbo_datamodel.Coupling instance.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.coupling.Coupling.from_db">from_db</a></td>
 <td>Load a Coupling by name from the tvbo database.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.coupling.Coupling.from_file">from_file</a></td>
 <td>Load a Coupling from a YAML file.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.coupling.Coupling.from_ontology">from_ontology</a></td>
 <td>Create a Coupling instance from an ontology Coupling class or name.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.coupling.Coupling.generate_report">generate_report</a></td>
 <td>Backward-compatible alias for :meth:<code>report</code>.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.coupling.Coupling.list_db">list_db</a></td>
 <td>List available coupling functions in the tvbo database.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.coupling.Coupling.plot">plot</a></td>
+<td>Plot the coupling output against a single input state component.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.coupling.Coupling.populate_from_type">populate_from_type</a></td>
 <td>Fill missing pre/post expressions and parameters from a type reference.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.classes.coupling.Coupling.render">render</a></td>
+<td>Render this coupling in the requested output format.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.coupling.Coupling.render_code">render_code</a></td>
+<td>Generate backend-specific code for this coupling.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.classes.coupling.Coupling.report">report</a></td>
 <td>Render a human-readable markdown (or pdf) report for this coupling.</td>
 </tr>
 <tr class="odd">
+<td><a href="#tvbo.classes.coupling.Coupling.summed_inputs">summed_inputs</a></td>
+<td>Summed inputs <code>gx_k</code> of a factored / vectorized coupling.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.classes.coupling.Coupling.symbolic">symbolic</a></td>
 <td>Full symbolic coupling equation with proper indexed state variables.</td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.coupling.Coupling.to_yaml">to_yaml</a></td>
+<td>Serialize this coupling to YAML.</td>
+</tr>
 </tbody>
 </table>
+<section id="tvbo.classes.coupling.Coupling.execute" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.execute">execute</h5>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.execute(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>, alt_label<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render, execute, and instantiate this coupling for a backend.</p>
+<p>Renders the coupling code via <code>render_code</code>, executes it, and returns the resulting runtime object.</p>
+<section id="parameters" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 3%">
+<col style="width: 88%">
+<col style="width: 4%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target backend. <code>"tvb"</code> returns an instantiated TVB coupling object; <code>"tvboptim"</code>/<code>"tvb-optim"</code> returns an instantiated tvboptim coupling class; <code>"python"</code> returns a <code>sympy.lambdify</code>-based callable for the coupling equation.</td>
+<td><code>'tvb'</code></td>
+</tr>
+<tr class="even">
+<td>alt_label</td>
+<td></td>
+<td>Alternative name to instantiate the coupling under (TVB backend only).</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Constructor arguments forwarded to the instantiated coupling object.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The instantiated backend coupling object, or a callable for the</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>"python"</code> format.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.classes.coupling.Coupling.from_datamodel" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.from_datamodel">from_datamodel</h5>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.from_datamodel(datamodel_instance)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.from_datamodel(datamodel_instance)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a Coupling instance from an existing tvbo_datamodel.Coupling instance.</p>
 </section>
 <section id="tvbo.classes.coupling.Coupling.from_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.from_db">from_db</h5>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load a Coupling by name from the tvbo database.</p>
 </section>
 <section id="tvbo.classes.coupling.Coupling.from_file" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.from_file">from_file</h5>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.from_file(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.from_file(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load a Coupling from a YAML file.</p>
 </section>
 <section id="tvbo.classes.coupling.Coupling.from_ontology" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.from_ontology">from_ontology</h5>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.from_ontology(ontoclass)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.from_ontology(ontoclass)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a Coupling instance from an ontology Coupling class or name.</p>
 <p>Accepts an owlready2 class, a plain name (<code>"SigmoidalJansenRit"</code>), or a CURIE (<code>"tvbo:SigmoidalJansenRit"</code>). Tries the database YAML first, then falls back to ontology lookup.</p>
 </section>
 <section id="tvbo.classes.coupling.Coupling.generate_report" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.generate_report">generate_report</h5>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.generate_report(<span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>, outputfile<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.generate_report(<span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>, outputfile<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Backward-compatible alias for :meth:<code>report</code>.</p>
 </section>
 <section id="tvbo.classes.coupling.Coupling.list_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.list_db">list_db</h5>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>List available coupling functions in the tvbo database.</p>
+</section>
+<section id="tvbo.classes.coupling.Coupling.plot" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.plot">plot</h5>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.plot(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    weights<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    node_idx<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    xs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot the coupling output against a single input state component.</p>
+<p>Lambdifies the assembled coupling <code>equation</code> and evaluates it while sweeping one node’s state over <code>xs</code>, holding the other components fixed.</p>
+<section id="parameters-1" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 3%">
+<col style="width: 86%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>weights</td>
+<td></td>
+<td>Connectivity weight matrix. If omitted, a random 3x3 matrix with a zeroed diagonal is used.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>node_idx</td>
+<td></td>
+<td>Plotting gate only. When not <code>None</code> (the default is <code>0</code>) the plot is drawn; the value is not otherwise used, as the swept component is always index 0. Pass <code>None</code> to skip plotting.</td>
+<td><code>0</code></td>
+</tr>
+<tr class="odd">
+<td>xs</td>
+<td></td>
+<td>Values to sweep the selected state component over. Defaults to 100 points on the interval <code>[-2, 2]</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>ax</td>
+<td></td>
+<td>Matplotlib axes to draw on. If omitted, a new figure is created and returned.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Accepted for signature flexibility; currently unused.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The created Matplotlib figure when <code>ax</code> is omitted and <code>node_idx</code></td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>is not <code>None</code>; otherwise <code>None</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.coupling.Coupling.populate_from_type" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.populate_from_type">populate_from_type</h5>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.populate_from_type(type_ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.populate_from_type(type_ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Fill missing pre/post expressions and parameters from a type reference.</p>
 <p>This is used when <code>network.coupling</code> entries specify a <code>type</code> field to reference a known coupling function (e.g.&nbsp;<code>KuramotoCoupling</code> or <code>tvbo:KuramotoCoupling</code>).</p>
-<section id="parameters" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<section id="parameters-2" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h6>
 <p>type_ref : str Coupling function name or CURIE (e.g.&nbsp;<code>"KuramotoCoupling"</code> or <code>"tvbo:KuramotoCoupling"</code>).</p>
+</section>
+</section>
+<section id="tvbo.classes.coupling.Coupling.render" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.render">render</h5>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.render(<span class="bu">format</span><span class="op">=</span><span class="st">'yaml'</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render this coupling in the requested output format.</p>
+<p>Dispatches to <code>to_yaml</code>, <code>report</code>, or <code>render_code</code> depending on <code>format</code>.</p>
+<section id="parameters-3" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 3%">
+<col style="width: 87%">
+<col style="width: 4%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Output format. <code>"yaml"</code> serializes to YAML; <code>"report"</code>, <code>"markdown"</code>, <code>"md"</code>, or <code>"pdf"</code> produce a human-readable report; any other value is forwarded to <code>render_code</code> to generate backend code.</td>
+<td><code>'yaml'</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Forwarded to the underlying renderer (e.g.&nbsp;<code>filepath</code>).</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>str</td>
+<td>The rendered output as a string.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.coupling.Coupling.render_code" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.render_code">render_code</h5>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.render_code(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    alt_label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Generate backend-specific code for this coupling.</p>
+<section id="parameters-4" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 79%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target backend (case-insensitive). One of <code>"tvb"</code>, <code>"autodiff"</code>/<code>"jax"</code>, <code>"tvboptim"</code>/<code>"tvb-optim"</code>, or <code>"python"</code>.</td>
+<td><code>'tvb'</code></td>
+</tr>
+<tr class="even">
+<td>model</td>
+<td></td>
+<td>Model context passed to the JAX template when relevant.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>alt_label</td>
+<td></td>
+<td>Alternative label accepted for signature compatibility; not used directly by this method.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Additional arguments forwarded to the selected template.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-3" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The formatted, backend-specific source code as a string.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level6 doc-section doc-section-raises">
+<h6 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If <code>format</code> is not a supported backend.</td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 <section id="tvbo.classes.coupling.Coupling.report" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.report">report</h5>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.report(<span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>, outputfile<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.report(<span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>, outputfile<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render a human-readable markdown (or pdf) report for this coupling.</p>
 <p>Includes pre/post expressions, the full assembled coupling equation (<code>Coupling.equation</code>), and the parameter table.</p>
 </section>
+<section id="tvbo.classes.coupling.Coupling.summed_inputs" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.summed_inputs">summed_inputs</h5>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.summed_inputs(delays<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Summed inputs <code>gx_k</code> of a factored / vectorized coupling.</p>
+<p>A factored coupling emits a <em>list</em> pre-expression whose k-th component is summed over the graph into <code>gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)</code>, which the post-expression then recombines. Returns <code>[(gx_k, sum_expr), ...]</code> so a report can state precisely what <code>gx_0</code>, <code>gx_1</code>, … mean; empty for a scalar coupling.</p>
+</section>
 <section id="tvbo.classes.coupling.Coupling.symbolic" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.symbolic">symbolic</h5>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.symbolic(delays<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.symbolic(delays<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Full symbolic coupling equation with proper indexed state variables.</p>
 <p>Resolves all expression styles (<code>theta_j</code>/<code>theta_i</code>, <code>x_j</code>/<code>x_i</code>, <code>incoming_states</code>/<code>local_states</code>) into proper <code>IndexedBase</code> notation and wraps the pre-expression in a weighted summation over connected nodes.</p>
-<section id="parameters-1" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<section id="parameters-5" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
 <p>delays : bool If True, incoming states carry an explicit time-delay index: <code>y1[j, t - tau[i, j]]</code> instead of plain <code>y1[j]</code>.</p>
 </section>
-<section id="returns" class="level6 doc-section doc-section-returns">
-<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<section id="returns-4" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h6>
 <p>sympy.Expr E.g. <code>Sum(w[i, j]*sin(theta[j] - theta[i]), (j, 0, N - 1))/N</code></p>
+</section>
+</section>
+<section id="tvbo.classes.coupling.Coupling.to_yaml" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.to_yaml">to_yaml</h5>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.to_yaml(filepath<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Serialize this coupling to YAML.</p>
+<section id="parameters-6" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 11%">
+<col style="width: 69%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>filepath</td>
+<td>str | None</td>
+<td>Optional path to write the YAML to. If omitted, the YAML is only returned.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-5" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The YAML representation of the coupling as a string.</td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 </section>
@@ -381,29 +830,112 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.coupling.get_global_coupling_functions">get_global_coupling_functions</a></td>
-<td></td>
+<td>Return all coupling function classes defined in the ontology.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.coupling.get_parameters">get_parameters</a></td>
-<td></td>
+<td>Extract parameter metadata from a coupling function ontology class.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.classes.coupling.coupling_class2metadata" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.coupling.coupling_class2metadata">coupling_class2metadata</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.coupling_class2metadata(ontoclass, metadata, overwrite<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.coupling_class2metadata(ontoclass, metadata, overwrite<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Populate coupling metadata from an ontology class.</p>
 <p>If overwrite is False (default), only fill missing fields. If overwrite is True, always set name and pre/post expressions. Parameters are added if missing; existing parameter value/description are only filled if missing regardless of overwrite.</p>
 </section>
 <section id="tvbo.classes.coupling.get_global_coupling_functions" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.coupling.get_global_coupling_functions">get_global_coupling_functions</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.get_global_coupling_functions()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.get_global_coupling_functions()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return all coupling function classes defined in the ontology.</p>
+<p>Loads the ontology on demand and collects the subclasses of its <code>Coupling</code> class.</p>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A list of the ontology’s <code>Coupling</code> subclasses.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.coupling.get_parameters" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.coupling.get_parameters">get_parameters</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.get_parameters(CF)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.get_parameters(CF)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Extract parameter metadata from a coupling function ontology class.</p>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 85%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CF</td>
+<td></td>
+<td>A coupling function name or an owlready2 ontology class. If a string is given, it is first resolved to the corresponding ontology class via the ontology registry.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A mapping from each ontology parameter to a dict of its properties:</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>domain</code> (with <code>lo</code>, <code>hi</code>, and <code>step</code>), <code>value</code>, <code>definition</code>,</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td><code>label</code>, and <code>name</code>.</td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 </section>

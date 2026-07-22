@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -193,6 +201,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.plot.bifurcation_diagram" class="level1">
 <h1>bifurcation_diagram</h1>
 <p><code>plot.bifurcation_diagram</code></p>
+<p>Plot bifurcation diagrams from continuation results.</p>
+<p>Provides helpers to draw equilibrium branches (coloured by stability with special bifurcation points marked) and periodic-orbit envelopes onto a Matplotlib axis, deriving the plotted variable of interest from continuation DataFrames.</p>
 <section id="functions" class="level2">
 <h2 class="anchored" data-anchor-id="functions">Functions</h2>
 <table class="caption-top table">
@@ -209,11 +219,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.bifurcation_diagram.plot_equilibrium_branch">plot_equilibrium_branch</a></td>
-<td></td>
+<td>Plot an equilibrium branch coloured by stability with special points marked.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.bifurcation_diagram.plot_periodic_orbit">plot_periodic_orbit</a></td>
-<td></td>
+<td>Plot the min/max envelope of a periodic-orbit branch.</td>
 </tr>
 </tbody>
 </table>
@@ -239,6 +249,59 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    VOI<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot an equilibrium branch coloured by stability with special points marked.</p>
+<p>The branch is split into contiguous segments wherever the <code>stable</code> flag changes, drawing stable segments as solid lines and unstable ones as dashed, then overlaying scatter markers for each special bifurcation point (excluding <code>endpoint</code>) coloured after the Julia BifurcationKit palette.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 79%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>df</td>
+<td></td>
+<td>Continuation DataFrame with <code>param</code>, <code>stable</code>, and <code>specialpoint</code> columns (plus the variable(s) referenced by <code>VOI</code>).</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>ax</td>
+<td></td>
+<td>Matplotlib axis to draw on.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>ICS</td>
+<td></td>
+<td>Unused; accepted for interface compatibility.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>VOI</td>
+<td></td>
+<td>Variable-of-interest expression to plot on the y-axis; defaults to the first column of <code>df</code> when <code>None</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Ignored; accepted for interface compatibility.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.plot.bifurcation_diagram.plot_periodic_orbit" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.plot.bifurcation_diagram.plot_periodic_orbit">plot_periodic_orbit</h3>
@@ -249,8 +312,61 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    color_cycle_index<span class="op">=</span><span class="dv">1</span>,</span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Plot the min/max envelope of a periodic-orbit branch.</p>
+<p>Draws two lines in a shared colour tracing the minimum and maximum of the variable of interest along the branch (using the <code>min_</code>/<code>max_</code> column prefixes), labelling only the first so the legend gains a single <code>Periodic orbit</code> entry.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 4%">
+<col style="width: 75%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>df_po</td>
+<td></td>
+<td>Periodic-orbit DataFrame with a <code>param</code> column and <code>min_</code>/<code>max_</code> prefixed columns for the variable of interest.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>VOI</td>
+<td></td>
+<td>Variable-of-interest name; when <code>None</code>, inferred from the first column of <code>df_po</code> with any <code>min_</code>/<code>max_</code> prefix stripped.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>Matplotlib axis to draw on.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>color_cycle_index</td>
+<td></td>
+<td>Index into the current axis colour cycle used for both envelope lines.</td>
+<td><code>1</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Ignored; accepted for interface compatibility.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 </section>

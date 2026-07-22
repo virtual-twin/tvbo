@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -228,7 +236,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.ontology.graph.adjust_positions">adjust_positions</a></td>
-<td></td>
+<td>Nudge node positions apart or together along the chosen axes.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.graph.edge_exists">edge_exists</a></td>
@@ -240,15 +248,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.graph.hierarchy_graph">hierarchy_graph</a></td>
-<td></td>
+<td>Extract the <code>is_a</code> hierarchy of a graph into a new multigraph.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.graph.labels_as_symbols">labels_as_symbols</a></td>
-<td></td>
+<td>Map graph nodes to LaTeX-rendered symbol labels.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.graph.model2graph">model2graph</a></td>
-<td></td>
+<td>Build a dependency graph of a model’s dynamics components.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.graph.nx2mermaid">nx2mermaid</a></td>
@@ -264,7 +272,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.graph.subset2graph">subset2graph</a></td>
-<td></td>
+<td>Build a directed multigraph from a subset of ontology classes.</td>
 </tr>
 </tbody>
 </table>
@@ -276,13 +284,84 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    direction<span class="op">=</span><span class="st">'xy'</span>,</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">'outward'</span>,</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Nudge node positions apart or together along the chosen axes.</p>
+<p>Compares every pair of points and, where their separation along an axis is below (outward mode) or above (inward mode) a threshold expressed as a percentage of the layout span, shifts the two points relative to each other to enforce the spacing.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 16%">
+<col style="width: 62%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>pos</td>
+<td>Dict[Any, np.ndarray]</td>
+<td>Mapping from node to its 2-D position array.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>threshold_percent</td>
+<td>int</td>
+<td>Target separation as a percentage of the total span along each considered axis.</td>
+<td><code>10</code></td>
+</tr>
+<tr class="odd">
+<td>direction</td>
+<td>str</td>
+<td>Axes to adjust; include <code>"x"</code> and/or <code>"y"</code> (e.g.&nbsp;<code>"xy"</code>).</td>
+<td><code>'xy'</code></td>
+</tr>
+<tr class="even">
+<td>mode</td>
+<td>str</td>
+<td><code>"outward"</code> to push points apart when too close, otherwise pull them together when too far.</td>
+<td><code>'outward'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 25%">
+<col style="width: 66%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>Dict[Any, np.ndarray]</td>
+<td>A new mapping from each node to its adjusted 2-D position array.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.graph.edge_exists" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.graph.edge_exists">edge_exists</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ontology.graph.edge_exists(G, source, target, edge_type)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Check if an edge with the given type exists between source and target in a MultiDiGraph.</p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 14%">
@@ -326,8 +405,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -350,37 +429,211 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.ontology.graph.get_color_mapping">get_color_mapping</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ontology.graph.get_color_mapping(g, by<span class="op">=</span><span class="st">'type'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Map nodes of a graph to distinct colors based on a node attribute.</p>
-<section id="parameters-1" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters:</h4>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters:</h4>
 <p>g : nx.Graph The input graph. by : str, optional Node attribute to be used for color mapping. Default is “type”.</p>
 </section>
-<section id="returns-1" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns:</h4>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns:</h4>
 <p>dict A dictionary mapping each node to a color index.</p>
 </section>
 </section>
 <section id="tvbo.ontology.graph.hierarchy_graph" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.graph.hierarchy_graph">hierarchy_graph</h3>
 <div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ontology.graph.hierarchy_graph(G)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Extract the <code>is_a</code> hierarchy of a graph into a new multigraph.</p>
+<p>Copies only the edges whose <code>type</code> attribute equals <code>"is_a"</code>, together with their incident nodes and attributes, dropping all object-property and other relation edges.</p>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 19%">
+<col style="width: 58%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td>nx.MultiDiGraph</td>
+<td>Source graph whose edges carry a <code>type</code> attribute.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 17%">
+<col style="width: 74%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>nx.MultiDiGraph</td>
+<td>A <code>networkx.MultiDiGraph</code> containing only the <code>is_a</code> edges and the nodes</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>nx.MultiDiGraph</td>
+<td>they connect.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.graph.labels_as_symbols" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.graph.labels_as_symbols">labels_as_symbols</h3>
 <div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ontology.graph.labels_as_symbols(G)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Map graph nodes to LaTeX-rendered symbol labels.</p>
+<p>For each node exposing a non-empty <code>symbol</code> annotation, the label is that symbol typeset as inline LaTeX (e.g.&nbsp;<code>$x$</code>); nodes without a symbol map to themselves.</p>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 10%">
+<col style="width: 67%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td>nx.Graph</td>
+<td>Graph whose nodes may carry a <code>symbol</code> annotation property.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 18%">
+<col style="width: 73%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>Dict[Any, str]</td>
+<td>A mapping from each node to its inline-LaTeX label string, or the node</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>Dict[Any, str]</td>
+<td>itself when it has no symbol.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.graph.model2graph" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.graph.model2graph">model2graph</h3>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ontology.graph.model2graph(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build a dependency graph of a model’s dynamics components.</p>
+<p>Resolves <code>model</code> (by name if given as a string), walks its descendant classes, and keeps only those categorised as a <code>Parameter</code>, <code>StateVariable</code>, <code>TimeDerivative</code>, <code>Function</code>, or <code>ConditionalDerivedVariable</code>. Each retained class becomes a node tagged with its category, with <code>is_a</code> edges to parent classes and object-property edges to other in-model classes.</p>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 73%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>A model class, or the name of a model to resolve via <code>ontology.get_model</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 17%">
+<col style="width: 73%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>nx.MultiDiGraph</td>
+<td>A <code>networkx.MultiDiGraph</code> induced on the retained dynamics-component</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>nx.MultiDiGraph</td>
+<td>nodes, each node’s <code>type</code> set to its ontology category.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.ontology.graph.nx2mermaid" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.ontology.graph.nx2mermaid">nx2mermaid</h3>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ontology.graph.nx2mermaid(G, id_as_label<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert a NetworkX graph to a Mermaid representation.</p>
-<section id="parameters-2" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters:</h4>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters:</h4>
 <p>G : nx.Graph NetworkX graph to be converted. id_as_label : bool, optional Use identifier as label in the Mermaid graph. Default is False.</p>
 </section>
-<section id="returns-2" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns:</h4>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns:</h4>
 <p>str The Mermaid representation of the graph.</p>
 </section>
 </section>
@@ -407,8 +660,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 class="doc-section doc-section-warning anchored" data-anchor-id="warning">Warning</h4>
 <p>The function omits the “Thing” class and its properties to avoid redundant information.</p>
 </section>
-<section id="returns-3" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 7%">
@@ -496,8 +749,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 class="doc-section doc-section-warning anchored" data-anchor-id="warning-1">Warning</h4>
 <p>The function omits the “Thing” class and its properties to avoid redundant information.</p>
 </section>
-<section id="returns-4" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<section id="returns-8" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 8%">
@@ -578,8 +831,96 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    individual_relationships<span class="op">=</span>[<span class="st">'has_reference'</span>],</span>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    expand_nodes<span class="op">=</span><span class="va">False</span>,</span>
 <span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build a directed multigraph from a subset of ontology classes.</p>
+<p>Each class in <code>subset</code> becomes a node with <code>is_a</code> edges to its parent classes and, optionally, edges derived from object-property restrictions and links from individuals that reference the class.</p>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 6%">
+<col style="width: 68%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>subset</td>
+<td></td>
+<td>Iterable of ontology classes (owlready2 <code>ThingClass</code>) to include as nodes; <code>Restriction</code> entries are skipped.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>add_object_properties</td>
+<td>bool</td>
+<td>If <code>True</code>, add edges for object-property restrictions found in each class’s <code>is_a</code> list (data-property restrictions are ignored).</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>add_annotation_properties</td>
+<td>bool</td>
+<td>If <code>True</code>, attach each class’s annotation properties as node attributes.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="even">
+<td>add_individuals</td>
+<td>bool</td>
+<td>If <code>True</code>, add edges from individuals that reference a node via one of <code>individual_relationships</code>.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>individual_relationships</td>
+<td>List[str]</td>
+<td>Names of the properties linking individuals to the subset classes; matching links are added as <code>has_reference</code> edges.</td>
+<td><code>['has_reference']</code></td>
+</tr>
+<tr class="even">
+<td>expand_nodes</td>
+<td>bool</td>
+<td>Currently unused placeholder for restricting the result to the original subset.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-9" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-9">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 17%">
+<col style="width: 74%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>nx.MultiDiGraph</td>
+<td>A <code>networkx.MultiDiGraph</code> of the subset with hierarchy, object-property,</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>nx.MultiDiGraph</td>
+<td>and individual-reference edges.</td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 </section>

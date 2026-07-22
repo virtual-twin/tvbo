@@ -1,5 +1,11 @@
 [
   {
+    "listing": "/Replication/index.html",
+    "items": [
+      "/Replication/Jansen1995/Run_Jansen1995.html"
+    ]
+  },
+  {
     "listing": "/Interoperability/NeuroML/examples/index.html",
     "items": [
       "/Interoperability/NeuroML/examples/Ex0_IaF.html",
@@ -37,12 +43,6 @@
       "/examples/dynamics_from_db.html",
       "/examples/network_from_db.html",
       "/examples/create_network.html"
-    ]
-  },
-  {
-    "listing": "/Replication/index.html",
-    "items": [
-      "/Replication/Jansen1995/Run_Jansen1995.html"
     ]
   }
 ]

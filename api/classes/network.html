@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -199,6 +207,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.network" class="level1">
 <h1>network</h1>
 <p><code>classes.network</code></p>
+<p>Brain-network connectivity classes for TVBO.</p>
+<p>Defines <a href="#tvbo.classes.network.Network"><code>Network</code></a> and its matrix-style subclass <a href="#tvbo.classes.network.Connectome"><code>Connectome</code></a>, which carry the structural connectivity (weights and tract lengths), parcellation, nodes/edges and declarative transforms of a virtual brain. Includes constructors that load networks from HDF5/YAML database files and from BIDS derivatives, JAX pytree registration so a network can flow through differentiable simulations, and graph-Laplacian coupling primitives.</p>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
 <table class="caption-top table">
@@ -261,7 +271,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"iri"</span>: <span class="st">"tvbo:DesikanKilliany"</span>}},</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    tractogram<span class="op">=</span>{<span class="st">"iri"</span>: <span class="st">"tvbo:dTOR"</span>},</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>See the <a href="../../../Specification/Network.qmd">Network specification</a> for the slot-by-slot reference and the <a href="#tvbo.classes.network.Connectome"><code>Connectome</code></a> subclass for matrix-style networks without an explicit parcellation.</p>
+<p>See the <a href="../../Specification/Network.html">Network specification</a> for the slot-by-slot reference and the <a href="#tvbo.classes.network.Connectome"><code>Connectome</code></a> subclass for matrix-style networks without an explicit parcellation.</p>
 </section>
 <section id="attributes-1" class="level4">
 <h4 class="anchored" data-anchor-id="attributes-1">Attributes</h4>
@@ -286,28 +296,44 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Access conduction_speed from parameters dict.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.classes.network.Network.distances">distances</a></td>
+<td>Tract-length matrix in millimetres (alias of <code>lengths</code>).</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.network.Network.global_coupling_strength">global_coupling_strength</a></td>
 <td>Access global_coupling_strength from parameters dict.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.network.Network.graph">graph</a></td>
 <td>Build NetworkX MultiDiGraph from network nodes and edges.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.network.Network.labels">labels</a></td>
 <td>Brain region labels from atlas.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.network.Network.lengths">lengths</a></td>
+<td>Tract-length matrix in millimetres (alias for <code>lengths_matrix</code>).</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.network.Network.lengths_matrix">lengths_matrix</a></td>
 <td>Tract length matrix as numpy/JAX array.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.classes.network.Network.metadata">metadata</a></td>
+<td>Back-compatible pointer that returns the network itself as its metadata.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.network.Network.node_labels">node_labels</a></td>
 <td>Node labels derived from nodes.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.network.Network.node_mapping_data">node_mapping_data</a></td>
 <td>The node-to-parent mapping array, or <code>None</code>.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.network.Network.node_parameter_vectors">node_parameter_vectors</a></td>
+<td>Per-node parameters as <code>{name: (n_nodes,) array}</code>, in declared node order.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.network.Network.number_of_regions">number_of_regions</a></td>
@@ -322,6 +348,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>The parent Network object, if assigned via object reference.</td>
 </tr>
 <tr class="odd">
+<td><a href="#tvbo.classes.network.Network.weights">weights</a></td>
+<td>Connectivity weight matrix (alias for <code>weights_matrix</code>).</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.classes.network.Network.weights_matrix">weights_matrix</a></td>
 <td>Connection weights matrix as numpy/JAX array.</td>
 </tr>
@@ -372,7 +402,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.network.Network.from_datamodel">from_datamodel</a></td>
-<td>Create a Connectome from a datamodel instance.</td>
+<td>Create a Network from a datamodel instance.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.network.Network.from_db">from_db</a></td>
@@ -439,36 +469,44 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Get a named edge matrix, optionally in a specific format.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.classes.network.Network.node_positions">node_positions</a></td>
+<td>Node coordinates as an <code>(n_nodes, 3)</code> array, in declared node order.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.network.Network.normalize">normalize</a></td>
 <td>Add min-max normalization of connection weights.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.network.Network.normalize_weights">normalize_weights</a></td>
 <td>Add a normalization transform for connection weights.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.network.Network.plot_brain_surface">plot_brain_surface</a></td>
 <td>Render the network on the cortical brain surface.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.network.Network.plot_graph">plot_graph</a></td>
 <td>Visualize connectome as network graph.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.network.Network.plot_lengths">plot_lengths</a></td>
 <td>Plot tract lengths matrix as heatmap.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.network.Network.plot_matrix">plot_matrix</a></td>
 <td>Plot both weights and lengths matrices side by side.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.network.Network.plot_overview">plot_overview</a></td>
 <td>Create comprehensive visualization with brain surface and matrices.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.network.Network.plot_weights">plot_weights</a></td>
 <td>Plot connection weights matrix as heatmap.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.network.Network.region_alias_map">region_alias_map</a></td>
+<td>Map each node’s canonical label AND every known alias -&gt; canonical label.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.network.Network.save">save</a></td>
@@ -488,11 +526,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.network.Network.to_yaml">to_yaml</a></td>
-<td>Serialize Connectome to YAML format.</td>
+<td>Serialize Network to YAML format.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.network.Network.tree_flatten">tree_flatten</a></td>
-<td>Return children and auxiliary data for JAX pytree support.</td>
+<td>Flatten into JAX pytree children <code>(weights, lengths)</code> plus metadata aux data.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.network.Network.tree_unflatten">tree_unflatten</a></td>
+<td>Rebuild a <code>Network</code> from JAX pytree children and metadata (inverse of <code>tree_flatten</code>).</td>
 </tr>
 </tbody>
 </table>
@@ -551,7 +593,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-3" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-3">Examples</h6>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>sc.add_transform(<span class="st">"weight"</span>, <span class="st">"M / M_max"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
@@ -582,7 +624,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="examples-4" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-4">Examples</h6>
 <div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>delays <span class="op">=</span> sc.calculate_delays(conduction_speed<span class="op">=</span><span class="fl">3.0</span>)</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>plt.imshow(delays, cmap<span class="op">=</span><span class="st">'viridis'</span>)</span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>plt.colorbar(label<span class="op">=</span><span class="st">'Delay (ms)'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -617,7 +659,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> network.create_graph()</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co"># From weight matrix</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> sc.create_graph(weight_threshold<span class="op">=</span><span class="fl">0.1</span>)</span>
 <span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Nodes: </span><span class="sc">{</span>G<span class="sc">.</span>number_of_nodes()<span class="sc">}</span><span class="ss">, Edges: </span><span class="sc">{</span>G<span class="sc">.</span>number_of_edges()<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
@@ -687,20 +729,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.network.Network.from_datamodel" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.from_datamodel">from_datamodel</h5>
 <div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.from_datamodel(datamodel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Create a Connectome from a datamodel instance.</p>
+<p>Create a Network from a datamodel instance.</p>
 <section id="parameters-8" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h6>
-<p>datamodel : tvbo_datamodel.Network Source datamodel Connectome instance</p>
+<p>datamodel : tvbo_datamodel.Network Source datamodel Network instance</p>
 </section>
 <section id="returns-4" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h6>
-<p>Connectome New Connectome with fields copied from datamodel</p>
+<p>Network New Network with fields copied from datamodel</p>
 </section>
 <section id="examples-7" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-7">Examples</h6>
 <div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.datamodel <span class="im">import</span> schema <span class="im">as</span> tvbo_datamodel</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>dm <span class="op">=</span> tvbo_datamodel.Network(number_of_nodes<span class="op">=</span><span class="dv">10</span>)</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome.from_datamodel(dm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network.from_datamodel(dm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="tvbo.classes.network.Network.from_db" class="level5">
@@ -939,7 +981,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-15" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-15">Examples</h6>
-<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>atlas <span class="op">=</span> sc.get_atlas()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
@@ -954,7 +996,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-16" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-16">Examples</h6>
-<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>centers <span class="op">=</span> sc.get_centers()</span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> idx, (x, y, z) <span class="kw">in</span> centers.items():</span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Region </span><span class="sc">{</span>idx<span class="sc">}</span><span class="ss">: (</span><span class="sc">{</span>x<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>y<span class="sc">:.1f}</span><span class="ss">, </span><span class="sc">{</span>z<span class="sc">:.1f}</span><span class="ss">)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1085,16 +1127,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>np.ndarray or scipy.sparse matrix or None</p>
 </section>
 </section>
+<section id="tvbo.classes.network.Network.node_positions" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.node_positions">node_positions</h5>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.node_positions()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Node coordinates as an <code>(n_nodes, 3)</code> array, in declared node order.</p>
+<p>A missing <code>z</code> defaults to 0; a node with no position at all raises, since a partial coordinate matrix (a mesh, a distance calc) is silently wrong rather than merely incomplete. Use <code>_get_node_position</code> for a tolerant per-node lookup.</p>
+</section>
 <section id="tvbo.classes.network.Network.normalize" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.normalize">normalize</h5>
-<div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.normalize()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.normalize()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Add min-max normalization of connection weights.</p>
 <p>Appends a transform to scale weights to [0, 1] range. Equivalent to <code>add_transform("weight", "(M - M_min) / (M_max - M_min)")</code>.</p>
 <section id="examples-19" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-19">Examples</h6>
-<div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>sc.normalize()</span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>normalized_weights <span class="op">=</span> sc.weights_matrix  <span class="co"># Now in [0, 1] range</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>sc.normalize()</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>normalized_weights <span class="op">=</span> sc.weights_matrix  <span class="co"># Now in [0, 1] range</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="see-also" class="level6 doc-section doc-section-see-also">
 <h6 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also">See Also</h6>
@@ -1103,9 +1151,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.network.Network.normalize_weights" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.normalize_weights">normalize_weights</h5>
-<div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.normalize_weights(</span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>    equation_rhs<span class="op">=</span><span class="st">'(M - M_min) / (M_max - M_min)'</span>,</span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.normalize_weights(</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>    equation_rhs<span class="op">=</span><span class="st">'(M - M_min) / (M_max - M_min)'</span>,</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Add a normalization transform for connection weights.</p>
 <p>Convenience wrapper for <code>add_transform("weight", ...)</code>.</p>
 <section id="parameters-23" class="level6 doc-section doc-section-parameters">
@@ -1114,9 +1162,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-20" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-20">Examples</h6>
-<div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>sc.normalize_weights(<span class="st">"M / M_max"</span>)  <span class="co"># Normalize to [0, 1]</span></span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>normalized <span class="op">=</span> sc.weights_matrix  <span class="co"># Returns normalized weights</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>sc.normalize_weights(<span class="st">"M / M_max"</span>)  <span class="co"># Normalize to [0, 1]</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>normalized <span class="op">=</span> sc.weights_matrix  <span class="co"># Returns normalized weights</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="see-also-1" class="level6 doc-section doc-section-see-also">
 <h6 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-1">See Also</h6>
@@ -1125,11 +1173,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.network.Network.plot_brain_surface" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.plot_brain_surface">plot_brain_surface</h5>
-<div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_brain_surface(</span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    weight_matrix<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_brain_surface(</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    weight_matrix<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render the network on the cortical brain surface.</p>
 <p>Nodes are rendered as coloured spheres at their MNI coordinates (from atlas metadata); edges as tubes. Requires <code>bsplot</code>.</p>
 <section id="parameters-24" class="level6 doc-section doc-section-parameters">
@@ -1147,26 +1195,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.network.Network.plot_graph" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.plot_graph">plot_graph</h5>
-<div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_graph(</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    node_cmap<span class="op">=</span><span class="st">'viridis'</span>,</span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    edge_cmap<span class="op">=</span><span class="st">'viridis'</span>,</span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>    node_colors<span class="op">=</span><span class="st">'in-strength'</span>,</span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    node_size<span class="op">=</span><span class="dv">8</span>,</span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>    threshold_percentile<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>    pos_scaling<span class="op">=</span><span class="dv">1</span>,</span>
-<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>    node_labels<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>    edge_labels<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>    log_in_strength<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>    node_size_scaling<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>    edge_color<span class="op">=</span><span class="st">'weight'</span>,</span>
-<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>    pos<span class="op">=</span><span class="st">'spring'</span>,</span>
-<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>    plot_brain<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>    edge_kwargs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>    node_kwargs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>    fontsize<span class="op">=</span><span class="dv">12</span>,</span>
-<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'networkx'</span>,</span>
-<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_graph(</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    node_cmap<span class="op">=</span><span class="st">'viridis'</span>,</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    edge_cmap<span class="op">=</span><span class="st">'viridis'</span>,</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>    node_colors<span class="op">=</span><span class="st">'in-strength'</span>,</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>    node_size<span class="op">=</span><span class="dv">8</span>,</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>    threshold_percentile<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>    pos_scaling<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>    node_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>    edge_labels<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>    log_in_strength<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>    node_size_scaling<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a>    edge_color<span class="op">=</span><span class="st">'weight'</span>,</span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a>    pos<span class="op">=</span><span class="st">'spring'</span>,</span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a>    plot_brain<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a>    edge_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-17"><a href="#cb45-17" aria-hidden="true" tabindex="-1"></a>    node_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb45-18"><a href="#cb45-18" aria-hidden="true" tabindex="-1"></a>    fontsize<span class="op">=</span><span class="dv">12</span>,</span>
+<span id="cb45-19"><a href="#cb45-19" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'networkx'</span>,</span>
+<span id="cb45-20"><a href="#cb45-20" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Visualize connectome as network graph.</p>
 <p>Delegates to :func:<code>tvbo.plot.network_graph.plot_graph_networkx</code> or :func:<code>tvbo.plot.network_graph.plot_graph_bsplot</code> depending on <em>format</em>.</p>
 <section id="parameters-25" class="level6 doc-section doc-section-parameters">
@@ -1179,17 +1227,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-21" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-21">Examples</h6>
-<div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple graph</span></span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">10</span>))</span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>mappable <span class="op">=</span> sc.plot_graph(ax, threshold_percentile<span class="op">=</span><span class="dv">75</span>)</span>
-<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>plt.colorbar(mappable, ax<span class="op">=</span>ax)</span>
-<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Anatomical layout</span></span>
-<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
-<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>sc.plot_graph(ax, plot_brain<span class="op">=</span><span class="st">"horizontal"</span>, node_labels<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple graph</span></span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">10</span>))</span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>mappable <span class="op">=</span> sc.plot_graph(ax, threshold_percentile<span class="op">=</span><span class="dv">75</span>)</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>plt.colorbar(mappable, ax<span class="op">=</span>ax)</span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Anatomical layout</span></span>
+<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
+<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a>sc.plot_graph(ax, plot_brain<span class="op">=</span><span class="st">"horizontal"</span>, node_labels<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="see-also-3" class="level6 doc-section doc-section-see-also">
 <h6 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-3">See Also</h6>
@@ -1198,7 +1246,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.network.Network.plot_lengths" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.plot_lengths">plot_lengths</h5>
-<div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_lengths(ax, cmap<span class="op">=</span><span class="st">'magma'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_lengths(ax, cmap<span class="op">=</span><span class="st">'magma'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plot tract lengths matrix as heatmap.</p>
 <section id="parameters-26" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-26">Parameters</h6>
@@ -1210,16 +1258,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-22" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-22">Examples</h6>
-<div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> sc.plot_lengths(ax)</span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>ax, label<span class="op">=</span><span class="st">"mm"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> sc.plot_lengths(ax)</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>ax, label<span class="op">=</span><span class="st">"mm"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="tvbo.classes.network.Network.plot_matrix" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.plot_matrix">plot_matrix</h5>
-<div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_matrix(log_weights<span class="op">=</span><span class="va">False</span>, cmap<span class="op">=</span><span class="st">'magma'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_matrix(log_weights<span class="op">=</span><span class="va">False</span>, cmap<span class="op">=</span><span class="st">'magma'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plot both weights and lengths matrices side by side.</p>
 <section id="parameters-27" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-27">Parameters</h6>
@@ -1231,26 +1279,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-23" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-23">Examples</h6>
-<div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>sc.plot_matrix(log_weights<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>sc.plot_matrix(log_weights<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="tvbo.classes.network.Network.plot_overview" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.plot_overview">plot_overview</h5>
-<div class="sourceCode" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_overview(</span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>    edge_properties<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    weights_kwargs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>    lengths_kwargs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>    graph_kwargs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>    log_weights<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>    plot_brain<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>    brain_kwargs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>    cmap<span class="op">=</span><span class="st">'magma'</span>,</span>
-<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>    edge_percentile<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a>    show_nodes<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a>    show_edges<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a>    max_edge_labels<span class="op">=</span><span class="dv">15</span>,</span>
-<span id="cb50-14"><a href="#cb50-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_overview(</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>    edge_properties<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    weights_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>    lengths_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>    graph_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>    log_weights<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>    plot_brain<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>    brain_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>    cmap<span class="op">=</span><span class="st">'magma'</span>,</span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>    edge_percentile<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>    show_nodes<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a>    show_edges<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a>    max_edge_labels<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create comprehensive visualization with brain surface and matrices.</p>
 <p>Produces a multi-panel figure with one row per edge property. Each row contains either a brain surface + matrix heatmap (when <em>plot_brain</em> is True) or just a matrix heatmap, both coloured by the same property.</p>
 <section id="parameters-28" class="level6 doc-section doc-section-parameters">
@@ -1263,8 +1311,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-24" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-24">Examples</h6>
-<div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>sc.plot_overview(log_weights<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>sc.plot_overview(log_weights<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="see-also-4" class="level6 doc-section doc-section-see-also">
 <h6 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-4">See Also</h6>
@@ -1273,7 +1321,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.network.Network.plot_weights" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.plot_weights">plot_weights</h5>
-<div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_weights(ax, cmap<span class="op">=</span><span class="st">'magma'</span>, log<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.plot_weights(ax, cmap<span class="op">=</span><span class="st">'magma'</span>, log<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plot connection weights matrix as heatmap.</p>
 <section id="parameters-29" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-29">Parameters</h6>
@@ -1285,16 +1333,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples-25" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-25">Examples</h6>
-<div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
-<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
-<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> sc.plot_weights(ax, log<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>ax)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>im <span class="op">=</span> sc.plot_weights(ax, log<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>ax)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
+</section>
+<section id="tvbo.classes.network.Network.region_alias_map" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.region_alias_map">region_alias_map</h5>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.region_alias_map()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Map each node’s canonical label AND every known alias -&gt; canonical label.</p>
+<p>Aliases are alternative label strings that denote the SAME region under a different nomenclature. They come from two sources, unioned: each node’s own <code>alternateName</code> (inline on the network) and, when the network declares a parcellation atlas, that atlas terminology’s <code>alternateName</code> per region (joined to nodes by canonical label — never by position). The identity <code>label -&gt; label</code> is always included so exact matches still resolve.</p>
+<p>Used by <code>by_label</code> node reconciliation so a dataset-sourced target whose nodes carry a divergent convention (e.g.&nbsp;<code>THALAMUS_LEFT</code> for <code>L_Thalamus</code>) aligns by name. Raises when one alias would map to two different canonical labels — an ambiguous crosswalk must fail loudly rather than silently mis-assign a region (and, in particular, a hemisphere).</p>
 </section>
 <section id="tvbo.classes.network.Network.save" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.save">save</h5>
-<div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.save(path, binary_format<span class="op">=</span><span class="st">'h5'</span>, sidecar_format<span class="op">=</span><span class="st">'yaml'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.save(path, binary_format<span class="op">=</span><span class="st">'h5'</span>, sidecar_format<span class="op">=</span><span class="st">'yaml'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Save as sidecar + binary companion.</p>
 <p>Sidecar is written via LinkML yaml_dumper or json_dumper — always schema-valid output, no manual serialization.</p>
 <section id="parameters-30" class="level6 doc-section doc-section-parameters">
@@ -1314,7 +1369,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.network.Network.set_matrix" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.set_matrix">set_matrix</h5>
-<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.set_matrix(name, data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.set_matrix(name, data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Set a named edge matrix.</p>
 <p>Accepts dense NumPy arrays, scipy sparse matrices (CSR, COO, etc.), or any array-like that can be converted. The matrix is stored internally and a template edge is created/updated automatically so that <code>save()</code> writes it to the HDF5 companion.</p>
 <section id="parameters-31" class="level6 doc-section doc-section-parameters">
@@ -1334,11 +1389,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.network.Network.set_node_mapping" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.set_node_mapping">set_node_mapping</h5>
-<div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.set_node_mapping(</span>
-<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>    mapping,</span>
-<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>    parent_network<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>    dataset_path<span class="op">=</span><span class="st">'/nodes/parent_index'</span>,</span>
-<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.set_node_mapping(</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>    mapping,</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>    parent_network<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>    dataset_path<span class="op">=</span><span class="st">'/nodes/parent_index'</span>,</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Set the node-to-parent mapping array.</p>
 <p>This stores the mapping data internally so that :func:<code>save</code> writes it into the HDF5 companion automatically — no manual <code>h5py</code> code required.</p>
 <section id="parameters-32" class="level6 doc-section doc-section-parameters">
@@ -1358,7 +1413,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.network.Network.to_bep017" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.to_bep017">to_bep017</h5>
-<div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.to_bep017(output_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.to_bep017(output_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Export to BEP017-compatible per-measure files.</p>
 <p>Each template edge becomes a separate TSV + JSON sidecar.</p>
 <section id="parameters-33" class="level6 doc-section doc-section-parameters">
@@ -1368,29 +1423,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.network.Network.to_yaml" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.to_yaml">to_yaml</h5>
-<div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.to_yaml(filepath<span class="op">=</span><span class="va">None</span>, <span class="bu">format</span><span class="op">=</span><span class="st">'tvbo'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Serialize Connectome to YAML format.</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.to_yaml(filepath<span class="op">=</span><span class="va">None</span>, <span class="bu">format</span><span class="op">=</span><span class="st">'tvbo'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Serialize Network to YAML format.</p>
 <section id="parameters-34" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-34">Parameters</h6>
 <p>filepath : str, optional Path to save YAML file. If None, returns YAML string. format : str Output format: “tvbo” (default) or “pyrates”. PyRates format generates a complete experiment YAML (network + dynamics).</p>
 </section>
 <section id="returns-27" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-27">Returns</h6>
-<p>str YAML representation of the Connectome</p>
+<p>str YAML representation of the Network</p>
 </section>
 <section id="examples-29" class="level6 doc-section doc-section-examples">
 <h6 class="doc-section doc-section-examples anchored" data-anchor-id="examples-29">Examples</h6>
-<div class="sourceCode" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Connectome(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>yaml_str <span class="op">=</span> sc.to_yaml()</span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>sc.to_yaml(<span class="st">"connectome.yaml"</span>)  <span class="co"># Save to file</span></span>
-<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>sc.to_yaml(<span class="st">"network.yaml"</span>, <span class="bu">format</span><span class="op">=</span><span class="st">"pyrates"</span>)  <span class="co"># PyRates format</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>sc <span class="op">=</span> Network(parcellation<span class="op">=</span>{<span class="st">"atlas"</span>: {<span class="st">"name"</span>: <span class="st">"DesikanKilliany"</span>}})</span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>yaml_str <span class="op">=</span> sc.to_yaml()</span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>sc.to_yaml(<span class="st">"connectome.yaml"</span>)  <span class="co"># Save to file</span></span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>sc.to_yaml(<span class="st">"network.yaml"</span>, <span class="bu">format</span><span class="op">=</span><span class="st">"pyrates"</span>)  <span class="co"># PyRates format</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="tvbo.classes.network.Network.tree_flatten" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.tree_flatten">tree_flatten</h5>
-<div class="sourceCode" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.tree_flatten()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Return children and auxiliary data for JAX pytree support.</p>
-<p>Children: (weights, lengths) so JAX can map/transform numerical payloads. Aux data: metadata dict WITHOUT the array data to avoid duplication.</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.tree_flatten()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Flatten into JAX pytree children <code>(weights, lengths)</code> plus metadata aux data.</p>
+<p>Metadata is stored without the array data to avoid duplicating the leaves.</p>
+</section>
+<section id="tvbo.classes.network.Network.tree_unflatten" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.network.Network.tree_unflatten">tree_unflatten</h5>
+<div class="sourceCode" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>classes.network.Network.tree_unflatten(aux_data, children)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Rebuild a <code>Network</code> from JAX pytree children and metadata (inverse of <code>tree_flatten</code>).</p>
+<p>Arrays are re-attached as <code>_pytree_data</code> rather than <code>Matrix</code> objects, so it stays valid under JAX tracing.</p>
 </section>
 </section>
 </section>
@@ -1421,12 +1482,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.classes.network.get_normative_connectome_data" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.network.get_normative_connectome_data">get_normative_connectome_data</h3>
-<div class="sourceCode" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>classes.network.get_normative_connectome_data(</span>
-<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>    atlas,</span>
-<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>    tractogram<span class="op">=</span><span class="st">'dTOR'</span>,</span>
-<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>    segmentation<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a>    scale<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>classes.network.get_normative_connectome_data(</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>    atlas,</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>    tractogram<span class="op">=</span><span class="st">'dTOR'</span>,</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>    segmentation<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>    scale<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>    with_nodes<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load normative connectivity matrices from tvbo/database/networks/ HDF5 files.</p>
 <section id="parameters-35" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-35">Parameters</h4>
@@ -1434,25 +1496,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="returns-28" class="level4 doc-section doc-section-returns">
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-28">Returns</h4>
-<p>weights : np.ndarray Connection strength matrix (N x N) lengths : np.ndarray or None Tract length matrix (N x N), or None if not available</p>
+<p>weights : np.ndarray Connection strength matrix (N x N) lengths : np.ndarray or None Tract length matrix (N x N), or None if not available nodes : list of Node, optional Only when <code>with_nodes=True</code>: the sidecar’s labelled + positioned region nodes, so the network is keyed by region (alignment by label, never by position). <code>None</code> if the sidecar declares no nodes.</p>
 </section>
 <section id="examples-30" class="level4 doc-section doc-section-examples">
 <h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples-30">Examples</h4>
-<div class="sourceCode" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>weights, lengths <span class="op">=</span> get_normative_connectome_data(<span class="st">"DesikanKilliany"</span>, <span class="st">"dTOR"</span>)</span>
-<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>weights, lengths <span class="op">=</span> get_normative_connectome_data(</span>
-<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Schaefer2018"</span>, <span class="st">"dTOR"</span>, segmentation<span class="op">=</span><span class="st">"7Networks"</span>, scale<span class="op">=</span><span class="st">"1000"</span></span>
-<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>weights, lengths <span class="op">=</span> get_normative_connectome_data(<span class="st">"DesikanKilliany"</span>, <span class="st">"dTOR"</span>)</span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>weights, lengths <span class="op">=</span> get_normative_connectome_data(</span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Schaefer2018"</span>, <span class="st">"dTOR"</span>, segmentation<span class="op">=</span><span class="st">"7Networks"</span>, scale<span class="op">=</span><span class="st">"1000"</span></span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 </section>
 <section id="tvbo.classes.network.graph_laplacian" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.network.graph_laplacian">graph_laplacian</h3>
-<div class="sourceCode" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>classes.network.graph_laplacian(M)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>classes.network.graph_laplacian(M)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Combinatorial graph Laplacian <code>L = W - diag(rowsum(W))</code> of a weight matrix.</p>
 <p>A standard network primitive (diffusive coupling operator): every row of <code>L</code> sums to zero. Referenced declaratively from a <code>Network.transforms</code> entry via <code>callable: {module: tvbo.classes.network, name: graph_laplacian}</code> — e.g.&nbsp;for a delay/diffusion-coupled Hopf network whose coupling matrix is the Laplacian of the (normalised) connectome. Cannot be expressed in the elementwise symbolic transform path because it needs a diagonal built from the row sums.</p>
 </section>
 <section id="tvbo.classes.network.normalized_graph_laplacian" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.network.normalized_graph_laplacian">normalized_graph_laplacian</h3>
-<div class="sourceCode" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>classes.network.normalized_graph_laplacian(M)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>classes.network.normalized_graph_laplacian(M)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Graph Laplacian of the max-normalised weight matrix: <code>L(W / max(W))</code>.</p>
 <p>The coupling operator for a diffusion-coupled network whose global coupling strength <code>G</code> is expressed in the max-normalised connectome scale (so <code>G</code> stays O(0.01–0.1) regardless of the raw streamline-count magnitude). Referenced via <code>callable: {module: tvbo.classes.network, name: normalized_graph_laplacian}</code>. Equivalent to the reference two-liner <code>W = W / W.max(); L = W - diag(W.sum(1))</code>.</p>
 

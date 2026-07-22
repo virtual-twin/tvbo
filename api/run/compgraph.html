@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -196,6 +204,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.run.compgraph" class="level1">
 <h1>compgraph</h1>
 <p><code>run.compgraph</code></p>
+<p>Reference simulation of network dynamics on a computational graph.</p>
+<p>Provides SciPy-based helpers that build per-node state and history buffers, propagate delayed coupling between nodes of a <code>networkx</code> graph, integrate each node’s dynamics with <code>odeint</code>, and collect the results into a <a href="../../api/data/types.html">TimeSeries</a>.</p>
 <section id="functions" class="level2">
 <h2 class="anchored" data-anchor-id="functions">Functions</h2>
 <table class="caption-top table">
@@ -208,7 +218,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.run.compgraph.collect_time_series">collect_time_series</a></td>
-<td></td>
+<td>Gather per-node simulation traces into a single <code>TimeSeries</code>.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.run.compgraph.compute_delayed_input_signal">compute_delayed_input_signal</a></td>
@@ -224,7 +234,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.run.compgraph.tqdm">tqdm</a></td>
-<td></td>
+<td>No-op <code>tqdm</code> fallback used when the package is unavailable.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.run.compgraph.update_node_state_with_delay">update_node_state_with_delay</a></td>
@@ -235,6 +245,70 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.run.compgraph.collect_time_series" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.run.compgraph.collect_time_series">collect_time_series</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>run.compgraph.collect_time_series(G, time_points)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Gather per-node simulation traces into a single <code>TimeSeries</code>.</p>
+<p>Each node’s recorded <code>"time-series"</code> is expanded to 4D and concatenated along the node axis, then wrapped in a <a href="../../api/data/types.html">TimeSeries</a> labelled with the model’s state-variable names.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 6%">
+<col style="width: 72%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>G</td>
+<td></td>
+<td>The graph whose nodes hold the simulated <code>"time-series"</code> arrays and model metadata.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>time_points</td>
+<td></td>
+<td>The time axis shared by all nodes.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A <code>TimeSeries</code> holding the stacked node traces with state-variable</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>dimension labels.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.run.compgraph.compute_delayed_input_signal" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.run.compgraph.compute_delayed_input_signal">compute_delayed_input_signal</h3>
@@ -254,6 +328,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.run.compgraph.tqdm" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.run.compgraph.tqdm">tqdm</h3>
 <div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>run.compgraph.tqdm(x, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>No-op <code>tqdm</code> fallback used when the package is unavailable.</p>
 </section>
 <section id="tvbo.run.compgraph.update_node_state_with_delay" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.run.compgraph.update_node_state_with_delay">update_node_state_with_delay</h3>

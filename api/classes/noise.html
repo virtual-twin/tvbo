@@ -107,6 +107,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="//unpkg.com/3d-force-graph"></script>
 <script src="../../_static/tvbo-icons.js"></script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../../styles.css">
 </head>
@@ -136,12 +165,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -174,7 +211,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#tvbo.classes.noise" id="toc-tvbo.classes.noise" class="nav-link active" data-scroll-target="#tvbo.classes.noise">noise</a>
   <ul class="collapse">
-  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   <li><a href="#classes" id="toc-classes" class="nav-link" data-scroll-target="#classes">Classes</a>
   <ul class="collapse">
   <li><a href="#tvbo.classes.noise.Integrator" id="toc-tvbo.classes.noise.Integrator" class="nav-link" data-scroll-target="#tvbo.classes.noise.Integrator">Integrator</a></li>
@@ -193,23 +229,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.noise" class="level1">
 <h1>noise</h1>
 <p><code>classes.noise</code></p>
-<section id="attributes" class="level2">
-<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><a href="#tvbo.classes.noise.available_integrators">available_integrators</a></td>
-<td></td>
-</tr>
-</tbody>
-</table>
-</section>
+<p>Runtime <code>Noise</code> and <code>Integrator</code> wrappers around the TVBO datamodel classes.</p>
+<p>These subclasses add computed properties (sigma/nsig, ontology-derived integrator metadata), JAX pytree registration, and code-generation/execution helpers on top of the plain serializable datamodel definitions, without introducing runtime caches or mutating stored parameters.</p>
 <section id="classes" class="level2">
 <h2 class="anchored" data-anchor-id="classes">Classes</h2>
 <table class="caption-top table">
@@ -235,6 +256,47 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Integrator(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Direct datamodel Integrator with ontology-backed population.</p>
 <p>Only schema fields are stored. All runtime conveniences are exposed as properties.</p>
+<section id="attributes" class="level4">
+<h4 class="anchored" data-anchor-id="attributes">Attributes</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.classes.noise.Integrator.class_name">class_name</a></td>
+<td>The generated integrator class name, suffixed with <code>Stochastic</code> when noisy.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.noise.Integrator.current_step">current_step</a></td>
+<td>The current integration step, a stateless default of <code>0</code>.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.noise.Integrator.info">info</a></td>
+<td>The code-generation metadata dict for this integrator’s ontology class.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.noise.Integrator.metadata">metadata</a></td>
+<td>The integrator itself, exposed for backward compatibility.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.noise.Integrator.noise_wrapper">noise_wrapper</a></td>
+<td>The noise as a runtime <code>Noise</code> wrapper, or <code>None</code> when non-stochastic.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.noise.Integrator.ontoclass">ontoclass</a></td>
+<td>The ontology class for this integrator, resolved from <code>method</code>.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.noise.Integrator.stochastic">stochastic</a></td>
+<td>Whether the integrator is stochastic, i.e.&nbsp;has a noise component.</td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="methods" class="level4">
 <h4 class="anchored" data-anchor-id="methods">Methods</h4>
 <table class="caption-top table">
@@ -246,47 +308,415 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.classes.noise.Integrator.execute">execute</a></td>
+<td>Render, execute, and instantiate the integrator backend object.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.classes.noise.Integrator.from_db">from_db</a></td>
 <td>Load an Integrator by name from the tvbo database.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.noise.Integrator.from_file">from_file</a></td>
 <td>Load an Integrator from a YAML file.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.noise.Integrator.list_db">list_db</a></td>
 <td>List available integrators in the tvbo database.</td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.noise.Integrator.render_code">render_code</a></td>
+<td>Render the integrator as source code for the requested backend.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.noise.Integrator.to_yaml">to_yaml</a></td>
+<td>Serialize the integrator to YAML, optionally writing it to a file.</td>
+</tr>
 </tbody>
 </table>
+<section id="tvbo.classes.noise.Integrator.execute" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.noise.Integrator.execute">execute</h5>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Integrator.execute(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render, execute, and instantiate the integrator backend object.</p>
+<p>For the <code>tvb</code> backend the integrator class is instantiated (wiring in an executed noise object when stochastic) and stored on <code>self.tvb</code>; for other backends the generated class is returned directly.</p>
+<section id="parameters" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 65%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target backend passed through to code generation.</td>
+<td><code>'tvb'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The executed backend integrator object or class.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.classes.noise.Integrator.from_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.noise.Integrator.from_db">from_db</h5>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Integrator.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Integrator.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load an Integrator by name from the tvbo database.</p>
 </section>
 <section id="tvbo.classes.noise.Integrator.from_file" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.noise.Integrator.from_file">from_file</h5>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Integrator.from_file(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Integrator.from_file(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load an Integrator from a YAML file.</p>
 </section>
 <section id="tvbo.classes.noise.Integrator.list_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.noise.Integrator.list_db">list_db</h5>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Integrator.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Integrator.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>List available integrators in the tvbo database.</p>
+</section>
+<section id="tvbo.classes.noise.Integrator.render_code" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.noise.Integrator.render_code">render_code</h5>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Integrator.render_code(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render the integrator as source code for the requested backend.</p>
+<section id="parameters-1" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 78%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target backend; <code>"tvb"</code> selects the TVB template, while <code>"autodiff"</code> or <code>"jax"</code> selects the JAX template.</td>
+<td><code>'tvb'</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Extra values forwarded to the JAX template render context.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The rendered source code as a string.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level6 doc-section doc-section-raises">
+<h6 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If <code>format</code> is not a recognized backend.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.noise.Integrator.to_yaml" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.noise.Integrator.to_yaml">to_yaml</h5>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Integrator.to_yaml(filepath<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Serialize the integrator to YAML, optionally writing it to a file.</p>
+<section id="parameters-2" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 12%">
+<col style="width: 68%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>filepath</td>
+<td>str | None</td>
+<td>Destination path to write to; when <code>None</code>, the YAML is returned instead.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The YAML string, or the result of writing to <code>filepath</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 </section>
 </section>
 <section id="tvbo.classes.noise.Noise" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.noise.Noise">Noise</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Noise(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Noise(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Datamodel Noise with property-based conveniences and no runtime caches.</p>
 <ul>
 <li>Inherits all serializable fields from tvbo_datamodel.Noise directly.</li>
 <li>Provides computed properties for sigma and nsig based on parameters.</li>
 <li>No mutation of parameters and no cached fields; safe for serialization.</li>
 </ul>
+<section id="attributes-1" class="level4">
+<h4 class="anchored" data-anchor-id="attributes-1">Attributes</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.classes.noise.Noise.nsig">nsig</a></td>
+<td>The noise dispersion <code>nsig</code>, derived from <code>sigma</code> as <span class="math inline">\(0.5\,\sigma^2\)</span> if needed.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.noise.Noise.parameters_dict">parameters_dict</a></td>
+<td>The noise parameters normalized to a dict-like view (empty dict if unset).</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.noise.Noise.sigma">sigma</a></td>
+<td>The noise standard deviation <code>sigma</code>, derived from <code>nsig</code> as <span class="math inline">\(\sqrt{2\,nsig}\)</span> if needed.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.noise.Noise.symbolic">symbolic</a></td>
+<td>The symbolic noise term <span class="math inline">\(\sqrt{dt}\,\sigma\,\xi\)</span> for gaussian/white noise.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods-1" class="level4">
+<h4 class="anchored" data-anchor-id="methods-1">Methods</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.classes.noise.Noise.execute">execute</a></td>
+<td>Render, execute, and instantiate the noise backend object.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.noise.Noise.render_code">render_code</a></td>
+<td>Render the noise as source code for the requested backend.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.noise.Noise.tree_flatten">tree_flatten</a></td>
+<td>Flatten into JAX pytree (children, aux).</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.classes.noise.Noise.tree_unflatten">tree_unflatten</a></td>
+<td>Reconstruct a <code>Noise</code> instance from JAX pytree aux_data and children.</td>
+</tr>
+</tbody>
+</table>
+<section id="tvbo.classes.noise.Noise.execute" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.noise.Noise.execute">execute</h5>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Noise.execute(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render, execute, and instantiate the noise backend object.</p>
+<p>The rendered code is executed to obtain the <code>Noise</code> class, which is stored on <code>self.tvb</code> and returned.</p>
+<section id="parameters-3" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 65%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target backend passed through to code generation.</td>
+<td><code>'tvb'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-3" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The executed backend noise object.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.noise.Noise.render_code" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.noise.Noise.render_code">render_code</h5>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Noise.render_code(<span class="bu">format</span><span class="op">=</span><span class="st">'tvb'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render the noise as source code for the requested backend.</p>
+<section id="parameters-4" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 79%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td></td>
+<td>Target backend; <code>"tvb"</code> selects the TVB template, while <code>"autodiff"</code> or <code>"jax"</code> selects the JAX template.</td>
+<td><code>'tvb'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-4" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The rendered source code as a string.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.classes.noise.Noise.tree_flatten" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.noise.Noise.tree_flatten">tree_flatten</h5>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Noise.tree_flatten()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Flatten into JAX pytree (children, aux).</p>
+<p>A present <code>sigma_vec</code> is exposed as the single array child so it can participate in <code>vmap</code> batching; the reconstruction kwargs go in aux.</p>
+</section>
+<section id="tvbo.classes.noise.Noise.tree_unflatten" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.noise.Noise.tree_unflatten">tree_unflatten</h5>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>classes.noise.Noise.tree_unflatten(aux_data, children)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Reconstruct a <code>Noise</code> instance from JAX pytree aux_data and children.</p>
 
 
+</section>
+</section>
 </section>
 </section>
 </section>

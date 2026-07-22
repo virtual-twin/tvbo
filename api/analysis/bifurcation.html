@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -295,12 +303,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Wrap a PyRates / PyCoBi continuation by name.</td>
 </tr>
 <tr class="odd">
+<td><a href="#tvbo.analysis.bifurcation.BifurcationResult.plot">plot</a></td>
+<td>Render the full bifurcation diagram for this branch.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.analysis.bifurcation.BifurcationResult.plot_3d">plot_3d</a></td>
 <td>Plot 3D bifurcation diagram with periodic orbit surfaces.</td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.analysis.bifurcation.BifurcationResult.plot_branch">plot_branch</a></td>
+<td>Draw the continuation branch as stability-coded line segments.</td>
+</tr>
 <tr class="even">
+<td><a href="#tvbo.analysis.bifurcation.BifurcationResult.plot_equilibrium_branch">plot_equilibrium_branch</a></td>
+<td>Draw the equilibrium branch and overlay its special points.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.analysis.bifurcation.BifurcationResult.plot_special_points">plot_special_points</a></td>
 <td>Mark codim-1 special points (LP/HB/BP/PD/TR/…) on <code>ax</code>.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.analysis.bifurcation.BifurcationResult.to_dataset">to_dataset</a></td>
+<td>Return the continuation branch as a native, self-describing xarray <code>Dataset</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -405,17 +429,99 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Wrap a PyRates / PyCoBi continuation by name.</p>
 <p>All visualisation/export logic lives on this class – the adapter just hands the extracted DataFrame straight to <code>__init__</code>.</p>
 </section>
-<section id="tvbo.analysis.bifurcation.BifurcationResult.plot_3d" class="level5">
-<h5 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.BifurcationResult.plot_3d">plot_3d</h5>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.BifurcationResult.plot_3d(</span>
+<section id="tvbo.analysis.bifurcation.BifurcationResult.plot" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.BifurcationResult.plot">plot</h5>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.BifurcationResult.plot(</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    ICS<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    ICS2<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    VOI<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    save<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    n_orbit_samples<span class="op">=</span><span class="dv">40</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    VOI<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    save<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render the full bifurcation diagram for this branch.</p>
+<p>Draws the equilibrium branch, its special points and any periodic-orbit envelopes (a filled min/max region, or a <code>max</code> line when only maxima are available), labels the axes, adds a legend and applies publication styling. When nested continuation produced codim-2 curves, dispatches to the codim-2 renderer instead.</p>
+<section id="parameters-3" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 6%">
+<col style="width: 76%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>Existing axes to draw on; a new figure is created when <code>None</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>ICS</td>
+<td></td>
+<td>Label for the x-axis (the free/continuation parameter); defaults to <code>self.ICS</code> or <code>"param"</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>VOI</td>
+<td></td>
+<td>Variable of interest plotted on the y-axis; resolved to a default branch column when <code>None</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>save</td>
+<td></td>
+<td>File path to write the figure to (at 500 dpi); skipped when <code>None</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Style overrides forwarded to <code>plot_branch</code> and <code>plot_special_points</code>.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The matplotlib axes the diagram was drawn on.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.analysis.bifurcation.BifurcationResult.plot_3d" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.BifurcationResult.plot_3d">plot_3d</h5>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.BifurcationResult.plot_3d(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    ICS<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    ICS2<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    VOI<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    save<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    n_orbit_samples<span class="op">=</span><span class="dv">40</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plot 3D bifurcation diagram with periodic orbit surfaces.</p>
 <p>Shows: - Codim-1 equilibrium backbone (stable=solid, unstable=dashed) - Periodic orbit tube surface with W displacement cross-sections - Codim-2 curves (Hopf/fold loci) - Special codim-2 points (BT, GH, cusp, ZH)</p>
 <section id="axis-convention" class="level6 doc-section doc-section-axis-convention">
@@ -423,27 +529,168 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>x = primary free parameter (codim-1, e.g.&nbsp;I) y = secondary parameter (codim-2, e.g.&nbsp;b) z = state variable (VOI, e.g.&nbsp;V)</p>
 </section>
 </section>
+<section id="tvbo.analysis.bifurcation.BifurcationResult.plot_branch" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.BifurcationResult.plot_branch">plot_branch</h5>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.BifurcationResult.plot_branch(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    ax,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    ICS<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    VOI<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Draw the continuation branch as stability-coded line segments.</p>
+<p>Splits the branch into contiguous stable/unstable runs (and, when a <code>branch_id</code> column is present, per branch) and plots each segment with the style from the central registry — <code>SFP</code>/<code>UFP</code> for equilibria or <code>SLC</code>/<code>ULC</code> for periodic orbits. Does nothing when the branch is empty.</p>
+<section id="parameters-4" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 4%">
+<col style="width: 83%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>Matplotlib axes to draw on.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>ICS</td>
+<td></td>
+<td>Free (continuation) parameter name; accepted for parity with the other plot methods and not used here.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>VOI</td>
+<td></td>
+<td>Variable of interest plotted on the y-axis; resolved to a default branch column when <code>None</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Line-style overrides forwarded to <code>matplotlib</code> (e.g.&nbsp;<code>linewidth</code>/<code>lw</code>, <code>color</code>, <code>linestyle</code>); continuation-config keys are filtered out before plotting.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.analysis.bifurcation.BifurcationResult.plot_equilibrium_branch" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.BifurcationResult.plot_equilibrium_branch">plot_equilibrium_branch</h5>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.BifurcationResult.plot_equilibrium_branch(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    ax,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    ICS<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    VOI<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Draw the equilibrium branch and overlay its special points.</p>
+<p>Convenience wrapper that calls <code>plot_branch</code> and then <code>plot_special_points</code> on the same axes.</p>
+<section id="parameters-5" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 6%">
+<col style="width: 75%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ax</td>
+<td></td>
+<td>Matplotlib axes to draw on.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>ICS</td>
+<td></td>
+<td>Free (continuation) parameter name, passed through to the underlying calls.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>VOI</td>
+<td></td>
+<td>Variable of interest plotted on the y-axis; resolved to a default branch column when <code>None</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Style overrides forwarded to <code>plot_branch</code> and <code>plot_special_points</code>.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.analysis.bifurcation.BifurcationResult.plot_special_points" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.BifurcationResult.plot_special_points">plot_special_points</h5>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.BifurcationResult.plot_special_points(</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    VOI,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    types<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.BifurcationResult.plot_special_points(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    VOI,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    types<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Mark codim-1 special points (LP/HB/BP/PD/TR/…) on <code>ax</code>.</p>
-<section id="parameters-3" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<section id="parameters-6" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h6>
 <p>types : iterable[str], optional Restrict markers to these canonical TYs (e.g.&nbsp;<code>['LP','HB']</code>). By default every TY found in <code>df.specialpoint</code> is plotted (except <code>endpoint</code>).</p>
 </section>
+</section>
+<section id="tvbo.analysis.bifurcation.BifurcationResult.to_dataset" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.BifurcationResult.to_dataset">to_dataset</h5>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.BifurcationResult.to_dataset()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the continuation branch as a native, self-describing xarray <code>Dataset</code>.</p>
+<p>The branch is a labelled table indexed by continuation <code>step</code>; the continuation parameter (<code>ICS</code>, e.g.&nbsp;<code>G</code>) is a coordinate along it and every recorded observable / stability flag becomes a data variable. This is the same labelled container the rest of tvbo uses (<code>ExperimentResult</code> holds it under <code>continuations</code>), so continuation results persist through the standard result format instead of any ad-hoc per-figure array dump.</p>
 </section>
 </section>
 </section>
 <section id="tvbo.analysis.bifurcation.CurvePicker" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.CurvePicker">CurvePicker</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.CurvePicker(fig, result, callback<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.CurvePicker(fig, result, callback<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Click any branch line to inspect the underlying point.</p>
 <p>Activated via <code>BifurcationResult.enable_picker(ax, callback=...)</code>. Each branch line drawn by <code>plot_branch</code> carries <code>picker=True</code> so matplotlib raises a <code>pick_event</code> on click; the picker resolves the nearest df row and forwards it to <code>callback(result, row_index)</code>.</p>
+<section id="methods-1" class="level4">
+<h4 class="anchored" data-anchor-id="methods-1">Methods</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.analysis.bifurcation.CurvePicker.disconnect">disconnect</a></td>
+<td>Detach the pick-event handler so clicks are no longer captured.</td>
+</tr>
+</tbody>
+</table>
+<section id="tvbo.analysis.bifurcation.CurvePicker.disconnect" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.CurvePicker.disconnect">disconnect</h5>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.CurvePicker.disconnect()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Detach the pick-event handler so clicks are no longer captured.</p>
+<p>Safe to call more than once; the connection id is cleared after the first disconnect.</p>
+</section>
+</section>
 </section>
 </section>
 <section id="functions" class="level2">
@@ -476,23 +723,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.analysis.bifurcation.canonical_ty" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.canonical_ty">canonical_ty</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.canonical_ty(ty)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.canonical_ty(ty)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Normalise any backend label to a key in <code>BIF_STYLES</code>.</p>
 </section>
 <section id="tvbo.analysis.bifurcation.get_bif_style" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.get_bif_style">get_bif_style</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.get_bif_style(ty, base<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.get_bif_style(ty, base<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Look up the merged style dict for a TY (e.g.&nbsp;‘LP’, ‘fold’, ‘SLC’).</p>
 <p><code>base</code> defaults to the line/marker base style depending on whether the entry is a branch (no marker) or a point (marker is present).</p>
 </section>
 <section id="tvbo.analysis.bifurcation.resolve_coord" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.resolve_coord">resolve_coord</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.resolve_coord(</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    df,</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    expr,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    state_var_index<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    po_orbits<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.resolve_coord(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    df,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    expr,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    state_var_index<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    po_orbits<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Evaluate one coord expression against <code>df</code> (and optionally PO meshes).</p>
 <section id="accepts" class="level4 doc-section doc-section-accepts">
 <h4 class="doc-section doc-section-accepts anchored" data-anchor-id="accepts">Accepts</h4>
@@ -506,14 +753,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.analysis.bifurcation.resolve_coords" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.analysis.bifurcation.resolve_coords">resolve_coords</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.resolve_coords(</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    coords,</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    df,</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    state_var_index<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    po_orbits<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    default_voi<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    default_param<span class="op">=</span><span class="st">'param'</span>,</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>analysis.bifurcation.resolve_coords(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    coords,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    df,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    state_var_index<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    po_orbits<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    default_voi<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    default_param<span class="op">=</span><span class="st">'param'</span>,</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Normalise the user’s <code>coords</code> argument to a tuple of arrays.</p>
 <p><code>coords</code> accepts: * <code>None</code> → <code>(param, default_voi)</code> * <code>'V'</code> → <code>(param, V)</code> * <code>'minmax(V)'</code> → <code>(param, [Vmin, Vmax])</code> * <code>(p, V)</code> → 2D * <code>(p, V, W)</code> → 3D Each element may itself be a string or already-resolved array.</p>
 

@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -248,6 +256,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><a href="#tvbo.classes.equation.lambda_symbol">lambda_symbol</a></td>
 <td></td>
 </tr>
+<tr class="even">
+<td><a href="#tvbo.classes.equation.logger">logger</a></td>
+<td></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -263,7 +275,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.add_spaces_around_operators">add_spaces_around_operators</a></td>
-<td></td>
+<td>Insert surrounding spaces around binary arithmetic operators in a string.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.build_dependency_graph">build_dependency_graph</a></td>
@@ -271,7 +283,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.conditionals2piecewise">conditionals2piecewise</a></td>
-<td></td>
+<td>Convert a metadata equation’s conditionals into a SymPy <code>Piecewise</code>.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.convert_ifelse_to_np_where">convert_ifelse_to_np_where</a></td>
@@ -283,7 +295,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.dependency_tree">dependency_tree</a></td>
-<td></td>
+<td>Build a directed dependency graph from a list of equations.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.extract_parts_from_numpy_where">extract_parts_from_numpy_where</a></td>
@@ -295,7 +307,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.get_latex_equation">get_latex_equation</a></td>
-<td></td>
+<td>Render a model’s equations as a list of LaTeX strings.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.get_symbolic_coupling">get_symbolic_coupling</a></td>
@@ -311,59 +323,59 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.rename_uppercase_variables">rename_uppercase_variables</a></td>
-<td></td>
+<td>Rename free symbols that start with an uppercase letter to a <code>*_uc</code> form.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.render_latex_equations">render_latex_equations</a></td>
-<td></td>
+<td>Render a model’s full set of equations as a single LaTeX/Markdown string.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.replace_H">replace_H</a></td>
-<td></td>
+<td>Rename the <code>H</code> symbol to <code>h_uc</code> across a dictionary of equations.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.replace_acronyms">replace_acronyms</a></td>
-<td></td>
+<td>Strip model-acronym suffixes from a key.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.set_specific_symbols_to_zero">set_specific_symbols_to_zero</a></td>
-<td></td>
+<td>Substitute the given symbols with zero in an equation string.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.sort_equations_by_dependencies">sort_equations_by_dependencies</a></td>
-<td></td>
+<td>Return equations ordered so each is defined before it is used.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.sub_equation">sub_equation</a></td>
-<td></td>
+<td>Substitute an equation’s symbols with their ontology display symbols.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.substitute_function_in_state_equations">substitute_function_in_state_equations</a></td>
-<td></td>
+<td>Inline auxiliary function definitions into state-variable equations.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.symbolic_conditions">symbolic_conditions</a></td>
-<td></td>
+<td>Return the model’s conditional expressions as SymPy expressions.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.symbolic_differential_equations">symbolic_differential_equations</a></td>
-<td></td>
+<td>Return the model’s time-derivative equations as SymPy expressions.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.symbolic_model_equations">symbolic_model_equations</a></td>
-<td></td>
+<td>Return all symbolic equations for a model in one mapping.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.symbolic_model_functions">symbolic_model_functions</a></td>
-<td></td>
+<td>Return the model’s auxiliary functions as SymPy expressions.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.symbolic_topological_sort">symbolic_topological_sort</a></td>
-<td></td>
+<td>Order equation names so dependencies precede the equations that use them.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.sympify_value">sympify_value</a></td>
-<td></td>
+<td>Parse a metadata equation’s value into a SymPy expression.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.topological_sort">topological_sort</a></td>
@@ -371,25 +383,72 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.topological_sort_equations">topological_sort_equations</a></td>
-<td></td>
+<td>Sort equations topologically according to a dependency graph.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.unify_coupling_terms">unify_coupling_terms</a></td>
-<td></td>
+<td>Rewrite TVB-style coupling terms to the legacy <code>c_pop*</code> naming.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.equation.update_class_relationships">update_class_relationships</a></td>
-<td></td>
+<td>Append the ontology <code>is_a</code> relations linking a variable to its equation.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.equation.update_mathematical_relationships">update_mathematical_relationships</a></td>
-<td></td>
+<td>Refresh the ontology relationships implied by a model’s equations.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.classes.equation.add_spaces_around_operators" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.add_spaces_around_operators">add_spaces_around_operators</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>classes.equation.add_spaces_around_operators(expression)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Insert surrounding spaces around binary arithmetic operators in a string.</p>
+<p>Wraps each <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code> or <code>%</code> operator in single spaces so the expression parses cleanly, while leaving the <code>**</code> power operator untouched.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>expression</td>
+<td></td>
+<td>The equation string to normalise.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The expression with spaces added around single-character operators.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.build_dependency_graph" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.build_dependency_graph">build_dependency_graph</h3>
@@ -399,6 +458,59 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.equation.conditionals2piecewise" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.conditionals2piecewise">conditionals2piecewise</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.equation.conditionals2piecewise(metadata_equation)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Convert a metadata equation’s conditionals into a SymPy <code>Piecewise</code>.</p>
+<p>Parses each conditional’s expression and condition into <code>(expr, cond)</code> pairs and appends a default branch using the equation’s <code>rhs</code> (or <code>0</code> when absent) guarded by <code>True</code>.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 5%">
+<col style="width: 73%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>metadata_equation</td>
+<td></td>
+<td>A metadata equation exposing <code>conditionals</code> (each with <code>expression</code> and <code>condition</code>) and an optional <code>rhs</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A SymPy <code>Piecewise</code> expression representing the conditional map.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.convert_ifelse_to_np_where" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.convert_ifelse_to_np_where">convert_ifelse_to_np_where</h3>
@@ -415,6 +527,59 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.equation.dependency_tree" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.dependency_tree">dependency_tree</h3>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.equation.dependency_tree(equations)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build a directed dependency graph from a list of equations.</p>
+<p>For each equation, the right-hand-side free symbols are treated as dependencies of the left-hand side, producing a <code>networkx.DiGraph</code> with an edge from each source symbol to its target.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 8%">
+<col style="width: 65%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>equations</td>
+<td></td>
+<td>An iterable of SymPy equations exposing <code>lhs</code> and <code>rhs</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A <code>networkx.DiGraph</code> whose edges point from dependencies to dependents.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.extract_parts_from_numpy_where" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.extract_parts_from_numpy_where">extract_parts_from_numpy_where</h3>
@@ -434,13 +599,97 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.equation.get_latex_equation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.get_latex_equation">get_latex_equation</h3>
 <div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.equation.get_latex_equation(model, func_dict<span class="op">=</span><span class="st">'all'</span>, mul_symbol<span class="op">=</span><span class="st">'dot'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render a model’s equations as a list of LaTeX strings.</p>
+<p>Resolves the left- and right-hand-side display symbols for each equation from the ontology, applies the canonical coupling and conditional renamings, and formats <code>lhs = rhs</code> in LaTeX in topological order.</p>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 79%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>The model identifier whose equations are rendered.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>func_dict</td>
+<td></td>
+<td>The equations to render. Pass the string <code>"all"</code> to derive them from the model, or a mapping of names to SymPy expressions.</td>
+<td><code>'all'</code></td>
+</tr>
+<tr class="odd">
+<td>mul_symbol</td>
+<td></td>
+<td>Multiplication symbol passed to SymPy’s <code>latex</code> renderer.</td>
+<td><code>'dot'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A list of LaTeX equation strings.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 13%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If a left- or right-hand-side variable cannot be found in the model.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.get_symbolic_coupling" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.get_symbolic_coupling">get_symbolic_coupling</h3>
 <div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>classes.equation.get_symbolic_coupling(coupling_function)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get the symbolic coupling expressions for the given coupling function.</p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 16%">
@@ -466,8 +715,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 4%">
@@ -490,8 +739,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="raises" class="level4 doc-section doc-section-raises">
-<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h4>
+<section id="raises-1" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-1">Raises</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 11%">
@@ -526,8 +775,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.piecewise2numpy">piecewise2numpy</h3>
 <div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>classes.equation.piecewise2numpy(piecewise_expr, fully_qualified_modules<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert a sympy Piecewise expression to an equivalent nested numpy.where expression.</p>
-<section id="parameters-1" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 22%">
@@ -553,8 +802,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-1" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 10%">
@@ -581,6 +830,83 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.equation.rename_uppercase_variables" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.rename_uppercase_variables">rename_uppercase_variables</h3>
 <div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>classes.equation.rename_uppercase_variables(input_equation)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Rename free symbols that start with an uppercase letter to a <code>*_uc</code> form.</p>
+<p>Each symbol whose name begins with an uppercase letter is replaced by its lowercased name suffixed with <code>_uc</code>; other symbols are left unchanged. A string input is first parsed via <code>sympify_value</code>.</p>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 9%">
+<col style="width: 56%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>input_equation</td>
+<td></td>
+<td>A SymPy expression, or a string to be parsed.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The expression with uppercase-leading symbols renamed.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises-2" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-2">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 14%">
+<col style="width: 75%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If a string input cannot be converted to a SymPy expression.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.render_latex_equations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.render_latex_equations">render_latex_equations</h3>
@@ -592,14 +918,209 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    markdown<span class="op">=</span><span class="va">False</span>,</span>
 <span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    subs<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render a model’s full set of equations as a single LaTeX/Markdown string.</p>
+<p>For a neural-mass model, renders the differential equations together with the auxiliary functions and conditions, joined by <code>separator</code>. For a coupling function, renders the global coupling expression instead.</p>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 6%">
+<col style="width: 65%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>The model or coupling-function identifier to render.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>odes_first</td>
+<td></td>
+<td>If true, place the differential equations before the auxiliary block.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>evaluate</td>
+<td></td>
+<td>Passed through when sympifying the differential equations.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>separator</td>
+<td></td>
+<td>LaTeX/Markdown text inserted between the ODEs and the auxiliary block.</td>
+<td><code>'\\text{where }'</code></td>
+</tr>
+<tr class="odd">
+<td>markdown</td>
+<td></td>
+<td>If true, join lines with blank lines instead of a LaTeX line break.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>subs</td>
+<td></td>
+<td>Optional substitutions applied to the auxiliary equations before rendering.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The rendered LaTeX (or Markdown) string for the model.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.replace_H" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.replace_H">replace_H</h3>
 <div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>classes.equation.replace_H(eq_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Rename the <code>H</code> symbol to <code>h_uc</code> across a dictionary of equations.</p>
+<p>Avoids clashes with SymPy’s built-in <code>H</code> by substituting the uppercase <code>H</code> symbol (and any <code>"H"</code> dictionary key) with <code>h_uc</code>.</p>
+<section id="parameters-8" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 10%">
+<col style="width: 62%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>eq_dict</td>
+<td></td>
+<td>Mapping of equation names to SymPy expressions.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-8" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A new mapping with <code>H</code> replaced by <code>h_uc</code> in both keys and expressions.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.replace_acronyms" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.replace_acronyms">replace_acronyms</h3>
 <div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>classes.equation.replace_acronyms(key, cls)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Strip model-acronym suffixes from a key.</p>
+<p>Removes the <code>_&lt;acronym&gt;</code> suffix contributed by each neural-mass-model ancestor of <code>cls</code>, yielding the bare variable name.</p>
+<section id="parameters-9" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 69%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>key</td>
+<td></td>
+<td>The name to strip acronym suffixes from.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>cls</td>
+<td></td>
+<td>The ontology class whose model ancestors provide the acronyms.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-9" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-9">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The key with matching <code>_&lt;acronym&gt;</code> suffixes removed.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.set_specific_symbols_to_zero" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.set_specific_symbols_to_zero">set_specific_symbols_to_zero</h3>
@@ -607,22 +1128,341 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    equation_str,</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    symbols_to_zero<span class="op">=</span>coupling_variables,</span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Substitute the given symbols with zero in an equation string.</p>
+<p>Parses <code>equation_str</code> and replaces every symbol named in <code>symbols_to_zero</code> with <code>0</code>, for example to drop coupling contributions for isolated-node dynamics.</p>
+<section id="parameters-10" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 5%">
+<col style="width: 66%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>equation_str</td>
+<td></td>
+<td>The equation to parse and modify.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>symbols_to_zero</td>
+<td></td>
+<td>Names of the symbols to set to zero; defaults to the module-level coupling variable names.</td>
+<td><code>coupling_variables</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-10" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-10">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The SymPy expression with the listed symbols replaced by zero.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.sort_equations_by_dependencies" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.sort_equations_by_dependencies">sort_equations_by_dependencies</h3>
 <div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>classes.equation.sort_equations_by_dependencies(equations)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return equations ordered so each is defined before it is used.</p>
+<p>Builds a dependency graph over the equation names, topologically sorts it and returns a new dictionary in dependency-respecting order.</p>
+<section id="parameters-11" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 9%">
+<col style="width: 64%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>equations</td>
+<td></td>
+<td>Mapping of variable names to their expression strings.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-11" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-11">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 79%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A new dictionary with the same items ordered by dependency.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.sub_equation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.sub_equation">sub_equation</h3>
 <div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>classes.equation.sub_equation(eq, model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Substitute an equation’s symbols with their ontology display symbols.</p>
+<p>For each free symbol, looks up the corresponding model variable in the ontology (keeping coupling terms by their bare name) and replaces it with the variable’s declared symbol, also applying the canonical coupling and conditional renamings.</p>
+<section id="parameters-12" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 66%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>eq</td>
+<td></td>
+<td>The SymPy expression to rewrite.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>model</td>
+<td></td>
+<td>The model identifier used to resolve variable symbols.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-12" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-12">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The expression with symbols substituted for their display symbols.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises-3" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-3">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 16%">
+<col style="width: 72%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If a symbol cannot be resolved to a model variable.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.substitute_function_in_state_equations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.substitute_function_in_state_equations">substitute_function_in_state_equations</h3>
 <div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>classes.equation.substitute_function_in_state_equations(sv_eqs, funcs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Inline auxiliary function definitions into state-variable equations.</p>
+<p>For each state-variable equation, replaces any function symbol that appears in it with the function’s defining expression.</p>
+<section id="parameters-13" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-13">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 72%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>sv_eqs</td>
+<td></td>
+<td>Mapping of state-variable names to SymPy expressions; mutated in place.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>funcs</td>
+<td></td>
+<td>Mapping of function names to their defining SymPy expressions.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-13" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-13">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The updated <code>sv_eqs</code> mapping with functions inlined.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.symbolic_conditions" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.symbolic_conditions">symbolic_conditions</h3>
 <div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>classes.equation.symbolic_conditions(NMM, zero_coupling<span class="op">=</span><span class="va">False</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the model’s conditional expressions as SymPy expressions.</p>
+<p>Sympifies each model conditional, optionally zeroing coupling terms, and strips the acronym and model-suffix decorations from the names.</p>
+<section id="parameters-14" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-14">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 8%">
+<col style="width: 62%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>NMM</td>
+<td></td>
+<td>The neural-mass model identifier or ontology individual.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>zero_coupling</td>
+<td></td>
+<td>If true, set coupling symbols to zero in each expression.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Forwarded to <code>sympify_value</code> (e.g.&nbsp;<code>acronym</code>).</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-14" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-14">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 77%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A mapping of conditional names to SymPy expressions.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.symbolic_differential_equations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.symbolic_differential_equations">symbolic_differential_equations</h3>
@@ -631,22 +1471,368 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    zero_coupling<span class="op">=</span><span class="va">False</span>,</span>
 <span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
 <span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the model’s time-derivative equations as SymPy expressions.</p>
+<p>Selects the model derivatives whose name contains <code>dot</code>, sympifies each right-hand side, optionally zeroing coupling terms, and strips the model suffix from the keys.</p>
+<section id="parameters-15" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-15">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 8%">
+<col style="width: 62%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>NMM</td>
+<td></td>
+<td>The neural-mass model identifier or ontology individual.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>zero_coupling</td>
+<td></td>
+<td>If true, set coupling symbols to zero in each equation.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Forwarded to <code>sympify_value</code> (e.g.&nbsp;<code>acronym</code>).</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-15" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-15">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 76%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A mapping of derivative names to SymPy expressions.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.symbolic_model_equations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.symbolic_model_equations">symbolic_model_equations</h3>
 <div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>classes.equation.symbolic_model_equations(NMM, zero_coupling<span class="op">=</span><span class="va">False</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return all symbolic equations for a model in one mapping.</p>
+<p>Merges the model’s auxiliary functions, time-derivative equations and conditionals into a single dictionary.</p>
+<section id="parameters-16" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-16">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 8%">
+<col style="width: 62%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>NMM</td>
+<td></td>
+<td>The neural-mass model identifier or ontology individual.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>zero_coupling</td>
+<td></td>
+<td>If true, set coupling symbols to zero throughout.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Forwarded to <code>sympify_value</code> (e.g.&nbsp;<code>acronym</code>).</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-16" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-16">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A combined mapping of names to SymPy expressions.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.symbolic_model_functions" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.symbolic_model_functions">symbolic_model_functions</h3>
 <div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>classes.equation.symbolic_model_functions(NMM, zero_coupling<span class="op">=</span><span class="va">False</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the model’s auxiliary functions as SymPy expressions.</p>
+<p>Sympifies each non-derivative model function (skipping <code>numpy.exp</code>), optionally zeroing coupling terms, strips the acronym and model-suffix decorations from the names, and orders the result by inter-equation dependency.</p>
+<section id="parameters-17" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-17">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 8%">
+<col style="width: 62%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>NMM</td>
+<td></td>
+<td>The neural-mass model identifier or ontology individual.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>zero_coupling</td>
+<td></td>
+<td>If true, set coupling symbols to zero in each function.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Forwarded to <code>sympify_value</code> (e.g.&nbsp;<code>acronym</code>).</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-17" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-17">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A dependency-ordered mapping of function names to SymPy expressions.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.symbolic_topological_sort" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.symbolic_topological_sort">symbolic_topological_sort</h3>
 <div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>classes.equation.symbolic_topological_sort(equations)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Order equation names so dependencies precede the equations that use them.</p>
+<p>Builds a dependency graph from each expression’s free symbols that also appear as equation keys, then performs a Kahn topological sort.</p>
+<section id="parameters-18" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-18">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 10%">
+<col style="width: 61%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>equations</td>
+<td></td>
+<td>Mapping of variable names to SymPy expressions.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-18" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-18">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A list of equation names in dependency-respecting order.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises-4" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-4">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 17%">
+<col style="width: 71%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If the equations contain a circular dependency.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.sympify_value" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.sympify_value">sympify_value</h3>
 <div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>classes.equation.sympify_value(v, acronym<span class="op">=</span><span class="st">''</span>, evaluate<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Parse a metadata equation’s value into a SymPy expression.</p>
+<p>Collects the equation’s referenced functions, parameters and state variables as symbols (stripping <code>acronym</code> from their labels), normalises NumPy prefixes and coupling terms, adds operator spacing and parses the result. A <code>where(...)</code> value is converted to a SymPy <code>Piecewise</code> instead.</p>
+<section id="parameters-19" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-19">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 79%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>v</td>
+<td></td>
+<td>A metadata equation individual exposing <code>has_function</code>, <code>has_parameter</code>, <code>has_state_variable</code>, <code>value</code> and <code>label</code>.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>acronym</td>
+<td></td>
+<td>Model acronym to strip from the collected symbol names.</td>
+<td><code>''</code></td>
+</tr>
+<tr class="odd">
+<td>evaluate</td>
+<td></td>
+<td>Accepted for API symmetry; the expression is always parsed unevaluated.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-19" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-19">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The parsed SymPy expression.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises-5" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-5">Raises</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If the equation string cannot be parsed.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.topological_sort" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.topological_sort">topological_sort</h3>
@@ -656,20 +1842,204 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.classes.equation.topological_sort_equations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.topological_sort_equations">topological_sort_equations</h3>
 <div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>classes.equation.topological_sort_equations(variable_dict, dependency_tree)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Sort equations topologically according to a dependency graph.</p>
+<p>Verifies the dependency graph is acyclic (raising with the offending cycle when it is not) and returns the equations reordered so each variable follows the variables it depends on.</p>
+<section id="parameters-20" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-20">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 6%">
+<col style="width: 68%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>variable_dict</td>
+<td></td>
+<td>Mapping of variable names to their equations.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>dependency_tree</td>
+<td></td>
+<td>A <code>networkx.DiGraph</code> of variable dependencies; must be a directed acyclic graph.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-20" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-20">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 76%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A new dictionary of equations in topological order.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises-6" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-6">Raises</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If the dependency graph contains a cycle.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.unify_coupling_terms" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.unify_coupling_terms">unify_coupling_terms</h3>
 <div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>classes.equation.unify_coupling_terms(eq_string)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Rewrite TVB-style coupling terms to the legacy <code>c_pop*</code> naming.</p>
+<p>Replaces indexed <code>coupling[i]</code> references and <code>local_range_coupling</code> with the legacy <code>c_pop0</code> / <code>c_pop1</code> / <code>local_coupling</code> names used elsewhere in the equation pipeline.</p>
+<section id="parameters-21" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-21">Parameters</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>eq_string</td>
+<td></td>
+<td>The equation string to normalise.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-21" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-21">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The equation string with coupling terms renamed.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.update_class_relationships" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.update_class_relationships">update_class_relationships</h3>
 <div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>classes.equation.update_class_relationships(s_cls, k_cls)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Append the ontology <code>is_a</code> relations linking a variable to its equation.</p>
+<p>Within the ontology world, adds <code>is_parameter_in</code> / <code>is_state_variable_of</code> / <code>has_derivative</code> / <code>is_derivative_of</code> axioms between the source variable class and the equation class where they do not already exist, then de-duplicates each class’s <code>is_a</code> list.</p>
+<section id="parameters-22" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-22">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 6%">
+<col style="width: 77%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>s_cls</td>
+<td></td>
+<td>The ontology class of the source variable (parameter, function, state variable, and similar).</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>k_cls</td>
+<td></td>
+<td>The ontology class of the equation the variable appears in.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.equation.update_mathematical_relationships" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.classes.equation.update_mathematical_relationships">update_mathematical_relationships</h3>
 <div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>classes.equation.update_mathematical_relationships(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Refresh the ontology relationships implied by a model’s equations.</p>
+<p>Walks every symbolic equation of the model and, for each free symbol, records the parameter / state-variable / derivative relationship between the symbol’s class and the equation’s class in the ontology. Equations that are <code>None</code> or not valid SymPy expressions are skipped with a message.</p>
+<section id="parameters-23" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-23">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 66%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>The model identifier whose relationships are updated.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 </section>

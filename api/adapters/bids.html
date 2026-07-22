@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -190,6 +198,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
+  <li><a href="#tvbo.adapters.bids.build_result_path" id="toc-tvbo.adapters.bids.build_result_path" class="nav-link" data-scroll-target="#tvbo.adapters.bids.build_result_path">build_result_path</a></li>
   <li><a href="#tvbo.adapters.bids.compute_id" id="toc-tvbo.adapters.bids.compute_id" class="nav-link" data-scroll-target="#tvbo.adapters.bids.compute_id">compute_id</a></li>
   <li><a href="#tvbo.adapters.bids.create_cifti_ptseries" id="toc-tvbo.adapters.bids.create_cifti_ptseries" class="nav-link" data-scroll-target="#tvbo.adapters.bids.create_cifti_ptseries">create_cifti_ptseries</a></li>
   <li><a href="#tvbo.adapters.bids.create_dataset_description" id="toc-tvbo.adapters.bids.create_dataset_description" class="nav-link" data-scroll-target="#tvbo.adapters.bids.create_dataset_description">create_dataset_description</a></li>
@@ -206,6 +215,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.adapters.bids.read_bids_timeseries" id="toc-tvbo.adapters.bids.read_bids_timeseries" class="nav-link" data-scroll-target="#tvbo.adapters.bids.read_bids_timeseries">read_bids_timeseries</a></li>
   <li><a href="#tvbo.adapters.bids.read_cifti_ptseries" id="toc-tvbo.adapters.bids.read_cifti_ptseries" class="nav-link" data-scroll-target="#tvbo.adapters.bids.read_cifti_ptseries">read_cifti_ptseries</a></li>
   <li><a href="#tvbo.adapters.bids.read_hdf5_timeseries" id="toc-tvbo.adapters.bids.read_hdf5_timeseries" class="nav-link" data-scroll-target="#tvbo.adapters.bids.read_hdf5_timeseries">read_hdf5_timeseries</a></li>
+  <li><a href="#tvbo.adapters.bids.result_entities" id="toc-tvbo.adapters.bids.result_entities" class="nav-link" data-scroll-target="#tvbo.adapters.bids.result_entities">result_entities</a></li>
   <li><a href="#tvbo.adapters.bids.to_float" id="toc-tvbo.adapters.bids.to_float" class="nav-link" data-scroll-target="#tvbo.adapters.bids.to_float">to_float</a></li>
   <li><a href="#tvbo.adapters.bids.write_cifti_ptseries" id="toc-tvbo.adapters.bids.write_cifti_ptseries" class="nav-link" data-scroll-target="#tvbo.adapters.bids.write_cifti_ptseries">write_cifti_ptseries</a></li>
   <li><a href="#tvbo.adapters.bids.write_hdf5_timeseries" id="toc-tvbo.adapters.bids.write_hdf5_timeseries" class="nav-link" data-scroll-target="#tvbo.adapters.bids.write_hdf5_timeseries">write_hdf5_timeseries</a></li>
@@ -244,6 +254,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.adapters.bids.H5PY_AVAILABLE">H5PY_AVAILABLE</a></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.adapters.bids.RESULT_PATTERNS">RESULT_PATTERNS</a></td>
 <td></td>
 </tr>
 </tbody>
@@ -510,68 +524,76 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.adapters.bids.build_result_path">build_result_path</a></td>
+<td>Filename for an experiment result via pybids <code>build_path</code> + RESULT_PATTERNS.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.adapters.bids.compute_id">compute_id</a></td>
 <td>Compute ID as hash of JSON sidecar content.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bids.create_cifti_ptseries">create_cifti_ptseries</a></td>
 <td>Create a CIFTI-2 ptseries (parcellated time series) image.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bids.create_dataset_description">create_dataset_description</a></td>
 <td>Create a dataset_description.json model.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bids.create_multi_state_cifti">create_multi_state_cifti</a></td>
 <td>Create separate CIFTI-2 ptseries files for each state variable.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bids.detect_timeseries_format">detect_timeseries_format</a></td>
 <td>Detect the time series format in a BIDS ts/ directory.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bids.find_bids_session_path">find_bids_session_path</a></td>
 <td>Find the path to a BIDS subject/session directory.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bids.get_unique_entity_values">get_unique_entity_values</a></td>
 <td>Get a set of all unique values for a given entity key from the BIDSLayout files.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bids.ingest_bids_session">ingest_bids_session</a></td>
 <td>Ingest all data from a BIDS BEP034 session.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bids.load_bep034_config">load_bep034_config</a></td>
 <td>Load the BEP034 configuration file.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bids.read_bids_coordinates">read_bids_coordinates</a></td>
 <td>Read coordinates from a BIDS coord/ directory.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bids.read_bids_equations">read_bids_equations</a></td>
 <td>Read model equations from a BIDS eq/ directory.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bids.read_bids_network">read_bids_network</a></td>
 <td>Read network connectivity from a BIDS net/ directory.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bids.read_bids_sidecar">read_bids_sidecar</a></td>
 <td>Read a BIDS JSON sidecar file.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bids.read_bids_timeseries">read_bids_timeseries</a></td>
 <td>Read time series data from a BIDS ts/ directory.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bids.read_cifti_ptseries">read_cifti_ptseries</a></td>
 <td>Read a CIFTI-2 ptseries file.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bids.read_hdf5_timeseries">read_hdf5_timeseries</a></td>
 <td>Read time series data from HDF5 file.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.adapters.bids.result_entities">result_entities</a></td>
+<td>BIDS entities for an experiment’s result, with alphanumeric values.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.adapters.bids.to_float">to_float</a></td>
@@ -595,20 +617,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
+<section id="tvbo.adapters.bids.build_result_path" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.bids.build_result_path">build_result_path</h3>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.build_result_path(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    entities<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    extension<span class="op">=</span><span class="st">'.h5'</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Filename for an experiment result via pybids <code>build_path</code> + RESULT_PATTERNS.</p>
+</section>
 <section id="tvbo.adapters.bids.compute_id" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.compute_id">compute_id</h3>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.compute_id(sidecar_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.compute_id(sidecar_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Compute ID as hash of JSON sidecar content.</p>
 </section>
 <section id="tvbo.adapters.bids.create_cifti_ptseries" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.create_cifti_ptseries">create_cifti_ptseries</h3>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.create_cifti_ptseries(</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    region_labels,</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    sample_period,</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    sample_period_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    state_variable_labels<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.create_cifti_ptseries(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    region_labels,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    sample_period,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    sample_period_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    state_variable_labels<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a CIFTI-2 ptseries (parcellated time series) image.</p>
 <p>This creates a valid CIFTI-2 file with: - ParcelsAxis: Named brain regions with proper structure - SeriesAxis: Time dimension with sampling info - ScalarAxis: State variable names (if multiple)</p>
 <section id="parameters-2" class="level4 doc-section doc-section-parameters">
@@ -636,23 +668,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.create_dataset_description" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.create_dataset_description">create_dataset_description</h3>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.create_dataset_description(</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">'TVB Simulation Output'</span>,</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    bids_version<span class="op">=</span><span class="st">'1.9.0'</span>,</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    software_name<span class="op">=</span><span class="st">'tvbo'</span>,</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    software_version<span class="op">=</span><span class="st">'0.1.0'</span>,</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.create_dataset_description(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">'TVB Simulation Output'</span>,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    bids_version<span class="op">=</span><span class="st">'1.9.0'</span>,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    software_name<span class="op">=</span><span class="st">'tvbo'</span>,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    software_version<span class="op">=</span><span class="st">'0.1.0'</span>,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a dataset_description.json model.</p>
 </section>
 <section id="tvbo.adapters.bids.create_multi_state_cifti" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.create_multi_state_cifti">create_multi_state_cifti</h3>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.create_multi_state_cifti(</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    region_labels,</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    state_variable_labels,</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    sample_period,</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    sample_period_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.create_multi_state_cifti(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    region_labels,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    state_variable_labels,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    sample_period,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    sample_period_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create separate CIFTI-2 ptseries files for each state variable.</p>
 <p>This is the recommended approach for multi-state variable data, creating one ptseries file per state variable.</p>
 <section id="parameters-3" class="level4 doc-section doc-section-parameters">
@@ -666,7 +698,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.detect_timeseries_format" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.detect_timeseries_format">detect_timeseries_format</h3>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.detect_timeseries_format(ts_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.detect_timeseries_format(ts_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Detect the time series format in a BIDS ts/ directory.</p>
 <section id="parameters-4" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
@@ -679,7 +711,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.find_bids_session_path" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.find_bids_session_path">find_bids_session_path</h3>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.find_bids_session_path(bids_dir, subject, session<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.find_bids_session_path(bids_dir, subject, session<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Find the path to a BIDS subject/session directory.</p>
 <section id="parameters-5" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
@@ -692,7 +724,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.get_unique_entity_values" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.get_unique_entity_values">get_unique_entity_values</h3>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.get_unique_entity_values(bids_layout, key)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.get_unique_entity_values(bids_layout, key)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get a set of all unique values for a given entity key from the BIDSLayout files.</p>
 <section id="parameters-6" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
@@ -754,7 +786,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.ingest_bids_session" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.ingest_bids_session">ingest_bids_session</h3>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.ingest_bids_session(bids_dir, subject, session<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.ingest_bids_session(bids_dir, subject, session<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Ingest all data from a BIDS BEP034 session.</p>
 <section id="parameters-7" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
@@ -767,12 +799,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.load_bep034_config" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.load_bep034_config">load_bep034_config</h3>
-<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.load_bep034_config()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.load_bep034_config()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load the BEP034 configuration file.</p>
 </section>
 <section id="tvbo.adapters.bids.read_bids_coordinates" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.read_bids_coordinates">read_bids_coordinates</h3>
-<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_bids_coordinates(coord_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_bids_coordinates(coord_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Read coordinates from a BIDS coord/ directory.</p>
 <section id="parameters-8" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
@@ -785,7 +817,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.read_bids_equations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.read_bids_equations">read_bids_equations</h3>
-<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_bids_equations(eq_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_bids_equations(eq_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Read model equations from a BIDS eq/ directory.</p>
 <section id="parameters-9" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
@@ -798,7 +830,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.read_bids_network" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.read_bids_network">read_bids_network</h3>
-<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_bids_network(net_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_bids_network(net_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Read network connectivity from a BIDS net/ directory.</p>
 <section id="parameters-10" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h4>
@@ -811,12 +843,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.read_bids_sidecar" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.read_bids_sidecar">read_bids_sidecar</h3>
-<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_bids_sidecar(json_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_bids_sidecar(json_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Read a BIDS JSON sidecar file.</p>
 </section>
 <section id="tvbo.adapters.bids.read_bids_timeseries" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.read_bids_timeseries">read_bids_timeseries</h3>
-<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_bids_timeseries(ts_dir, <span class="bu">format</span><span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_bids_timeseries(ts_dir, <span class="bu">format</span><span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Read time series data from a BIDS ts/ directory.</p>
 <p>Automatically detects the format (h5, cifti, tsv) unless specified.</p>
 <section id="parameters-11" class="level4 doc-section doc-section-parameters">
@@ -830,7 +862,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.read_cifti_ptseries" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.read_cifti_ptseries">read_cifti_ptseries</h3>
-<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_cifti_ptseries(path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_cifti_ptseries(path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Read a CIFTI-2 ptseries file.</p>
 <section id="parameters-12" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters</h4>
@@ -843,7 +875,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.read_hdf5_timeseries" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.read_hdf5_timeseries">read_hdf5_timeseries</h3>
-<div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_hdf5_timeseries(path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.read_hdf5_timeseries(path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Read time series data from HDF5 file.</p>
 <section id="parameters-13" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-13">Parameters</h4>
@@ -854,21 +886,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>dict Dictionary with ‘data’, ‘time’, ‘labels_dimensions’, ‘dimensions’, ‘metadata’</p>
 </section>
 </section>
+<section id="tvbo.adapters.bids.result_entities" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.bids.result_entities">result_entities</h3>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.result_entities(experiment, extension<span class="op">=</span><span class="st">'.h5'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>BIDS entities for an experiment’s result, with alphanumeric values.</p>
+<p>BIDS entity values must be alphanumeric (no spaces/hyphens/underscores), so the id and dynamics name are stripped to <code>[A-Za-z0-9]</code>. The short model <em>name</em> (<code>Kuramoto</code>) is used for <code>desc-</code> rather than the verbose label, so filenames stay compact. Returns a dict ready for :func:<code>bids.layout.writing.build_path</code> with <code>RESULT_PATTERNS</code>.</p>
+</section>
 <section id="tvbo.adapters.bids.to_float" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.to_float">to_float</h3>
-<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.to_float(val)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.to_float(val)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Safely convert JAX arrays/tracers to Python floats.</p>
 </section>
 <section id="tvbo.adapters.bids.write_cifti_ptseries" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.write_cifti_ptseries">write_cifti_ptseries</h3>
-<div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.write_cifti_ptseries(</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    region_labels,</span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    path,</span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    sample_period,</span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    sample_period_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    state_variable_labels<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.write_cifti_ptseries(</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>    region_labels,</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    path,</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    sample_period,</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>    sample_period_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>    state_variable_labels<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Write time series data to a CIFTI-2 ptseries.nii file.</p>
 <section id="parameters-14" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-14">Parameters</h4>
@@ -881,18 +919,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.write_hdf5_timeseries" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.write_hdf5_timeseries">write_hdf5_timeseries</h3>
-<div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.write_hdf5_timeseries(</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    time,</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    path,</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    labels_dimensions<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>    labels_ordering<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    sample_period<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    sample_period_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>    metadata<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>    compression<span class="op">=</span><span class="st">'gzip'</span>,</span>
-<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>    compression_opts<span class="op">=</span><span class="dv">4</span>,</span>
-<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.write_hdf5_timeseries(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>    data,</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    time,</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>    path,</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>    labels_dimensions<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>    labels_ordering<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>    sample_period<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>    sample_period_unit<span class="op">=</span><span class="st">'ms'</span>,</span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>    metadata<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>    compression<span class="op">=</span><span class="st">'gzip'</span>,</span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>    compression_opts<span class="op">=</span><span class="dv">4</span>,</span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Write time series data to HDF5 file preserving full dimensionality.</p>
 <p>This format supports arbitrary dimensionality (e.g., parameter sweeps, multiple modes, etc.) without splitting by state variable.</p>
 <section id="parameters-15" class="level4 doc-section doc-section-parameters">
@@ -906,12 +944,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bids.write_sidecar" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.write_sidecar">write_sidecar</h3>
-<div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.write_sidecar(sidecar, path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.write_sidecar(sidecar, path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Write a pydantic sidecar model to JSON file.</p>
 </section>
 <section id="tvbo.adapters.bids.write_tsv" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bids.write_tsv">write_tsv</h3>
-<div class="sourceCode" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.write_tsv(df, path, include_index<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>adapters.bids.write_tsv(df, path, include_index<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Write a DataFrame to TSV file.</p>
 
 

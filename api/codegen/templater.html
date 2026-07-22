@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -205,6 +213,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.codegen.templater" class="level1">
 <h1>templater</h1>
 <p><code>codegen.templater</code></p>
+<p>Generate TVBO Python classes from ontology definitions via Mako templates.</p>
+<p>Provides helpers that read model, parameter, state-variable, equation, coupling and integrator metadata from the ontology and render it into executable TVBO/TVB source using the templates in <code>tvbo.templates</code>.</p>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
 <table class="caption-top table">
@@ -223,6 +233,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><a href="#tvbo.codegen.templater.exec_globals">exec_globals</a></td>
 <td></td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.codegen.templater.logger">logger</a></td>
+<td></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -238,15 +252,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.codegen.templater.boolean2bitwise">boolean2bitwise</a></td>
-<td></td>
+<td>Rewrite Python boolean operators as their bitwise equivalents.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.codegen.templater.coupling2class">coupling2class</a></td>
-<td></td>
+<td>Generate a TVBO coupling class from an ontology coupling function.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.codegen.templater.equation2class">equation2class</a></td>
-<td></td>
+<td>Generate a TVBO equation class from an ontology equation.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.codegen.templater.format_code">format_code</a></td>
@@ -254,31 +268,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.codegen.templater.formulate_dependency_imports">formulate_dependency_imports</a></td>
-<td></td>
+<td>Build <code>from ... import ...</code> statements for dotted dependency paths.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.codegen.templater.get_integrator_info">get_integrator_info</a></td>
-<td></td>
+<td>Collect scheme metadata for an integrator into a dict.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.codegen.templater.get_model_info">get_model_info</a></td>
-<td></td>
+<td>Collect the codegen-relevant metadata for a model into a dict.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.codegen.templater.get_param_info">get_param_info</a></td>
-<td></td>
+<td>Extract label, symbol, default, range, definition and dependencies of a parameter.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.codegen.templater.get_statevariable_equations">get_statevariable_equations</a></td>
-<td></td>
+<td>Map each state variable to its symbolic time-derivative equation.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.codegen.templater.get_sv_info">get_sv_info</a></td>
-<td></td>
+<td>Extract label, symbol, default, range, boundaries and definition of a state variable.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.codegen.templater.integrator2class">integrator2class</a></td>
-<td></td>
+<td>Resolve an ontology integrator to a TVB integrator class or instance.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.codegen.templater.is_derived">is_derived</a></td>
@@ -286,7 +300,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.codegen.templater.model2class">model2class</a></td>
-<td></td>
+<td>Generate a TVBO model class from an ontology model.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.codegen.templater.source_observations">source_observations</a></td>
@@ -297,21 +311,216 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.codegen.templater.boolean2bitwise" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.boolean2bitwise">boolean2bitwise</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.boolean2bitwise(code_str)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Rewrite Python boolean operators as their bitwise equivalents.</p>
+<p>Replace <code>and</code>/<code>or</code>/<code>not</code> with <code>&amp;</code>/<code>|</code>/<code>~</code> so element-wise array expressions evaluate correctly.</p>
+<section id="parameters" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 10%">
+<col style="width: 58%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>code_str</td>
+<td></td>
+<td>Source expression using boolean keywords.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 81%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The expression with boolean operators replaced by bitwise operators.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.coupling2class" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.coupling2class">coupling2class</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.coupling2class(CF, fout<span class="op">=</span><span class="va">None</span>, print_source<span class="op">=</span><span class="va">False</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Generate a TVBO coupling class from an ontology coupling function.</p>
+<p>Resolve <code>CF</code> from the ontology if given as a name, build the pre- and post-summation expressions and parameters, and render them through the <code>_tvbo-tvb-coupling.py.mako</code> template. Then either write the source, print it, or execute it and return an instantiated coupling object. Keyword arguments matching coupling attributes are passed as array-coerced constructor values.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 6%">
+<col style="width: 71%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CF</td>
+<td></td>
+<td>Ontology coupling-function class, or a name to resolve.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>fout</td>
+<td></td>
+<td>Optional path; when given, write the rendered source there instead of instantiating.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>print_source</td>
+<td></td>
+<td>When True, print the rendered source with line numbers.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Constructor overrides for recognised coupling attributes.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The instantiated coupling object, or <code>None</code> when <code>fout</code> is given.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.equation2class" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.equation2class">equation2class</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.equation2class(EQ, fout<span class="op">=</span><span class="va">None</span>, print_source<span class="op">=</span><span class="va">False</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Generate a TVBO equation class from an ontology equation.</p>
+<p>Sympify the equation, render it (with its Python and LaTeX forms and default parameter values) through the <code>_tvbo-tvb-equation.py.mako</code> template, then either write the source, print it, or execute it and return an instantiated equation object.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 6%">
+<col style="width: 71%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>EQ</td>
+<td></td>
+<td>Ontology equation class to convert.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>fout</td>
+<td></td>
+<td>Optional path; when given, write the rendered source there instead of instantiating.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>print_source</td>
+<td></td>
+<td>When True, print the rendered source with line numbers.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Overrides for the equation’s default parameter values.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-2" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The instantiated equation object, or <code>None</code> when <code>fout</code> is given.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.format_code" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.format_code">format_code</h3>
 <div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.format_code(code, <span class="bu">format</span><span class="op">=</span><span class="st">'python'</span>, use_black<span class="op">=</span><span class="va">True</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Format code using black for Python variants.</p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 12%">
@@ -359,30 +568,422 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.codegen.templater.formulate_dependency_imports" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.formulate_dependency_imports">formulate_dependency_imports</h3>
 <div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.formulate_dependency_imports(dependencies)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Build <code>from ... import ...</code> statements for dotted dependency paths.</p>
+<p>Only dependencies containing a dotted path produce an import; the final segment is imported from the preceding module path.</p>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 8%">
+<col style="width: 62%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>dependencies</td>
+<td></td>
+<td>Iterable of dependency strings (e.g.&nbsp;<code>"pkg.mod.name"</code>).</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 79%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A generator of import statements, one per dotted dependency.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.get_integrator_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.get_integrator_info">get_integrator_info</h3>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_integrator_info(integrator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Collect scheme metadata for an integrator into a dict.</p>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 9%">
+<col style="width: 60%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>integrator</td>
+<td></td>
+<td>Ontology integrator class describing the scheme.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A dict with the integrator <code>class_name</code>, the number of derivative stages</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>n_dx</code>, its <code>intermediate_steps</code>, and the <code>dX_expr</code> update expression</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>(<code>None</code> when unset).</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.get_model_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.get_model_info">get_model_info</h3>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_model_info(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Collect the codegen-relevant metadata for a model into a dict.</p>
+<p>Resolve <code>model</code> from the ontology if given as a name, then gather its parameters and constants, coupling-variable indices, coupling terms, non-integrated variables (functions and conditionals) with their dependency-sorted symbolic expressions, state variables, state-variable differential equations, and variables of interest.</p>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 65%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>An ontology model class, or a model name to resolve.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A dict with keys <code>parameters</code>, <code>cvars</code>, <code>coupling_terms</code>,</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td><code>non_integrated_variables</code>, <code>ninvar_dfuns</code>, <code>state_variables</code>,</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td><code>state_variable_dfuns</code> and <code>vois</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.get_param_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.get_param_info">get_param_info</h3>
 <div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_param_info(param_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Extract label, symbol, default, range, definition and dependencies of a parameter.</p>
+<p>Fall back from the ontology <code>defaultValue</code> to <code>value</code> when no default is set.</p>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 9%">
+<col style="width: 59%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>param_class</td>
+<td></td>
+<td>Ontology parameter class to read metadata from.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A dict describing the parameter.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.get_statevariable_equations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.get_statevariable_equations">get_statevariable_equations</h3>
 <div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_statevariable_equations(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Map each state variable to its symbolic time-derivative equation.</p>
+<p>For every state variable of <code>model</code>, look up the matching <code>TimeDerivative</code> expression among the model’s symbolic differential equations, keyed by the derivative’s label with the model acronym suffix stripped.</p>
+<section id="parameters-8" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 65%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>An ontology model class, or a model name to resolve.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A dict mapping state-variable name to its differential-equation</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>expression.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.get_sv_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.get_sv_info">get_sv_info</h3>
 <div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_sv_info(sv_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Extract label, symbol, default, range, boundaries and definition of a state variable.</p>
+<p>Parse the ontology <code>stateVariableRange</code> and <code>stateVariableBoundaries</code> strings, defaulting to an effectively unbounded range and open boundaries when unset.</p>
+<section id="parameters-9" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 9%">
+<col style="width: 64%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>sv_class</td>
+<td></td>
+<td>Ontology state-variable class to read metadata from.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-8" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>A dict describing the state variable.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.integrator2class" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.integrator2class">integrator2class</h3>
 <div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.integrator2class(integrator, return_instance<span class="op">=</span><span class="va">True</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resolve an ontology integrator to a TVB integrator class or instance.</p>
+<p>Look up the matching <code>tvb.simulator.integrators</code> class, selecting the stochastic variant when a <code>noise</code> keyword is supplied and the deterministic variant otherwise.</p>
+<section id="parameters-10" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 6%">
+<col style="width: 69%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>integrator</td>
+<td></td>
+<td>Ontology integrator class, or a name to search for.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>return_instance</td>
+<td></td>
+<td>When True, return an instance built from <code>kwargs</code>; otherwise return the class.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="odd">
+<td>**kwargs</td>
+<td></td>
+<td>Integrator constructor arguments; a <code>noise</code> entry selects the stochastic variant.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-9" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-9">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The TVB integrator instance or class.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.is_derived" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.is_derived">is_derived</h3>
@@ -403,6 +1004,125 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    bifmodel<span class="op">=</span><span class="va">False</span>,</span>
 <span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
 <span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Generate a TVBO model class from an ontology model.</p>
+<p>Resolve <code>model</code> from the ontology if given as a name, assemble its state variables, differential equations, non-integrated variables, parameters and dependency imports via <code>get_model_info</code>, and render them through the <code>_tvbo-tvb-model_old.py.mako</code> template. Then either write the source, print it, or execute it and return the model class or an instance.</p>
+<section id="parameters-11" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 4%">
+<col style="width: 69%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>An ontology model class, or a model name to resolve.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>fout</td>
+<td></td>
+<td>Optional path; when given, write the rendered source there instead of instantiating.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>print_source</td>
+<td></td>
+<td>When True, print the rendered source with line numbers.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>split_nonintegrated_variables</td>
+<td></td>
+<td>When True, treat non-integrated variables as additional state variables (forced off when <code>sub_ninvars</code> is set).</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>return_instance</td>
+<td></td>
+<td>When True, return an instance; otherwise return the class.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="even">
+<td>sub_ninvars</td>
+<td></td>
+<td>When True, substitute non-integrated function expressions into the state equations instead of splitting them out.</td>
+<td><code>False</code></td>
+</tr>
+<tr class="odd">
+<td>bifmodel</td>
+<td></td>
+<td>Reserved flag (currently unused in rendering).</td>
+<td><code>False</code></td>
+</tr>
+<tr class="even">
+<td>**kwargs</td>
+<td></td>
+<td>Constructor overrides for recognised model attributes.</td>
+<td><code>{}</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-10" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-10">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The instantiated model, the model class, or <code>None</code> when <code>fout</code> is given.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 16%">
+<col style="width: 72%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If a model name cannot be resolved in the ontology.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.codegen.templater.source_observations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.source_observations">source_observations</h3>

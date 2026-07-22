@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -196,6 +204,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.parse.expression" class="level1">
 <h1>expression</h1>
 <p><code>parse.expression</code></p>
+<p>Parse TVBO equation strings into SymPy expressions.</p>
+<p>Provides <a href="../../api/parse/expression.html#parse_eq"><code>parse_eq</code></a> for turning an <code>Equation</code> (or a raw string) into a SymPy expression, along with the custom aggregation symbols and the <code>ARRAY_FUNCTIONS</code> registry of array reduction/manipulation functions (<code>sum</code>, <code>mean</code>, <code>slice_axis</code>, <code>mode_dot</code>, …) that the code printers in <code>tvbo.codegen.code</code> lower to backend-specific calls.</p>
 <section id="attributes" class="level2">
 <h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
 <table class="caption-top table">
@@ -238,6 +248,80 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 class="doc-section doc-section-example anchored" data-anchor-id="example">Example</h4>
 <p>Mean(1 - correlation(x[i], y[i]), (i, 0, N-1)) -&gt; jnp.mean(jax.vmap(lambda x, y: 1 - correlation(x, y))(x, y))</p>
 </section>
+<section id="methods" class="level4">
+<h4 class="anchored" data-anchor-id="methods">Methods</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.parse.expression.Mean.eval">eval</a></td>
+<td>Suppress automatic simplification so the symbol survives to codegen.</td>
+</tr>
+</tbody>
+</table>
+<section id="tvbo.parse.expression.Mean.eval" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.parse.expression.Mean.eval">eval</h5>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>parse.expression.Mean.<span class="bu">eval</span>(<span class="op">*</span>args)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Suppress automatic simplification so the symbol survives to codegen.</p>
+<p>SymPy calls this classmethod when a <code>Mean(...)</code> is constructed. Returning <code>None</code> signals that no closed-form evaluation should be performed, keeping the expression as an unevaluated <code>Mean</code> node that the code printers in <a href="../../api/codegen/code.html"><code>tvbo.codegen.code</code></a> translate into the backend’s mean/reduction call.</p>
+<section id="parameters" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 80%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>*args</td>
+<td></td>
+<td>The positional arguments the <code>Mean</code> was called with (the inner expression and index limit tuple). Left unused.</td>
+<td><code>()</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>Always <code>None</code>, leaving the <code>Mean</code> application unevaluated.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
 </section>
 </section>
 <section id="functions" class="level2">
@@ -258,19 +342,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.parse.expression.parse_eq" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.parse.expression.parse_eq">parse_eq</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>parse.expression.parse_eq(equation, parameters<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>parse.expression.parse_eq(equation, parameters<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Parse the right-hand side of an equation or a raw expression string.</p>
 <p>Extends parsing with the ability to pass parameters, functions, symbols, and arbitrary SymPy objects commonly used in nonlinear systems dynamics.</p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
 <p>equation : Equation | str An Equation from tvbo’s datamodel or a raw expression string. If an <code>Equation</code> with <code>latex=True</code> is provided, LaTeX parsing is used. parameters : Iterable[str] | Mapping[str, object] | None Names or a mapping of parameter names to SymPy objects or numbers. If an iterable of strings is provided, they are created as SymPy Symbols and injected into the parsing context. If a mapping is provided, the values are injected as-is (Symbols, Functions, Expressions, numbers, etc.).</p>
 </section>
 <section id="keyword-only-enhancements-optional" class="level4 doc-section doc-section-keyword-only-enhancements-optional">
 <h4 class="doc-section doc-section-keyword-only-enhancements-optional anchored" data-anchor-id="keyword-only-enhancements-optional">Keyword-only enhancements (optional)</h4>
 <p>local_dict : dict Additional local names to inject into the parser (merged on top of defaults). functions : Iterable[str] | Mapping[str, object] Names or mapping for functions. String names are created as undefined SymPy functions, e.g., Function(‘f’). Mapping values are used as-is. symbols : Iterable[str] | Mapping[str, Symbol] Extra symbol names or mapping for state variables, etc. String names are created as SymPy Symbols. Mapping values are used as-is. objects : Mapping[str, object] Arbitrary additional objects (e.g., Heaviside, MatrixSymbol, IndexedBase, Derivative alias, etc.) to inject into the local namespace. extra_transformations : Iterable[callable] Extra SymPy parser transformations to augment the defaults. transformations : Iterable[callable] Full control over the transformation pipeline (overrides defaults if provided).</p>
 </section>
-<section id="returns" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
 <p>sympy.Expr Parsed SymPy expression.</p>
 
 

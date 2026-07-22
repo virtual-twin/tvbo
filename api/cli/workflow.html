@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -178,10 +186,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
   <li><a href="#tvbo.cli.workflow.backends" id="toc-tvbo.cli.workflow.backends" class="nav-link" data-scroll-target="#tvbo.cli.workflow.backends">backends</a></li>
+  <li><a href="#tvbo.cli.workflow.finalize" id="toc-tvbo.cli.workflow.finalize" class="nav-link" data-scroll-target="#tvbo.cli.workflow.finalize">finalize</a></li>
   <li><a href="#tvbo.cli.workflow.nextflow" id="toc-tvbo.cli.workflow.nextflow" class="nav-link" data-scroll-target="#tvbo.cli.workflow.nextflow">nextflow</a></li>
   <li><a href="#tvbo.cli.workflow.plan_cmd" id="toc-tvbo.cli.workflow.plan_cmd" class="nav-link" data-scroll-target="#tvbo.cli.workflow.plan_cmd">plan_cmd</a></li>
+  <li><a href="#tvbo.cli.workflow.run_workflow" id="toc-tvbo.cli.workflow.run_workflow" class="nav-link" data-scroll-target="#tvbo.cli.workflow.run_workflow">run_workflow</a></li>
   <li><a href="#tvbo.cli.workflow.slurm" id="toc-tvbo.cli.workflow.slurm" class="nav-link" data-scroll-target="#tvbo.cli.workflow.slurm">slurm</a></li>
   <li><a href="#tvbo.cli.workflow.snakemake" id="toc-tvbo.cli.workflow.snakemake" class="nav-link" data-scroll-target="#tvbo.cli.workflow.snakemake">snakemake</a></li>
+  <li><a href="#tvbo.cli.workflow.submit_kit" id="toc-tvbo.cli.workflow.submit_kit" class="nav-link" data-scroll-target="#tvbo.cli.workflow.submit_kit">submit_kit</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -229,12 +240,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>List execution backends and their ontology-derived capabilities (continuous/spiking/jit/etc.).</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.cli.workflow.finalize">finalize</a></td>
+<td>Gather sharded HPC outputs into one self-describing <code>ExperimentResult</code>.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.cli.workflow.nextflow">nextflow</a></td>
 <td>Emit a self-contained Nextflow kit (<code>main.nf</code> + scripts + frozen spec).</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.cli.workflow.plan_cmd">plan_cmd</a></td>
 <td>Show the resolved workflow plan for <em>spec</em> without emitting any artefacts.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.cli.workflow.run_workflow">run_workflow</a></td>
+<td>Emit a self-contained kit then execute it (or submit for Slurm).</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.cli.workflow.slurm">slurm</a></td>
@@ -244,6 +263,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><a href="#tvbo.cli.workflow.snakemake">snakemake</a></td>
 <td>Emit a self-contained Snakemake kit (<code>Snakefile</code> + scripts + frozen spec).</td>
 </tr>
+<tr class="even">
+<td><a href="#tvbo.cli.workflow.submit_kit">submit_kit</a></td>
+<td>Submit a kit already emitted by <code>tvbo workflow slurm\|snakemake\|nextflow</code>.</td>
+</tr>
 </tbody>
 </table>
 <section id="tvbo.cli.workflow.backends" class="level3">
@@ -251,54 +274,109 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.backends(json<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--json'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>List execution backends and their ontology-derived capabilities (continuous/spiking/jit/etc.).</p>
 </section>
+<section id="tvbo.cli.workflow.finalize" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.cli.workflow.finalize">finalize</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.finalize(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    shards_dir<span class="op">=</span>typer.Argument(<span class="st">'results'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Directory holding the array tasks' shard outputs."</span>),</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    output<span class="op">=</span>typer.Option(Path(<span class="st">'results'</span>), <span class="st">'-o'</span>, <span class="st">'--output'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Where to write the reassembled result.'</span>),</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    spec<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--spec'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Frozen spec YAML to attach as the result sidecar (auto-detected in spec/ when omitted).'</span>),</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    stem<span class="op">=</span>typer.Option(<span class="st">'result'</span>, <span class="st">'--stem'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Basename of the result artifact (&lt;stem&gt;.h5 + &lt;stem&gt;.yaml).'</span>),</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    compress<span class="op">=</span>typer.Option(<span class="va">True</span>, <span class="st">'--compress/--no-compress'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'gzip-deflate the reassembled HDF5 (default on).'</span>),</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Gather sharded HPC outputs into one self-describing <code>ExperimentResult</code>.</p>
+<p>Concatenates each array task’s slice by parameter value into the full grid a local run produces, and writes it as <code>&lt;stem&gt;.h5</code> (keyed groups) plus a <code>&lt;stem&gt;.yaml</code> sidecar (the frozen, fully-overridden spec) — the same HDF5-plus-YAML layout as a network. No manual post-processing is needed; emitted kits submit this automatically as a dependent gather job.</p>
+</section>
 <section id="tvbo.cli.workflow.nextflow" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.cli.workflow.nextflow">nextflow</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.nextflow(</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    spec<span class="op">=</span>typer.Argument(...),</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span>typer.Option(<span class="st">'tvboptim'</span>, <span class="st">'--backend'</span>, <span class="st">'-b'</span>),</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--experiment'</span>),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    output<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'-o'</span>, <span class="st">'--output'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Output directory.'</span>),</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    override<span class="op">=</span>typer.Option([], <span class="st">'--set'</span>),</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    stdout<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--stdout'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Print artefact only; do not write a kit.'</span>),</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.nextflow(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    spec<span class="op">=</span>typer.Argument(...),</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--backend'</span>, <span class="st">'-b'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Execution backend; default: the experiment's declared execution.backend, else tvboptim."</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--experiment'</span>),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    output<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'-o'</span>, <span class="st">'--output'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Output directory.'</span>),</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    override<span class="op">=</span>typer.Option([], <span class="st">'--set'</span>),</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    stdout<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--stdout'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Print artefact only; do not write a kit.'</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    pack<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--pack'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Emit ONLY &lt;kit&gt;.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`.'</span>),</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    bundle_dataset<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--bundle-dataset'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Copy the fan-out's per-subject dataset files into the kit (spec/dataset/) and point dataset.bids_root at them, so the kit is self-contained — no separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects."</span>),</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    bundle_select<span class="op">=</span>typer.Option([], <span class="st">'--bundle-select'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Override: add a BIDS entity to disambiguate when a subject directory holds several files matching the observation's query (not needed when the query already names one file). Repeatable. Implies --bundle-dataset."</span>),</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Emit a self-contained Nextflow kit (<code>main.nf</code> + scripts + frozen spec).</p>
 </section>
 <section id="tvbo.cli.workflow.plan_cmd" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.cli.workflow.plan_cmd">plan_cmd</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.plan_cmd(</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    spec<span class="op">=</span>typer.Argument(..., <span class="bu">help</span><span class="op">=</span><span class="st">'Path, CURIE, or DB name (Study or Experiment).'</span>),</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span>typer.Option(<span class="st">'tvboptim'</span>, <span class="st">'--backend'</span>, <span class="st">'-b'</span>),</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    engine<span class="op">=</span>typer.Option(<span class="st">'local'</span>, <span class="st">'--engine'</span>, <span class="st">'-e'</span>),</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--experiment'</span>),</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    override<span class="op">=</span>typer.Option([], <span class="st">'--set'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Override a workflow spec key, e.g. ``--set slurm.account=foo`` (repeatable).'</span>),</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    json<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--json'</span>),</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.plan_cmd(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    spec<span class="op">=</span>typer.Argument(..., <span class="bu">help</span><span class="op">=</span><span class="st">'Path, CURIE, or DB name (Study or Experiment).'</span>),</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--backend'</span>, <span class="st">'-b'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Execution backend; default: the experiment's declared execution.backend, else tvboptim."</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    engine<span class="op">=</span>typer.Option(<span class="st">'local'</span>, <span class="st">'--engine'</span>, <span class="st">'-e'</span>),</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--experiment'</span>),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    override<span class="op">=</span>typer.Option([], <span class="st">'--set'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Override a workflow spec key, e.g. ``--set slurm.account=foo`` (repeatable).'</span>),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    json<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--json'</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Show the resolved workflow plan for <em>spec</em> without emitting any artefacts.</p>
 <p>Reports the chosen study/experiment, backend, engine, vectorized vs workflow-fanned axes, total cell count, chunking, and applied overrides.</p>
 </section>
+<section id="tvbo.cli.workflow.run_workflow" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.cli.workflow.run_workflow">run_workflow</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.run_workflow(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    engine<span class="op">=</span>typer.Argument(..., <span class="bu">help</span><span class="op">=</span><span class="st">'Execution engine: slurm | snakemake | nextflow.'</span>),</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    spec<span class="op">=</span>typer.Argument(..., <span class="bu">help</span><span class="op">=</span><span class="st">'Path, CURIE, or DB name (Study or Experiment).'</span>),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--backend'</span>, <span class="st">'-b'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Execution backend; default: the experiment's declared execution.backend, else tvboptim."</span>),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--experiment'</span>),</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    output<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'-o'</span>, <span class="st">'--output'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Output directory.'</span>),</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    override<span class="op">=</span>typer.Option([], <span class="st">'--set'</span>),</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    array<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--array'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Slurm array index or range to submit (e.g. '0' for smoke, '0-3' for four tasks). Ignored for non-Slurm engines."</span>),</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    array_throttle<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--array-throttle'</span>, <span class="bu">min</span><span class="op">=</span><span class="dv">1</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Limit concurrent Slurm array tasks when using --array, e.g. 1 for one GPU at a time.'</span>),</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    profile<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--profile'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Snakemake only: run with this profile (name or path) instead of the kit's shipped 'profile/' — e.g. a site profile carrying the cluster's executor config like BIH CUBI's 'cubi-v1'. Per-rule resources in the Snakefile apply on top of it."</span>),</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Emit a self-contained kit then execute it (or submit for Slurm).</p>
+<p>Use <code>--array 0</code> to submit only the first array task as a quick smoke test without changing the experiment spec. Use <code>--array-throttle</code> to cap how many Slurm array tasks run at once, for example <code>--array 0-39 --array-throttle 1</code> to keep one GPU busy at a time.</p>
+</section>
 <section id="tvbo.cli.workflow.slurm" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.cli.workflow.slurm">slurm</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.slurm(</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    spec<span class="op">=</span>typer.Argument(...),</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span>typer.Option(<span class="st">'tvboptim'</span>, <span class="st">'--backend'</span>, <span class="st">'-b'</span>),</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--experiment'</span>),</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    output<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'-o'</span>, <span class="st">'--output'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Output directory.'</span>),</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    override<span class="op">=</span>typer.Option([], <span class="st">'--set'</span>),</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    stdout<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--stdout'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Print artefact only; do not write a kit.'</span>),</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.slurm(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    spec<span class="op">=</span>typer.Argument(...),</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--backend'</span>, <span class="st">'-b'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Execution backend; default: the experiment's declared execution.backend, else tvboptim."</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--experiment'</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    output<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'-o'</span>, <span class="st">'--output'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Output directory.'</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    override<span class="op">=</span>typer.Option([], <span class="st">'--set'</span>),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    stdout<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--stdout'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Print artefact only; do not write a kit.'</span>),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    pack<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--pack'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Emit ONLY &lt;kit&gt;.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`.'</span>),</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    bundle_dataset<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--bundle-dataset'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Copy the fan-out's per-subject dataset files into the kit (spec/dataset/) and point dataset.bids_root at them, so the kit is self-contained — no separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects."</span>),</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    bundle_select<span class="op">=</span>typer.Option([], <span class="st">'--bundle-select'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Override: add a BIDS entity to disambiguate when a subject directory holds several files matching the observation's query (not needed when the query already names one file). Repeatable. Implies --bundle-dataset."</span>),</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Emit a self-contained sbatch kit (<code>run.sbatch</code> + scripts + frozen spec).</p>
 </section>
 <section id="tvbo.cli.workflow.snakemake" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.cli.workflow.snakemake">snakemake</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.snakemake(</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    spec<span class="op">=</span>typer.Argument(...),</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span>typer.Option(<span class="st">'tvboptim'</span>, <span class="st">'--backend'</span>, <span class="st">'-b'</span>),</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--experiment'</span>),</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    output<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'-o'</span>, <span class="st">'--output'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Output directory.'</span>),</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    override<span class="op">=</span>typer.Option([], <span class="st">'--set'</span>),</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    stdout<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--stdout'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Print artefact only; do not write a kit.'</span>),</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.snakemake(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    spec<span class="op">=</span>typer.Argument(...),</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--backend'</span>, <span class="st">'-b'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Execution backend; default: the experiment's declared execution.backend, else tvboptim."</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--experiment'</span>),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    output<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'-o'</span>, <span class="st">'--output'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Output directory.'</span>),</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    override<span class="op">=</span>typer.Option([], <span class="st">'--set'</span>),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    stdout<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--stdout'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Print artefact only; do not write a kit.'</span>),</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    pack<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--pack'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Emit ONLY &lt;kit&gt;.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`.'</span>),</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    benchmark<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--benchmark'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Attach Snakemake's native `benchmark:` directive to every rule: a per-cell TSV (wall time, max_rss/max_vms/max_uss/max_pss MB, CPU time, I/O) written next to each output — locally or as a SLURM job. Sugar for --set benchmark=true."</span>),</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    smoke<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--smoke'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Cap every rule's `tvbo run` to one tuning iteration (reach the post-tuning evaluation fast, e.g. to verify a fit streams within memory). --set smoke=true."</span>),</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    max_iterations<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--max-iterations'</span>, <span class="bu">min</span><span class="op">=</span><span class="dv">1</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Cap every rule's `tvbo run` to N tuning iterations. --set max_iterations=N."</span>),</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    bundle_dataset<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--bundle-dataset'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Copy the fan-out's per-subject dataset files into the kit (spec/&lt;exp&gt;/dataset/) and point dataset.bids_root at them, so the kit is self-contained — no separate FC upload or $TVBO_BIDS_ROOT needed. Scope subjects via dataset.subjects."</span>),</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    bundle_select<span class="op">=</span>typer.Option([], <span class="st">'--bundle-select'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Override: add a BIDS entity to disambiguate when a subject directory holds several files matching the observation's query (not needed when the query already names one file). Repeatable. Implies --bundle-dataset."</span>),</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Emit a self-contained Snakemake kit (<code>Snakefile</code> + scripts + frozen spec).</p>
+</section>
+<section id="tvbo.cli.workflow.submit_kit" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.cli.workflow.submit_kit">submit_kit</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>cli.workflow.submit_kit(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    kit<span class="op">=</span>typer.Argument(..., <span class="bu">help</span><span class="op">=</span><span class="st">'Path to an emitted kit directory OR a .tar.gz/.tgz/.tar/.zip archive of one (holds run.sbatch / Snakefile / main.nf).'</span>),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    engine<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--engine'</span>, <span class="st">'-e'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Engine to submit with; auto-detected from the kit when omitted.'</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    array<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--array'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Slurm array index or range to submit (e.g. '0' for a smoke task, '0-3' for four). Ignored for non-Slurm engines."</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    array_throttle<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--array-throttle'</span>, <span class="bu">min</span><span class="op">=</span><span class="dv">1</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Limit concurrent Slurm array tasks when using --array (e.g. 1 for one GPU at a time).'</span>),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    force<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--force'</span>, <span class="st">'-f'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Re-extract a re-uploaded archive over an already-extracted kit, refreshing the Snakefile/spec/code/profile. Leaves results/ and .snakemake/ intact so the run resumes with the new definition (no need to rm the kit dir first).'</span>),</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    out<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--out'</span>, <span class="st">'-o'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Directory to extract the archive into (default: next to the archive). Point it at a fresh dir to run a second copy in parallel — its results/ + logs/ stay isolated from an in-progress kit. Ignored when the kit is already a directory.'</span>),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    dry_run<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--dry-run'</span>, <span class="st">'-n'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Resolve and report the work without running or queueing anything — the engine's own dry run. Validates the kit (DAG, wildcards, inputs) before a large submission."</span>),</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    profile<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--profile'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Snakemake only: use this profile (a name resolved against the Snakemake config search path, or a path) instead of the kit's shipped 'profile/'. Use a site profile that carries the cluster's canonical executor config — e.g. BIH CUBI's 'cubi-v1' (`--profile cubi-v1`). The Snakefile's per-rule resources apply on top of it."</span>),</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Submit a kit already emitted by <code>tvbo workflow slurm|snakemake|nextflow</code>.</p>
+<p>Runs only the <em>execute</em> half of <code>tvbo workflow run</code> against an existing kit — no recipe, no re-emit. The kit may be a directory or a packaged <code>.tar.gz</code> / <code>.zip</code> archive of one; an archive is extracted next to itself first, so a shipped kit runs without a manual unzip. For Slurm this submits <code>run.sbatch</code> (the array job) and chains <code>finalize.sbatch</code> with an <code>afterok</code> dependency, so you get one reassembled result without touching <code>sbatch</code> yourself. The engine is inferred from the kit’s artefact file unless <code>--engine</code> is given. Run it from a login node (Slurm) or wherever the engine’s launcher is available.</p>
 
 
 </section>

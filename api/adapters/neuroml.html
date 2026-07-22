@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -192,7 +200,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.adapters.neuroml.plot_comparison" id="toc-tvbo.adapters.neuroml.plot_comparison" class="nav-link" data-scroll-target="#tvbo.adapters.neuroml.plot_comparison">plot_comparison</a></li>
   <li><a href="#tvbo.adapters.neuroml.plot_lems_comparison" id="toc-tvbo.adapters.neuroml.plot_lems_comparison" class="nav-link" data-scroll-target="#tvbo.adapters.neuroml.plot_lems_comparison">plot_lems_comparison</a></li>
   <li><a href="#tvbo.adapters.neuroml.run_lems_example" id="toc-tvbo.adapters.neuroml.run_lems_example" class="nav-link" data-scroll-target="#tvbo.adapters.neuroml.run_lems_example">run_lems_example</a></li>
-  <li><a href="#tvbo.adapters.neuroml.safe_id" id="toc-tvbo.adapters.neuroml.safe_id" class="nav-link" data-scroll-target="#tvbo.adapters.neuroml.safe_id">safe_id</a></li>
   <li><a href="#tvbo.adapters.neuroml.sympy_to_lems" id="toc-tvbo.adapters.neuroml.sympy_to_lems" class="nav-link" data-scroll-target="#tvbo.adapters.neuroml.sympy_to_lems">sympy_to_lems</a></li>
   <li><a href="#tvbo.adapters.neuroml.unit_to_dimension" id="toc-tvbo.adapters.neuroml.unit_to_dimension" class="nav-link" data-scroll-target="#tvbo.adapters.neuroml.unit_to_dimension">unit_to_dimension</a></li>
   <li><a href="#tvbo.adapters.neuroml.validate_lems_xml" id="toc-tvbo.adapters.neuroml.validate_lems_xml" class="nav-link" data-scroll-target="#tvbo.adapters.neuroml.validate_lems_xml">validate_lems_xml</a></li>
@@ -468,7 +475,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.adapters.neuroml.normalize_unit">normalize_unit</a></td>
-<td></td>
+<td>Normalize a unit string to its canonical TVBO form.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.adapters.neuroml.parse_lems_displays">parse_lems_displays</a></td>
@@ -491,18 +498,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Run a LEMS XML file via jNeuroML and return {filename: array} for each .dat output.</td>
 </tr>
 <tr class="even">
-<td><a href="#tvbo.adapters.neuroml.safe_id">safe_id</a></td>
-<td>Make a string safe for XML id attribute.</td>
-</tr>
-<tr class="odd">
 <td><a href="#tvbo.adapters.neuroml.sympy_to_lems">sympy_to_lems</a></td>
 <td>Convert a TVBO equation RHS string (or SymPy expr) to LEMS syntax.</td>
 </tr>
-<tr class="even">
-<td><a href="#tvbo.adapters.neuroml.unit_to_dimension">unit_to_dimension</a></td>
-<td></td>
-</tr>
 <tr class="odd">
+<td><a href="#tvbo.adapters.neuroml.unit_to_dimension">unit_to_dimension</a></td>
+<td>Return the physical dimension name for a unit string.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.adapters.neuroml.validate_lems_xml">validate_lems_xml</a></td>
 <td>Validate a LEMS XML string using PyLEMS.</td>
 </tr>
@@ -570,17 +573,70 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.adapters.neuroml.normalize_unit" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.normalize_unit">normalize_unit</h3>
 <div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.normalize_unit(unit_str)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Normalize a unit string to its canonical TVBO form.</p>
+<p>Strips surrounding whitespace and resolves known aliases (for example <code>"millisecond"</code> to <code>"ms"</code> or <code>"µm"</code> to <code>"um"</code>) via the <code>_ALIASES</code> table. Strings without an alias are returned unchanged.</p>
+<section id="parameters-9" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 77%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>unit_str</td>
+<td></td>
+<td>The raw unit label; any value is coerced to <code>str</code>. A falsy value (such as <code>None</code> or <code>""</code>) yields <code>None</code>.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The canonical unit string, or <code>None</code> when <code>unit_str</code> is empty.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.adapters.neuroml.parse_lems_displays" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.parse_lems_displays">parse_lems_displays</h3>
 <div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.parse_lems_displays(lems_file)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Parse Display + Line elements from a LEMS XML file.</p>
-<section id="parameters-9" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
+<section id="parameters-10" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h4>
 <p>lems_file : str LEMS filename (e.g.&nbsp;‘LEMS_NML2_Ex9_FN.xml’) resolved relative to the LEMSexamples directory.</p>
 </section>
-<section id="returns-4" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
 <p>list of _Display objects with their Line children.</p>
 </section>
 </section>
@@ -588,8 +644,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.parse_lems_output_columns">parse_lems_output_columns</h3>
 <div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.parse_lems_output_columns(lems_file)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Parse OutputFile → OutputColumn quantities from a LEMS file.</p>
-<section id="returns-5" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
 <p>dict mapping output filename (e.g.&nbsp;‘ex14.dat’) to list of quantity strings.</p>
 </section>
 </section>
@@ -605,8 +661,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    time_unit<span class="op">=</span><span class="st">'s'</span>,</span>
 <span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plot overlaid traces: reference vs TVBO.</p>
-<section id="parameters-10" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h4>
+<section id="parameters-11" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters</h4>
 <p>ref_data, tvbo_data : arrays with time in col 0 ref_cols, tvbo_cols : column names title : plot title time_scale : multiply time by this factor for display time_unit : label for x axis</p>
 </section>
 </section>
@@ -620,8 +676,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create publication-quality comparison plots mirroring LEMS Display layout.</p>
 <p>For each Display in the LEMS file, creates one subplot panel with: - Reference traces as solid lines (using original colors from LEMS) - TVBO traces as dashed lines (same color, slightly transparent)</p>
-<section id="parameters-11" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-11">Parameters</h4>
+<section id="parameters-12" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters</h4>
 <p>lems_file : str Reference LEMS filename (e.g.&nbsp;‘LEMS_NML2_Ex2_Izh.xml’) ref_outputs : dict {filename: array} from run_lems_example() tvbo_result : xarray.DataArray, optional <code>result.integration.data</code> from <code>exp.run("neuroml")</code>. Expects dims <code>(time, quantity)</code>. If None, only reference is plotted. title_prefix : str, optional Prefix for figure titles (e.g.&nbsp;‘Ex2’)</p>
 </section>
 </section>
@@ -629,36 +685,84 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.run_lems_example">run_lems_example</h3>
 <div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.run_lems_example(lems_file, cwd<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Run a LEMS XML file via jNeuroML and return {filename: array} for each .dat output.</p>
-<section id="parameters-12" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters</h4>
+<section id="parameters-13" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-13">Parameters</h4>
 <p>lems_file : str Name of the LEMS file (e.g., ‘LEMS_NML2_Ex9_FN.xml’). cwd : path, optional Working directory. Defaults to the LEMSexamples directory.</p>
 </section>
-<section id="returns-6" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h4>
 <p>dict mapping output filename to (n_time, n_cols) numpy arrays.</p>
 </section>
 </section>
-<section id="tvbo.adapters.neuroml.safe_id" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.safe_id">safe_id</h3>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.safe_id(s)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Make a string safe for XML id attribute.</p>
-</section>
 <section id="tvbo.adapters.neuroml.sympy_to_lems" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.sympy_to_lems">sympy_to_lems</h3>
-<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.sympy_to_lems(expr_str, parameters<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.sympy_to_lems(expr_str, parameters<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert a TVBO equation RHS string (or SymPy expr) to LEMS syntax.</p>
-<section id="parameters-13" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-13">Parameters</h4>
+<section id="parameters-14" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-14">Parameters</h4>
 <p>expr_str : str or sympy.Basic Equation RHS to convert. parameters : list of str, optional Model symbol names (parameters, state variables, etc.) to inject as SymPy Symbols before parsing, overriding any conflicting built-ins (e.g.&nbsp;<code>I</code>, <code>gamma</code>, <code>lambda</code>).</p>
 </section>
 </section>
 <section id="tvbo.adapters.neuroml.unit_to_dimension" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.unit_to_dimension">unit_to_dimension</h3>
-<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.unit_to_dimension(unit_str)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.unit_to_dimension(unit_str)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the physical dimension name for a unit string.</p>
+<p>Normalizes the unit and looks it up in the <code>UNITS</code> table, returning its dimension label (for example <code>"voltage"</code>, <code>"current"</code>, <code>"conductance"</code>). Unknown or empty units map to <code>"none"</code>.</p>
+<section id="parameters-15" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-15">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 9%">
+<col style="width: 65%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>unit_str</td>
+<td></td>
+<td>The unit label to resolve; aliases are normalized first.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-8" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The dimension name, or <code>"none"</code> if the unit is missing or unrecognized.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.adapters.neuroml.validate_lems_xml" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.validate_lems_xml">validate_lems_xml</h3>
-<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.validate_lems_xml(xml_string)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.validate_lems_xml(xml_string)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Validate a LEMS XML string using PyLEMS.</p>
 <p>Raises if the XML is not valid LEMS.</p>
 

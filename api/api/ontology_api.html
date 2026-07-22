@@ -136,12 +136,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Usage/index.html"> 
-<span class="menu-text">Usage</span></a>
+    <a class="nav-link" href="../../Networks/index.html"> 
+<span class="menu-text">Networks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Models/index.html"> 
+<span class="menu-text">Models</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../CLI/index.html"> 
 <span class="menu-text">CLI</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Interoperability/index.html"> 
+<span class="menu-text">Interoperability</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../datamodel/index.html"> 
@@ -236,13 +244,49 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.api.ontology_api.OntologyAPI">OntologyAPI</a></td>
-<td></td>
+<td>Query the ontology and build graph data for the front end.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.api.ontology_api.OntologyAPI" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI">OntologyAPI</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Query the ontology and build graph data for the front end.</p>
+<p>Wraps the module-level ontology graph and exposes methods to search for terms and to expand a node’s children or parents, accumulating the visited nodes and edges into a <code>{"nodes", "links"}</code> structure suitable for serialisation to a UI.</p>
+<section id="attributes-1" class="level4 doc-section doc-section-attributes">
+<h4 class="doc-section doc-section-attributes anchored" data-anchor-id="attributes-1">Attributes</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>edges</td>
+<td></td>
+<td>Set of <code>(source, target, type)</code> triplets between node storids.</td>
+</tr>
+<tr class="even">
+<td>nodes</td>
+<td></td>
+<td>Mapping of storid to a node dictionary (see <code>ontoclass2dict</code>).</td>
+</tr>
+<tr class="odd">
+<td>graph</td>
+<td></td>
+<td>Latest assembled graph with <code>"nodes"</code> and <code>"links"</code> lists.</td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="methods" class="level4">
 <h4 class="anchored" data-anchor-id="methods">Methods</h4>
 <table class="caption-top table">
@@ -253,6 +297,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </thead>
 <tbody>
+<tr class="odd">
+<td><a href="#tvbo.api.ontology_api.OntologyAPI.add_children">add_children</a></td>
+<td>Add a node’s children and required nodes, then refresh the graph.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.api.ontology_api.OntologyAPI.add_parents">add_parents</a></td>
+<td>Add a node’s parent nodes, then refresh the graph.</td>
+</tr>
 <tr class="odd">
 <td><a href="#tvbo.api.ontology_api.OntologyAPI.configure_simulation_experiment">configure_simulation_experiment</a></td>
 <td>Configure a simulation experiment based on the metadata configuration.</td>
@@ -274,18 +326,96 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Return all the direct parent nodes of the given node and the corresponding edges</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.api.ontology_api.OntologyAPI.print_triplets">print_triplets</a></td>
+<td>Print each accumulated edge as a subject-predicate-object triplet.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.api.ontology_api.OntologyAPI.query_nodes">query_nodes</a></td>
 <td>Search for a node in the ontology by label and return it together with all its direct connections.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.api.ontology_api.OntologyAPI.search_by_term">search_by_term</a></td>
 <td>Search for a term in the ontology</td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.api.ontology_api.OntologyAPI.update_graph">update_graph</a></td>
+<td>Rebuild the serialisable graph from the current nodes and edges.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.api.ontology_api.OntologyAPI.update_interrelationships">update_interrelationships</a></td>
+<td>Add edges among the currently held nodes from the ontology graph.</td>
+</tr>
 </tbody>
 </table>
+<section id="tvbo.api.ontology_api.OntologyAPI.add_children" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.add_children">add_children</h5>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.add_children(node_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Add a node’s children and required nodes, then refresh the graph.</p>
+<p>Inserts every successor of <code>node_id</code> in the ontology graph into <code>self.nodes</code>, and adds each entity referenced by the node’s <code>requires</code> property together with a <code>"requires"</code> edge. Finally rebuilds the graph via <code>update_graph</code>.</p>
+<section id="parameters" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 11%">
+<col style="width: 59%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>node_id</td>
+<td></td>
+<td>Storid of the node whose children to add.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.api.ontology_api.OntologyAPI.add_parents" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.add_parents">add_parents</h5>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.add_parents(node_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Add a node’s parent nodes, then refresh the graph.</p>
+<p>Inserts every predecessor of <code>node_id</code> in the ontology graph into <code>self.nodes</code> and rebuilds the graph via <code>update_graph</code>.</p>
+<section id="parameters-1" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 11%">
+<col style="width: 59%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>node_id</td>
+<td></td>
+<td>Storid of the node whose parents to add.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.api.ontology_api.OntologyAPI.configure_simulation_experiment" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.configure_simulation_experiment">configure_simulation_experiment</h5>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.configure_simulation_experiment(metadata)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.configure_simulation_experiment(metadata)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Configure a simulation experiment based on the metadata configuration.</p>
 <p>Accepts either legacy <code>model</code>/<code>connectivity</code> keys or the current <code>dynamics</code>/<code>network</code> keys. Model and coupling names are resolved via <code>Dynamics.from_db</code> / <code>Coupling.from_db</code> so that equations, parameters, and state variables are fully populated.</p>
 <p>Example metadata::</p>
@@ -301,39 +431,76 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.api.ontology_api.OntologyAPI.export_experiment" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.export_experiment">export_experiment</h5>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.export_experiment(</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span>,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    directory,</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    metadata_only<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.export_experiment(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    directory,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    metadata_only<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render the configured experiment and save into <em>directory</em>.</p>
 <p>Thin wrapper around :meth:<code>SimulationExperiment.save</code>. Returns a <code>{"format", "files"}</code> dict describing what was written. Format resolution (canonical key + aliases + extension) lives in :mod:<code>tvbo.export.registry</code>.</p>
 </section>
 <section id="tvbo.api.ontology_api.OntologyAPI.get_child_connections" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.get_child_connections">get_child_connections</h5>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.get_child_connections(node_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.get_child_connections(node_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return all the children nodes of the given node and the corresponding edges</p>
 </section>
 <section id="tvbo.api.ontology_api.OntologyAPI.get_export_formats" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.get_export_formats">get_export_formats</h5>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.get_export_formats()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.get_export_formats()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return supported export format descriptors for UI dropdowns.</p>
 </section>
 <section id="tvbo.api.ontology_api.OntologyAPI.get_parent_connections" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.get_parent_connections">get_parent_connections</h5>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.get_parent_connections(node_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.get_parent_connections(node_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return all the direct parent nodes of the given node and the corresponding edges</p>
+</section>
+<section id="tvbo.api.ontology_api.OntologyAPI.print_triplets" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.print_triplets">print_triplets</h5>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.print_triplets()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Print each accumulated edge as a subject-predicate-object triplet.</p>
+<p>Resolves the source and target storids of every edge in <code>self.edges</code> back to their ontology entities and prints them alongside the edge type. Intended for interactive debugging.</p>
 </section>
 <section id="tvbo.api.ontology_api.OntologyAPI.query_nodes" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.query_nodes">query_nodes</h5>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.query_nodes(query_str<span class="op">=</span><span class="st">'noise'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.query_nodes(query_str<span class="op">=</span><span class="st">'noise'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Search for a node in the ontology by label and return it together with all its direct connections. First node in the nodes list should always be the node being searched for. Args: label: label of the node to be searched for Returns: dict: a dictionary containing a list of nodes and a list of edges connecting the nodes</p>
 </section>
 <section id="tvbo.api.ontology_api.OntologyAPI.search_by_term" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.search_by_term">search_by_term</h5>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.search_by_term(term<span class="op">=</span><span class="st">'JansenRit'</span>, node2str<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.search_by_term(term<span class="op">=</span><span class="st">'JansenRit'</span>, node2str<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Search for a term in the ontology Args: term: string with term to be searched Returns: list: list of all nodes containing the search term in their label/definition</p>
+</section>
+<section id="tvbo.api.ontology_api.OntologyAPI.update_graph" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.update_graph">update_graph</h5>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.update_graph()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Rebuild the serialisable graph from the current nodes and edges.</p>
+<p>Refreshes interrelationships via <code>update_interrelationships</code>, then assembles <code>self.graph</code> with a <code>"nodes"</code> list of node dictionaries and a <code>"links"</code> list of <code>{"source", "target", "type"}</code> edge dictionaries.</p>
+<section id="returns" class="level6 doc-section doc-section-returns">
+<h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h6>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The assembled graph dictionary.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.api.ontology_api.OntologyAPI.update_interrelationships" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.api.ontology_api.OntologyAPI.update_interrelationships">update_interrelationships</h5>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.OntologyAPI.update_interrelationships()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Add edges among the currently held nodes from the ontology graph.</p>
+<p>Takes the subgraph of the ontology graph induced by the storids in <code>self.nodes</code> and merges its <code>(source, target, type)</code> edges into <code>self.edges</code>, capturing every relationship between nodes already present in the graph.</p>
 </section>
 </section>
 </section>
@@ -350,7 +517,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.api.ontology_api.label2symbol">label2symbol</a></td>
-<td></td>
+<td>Render an ontology node’s symbol as LaTeX, falling back to its label.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.api.ontology_api.ontoclass2dict">ontoclass2dict</a></td>
@@ -364,16 +531,75 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.api.ontology_api.label2symbol" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.ontology_api.label2symbol">label2symbol</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.label2symbol(node, delimiter<span class="op">=</span><span class="st">''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.label2symbol(node, delimiter<span class="op">=</span><span class="st">''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render an ontology node’s symbol as LaTeX, falling back to its label.</p>
+<p>If the node carries a non-empty <code>symbol</code> annotation, it is parsed with SymPy and rendered as LaTeX, optionally wrapped in <code>delimiter</code> on either side. Otherwise the node’s suffix-stripped label is returned.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 7%">
+<col style="width: 5%">
+<col style="width: 80%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>node</td>
+<td></td>
+<td>Ontology class or individual to render.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>delimiter</td>
+<td></td>
+<td>String placed on both sides of the LaTeX symbol, e.g.&nbsp;<code>"$"</code> to produce inline math. Ignored when falling back to the label.</td>
+<td><code>''</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>The LaTeX symbol (wrapped in <code>delimiter</code>) or the node’s label.</td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.api.ontology_api.ontoclass2dict" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.ontology_api.ontoclass2dict">ontoclass2dict</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.ontoclass2dict(ontoclass)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.ontoclass2dict(ontoclass)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert an OntoClass object to a JSON object Args: ontoclass: OntoClass object Returns: dict: JSON object</p>
 </section>
 <section id="tvbo.api.ontology_api.uid2int" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.api.ontology_api.uid2int">uid2int</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.uid2int(uid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>api.ontology_api.uid2int(uid)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert a UID object to an integer Args: uid: UID object Returns: int: integer</p>
 
 
