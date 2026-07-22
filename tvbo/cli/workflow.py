@@ -1064,7 +1064,7 @@ def _resolve_launcher(name: str) -> str | None:
 
 
 def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | None = None,
-                             dry_run: bool = False) -> None:
+                             dry_run: bool = False, profile: str | None = None) -> None:
     """Submit/execute a rendered workflow artefact for *engine*.
 
     Runs from the artefact's own directory so the generated script can use the
@@ -1073,6 +1073,10 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
     smoke task, ``'0-3'`` for four); ignored for non-Slurm engines. *dry_run* asks
     the engine to resolve and report the work without running or queueing it —
     each engine spells that differently, so it maps to the engine's own flag.
+    *profile* (Snakemake only) overrides the kit's shipped ``profile/`` with a named
+    or path profile — e.g. a site profile like ``cubi-v1`` that carries the
+    cluster's canonical executor config; the Snakefile's per-rule ``resources:``
+    apply on top of whichever profile is used.
     """
     # Resolve to an absolute launcher so a venv-installed console script is found
     # even when that venv's bin/ is not on PATH (see :func:`_resolve_launcher`).
@@ -1086,8 +1090,11 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
         cmd.append(artefact.name)
     elif engine == "snakemake":
         # A shipped SLURM profile makes the login-node run submit each rule to the
-        # scheduler (executor: slurm + jobs); without one, fall back to local cores.
-        if (artefact.parent / "profile" / "config.yaml").exists():
+        # scheduler (executor: slurm + jobs); a site profile (--profile) replaces it;
+        # without either, fall back to local cores.
+        if profile:
+            cmd = [exe, "--profile", profile]
+        elif (artefact.parent / "profile" / "config.yaml").exists():
             cmd = [exe, "--profile", "profile"]
         else:
             cmd = [exe, "--cores", "all"]
@@ -1104,20 +1111,21 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
 
 
 def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = None,
-                     dry_run: bool = False) -> None:
+                     dry_run: bool = False, profile: str | None = None) -> None:
     """Execute a generated workflow artefact inside *out_dir*.
 
     For Slurm this submits the array job and then chains the gather job
     (``finalize.sbatch``) with an ``afterok`` dependency, so the run converges to
     one reassembled result with no manual step. With *dry_run* nothing is queued:
     the engine only reports the work it would do, so the Slurm chain is skipped
-    (there is no array job id to depend on).
+    (there is no array job id to depend on). *profile* overrides the Snakemake
+    profile (see :func:`_execute_engine_artefact`).
     """
     if engine == "slurm" and not dry_run:
         _submit_slurm_chain(out_dir, slurm_array=slurm_array)
     else:
         _execute_engine_artefact(engine, out_dir / _ARTEFACT_NAME[engine],
-                                 slurm_array=slurm_array, dry_run=dry_run)
+                                 slurm_array=slurm_array, dry_run=dry_run, profile=profile)
 
 
 def _submit_slurm_chain(out_dir: Path, *, slurm_array: str | None = None) -> None:
@@ -1326,6 +1334,12 @@ def run_workflow(
         min=1,
         help="Limit concurrent Slurm array tasks when using --array, e.g. 1 for one GPU at a time.",
     ),
+    profile: str = typer.Option(
+        None, "--profile",
+        help="Snakemake only: run with this profile (name or path) instead of the kit's shipped "
+             "'profile/' — e.g. a site profile carrying the cluster's executor config like BIH "
+             "CUBI's 'cubi-v1'. Per-rule resources in the Snakefile apply on top of it.",
+    ),
 ) -> None:
     """Emit a self-contained kit then execute it (or submit for Slurm).
 
@@ -1379,7 +1393,7 @@ def run_workflow(
         _common.die("failed to emit workflow kit")
     if array is not None and array_throttle is not None:
         array = f"{array}%{array_throttle}"
-    _execute_emitted(engine, out_dir, slurm_array=array)
+    _execute_emitted(engine, out_dir, slurm_array=array, profile=profile)
 
 
 def _tar_extractall_safe(tar, dest: Path) -> None:
@@ -1474,6 +1488,13 @@ def submit_kit(
         help="Resolve and report the work without running or queueing anything — the engine's "
              "own dry run. Validates the kit (DAG, wildcards, inputs) before a large submission.",
     ),
+    profile: str = typer.Option(
+        None, "--profile",
+        help="Snakemake only: use this profile (a name resolved against the Snakemake config "
+             "search path, or a path) instead of the kit's shipped 'profile/'. Use a site profile "
+             "that carries the cluster's canonical executor config — e.g. BIH CUBI's 'cubi-v1' "
+             "(`--profile cubi-v1`). The Snakefile's per-rule resources apply on top of it.",
+    ),
 ) -> None:
     """Submit a kit already emitted by ``tvbo workflow slurm|snakemake|nextflow``.
 
@@ -1515,7 +1536,7 @@ def submit_kit(
     # --system-site-packages venv (native, or on the container) and is idempotent (the venv
     # is reused), so it is cheap to re-run.
     _provision_env_layer(kit, dry_run=dry_run)
-    _execute_emitted(eng, kit, slurm_array=array, dry_run=dry_run)
+    _execute_emitted(eng, kit, slurm_array=array, dry_run=dry_run, profile=profile)
 
 
 def _provision_env_layer(kit: Path, *, dry_run: bool) -> None:

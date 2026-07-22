@@ -197,59 +197,104 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
     return state_names, requested_aux, all_var_names
 
 
-def state_only_recorded_aux(model: Any, experiment: Any = None) -> List[Tuple[str, int]]:
-    """Recorded derived variables that are provably functions of the state alone.
+def _state_recomputable_derived(model: Any) -> Set[str]:
+    """Names of derived variables recomputable from the recorded state alone.
 
-    Returns ``[(name, aux_offset), ...]`` for each recorded derived variable whose
-    expression — expanded through referenced derived variables and parameters —
-    references no coupling input, external input, or ``local_coupling``; ``aux_offset``
-    is the variable's index within the recorded-auxiliary block (trajectory channel
-    ``len(state_names) + aux_offset``). These can be recomputed from the recorded
-    post-step state to undo the solver's one-step auxiliary lag; coupling-dependent
-    ones cannot (they need the in-scan coupling) and are omitted. Conservative: a
-    variable whose dependencies cannot be resolved is omitted.
+    Each derived variable's expression is fully expanded — via sympy substitution,
+    in declaration order (which is topological: a derived variable may only
+    reference earlier ones, as the dfun requires) — down to its primitive symbols.
+    A variable is state-recomputable iff every remaining symbol is one the
+    post-solve realignment binds from the recorded state: a state variable, a
+    non-stochastic parameter, a derived parameter, or ``t``.
+
+    A whitelist, not a coupling-name blacklist: coupling inputs surface as their
+    per-key symbols (an ``EIBLinearCoupling`` unpacks to ``c_lre`` / ``c_ffi``), not
+    under the coupling's declared name, so a blacklist would miss them. Time-varying
+    (stochastic) parameters are excluded too — the realignment cannot resolve them
+    host-side. Conservative: an unparseable expression, a forward reference, or a
+    cyclic one leaves an unexpanded derived-variable symbol behind and so falls out
+    as *not* recomputable, without a hand-rolled traversal or cycle guard.
+
+    Shared by :func:`state_only_recorded_aux` and :func:`state_only_derived_var_names`
+    so the two never disagree on which auxiliaries are recomputable from the state.
     """
-    _, requested_aux, _ = get_recorded_variable_names(model, experiment)
-    if not requested_aux or not getattr(model, "derived_variables", None):
-        return []
+    import sympy as sp
 
     from tvbo.classes.equation import sympify as _sympify
 
     dvars = model.derived_variables or {}
+    if not dvars:
+        return set()
     dparams = getattr(model, "derived_parameters", None) or {}
-    tainted = {"local_coupling"}
-    tainted |= set((getattr(model, "coupling_inputs", None) or {}).keys())
-    tainted |= set((getattr(model, "external_inputs", None) or {}).keys())
+    params = getattr(model, "parameters", None) or {}
+    state_vars = model.state_variables or {}
 
-    def _free_symbols(obj):
-        """Free-symbol names of ``obj``'s equation rhs, or ``None`` if absent/unparseable."""
-        eq = getattr(obj, "equation", None)
+    def _is_time_stochastic(p):
+        dist = getattr(p, "distribution", None)
+        return dist is not None and "time" in str(getattr(dist, "axis", "space"))
+
+    safe = set(state_vars.keys())
+    safe |= {name for name, p in params.items() if not _is_time_stochastic(p)}
+    safe |= set(dparams.keys())
+    safe.add("t")
+
+    expanded: Dict[str, Any] = {}  # name -> fully-expanded expr, or None if unparseable
+    for name, dv in dvars.items():
+        eq = getattr(dv, "equation", None)
         rhs = getattr(eq, "rhs", None) if eq is not None else None
-        if rhs is None:
-            return None
         try:
-            return {str(s) for s in _sympify(str(rhs)).free_symbols}
+            expr = _sympify(str(rhs)) if rhs is not None else None
         except Exception:
-            return None
+            expr = None
+        if expr is not None:
+            subs = {
+                sp.Symbol(n): x
+                for n, x in expanded.items()
+                if x is not None and sp.Symbol(n) in expr.free_symbols
+            }
+            if subs:
+                expr = expr.subs(subs)
+        expanded[name] = expr
 
-    syms = {name: _free_symbols(dv) for name, dv in dvars.items()}
-    syms.update({name: _free_symbols(dp) for name, dp in dparams.items()})
+    return {
+        name
+        for name, expr in expanded.items()
+        if expr is not None and {str(s) for s in expr.free_symbols} <= safe
+    }
 
-    def _depends_on_coupling(name, seen=frozenset()):
-        s = syms.get(name)
-        if s is None:                       # unresolved dependency → assume tainted
-            return True
-        if s & tainted:
-            return True
-        return any(
-            dep not in seen and dep in syms and _depends_on_coupling(dep, seen | {dep})
-            for dep in s
-        )
 
+def state_only_derived_var_names(model: Any) -> List[str]:
+    """Derived-variable names that are provably functions of the state alone.
+
+    Returned in the model's declaration order (dependency order — a derived
+    variable may only reference earlier ones, as the dfun requires). The post-solve
+    realignment binds these as locals so a recorded auxiliary can reach the
+    *intermediate* derived variables it depends on (e.g. a firing rate that is a
+    function of a synaptic-current derived variable) without a ``NameError``.
+    """
+    recomputable = _state_recomputable_derived(model)
+    return [name for name in (model.derived_variables or {}) if name in recomputable]
+
+
+def state_only_recorded_aux(model: Any, experiment: Any = None) -> List[Tuple[str, int]]:
+    """Recorded derived variables that are provably functions of the state alone.
+
+    Returns ``[(name, aux_offset), ...]`` for each recorded derived variable that is
+    state-recomputable (see :func:`_state_recomputable_derived`); ``aux_offset`` is
+    the variable's index within the recorded-auxiliary block (trajectory channel
+    ``len(state_names) + aux_offset``). These can be recomputed from the recorded
+    post-step state to undo the solver's one-step auxiliary lag; coupling-dependent
+    ones cannot (they need the in-scan coupling) and are omitted.
+    """
+    _, requested_aux, _ = get_recorded_variable_names(model, experiment)
+    if not requested_aux or not (model.derived_variables or {}):
+        return []
+
+    recomputable = _state_recomputable_derived(model)
     return [
         (name, offset)
         for offset, name in enumerate(requested_aux)
-        if name in dvars and not _depends_on_coupling(name)
+        if name in recomputable
     ]
 
 
