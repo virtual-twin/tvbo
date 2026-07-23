@@ -349,8 +349,8 @@ class PopulationSchematic:
         g.attr("node", shape="circle", fixedsize="true", width=str(node_size))
         for n in nodes:
             g.node(n)
-        for n in dots:                                   # ellipsis columns (own width, no shape)
-            g.node(n, shape="none", label="", width=str(node_size * 0.9), height="0.1")
+        for n in dots:                                   # narrow ellipsis columns so the real circuit zooms in
+            g.node(n, shape="none", label="", width=str(node_size * 0.45), height="0.1")
         for row in ranks:
             with g.subgraph() as s:
                 s.attr(rank="same")
@@ -387,9 +387,9 @@ class PopulationSchematic:
     # -- render -----------------------------------------------------------
     def plot(self, ax=None, layout="stacked", glyph="circle", node_size=0.7,
              self_loop=(0.62, 0.55), coupling_blob=False, ellipsis=None, legend=True,
-             legend_labels=None, synapse_colors=None, fontsize=15, ranksep=1.15, nodesep=1.0,
-             hide=None, long_range_targets=None, fill_width=2.6, fit="tight",
-             figsize=(7.8, 4.0)):
+             legend_labels=None, legend_loc="below", synapse_colors=None, fontsize=None,
+             ranksep=1.15, nodesep=1.0, hide=None, long_range_targets=None, fill_width=2.6,
+             fit="tight", figsize=(7.8, 4.0)):
         """Render the schematic onto ``ax`` (created if ``None``). Returns the axis.
 
         ``layout`` ∈ {stacked, mirror, row}; ``glyph`` ∈ {circle, neurons} or a
@@ -414,6 +414,8 @@ class PopulationSchematic:
         import matplotlib.pyplot as plt
         from matplotlib.patches import Ellipse
 
+        if fontsize is None:                             # inherit the figure's metadata font_size
+            fontsize = plt.rcParams["font.size"]
         colors = {**SYNAPSE_COLORS, **(synapse_colors or {})}
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
@@ -469,8 +471,8 @@ class PopulationSchematic:
         cy = np.mean([y for _, y, _ in real.values()])
         for side in ("dotL", "dotR"):
             col = [v[0] for n, v in pos.items() if n.startswith(side)]
-            if col:
-                ax.text(np.mean(col), cy, "…", fontsize=26, ha="center", va="center")
+            if col:                                      # compact "…", scales with the base font
+                ax.text(np.mean(col), cy, "…", fontsize=fontsize * 1.3, ha="center", va="center")
 
         allx = [x for x, _, _ in pos.values()]; ally = [y for _, y, _ in pos.values()]
         x0, x1 = min(allx) - 1.0 * r0, max(allx) + 1.0 * r0
@@ -489,10 +491,10 @@ class PopulationSchematic:
         adjustable = "datalim" if fit == "width" else "box"
         ax.set_aspect("equal", adjustable=adjustable); ax.axis("off")
         if legend:
-            self._legend(ax, colors, legend_labels, fontsize)
+            self._legend(ax, colors, legend_labels, fontsize, legend_loc)
         return ax
 
-    def _legend(self, ax, colors, legend_labels, fontsize):
+    def _legend(self, ax, colors, legend_labels, fontsize, loc="below"):
         from matplotlib.lines import Line2D
         seen, items = set(), []
         for c in self.connections:
@@ -506,11 +508,14 @@ class PopulationSchematic:
                           markerfacecolor=col, markeredgecolor=col, label=lbl)
                    for (lbl, col, mk, _s) in items]
         if handles:
-            # anchor the legend's TOP just below the axis so it sits BELOW the plot (loc
-            # "upper center" grows downward); constrained/compressed layout reserves the space.
-            leg = ax.legend(handles=handles, loc="upper center", ncol=len(handles), frameon=False,
+            # "below": legend TOP just under the axis (grows down); "top": legend BOTTOM just
+            # above the axis (grows up — use when a panel sits directly below the schematic, so
+            # the legend does not overlap it). Layout engine reserves the space either way.
+            anchor, mloc = (((0.5, 1.02), "lower center") if loc == "top"
+                            else ((0.5, -0.02), "upper center"))
+            leg = ax.legend(handles=handles, loc=mloc, ncol=len(handles), frameon=False,
                             fontsize=fontsize - 2, handlelength=1.8, columnspacing=1.6,
-                            bbox_to_anchor=(0.5, -0.02))
+                            bbox_to_anchor=anchor)
             leg.set_clip_on(False)
 
 

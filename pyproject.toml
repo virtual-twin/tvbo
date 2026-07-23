@@ -51,7 +51,11 @@ dependencies = [
     # Visualization doc) dies with "NameError: name 'colormaps' is not defined".
     # A >=0.0.7 floor is satisfied by an already-installed 0.0.7, so the stale
     # build survives an env that is never explicitly upgraded.
-    "bsplot>=0.0.9",
+    # >=0.0.10: the declarative Figure renderer (tvbo/adapters/bsplot.py) drives
+    # bsplot.figure.subplots / style.format_fig / panels.add_panel_number as a
+    # first-class dependency; keeping the floor current stops a stale 0.0.8 (below
+    # the previous floor) from lingering in an env that is never explicitly upgraded.
+    "bsplot>=0.0.10",
     "networkx>=3.4.2",
     "pydot>=3.0.3",
 

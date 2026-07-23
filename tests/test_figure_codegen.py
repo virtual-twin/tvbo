@@ -100,6 +100,20 @@ def test_container_path_unresolved_returns_empty():
     assert bsplot._container_path(EXP3_IRI, Path("/nonexistent/base/dir")) == ""
 
 
+def test_container_path_resolves_results_dir_container(tmp_path):
+    """A figure layer may bind a derived-figure container a replication study writes with
+    ``ExperimentResult.save`` under ``output/results/<name>/result.h5`` (the ``results_io``
+    convention), not only a ``tvbo run`` experiment under ``output/nc/<exp>/``. The last IRI
+    segment names the results subdirectory."""
+    bsplot._container_path.cache_clear()  # the resolver is lru_cached
+    result = tmp_path / "output" / "results" / "fig3" / "result.h5"
+    result.parent.mkdir(parents=True)
+    result.write_bytes(b"")  # existence is all the resolver checks
+    assert bsplot._container_path("tvbo:result/Deco2014/fig3", tmp_path) == str(result.resolve())
+    # An unknown name under the same base stays empty (no results/ subdir for it).
+    assert bsplot._container_path("tvbo:result/Deco2014/figX", tmp_path) == ""
+
+
 # --------------------------------------------------------------------------- build_context
 
 @requires_exp3

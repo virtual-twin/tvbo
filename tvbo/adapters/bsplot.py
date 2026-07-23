@@ -188,12 +188,16 @@ def _annotations(panel) -> list:
 def _container_path(iri, base_dir: Path) -> str:
     """Resolve an experiment IRI/key to its result container (skips ``*_network.h5``).
 
-    The PROV ``used`` edge points at an experiment; its container lives under
-    ``<base_dir>/output/nc/<exp>/``. Returns ``""`` when unresolved.
+    The PROV ``used`` edge points at a result; its container lives under either
+    ``<base_dir>/output/nc/<exp>/`` (a ``tvbo run`` experiment) or
+    ``<base_dir>/output/results/<name>/result.h5`` (a derived-figure container a
+    replication study writes with ``ExperimentResult.save``, the ``results_io``
+    convention). Both are tried so a figure layer can bind either. Returns ``""``
+    when unresolved.
     """
     if not iri:
         return ""
-    key = re.split(r"[:/#]", str(iri))[-1]          # last IRI segment (e.g. "exp-3")
+    key = re.split(r"[:/#]", str(iri))[-1]          # last IRI segment (e.g. "exp-3" or "fig3")
     digits = re.sub(r"\D", "", key)                 # trailing experiment number
     for cand in [key, *([f"exp{digits}", f"exp-{digits}"] if digits else [])]:
         d = base_dir / "output" / "nc" / cand
@@ -201,6 +205,9 @@ def _container_path(iri, base_dir: Path) -> str:
             files = [f for f in sorted(d.glob("*.h5")) if "network" not in f.name]
             if files:
                 return str(files[0].resolve())
+        result = base_dir / "output" / "results" / cand / "result.h5"
+        if result.is_file():
+            return str(result.resolve())
     return ""
 
 

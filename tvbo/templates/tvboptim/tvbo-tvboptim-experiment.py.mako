@@ -1468,7 +1468,12 @@ def create_network(
     if distances is None:
         distances = jnp.zeros_like(weights)
     _speed = ${conduction_speed}
-    _max_delay_bound = max_delay if max_delay is not None else (float(jnp.max(distances)) / _speed if _speed > 0 else 0.0)
+    # Size the bound the way DenseLengthGraph measures the largest delay — elementwise
+    # distances/_speed then max, NOT max(distances)/_speed. Equal in exact arithmetic, they
+    # differ by a float32 ULP for some speeds, landing the bound just under the graph's own
+    # max(delay) and tripping its strict `bound >= max(delay)` check (scattered sweep cells,
+    # e.g. v=5 fails while v=6 passes). A hair of headroom keeps the buffer never an ULP short.
+    _max_delay_bound = max_delay if max_delay is not None else (float(jnp.max(distances / _speed)) * (1.0 + 1e-4) if _speed > 0 else 0.0)
     graph = DenseLengthGraph(weights, distances, speed=_speed, region_labels=region_labels, max_delay_bound=_max_delay_bound)
     % elif use_delay_graph and use_sparse:
     # Sparse + per-edge delays: weights and delays share one BCOO sparsity pattern, so the
@@ -2565,7 +2570,9 @@ def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
             _network.graph.weights, _lengths, speed=_v_build,
             region_labels=_network.graph.region_labels,
             # min(): the binding speed is the build speed when every swept speed is faster.
-            max_delay_bound=float(jnp.max(_lengths)) / min(_v_build, ${_v_min}),
+            # max over lengths/speed (not max(lengths)/speed) + a hair of headroom, so a
+            # float32 ULP never lands the buffer under the graph's own max(delay).
+            max_delay_bound=float(jnp.max(_lengths / min(_v_build, ${_v_min}))) * (1.0 + 1e-4),
         )
         _network = type(_network)(
             _network.dynamics, _network.coupling, _length_graph, noise=_network.noise,
