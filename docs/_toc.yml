@@ -68,8 +68,6 @@ website:
                     href: Networks/HeterogeneousEdges.qmd
                   - text: "Network specification"
                     href: Specification/Network.qmd
-                  - text: "Network schema"
-                    href: datamodel/classes/Network.qmd
 
               - section: "Beyond the Mean Field"
                 href: BeyondMeanField/index.qmd
