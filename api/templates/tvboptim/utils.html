@@ -1360,13 +1360,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.state_only_derived_var_names">state_only_derived_var_names</h3>
 <div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.state_only_derived_var_names(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Derived-variable names that are provably functions of the state alone.</p>
-<p>Returned in the model’s declaration order (which is dependency order — a derived variable may only reference earlier ones, as the dfun requires). The post-solve realignment binds these as locals so a recorded auxiliary can reach the <em>intermediate</em> derived variables it depends on (e.g.&nbsp;a firing rate that is a function of a synaptic-current derived variable) without a <code>NameError</code>.</p>
+<p>Returned in the model’s declaration order (dependency order — a derived variable may only reference earlier ones, as the dfun requires). The post-solve realignment binds these as locals so a recorded auxiliary can reach the <em>intermediate</em> derived variables it depends on (e.g.&nbsp;a firing rate that is a function of a synaptic-current derived variable) without a <code>NameError</code>.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.state_only_recorded_aux" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.state_only_recorded_aux">state_only_recorded_aux</h3>
 <div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.state_only_recorded_aux(model, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Recorded derived variables that are provably functions of the state alone.</p>
-<p>Returns <code>[(name, aux_offset), ...]</code> for each recorded derived variable whose expression — expanded through referenced derived variables and parameters — references no coupling input, external input, or <code>local_coupling</code>; <code>aux_offset</code> is the variable’s index within the recorded-auxiliary block (trajectory channel <code>len(state_names) + aux_offset</code>). These can be recomputed from the recorded post-step state to undo the solver’s one-step auxiliary lag; coupling-dependent ones cannot (they need the in-scan coupling) and are omitted. Conservative: a variable whose dependencies cannot be resolved is omitted.</p>
+<p>Returns <code>[(name, aux_offset), ...]</code> for each recorded derived variable that is state-recomputable (see :func:<code>_state_recomputable_derived</code>); <code>aux_offset</code> is the variable’s index within the recorded-auxiliary block (trajectory channel <code>len(state_names) + aux_offset</code>). These can be recomputed from the recorded post-step state to undo the solver’s one-step auxiliary lag; coupling-dependent ones cannot (they need the in-scan coupling) and are omitted.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.streaming_post_eval_plan" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.streaming_post_eval_plan">streaming_post_eval_plan</h3>
@@ -1477,7 +1477,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

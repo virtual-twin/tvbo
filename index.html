@@ -6170,28 +6170,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div class="tvbo-home">
 <section class="hero">
-  <div class="hero__text">
-    <p class="eyebrow">The Virtual Brain Ontology</p>
-    <h1 class="hero__title">One specification for a whole <em>brain-network</em> simulation.</h1>
-    <p class="hero__lede">
-      From one typed, ontology-grounded spec, <code>tvbo</code> compiles runnable code
-      across many backends and a methods report — and grounds every parameter in a
-      knowledge graph. Studies re-run without drift; models compare even when they
-      share no notation.
-    </p>
-    <div class="hero__cta">
-      <a class="btn btn--primary" href="GettingStarted.html">Get started <span aria-hidden="true">→</span></a>
-      <a class="btn btn--ghost" href="https://tvbo.charite.de">Open the web app <span aria-hidden="true">↗</span></a>
+  <div class="hero__intro">
+    <div class="hero__head">
+      <p class="eyebrow">The Virtual Brain Ontology</p>
+      <h1 class="hero__title">One specification for a whole <em>brain-network</em> simulation.</h1>
+      <p class="hero__lede">
+        From one typed, ontology-grounded spec, <code>tvbo</code> compiles runnable code
+        across many backends and a methods report — and grounds every parameter in a
+        knowledge graph. Studies re-run without drift; models compare even when they
+        share no notation.
+      </p>
     </div>
-    <div class="hero__chips">
-      <span class="chips__label">From one source</span>
-      <ul class="chips">
-        <li>TVB</li><li>JAX</li><li>Julia</li><li>C / CUDA</li><li>AUTO</li><li>BifurcationKit</li>
-      </ul>
-    </div>
-  </div>
 
-  <div class="hero__art" aria-hidden="true">
+    <div class="hero__art" aria-hidden="true">
     <svg class="connectome" viewbox="0 0 400 400" role="img">
       <g class="edges">
         <line class="edge" x1="200" y1="50" x2="329.9" y2="125" style="animation-delay:.05s"></line>
@@ -6213,15 +6204,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <line class="edge" x1="200" y1="200" x2="70.1" y2="275" style="animation-delay:.75s"></line>
         <line class="edge" x1="200" y1="200" x2="70.1" y2="125" style="animation-delay:.80s"></line>
       </g>
-      <g class="halos">
-        <circle class="halo" cx="200" cy="50" r="16"></circle>
-        <circle class="halo" cx="329.9" cy="125" r="16"></circle>
-        <circle class="halo" cx="329.9" cy="275" r="16"></circle>
-        <circle class="halo" cx="200" cy="350" r="16"></circle>
-        <circle class="halo" cx="70.1" cy="275" r="16"></circle>
-        <circle class="halo" cx="70.1" cy="125" r="16"></circle>
-        <circle class="halo" cx="200" cy="200" r="24"></circle>
-      </g>
       <g class="pulses">
         <circle class="pulse" r="4.5" style="offset-path:path('M70.1,125 L329.9,125'); animation-delay:0s"></circle>
         <circle class="pulse" r="4.5" style="offset-path:path('M329.9,275 L70.1,275'); animation-delay:.9s"></circle>
@@ -6235,21 +6217,39 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <circle class="node node--outer" cx="200" cy="350" r="9" style="animation-delay:1.05s"></circle>
         <circle class="node node--outer" cx="70.1" cy="275" r="9" style="animation-delay:1.10s"></circle>
         <circle class="node node--outer" cx="70.1" cy="125" r="9" style="animation-delay:1.15s"></circle>
-        <circle class="node node--center" cx="200" cy="200" r="12" style="animation-delay:1.25s"></circle>
+        <circle class="node node--center" cx="200" cy="200" r="44" style="animation-delay:1.25s"></circle>
+        <circle class="node node--hub" cx="200" cy="200" r="9" style="animation-delay:1.32s"></circle>
       </g>
     </svg>
+    </div>
+  </div>
+
+  <div class="hero__bar">
+    <div class="hero__cta">
+      <a class="btn btn--primary" href="GettingStarted.html">Get started <span aria-hidden="true">→</span></a>
+      <a class="btn btn--ghost" href="platform.html">Explore the platform <span aria-hidden="true">→</span></a>
+    </div>
   </div>
 </section>
 
 <section class="pipeline">
   <p class="section-eyebrow">From database to reproducible result</p>
   <ol class="steps">
-    <li class="step"><span class="step__n">1</span><h3 class="anchored">Load</h3><p>Pull curated models and studies from the knowledge database.</p></li>
-    <li class="step"><span class="step__n">2</span><h3 class="anchored">Specify</h3><p>Define dynamical systems and networks in one small typed spec.</p></li>
-    <li class="step"><span class="step__n">3</span><h3 class="anchored">Build</h3><p>Configure the brain-network model — nodes, coupling, noise.</p></li>
-    <li class="step"><span class="step__n">4</span><h3 class="anchored">Generate</h3><p>Emit optimized simulation code for Python, JAX, or Julia.</p></li>
-    <li class="step"><span class="step__n">5</span><h3 class="anchored">Share</h3><p>Export reproducible models with standardized metadata.</p></li>
+    <li class="step"><span class="step__n">1</span><h3 class="anchored">Explore</h3><p>Find curated models, networks, and studies in the knowledge database.</p></li>
+    <li class="step"><span class="step__n">2</span><h3 class="anchored">Specify</h3><p>Define dynamical systems and networks as one typed spec.</p></li>
+    <li class="step"><span class="step__n">3</span><h3 class="anchored">Build</h3><p>Assemble the network model — nodes, coupling, noise.</p></li>
+    <li class="step"><span class="step__n">4</span><h3 class="anchored">Generate &amp; run</h3><p>Emit optimized code and execute on any backend.</p></li>
+    <li class="step"><span class="step__n">5</span><h3 class="anchored">Plot</h3><p>Compose multi-panel publication figures from results.</p></li>
+    <li class="step"><span class="step__n">6</span><h3 class="anchored">Share</h3><p>Export reproducible models with standardized metadata.</p></li>
   </ol>
+  <div class="pipeline__targets">
+    <span class="step__n step__n--sm" aria-hidden="true">4</span>
+    <span class="chips__label">From one source</span>
+    <span class="targets__arrow" aria-hidden="true">→</span>
+    <ul class="chips">
+      <li>TVB</li><li>JAX</li><li>Julia</li><li>C / CUDA</li><li>AUTO</li><li>BifurcationKit</li>
+    </ul>
+  </div>
 </section>
 
 <figure class="overview figure">
@@ -6258,23 +6258,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </figure>
 
 <div class="cards">
+  <a class="card" href="api/index.html">
+    <span class="card__icon"><i class="fa-brands fa-python" aria-hidden="true"></i></span>
+    <h3 class="anchored">Python Software</h3>
+    <p>The <code>tvbo</code> library — specify models, generate code across backends, and run simulations from Python.</p>
+    <span class="card__more">API reference →</span>
+  </a>
   <a class="card" href="https://tvbo.charite.de">
-    <span class="card__icon"><i class="fa-solid fa-brain" aria-hidden="true"></i></span>
-    <h3 class="anchored">TVB-O GUI</h3>
-    <p>Open the hosted web app to explore models, datasets, and simulations.</p>
+    <span class="card__icon"><i class="fa-solid fa-globe" aria-hidden="true"></i></span>
+    <h3 class="anchored">Platform</h3>
+    <p>The hosted web app — browse models &amp; networks, build experiments, and export, with no install.</p>
     <span class="card__more">Open the app ↗</span>
   </a>
-  <a class="card" href="./browser">
-    <span class="card__icon"><i class="fa-solid fa-compass" aria-hidden="true"></i></span>
-    <h3 class="anchored">Model Browser</h3>
-    <p>Browse models, parameters, and equations. Inspect relationships interactively.</p>
-    <span class="card__more">Browse models →</span>
-  </a>
-  <a class="card" href="./datamodel">
+  <a class="card" href="datamodel/index.html">
     <span class="card__icon"><i class="fa-solid fa-diagram-project" aria-hidden="true"></i></span>
-    <h3 class="anchored">Metadata Schema</h3>
-    <p>Explore the TVB-O metadata schema: classes, fields, and constraints.</p>
-    <span class="card__more">Open the schema →</span>
+    <h3 class="anchored">Data Model</h3>
+    <p>The typed metadata schema behind every spec — classes, fields, and constraints.</p>
+    <span class="card__more">Explore the schema →</span>
   </a>
 </div>
 </div>
