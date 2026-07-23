@@ -189,7 +189,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
+  <li><a href="#tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes" id="toc-tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes">auto_nvmap_budget_bytes</a></li>
+  <li><a href="#tvbo.templates.tvboptim.callbacks.auto_nvmap_cap" id="toc-tvbo.templates.tvboptim.callbacks.auto_nvmap_cap" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.auto_nvmap_cap">auto_nvmap_cap</a></li>
+  <li><a href="#tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes" id="toc-tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes">estimate_per_cell_bytes</a></li>
   <li><a href="#tvbo.templates.tvboptim.callbacks.progress_ticker" id="toc-tvbo.templates.tvboptim.callbacks.progress_ticker" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.progress_ticker">progress_ticker</a></li>
+  <li><a href="#tvbo.templates.tvboptim.callbacks.resolve_n_vmap" id="toc-tvbo.templates.tvboptim.callbacks.resolve_n_vmap" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.resolve_n_vmap">resolve_n_vmap</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -216,6 +220,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </thead>
 <tbody>
+<tr class="odd">
+<td><a href="#tvbo.templates.tvboptim.callbacks.AUTO_NVMAP_CAP">AUTO_NVMAP_CAP</a></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.templates.tvboptim.callbacks.AUTO_NVMAP_MEM_BUDGET_GB">AUTO_NVMAP_MEM_BUDGET_GB</a></td>
+<td></td>
+</tr>
 <tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.callbacks.logger">logger</a></td>
 <td></td>
@@ -290,19 +302,53 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes">auto_nvmap_budget_bytes</a></td>
+<td>Batch working-memory budget for <code>n_parallel: auto</code>, in bytes.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.templates.tvboptim.callbacks.auto_nvmap_cap">auto_nvmap_cap</a></td>
+<td>Cell-count cap for <code>n_parallel: auto</code>, overridable via <code>TVBO_NVMAP_AUTO_CAP</code>.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes">estimate_per_cell_bytes</a></td>
+<td>Best-effort per-cell working-memory estimate for <code>n_parallel: auto</code>.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.callbacks.progress_ticker">progress_ticker</a></td>
 <td>Wrap a scanned/vmapped per-item function so it streams <code>label i/total</code> progress.</td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.templates.tvboptim.callbacks.resolve_n_vmap">resolve_n_vmap</a></td>
+<td>Resolve an <code>Exploration.n_parallel</code> spec to a concrete vmap chunk width.</td>
+</tr>
 </tbody>
 </table>
+<section id="tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes">auto_nvmap_budget_bytes</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.auto_nvmap_budget_bytes()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Batch working-memory budget for <code>n_parallel: auto</code>, in bytes.</p>
+<p>Overridable via <code>TVBO_NVMAP_MEM_BUDGET_GB</code> (default :data:<code>AUTO_NVMAP_MEM_BUDGET_GB</code>). Bounds <code>n_vmap × per-cell-bytes</code> so auto-vectorisation cannot blow up peak memory on a large-per-cell model (e.g.&nbsp;a whole-brain delay network).</p>
+</section>
+<section id="tvbo.templates.tvboptim.callbacks.auto_nvmap_cap" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.auto_nvmap_cap">auto_nvmap_cap</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.auto_nvmap_cap()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Cell-count cap for <code>n_parallel: auto</code>, overridable via <code>TVBO_NVMAP_AUTO_CAP</code>.</p>
+<p>Read at call time so the environment variable takes effect per run. Falls back to :data:<code>AUTO_NVMAP_CAP</code> if the variable is unset or not a positive integer.</p>
+</section>
+<section id="tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes">estimate_per_cell_bytes</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.estimate_per_cell_bytes(observable_fn, state)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Best-effort per-cell working-memory estimate for <code>n_parallel: auto</code>.</p>
+<p>Sums the recorded output size (via <code>jax.eval_shape</code> — abstract, no compute) and the live per-cell input <code>state</code> (which carries any delay/history buffers). This is the buffer that a vmapped batch holds <code>n_vmap</code> copies of. Returns <code>None</code> if the shapes cannot be inferred, so the caller falls back to the count-only cap.</p>
+</section>
 <section id="tvbo.templates.tvboptim.callbacks.progress_ticker" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.progress_ticker">progress_ticker</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.progress_ticker(</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    total,</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    every<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">'batch'</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.progress_ticker(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    total,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    every<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">'batch'</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Wrap a scanned/vmapped per-item function so it streams <code>label i/total</code> progress.</p>
 <p>The exploration / sweep grid runs as one JIT-compiled <code>jax.lax.map</code>, so it prints <code>STEP 2 &gt; &lt;exploration&gt;</code> and then nothing until it returns — the cluster “empty log” problem. This fires a JAX-native <code>jax.debug.callback</code> (no JIT break, vmap-safe) once per <code>lax.map</code> batch — a no-arg callback has no batched input to vectorise, so it runs once per scan step — ticking a host-side counter and logging through the central <code>tvbo.run</code> logger. The <code>jax_tqdm</code> pattern, reduced to the logging we already route.</p>
 <section id="parameters-1" class="level4 doc-section doc-section-parameters">
@@ -369,6 +415,79 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td></td>
 <td></td>
 <td>overhead under <code>--quiet</code> or a coarse <code>TVBO_LOG_LEVEL</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="tvbo.templates.tvboptim.callbacks.resolve_n_vmap" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.resolve_n_vmap">resolve_n_vmap</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.resolve_n_vmap(spec, grid_n, per_cell_bytes<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resolve an <code>Exploration.n_parallel</code> spec to a concrete vmap chunk width.</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 3%">
+<col style="width: 84%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>spec</td>
+<td></td>
+<td>An integer chunk size (<code>1</code> = fully sequential), or the string <code>"auto"</code> to vectorise up to the count cap and memory budget.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>grid_n</td>
+<td></td>
+<td>Number of cells in the exploration grid.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>per_cell_bytes</td>
+<td></td>
+<td>Optional per-cell working-memory estimate (see :func:<code>estimate_per_cell_bytes</code>). When given, <code>"auto"</code> additionally caps <code>n_vmap</code> at <code>budget // per_cell_bytes</code> so the batch fits the budget.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 82%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>Positive integer vmap chunk width. An explicit integer is passed through</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td>unchanged (memory bounds do not apply — the caller opted in).</td>
 </tr>
 </tbody>
 </table>
