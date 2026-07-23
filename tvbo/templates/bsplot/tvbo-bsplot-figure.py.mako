@@ -114,21 +114,28 @@ def _panel_${p['key']}(fig, ax):
 % endfor
 def main():
 % for s in style:
-% if s['path']:
-    plt.style.use(${repr(s['value'])})              # study .mplstyle (matplotlib-native)
-% else:
+% if not s['path']:
     bsplot.style.use(${repr(s['value'])})
 % endif
 % endfor
 % if font_size:
-    plt.rcParams.update({_k: ${font_size} for _k in (          # one real point size for every panel
+    plt.rcParams.update({_k: ${font_size} for _k in (          # metadata base: every element the same size by default
         "font.size", "axes.labelsize", "axes.titlesize",
-        "xtick.labelsize", "ytick.labelsize", "legend.fontsize")})
+        "xtick.labelsize", "ytick.labelsize", "legend.fontsize", "figure.titlesize")})
 % endif
+% for s in style:
+% if s['path']:
+    plt.style.use(${repr(s['value'])})              # study .mplstyle last: overrides individual sizes if it sets them
+% endif
+% endfor
 % if spine_rcparams:
     plt.rcParams.update(${repr(spine_rcparams)})
 % endif
     fig, axd = bsplot.figure.subplots(**${repr(subplots_kwargs)})
+    try:                                            # tvbo prefers the "compressed" engine (packs
+        fig.set_layout_engine("compressed")         # fixed-aspect axes tightly, less whitespace);
+    except Exception:                               # fall back to "tight" where compressed can't apply.
+        fig.set_layout_engine("tight")
 
 % for p in panels:
 % if p['placeholder']:

@@ -45,7 +45,18 @@ def _build_graph(network: "Network", delays: bool = True, max_delay: float | Non
         lengths = jnp.asarray(np.asarray(lengths, dtype=float))
         cs = getattr(network, "conduction_speed", None)
         speed = float(getattr(cs, "value", cs)) if cs is not None else 3.0
-        bound = max_delay if max_delay is not None else (float(jnp.max(lengths)) / speed if speed > 0 else 0.0)
+        # Size the bound the way DenseLengthGraph measures the largest delay: elementwise
+        # ``lengths / speed`` then max — NOT ``max(lengths) / speed``. The two are equal in
+        # exact arithmetic but differ by a float32 ULP for some speeds, landing the bound just
+        # under the graph's own ``max(delay)`` and tripping its strict ``bound >= max(delay)``
+        # check (fails for scattered conduction speeds, e.g. a sweep cell at v=5 while v=6
+        # passes). A hair of headroom guarantees the buffer is never an ULP short.
+        if max_delay is not None:
+            bound = max_delay
+        elif speed > 0:
+            bound = float(jnp.max(lengths / speed)) * (1.0 + 1e-4)
+        else:
+            bound = 0.0
         return DenseLengthGraph(
             weights=weights,
             lengths=lengths,
