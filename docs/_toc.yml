@@ -48,8 +48,6 @@ website:
                     href: Models/CrossBackendParity.qmd
                   - text: "Integrators"
                     href: Models/Integrators.qmd
-                  - text: "Dynamics schema"
-                    href: datamodel/classes/Dynamics.qmd
 
               - section: "Networks & Connectomes"
                 href: Networks/index.qmd
@@ -76,8 +74,6 @@ website:
                     href: BeyondMeanField/MultiScaleModelling.qmd
                   - text: "NeuroML component mapping"
                     href: Interoperability/NeuroML/index.qmd
-                  - text: "subnetwork slot"
-                    href: datamodel/slots/subnetwork.qmd
 
               - section: "Simulation & Observation"
                 href: Simulation/index.qmd
@@ -142,8 +138,7 @@ website:
                     href: Bifurcation/07-NumericalContinuation.qmd
                   - text: "Backend trade-offs"
                     href: CLI/backends.qmd
-                  - text: "Continuation schema"
-                    href: datamodel/classes/Continuation.qmd
+
 
               - section: "Scale-Out & Reproducibility"
                 href: ScaleOut/index.qmd
