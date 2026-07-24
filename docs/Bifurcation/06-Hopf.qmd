@@ -1,6 +1,5 @@
 ---
 title: "6. Hopf Normal Form"
-sidebar: usage
 jupyter: python3
 # Redirect the pre-restructure URL so external links keep resolving.
 aliases:

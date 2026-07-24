@@ -1,12 +1,17 @@
 ---
-title: Bifurcation Tutorial
-sidebar: usage
+title: "Bifurcation & Stability Analysis"
+description: "Find where a model's behaviour changes qualitatively: fixed points, linear stability, phase portraits, and numerical continuation of bifurcations."
 # Redirect the pre-restructure URL so external links keep resolving.
 aliases:
   - /Usage/BifurcationTutorial/index.html
 ---
 
-A self-contained, declarative reproduction of the canonical normal-form
+This section teaches **bifurcation and stability analysis in TVBO** — locating fixed
+points, testing their linear stability, drawing phase portraits, and continuing the
+canonical bifurcations (saddle-node, pitchfork, Hopf) as a parameter varies. Each page is a
+short, copy-pasteable recipe.
+
+It is built as a self-contained, declarative reproduction of the canonical normal-form
 bifurcation tutorial in [`dev/BifurcationTutorial/`](https://github.com/virtual-twin/tvbo/tree/dev/dev/BifurcationTutorial),
 written entirely with **TVBO** primitives.
 

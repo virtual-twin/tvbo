@@ -1,6 +1,6 @@
 ---
 title: Observation Models
-sidebar: usage
+description: "Measure a simulation the way an experiment would — BOLD, EEG, functional connectivity, and power spectra, declared as observation models."
 jupyter: python3
 # Redirect the pre-restructure URL so existing links keep resolving.
 aliases:

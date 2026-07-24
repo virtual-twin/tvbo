@@ -191,15 +191,18 @@ plt.show()
 
 ## Where to go next
 
-The documentation is organized by **topic**, each with the same four sections: *Learn* a
-topic, *Do* a specific task, *Understand* why it works, *Look up* the exact fields.
+The documentation follows the shape of an experiment — **specify** it, **run** it, then
+**analyze** the result:
 
 | You want to… | Go to |
 |---|---|
+| See the whole spec as one object | [The SimulationExperiment object](Simulation/SimulationExperiments.qmd) |
 | Write or pick a model | [Models & dynamics](Models/index.qmd) |
 | Build or load a connectome | [Networks & connectomes](Networks/index.qmd) |
-| Measure something (BOLD, FC, EEG) | [Simulation & observation](Simulation/index.qmd) |
-| Match a model to data | [Fitting & inference](Fitting/index.qmd) |
+| Measure something (BOLD, FC, EEG) | [Observation models](Simulation/ObservationModels.qmd) |
+| Sweep parameters | [Parameter exploration](Simulation/ParameterExploration.qmd) |
+| Match a model to data | [Fitting, inference & optimization](Fitting/index.qmd) |
+| Run on JAX, TVB, Julia, … | [Run on a backend](Simulation/Backends.qmd) |
 | Find where behaviour changes | [Bifurcation & stability](Bifurcation/index.qmd) |
 | Add spiking or multi-scale detail | [Beyond the mean field](BeyondMeanField/index.qmd) |
 | Scale up to a cluster | [Scale-out & reproducibility](ScaleOut/index.qmd) |

@@ -1,6 +1,7 @@
 ---
 title: "Parameter Exploration"
 subtitle: "Sweep a model's knobs and watch what the network does"
+description: "Declare a grid of parameter values and run the cells in parallel to see how network behaviour changes across the sweep."
 jupyter: python3
 # Redirect the pre-restructure URL so existing links keep resolving.
 aliases:
@@ -231,7 +232,7 @@ running them locally.
 
 - **Found an interesting region?** [Bifurcation analysis](../Bifurcation/index.qmd)
   characterizes *what* changes there, instead of only where.
-- **Want the best parameters, not the landscape?** [Fitting & inference](../Fitting/index.qmd)
+- **Want the best parameters, not the landscape?** [Fitting, inference & optimization](../Fitting/index.qmd)
   optimizes $\theta$ against data rather than enumerating it.
 - **Grid too large for a laptop?** [Distributed workflows](../ScaleOut/DistributedWorkflows.qmd).
 

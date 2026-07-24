@@ -1,7 +1,6 @@
 ---
 title: Hierarchical & Surface Networks
 description: Build layered TVBO networks where a fine mesh references a coarse parent network
-sidebar: usage
 # Redirect the pre-restructure URL so existing links keep resolving.
 aliases:
   - /Usage/CreatingNetworks.html

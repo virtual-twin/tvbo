@@ -1,6 +1,7 @@
 ---
 title: "Visualization"
 subtitle: "Built-in plots for results, networks, and models"
+description: "Plot results the built-in way: time series, rasters, connectivity matrices, and network graphs."
 jupyter: python3
 # Redirect the pre-restructure URL so existing links keep resolving.
 aliases:

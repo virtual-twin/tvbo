@@ -23,7 +23,7 @@ tvbo run SPEC
 
 | Flag | Default | Purpose |
 |------|---------|---------|
-| `--backend, -b` | `tvboptim` | Execution backend. See [`tvbo workflow backends`](backends.qmd) for the full list. |
+| `--backend, -b` | `tvboptim` | Execution backend. See [`tvbo workflow backends`](../Simulation/Backends.qmd) for the full list. |
 | `--out-dir, -o` | _(none)_ | Directory to write results into. When omitted, no files are written. |
 | `--experiment` | _(all)_ | If SPEC is a Study, run only this experiment (by `key`/`name`/`label`/numeric `id`). A comma-list (`2,3,20,30`) runs several. |
 | `--duration` | _(spec)_ | Override `integration.duration` in milliseconds (shorthand for `--set integration.duration=…`). |
@@ -168,6 +168,6 @@ tvbo run experiment:JR_MEG -b jax --container ghcr.io/the-virtual-brain/tvbo:0.7
 
 ## See also
 
-- [Backends](backends.qmd) — what each backend can do
+- [Backends](../Simulation/Backends.qmd) — what each backend can do
 - [HPC patterns](hpc.qmd) — sharding, containers, retries
 - [`tvbo workflow`](workflow.qmd) — emit kits without launching
