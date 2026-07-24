@@ -12,6 +12,27 @@ means, which pairings TVBO supports today, and how a multi-scale experiment is
 specified. It is background rather than a recipe — the runnable pieces are linked
 from each section.
 
+## Heterogeneous or multi-scale?
+
+These are different questions, and it helps to separate them before you build.
+*Heterogeneity* is about **which model** runs at each node; *scale* is about **how
+much detail** a node resolves. They are independent axes:
+
+|                   | **single-scale**                              | **multi-scale (nested)**                             |
+|-------------------|-----------------------------------------------|------------------------------------------------------|
+| **homogeneous**   | classic TVB: one neural mass, one connectome  | one model, a region opened to a finer nested network |
+| **heterogeneous** | mixed neural masses on one connectome         | mixed masses macro **+** a nested spiking patch      |
+
+If you can draw the model as **one graph of peer nodes** — even when those nodes
+run different equations — it is *heterogeneous* and single-scale, covered by
+[Heterogeneous nodes](../Networks/HeterogeneousNodes.qmd) and
+[Heterogeneous edges](../Networks/HeterogeneousEdges.qmd); a heterogeneous
+network of neural masses is still entirely mean-field. This page is about the
+other axis: when a node must **contain** a finer network, with its own
+node-space, usually its own clock, and a projection up and down between levels.
+The two compose — a nested patch can itself be heterogeneous — but they are not
+the same feature.
+
 ## What multi-scale modelling is
 
 At the coarse level, each brain region is a single averaged unit, a *neural
@@ -94,9 +115,10 @@ transformer live in the network specification:
 - [Defining networks](../Specification/Network.qmd): nodes, edges, and connectomes
 - [Hierarchical & surface networks](../Networks/HierarchicalSurfaceNetworks.qmd): building a
   layered network, with a surface patch linked to a parent region
-- [Heterogeneous nodes](../Networks/HeterogeneousNodes.qmd) and
-  [heterogeneous edges](../Networks/HeterogeneousEdges.qmd): giving regions and
-  connections their own behaviour
+- [Heterogeneous nodes](../Networks/HeterogeneousNodes.qmd) /
+  [heterogeneous edges](../Networks/HeterogeneousEdges.qmd): a *separate* axis
+  (a different model per node, all on one scale) that composes with multi-scale —
+  a nested patch can itself be heterogeneous
 - [Coupling functions](../Networks/CouplingFunctions.qmd): the rule that turns one
   node's state into a signal others receive
 

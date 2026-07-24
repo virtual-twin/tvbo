@@ -1,6 +1,5 @@
 ---
 title: PDE Simulation
-sidebar: usage
 jupyter: python3
 execute:
   eval: true

@@ -1,6 +1,36 @@
-# Heterogeneous Edges
+---
+title: "Heterogeneous Edges"
+description: "Synapse-like relay nodes on the connection path — short-term plasticity modelled as its own dynamics, still a single-scale network."
+---
 
-Edgedynamics as Relay-Nodes!
+An edge can carry its own dynamics. Instead of a static weight, the connection
+between two nodes passes through a **relay node** with its own equations — here a
+short-term–plasticity synapse (depression, facilitation, Tsodyks–Markram). A
+pre-synaptic node drives three parallel synapse nodes, each filtering the signal
+differently before it reaches the post-synaptic node.
+
+::: {.callout-note}
+## Still single-scale, still heterogeneous
+
+A relay node is just another node on the same graph — the synapse *is* a node,
+peer to the neurons it connects. This is heterogeneity on one scale, not
+[multi-scale nesting](../BeyondMeanField/MultiScaleModelling.qmd): nothing here
+contains a finer network with its own node-space or clock.
+:::
+
+::: {.callout-note}
+## Backend: PyRates
+
+A relay's transmitted signal is **input-dependent**: `r_eff = r_in · x · u`
+reads what the synapse *receives*, not just its own state. PyRates routes such
+algebraic edge outputs natively, so this example runs on PyRates.
+
+The tvboptim (JAX) engine behind [heterogeneous *nodes*](HeterogeneousNodes.qmd)
+transports signals derived from a node's own state; input-dependent relay
+outputs are a deferred milestone there. To model short-term plasticity on
+tvboptim today, put the synaptic state (`x`, `u`) in the *receiving* node and
+drive it through ordinary coupling.
+:::
 
 ```{mermaid}
 flowchart LR
@@ -24,37 +54,31 @@ flowchart LR
 ```{python}
 from tvbo import Dynamics
 
-# Tsodyks-Markram sho#rt-term plasticity model
+# Tsodyks-Markram short-term plasticity model
 # Combines depression (x) and facilitation (u)
-# r_eff is an output (algebraic equation) - PyRates renders this correctly
+# r_eff is an input-dependent output (r_in * x * u); the PyRates backend routes it
 tsodyks = Dynamics.from_string("""
 name: TsodyksMarkram
-description: "Short-term synaptic plasticity with depression and facilitation"
+description: "Short-term synaptic plasticity with depression and facilitation (canonical Tsodyks-Markram)"
 parameters:
-  tau_x:
+  tau_D:
     value: 200.0
-    description: "Recovery time constant for depression (ms)"
-  tau_u:
-    value: 50.0
-    description: "Recovery time constant for facilitation (ms)"
+    description: "Depression recovery time constant (ms)"
+  tau_F:
+    value: 600.0
+    description: "Facilitation time constant (ms)"
   U0:
     value: 0.2
     description: "Baseline release probability"
-  k:
-    value: 0.5
-    description: "Depression rate"
-  k_fac:
-    value: 0.05
-    description: "Facilitation rate"
 state_variables:
   x:
     equation:
-      rhs: "(1 - x)/tau_x - k*x*u*r_in"
+      rhs: "(1 - x)/tau_D - u*x*r_in"
     initial_value: 1.0
     description: "Available synaptic resources (depression variable)"
   u:
     equation:
-      rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
+      rhs: "(U0 - u)/tau_F + U0*(1 - u)*r_in"
     initial_value: 0.2
     description: "Release probability (facilitation variable)"
 coupling_inputs:
@@ -63,7 +87,7 @@ derived_variables:
   r_eff:
     equation:
       rhs: "r_in*x*u"
-    description: "Effective synaptic transmission"
+    description: "Effective synaptic transmission (release probability x resources x rate)"
 output:
     - r_eff
 """)
@@ -71,18 +95,18 @@ output:
 # Pure synaptic depression model
 depression = Dynamics.from_string("""
 name: Depression
-description: "Short-term synaptic depression only"
+description: "Short-term synaptic depression only (fixed release probability)"
 parameters:
-  tau_x:
+  tau_D:
     value: 300.0
-    description: "Recovery time constant (ms)"
-  k:
-    value: 0.3
-    description: "Depression rate"
+    description: "Depression recovery time constant (ms)"
+  U:
+    value: 0.5
+    description: "Release probability (fixed)"
 state_variables:
   x:
     equation:
-      rhs: "(1 - x)/tau_x - k*x*r_in"
+      rhs: "(1 - x)/tau_D - U*x*r_in"
     initial_value: 1.0
     description: "Available synaptic resources"
 coupling_inputs:
@@ -90,7 +114,7 @@ coupling_inputs:
 derived_variables:
   r_eff:
     equation:
-      rhs: "r_in*x"
+      rhs: "U*r_in*x"
     description: "Effective transmission with depression"
 output:
     - r_eff
@@ -99,23 +123,20 @@ output:
 # Pure synaptic facilitation model
 facilitation = Dynamics.from_string("""
 name: Facilitation
-description: "Short-term synaptic facilitation only"
+description: "Short-term synaptic facilitation only (full resources)"
 parameters:
-  tau_u:
-    value: 100.0
-    description: "Recovery time constant (ms)"
+  tau_F:
+    value: 500.0
+    description: "Facilitation time constant (ms)"
   U0:
     value: 0.2
     description: "Baseline release probability"
-  k_fac:
-    value: 0.01
-    description: "Facilitation rate"
 state_variables:
   u:
     equation:
-      rhs: "(U0 - u)/tau_u + k_fac*(1 - u)*r_in"
+      rhs: "(U0 - u)/tau_F + U0*(1 - u)*r_in"
     initial_value: 0.2
-    description: "Release probability"
+    description: "Release probability (facilitation variable)"
 coupling_inputs:
   r_in: {}
 derived_variables:

@@ -1,5 +1,6 @@
 ---
 title: "Replication Studies"
+description: "Computational replications of published studies — each a single declarative SimulationStudy plus the figures that read its results."
 listing:
   id: replication-listing
   contents: "*/Run_*.qmd"
@@ -23,9 +24,9 @@ yourself, use the **`replicating-studies` skill**, which turns a paper into a
 single declarative `SimulationStudy` plus an honest, fully computed report.
 
 See **[the replication pipeline](pipeline.qmd)** for how a study becomes generated
-simulations, figures, and HPC jobs from one declarative spec, and
-**[custom figure panels](custom-panels.qmd)** for shipping a paper's bespoke panels
-with the study itself.
+simulations, figures, and HPC jobs from one declarative spec. A study's figures are
+declarative too — **[specify a figure](../Simulation/Figures.qmd)** covers the grammar, and
+**[custom figure panels](custom-panels.qmd)** the escape hatch for a paper's bespoke panels.
 
 ::: {#replication-listing}
 :::

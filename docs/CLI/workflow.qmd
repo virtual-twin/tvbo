@@ -246,7 +246,7 @@ tvbo workflow slurm … \
 
 ## `tvbo workflow backends`
 
-Prints the ontology-derived capability table (see [Backends](backends.qmd) for the full discussion):
+Prints the ontology-derived capability table (see [Backends](../Simulation/Backends.qmd) for the full discussion):
 
 ```bash
 tvbo workflow backends
@@ -277,6 +277,6 @@ jax  (JAX)
 ## See also
 
 - [Workflow kits anatomy](workflow-kits.qmd)
-- [Backends](backends.qmd) — what each backend vectorizes
+- [Backends](../Simulation/Backends.qmd) — what each backend vectorizes
 - [HPC patterns](hpc.qmd) — sharding, containers, retries
 - [`tvbo run --engine`](run.qmd) — one-command emit + submit

@@ -13,24 +13,25 @@ website:
           logo: _static/tvbo_logo.png
           collapse-level: 1
           contents:
+              # ──────────────────────────────────────────────────────────────
+              # Curated navigation grouped into declarative PARTS. A PART header
+              # is a text-only (non-link) row that Quarto renders as a plain
+              # label; topic sections stay collapsible under collapse-level: 1.
+              # Autogen blocks (replication / datamodel / api) are spliced in by
+              # scripts/update_toc_*.py and fall under the preceding PART.
+              # ──────────────────────────────────────────────────────────────
+
+              - text: "GET STARTED"
               - text: "Home"
                 href: index.qmd
               - text: "Installation"
                 href: installation.md
               - text: "Getting Started"
                 href: GettingStarted.qmd
-              - section: "Quick Reference"
-                href: reference.qmd
-                contents:
-                  - text: "Examples"
-                    href: examples/index.qmd
 
-              # ── Topic-first structure (audit §8) ──
-              # Domain topics at the top level; pages listed directly under each
-              # topic — no abstract Diátaxis sub-headings. Ordered within a topic
-              # as learn → do → understand → reference.
-              # Migration in progress: Usage/Interoperability still hold the topics
-              # not yet stood up.
+              - text: "SPECIFY AN EXPERIMENT"
+              - text: "The SimulationExperiment object"
+                href: Simulation/SimulationExperiments.qmd
               - section: "Models & Dynamics"
                 href: Models/index.qmd
                 contents:
@@ -46,9 +47,6 @@ website:
                     href: Models/UnitValidation.qmd
                   - text: "Cross-backend numerical parity"
                     href: Models/CrossBackendParity.qmd
-                  - text: "Integrators"
-                    href: Models/Integrators.qmd
-
               - section: "Networks & Connectomes"
                 href: Networks/index.qmd
                 contents:
@@ -58,40 +56,25 @@ website:
                     href: Networks/BuildConnectomeFromTractography.qmd
                   - text: "Hierarchical & surface networks"
                     href: Networks/HierarchicalSurfaceNetworks.qmd
-                  - text: "Coupling functions"
-                    href: Networks/CouplingFunctions.qmd
                   - text: "Heterogeneous nodes"
                     href: Networks/HeterogeneousNodes.qmd
                   - text: "Heterogeneous edges"
                     href: Networks/HeterogeneousEdges.qmd
                   - text: "Network specification"
                     href: Specification/Network.qmd
-
-              - section: "Beyond the Mean Field"
-                href: BeyondMeanField/index.qmd
-                contents:
-                  - text: "Multi-scale modelling"
-                    href: BeyondMeanField/MultiScaleModelling.qmd
-                  - text: "NeuroML component mapping"
-                    href: Interoperability/NeuroML/index.qmd
-
-              - section: "Simulation & Observation"
-                href: Simulation/index.qmd
-                contents:
-                  - text: "Simulation experiments"
-                    href: Simulation/SimulationExperiments.qmd
-                  - text: "Observation models"
-                    href: Simulation/ObservationModels.qmd
-                  - text: "Parameter exploration"
-                    href: Simulation/ParameterExploration.qmd
-                  - text: "Visualization"
-                    href: Simulation/Visualization.qmd
-                  - text: "The experiment result"
-                    href: Simulation/Results.qmd
-                  - text: "Output specification"
-                    href: Specification/Output.qmd
-
-              - section: "Fitting & Inference"
+              - text: "Coupling functions"
+                href: Networks/CouplingFunctions.qmd
+              - text: "Integrators"
+                href: Models/Integrators.qmd
+              - text: "Observation models"
+                href: Simulation/ObservationModels.qmd
+              - text: "Output specification"
+                href: Specification/Output.qmd
+              - text: "Specify a figure"
+                href: Simulation/Figures.qmd
+              - text: "Parameter exploration"
+                href: Simulation/ParameterExploration.qmd
+              - section: "Fitting, inference & optimization"
                 href: Fitting/index.qmd
                 contents:
                   - text: "Fit functional connectivity (RWW)"
@@ -115,31 +98,13 @@ website:
                   - text: "Algorithms (FIC, EIB)"
                     href: Specification/Algorithms.qmd
 
-              - section: "Bifurcation & Stability Analysis"
-                href: Bifurcation/index.qmd
-                contents:
-                  - text: "1. Linear stability"
-                    href: Bifurcation/01-LinearStability.qmd
-                  - text: "2. 2D phase portraits"
-                    href: Bifurcation/02-PhasePortrait2D.qmd
-                  - text: "Run a continuation"
-                    href: Bifurcation/BifurcationAnalysis.qmd
-                  - section: "Bifurcation types"
-                    contents:
-                      - text: "Saddle-node"
-                        href: Bifurcation/03-SaddleNode.qmd
-                      - text: "Pitchfork"
-                        href: Bifurcation/04-Pitchfork.qmd
-                      - text: "Hysteresis"
-                        href: Bifurcation/05-Hysteresis.qmd
-                      - text: "Hopf"
-                        href: Bifurcation/06-Hopf.qmd
-                  - text: "Numerical continuation"
-                    href: Bifurcation/07-NumericalContinuation.qmd
-                  - text: "Backend trade-offs"
-                    href: CLI/backends.qmd
-
-
+              - text: "RUN IT"
+              - text: "Run on a backend"
+                href: Simulation/Backends.qmd
+              - text: "The experiment result"
+                href: Simulation/Results.qmd
+              - text: "Visualization"
+                href: Simulation/Visualization.qmd
               - section: "Scale-Out & Reproducibility"
                 href: ScaleOut/index.qmd
                 contents:
@@ -147,9 +112,6 @@ website:
                     href: ScaleOut/DistributedWorkflows.qmd
                   - text: "Code generation & export"
                     href: ScaleOut/CodeGeneration.qmd
-                  - text: "Backends & capability matrix"
-                    href: CLI/backends.qmd
-
               - section: "Command-Line Interface"
                 href: CLI/index.qmd
                 contents:
@@ -183,13 +145,42 @@ website:
                         href: CLI/workflow.qmd
                       - text: "Workflow kits anatomy"
                         href: CLI/workflow-kits.qmd
-                      - text: "Backends"
-                        href: CLI/backends.qmd
                       - text: "HPC patterns"
                         href: CLI/hpc.qmd
                   - text: "Recipes"
                     href: CLI/recipes.qmd
 
+              - text: "ANALYZE"
+              - section: "Bifurcation & Stability Analysis"
+                href: Bifurcation/index.qmd
+                contents:
+                  - text: "1. Linear stability"
+                    href: Bifurcation/01-LinearStability.qmd
+                  - text: "2. 2D phase portraits"
+                    href: Bifurcation/02-PhasePortrait2D.qmd
+                  - text: "Run a continuation"
+                    href: Bifurcation/BifurcationAnalysis.qmd
+                  - section: "Bifurcation types"
+                    contents:
+                      - text: "Saddle-node"
+                        href: Bifurcation/03-SaddleNode.qmd
+                      - text: "Pitchfork"
+                        href: Bifurcation/04-Pitchfork.qmd
+                      - text: "Hysteresis"
+                        href: Bifurcation/05-Hysteresis.qmd
+                      - text: "Hopf"
+                        href: Bifurcation/06-Hopf.qmd
+                  - text: "Numerical continuation"
+                    href: Bifurcation/07-NumericalContinuation.qmd
+
+              - text: "EXTEND"
+              - section: "Beyond the Mean Field"
+                href: BeyondMeanField/index.qmd
+                contents:
+                  - text: "Multi-scale modelling"
+                    href: BeyondMeanField/MultiScaleModelling.qmd
+                  - text: "NeuroML component mapping"
+                    href: Interoperability/NeuroML/index.qmd
               - section: "Interoperability"
                 href: Interoperability/index.qmd
                 contents:
@@ -343,11 +334,9 @@ website:
                       - text: "OpenMINDS Interoperability"
                         href: Interoperability/OpenMINDS.qmd
 
-              - text: "---"
-
+              - text: "TOOLING"
               - text: "Platform"
                 href: platform.qmd
-
               - section: "Agentic Coding"
                 href: agents/index.qmd
                 contents:
@@ -373,8 +362,11 @@ website:
                     href: Replication/Jansen1995/Run_Jansen1995.qmd
 # END:replication-autogen
 
-              - text: "---"
-
+              - text: "REFERENCE"
+              - text: "Quick reference"
+                href: reference.qmd
+              - text: "Examples"
+                href: examples/index.qmd
               - section: "Ontology"
                 href: ontology/index.qmd
                 contents:
@@ -382,8 +374,6 @@ website:
                     href: ontology/spec/index-en.html
                   - text: "WebVOWL visualisation"
                     href: ontology/spec/webvowl/index.html#ontology
-
-              - text: "---"
 
 # BEGIN:datamodel-autogen
               - section: "Data Model"

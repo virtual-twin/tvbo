@@ -1,6 +1,6 @@
 ---
 title: "Command-Line Interface"
-sidebar: cli
+description: "Run, export, validate and orchestrate experiments from the shell — the registry-driven, transport-aware tvbo command tree."
 page-layout: full
 ---
 
@@ -57,7 +57,7 @@ Each page below documents one verb (or sub-tree) with all flags, exit codes, and
 - [`tvbo workflow`](workflow.qmd) — emit Slurm / Snakemake / Nextflow kits
 - [`tvbo skills`](skills.qmd) — install AI-assistant skills for Claude Code, Cursor, Copilot
 - [Workflow kits anatomy](workflow-kits.qmd) — what a generated kit contains
-- [Backends](backends.qmd) — capability table, vectorize-vs-fanout
+- [Backends](../Simulation/Backends.qmd) — capability table, vectorize-vs-fanout
 - [HPC patterns](hpc.qmd) — containers, sharding, engine dispatch
 - [Recipes](recipes.qmd) — copy-paste cookbook
 
@@ -68,7 +68,7 @@ The CLI exposes two complementary execution paths:
 1. **Direct execution** — `tvbo run` invokes the requested backend in-process and saves results. Best for laptops, CI, and short experiments.
 2. **Workflow emission** — `tvbo workflow {slurm,snakemake,nextflow}` writes a self-contained reproducibility kit (workflow artefact + frozen backend script + frozen YAML spec + README) and exits. The kit is portable: it can be `tar`-ed up, moved to an HPC cluster, and run independently of `tvbo`.
 
-The same Study YAML produces a *different* DAG depending on the chosen backend, because the planner consults the [backend capability table](backends.qmd) (mirrored from `ontology/tvb-o-axioms.ttl §4.1`) to decide which sweep axes can be vectorized inside the backend versus fanned out across workflow tasks.
+The same Study YAML produces a *different* DAG depending on the chosen backend, because the planner consults the [backend capability table](../Simulation/Backends.qmd) (mirrored from `ontology/tvb-o-axioms.ttl §4.1`) to decide which sweep axes can be vectorized inside the backend versus fanned out across workflow tasks.
 
 ## Quick start
 

@@ -5,7 +5,7 @@ subtitle: "How TVBO and the tvboptim JAX backend divide the work"
 
 If you already know **tvboptim**, this page explains where TVBO fits. If instead you
 want to *fit a model to data*, go straight to the
-[Fitting & Inference](../../Fitting/index.qmd) topic — that is where the workflows live.
+[Fitting, inference & optimization](../../Fitting/index.qmd) topic — that is where the workflows live.
 
 ## The division of labour
 
@@ -39,7 +39,7 @@ change its numbers.
 ## Where the workflows went
 
 The optimization workflows that used to sit on this page are now organized by *goal*
-rather than by backend, in [Fitting & Inference](../../Fitting/index.qmd):
+rather than by backend, in [Fitting, inference & optimization](../../Fitting/index.qmd):
 
 - [Reduced Wong-Wang](../../Fitting/RWW_tvboptim.qmd) — fit empirical BOLD functional connectivity
 - [Jansen-Rit](../../Fitting/JR_tvboptim.qmd) — fit a MEG frequency gradient

@@ -1,5 +1,5 @@
 ---
-title: "Fitting & Inference"
+title: "Fitting, inference & optimization"
 description: "Fit a model to empirical data, tune it, and infer parameters — with the theory that explains when it works."
 ---
 

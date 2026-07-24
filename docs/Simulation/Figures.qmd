@@ -1,0 +1,214 @@
+---
+title: "Specify a figure"
+description: "Declare a publication figure as data: a mosaic of panels whose layers bind result-container fields to visual channels, rendered backend-independently through bsplot."
+---
+
+A figure in TVBO is **data, not plotting code**. A `Figure` is a mosaic of panels; each
+grammar panel binds fields of a result container to visual channels (`mark` + `encoding`),
+and the binding that says *which data* (`Layer.used`) doubles as the figure's provenance
+edge. From that spec TVBO generates a self-contained `plot.py` through the bsplot adapter —
+so the plotting script becomes an inspectable, editable, FAIR replication artefact instead
+of a hand-written one-off.
+
+Figures are the last declarative field of a study: a `SimulationStudy` carries a
+`figures:` list, closing the loop — *a study is its experiments **and** the figures that
+read them*. You can also render a standalone `Figure`.
+
+::: {.callout-note}
+This page teaches how to **write** a figure spec. For the exhaustive field reference, see
+the schema — [`Figure`](../datamodel/classes/Figure.qmd) ·
+[`Panel`](../datamodel/classes/Panel.qmd) · [`Layer`](../datamodel/classes/Layer.qmd) — and
+for panels the grammar can't express, [Custom figure panels](../Replication/custom-panels.qmd).
+:::
+
+## How a figure is built
+
+A `Figure` nests three things; the rest are options documented in the schema.
+
+```text
+Figure     → a mosaic of panels + look/size options
+  Panel    → one cell; kind = cartesian | heatmap | image | custom
+    Layer  → one mark bound to one data source (grammar panels)
+```
+
+## A minimal figure
+
+One panel, one line — the recorded variable `V` against time from an experiment's result:
+
+```yaml
+figures:
+  - name: activity
+    layout: "a"
+    panels:
+      a:
+        kind: cartesian
+        layers:
+          - used:
+              iri: tvbo:exp/MyStudy/exp-1   # the experiment whose results to read
+              output: V                     # a recorded state variable in the container
+            mark: line
+            encoding:
+              x: time
+              y: V
+        label: "Regional activity"
+```
+
+Render it (see [Rendering](#rendering)):
+
+```bash
+tvbo figure render MyStudy -o figures/
+```
+
+## Arranging panels — the layout mosaic
+
+`layout` is a **bsplot mosaic string**: each letter is a panel key, a `/` (or newline)
+starts a new row, a repeated letter spans cells, and `.` leaves a gap.
+
+```yaml
+layout: "aab/ccd"     # 'a' spans the top-left 2 cells, 'b' top-right; 'c' spans, 'd' bottom-right
+```
+
+The figure also owns physical size and journal styling — independent of the data:
+
+```yaml
+width: 96.0
+height: 76.0
+dpi: 200
+font_size: 8.0
+style: [code/figures/mystudy.mplstyle]   # bsplot.style.use — names and/or .mplstyle paths
+panel_numbers: true
+```
+
+Row/column ratios, panel-number format and placement, spine style, output format and the
+rest of the figure-level options are [`Figure`](../datamodel/classes/Figure.qmd) attributes
+— set them there; this page doesn't restate them.
+
+## Panels: grammar vs. escape hatch
+
+| `kind` | Draws | Body |
+|---|---|---|
+| `cartesian` | line / scatter / rule / band marks | `layers:` (grammar) |
+| `heatmap` | a 2-D array field | `layers:` — `mark` omitted (implied) |
+| `image` | an external file | `path:` |
+| `custom` | a registered callable `fn(fig, ax, ctx)` | `render:` → [escape hatch](../Replication/custom-panels.qmd) |
+
+`cartesian`/`heatmap` are grammar-driven; `image`/`custom` are peer escape hatches. Every
+kind shares the label, `legend`, `annotations`, and honest-`placeholder` machinery.
+
+## Binding data to a panel — layers
+
+A **layer** is one mark bound to one data reference. This is where the grammar earns its
+keep — and where provenance is recorded.
+
+**`used` — which data (and the provenance edge).** The `used` block points at a
+result-container field and *is* typed `prov:used`, so declaring where a mark's data comes
+from is the provenance record — every plotted number stays traceable to the run that
+produced it:
+
+```yaml
+used:
+  iri: tvbo:exp/MyStudy/exp-3   # the experiment / result / dataset the data comes from
+  output: delta_omega           # a recorded state var, an observation__<name>, or an external var
+  sel:                          # xarray .sel — LABEL-keyed, never positional
+    KuramotoInertia.K: [270.0, 800.0, 1300.0]
+```
+
+The label-keyed `sel` is what keeps figures free of the positional-`reshape` mislabelling
+bug.
+
+**`transform` — keep compute off the plotting side.** A presentation-only reduction is a
+last resort. Prefer, in order: declare an [Observation](ObservationModels.qmd) upstream so
+the container is already plot-ready → a declarative postprocessing in the tvbo schema → a
+registered callable `fn(da) -> da` named in `transform:`. The figure spec stays
+presentation-only, so the emitted `plot.py` hides no analysis.
+
+**`mark`, `encoding`, `style`.** Channels bind to dim/coord/var **names** (keyed, never
+positional); `style` carries portable intent plus a `opts:` matplotlib passthrough — see
+[`Layer`](../datamodel/classes/Layer.qmd) for the full channel and style list:
+
+```yaml
+mark: line
+encoding: {x: KuramotoInertia.K, y: delta_omega}
+style: {color: "#1f77b4", opts: {linewidth: 1.3, linestyle: "--"}}
+```
+
+## A real grammar panel
+
+From `Taher2019.yaml` — a `cartesian` panel overlaying three layers (up-sweep line,
+down-sweep line, and sampled scatter markers) that all read the same container field:
+
+```yaml
+panels:
+  a:
+    kind: cartesian
+    layers:
+      - used: {iri: tvbo:exp/Taher2019/exp-3, output: delta_omega}
+        transform: up_branch          # a registered per-study reduction (fn(da)->da)
+        mark: line
+        encoding: {x: KuramotoInertia.K}
+        style: {color: "#1f77b4", opts: {linewidth: 1.3, label: up-sweep}}
+      - used: {iri: tvbo:exp/Taher2019/exp-3, output: delta_omega}
+        transform: down_branch
+        mark: line
+        encoding: {x: KuramotoInertia.K}
+        style: {color: "#1f77b4", opts: {linewidth: 1.3, linestyle: "--", label: down-sweep}}
+      - used:
+          iri: tvbo:exp/Taher2019/exp-3
+          output: delta_omega
+          sel: {KuramotoInertia.K: [270.0, 800.0, 1300.0]}   # mark the three sampled K
+        transform: up_branch
+        mark: scatter
+        encoding: {x: KuramotoInertia.K}
+        style: {opts: {facecolors: none, edgecolors: k, s: 49}}
+```
+
+## Rendering
+
+A `Figure` is **compiled, not interpreted**: the bsplot adapter resolves the layer context
+in Python and a Mako template emits a self-contained `plot.py`. That script is the
+deliverable — inspectable, editable, and runnable without TVBO.
+
+```bash
+# Render every figure in a study (or a standalone Figure YAML)
+tvbo figure render MyStudy --out-dir figures/ --base-dir .
+```
+
+```python
+from tvbo.adapters import bsplot
+# `figure` is a datamodel Figure (e.g. study.figures[0])
+bsplot.render(figure, base_dir=".", outfile="figures/activity.png")
+bsplot.render_code(figure)   # the plot.py source, without executing it
+```
+
+Because a figure's `used` edges are its data dependencies, a figure is also a **workflow
+step**: `tvbo workflow` emits a render rule per figure (inputs = the `used` containers),
+scheduled after the experiments it reads. Heavy renders request their own resources via the
+figure's `workflow_overrides` — see [Scale-out & reproducibility](../ScaleOut/index.qmd).
+
+## When the grammar isn't enough
+
+A hand-drawn inset, a covariant Lyapunov vector, a per-node montage — anything the grammar
+can't express — is a `kind: custom` panel that names a callable the study ships in its
+`code_source`. The generated `plot.py` imports the study's `code_modules` so the panel
+resolves whether you render on a laptop or an HPC node. See
+[Custom figure panels](../Replication/custom-panels.qmd).
+
+## Honest placeholders
+
+When a panel's data is missing or degenerate, set `placeholder:` so the render draws a
+labelled placeholder instead of erroring — never a replot of the paper's source data:
+
+```yaml
+panels:
+  c:
+    kind: cartesian
+    placeholder: "awaiting HCP S900 SC"
+    layers: [...]
+```
+
+## See also
+
+- [Output specification](../Specification/Output.qmd) · [Observation models](ObservationModels.qmd) — produce the plot-ready containers a figure reads
+- [Custom figure panels](../Replication/custom-panels.qmd) — the escape hatch
+- [The replication pipeline](../Replication/pipeline.qmd) — where figures sit in a study
+- Schema reference: [`Figure`](../datamodel/classes/Figure.qmd) · [`Panel`](../datamodel/classes/Panel.qmd) · [`Layer`](../datamodel/classes/Layer.qmd) · CLI [`tvbo figure`](../api/cli/figures.qmd)
