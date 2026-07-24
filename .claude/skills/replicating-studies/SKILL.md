@@ -3,16 +3,17 @@ name: replicating-studies
 description: "How to replicate a published study in TVBO \u2014 turn a paper into\
   \ ONE declarative, fully tvbo-native `SimulationStudy` (any kind: single-node bifurcation\
   \ to whole-brain network; forward simulation, parameter sweep, or fit to data) +\
-  \ simple plotting + an honest, fully-computed report. Encodes the hard-won rules\
+  \ declarative figures + an honest, fully-computed report. Encodes the hard-won rules\
   \ so the replication is fast and trustworthy. Composes the atomic skills (writing-models,\
   \ running-simulations, writing-reports)."
 ---
 
 # Replicating a study in TVBO
 
-You are reproducing a published paper as a **single declarative TVBO recipe** plus
-minimal plotting, with a report whose every number is computed from the run — never
-typed by hand. This skill owns the *replication-specific* layer; for the atomic
+You are reproducing a published paper as a **single declarative TVBO recipe** — its
+experiments **and** its figures (a `figures:` block, rendered by codegen) — with a report
+whose every number is computed from the run, never typed by hand. This skill owns the
+*replication-specific* layer; for the atomic
 how-to it defers to **writing-models** (Dynamics YAML), **running-simulations**
 (sourcing / CLI / backends), and **writing-reports** (the IMRAD report itself).
 
@@ -35,10 +36,16 @@ figures that silently integrate the wrong attractor.
 
 ## The non-negotiables (MUST)
 
-1. **ONE declarative recipe.** All targeted experiments live in one `<Study>.yaml`
-   as metadata (anchors + `<<:` inheritance, `from_experiment` seeding). **No Python
-   drivers.** `tvbo run <Study>.yaml` runs everything in dependency order; add
-   `--experiment 2,3` to run a subset.
+1. **ONE declarative recipe, rooted at `<Study>.yaml`.** All targeted experiments **and**
+   the figures that read them are metadata under a single root `<Study>.yaml` (anchors +
+   `<<:` inheritance, `from_experiment` seeding; a `figures:` block — non-negotiable #8).
+   It need **not** be monolithic: split a large spec with **`!include`** — the root stays a
+   thin entry that `!include`s reusable fragments (a shared Dynamics, an algorithm block,
+   per-experiment files) from sibling spec files at the root (never under `code/`), and
+   references curated components by `iri:`. **No Python drivers.** `tvbo run <Study>.yaml`
+   runs every experiment in dependency order and then renders the declarative figures — one
+   command produces results **and** figures; add
+   `--experiment 2,3` to run a subset (`--no-figures` to skip rendering).
 2. **Nothing hardcoded in the report.** Every reported value is computed inline from
    a result container (`output/nc/exp*/…h5`) or the recipe metadata — counts, ⟨Δω⟩,
    decay times, bifurcation thresholds, scaling exponents, spectral peaks, fitted params,
@@ -52,14 +59,18 @@ figures that silently integrate the wrong attractor.
 4. **Backend-independent metadata, backend chosen by fit.** The YAML states *intent*,
    never one backend's mechanism. The execution backend is picked in Phase 1.5 from the
    targets' feature needs, not defaulted.
-5. **FAIR layout, spec separate from code** (copy `assets/skeleton/`): the recipe
-   `<Study>.yaml` sits at the **study root** — the spec is not hidden inside `code/`.
-   Its callables live in `code/recipe/`, reached declaratively via
-   `code_source: ./code/recipe` (a local path, or a git repo — see **running-simulations**),
-   so `tvbo run <Study>.yaml` finds them without a driver. `code/` also holds the prep
-   script, analysis callables, one reference integration, and `figures/plot.py`;
-   `original_study/` the paper + analysis; `input/` the data provenance; `report/` the
-   report source.
+5. **FAIR layout — spec (metadata) at the root, code in `code/`** (copy `assets/skeleton/`):
+   the recipe `<Study>.yaml` sits at the **study root**, never inside `code/` — the spec is
+   backend-independent metadata, kept separate from code (that split is the point). Its
+   callables — model builders, analysis callables, **and the bespoke figure panels/transforms** —
+   live **flat in `code/`**, made importable by the zero-config `code/` convention: loading the
+   study puts `code/` on the path, so every `module:` / `callable:` / `code_modules:` resolves by
+   bare name — no driver, no `PYTHONPATH`, no `code_source`. (Set `code_source` **only** to point
+   the importable code *elsewhere* — a git repo or a shared directory — never at a local `code/`
+   subfolder; a `code/recipe/` split buys nothing and breaks imports if the line is forgotten.)
+   `code/` also holds the prep script and one reference integration; `original_study/` the paper +
+   analysis; `input/` the data provenance; `report/` the report source. Rendered figures and
+   their generated `plot_<name>.py` scripts land in the gitignored `figures/`.
 6. **Nothing large or upstream is vendored — gitignore it and document exact retrieval.**
    Git tracks only what you author: the spec, `code/`, `input/DATA.md`, and the report
    source (`report.qmd` + `references.bib` + the prose writeup). **Everything else is
@@ -73,9 +84,13 @@ figures that silently integrate the wrong attractor.
    **scorecard** (met / partial / out-of-scope) with a **fidelity tier per target**
    (mechanism-level vs decimal-level, Phase 1.5) and name the **accepted limitations**
    (unavailable exact SC, unpublished-seed realization dependence) up front.
-8. **One plotting script**, `code/figures/plot.py`, one `main()` whose sections mirror
-   the paper's figure *types* (time series / phase portraits / bifurcation diagrams /
-   spectra / sweeps / spatial maps), then compose A/B. Simple matplotlib next to the recipe.
+8. **Figures are declared metadata, not a plotting script.** Each paper figure is a
+   `Figure` in the study's `figures:` block (layout mosaic + panels + PROV `used`
+   bindings); `tvbo figure render <Study>.yaml` — run automatically by
+   `tvbo run <Study>.yaml` — emits a self-contained `plot_<name>.py` per figure **and**
+   runs it. Grammar panels (`cartesian`/`heatmap`) need **zero** plotting code; only a
+   genuinely bespoke panel interior is a registered `@bsplot.register_panel` callable in a
+   `code_modules` module under `code/`. **No hand-written `main()` plotting driver.**
 9. **Verify against an independent reference** (Phase 7) before trusting any figure.
 
 ---
@@ -107,7 +122,25 @@ targets, build a feature matrix (delays? Lyapunov/Benettin? adiabatic sweep? noi
 multi-mode? time-gated events? sparse coupling?) and pick the execution backend that
 supports them — **with rationale**. tvboptim (JAX) is common because delays, Lyapunov
 and adiabatic `lax.scan` sweeps are tvboptim-gated today; plain forward sims and
-operating points run on any backend. **Surface feature gaps now**: a need not yet
+operating points run on any backend.
+
+**Spiking / event-driven targets pick a spiking backend, and the two do different jobs.** A
+single spike-driven synapse or small event-driven model — a Tsodyks–Markram short-term-plasticity
+synapse driven by a defined spike train, an EPSP train — runs on the **NeuroML** backend
+(`run("neuroml")`): the STP synapse is a first-class component, `neuroml:blockingPlasticSynapse`
++ a `modes.plasticityMechanism` of `tsodyksMarkramDepMechanism` (depression) or
+`tsodyksMarkramDepFacMechanism` (facilitation), mapping `initReleaseProb=U`, `tauRec=τ_D`,
+`tauFac=τ_F` (template `docs/Interoperability/NeuroML/examples/Ex7_STP.qmd`); the presynaptic
+drive is a `neuroml:spikeGenerator` (regular) or `spikeArray` (preset times). A **recurrent
+spiking network** (thousands of LIF neurons, Poisson drive, population activity) is the
+**Brian2** path instead — Brian2 rejects a defined spike source, one-to-one edges and a
+nonlinear/multi-gate synapse, so it will NOT run the single-synapse NeuroML recipe. Different
+experiments in one recipe can use different backends (a rate reduction on tvboptim beside its
+spike-level companion on neuroml). Study-loader gotcha: a NeuroML cell's nested channel goes
+under `modes:`, not `components:` — `components` is a LinkML alias the strict study loader
+rejects (only the `from_string` doc path accepts it).
+
+**Surface feature gaps now**: a need not yet
 supported (e.g. the Lyapunov exponent of a *delayed* closed loop under `vmap`) BLOCKS
 its target — flag it as a framework/schema enhancement before you build, and mark the
 target `partial`/`out` in the eventual scorecard. This early gap-finding is what sets
@@ -180,15 +213,21 @@ See **writing-models** for the Dynamics form and **running-simulations** for sou
   (`from_experiment` / `source_point: branch`, shardable), and IC-seed ensembles
   (`distribution.seed` vs `execution.random_seed`). A product grid over independent cells needs
   none of it.
-- **Spec at the root, callables in `code/recipe/` via `code_source`.** The study declares
-  `code_source: ./code/recipe` (a local path) or a `{git, ref, subdir}` repo; tvbo puts that
-  dir on the import path so `callable: {module: <study>_analysis}` resolves with no driver and
-  no vendored package (falls back to a `code/` convention if unset). This keeps the spec at the
-  top level while its code lives under `code/`.
-- One file; shared `&dynamics` / `&params` / `&network` anchors; per-experiment `<<:`
-  overrides. Order experiments so a `from_experiment` source precedes its dependents
-  (operating point before its control runs) — then bare `tvbo run <Study>.yaml`
-  resolves the seeds in one pass.
+- **Spec at the root, callables flat in `code/` (zero-config).** Loading the study puts `code/`
+  on the import path, so `callable: {module: <study>_analysis}` and a figure's `code_modules:`
+  resolve by bare name — no driver, no `PYTHONPATH`, no vendored package. Set `code_source` ONLY
+  to point the importable code elsewhere — a `{git, ref, subdir}` repo or a shared directory —
+  never a local `code/` subfolder. This keeps the spec (backend-independent metadata) at the top
+  level and its code under `code/`.
+- **Reuse within a file** with shared `&dynamics` / `&params` / `&network` anchors +
+  per-experiment `<<:` overrides; **reuse across files** with `!include path.yaml`, which
+  substitutes the whole included document at that position (a `dynamics:`, an algorithm
+  block, a whole experiment). `!include` resolves through the same load path as a monolithic
+  study (byte-identical materialisation), so a big study can be a thin root that `!include`s
+  per-experiment / shared-component files. (`!include` takes a whole file — there is no
+  `#fragment` selector; to reuse one block, put that block in its own file and include it.)
+  Order experiments so a `from_experiment` source precedes its dependents (operating point
+  before its control runs) — then bare `tvbo run <Study>.yaml` resolves the seeds in one pass.
 - Non-obvious params get a one-line comment tying them to the paper (equation/figure).
 - Overriding a param replaces it wholesale (YAML merge is shallow) — restate `unit`/
   `description`, or don't override when the anchor default already matches.
@@ -216,32 +255,63 @@ trajectories** — a full θ/voltage trace over a 15k-point grid is terabytes; a
 reduction (e.g. effective frequency accumulated online) keeps resident memory ~constant
 (block-size, not trajectory-length), so the whole grid vmaps on one GPU with no sharding.
 
-## Phase 5 — Plotting: one `code/figures/plot.py`
+## Phase 5 — Figures: declare them in the study's `figures:` block
 
-Copy `assets/plot.py.tmpl` (one `main()`, one section per paper figure *type* — time series /
-phase portrait / bifurcation diagram / spectrum / sweep / spatial map). `plot.py` writes only
-**our reproduction** figures (`FigN_<study>.png`) to `output/figures/`. The A/B pairing with
-the paper original is a **report-render concern**, gated for copyright by the Phase-6
-internal/public profile (the report's `ab()` helper draws the original only in the internal
-build) — do **not** bake the copyrighted original into a committed/shared image. (`assets/
-compose_ab.py` pre-composes an `ab_fig{N}.png`; if you use it, that composite embeds the ©
-original, so treat it exactly like the internal build — git-ignored, never in the public
-report.) Read the native result containers directly. Always draw the paper's full multi-panel
-layout; a not-yet-run panel renders a labelled placeholder.
+Figures are **metadata**, rendered by codegen — not a hand-written plotting script. Each
+paper figure is a `Figure` in `<Study>.yaml`'s `figures:` list (schema `schema/figure.yaml`;
+design `dev/figure-spec-design.md`). `tvbo figure render <Study>.yaml` — run automatically by
+`tvbo run <Study>.yaml` — emits a self-contained, editable `plot_<name>.py` **and** runs it,
+producing `<name>.png` in `figures/`. Iterate one figure fast with `tvbo figure render` (the
+results stay put; only the plot re-runs). Copy `assets/figures.snippet.yaml` for the block and
+`assets/figures.py.tmpl` for the panel module.
+
+**A `Figure` is layout + binding + style; keep compute and plotting code out of it.**
+- **Layout is metadata:** `layout` (bsplot mosaic string, e.g. `aab/ccb` — letters = panel
+  keys, `/` = new row, repeated letters span, `.` = empty), `width`/`height` (mm), `dpi`,
+  `font_size`, `height_ratios`/`width_ratios`, `style` (`.mplstyle` paths), `spines`,
+  `panel_numbers`/`panel_number_format`/`panel_number_loc`. Set the paper's physical size and
+  type scale here, once — never in code.
+- **Grammar panels need zero code.** A `cartesian` or `heatmap` panel binds data through its
+  `layers`: `used: {iri: tvbo:exp/<Study>/exp-3, output: <var|observation__name>, sel: {dim: label}}`
+  (label-keyed, never positional — this binding **is** the PROV `used` edge), plus `mark`
+  (`line`/`scatter`/`rule`/`band`; implied for heatmap) and `encoding: {x, y, color}` naming
+  container dims/coords. `transform:` names an optional presentation-only reduction.
+- **Only a bespoke interior is code.** A `custom` panel sets `render: <fn>` + `opts:`, where
+  `<fn>` is a `@bsplot.register_panel` callable `fn(fig, ax, ctx)` in a module named in the
+  figure's `code_modules:` (a flat file in `code/`, e.g. `code/<study>_figures.py`). It reads its resolved layers with
+  `bsplot.load_layer(ctx["layers"][i])` and draws. A reused reduction is a
+  `@bsplot.register_transform` `fn(da)->da`. This is the escape hatch — reach for it only when
+  the grammar genuinely can't express the panel (twin axes, connectome, brain surface, dense
+  nested subgrids), not by default.
+
+**Compute lives upstream, never in the figure** (the ladder, design decision #4): prefer an
+**Observation** declared on the experiment (plot-ready, recorded as `observation__<name>`) →
+else a **declarative reduction** in the tvbo schema → and only last a registered `transform`.
+The `Figure` stays presentation-only.
+
+**Integrity (#3) is declarative too.** A panel whose TVBO data isn't ready sets
+`placeholder: "<label>"` — it draws a labelled placeholder in the paper's layout, never the
+paper's replotted source data. **Guard by data-requirement, not per figure:** a group-level
+panel often reproduces from group data while its per-subject sibling is blocked — give only the
+blocked panels a `placeholder`, so the reproducible ones ship.
 
 **Render spatial data in the paper's coordinate/surface convention**, not a convenient
 substitute — e.g. plot brain-region values at the paper's surface parcel centres (Koller uses
 the fsaverage5-*inflated* COM), not the raw MNI centroid; the convention changes the figure's
 look and can misalign, so derive the coordinates from the paper's surface and verify the
-mapping **by label**. And **guard a multi-panel figure by data-requirement, not per figure**:
-a group-level panel often reproduces from group data while its per-subject sibling stays
-blocked on per-subject data — split the guard so the reproducible panels ship and only the
-blocked ones are placeholders.
+mapping **by label** (a `custom` surface/heatmap panel's job).
 
-Keep any extracted **paper source arrays label-keyed** (`xarray` with named coords), not
-encoded into filenames — tvbo's declarative figure spec (`dev/figure-spec-design.md`) will
-bind figure data by IRI + `output` + `sel`, so a flat per-panel `.nc` set is a fine stopgap,
-but an elaborate filesystem-keyed tree is throwaway. Don't over-build it before the renderer.
+**A/B compose stays a report concern**, not a `Figure`: the study renders only *our*
+reproduction; the side-by-side against the paper original is drawn in the **report** (the
+`ab()` helper / `assets/compose_ab.py`), gated for copyright by the Phase-6 internal/public
+profile — do **not** bake the © original into any committed/shared image or into a `Figure`.
+
+**External published paper data binds by IRI too.** When a panel pairs TVBO output against the
+paper's own figure data, wrap that data as an external `Dataset` and bind
+`used: {iri: tvbo:dataset/<Study>_source, output: <var>, sel: {figure: 6, panel: c}}` — the
+same declarative path, figure/panel as coordinates you `sel` into. Until wrapped, a **flat,
+label-keyed** per-panel `.nc` set (`xarray` named coords, not filesystem-keyed) is an accepted
+stopgap; don't build an elaborate filename tree — it's throwaway once the `Dataset` binding lands.
 
 ## Phase 6 — Report: `report/report.qmd` (every number computed)
 
@@ -277,8 +347,11 @@ Replication-specific rules on top of that mechanics:
 Before trusting figures, validate the recipe's core dynamics against a **standalone
 reference integration** of the paper's governing equation in `code/<study>_reference.py`
 (plain NumPy, or another backend) — recipe output must match it (byte-exact, or within a
-stated tolerance). Where feasible, also cross-check via `render_code('tvb')` vs
-`render_code('tvboptim')`. This is what catches modelling bugs a PDF can't: e.g.
+stated tolerance). **If the paper states a closed form** — a steady-state law, an iterative
+amplitude recurrence — that closed form IS the oracle: compare the recipe output against it
+directly. A self-contained study has no external input to cap the number, so the agreement is
+exact to integration tolerance (the decimal-level targets pass), not merely mechanism-level.
+Where feasible, also cross-check via `render_code('tvb')` vs `render_code('tvboptim')`. This is what catches modelling bugs a PDF can't: e.g.
 per-step vs per-stage coupling evaluation converging to a *different attractor*.
 
 **Attribute a residual gap to data vs implementation with a head-to-head.** When a metric
@@ -310,6 +383,25 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   (`cpus_per_task`/`mem`/`time`/`partition`) via `workflow.slurm`. The kit is one
   `.tar.gz`; `tvbo workflow submit <kit>` runs it. This is invariant #1 (one recipe,
   no drivers) extended to the cluster — never hand-write sbatch.
+- **Every run-time knob is a `--set` on the emit, never a recipe hand-edit or a hand-written
+  sbatch.** The corollary of "no sbatch": any per-run override — swap the whole runtime
+  substrate, retarget the queue, resize a job — is a flag on `tvbo workflow snakemake`, so the
+  recipe stays the portable source of truth and the same study emits for CPU-container *and*
+  GPU-venv without editing it. A **GPU run** is exactly this: drop the container and point at a
+  `jax[cuda]` venv — `--set container= --set slurm.venv=/path/to/.venv --set slurm.partition=gpu
+  --set slurm.gres=gpu:1 --set slurm.mem=… --set slurm.time=…` (the SLURM executor turns
+  `gres` into `--gres` itself; on a GPU node let JAX auto-detect — do **not** force
+  `JAX_PLATFORMS=cuda`, which drops the CPU device a `jax.debug.print` progress callback needs;
+  use `cuda,cpu` if you must set it, and match the `jax-cuda12-*` plugin to `jaxlib`). Env vars
+  are `--set 'slurm.env=[{name: …, value: …}]'`. Install the venv from a **compute node**
+  (`srun`), never the login node.
+- **Prove the memory/streaming fix — don't eyeball it — with engine-native benchmarking.**
+  `tvbo workflow snakemake … --benchmark` (or `--set benchmark=true`) attaches Snakemake's
+  native `benchmark:` directive to every rule: a per-cell TSV (wall time, `max_rss`/`vms`/
+  `uss`/`pss` MB, io, cpu_time) written next to each output, whether run locally or as a SLURM
+  job — one row per cell, so a fanned sweep benchmarks every cell. This is how you turn "reason
+  about resident memory" into a *measured* peak (a streaming BOLD fit that would OOM at hundreds
+  of GB materialized shows a ~GB peak in the TSV), and how you size `slurm.mem` honestly.
 - **A dry run does NOT execute anything — smoke-test ONE experiment in the container
   FIRST.** `tvbo workflow submit --dry-run` (snakemake `-n`) only resolves the DAG
   (wildcards, inputs, resources); no `tvbo run` executes, so it cannot catch a runtime
@@ -317,7 +409,12 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   the same way). Before the real submit, run a single experiment end-to-end inside the
   SIF (`apptainer exec --bind … <sif> tvbo run spec/<id>/experiment.yaml`), then its
   dependents, then the full submit. This is Phase 7's "run END-TO-END, not `from_file`"
-  at cluster scale.
+  at cluster scale. **A *fit* can't be "run once" to smoke-test it** — its whole cost is the
+  tuning iterations. Cap them: `tvbo run … --smoke` (= `--max-iterations 1`) or
+  `--max-iterations N` reaches the post-tuning evaluation in one/N iterations (the recipe
+  untouched), which is how you verify a long fit runs and *streams within memory* in minutes
+  rather than days. At kit level it is a run modifier like any other: `--smoke` /
+  `--set smoke=true` / `--set max_iterations=N` on `tvbo workflow snakemake`.
 - **The container filesystem is READ-ONLY — a bug class that ONLY bites in-container.**
   Anything writing into the installed package or `$HOME/.cache` at import/run time
   fails only inside the SIF, never locally or in a dry run: codegen compiling templates
@@ -381,6 +478,16 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   evaluation must stream too. Neither shows in a short smoke test — reason about
   resident memory = `n_steps × n_nodes × n_states × 8 B` up front, and if a needed
   streaming observable doesn't exist yet, that's a Phase-1.5 framework gap.
+  **You request streaming declaratively — `reduce: streaming` on the observation** (opt-in,
+  byte-identical to the post-scan value to f64 rounding, zero effect on any other
+  observation), which folds it into the integrator carry as an (init, update, finalize)
+  reducer via `prepare(reduce=…)` instead of stacking a trajectory; currently supported for
+  the HRF-Volterra BOLD pipeline (the resolver lifts the kernel, downsample stride, TR stride
+  and Volterra `k_1`/`V_0` from the declared pipeline). **A streamed observation must decimate
+  by a stride/`subsample`, never `temporal_average`** — a stride is block-additive so it is
+  identical whether or not it is folded in-carry, whereas `temporal_average` is not (and
+  `temporal_average(1)` is not even the identity — it shifts by one). Verify it reaches the
+  streaming post-eval within memory *without* running the whole fit via `--smoke` (below).
 - **Metastable / FC metrics are duration-, trial-, and regime-sensitive — don't call a
   ceiling early.** A single short run's FC/PLV/order-parameter is noise-dominated (one lucky
   trial read 0.17; the 8-trial mean was 0.09). Match the paper's **full duration and trial
@@ -432,8 +539,11 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   internally inconsistent in the published workbook (Koller Fig 2e: the per-node spread
   disagrees across the steady-state vs transient windows) — a source-data defect, not a
   model gap. Identify these, scope them `out`, say why; don't chase them.
-- **Redundant scripts.** One prep script (emits the tvbo Network directly), one plot
-  script. Don't split what one `main()` can do.
+- **Redundant scripts.** One prep script (emits the tvbo Network directly); figures are
+  the declarative `figures:` block, not scripts. Don't hand-write per-figure `plot_*.py`
+  or an A/B compose driver — the renderer emits the plot scripts, and bespoke panel code
+  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in `figures/`
+  is *generated*; never author or commit it.)
 - **No dead vendored cruft — but a *live* dependency is not cruft.** Keep ONE pristine copy
   of the paper's own code under `original_study/`; don't duplicate it into `code/`. If the
   paper's algorithm is reused at runtime (e.g. a Helmholtz–Hodge flow-potential), *reference*
@@ -446,4 +556,19 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   arrays, the report PDF/logs → write them into `output/` (gitignored). A generated file
   tracked at the root reads as a hand-curated deliverable and silently drifts stale.
 - **Cross-references.** The report must stand alone — no "as in the sibling X study".
+- **A lineage of related papers → sibling studies sharing a curated model; pin every
+  original-figure lookup.** When one model spans several papers (a foundation and its
+  successor, e.g. a synapse used first at the single-synapse level then in a network), make
+  each paper its own self-contained study and share the model by a curated `iri:` — don't
+  cram both into one recipe (the scales and reports differ). Keep only the paper being
+  replicated under that study's `original_study/`; when it also holds a precursor/successor's
+  figures, an unpinned `original_study.rglob("fig_03.png")` in the report's `ab()` silently
+  grabs the WRONG paper's `fig_03.png`. Pin the lookup to the specific paper dir
+  (`glob("Author1997*")/"img"`), and eyeball the internal A/B once to confirm the original is
+  the right figure.
+- **A pure forward run must persist a container — check `wrote [...]` is non-empty.** An
+  experiment that only records a raw trajectory (no exploration, no declared observation) —
+  e.g. a NeuroML EPSP-train run — now saves its `integration` DataArray, but confirm the run
+  actually wrote `output/…_result.h5` (a figure that binds `iri: tvbo:result/<Study>/exp-N`
+  can't resolve an unwritten container). Run END-TO-END, not `from_file`.
 - **Framework gaps surface late** if you skip Phase 1.5. Find them before the YAML.
