@@ -236,6 +236,65 @@ def test_fanout_snakefile_is_executable_python():
     assert "results/30/sub-{subject}_result.h5" in resolved
 
 
+def _snakemake_cmd(tmp_path, monkeypatch, *, sbatch: bool, ship_profile: bool,
+                   cores=None, profile=None):
+    """Capture the snakemake argv `_execute_engine_artefact` would run for a kit.
+
+    *sbatch* toggles whether a scheduler is discoverable; *ship_profile* whether the
+    kit carries a SLURM `profile/`. Returns the launched command (minus argv[0]).
+    """
+    from tvbo.cli import workflow as wf
+
+    kit = tmp_path / "kit"
+    (kit / "profile").mkdir(parents=True) if ship_profile else kit.mkdir()
+    if ship_profile:
+        (kit / "profile" / "config.yaml").write_text("executor: slurm\n", encoding="utf-8")
+    (kit / "Snakefile").write_text("rule all:\n    input: []\n", encoding="utf-8")
+
+    # has_scheduler consults _resolve_launcher (which itself checks the venv sibling AND
+    # $PATH), so mocking it fully controls both the launcher path and scheduler discovery.
+    monkeypatch.setattr(wf, "_resolve_launcher",
+                        lambda n: (f"/fake/{n}" if n == "snakemake"
+                                   else (f"/fake/{n}" if (n == "sbatch" and sbatch) else None)))
+
+    captured = {}
+
+    def _fake_run(cmd, check=True, cwd=None, **kwargs):
+        captured["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout="")
+
+    monkeypatch.setattr(wf.subprocess, "run", _fake_run)
+    wf._execute_engine_artefact("snakemake", kit / "Snakefile", profile=profile, cores=cores)
+    return captured["cmd"]
+
+
+def test_snakemake_explicit_cores_runs_local_ignoring_shipped_profile(tmp_path, monkeypatch):
+    """`--cores` forces a LOCAL run even when the kit ships a SLURM profile and a scheduler exists."""
+    cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=True, ship_profile=True, cores="4")
+    assert cmd[1:] == ["--cores", "4"]
+    assert "--profile" not in cmd
+
+
+def test_snakemake_shipped_profile_used_only_when_scheduler_present(tmp_path, monkeypatch):
+    """With a scheduler present the shipped SLURM profile is used (submit each rule)."""
+    cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=True, ship_profile=True)
+    assert cmd[1:] == ["--profile", "profile"]
+
+
+def test_snakemake_falls_back_to_local_cores_without_a_scheduler(tmp_path, monkeypatch):
+    """A kit's SLURM profile can't work on a machine with no `sbatch`; a bare run must
+    still execute — auto-fall back to local cores so the SAME kit runs natively locally."""
+    cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=False, ship_profile=True)
+    assert cmd[1:] == ["--cores", "all"]
+    assert "--profile" not in cmd
+
+
+def test_snakemake_explicit_profile_wins_over_shipped(tmp_path, monkeypatch):
+    """`--profile cubi-v1` replaces the shipped profile regardless of scheduler discovery."""
+    cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=False, ship_profile=True, profile="cubi-v1")
+    assert cmd[1:] == ["--profile", "cubi-v1"]
+
+
 @pytest.mark.parametrize("engine,expected_tail", [
     ("snakemake", "--dry-run"),
     ("slurm", "--test-only"),
@@ -926,8 +985,10 @@ def test_workflow_stdout_only_does_not_create_kit(tmp_path: Path):
     [
         # Slurm submits the array with --parsable (then chains a gather job).
         ("slurm", ["sbatch", "--parsable", "run.sbatch"], "run.sbatch"),
-        # Snakemake ships a SLURM-executor profile, so submit runs the login-node
-        # orchestrator that dispatches each rule to the scheduler (not local --cores).
+        # Snakemake ships a SLURM-executor profile, so with a scheduler present submit
+        # runs the login-node orchestrator that dispatches each rule to it (not local
+        # --cores). Without a scheduler it auto-falls back to --cores; a `sbatch` mock
+        # below pins the HPC branch so this asserts the profile path deterministically.
         ("snakemake", ["snakemake", "--profile", "profile"], "Snakefile"),
         ("nextflow", ["nextflow", "run", "main.nf"], "main.nf"),
     ],
@@ -940,6 +1001,9 @@ def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, eng
         return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
 
     monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
+    # Pin a discoverable scheduler so the snakemake kit uses its shipped SLURM profile
+    # (the HPC branch) rather than the no-`sbatch` local-cores fallback — the test's intent.
+    monkeypatch.setattr("shutil.which", lambda n: f"/usr/bin/{n}")
 
     out = tmp_path / "kit"
     r = runner.invoke(
