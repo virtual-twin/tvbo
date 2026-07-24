@@ -3,8 +3,11 @@
 panel; B = the TVBO reproduction on white. Writes ``output/figures/ab_fig{N}.png``.
 
 Reusable as-is across replications. Point ``_REPRO`` at each paper figure's
-reproduction image (produced by ``plot.py``) and drop the paper originals into
-``original_study/img/fig{N}.png``. Imported and called by ``plot.py``'s ``main()``.
+reproduction image (rendered from the study's ``figures:`` block by ``tvbo figure render``)
+and drop the paper originals into ``original_study/img/fig{N}.png``. A/B composition is a
+REPORT concern — this helper is called from the report's internal build (the ``ab()`` helper),
+NOT from a plotting script; the composite embeds the © original, so it is local-only and
+git-ignored, never in the public report.
 """
 import matplotlib
 matplotlib.use("Agg")

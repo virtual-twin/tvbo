@@ -61,7 +61,7 @@ def ab(orig, repl, h=4.0, lab="<substrate>"):
     if r.exists():
         axr.imshow(mpimg.imread(str(r)))
     else:
-        axr.text(0.5, 0.5, f"{repl}\n(run: python code/figures/plot.py)", ha="center", va="center")
+        axr.text(0.5, 0.5, f"{repl}\n(run: tvbo figure render <Study>.yaml)", ha="center", va="center")
     plt.tight_layout(); plt.show()
 
 # ---- Every reported number is computed here from the result container or metadata. ----
@@ -258,6 +258,7 @@ explains what is not.>
 
 <!-- Running the study:
 `tvbo run <Study>.yaml` runs every experiment in dependency order (each `from_experiment`
-source before its dependents). `python code/figures/plot.py` writes output/figures/.
+source before its dependents) and then renders the `figures:` block to figures/
+(`tvbo figure render <Study>.yaml` re-renders figures only).
 PUBLIC report:   quarto render report/report.qmd --to pdf
 INTERNAL A/B:    quarto render report/report.qmd --to pdf --profile internal  (local-only) -->
