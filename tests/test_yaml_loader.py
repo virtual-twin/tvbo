@@ -121,3 +121,39 @@ def test_missing_include_raises_filenotfound(tmp_path: Path) -> None:
     main = _write(tmp_path / "main.yaml", "broken: !include does_not_exist.yaml\n")
     with pytest.raises(FileNotFoundError):
         yaml_loader.load_as_dict(main)
+
+
+def test_study_from_file_materialises_an_included_experiment(tmp_path: Path) -> None:
+    """A modular (`!include`-split) study loads and materialises like a monolithic one.
+
+    ``SimulationStudy.from_file`` keeps the raw experiment dicts (``_raw_experiments``) so
+    ``get_experiment`` can re-materialise through the iri-aware ``from_string`` path. Both
+    the datamodel load AND that raw extraction must go through ``yaml_loader`` — a plain
+    ``yaml.safe_load`` chokes on the ``!include`` tag, silently emptying ``_raw_experiments``
+    and dropping every experiment to the iri-unaware fallback. This guards that harmonisation.
+    """
+    import tvbo
+
+    _write(tmp_path / "dyn.yaml", """
+        name: Osc
+        system_type: continuous
+        output: [x]
+        parameters: {a: {value: 1.0}}
+        state_variables: {x: {equation: {rhs: '-a*x'}, initial_value: 0.1}}
+    """)
+    study_yaml = _write(tmp_path / "Study.yaml", """
+        key: T
+        experiments:
+          - id: 1
+            label: e1
+            dynamics: !include dyn.yaml
+            network: {number_of_nodes: 1}
+            integration: {method: heun, step_size: 0.1, duration: 1.0, transient_time: 0.0, unit: s}
+    """)
+
+    study = tvbo.SimulationStudy.from_file(str(study_yaml))
+    # The included experiment is captured (not emptied by a safe_load choke on !include)...
+    assert list(getattr(study, "_raw_experiments", {})) == [1]
+    # ...and materialises with the `!include`d Dynamics fully resolved.
+    exp = study.get_experiment(1)
+    assert exp.dynamics.name == "Osc"
