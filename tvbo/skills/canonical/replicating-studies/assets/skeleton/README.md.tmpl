@@ -9,13 +9,14 @@ the report's scorecard). Backend chosen by fit — see `original_study/analysis/
 <Study>/
   <Study>.yaml              THE spec — one declarative recipe at the root (all/selected experiments)
   README.md  environment.yml / requirements.txt
-  code/                     ALL code (the spec stays out of code/)
-    recipe/                 callables the spec references, reached via `code_source: ./code/recipe`
-    prepare_<study>.py  <study>_reference.py (verify)  figures/plot.py
+  code/                     ALL code, FLAT (the spec stays OUT of code/); importable with no config
+    <study>_networks.py  <study>_analysis.py  <study>_figures.py   callables the spec references (module: / code_modules:)
+    prepare_<study>.py  <study>_reference.py (verify)
   input/
     DATA.md                 TRACKED — provenance + exact download/regenerate steps
     sourcedata/             third-party raw inputs (connectomes, …) — git-ignored
-  output/                   EVERYTHING generated (git-ignored): run outputs, figures/, KPI tables, report.pdf
+  figures/                  rendered figures + their generated plot_<name>.py — git-ignored
+  output/                   run outputs (git-ignored): result .h5 containers, KPI tables, report.pdf
   report/                   report.qmd (+ _quarto.yml, _quarto-internal.yml) + references.bib   (*.pdf git-ignored)
   original_study/           paper + its published data — git-ignored, obtained per DATA.md
     <paper.pdf>  img/fig*.png  analysis/ (targets, figures, backend-fit)  source_data/  <pristine paper code>
@@ -23,8 +24,8 @@ the report's scorecard). Backend chosen by fit — see `original_study/analysis/
 ## Reproduce
 ```bash
 python code/prepare_<study>.py            # (only if the study has external inputs) raw source -> tvbo-ready Network
-tvbo run <Study>.yaml                      # all experiments in dependency order (--experiment for a subset)
-python code/figures/plot.py               # all figures -> output/figures/
+tvbo run <Study>.yaml                      # all experiments in dependency order, THEN renders figures/ (--experiment for a subset; --no-figures to skip)
+tvbo figure render <Study>.yaml           # (re-render figures only, without re-running experiments)
 quarto render report/report.qmd --to pdf                     # PUBLIC report.pdf (reproduction only; shareable)
 quarto render report/report.qmd --to pdf --profile internal  # INTERNAL report_internal.pdf (A/B with paper originals; local-only)
 ```
