@@ -1893,10 +1893,14 @@ classes:
                 description: "All values >= 0"
             source_var:
                 range: string
-                description: "Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics."
+                aliases:
+                    - source_variable
+                description: "Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics. The alias `source_variable` is accepted (harmonized with the `*_variable` spelling used elsewhere, e.g. the stimulus event's `target_variable`)."
             target_var:
                 range: string
-                description: "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics."
+                aliases:
+                    - target_variable
+                description: "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics. The alias `target_variable` is accepted."
             coupling:
                 range: Coupling
                 required: false
