@@ -375,3 +375,10 @@ Before submitting changes (always activate the venv first: `source .venv/bin/act
 | `.qmd` | Quarto documentation | `docs/` |
 
 Trust these instructions. Only search the codebase if information here is incomplete or found to be incorrect.
+
+<!-- mermaid-ai-skills:start -->
+## Mermaid Diagrams
+
+When the user asks to create, edit, or visualize a diagram, follow the
+instructions in `.github/instructions/mermaid.instructions.md`.
+<!-- mermaid-ai-skills:end -->
