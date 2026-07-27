@@ -73,17 +73,22 @@ figures that silently integrate the wrong attractor.
    bare name — no driver, no `PYTHONPATH`, no `code_source`. (Set `code_source` **only** to point
    the importable code *elsewhere* — a git repo or a shared directory — never at a local `code/`
    subfolder; a `code/recipe/` split buys nothing and breaks imports if the line is forgotten.)
-   `code/` also holds the prep script and one reference integration; `original_study/` the paper +
-   analysis; `input/` the data provenance; `report/` the report source. Rendered figures and
-   their generated `plot_<name>.py` scripts land in the gitignored `figures/`.
+   `code/` also holds the prep script and one reference integration; `original_study/` holds the
+   **paper's own material ONLY** (fully git-ignored); `input/` the data provenance; `report/` the
+   report source **and everything we author or generate** — including our replication analysis under
+   `report/analysis/` (targets, figures, backend-fit, adherence). Rendered figures and their
+   generated `plot_<name>.py` scripts land in the gitignored `figures/`.
 6. **Nothing large or upstream is vendored — gitignore it and document exact retrieval.**
-   Git tracks only what you author: the spec, `code/`, `input/DATA.md`, and the report
-   source (`report.qmd` + its `report_internal.qmd` wrapper + `_quarto.yml` + `references.bib`).
-   **Everything else is gitignored:** `output/` and all generated artifacts (figures, `report.pdf`/logs,
-   KPI/targets tables — write them to `output/`, never commit them at the study root),
-   the paper's own material under `original_study/`, and raw third-party inputs under
-   `input/sourcedata/`. Planning/working docs go to a gitignored `_dev/`. A fresh clone
-   is small and reproducible; `DATA.md` says how to obtain every ignored input.
+   Git tracks only what you author: the spec, `code/`, `input/DATA.md`, and the report source
+   (`report.qmd` + its `report_internal.qmd` wrapper + `_quarto.yml` + `references.bib` +
+   `report/analysis/`). **Everything else is gitignored:** `output/` and all generated artifacts
+   (figures, `report.pdf`/logs, KPI/targets tables — write them to `output/`, never commit them at
+   the study root), **all of `original_study/`** (the paper's own material — fully ignored; nothing
+   of ours lives there), and raw third-party inputs under `input/sourcedata/`. Planning/working docs
+   go to a gitignored `_dev/`. A fresh clone is small and reproducible; `DATA.md` says how to obtain
+   every ignored input. (**`.gitignore` has no inline/trailing comments** — a `#` after a pattern
+   becomes part of the pattern and silently breaks it, e.g. an un-ignored `figures/` or a dropped
+   `original_study/` exclusion; keep every comment on its own line.)
 7. **Replication, stated honestly.** Frame it as *replication* (independent code +
    independently-sourced data → same conclusions), not bit-exact *reproduction*. Ship a
    **scorecard** (met / partial / out-of-scope) with a **fidelity tier per target**
@@ -102,8 +107,9 @@ figures that silently integrate the wrong attractor.
 
 ## Phase 1 — Analyze the paper → `targets.md` + `figures.md`
 
-Read the version of record (put it in `original_study/`, figures as `img/fig*.png`).
-Produce two artifacts under `original_study/analysis/`:
+Read the version of record (put it in `original_study/`, figures as `img/fig*.png` — the paper's
+own material, fully git-ignored). Produce two artifacts of **your own** under `report/analysis/`
+(tracked — our work, not the paper's):
 
 - **`targets.md`** — a numbered table of replication targets `T1..Tn`. Each row:
   target · figure(s) · **key verbatim params** (copy them exactly — K, α, τ, seeds,
@@ -122,7 +128,7 @@ the *figures* actually show, with the discrepancy noted.
 (`{T1,T2,T7}`). Only selected targets become experiments in Phase 3. If the scope is
 contested, settle it with the user before continuing — do not guess.
 
-**Backend-fit + gaps** (`original_study/analysis/backend-fit.md`). For the selected
+**Backend-fit + gaps** (`report/analysis/backend-fit.md`). For the selected
 targets, build a feature matrix (delays? Lyapunov/Benettin? adiabatic sweep? noise?
 multi-mode? time-gated events? sparse coupling?) and pick the execution backend that
 supports them — **with rationale**. tvboptim (JAX) is common because delays, Lyapunov
