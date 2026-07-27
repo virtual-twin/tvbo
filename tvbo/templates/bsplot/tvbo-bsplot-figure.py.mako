@@ -67,6 +67,78 @@ def _apply_axopts(ax, o):
                   frameon=False)
 
 
+def _series3d(ds, da, name, axis):
+    """One 1-D channel of a line3d panel: a data_var, a value along a component coord
+    (e.g. select ``E`` along a ``var=[E,x,u]`` dim), or the index if the name is a plain dim."""
+    if name and name in ds.data_vars:
+        return np.asarray(ds[name].values).squeeze()
+    for c in getattr(da, "coords", {}):
+        vals = np.asarray(da.coords[c].values)
+        if vals.dtype.kind in "US" and name in set(vals.tolist()):
+            dim = da.coords[c].dims[0] if da.coords[c].dims else c
+            return np.asarray(da.sel({dim: name}).values).squeeze()
+    return _coord(da, name, axis)
+
+
+def _apply_axopts3d(ax, o):
+    """3-D axis directives for a line3d panel: labels, limits, camera, per-axis inversion,
+    and an opaque white box (no default grey panes). Applied after the 2-D-shared labels."""
+    if o.get("zlabel") is not None:
+        ax.set_zlabel(o["zlabel"])
+    if o.get("zlim"):
+        ax.set_zlim(*o["zlim"])
+    if o.get("elev") is not None or o.get("azim") is not None:
+        ax.view_init(elev=o.get("elev", ax.elev), azim=o.get("azim", ax.azim))
+    if o.get("invert_x"):
+        ax.invert_xaxis()
+    if o.get("invert_y"):
+        ax.invert_yaxis()
+    if o.get("invert_z"):
+        ax.invert_zaxis()
+    for _pa in (ax.xaxis, ax.yaxis, ax.zaxis):        # white box, faint edges
+        _pa.pane.set_facecolor("white"); _pa.pane.set_alpha(1.0); _pa.pane.set_edgecolor("0.8")
+
+
+def _cell_axes(ax):
+    """A panel's own axes: the primary plus any twin (twinx/twiny) sharing its subplot cell."""
+    axes = [ax]
+    sp = ax.get_subplotspec()
+    if sp is not None:
+        for a in ax.figure.axes:
+            if a is not ax and a.get_subplotspec() is sp:
+                axes.append(a)
+    return axes
+
+
+def _snapshot_fixed_axes(ax):
+    """Record the tick locator/formatter/limits of a custom panel's axes so the figure-wide
+    format pass cannot overwrite ticks the drawer set on purpose.
+
+    bsplot's format pass re-derives evenly spaced ticks for every numeric axis, keeping only
+    axes whose labels are strings. A custom drawer, though, often sets meaningful *numeric*
+    ticks — a raster's [0, n, 2n] cell axis, a 0-1 twin scale — or an intentionally bare axis
+    (``set_yticks([])``). Both cases install a ``FixedLocator``; snapshot exactly those so
+    ``_restore_fixed_axes`` can put them back verbatim after the format pass, while axes left
+    on an automatic locator still get the tidy shared formatting."""
+    from matplotlib.ticker import FixedLocator
+    snap = []
+    for a in _cell_axes(ax):
+        xloc, yloc = a.xaxis.get_major_locator(), a.yaxis.get_major_locator()
+        snap.append((a, isinstance(xloc, FixedLocator), isinstance(yloc, FixedLocator),
+                     a.get_xlim(), a.get_ylim(), xloc, a.xaxis.get_major_formatter(),
+                     yloc, a.yaxis.get_major_formatter()))
+    return snap
+
+
+def _restore_fixed_axes(snap):
+    """Put back the drawer's own fixed ticks/limits captured by ``_snapshot_fixed_axes``."""
+    for a, x_fixed, y_fixed, xlim, ylim, xloc, xfmt, yloc, yfmt in snap:
+        if x_fixed:
+            a.xaxis.set_major_locator(xloc); a.xaxis.set_major_formatter(xfmt); a.set_xlim(xlim)
+        if y_fixed:
+            a.yaxis.set_major_locator(yloc); a.yaxis.set_major_formatter(yfmt); a.set_ylim(ylim)
+
+
 % for p in panels:
 def _panel_${p['key']}(fig, ax):
     """Panel ${p['key']} — ${p['kind']}."""
@@ -75,6 +147,29 @@ def _panel_${p['key']}(fig, ax):
     ax.axis("off")
 % elif p['kind'] == 'custom':
     _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
+% elif p['kind'] == 'line3d':
+    _spec = ax.get_subplotspec(); ax.remove()           # swap the 2-D cell for a 3-D axis
+    ax = fig.add_subplot(_spec, projection="3d")
+% for L in p['layers']:
+    _ds = _open(${repr(L['container'])})
+    _da = _ds[${repr(L['output'])}]
+% if L['transform']:
+    _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
+% endif
+% if L['sel'] is not None:
+    _da = _da.sel(${repr(L['sel'])}, method=${repr(L['sel_method'])})
+% endif
+    _x = _series3d(_ds, _da, ${repr(L['x'])}, 0)
+    _y = _series3d(_ds, _da, ${repr(L['y'])}, 1)
+    _z = _series3d(_ds, _da, ${repr(L['z'])}, 2)
+% if L['mark'] == 'scatter':
+    ax.scatter(_x, _y, _z, **${repr(L['style'])})
+% else:
+    ax.plot(_x, _y, _z, **${repr(L['style'])})
+% endif
+% endfor
+    _apply_axopts(ax, ${repr(p['axopts'])})
+    _apply_axopts3d(ax, ${repr(p['axopts'])})
 % else:
 % for L in p['layers']:
     _ds = _open(${repr(L['container'])})
@@ -109,6 +204,7 @@ def _panel_${p['key']}(fig, ax):
 % for a in p['annotations']:
     ax.text(${a['x']}, ${a['y']}, ${repr(a['text'])}, transform=ax.transAxes, ha="center", va="center")
 % endfor
+    return ax                                           # a line3d panel returns a NEW (3-D) axis; capture it
 
 
 % endfor
@@ -140,16 +236,24 @@ def main():
 % for p in panels:
 % if p['placeholder']:
     try:
-        _panel_${p['key']}(fig, axd[${repr(p['key'])}])
+        axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}])
     except (FileNotFoundError, OSError, KeyError, ValueError, IndexError):
         _placeholder(axd[${repr(p['key'])}], ${repr(p['placeholder'])})
 % else:
-    _panel_${p['key']}(fig, axd[${repr(p['key'])}])
+    axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}])
 % endif
 % endfor
 
 % if auto_format:
+<% custom_keys = [p['key'] for p in panels if p['kind'] in ('custom', 'line3d')] %>\
+% if custom_keys:
+    _fixed = [_snapshot_fixed_axes(axd[_k]) for _k in ${repr(custom_keys)}]   # drawer's own fixed ticks
+% endif
     bsplot.style.format_fig(fig, add_panel_numbers=False)   # normalise ticks/labels; panel letters below
+% if custom_keys:
+    for _s in _fixed:                                       # ...restored so the format pass can't overwrite them
+        _restore_fixed_axes(_s)
+% endif
 % endif
 % for p in panels:
 % if p['kind'] == 'image':
