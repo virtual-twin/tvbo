@@ -111,6 +111,14 @@ def run(
         help="Shorthand for --max-iterations 1: the quickest run that still reaches the "
              "post-tuning evaluation (verify a fit executes / streams end to end).",
     ),
+    figures: bool = typer.Option(
+        True, "--figures/--no-figures",
+        help="After a Study's experiments finish, render its declarative `figures:` "
+             "(emit each plot_<name>.py and run it), so one command produces results AND "
+             "figures. On by default; --no-figures skips rendering (e.g. a partial/smoke "
+             "run whose panels would be placeholders). No effect on an experiment spec or "
+             "a study without figures.",
+    ),
 ) -> None:
     """Run a SPEC (experiment or study) in the selected backend.
 
@@ -150,6 +158,12 @@ def run(
     # which knows each experiment's grid size (a study's experiments can differ).
 
     if kind == "study":
+        # Register the study's figure code_modules up front: a builder/parameter ``used:``
+        # edge may name a transform (e.g. selecting an operating point out of a branch
+        # container) that a figure module registers, and that resolution happens during the
+        # EXPERIMENT run — before any figure renders. Import failures are non-fatal here (a
+        # genuinely broken module surfaces at figure-render time with full context).
+        _import_figure_code_modules(obj)
         exps = obj.experiments if hasattr(obj, "experiments") else obj.simulation_experiments
         items = list(exps.values()) if hasattr(exps, "values") else list(exps)
         if experiment is not None:
@@ -177,6 +191,12 @@ def run(
             _apply_axis_pins(exp, pin)
             _apply_max_iterations(exp, eff_max_iterations)
             _run_one(exp, _effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
+        # Close the replication loop: a study is its experiments AND the figures that
+        # read them, so render the declarative `figures:` here (unless suppressed, or
+        # this run only covered a subset of experiments — those panels would be
+        # placeholders). Rendering is a no-op when the study declares no figures.
+        if figures and experiment is None and shard is None:
+            _render_study_figures(obj, spec, out_dir)
         return
 
     if kind == "experiment":
@@ -192,6 +212,82 @@ def run(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _import_figure_code_modules(study) -> None:
+    """Import a study's figure ``code_modules`` so their registered transforms/panels are
+    available before its experiments run.
+
+    A figure ``Layer.transform`` and a builder/parameter ``used:`` transform name the same
+    ``bsplot.register_transform`` registry, but the latter is resolved during the experiment
+    run, before any figure renders. Importing the declared modules up front (the study loader
+    has already put ``code/`` on the path) fires their ``register_*`` decorators once, study-
+    wide. Import errors are swallowed here — a genuinely broken module is reported with full
+    context when a figure that needs it renders; this pass only pre-populates the registry.
+    """
+    import importlib
+
+    figures = getattr(study, "figures", None) or []
+    seen: list[str] = []
+    for fig in (figures.values() if hasattr(figures, "values") else figures):
+        for m in (getattr(fig, "code_modules", None) or []):
+            if str(m) not in seen:
+                seen.append(str(m))
+    for m in seen:
+        try:
+            importlib.import_module(m)
+        except Exception:
+            pass
+
+
+def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
+    """Render a study's declarative ``figures:`` after its experiments have run.
+
+    Reuses the exact ``tvbo figure render`` path (``figures.render_figures``), so
+    the images and ``plot_<name>.py`` scripts a one-command ``tvbo run`` produces
+    are byte-identical to a follow-up ``tvbo figure render`` — the study run just
+    fuses the two steps. ``base_dir`` is the study file's directory (the root each
+    layer's ``used`` IRI resolves against, ``<base>/output/…``); figures land in
+    ``<base>/figures`` to match the render command's default. A study with no
+    ``figures:`` is a silent no-op. A render failure is reported but does not fail
+    the run — the experiments already succeeded and their results are on disk.
+    """
+    from tvbo.utils import as_list
+    from .figures import render_figures
+
+    figs = as_list(getattr(study, "figures", None))
+    if not figs:
+        return
+
+    spec_path = Path(spec)
+    base = spec_path.resolve().parent if spec_path.is_file() else Path.cwd()
+    # A run persists results only when --out-dir is given (see _exec_one). With no -o and
+    # no results already on disk under <base>/output, every layer would resolve to nothing
+    # and each panel would be an empty placeholder — skip and tell the user how to get
+    # real figures, rather than emit blank plots. Prior results under output/ still render.
+    if out_dir is None:
+        if not (base / "output").is_dir():
+            _common.info(
+                f"skipping figures: this run saved no results (pass -o to persist them, "
+                f"e.g. `tvbo run {spec} -o output`)."
+            )
+            return
+        # output/ exists but THIS run did not persist (no -o): the figures below render from
+        # a PREVIOUS run's results, which may be stale. Warn rather than silently mislead.
+        _common.warn(
+            f"rendering figures from existing results under {base}/output — this run did not "
+            f"persist (no -o), so the figures reflect a PREVIOUS run, not this one. Pass -o "
+            f"(e.g. `tvbo run {spec} -o output/nc`) to render this run's own results."
+        )
+    out_figs = base / "figures"
+    _common.info(f"rendering {len(figs)} figure(s) -> {out_figs}")
+    try:
+        render_figures(figs, base, out_figs)
+    except Exception as e:  # noqa: BLE001 - never lose a completed run over a plotting error
+        _common.info(
+            f"figure rendering failed ({type(e).__name__}: {e}); the experiment "
+            f"results are saved. Re-run `tvbo figure render {spec}` to retry."
+        )
 
 
 def _effective_backend(experiment, cli_backend: str | None) -> str:
@@ -497,13 +593,24 @@ def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> N
     results_root = kwargs.pop("results_root", None) or (out_dir.parent if out_dir is not None else None)
     result = experiment.run(format=backend, results_root=results_root, **kwargs)
     _common.info(f"done: {type(result).__name__}")
-    if out_dir is not None:
-        out_dir.mkdir(parents=True, exist_ok=True)
-        if hasattr(result, "save"):
-            saved = result.save(str(out_dir), compress=compress, record_only=record_only)
-            _common.info(f"wrote {saved}")
-        else:
-            _common.info(f"(result has no .save(); skipping write to {out_dir})")
+    if out_dir is None:
+        # A run with no --out-dir computes the result and DISCARDS it. This is a footgun: the
+        # command still prints "done", but nothing is persisted, and a subsequent
+        # `tvbo figure render` / report then silently reads STALE results from a previous run.
+        # Warn loudly and say exactly how to persist.
+        _common.warn(
+            f"result NOT saved: no --out-dir, so this run computed {type(result).__name__} "
+            f"and discarded it. Any figures/report built afterwards will read STALE results "
+            f"from a previous run, not this one. Pass -o to persist, e.g. "
+            f"`tvbo run <spec> -o output/nc`."
+        )
+        return
+    out_dir.mkdir(parents=True, exist_ok=True)
+    if hasattr(result, "save"):
+        saved = result.save(str(out_dir), compress=compress, record_only=record_only)
+        _common.info(f"wrote {saved}")
+    else:
+        _common.info(f"(result has no .save(); skipping write to {out_dir})")
 
 
 def _dispatch_to_engine(engine: str, *, spec: str, backend: str,

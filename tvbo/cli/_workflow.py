@@ -750,6 +750,47 @@ def plan(
         _record_source_deps(getattr(_dyn, "parameters", None))
     _record_source_deps(getattr(experiment, "parameters", None))
 
+    # A ``used:`` DataRef (Parameter.used or an exploration-builder Argument.used) that
+    # names an in-study experiment is the same result dependency: the PROV ``used`` edge
+    # is the ordering edge. Record the referenced experiment id so the DAG runs it first.
+    def _dep_from_used(ref):
+        if ref is None:
+            return
+        _exp = getattr(ref, "experiment", None)
+        if _exp is not None:
+            _id = str(getattr(_exp, "id", _exp))
+        else:
+            # Same WHERE-parsing rule as the runtime resolver (dataref.locate_container):
+            # only a last iri segment that *is* an experiment token (``exp-30`` / ``exp30`` /
+            # ``30``) names an in-study dependency. A curated / dataset iri that merely
+            # contains digits (``tvbo:dataset/HCP1200``, ``rec-avgMatrix_atlas-HCPMMP1``)
+            # yields None here, so it never registers a phantom edge on a non-existent
+            # experiment (which would deadlock the DAG on a rule that is never emitted).
+            from tvbo.data.dataref import experiment_id
+            _id = experiment_id(getattr(ref, "iri", None))
+        if _id and _id != str(getattr(experiment, "id", "")) and _id not in depends_on:
+            depends_on.append(_id)
+
+    def _record_used_param_deps(container):
+        _items = container.values() if hasattr(container, "values") else (container or [])
+        for _it in _items:
+            _dep_from_used(getattr(_it, "used", None))
+
+    if _dyn is not None:
+        _record_used_param_deps(getattr(_dyn, "parameters", None))
+    _record_used_param_deps(getattr(experiment, "parameters", None))
+    _net = getattr(experiment, "network", None)
+    for _cpl in (list((getattr(_net, "coupling", None) or {}).values()) if hasattr(getattr(_net, "coupling", None), "values") else _as_list(getattr(_net, "coupling", None) or [])):
+        _record_used_param_deps(getattr(_cpl, "parameters", None))
+    # Exploration-builder arguments (ExplorationAxis.builder → Argument.used).
+    _expls = getattr(experiment, "explorations", None)
+    for _expl in (list(_expls.values()) if hasattr(_expls, "values") else _as_list(_expls or [])):
+        _space = getattr(_expl, "space", None)
+        for _axis in (list(_space.values()) if hasattr(_space, "values") else _as_list(_space or [])):
+            _bargs = getattr(getattr(_axis, "builder", None), "arguments", None)
+            for _barg in (list(_bargs.values()) if hasattr(_bargs, "values") else _as_list(_bargs or [])):
+                _dep_from_used(getattr(_barg, "used", None))
+
     return WorkflowPlan(
         study_key=study_key,
         experiment_key=experiment_key,

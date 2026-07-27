@@ -94,6 +94,58 @@ def test_workflow_plan_tvb_fans_out_both_axes():
     assert p["n_workflow_cells"] == 32 * 32
 
 
+_USED_DEP_RECIPE = """
+id: 100
+dynamics:
+  name: Kuramoto
+  label: Kuramoto
+  parameters:
+    omega: {{name: omega, value: 0.0628, unit: rad_per_ms}}
+    g: {{name: g, value: 0.0, free: true, heterogeneous: true, shape: "(n_nodes,)", used: {{iri: "{iri}", output: weights}}}}
+  coupling_inputs:
+    c: {{name: c, description: "coupling"}}
+  state_variables:
+    theta:
+      name: theta
+      unit: rad
+      equation: {{lhs: "Derivative(theta, t)", rhs: "omega + c"}}
+      variable_of_interest: true
+      coupling_variable: true
+  output: [theta]
+  number_of_modes: 1
+network:
+  number_of_nodes: 2
+  nodes:
+    - {{id: 0, label: r0}}
+    - {{id: 1, label: r1}}
+  edges:
+    - {{source: 0, target: 1, weight: 0.5}}
+    - {{source: 1, target: 0, weight: 0.5}}
+integration: {{method: RungeKutta4thOrder, duration: 10.0, step_size: 1.0, transient_time: 0.0}}
+"""
+
+
+def test_used_dataref_dependency_ignores_curated_entities():
+    """A `used:` DataRef adds an ordering edge only for a sibling *experiment* iri.
+
+    A curated / dataset iri that merely contains digits must not register a phantom
+    dependency on a non-existent experiment: the old heuristic stripped non-digits, so
+    ``tvbo:dataset/HCP1200`` became a dep on experiment '1200' (and an atlas iri on
+    experiment '1'), deadlocking the DAG on a rule that is never emitted. A real
+    ``…/exp-7`` still registers its edge.
+    """
+    from tvbo.classes.experiment import SimulationExperiment
+    from tvbo.cli import _workflow
+
+    def deps(iri):
+        exp = SimulationExperiment.from_string(_USED_DEP_RECIPE.format(iri=iri))
+        return _workflow.plan(study_key="s", experiment=exp, backend="tvboptim").depends_on
+
+    assert deps("tvbo:dataset/HCP1200") == []          # curated dataset → no phantom '1200'
+    assert deps("rec-avgMatrix_atlas-HCPMMP1") == []   # curated atlas → no phantom '1'
+    assert deps("tvbo:exp/s/exp-7") == ["7"]           # sibling experiment → real edge
+
+
 # ---------------------------------------------------------------------------
 # CLI: workflow snakemake / slurm / nextflow kit emission
 # ---------------------------------------------------------------------------
