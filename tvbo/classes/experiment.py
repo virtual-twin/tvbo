@@ -1938,7 +1938,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if not nm or nm in wanted:
                     continue
                 used = getattr(p, "used", None)
-                if used is not None:
+                # A cross-experiment ``used:`` carries its own WHERE (experiment/iri). A
+                # LOCAL ``used:`` (neither) names one of this experiment's own outputs and
+                # is resolved by the in-run machinery — skip it here so it never reaches
+                # locate_container, which raises on a WHERE-less reference.
+                if used is not None and not _dref.is_local_ref(used):
                     wanted[nm] = ("used", used)
                 elif is_from_exp:
                     m = str(getattr(p, "measure", "") or "")
@@ -1952,7 +1956,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         fallback = None
         if is_from_exp:
             src = getattr(ini, "source_experiment", None)
-            fallback = int(getattr(src, "id", src)) if src is not None else None
+            # Normalise the exp-id spelling (``exp-3``/``3``/an Experiment) to the int
+            # locate_container globs by, so a from_experiment source written ``exp-3``
+            # does not raise on ``int('exp-3')`` (matches _source_id_int in dataref).
+            _sid = _dref.experiment_id(getattr(src, "id", src)) if src is not None else None
+            fallback = int(_sid) if _sid is not None else None
 
         n_nodes = len(self.network.nodes) if self.network.nodes else None
         point = str(getattr(ini, "source_point", "") or "endpoint") if is_from_exp else "endpoint"

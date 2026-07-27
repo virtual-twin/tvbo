@@ -41,6 +41,23 @@ def experiment_id(iri) -> Optional[str]:
     return m.group(1) if m else None
 
 
+def _source_id_int(value) -> int:
+    """Numeric experiment id from an Experiment, an ``exp-N``/``N`` string, or an int.
+
+    Normalises the spellings the workflow planner accepts (``exp-3`` as written in a
+    recipe, a bare ``3``, an Experiment object with an ``id``) to the integer
+    ``locate_exp_container`` globs by, so resolve-time matches plan-time (which reads
+    the id via ``experiment_id``/``str``) instead of raising on ``int('exp-3')``.
+    """
+    eid = experiment_id(getattr(value, "id", value))
+    if eid is None:
+        raise ValueError(
+            f"cross-experiment sourcing: cannot read an experiment id from {value!r} "
+            f"(expected an experiment, an 'exp-N'/'N' string, or an integer)."
+        )
+    return int(eid)
+
+
 def locate_exp_container(results_root, source_id) -> Path:
     """Path to experiment ``source_id``'s saved result HDF5 under ``results_root``.
 
@@ -84,7 +101,7 @@ def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Pat
     """
     exp = getattr(ref, "experiment", None)
     if exp is not None:
-        return locate_exp_container(results_root, int(getattr(exp, "id", exp)))
+        return locate_exp_container(results_root, _source_id_int(exp))
 
     iri = getattr(ref, "iri", None)
     if iri:
@@ -100,7 +117,7 @@ def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Pat
         )
 
     if fallback_experiment is not None:
-        return locate_exp_container(results_root, int(fallback_experiment))
+        return locate_exp_container(results_root, _source_id_int(fallback_experiment))
 
     raise ValueError(
         "cross-experiment sourcing: DataRef has neither 'experiment' nor 'iri' and no "
