@@ -93,6 +93,24 @@ _objects.append(${sd["name"]})
 
 % endfor
 
+# ── Observation probes (clock-driven, zero-delivery: measure synapse u/x) ──
+% if probes:
+_probe_sink = NeuronGroup(1, "x_sink : 1", name="probe_sink")
+_objects.append(_probe_sink)
+% for pr in probes:
+${pr["name"]} = Synapses(${pr["source"]}, _probe_sink,
+    model="""${pr["model"]}""",
+    on_pre="""${pr["on_pre"]}""",
+    namespace=${_syn_ns(pr["namespace"])}, method="euler", name="${pr["name"]}")
+${pr["name"]}.connect(i=${pr["sample_i"]}, j=0)
+% for var, val in pr["init"].items():
+${pr["name"]}.${var} = ${val}
+% endfor
+mon_${pr["name"]} = StateMonitor(${pr["name"]}, ${repr(pr["vars"])}, record=True, dt=${pr["record_dt_ms"]} * ms)
+_objects += [${pr["name"]}, mon_${pr["name"]}]
+
+% endfor
+% endif
 # ── Poisson backgrounds (one independent train per neuron) ───────────
 % for name, pop in populations.items():
 % for pin in pop["poisson"]:
@@ -117,3 +135,14 @@ for _pop, _mon in {${", ".join(f"'{n}': mon_{n}" for n in populations)}}.items()
     _count = int((_t >= _settle).sum())
     RATES[_pop] = _count / ((_T - _settle) / 1000.0 * _N[_pop])
     print(f"{_pop}: {RATES[_pop]:.3f} Hz")
+% if probes:
+
+# ── Recorded synapse-internal state (population-mean u/x + time axis) ──
+SYNAPSE_STATE = {}
+% for pr in probes:
+SYNAPSE_STATE[${repr(pr["key"])}] = {
+    "t_ms": np.asarray(mon_${pr["name"]}.t / ms),
+    "vars": {_v: np.asarray(getattr(mon_${pr["name"]}, _v)).mean(axis=0) for _v in ${repr(pr["vars"])}},
+}
+% endfor
+% endif

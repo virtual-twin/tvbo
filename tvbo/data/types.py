@@ -2205,6 +2205,19 @@ class ExperimentResult:
                     dims=["population"], coords={"population": _pops_key})
             self._extras.setdefault("_spike_pops", _pops)
 
+        # Recorded synapse-internal state (u, x): the continuous population-mean trace measured
+        # by the backend's observation probe, one time series per recorded variable, on its own
+        # (coarser) time axis. Keyed by the filename-safe source-population name.
+        _syn = self._extras.get("synapse_state")
+        if _syn:
+            for key, d in _syn.items():
+                sk = _san(key)
+                dim = f"syntime__{sk}"
+                tvals = np.asarray(d["t_ms"], dtype=float)
+                for var, arr in d["vars"].items():
+                    data_vars[f"synapse__{sk}__{var}"] = xr.DataArray(
+                        np.asarray(arr, dtype=float), dims=[dim], coords={dim: tvals})
+
         # Fallback: a pure forward simulation (no sweep, no declared observations, no
         # continuation, no optimization) still carries its recorded trajectory in
         # integration.data. Persist it so `tvbo run` reproduces a raw forward run — e.g. a
@@ -2255,6 +2268,8 @@ class ExperimentResult:
                 for _k in ("duration_ms", "dt_ms"):
                     if self._extras.get(_k) is not None:
                         _attrs[_k] = float(self._extras[_k])
+            if self._extras.get("synapse_state"):
+                _attrs["synapse_recorded"] = [_san(k) for k in self._extras["synapse_state"]]
             ds = xr.Dataset(data_vars, attrs=_attrs)
             h5 = os.path.join(out_dir, f"{stem}.h5")
             # Grids of trajectories/observations compress well (repeated structure,
