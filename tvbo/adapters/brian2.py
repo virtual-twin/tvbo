@@ -70,6 +70,12 @@ _EXP_ONE_TYPES = frozenset({"expOneSynapse"})
 # Unit strings that denote a dimensionless (unitless) parameter.
 _DIMENSIONLESS_UNITS = frozenset({"", "1", "dimensionless", "none"})
 
+# Observation probe for recording synapse-internal state (u, x): how many source neurons to
+# sample for the population trace, and how coarsely to record it. STP variables evolve on the
+# tauF/tauD (100s of ms) scale, so a 1 ms record step is ample and keeps the trace small.
+_PROBE_SAMPLE = 200
+_PROBE_RECORD_DT_MS = 1.0
+
 
 def _unit_of(param):
     """Lower-cased unit string of a ``(value, unit)`` parameter tuple ('' if unitless)."""
@@ -77,6 +83,15 @@ def _unit_of(param):
         return str(param[1]).strip().lower()
     except (TypeError, IndexError):
         return ""
+
+
+def _sample_indices(n, k):
+    """Up to ``k`` distinct evenly-spaced indices in ``[0, n)`` (all of them if k >= n)."""
+    if k >= n:
+        return list(range(n))
+    if k <= 1:
+        return [0]
+    return sorted({int(round(i * (n - 1) / (k - 1))) for i in range(k)})
 
 
 # TVBO time-scale → factor to convert a time value into milliseconds.
@@ -226,6 +241,20 @@ class Brian2Adapter(BaseAdapter):
             result._extras["v"] = {p: np.asarray(m.v / meta["v_unit"]) for p, m in meta["state_monitors"].items()}
             any_mon = next(iter(meta["state_monitors"].values()))
             result._extras["t_ms"] = np.asarray(any_mon.t / ms)
+        # Recorded synapse-internal state (u, x): the population mean over the probed sample, the
+        # continuous trace the figures show as MEASURED (not reconstructed from spike trains).
+        syn_state = {}
+        for pinfo in meta.get("probe_monitors", {}).values():
+            mon = pinfo["mon"]
+            vals = {v: np.asarray(getattr(mon, v)) for v in pinfo["vars"]}   # [n_sample, n_time]
+            syn_state[pinfo["key"]] = {
+                "t_ms": np.asarray(mon.t / ms),
+                "vars": {v: arr.mean(axis=0) for v, arr in vals.items()},    # population mean [n_time]
+                "source": pinfo["source"],
+                "n_sample": int(next(iter(vals.values())).shape[0]) if vals else 0,
+            }
+        if syn_state:
+            result._extras["synapse_state"] = syn_state
         return result
 
     # ── Analysis: declarative network → Brian2 build description ────────
@@ -321,6 +350,7 @@ class Brian2Adapter(BaseAdapter):
 
         hubs = {}       # hub name -> {"source_pop", "gate", "summed_var"} (all_to_all)
         synapses = []   # sparse Synapses descriptors (random / one_to_one)
+        probes = []     # observation probes for synapses with recorded internal state (u, x)
 
         for edge_idx, edge in enumerate(edges):
             src = getattr(edge, "source", None)
@@ -362,7 +392,7 @@ class Brian2Adapter(BaseAdapter):
             if rule_norm == "all_to_all":
                 self._add_conductance_synapse(populations, hubs, src_pop, tgt_pop, syn, prefix, weight)
             elif rule_norm in ("random", "one_to_one"):
-                self._add_sparse_synapse(populations, synapses, src_pop, tgt_pop, syn,
+                self._add_sparse_synapse(populations, synapses, probes, src_pop, tgt_pop, syn,
                                          prefix, weight, edge, edge_idx, rule_norm)
             else:
                 shown = "none (a single explicit connection)" if rule is None else repr(rule)
@@ -376,6 +406,7 @@ class Brian2Adapter(BaseAdapter):
             "populations": populations,
             "hubs": hubs,
             "synapses": synapses,
+            "probes": probes,
             "duration_ms": duration_ms,
             "dt_ms": dt_ms,
             # Resolve the RNG seed once, here, from the recipe. The rendered script emits
@@ -583,7 +614,7 @@ class Brian2Adapter(BaseAdapter):
         }
 
     # --------------------------------------------------------------- sparse projections
-    def _add_sparse_synapse(self, populations, synapses, src_pop, tgt_pop, syn, prefix,
+    def _add_sparse_synapse(self, populations, synapses, probes, src_pop, tgt_pop, syn, prefix,
                             weight, edge, edge_idx, rule_norm):
         """Emit one genuinely-sparse projection as a Brian2 ``Synapses``.
 
@@ -647,6 +678,7 @@ class Brian2Adapter(BaseAdapter):
                 "name": f"syn_{gkey}", "source": src_pop, "target": tgt_pop, "model": r["model"],
                 "on_pre": r["on_pre"], "connect": connect, "namespace": r["syn_consts"], "init": r["init"],
             })
+            self._maybe_add_probe(probes, populations, syn, src_pop, gkey, r)
             return
 
         # Custom conductance synapse (STP): decaying post-synaptic conductance + per-synapse u/x.
@@ -657,6 +689,50 @@ class Brian2Adapter(BaseAdapter):
         synapses.append({
             "name": f"syn_{gkey}", "source": src_pop, "target": tgt_pop, "model": r["model"],
             "on_pre": r["on_pre"], "connect": connect, "namespace": r["syn_consts"], "init": r["init"],
+        })
+        self._maybe_add_probe(probes, populations, syn, src_pop, gkey, r)
+
+    def _maybe_add_probe(self, probes, populations, syn, src_pop, gkey, r):
+        """Register an observation probe when the synapse declares recorded internal state.
+
+        A synapse state variable with ``record: true`` (e.g. the STP ``u``/``x``) is monitored by
+        a clock-driven, zero-delivery copy of the projection: a representative sample of the
+        source population's neurons carry the same STP dynamics, driven by the same presynaptic
+        spikes, so their ``u``/``x`` equal what the real (event-driven) synapses use — and, being
+        clock-driven, are recordable as the continuous trace (an event-driven StateMonitor would
+        freeze the value between spikes). The probe delivers nothing (its ``_post +=`` line is
+        dropped), so the network's results are byte-identical; only the observation is added.
+        """
+        svs = getattr(syn, "state_variables", None) or {}
+        recorded = [n for n, sv in svs.items() if bool(getattr(sv, "record", False))]
+        if not recorded:
+            return
+        # Only variables that live ON the synapse (an event-driven ODE in the reduced model) can
+        # be probed — a target-side gate (g) is a cell variable, not a synapse one.
+        on_synapse = {ln.strip()[1:].split("/dt", 1)[0].strip()
+                      for ln in r["model"].splitlines() if "/dt" in ln}
+        vars_ = [n for n in recorded if n in on_synapse]
+        if not vars_:
+            return
+        # One probe per (source population, synapse dynamics): a source neuron's u/x is a property
+        # of its own spikes and STP params, identical across all its outgoing synapses, so several
+        # edges sharing a source + dynamics (the A->A/A->B/A->non-sel fan-out) need only one probe.
+        sig = (src_pop, r["model"], tuple(sorted(r["syn_consts"].items())), tuple(vars_))
+        if any(p.get("_sig") == sig for p in probes):
+            return
+        key = src_pop if src_pop not in {p["key"] for p in probes} else f"{src_pop}__{gkey}"
+        probes.append({
+            "name": f"probe_{gkey}",
+            "key": key,
+            "source": src_pop,
+            "vars": vars_,
+            "model": r["model"].replace("(event-driven)", "(clock-driven)"),
+            "on_pre": "\n".join(l for l in r["on_pre"].split("\n") if "_post +=" not in l),
+            "namespace": r["syn_consts"],
+            "init": r["init"],
+            "sample_i": _sample_indices(populations[src_pop]["size"], _PROBE_SAMPLE),
+            "record_dt_ms": _PROBE_RECORD_DT_MS,
+            "_sig": sig,
         })
 
     def _reduce_delta_sparse(self, syn, sparams, weight, edge_idx):
@@ -954,6 +1030,28 @@ def _instantiate(model, seed=None, record_v=False):
         for pin in pop["poisson"]:
             objects.append(PoissonInput(groups[name], pin["gate"], 1, qty(*pin["rate"]), weight=pin["weight"]))
 
+    # Observation probes: clock-driven, zero-delivery copies of a sampled subset of a recorded
+    # synapse, StateMonitored for the continuous internal state (u, x). Delivering nothing, they
+    # leave the network's results untouched.
+    probe_mons = {}
+    probes = model.get("probes", [])
+    if probes:
+        sink = NeuronGroup(1, "x_sink : 1", name="probe_sink")
+        objects.append(sink)
+        for pr in probes:
+            pns = {k: qty(*v) for k, v in pr["namespace"].items()}
+            pg = Synapses(groups[pr["source"]], sink, model=pr["model"], on_pre=pr["on_pre"],
+                          namespace=pns, method="euler", name=pr["name"])
+            pg.connect(i=pr["sample_i"], j=0)
+            for var, val in pr["init"].items():
+                setattr(pg, var, val)
+            objects.append(pg)
+            pm = StateMonitor(pg, pr["vars"], record=True, dt=pr["record_dt_ms"] * ms,
+                              name=f"mon_{pr['name']}")
+            objects.append(pm)
+            probe_mons[pr["name"]] = {"mon": pm, "key": pr["key"], "source": pr["source"],
+                                      "vars": pr["vars"]}
+
     # Monitors.
     for name in model["populations"]:
         spike_mons[name] = SpikeMonitor(groups[name])
@@ -962,4 +1060,5 @@ def _instantiate(model, seed=None, record_v=False):
             state_mons[name] = StateMonitor(groups[name], "v", record=True)
             objects.append(state_mons[name])
 
-    return Network(objects), {"spike_monitors": spike_mons, "state_monitors": state_mons, "v_unit": v_unit}
+    return Network(objects), {"spike_monitors": spike_mons, "state_monitors": state_mons,
+                              "probe_monitors": probe_mons, "v_unit": v_unit}
