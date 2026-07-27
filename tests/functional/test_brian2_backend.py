@@ -566,6 +566,10 @@ class TestBrian2ResultContainer:
         import numpy as np
         assert list(np.asarray(ds["population_size"])) == [15.0, 10.0]
         assert ds["firing_rate"].sizes["population"] == 2
+        # the population axis is KEYED (never positional): the coord labels equal attrs and the
+        # per-population raster tokens, so a rate is selectable by name and maps to its raster.
+        assert list(ds["firing_rate"].coords["population"].values) == pops
+        assert float(ds["population_size"].sel(population="ExcitatoryCell_2")) == 15.0
         for p in pops:
             assert f"spikes__{p}__t" in ds.data_vars and f"spikes__{p}__i" in ds.data_vars
         # the driven population fired; the container raster matches the in-memory run exactly.
@@ -575,3 +579,160 @@ class TestBrian2ResultContainer:
         np.testing.assert_allclose(np.sort(driven_t),
                                    np.sort(res._extras["spikes"]["ExcitatoryCell_2"]["t_ms"]), atol=1e-6)
         ds.close()
+
+
+# A conductance-based cell (drive is a current; no membrane time constant) that declares membrane
+# noise: the sigma*xi/sqrt(tau_m) discretisation has no tau_m to normalise by, so the build must
+# reject it with a clear message instead of emitting an equation that references an undefined
+# tau_m and fails opaquely inside Brian2.
+CONDUCTANCE_NOISE_YAML = """
+label: "Conductance cell with membrane noise (unsupported)"
+network:
+  dynamics:
+    NoisyCell:
+      iri: "extends:baseCellMembPot"
+      parameters:
+        C: {value: 0.5, unit: nF}
+        gL: {value: 25.0, unit: nS}
+        EL: {value: -70.0, unit: mV}
+        thresh: {value: -50.0, unit: mV}
+        reset: {value: -55.0, unit: mV}
+        refract: {value: 2.0, unit: ms}
+        v0: {value: -70.0, unit: mV}
+      coupling_inputs: [iSyn]
+      state_variables:
+        v:
+          equation: {rhs: "(gL * (EL - v) + iSyn) / C"}
+          initial_value: -70.0
+          unit: mV
+          record: true
+          noise: {intensity: {name: sigma_ext, value: 1.0, unit: mV}}
+      events:
+        spike: {condition: {rhs: "v > thresh"}, affect: {rhs: "v = reset"}}
+  nodes:
+    - {id: 2, dynamics: NoisyCell, size: 5}
+integration: {method: euler, step_size: 0.05, duration: 100.0, time_scale: ms}
+"""
+
+
+def test_conductance_cell_with_membrane_noise_is_rejected(tmp_path):
+    """A conductance-based cell declaring membrane noise fails loudly (no undefined tau_m)."""
+    path = tmp_path / "cond_noise.yaml"
+    path.write_text(CONDUCTANCE_NOISE_YAML)
+    exp = SimulationExperiment.from_file(str(path))
+    with pytest.raises(NotImplementedError, match="tau_m"):
+        exp.render("brian2")
+
+
+# Two pulse edges from the same generator onto the same population: their windows must SUM, each
+# keeping its own weight, not collapse to a single window carrying only the last edge's weight.
+TWO_PULSE_YAML = """
+label: "Two pulse edges onto one population sum (Brian2)"
+network:
+  dynamics:
+    ExcitatoryCell:
+      iri: "extends:baseCellMembPot"
+      parameters:
+        C: {value: 0.5, unit: nF}
+        gL: {value: 25.0, unit: nS}
+        EL: {value: -70.0, unit: mV}
+        thresh: {value: -50.0, unit: mV}
+        reset: {value: -55.0, unit: mV}
+        refract: {value: 2.0, unit: ms}
+        v0: {value: -70.0, unit: mV}
+      coupling_inputs: [iSyn]
+      state_variables:
+        v: {equation: {rhs: "(gL * (EL - v) + iSyn) / C"}, initial_value: -70.0, unit: mV, record: true}
+      events:
+        spike: {condition: {rhs: "v > thresh"}, affect: {rhs: "v = reset"}}
+    LoadPulse:
+      iri: neuroml:pulseGenerator
+      parameters: {delay: {value: 100.0, unit: ms}, duration: {value: 200.0, unit: ms}, amplitude: {value: 0.8, unit: nA}}
+  nodes:
+    - {id: 2, dynamics: ExcitatoryCell, size: 10}
+    - {id: 5, dynamics: LoadPulse}
+  edges:
+    - {source: 5, target: 2, connectivity: all_to_all, parameters: {weight: {value: 2.0}}}
+    - {source: 5, target: 2, connectivity: all_to_all, parameters: {weight: {value: 3.0}}}
+integration: {method: euler, step_size: 0.05, duration: 400.0, time_scale: ms}
+"""
+
+
+def test_multiple_pulse_edges_onto_one_population_sum(tmp_path):
+    """Two same-source pulse edges of different weight sum into two windows, not one."""
+    path = tmp_path / "two_pulse.yaml"
+    path.write_text(TWO_PULSE_YAML)
+    script = SimulationExperiment.from_file(str(path)).render("brian2")
+    window = "amp_stim_LoadPulse * int(t >= delay_stim_LoadPulse)"
+    assert script.count(window) == 2, "the two pulse edges did not both survive into iSyn"
+    assert "2.0 * amp_stim_LoadPulse" in script and "3.0 * amp_stim_LoadPulse" in script
+
+
+def test_render_seeds_random_connectivity_from_execution_random_seed(tmp_path):
+    """render() with no explicit seed emits seed(execution.random_seed) so the codegen path
+    builds the SAME random connectivity as run() — the render≡run invariant for sparse nets."""
+    path = tmp_path / "seeded.yaml"
+    path.write_text(SPARSE_STP_YAML + "execution: {random_seed: 4242}\n")
+    exp = SimulationExperiment.from_file(str(path))
+    assert "seed(4242)" in exp.render("brian2"), "the recipe seed did not reach the rendered script"
+
+
+def test_render_is_unseeded_without_a_declared_seed(tmp_path):
+    """No execution.random_seed and no explicit argument → no seed() call (unchanged behaviour)."""
+    path = tmp_path / "unseeded.yaml"
+    path.write_text(SPARSE_STP_YAML)
+    exp = SimulationExperiment.from_file(str(path))
+    assert "seed(" not in exp.render("brian2")
+
+
+# A delta (instantaneous-PSC) synapse whose spike event scales the jump by a unit-valued parameter
+# (J in mV): the delivered `v_post += weight*(J*u*x)*mV` would be dimensionally inconsistent (mV^2),
+# so the build must reject it and steer the amplitude into the edge weight instead of failing deep
+# inside Brian2. STP_bad mirrors the faithful STP_E but moves the mV scale into a synapse parameter.
+DELTA_UNITFUL_YAML = """
+label: "Delta synapse with unit-valued jump (unsupported)"
+network:
+  dynamics:
+    ExcitatoryCell:
+      iri: "extends:baseCellMembPot"
+      parameters:
+        tau_m: {value: 15.0, unit: ms}
+        thresh: {value: 20.0, unit: mV}
+        reset: {value: 16.0, unit: mV}
+        refract: {value: 2.0, unit: ms}
+        mu_ext: {value: 17.0, unit: mV}
+        v0: {value: 16.0, unit: mV}
+      coupling_inputs: [iSyn]
+      state_variables:
+        v: {equation: {rhs: "(-v + mu_ext + iSyn) / tau_m"}, initial_value: 16.0, unit: mV, record: true}
+      events:
+        spike: {condition: {rhs: "v > thresh"}, affect: {rhs: "v = reset"}}
+    STP_bad:
+      iri: "extends:baseConductanceBasedSynapse"
+      parameters:
+        U: {value: 0.20, unit: dimensionless}
+        J: {value: 0.45, unit: mV}
+        tauF: {value: 1500.0, unit: ms}
+        tauD: {value: 200.0, unit: ms}
+      coupling_inputs: [v]
+      state_variables:
+        u: {equation: {rhs: "(U - u) / tauF"}, initial_value: 0.20, unit: dimensionless}
+        x: {equation: {rhs: "(1 - x) / tauD"}, initial_value: 1.0, unit: dimensionless}
+      events:
+        spike_in: {affect: {rhs: "u = u + U*(1 - u); v = v + J*u*x; x = x - u*x"}}
+  nodes:
+    - {id: 10, dynamics: ExcitatoryCell, size: 20}
+  edges:
+    - {source: 10, target: 10, dynamics: STP_bad, connectivity: random, allow_self_connections: false,
+       parameters: {weight: {value: 3.0}, connection_probability: {value: 0.2}}}
+integration: {method: euler, step_size: 0.05, duration: 100.0, time_scale: ms}
+"""
+
+
+def test_delta_synapse_with_unit_valued_jump_is_rejected(tmp_path):
+    """A delta jump scaled by a unit-valued parameter fails loudly (dimensionless increment only)."""
+    path = tmp_path / "delta_bad.yaml"
+    path.write_text(DELTA_UNITFUL_YAML)
+    exp = SimulationExperiment.from_file(str(path))
+    with pytest.raises(NotImplementedError, match="dimensionless"):
+        exp.render("brian2")
