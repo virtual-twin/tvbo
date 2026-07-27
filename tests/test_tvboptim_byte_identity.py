@@ -136,13 +136,14 @@ def test_jr_trajectory(eager):
     sim_tvbo = np.asarray(r.integration.data)
     psd_tvbo = np.asarray(r.observations.simulated_psd.psd)
 
-    # --- tvboptim-native (YAML overrides a, b, mu; integration noise on all states, seed 42) ---
+    # --- tvboptim-native (YAML overrides a, b, mu; integration noise on all states,
+    # seed 0 = the resolved execution.random_seed default when the YAML sets none) ---
     states = ["y0", "y1", "y2", "y3", "y4", "y5"]
     net = Network(
         dynamics=JansenRit(a=0.065, b=0.065, mu=0.15),
         coupling={"delayed": DelayedSigmoidalJansenRit(incoming_states=["y1", "y2"], G=15.0)},
         graph=DenseDelayGraph(W, delays, region_labels=labels),
-        noise=AdditiveNoise(sigma=0.0001, apply_to=states, key=jax.random.key(42)),
+        noise=AdditiveNoise(sigma=0.0001, apply_to=states, key=jax.random.key(0)),
     )
     mi, si = prepare(net, Heun(), t0=0.0, t1=TRANSIENT, dt=DT)
     ri = mi(si)
@@ -447,7 +448,7 @@ def test_tbptt_differentiation(eager):
         dynamics=JansenRit(a=0.065, b=0.065, mu=0.15),
         coupling={"delayed": DelayedSigmoidalJansenRit(incoming_states=["y1", "y2"], G=15.0)},
         graph=DenseDelayGraph(Wm, delays, region_labels=labels),
-        noise=AdditiveNoise(sigma=0.0001, apply_to=states, key=jax.random.key(42)),
+        noise=AdditiveNoise(sigma=0.0001, apply_to=states, key=jax.random.key(0)),
     )
     mi, si = prepare(net, Heun(grad_horizon=W), t0=0.0, t1=TRANSIENT, dt=DT)
     ri = mi(si)
