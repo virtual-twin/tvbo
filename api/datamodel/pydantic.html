@@ -136,32 +136,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Networks/index.html"> 
-<span class="menu-text">Networks</span></a>
+    <a class="nav-link" href="../../GettingStarted.qmd"> 
+<span class="menu-text">Get Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Models/index.html"> 
-<span class="menu-text">Models</span></a>
+    <a class="nav-link" href="../../Simulation/SimulationExperiments.html"> 
+<span class="menu-text">Specify an Experiment</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../CLI/index.html"> 
-<span class="menu-text">CLI</span></a>
+    <a class="nav-link" href="../../Simulation/Backends.html"> 
+<span class="menu-text">Run on a Backend</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Bifurcation/index.html"> 
+<span class="menu-text">Analyze</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../Interoperability/index.html"> 
-<span class="menu-text">Interoperability</span></a>
+<span class="menu-text">Extend</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../datamodel/index.html"> 
-<span class="menu-text">Data Model</span></a>
+    <a class="nav-link" href="../../reference.html"> 
+<span class="menu-text">Reference</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../platform.html"> 
 <span class="menu-text">Platform</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../../agents/index.html"> 
-<span class="menu-text">Agents</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -443,7 +443,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.datamodel.pydantic.Argument">Argument</a></td>
-<td>A function argument with explicit value specification. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key).</td>
+<td>A function argument with explicit value specification. A value is either <code>value</code> (a literal / array / local reference) or <code>used</code> (a labelled array sourced from another experiment or dataset); the two are mutually exclusive. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key).</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.datamodel.pydantic.AxisReduction">AxisReduction</a></td>
@@ -575,7 +575,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.datamodel.pydantic.DataRef">DataRef</a></td>
-<td>A pointer to a result-container field (a PROV entity used by a layer). Reuses the shared iri slot as the experiment/result/dataset pointer.</td>
+<td>A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container reference primitive (a PROV entity a consumer <code>prov:used</code>). WHERE is either <code>experiment</code> (an in-study experiment id, resolved like <code>initial_state.source_experiment</code>) or the full <code>iri</code> (a curated / result / external pointer); at most one. WHICH is <code>output</code> (a recorded variable, <code>observation__&lt;name&gt;</code>, <code>estimate__&lt;param&gt;</code>, or external variable). SLICE is <code>sel</code> (label-keyed <code>.sel</code>, never positional). <code>reconcile</code> optionally aligns the sourced array to the consuming network’s node order by label. One model reused by figure layers (<code>Layer.used</code>), sourced arguments (<code>Argument.used</code>) and sourced parameters (<code>Parameter.used</code>), so data binding, cross-experiment sourcing and PROV provenance are the same edge. A sourced array is resolved lazily and never inlined into generated code.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.datamodel.pydantic.DataSource">DataSource</a></td>
@@ -803,7 +803,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.datamodel.pydantic.NodeReconciliation">NodeReconciliation</a></td>
-<td>Strategy for aligning a dataset-sourced empirical target’s nodes to the model network before comparison. Keyed alignment is the default so a differing node count or ordering (e.g.&nbsp;a 998-parcel empirical FC against a 1000-parcel model) cannot silently misalign the comparison.</td>
+<td>Strategy for aligning a sourced array’s nodes to the consuming model network before use. Keyed alignment guards against a differing node count or ordering (e.g.&nbsp;a 998-parcel empirical FC against a 1000-parcel model, or a hemisphere-swapped connectome) silently misaligning the data.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.datamodel.pydantic.Noise">Noise</a></td>
@@ -1208,7 +1208,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.datamodel.pydantic.Argument" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.pydantic.Argument">Argument</h3>
 <div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>datamodel.pydantic.Argument()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>A function argument with explicit value specification. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key).</p>
+<p>A function argument with explicit value specification. A value is either <code>value</code> (a literal / array / local reference) or <code>used</code> (a labelled array sourced from another experiment or dataset); the two are mutually exclusive. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key).</p>
 </section>
 <section id="tvbo.datamodel.pydantic.AxisReduction" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.pydantic.AxisReduction">AxisReduction</h3>
@@ -1389,6 +1389,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><a href="#tvbo.datamodel.pydantic.ConnectivityRule.one_to_one">one_to_one</a></td>
 <td>Index-aligned projection: source cell i connects to target cell i (min of the two population sizes).</td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.datamodel.pydantic.ConnectivityRule.random">random</a></td>
+<td>Sparse random projection (fixed-probability Erdos-Renyi): each of the size_src x size_tgt possible connections is present independently with probability given by the Edge’s <code>connection_probability</code> parameter (in <code>Edge.parameters</code>, alongside <code>weight</code>). For a self-projection the diagonal i-&gt;i is governed by Edge.allow_self_connections. A backend that only supports dense projections may reject this rule rather than approximate it.</td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -1525,7 +1529,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.datamodel.pydantic.DataRef" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.pydantic.DataRef">DataRef</h3>
 <div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>datamodel.pydantic.DataRef()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>A pointer to a result-container field (a PROV entity used by a layer). Reuses the shared iri slot as the experiment/result/dataset pointer.</p>
+<p>A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container reference primitive (a PROV entity a consumer <code>prov:used</code>). WHERE is either <code>experiment</code> (an in-study experiment id, resolved like <code>initial_state.source_experiment</code>) or the full <code>iri</code> (a curated / result / external pointer); at most one. WHICH is <code>output</code> (a recorded variable, <code>observation__&lt;name&gt;</code>, <code>estimate__&lt;param&gt;</code>, or external variable). SLICE is <code>sel</code> (label-keyed <code>.sel</code>, never positional). <code>reconcile</code> optionally aligns the sourced array to the consuming network’s node order by label. One model reused by figure layers (<code>Layer.used</code>), sourced arguments (<code>Argument.used</code>) and sourced parameters (<code>Parameter.used</code>), so data binding, cross-experiment sourcing and PROV provenance are the same edge. A sourced array is resolved lazily and never inlined into generated code.</p>
 </section>
 <section id="tvbo.datamodel.pydantic.DataSource" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.pydantic.DataSource">DataSource</h3>
@@ -2285,7 +2289,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.datamodel.pydantic.NodeReconciliation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.pydantic.NodeReconciliation">NodeReconciliation</h3>
 <div class="sourceCode" id="cb99"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a>datamodel.pydantic.NodeReconciliation()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Strategy for aligning a dataset-sourced empirical target’s nodes to the model network before comparison. Keyed alignment is the default so a differing node count or ordering (e.g.&nbsp;a 998-parcel empirical FC against a 1000-parcel model) cannot silently misalign the comparison.</p>
+<p>Strategy for aligning a sourced array’s nodes to the consuming model network before use. Keyed alignment guards against a differing node count or ordering (e.g.&nbsp;a 998-parcel empirical FC against a 1000-parcel model, or a hemisphere-swapped connectome) silently misaligning the data.</p>
 <section id="attributes-22" class="level4">
 <h4 class="anchored" data-anchor-id="attributes-22">Attributes</h4>
 <table class="caption-top table">
@@ -2298,7 +2302,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.datamodel.pydantic.NodeReconciliation.by_label">by_label</a></td>
-<td>Restrict both sides to their shared node labels by name (keyed <code>.sel</code>), preserving the model network’s order. Never positional.</td>
+<td>Restrict to the shared node labels by name (keyed <code>.sel</code>), preserving the consuming network’s order, on every node axis (a vector on its node axis, a matrix on both). Never positional.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.datamodel.pydantic.NodeReconciliation.none">none</a></td>

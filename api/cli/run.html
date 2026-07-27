@@ -136,32 +136,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Networks/index.html"> 
-<span class="menu-text">Networks</span></a>
+    <a class="nav-link" href="../../GettingStarted.qmd"> 
+<span class="menu-text">Get Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Models/index.html"> 
-<span class="menu-text">Models</span></a>
+    <a class="nav-link" href="../../Simulation/SimulationExperiments.html"> 
+<span class="menu-text">Specify an Experiment</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../CLI/index.html"> 
-<span class="menu-text">CLI</span></a>
+    <a class="nav-link" href="../../Simulation/Backends.html"> 
+<span class="menu-text">Run on a Backend</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Bifurcation/index.html"> 
+<span class="menu-text">Analyze</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../Interoperability/index.html"> 
-<span class="menu-text">Interoperability</span></a>
+<span class="menu-text">Extend</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../datamodel/index.html"> 
-<span class="menu-text">Data Model</span></a>
+    <a class="nav-link" href="../../reference.html"> 
+<span class="menu-text">Reference</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../platform.html"> 
 <span class="menu-text">Platform</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../../agents/index.html"> 
-<span class="menu-text">Agents</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -242,7 +242,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    save_all<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--save-all'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Persist every observation, including intermediates. By default only recorded outputs are saved (leaves + `record: true`); this keeps the scaffolding (e.g. a raw BOLD feeding an FC) for debugging.'</span>),</span>
 <span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    max_iterations<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--max-iterations'</span>, <span class="bu">min</span><span class="op">=</span><span class="dv">1</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Smoke cap: run at most N tuning iterations per algorithm AND per stage for THIS run (the recipe is untouched). A fit's post-tuning evaluation — the memory- and time-critical part of a long-horizon fit — is independent of how many tuning iterations preceded it, so `--max-iterations 1` reaches it in minutes to verify it runs/streams within memory."</span>),</span>
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    smoke<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--smoke'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Shorthand for --max-iterations 1: the quickest run that still reaches the post-tuning evaluation (verify a fit executes / streams end to end).'</span>),</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    figures<span class="op">=</span>typer.Option(<span class="va">True</span>, <span class="st">'--figures/--no-figures'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"After a Study's experiments finish, render its declarative `figures:` (emit each plot_&lt;name&gt;.py and run it), so one command produces results AND figures. On by default; --no-figures skips rendering (e.g. a partial/smoke run whose panels would be placeholders). No effect on an experiment spec or a study without figures."</span>),</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Run a SPEC (experiment or study) in the selected backend.</p>
 <p>Resolves <em>spec</em> to a <code>SimulationExperiment</code> or <code>SimulationStudy</code>, executes via <em>backend</em> on <em>engine</em>, and optionally writes results to <code>--out-dir</code>. Non-local engines re-emit the run through <code>tvbo workflow ENGINE</code> and submit.</p>
 

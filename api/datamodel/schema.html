@@ -136,32 +136,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Networks/index.html"> 
-<span class="menu-text">Networks</span></a>
+    <a class="nav-link" href="../../GettingStarted.qmd"> 
+<span class="menu-text">Get Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Models/index.html"> 
-<span class="menu-text">Models</span></a>
+    <a class="nav-link" href="../../Simulation/SimulationExperiments.html"> 
+<span class="menu-text">Specify an Experiment</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../CLI/index.html"> 
-<span class="menu-text">CLI</span></a>
+    <a class="nav-link" href="../../Simulation/Backends.html"> 
+<span class="menu-text">Run on a Backend</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Bifurcation/index.html"> 
+<span class="menu-text">Analyze</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../Interoperability/index.html"> 
-<span class="menu-text">Interoperability</span></a>
+<span class="menu-text">Extend</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../datamodel/index.html"> 
-<span class="menu-text">Data Model</span></a>
+    <a class="nav-link" href="../../reference.html"> 
+<span class="menu-text">Reference</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../platform.html"> 
 <span class="menu-text">Platform</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../../agents/index.html"> 
-<span class="menu-text">Agents</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -595,7 +595,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.datamodel.schema.Argument">Argument</a></td>
-<td>A function argument with explicit value specification. Value can be: literal (number/string), reference to input</td>
+<td>A function argument with explicit value specification. A value is either <code>value</code> (a literal / array / local</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.datamodel.schema.ArgumentName">ArgumentName</a></td>
@@ -775,7 +775,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.datamodel.schema.DataRef">DataRef</a></td>
-<td>A pointer to a result-container field (a PROV entity used by a layer). Reuses the shared iri slot as the</td>
+<td>A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.datamodel.schema.DataSource">DataSource</a></td>
@@ -1071,7 +1071,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.datamodel.schema.NodeReconciliation">NodeReconciliation</a></td>
-<td>Strategy for aligning a dataset-sourced empirical target’s nodes to the model network before comparison. Keyed</td>
+<td>Strategy for aligning a sourced array’s nodes to the consuming model network before use. Keyed alignment guards</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.datamodel.schema.Noise">Noise</a></td>
@@ -1415,8 +1415,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.datamodel.schema.Argument" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Argument">Argument</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Argument(name<span class="op">=</span><span class="va">None</span>, description<span class="op">=</span><span class="va">None</span>, value<span class="op">=</span><span class="va">None</span>, unit<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>A function argument with explicit value specification. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key).</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.Argument(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    value<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    used<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    unit<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A function argument with explicit value specification. A value is either <code>value</code> (a literal / array / local reference) or <code>used</code> (a labelled array sourced from another experiment or dataset); the two are mutually exclusive. Value can be: literal (number/string), reference to input (input.key), or cross-observation reference (observation_name.output_key).</p>
 </section>
 <section id="tvbo.datamodel.schema.ArgumentName" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.ArgumentName">ArgumentName</h3>
@@ -1795,8 +1801,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.datamodel.schema.DataRef" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.DataRef">DataRef</h3>
-<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.DataRef(iri<span class="op">=</span><span class="va">None</span>, output<span class="op">=</span><span class="va">None</span>, sel<span class="op">=</span>empty_dict())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>A pointer to a result-container field (a PROV entity used by a layer). Reuses the shared iri slot as the experiment/result/dataset pointer.</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.DataRef(</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    iri<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>    experiment<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>    output<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>    sel<span class="op">=</span>empty_dict(),</span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>    transform<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>    reconcile<span class="op">=</span><span class="st">'none'</span>,</span>
+<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container reference primitive (a PROV entity a consumer <code>prov:used</code>). WHERE is either <code>experiment</code> (an in-study experiment id, resolved like <code>initial_state.source_experiment</code>) or the full <code>iri</code> (a curated / result / external pointer); at most one. WHICH is <code>output</code> (a recorded variable, <code>observation__&lt;name&gt;</code>, <code>estimate__&lt;param&gt;</code>, or external variable). SLICE is <code>sel</code> (label-keyed <code>.sel</code>, never positional). <code>reconcile</code> optionally aligns the sourced array to the consuming network’s node order by label. One model reused by figure layers (<code>Layer.used</code>), sourced arguments (<code>Argument.used</code>) and sourced parameters (<code>Parameter.used</code>), so data binding, cross-experiment sourcing and PROV provenance are the same edge. A sourced array is resolved lazily and never inlined into generated code.</p>
 </section>
 <section id="tvbo.datamodel.schema.DataSource" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.DataSource">DataSource</h3>
@@ -1855,13 +1868,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb60-17"><a href="#cb60-17" aria-hidden="true" tabindex="-1"></a>    source<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb60-18"><a href="#cb60-18" aria-hidden="true" tabindex="-1"></a>    measure<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb60-19"><a href="#cb60-19" aria-hidden="true" tabindex="-1"></a>    producer<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb60-20"><a href="#cb60-20" aria-hidden="true" tabindex="-1"></a>    free<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb60-21"><a href="#cb60-21" aria-hidden="true" tabindex="-1"></a>    shape<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb60-22"><a href="#cb60-22" aria-hidden="true" tabindex="-1"></a>    explored_values<span class="op">=</span>empty_list(),</span>
-<span id="cb60-23"><a href="#cb60-23" aria-hidden="true" tabindex="-1"></a>    element_domains<span class="op">=</span>empty_list(),</span>
-<span id="cb60-24"><a href="#cb60-24" aria-hidden="true" tabindex="-1"></a>    datatype<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb60-25"><a href="#cb60-25" aria-hidden="true" tabindex="-1"></a>    required<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb60-26"><a href="#cb60-26" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb60-20"><a href="#cb60-20" aria-hidden="true" tabindex="-1"></a>    used<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-21"><a href="#cb60-21" aria-hidden="true" tabindex="-1"></a>    free<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-22"><a href="#cb60-22" aria-hidden="true" tabindex="-1"></a>    shape<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-23"><a href="#cb60-23" aria-hidden="true" tabindex="-1"></a>    explored_values<span class="op">=</span>empty_list(),</span>
+<span id="cb60-24"><a href="#cb60-24" aria-hidden="true" tabindex="-1"></a>    element_domains<span class="op">=</span>empty_list(),</span>
+<span id="cb60-25"><a href="#cb60-25" aria-hidden="true" tabindex="-1"></a>    datatype<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-26"><a href="#cb60-26" aria-hidden="true" tabindex="-1"></a>    required<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb60-27"><a href="#cb60-27" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="tvbo.datamodel.schema.DerivedParameterName" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.DerivedParameterName">DerivedParameterName</h3>
@@ -2152,7 +2166,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb89-5"><a href="#cb89-5" aria-hidden="true" tabindex="-1"></a>    accelerator<span class="op">=</span><span class="st">'cpu'</span>,</span>
 <span id="cb89-6"><a href="#cb89-6" aria-hidden="true" tabindex="-1"></a>    backend<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb89-7"><a href="#cb89-7" aria-hidden="true" tabindex="-1"></a>    batch_size<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb89-8"><a href="#cb89-8" aria-hidden="true" tabindex="-1"></a>    random_seed<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb89-8"><a href="#cb89-8" aria-hidden="true" tabindex="-1"></a>    random_seed<span class="op">=</span><span class="dv">0</span>,</span>
 <span id="cb89-9"><a href="#cb89-9" aria-hidden="true" tabindex="-1"></a>    find_fixpoint<span class="op">=</span><span class="va">False</span>,</span>
 <span id="cb89-10"><a href="#cb89-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Configuration for computational execution (parallelization, precision, hardware).</p>
@@ -2642,7 +2656,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.datamodel.schema.NodeReconciliation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.NodeReconciliation">NodeReconciliation</h3>
 <div class="sourceCode" id="cb129"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb129-1"><a href="#cb129-1" aria-hidden="true" tabindex="-1"></a>datamodel.schema.NodeReconciliation()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Strategy for aligning a dataset-sourced empirical target’s nodes to the model network before comparison. Keyed alignment is the default so a differing node count or ordering (e.g.&nbsp;a 998-parcel empirical FC against a 1000-parcel model) cannot silently misalign the comparison.</p>
+<p>Strategy for aligning a sourced array’s nodes to the consuming model network before use. Keyed alignment guards against a differing node count or ordering (e.g.&nbsp;a 998-parcel empirical FC against a 1000-parcel model, or a hemisphere-swapped connectome) silently misaligning the data.</p>
 </section>
 <section id="tvbo.datamodel.schema.Noise" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.Noise">Noise</h3>
@@ -2863,13 +2877,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb149-17"><a href="#cb149-17" aria-hidden="true" tabindex="-1"></a>    source<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb149-18"><a href="#cb149-18" aria-hidden="true" tabindex="-1"></a>    measure<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb149-19"><a href="#cb149-19" aria-hidden="true" tabindex="-1"></a>    producer<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb149-20"><a href="#cb149-20" aria-hidden="true" tabindex="-1"></a>    free<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb149-21"><a href="#cb149-21" aria-hidden="true" tabindex="-1"></a>    shape<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb149-22"><a href="#cb149-22" aria-hidden="true" tabindex="-1"></a>    explored_values<span class="op">=</span>empty_list(),</span>
-<span id="cb149-23"><a href="#cb149-23" aria-hidden="true" tabindex="-1"></a>    element_domains<span class="op">=</span>empty_list(),</span>
-<span id="cb149-24"><a href="#cb149-24" aria-hidden="true" tabindex="-1"></a>    datatype<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb149-25"><a href="#cb149-25" aria-hidden="true" tabindex="-1"></a>    required<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb149-26"><a href="#cb149-26" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb149-20"><a href="#cb149-20" aria-hidden="true" tabindex="-1"></a>    used<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb149-21"><a href="#cb149-21" aria-hidden="true" tabindex="-1"></a>    free<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb149-22"><a href="#cb149-22" aria-hidden="true" tabindex="-1"></a>    shape<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb149-23"><a href="#cb149-23" aria-hidden="true" tabindex="-1"></a>    explored_values<span class="op">=</span>empty_list(),</span>
+<span id="cb149-24"><a href="#cb149-24" aria-hidden="true" tabindex="-1"></a>    element_domains<span class="op">=</span>empty_list(),</span>
+<span id="cb149-25"><a href="#cb149-25" aria-hidden="true" tabindex="-1"></a>    datatype<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb149-26"><a href="#cb149-26" aria-hidden="true" tabindex="-1"></a>    required<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb149-27"><a href="#cb149-27" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="tvbo.datamodel.schema.ParameterName" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.datamodel.schema.ParameterName">ParameterName</h3>

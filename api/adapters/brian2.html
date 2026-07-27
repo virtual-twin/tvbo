@@ -136,32 +136,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Networks/index.html"> 
-<span class="menu-text">Networks</span></a>
+    <a class="nav-link" href="../../GettingStarted.qmd"> 
+<span class="menu-text">Get Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Models/index.html"> 
-<span class="menu-text">Models</span></a>
+    <a class="nav-link" href="../../Simulation/SimulationExperiments.html"> 
+<span class="menu-text">Specify an Experiment</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../CLI/index.html"> 
-<span class="menu-text">CLI</span></a>
+    <a class="nav-link" href="../../Simulation/Backends.html"> 
+<span class="menu-text">Run on a Backend</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Bifurcation/index.html"> 
+<span class="menu-text">Analyze</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../Interoperability/index.html"> 
-<span class="menu-text">Interoperability</span></a>
+<span class="menu-text">Extend</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../datamodel/index.html"> 
-<span class="menu-text">Data Model</span></a>
+    <a class="nav-link" href="../../reference.html"> 
+<span class="menu-text">Reference</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../platform.html"> 
 <span class="menu-text">Platform</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../../agents/index.html"> 
-<span class="menu-text">Agents</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -182,6 +182,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#tvbo.adapters.brian2" id="toc-tvbo.adapters.brian2" class="nav-link active" data-scroll-target="#tvbo.adapters.brian2">brian2</a>
   <ul class="collapse">
+  <li><a href="#supported-synapse-forms" id="toc-supported-synapse-forms" class="nav-link" data-scroll-target="#supported-synapse-forms">Supported synapse forms</a></li>
   <li><a href="#classes" id="toc-classes" class="nav-link" data-scroll-target="#classes">Classes</a>
   <ul class="collapse">
   <li><a href="#tvbo.adapters.brian2.Brian2Adapter" id="toc-tvbo.adapters.brian2.Brian2Adapter" class="nav-link" data-scroll-target="#tvbo.adapters.brian2.Brian2Adapter">Brian2Adapter</a></li>
@@ -206,9 +207,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>adapters.brian2</code></p>
 <p>Native Brian2 backend for small-scale spiking networks.</p>
 <p>Consumes the shared small-scale lowering core (:mod:<code>tvbo.adapters.smallscale</code>) and emits a Brian2 point-neuron network. The maths is printed through the shared SymPy printer (<code>render_expression(..., format="brian2")</code>); this adapter adds only the Brian2 role vocabulary and the synapse rendering.</p>
-<p><strong>All-to-all conductance synapses lower to O(N) population sums, not O(N^2) <code>Synapses</code>.</strong> For a fully-connected projection every post-synaptic neuron sees the same sum over pre-synaptic gating, so the gate lives on the <em>pre-synaptic</em> neuron and a size-1 “hub” <code>NeuronGroup</code> accumulates the population sum once (via a <code>(summed)</code> <code>Synapses</code>), read by every post-synaptic neuron through a <code>linked_var</code>. This is exactly the structure of the hand-written Deco 2014 reference <code>deco_column.py</code>, and is what lets the 160E+40I column run in seconds where the enumerated LEMS network needs ~190 s per 100 ms in jLEMS.</p>
-<p>Supported synapse forms (the Deco 2014 column): * <code>neuroml:expOneSynapse</code> — single-exponential conductance (AMPA, GABA); * a custom conductance synapse extending <code>baseConductanceBasedSynapse</code> whose gate ODEs / block / current are declared (the saturating NMDA with Mg block), provided the current is <em>linear</em> in the summed gate (population-sum requirement); * <code>neuroml:poissonFiringSynapse</code> — independent Poisson background → <code>PoissonInput</code>.</p>
-<p>Anything outside this set (sparse/one-to-one connectivity, non-Poisson spike sources, constant-current inputs, synapses nonlinear in their gate) raises a clear <code>NotImplementedError</code> rather than mis-simulating.</p>
+<p>Two connectivity lowerings, chosen per edge by the <code>connectivity</code> rule:</p>
+<p><strong>all_to_all → O(N) population sums.</strong> Every post-synaptic neuron sees the same sum over pre-synaptic gating, so the gate lives on the <em>pre-synaptic</em> neuron and a size-1 “hub” <code>NeuronGroup</code> accumulates the population sum once (via a <code>(summed)</code> <code>Synapses</code>), read by every post-synaptic neuron through a <code>linked_var</code>. This is the hand-written Deco 2014 <code>deco_column.py</code> structure — it runs the 160E+40I column in seconds where the enumerated LEMS network needs ~190 s per 100 ms in jLEMS.</p>
+<p><strong>random / one_to_one → real sparse <code>Synapses</code>.</strong> A genuinely sparse projection cannot be a single population sum (each target sees a different subset), so it is emitted as a Brian2 <code>Synapses</code> with <code>connect(p=…)</code> / <code>connect(j='i')</code>. Following the canonical Brian2 idioms: the delivered conductance decays on the <em>post-synaptic</em> <code>NeuronGroup</code> (<code>dg/dt=-g/tau</code>) and is incremented event-driven by <code>on_pre</code> (spike-gated, not summed every step); short-term-plasticity state (u, x) lives <em>on the synapse</em> as <code>(event-driven)</code> variables, mutated in <code>on_pre</code> in the recipe’s declared order, so any facilitation/depression convention is honoured per connection.</p>
+<section id="supported-synapse-forms" class="level2 doc-section doc-section-supported-synapse-forms">
+<h2 class="doc-section doc-section-supported-synapse-forms anchored" data-anchor-id="supported-synapse-forms">Supported synapse forms</h2>
+<ul>
+<li><code>neuroml:expOneSynapse</code> — single-exponential conductance (AMPA, GABA), either lowering;</li>
+<li>a custom conductance synapse extending <code>baseConductanceBasedSynapse</code> whose current is <em>linear</em> in a single gate: all_to_all lowers any such gate (e.g.&nbsp;the saturating NMDA with Mg block); the sparse path additionally requires that gate to be a pure decaying conductance (<code>dg/dt=-g/tau</code>), with the remaining state variables the per-synapse STP;</li>
+<li><code>neuroml:poissonFiringSynapse</code> — independent Poisson background → <code>PoissonInput</code>.</li>
+</ul>
+<p>Anything outside this set (non-Poisson spike sources, constant-current inputs, a summed-gate current nonlinear in its gate, or a sparse synapse whose gate is not a pure decay) raises a clear <code>NotImplementedError</code> rather than mis-simulating.</p>
+</section>
 <section id="classes" class="level2">
 <h2 class="anchored" data-anchor-id="classes">Classes</h2>
 <table class="caption-top table">
@@ -285,7 +295,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.adapters.brian2.assemble_eqs">assemble_eqs</h3>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>adapters.brian2.assemble_eqs(pop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The Brian2 <code>Equations</code> block for a cell population.</p>
-<p>Membrane ODE + a summed synaptic current <code>iSyn</code> + the pre-synaptic gate ODEs (dimensionless) + any linked summed-gate variables. Shared by the in-process <code>run</code> path and the generated script so the two never diverge.</p>
+<p>Membrane ODE + a summed drive <code>iSyn</code> + the pre-synaptic gate ODEs (dimensionless) + any linked summed-gate variables. Shared by the in-process <code>run</code> path and the generated script so the two never diverge. A conductance-based cell’s drive is a current (<code>amp</code>); a current-based cell (one declaring a membrane time constant <code>tau_m</code>, whose membrane is <code>(-v + ... + iSyn)/tau_m</code>) has a voltage drive (<code>volt</code>) — the Mongillo/Amit-Brunel form.</p>
 </section>
 <section id="tvbo.adapters.brian2.reset_code" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.brian2.reset_code">reset_code</h3>

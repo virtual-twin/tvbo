@@ -421,3 +421,29 @@ section[id^="parameters-"] {
     overflow-x: auto;
     font-size: 0.75em;
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   Sidebar PART headers.
+   A part header in _toc.yml is a text-only entry (no `href:`), which Quarto
+   renders as a bare `<span class="menu-text">` directly inside the
+   `<li class="sidebar-item">` — normal items wrap that span in an `<a>`.
+   Styling that direct-child span turns those rows into group labels.
+   ────────────────────────────────────────────────────────────────────── */
+#quarto-sidebar li.sidebar-item > span.menu-text {
+    display: block;
+    margin: 1.25rem 0 0.25rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--bs-secondary, #6c757d);
+    cursor: default;
+}
+/* The first part header ("GET STARTED") needs no separating rule/gap. */
+#quarto-sidebar > div > ul > li.sidebar-item:first-child > span.menu-text {
+    margin-top: 0.25rem;
+    padding-top: 0;
+    border-top: none;
+}

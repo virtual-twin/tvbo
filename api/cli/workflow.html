@@ -136,32 +136,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Networks/index.html"> 
-<span class="menu-text">Networks</span></a>
+    <a class="nav-link" href="../../GettingStarted.qmd"> 
+<span class="menu-text">Get Started</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../Models/index.html"> 
-<span class="menu-text">Models</span></a>
+    <a class="nav-link" href="../../Simulation/SimulationExperiments.html"> 
+<span class="menu-text">Specify an Experiment</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../CLI/index.html"> 
-<span class="menu-text">CLI</span></a>
+    <a class="nav-link" href="../../Simulation/Backends.html"> 
+<span class="menu-text">Run on a Backend</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../Bifurcation/index.html"> 
+<span class="menu-text">Analyze</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../Interoperability/index.html"> 
-<span class="menu-text">Interoperability</span></a>
+<span class="menu-text">Extend</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../../datamodel/index.html"> 
-<span class="menu-text">Data Model</span></a>
+    <a class="nav-link" href="../../reference.html"> 
+<span class="menu-text">Reference</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../platform.html"> 
 <span class="menu-text">Platform</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../../agents/index.html"> 
-<span class="menu-text">Agents</span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -326,7 +326,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    array<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--array'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Slurm array index or range to submit (e.g. '0' for smoke, '0-3' for four tasks). Ignored for non-Slurm engines."</span>),</span>
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    array_throttle<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--array-throttle'</span>, <span class="bu">min</span><span class="op">=</span><span class="dv">1</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Limit concurrent Slurm array tasks when using --array, e.g. 1 for one GPU at a time.'</span>),</span>
 <span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    profile<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--profile'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Snakemake only: run with this profile (name or path) instead of the kit's shipped 'profile/' — e.g. a site profile carrying the cluster's executor config like BIH CUBI's 'cubi-v1'. Per-rule resources in the Snakefile apply on top of it."</span>),</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    cores<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--cores'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Snakemake only: run LOCALLY on this many cores (an integer, or 'all'), ignoring the kit's shipped SLURM profile — the native local-testing path. The SAME kit submits to the scheduler on HPC when --cores is omitted; and on a machine with no `sbatch` a bare run falls back to local cores automatically."</span>),</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Emit a self-contained kit then execute it (or submit for Slurm).</p>
 <p>Use <code>--array 0</code> to submit only the first array task as a quick smoke test without changing the experiment spec. Use <code>--array-throttle</code> to cap how many Slurm array tasks run at once, for example <code>--array 0-39 --array-throttle 1</code> to keep one GPU busy at a time.</p>
 </section>
@@ -374,7 +375,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    out<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--out'</span>, <span class="st">'-o'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">'Directory to extract the archive into (default: next to the archive). Point it at a fresh dir to run a second copy in parallel — its results/ + logs/ stay isolated from an in-progress kit. Ignored when the kit is already a directory.'</span>),</span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    dry_run<span class="op">=</span>typer.Option(<span class="va">False</span>, <span class="st">'--dry-run'</span>, <span class="st">'-n'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Resolve and report the work without running or queueing anything — the engine's own dry run. Validates the kit (DAG, wildcards, inputs) before a large submission."</span>),</span>
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    profile<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--profile'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Snakemake only: use this profile (a name resolved against the Snakemake config search path, or a path) instead of the kit's shipped 'profile/'. Use a site profile that carries the cluster's canonical executor config — e.g. BIH CUBI's 'cubi-v1' (`--profile cubi-v1`). The Snakefile's per-rule resources apply on top of it."</span>),</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    cores<span class="op">=</span>typer.Option(<span class="va">None</span>, <span class="st">'--cores'</span>, <span class="bu">help</span><span class="op">=</span><span class="st">"Snakemake only: run the kit LOCALLY on this many cores (an integer, or 'all'), ignoring its shipped SLURM profile — the native local-testing path. The SAME kit submits to the scheduler on HPC when --cores is omitted; on a machine with no `sbatch`, a bare submit falls back to local cores automatically."</span>),</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Submit a kit already emitted by <code>tvbo workflow slurm|snakemake|nextflow</code>.</p>
 <p>Runs only the <em>execute</em> half of <code>tvbo workflow run</code> against an existing kit — no recipe, no re-emit. The kit may be a directory or a packaged <code>.tar.gz</code> / <code>.zip</code> archive of one; an archive is extracted next to itself first, so a shipped kit runs without a manual unzip. For Slurm this submits <code>run.sbatch</code> (the array job) and chains <code>finalize.sbatch</code> with an <code>afterok</code> dependency, so you get one reassembled result without touching <code>sbatch</code> yourself. The engine is inferred from the kit’s artefact file unless <code>--engine</code> is given. Run it from a login node (Slurm) or wherever the engine’s launcher is available.</p>
 
