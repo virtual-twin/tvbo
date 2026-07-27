@@ -3315,6 +3315,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
         outputfile=None,
         derivative_notation: str = "dot",
         baseline=None,
+        citeformat=None,
     ):
         """Render a human-readable report of the model.
 
@@ -3332,6 +3333,11 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
                 couplings that are new or changed relative to it (a "relative to"
                 note replaces the shared rows) — e.g. a controlled variant shown
                 against its uncontrolled base without repeating every shared term.
+            citeformat: How references are emitted. Default (`None`) renders a
+                formatted **References** section at the end (a standalone report).
+                `"quarto"` instead emits inline `@key` citations in the fulltext and
+                omits the list, so the report can be embedded in a Quarto document
+                whose own `bibliography:` resolves the citations into one bibliography.
 
         Returns:
             The rendered Markdown report string.
@@ -3346,7 +3352,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
 
         md_template = templates.lookup.get_template(f"{template_name}.md.mako")
         md_render = (
-            md_template.render(model=self, derivative_notation=derivative_notation, baseline=baseline)
+            md_template.render(model=self, derivative_notation=derivative_notation, baseline=baseline, citeformat=citeformat)
             .replace(r"\mathcal{lo}_{coupling}", "c_{local}")
             .replace("c_{pop0}", "c_{global}")
         )
