@@ -3106,15 +3106,17 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # === IC-based trial parallelization: ${expl['n_trials']} trials ===
     # Each trial samples different initial conditions from the state-variable distributions.
     # Every distributed variable keys off its OWN resolved seed (distribution.seed overriding
-    # execution.random_seed), folded by the trial index: fold_in(key(seed), i). So a variable's
-    # IC is independent of n_trials (adding trials never perturbs existing ones) and each
-    # variable honours its own seed, not just the first — consistent with _sample_initial_conditions.
+    # execution.random_seed) AND its state-variable index, folded by the trial index:
+    # fold_in(fold_in(key(seed), sv_index), i). Folding the SV index first decorrelates
+    # variables that SHARE a seed (e.g. both inheriting the default) instead of drawing them
+    # identically; folding the trial index keeps each variable's IC independent of n_trials
+    # (adding trials never perturbs existing ones) — consistent with _sample_initial_conditions.
     _n_trials = ${expl['n_trials']}
 
     def _sample_ics(i):
         ic = _expl_state.initial_state.dynamics  # (n_states, n_nodes)
     % for _si, (_sv_name, _sv_info) in enumerate(sv_distribution_info.items()):
-        _k${_si} = jax.random.fold_in(jax.random.key(${_sv_info['seed']}), i)
+        _k${_si} = jax.random.fold_in(jax.random.fold_in(jax.random.key(${_sv_info['seed']}), ${_si}), i)
     % if _sv_info['dist'] in ('gaussian', 'normal'):
         ic = ic.at[${_sv_info['idx']}].set(${(_sv_info['lo'] + _sv_info['hi']) / 2} + ${(_sv_info['hi'] - _sv_info['lo']) / 4.0} * jax.random.normal(_k${_si}, ic[${_sv_info['idx']}].shape))
     % else:

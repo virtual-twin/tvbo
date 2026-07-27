@@ -57,6 +57,7 @@ def generate_datamodel(root: str | Path) -> None:
     # `JsonschemaValidationPlugin(closed=False)`. `sort_keys` keeps it reproducible.
     js = json.loads(JsonSchemaGenerator(str(schema)).serialize())
     _relax_additional_properties(js)
+    _drop_redundant_anyof_type(js)
     (out_dir / "tvbo_datamodel.schema.json").write_text(
         json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -72,6 +73,29 @@ def _relax_additional_properties(node) -> None:
     elif isinstance(node, list):
         for value in node:
             _relax_additional_properties(value)
+
+
+def _drop_redundant_anyof_type(node) -> None:
+    """Strip the redundant sibling ``type`` LinkML stamps beside ``anyOf``.
+
+    ``JsonSchemaGenerator`` emits a slot's base range as a sibling ``type`` even
+    when the slot declares ``any_of``. In JSON Schema a sibling ``type`` conjoins
+    with ``anyOf``, so the base range silently *narrows* the union: ``n_parallel``
+    (``any_of: [integer, string]``, base range ``string`` from ``default_range``)
+    rejects ``1`` with "1 is not of type 'string'". Only a *scalar* base-range stamp
+    (``string``/``integer``/``number``/``boolean``) is this redundant, wrong sibling;
+    a structural ``type: object``/``array`` beside ``anyOf`` (a class-level rule) is a
+    real constraint, so it is left intact.
+    """
+    _SCALAR_STAMP = {"string", "integer", "number", "boolean"}
+    if isinstance(node, dict):
+        if "anyOf" in node and node.get("type") in _SCALAR_STAMP:
+            node.pop("type", None)
+        for value in node.values():
+            _drop_redundant_anyof_type(value)
+    elif isinstance(node, list):
+        for value in node:
+            _drop_redundant_anyof_type(value)
 
 
 def _write(target: Path, code: str) -> None:

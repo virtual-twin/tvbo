@@ -18,7 +18,7 @@
      xmlns:clinical="https://w3id.org/tvbo/clinical/"
      xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#">
     <owl:Ontology rdf:about="https://w3id.org/tvbo/tvbo.owl">
-        <owl:versionIRI rdf:resource="https://w3id.org/tvbo/2026-07-20/tvbo.owl"/>
+        <owl:versionIRI rdf:resource="https://w3id.org/tvbo/2026-07-27/tvbo.owl"/>
         <terms:contributor>The Virtual Brain Ontology contributors</terms:contributor>
         <terms:created rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-01-01</terms:created>
         <terms:description>Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.</terms:description>
@@ -292,6 +292,15 @@
     
 
 
+    <!-- https://w3id.org/tvbo/backendParameter -->
+
+    <owl:AnnotationProperty rdf:about="https://w3id.org/tvbo/backendParameter">
+        <rdfs:comment xml:lang="en">Concrete backend parameter that realises a backend-neutral tvbo term (e.g. the tvboptim solver keyword an evaluation scheme lowers to). Documentary: states how a value is enacted per backend without binding tvbo to any one of them.</rdfs:comment>
+        <rdfs:label xml:lang="en">backend parameter</rdfs:label>
+    </owl:AnnotationProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/boundConstraint -->
 
     <owl:AnnotationProperty rdf:about="https://w3id.org/tvbo/boundConstraint">
@@ -324,6 +333,15 @@
     <owl:AnnotationProperty rdf:about="https://w3id.org/tvbo/enabledByGraphParameter">
         <rdfs:comment xml:lang="en">Name of the concrete graph parameter a SimulationExperiment must set to realise this capability; read at configure() time to materialise the value.</rdfs:comment>
         <rdfs:label xml:lang="en">enabled by graph parameter</rdfs:label>
+    </owl:AnnotationProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/enabledByIntegrationSlot -->
+
+    <owl:AnnotationProperty rdf:about="https://w3id.org/tvbo/enabledByIntegrationSlot">
+        <rdfs:comment xml:lang="en">Name (optionally followed by &apos;:&apos; and the required value) of the Integration/Integrator metadata slot a SimulationExperiment must set to realise this capability; read at configure() time to materialise the slot.</rdfs:comment>
+        <rdfs:label xml:lang="en">enabled by integration slot</rdfs:label>
     </owl:AnnotationProperty>
     
 
@@ -2335,6 +2353,12 @@
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>sweep_seeding</skos:notation>
     </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/symmetry -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/symmetry"/>
     
 
 
@@ -9993,6 +10017,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/aggregation"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -10059,6 +10089,12 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/delayed"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
             </owl:Restriction>
@@ -10113,12 +10149,6 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/vectorized"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -10144,12 +10174,6 @@
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/sparse"/>
-                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/symmetry"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -24472,8 +24496,13 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/CouplingStageEvaluation"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
         <rdfs:label>per_stage (CouplingStageEvaluation)</rdfs:label>
+        <skos:altLabel>per_stage</skos:altLabel>
+        <skos:altLabel>recompute_coupling_per_stage</skos:altLabel>
         <skos:definition>Re-evaluate the coupling at every integrator stage — the coupling is a full part of the vector field (standard ODE integration). Accurate; required to reproduce reference integrators for stiff / chaotic / multistable systems. (tvboptim maps this to recompute_coupling_per_stage=True; diffrax already recomputes the whole RHS per stage.)</skos:definition>
         <skos:notation>per_stage</skos:notation>
+        <skos:prefLabel xml:lang="en">per-stage coupling evaluation</skos:prefLabel>
+        <skos:scopeNote xml:lang="en">Re-evaluate the network coupling term at every stage of a multi-stage integrator. Costlier, but the coupling seen by each stage is consistent with that stage&apos;s state; the difference from per-step matters for stiff or chaotic coupled networks.</skos:scopeNote>
+        <tvbo:backendParameter>tvboptim: recompute_coupling_per_stage=True</tvbo:backendParameter>
     </owl:Class>
     
 
@@ -24484,8 +24513,12 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/CouplingStageEvaluation"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
         <rdfs:label>per_step (CouplingStageEvaluation)</rdfs:label>
+        <skos:altLabel>per_step</skos:altLabel>
         <skos:definition>Evaluate the coupling once per integration step and hold it constant across the stages — a TVB-style efficiency shortcut (the coupling reduction runs once per step). Faster but lower- order in the coupling; can change the trajectory for sensitive systems. (tvboptim: recompute_coupling_per_stage=False, the current backend default.)</skos:definition>
         <skos:notation>per_step</skos:notation>
+        <skos:prefLabel xml:lang="en">per-step coupling evaluation</skos:prefLabel>
+        <skos:scopeNote xml:lang="en">Evaluate the network coupling once per integration step and hold it frozen across the integrator&apos;s stages. The default, and the classic TVB treatment.</skos:scopeNote>
+        <tvbo:backendParameter>tvboptim: recompute_coupling_per_stage=False</tvbo:backendParameter>
     </owl:Class>
     
 
@@ -32201,6 +32234,20 @@ Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.
     
 
 
+    <!-- https://w3id.org/tvbo/Brian2 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/Brian2">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Backend"/>
+        <tvbo:providesCapability rdf:resource="https://w3id.org/tvbo/CodeGeneration"/>
+        <tvbo:providesCapability rdf:resource="https://w3id.org/tvbo/NumPyExecution"/>
+        <tvbo:providesCapability rdf:resource="https://w3id.org/tvbo/SpikingSimulation"/>
+        <tvbo:supportsTask rdf:resource="https://w3id.org/tvbo/EventDrivenIntegration"/>
+        <tvbo:supportsTask rdf:resource="https://w3id.org/tvbo/ODEIntegration"/>
+        <rdfs:label xml:lang="en">Brian2</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/BuiltinModelLibrary -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/BuiltinModelLibrary">
@@ -32404,6 +32451,17 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
+    
+
+
+    <!-- https://w3id.org/tvbo/CouplingDependentAuxiliaryRecording -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/CouplingDependentAuxiliaryRecording">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/SimulationTask"/>
+        <tvbo:requiresCapability rdf:resource="https://w3id.org/tvbo/PerStageCouplingEvaluation"/>
+        <rdfs:comment xml:lang="en">Recording (via `output` or `record: true`) a derived/auxiliary variable whose equation reads a coupling input, with the auxiliary aligned to the state it is recorded alongside. Under the default per-step (frozen) coupling the recorded auxiliary carries the step-start coupling — one integration step behind the recorded post-step state — so exact state/coupling alignment requires per-stage coupling evaluation.</rdfs:comment>
+        <rdfs:label xml:lang="en">Coupling-dependent auxiliary recording</rdfs:label>
+    </owl:NamedIndividual>
     
 
 
@@ -32623,11 +32681,11 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid3106">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/HomoclinicBifurcation"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid3107">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/HomoclinicBifurcation"/>
     </rdf:Description>
     
 
@@ -33171,11 +33229,11 @@ This model, its motivation and derivation can be found in the published article 
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid3113">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid3114">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     
 
@@ -33900,6 +33958,17 @@ Note:
     
 
 
+    <!-- https://w3id.org/tvbo/PerStageCouplingEvaluation -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/PerStageCouplingEvaluation">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BackendCapability"/>
+        <rdfs:comment xml:lang="en">The network coupling is re-evaluated at every stage of a multi-stage integrator (a full part of the vector field) instead of being frozen once per step. Backend-independent numerical contract carried by `Integration.coupling_evaluation: per_stage` (tvboptim maps this to recompute_coupling_per_stage=True; diffrax recomputes the whole RHS per stage regardless).</rdfs:comment>
+        <rdfs:label xml:lang="en">Per-stage coupling evaluation</rdfs:label>
+        <tvbo:enabledByIntegrationSlot>coupling_evaluation:per_stage</tvbo:enabledByIntegrationSlot>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/PyRates -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/PyRates">
@@ -34199,6 +34268,16 @@ The total synaptic input x combines local excitatory recurrence (w), external in
         <rdfs:label xml:lang="en">Sparse (edge-list) coupling evaluation</rdfs:label>
         <tvbo:boundConstraint>edges &lt;&lt; nodes^2  (connection density below the backend&apos;s sparse/dense crossover)</tvbo:boundConstraint>
         <tvbo:enabledByGraphParameter>graph_representation</tvbo:enabledByGraphParameter>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/SpikingSimulation -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/SpikingSimulation">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BackendCapability"/>
+        <rdfs:comment xml:lang="en">Integration of point-neuron populations with threshold-reset spiking and event-delivered synapses.</rdfs:comment>
+        <rdfs:label xml:lang="en">Spiking (point-neuron) simulation</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -34531,11 +34610,11 @@ Note:
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid3123">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid3124">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     
 

@@ -1867,25 +1867,35 @@ def render_recorded_observable(
     network_obs_names: List[str],
     analysis_names: List[str],
     only_obs: Optional[List[str]] = None,
+    recorded_var_names: Optional[List[str]] = None,
 ) -> str:
     """Render the body of an exploration ``observable_fn`` that records a `record:` list.
 
-    Each recorded name resolves to ``compute_all_observations`` (derived / network /
-    simulated observations) or ``compute_analysis_observations`` (the `analysis`
-    diagnostics — Lyapunov, gradients). The observable returns a ``Bunch`` of the named
-    values, which the exploration stacks over the grid into one array per name. Kept in
-    the adapter (not the template) so the same routing serves any backend. Returns the
+    Each recorded name resolves to one of three sources: an ``analysis`` diagnostic
+    (Lyapunov, gradients) from ``compute_analysis_observations``; a raw model channel —
+    a state variable or a recorded auxiliary/derived variable in ``recorded_var_names`` —
+    read from ``result.data`` at its channel index; or a declared observation from
+    ``compute_all_observations``. The observable returns a ``Bunch`` of the named values,
+    which the exploration stacks over the grid into one array per name. Kept in the
+    adapter (not the template) so the same routing serves any backend. Returns the
     function-body string (8-space indented for ``def observable_fn(s):`` inside the
     exploration function).
     """
     analysis_set = set(analysis_names)
+    channel = {n: i for i, n in enumerate(recorded_var_names or [])}
+    # A declared observation is a recorded name that is neither an analysis diagnostic
+    # nor a raw model channel; only those need compute_all_observations.
+    obs_names = [n for n in record_names if n not in analysis_set and n not in channel]
     lines = ["result = _expl_model_fn(s)"]
-    if any(n not in analysis_set for n in record_names):
+    if obs_names:
         # Restrict the per-cell computation to the recorded observations and their
         # closure (passed by the caller), so non-recorded — possibly non-jittable —
         # observations never execute inside this jitted observable.
         if only_obs is not None:
-            _only_lit = "{%s}" % ", ".join(repr(n) for n in sorted(only_obs))
+            _only = [n for n in only_obs if n not in channel]
+            # An empty closure must emit an empty *set* literal — "{}" is an empty
+            # dict, which would change compute_all_observations' `only=` semantics.
+            _only_lit = ("{%s}" % ", ".join(repr(n) for n in sorted(_only))) if _only else "set()"
             lines.append(f"_all_obs = compute_all_observations(result, s, result_transient, only={_only_lit})")
         else:
             lines.append("_all_obs = compute_all_observations(result, s, result_transient)")
@@ -1895,6 +1905,8 @@ def render_recorded_observable(
     for n in record_names:
         if n in analysis_set:
             entries.append(f"{n}=_an_obs.{n}")
+        elif n in channel:
+            entries.append(f"{n}=result.data[:, {channel[n]}, ...]")
         else:
             entries.append(
                 f"{n}=getattr(_all_obs, '{n}').data if hasattr(getattr(_all_obs, '{n}', None), 'data') else getattr(_all_obs, '{n}')"
@@ -2897,6 +2909,36 @@ def network_axis_leaf(ref: Any) -> Optional[str]:
             f"{', '.join('network.edges.' + k for k in sorted(_NETWORK_EDGE_GRAPH_LEAVES))})."
         )
     return leaf
+
+
+_INITIAL_CONDITIONS_SCOPE = "initial_conditions."
+
+
+def initial_conditions_axis_sv(ref: Any) -> Optional[str]:
+    """State variable swept by an ``initial_conditions.``-scoped axis, else None.
+
+    ``initial_conditions.<state_var>`` sweeps the *initial value* of one state
+    variable across grid cells — a deterministic initial-condition ensemble (one
+    trajectory per swept value), as opposed to the stochastic ``n_trials`` +
+    ``StateVariable.distribution`` ensemble. Returns the bare ``<state_var>``
+    name; None for a reference outside the ``initial_conditions.`` scope, which
+    callers route through the dynamics/coupling path. The name is validated
+    against the model's state variables at codegen, where they are known.
+
+    Raises:
+        ValueError: the reference is ``initial_conditions.``-scoped but does not
+            name a single state variable (empty, or a further-dotted path) —
+            failing at codegen rather than sweeping nothing.
+    """
+    if not isinstance(ref, str) or not ref.startswith(_INITIAL_CONDITIONS_SCOPE):
+        return None
+    sv = ref[len(_INITIAL_CONDITIONS_SCOPE):]
+    if not sv or "." in sv:
+        raise ValueError(
+            f"exploration axis '{ref}': the initial_conditions scope takes a single "
+            f"state-variable name (e.g. 'initial_conditions.E')."
+        )
+    return sv
 
 
 def collect_network_edge_arrays(experiment: Any) -> Dict[str, list]:
