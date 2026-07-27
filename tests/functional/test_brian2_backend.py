@@ -736,3 +736,115 @@ def test_delta_synapse_with_unit_valued_jump_is_rejected(tmp_path):
     exp = SimulationExperiment.from_file(str(path))
     with pytest.raises(NotImplementedError, match="dimensionless"):
         exp.render("brian2")
+
+
+def test_probe_sample_indices_are_evenly_spaced_and_never_divide_by_zero():
+    """The probe sampler is safe at the k==1 edge and evenly spans the population otherwise."""
+    from tvbo.adapters.brian2 import _sample_indices
+    assert _sample_indices(800, 1) == [0]          # k == 1: no (k-1) division-by-zero
+    assert _sample_indices(5, 10) == [0, 1, 2, 3, 4]   # k >= n: all indices
+    s = _sample_indices(800, 200)
+    assert len(s) == 200 and s[0] == 0 and s[-1] == 799 and s == sorted(set(s))
+
+
+# A delta STP synapse whose u/x carry `record: true`: the backend adds a clock-driven,
+# zero-delivery OBSERVATION PROBE (a sampled copy of the source population's synapses, driven by
+# the same presynaptic spikes) and StateMonitors its u/x. This measures the continuous synaptic
+# state — including the slow decay held through silent intervals — that an event-driven monitor
+# would freeze, without perturbing the network (the probe delivers nothing). A suprathreshold
+# mu_ext makes the cells fire a regular train deterministically, so u builds by facilitation.
+RECORDED_SYN_YAML = """
+label: "Delta STP synapse with recorded internal state (observation probe)"
+network:
+  dynamics:
+    ExcitatoryCell:
+      iri: "extends:baseCellMembPot"
+      parameters:
+        tau_m: {value: 15.0, unit: ms}
+        thresh: {value: 20.0, unit: mV}
+        reset: {value: 16.0, unit: mV}
+        refract: {value: 2.0, unit: ms}
+        mu_ext: {value: 24.0, unit: mV}
+        v0: {value: 16.0, unit: mV}
+      coupling_inputs: [iSyn]
+      state_variables:
+        v: {equation: {rhs: "(-v + mu_ext + iSyn) / tau_m"}, initial_value: 16.0, unit: mV, record: true}
+      events:
+        spike: {condition: {rhs: "v > thresh"}, affect: {rhs: "v = reset"}}
+    STP_E:
+      iri: "extends:baseConductanceBasedSynapse"
+      parameters:
+        U: {value: 0.20, unit: dimensionless}
+        tauF: {value: 1500.0, unit: ms}
+        tauD: {value: 200.0, unit: ms}
+      coupling_inputs: [v]
+      state_variables:
+        u: {equation: {rhs: "(U - u) / tauF"}, initial_value: 0.20, unit: dimensionless, record: true}
+        x: {equation: {rhs: "(1 - x) / tauD"}, initial_value: 1.0, unit: dimensionless, record: true}
+      events:
+        spike_in: {affect: {rhs: "u = u + U*(1 - u); v = v + 0.1*u*x; x = x - u*x"}}
+  nodes:
+    - {id: 10, dynamics: ExcitatoryCell, size: 50}
+  edges:
+    - {source: 10, target: 10, dynamics: STP_E, connectivity: random, allow_self_connections: false,
+       parameters: {weight: {value: 0.1}, connection_probability: {value: 0.2}}}
+integration: {method: euler, step_size: 0.05, duration: 400.0, time_scale: ms}
+"""
+
+
+class TestBrian2RecordedSynapseState:
+    """A synapse variable with `record: true` is measured by a clock-driven observation probe."""
+
+    @pytest.fixture(scope="class")
+    def net(self, tmp_path_factory) -> SimulationExperiment:
+        path = tmp_path_factory.mktemp("brian2rec") / "rec.yaml"
+        path.write_text(RECORDED_SYN_YAML)
+        return SimulationExperiment.from_file(str(path))
+
+    @pytest.fixture(scope="class")
+    def script(self, net) -> str:
+        return net.render("brian2", seed=3)
+
+    def test_is_valid_python(self, script):
+        compile(script, "<generated>", "exec")
+
+    def test_emits_zero_delivery_clock_driven_probe(self, script):
+        pname = "probe_STP_E_from_ExcitatoryCell_to_ExcitatoryCell"
+        assert f"{pname} = Synapses(ExcitatoryCell, _probe_sink" in script
+        assert f"{pname}.connect(i=[" in script and ", j=0)" in script
+        # clock-driven (recordable continuous trace), and it delivers NOTHING to the sink.
+        assert "(clock-driven)" in script
+        probe_on_pre = script.split(pname + " = Synapses")[1].split(")")[0]
+        assert "v_post +=" not in probe_on_pre
+        # the generated script exposes the same shape as the in-process path: a time axis + means.
+        assert "SYNAPSE_STATE[" in script and '"t_ms":' in script
+
+    @pytest.mark.backend_brian2
+    @pytest.mark.slow
+    def test_probe_measures_ux_without_perturbing_the_network(self, net, tmp_path):
+        import numpy as np
+        import xarray as xr
+        res = net.run(format="brian2", seed=3)
+        res.save(str(tmp_path))
+        ds = xr.open_dataset(str(next(tmp_path.glob("*result.h5"))), engine="h5netcdf")
+        # the measured population-mean u/x round-trips, keyed by the source population.
+        assert "synapse__ExcitatoryCell__u" in ds.data_vars
+        rec = ds.attrs["synapse_recorded"]
+        rec = [rec] if isinstance(rec, str) else [str(r) for r in np.atleast_1d(rec)]
+        assert "ExcitatoryCell" in rec
+        u = np.asarray(ds["synapse__ExcitatoryCell__u"].values)
+        x = np.asarray(ds["synapse__ExcitatoryCell__x"].values)
+        assert u.size > 50 and u.shape == x.shape
+        # FACILITATION measured: u rises above its baseline U=0.20 and varies (not a frozen value);
+        # x is depleted below 1. These are the recorded traces, not an analytic reconstruction.
+        assert u.max() > 0.20 + 1e-3 and u.std() > 1e-3
+        assert x.min() < 1.0 - 1e-3
+        ds.close()
+        # the observation probe delivers nothing: firing rate is identical to a run whose synapse
+        # is NOT recorded (no probe built at all).
+        norec_path = tmp_path / "norec.yaml"
+        norec_path.write_text(RECORDED_SYN_YAML.replace(", record: true}", "}"))
+        r_rec = res._extras["rates"]["ExcitatoryCell"]
+        r_plain = SimulationExperiment.from_file(str(norec_path)).run(
+            format="brian2", seed=3)._extras["rates"]["ExcitatoryCell"]
+        assert r_rec == pytest.approx(r_plain, abs=1e-9), "the probe perturbed the network"
