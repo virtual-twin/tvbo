@@ -134,6 +134,9 @@ def _style_kwargs(style) -> dict:
 _AXIS_OPTS = {
     "xlabel", "ylabel", "title", "xlim", "ylim", "xticks", "yticks",
     "hide_xticklabels", "hide_yticklabels", "axhline", "legend",
+    # line3d only: the depth axis + camera + per-axis inversion (a phase-space axis often
+    # runs the opposite way to the paper's convention). Ignored by 2-D kinds.
+    "zlabel", "zlim", "elev", "azim", "invert_x", "invert_y", "invert_z",
 }
 
 
@@ -310,6 +313,7 @@ def _resolve_layer(layer, panel_kind, base_dir):
         "mark": str(layer.mark) if layer.mark else ("heatmap" if panel_kind == "heatmap" else "line"),
         "x": getattr(enc, "x", None),
         "y": getattr(enc, "y", None),
+        "z": getattr(enc, "z", None),
         "transform": getattr(layer, "transform", None),
         "sel": sel,
         "sel_method": method,
@@ -331,9 +335,11 @@ def build_context(figure, base_dir, outfile: str) -> dict:
                if kind == "custom" else None)
         # Default the axis labels to the first layer's x-dim / output; opts override them.
         axopts = _axopts(panel)
-        if kind in ("cartesian", "heatmap") and layers:
+        if kind in ("cartesian", "heatmap", "line3d") and layers:
             axopts.setdefault("xlabel", layers[0]["x"] or "")
             axopts.setdefault("ylabel", layers[0]["y"] or layers[0]["output"])
+        if kind == "line3d" and layers:
+            axopts.setdefault("zlabel", layers[0]["z"] or "")
         panels.append({
             "key": key,
             "kind": kind,

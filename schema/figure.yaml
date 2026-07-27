@@ -24,6 +24,7 @@ enums:
     permissible_values:
       cartesian: {description: "Line/scatter/rule/band marks in a 2-D cartesian frame."}
       heatmap:   {description: "A 2-D array field drawn as pcolormesh/imshow."}
+      line3d:    {description: "Line/scatter marks in a 3-D frame (x/y/z channels) — a phase-space orbit or trajectory. Camera via opts (elev, azim); axis via zlabel/zlim."}
       image:     {description: "An external raster/vector file placed in the grid cell."}
       custom:    {description: "A registered callable fn(container, ax, **opts)."}
 
@@ -190,6 +191,7 @@ classes:
     attributes:
       x: {range: string}
       y: {range: string}
+      z: {range: string, description: "Depth channel for a line3d panel (the third phase-space axis); ignored by 2-D kinds."}
       color: {range: string}
       detail: {range: string, description: "Non-visual grouping dim (e.g. the hue/iterate dim)."}
 
