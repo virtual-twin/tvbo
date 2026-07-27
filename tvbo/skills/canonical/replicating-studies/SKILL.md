@@ -167,10 +167,20 @@ on a current-based cell that declares `tau_m`), and **timed current-pulse stimul
 (`neuroml:pulseGenerator` — item cue / nonspecific readout). What Brian2 still does NOT accept is a
 *defined spike source* (`spikeGenerator`/`spikeArray`) — that single-synapse-driven-by-a-preset-train
 case stays on NeuroML. Spike **rasters persist to the container** (`spikes__<pop>__t/i`,
-`firing_rate`, `population_size`, `populations`/`duration_ms` attrs); a spiking figure binds those,
-and any per-synapse trace the figure shows (mean u/x) is **reconstructed from the recorded spike
-trains** in a `code/` analysis fn (each neuron's own train drives its facilitation) — tvbo-derived
-output, honest, not asserted. Different experiments in one recipe can use different backends (a rate
+`firing_rate`, `population_size`, `populations`/`duration_ms` attrs); a spiking figure binds those.
+A **synapse-internal trace the figure shows (mean u/x) should be MEASURED, not reconstructed**:
+declare `record: true` on the synapse's state variable and the Brian2 backend attaches a
+clock-driven, zero-delivery *observation probe* (a sampled copy of the population's synapses, same
+STP driven by the same spikes), persisting the population-mean as `synapse__<pop>__<var>` — the
+state the network actually integrated, on a byte-identical run (the probe delivers nothing). Prefer
+this over replaying the Tsodyks–Markram recurrence on the spikes in a `code/` fn; keep that
+reconstruction only as the **fallback** where a backend can't expose synapse state (the NeuroML
+single-synapse path), and cross-check the two agree (they did, to ~0.01). This is a case of the
+next rule — *measured beats a parallel analytic model of the same quantity*; the gap (record
+synapse state) was an addable backend primitive, not a permanent "u/x are analytic" limitation.
+(Event-driven STP records a frozen staircase under a plain StateMonitor, so the clock-driven probe
+is what makes the continuous "u held through the delay" trace measurable at all.) Different
+experiments in one recipe can use different backends (a rate
 reduction on tvboptim beside its spike-level companion on neuroml). Study-loader gotcha: a NeuroML cell's nested channel goes
 under `modes:`, not `components:` — `components` is a LinkML alias the strict study loader
 rejects (only the `from_string` doc path accepts it).
