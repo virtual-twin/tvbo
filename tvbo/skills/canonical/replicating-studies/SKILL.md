@@ -348,7 +348,10 @@ results stay put; only the plot re-runs). Copy `assets/figures.snippet.yaml` for
   `layers`: `used: {iri: tvbo:exp/<Study>/exp-3, output: <var|observation__name>, sel: {dim: label}}`
   (label-keyed, never positional — this binding **is** the PROV `used` edge), plus `mark`
   (`line`/`scatter`/`rule`/`band`; implied for heatmap) and `encoding: {x, y, color}` naming
-  container dims/coords. `transform:` names an optional presentation-only reduction.
+  container dims/coords. `transform:` names an optional presentation-only reduction. Bind an
+  **in-study** experiment by id — `used: {experiment: 3}` — rather than spelling a full `iri`:
+  it needs no hardcoded study key and registers the run-order dependency (that experiment runs
+  before the figure). Reserve an explicit `iri` for a curated/external container.
 - **Only a bespoke interior is code.** A `custom` panel sets `render: <fn>` + `opts:`, where
   `<fn>` is a `@bsplot.register_panel` callable `fn(fig, ax, ctx)` in a module named in the
   figure's `code_modules:` (a flat file in `code/`, e.g. `code/<study>_figures.py`). It reads its resolved layers with
@@ -682,4 +685,14 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   still write `output/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
   `iri: tvbo:result/<Study>/exp-N` can't resolve an unwritten container). Run END-TO-END, not
   `from_file`.
+- **A single-value exploration axis silently OVERRIDES the base parameter — never use one as
+  ensemble scaffolding.** An `Exploration` axis with one `explored_values` entry (or a 1-point
+  domain) still *writes that value over* the Dynamics/Coupling parameter it names. So a stand-in
+  axis added only to give a trial-only ensemble a `space` (a) runs the whole study at the axis's
+  value, not the model's — a typo or a stale number (`explored_values: [-1.76]` where the model
+  sets `-1.76128`) silently integrates the wrong regime, and reads as a backend failure — and
+  (b) is unnecessary. Express the ensemble with the mechanism that actually varies it: `n_trials`
+  (+ a per-SV `distribution`) for a stochastic IC ensemble, or an `initial_conditions.<state_var>`
+  sweep for a deterministic one (`assets/sweeps.md`). To pin a parameter, set it on the
+  Dynamics/Coupling, never as a degenerate axis.
 - **Framework gaps surface late** if you skip Phase 1.5. Find them before the YAML.
