@@ -2,7 +2,7 @@
 
 **Replication** of <Author> et al., *<title>*, <venue> (<Year>). One declarative recipe
 (`<Study>.yaml`) + minimal plotting; a *replication*, not a bit-exact reproduction (see
-the report's scorecard). Backend chosen by fit — see `original_study/analysis/backend-fit.md`.
+the report's scorecard). Backend chosen by fit — see `report/analysis/backend-fit.md`.
 
 ## Layout (FAIR)
 ```
@@ -17,9 +17,10 @@ the report's scorecard). Backend chosen by fit — see `original_study/analysis/
     sourcedata/             third-party raw inputs (connectomes, …) — git-ignored
   figures/                  rendered figures + their generated plot_<name>.py — git-ignored
   output/                   run outputs (git-ignored): result .h5 containers, KPI tables, report.pdf
-  report/                   report.qmd (whole report) + report_internal.qmd (A/B wrapper) + _quarto.yml + references.bib   (*.pdf git-ignored)
-  original_study/           paper + its published data — git-ignored, obtained per DATA.md
-    <paper.pdf>  img/fig*.png  analysis/ (targets, figures, backend-fit)  source_data/  <pristine paper code>
+  report/                   ALL of OUR work (tracked): report.qmd (whole report) + report_internal.qmd (A/B wrapper) + _quarto.yml + references.bib   (*.pdf git-ignored)
+    analysis/               OUR replication analysis (tracked): targets.md, figures.md, backend-fit.md, adherence.md
+  original_study/           the PAPER's own material ONLY — fully git-ignored, obtained per DATA.md
+    <paper.pdf>  img/fig*.png  source_data/  <pristine paper code>
 ```
 ## Reproduce
 ```bash

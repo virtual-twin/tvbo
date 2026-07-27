@@ -1,6 +1,10 @@
 # Run/build outputs — regenerated, not source.
+# (Comments MUST be on their own line — .gitignore has no inline/trailing comments; a `#`
+#  after a pattern becomes part of the pattern and silently breaks it.)
 output/
-figures/          # rendered figures + the generated plot_<name>.py scripts (from the figures: block)
+# figures/ = the declarative figure render target (tvbo run / tvbo figure render):
+# <name>.png + generated plot_<name>.py — regenerable, not tracked.
+figures/
 results/
 logs/
 kit*/
@@ -9,15 +13,18 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Data & upstream material — never vendored; obtain per input/DATA.md.
-input/sourcedata/          # third-party raw inputs (connectomes, atlases, …)
-original_study/*           # the paper's own material + its published data (workbook, source_data, code)
-!original_study/analysis/  # …but keep OUR analysis (targets.md, figures.md, backend-fit.md)
+# third-party raw inputs (connectomes, atlases, …)
+input/sourcedata/
+# original_study/ holds the PAPER's own material ONLY (PDF, figures, published data, its code) —
+# fully git-ignored. Everything WE author or generate lives under report/ (tracked), including our
+# replication analysis in report/analysis/ (targets.md, figures.md, backend-fit.md, adherence.md).
+original_study/
 
 # Generated report artifacts + working notes. report.qmd (the whole report) + report_internal.qmd
-# (the thin A/B wrapper) + references.bib + report/_quarto.yml ARE tracked (the render mechanism,
-# no copyrighted content). report_internal.pdf is the local-only A/B build that embeds the paper's
-# © originals — covered by report/*.pdf below; only the public report.pdf is shareable, and both
-# are git-ignored.
+# (the thin A/B wrapper) + references.bib + report/_quarto.yml + report/analysis/ ARE tracked (our
+# work, no copyrighted content). report_internal.pdf is the local-only A/B build that embeds the
+# paper's © originals — covered by report/*.pdf below; only the public report.pdf is shareable, and
+# both are git-ignored.
 report/*.pdf
 report/*.log
 report/.quarto/
