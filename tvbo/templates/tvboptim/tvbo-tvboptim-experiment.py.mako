@@ -13,7 +13,8 @@ from tvbo.templates.tvboptim.utils import (
     parse_exploration, normalize_n_parallel, get_param_info, get_node_param_overrides,
     normalize_coupling_aliases, resolve_coupling_input_map,
     get_node_state_overrides, render_jax_default, get_mode_layout,
-    get_all_observations_from_algo, network_axis_leaf, graph_selection,
+    get_all_observations_from_algo, network_axis_leaf, initial_conditions_axis_sv,
+    graph_selection,
 )
 import numpy as np
 import re
@@ -368,7 +369,9 @@ for pname in list(dyn_param_names):
                 'default': float(p_obj.value) if p_obj.value is not None else 0.0,
                 'mean': _dmean,
                 'std': _dstd,
-                'seed': int(getattr(dist, 'seed', None) or 42),
+                # Seed resolution (shared rule): a distribution's own `seed` overrides the
+                # experiment-global execution.random_seed; unset ⇒ inherit random_seed (default 0).
+                'seed': int(dist.seed) if getattr(dist, 'seed', None) is not None else random_seed,
                 'shape': str(getattr(p_obj, 'shape', '')) if getattr(p_obj, 'shape', None) else '',
             }
 # Remove stochastic params from dynamics params (trajectories injected after prepare)
@@ -392,7 +395,9 @@ for sv_name, sv in model.state_variables.items():
             'lo': lo,
             'hi': hi,
             'idx': state_names.index(sv_name if n_modes == 1 else f"{sv_name}__mode0"),
-            'seed': int(getattr(dist, 'seed', None) or 42),
+            # Seed resolution (shared rule): distribution.seed overrides execution.random_seed;
+            # unset ⇒ inherit random_seed (default 0). Both IC paths below read this resolved seed.
+            'seed': int(dist.seed) if getattr(dist, 'seed', None) is not None else random_seed,
         }
 
 # === Events metadata (stimuli and other time-dependent inputs) ===
@@ -714,6 +719,8 @@ for expl in exploration_list:
         is_coupling_param = False
         is_network_param = False
         graph_leaf = None
+        is_ic = False
+        ic_row = None
         if pname.startswith('network.'):
             # `network` is the reserved singleton-network scope (one Network per
             # experiment): `network.conduction_speed`, `network.edges.<label>`.
@@ -731,6 +738,32 @@ for expl in exploration_list:
             # `conduction_speed` untouched). `_axis_label` keeps the declared
             # dotted path, so grid coords stay named as written in the recipe.
             pname = re.sub(r'\W', '_', pname[len('network.'):])
+        elif pname.startswith('initial_conditions.'):
+            # `initial_conditions.<sv>` sweeps the INITIAL VALUE of one state
+            # variable across grid cells — a deterministic IC ensemble (one
+            # trajectory per swept value), distinct from the stochastic n_trials
+            # + distribution ensemble. The swept value is injected per cell into
+            # the state variable's row of the initial state (grid binding + wrapper
+            # below); `pname` only names the axis' dummy slot / `n_<name>` override.
+            is_ic = True
+            _ic_sv = initial_conditions_axis_sv(axis.parameter)
+            _ic_state_key = _ic_sv if n_modes == 1 else f"{_ic_sv}__mode0"
+            assert _ic_state_key in state_names, (
+                f"exploration axis '{axis.parameter}': unknown state variable "
+                f"'{_ic_sv}' (state variables: {', '.join(state_names)})."
+            )
+            # A distributed SV is resampled every run, which would overwrite the
+            # swept value and silently degenerate the ensemble — fail at codegen.
+            if _ic_sv in sv_distribution_info:
+                raise ValueError(
+                    f"exploration axis '{axis.parameter}': state variable '{_ic_sv}' "
+                    f"also declares a distribution, which resamples its initial value "
+                    f"per run and would overwrite the swept value. Drop the distribution "
+                    f"to sweep the initial condition deterministically, or drop the axis "
+                    f"to keep the stochastic n_trials ensemble."
+                )
+            ic_row = state_names.index(_ic_state_key)
+            pname = re.sub(r'\W', '_', _ic_sv)
         elif '.' in pname:
             prefix, pname = pname.rsplit('.', 1)
             is_coupling_param = (prefix in all_couplings)
@@ -767,6 +800,12 @@ for expl in exploration_list:
             import json as _json
             _arg_strs = []
             for _an, _arg in (_builder.arguments.items() if getattr(_builder, 'arguments', None) else []):
+                # A `used:` DataRef sources the argument from another experiment. It is
+                # resolved on the Python side (run() -> builder_data), keyed by axis::arg,
+                # and looked up here at runtime via _bdv — never inlined into the code.
+                if getattr(_arg, 'used', None) is not None:
+                    _arg_strs.append("%s=_bdv(%r)" % (str(_an), "%s::%s" % (str(axis.parameter), str(_an))))
+                    continue
                 _av = _arg.value if hasattr(_arg, 'value') else _arg
                 if isinstance(_av, str) and 'observations.' in _av:
                     _arg_strs.append("%s=_bov(%r)" % (str(_an), _av.split('observations.', 1)[1]))
@@ -842,6 +881,34 @@ for expl in exploration_list:
                 'n': len(_seed_vals),
                 'reduce': _reduce_stat,
             })
+            continue
+        # `initial_conditions.<sv>` axis: a deterministic per-cell initial condition,
+        # from explored_values (DataAxis) or a domain lo/hi/n (GridAxis). The grid
+        # binding writes it into a dummy `_ic_<sv>` slot; the wrapper injects it into
+        # the state variable's row of the initial state, so each cell starts from its
+        # own IC. `ic_row` is the SV's row in the (n_states, n_nodes) initial state.
+        if is_ic:
+            if explored_values:
+                _ic_vals = [float(v) for v in explored_values]
+                exp_info['axes'].append({
+                    'name': pname, 'label': _axis_label,
+                    'is_ic': True, 'ic_row': ic_row,
+                    'values': _ic_vals, 'n': len(_ic_vals),
+                    'is_coupling': False, 'element_idx': None,
+                    'reduce': _reduce_stat,
+                })
+            else:
+                assert domain and domain.lo is not None and domain.hi is not None, \
+                    (f"initial_conditions axis '{axis.parameter}' requires explored_values "
+                     f"or a domain with lo/hi")
+                _ic_n = _resolve_n(domain)
+                exp_info['axes'].append({
+                    'name': pname, 'label': _axis_label,
+                    'is_ic': True, 'ic_row': ic_row,
+                    'lo': float(domain.lo), 'hi': float(domain.hi), 'n': _ic_n,
+                    'is_coupling': False, 'element_idx': None,
+                    'reduce': _reduce_stat,
+                })
             continue
         # Auto-expand heterogeneous parameters: if pname matches a dynamics param
         # with shape containing 'n_nodes', expand to n_nodes element axes automatically.
@@ -1281,7 +1348,10 @@ from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph, DenseL
 % else:
 from tvboptim.experimental.network_dynamics.graph import DenseGraph, SparseGraph
 % endif
-from tvboptim.experimental.network_dynamics.solvers import ${solver_class}, BoundedSolver
+from tvboptim.experimental.network_dynamics.solvers import ${solver_class}
+% if has_state_bounds:
+from tvboptim.experimental.network_dynamics.solvers import BoundedSolver
+% endif
 % if has_noise:
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 % endif
@@ -1574,22 +1644,21 @@ def create_network(
 def _sample_initial_conditions(state, key=None):
     """Sample initial conditions from state variable distributions.
 
-    Each state variable with a ``distribution`` slot is replaced per-node by a
-    draw from that distribution. The default RNG seed is taken from the
-    distribution's ``seed`` slot (falls back to 42).
+    Each state variable with a ``distribution`` is redrawn per-node from it, keyed by that
+    distribution's OWN resolved seed (``distribution.seed`` overriding ``execution.random_seed``)
+    — so every distributed variable honours its own seed, not just the first. An explicit ``key``
+    overrides the per-distribution seeds (folded per variable so the variables stay decorrelated).
     """
-    if key is None:
-        key = jax.random.key(${list(sv_distribution_info.values())[0]['seed']})
-    _keys = jax.random.split(key, ${len(sv_distribution_info)})
     ic = state.initial_state.dynamics  # (n_states,) broadcast or (n_states, n_nodes)
     # Ensure per-node shape so sampling produces independent values per node
     if ic.ndim == 1:
         ic = jnp.broadcast_to(ic[:, None], (ic.shape[0], n_nodes)).copy()
 % for _si, (_sv_name, _sv_info) in enumerate(sv_distribution_info.items()):
+    _k${_si} = jax.random.fold_in(key, ${_si}) if key is not None else jax.random.key(${_sv_info['seed']})
 % if _sv_info['dist'] in ('gaussian', 'normal'):
-    ic = ic.at[${_sv_info['idx']}].set(${(_sv_info['lo'] + _sv_info['hi']) / 2} + ${(_sv_info['hi'] - _sv_info['lo']) / 4.0} * jax.random.normal(_keys[${_si}], (n_nodes,)))
+    ic = ic.at[${_sv_info['idx']}].set(${(_sv_info['lo'] + _sv_info['hi']) / 2} + ${(_sv_info['hi'] - _sv_info['lo']) / 4.0} * jax.random.normal(_k${_si}, (n_nodes,)))
 % else:
-    ic = ic.at[${_sv_info['idx']}].set(jax.random.uniform(_keys[${_si}], (n_nodes,), minval=${_sv_info['lo']}, maxval=${_sv_info['hi']}))
+    ic = ic.at[${_sv_info['idx']}].set(jax.random.uniform(_k${_si}, (n_nodes,), minval=${_sv_info['lo']}, maxval=${_sv_info['hi']}))
 % endif
 % endfor
     state.initial_state.dynamics = ic
@@ -2517,6 +2586,11 @@ def run_optimization(
         and not obs_name
         and bool(observation_names or derived_observation_names)
     )
+    # The per-cell observable_fn returns a Bunch (unpacked into labelled xr.DataArrays
+    # after the vmap) in the observation/streaming path AND in the record path — a bare
+    # state/aux/output record still goes through render_recorded_observable, which
+    # returns a Bunch. Both must be unpacked at packaging time, not passed as a raw array.
+    returns_bunch = bundles_observations or bool(expl.get('record'))
     # Streaming-reduction fast path: when every recorded (non-analysis) observable is an
     # Observation.dynamics observer, fold each into the integrator carry via
     # prepare(reduce=...) so the trajectory is never materialized (peak memory drops from
@@ -2589,6 +2663,16 @@ def ${expl['name']}(state, model_fn, result_transient=None, **kwargs):
             "main run did not compute (run mode='all' so base observations are available)")
         _o = _base_obs[_name]
         return _o.data if hasattr(_o, 'data') else _o
+    # `_bdv(key)` returns a builder argument sourced from another experiment via a
+    # `used:` DataRef. run() resolves each (against results_root) and hands them in as
+    # builder_data, keyed axis::arg — the cross-experiment counterpart of _bov.
+    _builder_data = kwargs.get('builder_data') or {}
+    def _bdv(_key):
+        assert _key in _builder_data, (
+            f"builder for '${expl['name']}' sources argument {_key!r} from another experiment "
+            "via a used: DataRef, but it was not resolved — run() resolves builder_data before "
+            "the run; ensure the source experiment has run and results_root points at it")
+        return _builder_data[_key]
 % endif
     if _network is not None:
         _solver = get_solver()
@@ -2662,6 +2746,15 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     ## each cell's integer seed into config.noise.key, so every cell/trial draws an
     ## independent noise realization (a real per-trial ensemble, not a no-op).
     grid_state.dynamics._noise_seed = DataAxis(jnp.asarray(${ax['values']}, dtype=jnp.uint32))
+    % elif ax.get('is_ic'):
+    ## Initial-condition axis: a dummy scalar slot Space sweeps; the wrapper below
+    ## writes each cell's value into the swept state variable's row of the initial
+    ## state, so every cell integrates from its own IC (a deterministic IC ensemble).
+    % if 'values' in ax:
+    grid_state.dynamics._ic_${ax['name']} = DataAxis(jnp.asarray(${ax['values']}))
+    % else:
+    grid_state.dynamics._ic_${ax['name']} = GridAxis(low=${ax['lo']}, high=${ax['hi']}, n=kwargs.get('n_${ax['name']}', ${ax['n']}))
+    % endif
     % elif ax.get('element_idx') is not None:
     ## Element-indexed parameter: create dummy scalar slot for Space discovery
     ## e.g., K[0] → grid_state.dynamics._K_el0 = GridAxis(...)
@@ -2779,7 +2872,7 @@ ${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
     # stacked over the sweep into one array per name.
     @jax.jit
     def observable_fn(s):
-${render_recorded_observable(expl['record'], derived_observation_names, network_observation_names, list(analysis_observations_dict.keys()), only_obs=_only_list)}
+${render_recorded_observable(expl['record'], derived_observation_names, network_observation_names, list(analysis_observations_dict.keys()), only_obs=_only_list, recorded_var_names=_recorded_var_names)}
 % elif obs_type == 'function_call':
 <%
     # Collect unique observations used - categorize by type
@@ -2923,6 +3016,23 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         return _seed_base_fn(s)
 % endif
 
+<%
+    ic_axes = [ax for ax in expl['axes'] if ax.get('is_ic')]
+%>
+% if ic_axes:
+    ## Initial-condition sweep: write each cell's swept value into the state
+    ## variable's row of the initial state, so every cell integrates from its own
+    ## IC. A deterministic per-cell initial condition (grid / linspace), distinct
+    ## from the stochastic n_trials + distribution ensemble. The swept SV carries
+    ## no distribution (guarded at codegen), so nothing resamples the row after.
+    _ic_base_fn = observable_fn
+    def observable_fn(s):
+        % for ax in ic_axes:
+        s.initial_state.dynamics = s.initial_state.dynamics.at[${ax['ic_row']}].set(s.dynamics._ic_${ax['name']})
+        % endfor
+        return _ic_base_fn(s)
+% endif
+
 % if expl.get('n_trials', 1) > 1 and stochastic_param_info:
 <%
     _sp_names = list(stochastic_param_info.keys())
@@ -2993,29 +3103,27 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endif
 
 % if expl.get('n_trials', 1) > 1 and sv_distribution_info:
-<%
-    _sv_names = list(sv_distribution_info.keys())
-    _n_sv = len(_sv_names)
-%>\
     # === IC-based trial parallelization: ${expl['n_trials']} trials ===
-    # Each trial samples different initial conditions from state variable distributions.
+    # Each trial samples different initial conditions from the state-variable distributions.
+    # Every distributed variable keys off its OWN resolved seed (distribution.seed overriding
+    # execution.random_seed), folded by the trial index: fold_in(key(seed), i). So a variable's
+    # IC is independent of n_trials (adding trials never perturbs existing ones) and each
+    # variable honours its own seed, not just the first — consistent with _sample_initial_conditions.
     _n_trials = ${expl['n_trials']}
-    _trial_key = jax.random.key(${random_seed})
-    _trial_keys = jax.random.split(_trial_key, _n_trials)
 
-    def _sample_ics(key):
-        keys = jax.random.split(key, ${_n_sv + 1})
+    def _sample_ics(i):
         ic = _expl_state.initial_state.dynamics  # (n_states, n_nodes)
     % for _si, (_sv_name, _sv_info) in enumerate(sv_distribution_info.items()):
+        _k${_si} = jax.random.fold_in(jax.random.key(${_sv_info['seed']}), i)
     % if _sv_info['dist'] in ('gaussian', 'normal'):
-        ic = ic.at[${_sv_info['idx']}].set(${(_sv_info['lo'] + _sv_info['hi']) / 2} + ${(_sv_info['hi'] - _sv_info['lo']) / 4.0} * jax.random.normal(keys[${_si + 1}], ic[${_sv_info['idx']}].shape))
+        ic = ic.at[${_sv_info['idx']}].set(${(_sv_info['lo'] + _sv_info['hi']) / 2} + ${(_sv_info['hi'] - _sv_info['lo']) / 4.0} * jax.random.normal(_k${_si}, ic[${_sv_info['idx']}].shape))
     % else:
-        ic = ic.at[${_sv_info['idx']}].set(jax.random.uniform(keys[${_si + 1}], ic[${_sv_info['idx']}].shape, minval=${_sv_info['lo']}, maxval=${_sv_info['hi']}))
+        ic = ic.at[${_sv_info['idx']}].set(jax.random.uniform(_k${_si}, ic[${_sv_info['idx']}].shape, minval=${_sv_info['lo']}, maxval=${_sv_info['hi']}))
     % endif
     % endfor
         return ic
 
-    _trial_ics = jax.vmap(_sample_ics)(_trial_keys)  # (n_trials, n_states, n_nodes)
+    _trial_ics = jax.vmap(_sample_ics)(jnp.arange(_n_trials))  # (n_trials, n_states, n_nodes)
 
     _base_ic_observable = observable_fn
 
@@ -3091,13 +3199,19 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     # large-per-cell grid does not blow up peak memory. An explicit int passes through.
     _per_cell_bytes = estimate_per_cell_bytes(observable_fn, _expl_state)
     _n_vmap = resolve_n_vmap(${repr(expl['n_parallel'])}, grid.N, _per_cell_bytes)
+    _n_pmap = _jax.device_count()
     # Stream "grid batch i/N" through the tvbo.run logger from inside the jitted
-    # lax.map (JAX-native jax.debug.callback, fires once per n_vmap batch) so a long
-    # grid does not go silent after "STEP 2 > ...". Identity wrap when INFO is off.
-    _n_batches = max(1, -(-grid.N // _n_vmap))
+    # pmap/lax.map (JAX-native jax.debug.callback) so a long grid does not go silent
+    # after "STEP 2 > ...". Identity wrap when INFO is off. The callback fires once per
+    # (device x lax.map scan step): the grid is split into n_map = ceil(N / n_pmap) cells
+    # per device, each device scans ceil(n_map / n_vmap) times. Count all three so the
+    # i/N total is truthful — ceil(N / n_vmap) alone ignored n_pmap, so a multi-device CPU
+    # (jax.device_count() = 8 here) showed e.g. 8/1 = 800%.
+    _n_map = max(1, -(-grid.N // _n_pmap))
+    _n_batches = max(1, _n_pmap * -(-_n_map // _n_vmap))
     exec_runner = ParallelExecution(
         progress_ticker(_n_batches, label="grid batch")(observable_fn),
-        grid, n_pmap=_jax.device_count(), n_vmap=_n_vmap,
+        grid, n_pmap=_n_pmap, n_vmap=_n_vmap,
     )
     _grid_outputs = list(exec_runner.run())
 % else:
@@ -3182,7 +3296,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
 % endif
 
-% if bundles_observations:
+% if returns_bunch:
     # observable_fn returned a Bunch of reduced observations.
     # No raw trajectory to attach; wrap each observation as xr.DataArray.
     _stacked_results = None
@@ -3332,8 +3446,13 @@ def run_experiment(
         # while using the custom dynamics/coupling parameters
         use_state = copy.deepcopy(default_state)
 
-        # Copy dynamics parameters from custom state
-        if hasattr(state, 'dynamics'):
+        # Copy dynamics parameters from custom state. Use `getattr(...) is not None`
+        # rather than `hasattr`: a Bunch's __getattr__ returns None for a missing key
+        # (it never raises), so `hasattr(state, 'coupling')` is ALWAYS True and a
+        # PARTIAL custom state — e.g. Bunch(dynamics=...) with no coupling — would hit
+        # `None.keys()` below. This makes the merge robust to a partial custom state
+        # (carry only the tuned dynamics, or only the tuned coupling).
+        if getattr(state, 'dynamics', None) is not None:
             for key in state.dynamics.keys():
                 if not key.startswith('_'):
                     val = state.dynamics[key]
@@ -3342,10 +3461,10 @@ def run_experiment(
                         val = val.value
                     use_state.dynamics[key] = val
 
-        # Copy coupling parameters from custom state
-        if hasattr(state, 'coupling'):
+        # Copy coupling parameters from custom state (partial-state-safe, see above).
+        if getattr(state, 'coupling', None) is not None:
             for coupling_name in state.coupling.keys():
-                if not coupling_name.startswith('_'):
+                if not coupling_name.startswith('_') and coupling_name in use_state.coupling:
                     src_coupling = state.coupling[coupling_name]
                     dst_coupling = use_state.coupling[coupling_name]
                     for key in src_coupling.keys():

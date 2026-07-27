@@ -256,20 +256,6 @@ enums:
             workflow:
                 description: "Fan out all otherwise-unassigned axes as scheduler tasks."
 
-    NodeReconciliation:
-        description: >-
-            Strategy for aligning a dataset-sourced empirical target's nodes to the
-            model network before comparison. Keyed alignment is the default so a
-            differing node count or ordering (e.g. a 998-parcel empirical FC against a
-            1000-parcel model) cannot silently misalign the comparison.
-        permissible_values:
-            by_label:
-                description: >-
-                    Restrict both sides to their shared node labels by name (keyed
-                    ``.sel``), preserving the model network's order. Never positional.
-            none:
-                description: "No reconciliation; the node sets are assumed identical."
-
     ImagingModality:
         permissible_values:
             BOLD:
@@ -2495,7 +2481,10 @@ classes:
                 description: "Custom distribution function (PDF or sampling callable). Only needed for non-standard distributions."
             seed:
                 range: integer
-                description: "Random seed for reproducible sampling."
+                description: >-
+                    Local RNG seed for THIS distribution's draws. When set it
+                    overrides the experiment-global `execution.random_seed`; when
+                    unset the distribution inherits `execution.random_seed`.
             axis:
                 range: SamplingAxis
                 ifabsent: "space"
@@ -2580,6 +2569,20 @@ classes:
                     let the two drift apart silently. The result is cached and
                     invalidated by the artifact fingerprint, so it is computed once
                     rather than per run. Mutually exclusive with `value:`/`source:`.
+            used:
+                range: DataRef
+                inlined: true
+                slot_uri: prov:used
+                description: >-
+                    WHERE + WHICH + SLICE in one edge — this parameter's array sourced
+                    from another experiment's result (an operating point, a tuned
+                    ``estimate__<name>`` a fit persisted), a dataset, or a curated
+                    entity, PROV ``prov:used``. The full cross-container form of which
+                    `source:`+`measure:` is the no-``sel``/no-``experiment`` shorthand;
+                    adds label ``reconcile`` and a swept-point ``sel``. Like `source:`
+                    the array is resolved lazily and never inlined. An in-study
+                    ``experiment`` reference also registers the workflow dependency.
+                    Mutually exclusive with `value:`/`source:`/`producer:`.
             free:
                 range: boolean
             shape:
@@ -2647,9 +2650,11 @@ classes:
     Argument:
         class_uri: tvbo:Argument
         description: >-
-            A function argument with explicit value specification.
-            Value can be: literal (number/string), reference to input (input.key),
-            or cross-observation reference (observation_name.output_key).
+            A function argument with explicit value specification. A value is either
+            ``value`` (a literal / array / local reference) or ``used`` (a labelled
+            array sourced from another experiment or dataset); the two are mutually
+            exclusive. Value can be: literal (number/string), reference to input
+            (input.key), or cross-observation reference (observation_name.output_key).
         slots:
             - name
             - description
@@ -2666,6 +2671,17 @@ classes:
                 any_of:
                   - range: ScalarValue
                   - array: {}
+            used:
+                range: DataRef
+                inlined: true
+                slot_uri: prov:used
+                description: >-
+                    A labelled array sourced from another experiment's result, a
+                    dataset, or a curated entity — the cross-container form of a value
+                    (WHERE + WHICH + SLICE, PROV ``prov:used``). Mutually exclusive with
+                    ``value``; an in-study ``experiment`` reference also registers the
+                    workflow dependency so the source runs first. Resolved lazily, never
+                    inlined into generated code.
             unit:
                 range: string
 
@@ -3348,12 +3364,17 @@ classes:
                 annotations:
                     collection_key: true
                 description: >-
-                    Dotted reference to the Parameter being swept; also the key
-                    of the enclosing `Exploration.space` collection.
-                    Format: "<scope>.<param_name>" where <scope> is either a
-                    Dynamics class name (e.g. "ReducedWongWang") or a coupling
-                    key (e.g. "FastLinearCoupling"). Resolved against the
-                    enclosing experiment at runtime.
+                    Dotted reference to the quantity being swept; also the key of
+                    the enclosing `Exploration.space` collection. Format
+                    "<scope>.<name>", where <scope> is a Dynamics class name
+                    (e.g. "ReducedWongWang.a"), a coupling key
+                    (e.g. "FastLinearCoupling.G"), or one of the reserved scopes:
+                    "network." for a connectome leaf (e.g. "network.conduction_speed",
+                    "network.edges.weight"), "execution.random_seed" for a per-cell
+                    noise-seed ensemble, or "initial_conditions.<state_var>" to sweep
+                    the initial value of one state variable (a deterministic
+                    initial-condition ensemble). Resolved against the enclosing
+                    experiment at runtime.
             domain:
                 range: Range
                 inlined: true
@@ -4444,8 +4465,12 @@ classes:
                 description: "Batch size for vectorized operations (None = auto)"
             random_seed:
                 range: integer
-                ifabsent: integer(42)
-                description: "Base random seed for reproducibility"
+                ifabsent: integer(0)
+                description: >-
+                    Experiment-global RNG seed (default 0). Governs every stochastic
+                    draw — additive noise, initial-condition and parameter
+                    distributions, and n_trials ensembles — unless a specific
+                    `Distribution.seed` overrides it for that distribution.
             find_fixpoint:
                 range: boolean
                 ifabsent: false

@@ -189,25 +189,40 @@ def _container_path(iri, base_dir: Path) -> str:
     """Resolve an experiment IRI/key to its result container (skips ``*_network.h5``).
 
     The PROV ``used`` edge points at a result; its container lives under either
-    ``<base_dir>/output/nc/<exp>/`` (a ``tvbo run`` experiment) or
+    ``<base_dir>/output/nc/<exp>/`` (a per-experiment ``tvbo run``), flat BIDS-style
+    files directly inside ``<base_dir>/output/nc/`` (``<exp>[_desc-...]_result.h5`` —
+    the layout a whole-study ``tvbo run`` writes into ``nc/``), the flat
+    ``<base_dir>/output/<exp>[_desc-...]_result.h5`` at the output root, or
     ``<base_dir>/output/results/<name>/result.h5`` (a derived-figure container a
     replication study writes with ``ExperimentResult.save``, the ``results_io``
-    convention). Both are tried so a figure layer can bind either. Returns ``""``
+    convention). All are tried so a figure layer can bind any of them. Returns ``""``
     when unresolved.
     """
     if not iri:
         return ""
     key = re.split(r"[:/#]", str(iri))[-1]          # last IRI segment (e.g. "exp-3" or "fig3")
     digits = re.sub(r"\D", "", key)                 # trailing experiment number
-    for cand in [key, *([f"exp{digits}", f"exp-{digits}"] if digits else [])]:
-        d = base_dir / "output" / "nc" / cand
+    cands = [key, *([f"exp-{digits}", f"exp{digits}"] if digits else [])]
+    nc = base_dir / "output" / "nc"
+    for cand in cands:
+        d = nc / cand
         if d.is_dir():
             files = [f for f in sorted(d.glob("*.h5")) if "network" not in f.name]
+            if files:
+                return str(files[0].resolve())
+        if nc.is_dir():                              # flat BIDS files directly inside output/nc/
+            files = [f for f in sorted(nc.glob(f"{cand}_*result.h5")) if "network" not in f.name]
             if files:
                 return str(files[0].resolve())
         result = base_dir / "output" / "results" / cand / "result.h5"
         if result.is_file():
             return str(result.resolve())
+    out = base_dir / "output"                        # flat whole-study layout: output/<exp>_*result.h5
+    if out.is_dir():
+        for cand in cands:                           # `_` boundary so exp-1 never matches exp-10
+            files = [f for f in sorted(out.glob(f"{cand}_*result.h5")) if "network" not in f.name]
+            if files:
+                return str(files[0].resolve())
     return ""
 
 
@@ -265,12 +280,27 @@ def _sel_dict(used):
     return resolved, method
 
 
+def _used_ref(used):
+    """The container key for a figure layer's ``used`` DataRef.
+
+    An explicit ``iri`` pointer wins; otherwise an in-study ``experiment`` id resolves to its
+    ``exp-<id>`` key. The ``experiment`` form is preferred for same-study bindings — it needs no
+    hardcoded study key in an IRI string and (via the ``used`` edge) registers the workflow
+    dependency so the source experiment runs first.
+    """
+    iri = getattr(used, "iri", None)
+    if iri:
+        return str(iri)
+    exp = getattr(used, "experiment", None)
+    return f"exp-{exp}" if exp is not None else None
+
+
 def _resolve_layer(layer, panel_kind, base_dir):
     """Resolve one ``Layer`` into the flat dict the template/callables consume."""
     used, enc = layer.used, getattr(layer, "encoding", None)
     sel, method = _sel_dict(used)
     return {
-        "container": _container_path(getattr(used, "iri", None), base_dir),
+        "container": _container_path(_used_ref(used), base_dir),
         "output": used.output,
         # str() collapses the MarkType enum (dataclass flavor) to a plain string the template compares.
         "mark": str(layer.mark) if layer.mark else ("heatmap" if panel_kind == "heatmap" else "line"),
