@@ -50,7 +50,12 @@ figures that silently integrate the wrong attractor.
    a result container (`output/nc/exp*/…h5`) or the recipe metadata — counts, ⟨Δω⟩,
    decay times, bifurcation thresholds, scaling exponents, spectral peaks, fitted params,
    correlations, whatever the paper reports. If you typed a number into prose, it is a
-   bug. (Papers are not ground truth; your own asserted numbers are not either.)
+   bug. (Papers are not ground truth; your own asserted numbers are not either.) The rule
+   is **asymmetric**: the *paper's* quoted values stay literals (you can't recompute someone
+   else's number), the bug is a hardcoded *result of yours* — so **audit before shipping**:
+   grep the prose for numeric literals and classify each as yours (compute it into `M`) or the
+   paper's (quote it). A report can read as fully computed and still hide a typed peak or step
+   size (see **writing-reports**).
 3. **A panel shows TVBO output or an honest placeholder — NEVER the paper's replotted
    source data.** Replotting the source arrays is a dev check that plotting *works*; it is
    never a deliverable panel (it passes off the paper's own numbers as your reproduction).
@@ -187,6 +192,19 @@ used the dTOR Schaefer-1000 SC, which reproduces the in-strength→wave *mechani
 the edge-level FC number; deciding this early would have saved a long fruitless hunt and set
 honest Fig-8 expectations from the start.)
 
+A third input class sits between obtainable and unobtainable: one the paper **synthesises from
+a distribution it gives but a seed it doesn't** (an artificial bimodal-Gaussian net power, a
+random connectome ensemble). You can match the *distribution* — and hence the mechanism —
+faithfully, but the *realization*, and any count or threshold read off it (the number of
+critical/solitary nodes), is realization-dependent by construction and cannot be bit-exact.
+Tag those targets mechanism-level here, reproduce the distribution's construction exactly (its
+deterministic structure too — e.g. generator/consumer roles from the real grid), and **never
+tune the synthesis seed to hit the paper's integer** — that is fitting, not replication.
+Contrast it with the study's *deterministic* inputs, which stay decimal-level. (Taher: P^G is a
+symmetric random bimodal the paper never deposited → 6 vs the paper's 9 solitary is an honest
+realization gap; the real-data P^R reproduces its 11 exactly on the same simulator — which is
+what *proves* the gap is the data, not the code.)
+
 ## Phase 2 — Source the data → `DATA.md` (tracked) + gitignored data dirs
 
 **Skip this phase if your study is self-contained** — a bifurcation / phase-portrait /
@@ -238,9 +256,10 @@ See **writing-models** for the Dynamics form and **running-simulations** for sou
   sweep tracks a hysteresis / partial-sync branch, a continuation, or a per-value analysis
   (λ₁(K), eigenvalues), that file covers warm-start branch tracking (`sweep_seeding:
   from_previous` + `bidirectional`), restarting a per-point analysis over the recorded branch
-  (`from_experiment` / `source_point: branch`, shardable), and IC-seed ensembles
-  (`distribution.seed` vs `execution.random_seed`). A product grid over independent cells needs
-  none of it.
+  (`from_experiment` / `source_point: branch`, shardable), and IC ensembles — deterministic
+  (`initial_conditions.<state_var>`, an evenly-spaced grid over one state variable's initial value,
+  for a paper's linspace IC fan) or stochastic (`distribution.seed` vs `execution.random_seed`).
+  A product grid over independent cells needs none of it.
 - **Spec at the root, callables flat in `code/` (zero-config).** Loading the study puts `code/`
   on the import path, so `callable: {module: <study>_analysis}` and a figure's `code_modules:`
   resolve by bare name — no driver, no `PYTHONPATH`, no vendored package. Set `code_source` ONLY
@@ -288,6 +307,18 @@ variance). (2) **At grid scale, record a reduced/streaming observable, never raw
 trajectories** — a full θ/voltage trace over a 15k-point grid is terabytes; a streaming
 reduction (e.g. effective frequency accumulated online) keeps resident memory ~constant
 (block-size, not trajectory-length), so the whole grid vmaps on one GPU with no sharding.
+
+Two detector traps (both silent, both cost a session here): (3) **an outlier/critical-node
+detector calibrated on one condition can quietly fail another — verify its count on EACH.** An
+absolute `|x| > thr` test measures from a fixed zero; a parallel condition that shifts the
+population baseline breaks it. Taher's solitary detector returned 6 nodes for P^G (locked bulk
+at ω≈0) but *all 438* for P^R, whose synchronised bulk co-rotates at −0.11 Hz. Make such tests
+**relative to the population's own baseline** (deviation from the profile median/mode), and
+check the returned count against the paper *for every condition* (P^G *and* P^R, control *and*
+patient), never just the first. (4) **When two callables compute the same quantity, they must
+use the same criterion.** A control *mask* and a solitary *ordering* that both mean "which nodes
+are solitary" drifted apart (one median-relative, one absolute) — reproducing one condition and
+breaking the other. Grep for siblings and align them.
 
 ## Phase 5 — Figures: declare them in the study's `figures:` block
 
@@ -396,6 +427,18 @@ inputs before blaming your code. (Koller: running his native `tvb-library` model
 substitute SC gave FC r=0.27 — the same as tvboptim's 0.32 — proving the shortfall was the
 connectome, not the engine; without it we'd have chased an implementation bug that wasn't
 there.)
+
+**Eyeball every reproduced panel's *shape* against the paper — the A/B internal composite is
+the instrument, not a formality.** Inline-computed numbers (non-negotiable #2) catch a wrong
+*value*, but a curve that plateaus where the paper's descends, a flipped monotonicity, a sign
+error, or a saturated axis still *computes* a number and sails through a value check. Lay the
+reproduction beside the original panel-for-panel and confirm the qualitative shape before
+declaring a figure done — a mismatch there is a modelling/analysis bug the reference
+integration alone won't surface. (Taher Fig 9(d): one strategy curve sat as a flat plateau
+instead of the paper's staircase descent — the visible tell of a broken solitary set, invisible
+in the scalar metrics.) This is also the moment a stale caption shows up: prose written before a
+later fix (a "not yet wired" follow-up that since shipped) must be reconciled with what the
+panel now shows.
 
 ## Phase 8 — Scale out to a cluster (ONLY when one node genuinely won't do)
 
@@ -560,7 +603,10 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
 
 - **Coupling evaluated once per step** silently integrates a different, multistable
   attractor. Use `Integrator.coupling_evaluation: per_stage` for chaotic/multistable
-  systems and verify against the reference (Phase 7).
+  **networked** systems and verify against the reference (Phase 7). It re-evaluates the
+  *network* coupling term at each integrator stage, so it is a **no-op for a single node**
+  (no network coupling to re-evaluate) — there the attractor-moving knob is `dt` (RK4 / halve
+  the step), not per_stage. Don't reach for it to explain a single-node discrepancy.
 - **Hardcoded fidelity numbers** creep into captions ("t_c ≈ 2.6 s") and read as
   matches when they aren't. Compute them (Phase 6). A recomputed value that *differs*
   from the paper is honest; a typed one that matches is not.
@@ -614,9 +660,18 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   grabs the WRONG paper's `fig_03.png`. Pin the lookup to the specific paper dir
   (`glob("Author1997*")/"img"`), and eyeball the internal A/B once to confirm the original is
   the right figure.
-- **A pure forward run must persist a container — check `wrote [...]` is non-empty.** An
-  experiment that only records a raw trajectory (no exploration, no declared observation) —
-  e.g. a NeuroML EPSP-train run — now saves its `integration` DataArray, but confirm the run
-  actually wrote `output/…_result.h5` (a figure that binds `iri: tvbo:result/<Study>/exp-N`
-  can't resolve an unwritten container). Run END-TO-END, not `from_file`.
+- **A run persists a container ONLY with `-o`, and figures read whatever container is on disk —
+  fresh or stale.** Two silent failure modes. (1) `tvbo run` *without* `-o` computes the result
+  and DISCARDS it, so a re-run after a recipe change leaves the OLD container in place and every
+  figure/report reads STALE data — you then reason about the new recipe from the previous run's
+  output. This is the costliest silent trap here: it produced a whole wrong "the backend can't
+  reproduce this" diagnosis before the container turned out to be days old. Always pass
+  `-o output/nc`, and before trusting a figure confirm its container is FRESH — the file timestamp
+  is from this run and its dims/coords match the current recipe (the exploration axis you just
+  changed is the dim you now see), not a leftover. (The CLI now warns on a no-`-o` run, but the
+  discipline is: persist, then verify freshness.) (2) A pure forward run that only records a raw
+  trajectory (no exploration, no declared observation) — e.g. a NeuroML EPSP-train run — must
+  still write `output/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
+  `iri: tvbo:result/<Study>/exp-N` can't resolve an unwritten container). Run END-TO-END, not
+  `from_file`.
 - **Framework gaps surface late** if you skip Phase 1.5. Find them before the YAML.
