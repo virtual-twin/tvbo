@@ -13,11 +13,11 @@ input/sourcedata/          # third-party raw inputs (connectomes, atlases, …)
 original_study/*           # the paper's own material + its published data (workbook, source_data, code)
 !original_study/analysis/  # …but keep OUR analysis (targets.md, figures.md, backend-fit.md)
 
-# Generated report artifacts + working notes. report-src.qmd (the report source) +
-# references.bib + report/_quarto.yml + report/_quarto-internal.yml ARE tracked (the render
-# mechanism, no copyrighted content). report_internal.pdf is the local-only A/B build that
-# embeds the paper's © originals — covered by report/*.pdf below; only the public report.pdf
-# is shareable, and both are git-ignored (as is the transient report-src.pdf intermediate).
+# Generated report artifacts + working notes. report.qmd (the whole report) + report_internal.qmd
+# (the thin A/B wrapper) + references.bib + report/_quarto.yml ARE tracked (the render mechanism,
+# no copyrighted content). report_internal.pdf is the local-only A/B build that embeds the paper's
+# © originals — covered by report/*.pdf below; only the public report.pdf is shareable, and both
+# are git-ignored.
 report/*.pdf
 report/*.log
 report/.quarto/

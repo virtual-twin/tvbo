@@ -11,13 +11,13 @@ metadata:
 
 # Writing Reports in TVBO
 
-This skill owns the **report** for a study replication: one `report/report-src.qmd` that
+This skill owns the **report** for a study replication: one `report/report.qmd` that
 reads like a paper and computes every number it prints. It is the reporting layer that
 **replicating-studies** composes; that skill decides *which* targets you replicate and
 their fidelity tier, and **running-simulations** covers how the runs produce the
 containers you read here. Start from the report template in the replicating-studies
-skeleton (`report-src.qmd.tmpl`) and keep its metrics cell, `ab()` helper, and profile
-machinery.
+skeleton (`report.qmd.tmpl` + its thin `report_internal.qmd.tmpl` wrapper + `_quarto.yml.tmpl`)
+and keep its metrics cell, `ab()` helper, and the two-entry render layout.
 
 Four rules carry the whole report. Break any one and the report stops being trustworthy.
 
@@ -29,15 +29,16 @@ Four rules carry the whole report. Break any one and the report stops being trus
 ## Structure: IMRAD
 
 The section order is fixed for every study: **Abstract · Introduction · Methods ·
-Results · Discussion · Conclusion · References**. Set `number-sections: true`; mark
-Abstract and References `{.unnumbered}`. Map the pieces to sections:
+Results · Discussion · Conclusion**, then the bibliography Quarto appends automatically
+(never a hand-written References section — see "References" below). Set
+`number-sections: true`; mark Abstract `{.unnumbered}`. Map the pieces to sections:
 
 - **Methods** carries the native equation render, the variants, coupling, network and
   data provenance, the analyses, the backend, and the verification against an
   independent reference.
 - **Results** opens with the computed comparison/scorecard table, then one subsection
-  per paper figure: a sentence or two on what the panel shows, the `ab()` call, and a
-  status callout.
+  per paper figure: a sentence or two on what the panel shows, the `ab()` call, its
+  **caption**, and a status callout.
 - **Discussion** interprets: what reproduced and why, the mechanism and downstream
   consequences of any negative result, the reproduction-vs-replication framing, and the
   accepted limitations.
@@ -89,17 +90,21 @@ replotted arrays as your result crosses the integrity line.
 ## Equations and parameters rendered natively from the recipe
 
 Render the model from the same metadata the backend compiles, so the mathematics shown is
-the mathematics that runs:
+the mathematics that runs. Pass **`citeformat="quarto"`** so the model's own references come
+out as inline `@key` citations (resolved by this document's `bibliography:`, merging into the
+one auto-appended list) instead of a second, redundant reference list embedded in the block:
 
 ```python
-print(EXP.dynamics.render("markdown"))                    # equations only
-print(EXP.dynamics.generate_report(format="markdown"))    # equations + parameter table
-print(CTRL.dynamics.render("markdown", baseline=EXP.dynamics))  # only the delta vs base
+print(EXP.dynamics.render("markdown", citeformat="quarto"))                    # equations only
+print(EXP.dynamics.generate_report(format="markdown", citeformat="quarto"))    # equations + parameter table
+print(CTRL.dynamics.render("markdown", baseline=EXP.dynamics, citeformat="quarto"))  # only the delta vs base
 ```
 
 Put `generate_report` in Methods so each auxiliary equation and every parameter checks
 one-to-one against the paper's equations and tables. Render a controlled variant relative
-to the base so only the changed terms appear.
+to the base so only the changed terms appear. Because `citeformat="quarto"` emits the model's
+citekeys as `@key`, **every citekey the model references must exist in `references.bib`** — if a
+curated model cites `Tsodyks1998`, that entry has to be present or Quarto flags an unresolved key.
 
 ## State a negative result honestly
 
@@ -123,39 +128,99 @@ Set `callout-icon: false`. Give each figure one short callout:
 One or two sentences each. The colour carries the verdict; the sentence carries the
 evidence.
 
-## Copyright-safe internal/public split — ONE source, `report-src.qmd`
+## Copyright-safe internal/public split — one project, two entry files, ONE command
 
 The report shows A/B panels (the paper's published figure beside your reproduction), but
-the paper's figures are copyright-restricted and must never be committed or shared. Keep
-**one** source file, named `report-src.qmd`, that renders two ways, selected by a Quarto
-profile — never a second report file:
+the paper's figures are copyright-restricted and must never be committed or shared. So the
+report renders two ways: a **PUBLIC** `report.pdf` (your reproduction only, shareable) and an
+**INTERNAL** `report_internal.pdf` (paper © figures beside yours, git-ignored). The
+Quarto-native way to get both from one command is a small **project with two entry files**:
 
-- The `ab()` helper reads `INTERNAL = "internal" in
-  os.environ.get("QUARTO_PROFILE","").split(",")` and draws the paper original **only when
-  `INTERNAL`**, so the public build never opens the copyrighted file.
-- Copy `assets/_quarto.yml.tmpl` → `report/_quarto.yml` (sets `output-file: report.pdf`)
-  and `assets/_quarto-internal.yml.tmpl` → `report/_quarto-internal.yml` (sets
-  `output-file: report_internal.pdf`).
-- **PUBLIC** (default, shareable): `quarto render report-src.qmd --to pdf` → `report.pdf`,
-  reproduction only. **INTERNAL** (opt-in, git-ignored): `quarto render report-src.qmd
-  --to pdf --profile internal` → `report_internal.pdf`, with the originals.
-- **Why `report-src.qmd`, not `report.qmd`:** Quarto's LaTeX/typst step always writes
-  `<input-stem>.pdf` first, then renames it to `output-file`. With a `report.qmd` source,
-  the internal build's `report.pdf` intermediate would overwrite the public `report.pdf`
-  before being renamed to `report_internal.pdf` — so the two builds clobber each other. A
-  distinct source stem (`report-src`) makes each build's `report-src.pdf` intermediate
-  transient, so both finals coexist and the render order does not matter. `--profile
-  internal` can only ever write `report_internal.pdf`, so a copyrighted build can never
-  overwrite the public `report.pdf`. Track `report-src.qmd` and the two `_quarto*.yml`;
-  git-ignore `report/*.pdf` and the paper's figures under `original_study/`.
+- **`report.qmd`** holds the *whole* report and carries **no YAML front matter** — every
+  format/title/bibliography setting lives in `report/_quarto.yml` (copied from
+  `_quarto.yml.tmpl`). This is the only file you write prose in.
+- **`report_internal.qmd`** is a four-line wrapper: its front matter overrides only the
+  `output-file` (and title), then `{{< include report.qmd >}}` pulls in the real report.
+- **`report/_quarto.yml`** lists both under `project: render:` and holds the shared
+  `format: typst` (+ `output-file: report.pdf`), `bibliography:`, and `execute:`.
 
-Verify by rendering both and confirming the public PDF embeds no wide A/B composite
-(public figure aspect ratios stay near 1.0–1.5; internal A/B composites are wide, ~2.2+).
+`quarto render` (run in `report/`, no file argument) builds the project's render list → **both
+PDFs in one pass**. No `--profile`, no `_quarto-internal.yml`, no post-render shell hook.
 
-## PDF gotchas (xelatex)
+- The `ab()` helper reads `INTERNAL =
+  os.environ.get("QUARTO_DOCUMENT_FILE","").startswith("report_internal")` and draws the paper
+  original **only when `INTERNAL`**, so the public build never opens the copyrighted file.
+  `QUARTO_DOCUMENT_FILE` (the input filename) is the branch signal Quarto exposes to the kernel —
+  the only per-build variable it exposes, which is *why* the split is two files rather than two
+  formats in one file.
+- **Why `report.qmd` must have no front matter:** Quarto's `{{< include >}}` splices the included
+  file's front matter too, and an included `output-file:` **overrides** the wrapper's — so the
+  internal build would write `report.pdf` and clobber the public one. Keeping all front matter out
+  of `report.qmd` (in `_quarto.yml` instead) removes the collision, and the two distinct input
+  stems (`report`, `report_internal`) keep each build's `<stem>.pdf` intermediate from ever being
+  the other's final. Track `report.qmd`, `report_internal.qmd`, `_quarto.yml`, and
+  `references.bib`; git-ignore `report/*.pdf` and the paper's figures under `original_study/`.
+- **Do NOT pass `--to pdf`** — it forces the xelatex engine over the `typst` format and
+  reintroduces the intermediate-clobber problem. `_quarto.yml`'s `format: typst` already emits a
+  PDF in a single fast pass.
 
-- Write all math, subscripts, and superscripts as **LaTeX**, never Unicode — xelatex
-  silently drops Unicode math. Use `$J_{NMDA}$`, `$\geq$`, `$w_+$`, `$\sigma$`, not σ or ≥.
+Verify by rendering and confirming the public `report.pdf` embeds no © original: the internal
+PDF is visibly larger (it carries the paper figures) and its A/B composites are wide (~2.2+),
+while public figure aspect ratios stay near 1.0–1.5.
+
+## References — Quarto's bibliography, never a hand-written list
+
+Do not write a `# References` section and do not add a `::: {#refs}` div. Set
+`bibliography: references.bib` in `_quarto.yml`, cite sources inline with `@key` (a bare `@key`
+renders "Author (Year)", a bracketed `[@key]` renders "(Author, Year)"), and Quarto **appends the
+bibliography once, automatically**, listing exactly the keys you cited. A manual heading or `#refs`
+div only produces a second, empty section (typst especially). Two consequences to hold to:
+
+- **Cite every source in the prose at least once.** Quarto lists only keys that appear as `@key`
+  somewhere; an entry in `references.bib` that is never cited is silently dropped. So the paper
+  (`@<Author><Year>`), NASEM 2019, the data/connectome/substitute sources, and every citekey the
+  native model render emits (with `citeformat="quarto"`) each need an inline `@key` — not just a
+  line in the `.bib`.
+- **Keep `references.bib` complete.** Any unresolved `@key` (including one emitted by the model
+  render) surfaces as "Citation key not found". When a curated model cites a key you don't yet
+  have (e.g. `Tsodyks1998` vs an existing `Tsodyks1997`), add the missing entry rather than editing
+  the model.
+
+**Every figure gets an original, public-facing caption — auto-rendered from the recipe.** Under
+each `ab()` call, render the caption with an **`#| output: asis`** cell:
+
+    ```{python}
+    #| output: asis
+    print(f"**Fig N.** {figcap('<FigName>')}")
+    ```
+
+where the `figcap()` helper reads the figure's `Figure.description` from the loaded study (single
+source of truth — the caption never drifts from the figure metadata, and you never retype it). The
+caption is **public-facing**: it describes OUR standalone reproduction, so it must NEVER paste the
+paper's caption verbatim (plagiarism) and must NEVER use the A/B framing ("left: paper, right:
+ours", "paper beside") — that composite exists only in the `INTERNAL` build.
+
+**Use `output: asis`, not an inline `` `{python} figcap()` ``.** Inline-code output is inserted
+*verbatim* and is NOT re-parsed as markdown, so `**bold**` shows its asterisks and `$I_0$` shows
+its dollar signs. `output: asis` prints raw markdown that Quarto DOES process — so the `**Fig N.**`
+lead renders bold, the description may use **LaTeX math** (`$I_0$`, `$\sigma$`, `$\Gamma$`) and
+computed `` `{python} M[...]` `` values, and no Unicode is needed (the whole point: LaTeX-compatible
+symbols, never font-fragile glyphs). Keep `Figure.description` in LaTeX + ASCII for this reason.
+
+## PDF gotchas (typst — and xelatex)
+
+The template renders via **typst** (`format: typst`, the fast single-pass default). Whether typst
+or xelatex, the math rules are the same and the failures are silent, so verify them in the PDF:
+
+- Write all math, subscripts, and superscripts as **LaTeX**, never Unicode — both engines drop
+  Unicode math (xelatex silently; typst via pandoc). Use `$J_{NMDA}$`, `$\geq$`, `$w_+$`,
+  `$\sigma$`, not σ or ≥. This applies inside `output: asis` captions too.
+- **typst doesn't render every LaTeX macro pandoc accepts.** `\pm` in particular came out as a
+  stray literal (`$0.03` for `$\pm 0.03$`); write the plain words ("within 0.03 Hz") instead.
+  pandoc *does* handle `\to`, `\approx`, `\sigma`, `\Gamma`, `\leftarrow`. When a macro looks
+  wrong in the PDF, replace it with prose rather than trusting it.
+- Write dashes as ASCII: `--` renders as an en-dash and `---` as an em-dash. Do not paste the
+  Unicode – or — glyphs.
 - Avoid a closing `$` immediately followed by a digit; it breaks pandoc's math parser.
 - Do not introduce Unicode while editing prose either.
 
@@ -220,11 +285,12 @@ check for the three-item-list habit, and confirm no Unicode math slipped in.
 ## Render and verify
 
 ```bash
-# from report/  (source is report-src.qmd; both PDFs coexist, any order)
-QUARTO_PYTHON=<repo>/.venv/bin/python quarto render report-src.qmd --to pdf          # -> report.pdf (public)
-QUARTO_PYTHON=<repo>/.venv/bin/python quarto render report-src.qmd --to pdf --profile internal  # -> report_internal.pdf (A/B, local-only)
+# from report/ — ONE command renders BOTH report.pdf (public) and report_internal.pdf (A/B, local-only)
+QUARTO_PYTHON=<repo>/.venv/bin/python quarto render     # no file arg -> the project render: list
 ```
 
-The public render must succeed and must contain no copyrighted original. Open the PDF and
-confirm the numbers rendered (an absent container shows as `—`, not a crash), the math
-typeset (no dropped subscripts), and the prose passes the slop scan.
+The render must succeed and the public `report.pdf` must contain no copyrighted original (the
+internal PDF is the larger one, carrying the paper figures). Open the PDF and confirm the numbers
+rendered (an absent container shows as `—`, not a crash), the math typeset (no dropped subscripts,
+no stray `\pm`), the citations resolved (no "Citation key not found", one auto-appended
+bibliography), and the prose passes the slop scan.

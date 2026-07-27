@@ -17,7 +17,7 @@ the report's scorecard). Backend chosen by fit — see `original_study/analysis/
     sourcedata/             third-party raw inputs (connectomes, …) — git-ignored
   figures/                  rendered figures + their generated plot_<name>.py — git-ignored
   output/                   run outputs (git-ignored): result .h5 containers, KPI tables, report.pdf
-  report/                   report.qmd (+ _quarto.yml, _quarto-internal.yml) + references.bib   (*.pdf git-ignored)
+  report/                   report.qmd (whole report) + report_internal.qmd (A/B wrapper) + _quarto.yml + references.bib   (*.pdf git-ignored)
   original_study/           paper + its published data — git-ignored, obtained per DATA.md
     <paper.pdf>  img/fig*.png  analysis/ (targets, figures, backend-fit)  source_data/  <pristine paper code>
 ```
@@ -26,6 +26,8 @@ the report's scorecard). Backend chosen by fit — see `original_study/analysis/
 python code/prepare_<study>.py            # (only if the study has external inputs) raw source -> tvbo-ready Network
 tvbo run <Study>.yaml                      # all experiments in dependency order, THEN renders figures/ (--experiment for a subset; --no-figures to skip)
 tvbo figure render <Study>.yaml           # (re-render figures only, without re-running experiments)
-quarto render report/report.qmd --to pdf                     # PUBLIC report.pdf (reproduction only; shareable)
-quarto render report/report.qmd --to pdf --profile internal  # INTERNAL report_internal.pdf (A/B with paper originals; local-only)
+cd report && quarto render                 # ONE command -> BOTH report.pdf (public; shareable) AND report_internal.pdf (A/B; local-only)
 ```
+The report is ONE Quarto project: `report.qmd` (the whole report) + `report_internal.qmd` (a thin
+`{{< include report.qmd >}}` wrapper) + `_quarto.yml`. `quarto render` (no file arg) builds both
+PDFs in one pass; do NOT pass `--to pdf` (that forces xelatex — `_quarto.yml` already sets `typst`).
