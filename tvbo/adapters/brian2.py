@@ -67,6 +67,18 @@ _BRIAN2_ROLE_VOCAB = {
 }
 _EXP_ONE_TYPES = frozenset({"expOneSynapse"})
 
+# Unit strings that denote a dimensionless (unitless) parameter.
+_DIMENSIONLESS_UNITS = frozenset({"", "1", "dimensionless", "none"})
+
+
+def _unit_of(param):
+    """Lower-cased unit string of a ``(value, unit)`` parameter tuple ('' if unitless)."""
+    try:
+        return str(param[1]).strip().lower()
+    except (TypeError, IndexError):
+        return ""
+
+
 # TVBO time-scale → factor to convert a time value into milliseconds.
 _TIME_SCALE_TO_MS = {"s": 1000.0, "ms": 1.0, "us": 0.001}
 
@@ -181,11 +193,12 @@ class Brian2Adapter(BaseAdapter):
 
         if codegen_target:
             brian2.prefs.codegen.target = codegen_target
-        # An unset seed falls back to the experiment's declared execution.random_seed,
-        # so a run reproduces from the recipe without a manual seed argument.
-        if seed is None:
-            seed = getattr(getattr(self.experiment, "execution", None), "random_seed", None)
         model = self._build_context()
+        # An explicit seed argument wins; otherwise fall back to the seed the build description
+        # resolved from execution.random_seed — the SAME value the rendered script emits, so
+        # run() and render() build seed-identical random connectivity from the recipe alone.
+        if seed is None:
+            seed = model.get("seed")
         net, meta = _instantiate(model, seed=seed, record_v=record_v)
         duration = model["duration_ms"]  # milliseconds
         net.run(duration * ms)
@@ -365,7 +378,10 @@ class Brian2Adapter(BaseAdapter):
             "synapses": synapses,
             "duration_ms": duration_ms,
             "dt_ms": dt_ms,
-            "seed": None,
+            # Resolve the RNG seed once, here, from the recipe. The rendered script emits
+            # ``seed(...)`` from this value and ``run()`` falls back to it, so both paths build
+            # seed-identical random connectivity by default (an explicit ``run(seed=...)`` wins).
+            "seed": getattr(getattr(exp, "execution", None), "random_seed", None),
         }
 
     def _add_poisson(self, pop, bg_name, bg_obj, dyn_lib, weight):
@@ -397,7 +413,8 @@ class Brian2Adapter(BaseAdapter):
         zero otherwise, added to every neuron of the population. This is the declarative
         loading / nonspecific-readout drive — deterministic, so it is identical between the
         in-process run and the generated script. The per-edge ``weight`` scales the amplitude
-        (a uniform nonspecific readout uses ``weight = 1``).
+        (a uniform nonspecific readout uses ``weight = 1``); when several pulse edges target
+        the same population their windows sum, each keeping its own weight.
         """
         pp = _params(pulse_obj)
         key = safe_id(pulse_name)
@@ -407,11 +424,13 @@ class Brian2Adapter(BaseAdapter):
         pop["namespace"][f"amp_stim_{key}"] = amp
         pop["namespace"][f"delay_stim_{key}"] = delay
         pop["namespace"][f"dur_stim_{key}"] = dur
-        pop["namespace"][f"w_stim_{key}"] = (weight, "dimensionless")
-        term = (f"w_stim_{key} * amp_stim_{key} * int(t >= delay_stim_{key})"
+        # Inline the per-edge weight and always append the term. A second edge from the same
+        # pulse onto this population shares the (identical) amp/delay/dur constants but adds its
+        # own window, so the two sum — rather than the second overwriting a shared ``w_stim``
+        # and its byte-identical term being dropped as a duplicate, silently losing a weight.
+        term = (f"{weight} * amp_stim_{key} * int(t >= delay_stim_{key})"
                 f" * int(t < delay_stim_{key} + dur_stim_{key})")
-        if term not in pop["current_terms"]:
-            pop["current_terms"].append(term)
+        pop["current_terms"].append(term)
 
     def _add_conductance_synapse(self, populations, hubs, src_pop, tgt_pop, syn, prefix, weight):
         """Reduce one all-to-all conductance synapse to gate + hub + current term.
@@ -687,6 +706,24 @@ class Brian2Adapter(BaseAdapter):
                 expr = parse(rhs)
                 if lhs == "v":                                   # deliver the membrane jump
                     incr = sp.simplify(expr - vsym)
+                    # The jump is delivered as ``v_post += weight * (incr) * mV`` (weight carries
+                    # the mV amplitude), so ``incr`` must be dimensionless. A parameter carrying a
+                    # voltage/current unit — or a residual ``v`` — would make the delivered term
+                    # dimensionally inconsistent and fail deep inside Brian2; reject it here with a
+                    # clear message, as the membrane-noise path does.
+                    unitful = sorted(
+                        s.name for s in incr.free_symbols
+                        if s.name == "v"
+                        or (s.name in sparams and _unit_of(sparams[s.name]) not in _DIMENSIONLESS_UNITS)
+                    )
+                    if unitful:
+                        raise NotImplementedError(
+                            f"Delta synapse (edge {edge_idx}): the membrane-jump increment "
+                            f"'{incr}' is not dimensionless (unit-valued: {unitful}). The jump is "
+                            f"delivered as 'v_post += weight*(increment)*mV', so put the mV "
+                            f"amplitude in the edge weight and keep the event increment "
+                            f"dimensionless (e.g. 'v = v + u*x')."
+                        )
                     syn_ref |= {s.name for s in incr.free_symbols}
                     on_pre.append(f"v_post += {weight} * ({render_expression(str(incr), format='brian2')}) * mV")
                     delivered = True
@@ -815,7 +852,17 @@ def assemble_eqs(pop):
     if pop.get("noise_sigma") is not None:
         # Additive Gaussian white noise on the membrane: the faithful discretisation of the
         # current-based SDE tau*dv = -v + ... + sigma*eta(t) is dv/dt += sigma*xi/sqrt(tau_m)
-        # (stationary membrane std sigma/sqrt(2)); requires the cell to declare tau_m.
+        # (stationary membrane std sigma/sqrt(2)). The 1/sqrt(tau_m) normalisation needs the
+        # membrane time constant, which only the current-based form declares; a conductance-
+        # based cell has no single tau_m, so reject it here rather than emit an equation that
+        # references an undefined ``tau_m`` and fails deep inside Brian2 with an opaque error.
+        if "tau_m" not in pop["cell_params"]:
+            raise NotImplementedError(
+                f"Cell {pop['name']!r} declares membrane noise but no 'tau_m'. The additive "
+                "white-noise discretisation sigma*xi/sqrt(tau_m) is defined only for the "
+                "current-based membrane form (tau_m*dv/dt = -v + ...); a conductance-based "
+                "cell has no single membrane time constant. Add tau_m or remove the noise."
+            )
         membrane += " + noise_sigma_v * xi * tau_m**-0.5"
     lines = [membrane + " : volt (unless refractory)"]
     zero = "0*mV" if drive_unit == "volt" else "0*amp"

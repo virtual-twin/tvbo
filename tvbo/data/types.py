@@ -2185,18 +2185,24 @@ class ExperimentResult:
             _rates = self._extras.get("rates") or {}
             _sizes = self._extras.get("sizes") or {}
             _pops = list(_spk)
-            for pop in _pops:
+            # Key the population axis by the same filename-safe token the per-population raster
+            # variables use (``spikes__<key>__t/i``), so a consumer can select a rate by name and
+            # map it straight to that population's raster — never a positional zip against attrs.
+            _pops_key = [_san(p) for p in _pops]
+            for pop, key in zip(_pops, _pops_key):
                 t = np.asarray(_spk[pop].get("t_ms"), dtype=float)
                 idx = np.asarray(_spk[pop].get("i"), dtype=float)
-                dim = f"spike__{_san(pop)}"
-                data_vars[f"spikes__{_san(pop)}__t"] = xr.DataArray(t, dims=[dim])
-                data_vars[f"spikes__{_san(pop)}__i"] = xr.DataArray(idx, dims=[dim])
+                dim = f"spike__{key}"
+                data_vars[f"spikes__{key}__t"] = xr.DataArray(t, dims=[dim])
+                data_vars[f"spikes__{key}__i"] = xr.DataArray(idx, dims=[dim])
             if _rates:
                 data_vars["firing_rate"] = xr.DataArray(
-                    np.asarray([_rates.get(p, np.nan) for p in _pops], dtype=float), dims=["population"])
+                    np.asarray([_rates.get(p, np.nan) for p in _pops], dtype=float),
+                    dims=["population"], coords={"population": _pops_key})
             if _sizes:
                 data_vars["population_size"] = xr.DataArray(
-                    np.asarray([_sizes.get(p, 0) for p in _pops], dtype=float), dims=["population"])
+                    np.asarray([_sizes.get(p, 0) for p in _pops], dtype=float),
+                    dims=["population"], coords={"population": _pops_key})
             self._extras.setdefault("_spike_pops", _pops)
 
         # Fallback: a pure forward simulation (no sweep, no declared observations, no
@@ -2243,7 +2249,9 @@ class ExperimentResult:
         if data_vars:
             _attrs = {"tvbo_class": "tvbo:ExperimentResult", "sidecar_file": f"{stem}.yaml"}
             if self._extras.get("spikes"):
-                _attrs["populations"] = list(self._extras["spikes"])
+                # The same filename-safe token used for the raster variables and the population
+                # coord, so attrs, coord and variable names all agree (no raw-vs-sanitised drift).
+                _attrs["populations"] = [_san(p) for p in self._extras["spikes"]]
                 for _k in ("duration_ms", "dt_ms"):
                     if self._extras.get(_k) is not None:
                         _attrs[_k] = float(self._extras[_k])
