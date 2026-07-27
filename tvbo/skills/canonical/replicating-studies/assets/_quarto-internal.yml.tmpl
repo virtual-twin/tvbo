@@ -1,8 +1,8 @@
 # Copy to report/_quarto-internal.yml. The `--profile internal` overlay. Activating it sets
-# QUARTO_PROFILE=internal, which report.qmd reads (INTERNAL = ...) to draw the paper figure
-# beside each reproduction. This file only renames the output so the internal build
-# (embedding © author figures) can never overwrite the committed, copyright-safe report.pdf.
-# report_internal.pdf is git-ignored.
+# QUARTO_PROFILE=internal, which report-src.qmd reads (INTERNAL = ...) to draw the paper figure
+# beside each reproduction, and renames the output to report_internal.pdf (a distinct stem from
+# the public report.pdf, so the two builds never clobber each other and can be produced in any
+# order). The internal build embeds © author figures and is git-ignored — never committed.
 format:
   pdf:
     output-file: report_internal.pdf

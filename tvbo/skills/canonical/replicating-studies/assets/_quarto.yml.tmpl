@@ -1,19 +1,20 @@
-# Copy to report/_quarto.yml. Makes report/ a self-contained Quarto project so the
-# `internal` profile can be applied (Quarto only merges `_quarto-<profile>.yml` when a base
-# project config is present) and so the profile can rename the output file. All format
-# options stay in report.qmd's front matter; this file intentionally carries none.
+# Copy to report/_quarto.yml. Makes report/ a self-contained Quarto project so the `internal`
+# profile can be applied (Quarto only merges `_quarto-<profile>.yml` when a base project config
+# is present) and so both PDFs coexist. The report SOURCE is `report-src.qmd`; each build
+# renames the `report-src.pdf` intermediate to a distinct final, so neither clobbers the other
+# and the render order does not matter. (A shared `report` input stem would make the internal
+# build's `report.pdf` intermediate overwrite the public output — Quarto's LaTeX/typst step
+# always writes `<input-stem>.pdf` first, then renames to output-file.)
 #
-# PUBLIC build (default; the shareable artifact):
-#     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render report.qmd --to pdf
-#   -> report.pdf, reproduction figures only (no copyrighted originals).
-#
-# INTERNAL A/B build (opt-in, git-ignored):
-#     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render report.qmd --to pdf --profile internal
-#   -> report_internal.pdf, paper figures shown beside the reproduction.
+# PUBLIC build (default; the shareable artifact) -> report.pdf, reproduction figures only:
+#     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render report-src.qmd --to pdf
+# INTERNAL A/B build (opt-in, git-ignored) -> report_internal.pdf, paper figures beside ours:
+#     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render report-src.qmd --to pdf --profile internal
 #
 # `--profile internal` can only ever write report_internal.pdf (the profile fixes its
-# output-file), so it can never put copyrighted content into report.pdf — safe by
-# construction. Quarto's project step does remove the stale report.pdf when the internal
-# build runs; just re-run the public command to regenerate it (both PDFs are git-ignored).
+# output-file), so it can never put copyrighted content into report.pdf — safe by construction.
 project:
   type: default
+format:
+  pdf:
+    output-file: report.pdf
