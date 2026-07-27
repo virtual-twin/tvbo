@@ -78,8 +78,8 @@ figures that silently integrate the wrong attractor.
    their generated `plot_<name>.py` scripts land in the gitignored `figures/`.
 6. **Nothing large or upstream is vendored — gitignore it and document exact retrieval.**
    Git tracks only what you author: the spec, `code/`, `input/DATA.md`, and the report
-   source (`report-src.qmd` + `references.bib` + the prose writeup). **Everything else is
-   gitignored:** `output/` and all generated artifacts (figures, `report.pdf`/logs,
+   source (`report.qmd` + its `report_internal.qmd` wrapper + `_quarto.yml` + `references.bib`).
+   **Everything else is gitignored:** `output/` and all generated artifacts (figures, `report.pdf`/logs,
    KPI/targets tables — write them to `output/`, never commit them at the study root),
    the paper's own material under `original_study/`, and raw third-party inputs under
    `input/sourcedata/`. Planning/working docs go to a gitignored `_dev/`. A fresh clone
@@ -384,6 +384,40 @@ reproduction; the side-by-side against the paper original is drawn in the **repo
 `ab()` helper / `assets/compose_ab.py`), gated for copyright by the Phase-6 internal/public
 profile — do **not** bake the © original into any committed/shared image or into a `Figure`.
 
+**Every figure carries an original caption — `Figure.description` is it.** Write each figure a
+`description:` in the `figures:` block: an original sentence or two describing what OUR
+reproduction shows (the quantities, panels, what to read off it), in your own words. It is the
+figure's caption and it is **public-facing** — so (a) NEVER paste the paper's caption verbatim
+(plagiarism, and it usually describes panels/data you didn't reproduce), and (b) NEVER use the
+internal A/B framing ("left: paper, right: ours", "paper original beside") — that composite
+exists only in the internal build; the caption describes the standalone reproduction. The report
+**auto-renders** `Figure.description` as the caption via a `figcap()` helper (single source of
+truth, no retyping) — through an **`#| output: asis`** cell so the description renders as markdown
+and may use **LaTeX math** (`$I_0$`, `$\sigma$`), NOT an inline `` `{python}` `` (whose output is
+verbatim and would print literal `$`/`**`); see **writing-reports**. Keep the description in LaTeX
++ ASCII, never Unicode.
+
+**Figures are LaTeX-compatible — no Unicode glyphs in a panel.** Circled numbers (①②③),
+Unicode Greek/subscripts (σ, I₀, λ₁, Γ) and em-dashes are font-fragile (render as tofu, or just
+look wrong) and are not portable. Mark sampled points with a **numbered colored disc** — a filled
+circle marker plus a plain white digit centered on it (`ax.plot(x, y, "o", color=…, ms=…)` +
+`ax.text(x, y, "2", ha="center", va="center", color="white", fontweight="bold")`) — matching the
+paper's style, not a `①` glyph. Use matplotlib **mathtext** for symbols (`$\sigma$`, `$I_0$`,
+`$\Gamma$`, `$t/T$`), and a hyphen, not an em-dash, in titles. This is the figure-side of the same
+LaTeX-not-Unicode rule the report captions follow.
+
+**A marked/sampled point must match what the paper says it IS — read the figure description, then
+verify via the panel it feeds.** When a `custom` panel marks sample points on a curve (three
+periodic orbits 1/2/3 on a period-vs-parameter branch), select each from the paper's figure
+caption/description, not a guessed heuristic: the description names what the point is — its period
+band **and its morphology** ("point 2 = the *mid* orbit, an asymmetric spike with a slow rise") —
+and that fixes which branch point to take. Then verify against the panel the marker drives: the
+marked orbit's waveform sub-panel must show the described shape. (An argmin-on-period heuristic put
+our "2" at the bottom-corner fold — a too-symmetric spike; the description's "asymmetric spike +
+slow rise" is what identified the elbow one bend up as the right orbit.) This is Phase 7's
+shape-check applied to marker placement — the caption/description is the oracle for *which* point,
+not just how to word it.
+
 **External published paper data binds by IRI too.** When a panel pairs TVBO output against the
 paper's own figure data, wrap that data as an external `Dataset` and bind
 `used: {iri: tvbo:dataset/<Study>_source, output: <var>, sel: {figure: 6, panel: c}}` — the
@@ -391,17 +425,21 @@ same declarative path, figure/panel as coordinates you `sel` into. Until wrapped
 label-keyed** per-panel `.nc` set (`xarray` named coords, not filesystem-keyed) is an accepted
 stopgap; don't build an elaborate filename tree — it's throwaway once the `Dataset` binding lands.
 
-## Phase 6 — Report: `report/report-src.qmd` (every number computed)
+## Phase 6 — Report: `report/report.qmd` (every number computed)
 
 See **writing-reports** for the report mechanics: the IMRAD structure, the metrics cell
 that computes every number from the containers (nothing hand-typed), the native
-`EXP.dynamics.generate_report(...)` equation and parameter render, the three-colour status
-callouts, the copyright-safe internal/public profile split, the xelatex/LaTeX rules, and
-the anti-slop prose standard. The templates it copies ship in this skill's `assets/`:
-`report-src.qmd.tmpl` plus `_quarto.yml.tmpl` and `_quarto-internal.yml.tmpl`. Copy all three
-into `report/` (the report source is `report-src.qmd`, NOT `report.qmd` — a distinct input
-stem is what lets the public `report.pdf` and internal `report_internal.pdf` builds coexist
-without clobbering each other; see the header comment in `_quarto.yml.tmpl`).
+`EXP.dynamics.generate_report(..., citeformat="quarto")` equation and parameter render, the
+three-colour status callouts, the copyright-safe internal/public split, references as Quarto's
+auto-appended bibliography, the typst/LaTeX rules, and the anti-slop prose standard. The templates
+it copies ship in this skill's `assets/`: `report.qmd.tmpl`, `report_internal.qmd.tmpl`, and
+`_quarto.yml.tmpl`. Copy all three into `report/` (as `report.qmd`, `report_internal.qmd`,
+`_quarto.yml`). One Quarto project renders BOTH PDFs from a single `quarto render` (in `report/`,
+no file arg): `report.qmd` holds the whole report and carries NO front matter, `report_internal.qmd`
+is a thin `{{< include report.qmd >}}` wrapper that draws the paper's © figures for A/B checking,
+and `_quarto.yml` lists both and holds the shared `format: typst` + `bibliography:`. The build
+branches on `QUARTO_DOCUMENT_FILE`; no `--profile`, no post-render hook (see the header comment in
+`_quarto.yml.tmpl`).
 
 Replication-specific rules on top of that mechanics:
 
