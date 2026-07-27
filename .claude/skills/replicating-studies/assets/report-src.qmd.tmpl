@@ -28,11 +28,11 @@ ORIG = Path("../original_study/img")                  # paper's figures (git-ign
 FIGS = OUT / "figures"                                # our reproduction figures (git-ignored)
 
 # --- INTERNAL vs PUBLIC build (copyright-safe single source) ------------------------
-# Showing the paper's own published figures is copyright-restricted, so ONE report.qmd
-# renders two ways, selected by a Quarto profile:
-#   PUBLIC   (default):  quarto render report.qmd --to pdf
+# Showing the paper's own published figures is copyright-restricted, so ONE source
+# (report-src.qmd) renders two ways, selected by a Quarto profile:
+#   PUBLIC   (default):  quarto render report-src.qmd --to pdf
 #                        -> report.pdf, ONLY our reproduction (no copyrighted originals).
-#   INTERNAL (opt-in):   quarto render report.qmd --to pdf --profile internal
+#   INTERNAL (opt-in):   quarto render report-src.qmd --to pdf --profile internal
 #                        -> report_internal.pdf, adds the paper figure beside each
 #                           reproduction for A/B validation. Local-only, git-ignored.
 # `--profile internal` sets QUARTO_PROFILE (read here) and the profile file renames the
@@ -125,7 +125,7 @@ if INTERNAL:
           "**Internal A/B validation build — do not distribute.** This render embeds the "
           "© <Year> <Author> original figures beside the reproduction for side-by-side "
           "checking; it is local-only and must never be committed. The public build "
-          "(`quarto render report.qmd --to pdf`) omits every original.\n:::\n")
+          "(`quarto render report-src.qmd --to pdf`) omits every original.\n:::\n")
 ```
 
 <!-- Canonical report STRUCTURE — a real paper (IMRAD), not a figure walk:
@@ -260,5 +260,6 @@ explains what is not.>
 `tvbo run <Study>.yaml` runs every experiment in dependency order (each `from_experiment`
 source before its dependents) and then renders the `figures:` block to figures/
 (`tvbo figure render <Study>.yaml` re-renders figures only).
-PUBLIC report:   quarto render report/report.qmd --to pdf
-INTERNAL A/B:    quarto render report/report.qmd --to pdf --profile internal  (local-only) -->
+Report SOURCE is report-src.qmd; the two builds write distinct PDFs (any order, no clobber):
+PUBLIC report:   quarto render report/report-src.qmd --to pdf                     -> report.pdf
+INTERNAL A/B:    quarto render report/report-src.qmd --to pdf --profile internal  -> report_internal.pdf (local-only) -->

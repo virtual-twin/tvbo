@@ -9,12 +9,12 @@ description: "How to write a TVBO replication report \u2014 one IMRAD Quarto doc
 
 # Writing Reports in TVBO
 
-This skill owns the **report** for a study replication: one `report/report.qmd` that
+This skill owns the **report** for a study replication: one `report/report-src.qmd` that
 reads like a paper and computes every number it prints. It is the reporting layer that
 **replicating-studies** composes; that skill decides *which* targets you replicate and
 their fidelity tier, and **running-simulations** covers how the runs produce the
 containers you read here. Start from the report template in the replicating-studies
-skeleton (`report.qmd.tmpl`) and keep its metrics cell, `ab()` helper, and profile
+skeleton (`report-src.qmd.tmpl`) and keep its metrics cell, `ab()` helper, and profile
 machinery.
 
 Four rules carry the whole report. Break any one and the report stops being trustworthy.
@@ -53,6 +53,24 @@ a bug, whether it is a count, a decay time, a bifurcation threshold, a correlati
 fitted parameter. Papers are not ground truth, and neither are your own asserted numbers;
 a recomputed value that *differs* from the paper is honest, a typed one that matches is
 not.
+
+**The rule is asymmetric — keep the two kinds of number straight.** A quantity is either
+*yours* (a result/metric from the run → MUST be inline `` `{python} M[...]` ``) or *the
+paper's* (a value you quote for comparison — "paper: 9 solitary", "±105 MW", "$t_c$ 2.58 s"),
+which MUST stay a **literal**: you cannot recompute someone else's number, and dressing it up
+as computed would be the lie. Layout config and rejected counterfactuals (a `dt=0.01`
+alternative you *didn't* use) stay literal too. So "nothing hardcoded" means *every value of
+yours computed, every value of theirs quoted* — a hardcoded paper value is correct; a hardcoded
+result is the bug.
+
+**Audit it before shipping — the rule does not enforce itself.** A report can read as fully
+computed (dozens of inline values, a fat `M`) and still hide a typed result. Grep the prose for
+numeric literals (strip the `` `{python}` `` spans and fenced code), and classify each as
+yours-or-theirs; a stray decimal that is *your* spectral peak, peak *location*, decay time, or
+solver step is the bug — replace it with an `M[...]` entry. And don't excuse one as a soft
+"≈600 MW" because computing it needs a cross-experiment merge (an ordinal-keyed Lyapunov/branch
+run read against a scan's parameter axis) — add the helper and compute it; an "≈" sitting next
+to a typed number in prose is usually the tell.
 
 ```python
 from tvbo.classes.study import SimulationStudy
@@ -103,26 +121,31 @@ Set `callout-icon: false`. Give each figure one short callout:
 One or two sentences each. The colour carries the verdict; the sentence carries the
 evidence.
 
-## Copyright-safe internal/public split — ONE report.qmd
+## Copyright-safe internal/public split — ONE source, `report-src.qmd`
 
 The report shows A/B panels (the paper's published figure beside your reproduction), but
 the paper's figures are copyright-restricted and must never be committed or shared. Keep
-**one** `report.qmd` that renders two ways, selected by a Quarto profile — never a second
-report file:
+**one** source file, named `report-src.qmd`, that renders two ways, selected by a Quarto
+profile — never a second report file:
 
 - The `ab()` helper reads `INTERNAL = "internal" in
   os.environ.get("QUARTO_PROFILE","").split(",")` and draws the paper original **only when
   `INTERNAL`**, so the public build never opens the copyrighted file.
-- Copy `assets/_quarto.yml.tmpl` → `report/_quarto.yml` and
-  `assets/_quarto-internal.yml.tmpl` → `report/_quarto-internal.yml` (which sets
+- Copy `assets/_quarto.yml.tmpl` → `report/_quarto.yml` (sets `output-file: report.pdf`)
+  and `assets/_quarto-internal.yml.tmpl` → `report/_quarto-internal.yml` (sets
   `output-file: report_internal.pdf`).
-- **PUBLIC** (default, shareable): `quarto render report.qmd --to pdf` → `report.pdf`,
-  reproduction only. **INTERNAL** (opt-in, git-ignored): `quarto render report.qmd --to
-  pdf --profile internal` → `report_internal.pdf`, with the originals.
-- `--profile internal` can only ever write `report_internal.pdf`, so a copyrighted build
-  can never overwrite the public `report.pdf`. Track `report.qmd` and the two
-  `_quarto*.yml`; git-ignore `report/*.pdf` and the paper's figures under
-  `original_study/`.
+- **PUBLIC** (default, shareable): `quarto render report-src.qmd --to pdf` → `report.pdf`,
+  reproduction only. **INTERNAL** (opt-in, git-ignored): `quarto render report-src.qmd
+  --to pdf --profile internal` → `report_internal.pdf`, with the originals.
+- **Why `report-src.qmd`, not `report.qmd`:** Quarto's LaTeX/typst step always writes
+  `<input-stem>.pdf` first, then renames it to `output-file`. With a `report.qmd` source,
+  the internal build's `report.pdf` intermediate would overwrite the public `report.pdf`
+  before being renamed to `report_internal.pdf` — so the two builds clobber each other. A
+  distinct source stem (`report-src`) makes each build's `report-src.pdf` intermediate
+  transient, so both finals coexist and the render order does not matter. `--profile
+  internal` can only ever write `report_internal.pdf`, so a copyrighted build can never
+  overwrite the public `report.pdf`. Track `report-src.qmd` and the two `_quarto*.yml`;
+  git-ignore `report/*.pdf` and the paper's figures under `original_study/`.
 
 Verify by rendering both and confirming the public PDF embeds no wide A/B composite
 (public figure aspect ratios stay near 1.0–1.5; internal A/B composites are wide, ~2.2+).
@@ -195,9 +218,9 @@ check for the three-item-list habit, and confirm no Unicode math slipped in.
 ## Render and verify
 
 ```bash
-# from report/
-QUARTO_PYTHON=<repo>/.venv/bin/python quarto render report.qmd --to pdf          # public
-QUARTO_PYTHON=<repo>/.venv/bin/python quarto render report.qmd --to pdf --profile internal  # A/B, local-only
+# from report/  (source is report-src.qmd; both PDFs coexist, any order)
+QUARTO_PYTHON=<repo>/.venv/bin/python quarto render report-src.qmd --to pdf          # -> report.pdf (public)
+QUARTO_PYTHON=<repo>/.venv/bin/python quarto render report-src.qmd --to pdf --profile internal  # -> report_internal.pdf (A/B, local-only)
 ```
 
 The public render must succeed and must contain no copyrighted original. Open the PDF and
