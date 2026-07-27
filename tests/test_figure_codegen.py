@@ -159,6 +159,21 @@ def test_container_path_output_root_no_exp_prefix_collision(tmp_path):
         "exp-1_desc-Model_result.h5")
 
 
+def test_container_path_digit_bearing_non_experiment_iri_does_not_misbind(tmp_path):
+    """A non-experiment IRI whose last segment merely CONTAINS digits (a connectome/dataset
+    ref like ``rec-avgMatrix_atlas-HCPMMP1``) must not be read as ``exp-1`` and grab exp-1's
+    container. Only a strict ``exp-N`` / ``expN`` / bare-``N`` key yields exp candidates."""
+    bsplot._container_path.cache_clear()
+    nc = tmp_path / "output" / "nc"
+    nc.mkdir(parents=True)
+    (nc / "exp-1_desc-Model_result.h5").write_bytes(b"")   # exp-1 exists...
+    # ...but a connectome IRI ending in HCPMMP1 must NOT resolve to it.
+    assert bsplot._container_path("tvbo:dataset/rec-avgMatrix_atlas-HCPMMP1", tmp_path) == ""
+    bsplot._container_path.cache_clear()
+    # A genuine experiment ref still resolves.
+    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path).endswith("exp-1_desc-Model_result.h5")
+
+
 def test_used_ref_prefers_in_study_experiment_id(tmp_path):
     """A figure layer's ``used`` may bind an in-study experiment by id (``experiment: 2``) rather
     than a raw ``iri`` — it resolves to that experiment's container with no hardcoded study key.

@@ -201,8 +201,12 @@ def _container_path(iri, base_dir: Path) -> str:
     if not iri:
         return ""
     key = re.split(r"[:/#]", str(iri))[-1]          # last IRI segment (e.g. "exp-3" or "fig3")
-    digits = re.sub(r"\D", "", key)                 # trailing experiment number
-    cands = [key, *([f"exp-{digits}", f"exp{digits}"] if digits else [])]
+    # Only an experiment reference (exp-N / expN / bare N) yields exp-<id> candidates. A
+    # digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be
+    # misread as exp-1 — reuse the strict matcher DataRef.experiment_id already uses.
+    from tvbo.data.dataref import experiment_id as _experiment_id
+    eid = _experiment_id(iri)
+    cands = [key, *([f"exp-{eid}", f"exp{eid}"] if eid else [])]
     nc = base_dir / "output" / "nc"
     for cand in cands:
         d = nc / cand

@@ -60,9 +60,12 @@ solver_kwargs_str = resolve_solver_kwargs(integration, dt, is_diffrax=is_diffrax
 %>
 % if is_diffrax:
 import diffrax
-from tvboptim.experimental.network_dynamics.solvers import DiffraxSolver, BoundedSolver
+from tvboptim.experimental.network_dynamics.solvers import DiffraxSolver
 % else:
-from tvboptim.experimental.network_dynamics.solvers import ${solver_class}, BoundedSolver
+from tvboptim.experimental.network_dynamics.solvers import ${solver_class}
+% endif
+% if has_state_bounds:
+from tvboptim.experimental.network_dynamics.solvers import BoundedSolver
 % endif
 
 

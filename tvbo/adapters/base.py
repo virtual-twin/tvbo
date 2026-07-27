@@ -395,7 +395,7 @@ class BaseAdapter:
         # Distribution info
         dist_info = self.collect_all_distributions(dynamics_dict)
         needs_random = any(d["has"] for d in dist_info.values())
-        dist_seed = next((d["seed"] for d in dist_info.values() if d["has"]), 42)
+        dist_seed = next((d["seed"] for d in dist_info.values() if d["has"]), 0)
 
         # Events
         all_events = self.collect_events()

@@ -76,6 +76,7 @@ ABOX_OUT = ontology/tvb-o-data.ttl
 BIOLOGY_OUT = ontology/tvb-o-biology.ttl
 AXIOMS_TTL = ontology/tvb-o-axioms.ttl
 BIFURCATION_TTL = ontology/tvb-o-bifurcation.ttl
+COUPLING_TTL = ontology/tvb-o-coupling.ttl
 NEUROML_TTL = ontology/tvb-o-neuroml.ttl
 NEUROML_MAPPINGS = ontology/tvb-o-neuroml-mappings.ttl
 NEUROML_CONTRACTS = tvbo/data/ontology/neuroml_contracts.json
@@ -141,6 +142,7 @@ gen-merged: gen-owl gen-abox
 		--input $(OWL_OUT) \
 		--input $(AXIOMS_TTL) \
 		--input $(BIFURCATION_TTL) \
+		--input $(COUPLING_TTL) \
 		--input $(NEUROML_TTL) \
 		--input $(NEUROML_MAPPINGS) \
 		--input $(ABOX_OUT) \

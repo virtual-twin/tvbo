@@ -279,10 +279,29 @@ def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
             f"persist (no -o), so the figures reflect a PREVIOUS run, not this one. Pass -o "
             f"(e.g. `tvbo run {spec} -o output/nc`) to render this run's own results."
         )
+    # Figures resolve result containers under <fig_base>/output/… . Align fig_base with where
+    # this run actually wrote results (-o out_dir) so a relocation still resolves: an out_dir of
+    # `.../output/nc` or `.../output` maps to its parent(s); an unrelated out_dir can't be mapped,
+    # so warn rather than silently render empty panels against <base>/output.
+    fig_base = base
+    if out_dir is not None:
+        od = Path(out_dir).resolve()
+        if od.name == "nc" and od.parent.name == "output":
+            fig_base = od.parent.parent
+        elif od.name == "output":
+            fig_base = od.parent
+        elif (od / "output").is_dir():
+            fig_base = od
+        elif not str(od).startswith(str((base / "output").resolve())):
+            _common.warn(
+                f"results were written to {od}, but figures resolve containers under "
+                f"{base}/output; panels binding experiment results may be empty. Re-run "
+                f"`tvbo figure render {spec} --base-dir <results root>` if so."
+            )
     out_figs = base / "figures"
     _common.info(f"rendering {len(figs)} figure(s) -> {out_figs}")
     try:
-        render_figures(figs, base, out_figs)
+        render_figures(figs, fig_base, out_figs)
     except Exception as e:  # noqa: BLE001 - never lose a completed run over a plotting error
         _common.info(
             f"figure rendering failed ({type(e).__name__}: {e}); the experiment "
