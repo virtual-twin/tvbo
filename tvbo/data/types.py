@@ -2131,6 +2131,84 @@ class ExperimentResult:
                 if da.dtype != object:  # skip special-point label strings (HDF5 object dtype)
                     data_vars[f"continuation__{_san(cont_name)}__{_san(vname)}"] = da
 
+            # Child periodic-orbit branches (from a Hopf point) hang off the equilibrium
+            # branch in ``periodic_orbits`` and were previously dropped by the save, so a
+            # PO branch's amplitude envelope (max/min per state var) and period never
+            # reached the ``.h5``. Serialize each under a nested ``__<po>__`` name so the
+            # full bifurcation diagram (Fig-2 periodic branch, Fig-3A period divergence)
+            # is reproducible from ``tvbo run`` alone.
+            for i, po in enumerate(getattr(bifres, "periodic_orbits", None) or []):
+                po_to_ds = getattr(po, "to_dataset", None)
+                if not callable(po_to_ds):
+                    continue
+                po_ds = po_to_ds()
+                if "step" not in getattr(po_ds, "sizes", {}):
+                    continue
+                po_name = _san(getattr(po, "name", None) or f"po{i}")
+                pdim = f"continuation__{_san(cont_name)}__{po_name}__step"
+                po_ds = po_ds.rename({"step": pdim}).reset_coords()
+                for vname, da in po_ds.data_vars.items():
+                    if da.dtype != object:
+                        data_vars[f"continuation__{_san(cont_name)}__{po_name}__{_san(vname)}"] = da
+
+                # Orbit waveforms: the adapter attaches ``orbit_profiles``
+                # ([n_steps, n_phase, n_vars], phase-resampled over one period) when the
+                # engine reconstructs them. Serialize as one 3-D var so every orbit's actual
+                # E(t)/x(t)/u(t) profile (Fig-3B morphologies, Fig-3C orbit) is reproducible.
+                prof = getattr(po, "orbit_profiles", None)
+                if prof is not None:
+                    prof = np.asarray(prof, dtype=float)
+                    n_po = po_ds.sizes.get(pdim)
+                    if prof.ndim == 3 and (n_po is None or prof.shape[0] == n_po):
+                        _mdl = getattr(po, "model", None)
+                        _svs = getattr(_mdl, "state_variables", None)
+                        if hasattr(_svs, "keys"):
+                            _vn = list(_svs.keys())
+                        elif _svs is not None:
+                            _vn = [getattr(s, "name", f"v{j}") for j, s in enumerate(_svs)]
+                        else:
+                            _vn = []
+                        _vn = (_vn + [f"v{j}" for j in range(len(_vn), prof.shape[2])])[:prof.shape[2]]
+                        _pdim = f"continuation__{_san(cont_name)}__{po_name}__phase"
+                        _vdim = f"continuation__{_san(cont_name)}__{po_name}__var"
+                        data_vars[f"continuation__{_san(cont_name)}__{po_name}__profile"] = xr.DataArray(
+                            prof, dims=[pdim, _pdim, _vdim],
+                            coords={_pdim: np.linspace(0.0, 1.0, prof.shape[1]), _vdim: _vn})
+
+        # Spiking backends (Brian2) carry a raster in ``_extras["spikes"]`` — persist it so a
+        # spiking run reproduces from the container: per-population spike times + neuron indices
+        # as flat 1D variables (each population its own length), plus the population firing rates
+        # and sizes on a shared ``population`` axis, and the run window in the Dataset attrs.
+        # General to any spiking run; guarded on the presence of spikes.
+        _spk = self._extras.get("spikes")
+        if _spk:
+            _rates = self._extras.get("rates") or {}
+            _sizes = self._extras.get("sizes") or {}
+            _pops = list(_spk)
+            for pop in _pops:
+                t = np.asarray(_spk[pop].get("t_ms"), dtype=float)
+                idx = np.asarray(_spk[pop].get("i"), dtype=float)
+                dim = f"spike__{_san(pop)}"
+                data_vars[f"spikes__{_san(pop)}__t"] = xr.DataArray(t, dims=[dim])
+                data_vars[f"spikes__{_san(pop)}__i"] = xr.DataArray(idx, dims=[dim])
+            if _rates:
+                data_vars["firing_rate"] = xr.DataArray(
+                    np.asarray([_rates.get(p, np.nan) for p in _pops], dtype=float), dims=["population"])
+            if _sizes:
+                data_vars["population_size"] = xr.DataArray(
+                    np.asarray([_sizes.get(p, 0) for p in _pops], dtype=float), dims=["population"])
+            self._extras.setdefault("_spike_pops", _pops)
+
+        # Fallback: a pure forward simulation (no sweep, no declared observations, no
+        # continuation, no optimization) still carries its recorded trajectory in
+        # integration.data. Persist it so `tvbo run` reproduces a raw forward run — e.g. a
+        # NeuroML EPSP-train experiment — as a native container instead of writing nothing.
+        # Guarded on an otherwise-empty data_vars, so exploration/observation runs are untouched.
+        if not data_vars and self.integration is not None:
+            _idata = getattr(self.integration, "data", None)
+            if _idata is not None and hasattr(_idata, "dims"):
+                data_vars["integration"] = _idata
+
         stem = "result"
         if self.source is not None and hasattr(self.source, "get_result_stem"):
             try:
@@ -2163,8 +2241,13 @@ class ExperimentResult:
 
         written = []
         if data_vars:
-            ds = xr.Dataset(data_vars, attrs={"tvbo_class": "tvbo:ExperimentResult",
-                                              "sidecar_file": f"{stem}.yaml"})
+            _attrs = {"tvbo_class": "tvbo:ExperimentResult", "sidecar_file": f"{stem}.yaml"}
+            if self._extras.get("spikes"):
+                _attrs["populations"] = list(self._extras["spikes"])
+                for _k in ("duration_ms", "dt_ms"):
+                    if self._extras.get(_k) is not None:
+                        _attrs[_k] = float(self._extras[_k])
+            ds = xr.Dataset(data_vars, attrs=_attrs)
             h5 = os.path.join(out_dir, f"{stem}.h5")
             # Grids of trajectories/observations compress well (repeated structure,
             # smooth fields), so gzip-deflate by default; `compress=False` opts out

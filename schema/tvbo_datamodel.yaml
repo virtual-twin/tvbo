@@ -528,6 +528,16 @@ enums:
                 description: >-
                     Index-aligned projection: source cell i connects to target
                     cell i (min of the two population sizes).
+            random:
+                description: >-
+                    Sparse random projection (fixed-probability Erdos-Renyi): each
+                    of the size_src x size_tgt possible connections is present
+                    independently with probability given by the Edge's
+                    `connection_probability` parameter (in `Edge.parameters`,
+                    alongside `weight`). For a self-projection the diagonal i->i is
+                    governed by Edge.allow_self_connections. A backend that only
+                    supports dense projections may reject this rule rather than
+                    approximate it.
     DimensionType:
         description: "Dimensions along which operations can be applied"
         permissible_values:

@@ -73,7 +73,7 @@ figures that silently integrate the wrong attractor.
    their generated `plot_<name>.py` scripts land in the gitignored `figures/`.
 6. **Nothing large or upstream is vendored — gitignore it and document exact retrieval.**
    Git tracks only what you author: the spec, `code/`, `input/DATA.md`, and the report
-   source (`report.qmd` + `references.bib` + the prose writeup). **Everything else is
+   source (`report-src.qmd` + `references.bib` + the prose writeup). **Everything else is
    gitignored:** `output/` and all generated artifacts (figures, `report.pdf`/logs,
    KPI/targets tables — write them to `output/`, never commit them at the study root),
    the paper's own material under `original_study/`, and raw third-party inputs under
@@ -124,6 +124,17 @@ supports them — **with rationale**. tvboptim (JAX) is common because delays, L
 and adiabatic `lax.scan` sweeps are tvboptim-gated today; plain forward sims and
 operating points run on any backend.
 
+**Pin the model CLASS from the supplement, not the main text — it decides the backend features.**
+A biophysical paper's main text rarely tabulates the network; the operative parameters *and the
+model class* live in the SOM / supplementary methods. Get that document, and cross-check a
+published reproduction's parameter file (a NEST/Brian2/Auryn repo), flagging where the
+reproduction re-tuned a value. The class is a first-order fork the backend-fit turns on:
+current-based (`τ_m dV = -V + I`, drives in mV) vs conductance-based (`C dV = g_L(E_L-V) + …`);
+instantaneous δ-PSC (a v-jump per spike, no synaptic time constant) vs kinetic conductance;
+Gaussian white-noise vs Poisson external drive; sparse-random vs all-to-all wiring. Reading the
+class off the main text — or off a template that happens to be conductance-based/Poisson — is how
+you build a plausible *wrong* model; decide it here, and Phase 7 verifies it.
+
 **Spiking / event-driven targets pick a spiking backend, and the two do different jobs.** A
 single spike-driven synapse or small event-driven model — a Tsodyks–Markram short-term-plasticity
 synapse driven by a defined spike train, an EPSP train — runs on the **NeuroML** backend
@@ -132,11 +143,22 @@ synapse driven by a defined spike train, an EPSP train — runs on the **NeuroML
 `tsodyksMarkramDepFacMechanism` (facilitation), mapping `initReleaseProb=U`, `tauRec=τ_D`,
 `tauFac=τ_F` (template `docs/Interoperability/NeuroML/examples/Ex7_STP.qmd`); the presynaptic
 drive is a `neuroml:spikeGenerator` (regular) or `spikeArray` (preset times). A **recurrent
-spiking network** (thousands of LIF neurons, Poisson drive, population activity) is the
-**Brian2** path instead — Brian2 rejects a defined spike source, one-to-one edges and a
-nonlinear/multi-gate synapse, so it will NOT run the single-synapse NeuroML recipe. Different
-experiments in one recipe can use different backends (a rate reduction on tvboptim beside its
-spike-level companion on neuroml). Study-loader gotcha: a NeuroML cell's nested channel goes
+spiking network** (thousands of LIF neurons, structured populations, population activity) is the
+**Brian2** path instead. The native Brian2 backend runs: all-to-all conductance synapses
+(lowered to O(N) population-sum hubs, incl. a multi-gate saturating NMDA), **sparse random /
+one-to-one connectivity** (`connectivity: random` + a `connection_probability` in the edge's
+`parameters`, or `one_to_one`), **instantaneous (δ) current-based PSCs** (a spike jumps `v_post`
+directly, no synaptic time constant — the Amit–Brunel / Mongillo form), **per-synapse short-term
+facilitation/depression**, **Gaussian white-noise membrane drive** (`StateVariable.noise.intensity`
+on a current-based cell that declares `tau_m`), and **timed current-pulse stimulation**
+(`neuroml:pulseGenerator` — item cue / nonspecific readout). What Brian2 still does NOT accept is a
+*defined spike source* (`spikeGenerator`/`spikeArray`) — that single-synapse-driven-by-a-preset-train
+case stays on NeuroML. Spike **rasters persist to the container** (`spikes__<pop>__t/i`,
+`firing_rate`, `population_size`, `populations`/`duration_ms` attrs); a spiking figure binds those,
+and any per-synapse trace the figure shows (mean u/x) is **reconstructed from the recorded spike
+trains** in a `code/` analysis fn (each neuron's own train drives its facilitation) — tvbo-derived
+output, honest, not asserted. Different experiments in one recipe can use different backends (a rate
+reduction on tvboptim beside its spike-level companion on neuroml). Study-loader gotcha: a NeuroML cell's nested channel goes
 under `modes:`, not `components:` — `components` is a LinkML alias the strict study loader
 rejects (only the `from_string` doc path accepts it).
 
@@ -144,7 +166,13 @@ rejects (only the `from_string` doc path accepts it).
 supported (e.g. the Lyapunov exponent of a *delayed* closed loop under `vmap`) BLOCKS
 its target — flag it as a framework/schema enhancement before you build, and mark the
 target `partial`/`out` in the eventual scorecard. This early gap-finding is what sets
-honest expectations instead of surprising you mid-YAML.
+honest expectations instead of surprising you mid-YAML. **But a gap is often an *addable
+general primitive*, not a permanent blocker** — an instantaneous δ-PSC synapse, a white-noise
+membrane drive, a timed current pulse, sparse random connectivity are backend features any study
+of that class wants. If the missing piece generalizes, add it root-cause to the backend (with a
+regression test) and un-block the target; reserve `partial`/`out` for gaps that don't generalize,
+need heavy new machinery, or that you won't build. State intent in the metadata either way (the
+YAML declares a δ-jump or a `noise.intensity`, not a backend mechanism).
 
 **Data obtainability + fidelity tier — decide BEFORE building (the biggest time-saver).**
 Tag every target with a **fidelity tier**: *mechanism-level* (a sign / pattern / ordering
@@ -228,6 +256,12 @@ See **writing-models** for the Dynamics form and **running-simulations** for sou
   `#fragment` selector; to reuse one block, put that block in its own file and include it.)
   Order experiments so a `from_experiment` source precedes its dependents (operating point
   before its control runs) — then bare `tvbo run <Study>.yaml` resolves the seeds in one pass.
+  When regime experiments differ only in one value buried inside an otherwise-identical block
+  (a µ_ext inside the cell `Dynamics`), **lift it OUT to a declarative input** — a full-duration
+  `pulseGenerator` drive — so the whole recurrent network is one shared anchor and only the small
+  drive differs per experiment. This both compacts the recipe (a 4-regime spiking study collapses
+  from 4× the network to ~1×) and is the more faithful encoding (an external drive is an input, not
+  a cell property).
 - Non-obvious params get a one-line comment tying them to the paper (equation/figure).
 - Overriding a param replaces it wholesale (YAML merge is shallow) — restate `unit`/
   `description`, or don't override when the anchor default already matches.
@@ -313,15 +347,17 @@ same declarative path, figure/panel as coordinates you `sel` into. Until wrapped
 label-keyed** per-panel `.nc` set (`xarray` named coords, not filesystem-keyed) is an accepted
 stopgap; don't build an elaborate filename tree — it's throwaway once the `Dataset` binding lands.
 
-## Phase 6 — Report: `report/report.qmd` (every number computed)
+## Phase 6 — Report: `report/report-src.qmd` (every number computed)
 
 See **writing-reports** for the report mechanics: the IMRAD structure, the metrics cell
 that computes every number from the containers (nothing hand-typed), the native
 `EXP.dynamics.generate_report(...)` equation and parameter render, the three-colour status
 callouts, the copyright-safe internal/public profile split, the xelatex/LaTeX rules, and
 the anti-slop prose standard. The templates it copies ship in this skill's `assets/`:
-`report.qmd.tmpl` plus `_quarto.yml.tmpl` and `_quarto-internal.yml.tmpl`. Copy all three
-into `report/`.
+`report-src.qmd.tmpl` plus `_quarto.yml.tmpl` and `_quarto-internal.yml.tmpl`. Copy all three
+into `report/` (the report source is `report-src.qmd`, NOT `report.qmd` — a distinct input
+stem is what lets the public `report.pdf` and internal `report_internal.pdf` builds coexist
+without clobbering each other; see the header comment in `_quarto.yml.tmpl`).
 
 Replication-specific rules on top of that mechanics:
 
@@ -499,6 +535,18 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   `a·gx/N` on *raw* SC (in-strength ~1e4) puts the operating point near K~1e-6, vs the paper's
   K~0.03 on *normalized* SC. Match how the paper normalizes weights before sweeping K, or the
   sweep hunts the wrong decade.
+- **A near-bifurcation operating point is implementation-specific — re-tune it to the phenomenon,
+  with precedent.** When a paper selects a regime with a control parameter sitting near a
+  bifurcation (a background drive µ that flips activity-silent → persistent → asynchronous, a
+  coupling at a synchronization onset), the paper's *exact* value need not reproduce that regime in
+  YOUR discretization — a δ-PSC / Euler network's transition sits at a different µ than the paper's
+  kinetic/exact one. Re-tune the control parameter to reproduce the *phenomenon* (the regime and its
+  ordering), document the shift, and cite the precedent: published reproductions routinely re-tune
+  the same knob (the Mongillo NEST reproduction shifted µ_ext ≈0.5 mV after changing the PSC kernel;
+  ours shifted comparably, activity-silent at 22.4 not the SOM's 23.1 mV). Faithful = the phenomenon
+  at a re-tuned operating point, not a byte-identical control value — decimal- vs mechanism-level
+  (Phase 1.5) applied to a control parameter, stated as such in the scorecard. Locate the transition
+  with a quick 3–4 point scan of the control parameter *before* committing the recipe value.
 
 ## Pitfalls we hit (so you don't)
 
