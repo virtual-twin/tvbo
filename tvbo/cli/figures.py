@@ -50,6 +50,33 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
     return as_list(getattr(study, "figures", None)), "study"
 
 
+def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
+    """Emit + run each figure's ``plot_<name>.py`` and return the written images.
+
+    The single home for the per-figure render loop, shared by the ``figure
+    render`` command and by ``tvbo run`` (which renders a study's figures after
+    its experiments, so one command closes the replication loop). For each
+    figure a self-contained ``plot_<name>.py`` is emitted next to the image and
+    executed; ``base_dir`` is the root each layer's ``used`` IRI resolves
+    against (``<base_dir>/output/…``).
+    """
+    from tvbo.adapters import bsplot
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for figure in figures:
+        name = getattr(figure, "name", None) or "figure"
+        fmt = (getattr(figure, "format", None) or "png").lstrip(".")
+        outfile = out_dir / f"{name}.{fmt}"
+        script_path = out_dir / f"plot_{sanitize_name(name)}.py"
+        bsplot.render(figure, base_dir=str(base_dir), outfile=str(outfile),
+                      script_path=str(script_path))
+        _common.info(f"wrote {outfile}")
+        _common.info(f"wrote {script_path}")
+        written.append(outfile)
+    return written
+
+
 @app.command("render", help="Render declarative figures from a Figure or SimulationStudy YAML.")
 def render(
     spec: str = typer.Argument(
@@ -64,16 +91,20 @@ def render(
         help="Root the experiment result containers live under (where output/nc/ sits). "
              "Defaults to the spec file's directory.",
     ),
+    name: str = typer.Option(
+        None, "-n", "--name",
+        help="Render only the figure(s) with this name (comma-separated for several). "
+             "Default: render every figure in the spec. Iterating one panel? "
+             "`tvbo figure render <Study>.yaml -n Fig3_<study>` re-renders just that figure.",
+    ),
 ) -> None:
-    """Render every figure in *spec* via bsplot codegen.
+    """Render figures in *spec* via bsplot codegen (all of them, or the ``--name`` subset).
 
     For each figure a self-contained ``plot_<name>.py`` is emitted next to the
     output image and executed, so the ``<name>.<format>`` file is produced and
     the script stays as an editable, rerunnable artefact. ``<base-dir>`` is the
     root each layer's ``used`` IRI resolves against (``<base-dir>/output/nc/…``).
     """
-    from tvbo.adapters import bsplot
-
     spec_path = Path(spec).expanduser()
     if not spec_path.is_file():
         _common.die(f"No such spec file: {spec_path}")
@@ -88,13 +119,14 @@ def render(
         _common.info(f"{spec_path.name}: no figures to render ({detail}).")
         return
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    for figure in figures:
-        name = getattr(figure, "name", None) or "figure"
-        fmt = (getattr(figure, "format", None) or "png").lstrip(".")
-        outfile = out_dir / f"{name}.{fmt}"
-        script_path = out_dir / f"plot_{sanitize_name(name)}.py"
-        bsplot.render(figure, base_dir=str(base), outfile=str(outfile),
-                      script_path=str(script_path))
-        _common.info(f"wrote {outfile}")
-        _common.info(f"wrote {script_path}")
+    if name:
+        wanted = [n.strip() for n in name.split(",") if n.strip()]
+        available = [getattr(f, "name", None) for f in figures]
+        figures = [f for f in figures if getattr(f, "name", None) in wanted]
+        if not figures:
+            _common.die(
+                f"{spec_path.name}: no figure named {wanted!r} "
+                f"(available: {[n for n in available if n]})."
+            )
+
+    render_figures(figures, base, out_dir)
