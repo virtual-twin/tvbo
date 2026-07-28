@@ -163,7 +163,7 @@ def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) 
         "inputs": _figure_inputs(figure, base_dir, exp_plans_by_key),
         "output": f"figures/{name}.{fmt}",
         "figures_dir": "figures",
-        "script": f"figures/plot_{sanitize_name(name)}.py",
+        "script": f"figures/scripts/plot_{sanitize_name(name)}.py",
         # The figure's custom-panel code_modules are bundled into the kit's code/, so put it
         # on PYTHONPATH exactly as the experiment rules do when the kit carries bundled code.
         "pythonpath_code": bool(bundled_code),
@@ -242,19 +242,22 @@ def write_figure_kit(figures, base_dir=".", out_dir="kit", workflow=None,
 
         out_dir/
           figures.smk                # the render rules (from emit_figure_rules)
-          figures/plot_<name>.py     # self-contained bsplot script per figure
+          figures/<name>.<fmt>          # the rendered image (what the rule declares)
+          figures/scripts/plot_<name>.py  # self-contained bsplot script per figure
 
     Each ``plot_<name>.py`` is ``bsplot.render_code(figure, base_dir, outfile=…)`` with
     ``outfile`` set to the rule's declared ``output`` (``figures/<name>.<fmt>``), so
-    running ``python figures/plot_<name>.py`` from the kit root produces exactly what
-    the rule promises. Returns the kit directory.
+    running ``python figures/scripts/plot_<name>.py`` from the kit root produces
+    exactly what the rule promises. The kit mirrors the local render layout — image
+    in ``figures/``, script in ``figures/scripts/`` — so a cluster run and a laptop
+    run put the same artefact in the same place. Returns the kit directory.
     """
     out_dir = Path(out_dir)
-    (out_dir / "figures").mkdir(parents=True, exist_ok=True)
+    (out_dir / "figures" / "scripts").mkdir(parents=True, exist_ok=True)
     for figure in figures:
         name = figure.name or "figure"
         fmt = (figure.format or "png").lstrip(".")
-        script = out_dir / "figures" / f"plot_{sanitize_name(name)}.py"
+        script = out_dir / "figures" / "scripts" / f"plot_{sanitize_name(name)}.py"
         code = bsplot.render_code(figure, base_dir=base_dir,
                                   outfile=f"figures/{name}.{fmt}")
         script.write_text(code, encoding="utf-8")

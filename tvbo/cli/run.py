@@ -114,7 +114,7 @@ def run(
     figures: bool = typer.Option(
         True, "--figures/--no-figures",
         help="After a Study's experiments finish, render its declarative `figures:` "
-             "(emit each plot_<name>.py and run it), so one command produces results AND "
+             "(emit each render script and run it), so one command produces results AND "
              "figures. On by default; --no-figures skips rendering (e.g. a partial/smoke "
              "run whose panels would be placeholders). No effect on an experiment spec or "
              "a study without figures.",
@@ -299,7 +299,7 @@ def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
     """Render a study's declarative ``figures:`` after its experiments have run.
 
     Reuses the exact ``tvbo figure render`` path (``figures.render_figures``), so
-    the images and ``plot_<name>.py`` scripts a one-command ``tvbo run`` produces
+    the images and render scripts a one-command ``tvbo run`` produces
     are byte-identical to a follow-up ``tvbo figure render`` — the study run just
     fuses the two steps. ``base_dir`` is the study file's directory (the root each
     layer's ``used`` IRI resolves against, ``<base>/output/…``); figures land in

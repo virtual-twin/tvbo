@@ -2698,6 +2698,13 @@ classes:
             array sourced from another experiment or dataset); the two are mutually
             exclusive. Value can be: literal (number/string), reference to input
             (input.key), or cross-observation reference (observation_name.output_key).
+            A bare scalar is the value, as it is for a Parameter: ``sel: {variable: phi}``
+            and ``opts: {xlabel: "time (s)"}`` mean ``{value: …}``, which is how both are
+            written throughout the docs.
+        slot_usage:
+            value:
+                annotations:
+                    simple_dict_value: true
         slots:
             - name
             - description

@@ -128,19 +128,12 @@ def _style_kwargs(style) -> dict:
     return kw
 
 
-# Axis directives a grammar (cartesian/heatmap) panel may carry on ``Panel.opts``.
-# Kept to a small, backend-independent set so the template can apply them uniformly;
-# a ``custom`` panel routes ``opts`` to its callable instead (see ``build_context``).
+# Grammar-panel axis directives on ``Panel.opts`` — a small backend-independent set the template applies uniformly (a ``custom`` panel routes ``opts`` to its callable; see ``build_context``).
 _AXIS_OPTS = {
     "xlabel", "ylabel", "title", "xlim", "ylim", "xticks", "yticks",
     "hide_xticklabels", "hide_yticklabels", "axhline", "legend",
-    # Axis scale ("log", "symlog", "linear"). Not cosmetic: a spectrum that falls two
-    # orders of magnitude reads as flat on a linear axis, so the scale is part of what
-    # the panel claims.
-    "xscale", "yscale",
-    # line3d only: the depth axis + camera + per-axis inversion (a phase-space axis often
-    # runs the opposite way to the paper's convention). Ignored by 2-D kinds.
-    "zlabel", "zlim", "elev", "azim", "invert_x", "invert_y", "invert_z", "zoom",
+    "xscale", "yscale",   # axis scale (log/symlog/linear): part of the claim, not cosmetic
+    "zlabel", "zlim", "elev", "azim", "invert_x", "invert_y", "invert_z", "zoom",  # line3d only
 }
 
 
@@ -363,6 +356,7 @@ def build_context(figure, base_dir, outfile: str) -> dict:
             "ctx": ctx,
             "annotations": _annotations(panel),
             "number_loc": getattr(panel, "number_loc", None),
+            "number": getattr(panel, "number", None),
         })
     layout = (figure.layout or "".join(str(p["key"]) for p in panels) or "a")
     layout = layout.replace("/", "\n")                  # bsplot mosaics split rows on newline
@@ -370,7 +364,12 @@ def build_context(figure, base_dir, outfile: str) -> dict:
     fig_loc = getattr(figure, "panel_number_loc", None)   # unset -> keep bsplot's own default placement
     font_size = getattr(figure, "font_size", None)
     for p in panels:
-        p["letter"] = fmt.format(p["key"])          # the mosaic key IS the panel letter
+        override = p.pop("number", None)   # overrides the mosaic key; "false" suppresses the letter (many cells = one paper panel)
+        if override is not None and str(override).lower() in ("false", "none", ""):
+            p["letter"] = None
+            p["number_kwargs"] = {}
+            continue
+        p["letter"] = fmt.format(override if override is not None else p["key"])
         place = {"option": "numbers"}               # label is given verbatim, no int->letter conversion
         loc = p["number_loc"] or fig_loc
         if loc:                                     # only override placement when a corner was asked for
