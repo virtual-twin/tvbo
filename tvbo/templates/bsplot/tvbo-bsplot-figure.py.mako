@@ -285,7 +285,9 @@ def main():
 % endfor
 % if panel_numbers:
 % for p in panels:
+% if p['letter'] is not None:
     _bpanels.add_panel_number(axd[${repr(p['key'])}], ${repr(p['letter'])}, **${repr(p['number_kwargs'])})
+% endif
 % endfor
 % endif
     fig.savefig(${repr(outfile)}, **${repr(savefig_kwargs)})

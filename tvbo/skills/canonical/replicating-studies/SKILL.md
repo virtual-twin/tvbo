@@ -85,7 +85,8 @@ figures that silently integrate the wrong attractor.
    **paper's own material ONLY** (fully git-ignored); `input/` the data provenance; `report/` the
    report source **and everything we author or generate** — including our replication analysis under
    `report/analysis/` (targets, figures, backend-fit, adherence). Rendered figures and their
-   generated `plot_<name>.py` scripts land in the gitignored `figures/`.
+   generated `plot_<name>.py` scripts land in the gitignored `figures/` — images at its
+   root, scripts in `figures/scripts/`.
 6. **Nothing large or upstream is vendored — gitignore it and document exact retrieval.**
    Git tracks only what you author: the spec, `code/`, `input/DATA.md`, and the report source
    (`report.qmd` + its `report_internal.qmd` wrapper + `_quarto.yml` + `references.bib` +
@@ -105,7 +106,7 @@ figures that silently integrate the wrong attractor.
 8. **Figures are declared metadata, not a plotting script.** Each paper figure is a
    `Figure` in the study's `figures:` block (layout mosaic + panels + PROV `used`
    bindings); `tvbo figure render <Study>.yaml` — run automatically by
-   `tvbo run <Study>.yaml` — emits a self-contained `plot_<name>.py` per figure **and**
+   `tvbo run <Study>.yaml` — emits a self-contained render script per figure **and**
    runs it. Grammar panels (`cartesian`/`heatmap`) need **zero** plotting code; only a
    genuinely bespoke panel interior is a registered `@bsplot.register_panel` callable in a
    `code_modules` module under `code/`. **No hand-written `main()` plotting driver.**
@@ -390,16 +391,23 @@ breaking the other. Grep for siblings and align them.
 Figures are **metadata**, rendered by codegen — not a hand-written plotting script. Each
 paper figure is a `Figure` in `<Study>.yaml`'s `figures:` list (schema `schema/figure.yaml`;
 design `dev/figure-spec-design.md`). `tvbo figure render <Study>.yaml` — run automatically by
-`tvbo run <Study>.yaml` — emits a self-contained, editable `plot_<name>.py` **and** runs it,
+`tvbo run <Study>.yaml` — emits a self-contained, editable `figures/scripts/plot_<name>.py`
+**and** runs it,
 producing `<name>.png` in `figures/`. Iterate one figure fast with `tvbo figure render` (the
 results stay put; only the plot re-runs). Copy `assets/figures.snippet.yaml` for the block and
 `assets/figures.py.tmpl` for the panel module.
 
-**`<study>/figures/` is THE render target — one place, gitignored.** Not `output/figures/`
+**`<study>/figures/` is THE render target — one place, gitignored.** The rendered
+`<name>.png` sits at its root and its generated `plot_<name>.py` in
+`figures/scripts/`, so the directory the report and reviewers browse holds IMAGES,
+not twice as many files. That subdirectory is **not** called `code/`: in a study
+that name means the authored, tracked, importable code the recipe references by bare
+module name, and a generated artifact must not borrow it. Not `output/figures/`
 (that is the results tree) and not `code/figures/`. Everything downstream reads from there: the
 report's `FIGS = Path("../figures")`, and any script that still writes a supplement image writes
 there too, so a figure and the report that embeds it can never point at different copies. Add
-`figures/` to the study `.gitignore` — the `<name>.png` **and** the generated `plot_<name>.py`
+`figures/` to the study `.gitignore` — the `<name>.png` **and** the generated
+`scripts/plot_<name>.py`
 are both regenerable artifacts.
 
 **A `Figure` is layout + binding + style; keep compute and plotting code out of it.**
@@ -884,7 +892,7 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
 - **Redundant scripts.** One prep script (emits the tvbo Network directly); figures are
   the declarative `figures:` block, not scripts. Don't hand-write per-figure `plot_*.py`
   or an A/B compose driver — the renderer emits the plot scripts, and bespoke panel code
-  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in `figures/`
+  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in `figures/scripts/`
   is *generated*; never author or commit it.)
 - **Moving a module changes what `Path(__file__).parents[N]` means — grep for the climb
   BEFORE you flatten.** Study code routinely locates the study root by climbing from its own

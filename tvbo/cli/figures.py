@@ -51,24 +51,33 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
 
 
 def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
-    """Emit + run each figure's ``plot_<name>.py`` and return the written images.
+    """Emit + run each figure's render script and return the written images.
 
     The single home for the per-figure render loop, shared by the ``figure
     render`` command and by ``tvbo run`` (which renders a study's figures after
-    its experiments, so one command closes the replication loop). For each
-    figure a self-contained ``plot_<name>.py`` is emitted next to the image and
-    executed; ``base_dir`` is the root each layer's ``used`` IRI resolves
-    against (``<base_dir>/output/…``).
+    its experiments, so one command closes the replication loop). ``base_dir`` is
+    the root each layer's ``used`` IRI resolves against (``<base_dir>/output/…``).
+
+    The image lands directly in ``out_dir`` — the one place the report and every
+    other consumer reads a figure from — while its self-contained, editable
+    ``plot_<name>.py`` goes to ``out_dir/scripts/``. Both are regenerable and
+    gitignored together; separating them just keeps a study with many figures from
+    interleaving twice as many files in the directory people actually browse. The
+    subdirectory is deliberately NOT called ``code``: in a study that name means
+    the authored, tracked, importable code the recipe references by bare module
+    name, which this is not.
     """
     from tvbo.adapters import bsplot
 
     out_dir.mkdir(parents=True, exist_ok=True)
+    script_dir = out_dir / "scripts"
+    script_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     for figure in figures:
         name = getattr(figure, "name", None) or "figure"
         fmt = (getattr(figure, "format", None) or "png").lstrip(".")
         outfile = out_dir / f"{name}.{fmt}"
-        script_path = out_dir / f"plot_{sanitize_name(name)}.py"
+        script_path = script_dir / f"plot_{sanitize_name(name)}.py"
         bsplot.render(figure, base_dir=str(base_dir), outfile=str(outfile),
                       script_path=str(script_path))
         _common.info(f"wrote {outfile}")
@@ -100,9 +109,9 @@ def render(
 ) -> None:
     """Render figures in *spec* via bsplot codegen (all of them, or the ``--name`` subset).
 
-    For each figure a self-contained ``plot_<name>.py`` is emitted next to the
-    output image and executed, so the ``<name>.<format>`` file is produced and
-    the script stays as an editable, rerunnable artefact. ``<base-dir>`` is the
+    Each figure's ``<name>.<format>`` image lands in ``<out-dir>`` and its
+    self-contained, editable ``plot_<name>.py`` in ``<out-dir>/scripts/``, so the
+    directory the report reads holds images only. ``<base-dir>`` is the
     root each layer's ``used`` IRI resolves against (``<base-dir>/output/nc/…``).
     """
     spec_path = Path(spec).expanduser()

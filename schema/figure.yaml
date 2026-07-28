@@ -135,6 +135,9 @@ classes:
       number_loc:
         range: Corner
         description: "Per-panel override of the figure's panel_number_loc — e.g. wide top panels upper-right, grid panels upper-left."
+      number:
+        range: string
+        description: "The panel letter to draw, overriding the mosaic key, or the string 'false' to draw none. Needed whenever the paper's panels do not map one-to-one onto mosaic cells: a row of five mode surfaces under a single (a), or a schematic cell that carries no letter of its own. Without it a grouped figure numbers every cell and its letters stop matching the paper's."
       placeholder:
         range: string
         description: "Honest-placeholder text drawn when this panel's data is missing or degenerate (never a source-replot). Setting it wraps the draw so a missing container falls back to this label instead of erroring."
