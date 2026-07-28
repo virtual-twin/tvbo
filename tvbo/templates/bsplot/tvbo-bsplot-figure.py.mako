@@ -62,6 +62,10 @@ def _apply_axopts(ax, o):
         ax.set_ylabel(o["ylabel"])
     if o.get("title"):
         ax.set_title(o["title"])
+    if o.get("xscale"):
+        ax.set_xscale(o["xscale"])
+    if o.get("yscale"):
+        ax.set_yscale(o["yscale"])
     if o.get("xlim"):
         ax.set_xlim(*o["xlim"])
     if o.get("ylim"):

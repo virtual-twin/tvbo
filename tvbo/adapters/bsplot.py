@@ -134,6 +134,10 @@ def _style_kwargs(style) -> dict:
 _AXIS_OPTS = {
     "xlabel", "ylabel", "title", "xlim", "ylim", "xticks", "yticks",
     "hide_xticklabels", "hide_yticklabels", "axhline", "legend",
+    # Axis scale ("log", "symlog", "linear"). Not cosmetic: a spectrum that falls two
+    # orders of magnitude reads as flat on a linear axis, so the scale is part of what
+    # the panel claims.
+    "xscale", "yscale",
     # line3d only: the depth axis + camera + per-axis inversion (a phase-space axis often
     # runs the opposite way to the paper's convention). Ignored by 2-D kinds.
     "zlabel", "zlim", "elev", "azim", "invert_x", "invert_y", "invert_z", "zoom",
