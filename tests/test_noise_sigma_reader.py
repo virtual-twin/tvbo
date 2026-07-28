@@ -1,13 +1,12 @@
 """One reader for the noise amplitude (``tvbo.utils.noise_sigma``).
 
 ``Noise`` admits three spellings of the same physical quantity — ``parameters.sigma``
-(σ), ``parameters.nsig`` (dispersion D = σ²/2) and the legacy ``intensity`` slot — and
-they used to be read by five separate implementations that disagreed. These tests pin
-the shared reader's contract and assert that every backend goes through it, so a recipe
-cannot mean a different amplitude on different backends.
+and the ``intensity`` slot (both σ), and ``parameters.nsig`` (dispersion D = σ²/2) —
+and they used to be read by five separate implementations that disagreed, two of them
+about what ``intensity`` even meant. These tests pin the shared reader's single
+contract and assert every backend goes through it, so one recipe cannot mean different
+amplitudes on different backends.
 """
-
-import math
 
 import pytest
 
@@ -45,11 +44,21 @@ def test_sigma_wins_over_nsig():
     assert noise_sigma(n) == pytest.approx(0.2)
 
 
-def test_intensity_is_ambiguous_so_the_caller_declares_the_convention():
-    """The whole point of the parameter: the two readings differ by sqrt(2v)/v."""
-    n = _noise(intensity={"name": "D", "value": 0.5})
-    assert noise_sigma(n, intensity_means="dispersion") == pytest.approx(math.sqrt(1.0))
-    assert noise_sigma(n, intensity_means="sigma") == pytest.approx(0.5)
+def test_intensity_is_a_sigma_everywhere():
+    """One meaning, schema-wide: `intensity` is σ; a dispersion goes in `nsig`.
+
+    It used to be read as σ by the point-neuron adapters and as D (σ=sqrt(2D)) by the
+    tvboptim template — readings that differ by sqrt(2D)/D on the same recipe.
+    """
+    assert noise_sigma(_noise(intensity={"name": "sigma_ext", "value": 0.5})) == pytest.approx(0.5)
+    assert noise_sigma(_noise(parameters={"nsig": {"value": 0.5}})) == pytest.approx(1.0)
+
+
+def test_sigma_wins_over_intensity_and_intensity_over_nsig():
+    n = _noise(intensity={"name": "s", "value": 0.4}, parameters={"sigma": {"value": 0.2}})
+    assert noise_sigma(n) == pytest.approx(0.2)
+    n2 = _noise(intensity={"name": "s", "value": 0.4}, parameters={"nsig": {"value": 0.5}})
+    assert noise_sigma(n2) == pytest.approx(0.4)
 
 
 # ── every backend reads through it ───────────────────────────────────
@@ -66,7 +75,8 @@ def _dyn(noise_yaml):
     [
         ("{additive: true, parameters: {sigma: {value: 0.0316}}}", 0.0316),
         ("{additive: true, parameters: {nsig: {value: 0.5}}}", 1.0),
-        ("{additive: true, intensity: {name: D, value: 0.5}}", math.sqrt(1.0)),
+        ("{additive: true, intensity: {name: sigma_ext, value: 0.5}}", 0.5),
+        ("{additive: true, parameters: {nsig: {value: 0.5}}}", 1.0),
     ],
 )
 def test_tvboptim_adapter_reads_the_declared_amplitude(noise_yaml, expected):
@@ -85,11 +95,11 @@ def test_tvboptim_adapter_agrees_with_the_codegen_template():
     for noise_yaml in (
         "{additive: true, parameters: {sigma: {value: 0.00283}}}",
         "{additive: true, parameters: {nsig: {value: 0.004}}}",
-        "{additive: true, intensity: {name: D, value: 0.004}}",
+        "{additive: true, intensity: {name: sigma_ext, value: 0.004}}",
     ):
         dyn = _dyn(noise_yaml)
         sv_noise = dyn.state_variables["x"].noise
-        template_reading = noise_sigma(sv_noise, intensity_means="dispersion") or 0.0
+        template_reading = noise_sigma(sv_noise) or 0.0
         assert float(_extract_noise(dyn).params.sigma) == pytest.approx(template_reading)
 
 
@@ -102,7 +112,7 @@ def test_noise_block_without_an_amplitude_is_not_a_noise_target():
 
 
 def test_base_adapter_reads_intensity_as_sigma():
-    """The point-neuron spelling (`intensity: {name: sigma_ext}`) is σ, not a dispersion."""
+    """`intensity: {name: sigma_ext}` is σ — the meaning the schema now states."""
     from tvbo.adapters.base import BaseAdapter
 
     dyn = _dyn("{intensity: {name: sigma_ext, value: 1.0, unit: mV}}")
@@ -117,3 +127,30 @@ def test_brian2_membrane_noise_keeps_intensity_as_sigma_with_its_unit():
     dyn = _dyn("{intensity: {name: sigma_ext, value: 1.0, unit: mV}}")
     assert _membrane_noise_sigma(dyn.state_variables["x"]) == (1.0, "mV")
     assert _membrane_noise_sigma(_dyn("{additive: true}").state_variables["x"]) is None
+
+
+def test_julia_agrees_on_the_amplitude_and_on_being_stochastic():
+    """Julia picks ODE vs SDE from the same reader, so a `parameters.sigma` recipe is
+    not silently integrated deterministically while the other backends add noise."""
+    from tvbo import SimulationExperiment
+
+    def render(noise_spec):
+        return SimulationExperiment.from_string(
+            "id: 1\nlabel: t\nintegration: {method: heun, dt: 0.05, duration: 100.0}\n"
+            "dynamics:\n  name: M\n  state_variables:\n"
+            f"    x: {{equation: {{rhs: '-x'}}, initial_value: 0.1, noise: {noise_spec}}}\n"
+        ).render("julia")
+
+    for spec in (
+        "{parameters: {sigma: {value: 0.0316}}}",
+        "{intensity: {name: sigma_ext, value: 0.0316}}",
+    ):
+        code = render(spec)
+        assert "SDEProblem" in code, f"{spec} produced a deterministic ODE"
+        assert "0.0316, # x" in code, f"{spec} lost its amplitude"
+
+    # nsig is a dispersion: sigma = sqrt(2 D)
+    code = render("{parameters: {nsig: {value: 0.0004995}}}")
+    assert "SDEProblem" in code and "0.0316" in code
+
+    assert "ODEProblem" in render("null")

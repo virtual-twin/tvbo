@@ -7,6 +7,10 @@
     "label": {
       "type": "string"
     },
+    "alternateName": {
+      "type": "string",
+      "_instruction": "Enter the alternateName."
+    },
     "description": {
       "type": "string"
     },
@@ -22,6 +26,9 @@
       "type": "boolean"
     },
     "id": {
+      "type": "integer"
+    },
+    "size": {
       "type": "integer"
     },
     "dynamics": {

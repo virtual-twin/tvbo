@@ -43,6 +43,7 @@ from __future__ import annotations
 import io
 import os
 import warnings
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Type
 
@@ -170,40 +171,6 @@ def _looks_like_path(source: Any) -> bool:
         return Path(source).exists()
     except OSError:
         return False
-
-
-# Convenience YAML keys folded to their canonical (schema) slot names before
-# LinkML parsing. LinkML ``aliases:`` are metadata only — the runtime loader
-# keys on the canonical slot name — so singular/alternate spellings declared as
-# schema aliases are resolved here. Keep in sync with ``aliases:`` in the schema.
-_SLOT_ALIASES = {
-    "optimization": "optimizations",  # singular convenience for the (multivalued) optimizations slot
-}
-
-
-def _fold_slot_aliases(obj: Any) -> Any:
-    """Recursively rename alias keys (e.g. ``optimization``) to their canonical
-    slot names (``optimizations``) so the LinkML loader accepts them."""
-    if isinstance(obj, dict):
-        folded: dict = {}
-        for k, v in obj.items():
-            canonical = _SLOT_ALIASES.get(k, k) if isinstance(k, str) else k
-            if canonical != k and canonical in obj:
-                # Both the alias (e.g. ``optimization``) and its canonical
-                # (``optimizations``) are present in the same mapping. Keep the
-                # canonical value and drop the alias rather than silently
-                # overwriting one with the other.
-                warnings.warn(
-                    f"YAML mapping has both '{k}' and its canonical alias "
-                    f"target '{canonical}'; ignoring '{k}'.",
-                    stacklevel=2,
-                )
-                continue
-            folded[canonical] = _fold_slot_aliases(v)
-        return folded
-    if isinstance(obj, list):
-        return [_fold_slot_aliases(x) for x in obj]
-    return obj
 
 
 # Edge var-slot aliases. Folded ONLY under an ``edges`` / ``edge_template`` key,
@@ -352,8 +319,9 @@ def _fold_state_variable_domains(obj: Any) -> Any:
 def _normalize_loaded(data: Any) -> Any:
     """Apply the dict-level TVBO conveniences shared by every load path.
 
-    Folds slot aliases to their canonical names (globally, and the edge-scoped
-    ``source_variable``/``target_variable``), folds legacy state-variable
+    Slot aliases are folded at construction by the generated datamodel (see
+    ``hatch_build._alias_support``), so this handles only what a class cannot: the
+    edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable
     ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries),
     and lifts the terse ``distribution: {lo, hi}`` shortcut into
     ``distribution: {domain: {lo, hi}}``. Both the string path (``load``/``loads`` →
@@ -361,7 +329,10 @@ def _normalize_loaded(data: Any) -> Any:
     route through here so the two cannot diverge. Order matters: the boundaries fold
     can create a terse ``distribution`` that the following lift then completes.
     """
-    data = _fold_slot_aliases(data)
+    import copy
+
+    # The passes below mutate in place; never reach through to the caller's object.
+    data = copy.deepcopy(data)
     data = _fold_edge_var_aliases(data)
     data = _fold_state_variable_domains(data)
     data = _lift_distribution_shortcut(data)

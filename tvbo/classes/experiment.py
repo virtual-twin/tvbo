@@ -832,8 +832,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # construction resolves the network builder eagerly (see __init__).
         register_recipe_code_paths(cls._pending_source_file)
         try:
-            with open(filepath) as file_handle:
-                data_as_dict = yaml.safe_load(file_handle) or {}
+            data_as_dict = yaml_loader.load_as_dict(filepath) or {}
             # Drop private/provenance keys (e.g. _source_file) — not schema slots,
             # so a round-tripped render_yaml() spec reloads cleanly.
             if isinstance(data_as_dict, dict):
@@ -875,7 +874,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo.utils import yaml_loader
         import yaml
 
-        data_as_dict = yaml.safe_load(yaml_string) or {}
+        data_as_dict = yaml_loader.load_as_dict(yaml_string) or {}
         return yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
 
     # ── Platform retrieval ────────────────────────────────────────
@@ -2486,6 +2485,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             from tvbo.adapters.brian2 import Brian2Adapter
 
             return Brian2Adapter(self).run(**kwargs)
+
+        elif format.lower() in ["gillespie", "ssa"]:
+            from tvbo.adapters.gillespie import GillespieAdapter
+
+            return GillespieAdapter(self).run(**kwargs)
 
         else:
             raise ValueError(

@@ -89,10 +89,14 @@ model_output_channel_index = (
 
 # Extract state variable bounds (for BoundedSolver)
 # Uses SymPy oo so code printers emit the correct backend literal
-from tvbo.templates.tvboptim.utils import get_state_bounds, format_bounds_array
+from tvbo.templates.tvboptim.utils import get_state_bounds, format_bounds_array, get_noise_covariance
 state_bounds_lo, state_bounds_hi, has_state_bounds = get_state_bounds(model)
 state_bounds_lo_str = format_bounds_array(state_bounds_lo, 'jax')
 state_bounds_hi_str = format_bounds_array(state_bounds_hi, 'jax')
+
+# A declared noise covariance wraps the solver in tvbo's CorrelatedNoiseSolver, exactly
+# as finite clamped bounds wrap it in tvboptim's BoundedSolver.
+noise_cov = get_noise_covariance(model, experiment)
 
 # Build coupling_inputs dict from model.coupling_inputs
 coupling_inputs_dict = {}
@@ -203,12 +207,11 @@ opt_mode = resolve_optimizer_mode(integration)
 
 # Noise configuration from state_variables or integration.
 # tvboptim's AdditiveGaussianNoise expects sigma = standard deviation of the per-step
-# Wiener increment (increment = sigma * sqrt(dt) * N(0,1)). Read through the shared
-# `tvbo.utils.noise_sigma`, in the TVB reading of `intensity` (dispersion D = sigma^2/2),
-# so this template and `adapters.tvboptim._extract_noise` cannot drift apart.
+# Wiener increment (increment = sigma * sqrt(dt) * N(0,1)); `tvbo.utils.noise_sigma` is
+# the shared reader, so this template and `adapters.tvboptim._extract_noise` cannot drift.
 from tvbo.utils import noise_sigma as _shared_noise_sigma
 def _noise_sigma(noise_obj):
-    return _shared_noise_sigma(noise_obj, intensity_means='dispersion') or 0.0
+    return _shared_noise_sigma(noise_obj) or 0.0
 
 noise_sigma_per_state = []
 noise_targets = []
@@ -1342,6 +1345,9 @@ from tvboptim.experimental.network_dynamics.solvers import ${solver_class}
 % if has_state_bounds:
 from tvboptim.experimental.network_dynamics.solvers import BoundedSolver
 % endif
+% if noise_cov:
+from tvbo.classes.correlated_noise import CorrelatedNoiseSolver, covariance_factor
+% endif
 % if has_noise:
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 % endif
@@ -1454,6 +1460,20 @@ def _freeze_step_time(solver):
 
 % endif
 
+% if noise_cov and noise_cov['lazy']:
+def _load_covariance(path, key):
+    """Read the declared noise covariance from its content-addressed artifact.
+
+    A sourced or produced covariance is materialised at codegen time and read here, so
+    an operator of any size costs nothing in the generated source. Read once when the
+    solver is built, never per step."""
+    from pathlib import Path
+
+    from tvbo.data.matrix_io import LazyArrayStore
+    return LazyArrayStore(Path(path), {}).read_dataset(key)
+
+
+% endif
 def get_solver(block_size=None):
     """Configured solver. ``block_size`` (native solvers only) sets the nested-block-scan
     granularity so a streaming reduction (``prepare(reduce=...)``) folds the observable
@@ -1470,6 +1490,18 @@ def get_solver(block_size=None):
     )
 % else:
     solver = base_solver
+% endif
+% if noise_cov:
+    # Impose the declared noise covariance on the Wiener increment (correlated_over:
+    # ${noise_cov['axis']}). Factorised once here, not per step.
+% if noise_cov['lazy']:
+    _covariance = _load_covariance(${repr(noise_cov['lazy'][0])}, ${repr(noise_cov['lazy'][1])})
+% else:
+    _covariance = ${repr(noise_cov['value'])}
+% endif
+    solver = CorrelatedNoiseSolver(
+        solver, covariance_factor(_covariance), axis=${repr(noise_cov['axis'])}
+    )
 % endif
 % if stochastic_param_info or has_stochastic_stimulus:
     solver = _freeze_step_time(solver)

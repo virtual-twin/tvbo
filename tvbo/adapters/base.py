@@ -291,14 +291,9 @@ class BaseAdapter:
 
     @staticmethod
     def get_noise_sigmas(dynamics) -> list[float]:
-        """Per-state-variable noise amplitude σ, ``0.0`` where none is declared.
-
-        Reads ``intensity`` as σ itself (the point-neuron spelling, ``intensity:
-        {name: sigma_ext, ...}``), which is what the NetworkDynamics.jl emission this
-        feeds has always assumed.
-        """
+        """Per-state-variable noise amplitude σ, ``0.0`` where none is declared."""
         return [
-            noise_sigma(getattr(sv, "noise", None), intensity_means="sigma") or 0.0
+            noise_sigma(getattr(sv, "noise", None)) or 0.0
             for sv in (dynamics.state_variables or {}).values()
         ]
 

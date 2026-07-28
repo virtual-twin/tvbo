@@ -406,7 +406,7 @@ network:
           initial_value: 16.0
           unit: mV
           record: true
-          noise: {intensity: {name: sigma_ext, value: 1.0, unit: mV}}
+          noise: {parameters: {sigma: {value: 1.0, unit: mV}}}
       events:
         spike: {condition: {rhs: "v > thresh"}, affect: {rhs: "v = reset"}}
     STP_E:
@@ -606,7 +606,7 @@ network:
           initial_value: -70.0
           unit: mV
           record: true
-          noise: {intensity: {name: sigma_ext, value: 1.0, unit: mV}}
+          noise: {parameters: {sigma: {value: 1.0, unit: mV}}}
       events:
         spike: {condition: {rhs: "v > thresh"}, affect: {rhs: "v = reset"}}
   nodes:

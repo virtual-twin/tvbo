@@ -27,7 +27,7 @@ def test_strided_model_merges_helper_functions_into_sink():
     assert populate_observation_from_iri(obs, functions_sink=sink) is True
 
     assert "strided_hrf" in sink, "the fused strided convolution function must merge"
-    for helper in ("hrf_kernel", "temporal_average", "prepend_history"):
+    for helper in ("hrf_kernel", "subsample", "prepend_history"):
         assert helper in sink, f"pipeline calls {helper} by name; it must merge"
     assert all(isinstance(f, dm.Function) for f in sink.values())
 

@@ -1,5 +1,11 @@
 ---
-applyTo: '**'
+name: mermaid
+description: "Create, validate and preview Mermaid diagrams through the Mermaid Chart VS Code extension: the LM tools to call, the real command IDs, and the @mermaid-chart slash commands. Use when asked to draw, edit or visualize any diagram."
+metadata:
+  audience: maintainer
+  applies_to:
+    - "**"
+  tags: [diagrams, tooling, vscode]
 ---
 
 # Mermaid AI Skills

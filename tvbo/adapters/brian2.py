@@ -129,15 +129,18 @@ def _params(dyn):
 def _membrane_noise_sigma(v_sv):
     """The Gaussian white-noise amplitude on a membrane variable, as ``(value, unit)``.
 
-    Reads ``StateVariable.noise.intensity`` — the standard-deviation scale σ of an additive
-    Gaussian white-noise current (the Mongillo ``σ_ext·η(t)`` external drive). Returns None
-    when the variable declares no noise.
+    The standard-deviation scale σ of an additive Gaussian white-noise current (the
+    Mongillo ``σ_ext·η(t)`` external drive), with the unit its declaration carries.
+    Returns None when the variable declares no noise.
     """
     nz = getattr(v_sv, "noise", None)
-    sigma = noise_sigma(nz, intensity_means="sigma")
+    sigma = noise_sigma(nz)
     if not sigma:
         return None
-    return float(sigma), str(getattr(getattr(nz, "intensity", None), "unit", "") or "mV")
+    # The unit belongs to whichever spelling carried the value; defaulting to the
+    # `intensity` slot's unit would stamp mV on a `parameters: {sigma: {unit: nA}}`.
+    source = normalize_params(getattr(nz, "parameters", None)).get("sigma") or getattr(nz, "intensity", None)
+    return float(sigma), str(getattr(source, "unit", "") or "mV")
 
 
 def _edge_weight(edge):

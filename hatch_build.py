@@ -49,7 +49,7 @@ def generate_datamodel(root: str | Path) -> None:
         )
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
-    _write(out_dir / "schema.py", PythonGenerator(str(schema)).serialize())
+    _write(out_dir / "schema.py", PythonGenerator(str(schema)).serialize() + _alias_support(schema))
     _write(out_dir / "pydantic.py", PydanticGenerator(str(schema)).serialize())
 
     # JSON Schema — relax `additionalProperties: false → true` everywhere so
@@ -61,6 +61,80 @@ def generate_datamodel(root: str | Path) -> None:
     (out_dir / "tvbo_datamodel.schema.json").write_text(
         json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+
+
+# Slot aliases whose resolution is more than a rename, so they must not be folded at
+# construction: `boundaries` also implies `enforce: clamp`, and a co-existing descriptive
+# `domain` becomes the sampling distribution. `yaml_loader._fold_state_variable_domains`
+# owns those.
+_SEMANTIC_ALIASES = ("range", "boundaries")
+
+
+def _alias_support(schema: Path) -> str:
+    """Python appended to the generated ``schema.py`` so classes accept their aliases.
+
+    LinkML treats ``aliases:`` as documentation — its loaders key on the canonical slot
+    name, so a declared alias is inert and raises ``unexpected keyword argument``. Each
+    class's ``__init__`` already receives exactly its own slots, which makes it the one
+    place where an alias can be resolved without guessing whether a mapping is an
+    instance or a keyed collection, and without a free-form key (a parameter named
+    ``dt``) ever being mistaken for a slot. Every construction path — the LinkML
+    loaders, ``cls(**data)``, nested and inlined members, subclasses — goes through it.
+    """
+    from linkml_runtime.utils.schemaview import SchemaView
+
+    view = SchemaView(str(schema))
+    table: dict[str, dict[str, str]] = {}
+    for cls_name in view.all_classes():
+        amap = {
+            alias: slot.name
+            for slot in view.class_induced_slots(cls_name)
+            for alias in (slot.aliases or [])
+            if alias != slot.name and alias not in _SEMANTIC_ALIASES
+        }
+        # An alias that is a real slot of this same class is that slot's own name here.
+        own = {s.name for s in view.class_induced_slots(cls_name)}
+        amap = {a: c for a, c in amap.items() if a not in own}
+        if amap:
+            table[cls_name] = amap
+    return f"""
+
+# --- slot aliases (generated) -------------------------------------------------------
+# {{class: {{alias: canonical slot}}}} from the schema's `aliases:`. Folded in __init__,
+# where the kwargs are known to belong to this class.
+_SLOT_ALIASES = {table!r}
+
+
+def _install_slot_aliases() -> None:
+    import warnings
+
+    def _wrap(cls, amap):
+        original = cls.__init__
+
+        def __init__(self, *args, **kwargs):
+            for alias, canonical in amap.items():
+                if alias in kwargs:
+                    value = kwargs.pop(alias)
+                    if canonical in kwargs:
+                        warnings.warn(
+                            f"{{cls.__name__}} got both {{alias!r}} and its canonical "
+                            f"slot {{canonical!r}}; ignoring {{alias!r}}.",
+                            stacklevel=2,
+                        )
+                    else:
+                        kwargs[canonical] = value
+            original(self, *args, **kwargs)
+
+        cls.__init__ = __init__
+
+    for name, amap in _SLOT_ALIASES.items():
+        cls = globals().get(name)
+        if cls is not None:
+            _wrap(cls, amap)
+
+
+_install_slot_aliases()
+"""
 
 
 def _relax_additional_properties(node) -> None:
