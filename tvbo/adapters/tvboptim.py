@@ -408,8 +408,9 @@ def to_heterogeneous_network(
     """Build a tvboptim ``HeterogeneousNetwork`` from a heterogeneous tvbo Network.
 
     Nodes are partitioned into ``DynamicsGroup``s by their referenced dynamics
-    (graph order = node order); edges are collapsed into ``SignalRoute``s keyed
-    by ``(coupling, target_var, delayed)``. The shared graph is built by the same
+    (graph order = node order); edges are collapsed into ``SignalRoute``s keyed by
+    ``(coupling NAME, target_var, delayed)`` — keying on object identity would split
+    two edges naming one coupling into two routes, applying the shared graph twice. The shared graph is built by the same
     :func:`_build_graph` the homogeneous path uses, so the connectome weights
     (with signs) and delays carry over unchanged.
 
@@ -499,9 +500,6 @@ def to_heterogeneous_network(
         sg, tg = node_group[node_index[s]], node_group[node_index[t]]
         cname, ccoup = _resolve_coupling(network, edge)
         edelayed = bool(getattr(ccoup, "delayed", delays)) if ccoup is not None else delays
-        # Key on the resolved coupling NAME: two edges naming one coupling are one
-        # route. Keying on object identity would split them and apply the shared
-        # graph twice, double-counting the coupling.
         key = (cname, getattr(edge, "target_var", None), edelayed)
         acc = routes_acc.setdefault(key, {"source": {}, "target": {}, "coupling": ccoup})
         readout = _source_readout(getattr(edge, "source_var", None), optim_dyn[sg].STATE_NAMES, sg)
@@ -537,6 +535,11 @@ def _heterogeneous_solution_to_dataarray(sol, het, network):
     canonical tvbo layout ``(time, variable, node, mode)`` — the final container
     is correctly keyed at assembly time, with no positional reshaping or
     ``TimeSeries`` round-trip downstream.
+
+    ``sol.to_graph`` owns the group -> graph-node scatter and its NaN fill, so the
+    ordering contract stays on the tvboptim side. Variables are written into a
+    preallocated container rather than stacked, which would hold a second full copy
+    of the result while it copies.
     """
     import xarray as xr
 
@@ -546,11 +549,6 @@ def _heterogeneous_solution_to_dataarray(sol, het, network):
             if v not in var_order:
                 var_order.append(v)
 
-    # ``to_graph`` owns the group -> graph-node scatter (and the NaN fill for groups
-    # lacking a variable); going through it keeps that ordering contract on the
-    # tvboptim side, where a change would fail loudly instead of mis-scattering here.
-    # Filled slice by slice into the final container: stacking a list of per-variable
-    # arrays would hold a second full copy of the result while it copies.
     ts = np.asarray(sol.ts)
     first = np.asarray(sol.to_graph(var_order[0]))
     n_time, n_nodes = first.shape
@@ -680,9 +678,6 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
     from tvbo.adapters.base import BaseAdapter
 
     network = experiment.network
-    # `build_dynamics_dict` is the shared assembler every codegen backend uses:
-    # the experiment's own dynamics first (so it is the default for nodes that
-    # declare none), then the network's library.
     lib = dynamics_lib if dynamics_lib is not None else BaseAdapter(experiment).build_dynamics_dict()
     default_dyn = next(iter(lib), None) if dynamics_lib is None else None
     het = to_heterogeneous_network(network, dynamics_lib=lib, default_dynamics=default_dyn)
@@ -701,10 +696,6 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
         )
     n_steps = max(1, int(round(dur / dt)))
     solver = getattr(solvers, SOLVER_MAP[method])(block_size=min(100, n_steps))
-    # A declared covariance is imposed by wrapping the solver, so it applies wherever
-    # the scan hands its increment to `step` — grouped or not. Resolved from `lib`, the
-    # dynamics dict actually built above (the `dynamics_lib` argument is None on the
-    # ordinary `exp.run("tvboptim")` path).
     _factors, _axis = _correlated_noise_factors(lib, het, context=experiment)
     if _factors is not None:
         from tvbo.classes.correlated_noise import CorrelatedNoiseSolver

@@ -2024,6 +2024,39 @@ def render_inference(inf: Any, coupling_keys: Set[str], external_keys: Set[str],
 # =============================================================================
 
 
+def materialise_lazy_params(parameters: Any, experiment: Any = None) -> Dict[str, tuple]:
+    """Resolve every sourced/produced parameter to a content-addressed artifact.
+
+    A `Parameter` carrying `producer:`, `source:` or `used:` has no literal `value`, so
+    the emission sites would otherwise fall back to a scalar default and silently drop
+    the array — a per-node operator would become ``jnp.full(shape, 1.0)`` and the model
+    would run with the geometry erased. Materialising here writes the array once at
+    codegen time and lets the generated module read it back, so an operator of any size
+    costs nothing in the generated source.
+
+    Returns ``{param_name: (path, key)}`` for the lazy parameters only; literals and
+    free parameters are absent. Empty when *experiment* is None, because materialising
+    runs the producer and this must stay side-effect-free when called as a predicate.
+    """
+    from pathlib import Path
+
+    from tvbo.data import param_io
+
+    if not parameters or experiment is None:
+        return {}
+    src_file = getattr(experiment, "_source_file", None)
+    src_dir = Path(src_file).parent if src_file else None
+
+    params = list(parameters.values()) if hasattr(parameters, "values") else list(parameters)
+    out: Dict[str, tuple] = {}
+    for p in params:
+        if not param_io.is_lazy(p):
+            continue
+        path, key = param_io.materialise(p, source_dir=src_dir, context=experiment)
+        out[str(p.name)] = (str(path), key)
+    return out
+
+
 def get_noise_covariance(model: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
     """The noise covariance a model declares, ready for the solver template to emit.
 

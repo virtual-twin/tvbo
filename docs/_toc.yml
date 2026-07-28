@@ -637,8 +637,6 @@ website:
                         href: datamodel/classes/Subject.qmd
                       - text: "Surrogate"
                         href: datamodel/classes/Surrogate.qmd
-                      - text: "Temporal Applicable Equation"
-                        href: datamodel/classes/TemporalApplicableEquation.qmd
                       - text: "Time Series"
                         href: datamodel/classes/TimeSeries.qmd
                       - text: "Tractogram"
@@ -1711,6 +1709,8 @@ website:
                         href: datamodel/slots/symbol.qmd
                       - text: "symmetry"
                         href: datamodel/slots/symmetry.qmd
+                      - text: "system_size"
+                        href: datamodel/slots/system_size.qmd
                       - text: "system_type"
                         href: datamodel/slots/system_type.qmd
                       - text: "tail"

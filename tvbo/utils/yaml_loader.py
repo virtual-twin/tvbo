@@ -173,11 +173,13 @@ def _looks_like_path(source: Any) -> bool:
         return False
 
 
-# Edge var-slot aliases. Folded ONLY under an ``edges`` / ``edge_template`` key,
-# never through the global, context-free ``_SLOT_ALIASES`` above:
-# ``target_variable`` is also the *canonical* slot on stimulus events, and a
-# context-free rename would clobber it.
 _EDGE_VAR_ALIASES = {"source_variable": "source_var", "target_variable": "target_var"}
+"""Edge var-slot aliases, folded ONLY under an ``edges`` / ``edge_template`` key.
+
+They must never join the global, context-free ``_SLOT_ALIASES``: ``target_variable`` is
+also the *canonical* slot on stimulus events, so a context-free rename would silently
+retarget every stimulus. The key-scoped application is what keeps the two apart.
+"""
 
 
 def resolve_edge_var_aliases(edges: Any) -> None:

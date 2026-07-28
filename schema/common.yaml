@@ -45,9 +45,10 @@ classes:
         description: >-
             A pointer to one labelled array in a result container, dataset, or
             curated entity — the single cross-container reference primitive (a PROV
-            entity a consumer ``prov:used``). WHERE is either ``experiment`` (an
-            in-study experiment id, resolved like ``initial_state.source_experiment``)
-            or the full ``iri`` (a curated / result / external pointer); at most one.
+            entity a consumer ``prov:used``). WHERE is ``experiment`` (an in-study
+            experiment id, resolved like ``initial_state.source_experiment``),
+            ``analysis`` (an in-study analysis name), or the full ``iri`` (a curated /
+            result / external pointer); at most one.
             WHICH is ``output`` (a recorded variable, ``observation__<name>``,
             ``estimate__<param>``, or external variable). SLICE is ``sel`` (label-keyed
             ``.sel``, never positional). ``reconcile`` optionally aligns the sourced
@@ -69,6 +70,14 @@ classes:
                     both are absent the reference is local — ``output`` names this
                     experiment's own output — otherwise falling back to
                     ``initial_state.source_experiment`` when present.
+            analysis:
+                range: string
+                description: >-
+                    WHERE (short form): an in-study analysis name whose saved result
+                    holds the array (``output/results/<name>/result.h5``). Mutually
+                    exclusive with ``experiment`` and ``iri``, and — like
+                    ``experiment`` — it registers the run-order dependency, so the
+                    analysis runs before whatever consumes it.
             output:
                 range: string
                 description: >-

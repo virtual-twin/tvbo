@@ -287,6 +287,10 @@ def _sync_check(
     Two independent failure modes: *drift*, where a committed copy no longer
     matches what its canonical source renders to (fix by re-running sync), and
     the :func:`_lint` findings, which sync cannot fix.
+
+    ``.claude/skills/`` is a local render and is not committed — the skills live in
+    ``skills/`` and ``tvbo/skills/canonical/`` — so it is gated only where it exists,
+    which is exactly where a stale copy could mislead someone.
     """
     import tempfile
 
@@ -327,11 +331,6 @@ def _sync_check(
                 if af.get(rel) != bf.get(rel):
                     drift.append(f"{label}/{rel}")
 
-        # `.claude/skills/` is a local render of the canonical sources and is not
-        # committed (the skills themselves live in `skills/` and
-        # `tvbo/skills/canonical/`). A checkout that never rendered it — CI, a fresh
-        # clone — has nothing to drift from, so only gate it where it exists, which
-        # is exactly where a stale copy could mislead someone.
         check_claude = claude_dir.exists()
         for skill in skills:
             if check_claude:
