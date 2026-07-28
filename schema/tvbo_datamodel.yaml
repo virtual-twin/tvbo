@@ -794,8 +794,6 @@ classes:
 
     Equation:
         class_uri: tvbo:Equation
-        annotations:
-            scalar_shortcut: rhs
         slots:
             - label
             - definition
@@ -810,6 +808,8 @@ classes:
                 range: string
                 aliases:
                     - righthandside
+                annotations:
+                    simple_dict_value: true
             conditionals:
                 description: Conditional logic for piecewise equations.
                 range: ConditionalBlock
@@ -1008,18 +1008,6 @@ classes:
                 range: string
                 ifabsent: string(linear)
                 description: "Interpolation for a data-driven stimulus: 'linear' or 'cubic'."
-
-    TemporalApplicableEquation:
-        class_uri: tvbo:TemporalApplicableEquation
-        annotations:
-            scalar_shortcut: rhs
-        is_a: Equation
-        slots:
-            - parameters
-        attributes:
-            time_dependent:
-                range: boolean
-                ifabsent: false
 
     Parcellation:
         class_uri: tvbo:Parcellation
@@ -2205,20 +2193,63 @@ classes:
 
     Analysis:
         class_uri: tvbo:Analysis
+        is_a: FunctionCall
+        # No prov:Activity mapping: like every FunctionCall this is a prov:Plan (the
+        # prospective recipe), and a Plan is an Entity, disjoint from the Activity that
+        # executes it. The Activity is the run; the Entity it generates is the container.
         description: >-
-            A general analysis observable: a quantity obtained by ANALYZING the model,
-            its solve, or a derived loss, rather than by transforming the recorded
-            trajectory. It is deliberately broad — the same concept covers parameter
+            A quantity obtained by ANALYZING something — a model, its solve, a derived
+            loss, simulated results, or empirical data — rather than by transforming a
+            recorded trajectory. Nothing here requires a model: decomposing empirical
+            maps into a basis, taking their spectrum, or running a permutation test over
+            measured data are analyses in exactly this sense, and so are parameter
             sensitivities/gradients (autodiff or finite-difference), stability spectra
-            (Lyapunov), bifurcation quantities, identifiability/Fisher-information
-            metrics, and future analyses. `type` names the analysis (extensible);
-            `target` and `wrt` bind it to what is analyzed and with respect to what;
-            `parameters` carries the analysis-specific configuration. Backend-neutral:
-            each backend maps `type` to its own machinery, or emits a comment and
-            skips when it has no equivalent (it does not raise).
+            (Lyapunov), bifurcation quantities, identifiability metrics, and reductions
+            spanning several experiments.
+
+            It is an invocation (``is_a: FunctionCall``) with two mutually exclusive ways
+            of saying WHAT is analyzed, the same alternative-specification idiom
+            ``Parameter`` uses for provenance:
+
+            - **the solve** — ``type`` names the analysis (a free string, extensible;
+              the vocabulary lives in the ontology as AnalysisObservable concepts rather
+              than a closed enum), ``target`` and ``wrt`` bind it to what is analyzed and
+              with respect to what, and ``parameters`` configures it. Evaluated as part
+              of the integration, so it is emitted by the same codegen and limited to
+              what that backend can trace. Declared on ``Observation.analysis``.
+
+            - **saved data** — ``callable`` (or ``class_call``) invoked with
+              ``arguments``, each a literal ``value`` or a ``used:`` DataRef reading an
+              experiment, another analysis, or a dataset. The data need not be simulated:
+              this is equally the form for analysing empirical maps, an atlas, or a
+              measured connectome. Because it consumes containers rather than a running
+              solve, it is scheduled on its own — before or after the experiments,
+              according to what it uses. Declared in ``SimulationStudy.analyses``, where
+              the result is persisted as its own container
+              (``output/results/<name>/result.h5``) — which is what lets a figure bind it
+              with ``used: {analysis: <name>}`` exactly as it binds a run, and why a study
+              needs no driver script for its non-simulation figures. ``name`` is then
+              required and unique, since it keys that container. The invocation yields a
+              mapping of name -> labelled array (or one array, keyed by the analysis
+              name); each key becomes an ``observation__<key>`` data-variable keeping its
+              dims and coordinates, so a figure ``encoding`` can name them.
+
+            Like a ``SimulationExperiment``, an Analysis declares its own ``execution``:
+            which backend renders it, at what precision, on which accelerator. That
+            states a requirement, not a mechanism — the same analysis is renderable by
+            more than one backend, and one that cannot render it says so rather than
+            silently substituting another.
         slots:
             - parameters
         attributes:
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: >-
+                    Which backend renders this analysis, and at what precision /
+                    accelerator / worker count — the same declaration a
+                    ``SimulationExperiment`` carries, so an analysis is not tied to one
+                    engine. Unset means the study's default.
             type:
                 range: string
                 description: >-
@@ -2503,8 +2534,10 @@ classes:
 
     Parameter:
         class_uri: tvbo:Parameter
-        annotations:
-            scalar_shortcut: value
+        slot_usage:
+            value:
+                annotations:
+                    simple_dict_value: true
         slots:
             - name
             - label
@@ -5049,6 +5082,21 @@ classes:
                 multivalued: true
                 inlined_as_list: true
                 range: SimulationExperiment
+            analyses:
+                multivalued: true
+                inlined_as_list: true
+                range: Analysis
+                description: >-
+                    Analyses of this study's results, each persisted as its own container
+                    and so bindable by a figure or a later analysis exactly like a run.
+                    These take the ``Analysis`` form that invokes a ``callable`` over
+                    ``arguments`` (the ``type``/``target``/``wrt`` form analyses a solve
+                    and belongs on an ``Observation`` instead), and each needs a unique
+                    ``name`` — it keys the container. An argument's ``used:`` DataRef both
+                    records what was consumed and orders the run: ``tvbo run`` executes
+                    the analyses around the experiments — one an experiment consumes
+                    first, one consuming an experiment after — and then renders the
+                    figures.
             figures:
                 multivalued: true
                 inlined_as_list: true

@@ -481,11 +481,7 @@ class Network(tvbo_datamodel.Network):
             n_nodes = kwargs["number_of_nodes"]
             kwargs["nodes"] = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)]
 
-        # Fold Edge var-slot aliases (source_variable/target_variable) onto the
-        # canonical source_var/target_var before the base constructor and the
-        # edge_template snapshot see them. The YAML load paths already folded
-        # these (yaml_loader._normalize_loaded); this covers callers that build
-        # the kwargs dict programmatically.
+        # Fold before the base constructor and the edge_template snapshot see them.
         resolve_edge_var_aliases(kwargs.get("edges"))
         resolve_edge_var_aliases(kwargs.get("edge_template"))
 

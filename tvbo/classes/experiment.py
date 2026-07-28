@@ -429,6 +429,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "model", None) and not getattr(self, "dynamics", None):
             self.dynamics = Dynamics(name=self.model)
 
+        self._propagate_event_names_to_dynamics()
+
         # Coerce dynamics to enhanced Dynamics class
         if getattr(self, "dynamics", None) and not isinstance(self.dynamics, Dynamics):
             if isinstance(self.dynamics, tvbo_datamodel.Dynamics):
@@ -3302,6 +3304,33 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 unique.append(f)
             out[subject] = unique
         return out
+
+    def _propagate_event_names_to_dynamics(self) -> None:
+        """Hand experiment-level event names down to the Dynamics before it parses.
+
+        An event's name is a symbol its dfun references, so the Dynamics needs it in its
+        symbolic scope at parse time or the name falls through to SymPy's global
+        namespace (see `Dynamics.get_symbolic_elements`). Only the names travel; the
+        events themselves are lowered later by `_resolve_events`.
+        """
+        events = getattr(self, "events", None)
+        dynamics = getattr(self, "dynamics", None)
+        if not events or dynamics is None:
+            return
+        names = (list(events.keys()) if hasattr(events, "keys")
+                 else [getattr(e, "name", None) for e in events])
+        is_mapping = isinstance(dynamics, dict)
+        existing = dynamics.get("events") if is_mapping else getattr(dynamics, "events", None)
+        if existing:
+            return
+        payload = {str(n): {"name": str(n)} for n in names if n}
+        if is_mapping:
+            dynamics["events"] = payload
+        else:
+            try:
+                dynamics.events = payload
+            except (AttributeError, TypeError):
+                pass
 
     def _resolve_events(self) -> None:
         """Lower declarative stimulus/stimulation Event fields into the form the

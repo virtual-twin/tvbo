@@ -27,6 +27,7 @@ from pathlib import Path
 
 from tvbo.adapters import bsplot
 from tvbo.cli import _workflow as _wf
+from tvbo.data.dataref import experiment_id as _experiment_id
 from tvbo.templates import lookup
 from tvbo.utils import as_list, deep_merge, sanitize_name
 
@@ -100,16 +101,21 @@ def _rule_resources(block: dict) -> dict:
 
 def _exp_key_of(iri, keys) -> str | None:
     """The kit experiment key a figure ``used.iri`` points at, or ``None`` for an
-    external reference. Mirrors ``bsplot._container_path``'s segment/digit extraction so
-    the IRI a figure renders from also resolves to the rule that produces its cells."""
+    external reference.
+
+    Uses the same STRICT matcher as ``bsplot._container_path`` (``dataref.experiment_id``,
+    which requires the last segment to BE an experiment token): a name that merely
+    contains a digit — an analysis called ``fig2_spectrum``, a curated
+    ``rec-avgMatrix_atlas-HCPMMP1`` — must not be read as experiment 2 and bound to that
+    rule's outputs. A loose digit strip made the workflow disagree with the ``plot.py``
+    about which container a layer meant."""
     if not iri:
         return None
     last = re.split(r"[:/#]", str(iri))[-1]
-    digits = re.sub(r"\D", "", last)
-    for cand in ([last, digits, f"exp{digits}", f"exp-{digits}"] if digits else [last]):
-        if cand in keys:
-            return cand
-    return None
+    if last in keys:
+        return last
+    eid = _experiment_id(iri)
+    return next((c for c in (f"exp{eid}", f"exp-{eid}", eid) if c in keys), None) if eid else None
 
 
 def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]:
@@ -118,15 +124,18 @@ def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]
     A ``used`` edge to a KIT experiment resolves to that experiment's own output files —
     the ``expand()`` over its fanned grid (so the figure waits for EVERY cell) or its single
     group-run path — emitted RAW so Snakemake evaluates the ``expand``. A ``used`` edge to
-    something the kit does not produce (an external/author-time container) falls back to the
-    single resolved container path via the same ``bsplot._container_path`` the ``plot.py``
-    reads, emitted as a quoted string. Unresolved edges are dropped — a rule cannot depend
-    on a file that does not exist.
+    something the kit does not produce (an external/author-time container, or an analysis's
+    own container) falls back to the single resolved container path via the same
+    ``bsplot._container_path`` the ``plot.py`` reads, emitted as a quoted string. Unresolved
+    edges are dropped — a rule cannot depend on a file that does not exist.
+
+    The reference is read through ``bsplot._used_ref``, so the short ``experiment:`` and
+    ``analysis:`` forms register their dependency exactly as a full ``iri`` does.
     """
     inputs, seen = [], set()
     for panel in as_list(getattr(figure, "panels", None)):
         for layer in (getattr(panel, "layers", None) or []):
-            iri = getattr(getattr(layer, "used", None), "iri", None)
+            iri = bsplot._used_ref(getattr(layer, "used", None))
             key = _exp_key_of(iri, exp_plans_by_key)
             if key is not None:
                 item = {"value": _wf.fan_input_expr(exp_plans_by_key[key]), "raw": True}

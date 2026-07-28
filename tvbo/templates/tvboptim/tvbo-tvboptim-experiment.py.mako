@@ -11,6 +11,7 @@ from tvbo.templates.tvboptim.utils import (
     safe_name, iter_parameter_values, as_list, get_attr, is_network_observation, obs_has_all_args,
     get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
     parse_exploration, normalize_n_parallel, get_param_info, get_node_param_overrides,
+    materialise_lazy_params,
     normalize_coupling_aliases, resolve_coupling_input_map,
     get_node_state_overrides, render_jax_default, get_mode_layout,
     get_all_observations_from_algo, network_axis_leaf, initial_conditions_axis_sv,
@@ -188,11 +189,14 @@ method = (integration.method or 'euler').lower()
 solver_class = SOLVER_MAP.get(method)
 assert solver_class, f"Unknown solver method: {method}. Valid: {list(SOLVER_MAP.keys())}"
 dt = float(integration.step_size)
-# Seconds per model time unit (ms -> 0.001). The Jacobian A inherits the model's native
-# rate units (per-ms by tvbo convention); analytic-frequency diagnostics (PSD in Hz)
-# convert A to per-second with this factor so the physical frequency axis is consistent.
+# `time_scale` is the canonical slot (alias `time_unit`); `unit` is the older spelling.
+# Seconds per model time unit (ms -> 0.001), used to put analytic-frequency diagnostics
+# on a physical Hz axis and to label the run.
 from tvbo.utils.units import unit_to_si_factor
-time_si_factor = unit_to_si_factor(getattr(integration, 'unit', None) or 'ms')
+## `unit` first: `time_scale` carries `ifabsent: ms`, so it is never unset and would
+## otherwise mask an explicitly declared `unit: s` (a 1000x error in every derived rate).
+time_unit = str(getattr(integration, 'unit', None) or getattr(integration, 'time_scale', None) or 'ms')
+time_si_factor = unit_to_si_factor(time_unit)
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the solver template) rather than duplicated across mako blocks.
@@ -274,6 +278,7 @@ dynamics_class = model.name.replace(' ', '').replace('-', '') if model.name else
 
 # Dynamics parameter info (shared utility)
 dyn_param_names, dyn_param_defaults, dyn_param_shapes = get_param_info(model.parameters)
+dyn_param_lazy = materialise_lazy_params(model.parameters, experiment)
 
 # Per-node parameter overrides from network.nodes[].parameters
 # If nodes define e.g. B=17.6 on node 1, auto-promote B to heterogeneous array
@@ -1460,17 +1465,20 @@ def _freeze_step_time(solver):
 
 % endif
 
-% if noise_cov and noise_cov['lazy']:
-def _load_covariance(path, key):
-    """Read the declared noise covariance from its content-addressed artifact.
+% if dyn_param_lazy or (noise_cov and noise_cov['lazy']):
+def _load_param(path, key, device=True):
+    """Read a sourced or produced array from its content-addressed artifact.
 
-    A sourced or produced covariance is materialised at codegen time and read here, so
-    an operator of any size costs nothing in the generated source. Read once when the
-    solver is built, never per step."""
+    Materialised at codegen time so an operator of any size never enters the generated
+    source. Read once when the network is built, not per step. ``device=False`` keeps the
+    array in NumPy at its stored precision — what a host-side consumer needs, since
+    ``jnp.asarray`` silently truncates float64 to float32 whenever x64 is off.
+    """
     from pathlib import Path
 
     from tvbo.data.matrix_io import LazyArrayStore
-    return LazyArrayStore(Path(path), {}).read_dataset(key)
+    _arr = LazyArrayStore(Path(path), {}).read_dataset(key)
+    return jnp.asarray(_arr) if device else _arr
 
 
 % endif
@@ -1495,7 +1503,7 @@ def get_solver(block_size=None):
     # Impose the declared noise covariance on the Wiener increment (correlated_over:
     # ${noise_cov['axis']}). Factorised once here, not per step.
 % if noise_cov['lazy']:
-    _covariance = _load_covariance(${repr(noise_cov['lazy'][0])}, ${repr(noise_cov['lazy'][1])})
+    _covariance = _load_param(${repr(noise_cov['lazy'][0])}, ${repr(noise_cov['lazy'][1])}, device=False)
 % else:
     _covariance = ${repr(noise_cov['value'])}
 % endif
@@ -1595,6 +1603,8 @@ def create_network(
         % for name in dyn_param_names:
         % if name in node_param_overrides:
         '${name}': jnp.array([${', '.join(str(v) for v in node_param_overrides[name])}]),
+        % elif name in dyn_param_lazy:
+        '${name}': _load_param(${repr(dyn_param_lazy[name][0])}, ${repr(dyn_param_lazy[name][1])}),
         % elif name in dyn_param_shapes:
         '${name}': jnp.full(${dyn_param_shapes[name]}, ${dyn_param_defaults.get(name, 1.0)}),
         % else:
@@ -3460,8 +3470,8 @@ def run_experiment(
     default_state = sim_result.state
     # Raw transient result for observation monitors (HRF warmup)
     transient = sim_result.result_transient
-    _log(f"  Simulation period: ${t1_default} ms, dt: ${dt} ms")
-    _log(f"  Transient period: ${transient_time} ms")
+    _log(f"  Simulation period: ${t1_default} ${time_unit}, dt: ${dt} ${time_unit}")
+    _log(f"  Transient period: ${transient_time} ${time_unit}")
 
     # Use custom state if provided (e.g., from previous optimization)
     if state is not None:

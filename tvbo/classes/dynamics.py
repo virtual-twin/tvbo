@@ -1326,8 +1326,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         """Build a unified local_dict for parsing model expressions.
 
         Includes symbols for parameters, coupling terms, derived parameters, derived
-        variables, output transforms, state variables, function names, and (optionally)
-        the time symbol 't'.
+        variables, output transforms, state variables, event names, function names, and
+        (optionally) the time symbol 't'.
+
+        Every declared name must appear here so it shadows SymPy's own global namespace:
+        `Q` is SymPy's assumptions object, `S` its sympify shortcut, `O` big-O, `N`
+        numeric evaluation and `I` the imaginary unit, so a model that names a quantity
+        after any of them would otherwise fail to parse.
 
         Returns
         -------
@@ -1368,12 +1373,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             for name in f.arguments:  # arguments is a dict keyed by name
                 scope[str(name)] = Symbol(str(name))
 
-        # Events: an event's name IS the symbol its dfun references (the stimulus term of
-        # the Jansen1995 idiom). Without it the name falls through to SymPy's own global
-        # namespace, where single capitals are taken: `Q` is the assumptions object, `S`
-        # the sympify shortcut, `O` the order class, `N` numerical evaluation, `I` the
-        # imaginary unit. A model whose stimulus happens to be called `Q` then fails to
-        # parse with a SympifyError that names none of them.
         for name in getattr(self, "events", {}) or {}:
             scope[str(name)] = Symbol(str(name))
 

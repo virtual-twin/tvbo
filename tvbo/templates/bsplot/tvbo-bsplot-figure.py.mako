@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import bsplot
 from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import TRANSFORMS as _TF, CUSTOM_PANELS as _CP, registered as _registered
+from tvbo.data.dataref import match_output as _match_output
 % for m in code_modules:
 import ${m}  # noqa: F401 — registers this study's custom panels/transforms into _CP / _TF
 % endfor
@@ -25,6 +26,17 @@ import ${m}  # noqa: F401 — registers this study's custom panels/transforms in
 def _open(path):
     """Open a run's result container once per distinct path (xarray)."""
     return xr.open_dataset(path, engine="h5netcdf")
+
+
+def _var(ds, output):
+    """The data-variable a layer's ``output`` names, via the shared ``DataRef`` rule.
+
+    A recorded state variable is stored under its own name, while an observation, an
+    analysis result or an estimate carries an ``observation__``/``estimate__`` prefix. A
+    figure names the quantity, not the storage convention, so both resolve — through the
+    one matcher every other consumer uses, not a copy of it.
+    """
+    return ds[_match_output(ds.data_vars, output)]
 
 
 def _placeholder(ax, label):
@@ -157,7 +169,7 @@ def _panel_${p['key']}(fig, ax):
     ax = fig.add_subplot(_spec, projection="3d")
 % for L in p['layers']:
     _ds = _open(${repr(L['container'])})
-    _da = _ds[${repr(L['output'])}]
+    _da = _var(_ds, ${repr(L['output'])})
 % if L['transform']:
     _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
 % endif
@@ -178,7 +190,7 @@ def _panel_${p['key']}(fig, ax):
 % else:
 % for L in p['layers']:
     _ds = _open(${repr(L['container'])})
-    _da = _ds[${repr(L['output'])}]
+    _da = _var(_ds, ${repr(L['output'])})
 % if L['transform']:
     _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
 % endif

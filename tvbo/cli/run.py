@@ -164,6 +164,10 @@ def run(
         # EXPERIMENT run — before any figure renders. Import failures are non-fatal here (a
         # genuinely broken module surfaces at figure-render time with full context).
         _import_figure_code_modules(obj)
+        analyses_before, analyses_after = _study_analysis_stages(obj)
+        whole_study = experiment is None and shard is None
+        if whole_study:
+            _run_study_analyses(analyses_before, spec, out_dir, stage="before")
         exps = obj.experiments if hasattr(obj, "experiments") else obj.simulation_experiments
         items = list(exps.values()) if hasattr(exps, "values") else list(exps)
         if experiment is not None:
@@ -191,11 +195,8 @@ def run(
             _apply_axis_pins(exp, pin)
             _apply_max_iterations(exp, eff_max_iterations)
             _run_one(exp, _effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
-        # Close the replication loop: a study is its experiments AND the figures that
-        # read them, so render the declarative `figures:` here (unless suppressed, or
-        # this run only covered a subset of experiments — those panels would be
-        # placeholders). Rendering is a no-op when the study declares no figures.
-        if figures and experiment is None and shard is None:
+        ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after") if whole_study else True
+        if figures and whole_study and ok:
             _render_study_figures(obj, spec, out_dir)
         return
 
@@ -238,6 +239,60 @@ def _import_figure_code_modules(study) -> None:
             importlib.import_module(m)
         except Exception:
             pass
+
+
+def _study_analysis_stages(study) -> tuple[list, list]:
+    """A study's ``analyses:`` split into the stages that run before / after its experiments.
+
+    Returns two empty lists when the study declares none, so callers need no guard. A
+    malformed schedule (duplicate name, unknown or circular ``used:``) raises here, before
+    any experiment runs, rather than half way through a long study.
+    """
+    from tvbo.data.analysis_io import schedule, study_analyses
+
+    analyses = study_analyses(study)
+    return schedule(analyses) if analyses else ([], [])
+
+
+def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str) -> bool:
+    """Execute one stage of a study's declarative ``analyses:``; True when the stage held.
+
+    Each writes ``<root>/results/<name>/result.h5`` — the container a figure layer or a
+    later analysis binds with ``used: {analysis: <name>}``. ``<root>`` follows the
+    results: ``--out-dir`` when given (so an analysis finds the sibling experiments this
+    run actually wrote), else ``<study dir>/output``, the root every other ``used:``
+    resolves against.
+
+    The ``before`` stage raises on failure — nothing has run yet, and an experiment may
+    source the missing analysis. The ``after`` stage reports and returns False instead:
+    the experiments already succeeded and must not be lost to a reduction, but the
+    figures that would read the missing container are then skipped rather than drawn
+    from stale or absent data.
+    """
+    from tvbo.data.analysis_io import run_analyses
+
+    if not analyses:
+        return True
+    spec_path = Path(spec)
+    base = spec_path.resolve().parent if spec_path.is_file() else Path.cwd()
+    root = Path(out_dir).resolve() if out_dir is not None else base / "output"
+    try:
+        run_analyses(
+            analyses, root,
+            on_start=lambda n: _common.info(f"running analysis: {n}"),
+            on_done=lambda n, p: _common.info(
+                f"  wrote {p.relative_to(base) if p.is_relative_to(base) else p}"),
+        )
+    except Exception as e:
+        if stage == "before":
+            raise
+        _common.warn(
+            f"analysis stage failed after the experiments completed ({type(e).__name__}: {e}). "
+            f"The runs are saved under {root}; skipping figures, which would read a "
+            f"container that was not written. Re-run to retry the analyses and figures."
+        )
+        return False
+    return True
 
 
 def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:

@@ -1098,16 +1098,6 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
             cmd.append(f"--array={slurm_array}")
         cmd.append(artefact.name)
     elif engine == "snakemake":
-        # The same kit runs natively both locally and on HPC. The profile is ALWAYS
-        # applied when one is available — it carries the container deployment method,
-        # its bind mounts, retries and keep-going, none of which are SLURM-specific.
-        # Running locally overrides only the *executor* (and cores), so a kit emitted
-        # with `workflow.container:` still runs inside that container on a laptop.
-        #   *profile*        -> that profile (e.g. a site profile like cubi-v1),
-        #                       else the kit's shipped profile/ when present.
-        #   --cores N        -> force LOCAL on N cores.
-        #   no `sbatch`      -> a laptop / CI: fall back to local automatically so bare
-        #                       `submit` still runs, no manual override needed.
         has_scheduler = bool(_resolve_launcher("sbatch"))  # checks the venv sibling AND $PATH
         use_profile = profile or (
             "profile" if (artefact.parent / "profile" / "config.yaml").exists() else None

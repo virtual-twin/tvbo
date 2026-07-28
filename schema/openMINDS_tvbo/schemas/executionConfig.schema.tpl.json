@@ -24,6 +24,9 @@
     },
     "find_fixpoint": {
       "type": "boolean"
+    },
+    "system_size": {
+      "type": "number"
     }
   }
 }

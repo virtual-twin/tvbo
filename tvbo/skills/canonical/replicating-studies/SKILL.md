@@ -125,6 +125,40 @@ own material, fully git-ignored). Produce two artifacts of **your own** under `r
   criterion** · a feasibility/tier tag (`core` / `extended`).
 - **`figures.md`** — per-figure panel map: panels, axes + ranges, colour convention,
   line styles, any quirks to reproduce as-is (mislabelled axes, unit conventions).
+- **`methods-vs-code.md`** — the **divergence register** (REQUIRED whenever the study ships
+  code; see below). Started in Phase 1, grown through every later phase, and surfaced as a
+  first-class section of the report.
+
+### The divergence register — why this is a headline deliverable, not bookkeeping
+
+Whenever a paper ships code, **assume its prose and its source describe different models until
+you have checked**, and keep a register of every place they do. This is not incidental: it is
+the failure mode a declarative recipe exists to remove, so documenting it is a primary result of
+the replication, not a footnote. In TVBO the spec **is** the executable artifact — there is no
+second description that can drift — and the register is the evidence for that claim.
+
+Classify each entry, because the classes have different detectability and different fixes:
+
+| Class | What it is | Typical tell |
+|---|---|---|
+| **A. Value drift** | same symbol, different number in code | a constants file disagrees with a table |
+| **B. Algorithm substitution** | code computes a *different operation* than the printed equation | an "integral" implemented as a least-squares solve |
+| **C. Undocumented configuration** | a choice the paper never states at all | which of several shipped bases; how many modes; which mask |
+| **D. Underdetermined prose** | text admits several readings, one correct | where an average sits relative to a nonlinear step |
+| **E. Convention traps** | same name, different meaning across files | id numbering, time units, initial conditions |
+
+Record for each: what Methods says · what the code does · **how you established it** (read vs
+verified) · whether it changes a reported number. Keeping "read" and "verified" distinct is what
+stops the register from becoming a second layer of assumptions — see the assumption-labelling
+rule in Phase 7.
+
+Two lessons from Pang2023, where 14 divergences were found and 8 changed a number: the ones that
+bite hardest are **C** (four cases — including the paper using *two different eigenmode bases*
+for different figures and saying so nowhere) because nothing in the text hints they exist; and
+**B** is the most damaging to a reader, because someone implementing the printed equation will
+not reproduce the figures. Note also that the register is only *visible* for open deposits — a
+paper without released code has the same drift and no way to see it, which is worth saying
+plainly in the report rather than implying the open paper is the sloppy one.
 
 Watch for the trap that the *printed* equation is not the one the figures use (Taher's
 Eq. 9 has a √N normalization typo; the figures use the plain std). Record the quantity
@@ -455,6 +489,15 @@ stopgap; don't build an elaborate filename tree — it's throwaway once the `Dat
 
 ## Phase 6 — Report: `report/report.qmd` (every number computed)
 
+**The report MUST carry a "Where the Methods and the code diverge" section** whenever the study
+ships code — a summary table by class (A–E) with counts, the two or three entries that would
+silently produce a wrong figure spelled out, and a short paragraph on why one declarative
+description removes the whole class. This is a headline result, so give it a numbered
+section of its own rather than burying it in Limitations; the full evidence lives in
+`report/analysis/methods-vs-code.md`. State plainly that the divergences are *visible* only
+because the deposit is open — otherwise the section reads as a criticism of the most transparent
+papers.
+
 See **writing-reports** for the report mechanics: the IMRAD structure, the metrics cell
 that computes every number from the containers (nothing hand-typed), the native
 `EXP.dynamics.generate_report(..., citeformat="quarto")` equation and parameter render, the
@@ -598,6 +641,31 @@ So, when you cannot verify:
 
 This is the same discipline as **doubting a claimed discrepancy** — default to "we may have
 misread this", and make the uncertainty visible instead of resolving it silently.
+
+### For a LINEAR model, don't fit a scale — invert the transfer function
+
+When a replication's output has the right shape but the wrong magnitude, the instinct is to
+report a best-fit scale factor. For a linear model that is the weak measurement, because the
+fit absorbs every other residual — basis truncation above all — and lands on a number that is
+neither the true scale nor obviously wrong. In Pang2023 the forward fit read 1.85 against a
+4–8 % truncation floor, and sat unexplained for a long time.
+
+Invert the model instead. A linear system's own transfer function is exactly invertible, so
+the deposited OUTPUT determines the INPUT that produced it:
+`Q(ω) = Φ(ω)·[−ω² + 2iωγ_s + γ_s²(1 + r_s²λ)]/γ_s²`. That returned a flat boxcar of amplitude
+**10.00 ± 0.05** where the Methods said 20 — a factor of exactly 2, settled in one step.
+
+Two reasons this beats fitting:
+
+- **It is truncation-consistent.** The same basis appears on both sides, so the error that
+  contaminates a forward comparison cancels instead of biasing the estimate.
+- **The recovered input's SHAPE is a self-test of the whole model.** A flat rectangle can only
+  come out if `γ_s`, the damping term, the eigenvalues and the stiffness are all right; any
+  error makes the recovery frequency-shaped. So the measurement validates the model and
+  quantifies the discrepancy at once — you are not merely asserting agreement.
+
+Generalises to any linear or linearised stage: a haemodynamic convolution, a filter, a modal
+projection. Where the model is nonlinear, invert around the operating point and say so.
 
 **Port a statistical procedure from the reference implementation, not from its description.**
 A spin test is the canonical example: naive nearest-neighbour matching of rotated parcels is

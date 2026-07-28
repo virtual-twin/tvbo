@@ -77,6 +77,29 @@ def locate_exp_container(results_root, source_id) -> Path:
     return sorted(cands)[0]
 
 
+def analysis_container_path(results_root, name) -> Path:
+    """``<results_root>/results/<name>/result.h5`` — the analysis-container layout, once."""
+    root = Path(results_root) if results_root else Path.cwd()
+    return root / "results" / str(name) / "result.h5"
+
+
+def locate_analysis_container(results_root, name) -> Path:
+    """Path to the container a study analysis named ``name`` writes under ``results_root``.
+
+    ``<results_root>/results/<name>/result.h5`` — the one place the convention is spelled,
+    so the writer (:mod:`tvbo.data.analysis_io`), the run-time resolver and the figure
+    adapter cannot disagree about where an analysis result lives. Raises when it has not
+    been produced yet, with the command that produces it.
+    """
+    path = analysis_container_path(results_root, name)
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"analysis sourcing: no saved result for analysis {str(name)!r} (looked for "
+            f"{path}). Run the study (`tvbo run <Study>.yaml`) so its analyses execute."
+        )
+    return path
+
+
 def is_local_ref(ref) -> bool:
     """A ``DataRef`` with no WHERE (neither ``experiment`` nor ``iri``).
 
@@ -85,15 +108,15 @@ def is_local_ref(ref) -> bool:
     resolved by the in-run observation machinery, not by opening a sibling container.
     Consumers test this to route a local reference to the right resolver.
     """
-    return not getattr(ref, "experiment", None) and not getattr(ref, "iri", None)
+    return not any(getattr(ref, w, None) for w in ("experiment", "analysis", "iri"))
 
 
 def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Path:
     """Resolve a ``DataRef``'s WHERE to a result-container path.
 
-    Precedence ladder (matches the design's one rule): an explicit ``experiment`` id
-    or an ``iri`` carrying a trailing experiment number resolves against
-    ``results_root``; a filesystem ``iri`` that exists is taken as-is (a curated /
+    Precedence ladder (matches the design's one rule): an explicit ``experiment`` id,
+    an ``analysis`` name, or an ``iri`` carrying a trailing experiment number resolves
+    against ``results_root``; a filesystem ``iri`` that exists is taken as-is (a curated /
     external container); a reference with no WHERE falls back to
     ``fallback_experiment`` (the enclosing ``initial_state.source_experiment``, so the
     warm-start ergonomic of naming the sibling once is preserved). Raises when none
@@ -102,6 +125,10 @@ def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Pat
     exp = getattr(ref, "experiment", None)
     if exp is not None:
         return locate_exp_container(results_root, _source_id_int(exp))
+
+    ana = getattr(ref, "analysis", None)
+    if ana is not None:
+        return locate_analysis_container(results_root, ana)
 
     iri = getattr(ref, "iri", None)
     if iri:
@@ -133,12 +160,18 @@ def match_output(keys: Iterable[str], output: str) -> str:
 
     A recorded state variable matches by name; a declared observation / estimate is
     stored ``observation__<name>`` / ``estimate__<name>``, so the trailing-``__``
-    suffix matches too. Shared by every consumer (figure layers, warm-start
-    parameters, state seeds) so ``output`` addresses them all identically.
+    suffix matches too. An EXACT match always wins: a container holding both a recorded
+    ``power`` and an ``observation__power`` would otherwise resolve by dict iteration
+    order, so one spec could bind different arrays in different containers. Shared by
+    every consumer (figure layers, warm-start parameters, state seeds) so ``output``
+    addresses them all identically.
     """
-    keys = list(keys)
+    keys = [str(k) for k in keys]
     for k in keys:
-        if k == output or k.endswith(f"__{output}"):
+        if k == output:
+            return k
+    for k in keys:
+        if k.endswith(f"__{output}"):
             return k
     raise KeyError(
         f"cross-experiment sourcing: source container does not hold '{output}' "

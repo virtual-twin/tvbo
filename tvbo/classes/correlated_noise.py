@@ -33,11 +33,9 @@ import numpy as np
 
 __all__ = ["covariance_factor", "noise_mixer", "CorrelatedNoiseSolver"]
 
-# Axis names (`Noise.correlated_over`, a DimensionType) mapped onto the axis of the
-# per-step noise increment, which is [n_noise_states, n_nodes]. `mode` is deliberately
-# absent: a model's mode axis is folded into the state axis, so there is no distinct
-# axis for a modal covariance to index (see `_axis_position`).
 _AXIS = {"state": -2, "node": -1, "region": -1}
+"""`Noise.correlated_over` names mapped onto axes of the [n_noise_states, n_nodes]
+increment. `mode` is absent by design: a model's modes are folded into the state axis."""
 
 # Symmetry and PSD are checked against the matrix's own scale, so the tolerance means
 # the same thing for a covariance of order 1e-6 and one of order 1e6.
@@ -187,9 +185,11 @@ def CorrelatedNoiseSolver(base_solver, factor, axis: str = "node"):
         """A native solver that mixes the noise increment before delegating."""
 
         def __init__(self, base_solver, factor):
-            # Deliberately skip NativeSolver.__init__ and delegate the scan settings
-            # to the wrapped solver, so wrapping cannot silently drop a block size or
-            # a gradient horizon (the idiom BoundedSolver uses).
+            """Wrap `base_solver`, delegating its scan settings via the properties below.
+
+            Skips `NativeSolver.__init__` so wrapping cannot silently drop a block size
+            or gradient horizon — the idiom `BoundedSolver` uses.
+            """
             self.base_solver = base_solver
             self.factor = factor
 

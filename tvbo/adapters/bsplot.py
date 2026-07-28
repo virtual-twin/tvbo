@@ -251,7 +251,10 @@ def load_layer(layer: dict):
     """
     name = layer.get("transform")
     fn = registered(TRANSFORMS, name, "transform") if name else None   # spec error before any IO
-    da = _open_ds(layer["container"])[layer["output"]]
+    ds = _open_ds(layer["container"])
+    from tvbo.data.dataref import match_output
+
+    da = ds[match_output(ds.data_vars, layer["output"])]
     if fn:
         da = fn(da)
     if layer.get("sel"):
@@ -291,15 +294,19 @@ def _used_ref(used):
     """The container key for a figure layer's ``used`` DataRef.
 
     An explicit ``iri`` pointer wins; otherwise an in-study ``experiment`` id resolves to its
-    ``exp-<id>`` key. The ``experiment`` form is preferred for same-study bindings — it needs no
-    hardcoded study key in an IRI string and (via the ``used`` edge) registers the workflow
-    dependency so the source experiment runs first.
+    ``exp-<id>`` key and an in-study ``analysis`` to its own name (whose container
+    ``_container_path`` finds under ``output/results/<name>/``). The short forms are preferred
+    for same-study bindings — they need no hardcoded study key in an IRI string and (via the
+    ``used`` edge) register the dependency, so the source runs first.
     """
     iri = getattr(used, "iri", None)
     if iri:
         return str(iri)
     exp = getattr(used, "experiment", None)
-    return f"exp-{exp}" if exp is not None else None
+    if exp is not None:
+        return f"exp-{exp}"
+    ana = getattr(used, "analysis", None)
+    return str(ana) if ana is not None else None
 
 
 def _resolve_layer(layer, panel_kind, base_dir):

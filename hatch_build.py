@@ -63,10 +63,7 @@ def generate_datamodel(root: str | Path) -> None:
     )
 
 
-# Slot aliases whose resolution is more than a rename, so they must not be folded at
-# construction: `boundaries` also implies `enforce: clamp`, and a co-existing descriptive
-# `domain` becomes the sampling distribution. `yaml_loader._fold_state_variable_domains`
-# owns those.
+# `boundaries` also implies `enforce: clamp`; yaml_loader._fold_state_variable_domains owns it.
 _SEMANTIC_ALIASES = ("range", "boundaries")
 
 
@@ -80,25 +77,37 @@ def _alias_support(schema: Path) -> str:
     instance or a keyed collection, and without a free-form key (a parameter named
     ``dt``) ever being mistaken for a slot. Every construction path — the LinkML
     loaders, ``cls(**data)``, nested and inlined members, subclasses — goes through it.
+
+    It also applies LinkML's ``simple_dict_value`` annotation, which marks the slot a
+    bare scalar stands for: ``omega: 0.0628`` means ``{value: 0.0628}`` and
+    ``equation: "x+2"`` means ``{rhs: "x+2"}``. LinkML specifies this for keyed
+    collections (``inlined_as_simple_dict``) but ``linkml_runtime``'s dataclass loader
+    does not implement it, so it is applied here — and extended to single-valued
+    inlined slots, which the spec does not cover. Slots explicitly marked
+    ``inlined: false`` are references: their scalar is the target's *identifier*, not a
+    value to wrap (``FreeParameter.parameter: ReducedWongWangEIB.J_i``), so they are skipped.
     """
     from linkml_runtime.utils.schemaview import SchemaView
 
     view = SchemaView(str(schema))
 
-    # A class may declare `annotations: {scalar_shortcut: <slot>}` — the slot a bare
-    # scalar stands for, so `omega: 0.0628` means `omega: {value: 0.0628}` and
-    # `equation: "x+2"` means `equation: {rhs: "x+2"}`.
     shortcut_of: dict[str, str] = {}
     for cls_name in view.all_classes():
-        ann = (view.get_class(cls_name).annotations or {}).get("scalar_shortcut")
-        if ann is not None:
-            shortcut_of[cls_name] = str(getattr(ann, "value", ann))
+        # The annotation must be declared ON this class: induced slots inherit, and a
+        # subclass that redefines what a bare scalar means (DerivedParameter, whose
+        # scalar is an `equation`, not Parameter's `value`) must not silently take the
+        # parent's.
+        for slot_name in view.class_slots(cls_name, direct=True):
+            slot = view.induced_slot(slot_name, cls_name)
+            if slot.annotations and "simple_dict_value" in slot.annotations:
+                shortcut_of[cls_name] = slot.name
+                break
     lifts: dict[str, dict[str, str]] = {}
     for cls_name in view.all_classes():
         slot_lifts = {
             slot.name: (shortcut_of[str(slot.range)], bool(slot.multivalued))
             for slot in view.class_induced_slots(cls_name)
-            if str(slot.range) in shortcut_of
+            if str(slot.range) in shortcut_of and slot.inlined is not False
         }
         if slot_lifts:
             lifts[cls_name] = slot_lifts
