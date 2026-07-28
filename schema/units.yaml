@@ -160,6 +160,15 @@ enums:
                 exact_mappings:
                     - UO:0000015
                 description: "Centimetre"
+            # ── Reciprocal area (spatial eigenvalues, curvature) ──
+            per_mm2:
+                meaning: qudt:PER-MilliM2
+                description: >-
+                    Per square millimetre (mm⁻²). The unit of a Laplace-Beltrami
+                    eigenvalue and of Gaussian curvature.
+            per_m2:
+                meaning: qudt:PER-M2
+                description: "Per square metre (m⁻²)"
             # ── Velocity ──
             m_per_s:
                 meaning: qudt:M-PER-SEC

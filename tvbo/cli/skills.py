@@ -287,6 +287,10 @@ def _sync_check(
     Two independent failure modes: *drift*, where a committed copy no longer
     matches what its canonical source renders to (fix by re-running sync), and
     the :func:`_lint` findings, which sync cannot fix.
+
+    ``.claude/skills/`` is a local render and is not committed — the skills live in
+    ``skills/`` and ``tvbo/skills/canonical/`` — so it is gated only where it exists,
+    which is exactly where a stale copy could mislead someone.
     """
     import tempfile
 
@@ -327,17 +331,19 @@ def _sync_check(
                 if af.get(rel) != bf.get(rel):
                     drift.append(f"{label}/{rel}")
 
+        check_claude = claude_dir.exists()
         for skill in skills:
-            _cmp(
-                tmp_path / "claude" / skill.name / "SKILL.md",
-                claude_dir / skill.name / "SKILL.md",
-                f".claude/skills/{skill.name}/SKILL.md",
-            )
-            _cmp_tree(
-                tmp_path / "claude" / skill.name / "assets",
-                claude_dir / skill.name / "assets",
-                f".claude/skills/{skill.name}/assets",
-            )
+            if check_claude:
+                _cmp(
+                    tmp_path / "claude" / skill.name / "SKILL.md",
+                    claude_dir / skill.name / "SKILL.md",
+                    f".claude/skills/{skill.name}/SKILL.md",
+                )
+                _cmp_tree(
+                    tmp_path / "claude" / skill.name / "assets",
+                    claude_dir / skill.name / "assets",
+                    f".claude/skills/{skill.name}/assets",
+                )
             if skill.audience in {"maintainer", "both"}:
                 _cmp(
                     tmp_path / "copilot" / f"{skill.name}.instructions.md",

@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import copy
 import re
+import warnings
 from functools import lru_cache
 from typing import Any, Type, Union, get_args, get_origin
 
@@ -122,6 +123,22 @@ def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
     return None
 
 
+@lru_cache(maxsize=None)
+def _slot_alias_map(model_cls: Type[BaseModel]) -> dict[str, str]:
+    """This class's ``{alias: canonical}`` slot-alias map.
+
+    Reused verbatim from the LinkML dataclass path (``schema._SLOT_ALIASES``) so
+    this validator accepts exactly the keys that loader does. The dataclasses fold
+    these aliases in ``__init__``; the Pydantic models cannot, so :func:`_inject`
+    folds them here, class-scoped — the same context that keeps ``target_variable``
+    (an ``Edge`` alias, but the canonical slot on a stimulus ``Event``) from being
+    renamed where it must not be.
+    """
+    from tvbo.datamodel.schema import _SLOT_ALIASES
+
+    return _SLOT_ALIASES.get(model_cls.__name__, {})
+
+
 # --------------------------------------------------------------------------- #
 # Key -> identifier injection
 # --------------------------------------------------------------------------- #
@@ -133,6 +150,24 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
     # Drop file-envelope metadata wherever a model is constructed (mirrors TVBO).
     for envelope_key in _ENVELOPE_KEYS:
         data.pop(envelope_key, None)
+
+    # Fold this class's slot aliases (``dt``->``step_size``, ``righthandside``->``rhs``,
+    # ...), class-scoped, exactly as the generated dataclasses fold them in ``__init__``.
+    # The Pydantic models cannot, so a raw alias key would otherwise be rejected by
+    # ``extra='forbid'``. Runs before the field walk so an aliased key is seen under its
+    # canonical name.
+    for alias, canonical in _slot_alias_map(model_cls).items():
+        if alias not in data:
+            continue
+        if canonical in data:
+            warnings.warn(
+                f"{model_cls.__name__} got both {alias!r} and its canonical slot "
+                f"{canonical!r}; ignoring {alias!r}.",
+                stacklevel=2,
+            )
+            data.pop(alias)
+        else:
+            data[canonical] = data.pop(alias)
 
     for fname, info in model_cls.model_fields.items():
         key = fname if fname in data else (info.alias if info.alias and info.alias in data else None)
@@ -285,8 +320,9 @@ def loads(source: str, target_class: Union[str, Type[BaseModel], None] = None,
     ``drop_unknown`` is forwarded to :func:`validate` (see its docstring); the
     remaining ``kwargs`` go to the YAML loader.
     """
+    target = _resolve_target(target_class)
     data = yaml_loader.load_as_dict(source, **kwargs) or {}
-    return validate(data, target_class, drop_unknown=drop_unknown)
+    return validate(data, target, drop_unknown=drop_unknown)
 
 
 def load(source: Any, target_class: Union[str, Type[BaseModel], None] = None,
@@ -297,8 +333,9 @@ def load(source: Any, target_class: Union[str, Type[BaseModel], None] = None,
     a path, matching :func:`tvbo.utils.yaml_loader.load`. ``drop_unknown`` is
     forwarded to :func:`validate`; the remaining ``kwargs`` go to the YAML loader.
     """
+    target = _resolve_target(target_class)
     data = yaml_loader.load_as_dict(source, **kwargs) or {}
-    return validate(data, target_class, drop_unknown=drop_unknown)
+    return validate(data, target, drop_unknown=drop_unknown)
 
 
 def dump(obj: Union[BaseModel, dict], *, exclude_none: bool = True, sort_keys: bool = False) -> str:

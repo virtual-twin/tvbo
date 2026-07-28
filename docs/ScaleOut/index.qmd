@@ -18,7 +18,7 @@ work, and shipping an experiment that reproduces.
 
 ## Understand
 
-- [Backends & capability matrix](../CLI/backends.qmd) — what each backend supports and
+- [Backends & capability matrix](../Simulation/Backends.qmd) — what each backend supports and
   how work is dispatched.
 - [Workflow kits](../CLI/workflow-kits.qmd) — what a packaged cluster kit contains and
   why it is structured that way.

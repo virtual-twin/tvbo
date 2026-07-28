@@ -29,6 +29,13 @@ else:
     model = context['model']
     _exp_functions = {}
 
+# Seed resolution (shared rule): a distribution's own seed overrides execution.random_seed,
+# which defaults to 0. Time-axis parameter distributions below fall back to this when they
+# declare no seed — matching the space-axis path in the experiment template.
+_exec_ctx = getattr(_experiment_ctx, 'execution', None)
+_rs = getattr(_exec_ctx, 'random_seed', None) if _exec_ctx is not None else None
+_random_seed = int(_rs) if _rs is not None else 0
+
 # Collect user-defined functions from model.functions and experiment.functions
 # These are functions defined in YAML that need to be recognized by the code printer.
 # Map function name -> function name (identity mapping) so printer emits them as-is.
@@ -94,7 +101,7 @@ for pname in param_names:
                 'lo': float(getattr(domain, 'lo', 0)) if domain else 0.0,
                 'hi': float(getattr(domain, 'hi', 1)) if domain else 1.0,
                 'default': float(p_obj.value) if p_obj.value is not None else 0.0,
-                'seed': int(getattr(dist, 'seed', None) or 42),
+                'seed': (int(dist.seed) if getattr(dist, 'seed', None) is not None else _random_seed),
                 'shape': str(getattr(p_obj, 'shape', '')) if getattr(p_obj, 'shape', None) else '',
             }
             continue

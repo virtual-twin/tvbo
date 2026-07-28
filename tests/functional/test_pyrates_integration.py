@@ -116,6 +116,45 @@ class TestNetworkExport:
         assert "nodes:" in yaml_output or "node" in yaml_output.lower()
         assert "edges:" in yaml_output or "edge" in yaml_output.lower()
 
+    @pytest.mark.parametrize(
+        "edge_kwargs",
+        [
+            {"parameters": {"weight": tvbo_datamodel.Parameter(name="weight", value=0.33)}},
+            {"weight": 0.33},
+        ],
+        ids=["keyed-parameters", "scalar-field"],
+    )
+    def test_edge_weight_reaches_yaml(self, edge_kwargs):
+        """A non-unit edge weight must reach the PyRates YAML, not the 1.0 fallback.
+
+        edge.parameters is a dict[str, Parameter]; the codegen helper previously
+        iterated it as a list of Parameter objects, never matched, and always
+        emitted the default weight (any weight != 1.0 was silently lost). Covers
+        both the keyed-parameters and scalar-field forms of the weight.
+        """
+        osc = Dynamics("Dynamics")
+        osc.name = "osc"
+        osc.add_parameter("omega", value=1.0)
+        osc.add_state_variable("x", equation="y", initial_value=1.0)
+        osc.add_state_variable("y", equation="-omega**2 * x", initial_value=0.0)
+
+        network = Network(number_of_nodes=2)
+        network.label = "WeightNet"
+        network.nodes = [
+            tvbo_datamodel.Node(id=0, label="A", dynamics=osc.name),
+            tvbo_datamodel.Node(id=1, label="B", dynamics=osc.name),
+        ]
+        network.edges = [
+            tvbo_datamodel.Edge(
+                source=0, target=1, coupling=Coupling(name="Linear"), **edge_kwargs
+            ),
+        ]
+
+        yaml_output = to_pyrates_yaml_string(dynamics=osc, network=network)
+
+        assert "weight: 0.33" in yaml_output
+        assert "weight: 1.0" not in yaml_output
+
     def test_weights_matrix_from_edges(self):
         """Test that weights_matrix property correctly computes from edges."""
         network = Network(number_of_nodes=3)

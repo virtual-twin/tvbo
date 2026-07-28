@@ -8,9 +8,39 @@
     "description": {
       "type": "string"
     },
+    "type": {
+      "type": "string"
+    },
     "equation": {
       "_embeddedTypes": [
         "tvbo:Equation"
+      ]
+    },
+    "of": {
+      "type": "string"
+    },
+    "axis": {
+      "type": "integer"
+    },
+    "diagonal": {
+      "_linkedTypes": [
+        "tvbo:ScalarValue"
+      ]
+    },
+    "distribution": {
+      "_embeddedTypes": [
+        "tvbo:Distribution"
+      ]
+    },
+    "comparison": {
+      "type": "string"
+    },
+    "seed_offset": {
+      "type": "integer"
+    },
+    "target_range": {
+      "_embeddedTypes": [
+        "tvbo:Range"
       ]
     }
   }

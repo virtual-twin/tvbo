@@ -4,7 +4,8 @@ description: "When a paper needs a panel the figure grammar cannot express, ship
 ---
 
 A TVBO `Figure` renders result containers into a publication figure: most panels are
-grammar-driven (`cartesian`, `heatmap`) or an external `image`. When a paper needs a
+[grammar-driven](../Simulation/Figures.qmd) (`cartesian`, `heatmap`) or an external
+`image`. When a paper needs a
 bespoke panel the grammar cannot express — a covariant Lyapunov vector, a per-node
 profile, a hand-drawn inset — the study ships the drawing code itself and registers it
 under a name the spec refers to.

@@ -135,11 +135,27 @@ def build_instruction(slot_name: str, slot_def: dict[str, Any]) -> str:
     return f"Enter the {readable_name}."
 
 
+def inherited_chain(class_name: str, class_defs: dict[str, Any]) -> list[dict[str, Any]]:
+    """The class and its ``is_a`` ancestors, most distant first.
+
+    A subclass carries its parents' slots at runtime, so an export that emitted only a
+    class's own declarations would silently drop them — a `PDESolver is_a Solver` would
+    serialize without the step size and tolerances it actually has.
+    """
+    chain, seen, name = [], set(), class_name
+    while name and name in class_defs and name not in seen:
+        seen.add(name)
+        chain.append(class_defs[name])
+        name = (class_defs[name] or {}).get("is_a")
+    return list(reversed(chain))
+
+
 def convert_class_to_openminds(
     class_name: str,
     class_def: dict[str, Any],
     slots: dict[str, Any],
     all_classes: set[str],
+    class_defs: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Convert a LinkML class definition to openMINDS schema."""
     schema: dict[str, Any] = {
@@ -154,32 +170,30 @@ def convert_class_to_openminds(
     if class_name in OPENMINDS_CATEGORIES:
         schema["_categories"] = OPENMINDS_CATEGORIES[class_name]
 
-    # Collect required fields
-    required: list[str] = []
+    # Required flag per property name. A map, not an append-only list, so a
+    # subclass that redeclares an inherited slot as optional flips it off:
+    # inherited definitions run first and own last, and the last write wins.
+    required_flags: dict[str, bool] = {}
 
     # Properties
     properties: dict[str, Any] = {}
 
-    # Process slots
-    slot_names = class_def.get("slots", []) or []
-    for slot_name in slot_names:
-        slot_def = resolve_slot(slot_name, slots, class_def)
-        prop = convert_slot_to_property(slot_name, slot_def, all_classes)
-        if prop:
-            properties[slot_name] = prop
-            if slot_def.get("required"):
-                required.append(slot_name)
-
-    # Process attributes
-    attributes = class_def.get("attributes", {}) or {}
-    for attr_name, attr_def in attributes.items():
-        if isinstance(attr_def, dict):
-            prop = convert_slot_to_property(attr_name, attr_def, all_classes)
+    # Inherited first, own last, so a subclass narrows what it redeclares.
+    for definition in inherited_chain(class_name, class_defs or {class_name: class_def}):
+        for slot_name in definition.get("slots", []) or []:
+            slot_def = resolve_slot(slot_name, slots, definition)
+            prop = convert_slot_to_property(slot_name, slot_def, all_classes)
             if prop:
-                properties[attr_name] = prop
-                if attr_def.get("required"):
-                    required.append(attr_name)
+                properties[slot_name] = prop
+                required_flags[slot_name] = bool(slot_def.get("required"))
+        for attr_name, attr_def in (definition.get("attributes", {}) or {}).items():
+            if isinstance(attr_def, dict):
+                prop = convert_slot_to_property(attr_name, attr_def, all_classes)
+                if prop:
+                    properties[attr_name] = prop
+                    required_flags[attr_name] = bool(attr_def.get("required"))
 
+    required = [name for name, is_required in required_flags.items() if is_required]
     if required:
         schema["required"] = required
 
@@ -255,7 +269,7 @@ def generate_openminds_schemas(
             class_def = {}
 
         # Convert to openMINDS
-        schema = convert_class_to_openminds(class_name, class_def, slots, all_classes)
+        schema = convert_class_to_openminds(class_name, class_def, slots, all_classes, classes)
 
         # Generate filename
         filename = f"{camel_to_snake(class_name).replace('_', '')}.schema.tpl.json"

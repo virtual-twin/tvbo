@@ -114,6 +114,81 @@ def test_container_path_resolves_results_dir_container(tmp_path):
     assert bsplot._container_path("tvbo:result/Deco2014/figX", tmp_path) == ""
 
 
+def test_container_path_resolves_flat_nc_container(tmp_path):
+    """A whole-study ``tvbo run`` writes BIDS-style result files FLAT inside ``output/nc/``
+    (``exp-<id>_desc-<model>_result.h5``), not in a per-experiment ``output/nc/<exp>/``
+    subdirectory. The resolver must find that layout (regression: a figure's ``used`` IRI
+    silently resolved to "" for it, so custom panels fell back to placeholder/degenerate
+    data — the Cortes2013 Fig-2/3 bug)."""
+    bsplot._container_path.cache_clear()  # the resolver is lru_cached
+    nc = tmp_path / "output" / "nc"
+    nc.mkdir(parents=True)
+    result = nc / "exp-1_desc-TsodyksMarkram_result.h5"
+    result.write_bytes(b"")  # existence is all the resolver checks
+    (nc / "exp-1_desc-TsodyksMarkram_network.h5").write_bytes(b"")  # sidecar must be skipped
+    got = bsplot._container_path("tvbo:exp/Cortes2013/exp-1", tmp_path)
+    assert got == str(result.resolve())
+    assert "network" not in Path(got).name
+
+
+def test_container_path_flat_nc_no_exp_prefix_collision(tmp_path):
+    """The flat-in-nc glob is boundary-anchored (``exp-1_*``) so a request for ``exp-1`` never
+    grabs ``exp-10``'s container."""
+    bsplot._container_path.cache_clear()
+    nc = tmp_path / "output" / "nc"
+    nc.mkdir(parents=True)
+    (nc / "exp-10_desc-Model_result.h5").write_bytes(b"")   # only exp-10 exists so far
+    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path) == ""  # must NOT match exp-10
+    (nc / "exp-1_desc-Model_result.h5").write_bytes(b"")
+    bsplot._container_path.cache_clear()  # the "" above is memoised for these exact args
+    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path).endswith(
+        "exp-1_desc-Model_result.h5")
+
+
+def test_container_path_output_root_no_exp_prefix_collision(tmp_path):
+    """The flat OUTPUT-ROOT glob (output/<exp>_*result.h5) is boundary-anchored too, so exp-1
+    never binds exp-10's container there either."""
+    bsplot._container_path.cache_clear()
+    out = tmp_path / "output"
+    out.mkdir(parents=True)
+    (out / "exp-10_desc-Model_result.h5").write_bytes(b"")  # only exp-10 at the output root
+    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path) == ""  # must NOT match exp-10
+    (out / "exp-1_desc-Model_result.h5").write_bytes(b"")
+    bsplot._container_path.cache_clear()
+    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path).endswith(
+        "exp-1_desc-Model_result.h5")
+
+
+def test_container_path_digit_bearing_non_experiment_iri_does_not_misbind(tmp_path):
+    """A non-experiment IRI whose last segment merely CONTAINS digits (a connectome/dataset
+    ref like ``rec-avgMatrix_atlas-HCPMMP1``) must not be read as ``exp-1`` and grab exp-1's
+    container. Only a strict ``exp-N`` / ``expN`` / bare-``N`` key yields exp candidates."""
+    bsplot._container_path.cache_clear()
+    nc = tmp_path / "output" / "nc"
+    nc.mkdir(parents=True)
+    (nc / "exp-1_desc-Model_result.h5").write_bytes(b"")   # exp-1 exists...
+    # ...but a connectome IRI ending in HCPMMP1 must NOT resolve to it.
+    assert bsplot._container_path("tvbo:dataset/rec-avgMatrix_atlas-HCPMMP1", tmp_path) == ""
+    bsplot._container_path.cache_clear()
+    # A genuine experiment ref still resolves.
+    assert bsplot._container_path("tvbo:exp/S/exp-1", tmp_path).endswith("exp-1_desc-Model_result.h5")
+
+
+def test_used_ref_prefers_in_study_experiment_id(tmp_path):
+    """A figure layer's ``used`` may bind an in-study experiment by id (``experiment: 2``) rather
+    than a raw ``iri`` — it resolves to that experiment's container with no hardcoded study key.
+    An explicit ``iri`` still wins when both are given."""
+    bsplot._container_path.cache_clear()
+    nc = tmp_path / "output" / "nc"
+    nc.mkdir(parents=True)
+    (nc / "exp-2_desc-Model_result.h5").write_bytes(b"")
+    assert bsplot._used_ref(P.DataRef(experiment="2")) == "exp-2"
+    assert bsplot._container_path(bsplot._used_ref(P.DataRef(experiment="2")), tmp_path).endswith(
+        "exp-2_desc-Model_result.h5")
+    assert bsplot._used_ref(P.DataRef(iri="tvbo:exp/S/exp-5", experiment="2")) == "tvbo:exp/S/exp-5"
+    assert bsplot._used_ref(P.DataRef()) is None
+
+
 # --------------------------------------------------------------------------- build_context
 
 @requires_exp3

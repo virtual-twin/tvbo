@@ -119,7 +119,7 @@ NON_RUNTIME = {
     "FunctionCall", "GraphGenerator", "InitialState", "Matrix", "NDArray",
     "Node", "Observation", "Option", "Provenance", "RandomStream",
     "RegionMapping", "ScalarValue", "Solver", "StateValue", "StateVariable",
-    "Parameter", "CouplingInput", "Parcellation", "TemporalApplicableEquation",
+    "Parameter", "CouplingInput", "Parcellation",
     "TimeSeries", "Tractogram", "UpdateRule",
 }
 

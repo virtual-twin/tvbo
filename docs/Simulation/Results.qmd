@@ -1,6 +1,7 @@
 ---
 title: "Working with Results"
 subtitle: "Accessing simulation output, observations, and exporting to BIDS"
+description: "The ExperimentResult container: index the integration time series and observations, and export them to BIDS."
 execute:
   eval: true
   output: true

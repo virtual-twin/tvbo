@@ -118,4 +118,4 @@ python ./kit/scripts/JR_MEG_FrequencyGradient_Optimization.py \
 
 - [`tvbo workflow`](workflow.qmd) — the emitter commands
 - [HPC patterns](hpc.qmd) — sharding and containers
-- [Backends](backends.qmd) — what determines `vectorize_axes` vs `workflow_axes`
+- [Backends](../Simulation/Backends.qmd) — what determines `vectorize_axes` vs `workflow_axes`

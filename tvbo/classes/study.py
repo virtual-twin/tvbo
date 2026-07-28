@@ -60,7 +60,6 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         """
         from pathlib import Path
         from tvbo.utils import register_recipe_code_paths
-        import yaml
 
         study = yaml_loader.load(filepath, cls)
         study._source_file = str(Path(filepath).resolve())
@@ -69,13 +68,17 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         # code_source (local dir or git repo) when declared, else the code/
         # subdir beside the YAML.
         register_recipe_code_paths(study._source_file, getattr(study, "code_source", None))
-        # Keep the raw (anchor-resolved) experiment dicts so experiments can be
-        # materialised through SimulationExperiment.from_string — that path
-        # iri-sources dynamics/coupling from the registry, which loading the
-        # datamodel object directly does not.
+        # Keep the raw (anchor- and !include-resolved) experiment dicts so experiments
+        # can be materialised through SimulationExperiment.from_string — that path
+        # iri-sources dynamics/coupling from the registry, which loading the datamodel
+        # object directly does not. Extract them with the SAME loader as the LinkML load
+        # above (yaml_loader, NOT a plain yaml.safe_load) so the two load paths cannot
+        # diverge: load_as_dict resolves `!include` fragments and folds slot aliases
+        # identically, so a modular (!include-split) study materialises exactly like a
+        # monolithic one. A plain safe_load chokes on the `!include` tag and would silently
+        # empty this, dropping every experiment to the iri-unaware from_datamodel fallback.
         try:
-            with open(filepath) as _fh:
-                _raw = yaml.safe_load(_fh) or {}
+            _raw = yaml_loader.load_as_dict(filepath) or {}
             _raw_exps = {
                 e.get("id"): e for e in (_raw.get("experiments") or []) if isinstance(e, dict)
             }

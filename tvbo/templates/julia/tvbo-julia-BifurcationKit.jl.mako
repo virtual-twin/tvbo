@@ -245,7 +245,61 @@ for hopf_idx in hopf_indices
     end
 end
 
-po_results = (hopf_indices = hopf_indices, branches = po_branches)
+# Orbit waveforms: for each PO branch, reconstruct every step's orbit with
+# get_periodic_orbit and phase-resample it to NPROF points over one period. This makes
+# the actual periodic-orbit profile (E(t), x(t), … over t/T) recoverable downstream —
+# BifurcationKit only records amplitude/period by default, not the waveform. Stored as a
+# [n_steps, NPROF, n_vars] array per branch under po_results.profiles.
+NPROF = 400
+NVARS = ${len(svs)}
+_PHASE_GRID = LinRange(0.0, 1.0, NPROF)
+
+# Bracketing index and linear-interpolation weight of each phase-grid point in the
+# normalised time vector `tn`. Depends only on the orbit's time axis, so it is computed
+# once per orbit and reused for every state variable.
+function _phase_brackets(tn)
+    map(_PHASE_GRID) do g
+        k = searchsortedfirst(tn, g)
+        k <= 1        ? (1, 1, 0.0) :
+        k > length(tn) ? (length(tn), length(tn), 0.0) :
+        (k - 1, k, (g - tn[k-1]) / max(tn[k] - tn[k-1], eps()))
+    end
+end
+
+po_profiles = Any[]
+for (bi, br_po) in enumerate(po_branches)
+    try
+        # Rows are the BRANCH steps — the same axis `po_results.branches` serialises —
+        # not the number of saved solutions. The two differ whenever BifurcationKit
+        # saves at a coarser stride, and the reader drops any profile whose first axis
+        # disagrees with the branch. Each saved solution lands on its own step; rows
+        # with no saved solution stay NaN.
+        nrows = length(br_po.branch)
+        profs = fill(NaN, nrows, NPROF, NVARS)
+        for (si, _s) in enumerate(br_po.sol)
+            _row = hasproperty(_s, :step) ? Int(_s.step) + 1 : si
+            (1 <= _row <= nrows) || continue
+            xtt = get_periodic_orbit(br_po.prob, _s.x, _s.p)
+            _t = xtt.t
+            _tn = (_t .- _t[1]) ./ max(_t[end] - _t[1], eps())
+            _ord = sortperm(_tn); _tn = _tn[_ord]           # ensure ascending for interpolation
+            _br = _phase_brackets(_tn)
+            for vi in 1:NVARS
+                _yv = xtt[vi, _ord]
+                for (pj, (lo, hi, w)) in enumerate(_br)
+                    profs[_row, pj, vi] = (1 - w) * _yv[lo] + w * _yv[hi]
+                end
+            end
+        end
+        push!(po_profiles, profs)
+    catch e
+        @warn "PO branch $bi: orbit-profile extraction failed; this branch's waveforms \
+               (E(t), x(t), … over one period) will be MISSING from the result" exception=(e, catch_backtrace())
+        push!(po_profiles, nothing)
+    end
+end
+
+po_results = (hopf_indices = hopf_indices, branches = po_branches, profiles = po_profiles)
 
 % endif
 

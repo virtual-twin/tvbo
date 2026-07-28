@@ -1,6 +1,5 @@
 ---
 title: Initial Conditions & Initial State
-sidebar: usage
 jupyter: python3
 # Redirect the pre-restructure URL so existing links keep resolving.
 aliases:

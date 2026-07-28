@@ -19,6 +19,7 @@ Analysis functions (``per_window_fc``, ``ttest_correlation_strength``) have
 moved to ``tvbo.analysis``.
 """
 
+import warnings
 from os.path import abspath, dirname, join
 
 import numpy as np
@@ -177,6 +178,102 @@ def as_list(obj) -> list:
         return list(obj)
     except TypeError:      # a genuine scalar (int, float, LinkML leaf, …)
         return [obj]
+
+
+def normalize_params(params) -> dict:
+    """Normalize a ``parameters`` collection to a flat ``{name: param}`` dict.
+
+    Accepts the keyed mapping ``{weight: Parameter(...)}`` (LinkML ``JsonObj`` or
+    plain dict), the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw
+    YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node
+    and dynamics parameter collections alike.
+    """
+    if not params:
+        return {}
+    if isinstance(params, (list, tuple)):
+        out = {}
+        for item in params:
+            if isinstance(item, dict):
+                out.update({str(k): v for k, v in item.items()})
+            elif getattr(item, "name", None) is not None:
+                out[str(item.name)] = item
+        return out
+    try:
+        return {str(k): v for k, v in params.items()}
+    except AttributeError:
+        return {}
+
+
+def edge_param(edge, name: str, default=None):
+    """A named quantity off an ``Edge``: its ``parameters`` entry, else its own slot.
+
+    ``weight``/``delay``/``distance`` are both first-class ``Edge`` slots and
+    valid entries in the generic ``parameters`` collection, so a recipe may spell
+    either. ``parameters`` wins when both are set. This is the single reader every
+    backend goes through, so one recipe cannot mean different connectomes on
+    different backends. Returns the value verbatim (no coercion), or *default*.
+    """
+    p = normalize_params(getattr(edge, "parameters", None)).get(name)
+    if p is not None:
+        val = getattr(p, "value", p)
+        if val is not None:
+            return val
+    scalar = getattr(edge, name, None)
+    if isinstance(scalar, bool) or scalar is None:
+        return default
+    return scalar if isinstance(scalar, (int, float)) else default
+
+
+def noise_sigma(noise, **legacy):
+    """The noise standard deviation σ off a declared ``Noise``, or ``None``.
+
+    The one reader for every spelling the schema allows, so a recipe cannot mean a
+    different amplitude on different backends. Each spelling has exactly one meaning:
+
+    * ``parameters: {sigma: {value: s}}`` → ``s``. Wins whenever present.
+    * ``intensity: {value: s}`` → ``s``. Deprecated spelling of the same quantity;
+      reading one warns.
+    * ``parameters: {nsig: {value: D}}`` → ``sqrt(2 D)``. The dispersion spelling
+      (``D = σ²/2``) — what a TVB import writes.
+
+    Returns ``None`` when the noise declares no amplitude at all (and for a missing
+    ``Noise``), leaving "absent" distinguishable from an explicit zero.
+    """
+    import math
+
+    if "intensity_means" in legacy:
+        # Emitted by scripts rendered before `intensity` was pinned to sigma; those
+        # files live in users' output/ dirs and are re-run against the installed package.
+        warnings.warn(
+            "noise_sigma(intensity_means=...) is obsolete: `intensity` is a standard "
+            "deviation, and a dispersion is declared as `parameters.nsig`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    if not noise:
+        return None
+    params = normalize_params(getattr(noise, "parameters", None))
+    candidates = (
+        ("sigma", params.get("sigma"), lambda v: v),
+        ("intensity", getattr(noise, "intensity", None), lambda v: v),
+        ("nsig", params.get("nsig"), lambda v: math.sqrt(2.0 * v)),
+    )
+    for name, source, to_sigma in candidates:
+        val = getattr(source, "value", source)
+        if val is None:
+            continue
+        if name == "intensity":
+            warnings.warn(
+                "`noise.intensity` is deprecated; declare `parameters: {sigma: ...}` for "
+                "a standard deviation or `parameters: {nsig: ...}` for a dispersion. It "
+                "is read as a standard deviation, so a recipe that meant a dispersion "
+                "is off by sqrt(2 D)/D.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        val = float(val)
+        return to_sigma(val) if val > 0 else 0.0
+    return None
 
 
 def sanitize_name(name) -> str:
@@ -547,24 +644,35 @@ def from_yaml(filepath: str, cls) -> object:
 
 
 def add_to_parameters_collection(key, value, path, parameters):
-    """Adds a value to a Bunch object using the provided path, without inserting a redundant sub-level."""
+    """Adds a value to a Bunch object using the provided path, without inserting a redundant sub-level.
+
+    A Parameter may carry both a scalar ``value`` AND a nested ``distribution`` (e.g.
+    ``omega_mean_hz = 10 Hz + Normal(mean, std)``): its scalar and the distribution's
+    sub-parameters navigate through the same name. The two must coexist rather than
+    overwrite — a scalar already stored at a name is preserved under a reserved ``value``
+    key when that name has to become a sub-Bunch, and a scalar written onto a name that is
+    already a sub-Bunch is stored under ``value`` instead of clobbering the sub-tree.
+    """
     current_level = parameters
     for part in path:
         if part == "parameters":
             continue
+        if part == key:
+            continue  # the final leaf is written after the loop; never turn it into a Bunch
         part_key = str(part) if isinstance(part, int) else part
-        # A path component must map to a sub-Bunch to navigate into. Nest when the slot
-        # is absent OR already holds a scalar leaf: a Parameter that carries both a
-        # ``value`` AND a nested ``distribution`` (e.g. omega_mean_hz = 10 Hz + Normal(mean,
-        # std)) stores its scalar first, then the distribution's sub-parameters navigate
-        # through the same name — without this guard that dereferences the scalar
-        # (an ``extended_float``) and raises "argument of type '…' is not iterable".
-        if not isinstance(current_level.get(part_key), Bunch):
-            current_level[part_key] = Bunch()
-        if part != key:
-            current_level = current_level[part_key]
+        existing = current_level.get(part_key)
+        if not isinstance(existing, Bunch):
+            nested = Bunch()
+            if existing is not None:
+                nested["value"] = existing  # keep a scalar leaf already stored at this name
+            current_level[part_key] = nested
+        current_level = current_level[part_key]
     final_key = str(key) if isinstance(key, int) else key
-    current_level[final_key] = value.value
+    existing = current_level.get(final_key)
+    if isinstance(existing, Bunch):
+        existing["value"] = value.value  # a nested sub-tree already occupies this slot
+    else:
+        current_level[final_key] = value.value
 
 
 def traverse_metadata(

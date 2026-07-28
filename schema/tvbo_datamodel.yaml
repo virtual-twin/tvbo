@@ -44,9 +44,13 @@ slots:
     time_scale:
         range: UnitEnum
         ifabsent: "ms"
+        aliases:
+            - time_unit
         description: >-
             Time unit for the integration / simulation. Determines the
-            physical time meaning of one model time-step.
+            physical time meaning of one model time-step. `time_unit` is
+            accepted as a synonym (the spelling `Network` uses for its own
+            time unit).
     environment:
         range: SoftwareEnvironment
     requirements:
@@ -255,20 +259,6 @@ enums:
                 description: "Place all otherwise-unassigned axes on the vectorized tier."
             workflow:
                 description: "Fan out all otherwise-unassigned axes as scheduler tasks."
-
-    NodeReconciliation:
-        description: >-
-            Strategy for aligning a dataset-sourced empirical target's nodes to the
-            model network before comparison. Keyed alignment is the default so a
-            differing node count or ordering (e.g. a 998-parcel empirical FC against a
-            1000-parcel model) cannot silently misalign the comparison.
-        permissible_values:
-            by_label:
-                description: >-
-                    Restrict both sides to their shared node labels by name (keyed
-                    ``.sel``), preserving the model network's order. Never positional.
-            none:
-                description: "No reconciliation; the node sets are assumed identical."
 
     ImagingModality:
         permissible_values:
@@ -528,6 +518,16 @@ enums:
                 description: >-
                     Index-aligned projection: source cell i connects to target
                     cell i (min of the two population sizes).
+            random:
+                description: >-
+                    Sparse random projection (fixed-probability Erdos-Renyi): each
+                    of the size_src x size_tgt possible connections is present
+                    independently with probability given by the Edge's
+                    `connection_probability` parameter (in `Edge.parameters`,
+                    alongside `weight`). For a self-projection the diagonal i->i is
+                    governed by Edge.allow_self_connections. A backend that only
+                    supports dense projections may reject this rule rather than
+                    approximate it.
     DimensionType:
         description: "Dimensions along which operations can be applied"
         permissible_values:
@@ -808,6 +808,8 @@ classes:
                 range: string
                 aliases:
                     - righthandside
+                annotations:
+                    simple_dict_value: true
             conditionals:
                 description: Conditional logic for piecewise equations.
                 range: ConditionalBlock
@@ -1006,16 +1008,6 @@ classes:
                 range: string
                 ifabsent: string(linear)
                 description: "Interpolation for a data-driven stimulus: 'linear' or 'cubic'."
-
-    TemporalApplicableEquation:
-        class_uri: tvbo:TemporalApplicableEquation
-        is_a: Equation
-        slots:
-            - parameters
-        attributes:
-            time_dependent:
-                range: boolean
-                ifabsent: false
 
     Parcellation:
         class_uri: tvbo:Parcellation
@@ -1893,10 +1885,14 @@ classes:
                 description: "All values >= 0"
             source_var:
                 range: string
-                description: "Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics."
+                aliases:
+                    - source_variable
+                description: "Output variable from source node to use (e.g., 'x_out'). If not specified, uses first output variable from source dynamics. The alias `source_variable` is accepted (harmonized with the `*_variable` spelling used elsewhere, e.g. the stimulus event's `target_variable`)."
             target_var:
                 range: string
-                description: "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics."
+                aliases:
+                    - target_variable
+                description: "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics. The alias `target_variable` is accepted."
             coupling:
                 range: Coupling
                 required: false
@@ -2197,20 +2193,63 @@ classes:
 
     Analysis:
         class_uri: tvbo:Analysis
+        is_a: FunctionCall
+        # No prov:Activity mapping: like every FunctionCall this is a prov:Plan (the
+        # prospective recipe), and a Plan is an Entity, disjoint from the Activity that
+        # executes it. The Activity is the run; the Entity it generates is the container.
         description: >-
-            A general analysis observable: a quantity obtained by ANALYZING the model,
-            its solve, or a derived loss, rather than by transforming the recorded
-            trajectory. It is deliberately broad — the same concept covers parameter
+            A quantity obtained by ANALYZING something — a model, its solve, a derived
+            loss, simulated results, or empirical data — rather than by transforming a
+            recorded trajectory. Nothing here requires a model: decomposing empirical
+            maps into a basis, taking their spectrum, or running a permutation test over
+            measured data are analyses in exactly this sense, and so are parameter
             sensitivities/gradients (autodiff or finite-difference), stability spectra
-            (Lyapunov), bifurcation quantities, identifiability/Fisher-information
-            metrics, and future analyses. `type` names the analysis (extensible);
-            `target` and `wrt` bind it to what is analyzed and with respect to what;
-            `parameters` carries the analysis-specific configuration. Backend-neutral:
-            each backend maps `type` to its own machinery, or emits a comment and
-            skips when it has no equivalent (it does not raise).
+            (Lyapunov), bifurcation quantities, identifiability metrics, and reductions
+            spanning several experiments.
+
+            It is an invocation (``is_a: FunctionCall``) with two mutually exclusive ways
+            of saying WHAT is analyzed, the same alternative-specification idiom
+            ``Parameter`` uses for provenance:
+
+            - **the solve** — ``type`` names the analysis (a free string, extensible;
+              the vocabulary lives in the ontology as AnalysisObservable concepts rather
+              than a closed enum), ``target`` and ``wrt`` bind it to what is analyzed and
+              with respect to what, and ``parameters`` configures it. Evaluated as part
+              of the integration, so it is emitted by the same codegen and limited to
+              what that backend can trace. Declared on ``Observation.analysis``.
+
+            - **saved data** — ``callable`` (or ``class_call``) invoked with
+              ``arguments``, each a literal ``value`` or a ``used:`` DataRef reading an
+              experiment, another analysis, or a dataset. The data need not be simulated:
+              this is equally the form for analysing empirical maps, an atlas, or a
+              measured connectome. Because it consumes containers rather than a running
+              solve, it is scheduled on its own — before or after the experiments,
+              according to what it uses. Declared in ``SimulationStudy.analyses``, where
+              the result is persisted as its own container
+              (``output/results/<name>/result.h5``) — which is what lets a figure bind it
+              with ``used: {analysis: <name>}`` exactly as it binds a run, and why a study
+              needs no driver script for its non-simulation figures. ``name`` is then
+              required and unique, since it keys that container. The invocation yields a
+              mapping of name -> labelled array (or one array, keyed by the analysis
+              name); each key becomes an ``observation__<key>`` data-variable keeping its
+              dims and coordinates, so a figure ``encoding`` can name them.
+
+            Like a ``SimulationExperiment``, an Analysis declares its own ``execution``:
+            which backend renders it, at what precision, on which accelerator. That
+            states a requirement, not a mechanism — the same analysis is renderable by
+            more than one backend, and one that cannot render it says so rather than
+            silently substituting another.
         slots:
             - parameters
         attributes:
+            execution:
+                range: ExecutionConfig
+                inlined: true
+                description: >-
+                    Which backend renders this analysis, and at what precision /
+                    accelerator / worker count — the same declaration a
+                    ``SimulationExperiment`` carries, so an analysis is not tied to one
+                    engine. Unset means the study's default.
             type:
                 range: string
                 description: >-
@@ -2481,7 +2520,10 @@ classes:
                 description: "Custom distribution function (PDF or sampling callable). Only needed for non-standard distributions."
             seed:
                 range: integer
-                description: "Random seed for reproducible sampling."
+                description: >-
+                    Local RNG seed for THIS distribution's draws. When set it
+                    overrides the experiment-global `execution.random_seed`; when
+                    unset the distribution inherits `execution.random_seed`.
             axis:
                 range: SamplingAxis
                 ifabsent: "space"
@@ -2492,6 +2534,10 @@ classes:
 
     Parameter:
         class_uri: tvbo:Parameter
+        slot_usage:
+            value:
+                annotations:
+                    simple_dict_value: true
         slots:
             - name
             - label
@@ -2566,6 +2612,20 @@ classes:
                     let the two drift apart silently. The result is cached and
                     invalidated by the artifact fingerprint, so it is computed once
                     rather than per run. Mutually exclusive with `value:`/`source:`.
+            used:
+                range: DataRef
+                inlined: true
+                slot_uri: prov:used
+                description: >-
+                    WHERE + WHICH + SLICE in one edge — this parameter's array sourced
+                    from another experiment's result (an operating point, a tuned
+                    ``estimate__<name>`` a fit persisted), a dataset, or a curated
+                    entity, PROV ``prov:used``. The full cross-container form of which
+                    `source:`+`measure:` is the no-``sel``/no-``experiment`` shorthand;
+                    adds label ``reconcile`` and a swept-point ``sel``. Like `source:`
+                    the array is resolved lazily and never inlined. An in-study
+                    ``experiment`` reference also registers the workflow dependency.
+                    Mutually exclusive with `value:`/`source:`/`producer:`.
             free:
                 range: boolean
             shape:
@@ -2633,9 +2693,11 @@ classes:
     Argument:
         class_uri: tvbo:Argument
         description: >-
-            A function argument with explicit value specification.
-            Value can be: literal (number/string), reference to input (input.key),
-            or cross-observation reference (observation_name.output_key).
+            A function argument with explicit value specification. A value is either
+            ``value`` (a literal / array / local reference) or ``used`` (a labelled
+            array sourced from another experiment or dataset); the two are mutually
+            exclusive. Value can be: literal (number/string), reference to input
+            (input.key), or cross-observation reference (observation_name.output_key).
         slots:
             - name
             - description
@@ -2652,6 +2714,17 @@ classes:
                 any_of:
                   - range: ScalarValue
                   - array: {}
+            used:
+                range: DataRef
+                inlined: true
+                slot_uri: prov:used
+                description: >-
+                    A labelled array sourced from another experiment's result, a
+                    dataset, or a curated entity — the cross-container form of a value
+                    (WHERE + WHICH + SLICE, PROV ``prov:used``). Mutually exclusive with
+                    ``value``; an in-study ``experiment`` reference also registers the
+                    workflow dependency so the source runs first. Resolved lazily, never
+                    inlined into generated code.
             unit:
                 range: string
 
@@ -2949,9 +3022,55 @@ classes:
             noise_type:
                 range: string
                 ifabsent: "gaussian"
+                description: >-
+                    Temporal character of the process: `gaussian`/`white` (delta-correlated
+                    in time) or `ou`/`ornstein-uhlenbeck` (exponentially correlated in
+                    time). Governs the TIME axis only, and composes freely with
+                    `covariance`, which governs a spatial axis.
+            covariance:
+                range: Parameter
+                inlined: true
+                required: false
+                description: >-
+                    Covariance of the unit-intensity noise increment across the axis named
+                    by `correlated_over` — the second-order structure of the driving
+                    process, stated as mathematics rather than as a factorisation. Must be
+                    square in that axis, symmetric and positive semi-definite; its diagonal
+                    carries per-element variances and need NOT be unity, so unequal
+                    variances and cross-element correlation are expressed together. The
+                    realised increment is `intensity` times a draw from this covariance, so
+                    a scalar `intensity` continues to mean what it means for uncorrelated
+                    noise. Absent (the default) means the increment is independent across
+                    that axis. Being a `Parameter`, it carries the full provenance triple:
+                    a literal `value:`, existing bytes via `source:`+`measure:`, or — the
+                    usual case for a derived operator — `producer:`, whose FunctionCall
+                    records how the structure was obtained (projecting a spatially white
+                    field into a modal basis, spreading independent per-region drives
+                    through a connectome). The generative account therefore lives in the
+                    provenance, and the matrix itself stays a statement about the process.
+                    How a backend samples it (Cholesky, eigendecomposition, whitening) is a
+                    backend concern and is never stated here.
+            correlated_over:
+                range: DimensionType
+                required: false
+                description: >-
+                    Which axis `covariance` indexes — `node` (equivalently `region`) for
+                    spatially correlated drive, or `state` for correlation between the
+                    noise on different state variables. Required whenever `covariance` is
+                    set: a covariance without a named axis does not identify a process. A
+                    multi-mode model carries its modes inside the state axis, so a modal
+                    covariance is declared over `state`.
             correlated:
                 range: boolean
-                ifabsent: false
+                deprecated: >-
+                    Superseded by `covariance` + `correlated_over`. A bare boolean never
+                    identified a process — it said neither which axis was correlated nor
+                    how strongly — so no backend could act on it. Read and ignored, so
+                    recipes carrying it keep loading; delete it, and declare `covariance`
+                    if the noise really is correlated.
+                description: >-
+                    Deprecated. Whether the noise is correlated, without saying across
+                    which axis or by how much. Use `covariance` + `correlated_over`.
             gaussian:
                 range: boolean
                 description: "Indicates whether the noise is Gaussian"
@@ -2967,7 +3086,16 @@ classes:
                 range: RandomStream
                 inlined: true
             intensity:
-                description: "Optional scalar or vector intensity parameter for noise."
+                description: >-
+                    Noise amplitude as a standard deviation (sigma). Superseded by the
+                    `sigma` entry of `parameters`, which states the same quantity where
+                    every other declared quantity lives; a dispersion (TVB's nsig,
+                    D = sigma^2/2) is the `nsig` entry there.
+                deprecated: >-
+                    Use `parameters: {sigma: ...}` for a standard deviation, or
+                    `parameters: {nsig: ...}` for a dispersion. `intensity` is read as a
+                    standard deviation; a recipe that meant a dispersion is off by
+                    sqrt(2 D)/D.
                 range: Parameter
                 inlined: true
             distribution:
@@ -3334,12 +3462,17 @@ classes:
                 annotations:
                     collection_key: true
                 description: >-
-                    Dotted reference to the Parameter being swept; also the key
-                    of the enclosing `Exploration.space` collection.
-                    Format: "<scope>.<param_name>" where <scope> is either a
-                    Dynamics class name (e.g. "ReducedWongWang") or a coupling
-                    key (e.g. "FastLinearCoupling"). Resolved against the
-                    enclosing experiment at runtime.
+                    Dotted reference to the quantity being swept; also the key of
+                    the enclosing `Exploration.space` collection. Format
+                    "<scope>.<name>", where <scope> is a Dynamics class name
+                    (e.g. "ReducedWongWang.a"), a coupling key
+                    (e.g. "FastLinearCoupling.G"), or one of the reserved scopes:
+                    "network." for a connectome leaf (e.g. "network.conduction_speed",
+                    "network.edges.weight"), "execution.random_seed" for a per-cell
+                    noise-seed ensemble, or "initial_conditions.<state_var>" to sweep
+                    the initial value of one state variable (a deterministic
+                    initial-condition ensemble). Resolved against the enclosing
+                    experiment at runtime.
             domain:
                 range: Range
                 inlined: true
@@ -4148,6 +4281,13 @@ classes:
                 range: float
                 ifabsent: float(1e-10)
                 description: "Relative tolerance for adaptive solvers."
+            step_size:
+                range: float
+                aliases:
+                    - dt
+                description: >-
+                    Fixed time step of the solver. Unset for an adaptive solver, which
+                    chooses its own step from `abs_tol` / `rel_tol`.
 
     Integrator:
         class_uri: tvbo:Integrator
@@ -4430,8 +4570,12 @@ classes:
                 description: "Batch size for vectorized operations (None = auto)"
             random_seed:
                 range: integer
-                ifabsent: integer(42)
-                description: "Base random seed for reproducibility"
+                ifabsent: integer(0)
+                description: >-
+                    Experiment-global RNG seed (default 0). Governs every stochastic
+                    draw — additive noise, initial-condition and parameter
+                    distributions, and n_trials ensembles — unless a specific
+                    `Distribution.seed` overrides it for that distribution.
             find_fixpoint:
                 range: boolean
                 ifabsent: false
@@ -4439,6 +4583,22 @@ classes:
                     Whether to find a fixed point (steady state) before
                     time integration. Used as initial condition for ODEProblem.
                     Maps to NLsolve.fixpoint! in ND.jl or similar in other backends.
+            system_size:
+                range: float
+                description: >-
+                    System size (van Kampen Ω) for the stochastic 'gillespie' backend:
+                    the number of discrete units per unit of the activity variable, and
+                    the sole source of noise. Runs a mean-field rate model as a finite
+                    birth-death process (Gillespie SSA): the activity state variable X
+                    becomes a discrete count n ≈ Ω·X, its relaxation equation
+                    tau*X' = -X + F(...) is read as birth propensity Ω·F/tau (the gain)
+                    and death propensity n/tau (the leak), while the remaining state
+                    variables integrate deterministically between events. Larger Ω means
+                    finer discreteness and weaker fluctuations, recovering the
+                    deterministic mean field as Ω→∞. For an activity already expressed as
+                    a fraction in [0,1], Ω is the population size N; for a firing rate it
+                    is N divided by the rate at full activation. Required by the
+                    'gillespie' backend; ignored by every other backend.
 
     DistributionConfig:
         class_uri: tvbo:DistributionConfig
@@ -4922,6 +5082,21 @@ classes:
                 multivalued: true
                 inlined_as_list: true
                 range: SimulationExperiment
+            analyses:
+                multivalued: true
+                inlined_as_list: true
+                range: Analysis
+                description: >-
+                    Analyses of this study's results, each persisted as its own container
+                    and so bindable by a figure or a later analysis exactly like a run.
+                    These take the ``Analysis`` form that invokes a ``callable`` over
+                    ``arguments`` (the ``type``/``target``/``wrt`` form analyses a solve
+                    and belongs on an ``Observation`` instead), and each needs a unique
+                    ``name`` — it keys the container. An argument's ``used:`` DataRef both
+                    records what was consumed and orders the run: ``tvbo run`` executes
+                    the analyses around the experiments — one an experiment consumes
+                    first, one consuming an experiment after — and then renders the
+                    figures.
             figures:
                 multivalued: true
                 inlined_as_list: true
@@ -5242,18 +5417,18 @@ classes:
 
     PDESolver:
         class_uri: tvbo:PDESolver
+        is_a: Solver
+        description: >-
+            Numerical solver for a PDE: the time-integration algorithm, tolerances and
+            step inherited from `Solver`, plus the spatial discretization and
+            preconditioner a PDE additionally needs.
         attributes:
+            method:
+                range: string
+                description: >-
+                    Time-integration algorithm, e.g. implicit Euler or Crank-Nicolson.
             discretization:
                 range: DiscretizationMethod
-            time_integrator:
-                description: "e.g., implicit Euler, Crank-Nicolson."
-                range: string
-            dt:
-                description: "Time step (s)."
-                range: float
-            tolerances:
-                description: "Abs/rel tolerances."
-                range: string
             preconditioner:
                 range: string
         slots:

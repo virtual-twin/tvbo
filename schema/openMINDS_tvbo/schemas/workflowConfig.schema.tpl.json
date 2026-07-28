@@ -7,13 +7,24 @@
     "container": {
       "type": "string"
     },
+    "container_binds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "container_args": {
+      "type": "string"
+    },
     "retries": {
       "type": "integer"
     },
     "rng": {
       "type": "string"
     },
-    "provenance": {
+    "emit_provenance": {
       "type": "boolean"
     },
     "chunk": {

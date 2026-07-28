@@ -1068,7 +1068,8 @@ def _resolve_launcher(name: str) -> str | None:
 
 
 def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | None = None,
-                             dry_run: bool = False, profile: str | None = None) -> None:
+                             dry_run: bool = False, profile: str | None = None,
+                             cores: str | None = None) -> None:
     """Submit/execute a rendered workflow artefact for *engine*.
 
     Runs from the artefact's own directory so the generated script can use the
@@ -1080,7 +1081,11 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
     *profile* (Snakemake only) overrides the kit's shipped ``profile/`` with a named
     or path profile — e.g. a site profile like ``cubi-v1`` that carries the
     cluster's canonical executor config; the Snakefile's per-rule ``resources:``
-    apply on top of whichever profile is used.
+    apply on top of whichever profile is used. *cores* (Snakemake only) forces a
+    LOCAL run on that many cores (``'all'`` for every core), overriding only the
+    profile's executor — its container/bind/retry settings still apply — the native
+    local-testing path; the SAME kit submits to the scheduler on HPC when *cores*
+    is unset.
     """
     # Resolve to an absolute launcher so a venv-installed console script is found
     # even when that venv's bin/ is not on PATH (see :func:`_resolve_launcher`).
@@ -1093,15 +1098,20 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
             cmd.append(f"--array={slurm_array}")
         cmd.append(artefact.name)
     elif engine == "snakemake":
-        # A shipped SLURM profile makes the login-node run submit each rule to the
-        # scheduler (executor: slurm + jobs); a site profile (--profile) replaces it;
-        # without either, fall back to local cores.
-        if profile:
-            cmd = [exe, "--profile", profile]
-        elif (artefact.parent / "profile" / "config.yaml").exists():
-            cmd = [exe, "--profile", "profile"]
-        else:
-            cmd = [exe, "--cores", "all"]
+        has_scheduler = bool(_resolve_launcher("sbatch"))  # checks the venv sibling AND $PATH
+        use_profile = profile or (
+            "profile" if (artefact.parent / "profile" / "config.yaml").exists() else None
+        )
+        run_local = cores is not None or not has_scheduler
+        if run_local and cores is None:
+            _common.info("no SLURM scheduler found (no `sbatch`); running locally")
+        cmd = [exe]
+        if use_profile:
+            cmd += ["--profile", use_profile]
+        if run_local:
+            cmd += ["--executor", "local"]
+        if run_local or not use_profile:
+            cmd += ["--cores", cores or "all"]
         if dry_run:
             cmd.append("--dry-run")
     elif engine == "nextflow":
@@ -1115,7 +1125,8 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
 
 
 def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = None,
-                     dry_run: bool = False, profile: str | None = None) -> None:
+                     dry_run: bool = False, profile: str | None = None,
+                     cores: str | None = None) -> None:
     """Execute a generated workflow artefact inside *out_dir*.
 
     For Slurm this submits the array job and then chains the gather job
@@ -1123,13 +1134,15 @@ def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = No
     one reassembled result with no manual step. With *dry_run* nothing is queued:
     the engine only reports the work it would do, so the Slurm chain is skipped
     (there is no array job id to depend on). *profile* overrides the Snakemake
-    profile (see :func:`_execute_engine_artefact`).
+    profile and *cores* forces a local Snakemake run (see
+    :func:`_execute_engine_artefact`).
     """
     if engine == "slurm" and not dry_run:
         _submit_slurm_chain(out_dir, slurm_array=slurm_array)
     else:
         _execute_engine_artefact(engine, out_dir / _ARTEFACT_NAME[engine],
-                                 slurm_array=slurm_array, dry_run=dry_run, profile=profile)
+                                 slurm_array=slurm_array, dry_run=dry_run,
+                                 profile=profile, cores=cores)
 
 
 def _submit_slurm_chain(out_dir: Path, *, slurm_array: str | None = None) -> None:
@@ -1344,6 +1357,13 @@ def run_workflow(
              "'profile/' — e.g. a site profile carrying the cluster's executor config like BIH "
              "CUBI's 'cubi-v1'. Per-rule resources in the Snakefile apply on top of it.",
     ),
+    cores: str = typer.Option(
+        None, "--cores",
+        help="Snakemake only: run LOCALLY on this many cores (an integer, or 'all'). Overrides "
+             "only the profile's executor — the kit still runs in the container its profile "
+             "declares. The SAME kit submits to the scheduler on HPC when --cores is omitted; "
+             "on a machine with no `sbatch` a bare run falls back to local automatically.",
+    ),
 ) -> None:
     """Emit a self-contained kit then execute it (or submit for Slurm).
 
@@ -1362,7 +1382,8 @@ def run_workflow(
         for _eid in _exp_ids:
             _out_i = (output / f"exp{_eid}") if output else Path("output") / f"exp{_eid}"
             _common.info(f"── experiment {_eid} → {_out_i}")
-            run_workflow(engine, spec, backend, _eid, _out_i, override, array, array_throttle)
+            run_workflow(engine, spec, backend, _eid, _out_i, override, array,
+                         array_throttle, profile, cores)
         return
     effective_overrides = list(override)
     if engine == "slurm" and array is not None:
@@ -1397,7 +1418,7 @@ def run_workflow(
         _common.die("failed to emit workflow kit")
     if array is not None and array_throttle is not None:
         array = f"{array}%{array_throttle}"
-    _execute_emitted(engine, out_dir, slurm_array=array, profile=profile)
+    _execute_emitted(engine, out_dir, slurm_array=array, profile=profile, cores=cores)
 
 
 def _tar_extractall_safe(tar, dest: Path) -> None:
@@ -1499,6 +1520,13 @@ def submit_kit(
              "that carries the cluster's canonical executor config — e.g. BIH CUBI's 'cubi-v1' "
              "(`--profile cubi-v1`). The Snakefile's per-rule resources apply on top of it.",
     ),
+    cores: str = typer.Option(
+        None, "--cores",
+        help="Snakemake only: run the kit LOCALLY on this many cores (an integer, or 'all'). "
+             "Overrides only the profile's executor — the kit still runs in the container its "
+             "profile declares. The SAME kit submits to the scheduler on HPC when --cores is "
+             "omitted; on a machine with no `sbatch`, a bare submit falls back to local.",
+    ),
 ) -> None:
     """Submit a kit already emitted by ``tvbo workflow slurm|snakemake|nextflow``.
 
@@ -1540,7 +1568,7 @@ def submit_kit(
     # --system-site-packages venv (native, or on the container) and is idempotent (the venv
     # is reused), so it is cheap to re-run.
     _provision_env_layer(kit, dry_run=dry_run)
-    _execute_emitted(eng, kit, slurm_array=array, dry_run=dry_run, profile=profile)
+    _execute_emitted(eng, kit, slurm_array=array, dry_run=dry_run, profile=profile, cores=cores)
 
 
 def _provision_env_layer(kit: Path, *, dry_run: bool) -> None:

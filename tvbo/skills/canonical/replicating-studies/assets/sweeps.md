@@ -31,7 +31,18 @@ vmapped grid path (see **running-simulations**) is enough.
   reassemble by branch *position*, so the up- and down-branches stay separable even where the
   swept value repeats.
 
-## IC ensembles — which seed?
+## IC ensembles — deterministic sweep or random seed?
+
+- **First ask: does the paper vary ICs on a grid, or draw them at random?** A figure that shows
+  an *evenly-spaced fan* of trajectories from initial conditions on a linspace is a deterministic
+  grid, not a random draw — reproduce it with a deterministic **`initial_conditions.<state_var>`**
+  exploration axis (`parameter: initial_conditions.E`, `domain: {lo, hi, n}` or `explored_values`),
+  which sweeps one state variable's initial value and yields one trajectory per value, keyed as a
+  first-class `initial_conditions.E` result dim. This matches the paper's exact construction
+  (`linspace(lo, hi, n)`), is reproducible run to run, and needs no seed. Prefer it whenever the
+  paper's ICs are deterministic. The swept SV must NOT also carry a `distribution` — that would
+  resample and overwrite the swept value, so codegen rejects the combination. Use the random-seed
+  path below only for a genuinely *stochastic* IC ensemble.
 
 - **Two independent seeds, not interchangeable.** A state variable's `distribution.seed` sets
   the random **initial condition**; `execution.random_seed` sets the **noise** realization.

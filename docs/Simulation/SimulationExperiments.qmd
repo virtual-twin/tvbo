@@ -1,11 +1,13 @@
 ---
-title: Simulation Experiments
-subtitle: "Building, configuring, and running a SimulationExperiment"
-sidebar: usage
+title: The SimulationExperiment object
+description: "The central runnable object: bundle dynamics, network, coupling, integration and observations into one declarative spec, then serialize, render, or run it."
 jupyter: python3
-# Redirect the pre-restructure URL so existing links keep resolving.
+# Redirect the pre-restructure URLs so existing links keep resolving. The
+# "Simulation & Observation" section was dissolved into the SPECIFY / RUN IT parts;
+# its old landing now redirects here.
 aliases:
   - /Usage/SimulationExperiments.html
+  - /Simulation/index.html
 ---
 
 ## Overview
@@ -109,6 +111,14 @@ Experiments are round-trippable through YAML (see
 exp = SimulationExperiment.from_file("my_experiment.yaml")
 ```
 
+The file is read by the shared loader, so it supports keyed collections, scalar
+shortcuts, anchors/merge keys and `!include` — see
+[Writing TVB-O YAML](../Specification/YAML.qmd).
+
+::: {.callout-warning}
+A key repeated twice in the same mapping is an error, not a last-one-wins override.
+:::
+
 ### Other constructors
 
 | Method | Source |
@@ -157,17 +167,10 @@ result = exp.run("jax", duration=5_000)
 print(type(result).__name__, "→", result.integration.data.shape)
 ```
 
-### Available backends
-
-| `format=` | Backend | Notes |
-|---|---|---|
-| `"tvboptim"` *(default)* | tvboptim (JAX-based) | Optimisation-friendly; supports algorithms & explorations. |
-| `"jax"` / `"autodiff"` | Pure JAX kernel | Fastest forward integration, jit-compiled. |
-| `"tvb"` | The Virtual Brain | Reference NumPy implementation. |
-| `"pyrates"` | PyRates | Symbolic frontend, good for custom models. |
-| `"networkdynamics"` | NetworkDynamics.jl | Julia backend (requires julia). |
-| `"mtk"` | ModelingToolkit.jl | Symbolic Julia backend. |
-| `"bifurcation"` | BifurcationKit.jl / numcont | Continuation analysis. |
+The `format=` (default `tvboptim`) selects the engine: `jax` for the fastest forward
+integration, `tvb` for a reference result, plus `pyrates`, `networkdynamics`, `brian2`,
+and the `bifurcationkit` / `auto` analysis backends. The full catalogue — capabilities,
+CLI invocation, and how sweeps are placed — is on **[Run on a backend](Backends.qmd)**.
 
 `exp.run()` accepts these common kwargs:
 
@@ -229,6 +232,7 @@ in BIDS layout, see [Working with Results → BIDS Export](Results.qmd#exporting
 
 ## See Also
 
+- [Run on a backend](Backends.qmd) — pick an engine and invoke it
 - [Working with Results](Results.qmd) — what `exp.run()` returns
 - [Defining Dynamical Systems](../Models/DefineDynamicalSystem.qmd)
 - [Defining Networks](../Specification/Network.qmd)

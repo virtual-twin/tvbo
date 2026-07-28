@@ -221,7 +221,12 @@ class BifurcationKitAdapter:
         po_n = _newton_kwargs(bc)
         if po_n:
             po_cp.append(f"newton_options = NewtonPar({', '.join(po_n)})")
-        po_cp_str = ", ".join(po_cp) if po_cp else ""
+        # BifurcationKit defaults `save_sol_every_step` to 0, leaving `br.sol` empty —
+        # and the orbit waveforms are reconstructed from exactly those saved solutions.
+        # Always request them, so `po_results.profiles` is populated rather than a
+        # branch-long run of `nothing` behind a buried @warn.
+        po_cp.append("save_sol_every_step = 1")
+        po_cp_str = ", ".join(po_cp)
 
         # Source point
         source = br.source_point
@@ -457,13 +462,33 @@ class BifurcationKitAdapter:
         raise ValueError(f"Cannot resolve dynamics for continuation. dynamics='{dyn_ref}' not found.")
 
     def _extract_periodic_orbits(self, model, **kwargs) -> list:
-        """Extract periodic orbit branches from Julia Main after execution."""
+        """Extract periodic orbit branches from Julia Main after execution.
+
+        Also attaches each branch's orbit waveforms (``orbit_profiles``, a
+        ``[n_steps, NPROF, n_vars]`` array phase-resampled over one period) when the
+        Julia run produced them (``po_results.profiles``); the actual periodic-orbit
+        profile is otherwise not recorded by BifurcationKit.
+        """
+        import numpy as np
         from tvbo.adapters.julia import eval_with_auto_install
         from tvbo.analysis import BifurcationResult
 
         try:
             po = eval_with_auto_install("po_results")
-            return [BifurcationResult(br=p, model=model, **kwargs) for p in po.branches]
+            try:
+                prof_list = list(getattr(po, "profiles", None) or [])
+            except Exception:
+                prof_list = []
+            out = []
+            for i, p in enumerate(po.branches):
+                res = BifurcationResult(br=p, model=model, **kwargs)
+                if i < len(prof_list) and prof_list[i] is not None:
+                    try:
+                        res.orbit_profiles = np.asarray(prof_list[i], dtype=float)
+                    except Exception:
+                        pass
+                out.append(res)
+            return out
         except Exception:
             return []
 

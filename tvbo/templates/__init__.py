@@ -36,7 +36,15 @@ def _mako_module_dir() -> str:
     override = os.environ.get("TVBO_MAKO_CACHE")
     if override:
         return override
-    return join(tempfile.gettempdir(), f"tvbo-mako-{os.getuid()}")
+    # Scope by numeric uid, not by name: mako writes generated .py modules here and
+    # imports them back, and the system temp dir is world-writable. `getpass.getuser()`
+    # reads $LOGNAME/$USER first, so on a shared host another account could point tvbo
+    # at a directory it controls.
+    if hasattr(os, "getuid"):
+        return join(tempfile.gettempdir(), f"tvbo-mako-{os.getuid()}")
+    import getpass  # no uid to scope by (Windows); fall back to the account name
+
+    return join(tempfile.gettempdir(), f"tvbo-mako-{getpass.getuser()}")
 
 
 lookup = TemplateLookup(

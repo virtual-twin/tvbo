@@ -4,6 +4,32 @@
     "researchProduct"
   ],
   "properties": {
+    "description": {
+      "type": "string"
+    },
+    "citekey": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "year": {
+      "type": "integer"
+    },
+    "doi": {
+      "type": "string"
+    },
     "label": {
       "type": "string"
     },
@@ -43,6 +69,19 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true
+    },
+    "figures": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "code_source": {
+      "_embeddedTypes": [
+        "tvbo:CodeSource"
+      ]
     }
   }
 }

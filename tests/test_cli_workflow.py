@@ -94,6 +94,58 @@ def test_workflow_plan_tvb_fans_out_both_axes():
     assert p["n_workflow_cells"] == 32 * 32
 
 
+_USED_DEP_RECIPE = """
+id: 100
+dynamics:
+  name: Kuramoto
+  label: Kuramoto
+  parameters:
+    omega: {{name: omega, value: 0.0628, unit: rad_per_ms}}
+    g: {{name: g, value: 0.0, free: true, heterogeneous: true, shape: "(n_nodes,)", used: {{iri: "{iri}", output: weights}}}}
+  coupling_inputs:
+    c: {{name: c, description: "coupling"}}
+  state_variables:
+    theta:
+      name: theta
+      unit: rad
+      equation: {{lhs: "Derivative(theta, t)", rhs: "omega + c"}}
+      variable_of_interest: true
+      coupling_variable: true
+  output: [theta]
+  number_of_modes: 1
+network:
+  number_of_nodes: 2
+  nodes:
+    - {{id: 0, label: r0}}
+    - {{id: 1, label: r1}}
+  edges:
+    - {{source: 0, target: 1, weight: 0.5}}
+    - {{source: 1, target: 0, weight: 0.5}}
+integration: {{method: RungeKutta4thOrder, duration: 10.0, step_size: 1.0, transient_time: 0.0}}
+"""
+
+
+def test_used_dataref_dependency_ignores_curated_entities():
+    """A `used:` DataRef adds an ordering edge only for a sibling *experiment* iri.
+
+    A curated / dataset iri that merely contains digits must not register a phantom
+    dependency on a non-existent experiment: the old heuristic stripped non-digits, so
+    ``tvbo:dataset/HCP1200`` became a dep on experiment '1200' (and an atlas iri on
+    experiment '1'), deadlocking the DAG on a rule that is never emitted. A real
+    ``…/exp-7`` still registers its edge.
+    """
+    from tvbo.classes.experiment import SimulationExperiment
+    from tvbo.cli import _workflow
+
+    def deps(iri):
+        exp = SimulationExperiment.from_string(_USED_DEP_RECIPE.format(iri=iri))
+        return _workflow.plan(study_key="s", experiment=exp, backend="tvboptim").depends_on
+
+    assert deps("tvbo:dataset/HCP1200") == []          # curated dataset → no phantom '1200'
+    assert deps("rec-avgMatrix_atlas-HCPMMP1") == []   # curated atlas → no phantom '1'
+    assert deps("tvbo:exp/s/exp-7") == ["7"]           # sibling experiment → real edge
+
+
 # ---------------------------------------------------------------------------
 # CLI: workflow snakemake / slurm / nextflow kit emission
 # ---------------------------------------------------------------------------
@@ -234,6 +286,75 @@ def test_fanout_snakefile_is_executable_python():
 
     # ...and the wildcard must survive that evaluation as a literal for expand()/output:.
     assert "results/30/sub-{subject}_result.h5" in resolved
+
+
+def _snakemake_cmd(tmp_path, monkeypatch, *, sbatch: bool, ship_profile: bool,
+                   cores=None, profile=None):
+    """Capture the snakemake argv `_execute_engine_artefact` would run for a kit.
+
+    *sbatch* toggles whether a scheduler is discoverable; *ship_profile* whether the
+    kit carries a SLURM `profile/`. Returns the launched command (minus argv[0]).
+    """
+    from tvbo.cli import workflow as wf
+
+    kit = tmp_path / "kit"
+    (kit / "profile").mkdir(parents=True) if ship_profile else kit.mkdir()
+    if ship_profile:
+        (kit / "profile" / "config.yaml").write_text("executor: slurm\n", encoding="utf-8")
+    (kit / "Snakefile").write_text("rule all:\n    input: []\n", encoding="utf-8")
+
+    # has_scheduler consults _resolve_launcher (which itself checks the venv sibling AND
+    # $PATH), so mocking it fully controls both the launcher path and scheduler discovery.
+    monkeypatch.setattr(wf, "_resolve_launcher",
+                        lambda n: (f"/fake/{n}" if n == "snakemake"
+                                   else (f"/fake/{n}" if (n == "sbatch" and sbatch) else None)))
+
+    captured = {}
+
+    def _fake_run(cmd, check=True, cwd=None, **kwargs):
+        captured["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout="")
+
+    monkeypatch.setattr(wf.subprocess, "run", _fake_run)
+    wf._execute_engine_artefact("snakemake", kit / "Snakefile", profile=profile, cores=cores)
+    return captured["cmd"]
+
+
+def test_snakemake_explicit_cores_runs_local_but_keeps_the_profile(tmp_path, monkeypatch):
+    """`--cores` forces a LOCAL run, overriding only the profile's *executor*.
+
+    The profile carries the container deployment method and its bind mounts, retries
+    and keep-going alongside the SLURM executor. Dropping it to run locally would
+    silently execute every rule outside the kit's declared container.
+    """
+    cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=True, ship_profile=True, cores="4")
+    assert cmd[1:] == ["--profile", "profile", "--executor", "local", "--cores", "4"]
+
+
+def test_snakemake_shipped_profile_used_only_when_scheduler_present(tmp_path, monkeypatch):
+    """With a scheduler present the shipped SLURM profile is used as-is (submit each rule)."""
+    cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=True, ship_profile=True)
+    assert cmd[1:] == ["--profile", "profile"]
+
+
+def test_snakemake_falls_back_to_local_cores_without_a_scheduler(tmp_path, monkeypatch):
+    """A kit's SLURM executor can't work on a machine with no `sbatch`; a bare run must
+    still execute — auto-fall back to a local executor so the SAME kit runs natively
+    locally, still inside the container the profile declares."""
+    cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=False, ship_profile=True)
+    assert cmd[1:] == ["--profile", "profile", "--executor", "local", "--cores", "all"]
+
+
+def test_snakemake_without_a_profile_just_runs_local_cores(tmp_path, monkeypatch):
+    """No shipped profile and nothing to preserve: a plain local run."""
+    cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=True, ship_profile=False)
+    assert cmd[1:] == ["--cores", "all"]
+
+
+def test_snakemake_explicit_profile_wins_over_shipped(tmp_path, monkeypatch):
+    """`--profile cubi-v1` replaces the shipped profile regardless of scheduler discovery."""
+    cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=False, ship_profile=True, profile="cubi-v1")
+    assert cmd[1:] == ["--profile", "cubi-v1", "--executor", "local", "--cores", "all"]
 
 
 @pytest.mark.parametrize("engine,expected_tail", [
@@ -926,8 +1047,10 @@ def test_workflow_stdout_only_does_not_create_kit(tmp_path: Path):
     [
         # Slurm submits the array with --parsable (then chains a gather job).
         ("slurm", ["sbatch", "--parsable", "run.sbatch"], "run.sbatch"),
-        # Snakemake ships a SLURM-executor profile, so submit runs the login-node
-        # orchestrator that dispatches each rule to the scheduler (not local --cores).
+        # Snakemake ships a SLURM-executor profile, so with a scheduler present submit
+        # runs the login-node orchestrator that dispatches each rule to it (not local
+        # --cores). Without a scheduler it auto-falls back to --cores; a `sbatch` mock
+        # below pins the HPC branch so this asserts the profile path deterministically.
         ("snakemake", ["snakemake", "--profile", "profile"], "Snakefile"),
         ("nextflow", ["nextflow", "run", "main.nf"], "main.nf"),
     ],
@@ -940,6 +1063,9 @@ def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, eng
         return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
 
     monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
+    # Pin a discoverable scheduler so the snakemake kit uses its shipped SLURM profile
+    # (the HPC branch) rather than the no-`sbatch` local-cores fallback — the test's intent.
+    monkeypatch.setattr("shutil.which", lambda n: f"/usr/bin/{n}")
 
     out = tmp_path / "kit"
     r = runner.invoke(

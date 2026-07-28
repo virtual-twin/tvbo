@@ -1,6 +1,7 @@
 ---
-applyTo: "**"
+applyTo: '**'
 ---
+
 # Mermaid AI Skills
 
 When the user asks to create, edit, or visualize any diagram, use the Mermaid

@@ -715,9 +715,9 @@ def _fold_range_boundaries(rng, boundaries):
 def _fold_component_alias(d: dict) -> None:
     """Recursively rename the Dynamics-only ``components`` → ``modes`` slot alias.
 
-    Kept out of :data:`tvbo.utils.yaml_loader._SLOT_ALIASES` (which is applied to
-    every loaded document) because ``components`` is a ``modes`` alias only inside
-    a Dynamics. Mutates ``d`` in place at every nesting level.
+    ``components`` is a ``modes`` alias only inside a Dynamics, so it is folded here
+    (and by the class-scoped fold in the loader) rather than anywhere a ``components``
+    key appears. Mutates ``d`` in place at every nesting level.
     """
     for alias, canonical in _DYNAMICS_SLOT_ALIASES.items():
         if alias in d:
@@ -743,8 +743,8 @@ def _resolve_dynamics_aliases(d: dict) -> dict:
 
     * the Dynamics-specific ``components`` → ``modes`` alias (recursively), then
     * :func:`tvbo.utils.yaml_loader._normalize_loaded` — the one implementation
-      shared with the LinkML ``load``/``loads``/``load_as_dict`` path: global slot
-      aliases, the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries``
+      shared with the LinkML ``load``/``loads``/``load_as_dict`` path: the aliases
+      ``Dynamics`` declares, the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries``
       gaining ``enforce: clamp``; a co-existing descriptive ``domain`` preserved as
       the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}``
       lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``),
@@ -942,9 +942,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Returns:
             The instance parsed from the string.
         """
-        import yaml
-
-        data = yaml.safe_load(str)
+        data = yaml_loader.load_as_dict(str) or {}
         _resolve_dynamics_aliases(data)
         inst = cls(**data)
         if use_ontology:
@@ -1328,8 +1326,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         """Build a unified local_dict for parsing model expressions.
 
         Includes symbols for parameters, coupling terms, derived parameters, derived
-        variables, output transforms, state variables, function names, and (optionally)
-        the time symbol 't'.
+        variables, output transforms, state variables, event names, function names, and
+        (optionally) the time symbol 't'.
+
+        Every declared name must appear here so it shadows SymPy's own global namespace:
+        `Q` is SymPy's assumptions object, `S` its sympify shortcut, `O` big-O, `N`
+        numeric evaluation and `I` the imaginary unit, so a model that names a quantity
+        after any of them would otherwise fail to parse.
 
         Returns
         -------
@@ -1369,6 +1372,9 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             scope[str(fname)] = Function(str(fname))
             for name in f.arguments:  # arguments is a dict keyed by name
                 scope[str(name)] = Symbol(str(name))
+
+        for name in getattr(self, "events", {}) or {}:
+            scope[str(name)] = Symbol(str(name))
 
         if "e" not in scope:
             from sympy import E
@@ -3315,6 +3321,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
         outputfile=None,
         derivative_notation: str = "dot",
         baseline=None,
+        citeformat=None,
     ):
         """Render a human-readable report of the model.
 
@@ -3332,6 +3339,11 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
                 couplings that are new or changed relative to it (a "relative to"
                 note replaces the shared rows) — e.g. a controlled variant shown
                 against its uncontrolled base without repeating every shared term.
+            citeformat: How references are emitted. Default (`None`) renders a
+                formatted **References** section at the end (a standalone report).
+                `"quarto"` instead emits inline `@key` citations in the fulltext and
+                omits the list, so the report can be embedded in a Quarto document
+                whose own `bibliography:` resolves the citations into one bibliography.
 
         Returns:
             The rendered Markdown report string.
@@ -3346,7 +3358,7 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
 
         md_template = templates.lookup.get_template(f"{template_name}.md.mako")
         md_render = (
-            md_template.render(model=self, derivative_notation=derivative_notation, baseline=baseline)
+            md_template.render(model=self, derivative_notation=derivative_notation, baseline=baseline, citeformat=citeformat)
             .replace(r"\mathcal{lo}_{coupling}", "c_{local}")
             .replace("c_{pop0}", "c_{global}")
         )

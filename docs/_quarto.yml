@@ -12,12 +12,18 @@ project:
     - datamodel/**/*.qmd
     - Models/*.qmd
     - Simulation/*.qmd
+    # index.qmd dissolved into SPECIFY/RUN IT; its old URL is owned by
+    # Simulation/SimulationExperiments.qmd's `aliases:`, so exclude the stub here.
+    - "!Simulation/index.qmd"
     - ScaleOut/*.qmd
     - Bifurcation/*.qmd
     - Networks/*.qmd
     - BeyondMeanField/*.qmd
     - Fitting/*.qmd
     - CLI/*.qmd
+    # backends.qmd moved to Simulation/Backends.qmd; its old URL is owned by that
+    # page's `aliases:` entry, so exclude the stub here to avoid a duplicate path.
+    - "!CLI/backends.qmd"
     - examples/**/*.qmd
     - Specification/*.qmd
     - Interoperability/**/*.qmd
@@ -53,23 +59,25 @@ website:
 
         # Keep in step with the sidebar in _toc.yml — the two menus should tell the
         # same story about what the site contains.
+        # Mirrors the sidebar PARTS in _toc.yml: each item is the representative
+        # landing for one part, so navbar and sidebar tell the same story.
         left:
             - href: index.qmd
               text: Home
-            - text: "Networks"
-              href: Networks/index.qmd
-            - text: "Models"
-              href: Models/index.qmd
-            - text: "CLI"
-              href: CLI/index.qmd
-            - text: "Interoperability"
+            - text: "Get Started"
+              href: GettingStarted.qmd
+            - text: "Specify an Experiment"
+              href: Simulation/SimulationExperiments.qmd
+            - text: "Run on a Backend"
+              href: Simulation/Backends.qmd
+            - text: "Analyze"
+              href: Bifurcation/index.qmd
+            - text: "Extend"
               href: Interoperability/index.qmd
-            - text: "Data Model"
-              href: datamodel/index.qmd
+            - text: "Reference"
+              href: reference.qmd
             - text: "Platform"
               href: platform.qmd
-            - text: "Agents"
-              href: agents/index.qmd
 
         tools:
             - icon: github

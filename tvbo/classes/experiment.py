@@ -429,6 +429,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "model", None) and not getattr(self, "dynamics", None):
             self.dynamics = Dynamics(name=self.model)
 
+        self._propagate_event_names_to_dynamics()
+
         # Coerce dynamics to enhanced Dynamics class
         if getattr(self, "dynamics", None) and not isinstance(self.dynamics, Dynamics):
             if isinstance(self.dynamics, tvbo_datamodel.Dynamics):
@@ -832,8 +834,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # construction resolves the network builder eagerly (see __init__).
         register_recipe_code_paths(cls._pending_source_file)
         try:
-            with open(filepath) as file_handle:
-                data_as_dict = yaml.safe_load(file_handle) or {}
+            data_as_dict = yaml_loader.load_as_dict(filepath) or {}
             # Drop private/provenance keys (e.g. _source_file) — not schema slots,
             # so a round-tripped render_yaml() spec reloads cleanly.
             if isinstance(data_as_dict, dict):
@@ -875,7 +876,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         from tvbo.utils import yaml_loader
         import yaml
 
-        data_as_dict = yaml.safe_load(yaml_string) or {}
+        data_as_dict = yaml_loader.load_as_dict(yaml_string) or {}
         return yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
 
     # ── Platform retrieval ────────────────────────────────────────
@@ -1732,21 +1733,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _locate_source_result(self, results_root, source_id):
         """Path to the ``from_experiment`` source run's saved result HDF5.
 
-        Globs ``results_root`` (or cwd) by the ``exp-<id>_`` stem, skipping the
-        network sidecar. Raises if the source hasn't been run yet. Shared by the
-        seed / branch / parameter resolvers.
+        Delegates to the shared cross-experiment container locator
+        (:func:`tvbo.data.dataref.locate_exp_container`) — globs ``results_root``
+        (or cwd) by the ``exp-<id>_`` stem, skipping the network sidecar, and raises
+        if the source hasn't been run yet. Shared by the seed / branch / parameter
+        resolvers and by every ``DataRef`` consumer, so all locate one code path.
         """
-        from pathlib import Path
+        from tvbo.data import dataref as _dref
 
-        root = Path(results_root) if results_root else Path.cwd()
-        cands = [p for p in root.glob(f"**/*exp-{source_id}_*.h5") if "network" not in p.name]
-        if not cands:
-            raise FileNotFoundError(
-                f"initial_state.from_experiment: no saved result for experiment {source_id} "
-                f"under {root} (looked for '*exp-{source_id}_*.h5'). Run experiment "
-                f"{source_id} first so its result is available."
-            )
-        return sorted(cands)[0]
+        return _dref.locate_exp_container(results_root, source_id)
 
     def _resolve_from_experiment_seed(self, results_root=None):
         """Load the operating point for ``initial_state.method == from_experiment``.
@@ -1829,15 +1824,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return da.dims[-1]
 
         def _final_key(ds, sv):
-            target = f"{sv}_final"
-            for k in ds.data_vars:
-                if k == target or k.endswith(f"__{target}"):
-                    return k
-            raise KeyError(
-                f"initial_state.from_experiment: source experiment {source_id} does not "
-                f"record '{target}'. The source must expose its settled state as an "
-                f"observation named '{sv}_final' for each state variable."
-            )
+            from tvbo.data import dataref as _dref
+
+            try:
+                return _dref.match_output(ds.data_vars, f"{sv}_final")
+            except KeyError:
+                raise KeyError(
+                    f"initial_state.from_experiment: source experiment {source_id} does not "
+                    f"record '{sv}_final'. The source must expose its settled state as an "
+                    f"observation named '{sv}_final' for each state variable."
+                ) from None
 
         ds = xr.open_dataset(src_h5, engine="h5netcdf")
         try:
@@ -1891,25 +1887,31 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         }
 
     def _resolve_from_experiment_params(self, results_root=None):
-        """Load model PARAMETERS sourced from the from_experiment operating point.
+        """Load model PARAMETERS sourced from another experiment.
 
-        A parameter (dynamics **or** coupling) that declares ``measure: <name>`` in a
-        ``method=from_experiment`` experiment takes its value from the source run's
-        operating point. Two flavours share one path: a recorded per-node observation
-        (e.g. ``g`` from a ``control_mask``), or a tuned free parameter the source fit
-        persisted as ``estimate__<name>`` (warm-start / prior location, e.g. ``wLRE``).
-        Per-node **vectors and per-edge matrices** are both handled; when the source
-        array carries node-label coordinates (``node`` / ``node_i``+``node_j``) it is
-        reconciled to THIS experiment's network **by label** — alias-aware, on every
-        node axis — via the same `.sel` path the dataset targets use. An unlabelled
-        source array is taken in model order (legacy behaviour). Returns
-        ``{param_name: ndarray}``, or ``None`` when no parameter sources a value.
+        A parameter (dynamics **or** coupling) obtains its value from a sibling run in
+        one of two spellings, both resolved through the one shared ``DataRef`` path
+        (:mod:`tvbo.data.dataref`):
+
+        * ``used: {experiment, output, sel, reconcile}`` — the explicit cross-container
+          reference: any experiment's recorded observation, a tuned free parameter it
+          persisted as ``estimate__<name>`` (warm-start / prior location, e.g. ``wLRE``),
+          optionally one swept point (``sel``) and label ``reconcile``. Self-contained,
+          so it resolves with or without ``initial_state.from_experiment``.
+        * ``measure: <name>`` in a ``method=from_experiment`` experiment — the no-``sel``
+          shorthand whose WHERE is the enclosing ``source_experiment`` and whose value is
+          the settled operating point (``source_point``).
+
+        Per-node **vectors and per-edge matrices** are both handled; a source array with
+        node-label coordinates is reconciled to THIS experiment's network **by label**
+        (alias-aware, on every node axis). An unlabelled source array is taken in model
+        order. Returns ``{param_name: ndarray}``, or ``None`` when nothing sources a value.
         """
-        ini = getattr(self, "initial_state", None)
-        if ini is None or str(getattr(ini, "method", "") or "") != "from_experiment":
-            return None
+        from tvbo.data import dataref as _dref
 
-        # Parameters that source from the operating point — dynamics + coupling.
+        ini = getattr(self, "initial_state", None)
+        is_from_exp = ini is not None and str(getattr(ini, "method", "") or "") == "from_experiment"
+
         def _items(params):
             if params is None:
                 return []
@@ -1923,6 +1925,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 return list(obj.values())
             return list(obj) if isinstance(obj, (list, tuple)) else [obj]
 
+        # Each sourced parameter -> ('used', DataRef) | ('measure', name). A ``used:``
+        # edge carries its own WHERE, so it resolves independently of from_experiment; a
+        # bare ``measure:`` needs the from_experiment source that supplies its WHERE.
         wanted: dict = {}
         param_sets = [getattr(getattr(self, "dynamics", None), "parameters", None)]
         net = getattr(self, "network", None)
@@ -1930,24 +1935,45 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             param_sets.append(getattr(c, "parameters", None))
         for ps in param_sets:
             for key, p in _items(ps):
-                m = str(getattr(p, "measure", "") or "")
                 nm = getattr(p, "name", None) or key
-                if m and nm and nm not in wanted:
-                    wanted[nm] = m
+                if not nm or nm in wanted:
+                    continue
+                used = getattr(p, "used", None)
+                # A cross-experiment ``used:`` carries its own WHERE (experiment/iri). A
+                # LOCAL ``used:`` (neither) names one of this experiment's own outputs and
+                # is resolved by the in-run machinery — skip it here so it never reaches
+                # locate_container, which raises on a WHERE-less reference.
+                if used is not None and not _dref.is_local_ref(used):
+                    wanted[nm] = ("used", used)
+                elif is_from_exp:
+                    m = str(getattr(p, "measure", "") or "")
+                    if m:
+                        wanted[nm] = ("measure", m)
         if not wanted:
             return None
 
-        src = getattr(ini, "source_experiment", None)
-        if src is None:
-            raise ValueError("initial_state.method=from_experiment requires source_experiment")
-        source_id = int(getattr(src, "id", src))
-        src_h5 = self._locate_source_result(results_root, source_id)
+        # WHERE fallback for a bare ``measure:`` (and a ``used:`` naming no experiment/
+        # iri): the enclosing from_experiment source, named once.
+        fallback = None
+        if is_from_exp:
+            src = getattr(ini, "source_experiment", None)
+            # Normalise the exp-id spelling (``exp-3``/``3``/an Experiment) to the int
+            # locate_container globs by, so a from_experiment source written ``exp-3``
+            # does not raise on ``int('exp-3')`` (matches _source_id_int in dataref).
+            _sid = _dref.experiment_id(getattr(src, "id", src)) if src is not None else None
+            fallback = int(_sid) if _sid is not None else None
 
         n_nodes = len(self.network.nodes) if self.network.nodes else None
-        point = str(getattr(ini, "source_point", "") or "endpoint")
-        # 'branch' has no single point for a parameter value; fall back to the settled
-        # endpoint rather than crash on int('branch').
-        sel = -1 if point in ("", "endpoint", "branch") else int(point)
+        point = str(getattr(ini, "source_point", "") or "endpoint") if is_from_exp else "endpoint"
+        # 'branch' has no single point for a parameter value; settle to the endpoint.
+        settle = -1 if point in ("", "endpoint", "branch") else int(point)
+
+        _recon: dict = {}   # network-invariant alias map + model labels, computed lazily
+        def _recon_ctx():
+            if not _recon:
+                _recon["amap"] = self.network.region_alias_map()
+                _recon["labels"] = self._resolve_model_node_labels()
+            return _recon["amap"], _recon["labels"]
 
         def _node_dims(da):
             labelled = [d for d in da.dims if str(d).startswith("node")]
@@ -1959,46 +1985,83 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     return by_size[:1]
             return [da.dims[-1]]
 
-        def _measure_key(ds, measure):
-            for k in ds.data_vars:
-                if k == measure or k.endswith(f"__{measure}"):
-                    return k
-            raise KeyError(
-                f"initial_state.from_experiment: source experiment {source_id} does not record "
-                f"'{measure}' (looked for an observation or estimate__{measure}). Have the source "
-                f"record it — a per-node observation, or a tuned free parameter."
-            )
+        out = {}
+        for pname, (kind, spec) in wanted.items():
+            if kind != "used":
+                continue
+            amap, labels = _recon_ctx() if _dref.reconcile_mode(spec) == "by_label" else (None, None)
+            da = _dref.resolve_dataref(spec, results_root=results_root,
+                                       fallback_experiment=fallback,
+                                       alias_map=amap, model_labels=labels)
+            out[pname] = jnp.asarray(np.asarray(da.values))
 
-        _recon: dict = {}   # cache the network-invariant alias map + model labels
-        def _reconcile(da, node_dims):
-            # Relabel each LABELLED node axis source->canonical, then select this model's
-            # node order (both axes for a matrix). Unlabelled axes are assumed already in
-            # model order (legacy). Reuses the dataset-target `.sel` reconcile path. The
-            # alias map + labels depend only on self.network, so compute them once (lazily,
-            # to keep the all-unlabelled case free of an atlas load) and reuse across params.
-            labelled = [d for d in node_dims if d in da.coords]
-            if not labelled:
-                return np.asarray(da.values)
-            if not _recon:
-                _recon["amap"] = self.network.region_alias_map()
-                _recon["labels"] = self._resolve_model_node_labels()
-            for d in labelled:
-                da = da.assign_coords({d: [_recon["amap"].get(str(l), str(l)) for l in da[d].values]})
-                da = da.sel({d: _recon["labels"]})
-            return np.asarray(da.values)
-
-        ds = xr.open_dataset(src_h5, engine="h5netcdf")
-        try:
-            out = {}
-            for pname, measure in wanted.items():
-                da = ds[_measure_key(ds, measure)]
-                node_dims = _node_dims(da)
-                for d in [d for d in da.dims if d not in node_dims]:
-                    da = da.isel({d: sel})     # settle any swept dims to the operating point
-                out[pname] = jnp.asarray(_reconcile(da, node_dims))
-        finally:
-            ds.close()
+        # Legacy ``measure:`` params all share the one from_experiment source — locate and
+        # open it ONCE, then settle each to the operating point and reconcile labelled node
+        # axes. WHERE is the source; the swept dims settle positionally (source_point).
+        measures = [(p, s) for p, (k, s) in wanted.items() if k == "measure"]
+        if measures:
+            if fallback is None:
+                raise ValueError("initial_state.method=from_experiment requires source_experiment")
+            ds = xr.open_dataset(self._locate_source_result(results_root, fallback), engine="h5netcdf")
+            try:
+                for pname, measure in measures:
+                    da = ds[_dref.match_output(ds.data_vars, measure)]
+                    node_dims = _node_dims(da)
+                    for d in [d for d in da.dims if d not in node_dims]:
+                        da = da.isel({d: settle})     # settle swept dims to the operating point
+                    da = da.load()
+                    if any(d in da.coords for d in node_dims):
+                        amap, labels = _recon_ctx()
+                        da = _dref.reconcile_by_label(da, amap, labels, node_dims=node_dims)
+                    out[pname] = jnp.asarray(np.asarray(da.values))
+            finally:
+                ds.close()
         return out
+
+    def _resolve_builder_datarefs(self, results_root=None):
+        """Resolve exploration-builder ``Argument.used`` DataRefs to arrays, keyed for the run.
+
+        An ``ExplorationAxis.builder`` argument may source a labelled array from another
+        experiment with ``used:`` — e.g. a control-mask builder that needs the
+        operating-point Lyapunov vector a *different* experiment recorded. Each is
+        resolved here, on the Python side where ``results_root`` and the network are
+        available, through the one shared ``DataRef`` path (:mod:`tvbo.data.dataref`),
+        and handed to the generated run as ``builder_data={'<axis>::<arg>': array}``
+        (looked up at runtime by ``_bdv``). This mirrors how the from_experiment seeds
+        are pre-resolved and injected as data — the array is never inlined into the
+        emitted code. Returns ``None`` when no builder argument sources a value.
+        """
+        from tvbo.data import dataref as _dref
+
+        expls = getattr(self, "explorations", None)
+        if not expls:
+            return None
+        expl_list = list(expls.values()) if hasattr(expls, "values") else list(expls)
+        out: dict = {}
+        for expl in expl_list:
+            space = getattr(expl, "space", None)
+            if not space:
+                continue
+            axes = list(space.values()) if hasattr(space, "values") else list(space)
+            for axis in axes:
+                builder = getattr(axis, "builder", None)
+                args = getattr(builder, "arguments", None) if builder is not None else None
+                if not args:
+                    continue
+                items = args.items() if hasattr(args, "items") \
+                    else [(getattr(a, "name", None), a) for a in args]
+                for an, arg in items:
+                    ref = getattr(arg, "used", None)
+                    if ref is None:
+                        continue
+                    amap = labels = None
+                    if _dref.reconcile_mode(ref) == "by_label":
+                        amap = self.network.region_alias_map()
+                        labels = self._resolve_model_node_labels()
+                    da = _dref.resolve_dataref(ref, results_root=results_root,
+                                               alias_map=amap, model_labels=labels)
+                    out[f"{getattr(axis, 'parameter', '')}::{an}"] = np.asarray(da.values)
+        return out or None
 
     def run(self, format=None, initial_conditions=None, results_root=None, **kwargs):
         """Configure, build, and run the experiment on a backend.
@@ -2124,6 +2187,39 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             )
 
         elif format.lower() in ["tvboptim", "tvb-optim"]:
+            # Heterogeneous networks (different dynamics per node) run in process
+            # through the tvboptim HeterogeneousNetwork engine rather than the
+            # homogeneous codegen path below.
+            from tvbo.adapters.tvboptim import (
+                is_heterogeneous,
+                run_heterogeneous_tvboptim,
+            )
+
+            if is_heterogeneous(self):
+                # The in-process HeterogeneousNetwork engine integrates from the
+                # network's own defaults; unlike the homogeneous path below it does
+                # not yet apply the cross-experiment seeds resolved from
+                # ``results_root``. Refuse loudly when the experiment declares one
+                # rather than silently returning a default-seeded (wrong) result.
+                _declared = [
+                    label
+                    for label, seed in (
+                        ("initial_state.from_experiment", self._resolve_from_experiment_seed(results_root)),
+                        ("sourced Parameter (used:/measure:)", self._resolve_from_experiment_params(results_root)),
+                        ("initial_state.source_point='branch'", self._resolve_from_experiment_branch(results_root)),
+                        ("ExplorationAxis.builder used:", self._resolve_builder_datarefs(results_root)),
+                    )
+                    if seed is not None
+                ]
+                if _declared:
+                    raise NotImplementedError(
+                        "Heterogeneous tvboptim runs do not yet apply cross-experiment "
+                        "seeds, but this experiment declares: " + ", ".join(_declared)
+                        + ". Run the homogeneous tvboptim path, or remove the seed until "
+                        "the HeterogeneousNetwork engine supports it."
+                    )
+                return run_heterogeneous_tvboptim(self, **kwargs)
+
             import time
 
             benchmark = kwargs.pop("benchmark", False)
@@ -2178,6 +2274,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             _branch = self._resolve_from_experiment_branch(results_root)
             if _branch is not None:
                 kwargs.setdefault("branch_seed", _branch)
+
+            # Exploration-builder arguments sourced from another experiment (Argument.used):
+            # resolve here and inject as builder_data, looked up at runtime by _bdv.
+            _bdata = self._resolve_builder_datarefs(results_root)
+            if _bdata is not None:
+                kwargs.setdefault("builder_data", _bdata)
 
             # Run the experiment with optional per-step timing
             if benchmark:
@@ -2385,6 +2487,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             from tvbo.adapters.brian2 import Brian2Adapter
 
             return Brian2Adapter(self).run(**kwargs)
+
+        elif format.lower() in ["gillespie", "ssa"]:
+            from tvbo.adapters.gillespie import GillespieAdapter
+
+            return GillespieAdapter(self).run(**kwargs)
 
         else:
             raise ValueError(
@@ -3197,6 +3304,33 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 unique.append(f)
             out[subject] = unique
         return out
+
+    def _propagate_event_names_to_dynamics(self) -> None:
+        """Hand experiment-level event names down to the Dynamics before it parses.
+
+        An event's name is a symbol its dfun references, so the Dynamics needs it in its
+        symbolic scope at parse time or the name falls through to SymPy's global
+        namespace (see `Dynamics.get_symbolic_elements`). Only the names travel; the
+        events themselves are lowered later by `_resolve_events`.
+        """
+        events = getattr(self, "events", None)
+        dynamics = getattr(self, "dynamics", None)
+        if not events or dynamics is None:
+            return
+        names = (list(events.keys()) if hasattr(events, "keys")
+                 else [getattr(e, "name", None) for e in events])
+        is_mapping = isinstance(dynamics, dict)
+        existing = dynamics.get("events") if is_mapping else getattr(dynamics, "events", None)
+        if existing:
+            return
+        payload = {str(n): {"name": str(n)} for n in names if n}
+        if is_mapping:
+            dynamics["events"] = payload
+        else:
+            try:
+                dynamics.events = payload
+            except (AttributeError, TypeError):
+                pass
 
     def _resolve_events(self) -> None:
         """Lower declarative stimulus/stimulation Event fields into the form the
