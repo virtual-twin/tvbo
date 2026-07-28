@@ -715,9 +715,9 @@ def _fold_range_boundaries(rng, boundaries):
 def _fold_component_alias(d: dict) -> None:
     """Recursively rename the Dynamics-only ``components`` → ``modes`` slot alias.
 
-    Kept out of :data:`tvbo.utils.yaml_loader._SLOT_ALIASES` (which is applied to
-    every loaded document) because ``components`` is a ``modes`` alias only inside
-    a Dynamics. Mutates ``d`` in place at every nesting level.
+    ``components`` is a ``modes`` alias only inside a Dynamics, so it is folded here
+    (and by the class-scoped fold in the loader) rather than anywhere a ``components``
+    key appears. Mutates ``d`` in place at every nesting level.
     """
     for alias, canonical in _DYNAMICS_SLOT_ALIASES.items():
         if alias in d:
@@ -743,8 +743,8 @@ def _resolve_dynamics_aliases(d: dict) -> dict:
 
     * the Dynamics-specific ``components`` → ``modes`` alias (recursively), then
     * :func:`tvbo.utils.yaml_loader._normalize_loaded` — the one implementation
-      shared with the LinkML ``load``/``loads``/``load_as_dict`` path: global slot
-      aliases, the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries``
+      shared with the LinkML ``load``/``loads``/``load_as_dict`` path: the aliases
+      ``Dynamics`` declares, the legacy ``boundaries``/``range`` → ``domain`` fold (``boundaries``
       gaining ``enforce: clamp``; a co-existing descriptive ``domain`` preserved as
       the IC-sampling ``distribution``), and the terse ``distribution: {lo, hi}``
       lift. A bare ``domain`` is left untouched (``enforce`` defaults to ``none``),
@@ -942,9 +942,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Returns:
             The instance parsed from the string.
         """
-        import yaml
-
-        data = yaml.safe_load(str)
+        data = yaml_loader.load_as_dict(str) or {}
         _resolve_dynamics_aliases(data)
         inst = cls(**data)
         if use_ontology:

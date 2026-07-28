@@ -68,7 +68,7 @@ exp_dict = {
         "solver": {
             "label": "FEM implicit Euler",
             "discretization": "FEM",
-            "time_integrator": "implicit Euler",
+            "method": "implicit Euler",
             "dt": 0.01,
         },
     },
@@ -176,7 +176,7 @@ exp_cortex = {
             'equation': {'lhs': 'u_t', 'rhs': 'D * laplacian(u)'},
         }],
         'operators': [{'label': 'Diffusion', 'operator_type': 'laplacian', 'coefficient': 'D'}],
-        'solver': {'label': 'FEM IE', 'discretization': 'FEM', 'time_integrator': 'implicit Euler', 'dt': 2.0},
+        'solver': {'label': 'FEM IE', 'discretization': 'FEM', 'method': 'implicit Euler', 'dt': 2.0},
     },
     'integration': {'duration': 60},
 }

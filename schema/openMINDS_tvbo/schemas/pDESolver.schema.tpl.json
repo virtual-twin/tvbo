@@ -1,6 +1,18 @@
 {
   "_type": "tvbo:PDESolver",
   "properties": {
+    "method": {
+      "type": "string"
+    },
+    "abs_tol": {
+      "type": "number"
+    },
+    "rel_tol": {
+      "type": "number"
+    },
+    "step_size": {
+      "type": "number"
+    },
     "label": {
       "type": "string"
     },
@@ -19,15 +31,6 @@
       "type": "string"
     },
     "discretization": {
-      "type": "string"
-    },
-    "time_integrator": {
-      "type": "string"
-    },
-    "dt": {
-      "type": "number"
-    },
-    "tolerances": {
       "type": "string"
     },
     "preconditioner": {

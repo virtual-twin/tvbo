@@ -2979,9 +2979,55 @@ classes:
             noise_type:
                 range: string
                 ifabsent: "gaussian"
+                description: >-
+                    Temporal character of the process: `gaussian`/`white` (delta-correlated
+                    in time) or `ou`/`ornstein-uhlenbeck` (exponentially correlated in
+                    time). Governs the TIME axis only, and composes freely with
+                    `covariance`, which governs a spatial axis.
+            covariance:
+                range: Parameter
+                inlined: true
+                required: false
+                description: >-
+                    Covariance of the unit-intensity noise increment across the axis named
+                    by `correlated_over` — the second-order structure of the driving
+                    process, stated as mathematics rather than as a factorisation. Must be
+                    square in that axis, symmetric and positive semi-definite; its diagonal
+                    carries per-element variances and need NOT be unity, so unequal
+                    variances and cross-element correlation are expressed together. The
+                    realised increment is `intensity` times a draw from this covariance, so
+                    a scalar `intensity` continues to mean what it means for uncorrelated
+                    noise. Absent (the default) means the increment is independent across
+                    that axis. Being a `Parameter`, it carries the full provenance triple:
+                    a literal `value:`, existing bytes via `source:`+`measure:`, or — the
+                    usual case for a derived operator — `producer:`, whose FunctionCall
+                    records how the structure was obtained (projecting a spatially white
+                    field into a modal basis, spreading independent per-region drives
+                    through a connectome). The generative account therefore lives in the
+                    provenance, and the matrix itself stays a statement about the process.
+                    How a backend samples it (Cholesky, eigendecomposition, whitening) is a
+                    backend concern and is never stated here.
+            correlated_over:
+                range: DimensionType
+                required: false
+                description: >-
+                    Which axis `covariance` indexes — `node` (equivalently `region`) for
+                    spatially correlated drive, or `state` for correlation between the
+                    noise on different state variables. Required whenever `covariance` is
+                    set: a covariance without a named axis does not identify a process. A
+                    multi-mode model carries its modes inside the state axis, so a modal
+                    covariance is declared over `state`.
             correlated:
                 range: boolean
-                ifabsent: false
+                deprecated: >-
+                    Superseded by `covariance` + `correlated_over`. A bare boolean never
+                    identified a process — it said neither which axis was correlated nor
+                    how strongly — so no backend could act on it. Read and ignored, so
+                    recipes carrying it keep loading; delete it, and declare `covariance`
+                    if the noise really is correlated.
+                description: >-
+                    Deprecated. Whether the noise is correlated, without saying across
+                    which axis or by how much. Use `covariance` + `correlated_over`.
             gaussian:
                 range: boolean
                 description: "Indicates whether the noise is Gaussian"
@@ -2997,7 +3043,16 @@ classes:
                 range: RandomStream
                 inlined: true
             intensity:
-                description: "Optional scalar or vector intensity parameter for noise."
+                description: >-
+                    Noise amplitude as a standard deviation (sigma). Superseded by the
+                    `sigma` entry of `parameters`, which states the same quantity where
+                    every other declared quantity lives; a dispersion (TVB's nsig,
+                    D = sigma^2/2) is the `nsig` entry there.
+                deprecated: >-
+                    Use `parameters: {sigma: ...}` for a standard deviation, or
+                    `parameters: {nsig: ...}` for a dispersion. `intensity` is read as a
+                    standard deviation; a recipe that meant a dispersion is off by
+                    sqrt(2 D)/D.
                 range: Parameter
                 inlined: true
             distribution:
@@ -4183,6 +4238,13 @@ classes:
                 range: float
                 ifabsent: float(1e-10)
                 description: "Relative tolerance for adaptive solvers."
+            step_size:
+                range: float
+                aliases:
+                    - dt
+                description: >-
+                    Fixed time step of the solver. Unset for an adaptive solver, which
+                    chooses its own step from `abs_tol` / `rel_tol`.
 
     Integrator:
         class_uri: tvbo:Integrator
@@ -4478,6 +4540,22 @@ classes:
                     Whether to find a fixed point (steady state) before
                     time integration. Used as initial condition for ODEProblem.
                     Maps to NLsolve.fixpoint! in ND.jl or similar in other backends.
+            system_size:
+                range: float
+                description: >-
+                    System size (van Kampen Ω) for the stochastic 'gillespie' backend:
+                    the number of discrete units per unit of the activity variable, and
+                    the sole source of noise. Runs a mean-field rate model as a finite
+                    birth-death process (Gillespie SSA): the activity state variable X
+                    becomes a discrete count n ≈ Ω·X, its relaxation equation
+                    tau*X' = -X + F(...) is read as birth propensity Ω·F/tau (the gain)
+                    and death propensity n/tau (the leak), while the remaining state
+                    variables integrate deterministically between events. Larger Ω means
+                    finer discreteness and weaker fluctuations, recovering the
+                    deterministic mean field as Ω→∞. For an activity already expressed as
+                    a fraction in [0,1], Ω is the population size N; for a firing rate it
+                    is N divided by the rate at full activation. Required by the
+                    'gillespie' backend; ignored by every other backend.
 
     DistributionConfig:
         class_uri: tvbo:DistributionConfig
@@ -5281,18 +5359,18 @@ classes:
 
     PDESolver:
         class_uri: tvbo:PDESolver
+        is_a: Solver
+        description: >-
+            Numerical solver for a PDE: the time-integration algorithm, tolerances and
+            step inherited from `Solver`, plus the spatial discretization and
+            preconditioner a PDE additionally needs.
         attributes:
+            method:
+                range: string
+                description: >-
+                    Time-integration algorithm, e.g. implicit Euler or Crank-Nicolson.
             discretization:
                 range: DiscretizationMethod
-            time_integrator:
-                description: "e.g., implicit Euler, Crank-Nicolson."
-                range: string
-            dt:
-                description: "Time step (s)."
-                range: float
-            tolerances:
-                description: "Abs/rel tolerances."
-                range: string
             preconditioner:
                 range: string
         slots:

@@ -857,6 +857,8 @@ website:
                         href: datamodel/slots/cores.qmd
                       - text: "correlated"
                         href: datamodel/slots/correlated.qmd
+                      - text: "correlated_over"
+                        href: datamodel/slots/correlated_over.qmd
                       - text: "correlation"
                         href: datamodel/slots/correlation.qmd
                       - text: "coupling"
@@ -871,6 +873,8 @@ website:
                         href: datamodel/slots/coupling_terms.qmd
                       - text: "coupling_variable"
                         href: datamodel/slots/coupling_variable.qmd
+                      - text: "covariance"
+                        href: datamodel/slots/covariance.qmd
                       - text: "cpus_per_task"
                         href: datamodel/slots/cpus_per_task.qmd
                       - text: "cse"
@@ -979,8 +983,6 @@ website:
                         href: datamodel/slots/ds_max.qmd
                       - text: "ds_min"
                         href: datamodel/slots/ds_min.qmd
-                      - text: "dt"
-                        href: datamodel/slots/dt.qmd
                       - text: "dtype"
                         href: datamodel/slots/dtype.qmd
                       - text: "duration"
@@ -1755,8 +1757,6 @@ website:
                         href: datamodel/slots/time.qmd
                       - text: "time_dependent"
                         href: datamodel/slots/time_dependent.qmd
-                      - text: "time_integrator"
-                        href: datamodel/slots/time_integrator.qmd
                       - text: "time_post_surgery"
                         href: datamodel/slots/time_post_surgery.qmd
                       - text: "time_range"
@@ -1773,8 +1773,6 @@ website:
                         href: datamodel/slots/title.qmd
                       - text: "tol_stability"
                         href: datamodel/slots/tol_stability.qmd
-                      - text: "tolerances"
-                        href: datamodel/slots/tolerances.qmd
                       - text: "tool_role"
                         href: datamodel/slots/tool_role.qmd
                       - text: "tractogram"

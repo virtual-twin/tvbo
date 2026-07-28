@@ -327,17 +327,24 @@ def _sync_check(
                 if af.get(rel) != bf.get(rel):
                     drift.append(f"{label}/{rel}")
 
+        # `.claude/skills/` is a local render of the canonical sources and is not
+        # committed (the skills themselves live in `skills/` and
+        # `tvbo/skills/canonical/`). A checkout that never rendered it — CI, a fresh
+        # clone — has nothing to drift from, so only gate it where it exists, which
+        # is exactly where a stale copy could mislead someone.
+        check_claude = claude_dir.exists()
         for skill in skills:
-            _cmp(
-                tmp_path / "claude" / skill.name / "SKILL.md",
-                claude_dir / skill.name / "SKILL.md",
-                f".claude/skills/{skill.name}/SKILL.md",
-            )
-            _cmp_tree(
-                tmp_path / "claude" / skill.name / "assets",
-                claude_dir / skill.name / "assets",
-                f".claude/skills/{skill.name}/assets",
-            )
+            if check_claude:
+                _cmp(
+                    tmp_path / "claude" / skill.name / "SKILL.md",
+                    claude_dir / skill.name / "SKILL.md",
+                    f".claude/skills/{skill.name}/SKILL.md",
+                )
+                _cmp_tree(
+                    tmp_path / "claude" / skill.name / "assets",
+                    claude_dir / skill.name / "assets",
+                    f".claude/skills/{skill.name}/assets",
+                )
             if skill.audience in {"maintainer", "both"}:
                 _cmp(
                     tmp_path / "copilot" / f"{skill.name}.instructions.md",

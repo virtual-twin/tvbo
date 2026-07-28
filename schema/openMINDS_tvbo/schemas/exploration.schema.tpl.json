@@ -68,7 +68,7 @@
       }
     },
     "n_parallel": {
-      "type": "integer"
+      "type": "string"
     },
     "n_trials": {
       "type": "integer"

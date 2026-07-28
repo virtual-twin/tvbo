@@ -2024,6 +2024,74 @@ def render_inference(inf: Any, coupling_keys: Set[str], external_keys: Set[str],
 # =============================================================================
 
 
+def get_noise_covariance(model: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
+    """The noise covariance a model declares, ready for the solver template to emit.
+
+    Mirrors the provenance rule every other array-valued quantity follows: a literal
+    binds inline, while a sourced or produced matrix (the usual case — a projection
+    operator, a connectome-derived structure) is materialised codegen-time to a
+    content-addressed artifact and emitted as a lazy ``(file, key)`` the generated
+    module reads at run time, so a large operator never enters the generated source.
+
+    Every noisy state variable must agree: one Wiener increment is drawn per step for
+    all of them, so two different covariances cannot both be imposed on it.
+
+    Args:
+        model: Dynamics instance with ``.state_variables``.
+        experiment: The declaring experiment, used to ground a relative source path and
+            to resolve a producer's arguments. Without it a lazy covariance stays
+            deferred, so calling this as a cheap predicate has no side effects.
+
+    Returns:
+        ``{"axis": str, "value": [[...]] | None, "lazy": (path, key) | None}``, or None
+        when no covariance is declared.
+    """
+    from pathlib import Path
+
+    import numpy as np
+
+    from tvbo.data import param_io
+
+    svs = getattr(model, "state_variables", None) if model else None
+    if not svs:
+        return None
+
+    src_file = getattr(experiment, "_source_file", None) if experiment is not None else None
+    src_dir = Path(src_file).parent if src_file else None
+
+    found = None
+    for sv_name, sv in svs.items():
+        noise = getattr(sv, "noise", None)
+        cov = getattr(noise, "covariance", None) if noise is not None else None
+        if cov is None:
+            continue
+        axis = getattr(noise, "correlated_over", None)
+        if axis is None:
+            raise ValueError(
+                f"state variable {sv_name!r}: `noise.covariance` is set but "
+                f"`noise.correlated_over` is not. A covariance without a named axis "
+                f"does not identify a process; set it to `node` (or `state`)."
+            )
+        entry = {"axis": str(axis), "value": None, "lazy": None}
+        if param_io.is_lazy(cov):
+            if experiment is not None:
+                path, key = param_io.materialise(cov, source_dir=src_dir, context=experiment)
+                entry["lazy"] = (str(path), key)
+        else:
+            entry["value"] = np.asarray(
+                param_io.resolve(cov, source_dir=src_dir, context=experiment), dtype=float
+            ).tolist()
+        if found is None:
+            found = (entry, sv_name)
+        elif found[0] != entry:
+            raise ValueError(
+                f"state variables {found[1]!r} and {sv_name!r} declare different "
+                f"correlated noise; one Wiener increment is shared across all noisy "
+                f"states, so they must declare the same covariance and axis."
+            )
+    return found[0] if found else None
+
+
 def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
     """Extract state variable bounds as SymPy expressions.
 

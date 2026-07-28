@@ -44,6 +44,11 @@
     },
     "unit": {
       "type": "string"
+    },
+    "reduce": {
+      "_embeddedTypes": [
+        "tvbo:AxisReduction"
+      ]
     }
   }
 }

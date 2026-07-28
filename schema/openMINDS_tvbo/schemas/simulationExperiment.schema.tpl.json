@@ -45,6 +45,11 @@
         "tvbo:Integrator"
       ]
     },
+    "initial_state": {
+      "_embeddedTypes": [
+        "tvbo:InitialState"
+      ]
+    },
     "connectivity": {
       "_embeddedTypes": [
         "tvbo:Network"

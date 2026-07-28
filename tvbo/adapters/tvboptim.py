@@ -115,11 +115,9 @@ def _extract_noise(dyn_obj):
     additive = True
 
     for sv_name, sv in svs.items():
-        # Read through the shared reader, in the same TVB reading of `intensity` the
-        # tvboptim experiment template uses — the two must agree on what a recipe means.
         # A state variable whose noise declares no amplitude (or zero) is not a noise
-        # target, exactly as in the template; it is never given a fabricated default.
-        sv_sigma = noise_sigma(getattr(sv, "noise", None), intensity_means="dispersion")
+        # target, exactly as in the codegen template; never a fabricated default.
+        sv_sigma = noise_sigma(getattr(sv, "noise", None))
         if not sv_sigma:
             continue
         noisy_states.append(sv_name)
@@ -569,6 +567,82 @@ def _heterogeneous_solution_to_dataarray(sol, het, network):
     )
 
 
+def _declared_covariance(dyn_obj, context=None):
+    """The one ``(covariance, axis)`` a dynamics declares, or ``(None, None)``.
+
+    Resolved through ``param_io`` so the matrix carries the same provenance a
+    parameter does — a literal, a file, or (the usual case) a ``producer:``. Every
+    noisy state variable must agree on the structure: tvboptim draws one Wiener block
+    per step for all of them, so two different covariances cannot both be imposed on
+    it, and silently honouring one would change the science on the other.
+    """
+    from tvbo.data import param_io
+
+    found = None
+    for sv_name, sv in (getattr(dyn_obj, "state_variables", None) or {}).items():
+        noise = getattr(sv, "noise", None)
+        cov = getattr(noise, "covariance", None) if noise is not None else None
+        if cov is None:
+            continue
+        axis = getattr(noise, "correlated_over", None)
+        if axis is None:
+            raise ValueError(
+                f"state variable {sv_name!r}: `noise.covariance` is set but "
+                f"`noise.correlated_over` is not. A covariance without a named axis "
+                f"does not identify a process; set it to `node` (or `state`/`mode`)."
+            )
+        axis = str(axis)
+        matrix = np.asarray(param_io.resolve(cov, context=context), dtype=float)
+        if found is None:
+            found = (matrix, axis, sv_name)
+        elif found[1] != axis or not np.array_equal(found[0], matrix):
+            raise ValueError(
+                f"state variables {found[2]!r} and {sv_name!r} declare different "
+                f"correlated noise; one Wiener block is shared across all noisy states, "
+                f"so they must declare the same covariance and axis."
+            )
+    return (found[0], found[1]) if found else (None, None)
+
+
+def _correlated_noise_factors(lib, het, context=None):
+    """Per-group covariance factors for every group whose dynamics declares one.
+
+    Groups are named after their dynamics, so the library key *is* the group key. Each
+    group keeps its own factor rather than one winning globally: a heterogeneous
+    network may legitimately drive its groups with different processes, and a group
+    that declares no covariance must keep its independent increment.
+
+    Returns ``(factors_by_group, axis)``, or ``(None, None)`` when nothing is declared.
+    """
+    from tvbo.classes.correlated_noise import covariance_factor
+
+    factors, axes = {}, set()
+    for name in het.group_names:
+        dyn = (lib or {}).get(name)
+        if dyn is None:
+            continue
+        cov, axis = _declared_covariance(dyn, context=context)
+        if cov is None:
+            continue
+        n_group_nodes = len(het.group_nodes[name])
+        if axis in ("node", "region") and cov.shape[0] != n_group_nodes:
+            raise ValueError(
+                f"group {name!r}: `noise.covariance` is {cov.shape[0]}x{cov.shape[0]} "
+                f"but the group has {n_group_nodes} nodes; a covariance over the node "
+                f"axis must be square in the number of nodes."
+            )
+        factors[name] = covariance_factor(cov, name=f"{name}.noise.covariance")
+        axes.add(axis)
+    if not factors:
+        return None, None
+    if len(axes) > 1:
+        raise ValueError(
+            f"groups declare `noise.correlated_over` on different axes ({sorted(axes)}); "
+            f"one solver mixes every group's increment, so they must agree."
+        )
+    return factors, axes.pop()
+
+
 def _seed_group_noise(config, het, seed: int) -> None:
     """Seed every noisy group's PRNG from the experiment's resolved seed.
 
@@ -627,6 +701,15 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
         )
     n_steps = max(1, int(round(dur / dt)))
     solver = getattr(solvers, SOLVER_MAP[method])(block_size=min(100, n_steps))
+    # A declared covariance is imposed by wrapping the solver, so it applies wherever
+    # the scan hands its increment to `step` — grouped or not. Resolved from `lib`, the
+    # dynamics dict actually built above (the `dynamics_lib` argument is None on the
+    # ordinary `exp.run("tvboptim")` path).
+    _factors, _axis = _correlated_noise_factors(lib, het, context=experiment)
+    if _factors is not None:
+        from tvbo.classes.correlated_noise import CorrelatedNoiseSolver
+
+        solver = CorrelatedNoiseSolver(solver, _factors, axis=_axis)
 
     simulate, config = prepare(het, solver, t0=0.0, t1=dur, dt=dt)
     if seed is None:

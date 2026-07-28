@@ -19,6 +19,7 @@ Analysis functions (``per_window_fc``, ``ttest_correlation_strength``) have
 moved to ``tvbo.analysis``.
 """
 
+import warnings
 from os.path import abspath, dirname, join
 
 import numpy as np
@@ -223,43 +224,55 @@ def edge_param(edge, name: str, default=None):
     return scalar if isinstance(scalar, (int, float)) else default
 
 
-def noise_sigma(noise, *, intensity_means: str = "dispersion"):
+def noise_sigma(noise, **legacy):
     """The noise standard deviation σ off a declared ``Noise``, or ``None``.
 
     The one reader for every spelling the schema allows, so a recipe cannot mean a
-    different amplitude on different backends:
+    different amplitude on different backends. Each spelling has exactly one meaning:
 
-    * ``parameters: {sigma: {value: s}}`` → ``s``. Unambiguous, and what the curated
-      recipes use; it wins whenever present.
-    * ``parameters: {nsig: {value: D}}`` → ``sqrt(2 D)``. TVB stores the dispersion
-      ``D = σ²/2``.
-    * ``intensity: {value: v}`` → **ambiguous**, so the caller must say what it means.
-      ``intensity_means="dispersion"`` (default, the TVB reading) treats ``v`` as ``D``
-      and returns ``sqrt(2 v)``; ``intensity_means="sigma"`` takes ``v`` as σ itself,
-      which is how the point-neuron recipes write it (``intensity: {name: sigma_ext,
-      value: 1.0, unit: mV}``). The two disagree by ``sqrt(2 v)/v``, so the choice is
-      spelled at each call site rather than guessed here.
+    * ``parameters: {sigma: {value: s}}`` → ``s``. Wins whenever present.
+    * ``intensity: {value: s}`` → ``s``. Deprecated spelling of the same quantity;
+      reading one warns.
+    * ``parameters: {nsig: {value: D}}`` → ``sqrt(2 D)``. The dispersion spelling
+      (``D = σ²/2``) — what a TVB import writes.
 
     Returns ``None`` when the noise declares no amplitude at all (and for a missing
     ``Noise``), leaving "absent" distinguishable from an explicit zero.
     """
     import math
 
+    if "intensity_means" in legacy:
+        # Emitted by scripts rendered before `intensity` was pinned to sigma; those
+        # files live in users' output/ dirs and are re-run against the installed package.
+        warnings.warn(
+            "noise_sigma(intensity_means=...) is obsolete: `intensity` is a standard "
+            "deviation, and a dispersion is declared as `parameters.nsig`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if not noise:
         return None
     params = normalize_params(getattr(noise, "parameters", None))
-    for name, to_sigma in (("sigma", lambda v: v), ("nsig", lambda v: math.sqrt(2.0 * v))):
-        p = params.get(name)
-        val = getattr(p, "value", p)
-        if val is not None:
-            val = float(val)
-            return to_sigma(val) if val > 0 else 0.0
-    val = getattr(getattr(noise, "intensity", None), "value", None)
-    if val is not None:
+    candidates = (
+        ("sigma", params.get("sigma"), lambda v: v),
+        ("intensity", getattr(noise, "intensity", None), lambda v: v),
+        ("nsig", params.get("nsig"), lambda v: math.sqrt(2.0 * v)),
+    )
+    for name, source, to_sigma in candidates:
+        val = getattr(source, "value", source)
+        if val is None:
+            continue
+        if name == "intensity":
+            warnings.warn(
+                "`noise.intensity` is deprecated; declare `parameters: {sigma: ...}` for "
+                "a standard deviation or `parameters: {nsig: ...}` for a dispersion. It "
+                "is read as a standard deviation, so a recipe that meant a dispersion "
+                "is off by sqrt(2 D)/D.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         val = float(val)
-        if val <= 0:
-            return 0.0
-        return math.sqrt(2.0 * val) if intensity_means == "dispersion" else val
+        return to_sigma(val) if val > 0 else 0.0
     return None
 
 

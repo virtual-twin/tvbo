@@ -59,6 +59,12 @@
     "directed": {
       "type": "boolean"
     },
+    "connectivity": {
+      "type": "string"
+    },
+    "allow_self_connections": {
+      "type": "boolean"
+    },
     "source_network": {
       "type": "string"
     },
