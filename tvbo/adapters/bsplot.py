@@ -128,12 +128,31 @@ def _style_kwargs(style) -> dict:
     return kw
 
 
+def _heatmap_kwargs(style) -> dict:
+    """Resolve a Style into pcolormesh kwargs: the colormap, opacity and raw opts.
+
+    A field's colour scale is part of what it shows (a diverging map centred on zero for a
+    correlation matrix), so ``Style.colormap`` and explicit ``vmin``/``vmax`` opts route
+    here. ``Style.color`` — a line colour — is not a mesh property and is dropped.
+    """
+    if style is None:
+        return {}
+    kw: dict = {}
+    if getattr(style, "colormap", None):
+        kw["cmap"] = style.colormap
+    if getattr(style, "opacity", None) is not None:
+        kw["alpha"] = style.opacity
+    kw.update(_arg_dict(getattr(style, "opts", None)))
+    return kw
+
+
 # Grammar-panel axis directives on ``Panel.opts`` — a small backend-independent set the template applies uniformly (a ``custom`` panel routes ``opts`` to its callable; see ``build_context``).
 _AXIS_OPTS = {
     "xlabel", "ylabel", "title", "xlim", "ylim", "xticks", "yticks",
-    "hide_xticklabels", "hide_yticklabels", "axhline", "legend",
+    "hide_xticklabels", "hide_yticklabels", "axhline", "axvline", "legend",
     "xscale", "yscale",   # axis scale (log/symlog/linear): part of the claim, not cosmetic
-    "zlabel", "zlim", "elev", "azim", "invert_x", "invert_y", "invert_z", "zoom",  # line3d only
+    "aspect", "invert_x", "invert_y",   # frame geometry/direction: a matrix reads row 0 at top
+    "zlabel", "zlim", "elev", "azim", "invert_z", "zoom",  # line3d only
 }
 
 
@@ -310,18 +329,22 @@ def _resolve_layer(layer, panel_kind, base_dir):
     """Resolve one ``Layer`` into the flat dict the template/callables consume."""
     used, enc = layer.used, getattr(layer, "encoding", None)
     sel, method = _sel_dict(used)
+    # str() collapses the MarkType enum (dataclass flavor) to a plain string the template compares.
+    mark = str(layer.mark) if layer.mark else ("heatmap" if panel_kind == "heatmap" else "line")
+    style = getattr(layer, "style", None)
+    triangle = getattr(layer, "triangle", None)
     return {
         "container": _container_path(_used_ref(used), base_dir),
         "output": used.output,
-        # str() collapses the MarkType enum (dataclass flavor) to a plain string the template compares.
-        "mark": str(layer.mark) if layer.mark else ("heatmap" if panel_kind == "heatmap" else "line"),
+        "mark": mark,
         "x": getattr(enc, "x", None),
         "y": getattr(enc, "y", None),
         "z": getattr(enc, "z", None),
         "transform": getattr(layer, "transform", None),
         "sel": sel,
         "sel_method": method,
-        "style": _style_kwargs(getattr(layer, "style", None)),
+        "triangle": str(triangle) if triangle else None,
+        "style": _heatmap_kwargs(style) if mark == "heatmap" else _style_kwargs(style),
     }
 
 
@@ -337,6 +360,10 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         # base_dir lets a panel resolve study-relative inputs (e.g. a tvbo Network yaml).
         ctx = ({"layers": layers, "opts": _panel_opts(panel), "key": key, "base_dir": str(base_dir)}
                if kind == "custom" else None)
+        # One colourbar per panel (not per layer — a split matrix is two layers, one scale),
+        # suppressed with `colorbar: false` where the paper prints none.
+        colorbar = (any(l["mark"] == "heatmap" for l in layers)
+                    and _panel_opts(panel).get("colorbar", True) is not False)
         # Default the axis labels to the first layer's x-dim / output; opts override them.
         axopts = _axopts(panel)
         if kind in ("cartesian", "heatmap", "line3d") and layers:
@@ -344,14 +371,22 @@ def build_context(figure, base_dir, outfile: str) -> dict:
             axopts.setdefault("ylabel", layers[0]["y"] or layers[0]["output"])
         if kind == "line3d" and layers:
             axopts.setdefault("zlabel", layers[0]["z"] or "")
+        placeholder = getattr(panel, "placeholder", None)
+        render = getattr(panel, "render", None)
+        path = resolve_path(getattr(panel, "path", None), base_dir)
         panels.append({
             "key": key,
             "kind": kind,
             "title": getattr(panel, "label", None),
-            "path": resolve_path(getattr(panel, "path", None), base_dir),
-            "render": getattr(panel, "render", None),
-            "placeholder": getattr(panel, "placeholder", None),
+            "path": path,
+            "render": render,
+            "placeholder": placeholder,
+            # Nothing to draw at all: the placeholder IS the panel, not a fallback. Without
+            # this the guarded draw succeeds silently (no layer raises) and the slot renders
+            # as an empty 0-1 axes instead of the honest label.
+            "placeholder_only": bool(placeholder) and not layers and not render and not path,
             "layers": layers,
+            "colorbar": colorbar,
             "axopts": axopts,
             "ctx": ctx,
             "annotations": _annotations(panel),

@@ -36,6 +36,12 @@ enums:
       rule:    {description: "Reference line / span (threshold, stimulus window, vline)."}
       band:    {description: "Filled band between two series (error/CI)."}
 
+  Triangle:
+    description: "Which half of a square matrix a layer fills, leaving the other half to a sibling layer, so two quantities read as one image. The conventional way to show a model-vs-data (or data-vs-reconstruction) connectivity matrix. Named for the drawn halves: with the matrix convention (row 0 at top, set invert_y) 'upper' is the top-right triangle."
+    permissible_values:
+      lower: {description: "The triangle below the diagonal."}
+      upper: {description: "The triangle above the diagonal."}
+
   Corner:
     description: "A named corner for placing a panel number inside its axes — the four corners bsplot's add_panel_number anchors to. An enum so a typo is a validation error, not a silent fallback to the default corner."
     permissible_values:
@@ -182,6 +188,9 @@ classes:
       mark:
         range: MarkType
         description: "Cartesian mark; omitted for heatmap panels (implied by the panel kind)."
+      triangle:
+        range: Triangle
+        description: "Fill only this triangle of a square matrix, masking the other half so a sibling layer fills it. Two layers then compose one matrix image whose halves are the quantities being compared."
       encoding:
         range: Encoding
         inlined: true
