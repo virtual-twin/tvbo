@@ -10,7 +10,7 @@ Complete BOLD functional connectivity simulation & optimization: simulation, exp
 ```{python}
 import os
 
-device_count = os.environ.get("TVBO_XLA_DEVICE_COUNT", "8")
+device_count = os.environ.get("TVBO_XLA_DEVICE_COUNT", "1")
 os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={device_count}"
 
 from tvbo import SimulationExperiment, Network

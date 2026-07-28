@@ -255,12 +255,11 @@ jobs:
             extra_args: ""
             xla_device_count: "8"
             test_timeout: "900"
-          # tvboptim docs in CI: keep only stable RWW path.
-          # EI/JR are too heavy for current CI limits and run in manual workflows.
+          # Stable RWW only (EI/JR too heavy). device_count=1: forced host CPU devices add cores=0, memory=8x → OOM.
           - shard: tvboptim-rww
             doc_pattern: "RWW_tvboptim"
             extra_args: "--run-slow"
-            xla_device_count: "8"
+            xla_device_count: "1"
             test_timeout: "900"
           # Replication studies
           # The Jansen1995 replication runs 6 experiments, each a small parameter

@@ -1367,7 +1367,7 @@ from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
-from tvbo.templates.tvboptim.callbacks import progress_ticker, resolve_n_vmap, estimate_per_cell_bytes   # grid-batch progress; n_parallel:auto → vmap width
+from tvbo.templates.tvboptim.callbacks import progress_ticker, resolve_exploration_n_vmap   # grid-batch progress; n_parallel → vmap width
 % endif
 % if has_nsga2:
 # Multi-objective search (Exploration.strategy == 'nsga2') + Pareto-seeded refinement.
@@ -3228,19 +3228,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % else:
 % if has_axes:
     import jax as _jax
-    # n_parallel 'auto' (default) resolves here, where grid.N and the per-cell working
-    # size are known: it caps n_vmap by both a cell count and a memory budget so a
-    # large-per-cell grid does not blow up peak memory. An explicit int passes through.
-    _per_cell_bytes = estimate_per_cell_bytes(observable_fn, _expl_state)
-    _n_vmap = resolve_n_vmap(${repr(expl['n_parallel'])}, grid.N, _per_cell_bytes)
     _n_pmap = _jax.device_count()
-    # Stream "grid batch i/N" through the tvbo.run logger from inside the jitted
-    # pmap/lax.map (JAX-native jax.debug.callback) so a long grid does not go silent
-    # after "STEP 2 > ...". Identity wrap when INFO is off. The callback fires once per
-    # (device x lax.map scan step): the grid is split into n_map = ceil(N / n_pmap) cells
-    # per device, each device scans ceil(n_map / n_vmap) times. Count all three so the
-    # i/N total is truthful — ceil(N / n_vmap) alone ignored n_pmap, so a multi-device CPU
-    # (jax.device_count() = 8 here) showed e.g. 8/1 = 800%.
+    _n_vmap = resolve_exploration_n_vmap(${repr(expl['n_parallel'])}, grid.N, observable_fn, _expl_state)
+    # Batch count for the i/N progress line: n_pmap devices × ceil(cells/n_vmap) chunks.
     _n_map = max(1, -(-grid.N // _n_pmap))
     _n_batches = max(1, _n_pmap * -(-_n_map // _n_vmap))
     exec_runner = ParallelExecution(
