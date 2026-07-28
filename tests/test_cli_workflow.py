@@ -320,31 +320,41 @@ def _snakemake_cmd(tmp_path, monkeypatch, *, sbatch: bool, ship_profile: bool,
     return captured["cmd"]
 
 
-def test_snakemake_explicit_cores_runs_local_ignoring_shipped_profile(tmp_path, monkeypatch):
-    """`--cores` forces a LOCAL run even when the kit ships a SLURM profile and a scheduler exists."""
+def test_snakemake_explicit_cores_runs_local_but_keeps_the_profile(tmp_path, monkeypatch):
+    """`--cores` forces a LOCAL run, overriding only the profile's *executor*.
+
+    The profile carries the container deployment method and its bind mounts, retries
+    and keep-going alongside the SLURM executor. Dropping it to run locally would
+    silently execute every rule outside the kit's declared container.
+    """
     cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=True, ship_profile=True, cores="4")
-    assert cmd[1:] == ["--cores", "4"]
-    assert "--profile" not in cmd
+    assert cmd[1:] == ["--profile", "profile", "--executor", "local", "--cores", "4"]
 
 
 def test_snakemake_shipped_profile_used_only_when_scheduler_present(tmp_path, monkeypatch):
-    """With a scheduler present the shipped SLURM profile is used (submit each rule)."""
+    """With a scheduler present the shipped SLURM profile is used as-is (submit each rule)."""
     cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=True, ship_profile=True)
     assert cmd[1:] == ["--profile", "profile"]
 
 
 def test_snakemake_falls_back_to_local_cores_without_a_scheduler(tmp_path, monkeypatch):
-    """A kit's SLURM profile can't work on a machine with no `sbatch`; a bare run must
-    still execute — auto-fall back to local cores so the SAME kit runs natively locally."""
+    """A kit's SLURM executor can't work on a machine with no `sbatch`; a bare run must
+    still execute — auto-fall back to a local executor so the SAME kit runs natively
+    locally, still inside the container the profile declares."""
     cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=False, ship_profile=True)
+    assert cmd[1:] == ["--profile", "profile", "--executor", "local", "--cores", "all"]
+
+
+def test_snakemake_without_a_profile_just_runs_local_cores(tmp_path, monkeypatch):
+    """No shipped profile and nothing to preserve: a plain local run."""
+    cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=True, ship_profile=False)
     assert cmd[1:] == ["--cores", "all"]
-    assert "--profile" not in cmd
 
 
 def test_snakemake_explicit_profile_wins_over_shipped(tmp_path, monkeypatch):
     """`--profile cubi-v1` replaces the shipped profile regardless of scheduler discovery."""
     cmd = _snakemake_cmd(tmp_path, monkeypatch, sbatch=False, ship_profile=True, profile="cubi-v1")
-    assert cmd[1:] == ["--profile", "cubi-v1"]
+    assert cmd[1:] == ["--profile", "cubi-v1", "--executor", "local", "--cores", "all"]
 
 
 @pytest.mark.parametrize("engine,expected_tail", [

@@ -206,6 +206,59 @@ def _fold_slot_aliases(obj: Any) -> Any:
     return obj
 
 
+# Edge var-slot aliases. Folded ONLY under an ``edges`` / ``edge_template`` key,
+# never through the global, context-free ``_SLOT_ALIASES`` above:
+# ``target_variable`` is also the *canonical* slot on stimulus events, and a
+# context-free rename would clobber it.
+_EDGE_VAR_ALIASES = {"source_variable": "source_var", "target_variable": "target_var"}
+
+
+def resolve_edge_var_aliases(edges: Any) -> None:
+    """Fold the ``source_variable`` / ``target_variable`` slot aliases onto the
+    canonical ``source_var`` / ``target_var`` on inline edge dicts, in place.
+
+    ``edges`` may be a single edge dict, a list of them, or ``None``; non-dict
+    entries are left untouched.
+    """
+    if edges is None:
+        return
+    for edge in edges if isinstance(edges, (list, tuple)) else [edges]:
+        if not isinstance(edge, dict):
+            continue
+        for alias, canonical in _EDGE_VAR_ALIASES.items():
+            if alias not in edge:
+                continue
+            if canonical in edge:
+                warnings.warn(
+                    f"Edge has both '{alias}' and its canonical alias target "
+                    f"'{canonical}'; ignoring '{alias}'.",
+                    stacklevel=2,
+                )
+                edge.pop(alias)
+            else:
+                edge[canonical] = edge.pop(alias)
+
+
+def _fold_edge_var_aliases(obj: Any) -> Any:
+    """Recursively apply :func:`resolve_edge_var_aliases` to every ``edges`` /
+    ``edge_template`` value, wherever the network sits in the document.
+
+    Keying on the slot name rather than on the enclosing class keeps the fold
+    scoped to edges while staying agnostic about the document root — the same
+    alias works whether a ``Network``, a ``SimulationExperiment`` or a
+    ``SimulationStudy`` is being loaded.
+    """
+    if isinstance(obj, dict):
+        for key in ("edges", "edge_template"):
+            resolve_edge_var_aliases(obj.get(key))
+        for v in obj.values():
+            _fold_edge_var_aliases(v)
+    elif isinstance(obj, list):
+        for x in obj:
+            _fold_edge_var_aliases(x)
+    return obj
+
+
 def _lift_distribution_shortcut(obj: Any) -> Any:
     """Allow a terse ``distribution: {lo, hi}`` as a shortcut for a Uniform.
 
@@ -299,7 +352,8 @@ def _fold_state_variable_domains(obj: Any) -> Any:
 def _normalize_loaded(data: Any) -> Any:
     """Apply the dict-level TVBO conveniences shared by every load path.
 
-    Folds slot aliases to their canonical names, folds legacy state-variable
+    Folds slot aliases to their canonical names (globally, and the edge-scoped
+    ``source_variable``/``target_variable``), folds legacy state-variable
     ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries),
     and lifts the terse ``distribution: {lo, hi}`` shortcut into
     ``distribution: {domain: {lo, hi}}``. Both the string path (``load``/``loads`` →
@@ -308,6 +362,7 @@ def _normalize_loaded(data: Any) -> Any:
     can create a terse ``distribution`` that the following lift then completes.
     """
     data = _fold_slot_aliases(data)
+    data = _fold_edge_var_aliases(data)
     data = _fold_state_variable_domains(data)
     data = _lift_distribution_shortcut(data)
     return data

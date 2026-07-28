@@ -286,6 +286,11 @@ def flag_text(obj, flags=None):
             continue
         if attr == "shape" and not any(ch.isdigit() for ch in str(val)):
             continue
+        if attr == "source" and not isinstance(val, str):
+            # `source` may be a structured object (iri / path / producer); show a
+            # concise pointer, never its raw repr.
+            val = (getattr(val, "iri", None) or getattr(val, "path", None)
+                   or getattr(val, "name", None) or type(val).__name__)
         labels.append(f"{key}={val}")
     return ", ".join(labels) or ""
 

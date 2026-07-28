@@ -42,10 +42,10 @@ from tvbo.adapters.base import BaseAdapter
 from tvbo.adapters.smallscale.lowering import (
     classify_node_role,
     group_nodes_by_dynamics,
-    normalize_edge_params,
     safe_id,
 )
 from tvbo.codegen.code import render_expression
+from tvbo.utils import edge_param, noise_sigma, normalize_params
 
 # ── Brian2 role vocabulary ────────────────────────────────────────────
 _POISSON_TYPES = frozenset({"poissonFiringSynapse", "transientPoissonFiringSynapse"})
@@ -119,7 +119,7 @@ def _nml_type(dyn):
 def _params(dyn):
     """``{name: (value, unit)}`` for a Dynamics/edge's parameters."""
     out = {}
-    for name, p in normalize_edge_params(getattr(dyn, "parameters", None)).items():
+    for name, p in normalize_params(getattr(dyn, "parameters", None)).items():
         val = getattr(p, "value", p)
         unit = str(getattr(p, "unit", "") or "")
         out[str(name)] = (val, unit)
@@ -134,15 +134,10 @@ def _membrane_noise_sigma(v_sv):
     when the variable declares no noise.
     """
     nz = getattr(v_sv, "noise", None)
-    if nz is None:
+    sigma = noise_sigma(nz, intensity_means="sigma")
+    if not sigma:
         return None
-    intensity = getattr(nz, "intensity", None)
-    if intensity is None:
-        return None
-    val = getattr(intensity, "value", intensity)
-    if val is None:
-        return None
-    return float(val), str(getattr(intensity, "unit", "") or "mV")
+    return float(sigma), str(getattr(getattr(nz, "intensity", None), "unit", "") or "mV")
 
 
 def _edge_weight(edge):
@@ -151,12 +146,9 @@ def _edge_weight(edge):
 
 
 def _edge_param(edge, name, default):
-    """A named scalar from an edge's ``parameters`` collection (or ``default``)."""
-    for n, p in normalize_edge_params(getattr(edge, "parameters", None)).items():
-        if str(n) == name:
-            val = getattr(p, "value", p)
-            return float(val) if val is not None else default
-    return default
+    """A named scalar off an edge as a float (or ``default``); see `tvbo.utils.edge_param`."""
+    val = edge_param(edge, name)
+    return float(val) if val is not None else default
 
 
 def _brian2_unit(unit):
@@ -343,6 +335,7 @@ class Brian2Adapter(BaseAdapter):
                     "current_terms": [],    # list of amp-expression strings summed into iSyn
                     "poisson": [],          # {"gate", "rate": (v,u), "weight"}
                     "namespace": {},        # const name -> (value, unit)
+                    "masks": {},            # per-neuron 0/1 subset mask var -> fraction (random pulse)
                 }
                 if noise_sigma is not None:
                     populations[pop]["namespace"]["noise_sigma_v"] = noise_sigma
@@ -359,6 +352,7 @@ class Brian2Adapter(BaseAdapter):
                 continue
             src, tgt = int(src), int(tgt)
             rule = getattr(edge, "connectivity", None)
+            rule_norm = str(rule).lower().replace("-", "_") if rule is not None else None
             weight = _edge_weight(edge)
 
             # ── Poisson background edge → PoissonInput on the target's ext gate ──
@@ -374,12 +368,12 @@ class Brian2Adapter(BaseAdapter):
                 if tgt not in cell_pop_of_node:
                     continue
                 pulse_name, pulse_obj = pulse_of_node[src]
-                self._add_current_pulse(populations[cell_pop_of_node[tgt]], pulse_name, pulse_obj, weight)
+                self._add_current_pulse(populations[cell_pop_of_node[tgt]], pulse_name, pulse_obj,
+                                        weight, edge, edge_idx, rule_norm)
                 continue
 
             if src not in cell_pop_of_node or tgt not in cell_pop_of_node:
                 continue
-            rule_norm = str(rule).lower().replace("-", "_") if rule is not None else None
 
             src_pop = cell_pop_of_node[src]
             tgt_pop = cell_pop_of_node[tgt]
@@ -436,7 +430,7 @@ class Brian2Adapter(BaseAdapter):
         pop["current_terms"].append(f"w_{gate} * gbase_{gate} * (erev_{gate} - v) * {gate}")
         pop["poisson"].append({"gate": gate, "rate": bp.get("averageRate", (2400.0, "Hz")), "weight": 1.0})
 
-    def _add_current_pulse(self, pop, pulse_name, pulse_obj, weight):
+    def _add_current_pulse(self, pop, pulse_name, pulse_obj, weight, edge, edge_idx, rule_norm):
         """Wire a deterministic timed current pulse onto a target population.
 
         A ``pulseGenerator`` (delay, duration, amplitude) becomes a rectangular current
@@ -446,7 +440,14 @@ class Brian2Adapter(BaseAdapter):
         in-process run and the generated script. The per-edge ``weight`` scales the amplitude
         (a uniform nonspecific readout uses ``weight = 1``); when several pulse edges target
         the same population their windows sum, each keeping its own weight.
+
+        A `random` edge instead drives only a random SUBSET, ``connection_probability`` of the
+        population — the paper's nonspecific input to 15% of the excitatory neurons — as a
+        per-neuron 0/1 mask drawn once from the seeded RNG, so run and rendered script are
+        identical. The mask is per EDGE, so two random pulse edges onto one population are two
+        independent subsets. Any other connectivity rule raises, as it does for a synapse edge.
         """
+        fraction = self._pulse_fraction(edge, edge_idx, rule_norm)
         pp = _params(pulse_obj)
         key = safe_id(pulse_name)
         amp = pp.get("amplitude", (0.0, "nA"))
@@ -455,13 +456,39 @@ class Brian2Adapter(BaseAdapter):
         pop["namespace"][f"amp_stim_{key}"] = amp
         pop["namespace"][f"delay_stim_{key}"] = delay
         pop["namespace"][f"dur_stim_{key}"] = dur
+        # Keyed by edge: independent draws, possibly different fractions.
+        gate = ""
+        if fraction is not None:
+            mask = f"stim_mask_{key}_{edge_idx}"
+            pop["masks"][mask] = float(fraction)
+            gate = f"{mask} * "
         # Inline the per-edge weight and always append the term. A second edge from the same
         # pulse onto this population shares the (identical) amp/delay/dur constants but adds its
         # own window, so the two sum — rather than the second overwriting a shared ``w_stim``
         # and its byte-identical term being dropped as a duplicate, silently losing a weight.
-        term = (f"{weight} * amp_stim_{key} * int(t >= delay_stim_{key})"
+        term = (f"{gate}{weight} * amp_stim_{key} * int(t >= delay_stim_{key})"
                 f" * int(t < delay_stim_{key} + dur_stim_{key})")
         pop["current_terms"].append(term)
+
+    @staticmethod
+    def _pulse_fraction(edge, edge_idx, rule_norm):
+        """The stimulated fraction a current-pulse edge declares, or ``None`` for all-to-all."""
+        if rule_norm in (None, "all_to_all"):
+            return None
+        if rule_norm != "random":
+            raise NotImplementedError(
+                f"Brian2 backend drives a current pulse over the whole target (all_to_all) "
+                f"or a 'random' subset; edge {edge_idx} has connectivity {rule_norm!r}.")
+        fraction = _edge_param(edge, "connection_probability", None)
+        if fraction is None:
+            raise NotImplementedError(
+                f"Edge {edge_idx}: a 'random' current-pulse edge needs a "
+                f"'connection_probability' (the stimulated fraction) in `parameters`.")
+        if not 0.0 < fraction <= 1.0:
+            raise ValueError(
+                f"Edge {edge_idx}: connection_probability is a fraction in (0, 1]; "
+                f"got {fraction} (15% is 0.15, not 15).")
+        return fraction
 
     def _add_conductance_synapse(self, populations, hubs, src_pop, tgt_pop, syn, prefix, weight):
         """Reduce one all-to-all conductance synapse to gate + hub + current term.
@@ -952,6 +979,8 @@ def assemble_eqs(pop):
         lines.append(f"d{gate}/dt = {rhs} : 1")
     for svar in pop["linked"]:
         lines.append(f"{svar} : 1 (linked)")
+    for mvar in pop["masks"]:
+        lines.append(f"{mvar} : 1 (constant)")            # per-neuron 0/1 random-subset stim mask
     return "\n".join(lines)
 
 
@@ -994,6 +1023,8 @@ def _instantiate(model, seed=None, record_v=False):
         grp = NeuronGroup(pop["size"], assemble_eqs(pop), threshold="v > thresh", reset=reset_code(pop),
                           refractory=refract, method="euler", namespace={**cp, **ns}, name=name)
         grp.v = cp.get("v0", cp.get("EL", -70 * mV))
+        for mvar, frac in pop["masks"].items():
+            setattr(grp, mvar, f"rand() < {frac}")     # seeded per-neuron subset mask (render≡run)
         groups[name] = grp
         objects.append(grp)
 

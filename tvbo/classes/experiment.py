@@ -2194,7 +2194,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 run_heterogeneous_tvboptim,
             )
 
-            if is_heterogeneous(self.network):
+            if is_heterogeneous(self):
                 # The in-process HeterogeneousNetwork engine integrates from the
                 # network's own defaults; unlike the homogeneous path below it does
                 # not yet apply the cross-experiment seeds resolved from

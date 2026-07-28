@@ -297,6 +297,13 @@ See **writing-models** for the Dynamics form and **running-simulations** for sou
   study (byte-identical materialisation), so a big study can be a thin root that `!include`s
   per-experiment / shared-component files. (`!include` takes a whole file — there is no
   `#fragment` selector; to reuse one block, put that block in its own file and include it.)
+  **The included file is the bare VALUE at that position, not a study-shaped document**: a
+  `figures: !include figures.yaml` needs `figures.yaml` to be a bare *list* of Figures (its
+  prose header becomes `#` comments), not a second spec with its own `title:`/`label:`/
+  `figures:` keys. A sibling `figures.yaml` that the root spec never `!include`s is **invisible
+  to `tvbo run`** — the study renders no figures and the drift is silent, because rendering that
+  file directly still works. If you can't `tvbo run <Study>.yaml` and get the figures, they are
+  not in the recipe.
   Order experiments so a `from_experiment` source precedes its dependents (operating point
   before its control runs) — then bare `tvbo run <Study>.yaml` resolves the seeds in one pass.
   When regime experiments differ only in one value buried inside an otherwise-identical block
@@ -353,6 +360,13 @@ design `dev/figure-spec-design.md`). `tvbo figure render <Study>.yaml` — run a
 producing `<name>.png` in `figures/`. Iterate one figure fast with `tvbo figure render` (the
 results stay put; only the plot re-runs). Copy `assets/figures.snippet.yaml` for the block and
 `assets/figures.py.tmpl` for the panel module.
+
+**`<study>/figures/` is THE render target — one place, gitignored.** Not `output/figures/`
+(that is the results tree) and not `code/figures/`. Everything downstream reads from there: the
+report's `FIGS = Path("../figures")`, and any script that still writes a supplement image writes
+there too, so a figure and the report that embeds it can never point at different copies. Add
+`figures/` to the study `.gitignore` — the `<name>.png` **and** the generated `plot_<name>.py`
+are both regenerable artifacts.
 
 **A `Figure` is layout + binding + style; keep compute and plotting code out of it.**
 - **Layout is metadata:** `layout` (bsplot mosaic string, e.g. `aab/ccb` — letters = panel
@@ -454,6 +468,28 @@ is a thin `{{< include report.qmd >}}` wrapper that draws the paper's © figures
 and `_quarto.yml` lists both and holds the shared `format: typst` + `bibliography:`. The build
 branches on `QUARTO_DOCUMENT_FILE`; no `--profile`, no post-render hook (see the header comment in
 `_quarto.yml.tmpl`).
+
+**Embed every figure through a python cell, never a markdown link to `../figures/`.** Typst
+resolves paths only *inside* the render project (`report/`), so `![](../figures/x.png)` fails the
+build with a bare `error: failed to load file (access denied)` — nothing about paths. The `ab()`
+helper (and a one-panel `show()` for figures with no paper counterpart) reads the PNG with
+`mpimg.imread` and draws it, which also lets `ab()` decide per build whether the © original
+appears at all. When stacking several scans in one panel, normalise them first — an RGBA PNG and
+an RGB JPEG cannot be `np.concatenate`d (`dimension 2 has size 4 vs 3`).
+
+**`figcap()` reads the LOADED study, never a YAML file.** Resolve the caption off
+`SimulationStudy.from_file("../<Study>.yaml").figures` (match by `Figure.name`), so it keeps
+working however the spec is split — a `figcap` that raw-parses `figures.yaml` breaks the moment
+the figures move into the recipe or behind an `!include`, and it silently returns `""` (an empty
+caption) rather than failing.
+
+**Migrating an older report off the profile split**: `report-src.qmd` → `report.qmd` with its
+front matter *moved* into `_quarto.yml` (the file must carry none, or the wrapper's `output-file`
+is overridden), add the `report_internal.qmd` wrapper, and **delete** `_quarto-internal.yml`
+together with any `post-render:` hook or `make_internal_report.py`-style generator — the two
+entries in `render:` replace all of it. Flip `INTERNAL` from `QUARTO_PROFILE` to
+`QUARTO_DOCUMENT_FILE`, repoint `FIGS` at `../figures`, and render with a bare `quarto render`
+(passing `--to pdf` forces xelatex and reintroduces the intermediate-clobber problem typst avoids).
 
 Replication-specific rules on top of that mechanics:
 
@@ -703,6 +739,13 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   or an A/B compose driver — the renderer emits the plot scripts, and bespoke panel code
   lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in `figures/`
   is *generated*; never author or commit it.)
+- **Moving a module changes what `Path(__file__).parents[N]` means — grep for the climb
+  BEFORE you flatten.** Study code routinely locates the study root by climbing from its own
+  file (`_ROOT = Path(__file__).resolve().parents[2]`, written when it lived in `code/recipe/`).
+  Flattening it into `code/` makes every such climb overshoot by one, so paths resolve into the
+  *sibling-studies* directory. The failure is loud only if nothing exists there — otherwise you
+  silently read another study's tree. After any move, `grep -rn "parents\[" code/`, fix each N,
+  and re-run one figure end-to-end to confirm the containers still resolve.
 - **No dead vendored cruft — but a *live* dependency is not cruft.** Keep ONE pristine copy
   of the paper's own code under `original_study/`; don't duplicate it into `code/`. If the
   paper's algorithm is reused at runtime (e.g. a Helmholtz–Hodge flow-potential), *reference*

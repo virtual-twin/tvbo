@@ -37,6 +37,8 @@ _cfg_jax()
 
 from tvbo.data.registry import database_dir
 from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo.utils import edge_param
+from tvbo.utils.yaml_loader import resolve_edge_var_aliases
 
 # HDF5+YAML network files — resolved via registry (works for pip & editable installs)
 NETWORK_DIR = database_dir("Network")
@@ -478,6 +480,14 @@ class Network(tvbo_datamodel.Network):
         elif kwargs.get("number_of_nodes") and not kwargs.get("nodes"):
             n_nodes = kwargs["number_of_nodes"]
             kwargs["nodes"] = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)]
+
+        # Fold Edge var-slot aliases (source_variable/target_variable) onto the
+        # canonical source_var/target_var before the base constructor and the
+        # edge_template snapshot see them. The YAML load paths already folded
+        # these (yaml_loader._normalize_loaded); this covers callers that build
+        # the kwargs dict programmatically.
+        resolve_edge_var_aliases(kwargs.get("edges"))
+        resolve_edge_var_aliases(kwargs.get("edge_template"))
 
         # `node_template` is a partial Node applied to every materialized node
         # (see _expand_node_template). The parent constructor builds it as a
@@ -2519,36 +2529,55 @@ class Network(tvbo_datamodel.Network):
         y = tvbo_datamodel.BrainRegionSeries(values=[str(i) for i in range(N1)])
         return tvbo_datamodel.Matrix(x=x, y=y, values=arr.reshape(-1).astype(jnp.float32).tolist())
 
-    @staticmethod
-    def _get_edge_param(edge, name: str) -> Optional[float]:
-        return edge.parameters[name].value if name in edge.parameters else None
+    def node_index_map(self) -> Dict[int, int]:
+        """``{Node.id: row/column index}`` for the connectome matrices.
 
-    def _weights_from_edges(self) -> Optional[np.ndarray]:
-        """Compute weights matrix from edges.
+        ``Node.id`` is a *unique identifier* (``dcterms:identifier``), not a
+        position: a network may declare ``[{id: 0}, {id: 2}]`` and its edges then
+        address nodes by those ids, while the matrices are indexed by declaration
+        order. Matrix-only networks (no ``nodes``) address rows directly, so the
+        map is the identity there.
+        """
+        return {
+            (i if getattr(nd, "id", None) is None else int(nd.id)): i
+            for i, nd in enumerate(self.nodes or [])
+        }
 
-        Looks for 'weight' parameter in edge.parameters.
-        Matrices are target-by-source: an edge source -> target is stored at
-        [target, source], matching the coupling convention used by backends.
-        Undirected edges (directed=False) are mirrored to produce symmetric matrix.
-        Returns None if no edges are defined.
+    def _edge_matrix(self, value_of, fill: float = 0.0) -> Optional[np.ndarray]:
+        """Build one connectome matrix from the explicit edges.
+
+        The single place where an edge becomes matrix entries: endpoints are
+        resolved from ``Node.id`` through :meth:`node_index_map` and bounds-checked
+        once here, so every connectome matrix reads the same connectome.
+        ``value_of(edge, i, j)`` supplies the entry (``None`` skips the edge) and
+        receives the resolved indices; the raw ids stay on ``edge`` for callers that
+        need them. Matrices are target-by-source — an edge source -> target is
+        stored at ``[target, source]``, the coupling convention backends expect —
+        and undirected edges are mirrored. ``None`` when the network has no edges.
         """
         if not self.edges:
             return None
         n = self.number_of_nodes or self.number_of_regions or 1
-        W = np.zeros((n, n), dtype=np.float64)
+        index_map = self.node_index_map()
+        M = np.full((n, n), fill, dtype=np.float64)
         for edge in self.edges:
             i, j = edge.source, edge.target
             if i is None or j is None:
                 continue
-            if 0 <= i < n and 0 <= j < n:
-                w = self._get_edge_param(edge, "weight")
-                if w is None:
-                    w = 1.0  # edge exists → default unit weight
-                W[j, i] = w
-                # Mirror for undirected edges (symmetric)
-                if not edge.directed:
-                    W[i, j] = w
-        return W
+            i, j = index_map.get(i, i), index_map.get(j, j)
+            if not (0 <= i < n and 0 <= j < n):
+                continue
+            value = value_of(edge, i, j)
+            if value is None:
+                continue
+            M[j, i] = value
+            if not edge.directed:
+                M[i, j] = value
+        return M
+
+    def _weights_from_edges(self) -> Optional[np.ndarray]:
+        """Connectome weights from the explicit edges; an edge with no weight counts as 1."""
+        return self._edge_matrix(lambda edge, i, j: edge_param(edge, "weight", 1.0))
 
     @property
     def node_parameter_vectors(self) -> Dict[str, np.ndarray]:
@@ -2615,64 +2644,21 @@ class Network(tvbo_datamodel.Network):
         return np.sqrt(dx * dx + dy * dy + dz * dz)
 
     def _lengths_from_edges(self) -> Optional[np.ndarray]:
-        """Compute lengths/distances matrix from edges.
+        """Tract lengths from the explicit edges.
 
-        Looks for 'length' or 'distance' parameter in edge.parameters.
-        Matrices are target-by-source: an edge source -> target is stored at
-        [target, source], matching the coupling convention used by backends.
-        If no distance is specified but nodes have positions, computes
-        Euclidean distance from node coordinates (in distance_unit).
-        Undirected edges (directed=False) are mirrored to produce symmetric matrix.
-        Returns None if no edges are defined.
+        Reads ``length``, then ``distance``; with neither declared, falls back to the
+        Euclidean distance between the two nodes' positions (in ``distance_unit``).
         """
-        if not self.edges:
-            return None
-        n = self.number_of_nodes or self.number_of_regions or 1
-        L = np.zeros((n, n), dtype=np.float64)
-        for edge in self.edges:
-            i, j = edge.source, edge.target
-            if i is None or j is None:
-                continue
-            if 0 <= i < n and 0 <= j < n:
-                d = self._get_edge_param(edge, "length")
-                if d is None:
-                    d = self._get_edge_param(edge, "distance")
-                # If no explicit distance, compute from node positions
-                if d is None or d == 0:
-                    d = self._compute_euclidean_distance(i, j)
-                if d is None:
-                    d = 0.0
-                L[j, i] = d
-                # Mirror for undirected edges (symmetric)
-                if not edge.directed:
-                    L[i, j] = d
-        return L
+        def length(edge, i, j):
+            d = edge_param(edge, "length")
+            if d is None:
+                d = edge_param(edge, "distance")
+            if d is None or d == 0:
+                # Positions are keyed by Node.id, so look up the edge's own endpoints.
+                d = self._compute_euclidean_distance(edge.source, edge.target)
+            return 0.0 if d is None else d
 
-    def _delays_from_edges(self) -> Optional[np.ndarray]:
-        """Compute delays matrix from edges.
-
-        Looks for 'delay' parameter in edge.parameters.
-        Undirected edges (directed=False) are mirrored to produce symmetric matrix.
-        Returns None if no edges are defined or no delays are set.
-        """
-        if not self.edges:
-            return None
-        n = self.number_of_nodes or self.number_of_regions or 1
-        D = np.zeros((n, n), dtype=np.float64)
-        has_delays = False
-        for edge in self.edges:
-            i, j = edge.source, edge.target
-            if i is None or j is None:
-                continue
-            if 0 <= i < n and 0 <= j < n:
-                delay = self._get_edge_param(edge, "delay")
-                D[j, i] = delay
-                # Mirror for undirected edges (symmetric)
-                if not edge.directed:
-                    D[i, j] = delay
-                if delay > 0:
-                    has_delays = True
-        return D if has_delays else None
+        return self._edge_matrix(length)
 
     @property
     def node_labels(self) -> List[str]:
@@ -3625,32 +3611,16 @@ class Network(tvbo_datamodel.Network):
         return delays
 
     def _delays_from_edges(self) -> Optional[np.ndarray]:
-        """Build delay matrix from explicit edge objects.
+        """Explicit per-edge delays, or ``None`` when no edge declares a positive one.
 
-        Returns None if edges don't represent point-to-point connections
-        (i.e. they lack source/target attributes).
+        Unconnected entries stay ``NaN`` (consumers such as
+        ``adapters.tvboptim._build_graph`` zero them), which is what distinguishes
+        "no edge" from "an edge with delay 0".
         """
-        edges_with_endpoints = [
-            e
-            for e in self.edges
-            if hasattr(e, "source") and hasattr(e, "target") and e.source is not None and e.target is not None
-        ]
-        if not edges_with_endpoints:
+        delays = self._edge_matrix(lambda edge, i, j: edge_param(edge, "delay"), fill=np.nan)
+        if delays is None or not np.any(np.nan_to_num(delays) > 0):
             return None
-
-        n = self.number_of_nodes or 1
-        delays = np.full((n, n), np.nan)
-        has_delays = False
-        for edge in edges_with_endpoints:
-            if hasattr(edge, "parameters") and edge.parameters:
-                delay_param = edge.parameters.get("delay")
-                if delay_param and hasattr(delay_param, "value"):
-                    delay_val = float(delay_param.value)
-                    delays[edge.target, edge.source] = delay_val
-                    has_delays = has_delays or delay_val > 0
-                    if not edge.directed:
-                        delays[edge.source, edge.target] = delay_val
-        return delays if has_delays else None
+        return delays
 
     def _unit_conversion_factor(self, output_unit: str) -> float:
         """Compute multiplicative factor to convert native delay units to *output_unit*."""
@@ -3747,14 +3717,14 @@ class Network(tvbo_datamodel.Network):
                     source = index_to_id.get(source, source)
                     target = index_to_id.get(target, target)
 
-                    weight = self._get_edge_param(edge, "weight") or 0.0
+                    weight = edge_param(edge, "weight") or 0.0
                     if weight <= weight_threshold:
                         continue
 
                     edge_attrs = {
                         "weight": weight,
-                        "delay": self._get_edge_param(edge, "delay") or 0.0,
-                        "distance": self._get_edge_param(edge, "distance") or 0.0,
+                        "delay": edge_param(edge, "delay") or 0.0,
+                        "distance": edge_param(edge, "distance") or 0.0,
                         "directed": edge.directed,
                         "source_var": edge.source_var,
                         "target_var": edge.target_var,
