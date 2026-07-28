@@ -1368,6 +1368,15 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             for name in f.arguments:  # arguments is a dict keyed by name
                 scope[str(name)] = Symbol(str(name))
 
+        # Events: an event's name IS the symbol its dfun references (the stimulus term of
+        # the Jansen1995 idiom). Without it the name falls through to SymPy's own global
+        # namespace, where single capitals are taken: `Q` is the assumptions object, `S`
+        # the sympify shortcut, `O` the order class, `N` numerical evaluation, `I` the
+        # imaginary unit. A model whose stimulus happens to be called `Q` then fails to
+        # parse with a SympifyError that names none of them.
+        for name in getattr(self, "events", {}) or {}:
+            scope[str(name)] = Symbol(str(name))
+
         if "e" not in scope:
             from sympy import E
 

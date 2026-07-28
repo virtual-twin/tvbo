@@ -111,6 +111,14 @@ Experiments are round-trippable through YAML (see
 exp = SimulationExperiment.from_file("my_experiment.yaml")
 ```
 
+The file is read by the shared loader, so it supports keyed collections, scalar
+shortcuts, anchors/merge keys and `!include` — see
+[Writing TVB-O YAML](../Specification/YAML.qmd).
+
+::: {.callout-warning}
+A key repeated twice in the same mapping is an error, not a last-one-wins override.
+:::
+
 ### Other constructors
 
 | Method | Source |

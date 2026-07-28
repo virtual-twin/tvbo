@@ -32,6 +32,8 @@ website:
               - text: "SPECIFY AN EXPERIMENT"
               - text: "The SimulationExperiment object"
                 href: Simulation/SimulationExperiments.qmd
+              - text: "Writing TVB-O YAML"
+                href: Specification/YAML.qmd
               - section: "Models & Dynamics"
                 href: Models/index.qmd
                 contents:

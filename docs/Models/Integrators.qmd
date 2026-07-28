@@ -14,10 +14,40 @@ block:
 ```yaml
 integration:
   method: Heun          # euler | heun | rk4
-  step_size: 0.1        # dt, in the model's time unit (ms for neural masses)
-  duration: 1000.0
+  step_size: 0.1        # one step = 0.1 of the time_scale unit below
+  time_scale: ms        # s | ms | us  (default: ms)
+  duration: 1000.0      # total simulated time, in time_scale units
   transient_time: 200.0 # discard this leading burn-in from the result
 ```
+
+`dt` is accepted as a synonym for `step_size`. It means the same slot on every
+solver — a PDE solver's time step included — so one spelling never names two
+different things.
+
+## Time units
+
+`ms` is not baked in. `time_scale` sets what one unit of `step_size`, `duration`,
+and `transient_time` means; every time in the block is read in that unit. It
+defaults to `ms`, the convention for neural-mass models, so most examples leave
+it out — but you set it explicitly whenever your parameters are in another unit:
+
+```yaml
+integration:
+  method: Heun
+  step_size: 0.0001   # 0.1 ms, written in seconds
+  time_scale: s       # now step_size / duration / transient_time are seconds
+  duration: 1.0       # 1 second
+```
+
+Accepted values are `s`, `ms`, and `us`. Pick the one your rate and time-constant
+parameters are already written in, so you never hand-convert. The backends stamp
+this unit onto the emitted `dt` and run length.
+
+`time_unit` is accepted as a synonym for `time_scale`, so the spelling a
+[`Network`](../Networks/index.qmd) uses for its own time unit works on the
+integrator too. A network carries its **own** `time_unit` for conduction delays
+and tract lengths (also `ms` by default) — see [Unit validation](UnitValidation.qmd).
+Keep the two consistent unless you have a reason not to.
 
 ## Methods
 
