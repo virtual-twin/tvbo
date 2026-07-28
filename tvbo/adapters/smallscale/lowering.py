@@ -23,6 +23,8 @@ import re
 import warnings
 from typing import TypedDict
 
+from tvbo.utils import normalize_params
+
 
 # ── Identifiers ───────────────────────────────────────────────────────
 
@@ -67,26 +69,6 @@ def unique_component_id(name, taken, kind="component"):
 # ── Parameter helpers ─────────────────────────────────────────────────
 
 
-def normalize_edge_params(params):
-    """Normalize edge parameters to a flat ``{name: param_obj}`` dict.
-
-    Handles both the dict form ``{weight: {value: 1.0}}`` and the list form
-    ``[{weight: {value: 1.0}}, ...]`` that YAML may produce.
-    """
-    if not params:
-        return {}
-    if isinstance(params, list):
-        result = {}
-        for item in params:
-            if isinstance(item, dict):
-                for k, v in item.items():
-                    result[str(k)] = v
-        return result
-    # dict or dict-like (LinkML JsonObj)
-    try:
-        return {str(k): v for k, v in params.items()}
-    except AttributeError:
-        return {}
 
 
 def merge_params(*param_dicts):
@@ -168,23 +150,27 @@ class ConnectionRecord(TypedDict, total=False):
 # ── Node grouping and role classification ─────────────────────────────
 
 
-def group_nodes_by_dynamics(nodes, default_dyn_name):
-    """Group nodes by their ``Dynamics`` name, preserving first-encounter order.
+def node_dynamics_name(node, default_dyn_name):
+    """The ``Dynamics`` name a node runs.
 
-    Nodes without an explicit ``dynamics`` fall back to *default_dyn_name* — the
-    experiment's top-level dynamics — so a single-model network still groups into
-    one population.
+    ``Node.dynamics`` is a name-reference slot, so it may arrive as a bare name or
+    as a resolved ``Dynamics``; a node that declares none falls back to
+    *default_dyn_name* — the experiment's top-level dynamics. One rule, shared by
+    every backend, so they cannot disagree about which model a node runs.
     """
+    node_dyn = getattr(node, "dynamics", None)
+    if not node_dyn:
+        return default_dyn_name
+    return getattr(node_dyn, "name", None) or str(node_dyn)
+
+
+def group_nodes_by_dynamics(nodes, default_dyn_name):
+    """Group nodes by their ``Dynamics`` name, preserving first-encounter order."""
     from collections import OrderedDict
 
     groups = OrderedDict()
     for node in nodes:
-        node_dyn = getattr(node, "dynamics", None)
-        if node_dyn:
-            dyn_name = getattr(node_dyn, "name", None) or str(node_dyn)
-        else:
-            dyn_name = default_dyn_name
-        groups.setdefault(dyn_name, []).append(node)
+        groups.setdefault(node_dynamics_name(node, default_dyn_name), []).append(node)
     return groups
 
 

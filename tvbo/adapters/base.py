@@ -17,6 +17,7 @@ import numpy as np
 if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
 
+from tvbo.utils import noise_sigma
 from tvbo.templates.base.utils import (
     collect_param_distributions,
     collect_sv_distributions,
@@ -159,17 +160,11 @@ class BaseAdapter:
 
     @staticmethod
     def is_stochastic_dynamics(dynamics_dict: OrderedDict) -> bool:
-        """Detect stochastic system: any SV with noise intensity > 0."""
-        for dyn in dynamics_dict.values():
-            for sv in (dyn.state_variables or {}).values():
-                n = getattr(sv, "noise", None)
-                if n and getattr(getattr(n, "intensity", None), "value", None):
-                    try:
-                        if float(n.intensity.value) > 0:
-                            return True
-                    except (ValueError, TypeError):
-                        pass
-        return False
+        """Detect a stochastic system: any state variable with a positive noise amplitude."""
+        return any(
+            BaseAdapter.get_noise_sigmas(dyn) and max(BaseAdapter.get_noise_sigmas(dyn)) > 0
+            for dyn in dynamics_dict.values()
+        )
 
     # ── Graph / network ──────────────────────────────────────────────────
 
@@ -296,18 +291,16 @@ class BaseAdapter:
 
     @staticmethod
     def get_noise_sigmas(dynamics) -> list[float]:
-        """Extract per-SV noise intensity values."""
-        sigmas = []
-        for sv in (dynamics.state_variables or {}).values():
-            n = getattr(sv, "noise", None)
-            val = 0.0
-            if n and getattr(getattr(n, "intensity", None), "value", None):
-                try:
-                    val = float(n.intensity.value)
-                except (ValueError, TypeError):
-                    pass
-            sigmas.append(val)
-        return sigmas
+        """Per-state-variable noise amplitude σ, ``0.0`` where none is declared.
+
+        Reads ``intensity`` as σ itself (the point-neuron spelling, ``intensity:
+        {name: sigma_ext, ...}``), which is what the NetworkDynamics.jl emission this
+        feeds has always assumed.
+        """
+        return [
+            noise_sigma(getattr(sv, "noise", None), intensity_means="sigma") or 0.0
+            for sv in (dynamics.state_variables or {}).values()
+        ]
 
     # ── Events ────────────────────────────────────────────────────────
 

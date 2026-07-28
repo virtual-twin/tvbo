@@ -1539,3 +1539,145 @@ panel-label collision fixed (K≈ moved to the opposite corner from the panel le
 REMAINING (minor/deferred): λ₁ magnitude sim gap (not rendering); a negligible ylabel clip on the tall top panel;
 slurm/nextflow figure emitters (snakemake primary); a `Figure.render()` method (funcs + CLI already cover it); kit
 `OUT_DIR` vs local `output/nc/` path reconciliation.
+
+## Investigate 3× post-rate magnitude in HeterogeneousEdges (most likely our pyrates codegen)
+
+`docs/Networks/HeterogeneousEdges.qmd` (pre → {Depression, Facilitation,
+Tsodyks–Markram} synapses → post; each synapse→post edge `weight=0.33`, `source_var:
+r_eff`) renders a post-synaptic rate peaking ~2.4. That is **~3× too high**.
+
+**Evidence (2026-07-24).** Rebuilding the identical 5-node network on the tvboptim
+heterogeneous engine — where `r_eff = r_in·x·u` is routed correctly via an
+input-dependent readout `readout(state, params, inputs)` — gives post peak **0.79**.
+Forcing the synapse→post weights to **1.0** in tvboptim reproduces pyrates exactly
+(**2.40 ≈ 2.398**, ratio 3.0×). So the tvbo→pyrates path effectively **drops the
+0.33 edge weight** on edges whose `source_var` is an output/derived variable
+(`r_eff`). The *rising trend* is correct (the Facilitation pathway `r_in·u`, `u`
+climbing, dominates the sum) — only the magnitude is wrong.
+
+**Prime suspect: our codegen, not pyrates.** tvbo generates the pyrates model, so a
+dropped edge weight most likely comes from `tvbo/codegen/pyrates.py` /
+`tvbo/adapters/pyrates.py` not applying the edge weight when the source is a
+`derived_variable`/`output`. `r_eff` depends on the coupling input `r_in` — the
+output-depends-on-input case pyrates handles awkwardly (the doc already notes
+pyrates "cannot monitor output variables"). Do NOT assume tvboptim is the
+reference: the use-case implementation (equations, `r_eff` formulation, weights)
+may itself be off.
+
+**Actions.**
+- Trace an `r_eff`-source edge through `to_yaml(format="pyrates")` / the pyrates
+  codegen: is the `0.33` weight emitted on the pyrates edge, or lost for
+  derived-variable sources? Control: check a state-var source (`r_out`) edge.
+- Validate the 3-synapse dynamics AND magnitude against the **original
+  Tsodyks–Markram study** and the PyRates short-term-plasticity tutorial this
+  example is based on, to decide the correct post magnitude before blaming an
+  engine.
+- If it is a pyrates-side bug (not our codegen), confirm and report upstream.
+- Once resolved, regenerate the `HeterogeneousEdges` figure (via the tvbo→tvboptim
+  heterogeneous adapter once P1/P2 land, or after fixing the pyrates codegen).
+- Repro: 5-node pre→{dep,fac,tso}→post, drive pulses amp 5 / width 15 at
+  [50,80,110,140,170, 500,…]; compare `exp.run("pyrates")` vs the tvboptim
+  `HeterogeneousNetwork` rebuild (both reconstructed during this investigation).
+
+**Finding (2026-07-24) — the use-case TM equations are non-canonical (2nd, independent
+bug).** Checked against Cortes2013's "Standard TM Model" (deterministic continuous
+TM): `ẋ = (1-x)/τ_D − u·x·E`, `u̇ = U·E·(1-u) − (u-U)/τ_F`, drive ∝ `u·x·E`. The
+doc's synapse matches on `r_eff = r_in·x·u` and the facilitation decay, but invents
+two coefficients the real TM does not have:
+- depression `k·x·u·r_in` with **k=0.5** — should be coefficient **1** (`u·x·r_in`);
+- facilitation increment `k_fac·(1-u)·r_in` with **k_fac=0.05** — should be
+  `U0·(1-u)·r_in` (the increment coefficient IS the baseline `U0=0.2`, not a free
+  `k_fac`).
+Inherited from the PyRates tutorial the doc cites, not from Tsodyks–Markram. So two
+independent bugs: (1) this model-form deviation and (2) the codegen weight drop
+above. Fix the equations to `-u·x·r_in` and `+U0·(1-u)·r_in`, and wire a citation
+(`Tsodyks1997` spike-based; `Cortes2013` deterministic) into `HeterogeneousEdges.qmd`.
+Paper extraction: `tvbo-manuscript/use-cases/replication_studies/Cortes2013/original_study/`.
+
+## `jax` backend silently ignores `explorations` — warn, then support (2026-07-24)
+
+Discovered while building the Cortes2013 replication: running a `SimulationExperiment`
+that declares an `Exploration` (a `space` sweep or `n_trials` ensemble) on the **`jax`**
+backend runs a **single** forward sim and drops the sweep entirely — `result.explorations`
+is empty and `result.save(...)` writes `[]` (nothing). No error, no warning; it just
+silently ignores the exploration. Only **`tvboptim`** currently executes explorations
+(the vectorised grid path). This cost real debugging time (the run "succeeds" and writes
+nothing).
+
+- **Step 1 (guard).** When an experiment carries a non-empty `explorations` (or
+  `optimizations`/`inferences`) and the selected backend is `jax` (or any backend without
+  exploration support), **raise or warn loudly** at dispatch — e.g. in
+  `tvbo/cli/run.py::_effective_backend` / the backend's `run()` entry — telling the user
+  the sweep will not run and to use `tvboptim`. Silent no-op → empty save is the worst case.
+- **Step 2 (support).** Add jax-native exploration execution so a plain forward sweep does
+  not require the full `tvboptim` optimisation stack — vectorise the grid (`vmap`/`lax.map`)
+  and populate `result.explorations` the same way tvboptim does, so `jax` and `tvboptim`
+  produce interchangeable result containers for a bare sweep.
+
+## Backend-independent schema representation of integration schemes (2026-07-24)
+
+Surfaced twice during the Cortes2013 replication:
+1. The tvboptim **heterogeneous** adapter path maps the solver by
+   `str(method).lower()` against `{"euler","heun","rk4","rungekutta4"}` and silently
+   **falls back to Heun** for anything else — so `method: RungeKutta4thOrder` (a valid
+   name elsewhere) becomes Heun there (`tvbo/adapters/tvboptim.py:540-546`). An explicit
+   scheme at too-large `dt` then sustains lightly-damped librations (wrong attractor).
+2. The tvboptim **codegen** template uses a *different* SOLVER_MAP
+   (`['euler','heun','heunstochastic','rk4','rungekutta4thorder','runge_kutta',
+   'rungekutta']`) — so the two paths accept different spellings of the same scheme, and
+   `RungeKutta4` (no `thorder`) errors in one and Heun-falls-back in the other.
+
+This name-matching is flaky and duplicated. **We need an abstract, backend-independent
+metadata representation of integration schemes** (tvbo already has the seed of this):
+- a **database of simple solvers as schema** (Euler, Heun, RK4, …) with their Butcher
+  tableau / order / stability metadata, so every backend resolves the SAME canonical
+  scheme identity instead of string-matching per-adapter;
+- **complex/backend-specific solvers** (e.g. `Rodas5`, `Tsit5`, adaptive DDE solvers)
+  live in the database too but are **linked as callables** scoped to the language/backend
+  that provides them;
+- adapters consume the resolved scheme metadata (canonical id + per-backend callable),
+  never a raw lowercased name — killing the silent Heun fallback and the spelling drift.
+
+Same spirit as the "backend-independent metadata states INTENT, not one backend's
+mechanism" rule. Until then, name the solver exactly as each backend's map expects and
+verify the integrator against a dt-converged reference (Phase 7) near sensitive regimes.
+
+## tvboptim exploration path ≠ single-sim path at the same IC (2026-07-24)
+
+Diagnosed in the Cortes2013 Fig-4 (near-homoclinic transient chaos). At a **nominally
+identical** initial condition, the tvboptim **exploration/`n_trials` grid path** and the
+tvboptim **single-sim path** produce trajectories that differ by ~7e-5 at the first recorded
+step and grow apart. Established:
+- It is **not** the integrator scheme: rk4 / heun / euler all give the *same* exploration
+  result (all ride the orbit; single-sim + NumPy reference settle).
+- It is **not** precision: both paths are float64.
+- A **single** tvboptim sim reproduces the dt-converged NumPy RK4 reference (both settle,
+  peak 17.40, diff ~1e-3). Stable limit cycles match the reference *exactly* — so the paths
+  agree everywhere the dynamics is non-chaotic.
+- Near the Shilnikov homoclinic the system is genuinely chaotic (σ≈16, λ₁≈17 s⁻¹, e-folding
+  ~0.06 s), so the ~1e-4 path discrepancy amplifies over 15 s into a qualitatively different
+  transient (settle-to-down vs ride-the-orbit). This part is *expected physics* (the paper's
+  sensitive-dependence result), not a defect.
+
+**Root cause = fractal basin + a confounded comparison; NOT a codegen or sampler bug.**
+Established:
+- A **deterministic exploration** (`space` sweep, `transient_time=0`, ICs via `initial_value`,
+  NO `distribution`) reproduces the single-sim path **bit-consistently** at the same IC
+  (`E0_rec=2.97558`, 2 spikes, settle, peak 17.40 = plain sim = NumPy reference). Grid/vmap
+  codegen, RHS, and settings/IC passing are all correct.
+- The `_sample_initial_conditions` codegen (`tvbo/templates/tvboptim/
+  tvbo-tvboptim-experiment.py.mako:1574-1596`) replaces each trial's state row with
+  `jax.random.uniform(key, (n_nodes,), minval=lo, maxval=hi)` — the right behaviour for an IC
+  ensemble; a degenerate `{lo:X, hi:X}` returns `X`.
+- The apparent "same IC → different outcome" was a **confound in the diagnostic**: the
+  ensemble's *recorded* first sample is taken after the first integration step (≈E(dt)), not
+  the true sampled IC, so "single sims at the ensemble's E(0)" actually started ~1e-4 (one
+  step) off the true ICs. Near the Shilnikov homoclinic (σ≈16, e-folding ~0.06 s) the basin is
+  fractal, so ~1e-4 flips settle-vs-orbit. Genuine sensitive dependence (the paper's result).
+
+So there is **no confirmed bug**. Recommended *guardrails* (not a fix for a known defect):
+(1) add a determinism test asserting `grid-path == single-path == reference` bit-for-bit at a
+fixed IC in a non-chaotic regime (and a degenerate distribution returns its point exactly);
+(2) consider recording the true IC (E at t=0, pre-step) so a trial's sampled IC is inspectable
+without the one-step offset. Until then, integrate sensitive-regime transients on the
+single-sim path (or the dt-converged reference) — Phase 7.

@@ -848,3 +848,72 @@ class TestBrian2RecordedSynapseState:
         r_plain = SimulationExperiment.from_file(str(norec_path)).run(
             format="brian2", seed=3)._extras["rates"]["ExcitatoryCell"]
         assert r_rec == pytest.approx(r_plain, abs=1e-9), "the probe perturbed the network"
+
+
+# A `random` current-pulse edge drives only a random SUBSET of the target's neurons (a per-neuron
+# 0/1 mask, fraction = connection_probability), reusing the sparse-synapse convention — the paper's
+# "nonspecific input to 15% of the excitatory neurons". A subthreshold mu_ext keeps the unstimulated
+# neurons silent, so only the masked fraction fires, and only within the pulse window.
+RANDOM_PULSE_YAML = """
+label: "Random-subset current pulse (Brian2)"
+network:
+  dynamics:
+    Cell:
+      iri: "extends:baseCellMembPot"
+      parameters:
+        tau_m: {value: 15.0, unit: ms}
+        thresh: {value: 20.0, unit: mV}
+        reset: {value: 16.0, unit: mV}
+        refract: {value: 2.0, unit: ms}
+        mu_ext: {value: 15.0, unit: mV}
+        v0: {value: 16.0, unit: mV}
+      coupling_inputs: [iSyn]
+      state_variables:
+        v: {equation: {rhs: "(-v + mu_ext + iSyn) / tau_m"}, initial_value: 16.0, unit: mV, record: true}
+      events:
+        spike: {condition: {rhs: "v > thresh"}, affect: {rhs: "v = reset"}}
+    Noise:
+      iri: neuroml:pulseGenerator
+      parameters: {delay: {value: 100.0, unit: ms}, duration: {value: 200.0, unit: ms}, amplitude: {value: 10.0, unit: mV}}
+  nodes:
+    - {id: 2, dynamics: Cell, size: 200}
+    - {id: 5, dynamics: Noise}
+  edges:
+    - {source: 5, target: 2, connectivity: random, parameters: {connection_probability: {value: 0.3}}}
+integration: {method: euler, step_size: 0.05, duration: 400.0, time_scale: ms}
+execution: {random_seed: 0}
+"""
+
+
+class TestBrian2RandomSubsetPulse:
+    """A `random` current-pulse edge drives only a fraction of the target (per-neuron mask)."""
+
+    @pytest.fixture(scope="class")
+    def net(self, tmp_path_factory) -> SimulationExperiment:
+        path = tmp_path_factory.mktemp("brian2subset") / "subset.yaml"
+        path.write_text(RANDOM_PULSE_YAML)
+        return SimulationExperiment.from_file(str(path))
+
+    @pytest.fixture(scope="class")
+    def script(self, net) -> str:
+        return net.render("brian2")
+
+    def test_is_valid_python(self, script):
+        compile(script, "<generated>", "exec")
+
+    def test_emits_seeded_per_neuron_mask(self, script):
+        # a constant per-neuron mask, drawn from the seeded RNG (render≡run), gating the
+        # window. Keyed by edge index, so two random pulse edges onto one population are
+        # two independent subsets rather than one shared mask.
+        assert "stim_mask_Noise_0 : 1 (constant)" in script
+        assert 'stim_mask_Noise_0 = "rand() < 0.3"' in script
+        assert "stim_mask_Noise_0 * 1.0 * amp_stim_Noise" in script
+
+    @pytest.mark.backend_brian2
+    @pytest.mark.slow
+    def test_only_the_masked_fraction_fires_within_the_window(self, net):
+        import numpy as np
+        spk = net.run(format="brian2", seed=0)._extras["spikes"]["Cell"]
+        i, t = np.asarray(spk["i"]), np.asarray(spk["t_ms"])
+        assert 0.20 < len(np.unique(i)) / 200 < 0.40       # ~30% of neurons driven (fraction 0.3)
+        assert np.all((t >= 100.0) & (t < 300.0))          # only within the pulse window

@@ -179,6 +179,90 @@ def as_list(obj) -> list:
         return [obj]
 
 
+def normalize_params(params) -> dict:
+    """Normalize a ``parameters`` collection to a flat ``{name: param}`` dict.
+
+    Accepts the keyed mapping ``{weight: Parameter(...)}`` (LinkML ``JsonObj`` or
+    plain dict), the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw
+    YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node
+    and dynamics parameter collections alike.
+    """
+    if not params:
+        return {}
+    if isinstance(params, (list, tuple)):
+        out = {}
+        for item in params:
+            if isinstance(item, dict):
+                out.update({str(k): v for k, v in item.items()})
+            elif getattr(item, "name", None) is not None:
+                out[str(item.name)] = item
+        return out
+    try:
+        return {str(k): v for k, v in params.items()}
+    except AttributeError:
+        return {}
+
+
+def edge_param(edge, name: str, default=None):
+    """A named quantity off an ``Edge``: its ``parameters`` entry, else its own slot.
+
+    ``weight``/``delay``/``distance`` are both first-class ``Edge`` slots and
+    valid entries in the generic ``parameters`` collection, so a recipe may spell
+    either. ``parameters`` wins when both are set. This is the single reader every
+    backend goes through, so one recipe cannot mean different connectomes on
+    different backends. Returns the value verbatim (no coercion), or *default*.
+    """
+    p = normalize_params(getattr(edge, "parameters", None)).get(name)
+    if p is not None:
+        val = getattr(p, "value", p)
+        if val is not None:
+            return val
+    scalar = getattr(edge, name, None)
+    if isinstance(scalar, bool) or scalar is None:
+        return default
+    return scalar if isinstance(scalar, (int, float)) else default
+
+
+def noise_sigma(noise, *, intensity_means: str = "dispersion"):
+    """The noise standard deviation σ off a declared ``Noise``, or ``None``.
+
+    The one reader for every spelling the schema allows, so a recipe cannot mean a
+    different amplitude on different backends:
+
+    * ``parameters: {sigma: {value: s}}`` → ``s``. Unambiguous, and what the curated
+      recipes use; it wins whenever present.
+    * ``parameters: {nsig: {value: D}}`` → ``sqrt(2 D)``. TVB stores the dispersion
+      ``D = σ²/2``.
+    * ``intensity: {value: v}`` → **ambiguous**, so the caller must say what it means.
+      ``intensity_means="dispersion"`` (default, the TVB reading) treats ``v`` as ``D``
+      and returns ``sqrt(2 v)``; ``intensity_means="sigma"`` takes ``v`` as σ itself,
+      which is how the point-neuron recipes write it (``intensity: {name: sigma_ext,
+      value: 1.0, unit: mV}``). The two disagree by ``sqrt(2 v)/v``, so the choice is
+      spelled at each call site rather than guessed here.
+
+    Returns ``None`` when the noise declares no amplitude at all (and for a missing
+    ``Noise``), leaving "absent" distinguishable from an explicit zero.
+    """
+    import math
+
+    if not noise:
+        return None
+    params = normalize_params(getattr(noise, "parameters", None))
+    for name, to_sigma in (("sigma", lambda v: v), ("nsig", lambda v: math.sqrt(2.0 * v))):
+        p = params.get(name)
+        val = getattr(p, "value", p)
+        if val is not None:
+            val = float(val)
+            return to_sigma(val) if val > 0 else 0.0
+    val = getattr(getattr(noise, "intensity", None), "value", None)
+    if val is not None:
+        val = float(val)
+        if val <= 0:
+            return 0.0
+        return math.sqrt(2.0 * val) if intensity_means == "dispersion" else val
+    return None
+
+
 def sanitize_name(name) -> str:
     """Sanitise a name into a filesystem- and rule-safe token (keep alnum, ``_``, ``-``)."""
     import re
@@ -547,24 +631,35 @@ def from_yaml(filepath: str, cls) -> object:
 
 
 def add_to_parameters_collection(key, value, path, parameters):
-    """Adds a value to a Bunch object using the provided path, without inserting a redundant sub-level."""
+    """Adds a value to a Bunch object using the provided path, without inserting a redundant sub-level.
+
+    A Parameter may carry both a scalar ``value`` AND a nested ``distribution`` (e.g.
+    ``omega_mean_hz = 10 Hz + Normal(mean, std)``): its scalar and the distribution's
+    sub-parameters navigate through the same name. The two must coexist rather than
+    overwrite — a scalar already stored at a name is preserved under a reserved ``value``
+    key when that name has to become a sub-Bunch, and a scalar written onto a name that is
+    already a sub-Bunch is stored under ``value`` instead of clobbering the sub-tree.
+    """
     current_level = parameters
     for part in path:
         if part == "parameters":
             continue
+        if part == key:
+            continue  # the final leaf is written after the loop; never turn it into a Bunch
         part_key = str(part) if isinstance(part, int) else part
-        # A path component must map to a sub-Bunch to navigate into. Nest when the slot
-        # is absent OR already holds a scalar leaf: a Parameter that carries both a
-        # ``value`` AND a nested ``distribution`` (e.g. omega_mean_hz = 10 Hz + Normal(mean,
-        # std)) stores its scalar first, then the distribution's sub-parameters navigate
-        # through the same name — without this guard that dereferences the scalar
-        # (an ``extended_float``) and raises "argument of type '…' is not iterable".
-        if not isinstance(current_level.get(part_key), Bunch):
-            current_level[part_key] = Bunch()
-        if part != key:
-            current_level = current_level[part_key]
+        existing = current_level.get(part_key)
+        if not isinstance(existing, Bunch):
+            nested = Bunch()
+            if existing is not None:
+                nested["value"] = existing  # keep a scalar leaf already stored at this name
+            current_level[part_key] = nested
+        current_level = current_level[part_key]
     final_key = str(key) if isinstance(key, int) else key
-    current_level[final_key] = value.value
+    existing = current_level.get(final_key)
+    if isinstance(existing, Bunch):
+        existing["value"] = value.value  # a nested sub-tree already occupies this slot
+    else:
+        current_level[final_key] = value.value
 
 
 def traverse_metadata(

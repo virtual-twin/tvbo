@@ -52,7 +52,7 @@ def test_single_group_equivalence():
         )
     )
     network.dynamics["Decay"] = model
-    assert not is_heterogeneous(network)  # one dynamics -> homogeneous
+    assert not is_heterogeneous(SimulationExperiment(network=network))  # one dynamics -> homogeneous
 
     solver = Heun(block_size=100)
     kw = dict(t0=0.0, t1=50.0, dt=0.1)
@@ -126,7 +126,7 @@ def _hetero_experiment():
 def test_adapter_partitions_and_routes():
     """to_heterogeneous_network builds one group per dynamics and one route."""
     exp = _hetero_experiment()
-    assert is_heterogeneous(exp.network)
+    assert is_heterogeneous(exp)
     het = to_heterogeneous_network(exp.network)
     assert set(het.group_names) == {"SlowDriver", "Excitable", "Relaxation"}
     assert het.group_nodes["SlowDriver"] == (0,)

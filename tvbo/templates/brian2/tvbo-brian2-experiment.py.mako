@@ -58,6 +58,9 @@ ${name} = NeuronGroup(
     namespace=${_ns_literal(pop)}, name="${name}",
 )
 ${name}.v = ${_init_v(pop)}
+% for mvar, frac in pop["masks"].items():
+${name}.${mvar} = "rand() < ${frac}"
+% endfor
 _objects.append(${name})
 
 % endfor

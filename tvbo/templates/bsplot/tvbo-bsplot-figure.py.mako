@@ -95,6 +95,11 @@ def _apply_axopts3d(ax, o):
         ax.invert_yaxis()
     if o.get("invert_z"):
         ax.invert_zaxis()
+    if o.get("zoom"):                                 # fill the cell (3-D axes reserve big margins)
+        try:
+            ax.set_box_aspect(None, zoom=o["zoom"])
+        except TypeError:
+            pass                                      # older mpl without the zoom kwarg
     for _pa in (ax.xaxis, ax.yaxis, ax.zaxis):        # white box, faint edges
         _pa.pane.set_facecolor("white"); _pa.pane.set_alpha(1.0); _pa.pane.set_edgecolor("0.8")
 

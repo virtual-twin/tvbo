@@ -202,23 +202,13 @@ warmstart_solver_kwargs = 'recompute_coupling_per_stage=True' if str(_ce) == 'pe
 opt_mode = resolve_optimizer_mode(integration)
 
 # Noise configuration from state_variables or integration.
-# tvboptim's AdditiveGaussianNoise expects sigma = standard deviation
-# of the per-step Wiener increment (increment = sigma * sqrt(dt) * N(0,1)).
-# TVB's convention stores nsig = D = sigma^2 / 2 in `noise.intensity`.
-# So when the YAML provides `intensity` (TVB style), convert via
-# sigma = sqrt(2 * intensity). When it provides `sigma` directly, use as-is.
-import math as _math
+# tvboptim's AdditiveGaussianNoise expects sigma = standard deviation of the per-step
+# Wiener increment (increment = sigma * sqrt(dt) * N(0,1)). Read through the shared
+# `tvbo.utils.noise_sigma`, in the TVB reading of `intensity` (dispersion D = sigma^2/2),
+# so this template and `adapters.tvboptim._extract_noise` cannot drift apart.
+from tvbo.utils import noise_sigma as _shared_noise_sigma
 def _noise_sigma(noise_obj):
-    if not noise_obj:
-        return 0.0
-    sp = (noise_obj.parameters or {}).get('sigma') if noise_obj.parameters else None
-    if sp is not None:
-        return float(sp.value if sp.value is not None else sp)
-    intens = getattr(noise_obj, 'intensity', None)
-    if intens is not None:
-        D = float(intens.value if intens.value is not None else intens)
-        return _math.sqrt(2.0 * D) if D > 0 else 0.0
-    return 0.0
+    return _shared_noise_sigma(noise_obj, intensity_means='dispersion') or 0.0
 
 noise_sigma_per_state = []
 noise_targets = []

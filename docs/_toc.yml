@@ -1047,6 +1047,8 @@ website:
                         href: datamodel/slots/execution.qmd
                       - text: "executor"
                         href: datamodel/slots/executor.qmd
+                      - text: "experiment"
+                        href: datamodel/slots/experiment.qmd
                       - text: "experiment_yaml_hash"
                         href: datamodel/slots/experiment_yaml_hash.qmd
                       - text: "explorations"

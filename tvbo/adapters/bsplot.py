@@ -136,7 +136,7 @@ _AXIS_OPTS = {
     "hide_xticklabels", "hide_yticklabels", "axhline", "legend",
     # line3d only: the depth axis + camera + per-axis inversion (a phase-space axis often
     # runs the opposite way to the paper's convention). Ignored by 2-D kinds.
-    "zlabel", "zlim", "elev", "azim", "invert_x", "invert_y", "invert_z",
+    "zlabel", "zlim", "elev", "azim", "invert_x", "invert_y", "invert_z", "zoom",
 }
 
 
