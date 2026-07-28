@@ -21,16 +21,7 @@ from tvboptim.optim.callbacks import AbstractCallback
 logger = logging.getLogger("tvbo.run")
 
 
-# ``Exploration.n_parallel: auto`` vectorises the grid in chunks of n_vmap cells. It
-# is bounded two ways (whichever is smaller):
-#   * a cell COUNT cap (``AUTO_NVMAP_CAP``, env ``TVBO_NVMAP_AUTO_CAP``): per-cell
-#     throughput saturates by ~32-64 cells, so this forfeits no meaningful speed;
-#   * a MEMORY budget (``TVBO_NVMAP_MEM_BUDGET_GB``): vectorising N cells holds N ×
-#     per-cell working set (output trajectory + live state, incl. delay history) at
-#     once, so — unlike a sequential run, which holds one cell — auto can raise peak
-#     memory. The budget bounds that batch footprint; when a per-cell estimate is
-#     available (see :func:`estimate_per_cell_bytes`) auto shrinks n_vmap to fit it.
-# An explicit integer ``n_parallel`` bypasses both bounds.
+# n_parallel:auto bounds (see resolve_n_vmap / estimate_per_cell_bytes); explicit int bypasses.
 AUTO_NVMAP_CAP = 64
 AUTO_NVMAP_MEM_BUDGET_GB = 2.0
 
@@ -63,39 +54,92 @@ def auto_nvmap_budget_bytes() -> int:
     """Batch working-memory budget for ``n_parallel: auto``, in bytes.
 
     Overridable via ``TVBO_NVMAP_MEM_BUDGET_GB`` (default :data:`AUTO_NVMAP_MEM_BUDGET_GB`).
-    Bounds ``n_vmap × per-cell-bytes`` so auto-vectorisation cannot blow up peak memory
-    on a large-per-cell model (e.g. a whole-brain delay network).
+    Bounds the live batch (``shared_ram_devices × n_vmap × per-cell-bytes``) so
+    auto-vectorisation cannot blow up peak memory on a large-per-cell model.
     """
     return int(_env_positive("TVBO_NVMAP_MEM_BUDGET_GB", float, AUTO_NVMAP_MEM_BUDGET_GB) * (1024 ** 3))
 
 
-def estimate_per_cell_bytes(observable_fn, state) -> Optional[int]:
-    """Best-effort per-cell working-memory estimate for ``n_parallel: auto``.
+def shared_ram_device_count() -> int:
+    """Number of devices whose per-cell batches share one physical RAM pool.
 
-    Sums the recorded output size (via ``jax.eval_shape`` — abstract, no compute) and
-    the live per-cell input ``state`` (which carries any delay/history buffers). This
-    is the buffer that a vmapped batch holds ``n_vmap`` copies of. Returns ``None`` if
-    the shapes cannot be inferred, so the caller falls back to the count-only cap.
+    CPU host-replication (``xla_force_host_platform_device_count``) fans one host's RAM
+    across N logical devices, so a pmapped batch holds ``N × n_vmap`` cells in the *same*
+    RAM. Real GPU/TPU devices each have independent memory (only ``n_vmap`` cells apiece),
+    so returns 1 there. Scales the ``n_parallel: auto`` memory budget (see
+    :func:`resolve_exploration_n_vmap`). Returns 1 if JAX or the device list is unavailable.
     """
     try:
         import jax
 
-        def _nbytes(tree):
-            total = 0
-            for leaf in jax.tree.leaves(tree):
-                size = getattr(leaf, "size", None)
-                dtype = getattr(leaf, "dtype", None)
-                if size is not None and dtype is not None:
-                    total += int(size) * dtype.itemsize
-            return total
+        devices = jax.devices()
+        if devices and all(getattr(d, "platform", None) == "cpu" for d in devices):
+            return len(devices)
+    except Exception:
+        pass
+    return 1
 
-        out = jax.eval_shape(observable_fn, state)
-        return _nbytes(out) + _nbytes(state)
+
+def estimate_per_cell_bytes(observable_fn, state) -> Optional[int]:
+    """Best-effort per-cell peak working-memory estimate for ``n_parallel: auto``.
+
+    Compiles the single-cell observable ahead-of-time and reads XLA's memory analysis
+    (``temp + output + argument``), so the estimate includes the transient buffers the
+    observable allocates and then reduces away — e.g. a BOLD trajectory and its FFT
+    convolution behind a scalar loss. Summing only the output (as ``eval_shape`` would)
+    under-counts such reduction observables, so a vmapped batch of them silently OOMs.
+    Falls back to an output+input shape sum, then ``None``, so the caller degrades to
+    the count-only cap.
+    """
+    try:
+        import jax
+    except Exception:
+        return None
+
+    try:
+        stats = jax.jit(observable_fn).lower(state).compile().memory_analysis()
+        if stats is not None:
+            total = sum(
+                int(getattr(stats, attr, 0) or 0)
+                for attr in ("temp_size_in_bytes", "output_size_in_bytes", "argument_size_in_bytes")
+            )
+            if total > 0:
+                return total
+    except Exception:  # AOT compile / memory_analysis unsupported — fall through
+        pass
+
+    def _nbytes(tree):
+        total = 0
+        for leaf in jax.tree.leaves(tree):
+            size, dtype = getattr(leaf, "size", None), getattr(leaf, "dtype", None)
+            if size is not None and dtype is not None:
+                total += int(size) * dtype.itemsize
+        return total
+
+    try:
+        return _nbytes(jax.eval_shape(observable_fn, state)) + _nbytes(state)
     except Exception:  # abstract eval can fail on exotic observables — degrade gracefully
         return None
 
 
-def resolve_n_vmap(spec, grid_n, per_cell_bytes=None):
+def resolve_exploration_n_vmap(spec, grid_n, observable_fn, state):
+    """Resolve ``Exploration.n_parallel`` to a vmap chunk width for a grid run.
+
+    Composition both exploration templates call: for ``"auto"`` it estimates per-cell
+    memory (:func:`estimate_per_cell_bytes`) and counts shared-RAM devices
+    (:func:`shared_ram_device_count`) to bound the batch; an explicit integer skips the
+    estimate (and its compile) and passes straight through :func:`resolve_n_vmap`.
+    """
+    per_cell = estimate_per_cell_bytes(observable_fn, state) if _is_auto(spec) else None
+    return resolve_n_vmap(spec, grid_n, per_cell, n_pmap=shared_ram_device_count())
+
+
+def _is_auto(spec) -> bool:
+    """True when an ``n_parallel`` spec requests automatic vmap-width resolution."""
+    return isinstance(spec, str) and spec.strip().lower() == "auto"
+
+
+def resolve_n_vmap(spec, grid_n, per_cell_bytes=None, n_pmap=1):
     """Resolve an ``Exploration.n_parallel`` spec to a concrete vmap chunk width.
 
     Args:
@@ -104,18 +148,28 @@ def resolve_n_vmap(spec, grid_n, per_cell_bytes=None):
         grid_n: Number of cells in the exploration grid.
         per_cell_bytes: Optional per-cell working-memory estimate (see
             :func:`estimate_per_cell_bytes`). When given, ``"auto"`` additionally caps
-            ``n_vmap`` at ``budget // per_cell_bytes`` so the batch fits the budget.
+            ``n_vmap`` so the concurrently-held batch fits the budget.
+        n_pmap: Number of devices whose batches share one RAM pool (see
+            :func:`shared_ram_device_count`). The live batch is ``n_pmap × n_vmap`` cells
+            in that shared RAM, so the budget bounds ``n_pmap × n_vmap × per_cell`` — not
+            ``n_vmap`` alone (else forced host devices multiply the footprint past it).
 
     Returns:
         Positive integer vmap chunk width. An explicit integer is passed through
         unchanged (memory bounds do not apply — the caller opted in).
     """
-    if not (isinstance(spec, str) and spec.strip().lower() == "auto"):
+    if not _is_auto(spec):
         return max(1, int(spec))
+    n_pmap = max(1, int(n_pmap))
     width = min(int(grid_n), auto_nvmap_cap())
     if per_cell_bytes and per_cell_bytes > 0:
-        width = min(width, auto_nvmap_budget_bytes() // int(per_cell_bytes))
-    return max(1, width)
+        width = min(width, auto_nvmap_budget_bytes() // (int(per_cell_bytes) * n_pmap))
+    width = max(1, width)
+    logger.debug(
+        "n_parallel=auto -> n_vmap=%d (grid_n=%d, n_pmap=%d, per_cell_bytes=%s)",
+        width, int(grid_n), n_pmap, per_cell_bytes,
+    )
+    return width
 
 
 class LoggingProgressCallback(AbstractCallback):

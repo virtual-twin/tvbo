@@ -67,7 +67,7 @@ import jax.numpy as jnp
 
 from tvboptim.types import Space, GridAxis
 from tvboptim.execution import ParallelExecution
-from tvbo.templates.tvboptim.callbacks import resolve_n_vmap, estimate_per_cell_bytes   # n_parallel:auto → vmap width
+from tvbo.templates.tvboptim.callbacks import resolve_exploration_n_vmap   # n_parallel → vmap width
 
 % for expl in explorations:
 <%
@@ -92,13 +92,8 @@ def run_${expl['name']}_exploration(state, observable_fn):
     """Run ${expl['name']} parameter exploration."""
     grid = setup_${expl['name']}_grid(state)
     import jax as _jax
-    _n_devices = _jax.device_count()
-    # n_parallel 'auto' (default) caps n_vmap by both a cell count and a memory budget
-    # (using the per-cell working size) so a large-per-cell grid does not blow up peak
-    # memory; an explicit int passes through. See callbacks.resolve_n_vmap.
-    _per_cell_bytes = estimate_per_cell_bytes(observable_fn, state)
-    _n_vmap = resolve_n_vmap(${repr(expl['n_parallel'])}, grid.N, _per_cell_bytes)
-    exec = ParallelExecution(observable_fn, grid, n_pmap=_n_devices, n_vmap=_n_vmap)
+    _n_vmap = resolve_exploration_n_vmap(${repr(expl['n_parallel'])}, grid.N, observable_fn, state)
+    exec = ParallelExecution(observable_fn, grid, n_pmap=_jax.device_count(), n_vmap=_n_vmap)
     results = exec.run()
     return grid, jnp.stack(results)
 
