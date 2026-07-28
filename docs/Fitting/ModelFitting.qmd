@@ -1,6 +1,5 @@
 ---
 title: Model Fitting
-sidebar: usage
 jupyter: python3
 # Redirect the pre-restructure URL so existing links keep resolving.
 aliases:

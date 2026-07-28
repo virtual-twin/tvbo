@@ -1,6 +1,5 @@
 ---
 title: "5. Hysteresis (Double Saddle-Node)"
-sidebar: usage
 jupyter: python3
 # Redirect the pre-restructure URL so external links keep resolving.
 aliases:

@@ -46,11 +46,16 @@ def test_dispatch_to_engine_uses_kit_dir_not_file(monkeypatch, tmp_path: Path, e
     # Kit emitted in-process into the directory (not a bare artefact file).
     assert (kit_dir / expected_workflow_file).is_file()
     # The submission shells out from the kit dir; none re-invokes `tvbo` on PATH.
-    # (Filter out unrelated subprocess calls a library may make, e.g. `uname -p`.)
-    submits = [c for c in calls if c["cmd"][0] in {"sbatch", "snakemake", "nextflow"}]
+    # Match the launcher by BASENAME: `_resolve_launcher` returns snakemake's
+    # ABSOLUTE path when it sits next to the running interpreter (the venv-off-PATH
+    # case — a cluster user runs `.venv/bin/tvbo` without activating), so cmd[0] may
+    # be `/…/.venv/bin/snakemake`, not the bare name. This is exactly why it works
+    # both locally and on HPC. (Filter out unrelated subprocess calls a library may
+    # make, e.g. `uname -p`.)
+    submits = [c for c in calls if Path(c["cmd"][0]).name in {"sbatch", "snakemake", "nextflow"}]
     assert submits, calls
     assert all(Path(c["cwd"]) == kit_dir for c in submits)
-    assert all(c["cmd"][0] != "tvbo" for c in calls)
+    assert all(Path(c["cmd"][0]).name != "tvbo" for c in calls)
     # JR_MEG dispatches as a single array task (chunk=1) — that one task IS the
     # whole result, so slurm submits just the array; no gather job is chained.
     if engine == "slurm":
@@ -210,3 +215,61 @@ def test_max_iterations_none_is_a_no_op():
     exp = SimpleNamespace(algorithms={"a": _algo(200)}, optimizations={})
     run_cli._apply_max_iterations(exp, None)
     assert exp.algorithms["a"].n_iterations == 200
+
+
+# ── study figure rendering (`tvbo run <study>` closes the replication loop) ──────────────
+def test_render_study_figures_renders_into_base_figures_dir(monkeypatch, tmp_path: Path):
+    """A study run renders its declarative `figures:` via the same path as `tvbo figure
+    render`: base = the spec file's dir, output = <base>/figures — so the one-command
+    result is interchangeable with a follow-up `tvbo figure render`."""
+    seen = {}
+
+    def _fake_render(figures, base_dir, out_dir):
+        seen["figures"] = list(figures)
+        seen["base"] = Path(base_dir)
+        seen["out"] = Path(out_dir)
+        return [Path(out_dir) / "f.png"]
+
+    monkeypatch.setattr("tvbo.cli.figures.render_figures", _fake_render)
+
+    spec = tmp_path / "Study.yaml"
+    spec.write_text("name: s\n", encoding="utf-8")
+    study = SimpleNamespace(figures=[SimpleNamespace(name="Fig1")])
+
+    run_cli._render_study_figures(study, str(spec), out_dir=tmp_path / "output" / "nc")
+
+    assert seen["figures"] == list(study.figures)
+    assert seen["base"] == tmp_path                     # spec dir, not the results out-dir
+    assert seen["out"] == tmp_path / "figures"
+
+
+def test_render_study_figures_no_figures_is_a_no_op(monkeypatch, tmp_path: Path):
+    """A study without a `figures:` list never invokes the renderer."""
+    called = False
+
+    def _fake_render(*a, **k):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("tvbo.cli.figures.render_figures", _fake_render)
+    spec = tmp_path / "Study.yaml"
+    spec.write_text("name: s\n", encoding="utf-8")
+
+    run_cli._render_study_figures(SimpleNamespace(figures=None), str(spec), out_dir=None)
+    run_cli._render_study_figures(SimpleNamespace(figures=[]), str(spec), out_dir=None)
+    assert called is False
+
+
+def test_render_study_figures_swallows_render_error(monkeypatch, tmp_path: Path):
+    """A plotting failure must not fail a completed run — the results are already on disk."""
+    def _boom(*a, **k):
+        raise RuntimeError("no container")
+
+    monkeypatch.setattr("tvbo.cli.figures.render_figures", _boom)
+    spec = tmp_path / "Study.yaml"
+    spec.write_text("name: s\n", encoding="utf-8")
+
+    # Must not raise.
+    run_cli._render_study_figures(
+        SimpleNamespace(figures=[SimpleNamespace(name="Fig1")]), str(spec), out_dir=None
+    )

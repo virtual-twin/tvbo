@@ -82,16 +82,11 @@ if is_network:
                 nodes[safe_label] = "node"
                 node_dynamics_map[node_id] = None
 
-        # Helper to get parameter value from edge.parameters
         def get_edge_param(edge, name, default=0.0):
-            params = getattr(edge, 'parameters', None)
-            if params:
-                for p in params:
-                    p_name = getattr(p, 'name', None)
-                    if p_name == name:
-                        val = getattr(p, 'value', None)
-                        return float(val) if val is not None else default
-            return default
+            """Edge weight/delay/distance as a float, via the shared reader."""
+            from tvbo.utils import edge_param
+            val = edge_param(edge, name)
+            return float(val) if val is not None else default
 
         # Collect edges from network.edges
         if hasattr(network, 'edges') and network.edges:

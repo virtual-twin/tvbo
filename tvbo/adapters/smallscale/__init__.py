@@ -20,7 +20,7 @@ from tvbo.adapters.smallscale.lowering import (
     expand_input_targets,
     group_nodes_by_dynamics,
     merge_params,
-    normalize_edge_params,
+    node_dynamics_name,
     safe_id,
     unique_component_id,
 )
@@ -34,7 +34,7 @@ __all__ = [
     "expand_input_targets",
     "group_nodes_by_dynamics",
     "merge_params",
-    "normalize_edge_params",
+    "node_dynamics_name",
     "safe_id",
     "unique_component_id",
 ]

@@ -251,4 +251,4 @@ cell/chunk/array-task counts, vectorized vs. workflow-fanned axes, and every
 - [`tvbo run`](run.qmd) — execution flags (`--slurm-chunk`, `--engine`)
 - [`tvbo workflow`](workflow.qmd) — emitter flags and the planner
 - [Workflow kits anatomy](workflow-kits.qmd) — what each emitted file does
-- [Backends](backends.qmd) — what a backend vectorizes vs. fans out
+- [Backends](../Simulation/Backends.qmd) — what a backend vectorizes vs. fans out

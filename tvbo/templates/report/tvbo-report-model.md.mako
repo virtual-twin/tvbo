@@ -115,18 +115,26 @@ for _en, _ev in (getattr(model, 'events', None) or {}).items():
     _parts = []
     if _present(_cond):
         try:
-            _c = latex(sympify(str(_cond), strict=False), mul_symbol='*', symbol_names=symbol_names)
+            _c = latex(sympify(str(_cond), strict=False), symbol_names=symbol_names)
         except Exception:
             _c = str(_cond)
-        _parts.append(f"when $ {_c} $")
-    if _present(_aff) and '=' in str(_aff):
-        _l, _r = str(_aff).split('=', 1)
+        _parts.append(f"when ${_c}$")
+    # The affect may be SEVERAL assignments separated by ';' (a spike updates u and x and delivers
+    # to v). Parse and render EACH natively with sympy, so multiplication is implicit and every
+    # update shows as its own $lhs \leftarrow rhs$ — not the raw semicolon-joined string.
+    _updates = []
+    for _stmt in str(_aff or '').split(';'):
+        _stmt = _stmt.strip()
+        if not _stmt or '=' not in _stmt:
+            continue
+        _l, _r = _stmt.split('=', 1)
         try:
-            _a = (f"{latex(Symbol(_l.strip()), symbol_names=symbol_names)} \\leftarrow "
-                  f"{latex(sympify(_r, strict=False), mul_symbol='*', symbol_names=symbol_names)}")
+            _updates.append(f"{latex(Symbol(_l.strip()), symbol_names=symbol_names)} \\leftarrow "
+                            f"{latex(sympify(_r, strict=False), symbol_names=symbol_names)}")
         except Exception:
-            _a = str(_aff)
-        _parts.append(f"$ {_a} $")
+            _updates.append(_stmt)
+    if _updates:
+        _parts.append("$" + ",\\; ".join(_updates) + "$")
     events_lines.append(f"- *{_en}*: " + ", ".join(_parts))
 
 # coupling_inputs is the supported surface; coupling_terms duplicated the same names
@@ -175,8 +183,12 @@ if not ref_names:
     if isinstance(raw_refs, str):
         raw_refs = [raw_refs]
     ref_names = list(raw_refs)
+# citeformat: 'quarto' -> inline @key citations in the fulltext and NO References list (a host
+# Quarto doc's own bibliography resolves them into one bibliography); else a formatted list below.
+citeformat = context.get('citeformat', None)
+_quarto_cites = ("[" + "; ".join("@" + n for n in ref_names) + "]") if (citeformat == 'quarto' and ref_names) else ""
 %>\
-**${model.name}**
+**${model.name}**${' ' + _quarto_cites if _quarto_cites else ''}
 
 % if model.description:
 ${model.description}
@@ -250,7 +262,7 @@ ${'\n'.join(events_lines)}
 ${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_parameters])}
 
 % endif
-% if ref_names:
+% if ref_names and citeformat != 'quarto':
 **References**
 
 ${"\n\n".join([report.get_citation(n) for n in ref_names])}

@@ -30,10 +30,10 @@ from tvbo.adapters.smallscale.lowering import (
     expand_input_targets,
     group_nodes_by_dynamics,
     merge_params,
-    normalize_edge_params as _normalize_edge_params,
     safe_id,
     unique_component_id as _unique_component_id,
 )
+from tvbo.utils import normalize_params
 
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult
@@ -397,8 +397,6 @@ def _build_regime_data(events):
     return None
 
 
-# ``_normalize_edge_params`` moved to ``tvbo.adapters.smallscale.lowering``
-# (imported above as ``normalize_edge_params``).
 
 
 def validate_lems_xml(xml_string):
@@ -2186,10 +2184,10 @@ def _build_std_network_context(experiment):
             # Node parameters override the library's. Nodes agreeing on every value
             # share one component; differing ones get their own (unique id). The
             # component XML is emitted once per unique component, not per node.
-            dyn_params = _normalize_edge_params(getattr(_dyn_lib_obj, "parameters", None))
+            dyn_params = normalize_params(getattr(_dyn_lib_obj, "parameters", None))
             for node in group_nodes:
                 nid = getattr(node, "id", 0)
-                node_params = _normalize_edge_params(getattr(node, "parameters", None))
+                node_params = normalize_params(getattr(node, "parameters", None))
                 param_strs = {}
                 for pn, pv in merge_params(dyn_params, node_params).items():
                     val = getattr(pv, "value", pv)
@@ -2235,8 +2233,8 @@ def _build_std_network_context(experiment):
             dyn_obj = dynamics_lib.get(dyn_name)
             for sub_idx, node in enumerate(group_nodes):
                 nid = getattr(node, "id", sub_idx)
-                dyn_params = _normalize_edge_params(getattr(_dyn_lib_obj, "parameters", None))
-                node_params = _normalize_edge_params(getattr(node, "parameters", None))
+                dyn_params = normalize_params(getattr(_dyn_lib_obj, "parameters", None))
+                node_params = normalize_params(getattr(node, "parameters", None))
                 merged_params = {**dyn_params, **node_params}
                 param_strs = {}
                 for pn, pv in merged_params.items():
@@ -2361,7 +2359,7 @@ def _build_std_network_context(experiment):
                 continue
             inp_info = input_nodes[src]
             tgt_pop, tgt_base = node_pop_map[tgt]
-            inp_edge_params = _normalize_edge_params(getattr(edge, "parameters", None))
+            inp_edge_params = normalize_params(getattr(edge, "parameters", None))
             inp_weight = None
             inp_segmentId = None
             inp_fractionAlong = None
@@ -2408,7 +2406,7 @@ def _build_std_network_context(experiment):
             if coup_str in dynamics_lib:
                 resolved_syn_dyn = dynamics_lib[coup_str]
 
-        edge_params = _normalize_edge_params(getattr(edge, "parameters", None))
+        edge_params = normalize_params(getattr(edge, "parameters", None))
 
         weight = None
         delay = None
@@ -2724,10 +2722,10 @@ def _build_network_context(experiment):
             # Each becomes a standalone component + explicitInput.
             # Node parameters override the library's. Nodes agreeing on every value
             # share a component; differing ones need their own.
-            dyn_params = _normalize_edge_params(getattr(_dyn_lib_obj, "parameters", None))
+            dyn_params = normalize_params(getattr(_dyn_lib_obj, "parameters", None))
             for node in group_nodes:
                 nid = getattr(node, "id", 0)
-                node_params = _normalize_edge_params(getattr(node, "parameters", None))
+                node_params = normalize_params(getattr(node, "parameters", None))
                 param_strs = {}
                 for pn, pv in {**dyn_params, **node_params}.items():
                     val = getattr(pv, "value", pv)
@@ -2756,8 +2754,8 @@ def _build_network_context(experiment):
             ts = str(getattr(integration, "time_scale", "ms") or "ms") if integration else "ms"
             for sub_idx, node in enumerate(group_nodes):
                 nid = getattr(node, "id", sub_idx)
-                dyn_params = _normalize_edge_params(getattr(dyn_obj, "parameters", None))
-                node_params = _normalize_edge_params(getattr(node, "parameters", None))
+                dyn_params = normalize_params(getattr(dyn_obj, "parameters", None))
+                node_params = normalize_params(getattr(node, "parameters", None))
                 param_strs = {}
                 for pn, pv in {**dyn_params, **node_params}.items():
                     val = getattr(pv, "value", pv)
@@ -2832,7 +2830,7 @@ def _build_network_context(experiment):
             inp_info = input_nodes[src]
             tgt_pop, tgt_base = node_pop_map[tgt]
             # Edge params may override input weight
-            edge_params = _normalize_edge_params(getattr(edge, "parameters", None))
+            edge_params = normalize_params(getattr(edge, "parameters", None))
             inp_weight = None
             for pn, pv in edge_params.items():
                 if str(pn) == "weight":
@@ -2869,7 +2867,7 @@ def _build_network_context(experiment):
         # Supports both dict {weight: {value:1.0}} and list [{weight: ...}]
         # formats.  Separates connection-level params (weight, delay) from
         # synapse definition params (everything else, kept with their units).
-        edge_params = _normalize_edge_params(getattr(edge, "parameters", None))
+        edge_params = normalize_params(getattr(edge, "parameters", None))
         weight = None
         delay = None
         delay_unit = None
@@ -2891,7 +2889,7 @@ def _build_network_context(experiment):
         if edge_coupling:
             coup_name = getattr(edge_coupling, "name", None) or str(edge_coupling)
             syn_type = coup_name
-            coup_params = _normalize_edge_params(getattr(edge_coupling, "parameters", None))
+            coup_params = normalize_params(getattr(edge_coupling, "parameters", None))
             for k, v in coup_params.items():
                 k = str(k)
                 if k not in ("weight", "delay") and k not in syn_params:
@@ -2930,7 +2928,7 @@ def _build_network_context(experiment):
             # A standard synapse carries its values on the library entry; the edge
             # supplies only per-connection weight/delay, so without this the
             # component would be emitted with no parameters at all.
-            for pn, pv in _normalize_edge_params(getattr(resolved_edge_dyn, "parameters", None)).items():
+            for pn, pv in normalize_params(getattr(resolved_edge_dyn, "parameters", None)).items():
                 val = getattr(pv, "value", pv)
                 if val is not None and str(pn) not in syn_params:
                     syn_params[str(pn)] = {"value": val, "unit": getattr(pv, "unit", None)}
@@ -3017,7 +3015,7 @@ def _build_network_context(experiment):
             ref_iri = getattr(ref_dyn, "iri", "") or ""
             ref_nml_type = ref_iri.split(":", 1)[1] if ref_iri.startswith("neuroml:") else target
             ref_params = {}
-            for pn, pv in _normalize_edge_params(getattr(ref_dyn, "parameters", None)).items():
+            for pn, pv in normalize_params(getattr(ref_dyn, "parameters", None)).items():
                 val = getattr(pv, "value", pv)
                 if val is not None:
                     ref_params[str(pn)] = {"value": val, "unit": getattr(pv, "unit", None)}

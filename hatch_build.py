@@ -49,7 +49,7 @@ def generate_datamodel(root: str | Path) -> None:
         )
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
-    _write(out_dir / "schema.py", PythonGenerator(str(schema)).serialize())
+    _write(out_dir / "schema.py", PythonGenerator(str(schema)).serialize() + _alias_support(schema))
     _write(out_dir / "pydantic.py", PydanticGenerator(str(schema)).serialize())
 
     # JSON Schema — relax `additionalProperties: false → true` everywhere so
@@ -57,9 +57,139 @@ def generate_datamodel(root: str | Path) -> None:
     # `JsonschemaValidationPlugin(closed=False)`. `sort_keys` keeps it reproducible.
     js = json.loads(JsonSchemaGenerator(str(schema)).serialize())
     _relax_additional_properties(js)
+    _drop_redundant_anyof_type(js)
     (out_dir / "tvbo_datamodel.schema.json").write_text(
         json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+
+
+# `boundaries` also implies `enforce: clamp`; yaml_loader._fold_state_variable_domains owns it.
+_SEMANTIC_ALIASES = ("range", "boundaries")
+
+
+def _alias_support(schema: Path) -> str:
+    """Python appended to the generated ``schema.py`` so classes accept their aliases.
+
+    LinkML treats ``aliases:`` as documentation — its loaders key on the canonical slot
+    name, so a declared alias is inert and raises ``unexpected keyword argument``. Each
+    class's ``__init__`` already receives exactly its own slots, which makes it the one
+    place where an alias can be resolved without guessing whether a mapping is an
+    instance or a keyed collection, and without a free-form key (a parameter named
+    ``dt``) ever being mistaken for a slot. Every construction path — the LinkML
+    loaders, ``cls(**data)``, nested and inlined members, subclasses — goes through it.
+
+    It also applies LinkML's ``simple_dict_value`` annotation, which marks the slot a
+    bare scalar stands for: ``omega: 0.0628`` means ``{value: 0.0628}`` and
+    ``equation: "x+2"`` means ``{rhs: "x+2"}``. LinkML specifies this for keyed
+    collections (``inlined_as_simple_dict``) but ``linkml_runtime``'s dataclass loader
+    does not implement it, so it is applied here — and extended to single-valued
+    inlined slots, which the spec does not cover. Slots explicitly marked
+    ``inlined: false`` are references: their scalar is the target's *identifier*, not a
+    value to wrap (``FreeParameter.parameter: ReducedWongWangEIB.J_i``), so they are skipped.
+    """
+    from linkml_runtime.utils.schemaview import SchemaView
+
+    view = SchemaView(str(schema))
+
+    shortcut_of: dict[str, str] = {}
+    for cls_name in view.all_classes():
+        # The annotation must be declared ON this class: induced slots inherit, and a
+        # subclass that redefines what a bare scalar means (DerivedParameter, whose
+        # scalar is an `equation`, not Parameter's `value`) must not silently take the
+        # parent's.
+        for slot_name in view.class_slots(cls_name, direct=True):
+            slot = view.induced_slot(slot_name, cls_name)
+            if slot.annotations and "simple_dict_value" in slot.annotations:
+                shortcut_of[cls_name] = slot.name
+                break
+    lifts: dict[str, dict[str, str]] = {}
+    for cls_name in view.all_classes():
+        slot_lifts = {
+            slot.name: (shortcut_of[str(slot.range)], bool(slot.multivalued))
+            for slot in view.class_induced_slots(cls_name)
+            if str(slot.range) in shortcut_of and slot.inlined is not False
+        }
+        if slot_lifts:
+            lifts[cls_name] = slot_lifts
+
+    table: dict[str, dict[str, str]] = {}
+    for cls_name in view.all_classes():
+        amap = {
+            alias: slot.name
+            for slot in view.class_induced_slots(cls_name)
+            for alias in (slot.aliases or [])
+            if alias != slot.name and alias not in _SEMANTIC_ALIASES
+        }
+        # An alias that is a real slot of this same class is that slot's own name here.
+        own = {s.name for s in view.class_induced_slots(cls_name)}
+        amap = {a: c for a, c in amap.items() if a not in own}
+        if amap:
+            table[cls_name] = amap
+    return f"""
+
+# --- scalar shortcuts (generated) ---------------------------------------------------
+# {{class: {{slot: slot the scalar stands for}}}}, from `annotations.scalar_shortcut` on
+# each range class. Lets a value be written bare where the object has one obvious field.
+_SCALAR_SHORTCUTS = {lifts!r}
+
+
+_SCALARS = (str, int, float, bool)
+
+
+def _lift_scalar(value, target, multivalued):
+    \"\"\"`0.0628` -> `{{'value': 0.0628}}`, leaving an already-written mapping alone.
+
+    On a multivalued slot the members are lifted, not the collection: `{{omega: 0.0628}}`
+    is a keyed collection of one Parameter, not a Parameter.
+    \"\"\"
+    if not multivalued:
+        return {{target: value}} if isinstance(value, _SCALARS) else value
+    if isinstance(value, dict):
+        return {{k: ({{target: v}} if isinstance(v, _SCALARS) else v) for k, v in value.items()}}
+    if isinstance(value, list):
+        return [({{target: v}} if isinstance(v, _SCALARS) else v) for v in value]
+    return value
+
+
+# --- slot aliases (generated) -------------------------------------------------------
+# {{class: {{alias: canonical slot}}}} from the schema's `aliases:`. Folded in __init__,
+# where the kwargs are known to belong to this class.
+_SLOT_ALIASES = {table!r}
+
+
+def _install_slot_aliases() -> None:
+    import warnings
+
+    def _wrap(cls, amap):
+        original = cls.__init__
+
+        def __init__(self, *args, **kwargs):
+            for slot, (target, mv) in _SCALAR_SHORTCUTS.get(cls.__name__, {{}}).items():
+                if slot in kwargs and kwargs[slot] is not None:
+                    kwargs[slot] = _lift_scalar(kwargs[slot], target, mv)
+            for alias, canonical in amap.items():
+                if alias in kwargs:
+                    value = kwargs.pop(alias)
+                    if canonical in kwargs:
+                        warnings.warn(
+                            f"{{cls.__name__}} got both {{alias!r}} and its canonical "
+                            f"slot {{canonical!r}}; ignoring {{alias!r}}.",
+                            stacklevel=2,
+                        )
+                    else:
+                        kwargs[canonical] = value
+            original(self, *args, **kwargs)
+
+        cls.__init__ = __init__
+
+    for name in set(_SLOT_ALIASES) | set(_SCALAR_SHORTCUTS):
+        cls = globals().get(name)
+        if cls is not None:
+            _wrap(cls, _SLOT_ALIASES.get(name, {{}}))
+
+
+_install_slot_aliases()
+"""
 
 
 def _relax_additional_properties(node) -> None:
@@ -72,6 +202,29 @@ def _relax_additional_properties(node) -> None:
     elif isinstance(node, list):
         for value in node:
             _relax_additional_properties(value)
+
+
+def _drop_redundant_anyof_type(node) -> None:
+    """Strip the redundant sibling ``type`` LinkML stamps beside ``anyOf``.
+
+    ``JsonSchemaGenerator`` emits a slot's base range as a sibling ``type`` even
+    when the slot declares ``any_of``. In JSON Schema a sibling ``type`` conjoins
+    with ``anyOf``, so the base range silently *narrows* the union: ``n_parallel``
+    (``any_of: [integer, string]``, base range ``string`` from ``default_range``)
+    rejects ``1`` with "1 is not of type 'string'". Only a *scalar* base-range stamp
+    (``string``/``integer``/``number``/``boolean``) is this redundant, wrong sibling;
+    a structural ``type: object``/``array`` beside ``anyOf`` (a class-level rule) is a
+    real constraint, so it is left intact.
+    """
+    _SCALAR_STAMP = {"string", "integer", "number", "boolean"}
+    if isinstance(node, dict):
+        if "anyOf" in node and node.get("type") in _SCALAR_STAMP:
+            node.pop("type", None)
+        for value in node.values():
+            _drop_redundant_anyof_type(value)
+    elif isinstance(node, list):
+        for value in node:
+            _drop_redundant_anyof_type(value)
 
 
 def _write(target: Path, code: str) -> None:

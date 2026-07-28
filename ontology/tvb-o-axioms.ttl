@@ -321,17 +321,30 @@ tvbo:SparseDelayGraph a owl:Class ;
 # §4.1d Analysis observables (Analysis.type vocabulary).
 # ─────────────────────────────────────────────────────────────────
 #
-# An analysis observable ANALYSES the model / its solve / a derived loss rather
-# than transforming the recorded trajectory. `Analysis.type` names it and stays a
-# free string (extensible — backends dispatch on it), so the vocabulary lives
-# here as concepts rather than a closed schema enum. Each concept is
-# backend-independent (says what is computed, not how); a backend that has no
-# equivalent emits a comment and skips rather than raising. Named backends below
-# are the ones that currently lower the type.
+# An Analysis derives a quantity by ANALYSING something rather than by transforming
+# a recorded trajectory. What it analyses need not be a model: empirical maps, an
+# atlas or a measured connectome are analysed in exactly the same sense as a solve.
+# The schema splits this into two forms by WHERE the analysis runs, and only one of
+# them carries a vocabulary:
+#
+#   * analysing a solve — runs inside the integration, named by the free string
+#     `Analysis.type` and dispatched by the backend. That vocabulary is the
+#     AnalysisObservable concepts below; it stays open (concepts here, not a closed
+#     schema enum) so backends can extend it. Each concept is backend-independent
+#     (says what is computed, not how); a backend with no equivalent emits a comment
+#     and skips rather than raising. Named backends below currently lower the type.
+#   * analysing saved data — runs on the host over result containers or empirical
+#     inputs, named by the `callable` it invokes. It has no closed vocabulary,
+#     because the identity of such an analysis is the function plus the data it
+#     `used:`, which the study records per instance.
+
+tvbo:Analysis
+    rdfs:label   "Analysis"@en ;
+    rdfs:comment "A quantity obtained by analysing a model, its solve, a derived loss, simulated results, or empirical data — as opposed to transforming a recorded trajectory. Analysing a solve is named by Analysis.type (see AnalysisObservable); analysing saved data is named by the callable invoked over the arrays it used."@en .
 
 tvbo:AnalysisObservable a owl:Class ;
     rdfs:label   "Analysis observable"@en ;
-    rdfs:comment "A quantity obtained by analysing the model, its solve, or a derived loss — the vocabulary of Analysis.type."@en .
+    rdfs:comment "A quantity obtained by analysing the model, its solve, or a derived loss — the vocabulary of Analysis.type, i.e. the form of Analysis that runs inside the integration. Analyses of saved results or empirical data take the callable form instead and are not drawn from this vocabulary."@en .
 
 tvbo:realisedByBackend a owl:AnnotationProperty ;
     rdfs:label   "realised by backend"@en ;

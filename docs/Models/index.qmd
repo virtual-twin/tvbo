@@ -15,7 +15,7 @@ integrates.
 
 ## Do
 
-- [Events & stimulation](Events.qmd) *(draft)* — threshold events, preset-time events,
+- [Events & stimulation](Events.qmd) — threshold events, preset-time events,
   and external stimuli.
 - [Noise & stochastic integration](Noise.qmd) — additive and multiplicative noise.
 - [Initial conditions](InitialConditions.qmd) — set and resolve starting state.

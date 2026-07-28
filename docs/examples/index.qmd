@@ -1,5 +1,6 @@
 ---
 title: "Examples"
+description: "A gallery of copy-paste runnable examples — models, dynamics, and networks loaded from the database."
 listing:
   id: examples-listing
   contents: "*.qmd"

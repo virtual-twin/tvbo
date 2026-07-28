@@ -1,6 +1,5 @@
 ---
 title: Noise & Stochastic Integration
-sidebar: usage
 jupyter: python3
 # Redirect the pre-restructure URL so existing links keep resolving.
 aliases:
@@ -83,8 +82,30 @@ integration:
 
 | Parameter | Description |
 |-----------|-------------|
-| `nsig` | Noise amplitude ($\sigma$). Diffusion coefficient $D = \frac{1}{2}\sigma^2$ |
+| `sigma` | Noise amplitude as a standard deviation $\sigma$ |
+| `nsig` | Noise amplitude as a dispersion $D = \tfrac{1}{2}\sigma^{2}$ (TVB's convention), so $\sigma = \sqrt{2D}$ |
 | `ntau` | OU time constant (only for `ou` type) |
+
+Give the amplitude **either** way — `sigma` when you have a standard deviation,
+`nsig` when you have a dispersion. Both are read by one shared reader, so a recipe
+means the same amplitude on every backend (tvboptim, Brian2, NetworkDynamics.jl,
+Julia). `sigma` wins if both are present.
+
+::: {.callout-warning}
+## `intensity` is deprecated
+
+The bare `noise: {intensity: ...}` slot is deprecated and warns when read. It is
+interpreted as a **standard deviation**. Declare `parameters: {sigma: ...}` for a
+standard deviation, or `parameters: {nsig: ...}` for a dispersion — a recipe that
+wrote `intensity` meaning a dispersion is off by $\sqrt{2D}/D$.
+
+```yaml
+# before                          # after
+noise:                            noise:
+    intensity: {value: 0.0316}        parameters:
+                                          sigma: {value: 0.0316}
+```
+:::
 
 ::: {.callout-note}
 Stochastic integration uses the Heun method (stochastic Heun-Euler). Set `method: heun` for best accuracy with noise.

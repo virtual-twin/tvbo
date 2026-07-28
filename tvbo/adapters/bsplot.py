@@ -134,6 +134,9 @@ def _style_kwargs(style) -> dict:
 _AXIS_OPTS = {
     "xlabel", "ylabel", "title", "xlim", "ylim", "xticks", "yticks",
     "hide_xticklabels", "hide_yticklabels", "axhline", "legend",
+    # line3d only: the depth axis + camera + per-axis inversion (a phase-space axis often
+    # runs the opposite way to the paper's convention). Ignored by 2-D kinds.
+    "zlabel", "zlim", "elev", "azim", "invert_x", "invert_y", "invert_z", "zoom",
 }
 
 
@@ -189,25 +192,44 @@ def _container_path(iri, base_dir: Path) -> str:
     """Resolve an experiment IRI/key to its result container (skips ``*_network.h5``).
 
     The PROV ``used`` edge points at a result; its container lives under either
-    ``<base_dir>/output/nc/<exp>/`` (a ``tvbo run`` experiment) or
+    ``<base_dir>/output/nc/<exp>/`` (a per-experiment ``tvbo run``), flat BIDS-style
+    files directly inside ``<base_dir>/output/nc/`` (``<exp>[_desc-...]_result.h5`` —
+    the layout a whole-study ``tvbo run`` writes into ``nc/``), the flat
+    ``<base_dir>/output/<exp>[_desc-...]_result.h5`` at the output root, or
     ``<base_dir>/output/results/<name>/result.h5`` (a derived-figure container a
     replication study writes with ``ExperimentResult.save``, the ``results_io``
-    convention). Both are tried so a figure layer can bind either. Returns ``""``
+    convention). All are tried so a figure layer can bind any of them. Returns ``""``
     when unresolved.
     """
     if not iri:
         return ""
     key = re.split(r"[:/#]", str(iri))[-1]          # last IRI segment (e.g. "exp-3" or "fig3")
-    digits = re.sub(r"\D", "", key)                 # trailing experiment number
-    for cand in [key, *([f"exp{digits}", f"exp-{digits}"] if digits else [])]:
-        d = base_dir / "output" / "nc" / cand
+    # Only an experiment reference (exp-N / expN / bare N) yields exp-<id> candidates. A
+    # digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be
+    # misread as exp-1 — reuse the strict matcher DataRef.experiment_id already uses.
+    from tvbo.data.dataref import experiment_id as _experiment_id
+    eid = _experiment_id(iri)
+    cands = [key, *([f"exp-{eid}", f"exp{eid}"] if eid else [])]
+    nc = base_dir / "output" / "nc"
+    for cand in cands:
+        d = nc / cand
         if d.is_dir():
             files = [f for f in sorted(d.glob("*.h5")) if "network" not in f.name]
+            if files:
+                return str(files[0].resolve())
+        if nc.is_dir():                              # flat BIDS files directly inside output/nc/
+            files = [f for f in sorted(nc.glob(f"{cand}_*result.h5")) if "network" not in f.name]
             if files:
                 return str(files[0].resolve())
         result = base_dir / "output" / "results" / cand / "result.h5"
         if result.is_file():
             return str(result.resolve())
+    out = base_dir / "output"                        # flat whole-study layout: output/<exp>_*result.h5
+    if out.is_dir():
+        for cand in cands:                           # `_` boundary so exp-1 never matches exp-10
+            files = [f for f in sorted(out.glob(f"{cand}_*result.h5")) if "network" not in f.name]
+            if files:
+                return str(files[0].resolve())
     return ""
 
 
@@ -229,7 +251,10 @@ def load_layer(layer: dict):
     """
     name = layer.get("transform")
     fn = registered(TRANSFORMS, name, "transform") if name else None   # spec error before any IO
-    da = _open_ds(layer["container"])[layer["output"]]
+    ds = _open_ds(layer["container"])
+    from tvbo.data.dataref import match_output
+
+    da = ds[match_output(ds.data_vars, layer["output"])]
     if fn:
         da = fn(da)
     if layer.get("sel"):
@@ -265,17 +290,37 @@ def _sel_dict(used):
     return resolved, method
 
 
+def _used_ref(used):
+    """The container key for a figure layer's ``used`` DataRef.
+
+    An explicit ``iri`` pointer wins; otherwise an in-study ``experiment`` id resolves to its
+    ``exp-<id>`` key and an in-study ``analysis`` to its own name (whose container
+    ``_container_path`` finds under ``output/results/<name>/``). The short forms are preferred
+    for same-study bindings — they need no hardcoded study key in an IRI string and (via the
+    ``used`` edge) register the dependency, so the source runs first.
+    """
+    iri = getattr(used, "iri", None)
+    if iri:
+        return str(iri)
+    exp = getattr(used, "experiment", None)
+    if exp is not None:
+        return f"exp-{exp}"
+    ana = getattr(used, "analysis", None)
+    return str(ana) if ana is not None else None
+
+
 def _resolve_layer(layer, panel_kind, base_dir):
     """Resolve one ``Layer`` into the flat dict the template/callables consume."""
     used, enc = layer.used, getattr(layer, "encoding", None)
     sel, method = _sel_dict(used)
     return {
-        "container": _container_path(getattr(used, "iri", None), base_dir),
+        "container": _container_path(_used_ref(used), base_dir),
         "output": used.output,
         # str() collapses the MarkType enum (dataclass flavor) to a plain string the template compares.
         "mark": str(layer.mark) if layer.mark else ("heatmap" if panel_kind == "heatmap" else "line"),
         "x": getattr(enc, "x", None),
         "y": getattr(enc, "y", None),
+        "z": getattr(enc, "z", None),
         "transform": getattr(layer, "transform", None),
         "sel": sel,
         "sel_method": method,
@@ -297,9 +342,11 @@ def build_context(figure, base_dir, outfile: str) -> dict:
                if kind == "custom" else None)
         # Default the axis labels to the first layer's x-dim / output; opts override them.
         axopts = _axopts(panel)
-        if kind in ("cartesian", "heatmap") and layers:
+        if kind in ("cartesian", "heatmap", "line3d") and layers:
             axopts.setdefault("xlabel", layers[0]["x"] or "")
             axopts.setdefault("ylabel", layers[0]["y"] or layers[0]["output"])
+        if kind == "line3d" and layers:
+            axopts.setdefault("zlabel", layers[0]["z"] or "")
         panels.append({
             "key": key,
             "kind": kind,

@@ -986,7 +986,8 @@ tvbo:TsodyksMarkram a owl:NamedIndividual,
         tvbo:Dynamics ;
     rdfs:label "TsodyksMarkram" ;
     dcterms:description "Tsodyks-Markram mean-field model of short-term synaptic plasticity. A three-variable neural mass model with firing rate E, synaptic depression variable x, and facilitation variable u. The transfer function uses a softplus nonlinearity α·log(1 + exp(s/α)). Reproduces the dynamics from BifurcationKit.jl/examples/TMModel.jl." ;
-    dcterms:references <https://w3id.org/tvbo/studies/Tsodyks1997> ;
+    dcterms:references <https://w3id.org/tvbo/studies/Tsodyks1997>,
+        <https://w3id.org/tvbo/studies/Tsodyks1998> ;
     tvbo:hasDerivedVariable <https://w3id.org/tvbo/TsodyksMarkram/derived_variables/SS0>,
         <https://w3id.org/tvbo/TsodyksMarkram/derived_variables/SS1> ;
     tvbo:hasParameter <https://w3id.org/tvbo/TsodyksMarkram/parameters/E0>,
@@ -1288,104 +1289,104 @@ tvbo:ZetterbergJansen a owl:NamedIndividual,
     rdfs:label "space-MNI152_atlas-Yeo17_res-1_dseg" ;
     skos:altLabel "Yeo17" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-1000_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-1000_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-1000_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-1000_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-100_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-100_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-100_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-100_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-200_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-200_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-200_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-200_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-300_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-300_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-300_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-300_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-400_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-400_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-400_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-400_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-500_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-500_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-500_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-500_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-600_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-600_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-600_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-600_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-700_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-700_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-700_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-700_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-800_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-800_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-800_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-800_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-900_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-900_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-900_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-17Networks_scale-900_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-1000_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-1000_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-1000_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-1000_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-100_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-100_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-100_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-100_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-200_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-200_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-200_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-200_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-300_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-300_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-300_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-300_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-400_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-400_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-400_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-400_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-500_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-500_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-500_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-500_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-600_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-600_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-600_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-600_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-700_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-700_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-700_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-700_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-800_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-800_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-800_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-800_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
-<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-900_dseg> a atom:BrainAtlas,
+<https://w3id.org/tvbo/atlases/tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-900_res-1_desc-ordered_dseg> a atom:BrainAtlas,
         owl:NamedIndividual ;
-    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-900_dseg" ;
+    rdfs:label "tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-900_res-1_desc-ordered_dseg" ;
     skos:altLabel "Schaefer2018" .
 
 <https://w3id.org/tvbo/atlases/tpl-MNI152NLin2009b_atlas-hcpmmp1_desc-ordered_dseg> a atom:BrainAtlas,
@@ -1412,6 +1413,18 @@ tvbo:ZetterbergJansen a owl:NamedIndividual,
         tvbo:Continuation ;
     rdfs:label "eq_in_a_full" ;
     dcterms:description "Comprehensive bifurcation analysis of the Generic2dOscillator. Continues the equilibrium branch as parameter a is varied, detects fold and Hopf bifurcations, then branches to periodic orbits from both Hopf points with fine-tuned solver settings." .
+
+<https://w3id.org/tvbo/coordinate_spaces/FSLMNI152> a atom:CommonCoordinateSpace,
+        owl:NamedIndividual ;
+    rdfs:label "FSLMNI152" ;
+    dcterms:description "FSL's MNI152 standard-space template (the `FSLMNI152_1mm` average distributed with FSL). The reference space in which the Schaefer2018 cortical parcellations are published. Distinct from the nonlinear 2009-series MNI152 variants." ;
+    skos:altLabel "FSLMNI152",
+        "FSL_MNI152_1mm",
+        "MNI152",
+        "tpl-FSLMNI152" ;
+    tvbo:anatomicalAxesOrientation "RAS" ;
+    tvbo:axesOrigin "anterior commissure" ;
+    tvbo:unit "mm" .
 
 <https://w3id.org/tvbo/coordinate_spaces/MNI152NLin2009b> a atom:CommonCoordinateSpace,
         owl:NamedIndividual ;
@@ -1529,6 +1542,12 @@ tvbo:data a owl:Ontology ;
     rdfs:seeAlso tvbo:axioms,
         tvbo:struct .
 
+<https://w3id.org/tvbo/experiments/Delay_Speed_Synchronization> a owl:NamedIndividual,
+        tvbo:SimulationExperiment ;
+    rdfs:label "Delays Shape Synchronization" ;
+    dcterms:description """Coupled Kuramoto phase oscillators on the Desikan-Killiany connectome. A sweep over the conduction speed varies the transmission delays (delays = tract length / speed) and measures the Kuramoto order parameter, reproducing the non-monotonic delay-organised synchronization of Petkoski & Jirsa (2019).
+""" .
+
 <https://w3id.org/tvbo/experiments/EI_Tuning_FIC_EIB_Optimization> a owl:NamedIndividual,
         tvbo:SimulationExperiment ;
     rdfs:label "EI Tuning: Functional Connectivity Fitting" ;
@@ -1610,9 +1629,7 @@ tvbo:data a owl:Ontology ;
         tvbo:GraphGenerator ;
     rdfs:label "RandomReservoir" ;
     dcterms:description "Sparse random recurrent adjacency with post-hoc spectral-radius rescaling — the canonical Echo State Network substrate (Jaeger 2001). The recurrent reservoir of an ESN is fully described by four numbers: size, sparsity, target spectral radius, and the weight distribution of the non-zero entries." ;
-    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/n>,
-        <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/seed>,
-        <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/sparsity>,
+    tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/sparsity>,
         <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/spectral_radius>,
         <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/weight_distribution> .
 
@@ -1634,9 +1651,8 @@ tvbo:data a owl:Ontology ;
 <https://w3id.org/tvbo/graph_generators/WeightShuffle> a owl:NamedIndividual,
         tvbo:GraphGenerator ;
     rdfs:label "WeightShuffle" ;
-    dcterms:description "Derived generator: load a reference adjacency by IRI and permute its non-zero entries under a chosen preservation mode. Used for null-model controls (e.g. shuffled SC matrices that preserve density / degree sequence / weight distribution while randomising topology)." ;
+    dcterms:description "Derived generator: load a reference adjacency by IRI and permute its non-zero entries, holding one structural property fixed. Used for null-model controls (e.g. a shuffled SC matrix that keeps the source's density and weight multiset while randomising which edge carries which weight)." ;
     tvbo:hasParameter <https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/preserve>,
-        <https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/seed>,
         <https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/source> .
 
 <https://w3id.org/tvbo/integrators/Dopri5> a owl:NamedIndividual,
@@ -2096,6 +2112,12 @@ to a task-appropriate range (e.g. omega in Hz).
     rdfs:label "BOLD_Gamma" ;
     dcterms:description "BOLD fMRI observation model using a Gamma-shaped hemodynamic response function. Provides a simpler, unimodal HRF shape." ;
     tvbo:hasParameter <https://w3id.org/tvbo/observation_models/bold_gamma/parameters/TR> .
+
+<https://w3id.org/tvbo/observation_models/bold_hrf_strided> a owl:NamedIndividual,
+        tvbo:Observation ;
+    rdfs:label "BOLD_HRF_strided" ;
+    dcterms:description "BOLD fMRI observation model identical to BOLD_TVB's HRF+Volterra forward model, but with the HRF convolution and TR subsampling fused into a single strided convolution (strided_convolve): the convolution is evaluated only at the retained [stride::stride] output samples, avoiding the full-length FFT. Byte-identical to a direct full 'valid' convolution + subsample; equal to the FFT path to FFT roundoff (~1e-12 float64 / ~1e-6 float32); ~70x cheaper with no FFT buffer." ;
+    tvbo:hasParameter <https://w3id.org/tvbo/observation_models/bold_hrf_strided/parameters/TR> .
 
 <https://w3id.org/tvbo/observation_models/bold_mixture_of_gammas> a owl:NamedIndividual,
         tvbo:Observation ;
@@ -11097,17 +11119,6 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     rdfs:label "seed (RandomRegular parameter)" ;
     skos:notation "seed" .
 
-<https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/n> a owl:NamedIndividual,
-        tvbo:Parameter ;
-    rdfs:label "n (RandomReservoir parameter)" ;
-    dcterms:description "Number of nodes" ;
-    skos:notation "n" .
-
-<https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/seed> a owl:NamedIndividual,
-        tvbo:Parameter ;
-    rdfs:label "seed (RandomReservoir parameter)" ;
-    skos:notation "seed" .
-
 <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/sparsity> a owl:NamedIndividual,
         tvbo:Parameter ;
     rdfs:label "sparsity (RandomReservoir parameter)" ;
@@ -11123,7 +11134,7 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
 <https://w3id.org/tvbo/graph_generators/RandomReservoir/parameters/weight_distribution> a owl:NamedIndividual,
         tvbo:Parameter ;
     rdfs:label "weight_distribution (RandomReservoir parameter)" ;
-    dcterms:description "Distribution from which non-zero weights are drawn. Default: Normal(0, 1)." ;
+    dcterms:description "Distribution the non-zero weights are drawn from. Overrides the standard Normal that the `raw` step declares as its default." ;
     skos:notation "weight_distribution" .
 
 <https://w3id.org/tvbo/graph_generators/Star/parameters/n> a owl:NamedIndividual,
@@ -11158,16 +11169,8 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
 <https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/preserve> a owl:NamedIndividual,
         tvbo:Parameter ;
     rdfs:label "preserve (WeightShuffle parameter)" ;
-    dcterms:description """Which structural property to preserve under permutation:
-  - binary_mask:        preserve the {0, nonzero} pattern; permute weight values among non-zero positions
-  - degree:             preserve per-node degree (within rounding)
-  - weight_distribution: preserve the multiset of weights (binary topology rerandomised)""" ;
+    dcterms:description "Which structural property to hold fixed under permutation. Only `binary_mask` is implemented: keep the {0, nonzero} pattern and permute the weight values among their existing positions, so density and topology stay fixed while the weight-to-edge assignment is randomised. Any other value is rejected — a null model that silently controlled a different property than the one asked for would invalidate the comparison it exists to support." ;
     skos:notation "preserve" .
-
-<https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/seed> a owl:NamedIndividual,
-        tvbo:Parameter ;
-    rdfs:label "seed (WeightShuffle parameter)" ;
-    skos:notation "seed" .
 
 <https://w3id.org/tvbo/graph_generators/WeightShuffle/parameters/source> a owl:NamedIndividual,
         tvbo:Parameter ;
@@ -11644,6 +11647,14 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     skos:notation "TR" ;
     tvbo:unit "ms" .
 
+<https://w3id.org/tvbo/observation_models/bold_hrf_strided/parameters/TR> a owl:NamedIndividual,
+        tvbo:Parameter ;
+    rdfs:label "TR (bold_hrf_strided parameter)" ;
+    dcterms:description "Repetition time (sampling period)" ;
+    schema1:defaultValue 7.2e+02 ;
+    skos:notation "TR" ;
+    tvbo:unit "ms" .
+
 <https://w3id.org/tvbo/observation_models/bold_mixture_of_gammas/parameters/TR> a owl:NamedIndividual,
         tvbo:Parameter ;
     rdfs:label "TR (bold_mixture_of_gammas parameter)" ;
@@ -11953,6 +11964,20 @@ In the original publication, the parameter 'd' is set in second. In TVB, the par
     schema1:pagination "719--723" ;
     schema1:publisher "Proceedings of the National Academy of Sciences" ;
     schema1:volumeNumber "94" .
+
+<https://w3id.org/tvbo/studies/Tsodyks1998> a schema1:ScholarlyArticle,
+        owl:NamedIndividual ;
+    rdfs:label "Tsodyks1998" ;
+    dcterms:issued "1998" ;
+    dcterms:title "Neural networks with dynamic synapses" ;
+    schema1:author "Markram, Henry",
+        "Pawelzik, Klaus",
+        "Tsodyks, Misha" ;
+    schema1:identifier "10.1162/089976698300017502" ;
+    schema1:isPartOf "Neural Computation" ;
+    schema1:issueNumber "4" ;
+    schema1:pagination "821--835" ;
+    schema1:volumeNumber "10" .
 
 <https://w3id.org/tvbo/studies/Volo2019> a schema1:ScholarlyArticle,
         owl:NamedIndividual ;

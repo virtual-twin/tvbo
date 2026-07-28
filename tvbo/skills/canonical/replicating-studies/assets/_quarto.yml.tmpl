@@ -1,19 +1,42 @@
-# Copy to report/_quarto.yml. Makes report/ a self-contained Quarto project so the
-# `internal` profile can be applied (Quarto only merges `_quarto-<profile>.yml` when a base
-# project config is present) and so the profile can rename the output file. All format
-# options stay in report.qmd's front matter; this file intentionally carries none.
+# Copy to report/_quarto.yml. One Quarto project that renders BOTH reports from ONE `quarto render`
+# (no file arg, no --profile, no post-render hook):
+#   report.qmd          -> report.pdf          PUBLIC   (our reproduction only — the shareable artifact)
+#   report_internal.qmd -> report_internal.pdf INTERNAL (paper © figures beside ours — git-ignored, A/B)
 #
-# PUBLIC build (default; the shareable artifact):
-#     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render report.qmd --to pdf
-#   -> report.pdf, reproduction figures only (no copyrighted originals).
+# How it stays copyright-safe with only three files (report.qmd, report_internal.qmd, this file):
+#  - report.qmd holds the WHOLE report and carries NO front matter, so report_internal.qmd can
+#    `{{< include report.qmd >}}` it without the included front matter overriding the wrapper's
+#    output name (an included front matter WOULD win — that is the one trap this layout avoids).
+#  - All shared settings (title, format, bibliography, execute) live HERE and apply to both entries;
+#    each entry overrides only what differs (report_internal.qmd: its output-file + a "do not
+#    distribute" title).
+#  - The build branches on QUARTO_DOCUMENT_FILE — the input filename Quarto exposes to the kernel —
+#    so report_internal.qmd -> INTERNAL (draws © originals), report.qmd -> PUBLIC. The internal
+#    build can never write report.pdf.
 #
-# INTERNAL A/B build (opt-in, git-ignored):
-#     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render report.qmd --to pdf --profile internal
-#   -> report_internal.pdf, paper figures shown beside the reproduction.
-#
-# `--profile internal` can only ever write report_internal.pdf (the profile fixes its
-# output-file), so it can never put copyrighted content into report.pdf — safe by
-# construction. Quarto's project step does remove the stale report.pdf when the internal
-# build runs; just re-run the public command to regenerate it (both PDFs are git-ignored).
+# Rendered via Typst (single fast pass, no xelatex rerun loop). Do NOT pass `--to pdf` (that forces
+# the LaTeX engine and reintroduces the intermediate-clobber problem). Run with the tvbo venv:
+#     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render      # in report/  -> BOTH PDFs
 project:
   type: default
+  render:
+    - report.qmd
+    - report_internal.qmd
+title: "TVBO replication of <Author> et al. (<Year>)"
+subtitle: "*<Paper title>* (<venue>), replicated with a single declarative tvbo recipe"
+format:
+  typst:
+    output-file: report.pdf
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    fig-width: 7
+    margin:
+      x: 1.8cm
+      y: 2cm
+callout-icon: false
+bibliography: references.bib
+jupyter: python3
+execute:
+  echo: false
+  warning: false

@@ -113,8 +113,12 @@ def has_distributions(model):
     return bool(collect_sv_distributions(model) or collect_param_distributions(model))
 
 
-def get_distribution_seed(model, default=42):
-    """Find the first explicit seed from any distribution, or return default."""
+def get_distribution_seed(model, default=0):
+    """Find the first explicit distribution `seed`, or *default* (the experiment-global seed).
+
+    Mirrors the seed-resolution rule: a distribution's own `seed` wins; absent one, the caller
+    passes ``execution.random_seed`` (default 0) so the draw inherits the experiment-global seed.
+    """
     for _, _, d in collect_sv_distributions(model) + collect_param_distributions(model):
         s = getattr(d, "seed", None)
         if s is not None:

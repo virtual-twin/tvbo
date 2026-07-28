@@ -24,6 +24,12 @@
     },
     "hemi": {
       "type": "string"
+    },
+    "desc": {
+      "type": "string"
+    },
+    "suffix": {
+      "type": "string"
     }
   }
 }

@@ -43,6 +43,11 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true
+    },
+    "surrogate": {
+      "_embeddedTypes": [
+        "tvbo:Surrogate"
+      ]
     }
   }
 }
