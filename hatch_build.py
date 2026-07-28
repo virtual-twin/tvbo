@@ -84,6 +84,25 @@ def _alias_support(schema: Path) -> str:
     from linkml_runtime.utils.schemaview import SchemaView
 
     view = SchemaView(str(schema))
+
+    # A class may declare `annotations: {scalar_shortcut: <slot>}` — the slot a bare
+    # scalar stands for, so `omega: 0.0628` means `omega: {value: 0.0628}` and
+    # `equation: "x+2"` means `equation: {rhs: "x+2"}`.
+    shortcut_of: dict[str, str] = {}
+    for cls_name in view.all_classes():
+        ann = (view.get_class(cls_name).annotations or {}).get("scalar_shortcut")
+        if ann is not None:
+            shortcut_of[cls_name] = str(getattr(ann, "value", ann))
+    lifts: dict[str, dict[str, str]] = {}
+    for cls_name in view.all_classes():
+        slot_lifts = {
+            slot.name: (shortcut_of[str(slot.range)], bool(slot.multivalued))
+            for slot in view.class_induced_slots(cls_name)
+            if str(slot.range) in shortcut_of
+        }
+        if slot_lifts:
+            lifts[cls_name] = slot_lifts
+
     table: dict[str, dict[str, str]] = {}
     for cls_name in view.all_classes():
         amap = {
@@ -99,6 +118,30 @@ def _alias_support(schema: Path) -> str:
             table[cls_name] = amap
     return f"""
 
+# --- scalar shortcuts (generated) ---------------------------------------------------
+# {{class: {{slot: slot the scalar stands for}}}}, from `annotations.scalar_shortcut` on
+# each range class. Lets a value be written bare where the object has one obvious field.
+_SCALAR_SHORTCUTS = {lifts!r}
+
+
+_SCALARS = (str, int, float, bool)
+
+
+def _lift_scalar(value, target, multivalued):
+    \"\"\"`0.0628` -> `{{'value': 0.0628}}`, leaving an already-written mapping alone.
+
+    On a multivalued slot the members are lifted, not the collection: `{{omega: 0.0628}}`
+    is a keyed collection of one Parameter, not a Parameter.
+    \"\"\"
+    if not multivalued:
+        return {{target: value}} if isinstance(value, _SCALARS) else value
+    if isinstance(value, dict):
+        return {{k: ({{target: v}} if isinstance(v, _SCALARS) else v) for k, v in value.items()}}
+    if isinstance(value, list):
+        return [({{target: v}} if isinstance(v, _SCALARS) else v) for v in value]
+    return value
+
+
 # --- slot aliases (generated) -------------------------------------------------------
 # {{class: {{alias: canonical slot}}}} from the schema's `aliases:`. Folded in __init__,
 # where the kwargs are known to belong to this class.
@@ -112,6 +155,9 @@ def _install_slot_aliases() -> None:
         original = cls.__init__
 
         def __init__(self, *args, **kwargs):
+            for slot, (target, mv) in _SCALAR_SHORTCUTS.get(cls.__name__, {{}}).items():
+                if slot in kwargs and kwargs[slot] is not None:
+                    kwargs[slot] = _lift_scalar(kwargs[slot], target, mv)
             for alias, canonical in amap.items():
                 if alias in kwargs:
                     value = kwargs.pop(alias)
@@ -127,10 +173,10 @@ def _install_slot_aliases() -> None:
 
         cls.__init__ = __init__
 
-    for name, amap in _SLOT_ALIASES.items():
+    for name in set(_SLOT_ALIASES) | set(_SCALAR_SHORTCUTS):
         cls = globals().get(name)
         if cls is not None:
-            _wrap(cls, amap)
+            _wrap(cls, _SLOT_ALIASES.get(name, {{}}))
 
 
 _install_slot_aliases()

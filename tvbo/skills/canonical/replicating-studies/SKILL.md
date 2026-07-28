@@ -529,6 +529,85 @@ substitute SC gave FC r=0.27 — the same as tvboptim's 0.32 — proving the sho
 connectome, not the engine; without it we'd have chased an implementation bug that wasn't
 there.)
 
+### When the paper deposits its own ANALYSIS OUTPUTS, demand identity (r = 1, RMSE ~1e-15)
+
+Many deposits ship not just inputs but the authors' own *derived* arrays (accuracy curves,
+power spectra, permutation sets). That converts verification from "do we agree roughly?" into
+an exact test: run **our** implementation on **their** inputs and require machine precision.
+Write it as a standing harness (`code/verify_identity.py`) that prints one table, because it
+is the thing you re-run after every refactor. Classify each check up front — mixing the
+classes is how a replication overclaims:
+
+| class | meaning | criterion |
+|---|---|---|
+| `identity` | deterministic, same inputs, same algorithm | RMSE ≲ 1e-12. **A failure is OUR bug.** |
+| `convergent` | deterministic but solver-tolerance-limited | agreement stated *with its floor* |
+| `stochastic` | depends on an unpublished seed | distributional only — matching an exact number would mean we tuned to it |
+
+Identity is a *discriminating instrument*, not a rubber stamp — it localises bugs that a
+correlation would hide. Four traps it caught in one study (Pang2023), each of which would
+have produced plausible, wrong figures:
+
+- **The deposit ships several versions of "the same" array.** The basis under
+  `results/basis_geometric_*` differed from `template_eigenmodes/*_emode_200.txt` by 4.2e-2.
+  Both look right; only one gives identity (5.6e-16 vs 2.6e-6). **Try every candidate and let
+  identity pick** — never assume the obviously-named file is the one the figures used.
+- **Order of a nonlinear step.** A normalised power spectrum averaged over subjects is NOT
+  the spectrum of the subject-averaged map: r = 0.885 vs r = 1.0000000000. Whenever a
+  statistic normalises, establish *where* the averaging happens; the paper's prose often
+  won't say, and only identity distinguishes them.
+- **"Improving" the reference algorithm breaks it.** Symmetrising a Gram matrix before
+  solving is numerically defensible and *wrong here* — port the reference's arithmetic
+  exactly (`(Ψ'Ψ)\(Ψ'y)`), because identity against it is the criterion.
+- **Masked/NaN vertices silently poison a least-squares solve.** One NaN turns an entire
+  reconstruction into NaN. Restrict to the analysis mask the paper uses (its cortex mask),
+  and treat an all-NaN result as a convention bug, not a data problem.
+
+Two mechanical ones worth a checklist line: when loading a `.mat`/HDF5 reference, select the
+dataset **by name** (`eig_vec`), never "the first key" — sibling arrays like `eig_val` sort
+first and load silently; and MATLAB HDF5 arrives **transposed**, so confirm orientation
+against a known dimension rather than by eye.
+
+### When NO output data is shipped, an unverified convention is an ASSUMPTION — label it
+
+The identity checks above only exist because that deposit happened to include the authors'
+derived arrays. **Most do not.** The failure mode is subtle and expensive: with nothing to
+test against, a plausible reading of the Methods gets written into `targets.md` as though it
+were established, every downstream number inherits it, and the report states it as fact.
+
+The tell is that the paper's prose *underdetermines* the computation. "The power spectrum of
+the group-averaged maps" does not say whether the averaging precedes or follows a nonlinear
+normalisation — and those differ by r = 0.885 vs 1.0. Prose almost never pins down: where an
+average sits relative to a nonlinear step; which of several shipped files is "the" basis;
+whether an analysis runs on all vertices or a cortex mask; 0- vs 1-based indices; whether a
+"correlation" is over vertices or parcels.
+
+So, when you cannot verify:
+
+1. **Write the assumption down as an assumption**, in `targets.md`, next to the target it
+   feeds — not as a statement of what the paper did. Phrase it "we read X as Y; not
+   verifiable from the deposit".
+2. **Enumerate the plausible alternatives you rejected**, and say why. If you cannot name an
+   alternative, you have not understood the choice well enough to make it.
+3. **Test sensitivity.** Compute the target under each candidate convention. If they agree
+   to within the reported precision, the ambiguity is harmless — say so and move on. If they
+   disagree materially, that is a *first-class limitation* of the replication, and the
+   scorecard must show the range, not one arbitrarily-chosen member of it.
+4. **Never let an assumption harden into an assertion** through repetition. A convention you
+   guessed in Phase 1 is still a guess in Phase 6 unless something verified it in between.
+
+This is the same discipline as **doubting a claimed discrepancy** — default to "we may have
+misread this", and make the uncertainty visible instead of resolving it silently.
+
+**Port a statistical procedure from the reference implementation, not from its description.**
+A spin test is the canonical example: naive nearest-neighbour matching of rotated parcels is
+*not a permutation* (parcels get duplicated and dropped), which biases the null; the published
+method (Váša `rotate_parcellation.m`) does a greedy "most distant minimum" assignment
+**without replacement**. Also force `det = +1` — the QR of a Gaussian matrix can be a
+*reflection*, which is not a rotation of the sphere. Where the deposit ships its own
+permutation set, use **theirs** to verify your statistic, which isolates the test from your
+RNG; then check your own generator separately (every row a true permutation).
+
 **Eyeball every reproduced panel's *shape* against the paper — the A/B internal composite is
 the instrument, not a formality.** Inline-computed numbers (non-negotiable #2) catch a wrong
 *value*, but a curve that plateaus where the paper's descends, a flipped monotonicity, a sign

@@ -1,0 +1,219 @@
+---
+title: "Writing TVB-O YAML"
+description: "From the basics to anchors, merge keys and includes: the YAML conventions shared by every TVB-O specification."
+subtitle: "One page for the idioms every recipe uses"
+---
+
+## Overview
+
+Every TVB-O specification — a `Dynamics`, a `Network`, a `SimulationExperiment`, a
+`SimulationStudy` — is one YAML document read by one loader, so the idioms below work
+the same everywhere. For *what* fields each component has, see the
+[specification reference](index.qmd).
+
+The page runs from the basics to the parts you only need on larger recipes. If you
+are writing your first experiment, the first two sections are enough.
+
+## The basics
+
+A specification is a **mapping**: `key: value`, one per line, nesting by indentation
+(spaces, never tabs).
+
+```yaml
+id: 1                        # a number
+label: "My Experiment"       # a string — quote it if it contains : or #
+integration:                 # a nested mapping
+  method: heun
+  step_size: 0.1
+```
+
+A **list** is written with `-`, or inline with `[]`:
+
+```yaml
+coupling_inputs: [c_in, c_ex]     # inline
+edges:                            # block form
+  - {source: 0, target: 1}
+  - {source: 1, target: 0}
+```
+
+Mappings have an inline form too, which keeps small objects on one line — the two
+blocks below mean the same thing:
+
+```yaml
+integration: {method: heun, step_size: 0.1}
+```
+
+That is all the YAML most recipes need.
+
+## Keyed collections
+
+Collections of *named* things — parameters, state variables, dynamics libraries — are
+mappings whose **key is the name**. You do not repeat it inside:
+
+```yaml
+parameters:
+  omega: {value: 0.0628}     # the parameter is called `omega`
+  k:     {value: 2.0}
+```
+
+`omega: {name: omega, value: 0.0628}` is redundant, and a key that disagrees with an
+inner `name:` is an error rather than a silent winner.
+
+## Shortcuts
+
+Where an object has one obvious field, write the value bare:
+
+```yaml
+parameters:
+  omega: 0.0628              # same as {value: 0.0628}
+state_variables:
+  x:
+    equation: "x + 2"        # same as {rhs: "x + 2"}
+    initial_value: 0.1
+```
+
+| You write | It means |
+|---|---|
+| a `Parameter` as a scalar | `{value: …}` |
+| an `Equation` as a string | `{rhs: …}` |
+
+The long form is always available — reach for it as soon as you need a sibling field,
+e.g. `{value: 0.0628, unit: Hz}`. The shortcut is declared on the class, so it applies
+everywhere that class appears, including `Event.condition`, `Event.affect` and
+`Stimulus.equation`.
+
+Two more in the same spirit:
+
+```yaml
+# a terse distribution completes to a Uniform over that support
+parameters:
+  g: {value: 1.0, distribution: {lo: 0.0, hi: 2.0}}
+
+# `boundaries` is the legacy hard-clamp spelling; it implies enforce: clamp
+state_variables:
+  x: {equation: "-x", initial_value: 0.1, boundaries: {lo: 0.0, hi: 1.0}}
+```
+
+A plain `domain: {lo, hi}` is descriptive only — it records the meaningful range
+without constraining the trajectory. Clamping is never a default; see
+[Defining a dynamical system](../Models/DefineDynamicalSystem.qmd).
+
+### Alternative spellings
+
+Some slots accept a second name, declared in the schema and resolved on load:
+
+| Alias | Canonical slot |
+|---|---|
+| `dt` | `step_size` (on any solver) |
+| `number_of_regions` | `number_of_nodes` |
+| `righthandside` / `lefthandside` | `rhs` / `lhs` |
+| `components` | `modes` (on a `Dynamics`) |
+| `optimization` / `inference` | `optimizations` / `inferences` |
+
+```yaml
+integration: {method: heun, dt: 0.05}   # dt == step_size
+```
+
+These resolve **per class**, so a name that collides with something of yours is safe:
+a model parameter called `dt` stays a parameter. Writing both spellings in one
+mapping warns and keeps the canonical one.
+
+## Reusing values: `&`, `*` and `<<`
+
+Standard YAML gives you three handles for saying a thing once. They are worth knowing
+when a recipe starts repeating itself.
+
+### `&name` — anchor
+
+Label a value so you can point at it later. An anchor changes nothing on its own:
+
+```yaml
+dynamics: &base
+  name: Kuramoto
+  parameters: {omega: 0.0628}
+```
+
+### `*name` — reference
+
+Use the anchored value again, verbatim:
+
+```yaml
+network:
+  number_of_nodes: 2
+  dynamics:
+    Kuramoto: *base          # exactly the block anchored above
+```
+
+### `<<: *name` — merge key
+
+Pull the anchored mapping's entries in, then override what differs. This is the one
+you want when two blocks are *almost* the same:
+
+```yaml
+dynamics: &base
+  name: Kuramoto
+  parameters: {omega: 0.0628}     # 10 Hz
+network:
+  number_of_nodes: 2
+  dynamics:
+    Kuramoto:
+      <<: *base                   # name comes from the anchor
+      parameters: {omega: 0.1257} # 20 Hz
+```
+
+It works on list entries too — one edge reused with its endpoints reversed:
+
+```yaml
+edges:
+  - &link {source: 0, target: 1, parameters: {weight: 0.3}, directed: true}
+  - {<<: *link, source: 1, target: 0}
+```
+
+Two things to know:
+
+* The anchor must sit on a value the schema accepts — a slot, or a list entry. An
+  invented top-level key (`base: &base {…}` beside `dynamics:`) is read as a slot of
+  the document and rejected.
+* The merge is **shallow**. An explicit `parameters:` replaces the anchor's whole
+  block rather than merging into it key by key.
+
+::: {.callout-warning}
+## Duplicate keys are an error
+
+A key written twice in the same mapping is rejected, not silently resolved to the last
+one — a duplicate is nearly always a hand-merge accident. Merge keys are unaffected:
+an explicit entry still overrides what `<<:` pulled in.
+:::
+
+## Splitting a recipe: `!include`
+
+Substitute another YAML file at that position. Paths resolve relative to the file
+containing the directive, so a large recipe can be split into readable pieces:
+
+```yaml
+id: 1
+label: My Experiment
+dynamics: !include _models/jansen_rit.yaml
+network:  !include _networks/dk68.yaml
+```
+
+Anchors are file-local: a fragment is readable on its own and cannot capture names
+from — or leak them into — its parent.
+
+## Sourcing by `iri`
+
+Rather than writing a component out, point at a curated entry:
+
+```yaml
+dynamics: {iri: "tvbo:JansenRit"}
+```
+
+Fields alongside `iri` override the sourced ones, which is the usual way to take a
+curated model and change one parameter. See
+[Specs and resolution](../CLI/specs.qmd) for the accepted forms.
+
+## See also
+
+- [Specification reference](index.qmd) — what each component contains
+- [Simulation experiments](../Simulation/SimulationExperiments.qmd) — loading and running
+- [Specs and resolution](../CLI/specs.qmd) — how an `iri` is resolved

@@ -44,9 +44,13 @@ slots:
     time_scale:
         range: UnitEnum
         ifabsent: "ms"
+        aliases:
+            - time_unit
         description: >-
             Time unit for the integration / simulation. Determines the
-            physical time meaning of one model time-step.
+            physical time meaning of one model time-step. `time_unit` is
+            accepted as a synonym (the spelling `Network` uses for its own
+            time unit).
     environment:
         range: SoftwareEnvironment
     requirements:
@@ -790,6 +794,8 @@ classes:
 
     Equation:
         class_uri: tvbo:Equation
+        annotations:
+            scalar_shortcut: rhs
         slots:
             - label
             - definition
@@ -1005,6 +1011,8 @@ classes:
 
     TemporalApplicableEquation:
         class_uri: tvbo:TemporalApplicableEquation
+        annotations:
+            scalar_shortcut: rhs
         is_a: Equation
         slots:
             - parameters
@@ -2495,6 +2503,8 @@ classes:
 
     Parameter:
         class_uri: tvbo:Parameter
+        annotations:
+            scalar_shortcut: value
         slots:
             - name
             - label
