@@ -39,10 +39,47 @@ def _var(ds, output):
     return ds[_match_output(ds.data_vars, output)]
 
 
+_PLACEHOLDER_AXES = []          # re-bared after the format pass, which re-derives ticks
+
+
+def _bare(ax):
+    """Strip a placeholder slot to a dashed grey outline: it holds the paper's layout
+    position but must never read as a drawn-and-empty panel."""
+    ax.set_xticks([]); ax.set_yticks([])
+    for _s in ax.spines.values():
+        _s.set_visible(True); _s.set_color("0.75"); _s.set_linestyle((0, (4, 4)))
+        _s.set_linewidth(0.6)
+
+
+def _wrap(ax, text, pad=0.88):
+    """Wrap text to the AXES width — matplotlib's ``wrap=True`` wraps to the figure edge,
+    so a long placeholder label would otherwise run across its neighbours."""
+    import textwrap
+
+    width_pt = ax.get_window_extent().width / ax.figure.dpi * 72.0 * pad
+    n = max(14, int(width_pt / (0.5 * plt.rcParams.get("font.size", 10.0))))
+    return "\n".join(textwrap.fill(line, n) for line in str(text).splitlines())
+
+
 def _placeholder(ax, label):
     """Honest labelled placeholder when a panel's data is missing/degenerate."""
-    ax.text(0.5, 0.5, label, ha="center", va="center", transform=ax.transAxes, wrap=True)
-    ax.set_xticks([]); ax.set_yticks([])
+    ax.text(0.5, 0.5, _wrap(ax, label), ha="center", va="center", transform=ax.transAxes,
+            color="0.35", style="italic")
+    _bare(ax)
+    _PLACEHOLDER_AXES.append(ax)
+
+
+def _triangle(C, which):
+    """One triangle of a square matrix, the other half NaN, so two layers compose one image.
+
+    The halves are named as drawn: with the matrix convention (row 0 at top, ``invert_y``)
+    ``upper`` is the top-right triangle. The diagonal belongs to neither half.
+    """
+    if C.ndim != 2 or C.shape[0] != C.shape[1]:
+        raise ValueError(f"triangle needs a square matrix, got shape {C.shape}")
+    ones = np.ones(C.shape, dtype=bool)
+    keep = np.triu(ones, 1) if which == "upper" else np.tril(ones, -1)
+    return np.where(keep, C, np.nan)
 
 
 def _coord(da, name, axis):
@@ -54,8 +91,11 @@ def _coord(da, name, axis):
 
 def _apply_axopts(ax, o):
     """Apply a grammar panel's resolved axis directives (labels, limits, ticks, legend)."""
-    if o.get("axhline") is not None:
-        ax.axhline(o["axhline"], color="0.6", lw=0.7, ls=":", zorder=0)
+    for _key, _draw in (("axhline", ax.axhline), ("axvline", ax.axvline)):
+        _at = o.get(_key)
+        if _at is not None:
+            for _v in (_at if isinstance(_at, (list, tuple)) else [_at]):
+                _draw(_v, color="0.6", lw=0.7, ls=":", zorder=0)
     if o.get("xlabel") is not None:
         ax.set_xlabel(o["xlabel"])
     if o.get("ylabel") is not None:
@@ -70,6 +110,12 @@ def _apply_axopts(ax, o):
         ax.set_xlim(*o["xlim"])
     if o.get("ylim"):
         ax.set_ylim(*o["ylim"])
+    if o.get("aspect"):
+        ax.set_aspect(o["aspect"])
+    if o.get("invert_x"):
+        ax.invert_xaxis()
+    if o.get("invert_y"):
+        ax.invert_yaxis()
     if o.get("xticks") is not None:
         ax.set_xticks(o["xticks"])
     if o.get("yticks") is not None:
@@ -105,10 +151,6 @@ def _apply_axopts3d(ax, o):
         ax.set_zlim(*o["zlim"])
     if o.get("elev") is not None or o.get("azim") is not None:
         ax.view_init(elev=o.get("elev", ax.elev), azim=o.get("azim", ax.azim))
-    if o.get("invert_x"):
-        ax.invert_xaxis()
-    if o.get("invert_y"):
-        ax.invert_yaxis()
     if o.get("invert_z"):
         ax.invert_zaxis()
     if o.get("zoom"):                                 # fill the cell (3-D axes reserve big margins)
@@ -163,7 +205,9 @@ def _restore_fixed_axes(snap):
 % for p in panels:
 def _panel_${p['key']}(fig, ax):
     """Panel ${p['key']} — ${p['kind']}."""
-% if p['kind'] == 'image':
+% if p['placeholder_only']:
+    _placeholder(ax, ${repr(p['placeholder'])})
+% elif p['kind'] == 'image':
     ax.imshow(plt.imread(${repr(p['path'])}), origin="upper")
     ax.axis("off")
 % elif p['kind'] == 'custom':
@@ -207,8 +251,10 @@ def _panel_${p['key']}(fig, ax):
     _y = _coord(_da, ${repr(L['y'])}, 1)
     if _C.shape == (len(_x), len(_y)):
         _C = _C.T                                   # orient to (y, x) for pcolormesh
-    _im = ax.pcolormesh(_x, _y, _C, shading="auto")
-    fig.colorbar(_im, ax=ax)
+% if L['triangle']:
+    _C = _triangle(_C, ${repr(L['triangle'])})
+% endif
+    _im = ax.pcolormesh(_x, _y, _C, shading="auto", **${repr(L['style'])})
 % elif L['mark'] == 'scatter':
     _x = _coord(_da, ${repr(L['x'])}, 0)
     ax.scatter(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
@@ -217,6 +263,9 @@ def _panel_${p['key']}(fig, ax):
     ax.plot(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
 % endif
 % endfor
+% if p['colorbar']:
+    fig.colorbar(_im, ax=ax)                        # one scale per panel, not per layer
+% endif
     _apply_axopts(ax, ${repr(p['axopts'])})
 % endif
 % if p['title']:
@@ -255,10 +304,11 @@ def main():
         fig.set_layout_engine("tight")
 
 % for p in panels:
-% if p['placeholder']:
-    try:
+% if p['placeholder'] and not p['placeholder_only']:
+    try:                                            # data declared but may be absent: fall back to the label
         axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}])
-    except (FileNotFoundError, OSError, KeyError, ValueError, IndexError):
+    except Exception as _e:
+        print("panel ${p['key']}: placeholder ({}: {})".format(type(_e).__name__, _e))
         _placeholder(axd[${repr(p['key'])}], ${repr(p['placeholder'])})
 % else:
     axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}])
@@ -275,10 +325,12 @@ def main():
     for _s in _fixed:                                       # ...restored so the format pass can't overwrite them
         _restore_fixed_axes(_s)
 % endif
+    for _pax in _PLACEHOLDER_AXES:                          # a placeholder slot has no ticks to normalise
+        _bare(_pax)
 % endif
 % for p in panels:
-% if p['kind'] == 'image':
-    _iax = axd[${repr(p['key'])}]            # keep image top-down (format_fig normalises the y-axis)
+% if p['kind'] == 'image' or p['axopts'].get('invert_y'):
+    _iax = axd[${repr(p['key'])}]            # keep image/matrix top-down (format_fig normalises the y-axis)
     if _iax.get_ylim()[0] < _iax.get_ylim()[1]:
         _iax.invert_yaxis()
 % endif

@@ -505,6 +505,123 @@ def test_render_code_auto_format_toggle():
     assert "bsplot.style.format_fig" not in _emit(auto_format=False)
 
 
+# --------------------------------------------------------------------------- placeholder / axes / matrix
+
+def _placeholder_figure(**panel_kw):
+    """A one-panel figure whose panel carries a placeholder and nothing else to draw."""
+    return P.Figure(
+        name="ph", layout="a",
+        panels={"a": P.Panel(panel_key="a", kind="cartesian",
+                             placeholder="needs exp-2 (resting BOLD)", **panel_kw)},
+    )
+
+
+def test_placeholder_only_panel_draws_the_label():
+    """A panel with a placeholder and NO layers draws the label, not an empty 0-1 axes.
+
+    The guarded draw cannot catch this case: with nothing bound, the panel body raises
+    nothing and the honest placeholder would silently never appear."""
+    ctx = bsplot.build_context(_placeholder_figure(), TAHER_BASE, "out.png")
+    assert ctx["panels"][0]["placeholder_only"] is True
+
+    code = bsplot.render_code(_placeholder_figure(), TAHER_BASE, "out.png")
+    ast.parse(code)
+    body = code.split("def _panel_a(")[1].split("def ")[0]
+    assert "_placeholder(ax, 'needs exp-2 (resting BOLD)')" in body
+
+
+def test_placeholder_with_data_stays_a_guarded_fallback():
+    """A placeholder panel that DOES bind data keeps the try/except fallback — the label
+    is the honest stand-in for a missing container, not the panel itself."""
+    figure = _cartesian_figure(iri=MISSING_IRI)
+    figure.panels["a"].placeholder = "no data"
+    ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
+    assert ctx["panels"][0]["placeholder_only"] is False
+
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    assert "try:" in code and "_placeholder(axd['a'], 'no data')" in code
+
+
+def test_axvline_and_axhline_accept_scalar_or_list():
+    """Reference lines are declarative axis directives: the paper's dashed verticals at
+    N = 10/100/200 are one ``axvline`` list, not three hand-drawn calls."""
+    figure = _cartesian_figure()
+    figure.panels["a"].opts = {
+        "axvline": P.Argument(name="axvline", value=[10, 100, 200]),
+        "axhline": P.Argument(name="axhline", value=0.0),
+    }
+    ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
+    assert ctx["panels"][0]["axopts"]["axvline"] == [10, 100, 200]
+    assert ctx["panels"][0]["axopts"]["axhline"] == 0.0
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "'axvline': [10, 100, 200]" in code
+
+
+def _matrix_figure():
+    """A heatmap panel composed of two triangles: data below, model above the diagonal."""
+    return P.Figure(
+        name="fc", layout="a",
+        panels={"a": P.Panel(
+            panel_key="a", kind="heatmap",
+            opts={"invert_y": P.Argument(name="invert_y", value=True),
+                  "aspect": P.Argument(name="aspect", value="equal")},
+            layers=[
+                P.Layer(used=P.DataRef(iri=EXP3_IRI, output="fc_data"), triangle="lower",
+                        encoding=P.Encoding(x="region_j", y="region_i"),
+                        style=P.Style(colormap="seismic",
+                                      opts={"vmin": P.Argument(name="vmin", value=-1.0),
+                                            "vmax": P.Argument(name="vmax", value=1.0)})),
+                P.Layer(used=P.DataRef(iri=EXP3_IRI, output="fc_model"), triangle="upper",
+                        encoding=P.Encoding(x="region_j", y="region_i"),
+                        style=P.Style(colormap="seismic")),
+            ])},
+    )
+
+
+def test_split_triangle_matrix_layers():
+    """Two layers compose ONE matrix: each masks its half, they share a single colourbar,
+    and the panel reads with the matrix convention (row 0 at top)."""
+    ctx = bsplot.build_context(_matrix_figure(), TAHER_BASE, "out.png")
+    panel = ctx["panels"][0]
+    assert [l["triangle"] for l in panel["layers"]] == ["lower", "upper"]
+    assert panel["colorbar"] is True
+    assert panel["axopts"]["invert_y"] is True and panel["axopts"]["aspect"] == "equal"
+    # A heatmap layer's Style resolves to mesh kwargs (colormap + limits), not line kwargs.
+    assert panel["layers"][0]["style"] == {"cmap": "seismic", "vmin": -1.0, "vmax": 1.0}
+
+    code = bsplot.render_code(_matrix_figure(), TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert code.count("_triangle(_C, 'lower')") == 1
+    assert code.count("_triangle(_C, 'upper')") == 1
+    assert code.count("fig.colorbar(") == 1          # one scale for the composed matrix
+
+
+def test_triangle_masks_the_other_half():
+    """The emitted ``_triangle`` helper keeps exactly one half and NaNs the rest."""
+    ns: dict = {}
+    exec(compile(bsplot.render_code(_matrix_figure(), TAHER_BASE, "out.png"),
+                 "<figure>", "exec"), ns)
+    import numpy as np
+
+    m = np.arange(9.0).reshape(3, 3)
+    upper, lower = ns["_triangle"](m, "upper"), ns["_triangle"](m, "lower")
+    assert np.isnan(np.diag(upper)).all() and np.isnan(np.diag(lower)).all()
+    assert upper[0, 2] == m[0, 2] and np.isnan(upper[2, 0])
+    assert lower[2, 0] == m[2, 0] and np.isnan(lower[0, 2])
+    with pytest.raises(ValueError, match="square"):
+        ns["_triangle"](np.zeros((2, 3)), "upper")
+
+
+def test_colorbar_suppressed_by_opt():
+    """`colorbar: false` drops the scale where the paper prints none."""
+    figure = _matrix_figure()
+    figure.panels["a"].opts["colorbar"] = P.Argument(name="colorbar", value=False)
+    ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
+    assert ctx["panels"][0]["colorbar"] is False
+    assert "fig.colorbar(" not in bsplot.render_code(figure, TAHER_BASE, "out.png")
+
+
 # --------------------------------------------------------------------------- render round-trip
 
 @requires_exp3

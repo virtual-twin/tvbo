@@ -79,8 +79,17 @@ def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
             if not wanted:
                 _common.die(f"No experiment named {experiment_arg!r} in study.")
             exp = wanted[0]
-        else:
+        elif len(items) == 1:
             exp = items[0]
+        else:
+            ids = ", ".join(sorted(_common.experiment_key(e) for e in items))
+            _common.die(
+                f"Study {spec!r} has {len(items)} experiments ({ids}); a single-kit "
+                "engine will not silently pick the first.\n"
+                "Emit the WHOLE study as one Snakemake DAG with "
+                "`tvbo workflow snakemake <spec>` (no --experiment), or pass "
+                "`--experiment <id>` to emit exactly one."
+            )
         # Prefer the *runtime* experiment (has render/render_code/render_yaml) over the
         # datamodel object, so the kit can freeze the backend script + YAML snapshot.
         if not hasattr(exp, "render") and hasattr(obj, "get_experiment"):
@@ -123,6 +132,82 @@ def _build_plan(spec: str, *, engine: str, backend: str,
 
 
 from tvbo.utils import deep_merge as _deep_merge  # noqa: E402  (shared recursive merge)
+
+
+def _build_plans(spec: str, *, engine: str, backend: str,
+                 experiment: str | None, overrides: list[str]):
+    """Return ``(study_or_none, [(plan, experiment_obj), ...])``.
+
+    A study SPEC with no ``--experiment`` plans EVERY experiment (the whole
+    study) — mirroring how the snakemake kit emits one rule per experiment,
+    never silently collapsing to the first. An explicit ``--experiment`` (comma
+    list) subsets; a bare experiment SPEC yields a single plan.
+    """
+    study, experiments, study_key = _study_experiments(spec, experiment)
+    parsed = _parse_overrides(overrides)
+    built = []
+    for exp in experiments:
+        base = _wf.merge_workflow_spec(study, exp)
+        spec_dict = _deep_merge(base, parsed["merged"])
+        plan = _wf.plan(
+            study_key=str(study_key), experiment=exp, backend=backend,
+            engine=engine, workflow_spec=spec_dict, overrides=parsed["records"],
+            source_spec=spec, experiment_selector=experiment,
+        )
+        built.append((plan, exp))
+    return study, built
+
+
+def _plan_payload(plan) -> dict:
+    """The JSON-serialisable view of one resolved plan (shared by ``plan --json``)."""
+    return {
+        "study": plan.study_key,
+        "experiment": plan.experiment_key,
+        "backend": plan.backend.name,
+        "engine": plan.engine,
+        "container": plan.container,
+        "out_dir": plan.out_dir,
+        "vectorize_axes": [
+            {"name": ax.name, "parameter": ax.parameter, "kind": ax.kind, "n": ax.n}
+            for ax in plan.vectorize_axes
+        ],
+        "workflow_axes": [
+            {"name": ax.name, "parameter": ax.parameter, "kind": ax.kind, "n": ax.n}
+            for ax in plan.workflow_axes
+        ],
+        "n_workflow_cells": plan.n_workflow_cells,
+        "n_array_tasks": plan.n_array_tasks,
+        "chunk": plan.chunk,
+        "engine_block": plan.engine_block,
+        "overrides": plan.overrides,
+    }
+
+
+def _print_plan_block(plan, *, show_study: bool = True) -> None:
+    """Print one plan's human-readable block. ``show_study`` prints the study line
+    (suppressed in whole-study mode where it heads the whole listing once)."""
+    if show_study:
+        typer.echo(f"study      : {plan.study_key}")
+    typer.echo(f"experiment : {plan.experiment_key}")
+    typer.echo(f"backend    : {plan.backend.name} ({plan.backend.label})")
+    typer.echo(f"engine     : {plan.engine}")
+    typer.echo(f"container  : {plan.container or '(none)'}")
+    typer.echo(f"out_dir    : {plan.out_dir}")
+    typer.echo("")
+    typer.echo("vectorized inside backend (1 job covers all):")
+    for ax in plan.vectorize_axes:
+        typer.echo(f"  - {ax.name:<12} {ax.parameter}  kind={ax.kind}  n={ax.n}")
+    typer.echo("")
+    typer.echo("workflow-fanned axes (engine spawns 1 task per cell):")
+    for ax in plan.workflow_axes:
+        typer.echo(f"  - {ax.name:<12} {ax.parameter}  kind={ax.kind}  n={ax.n}")
+    typer.echo("")
+    typer.echo(f"total workflow cells : {plan.n_workflow_cells}")
+    typer.echo(f"chunk                : {plan.chunk}  →  {plan.n_array_tasks} array task(s)")
+    if plan.overrides:
+        typer.echo("\noverrides:")
+        for o in plan.overrides:
+            typer.echo(f"  - {o['key']}={o['value']!r}  ({o['source']})")
 
 
 def _render_template(rel: str, **ctx) -> str:
@@ -610,56 +695,35 @@ def plan_cmd(
     Reports the chosen study/experiment, backend, engine, vectorized vs
     workflow-fanned axes, total cell count, chunking, and applied overrides.
     """
-    plan, _exp = _build_plan(spec, engine=engine, backend=backend,
-                             experiment=experiment, overrides=override)
+    study, built = _build_plans(spec, engine=engine, backend=backend,
+                                experiment=experiment, overrides=override)
+    plans = [p for p, _ in built]
 
     if json:
         import json as _json
-        payload = {
-            "study": plan.study_key,
-            "experiment": plan.experiment_key,
-            "backend": plan.backend.name,
-            "engine": plan.engine,
-            "container": plan.container,
-            "out_dir": plan.out_dir,
-            "vectorize_axes": [
-                {"name": ax.name, "parameter": ax.parameter, "kind": ax.kind, "n": ax.n}
-                for ax in plan.vectorize_axes
-            ],
-            "workflow_axes": [
-                {"name": ax.name, "parameter": ax.parameter, "kind": ax.kind, "n": ax.n}
-                for ax in plan.workflow_axes
-            ],
-            "n_workflow_cells": plan.n_workflow_cells,
-            "n_array_tasks": plan.n_array_tasks,
-            "chunk": plan.chunk,
-            "engine_block": plan.engine_block,
-            "overrides": plan.overrides,
-        }
-        typer.echo(_json.dumps(payload, default=str, indent=2))
+        payloads = [_plan_payload(p) for p in plans]
+        typer.echo(_json.dumps(payloads[0] if len(payloads) == 1 else payloads,
+                               default=str, indent=2))
         return
 
-    typer.echo(f"study      : {plan.study_key}")
-    typer.echo(f"experiment : {plan.experiment_key}")
-    typer.echo(f"backend    : {plan.backend.name} ({plan.backend.label})")
-    typer.echo(f"engine     : {plan.engine}")
-    typer.echo(f"container  : {plan.container or '(none)'}")
-    typer.echo(f"out_dir    : {plan.out_dir}")
-    typer.echo("")
-    typer.echo("vectorized inside backend (1 job covers all):")
-    for ax in plan.vectorize_axes:
-        typer.echo(f"  - {ax.name:<12} {ax.parameter}  kind={ax.kind}  n={ax.n}")
-    typer.echo("")
-    typer.echo(f"workflow-fanned axes (engine spawns 1 task per cell):")
-    for ax in plan.workflow_axes:
-        typer.echo(f"  - {ax.name:<12} {ax.parameter}  kind={ax.kind}  n={ax.n}")
-    typer.echo("")
-    typer.echo(f"total workflow cells : {plan.n_workflow_cells}")
-    typer.echo(f"chunk                : {plan.chunk}  →  {plan.n_array_tasks} array task(s)")
-    if plan.overrides:
-        typer.echo("\noverrides:")
-        for o in plan.overrides:
-            typer.echo(f"  - {o['key']}={o['value']!r}  ({o['source']})")
+    multi = len(plans) > 1
+    scope = "whole study" if experiment is None else "selected"
+    if multi:
+        typer.echo(f"study      : {plans[0].study_key}   "
+                   f"({len(plans)} experiments — {scope})\n")
+    total_cells = total_tasks = 0
+    for plan in plans:
+        if multi:
+            bar = "─" * max(3, 46 - len(str(plan.experiment_key)))
+            typer.echo(f"── experiment {plan.experiment_key} {bar}")
+        _print_plan_block(plan, show_study=not multi)
+        total_cells += plan.n_workflow_cells or 0
+        total_tasks += plan.n_array_tasks or 0
+        if multi:
+            typer.echo("")
+    if multi:
+        typer.echo(f"total ({scope}) : {len(plans)} experiments, {total_cells} workflow "
+                   f"cells, {total_tasks} array task(s)")
 
 
 def _study_experiments(spec: str, experiment: str | None):
