@@ -272,9 +272,11 @@ def test_build_context_resolves_everything():
     assert a["axopts"]["xlabel"] == "KuramotoInertia.K"
     assert a["axopts"]["ylabel"] == "delta_omega"
     # annotations -> [{text, x, y}] in axes-fraction coords
+    _centred = {"ha": "center", "va": "center"}    # the default when none is declared
     assert a["annotations"] == [
-        {"text": "corner", "x": 0.03, "y": 0.95},
-        {"text": "xy", "x": 0.2, "y": 0.3},
+        {"text": "corner", "x": 0.03, "y": 0.95, "layer": None, "arrow": None,
+         "kwargs": _centred},                                            # literal text
+        {"text": "xy", "x": 0.2, "y": 0.3, "layer": None, "arrow": None, "kwargs": _centred},
     ]
     assert a["placeholder"] is None
 
@@ -478,9 +480,62 @@ def test_render_code_is_valid_python():
 
 
 def test_render_code_font_size_emitted():
-    """``font.size`` is set iff a physical ``font_size`` is declared."""
-    assert "font.size" in _emit(font_size=9)
-    assert "font.size" not in _emit()
+    """The base type-size block is emitted iff a physical ``font_size`` is declared."""
+    assert "plt.rcParams.update({_k: 9" in _emit(font_size=9)
+    assert "plt.rcParams.update({_k:" not in _emit()
+
+
+def test_render_code_font_size_wins_over_mplstyle():
+    """A declared ``font_size`` must be applied AFTER the study .mplstyle, not before.
+
+    A study style file that sets ``font.size`` would otherwise silently override the
+    per-figure declaration, making ``font_size:`` a no-op that is invisible in the spec and
+    only detectable by measuring glyphs in the rendered PNG.
+    """
+    code = _emit(font_size=9, style=["some/study.mplstyle"])
+    assert code.index("plt.style.use(") < code.index("plt.rcParams.update({_k: 9")
+
+
+def test_render_code_bar_mark():
+    """``mark: bar`` emits ``ax.bar``, not the line fallback.
+
+    A spectrum read as a line implies interpolation between mode numbers that do not
+    exist, so the distinction is part of what the panel claims, not styling."""
+    fig = _cartesian_figure()
+    fig.panels["a"].layers[0].mark = "bar"
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "ax.bar(_x," in code
+    assert "ax.plot(_x," not in code
+
+
+def test_render_code_annotation_text_kwargs():
+    """Annotation placement/rotation reach the emitted ``ax.text`` call.
+
+    A label running up the side of a reference line is 90-degree rotated text; without
+    these the drawer has no way to say so and the label overlaps the line."""
+    fig = _cartesian_figure()
+    fig.panels["a"].annotations = [P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0,
+                                                ha="right", va="top", size=6.5)]
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "'rotation': 90.0" in code and "'ha': 'right'" in code
+    assert "'va': 'top'" in code and "'size': 6.5" in code
+
+
+def test_render_code_cell_axes_walks_insets():
+    """A composite panel's inset axes must be reachable from ``_cell_axes``.
+
+    Insets carry no subplotspec, so without the child walk a grid's deliberate per-cell
+    ticks are invisible to the snapshot and the figure-wide format pass replaces them."""
+    import matplotlib.pyplot as plt
+
+    ns: dict = {}
+    exec(compile(_emit(), "<figure>", "exec"), ns)
+    fig, ax = plt.subplots()
+    inner = ax.inset_axes([0.1, 0.1, 0.4, 0.4])
+    deeper = inner.inset_axes([0.1, 0.1, 0.4, 0.4])
+    found = ns["_cell_axes"](ax)
+    plt.close(fig)
+    assert inner in found and deeper in found
 
 
 def test_render_code_trim_margins_toggle():
@@ -542,6 +597,20 @@ def test_placeholder_with_data_stays_a_guarded_fallback():
     assert "try:" in code and "_placeholder(axd['a'], 'no data')" in code
 
 
+def test_placeholder_fallback_does_not_redraw_the_declared_frame():
+    """A panel that declares a paper frame (xticks/xlim) AND a placeholder must stay bare when
+    its data is absent: the post-format frame re-apply is guarded on ``_PLACEHOLDER_AXES`` so it
+    never draws real ticks over the honest bare box that ``_bare`` just stripped."""
+    figure = _cartesian_figure(iri=MISSING_IRI)
+    figure.panels["a"].placeholder = "no data"
+    figure.panels["a"].opts = {"xticks": P.Argument(name="xticks", value=[0, 1, 2])}
+    ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
+    assert ctx["panels"][0]["post_axopts"] == {"xticks": [0, 1, 2]}   # a real fallback keeps its declared frame
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "if axd['a'] not in _PLACEHOLDER_AXES:" in code
+
+
 def test_axvline_and_axhline_accept_scalar_or_list():
     """Reference lines are declarative axis directives: the paper's dashed verticals at
     N = 10/100/200 are one ``axvline`` list, not three hand-drawn calls."""
@@ -556,6 +625,18 @@ def test_axvline_and_axhline_accept_scalar_or_list():
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
     ast.parse(code)
     assert "'axvline': [10, 100, 200]" in code
+
+
+def test_invert_x_is_restored_after_the_format_pass():
+    """``format_fig`` re-normalises every numeric axis to ascending (``min/max`` + ``set_xlim``),
+    so a declared ``invert_x`` is re-applied afterwards — guarded like ``invert_y`` so it is
+    idempotent — or the declared x-direction silently flips back."""
+    figure = _cartesian_figure()
+    figure.panels["a"].opts = {"invert_x": P.Argument(name="invert_x", value=True)}
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "_iax.invert_xaxis()" in code
+    assert "if _iax.get_xlim()[0] < _iax.get_xlim()[1]:" in code
 
 
 def _matrix_figure():
@@ -592,9 +673,55 @@ def test_split_triangle_matrix_layers():
 
     code = bsplot.render_code(_matrix_figure(), TAHER_BASE, "out.png")
     ast.parse(code)
-    assert code.count("_triangle(_C, 'lower')") == 1
-    assert code.count("_triangle(_C, 'upper')") == 1
+    assert code.count("_triangle(_C, 'lower', 0)") == 1
+    assert code.count("_triangle(_C, 'upper', 0)") == 1
     assert code.count("fig.colorbar(") == 1          # one scale for the composed matrix
+
+
+def test_scatter_keeps_its_declared_colour_under_a_colour_encoding():
+    """A colour-mapped LINE drops its fixed ``style.color`` (the map supplies one hue per entry),
+    but a ``scatter`` is drawn straight from ``style`` — popping its colour would silently blank
+    the declared point colour."""
+    scatter = P.Layer(mark="scatter", used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
+                      encoding=P.Encoding(x="K", y="delta_omega", color="region"),
+                      style=P.Style(color="red"))
+    assert bsplot._resolve_layer(scatter, "cartesian", TAHER_BASE)["style"].get("color") == "red"
+
+    line = P.Layer(used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
+                   encoding=P.Encoding(x="K", y="delta_omega", color="region"),
+                   style=P.Style(color="red"))
+    assert "color" not in bsplot._resolve_layer(line, "cartesian", TAHER_BASE)["style"]
+
+
+def test_annotations_default_base_dir_resolves_a_used_binding():
+    """``_annotations`` defaults ``base_dir`` to a ``Path``, not the str ``'.'`` — a ``used``
+    binding routes base_dir into ``_container_path``'s Path arithmetic, which a str would break."""
+    panel = P.Panel(panel_key="a", kind="cartesian",
+                    annotations=[P.Annotation(text="r = {:.2f}",
+                                              used=P.DataRef(iri="tvbo:x", output="v"))])
+    out = bsplot._annotations(panel)   # no base_dir -> the default must not raise
+    assert out[0]["layer"] is not None
+
+
+def test_triangle_gap_separates_the_two_halves():
+    """`triangle_gap` slides the halves apart along the diagonal, so the two quantities do
+    not touch — without it a data/model matrix reads as one continuous field."""
+    figure = _matrix_figure()
+    figure.panels["a"].opts["triangle_gap"] = P.Argument(name="triangle_gap", value=7)
+    ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
+    assert ctx["panels"][0]["triangle_gap"] == 7
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    assert "_triangle(_C, 'lower', 7)" in code
+
+    ns: dict = {}
+    exec(compile(code, "<figure>", "exec"), ns)
+    import numpy as np
+
+    m = np.ones((4, 4))
+    out = ns["_triangle"](m, "upper", 2)
+    assert out.shape == (6, 6)                      # widened by the gap
+    assert np.isnan(np.diagonal(out, offset=0)).all()
+    assert out[0, 3] == 1.0 and np.isnan(out[0, 2])  # band of NaN before the half starts
 
 
 def test_triangle_masks_the_other_half():
@@ -611,6 +738,73 @@ def test_triangle_masks_the_other_half():
     assert lower[2, 0] == m[2, 0] and np.isnan(lower[0, 2])
     with pytest.raises(ValueError, match="square"):
         ns["_triangle"](np.zeros((2, 3)), "upper")
+
+
+def test_declared_ticks_survive_the_format_pass():
+    """bsplot's format pass re-derives evenly spaced ticks; a DECLARED tick set is the
+    paper's own frame and must win, so it is re-applied afterwards."""
+    figure = _cartesian_figure()
+    figure.panels["a"].opts = {"xticks": P.Argument(name="xticks", value=[50, 100, 150, 200]),
+                               "xlabel": P.Argument(name="xlabel", value="modes")}
+    ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
+    post = ctx["panels"][0]["post_axopts"]
+    assert post == {"xticks": [50, 100, 150, 200]}      # labels are not clobbered, ticks are
+
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert code.index("format_fig") < code.index("{'xticks': [50, 100, 150, 200]}")
+    # A placeholder-only panel has no frame to restore.
+    assert bsplot.build_context(_placeholder_figure(), TAHER_BASE, "o.png")["panels"][0][
+        "post_axopts"] == {}
+
+
+def test_annotation_binds_a_computed_number():
+    """A statistic printed on a panel is READ from the container and formatted, never typed
+    into the spec — the figure-side of "nothing hardcoded"."""
+    figure = _cartesian_figure()
+    figure.panels["a"].annotations = [
+        P.Annotation(text="r = {:.2f}", loc="lower left",
+                     used=P.DataRef(iri=EXP3_IRI, output="r")),
+        P.Annotation(text="literal", x=0.5, y=0.5),
+    ]
+    ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
+    bound, plain = ctx["panels"][0]["annotations"]
+    assert bound["layer"]["output"] == "r" and Path(bound["layer"]["container"]).is_file()
+    assert plain["layer"] is None
+
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "'r = {:.2f}'.format(" in code and "_load_layer(" in code
+    assert "_txt = 'literal'" in code
+
+
+def test_color_encoding_draws_one_line_per_entry():
+    """`color:` on a line layer fans one line per entry of that dim — or of a NON-dim
+    coordinate, so regions are labelled by name and not by atlas number."""
+    figure = _cartesian_figure()
+    layer = figure.panels["a"].layers[0]
+    layer.encoding = P.Encoding(x="time", color="parcel_name")
+    layer.style = P.Style(colormap="turbo", color="red")
+    ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
+    resolved = ctx["panels"][0]["layers"][0]
+    assert resolved["color"] == "parcel_name" and resolved["cmap"] == "turbo"
+    assert "color" not in resolved["style"]        # the map supplies it, one value per line
+
+    code = bsplot.render_code(figure, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "_color_dim(_da, 'parcel_name')" in code
+    assert "plt.get_cmap('turbo')" in code
+
+    ns: dict = {}
+    exec(compile(code, "<figure>", "exec"), ns)
+    import numpy as np
+    import xarray as xr
+
+    da = xr.DataArray(np.zeros((2, 3)), dims=["parcel", "time"],
+                      coords={"parcel": [181, 186],
+                              "parcel_name": ("parcel", ["L_V1_ROI", "L_V4_ROI"])})
+    assert ns["_color_dim"](da, "parcel_name") == ("parcel", ["L_V1_ROI", "L_V4_ROI"])
+    assert ns["_color_dim"](da, "parcel") == ("parcel", ["181", "186"])
 
 
 def test_colorbar_suppressed_by_opt():
@@ -705,3 +899,27 @@ def test_emit_figure_rules_no_input_when_unresolved():
     assert "rule fig_orphan:" in text
     # No resolvable container -> the rule declares no inputs (can't depend on a missing file).
     assert "input:" not in text
+
+
+@requires_exp3
+def test_emit_figure_rules_input_from_annotation_used():
+    """An annotation's PROV ``used`` registers the render rule's ``input:`` just like a layer's
+    does — a panel whose only binding to a run is a computed statistic still waits for it."""
+    figure = P.Figure(
+        name="annot_only",
+        layout="a",
+        panels={
+            "a": P.Panel(
+                panel_key="a",
+                kind="cartesian",
+                # The layer resolves nothing; the only live edge is the annotation.
+                layers=[P.Layer(used=P.DataRef(iri=MISSING_IRI, output="delta_omega"),
+                                encoding=P.Encoding(x="KuramotoInertia.K", y="delta_omega"))],
+                annotations=[P.Annotation(text="r = {:.2f}",
+                                          used=P.DataRef(iri=EXP3_IRI, output="delta_omega"))],
+            )
+        },
+    )
+    text = fw.emit_figure_rules([figure], base_dir=TAHER_BASE)
+    assert "input:" in text
+    assert _EXP3_CONTAINER in text

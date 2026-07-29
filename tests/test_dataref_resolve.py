@@ -236,6 +236,15 @@ def test_sel_dict_and_reconcile_mode():
     assert dr.reconcile_mode(_ref()) == "none"
 
 
+def test_sel_dict_reads_the_keyed_dict_spelling():
+    """A study writes ``sel: {variable: phi}`` — a NAME-KEYED collection, which is what the
+    loader hands back. Reading only the list spelling silently dropped the selection, so a
+    sourced argument arrived unsliced (whole trajectory instead of one state variable)."""
+    sel = {"variable": SimpleNamespace(name="variable", value="phi"),
+           "time": SimpleNamespace(name="time", value=[0.006, 0.016])}
+    assert dr.sel_dict(_ref(sel=sel)) == {"variable": "phi", "time": [0.006, 0.016]}
+
+
 # --------------------------------------------------------------------------- full pipeline
 
 def test_resolve_dataref_end_to_end(sweep_h5):

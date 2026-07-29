@@ -115,6 +115,48 @@ def test_number_of_regions_is_accepted():
     assert Network(**{"number_of_regions": 3}).number_of_nodes == 3
 
 
+# ── the scalar shortcut also lifts ARRAY literals ────────────────────
+
+
+def test_scalar_shortcut_lifts_an_array_literal():
+    """``sel: {time: [0.006, 0.016]}`` is a coordinate LIST, and the slot it lifts into
+    holds arrays as well as scalars. Lifting only scalars left the list to be built as an
+    Argument positionally, where it landed in ``description`` and the selection silently
+    vanished — a sourced argument then arrived unsliced."""
+    from tvbo.datamodel.schema import DataRef
+
+    ref = DataRef(experiment="1", output="integration",
+                  sel={"variable": "phi", "time": [0.006, 0.016]})
+    assert ref.sel["variable"].value == "phi"
+    assert list(ref.sel["time"].value) == [0.006, 0.016]
+    assert ref.sel["time"].description is None
+
+
+def test_scalar_shortcut_leaves_a_collection_list_alone():
+    """A list of MAPPINGS is the list spelling of a keyed collection, not a literal."""
+    from tvbo.datamodel.schema import _lift_scalar
+
+    members = [{"name": "a", "value": 1}, {"name": "b", "value": 2}]
+    assert _lift_scalar(members, "value", True) == members
+    assert _lift_scalar([[1, 2], [3, 4]], "value", False) == {"value": [[1, 2], [3, 4]]}
+
+
+def test_scalar_shortcut_keeps_keyed_list_scalars_as_identifiers():
+    """``arguments: [v]`` is the list spelling of a NAME-KEYED collection, so ``v`` is the
+    argument's name — not a value to wrap. Lifting it to ``{value: v}`` mislabelled ``v`` as
+    ``value`` and stranded the real name in ``description``, generating ``def Sigm(value)``
+    with a body that still referenced ``v`` (``NameError: name 'v' is not defined``). A
+    non-keyed list (``additional_equations``) still lifts each element."""
+    from tvbo.datamodel.schema import Function, _lift_scalar
+
+    fn = Function(name="Sigm", arguments=["v"])
+    assert list(fn.arguments) == ["v"]
+    assert fn.arguments["v"].name == "v" and fn.arguments["v"].value is None
+
+    assert _lift_scalar(["v"], "value", True, keyed=True) == ["v"]
+    assert _lift_scalar(["x = -x"], "rhs", True, keyed=False) == [{"rhs": "x = -x"}]
+
+
 # ── the collisions still resolve to the right slot ───────────────────
 
 
