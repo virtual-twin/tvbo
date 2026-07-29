@@ -186,12 +186,15 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
 
     if experiment is not None and getattr(experiment, "observations", None):
         for obs in experiment.observations.values():
-            src = getattr(obs, "source", None)
-            if not src:
-                continue
-            src_name = str(src)
-            if src_name in aux_names and src_name not in requested_aux:
-                requested_aux.append(src_name)
+            # `source` is multivalued (a list) and its entries may be objects with `.name`
+            # or plain strings; unwrap each so an auxiliary read by an observation is recorded
+            # even when it is record: false (its trajectory is streamed, not a user output) and
+            # not listed in model.output. A raw str(src) would stringify the whole list and
+            # never match a derived-variable name.
+            for src in as_list(getattr(obs, "source", None)):
+                src_name = str(getattr(src, "name", src))
+                if src_name in aux_names and src_name not in requested_aux:
+                    requested_aux.append(src_name)
 
     all_var_names = state_names + requested_aux
     return state_names, requested_aux, all_var_names
@@ -1089,6 +1092,231 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
     return red
 
 
+def _resolve_stat_stream(obs: Any) -> Dict[str, Any]:
+    """Synthesize a cumulative streaming mean/std/variance reducer from ``aggregation``.
+
+    An observation marked ``reduce: streaming`` whose ``aggregation`` is ``mean``, ``std``
+    or ``variance`` — and which has no HRF/BOLD ``pipeline`` — folds into the integrator
+    carry as a running-moment accumulator instead of materialising the source trajectory.
+    ``mean`` carries one accumulator (a running sum, divided by the sample count at
+    finalize); ``std``/``variance`` add a sum-of-squares and read ``sqrt(E[x^2] - E[x]^2)``
+    (variance without the ``sqrt``) — the ddof=0 form that matches the host ``jnp.std`` /
+    ``jnp.var``. The returned dict is shaped exactly as the recurrence resolver's, with no
+    ``kind`` tag, so a stat stream reuses :func:`render_recurrence_reduction` unchanged.
+
+    ``skip_inclusive`` marks the reduction a pure accumulator with no per-sample memory
+    dependency, so the emitter folds the sample AT ``skip`` (``_gstep >= skip``) rather than
+    the step after it — a running mean must not silently drop its first sample, unlike a
+    phase-difference observer whose first step has no predecessor. Every RHS is parsed to a
+    sympy ``Expr`` against {source, the accumulators, ``count``, ``dt``}, exactly as the
+    recurrence path resolves its updates. Takes no ``experiment`` — the full dict resolves
+    unconditionally, so the bare ``resolve_reduction(obs)`` streaming predicate stays truthy.
+    """
+    import sympy as sp
+
+    name = str(get_attr(obs, "name", "observation"))
+    src = as_list(get_attr(obs, "source"))
+    source = str(src[0]) if src else None
+    if source is None:
+        raise ValueError(
+            f"Observation {name!r} declares aggregation + reduce: streaming but has no "
+            "source to reduce over."
+        )
+    agg = get_attr(obs, "aggregation", None)
+    agg = str(getattr(agg, "value", agg) or "mean").lower()
+
+    allowed = {source, "_s_sum", "_s_sq", "count", "dt"}
+    loc = {n: sp.Symbol(n) for n in allowed}
+
+    def _parse(rhs: str) -> Any:
+        expr = sp.sympify(rhs, locals=loc)
+        unknown = {str(s) for s in expr.free_symbols} - allowed
+        if unknown:
+            raise ValueError(
+                f"Observation {name!r} stat-stream reduction: unknown symbol(s) "
+                f"{sorted(unknown)}; available are the source {source!r}, the accumulators "
+                "_s_sum/_s_sq, and count/dt."
+            )
+        return expr
+
+    if agg == "mean":
+        states = [{
+            "name": "_s_sum", "init": 0.0,
+            "update": _parse(f"_s_sum + {source}"), "evict": None, "is_accumulator": True,
+        }]
+        output = _parse("_s_sum / count")
+    else:
+        states = [
+            {"name": "_s_sum", "init": 0.0,
+             "update": _parse(f"_s_sum + {source}"), "evict": None, "is_accumulator": True},
+            {"name": "_s_sq", "init": 0.0,
+             "update": _parse(f"_s_sq + ({source})**2"), "evict": None, "is_accumulator": True},
+        ]
+        # ddof=0. Guard the one-pass co-moment with Abs: catastrophic f64 cancellation on a
+        # near-constant source can make it slightly negative, which two-pass jnp.var/jnp.std
+        # never return (and would NaN under the sqrt). Abs (unary → jnp.abs) is a no-op for real
+        # variance, so it stays byte-identical there while giving ~0 (not NaN) at the degenerate end.
+        variance = "Abs(_s_sq / count - (_s_sum / count)**2)"
+        output = _parse(f"sqrt({variance})" if agg == "std" else variance)
+
+    return {
+        "source": source,
+        "states": states,
+        "derived": [],
+        "surrogates": [],
+        "output_name": None,
+        "parameters": {},
+        "output": output,
+        "functions": {},
+        "statistic": "mean",
+        "histogram": None,
+        "windowed": False,
+        "skip_inclusive": True,   # pure accumulator: fold the sample AT skip, not the next
+    }
+
+
+def _resolve_fc_stream(obs: Any) -> Optional[Dict[str, Any]]:
+    """Lift a cumulative co-moment FC reducer from a ``compute_fc`` pipeline marked
+    ``reduce: streaming``.
+
+    A ``pipeline: [compute_fc]`` observation — a node-node Pearson-correlation FC over a
+    recorded source (e.g. inp_corr over the excitatory input current ``x_e_pre``) — folds
+    into the integrator carry as a Welford co-moment accumulator: the existing
+    ``windowed_fc`` reducer recipe's ``add`` update and zero-diagonal Pearson ``emit``,
+    WITHOUT its sliding-window ``evict`` (this reduction is *cumulative* over the whole
+    run, not a moving window). The ``compute_fc`` ``skip_t`` (default 0) drops the first
+    samples exactly as the materialised pipeline does. Byte-identical to
+    ``compute_fc(source, skip_t=...)`` to f64 summation order, holding no trajectory
+    (``O(n^2)`` co-moment state vs the ``O(n_time * n)`` trajectory).
+
+    The reducer's assignments are lowered to backend source here (via the shared
+    :func:`tvbo.codegen.reducers.resolve_streaming_reducer`) so the render partial emits
+    from clean context; the dict is tagged ``kind: 'comoment'`` for the matrix-state
+    render branch. Returns ``None`` when the pipeline's first reducer has no registered
+    ``window`` streaming form (so the caller falls through to the BOLD path). Takes no
+    ``experiment`` — side-effect-free, so the bare ``resolve_reduction(obs)`` streaming
+    predicate stays truthy.
+    """
+    from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
+    from tvbo.codegen.reducers import resolve_streaming_reducer
+
+    name = str(get_attr(obs, "name", "observation"))
+    src = as_list(get_attr(obs, "source"))
+    source = str(src[0]) if src else None
+    if source is None:
+        raise ValueError(
+            f"Observation {name!r} declares a compute_fc pipeline + reduce: streaming but "
+            "has no source to reduce over."
+        )
+    pipeline = as_list(get_attr(obs, "pipeline"))
+    step = pipeline[0]
+    call = get_attr(step, "callable")
+    mod = str(get_attr(call, "module", "") or "")
+    fname = str(get_attr(call, "name", "") or "")
+    spec = lookup_streaming_reducer("tvboptim", mod, fname)
+    if spec is None or spec.emit_kind != "window":
+        return None
+
+    # compute_fc `skip_t` (initial samples dropped before correlating), read off the step
+    # arguments (dict-keyed or a legacy list of named args).
+    skip_t = 0
+    args = get_attr(step, "arguments", None) or {}
+    items = args.items() if hasattr(args, "items") else (
+        (str(get_attr(a, "name", "")), a) for a in args)
+    for aname, arg in items:
+        if str(aname) == "skip_t":
+            # a named-arg object carries `.value`; a plain keyed-dict entry IS the scalar.
+            _v = get_attr(arg, "value", arg)
+            if _v is not None:
+                skip_t = int(to_numeric(_v))
+
+    lowered = resolve_streaming_reducer(spec, "jax")
+    return {
+        "kind": "comoment",
+        "source": source,
+        "states": list(spec.state),   # e.g. ['count', 'mean', 'comoment']
+        "add": lowered["add"],        # [(lhs, jax_rhs_src), ...] — sequential Welford update
+        "emit": lowered["emit"],      # zero-diagonal Pearson correlation over the co-moment
+        "skip_t": int(skip_t),
+        "statistic": "mean",
+        "windowed": False,
+    }
+
+
+def _step_reducer_name(step: Any) -> str:
+    """Name of a pipeline step's operation.
+
+    A step names its operation in one of three ways and all three occur in curated
+    observation models: a ``callable`` reference, a ``function`` reference, or — for a step
+    that carries its own ``equation`` — the step's own ``name``.
+    """
+    for slot in ("callable", "function"):
+        ref = get_attr(step, slot)
+        if ref is not None:
+            return str(get_attr(ref, "name", ref))
+    return str(get_attr(step, "name", "") or "")
+
+
+_STRIDE_REDUCERS = {"subsampling", "subsample", "sub_sample"}
+
+
+def _resolve_subsample_stream(obs: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
+    """Lift a stride reducer from a pure-decimation pipeline marked ``reduce: streaming``.
+
+    The simplest streamable pipeline is a *stride*: keep every ``k``-th sample of the
+    source and drop the rest (``SubSampling(period=TR)``). Materialised it costs a full
+    trajectory to produce a ``1/k`` slice of it; folded into the carry it costs only the
+    slice. Every sample the reducer keeps is a sample the pipeline would have kept, so the
+    streamed value is bit-identical rather than merely close.
+
+    This is deliberately NOT the ``temporal_average`` case: averaging a window is a
+    different operation (and tvboptim's emitted form shifts by one sample even at
+    ``period_samples == 1``), so it is left on the materialise path.
+
+    Returns a reduction dict tagged ``kind: 'stride'`` carrying the decimation in
+    integration steps, or ``None`` when the pipeline is not a pure stride — in which case
+    the caller falls through to the BOLD path, whose error message names what it needs.
+    """
+    pipeline = as_list(get_attr(obs, "pipeline"))
+    if not pipeline or any(_step_reducer_name(st).lower() not in _STRIDE_REDUCERS
+                           for st in pipeline):
+        return None
+
+    name = str(get_attr(obs, "name", "observation"))
+    src = as_list(get_attr(obs, "source"))
+    source = str(src[0]) if src else None
+    red: Dict[str, Any] = {"kind": "stride", "source": source, "windowed": False}
+    if experiment is None:
+        return red   # predicate call ("is this streaming?"): stay side-effect-free
+
+    def _arg(step, key):
+        args = get_attr(step, "arguments", None) or {}
+        items = (args.items() if hasattr(args, "items")
+                 else ((str(get_attr(a, "name", "")), a) for a in args))
+        for k, a in items:
+            if str(k) == key:
+                return get_attr(a, "value", a)
+        return None
+
+    dt = get_attr(get_attr(experiment, "integration"), "step_size")
+    dt = float(to_numeric(dt)) if dt else None
+    period = next((_arg(st, "period") for st in pipeline if _arg(st, "period") is not None),
+                  get_attr(obs, "period"))
+    if period is not None and dt:
+        ds_steps = int(round(float(to_numeric(period)) / dt))
+    else:
+        step_arg = next((_arg(st, "step") for st in pipeline if _arg(st, "step") is not None), None)
+        if step_arg is None:
+            raise ValueError(
+                f"Observation {name!r}: reduce: streaming could not determine the decimation "
+                "stride (no `period` on the step or the observation with an integration "
+                "`step_size`, and no explicit `step`)."
+            )
+        ds_steps = int(to_numeric(step_arg))
+    red["ds_steps"] = max(1, ds_steps)
+    return red
+
+
 def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
     """Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction.
 
@@ -1119,10 +1347,27 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     backend via ``render_expression`` (which accepts sympy directly). Returns ``None``
     when the observation declares no ``dynamics`` (the post-scan path runs).
     """
-    # Opt-in streaming of a post-scan pipeline (currently HRF-Volterra BOLD): lifted to
-    # a block reducer instead of the dynamics-observer recurrence path below.
+    # Opt-in streaming of a post-scan observation: lifted to a block reducer instead of the
+    # dynamics-observer recurrence path below. A cumulative mean/std/variance over a source
+    # (no HRF/BOLD pipeline) synthesizes a running-moment accumulator; an HRF-Volterra BOLD
+    # pipeline lifts the convolution reducer.
     _rm = get_attr(obs, "reduce")
     if _rm is not None and str(getattr(_rm, "value", _rm)) == "streaming":
+        _agg = get_attr(obs, "aggregation", None)
+        _agg = str(getattr(_agg, "value", _agg) or "").lower()
+        _pipe = as_list(get_attr(obs, "pipeline"))
+        if not _pipe and _agg in {"mean", "std", "variance"}:
+            return _resolve_stat_stream(obs)
+        # A compute_fc (windowed-correlation) pipeline streams as a cumulative co-moment
+        # FC reducer (add-only Welford), NOT the HRF/BOLD convolution reducer; fall through
+        # to the BOLD path only when the pipeline is not a registered windowed reducer.
+        if _pipe:
+            _fc = _resolve_fc_stream(obs)
+            if _fc is not None:
+                return _fc
+            _sub = _resolve_subsample_stream(obs, experiment)
+            if _sub is not None:
+                return _sub
         return _resolve_bold_stream(obs, experiment)
 
     import sympy as sp
@@ -1382,10 +1627,17 @@ def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
     obs_by_name = (dict(obs.items()) if hasattr(obs, "items")
                    else {str(get_attr(o, "name")): o for o in obs})
 
+    def _is_streaming(o: Any) -> bool:
+        _rm = get_attr(o, "reduce")
+        return _rm is not None and str(getattr(_rm, "value", _rm)) == "streaming"
+
     streaming = {}
     for n, o in obs_by_name.items():
         r = resolve_reduction(o, experiment)
-        if r is not None and r.get("kind") == "convolution":
+        # Fold every reduce: streaming observation into the post-tuning carry: a convolution
+        # (BOLD) reducer or a non-windowed stat stream (mean/std/variance). A plain dynamics
+        # observer (not reduce: streaming) stays on the materialise path.
+        if r is not None and _is_streaming(o) and not r.get("windowed"):
             streaming[str(n)] = r
     if not streaming:
         return {"names": [], "deliverables": [], "period_in_steps": None}
@@ -1423,11 +1675,17 @@ def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
                 changed = True
 
     import math
+    # A reducer that writes into a sample-indexed buffer carries a block to align to, so
+    # that a slot boundary never falls inside a block: ds_steps * tr_stride for a
+    # convolution (BOLD) reducer, ds_steps for a plain stride. A scalar stat stream has
+    # none, so default the block to a plain 1000 steps.
+    slotted = [r for r in streaming.values() if r.get("kind") in ("convolution", "stride")]
     pis = 1
-    for r in streaming.values():
-        step = int(r["ds_steps"]) * int(r["tr_stride"])
+    for r in slotted:
+        step = int(r["ds_steps"]) * int(r.get("tr_stride", 1))
         pis = pis * step // math.gcd(pis, step)
-    return {"names": sorted(streaming), "deliverables": deliverables, "period_in_steps": pis}
+    period = pis if slotted else 1000
+    return {"names": sorted(streaming), "deliverables": deliverables, "period_in_steps": period}
 
 
 def _literal_code(value: Any) -> str:

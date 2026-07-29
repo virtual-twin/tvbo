@@ -184,7 +184,19 @@ rule ${ep["rule_name"]}:
 % for _e in (_b.get("env") or []):
         "export ${_e['name']}=${_e['value']} && "
 % endfor
+% if ep.get("scripts_relpath"):
+        ## Pick the code source at run time. TVBO_CODE_SOURCE (or the emit-time default
+        ## below) selects `frozen` -> run the pre-rendered `scripts/<key>` as-is with no
+        ## codegen; anything else, or a missing script, falls back to re-rendering from
+        ## the frozen spec. The `${...}` braces are doubled so Snakemake's `.format()`
+        ## leaves the shell parameter expansion intact.
+        "CODE_SOURCE=\"${'$'}{{TVBO_CODE_SOURCE:-${ep['code_source']}}}\" && "
+        "if [ \"$CODE_SOURCE\" = frozen ] && [ -f ${ep['scripts_relpath']} ]; then RENDERED=\"--rendered ${ep['scripts_relpath']}\"; else RENDERED=\"\"; fi && "
+% endif
         "tvbo run ${ep['spec_relpath']} "
+% if ep.get("scripts_relpath"):
+        "$RENDERED "
+% endif
         "--backend=${ep['backend']} "
 % if ep.get("select"):
         "--experiment=${ep['select']} "

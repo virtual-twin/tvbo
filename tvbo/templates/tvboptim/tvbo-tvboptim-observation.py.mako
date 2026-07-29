@@ -633,9 +633,68 @@ if network_obs_keys:
 <%def name="render_reduction(red, name, s_idx, dt)">\
 % if red.get('kind') == 'convolution':
 ${render_convolution_reduction(red, name, s_idx, dt)}\
+% elif red.get('kind') == 'stride':
+${render_stride_reduction(red, name, s_idx, dt)}\
+% elif red.get('kind') == 'comoment':
+${render_comoment_reduction(red, name, s_idx, dt)}\
 % else:
 ${render_recurrence_reduction(red, name, s_idx, dt)}\
 % endif
+</%def>\
+## Cumulative co-moment FC reducer (a compute_fc pipeline marked reduce: streaming). Folds
+## the whole post-transient window as a Welford co-moment (add-only, NO eviction — cumulative,
+## not a sliding window), then reads the zero-diagonal Pearson correlation at finalize.
+## Matrix-valued state: `comoment` is (n, n), `mean` is (n,), `count` a scalar. The `add`
+## assignments and the Pearson `emit` are the declarative windowed_fc recipe already lowered to
+## this backend (utils._resolve_fc_stream via resolve_streaming_reducer), so this partial only
+## emits the block scaffolding — the accumulator math is the shared reducer spec, no FC logic
+## baked here. Byte-identical to compute_fc(source, skip_t) to f64 summation order; the
+## compute_fc skip_t adds to the transient `skip` so the same leading samples are dropped.
+<%def name="render_comoment_reduction(red, name, s_idx, dt)">\
+<%
+    _states = list(red['states'])          # ['count', 'mean', 'comoment']
+    _add = red['add']                      # [(lhs, jax_rhs), ...] sequential Welford update
+    _emit = red['emit']                    # zero-diagonal Pearson correlation over comoment
+    _skip_t = int(red.get('skip_t', 0))
+    _acc = ", ".join(_states)
+    _acc0 = ", ".join("_%s0" % _s for _s in _states)
+    # Carry-init shape keyed by state ROLE (not position), so a reducer-spec state reorder
+    # cannot silently mis-shape the accumulator; an unknown state fails loudly at emit.
+    _INIT_SHAPE = {'count': 'jnp.array(0)', 'mean': 'jnp.zeros((n,))', 'comoment': 'jnp.zeros((n, n))'}
+    _missing = [_s for _s in _states if _s not in _INIT_SHAPE]
+    if _missing:
+        raise ValueError("co-moment reducer: no carry-init shape for state(s) %s" % _missing)
+    _init_tuple = ", ".join(_INIT_SHAPE[_s] for _s in _states)
+%>\
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
+    # warm_history/progress are accepted-and-ignored so this reducer shares ONE call site
+    # with the recurrence and convolution factories. The compute_fc skip_t (${_skip_t}) adds
+    # to the transient `skip`: the first (skip + ${_skip_t}) samples are dropped, matching the
+    # materialised compute_fc(source, skip_t=${_skip_t}).
+    _skip = skip + ${_skip_t}
+    def _init(template, n_steps):
+        n = template.shape[-1]
+        return (${_init_tuple}, jnp.array(0))
+    def _update(acc, block):
+        def _step(carry, s_row):
+            ${_acc}, _gstep = carry
+            v = s_row[s_var]
+            _accept = _gstep >= _skip
+            # Fold one sample via the Welford `add` recurrence, then commit only past `skip`
+            # (a running correlation must not fold the dropped leading samples).
+            ${_acc0} = ${_acc}
+% for _lhs, _rhs in _add:
+            ${_lhs} = ${_rhs}
+% endfor
+% for _s in _states:
+            ${_s} = jnp.where(_accept, ${_s}, _${_s}0)
+% endfor
+            return (${_acc}, _gstep + 1), None
+        return jax.lax.scan(_step, acc, block)[0]
+    def _finalize(acc):
+        ${_acc}, _gstep = acc
+        return ${_emit}
+    return (_init, _update, _finalize)
 </%def>\
 ## Streaming HRF-Volterra BOLD reducer (Observation.reduce == 'streaming'). Recasts the
 ## post-scan bold pipeline (HRF kernel -> stride decimation -> prepend downsampled
@@ -707,11 +766,43 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         return _bold
     return (_init, _update, _finalize)
 </%def>\
+## Streaming stride reducer (Observation.reduce == 'streaming' over a pure decimation
+## pipeline). Keeps every _ds-th sample of the source column and writes it straight into a
+## preallocated buffer, so a run that reports 1/_ds of its samples never materialises the
+## other (_ds - 1)/_ds. Bit-identical to the materialised SubSampling: the kept samples are
+## the same samples. Block boundaries are multiples of _ds (streaming_post_eval_plan), so a
+## block's local decimation grid is the global one and the write slot is exact.
+<%def name="render_stride_reduction(red, name, s_idx, dt)">\
+<%
+    from tvbo.codegen import render_expression
+    _rc = lambda e: render_expression(e, format='jax', parameters=['_block_voi', '_ds'])
+%>\
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
+    # warm_history/progress are accepted-and-ignored so this reducer shares ONE call site
+    # with the recurrence, comoment and convolution factories.
+    _ds = ${red['ds_steps']}           # decimation stride (integration steps per kept sample)
+    def _init(template, n_steps):
+        n = template.shape[-1]
+        return (jnp.zeros((len(range(_ds - 1, n_steps, _ds)), n)), jnp.array(0))
+    def _update(acc, block):
+        _out, _count = acc
+        _block_voi = block[:, s_var, :]
+        _samples = ${_rc("subsample(_block_voi, _ds - 1, _ds)")}
+        _out = jax.lax.dynamic_update_slice(_out, _samples, (_count // _ds, 0))
+        return (_out, _count + block.shape[0])
+    def _finalize(acc):
+        _out, _count = acc
+        return _out
+    return (_init, _update, _finalize)
+</%def>\
 <%def name="render_recurrence_reduction(red, name, s_idx, dt)">\
 <%
     from tvbo.codegen import render_expression
     from tvbo.templates.tvboptim.utils import render_jax_default
     _is_median = red.get('statistic', 'mean') == 'median'
+    # Pure accumulators (skip_inclusive) fold the sample AT skip; a memory-dependent
+    # observer's first step has no predecessor, so it starts the step after (`>`).
+    _gate = '>=' if red.get('skip_inclusive') else '>'
     _snames = [s['name'] for s in red['states']]
     _mem = [s for s in red['states'] if not s['is_accumulator']]   # memory-only states
     _mnames = [s['name'] for s in _mem]
@@ -730,7 +821,9 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
     _mem_new = "".join("_new_%s, " % _n for _n in _mnames)   # "_new_s_prev, "
     _mem_ini = "".join("jnp.full((n,), %r), " % s['init'] for s in _mem)
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0):
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
+    # warm_history/progress are accepted-and-ignored so the recurrence and convolution
+    # factories share ONE call site (the convolution reducer uses both; a recurrence does not).
 % if _rpars:
     # Observer constants (Dynamics.parameters), bound by name in the closure the
     # init/update/finalize triple shares. A literal inlines; a sourced/produced operator
@@ -764,7 +857,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0):
         def _step(carry, s_row):
             ${_mem_pre}_counts, _gstep = carry
             ${_src} = s_row[s_var]
-            _accumulate = _gstep > skip
+            _accumulate = _gstep ${_gate} skip
 % for _d in _step_dvs:
             ${_d['name']} = ${_jc(_d['expr'])}
 % endfor
@@ -794,7 +887,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0):
         def _step(carry, s_row):
             ${", ".join(_snames)}, _count, _gstep = carry
             ${_src} = s_row[s_var]
-            _accumulate = _gstep > skip
+            _accumulate = _gstep ${_gate} skip
 % for _d in _step_dvs:
             ${_d['name']} = ${_jc(_d['expr'])}
 % endfor

@@ -1222,7 +1222,7 @@ def test_workflow_run_slurm_array_smoke(tmp_path: Path, monkeypatch):
 
     original_emit = workflow_cli._emit
 
-    def _capture_emit(engine, *, spec, backend, experiment, output, override, stdout):
+    def _capture_emit(engine, *, spec, backend, experiment, output, override, stdout, **kwargs):
         emitted["overrides"] = list(override)
         return original_emit(
             engine,
@@ -1232,6 +1232,7 @@ def test_workflow_run_slurm_array_smoke(tmp_path: Path, monkeypatch):
             output=output,
             override=override,
             stdout=stdout,
+            **kwargs,
         )
 
     monkeypatch.setattr("tvbo.cli.workflow._emit", _capture_emit)

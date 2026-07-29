@@ -71,6 +71,15 @@ def run(
              "injects that subject's empirical target (e.g. their FC). Set per shard "
              "by the workflow fan-out.",
     ),
+    rendered: Path = typer.Option(
+        None, "--rendered",
+        help="Run a PRE-RENDERED backend script instead of generating code at run time. "
+             "The spec is still loaded for orchestration (subject/dataset resolution, "
+             "seeds, network observations, output layout) — only the backend code source "
+             "changes: the frozen script is executed as-is. Lets a workflow kit run on a "
+             "stock tvbo runtime with no codegen step. The script must match the run's "
+             "backend and the (single) experiment being run.",
+    ),
     set_: list[str] = typer.Option(
         [], "--set",
         help="Override an experiment metadata field for THIS run only (the recipe file is "
@@ -149,6 +158,14 @@ def run(
     kwargs["record_only"] = not save_all
     if results_root is not None:
         kwargs["results_root"] = str(results_root)
+    # A pre-rendered backend script replaces codegen for this run only; every other
+    # flag (subject/shard/-o/--set/--experiment) keeps its meaning. Read once here and
+    # thread it through to Experiment.run as the rendered_code override.
+    if rendered is not None:
+        try:
+            kwargs["rendered_code"] = Path(rendered).read_text(encoding="utf-8")
+        except OSError as e:
+            _common.die(f"--rendered: cannot read {rendered}: {e}")
 
     chunk_i = chunk_n = None
     if shard:
@@ -176,6 +193,14 @@ def run(
             items = [e for e in items if wanted & _common.experiment_ids(e)]
             if not items:
                 _common.die(f"No experiment(s) matching {experiment!r} in study.")
+        # A single frozen script belongs to a single experiment; refuse to run it against
+        # several (each experiment renders its own code). The workflow always drives one
+        # experiment per rule, so this only guards manual misuse.
+        if rendered is not None and len(items) > 1:
+            _common.die(
+                f"--rendered is a single pre-rendered experiment script but {len(items)} "
+                f"experiments matched; pass --experiment to select exactly one."
+            )
         for exp in items:
             _common.info(f"running experiment: {getattr(exp, 'key', None) or getattr(exp, 'label', None)}")
             # Resolve to the runtime experiment (has .run) rather than the datamodel object.
