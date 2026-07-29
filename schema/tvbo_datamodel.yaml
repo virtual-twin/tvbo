@@ -579,9 +579,10 @@ enums:
                     Fold this observation into the integrator carry as an
                     (init, update, finalize) reducer; never materialise the
                     trajectory. Supported for the HRF-Volterra BOLD pipeline
-                    (hemodynamic convolution), whose kernel / downsample stride /
+                    (hemodynamic convolution, whose kernel / downsample stride /
                     TR stride / Volterra scaling the resolver lifts from the
-                    declared pipeline.
+                    declared pipeline), cumulative mean/std/variance aggregations,
+                    and a matrix co-moment FC (compute_fc as a running covariance).
 
     ContinuationAlgorithm:
         description: >-
@@ -2167,11 +2168,15 @@ classes:
                     f64 rounding) but with O(block) instead of O(n_time) peak memory,
                     so a fit whose per-stage simulation is too long to hold the
                     trajectory (e.g. the Schirner 2023 group fit) can still evaluate
-                    it. Currently supported for the HRF-Volterra BOLD pipeline: the
-                    resolver lifts the HRF kernel, downsample stride, TR stride and
-                    Volterra k_1/V_0 from the declared pipeline. Absent (the default)
-                    keeps the post-scan pipeline unchanged — no other observation or
-                    experiment is affected.
+                    it. Supported for the HRF-Volterra BOLD pipeline (the resolver
+                    lifts the HRF kernel, downsample stride, TR stride and Volterra
+                    k_1/V_0 from the declared pipeline), for cumulative mean/std/variance
+                    aggregations, and for a matrix co-moment FC (compute_fc as a running
+                    covariance emitted at finalize, never a trajectory). Byte-identical
+                    holds noise-off; with a per-block noise draw the realization shifts
+                    with block size (ergodically vanishing). Absent (the default) keeps
+                    the post-scan pipeline unchanged — no other observation or experiment
+                    is affected.
 
             # Direct class reference (alternative to pipeline)
             class_reference:

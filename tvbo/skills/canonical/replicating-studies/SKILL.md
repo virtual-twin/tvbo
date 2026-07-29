@@ -765,6 +765,22 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   actually live before assuming — and when you re-pull an image, assert the fix is
   present (a tag can rebuild to stale cached content; a SIF is named by the URL hash, so
   it lands at the same path — force the pull).
+- **Ship the kit dual-mode so a version-skewed node can still run YOUR code —
+  `--code-source {frozen,spec}`.** A Snakemake study kit emits BOTH the frozen pre-rendered
+  `scripts/<exp>` and the `spec/<exp>`, and each rule can run either: **spec** (default)
+  re-generates the backend code from the spec at run time (needs a node `tvbo` whose codegen
+  matches the emit-time behaviour); **frozen** runs the pre-rendered script as-is via `tvbo run
+  --rendered scripts/<exp>`, so the reducer/streaming logic is already baked into the script and
+  the node's `tvbo` needs no matching codegen. This is the clean fix for the *version-skew* trap
+  above — when the cluster's released `tvbo` lags a codegen feature the recipe relies on (a new
+  streaming reducer), emit `--code-source frozen` and the node runs the frozen code with no
+  container rebuild. Set the emit-time default (`tvbo workflow snakemake … --code-source
+  frozen`) or override per submission (`tvbo workflow submit … --code-source frozen`, or
+  `TVBO_CODE_SOURCE=frozen snakemake …`); a rule with no `scripts/<exp>` (a cross-experiment
+  analysis has no standalone sim to render) falls back to spec automatically, and `frozen`
+  cannot honour a run-time flag that *changes* codegen (`--set integration.*`, `--pin` on a
+  non-vectorized axis) — use `spec` for those. `frozen` and `spec` are byte-identical for a
+  deterministic experiment (kit anatomy + the full contract: `docs/CLI/workflow-kits.qmd`).
 - **Run the orchestrator on a COMPUTE node, not the login node.** Login nodes are
   cgroup-capped (a per-user memory limit that OOM-kills a long `snakemake`); DAG
   resolution that takes seconds on a compute node crawls or dies on a starved login
@@ -816,9 +832,15 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   **You request streaming declaratively — `reduce: streaming` on the observation** (opt-in,
   byte-identical to the post-scan value to f64 rounding, zero effect on any other
   observation), which folds it into the integrator carry as an (init, update, finalize)
-  reducer via `prepare(reduce=…)` instead of stacking a trajectory; currently supported for
-  the HRF-Volterra BOLD pipeline (the resolver lifts the kernel, downsample stride, TR stride
-  and Volterra `k_1`/`V_0` from the declared pipeline). **A streamed observation must decimate
+  reducer via `prepare(reduce=…)` instead of stacking a trajectory. Supported for the
+  HRF-Volterra BOLD pipeline (the resolver lifts the kernel, downsample stride, TR stride and
+  Volterra `k_1`/`V_0` from the declared pipeline), for cumulative **mean / std / variance**
+  aggregations (Welford, folded per block), and for a **matrix co-moment FC** (`compute_fc` — a
+  running covariance emitted at the end, never a trajectory) — the last is what turns Schirner's
+  ~440 GB FC evaluation into a ~GB peak. Byte-identical noise-off; with tvboptim's *per-block*
+  noise draw the realization shifts with block size (ergodically vanishing — the same accepted
+  tradeoff as the shipped BOLD stream), so treat a noisy streamed metric as distributional, not
+  bit-exact across block sizes. **A streamed observation must decimate
   by a stride/`subsample`, never `temporal_average`** — a stride is block-additive so it is
   identical whether or not it is folded in-carry, whereas `temporal_average` is not (and
   `temporal_average(1)` is not even the identity — it shifts by one). Verify it reaches the
