@@ -620,7 +620,7 @@ def plot_fig5(res, experiment):
     er = res.exploration.K_sweep_symmetric_fig5
     n0, n1 = er.shape
     n_nodes = 2  # from data shape
-    grid = np.array(er.results.reshape(n0, n1, -1, n_nodes))
+    grid = np.asarray(er.results).reshape(n0, n1, -1, n_nodes)
     K_vals = _get_axis_values(er, 0)
     dt = er.dt
     t = _time_axis(grid.shape[2], dt)
@@ -752,7 +752,7 @@ def plot_fig6(res, experiment):
     er = res.exploration.K_sweep_asymmetric_fig6
     n0, n1 = er.shape
     n_nodes = 2
-    grid = np.array(er.results.reshape(n0, n1, -1, n_nodes))
+    grid = np.asarray(er.results).reshape(n0, n1, -1, n_nodes)
 
     ax0_vals = _get_axis_values(er, 0)
     ax1_vals = _get_axis_values(er, 1)
