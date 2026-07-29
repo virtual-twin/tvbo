@@ -2650,6 +2650,32 @@ def run_optimization(
     _stream_bs = expl.get('block_size') or 1000
     _stream_skip = int(round(transient_time / dt)) if has_transient else 0
     _stream_t1 = (transient_time + t1_default) if has_transient else t1_default
+    # Bundled-observation streaming: an exploration that bundles ALL declared observations
+    # (no explicit `record:` list, the exp 32/41 shape) streams when EVERY bundled observation
+    # is trajectory-free — a reduce: streaming reducer, a deliverable derived from streamed /
+    # static values, or a static network observation. Then the streamable ones fold into
+    # prepare(reduce=...) so S_e/S_i/x_e_pre are never materialised and the deliverables
+    # (fc, fc_corr, amp_dm, …) are computed from the streamed values with no trajectory. This
+    # is INERT for every other recipe: any bundled obs that needs the raw trajectory (no
+    # streaming reducer) leaves the set not-fully-streamable and keeps the materialise path.
+    # A wired algorithm (exp 41 FIC) still works — it tunes on the short-TR model_fn, then this
+    # streaming observable_fn evaluates the tuned state. The per-cell seed / noise wrappers
+    # compose on top (they set s.noise.key before the streamed fold), so a seed axis or model
+    # noise does not force materialisation. Injected stochastic-parameter trajectories and
+    # element-slot axes still need the trajectory model_fn and so keep the materialise path.
+    _bundle_plan = streaming_post_eval_plan(experiment) if bundles_observations else {'names': [], 'deliverables': [], 'period_in_steps': None}
+    _bundle_stream_names = _bundle_plan['names']
+    _bundled_all = set(observation_names) | set(derived_observation_names)
+    _bundle_covered = set(_bundle_stream_names) | set(_bundle_plan['deliverables']) | set(network_observation_names)
+    _bundle_fully_stream = (
+        bundles_observations
+        and bool(_bundle_stream_names)
+        and not stochastic_param_info
+        and not _element_axes_present
+        and not analysis_observation_names
+        and _bundled_all <= _bundle_covered
+    )
+    _bundle_bs = _bundle_plan['period_in_steps'] or 1000
     # Network-scope axes (e.g. `network.conduction_speed`): the base graph is a
     # DenseLengthGraph, so the axis sweeps its live `speed` leaf directly. _v_min
     # (the slowest swept speed) sizes the max_delay_bound history buffer.
@@ -2965,7 +2991,33 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     obs_class = ''.join(word.capitalize() for word in obs_name.split('_')) if obs_name else ''
 %>
 % if not obs_name:
-% if bundles_observations:
+% if bundles_observations and _bundle_fully_stream:
+    # Every bundled observation is trajectory-free (a reduce: streaming reducer, a derived
+    # deliverable, or a static network obs), so fold the streamable ones into the integrator
+    # carry via prepare(reduce=...) — the S_e/S_i/x_e_pre trajectory is NEVER materialised
+    # (peak memory O(batch·block·n_node), not O(batch·n_time·n_node)). Deliverables (fc,
+    # fc_corr, amp_dm, …) are computed from the streamed values with no trajectory. Falls back
+    # to the materialise path only when the network is a passed-in model_fn (not rebuildable).
+    if _network is not None:
+        _bundle_model_fn, _ = prepare(
+            _network, get_solver(block_size=${_bundle_bs}),
+            t0=0.0, t1=${_stream_t1}, dt=${dt},
+            reduce=_compose_reducers(*[
+                _STREAMING_REDUCERS[_n][0](_STREAMING_REDUCERS[_n][1], ${dt}, skip=${_stream_skip})
+                for _n in ${repr(_bundle_stream_names)}
+            ]),
+        )
+        @jax.jit
+        def observable_fn(s):
+            _vals = _bundle_model_fn(s)
+            _pre = {_n: _v for _n, _v in zip(${repr(_bundle_stream_names)}, _vals)}
+            return compute_all_observations(None, s, result_transient, precomputed=_pre)
+    else:
+        @jax.jit
+        def observable_fn(s):
+            result = _expl_model_fn(s)
+            return compute_all_observations(result, s, result_transient)
+% elif bundles_observations:
     # Observations declared: observable_fn returns only the reduced
     # observation values per grid point (no trajectory). Output size is
     # the sum of declared observation shapes — typically per-node or

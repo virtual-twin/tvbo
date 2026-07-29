@@ -38,7 +38,7 @@ Each artefact:
 
 - Sets up engine-specific job parameters (Slurm headers, Snakemake `rule all`, Nextflow channels) from the merged `slurm.*` / `snakemake.*` / `nextflow.*` workflow blocks.
 - Iterates the workflow-fanned axes: one array task / rule instance / process invocation per cell.
-- Runs the kit's **own frozen spec**: `tvbo run spec/<exp>.yaml --backend=… --slurm-chunk=$SLURM_ARRAY_TASK_ID/N -o …`, so each array task simulates its `1/N` share of the sweep and the job is **self-contained**. Any custom callable/builder modules the recipe references (`callable: {module: …}`, `builder: {module: …}`) are bundled into `code/` and the artefact puts it on `PYTHONPATH`, so no external recipe or code is needed at run time; only `tvbo` plus the backend runtime must be provisioned (from the emitted `environment.yml`). (If the source recipe is preferred over the frozen spec, the fallback form is `tvbo run <recipe> --experiment "<label>" --slurm-chunk=…`.)
+- Runs the kit's **own frozen spec**: `tvbo run spec/<exp>.yaml --backend=… --slurm-chunk=$SLURM_ARRAY_TASK_ID/N -o …`, so each array task simulates its `1/N` share of the sweep and the job is **self-contained**. Any custom callable/builder modules the recipe references (`callable: {module: …}`, `builder: {module: …}`) are bundled into `code/` and the artefact puts it on `PYTHONPATH`, so no external recipe or code is needed at run time; only `tvbo` plus the backend runtime must be provisioned (from the emitted `environment.yml`). (If the source recipe is preferred over the frozen spec, the fallback form is `tvbo run <recipe> --experiment "<label>" --slurm-chunk=…`.) A **Snakemake study kit** can additionally run the *pre-rendered* `scripts/<exp>` instead of re-generating from the spec — see [Code source: frozen vs spec](#code-source-frozen-vs-spec) below.
 - Optionally wraps the inner command in `singularity exec <image>` when `--set container=…` was passed.
 
 ### `scripts/<experiment>.<ext>`
@@ -89,6 +89,33 @@ Auto-generated provenance + how-to-run. Sections:
     - cell counts: workflow cells, chunk size, array tasks
     - vectorized vs. workflow-fanned axes (with names + ranges)
 4. **CLI overrides**: every `--set KEY=VALUE` recorded with its source.
+
+## Code source: frozen vs spec
+
+A **Snakemake study kit** emits *both* the frozen `scripts/<exp>` and the `spec/<exp>/` for every experiment, so the **same kit runs two ways** — chosen at emit or submit time:
+
+| Mode | The rule runs | What the node needs |
+|------|---------------|---------------------|
+| **`frozen`** | `tvbo run spec/<exp>.yaml --rendered scripts/<exp>.<ext> …` — executes the **pre-rendered** code as-is, no codegen | the `tvbo` runtime + backend; the reducer/streaming logic is already baked into the script, so the node's `tvbo` needs no matching codegen |
+| **`spec`** (default) | `tvbo run spec/<exp>.yaml …` — **re-renders** the backend code from the spec at run time | a `tvbo` whose codegen matches the emit-time behaviour |
+
+Pick the **emit-time default** baked into each rule (both artefacts are always written, so one kit stays submittable either way):
+
+```bash
+tvbo workflow snakemake <recipe> --code-source frozen   # default: spec
+```
+
+Override for a single submission:
+
+```bash
+tvbo workflow submit <kit> --code-source frozen         # sets $TVBO_CODE_SOURCE for this run
+# or drive snakemake yourself:
+TVBO_CODE_SOURCE=frozen snakemake --profile profile
+```
+
+Under the hood `frozen` uses **`tvbo run --rendered <script>`**: `tvbo run` keeps all orchestration (subject / shard / output / dataset resolution) but executes the given pre-rendered script instead of re-generating code. `frozen` and `spec` are **byte-identical** for a deterministic experiment — use `frozen` to pin the exact emitted code (immune to any later codegen drift) or when the node's `tvbo` predates a codegen feature the recipe relies on; use `spec` to re-generate against the node's `tvbo`.
+
+**Automatic fallback to spec.** A rule reverts to `spec` when no `scripts/<exp>` exists — e.g. a **cross-experiment analysis** (an observation whose `source:` reads another experiment's result) has no standalone simulation to render, so only its spec is emitted. `frozen` also cannot honour run-time flags that *change codegen* (`--set integration.*`, or `--pin` on a fan-out axis the backend does not vectorize); use `spec` for those.
 
 ## Why a *kit* (not a single file)?
 

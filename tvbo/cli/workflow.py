@@ -793,14 +793,43 @@ def _figure_base_dir(study, out_dir: Path) -> str:
     return str(Path(src).parent) if src else str(out_dir)
 
 
+def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: str) -> str | None:
+    """Freeze *experiment*'s pre-rendered backend script under ``out_dir/scripts/<key>.<ext>``.
+
+    Mirrors the single-experiment kit's script freeze (`_emit_kit` step 2): the rendered
+    tvboptim/jax/… code imports only stable tvbo runtime modules (never codegen), so a rule
+    can execute it as-is via ``tvbo run … --rendered`` — no code generation on the node.
+    Returns the kit-relative path, or ``None`` when the render fails, in which case the rule
+    falls back to re-rendering from the frozen spec.
+    """
+    from tvbo import export as _export
+
+    try:
+        fmt = _export.resolve(backend_name)
+        ext = (fmt.extension or ".py").lstrip(".")
+        code = experiment.render(format=backend_name)
+        scripts_dir = out_dir / "scripts"
+        scripts_dir.mkdir(parents=True, exist_ok=True)
+        path = scripts_dir / f"{key}.{ext}"
+        path.write_text(code, encoding="utf-8")
+        rel = str(path.relative_to(out_dir))
+        _common.info(f"wrote {rel}")
+        return rel
+    except Exception as exc:
+        _common.info(f"(could not render backend script for {backend_name!r}: {exc})")
+        return None
+
+
 def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
                           output: Path | None, override: list[str], stdout: bool = False,
-                          bundle_select: dict | None = None):
+                          bundle_select: dict | None = None, code_source: str = "spec"):
     """Emit one Snakefile that fans every experiment (and, per experiment, every
     subject / sweep cell) into its own job. In kit mode each experiment is frozen
-    into a self-contained ``spec/<key>/`` so a rule runs ``tvbo run
-    spec/<key>/experiment.yaml``; in ``--stdout`` mode nothing is written and the
-    rules run ``tvbo run <source-spec> --experiment <id>``."""
+    BOTH as a self-contained ``spec/<key>/experiment.yaml`` (re-rendered at run time)
+    AND as a pre-rendered ``scripts/<key>.<ext>`` (run as-is, no codegen). Each rule
+    picks between them at run time from ``$TVBO_CODE_SOURCE`` (default *code_source*,
+    ``'spec'`` for back-compat), so ONE kit runs either way; ``--stdout`` writes
+    nothing and its rules run ``tvbo run <source-spec> --experiment <id>``."""
     study, experiments, study_key = _study_experiments(spec, experiment)
     out_dir = output or Path("output").joinpath(str(study_key), "snakemake")
     if not stdout:
@@ -851,6 +880,7 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             result_stem = exp.get_result_stem()
         except Exception:
             result_stem = "result"
+        scripts_relpath = None
         if stdout:
             spec_relpath, select = spec, key
         else:
@@ -865,11 +895,22 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             # kit (shared code/ dir), so `tvbo run` resolves them on the node.
             bundled_code = _bundle_callable_modules(yaml_text, out_dir) or bundled_code
             spec_relpath, select = f"spec/{key}/experiment.yaml", None
+            # Freeze the pre-rendered backend script ALONGSIDE the spec, so the SAME kit
+            # runs either way: `--code-source frozen` runs `scripts/<key>.<ext>` with no
+            # codegen on the node. A render failure is non-fatal — the spec path still
+            # works; the rule falls back to it when the script is absent.
+            scripts_relpath = _freeze_backend_script(exp, out_dir, plan.backend.name, key)
             _common.info(f"froze experiment {key} ({len(plan.workflow_axes)} fan-out axes)")
         exp_plans.append({
             "key": key,
             "rule_name": "exp_" + key.replace("-", "_").replace(".", "_"),
             "spec_relpath": spec_relpath,
+            # Pre-rendered backend script (frozen alongside the spec); None in --stdout
+            # mode or if the render failed, in which case the rule always uses the spec.
+            "scripts_relpath": scripts_relpath,
+            # Emit-time default code source baked into the rule (overridable at run time
+            # via $TVBO_CODE_SOURCE); 'spec' preserves the pre-existing behaviour.
+            "code_source": code_source,
             "select": select,
             # The plan resolves an unset backend to the experiment's execution.backend
             # (else tvboptim); emit that resolved name, never the raw None — otherwise the
@@ -1083,11 +1124,11 @@ def _finalize_kit(out_dir: Path, *, pack: bool) -> Path:
 
 def _emit(engine: str, *, spec: str, backend: str, experiment: str | None,
           output: Path | None, override: list[str], stdout: bool, pack: bool = False,
-          bundle_select: dict | None = None) -> None:
+          bundle_select: dict | None = None, code_source: str = "spec") -> None:
     if engine == "snakemake":
         out_dir = _emit_snakemake_study(spec=spec, backend=backend, experiment=experiment,
                                         output=output, override=override, stdout=stdout,
-                                        bundle_select=bundle_select)
+                                        bundle_select=bundle_select, code_source=code_source)
         return _finalize_kit(out_dir, pack=pack) if out_dir is not None else None
     plan, exp = _build_plan(spec, engine=engine, backend=backend,
                             experiment=experiment, overrides=override)
@@ -1133,7 +1174,7 @@ def _resolve_launcher(name: str) -> str | None:
 
 def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | None = None,
                              dry_run: bool = False, profile: str | None = None,
-                             cores: str | None = None) -> None:
+                             cores: str | None = None, code_source: str | None = None) -> None:
     """Submit/execute a rendered workflow artefact for *engine*.
 
     Runs from the artefact's own directory so the generated script can use the
@@ -1184,13 +1225,20 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
             cmd.append("-preview")
     else:
         _common.die(f"unsupported engine {engine!r}; expected {'|'.join(_ARTEFACT_NAME)}")
+    # Select the frozen-vs-spec code source for this run by exporting TVBO_CODE_SOURCE into
+    # the engine's environment; each rule's shell reads it (default = the kit's emit-time
+    # default). Inherited by a local run and by any executor that forwards the environment.
+    env = None
+    if code_source is not None:
+        env = {**os.environ, "TVBO_CODE_SOURCE": code_source}
+        _common.info(f"code source: TVBO_CODE_SOURCE={code_source}")
     _common.info("$ " + " ".join(shlex.quote(c) for c in cmd))
-    subprocess.run(cmd, check=True, cwd=artefact.parent)
+    subprocess.run(cmd, check=True, cwd=artefact.parent, env=env)
 
 
 def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = None,
                      dry_run: bool = False, profile: str | None = None,
-                     cores: str | None = None) -> None:
+                     cores: str | None = None, code_source: str | None = None) -> None:
     """Execute a generated workflow artefact inside *out_dir*.
 
     For Slurm this submits the array job and then chains the gather job
@@ -1202,27 +1250,35 @@ def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = No
     :func:`_execute_engine_artefact`).
     """
     if engine == "slurm" and not dry_run:
-        _submit_slurm_chain(out_dir, slurm_array=slurm_array)
+        _submit_slurm_chain(out_dir, slurm_array=slurm_array, code_source=code_source)
     else:
         _execute_engine_artefact(engine, out_dir / _ARTEFACT_NAME[engine],
                                  slurm_array=slurm_array, dry_run=dry_run,
-                                 profile=profile, cores=cores)
+                                 profile=profile, cores=cores, code_source=code_source)
 
 
-def _submit_slurm_chain(out_dir: Path, *, slurm_array: str | None = None) -> None:
+def _submit_slurm_chain(out_dir: Path, *, slurm_array: str | None = None,
+                        code_source: str | None = None) -> None:
     """Submit ``run.sbatch`` (array), then ``finalize.sbatch`` with a dependency.
 
     ``sbatch --parsable`` returns the array job id; the gather job is submitted
     ``--dependency=afterok`` on it and told where the shards landed via
     ``TVBO_SHARD_DIR``, so it reassembles them into one result once every task
-    succeeds.
+    succeeds. When *code_source* is set it is exported into the submit environment
+    as ``TVBO_CODE_SOURCE`` (``sbatch`` forwards it to the job via its default
+    ``--export=ALL``), selecting the frozen-vs-spec code source per submission.
     """
+    env = None
     cmd = ["sbatch", "--parsable"]
     if slurm_array is not None:
         cmd.append(f"--array={slurm_array}")
+    if code_source is not None:
+        cmd.append(f"--export=ALL,TVBO_CODE_SOURCE={code_source}")
+        env = {**os.environ, "TVBO_CODE_SOURCE": code_source}
+        _common.info(f"code source: TVBO_CODE_SOURCE={code_source}")
     cmd.append(_ARTEFACT_NAME["slurm"])
     _common.info("$ " + " ".join(shlex.quote(c) for c in cmd))
-    res = subprocess.run(cmd, check=True, cwd=out_dir, capture_output=True, text=True)
+    res = subprocess.run(cmd, check=True, cwd=out_dir, capture_output=True, text=True, env=env)
     job_id = (res.stdout or "").strip().split(";")[0]
     _common.info(f"submitted array job {job_id}")
 
@@ -1279,6 +1335,14 @@ def slurm(
           output=output, override=override, stdout=stdout, pack=pack, bundle_select=sel)
 
 
+def _validate_code_source(value):
+    """Reject a mistyped ``--code-source`` up front — a silently-unmatched value would fall
+    through to the spec path with no error. ``None`` (submit's 'use the kit default') is allowed."""
+    if value is not None and value not in ("spec", "frozen"):
+        raise typer.BadParameter("must be 'spec' or 'frozen'")
+    return value
+
+
 @app.command("snakemake", help="Emit a self-contained Snakemake kit (Snakefile + scripts + spec).")
 def snakemake(
     spec: str = typer.Argument(...),
@@ -1306,6 +1370,15 @@ def snakemake(
         None, "--max-iterations", min=1,
         help="Cap every rule's `tvbo run` to N tuning iterations. --set max_iterations=N.",
     ),
+    code_source: str = typer.Option(
+        "spec", "--code-source",
+        help="Emit-time DEFAULT code source baked into each rule: 'spec' re-renders backend "
+             "code from the frozen spec at run time (back-compat); 'frozen' runs the "
+             "pre-rendered scripts/<key> as-is (no codegen — needs only the node's tvbo "
+             "runtime). BOTH artefacts are always emitted, so the SAME kit runs either way; "
+             "override per run with $TVBO_CODE_SOURCE (see `tvbo workflow submit --code-source`).",
+        callback=_validate_code_source,
+    ),
     bundle_dataset: bool = typer.Option(
         False, "--bundle-dataset",
         help="Copy the fan-out's per-subject dataset files into the kit (spec/<exp>/dataset/) "
@@ -1330,7 +1403,8 @@ def snakemake(
         *([f"max_iterations={max_iterations}"] if max_iterations is not None else []),
     ]
     _emit("snakemake", spec=spec, backend=backend, experiment=experiment,
-          output=output, override=override, stdout=stdout, pack=pack, bundle_select=sel)
+          output=output, override=override, stdout=stdout, pack=pack, bundle_select=sel,
+          code_source=code_source)
 
 
 @app.command("nextflow", help="Emit a self-contained Nextflow kit (main.nf + scripts + spec).")
@@ -1428,6 +1502,14 @@ def run_workflow(
              "declares. The SAME kit submits to the scheduler on HPC when --cores is omitted; "
              "on a machine with no `sbatch` a bare run falls back to local automatically.",
     ),
+    code_source: str = typer.Option(
+        "spec", "--code-source",
+        help="Snakemake only: code source for the emitted-and-run kit — 'spec' re-renders "
+             "backend code at run time (default), 'frozen' runs the pre-rendered scripts/<key> "
+             "(no codegen). Baked in as the kit's default AND exported for this run; BOTH "
+             "artefacts are emitted, so the kit stays submittable either way afterwards.",
+        callback=_validate_code_source,
+    ),
 ) -> None:
     """Emit a self-contained kit then execute it (or submit for Slurm).
 
@@ -1447,7 +1529,7 @@ def run_workflow(
             _out_i = (output / f"exp{_eid}") if output else Path("output") / f"exp{_eid}"
             _common.info(f"── experiment {_eid} → {_out_i}")
             run_workflow(engine, spec, backend, _eid, _out_i, override, array,
-                         array_throttle, profile, cores)
+                         array_throttle, profile, cores, code_source)
         return
     effective_overrides = list(override)
     if engine == "slurm" and array is not None:
@@ -1477,12 +1559,16 @@ def run_workflow(
                     f"{plan_preview.n_vectorize_cells} for --array run"
                 )
     out_dir = _emit(engine, spec=spec, backend=backend, experiment=experiment,
-                    output=output, override=effective_overrides, stdout=False)
+                    output=output, override=effective_overrides, stdout=False,
+                    code_source=code_source)
     if out_dir is None:
         _common.die("failed to emit workflow kit")
     if array is not None and array_throttle is not None:
         array = f"{array}%{array_throttle}"
-    _execute_emitted(engine, out_dir, slurm_array=array, profile=profile, cores=cores)
+    # The emitted kit already defaults to code_source; export it too so a non-default choice
+    # reaches the job even on an executor that only forwards the environment.
+    _execute_emitted(engine, out_dir, slurm_array=array, profile=profile, cores=cores,
+                     code_source=code_source if code_source != "spec" else None)
 
 
 def _tar_extractall_safe(tar, dest: Path) -> None:
@@ -1591,6 +1677,16 @@ def submit_kit(
              "profile declares. The SAME kit submits to the scheduler on HPC when --cores is "
              "omitted; on a machine with no `sbatch`, a bare submit falls back to local.",
     ),
+    code_source: str = typer.Option(
+        None, "--code-source",
+        help="Override the kit's baked-in code source for THIS submission by exporting "
+             "TVBO_CODE_SOURCE into the run environment: 'frozen' runs the pre-rendered "
+             "scripts/<key> (no codegen); 'spec' re-renders from the frozen spec. Omit to use "
+             "the kit's emit-time default (`tvbo workflow snakemake --code-source`). Lets ONE "
+             "kit be submitted both ways for verification. Forwarded to the job by a local run "
+             "and by any executor that exports its environment (Slurm `--export=ALL`).",
+        callback=_validate_code_source,
+    ),
 ) -> None:
     """Submit a kit already emitted by ``tvbo workflow slurm|snakemake|nextflow``.
 
@@ -1632,7 +1728,8 @@ def submit_kit(
     # --system-site-packages venv (native, or on the container) and is idempotent (the venv
     # is reused), so it is cheap to re-run.
     _provision_env_layer(kit, dry_run=dry_run)
-    _execute_emitted(eng, kit, slurm_array=array, dry_run=dry_run, profile=profile, cores=cores)
+    _execute_emitted(eng, kit, slurm_array=array, dry_run=dry_run, profile=profile,
+                     cores=cores, code_source=code_source)
 
 
 def _provision_env_layer(kit: Path, *, dry_run: bool) -> None:

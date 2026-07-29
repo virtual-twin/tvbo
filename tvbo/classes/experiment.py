@@ -1658,7 +1658,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         _walk(parameters)
 
-    def execute(self, format="tvb", **kwargs):
+    def execute(self, format="tvb", rendered_code=None, **kwargs):
         """Render and build the executable object for a backend without running it.
 
         Calls `configure` to normalize coupling/delay metadata, renders the
@@ -1674,6 +1674,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         Args:
             format: Backend identifier selecting what to build.
+            rendered_code: Optional pre-rendered backend script to execute
+                instead of calling `render_code(format)`. When given, no code
+                is generated: the string is executed as-is, so a kit frozen
+                once (via `render(format)`) runs on a stock tvbo runtime with
+                no codegen step. Must match `format`. When `None` (default) the
+                behaviour is unchanged — the code is rendered on the fly.
             **kwargs: Backend-specific options. Forwarded to the TVB simulator
                 factory, to `render_code`, or interpreted as JAX flags
                 (`jit`, `_return_namespace`) depending on `format`.
@@ -1688,7 +1694,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # backend code generation. Idempotent — safe if called twice via run().
         self.configure()
         if format.lower() == "tvb":
-            code = self.render_code(format=format)
+            code = rendered_code if rendered_code is not None else self.render_code(format=format)
             namespace = templater.exec_globals
             exec(code, namespace)
             sim = namespace["define_simulation"](connectivity=self.network.execute("tvb"), **kwargs)
@@ -1701,14 +1707,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # This allows: ns = exp.execute('tvboptim')
             #              spectrum, cauchy_pdf = ns.spectrum, ns.cauchy_pdf
             namespace = {}
-            code = self.render_code("tvboptim")
+            code = rendered_code if rendered_code is not None else self.render_code("tvboptim")
             exec(code, namespace)
             return Bunch(**namespace)
 
         elif format.lower() in ["autodiff", "jax"]:
             _return_namespace = kwargs.pop("_return_namespace", False)
             jit = kwargs.get("jit", True)
-            code = self.render_code(format=format, **kwargs)
+            code = rendered_code if rendered_code is not None else self.render_code(format=format, **kwargs)
             # Use a fresh namespace each time to avoid JAX tracer leaks
             # between repeated executions (stale tracers in shared globals
             # cause UnexpectedTracerError on re-runs).
@@ -1722,7 +1728,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return jax_model
 
         elif format.lower() in ["pde", "pde-fem", "pde-python"]:
-            code = self.render_code(format="pde")
+            code = rendered_code if rendered_code is not None else self.render_code(format="pde")
             namespace = templater.exec_globals
             exec(code, namespace)
             return namespace
@@ -2063,7 +2069,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     out[f"{getattr(axis, 'parameter', '')}::{an}"] = np.asarray(da.values)
         return out or None
 
-    def run(self, format=None, initial_conditions=None, results_root=None, **kwargs):
+    def run(self, format=None, initial_conditions=None, results_root=None,
+            rendered_code=None, **kwargs):
         """Configure, build, and run the experiment on a backend.
 
         Dispatches on `format` to the corresponding backend (`tvb`, `tvboptim`,
@@ -2083,6 +2090,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 `initial_state.method == from_experiment` (see
                 `_resolve_from_experiment_seed`). Defaults to the current
                 directory; the CLI passes the run's output-directory parent.
+            rendered_code: Optional pre-rendered backend script executed instead
+                of generating code at run time (forwarded to `execute`). All
+                orchestration around it — subject/dataset resolution, seeds,
+                network observations, saving — is unchanged, so a frozen script
+                and the from-spec render produce byte-identical results. `None`
+                (default) keeps the render-at-runtime behaviour.
             **kwargs: Backend-specific run options. A `duration` value is
                 applied to the integration settings before running; other
                 keys (e.g. `benchmark`, `mode`) are passed through to the
@@ -2129,7 +2142,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     stacklevel=2,
                 )
             initial_conditions = self.collect_initial_conditions(random=_random_ic)
-            simulator_ = self.execute()
+            simulator_ = self.execute(rendered_code=rendered_code)
             simulator_.initial_conditions = initial_conditions.data
             simulator_.configure()
             simres = simulator_.run(**kwargs)
@@ -2228,7 +2241,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Get the namespace (reuse execute to avoid code duplication)
             if benchmark:
                 t0 = time.perf_counter()
-            ns = self.execute("tvboptim")
+            ns = self.execute("tvboptim", rendered_code=rendered_code)
             if benchmark:
                 timings.code_generation = time.perf_counter() - t0
 
@@ -2320,7 +2333,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 jax.config.update("jax_enable_x64", False)
                 state = state.convert_dtype(target_dtype=jnp.float32)
 
-            jax_model, _jax_ns = self.execute(format="jax", _return_namespace=True, **kwargs)
+            jax_model, _jax_ns = self.execute(format="jax", _return_namespace=True,
+                                              rendered_code=rendered_code, **kwargs)
             _run_fn = _jax_ns.get("run_experiment")
             if _run_fn is not None:
                 # Template builds ExperimentResult directly (mirrors tvboptim backend).
@@ -2352,7 +2366,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
 
         elif format.lower() in ["pde", "pde-fem", "pde-python"]:
-            ns = self.execute(format="pde")
+            ns = self.execute(format="pde", rendered_code=rendered_code)
             solve = ns.get("solve_pde")
             viz = ns.get("visualize")
             meta = ns.get("meta")
