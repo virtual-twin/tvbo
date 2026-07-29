@@ -138,3 +138,32 @@ def test_reducer_is_block_decomposition_invariant(block):
     got = np.asarray(finalize(acc))
 
     assert np.array_equal(got, np.asarray(data[:, 0, :])[ds - 1::ds])
+
+
+@pytest.mark.parametrize("n_steps", [305, 312, 324])
+def test_reducer_handles_a_partial_tail_block(n_steps):
+    """A run length that is not a multiple of the block leaves a short tail.
+
+    tvboptim's ``_blocked_scan`` runs ``n_steps // block_size`` full blocks and then ONE
+    tail call of the remainder, so the reducer must neither write past its buffer nor
+    leave the last slot unwritten — a stale zero row would look like a real sample. The
+    buffer is sized ``len(range(ds-1, n_steps, ds))``, which equals the number of full
+    blocks when ``block_size == ds``; this pins that identity for tails that do and do not
+    themselves contain a sample.
+    """
+    rng = np.random.default_rng(2)
+    ds, n_node = 25, 3
+    data = jnp.asarray(rng.standard_normal((n_steps, 1, n_node)))
+
+    init, update, finalize = _emit_reducer(ds)()
+    acc = init(data[0], n_steps)
+    n_blocks = n_steps // ds
+    for b in range(n_blocks):
+        acc = update(acc, data[b * ds:(b + 1) * ds])
+    if n_steps % ds:
+        acc = update(acc, data[n_blocks * ds:])
+    got = np.asarray(finalize(acc))
+
+    expected = np.asarray(data[:, 0, :])[ds - 1::ds]
+    assert got.shape == expected.shape
+    assert np.array_equal(got, expected)
