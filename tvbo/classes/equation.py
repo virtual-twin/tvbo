@@ -18,7 +18,6 @@ import sympy as sp
 from sympy import (
     IndexedBase,
     Piecewise,
-    init_printing,
     latex,
     sympify,
     parse_expr,
@@ -28,10 +27,15 @@ from sympy import (
 from sympy.abc import _clash1
 from sympy.core.basic import Basic
 from sympy.core.symbol import symbols
+from sympy.printing.printer import Printer
 
 from tvbo.ontology import owl as ontology
 
-init_printing(order="none")
+# Term order only — NOT `init_printing`, which also installs global IPython display
+# formatters. Under a Jupyter kernel sympy resolves those to `use_latex='png'` and claims
+# builtin `int`, so a report's inline `{python} n_modes` renders as a base64 PNG instead of
+# a number. This is the setting `init_printing` itself applies, without that side effect.
+Printer.set_global_settings(order="none")
 
 _clash1.update(
     {

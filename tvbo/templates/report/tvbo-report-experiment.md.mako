@@ -71,6 +71,7 @@ execution = getattr(exp, 'execution', None)
 references = getattr(exp, 'references', []) or []
 
 derivative_notation = context.get('derivative_notation', 'dot')
+mul_symbol = context.get('mul_symbol', None)
 
 # ── Auto-numbering ──
 _sec = [0]
@@ -268,7 +269,11 @@ output = getattr(model, 'output', []) or []
 coupling_inputs = getattr(model, 'coupling_inputs', {}) or {}
 coupling_terms = getattr(model, 'coupling_terms', {}) or {}
 observed = getattr(model, 'observed', {}) or {}
-events = getattr(model, 'events', []) or []
+# The Dynamics carries only the event NAMES its dfuns reference (propagated so they parse
+# in the model's symbolic scope); the full declaration — condition, effect, parameters —
+# lives on the experiment, so the experiment's definition wins where both name an event.
+events = dict(report.name_items(getattr(model, 'events', None)))
+events.update(dict(report.name_items(getattr(exp, 'events', None))))
 model_summary = []
 if _p(model, 'model_type', None):
     model_summary.append(f"type: {_p(model, 'model_type')}")
@@ -300,12 +305,8 @@ ${'; '.join(model_summary)}.
 
 **State Equations**
 
-% for name, svar in svars.items():
-<%
-svar_eq = getattr(svar, 'equation', None)
-svar_rhs = getattr(svar_eq, 'rhs', '') if svar_eq else ''
-%>
-$$${deriv_latex(name, svar_rhs)}$$
+% for _eq in report.model_equations_latex(model, 'state', derivative_notation, mul_symbol):
+$$${_eq}$$
 % endfor
 
 % if dvars or mfuncs:
@@ -407,7 +408,9 @@ ${report.param_table(coupling_terms, name_header='Term')}
 
 % endif
 % if events:
-**Events:** ${', '.join([_name_text(item) for item in _as_list(events)])}
+**Events**
+
+${report.event_table(events, derivative_notation)}
 
 % endif
 % endif

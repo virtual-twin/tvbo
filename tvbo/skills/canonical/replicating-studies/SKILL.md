@@ -100,7 +100,7 @@ figures that silently integrate the wrong attractor.
    `original_study/` exclusion; keep every comment on its own line.)
 7. **Replication, stated honestly.** Frame it as *replication* (independent code +
    independently-sourced data → same conclusions), not bit-exact *reproduction*. Ship a
-   **scorecard** (met / partial / out-of-scope) with a **fidelity tier per target**
+   **scorecard** (met / short / out / blocked -- see below) with a **fidelity tier per target**
    (mechanism-level vs decimal-level, Phase 1.5) and name the **accepted limitations**
    (unavailable exact SC, unpublished-seed realization dependence) up front.
 8. **Figures are declared metadata, not a plotting script.** Each paper figure is a
@@ -264,6 +264,16 @@ symmetric random bimodal the paper never deposited → 6 vs the paper's 9 solita
 realization gap; the real-data P^R reproduces its 11 exactly on the same simulator — which is
 what *proves* the gap is the data, not the code.)
 
+A fourth: **a deposit routinely ships the OPTIMUM but not the search that found it.** Pang2023
+deposits the fitted model's FC/FCD and a 2-element `KS`, and nothing of the 20-point `r_s`
+landscape those came from — that curve exists only as a published raster (Extended Data Fig 10).
+So a sweep target's *shape* can be compared only figure-to-figure while its *optimum* compares
+numerically. Tag it accordingly, and when you do read values off their raster, say so — reading
+a curve by eye is an observation, not a measurement, and must not be presented beside computed
+numbers as though it were one. (Ours reproduced their descending limb almost exactly under a
+one-grid-step shift while the ascending limb was far shallower — enough to state as a lead, not
+enough to claim a mechanism.)
+
 ## Phase 2 — Source the data → `DATA.md` (tracked) + gitignored data dirs
 
 **Skip this phase if your study is self-contained** — a bifurcation / phase-portrait /
@@ -416,6 +426,56 @@ are both regenerable artifacts.
   `font_size`, `height_ratios`/`width_ratios`, `style` (`.mplstyle` paths), `spines`,
   `panel_numbers`/`panel_number_format`/`panel_number_loc`. Set the paper's physical size and
   type scale here, once — never in code.
+
+**Size, aspect and type size are MEASURED off the original, not guessed — get them right on
+the first render.** Three defaults are wrong for a replication and cost a re-render every time:
+
+- **Aspect.** Derive `height` from the original's own pixel aspect: `height = width ×
+  (h_px / w_px)` of the paper's figure scan (a Nature two-column figure is `width: 183`, a
+  single-column one `88`). Then set **`trim_margins: false`** — the default trims to content
+  (`bbox_inches="tight"`), which re-crops the saved PNG and makes its aspect drift away from
+  the declared `width × height`, which is exactly the "why is my figure the wrong shape"
+  symptom. Check it: the rendered PNG's `h/w` must equal `height/width` to ~1 %.
+  **But `trim_margins: false` also exposes a layout failure that trimming used to hide.**
+  A dense mosaic (many panels, a very short row, empty `.` cells) can starve matplotlib's
+  constrained-layout solver — it warns `axes sizes collapsed to zero` and silently drops
+  EVERY axes back to the default 12 % subplot margins, giving a figure ringed by ~8 % white
+  that neither `set_layout_engine("none")` nor `subplots_adjust` nor `height_ratios` will
+  shift. Diagnose by measuring the ink bounding box of the PNG; if padding is ~8 % on all
+  four sides while a sibling figure is at ~1 %, that is this bug and not your margins. The
+  fix is to let it trim and declare the size OVERSIZE so the trimmed result lands on the
+  target (iterate twice — measure, rescale, re-render), and **re-measure after any type-size
+  change**, because the trim moves with it.
+- **Panel proportions.** A mosaic alone distributes rows/columns EQUALLY. If the paper's rows
+  or columns are unequal (a short schematic row above tall matrix panels), measure their pixel
+  extents in the original and set `height_ratios` / `width_ratios` — otherwise every panel is
+  subtly the wrong shape even though the figure size is right.
+- **Type size — the single most repeated defect in this skill's history. VERIFY IT IN PIXELS,
+  every time, before you call a figure done.** Set **`font_size: 9`** for a 183 mm figure and
+  **10** for an 88 mm one as the *starting* value, never below 8. Then MEASURE, because two
+  independent traps make the declared number a lie:
+
+  1. **A study `.mplstyle` silently overrides `font_size`.** If the study ships a style file
+     that sets `font.size`, it used to be applied *after* the declared size and won — so
+     `font_size: 8` in the spec rendered as whatever the style said (Pang2023: 5 pt) with
+     nothing in the spec, the log, or the emitted script to show it. tvbo now applies the
+     `.mplstyle` FIRST and the declared `font_size` last (regression-tested), but **any style
+     file you write must still be checked**: grep it for `font.size`, `axes.labelsize`,
+     `xtick.labelsize`.
+  2. **A point size is meaningless without the width it was measured at.** Apparent size is
+     the ratio of glyph height to figure WIDTH. Pixel forensics on a 120 mm (1.5-column)
+     original that you then reproduce at 183 mm yields type ~1.5× too small — and the same
+     error scales every `linewidth`, `markersize` and tick length in the file. If a
+     `.mplstyle` is derived from measurements, record the width they were taken at and
+     rescale by `target_mm / measured_mm`.
+
+  **The check (do it, don't assume):** binarise the rendered PNG and the paper's own scan,
+  take connected components with `5 <= h <= 40 px`, and compare the modal glyph height as a
+  PERCENTAGE OF IMAGE WIDTH. That ratio is resolution-independent, so it compares a 953 px
+  scan with a 2161 px render directly. Journals run ~0.7–0.85 %; land within that or slightly
+  above. **Aim a little above the original** — a Nature figure's 6 pt labels are legible at
+  183 mm in print and illegible on screen at 2000 px, and every replication we have shipped
+  erred small, three of them after this rule was already written down.
 - **Grammar panels need zero code.** A `cartesian` or `heatmap` panel binds data through its
   `layers`: `used: {iri: tvbo:exp/<Study>/exp-3, output: <var|observation__name>, sel: {dim: label}}`
   (label-keyed, never positional — this binding **is** the PROV `used` edge), plus `mark`
@@ -510,44 +570,61 @@ See **writing-reports** for the report mechanics: the IMRAD structure, the metri
 that computes every number from the containers (nothing hand-typed), the native
 `EXP.dynamics.generate_report(..., citeformat="quarto")` equation and parameter render, the
 three-colour status callouts, the copyright-safe internal/public split, references as Quarto's
-auto-appended bibliography, the typst/LaTeX rules, and the anti-slop prose standard. The templates
+auto-appended bibliography, the LaTeX rules, and the anti-slop prose standard. The templates
 it copies ship in this skill's `assets/`: `report.qmd.tmpl`, `report_internal.qmd.tmpl`, and
 `_quarto.yml.tmpl`. Copy all three into `report/` (as `report.qmd`, `report_internal.qmd`,
 `_quarto.yml`). One Quarto project renders BOTH PDFs from a single `quarto render` (in `report/`,
 no file arg): `report.qmd` holds the whole report and carries NO front matter, `report_internal.qmd`
 is a thin `{{< include report.qmd >}}` wrapper that draws the paper's © figures for A/B checking,
-and `_quarto.yml` lists both and holds the shared `format: typst` + `bibliography:`. The build
+and `_quarto.yml` lists both and holds the shared `format: pdf` (xelatex) + `bibliography:`. The build
 branches on `QUARTO_DOCUMENT_FILE`; no `--profile`, no post-render hook (see the header comment in
 `_quarto.yml.tmpl`).
 
-**Embed every figure through a python cell, never a markdown link to `../figures/`.** Typst
-resolves paths only *inside* the render project (`report/`), so `![](../figures/x.png)` fails the
-build with a bare `error: failed to load file (access denied)` — nothing about paths. The `ab()`
-helper (and a one-panel `show()` for figures with no paper counterpart) reads the PNG with
-`mpimg.imread` and draws it, which also lets `ab()` decide per build whether the © original
-appears at all. When stacking several scans in one panel, normalise them first — an RGBA PNG and
-an RGB JPEG cannot be `np.concatenate`d (`dimension 2 has size 4 vs 3`).
+**Stage every figure into `report/_figures/` and embed it from there, never through a link up
+into `../figures/`.** `tvbo.utils.report.report_figure` does the staging, decides per build
+whether the © original is opened at all, and composes the A/B pair — one implementation for every
+study, so no report grows its own `ab()` again. Loop the recipe's own `figures:` block
+(`figures_in_paper_order`, `figure_title`, `figure_caption`) rather than a hand-written list of
+stems and captions, and derive each figure's status callout from `figure_targets(fig,
+TARGET_ROWS)` so it cannot disagree with the scorecard.
 
-**`figcap()` reads the LOADED study, never a YAML file.** Resolve the caption off
-`SimulationStudy.from_file("../<Study>.yaml").figures` (match by `Figure.name`), so it keeps
-working however the spec is split — a `figcap` that raw-parses `figures.yaml` breaks the moment
-the figures move into the recipe or behind an `!include`, and it silently returns `""` (an empty
-caption) rather than failing.
+**Captions read the LOADED study, never a YAML file.** `figure_caption` resolves off
+`SimulationStudy.from_file("../<Study>.yaml").figures`, so it keeps working however the spec is
+split — a caption helper that raw-parses `figures.yaml` breaks the moment the figures move into
+the recipe or behind an `!include`, and it silently returns `""` rather than failing.
 
 **Migrating an older report off the profile split**: `report-src.qmd` → `report.qmd` with its
 front matter *moved* into `_quarto.yml` (the file must carry none, or the wrapper's `output-file`
 is overridden), add the `report_internal.qmd` wrapper, and **delete** `_quarto-internal.yml`
 together with any `post-render:` hook or `make_internal_report.py`-style generator — the two
-entries in `render:` replace all of it. Flip `INTERNAL` from `QUARTO_PROFILE` to
-`QUARTO_DOCUMENT_FILE`, repoint `FIGS` at `../figures`, and render with a bare `quarto render`
-(passing `--to pdf` forces xelatex and reintroduces the intermediate-clobber problem typst avoids).
+entries in `render:` replace all of it. Flip `INTERNAL` to `tvbo.utils.report.is_internal()`,
+repoint `FIGS` at `../figures`, and render with a bare `quarto render`.
 
 Replication-specific rules on top of that mechanics:
 
+- **A shortfall is one of three things, and the scorecard must not merge them.** `met` /
+  **`short`** (attempted, did not meet its criterion -- the only true replication failure) /
+  **`out`** (judged to test nothing the other targets do not; declared unattempted) /
+  **`blocked`** (in scope, but an input cannot be obtained). Written as one bucket, a scope
+  decision reads as a failure and -- worse -- a failure can hide inside a scope decision. Check
+  by reading each reason: if it describes an obstacle ("needs data that is not released") the
+  row is `blocked`, not `out`; if it describes a result, it is `short`.
+
 - **The scorecard maps 1:1 to `targets.md`.** Every criterion `T1..Tn` from Phase 1 is one
-  row (met / partial / out), tagged with its Phase-1.5 **fidelity tier**: *mechanism-level*
+  row, tagged with its Phase-1.5 **fidelity tier**: *mechanism-level*
   (a sign or ordering that any reasonable input reproduces) vs *decimal-level* (a number that
   needs the paper's exact input). Derive the verdict from the data, never assert it.
+  Mechanically: give `targets.md` a `Status` column and **read that file** —
+  `report.read_md_tables(<path>)` returns each table's rows as `{header: cell}` dicts, so the
+  scorecard, the tally by scope, and the "which targets fell short" list are all computed
+  from the one file whose criteria were written before anything ran. Typing the tally into
+  prose is the same defect as typing a result (non-negotiable #2): it drifts the first time a
+  target changes verdict, and nothing catches it. **A file you compute from is an input —
+  validate the parse.** Three rows of our `targets.md` had run two cells together into one, so
+  those rows silently shifted a column left and their Scope/Fidelity/Status read as each other's
+  neighbour; the table still rendered, and the tally was simply wrong. Check that every row
+  parsed to the full header width and that each value falls in its expected vocabulary
+  (`core|extended|out`, `mech|dec`, `met|partial|out`) before believing the counts.
 - **Reproduction vs. replication (NASEM framing).** Frame the study as replication, not
   bit-exact reproduction, and split the mechanism-level targets (they reproduce) from the
   decimal-level ones (capped by unavailable inputs, stated as accepted limitations). This
@@ -619,6 +696,24 @@ dataset **by name** (`eig_vec`), never "the first key" — sibling arrays like `
 first and load silently; and MATLAB HDF5 arrives **transposed**, so confirm orientation
 against a known dimension rather than by eye.
 
+**A cross-check experiment should RECORD on the grid it will be compared against.** When one
+experiment exists to bound another's error, declare its observation at the *other* run's
+sampling period (`iri: tvbo:SubSample`, `period: <the other run's dt>`, `reduce: streaming`)
+rather than recording its own — much finer — solver step. The two then share one time
+coordinate by construction, so the comparison needs no interpolation and no positional
+decimation, and the container stops being an artifact in its own right: Pang2023's vertex-space
+check went 2.3 GB → 151 MB and 10 min → 1m23, because the *write*, not the solve, was eight of
+those ten minutes. Recording every step of a 32,492-node field "in case we need it" is also how
+you stall the whole machine — that write filled the page cache and collapsed throughput for
+unrelated work that followed, which reads as a hung job rather than as the disk-bound write it is.
+
+**Report a cross-check that does not converge AS unresolved.** Do not quote a bound from a
+diverged run, and do not quietly drop the target. Say what was measured (the step sizes tried,
+where it left the physical range, the growth rate at each), separate what that *does* exonerate
+(here: the analysis chain, verified end to end on the diverged container) from what stays open
+(the discretisation), and mark the row `partial`/open in the scorecard. An unresolved
+verification honestly reported is a result; a missing one is a gap in the replication.
+
 ### When NO output data is shipped, an unverified convention is an ASSUMPTION — label it
 
 The identity checks above only exist because that deposit happened to include the authors'
@@ -683,6 +778,21 @@ method (Váša `rotate_parcellation.m`) does a greedy "most distant minimum" ass
 *reflection*, which is not a rotation of the sphere. Where the deposit ships its own
 permutation set, use **theirs** to verify your statistic, which isolates the test from your
 RNG; then check your own generator separately (every row a true permutation).
+
+**Measure the layout, then eyeball the shape.** Declare each figure's published counterpart
+with `reference_image: original_study/img/fig_0N.png` and run `tvbo figure compare
+<Study>.yaml`: it decomposes both images into panel boxes (recursive XY-cut), matches them by
+overlap, and writes a per-panel offset table plus a side-by-side overlay. Page **aspect** is
+the number to read first — it is exactly reproducible and it catches the whole class of "the
+figure is the wrong shape" that survives every value check. A deliberate aspect difference
+(a panel of the paper's you do not draw) is fine, but it belongs in the figure's
+`description:` as a stated departure, not as an unexplained 1.14-against-1.75. The panel
+counts often disagree because a published raster's panels touch where yours have gutters;
+read the offsets only where the counts agree. Identifying the counterpart is itself worth the
+few minutes: deposits number their images `fig_01…fig_NN` with no mapping to "Extended Data
+Fig 10", the offset from main-text numbering is *not* uniform, and the only reliable way is to
+open the candidates — doing so is what turned Pang2023's `r_s` landscape from an
+uncomparable panel into one measurable at aspect 1.272 against 1.280.
 
 **Eyeball every reproduced panel's *shape* against the paper — the A/B internal composite is
 the instrument, not a formality.** Inline-computed numbers (non-negotiable #2) catch a wrong
@@ -798,6 +908,41 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
 
 ## Dynamical & numerical traps (these cost us the most time)
 
+- **Size `step_size` from the STIFFEST thing the experiment actually integrates — not from the
+  paper's fitted parameter, and not from the sibling experiment whose `integration:` block you
+  inherited.** A step chosen for the optimum is wrong for the sweep that visits the rest of the
+  grid, and wrong again for the same equation solved in a different space. Both failures are
+  SILENT: the sweep returns plausible numbers from the cells that happened to converge. Two
+  measured cases from Pang2023, both from one inherited anchor. (1) The resting model's fastest
+  mode is `γ_s·√(1 + r_s²·λ_max)` — 114 Hz at the fitted `r_s` = 28.9 mm but **390 Hz at the
+  grid's 100 mm**. At the single run's 0.5 ms every cell from `r_s` = 76 mm up returned a growing
+  fraction of non-finite modes (11 % → 47 %) while the low-`r_s` cells looked perfectly healthy —
+  and the *converged* part of the landscape was distorted too: halving to 0.25 ms did not merely
+  remove NaNs, it sharpened the optimum from KS 0.065 in a flat well to **0.029 against 0.068 at
+  its neighbour**, moving the very quantity the paper's optimisation minimises. (2) The same PDE
+  on the mesh instead of in a 200-mode basis: the truncated basis stops at |λ| = 0.044 mm⁻² while
+  the full cotangent LBO reaches **16.0 mm⁻²**, ~360× stiffer, and the inherited 0.1 ms step
+  diverged to 1e116. Measure the operator's spectral radius
+  (`scipy.sparse.linalg.eigsh(L, k=1, which='LM')`), form `dt·ω`, pick the step from that, then
+  confirm the boundary empirically — a sweep locates its own (ours sat at `dt·ω ≈ 0.9` for Heun).
+  Give the swept or differently-discretised experiment its OWN `integration:` block
+  (`<<: *anchor` + an overriding `step_size:`) and say why in a comment, or a reader reads the
+  difference as drift rather than as the measurement it is.
+- **A stability claim needs the FULL production window — a short probe proves nothing.** We
+  tested the vertex-space run over 20 ms, watched it decay, and declared the finer step stable;
+  over the declared 100 ms it holds to ~25 ms and then passes 1e7. A marginal instability grows
+  per STEP, so its blow-up *time* scales with the step — which is also the diagnostic that
+  separates it from a sign/operator error: a genuine positive eigenvalue blows up at the same
+  time whatever the step, whereas ours slowed from 2150 s⁻¹ to 735 s⁻¹ when the step shrank 5×.
+  Measure that growth rate at two steps before concluding which failure you have.
+- **A swept cell must be the SAME computation as the single run — check the frame count, not the
+  code.** The two paths differ structurally: a single run integrates the transient separately and
+  streams only the main window, while a sweep folds transient + main into ONE window and asks the
+  reducer to drop the transient. If that `skip` is accepted and ignored, the sweep silently keeps
+  `skip/stride` extra leading samples — 1,338 BOLD frames where the same experiment run alone
+  gives 1,200 — and every FC/FCD statistic is then computed over a window contaminated by the
+  start-up transient the single run discards. After any sweep, assert the per-cell shape equals
+  the base run's before believing a landscape.
 - **The integrator, not the physics, can move the attractor.** An explicit scheme
   (Heun/RK2) at too large a `dt` sustains lightly-damped fast librations at high
   coupling: the *time-averaged* spread climbs and reads like desynchronization, but it is
@@ -959,6 +1104,24 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   still write `output/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
   `iri: tvbo:result/<Study>/exp-N` can't resolve an unwritten container). Run END-TO-END, not
   `from_file`.
+- **Re-running an experiment does NOT invalidate the analyses computed from it.** An analysis
+  container carries no link back to the result it was derived from, and any "run what is missing"
+  pass skips whatever already exists — so after re-running an experiment the figures render THIS
+  run's dynamics against the PREVIOUS run's analyses, and nothing raises. Delete the dependent
+  containers explicitly before recomputing, and take the dependency set from the study's own
+  schedule (the `after` stage of `_study_analysis_stages`, which is transitive — for Pang2023 it
+  correctly caught 17 including second-order ones like the FCD landscape and the myelin
+  correlation) rather than hand-listing, which misses exactly the ones you did not think of. Then
+  confirm the invalidation *worked* by checking that an unchanged quantity comes back identical —
+  trusting the pass is how you end up believing a stale number twice.
+- **Two runs of the same field may name the same axis differently — reconcile by NAME, never
+  broadcast.** A modal run projected onto the surface lands on `vertex`; the mesh run calls the
+  same axis `node`. Subtracting them as they arrive broadcasts into a 32,492 × 32,492 outer
+  product instead of an elementwise difference — 8 GB and a meaningless answer, with no error
+  raised. Match the non-shared dims by size, rename, transpose, and only then subtract. Where the
+  two sample a *shared* axis differently (a stiffer run needs a finer step), align on its
+  COORDINATE — `.sel(time=…, method="nearest", tolerance=…)` — never by decimating positionally,
+  and better still make the coincidence structural (next bullet).
 - **A single-value exploration axis silently OVERRIDES the base parameter — never use one as
   ensemble scaffolding.** An `Exploration` axis with one `explored_values` entry (or a 1-point
   domain) still *writes that value over* the Dynamics/Coupling parameter it names. So a stand-in

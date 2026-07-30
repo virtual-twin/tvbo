@@ -20,13 +20,18 @@ Functions:
 
 import operator
 import re
-from typing import Any, Sequence
+from pathlib import Path
+from typing import Any, NamedTuple, Sequence
 
 import pandas as pd
 from tvbo.data import db
 
 
 _EMPTY_MARKERS = {"", "—", "-", "None", "nan"}
+
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
+_RULE_RE = re.compile(r"^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$")
+_CELL_SPLIT_RE = re.compile(r"(?<!\\)\|")
 
 _MATHRM_RE = re.compile(r"\\mathrm\{([^}]*)\}")
 _CMD_RE = re.compile(r"\\[a-zA-Z]+")
@@ -53,6 +58,7 @@ def md_table(
     aligns: Sequence[str] | None = None,
     empty: str = "",
     col_cap: int = 44,
+    col_floor: int = 9,
 ) -> str:
     """Render a GitHub-markdown table, omitting columns with no data.
 
@@ -73,6 +79,9 @@ def md_table(
         rows: One sequence of cell values per row.
         aligns: Per-column alignment, ``'l'``/``'r'``/``'c'``; defaults to left.
         empty: Placeholder rendered for an empty cell in a kept column.
+        col_cap: Width above which a column stops earning more of the page.
+        col_floor: Width below which a column stops giving it up, so a short
+            column keeps enough room to typeset its own cells.
 
     Returns:
         The markdown table as a string (header, rule, and body rows), or a
@@ -93,14 +102,15 @@ def md_table(
 
     aligns = list(aligns) if aligns else ["l"] * n
 
-    # Size each kept column's separator to its (capped) rendered content width, so
-    # pandoc/LaTeX allocates PDF column widths *proportional to content* instead of
-    # equally: a lone name column no longer hogs space while a long description is
-    # squished. Columns under `col_cap` keep their natural width (headers/short cells
-    # never wrap); only over-long cells are capped so they can't starve the rest.
+    # Size each kept column's separator to its rendered content width, clamped to
+    # [col_floor, col_cap], so pandoc/LaTeX allocates PDF column widths *proportional to
+    # content* instead of equally: a lone name column no longer hogs space while a long
+    # description is squished. The floor matters as much as the cap -- a 3-character `ID`
+    # column beside two 44-character prose columns gets ~3 % of the text width, which is
+    # narrower than the word it holds, so its cells collide with the next column.
     def _sep(j):
         widths = [_visual_width(headers[j])] + [_visual_width(r[j]) for r in norm]
-        width = max(3, min(max(widths), col_cap))
+        width = max(col_floor, min(max(widths), col_cap))
         a = aligns[j] if j < len(aligns) else "l"
         if a == "r":
             return "-" * (width - 1) + ":"
@@ -115,6 +125,519 @@ def md_table(
         for r in norm
     )
     return "\n".join([head, sep] + ([body] if body else []))
+
+
+class MarkdownTable(NamedTuple):
+    """One parsed markdown table, tagged with the heading it appeared under."""
+
+    section: str
+    headers: list[str]
+    rows: list[dict]
+
+
+def _cells(line: str) -> list[str]:
+    """A table row's cells, honouring ``\\|`` escapes inside a cell."""
+    parts = _CELL_SPLIT_RE.split(line.strip())
+    if parts and not parts[0].strip():
+        parts = parts[1:]
+    if parts and not parts[-1].strip():
+        parts = parts[:-1]
+    return [p.strip().replace("\\|", "|") for p in parts]
+
+
+def read_md_tables(source) -> list[MarkdownTable]:
+    """Read the GitHub-markdown tables out of a document — the inverse of `md_table`.
+
+    Lets a report *compute* from a hand-maintained analysis file (a replication's
+    `targets.md`, a divergence register) instead of restating its contents in prose,
+    so the two can never disagree.
+
+    Args:
+        source: A path to a markdown file, or the markdown text itself.
+
+    Returns:
+        One `MarkdownTable` per table found, each row a `{header: cell}` dict and
+        each table tagged with the nearest preceding heading.
+    """
+    text = source
+    if isinstance(source, (str, Path)):
+        path = Path(source)
+        if path.suffix.lower() in (".md", ".markdown", ".qmd") and path.exists():
+            text = path.read_text(encoding="utf-8")
+
+    lines = str(text).splitlines()
+    tables: list[MarkdownTable] = []
+    section = ""
+    i = 0
+    while i < len(lines):
+        heading = _HEADING_RE.match(lines[i])
+        if heading:
+            section = heading.group(2).strip()
+            i += 1
+            continue
+        is_header = lines[i].lstrip().startswith("|") and i + 1 < len(lines) and _RULE_RE.match(lines[i + 1].strip())
+        if not is_header:
+            i += 1
+            continue
+        headers = _cells(lines[i])
+        rows = []
+        i += 2
+        while i < len(lines) and lines[i].lstrip().startswith("|"):
+            cells = _cells(lines[i])
+            rows.append({h: (cells[j] if j < len(cells) else "") for j, h in enumerate(headers)})
+            i += 1
+        tables.append(MarkdownTable(section, headers, rows))
+    return tables
+
+
+# ── The replication-report toolkit ──────────────────────────────────────────
+# Every replication report does the same handful of things: format a number that may not have
+# been computed, open a result or analysis container, read a value off the recipe, embed a
+# figure with the published original beside it, caption it from the recipe's own metadata, and
+# score the run against the targets written before it. Those live here, once, so a report holds
+# only what is specific to its study -- its metrics -- and ten reports cannot drift apart on the
+# parts they share.
+
+
+_FIG_LABEL_RE = re.compile(r"(EDF|Fig)(\d+)")
+
+_MISSING = "—"
+
+
+def fmt(x, digits: int = 2, missing: str = _MISSING) -> str:
+    """A computed number for prose, or *missing* when it could not be computed.
+
+    A report reads containers that may not exist yet, and a half-run study must render rather
+    than crash: an absent number shows as a dash, which is visibly not a result.
+    """
+    import math
+
+    if x is None or (isinstance(x, float) and not math.isfinite(x)):
+        return missing
+    return f"{x:.{digits}f}" if digits else f"{int(round(x))}"
+
+
+def sci(x, digits: int = 2, missing: str = _MISSING) -> str:
+    """A computed number in scientific notation, or *missing*."""
+    import math
+
+    if x is None or (isinstance(x, float) and not math.isfinite(x)):
+        return missing
+    return f"{x:.{digits}e}"
+
+
+def value_of(obj):
+    """The `.value` of a recipe object, or the object itself when it is already a scalar."""
+    return getattr(obj, "value", obj)
+
+
+def recipe_param(experiment, name, group: str = "dynamics"):
+    """A declared parameter's value, read from the recipe rather than typed into prose.
+
+    *group* selects where to look: ``"dynamics"`` for the model's parameters, or the name of a
+    single event/coupling whose parameters to read. Returns None when the name is not declared,
+    so a renamed parameter shows as a dash instead of silently reporting a stale literal.
+    """
+    holder = getattr(experiment, group, None) if group != "dynamics" else experiment.dynamics
+    params = getattr(holder, "parameters", None)
+    if params is None:
+        return None
+    items = params.items() if hasattr(params, "items") else [
+        (getattr(p, "name", None), p) for p in params]
+    return next((value_of(p) for n, p in items if n == name), None)
+
+
+def open_result(out_dir, experiment: str | None = None):
+    """The result container of an experiment, or None when it has not been run.
+
+    Network sidecars share the directory and are excluded by name — opening one instead of the
+    result is the failure this exists to prevent.
+    """
+    import xarray as xr
+
+    out_dir = Path(out_dir)
+    root = out_dir / "nc" / experiment if experiment else out_dir
+    files = [f for f in sorted(root.rglob("*.h5")) if "network" not in f.name]
+    return xr.open_dataset(files[0], engine="h5netcdf") if files else None
+
+
+def result_sidecar(out_dir, experiment: str) -> dict:
+    """The YAML sidecar `tvbo run` wrote beside a result, or an empty dict."""
+    import yaml
+
+    root = Path(out_dir) / "nc" / experiment
+    files = [f for f in sorted(root.glob("*.yaml")) if "network" not in f.name] if root.is_dir() else []
+    return yaml.safe_load(files[0].read_text()) if files else {}
+
+
+def sidecar_value(meta: dict, *path):
+    """A value dug out of a sidecar by key path, unwrapping a ``{value: ...}`` leaf."""
+    node = meta
+    for key in path:
+        if not isinstance(node, dict) or key not in node:
+            return None
+        node = node[key]
+    return node.get("value") if isinstance(node, dict) else node
+
+
+def analysis_dataset(out_dir, name):
+    """A declared analysis's own container, or None when the analysis has not been run.
+
+    The report reads the same container the figures do, so a number in the prose and the number
+    in the panel are the same number — never two computations of one quantity.
+    """
+    import xarray as xr
+
+    from tvbo.data.dataref import analysis_container_path
+
+    path = analysis_container_path(Path(out_dir), name)
+    return xr.open_dataset(path, engine="h5netcdf") if path.exists() else None
+
+
+def analysis_output(out_dir, name, variable):
+    """One named output of a declared analysis, matched by tvbo's own output resolution."""
+    from tvbo.data.dataref import match_output
+
+    ds = analysis_dataset(out_dir, name)
+    if ds is None:
+        return None
+    try:
+        return ds[match_output(ds.data_vars, variable)]
+    except KeyError:
+        return None
+
+
+def analysis_scalar(out_dir, name, variable):
+    """One scalar out of a declared analysis, or None when it has not been run."""
+    da = analysis_output(out_dir, name, variable)
+    return None if da is None else float(da.values)
+
+
+def crossref_div(identifier: str, content: str, caption: str) -> str:
+    """Wrap *content* as a Quarto cross-referenceable float with a COMPUTED caption.
+
+    Quarto's `tbl-cap`/`fig-cap` cell options take a literal string, so a caption holding a
+    computed value has to use the cross-reference div instead: the div's last paragraph is the
+    caption, and it is ordinary markdown. This is what gives a printed table a real "Table N"
+    number and a `@tbl-…` target rather than leaving it captionless in the flow.
+
+    Args:
+        identifier: Reference id, e.g. ``"tbl-scorecard"``. Must carry a float prefix
+            (``tbl-``, ``fig-``, ``lst-``) or Quarto will not number it.
+        content: The table or figure markdown.
+        caption: One sentence saying what the reader is looking at.
+    """
+    return f"::: {{#{identifier}}}\n\n{content.strip()}\n\n{caption.strip()}\n\n:::\n"
+
+
+def is_internal() -> bool:
+    """True in the INTERNAL build — the one allowed to open the paper's © figures.
+
+    Quarto exposes the *input filename* as ``QUARTO_DOCUMENT_FILE``, which is why the
+    public/internal split is two entry files rather than two formats in one file.
+    """
+    import os
+
+    return os.environ.get("QUARTO_DOCUMENT_FILE", "").startswith("report_internal")
+
+
+def may_show_original(cleared: bool = False) -> bool:
+    """Whether this build is permitted to embed the paper's published figure.
+
+    Two grounds, and only two. The **INTERNAL build** is local and git-ignored, so the original
+    never leaves the machine. **Documented copyright clearance** from the publisher and the
+    authors permits it anywhere, including the shareable PDF — that is a real case, not a
+    hypothetical, and a study that has obtained clearance says so by passing ``cleared=True``.
+
+    No study in this repository currently has clearance, so in practice the internal build is
+    the only route. Default to ``False``: clearance is something a study proves it has, never
+    something the code assumes.
+    """
+    return bool(cleared) or is_internal()
+
+
+def figure_label(figure) -> tuple[str, int]:
+    """The paper's own label for a figure, parsed from the name the recipe declares.
+
+    Returns ``("Fig", 4)`` or ``("EDF", 10)``; sorting on it puts the main-text figures in
+    order and the extended data after them, so a report never hardcodes a figure list.
+    """
+    match = _FIG_LABEL_RE.search(slot(figure, "name", "") or "")
+    return (match.group(1), int(match.group(2))) if match else ("Fig", 99)
+
+
+def figure_title(figure) -> str:
+    """A figure's heading, as the paper would print it."""
+    kind, number = figure_label(figure)
+    return f"Extended Data Fig. {number}" if kind == "EDF" else f"Figure {number}"
+
+
+def find_figure(name: str, *studies):
+    """The declared figure of that name, across one or more loaded studies."""
+    for study in studies:
+        for figure in (getattr(study, "figures", None) or []):
+            if slot(figure, "name") == name:
+                return figure
+    return None
+
+
+def figure_caption(figure, *studies) -> str:
+    """A figure's public-facing caption — its own ``description:`` in the recipe.
+
+    Single source of truth: the caption cannot drift from the figure it describes, and it is
+    never the paper's caption (that would be plagiarism) nor the internal A/B framing. Accepts
+    a figure or its name (with the studies to look it up in — a study may span more than one
+    spec). Returns "" for an unknown name, so a caption is missing rather than a crash.
+    """
+    if isinstance(figure, str):
+        figure = find_figure(figure, *studies)
+    return " ".join(str(slot(figure, "description", "") or "").split())
+
+
+def figures_in_paper_order(figures) -> list:
+    """The study's figures, ordered as the paper prints them."""
+    return sorted(figures, key=lambda f: (figure_label(f)[0] == "EDF", figure_label(f)[1]))
+
+
+def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list[dict]:
+    """The declared targets a figure carries, joined on the targets table's own figure column.
+
+    Lets a per-figure status callout be *derived* from the scorecard rather than asserted
+    beside it, so the two cannot disagree.
+    """
+    kind, number = figure_label(figure)
+    want = f"EDF{number}" if kind == "EDF" else str(number)
+    hits = []
+    for row in rows:
+        tokens = (re.match(r"(EDF\d+|\d+)", t.strip()) for t in re.split(r"[,;]", row.get(column, "")))
+        if any(m and m.group(1) == want for m in tokens):
+            hits.append(row)
+    return hits
+
+
+def report_figure(ours, theirs=None, stage=Path("_figures"), credit: str = "the authors",
+                  label: str = "", missing: str = "", width: float = 6.7,
+                  dpi: int = 300, cleared: bool = False) -> Path | None:
+    """The image a report embeds for one figure, staged inside the render project.
+
+    This is the A/B helper every replication report used to carry its own copy of. Pass
+    ``theirs=None`` — what the PUBLIC build does — and the copyrighted original is never
+    opened, let alone embedded. Pass it in the INTERNAL build and the two are composed
+    left-right at a common height. Staging keeps the render reading only from its own project
+    directory, and makes the composite a gitignored artifact rather than a committed file.
+
+    Args:
+        ours: Our rendered figure. A missing file returns None rather than a blank slot.
+        theirs: The published original — one path, or several stacked vertically when the
+            paper splits one quantity across scans. None embeds ours alone.
+        stage: Directory beside the report to stage into (created if absent).
+        credit: Attribution over the original, e.g. ``"Pang et al. 2023 (c)"``.
+        label: Qualifier after "TVBO replication", e.g. the parcellation or backend.
+        missing: Drawn in the original's pane when it cannot be found, so the A/B still shows
+            which side is absent instead of silently rendering as a single panel.
+        width: Composite width in inches — the report's text-block width.
+        dpi: Raster resolution of the composite.
+        cleared: True only when the study holds documented copyright clearance for the
+            published figure. Without it, composing an original outside the INTERNAL build
+            raises rather than shipping it.
+
+    Returns:
+        The staged path to embed, or None when our figure has not been rendered.
+    """
+    import shutil
+
+    ours, stage = Path(ours), Path(stage)
+    if theirs is not None and not may_show_original(cleared):
+        raise RuntimeError(
+            "refusing to compose a published original into the PUBLIC build. `report.pdf` is "
+            "the shareable artifact, so embedding the paper's figure needs one of two grounds: "
+            "the INTERNAL build (resolve the reference image behind `if is_internal()`), or "
+            "documented copyright clearance from the publisher and authors (`cleared=True`). "
+            "See the A/B section of the writing-reports skill.")
+    if not ours.is_file():
+        return None
+    stage.mkdir(parents=True, exist_ok=True)
+    if theirs is None:
+        return Path(shutil.copyfile(ours, stage / ours.name))
+
+    from tvbo.utils.figure_compare import Pane, side_by_side
+
+    return side_by_side(
+        [Pane(theirs, f"Original — {credit}", missing or "original not available"),
+         Pane(ours, f"TVBO replication{f' ({label})' if label else ''}")],
+        stage / f"{ours.stem}_ab.png", width=width, dpi=dpi)
+
+
+VERDICTS = {
+    "met": "met",
+    "short": "short of criterion",
+    "out": "out of scope",
+    "blocked": "input unobtainable",
+}
+"""The four outcomes a replication target can have.
+
+`short` is the only one that is a failure of the replication: it was run and missed. `out` is a
+judgement made before running that the target tests nothing another target does not, `blocked` is
+an input that cannot be obtained. Collapsing them lets a scope decision read as a failure, and a
+failure hide inside a scope decision.
+"""
+
+TIERS = ("core", "extended")
+"""How central a target is to the paper's claims — independent of whether it was met.
+
+A tier is not an outcome. Reusing an outcome word (`out`) as a tier makes the tally cross itself:
+the same targets appear in a scope row and a status column, and the reader cannot tell whether
+the table is counting two things or one.
+"""
+
+
+class Scorecard:
+    """A replication's targets, read from the `targets.md` written before anything ran.
+
+    Owns the vocabulary, the tally, the reason register and the figure join, so a report can
+    state a verdict only where the targets file supports one — the tally, the per-figure callout
+    and the shortfall prose all come from this single reading of that file.
+
+    The file's shape is fixed by the replicating-studies skill: one or more tables carrying a
+    `Status` column, plus a register table carrying a `Why it falls short` column keyed by `ID`.
+    """
+
+    def __init__(self, source, verdicts: dict | None = None, tiers: Sequence[str] = TIERS):
+        tables = read_md_tables(source)
+        self.verdicts = dict(verdicts or VERDICTS)
+        self.tiers = list(tiers)
+        self.rows = [r for t in tables if "Status" in t.headers for r in t.rows]
+        self.reasons = {r["ID"]: r[self.WHY]
+                        for t in tables if self.WHY in t.headers for r in t.rows}
+
+    WHY = "Why it falls short"
+
+    def _key(self, row) -> int:
+        digits = "".join(c for c in row["ID"] if c.isdigit())
+        return int(digits) if digits else 0
+
+    def of(self, *verdicts) -> list[dict]:
+        """Every target with one of *verdicts*, in target-number order."""
+        return sorted((r for r in self.rows if r["Status"].strip() in verdicts), key=self._key)
+
+    def count(self, *verdicts) -> int:
+        return len(self.of(*verdicts))
+
+    def verdict(self, row) -> str:
+        """A row's outcome, spelled the way the reader sees it."""
+        status = row["Status"].strip()
+        return self.verdicts.get(status, status)
+
+    def headline(self, row) -> str:
+        """The target's headline, without its parenthetical and trailing qualifiers."""
+        return row["Target"].split(",")[0].split("(")[0].strip()
+
+    def reason(self, row) -> str:
+        return self.reasons.get(
+            row["ID"], "No reason is recorded in `targets.md` — that is a gap.")
+
+    def tally_table(self, tier_column: str = "Scope") -> str:
+        """Targets counted by tier against outcome — each target in exactly one cell."""
+        counts = {tier: {v: 0 for v in self.verdicts} for tier in self.tiers}
+        for row in self.rows:
+            tier, status = row[tier_column].strip(), row["Status"].strip()
+            if tier in counts and status in counts[tier]:
+                counts[tier][status] += 1
+        body = [[tier, *(counts[tier][v] for v in self.verdicts), sum(counts[tier].values())]
+                for tier in self.tiers if sum(counts[tier].values())]
+        body.append(["**all**",
+                     *(sum(counts[t][v] for t in self.tiers) for v in self.verdicts),
+                     len(self.rows)])
+        return md_table(["Tier", *self.verdicts.values(), "Total"], body,
+                        aligns=["l"] + ["r"] * (len(self.verdicts) + 1))
+
+    def target_table(self, columns: Sequence[str] = ("ID", "Target", "Fig(s)", "Scope",
+                                                     "Fidelity", "Status")) -> str:
+        """One row per target, with its outcome spelled out."""
+        headers = ["Tier" if c == "Scope" else c for c in columns]
+        cell = {"Target": self.headline, "Status": self.verdict}
+        return md_table(headers,
+                        [[cell[c](r) if c in cell else r[c] for c in columns] for r in self.rows],
+                        aligns=["l"] * len(headers))
+
+    def for_figure(self, figure, column: str = "Fig(s)") -> list[dict]:
+        """Every target a figure carries, joined on the targets table's own figure column."""
+        return figure_targets(figure, self.rows, column)
+
+    def figure_callout(self, figure, scored_in: str = "@sec-scorecard") -> str:
+        """A figure's verdict, assembled from the outcome of every target it carries.
+
+        Red is reserved for a target that was attempted and missed. A declared scope decision is
+        not a failure of the figure, and an unobtainable input is a gap in the data — both are
+        yellow, and a figure whose targets all met is green.
+        """
+        def names(rows):
+            ids = sorted((r["ID"] for r in rows), key=lambda s: int("".join(
+                c for c in s if c.isdigit()) or 0))
+            return ids[0] if len(ids) == 1 else ", ".join(ids[:-1]) + f" and {ids[-1]}"
+
+        by = {}
+        for row in self.for_figure(figure):
+            by.setdefault(row["Status"].strip(), []).append(row)
+        if not by:
+            return ""
+        met, short = by.get("met", []), by.get("short", [])
+        out, blocked = by.get("out", []), by.get("blocked", [])
+        kind = "important" if short else "warning" if (out or blocked) and not met else "note"
+        said = []
+        if met:
+            said.append(f"{names(met)} met")
+        if short:
+            said.append(f"{names(short)} attempted and short of its criterion")
+        if out:
+            said.append(f"{names(out)} out of scope by declaration")
+        if blocked:
+            said.append(f"{names(blocked)} blocked on an unobtainable input")
+        tail = f" Each is scored in {scored_in}." if (short or out or blocked) else ""
+        return f"::: {{.callout-{kind}}}\n{'; '.join(said)}.{tail}\n:::\n"
+
+    def shortfall_prose(self) -> str:
+        """The shortfall, as one paragraph per outcome — never one undifferentiated list.
+
+        Separate paragraphs are what stop a scope decision reading as a failure. The default
+        wording states what each outcome means before naming its targets; reword it in the
+        report if a study needs to, but keep the three groups apart.
+        """
+        def sentences(rows):
+            return " ".join(f"**{r['ID']}**, {self.headline(r)}. {self.reason(r)}" for r in rows)
+
+        blocks, groups = [], [
+            ("short", "Attempted and short of criterion", "These were run and did not meet the "
+             "criterion written for them, so they are the replication's own shortfall."),
+            ("out", "Declared out of scope", "Nothing was attempted here and nothing failed. "
+             "Each was judged, before anything was run, to add no test of the paper's claims "
+             "that another target does not already make; the justification is what follows."),
+            ("blocked", "Blocked on an unobtainable input", "These would be in scope, and the "
+             "method for them is the one already used elsewhere in this replication. What is "
+             "missing is data we cannot get."),
+        ]
+        for status, title, lead in groups:
+            rows = self.of(status)
+            if rows:
+                blocks.append(f"**{title} ({len(rows)}).** {lead} {sentences(rows)}\n")
+        return "\n".join(blocks)
+
+
+def show_report_figure(ours, theirs=None, **kwargs) -> None:
+    """`report_figure`, displayed in the current cell.
+
+    For reports that emit figures from a plain python cell. Prefer embedding the path
+    `report_figure` returns as markdown — that gets a figure number, a caption and a
+    cross-reference target; this exists so a report with many inline call sites can share the
+    one implementation without restructuring every cell.
+    """
+    from IPython.display import Image, display
+
+    staged = report_figure(ours, theirs, **kwargs)
+    if staged is None:
+        print(f"{Path(ours).name} is not rendered")
+        return
+    display(Image(str(staged)))
 
 
 # ── Report cell formatters ──────────────────────────────────────────────────
@@ -297,6 +820,89 @@ def flag_text(obj, flags=None):
 
 _STATE_VAR_FLAGS = [("coupling_variable", "coupling"), ("stimulation_variable", "stimulation"), ("record", "recorded")]
 _PARAM_FLAGS = [("free", "free"), ("heterogeneous", "heterogeneous")]
+
+
+def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=None):
+    """One SymPy equation as LaTeX, with the derivative written the report's way.
+
+    Takes an already-parsed ``Eq`` — never a source string. Re-parsing an authored
+    right-hand side needs a symbol vocabulary assembled by hand, and every symbol the
+    assembler forgets (an event's name, a coupling term) turns into a silent fall-back to
+    raw Python in the middle of the Methods section. ``Dynamics.get_equations()`` has
+    already done that resolution against the model's own scope, so this only prints.
+
+    Args:
+        eq: A SymPy ``Eq``; a derivative left-hand side gets dot notation.
+        derivative_notation: ``"dot"`` for ``\\dot{x}``, anything else for ``dx/dt``.
+        symbol_names: ``{Symbol: latex}`` display overrides (``Dynamics.symbol_map()``).
+        mul_symbol: Passed through to ``sympy.latex``.
+    """
+    from sympy import Derivative, Eq, Symbol, latex
+
+    symbol_names = symbol_names or {}
+    if derivative_notation == "dot" and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
+        deriv = eq.lhs
+        order = sum(1 for v in deriv.variables if v == Symbol("t"))
+        base = latex(deriv.expr, mul_symbol=mul_symbol, symbol_names=symbol_names)
+        dots = {1: "dot", 2: "ddot", 3: "dddot"}.get(order)
+        lhs = (f"\\{dots}{{{base}}}" if dots
+               else f"\\frac{{d^{order}}}{{d t^{order}}} {base}")
+        return f"{lhs} = {latex(eq.rhs, mul_symbol=mul_symbol, symbol_names=symbol_names)}"
+    return latex(eq, mul_symbol=mul_symbol, symbol_names=symbol_names)
+
+
+def model_equations_latex(model, kind="state", derivative_notation="dot", mul_symbol=None):
+    """A model's equations of one kind, each as LaTeX, straight from its symbolic form.
+
+    ``kind`` selects ``state`` (state variables) or ``derived`` (derived variables). The
+    equations come from :meth:`Dynamics.get_equations`, so the report shows the same
+    expressions the backend integrates.
+    """
+    collection = "state_variables" if kind == "state" else "derived_variables"
+    members = getattr(model, collection, None) or {}
+    symbol_names = model.symbol_map() if hasattr(model, "symbol_map") else {}
+    return [equation_latex(eq, derivative_notation, symbol_names, mul_symbol)
+            for name, eq in model.get_equations().items() if name in members]
+
+
+def event_table(events, derivative_notation="dot"):
+    """Markdown table of a model's events (spike conditions, stimuli, resets).
+
+    An event is part of the model's definition — a stimulus protocol is not decoration —
+    so it belongs in the report beside the state equations. Its condition and effect are
+    rendered symbolically like every other equation.
+    """
+    from sympy import sympify
+
+    def _expr(obj, *names):
+        for n in names:
+            e = slot(obj, n)
+            if e is None:
+                continue
+            rhs = slot(e, "rhs", e)
+            if rhs in (None, ""):
+                continue
+            try:
+                return f"${equation_latex(sympify(str(rhs)), derivative_notation)}$"
+            except Exception:
+                return f"`{rhs}`"
+        return ""
+
+    rows = []
+    for name, ev in name_items(events):
+        if str(name).startswith("_"):
+            continue
+        params = slot(ev, "parameters", None)
+        rows.append([
+            f"`{name}`",
+            str(slot(ev, "event_type", "") or ""),
+            _expr(ev, "condition"),
+            _expr(ev, "equation", "effect"),
+            ", ".join(f"{p} = {format_number(slot(v, 'value', ''))}"
+                      for p, v in name_items(params)) if params else "",
+            slot(ev, "description", "") or slot(ev, "label", "") or "",
+        ])
+    return md_table(["Event", "Type", "Condition", "Effect", "Parameters", "Description"], rows)
 
 
 def state_variable_table(svars):

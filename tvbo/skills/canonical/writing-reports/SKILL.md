@@ -17,7 +17,7 @@ reads like a paper and computes every number it prints. It is the reporting laye
 their fidelity tier, and **running-simulations** covers how the runs produce the
 containers you read here. Start from the report template in the replicating-studies
 skeleton (`report.qmd.tmpl` + its thin `report_internal.qmd.tmpl` wrapper + `_quarto.yml.tmpl`)
-and keep its metrics cell, `ab()` helper, and the two-entry render layout.
+and keep its metrics cell, its A/B figure loop, and the two-entry render layout.
 
 Four rules carry the whole report. Break any one and the report stops being trustworthy.
 
@@ -37,7 +37,7 @@ Results · Discussion · Conclusion**, then the bibliography Quarto appends auto
   data provenance, the analyses, the backend, and the verification against an
   independent reference.
 - **Results** opens with the computed comparison/scorecard table, then one subsection
-  per paper figure: a sentence or two on what the panel shows, the `ab()` call, its
+  per paper figure: a sentence or two on what the panel shows, the figure, its
   **caption**, and a status callout.
 - **Discussion** interprets: what reproduced and why, the mechanism and downstream
   consequences of any negative result, the reproduction-vs-replication framing, and the
@@ -115,18 +115,150 @@ when it is present, and the mechanism. Report the cause, not just the mismatch. 
 dress a non-reproduction as a partial success, and do not bury it — put it where a reader
 looking for that result will find it.
 
-## Status callouts: three colours, no emoji
+## Status callouts: three colours, and NO emoji anywhere
 
 Set `callout-icon: false`. Give each figure one short callout:
 
 - **green** (`.callout-note` / `.callout-tip`): what reproduced, with an inline-computed
   number.
-- **yellow** (`.callout-warning`): what is *missing* because the data or target is not
-  yet available (a placeholder panel gets this).
-- **red** (`.callout-important`): what was *attempted and failed to match*.
+- **yellow** (`.callout-warning`): what is *missing* — the data or target is not available
+  (`out`, `blocked`, a placeholder panel).
+- **red** (`.callout-important`): what was *attempted and failed to match* (`short`). Red is
+  reserved for that; a declared scope decision is not a failure.
 
 One or two sentences each. The colour carries the verdict; the sentence carries the
 evidence.
+
+**No emoji, checkmarks or dingbats anywhere in a report** — not in prose, not in a verdict
+column, not in a status table. Two independent reasons: xelatex has no glyph for them and drops
+them without a warning, so a column of ✅/🟡 renders as an empty column; and a scientific report
+states a verdict in the words the scorecard uses. Write `yes` / `partial` / `no`, or the
+scorecard's own `met` / `short` / `out` / `blocked`. The same applies to ✓, ✗, ◐ and ◑, which
+read as decoration and vanish just as silently.
+
+## Prose, not bullets, in Results and Discussion
+
+Bullets are for planning. The rendered Results and Discussion must be flowing paragraphs: a
+reader gets the argument from connected sentences, not from fragments that leave the connective
+work undone. Lists belong in Methods (inclusion criteria, materials) and in the recipe-derived
+sections; a shortfall register, a limitation, or a per-figure verdict is prose.
+
+The trap this creates with the tables rule above: when a table is too cramped to read, the fix is
+**prose**, not a bullet list. A shortfall section reads best as one paragraph per verdict class,
+each opening with what that verdict means and then naming its targets in sentences.
+
+## The blueprint: what tvbo provides, what your report writes
+
+A replication report is mostly the *same* report ten times over. Everything shared lives in
+`tvbo.utils.report`; what you write is the study's own metrics and its prose. If you find
+yourself defining `ab()`, `figcap()`, `fmt()`, `_open()` or a scorecard tally, stop — it exists.
+
+| Job | Use | Not |
+|---|---|---|
+| Which build is this | `is_internal()`, `may_show_original(cleared)` | reading `QUARTO_DOCUMENT_FILE` yourself |
+| A/B figure | `report_figure(...)` / `show_report_figure(...)` | a hand-rolled `ab()` |
+| Figure order, title, caption | `figures_in_paper_order`, `figure_title`, `figure_caption` | a hardcoded list of stems and captions |
+| Number for prose | `fmt`, `sci` | a local formatter per report |
+| Result container | `open_result`, `result_sidecar`, `sidecar_value` | globbing `output/nc` inline |
+| Declared analysis | `analysis_dataset`, `analysis_output`, `analysis_scalar` | recomputing what the recipe computed |
+| Recipe value | `recipe_param`, `value_of` | reaching into `.parameters` by hand |
+| Scorecard | `Scorecard(targets_md)` | a tally loop and a verdict dict per study |
+| Captioned table | `crossref_div("tbl-…", table, caption)` | an uncaptioned printed table |
+
+What stays in the report: the study's metric functions (each reads a container and returns a
+number), the `M` dict, the prose, and the credit line. That is the whole of it.
+
+**The copyright guard is structural, not conventional.** Resolve the published figure *and* its
+attribution in one function behind the permission check, so the public build neither opens the
+file nor builds the credit string:
+
+```python
+CLEARED = False   # True ONLY with documented clearance from publisher AND authors
+
+def original(fig):
+    if not (CLEARED or INTERNAL):
+        return None, ""
+    return reference_image_for(fig, ROOT), "<Author> et al. <Year> (c)"
+```
+
+A `CREDIT` constant at the top of the report is one careless argument away from the shareable
+PDF. As a backstop, `report_figure` **raises** if handed an original without either ground — a
+report that forgets its guard fails the build instead of quietly shipping the paper's figure.
+Clearance is a real case, not a hypothetical; it is simply one no study here currently has.
+
+## Every table and every figure carries a caption
+
+An uncaptioned table is a wall of numbers the reader has to reverse-engineer. Caption both, and
+caption them from metadata wherever metadata exists.
+
+- **Figures**: `![{figure_caption(fig)}](path){#fig-name}` — the caption is the recipe's own
+  `Figure.description`, so it cannot drift from the figure, and the `#fig-` id makes it
+  cross-referenceable. Never retype the paper's caption, and never use the A/B framing
+  ("left: paper") — that composite exists only in the internal build.
+- **Tables with a computed caption**: the `tbl-cap` cell option takes a *literal* string, so a
+  caption holding a computed value must use Quarto's **cross-reference div** — the div's last
+  paragraph is the caption and is ordinary markdown. `crossref_div("tbl-x", table, caption)`
+  emits it.
+- **Hand-written markdown tables**: put `: Caption text {#tbl-x}` on the line after the table.
+- A caption **defines its terms**. If a column says `core`/`extended` or `mech`/`dec`, the
+  caption says what those mean; the reader should not have to find `targets.md`.
+
+**Uncaptioned `longtable`s still step LaTeX's table counter.** A Methods section that renders the
+recipe emits ~30 anonymous tables, so the first captioned table in Results comes out as
+"Table 34". Reset the counter where the recipe dump ends:
+
+````markdown
+```{=latex}
+\setcounter{table}{0}
+```
+````
+
+## Tables a reader can actually read
+
+A replication report is mostly tables, and they are the first thing to go wrong. Build every
+one through `tvbo.utils.report.md_table` (never hand-write a pipe table with computed values),
+and hold to four rules.
+
+- **A table whose cells are sentences is not a table.** Four columns where two hold prose does
+  not become readable by tuning widths — the prose columns starve the short ones and every row
+  wraps to four lines. Write it as prose (see "Prose, not bullets" below). Reserve tables for
+  short cells — IDs, numbers, verdicts, a clause — which is exactly what a scorecard is.
+- **A verdict column needs its reason somewhere the reader reaches.** "T14 … out" beside the
+  criterion it *would* have been judged against reads as a non-sequitur — the criterion explains
+  a *failure*, never a *choice not to attempt* (see the three kinds of shortfall below). Keep a `Why it falls short` register in
+  `targets.md` with one row per non-`met` target, and join it by ID. Same rule inside the
+  document: a scorecard row and its justification must not live in different files.
+- **Give short columns a floor.** `md_table` sizes each column's separator to its content so
+  pandoc allocates page width proportionally — with a floor, because a 3-character `ID` column
+  beside two prose columns would otherwise get ~6 % of the text block, less than the width of
+  the word `T14`, and its cells collide with the next column. If you build a table by hand, size
+  its separator row the same way.
+- **Spell verdicts out.** `out` in a narrow column is both cryptic and unwrappable; `out of
+  scope` is clearer *and* earns the column enough width to typeset it.
+
+## A shortfall is one of three things — never one bucket
+
+`met / partial / out` collapses two unrelated judgements into one word, and the report then reads
+as if every shortfall were the same kind of shortfall. It is not. Score four verdicts:
+
+| Verdict | Meaning | Is it a replication failure? |
+|---|---|---|
+| `met` | Reproduced against the criterion written for it. | — |
+| `short` | **Attempted and did not meet its criterion.** | **Yes — the only one.** |
+| `out` | Judged to add no test of the paper's claims; declared unattempted. | No. Nothing was run, so nothing failed. |
+| `blocked` | Would be in scope; an input it needs cannot be obtained. | No — a gap in the data, not in the reproduction. |
+
+The rule that catches the error: **read each shortfall reason and ask whether it describes a
+choice, an obstacle, or a result.** A row marked `out` whose reason says "cannot be scored" or
+"needs data that is not released" is mislabelled — that is `blocked`. A row marked `out` whose
+reason is really "we tried and it did not match" is the serious version of the same mistake:
+a failure hidden inside a scope decision.
+
+Report the three groups separately, each opening with what its verdict means, so a scope decision
+can never be read as a failure. Carry the distinction into the per-figure callouts too: red for
+`short` only; `out` and `blocked` are yellow. And write the reason to match its own class —
+lead a scope decision with the judgement ("a robustness sweep of T12 rather than a new claim"),
+not with a blocker that happens to also apply.
 
 ## Copyright-safe internal/public split — one project, two entry files, ONE command
 
@@ -142,17 +274,60 @@ Quarto-native way to get both from one command is a small **project with two ent
 - **`report_internal.qmd`** is a four-line wrapper: its front matter overrides only the
   `output-file` (and title), then `{{< include report.qmd >}}` pulls in the real report.
 - **`report/_quarto.yml`** lists both under `project: render:` and holds the shared
-  `format: typst` (+ `output-file: report.pdf`), `bibliography:`, and `execute:`.
+  `format: pdf` (+ `output-file: report.pdf`), `bibliography:`, and `execute:`.
 
 `quarto render` (run in `report/`, no file argument) builds the project's render list → **both
 PDFs in one pass**. No `--profile`, no `_quarto-internal.yml`, no post-render shell hook.
 
-- The `ab()` helper reads `INTERNAL =
-  os.environ.get("QUARTO_DOCUMENT_FILE","").startswith("report_internal")` and draws the paper
-  original **only when `INTERNAL`**, so the public build never opens the copyrighted file.
-  `QUARTO_DOCUMENT_FILE` (the input filename) is the branch signal Quarto exposes to the kernel —
-  the only per-build variable it exposes, which is *why* the split is two files rather than two
-  formats in one file.
+- `INTERNAL = tvbo.utils.report.is_internal()` reads `QUARTO_DOCUMENT_FILE` — the input filename,
+  the only per-build variable Quarto exposes to the kernel, which is *why* the split is two entry
+  files rather than two formats in one file. The A/B helper draws the paper original **only when
+  `INTERNAL`**, so the public build never opens the copyrighted file.
+
+### The A/B pair is composed by tvbo, not by each report
+
+**Do not write an `ab()` that lays out matplotlib axes.** Ten reports each grew their own copy of
+that helper and they drifted: different widths, different title wording, one that false-coloured a
+greyscale scan through the default colormap. The layout lives in `tvbo.utils.report`:
+
+```python
+from tvbo.utils.report import report_figure, show_report_figure
+
+staged = report_figure(FIGDIR / f"{fig.name}.png",                    # ours
+                       reference_image_for(fig, ROOT) if INTERNAL else None,   # theirs
+                       STAGE, credit="Pang et al. 2023 (c)")
+print(f"![**Fig {n}.** {figure_caption(fig)}](_figures/{staged.name}){{width=100%}}")
+```
+
+What that buys, and what a per-report copy kept getting wrong:
+
+- **Original LEFT, reproduction RIGHT, at a common height** with widths following each image's own
+  aspect. Neither side is stretched to match the other — a squared-off original would misrepresent
+  the very layout the A/B exists to check.
+- **A missing original still holds its pane**, labelled with how to obtain it. Collapsing to a lone
+  panel reads as a completed comparison that never happened.
+- **Several scans stack into one pane** — pass a list when the paper splits one quantity over
+  Fig 2A/2B.
+- **A greyscale scan stays grey.** `imshow` on a 2-D array applies the default colormap, which
+  silently recolours the paper's figure.
+- **The composite is staged into `report/_figures/`** (gitignored), so the copyrighted original
+  reaches exactly one artifact and never the repository.
+
+Prefer `report_figure` + a markdown embed over `show_report_figure`: the embed gets a real figure
+number, a caption and a cross-reference target. Use `show_report_figure` only where a report
+already emits figures from plain python cells and restructuring them is not worth it.
+
+### Drive the figure section from the recipe, never a hand-written list
+
+A list of `(stem, paper_image, caption)` tuples in the report is three things that drift from the
+`figures:` block. Loop the study's own figures, and take everything from the metadata —
+`figures_in_paper_order`, `figure_title`, `figure_caption` (the `description:`), and
+`reference_image_for` (the declared `reference_image:`). A figure added to the recipe then appears
+in the report with its caption, in the right place, with nothing typed.
+
+Derive the per-figure status callout the same way: `figure_targets(fig, TARGET_ROWS)` joins the
+scorecard on the targets table's own `Fig(s)` column, so the verdict beside a figure and the
+verdict in the scorecard cannot disagree.
 - **Why `report.qmd` must have no front matter:** Quarto's `{{< include >}}` splices the included
   file's front matter too, and an included `output-file:` **overrides** the wrapper's — so the
   internal build would write `report.pdf` and clobber the public one. Keeping all front matter out
@@ -160,13 +335,38 @@ PDFs in one pass**. No `--profile`, no `_quarto-internal.yml`, no post-render sh
   stems (`report`, `report_internal`) keep each build's `<stem>.pdf` intermediate from ever being
   the other's final. Track `report.qmd`, `report_internal.qmd`, `_quarto.yml`, and
   `references.bib`; git-ignore `report/*.pdf` and the paper's figures under `original_study/`.
-- **Do NOT pass `--to pdf`** — it forces the xelatex engine over the `typst` format and
-  reintroduces the intermediate-clobber problem. `_quarto.yml`'s `format: typst` already emits a
-  PDF in a single fast pass.
-
 Verify by rendering and confirming the public `report.pdf` embeds no © original: the internal
 PDF is visibly larger (it carries the paper figures) and its A/B composites are wide (~2.2+),
 while public figure aspect ratios stay near 1.0–1.5.
+
+## Render with LaTeX, and keep long tables out of callouts
+
+`_quarto.yml` sets **`format: pdf`** with `pdf-engine: xelatex`. A replication report is mostly
+wide computed tables, and `longtable` is the only engine that breaks one across a page with its
+header repeated; typst restarted the table on a fresh page and left the remainder of the previous
+one blank. The two entry stems (`report`, `report_internal`) keep each build's `.tex` intermediate
+from being the other's, so the LaTeX path has no intermediate-clobber problem.
+
+**A `longtable` cannot live inside a callout.** Quarto renders a callout as a breakable
+`tcolorbox`, and LaTeX cannot page-break a longtable inside one — so it ships each table to a page
+of its own and leaves three quarters of the preceding page blank. Wrapping the Methods experiment
+renders in `::: {.callout-note}` blocks cost 14 pages of whitespace in one report. **Callouts are
+for verdicts, not containers**: give a rendered `experiment.render("markdown")` a plain `###`
+heading. The symptom to recognise is a PDF whose page count is two or three times what its content
+warrants, with a table alone at the top of each page.
+
+Two settings earn their place in `include-in-header`:
+
+```yaml
+    include-in-header:
+      text: |
+        \usepackage{etoolbox}
+        \usepackage{ragged2e}
+        \AtBeginEnvironment{longtable}{\small\RaggedRight}
+```
+
+`\small` buys a wide scorecard the width it needs; `\RaggedRight` stops LaTeX stretching
+inter-word space in a narrow column until the row looks broken.
 
 ## References — Quarto's bibliography, never a hand-written list
 
@@ -174,7 +374,7 @@ Do not write a `# References` section and do not add a `::: {#refs}` div. Set
 `bibliography: references.bib` in `_quarto.yml`, cite sources inline with `@key` (a bare `@key`
 renders "Author (Year)", a bracketed `[@key]` renders "(Author, Year)"), and Quarto **appends the
 bibliography once, automatically**, listing exactly the keys you cited. A manual heading or `#refs`
-div only produces a second, empty section (typst especially). Two consequences to hold to:
+div only produces a second, empty section. Two consequences to hold to:
 
 - **Cite every source in the prose at least once.** Quarto lists only keys that appear as `@key`
   somewhere; an entry in `references.bib` that is never cited is silently dropped. So the paper
@@ -207,20 +407,21 @@ lead renders bold, the description may use **LaTeX math** (`$I_0$`, `$\sigma$`, 
 computed `` `{python} M[...]` `` values, and no Unicode is needed (the whole point: LaTeX-compatible
 symbols, never font-fragile glyphs). Keep `Figure.description` in LaTeX + ASCII for this reason.
 
-## PDF gotchas (typst — and xelatex)
+## PDF gotchas
 
-The template renders via **typst** (`format: typst`, the fast single-pass default). Whether typst
-or xelatex, the math rules are the same and the failures are silent, so verify them in the PDF:
+These failures are silent, so verify them in the rendered PDF rather than in the source:
 
-- Write all math, subscripts, and superscripts as **LaTeX**, never Unicode — both engines drop
-  Unicode math (xelatex silently; typst via pandoc). Use `$J_{NMDA}$`, `$\geq$`, `$w_+$`,
-  `$\sigma$`, not σ or ≥. This applies inside `output: asis` captions too.
-- **typst doesn't render every LaTeX macro pandoc accepts.** `\pm` in particular came out as a
-  stray literal (`$0.03` for `$\pm 0.03$`); write the plain words ("within 0.03 Hz") instead.
-  pandoc *does* handle `\to`, `\approx`, `\sigma`, `\Gamma`, `\leftarrow`. When a macro looks
-  wrong in the PDF, replace it with prose rather than trusting it.
+- Write all math, subscripts, and superscripts as **LaTeX**, never Unicode — xelatex drops
+  Unicode math without a word. Use `$J_{NMDA}$`, `$\geq$`, `$w_+$`, `$\sigma$`, not σ or ≥. This
+  applies inside `output: asis` captions too.
+- **No emoji, anywhere.** xelatex has no glyph for them and drops them silently, so a ✅/🟡 status
+  column renders as an empty column. Callout colours carry the verdict (and `callout-icon: false`
+  is set for the same reason).
 - Write dashes as ASCII: `--` renders as an en-dash and `---` as an em-dash. Do not paste the
   Unicode – or — glyphs.
+- A `#| label: tbl-*` on a cell that prints a table makes Quarto number it as a float — it comes
+  out as a bare `Table 36` with no caption unless you give it one. Label it something else unless
+  you are cross-referencing it.
 - Avoid a closing `$` immediately followed by a digit; it breaks pandoc's math parser.
 - Do not introduce Unicode while editing prose either.
 

@@ -105,7 +105,11 @@ def _alias_support(schema: Path) -> str:
     lifts: dict[str, dict[str, str]] = {}
     for cls_name in view.all_classes():
         slot_lifts = {
-            slot.name: (shortcut_of[str(slot.range)], bool(slot.multivalued))
+            slot.name: (
+                shortcut_of[str(slot.range)],
+                bool(slot.multivalued),
+                view.get_identifier_slot(str(slot.range), use_key=True) is not None,
+            )
             for slot in view.class_induced_slots(cls_name)
             if str(slot.range) in shortcut_of and slot.inlined is not False
         }
@@ -136,18 +140,37 @@ _SCALAR_SHORTCUTS = {lifts!r}
 _SCALARS = (str, int, float, bool)
 
 
-def _lift_scalar(value, target, multivalued):
+def _is_literal(value):
+    \"\"\"A bare value the shortcut may lift: a scalar, or a (nested) list of scalars.
+
+    An array literal counts — a coordinate list to select, a coefficient matrix — because
+    the slot it lifts into holds arrays as well as scalars. A list of MAPPINGS does not:
+    that is the list spelling of a keyed collection, whose members lift individually.
+    \"\"\"
+    if isinstance(value, _SCALARS):
+        return True
+    if isinstance(value, (list, tuple)):
+        return bool(value) and all(_is_literal(v) for v in value)
+    return False
+
+
+def _lift_scalar(value, target, multivalued, keyed=False):
     \"\"\"`0.0628` -> `{{'value': 0.0628}}`, leaving an already-written mapping alone.
 
     On a multivalued slot the members are lifted, not the collection: `{{omega: 0.0628}}`
-    is a keyed collection of one Parameter, not a Parameter.
+    is a keyed collection of one Parameter, not a Parameter. A `keyed` collection's LIST
+    spelling (`arguments: [v]`) is a list of member identifiers, not values, so its bare
+    scalars are left for the loader to key on; only a non-keyed list (`additional_equations:
+    ["x = -x"]` -> `[{{rhs: "x = -x"}}]`) lifts its elements.
     \"\"\"
     if not multivalued:
-        return {{target: value}} if isinstance(value, _SCALARS) else value
+        return {{target: value}} if _is_literal(value) else value
     if isinstance(value, dict):
-        return {{k: ({{target: v}} if isinstance(v, _SCALARS) else v) for k, v in value.items()}}
+        return {{k: ({{target: v}} if _is_literal(v) else v) for k, v in value.items()}}
     if isinstance(value, list):
-        return [({{target: v}} if isinstance(v, _SCALARS) else v) for v in value]
+        if keyed:
+            return value
+        return [({{target: v}} if _is_literal(v) else v) for v in value]
     return value
 
 
@@ -164,9 +187,9 @@ def _install_slot_aliases() -> None:
         original = cls.__init__
 
         def __init__(self, *args, **kwargs):
-            for slot, (target, mv) in _SCALAR_SHORTCUTS.get(cls.__name__, {{}}).items():
+            for slot, (target, mv, keyed) in _SCALAR_SHORTCUTS.get(cls.__name__, {{}}).items():
                 if slot in kwargs and kwargs[slot] is not None:
-                    kwargs[slot] = _lift_scalar(kwargs[slot], target, mv)
+                    kwargs[slot] = _lift_scalar(kwargs[slot], target, mv, keyed)
             for alias, canonical in amap.items():
                 if alias in kwargs:
                     value = kwargs.pop(alias)

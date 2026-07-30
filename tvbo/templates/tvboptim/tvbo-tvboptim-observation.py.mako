@@ -781,6 +781,16 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
     # warm_history/progress are accepted-and-ignored so this reducer shares ONE call site
     # with the recurrence, comoment and convolution factories.
     _ds = ${red['ds_steps']}           # decimation stride (integration steps per kept sample)
+    # `skip` is the transient, in integration steps, for the sweep path, which folds
+    # transient and main run into ONE window (the single-run path integrates them
+    # separately and streams only the main one). Without this the sweep silently keeps
+    # `skip/_ds` extra leading samples and a swept cell is NOT the same computation as the
+    # same experiment run alone. Dropped at finalize rather than gated per block, so the
+    # arithmetic never depends on the block size dividing the stride. The sample GRID stays
+    # anchored at 0, so when `skip` is not a multiple of `_ds` the kept samples sit up to
+    # one stride earlier than the single run's — same count, same post-transient window,
+    # phase offset < 1 sample.
+    _skip_n = max(0, -(-(skip + 1) // _ds) - 1) if skip else 0
     def _init(template, n_steps):
         n = template.shape[-1]
         return (jnp.zeros((len(range(_ds - 1, n_steps, _ds)), n)), jnp.array(0))
@@ -792,7 +802,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         return (_out, _count + block.shape[0])
     def _finalize(acc):
         _out, _count = acc
-        return _out
+        return _out[_skip_n:]
     return (_init, _update, _finalize)
 </%def>\
 <%def name="render_recurrence_reduction(red, name, s_idx, dt)">\

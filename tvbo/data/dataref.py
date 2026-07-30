@@ -280,18 +280,18 @@ def reconcile_by_label(da, alias_map: Mapping[str, str], model_labels: Sequence[
 
 
 def sel_dict(ref) -> dict:
-    """``DataRef.sel`` (a list of ``Argument``) as a plain ``{dim: value}`` mapping.
+    """``DataRef.sel`` (a collection of ``Argument``) as a plain ``{dim: value}`` mapping.
 
     The Argument name is the dimension/coordinate; its ``value`` the coordinate label.
     Keyed by name, never positional. Empty when the reference carries no ``sel``.
+
+    Both spellings resolve: the keyed dict a study writes (``sel: {variable: phi}``) and
+    the list of Arguments a dataclass build produces.
     """
-    out: dict = {}
-    for arg in getattr(ref, "sel", None) or []:
-        name = getattr(arg, "name", None)
-        if name is None:
-            continue
-        out[name] = getattr(arg, "value", None)
-    return out
+    sel = getattr(ref, "sel", None) or []
+    items = sel.items() if hasattr(sel, "items") else [(getattr(a, "name", None), a) for a in sel]
+    return {str(name): getattr(arg, "value", arg)
+            for name, arg in items if name is not None}
 
 
 def reconcile_mode(ref) -> str:

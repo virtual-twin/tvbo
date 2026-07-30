@@ -14,8 +14,9 @@
 #    so report_internal.qmd -> INTERNAL (draws © originals), report.qmd -> PUBLIC. The internal
 #    build can never write report.pdf.
 #
-# Rendered via Typst (single fast pass, no xelatex rerun loop). Do NOT pass `--to pdf` (that forces
-# the LaTeX engine and reintroduces the intermediate-clobber problem). Run with the tvbo venv:
+# Rendered via LaTeX (xelatex). A replication report is mostly wide computed tables, and
+# `longtable` is the only engine that breaks one across a page with its header repeated. Run with
+# the tvbo venv:
 #     QUARTO_PYTHON=/path/to/tvbo/.venv/bin/python quarto render      # in report/  -> BOTH PDFs
 project:
   type: default
@@ -25,15 +26,23 @@ project:
 title: "TVBO replication of <Author> et al. (<Year>)"
 subtitle: "*<Paper title>* (<venue>), replicated with a single declarative tvbo recipe"
 format:
-  typst:
+  pdf:
     output-file: report.pdf
+    pdf-engine: xelatex
+    documentclass: scrartcl
     toc: true
     toc-depth: 2
     number-sections: true
+    colorlinks: true
     fig-width: 7
-    margin:
-      x: 1.8cm
-      y: 2cm
+    fig-pos: "H"
+    geometry:
+      - margin=2cm
+    include-in-header:
+      text: |
+        \usepackage{etoolbox}
+        \usepackage{ragged2e}
+        \AtBeginEnvironment{longtable}{\small\RaggedRight}
 callout-icon: false
 bibliography: references.bib
 jupyter: python3

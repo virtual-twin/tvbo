@@ -105,7 +105,10 @@ def write_matrix(grp, matrix, fmt: str = "dense"):
         Storage format: "dense", "csr", or "coo".
     """
     grp.attrs["format"] = str(fmt)
-    grp.attrs["shape"] = list(np.asarray(matrix).shape)
+    # `.shape` directly, never via np.asarray: a scipy sparse matrix survives that
+    # call as a 0-d object array, which would record an empty shape.
+    shape = matrix.shape if hasattr(matrix, "shape") else np.asarray(matrix).shape
+    grp.attrs["shape"] = list(shape)
     _WRITERS[str(fmt)](grp, matrix)
 
 

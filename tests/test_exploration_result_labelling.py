@@ -106,3 +106,62 @@ def test_none_results_stay_none():
     r = ExplorationResult(name="empty", results=None, axes=[])
     assert r.results is None
     assert r.as_grid() is None
+
+
+# ── Declared observation axes ───────────────────────────────────────────────────────────
+
+
+def _stacked(shape, dims=None, ts=None, cell_coords=None):
+    from tvbo.data.types import _stacked_to_dataarray
+
+    return _stacked_to_dataarray(
+        np.zeros(shape), [_axis("model.c", C_VALS)], intrinsic_ts=ts,
+        name="obs", cell_coords=cell_coords, dims=dims,
+    )
+
+
+def test_declared_dims_name_a_swept_observation():
+    """A streamed observation's axes come from what it DECLARED, not from a template.
+
+    `(time, node)` and the positional `(node, mode)` fallback have the same rank, so
+    nothing raises when the guess is wrong — a 1,338-frame BOLD time axis simply comes
+    back named `node`, and every downstream `.sel` is then keyed on the wrong axis.
+    """
+    da = _stacked((len(C_VALS), 1338, 200), dims=("time", "node"))
+    assert da.dims == ("model.c", "time", "node")
+
+
+def test_declared_dims_win_over_a_matching_time_vector():
+    da = _stacked((len(C_VALS), 4, 4), dims=("node", "node_j"), ts=np.arange(4.0))
+    assert da.dims == ("model.c", "node", "node_j")
+    assert "time" not in da.coords
+
+
+def test_undeclared_observations_keep_the_positional_fallback():
+    """Payloads that declare nothing (a raw swept trajectory) are unchanged."""
+    da = _stacked((len(C_VALS), 50, 2), ts=np.arange(50.0))
+    assert da.dims == ("model.c", "time", "variable")
+
+
+def test_declared_dims_apply_on_the_sharded_point_path():
+    da = _stacked((2, 1338, 200), dims=("time", "node"),
+                  cell_coords={"model.c": np.array([0.1, 0.3])})
+    assert da.dims == ("point", "time", "node")
+    assert list(da.coords["model.c"].values) == [0.1, 0.3]
+
+
+def test_a_declared_shape_that_does_not_fit_falls_back_rather_than_raising():
+    """A rank mismatch means the declaration is not about this payload; never mislabel."""
+    da = _stacked((len(C_VALS), 50, 2), dims=("time",), ts=np.arange(50.0))
+    assert da.dims == ("model.c", "time", "variable")
+
+
+def test_a_declared_singleton_axis_is_not_squeezed_away():
+    """A one-node observation still has a node axis — it declared one."""
+    da = _stacked((len(C_VALS), 40, 1), dims=("time", "node"), ts=np.arange(40.0))
+    assert da.dims == ("model.c", "time", "node")
+
+
+def test_an_undeclared_trailing_singleton_is_still_squeezed():
+    da = _stacked((len(C_VALS), 40, 2, 1), ts=np.arange(40.0))
+    assert da.dims == ("model.c", "time", "variable")

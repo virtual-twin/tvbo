@@ -86,8 +86,72 @@ class TestMatrixRoundTrip:
             result = read_matrix(hf2["test"])
         np.testing.assert_allclose(result, m, atol=1e-6)
 
+    def test_scipy_sparse_input_records_its_shape(self, h5_file):
+        """A scipy matrix keeps its shape: np.asarray(csr) is a 0-d object array."""
+        import h5py
+        import scipy.sparse as sp
+        from tvbo.data.matrix_io import write_matrix, read_matrix
+
+        hf, path = h5_file
+        m = sp.random(400, 400, density=0.01, format="csr", random_state=0)
+        grp = hf.create_group("test")
+        write_matrix(grp, m, fmt="csr")
+        hf.close()
+
+        with h5py.File(path, "r") as hf2:
+            assert tuple(hf2["test"].attrs["shape"]) == (400, 400)
+            result = read_matrix(hf2["test"])
+        np.testing.assert_allclose(result, m.toarray(), atol=1e-6)
+
 
 # ── network_io tests ─────────────────────────────────────────────────
+
+
+class TestTemplateEdgeOnlyNetwork:
+    """A network whose `edges` are matrix DECLARATIONS, not connections.
+
+    Every connectome loaded from a `data_file:` companion is of this shape, and at
+    mesh scale materialising an N x N from those declarations is the difference
+    between a run and an out-of-memory kill.
+    """
+
+    def _network(self, n=4000):
+        from tvbo import Network
+        from tvbo.datamodel.schema import Edge
+
+        return Network(number_of_nodes=n, edges=[Edge(label="weight", format="csr")])
+
+    def test_no_matrix_is_built_from_template_edges(self):
+        net = self._network()
+        assert net._delays_from_edges() is None
+        assert net._weights_from_edges() is None
+
+    def test_placeholder_nodes_are_not_written_to_the_sidecar(self, tmp_path):
+        import scipy.sparse as sp
+        import yaml as _yaml
+        from tvbo.data.network_io import save_network, load_network
+
+        net = self._network(n=600)
+        net.set_matrix("weight", sp.eye(600, format="csr") * 2.0)
+        save_network(net, tmp_path / "net.yaml")
+
+        meta = _yaml.safe_load((tmp_path / "net.yaml").read_text())
+        assert "nodes" not in meta
+        assert meta["number_of_nodes"] == 600
+
+        back = load_network(tmp_path / "net.yaml")
+        assert len(back.nodes) == 600
+        np.testing.assert_allclose(back.weights_matrix, np.eye(600) * 2.0, atol=1e-6)
+
+    def test_authored_nodes_survive_the_round_trip(self, tmp_path):
+        from tvbo import Network
+        from tvbo.data.network_io import save_network, load_network
+
+        net = Network.from_matrix(np.eye(3), labels=["L_V1", "R_V1", "thal"])
+        save_network(net, tmp_path / "net.yaml")
+
+        back = load_network(tmp_path / "net.yaml")
+        assert [n.label for n in back.nodes] == ["L_V1", "R_V1", "thal"]
 
 
 class TestNetworkIO:

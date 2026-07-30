@@ -2549,17 +2549,22 @@ class Network(tvbo_datamodel.Network):
         receives the resolved indices; the raw ids stay on ``edge`` for callers that
         need them. Matrices are target-by-source — an edge source -> target is
         stored at ``[target, source]``, the coupling convention backends expect —
-        and undirected edges are mirrored. ``None`` when the network has no edges.
+        and undirected edges are mirrored. ``None`` when the network declares no
+        edge that actually connects two nodes.
         """
-        if not self.edges:
+        # Endpointless entries are TEMPLATE edges: they name a matrix carried in the
+        # companion file, they are not connections. Select before allocating, or a
+        # template-only network (any connectome loaded from `data_file:`) builds a
+        # dense N x N of `fill` and then scans it — 8.4 GB and a 1e9-element pass for
+        # a 32k-vertex mesh, to return a matrix with nothing in it.
+        placed = [e for e in (self.edges or []) if e.source is not None and e.target is not None]
+        if not placed:
             return None
         n = self.number_of_nodes or self.number_of_regions or 1
         index_map = self.node_index_map()
         M = np.full((n, n), fill, dtype=np.float64)
-        for edge in self.edges:
+        for edge in placed:
             i, j = edge.source, edge.target
-            if i is None or j is None:
-                continue
             i, j = index_map.get(i, i), index_map.get(j, j)
             if not (0 <= i < n and 0 <= j < n):
                 continue
@@ -2903,10 +2908,12 @@ class Network(tvbo_datamodel.Network):
         if L is None:
             L = self._lengths_from_edges()
         if L is None:
-            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
-            if n > 0:
-                return np.zeros((n, n), dtype=np.float64)
-            return L
+            # None, not a zeros matrix: "no tract lengths" is not "every tract has
+            # length zero". Standing in a dense N x N of zeros defeats every
+            # `lengths_matrix is not None` guard downstream, and makes an undelayed
+            # mesh-scale network pay three N x N allocations to discover it has no
+            # delays.
+            return None
 
         # Apply transforms targeting "length" (mirrors weights_matrix; the
         # add_transform contract lists "length" as a valid edge-property target).

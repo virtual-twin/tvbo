@@ -76,7 +76,81 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
     return xr.DataArray(data=data_np, dims=dims, coords=coords)
 
 
-def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None):
+def _unwrap_observation(obs):
+    """An observation's array, whatever wrapper it arrived in.
+
+    ``.data`` unwraps an ``ObservationResult``, but xarray spells its raw buffer the same
+    way, so the same expression would strip the dims a labelled observation carries. Every
+    site that reaches for an observation's array goes through here.
+    """
+    return obs if isinstance(obs, xr.DataArray) else getattr(obs, "data", obs)
+
+
+def _observation_dataarray(raw_data, dims=None, nodes=None):
+    """Attach an observation's DECLARED axis names to the array the backend returned.
+
+    The axes are not inferred here. An observation's output shape is fixed by the
+    reduction that produced it, so codegen emits the names alongside the reducer
+    (``_STREAMING_DIMS``, from ``utils.reduction_dims``) and this only binds them —
+    together with the network's node labels, which the caller already holds. Inferring
+    dims from shape instead cannot tell an ``(n_freq, n_node)`` spectrum from an
+    ``(n_node, n_node)`` matrix, so nothing here guesses: an observation with no declared
+    dims is passed through unlabelled and the container falls back to positional names.
+
+    Returns the input untouched when it is already labelled, is not a numeric array, or
+    carries no dims declaration of the right rank.
+    """
+    if raw_data is None or isinstance(raw_data, xr.DataArray) or not dims:
+        return raw_data
+    try:
+        a = np.asarray(raw_data)
+    except (ValueError, TypeError):
+        return raw_data
+    if a.dtype == object or a.ndim == 0 or a.size == 0 or a.ndim != len(dims):
+        return raw_data
+
+    dims = [str(d) for d in dims]
+    coords = {}
+    if nodes:
+        labels = [str(n) for n in nodes]
+        coords = {d: labels for i, d in enumerate(dims)
+                  if d in ("node", "node_j") and a.shape[i] == len(labels)}
+    return xr.DataArray(a, dims=dims, coords=coords)
+
+
+def _inner_dims(post_trial_shape, ts_arr, declared=None):
+    """Axis names for one exploration cell's payload, and the coords they carry.
+
+    A DECLARED shape wins outright. An observation's axes come from the reduction it
+    declares — a stride keeps ``(time, node)``, a co-moment gives ``(node, node_j)``, a
+    recurrence gives ``(node,)`` — and are known at codegen. Falling back to matching
+    lengths against a positional ``(time, variable, node, mode)`` template is how a
+    1,338-frame time axis ends up named ``node``: silently, with every downstream
+    selection then keyed on the wrong axis.
+
+    The template remains the fallback for payloads that declare nothing (a raw swept
+    trajectory, an observable a backend returns unlabelled).
+    """
+    n = len(post_trial_shape)
+    coords = {}
+    if declared is not None and len(declared) == n:
+        dims = [str(d) for d in declared]
+        if ts_arr is not None and "time" in dims and ts_arr.size == post_trial_shape[dims.index("time")]:
+            coords["time"] = ts_arr
+        return dims, coords
+
+    template = ["variable", "node", "mode"]
+    if ts_arr is not None and ts_arr.size > 1 and n > 0 and ts_arr.size == post_trial_shape[0]:
+        dims = ["time"] + [template[i] if i < len(template) else f"dim_{i}" for i in range(n - 1)]
+        coords["time"] = ts_arr
+    else:
+        # Time-aggregated (or no time) — assume spatial layout, right-aligned.
+        dims = template[-n:] if n else []
+    return dims, coords
+
+
+def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None,
+                          cell_coords=None, dims=None):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
 
     Outer dims correspond to exploration axes (parameter names with their
@@ -92,6 +166,9 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
     not the full Cartesian product. The result then gets a single ``point`` dim
     with each axis's value hung on it as a coordinate, so the shard is
     self-describing and reassembles by parameter value across tasks.
+
+    ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the
+    spec knows them (see :func:`_inner_dims`).
     """
     if stacked_arr is None:
         return None
@@ -146,23 +223,9 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
             ts_arr = np.asarray(intrinsic_ts)
             while ts_arr.ndim > 1:
                 ts_arr = ts_arr[0]
-        has_time = (
-            ts_arr is not None
-            and ts_arr.size > 1
-            and len(post_trial_shape) > 0
-            and ts_arr.size == post_trial_shape[0]
-        )
-        if has_time:
-            post_time_template = ["variable", "node", "mode"]
-            inner_dims = ["time"] + [
-                post_time_template[i] if i < len(post_time_template) else f"dim_{i}"
-                for i in range(len(post_trial_shape) - 1)
-            ]
-            coords["time"] = ts_arr
-        else:
-            spatial_template = ["variable", "node", "mode"]
-            inner_dims = spatial_template[-len(post_trial_shape):] if post_trial_shape else []
-        while inner_dims and arr.shape[-1] == 1:
+        inner_dims, inner_coords = _inner_dims(post_trial_shape, ts_arr, dims)
+        coords.update(inner_coords)
+        while inner_dims and arr.shape[-1] == 1 and inner_dims != list(dims or []):
             arr = arr[..., 0]
             inner_dims = inner_dims[:-1]
         all_dims = ["point"] + trial_dims + inner_dims
@@ -214,31 +277,13 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
         while ts_arr.ndim > 1:
             ts_arr = ts_arr[0]
 
-    has_time = (
-        ts_arr is not None
-        and ts_arr.size > 1
-        and len(post_trial_shape) > 0
-        and ts_arr.size == post_trial_shape[0]
-    )
-
-    if has_time:
-        post_time_template = ["variable", "node", "mode"]
-        inner_dims = ["time"] + [
-            post_time_template[i] if i < len(post_time_template) else f"dim_{i}"
-            for i in range(len(post_trial_shape) - 1)
-        ]
-        coords["time"] = ts_arr
-    else:
-        # Time-aggregated (or no time) — assume spatial layout
-        # (variable, node, mode), aligned to the right of the convention.
-        spatial_template = ["variable", "node", "mode"]
-        inner_dims = (
-            spatial_template[-len(post_trial_shape):] if post_trial_shape else []
-        )
+    inner_dims, inner_coords = _inner_dims(post_trial_shape, ts_arr, dims)
+    coords.update(inner_coords)
 
     # Drop trailing singleton inner dims so we don't fabricate axes that don't
-    # actually carry information (e.g. mode/node when size 1).
-    while inner_dims and arr.shape[-1] == 1:
+    # actually carry information (e.g. mode/node when size 1) — but never a DECLARED
+    # axis: a single-node observation still has a node axis, because it said so.
+    while inner_dims and arr.shape[-1] == 1 and inner_dims != list(dims or []):
         arr = arr[..., 0]
         inner_dims = inner_dims[:-1]
 
@@ -391,7 +436,7 @@ class SimulationResult:
         Warm-up simulation result that preceded this one.
     """
 
-    def __init__(self, data=None, observations=None, transient=None, *, result=None, state_names=None, nodes=None, units=None, **kwargs):
+    def __init__(self, data=None, observations=None, transient=None, *, result=None, state_names=None, nodes=None, observation_dims=None, units=None, **kwargs):
         self._extras = {}
         self._timeseries = None
         self._units = units or {}  # {variable_name: unit_string}
@@ -408,10 +453,12 @@ class SimulationResult:
         self.data = data
         # Normalize observations to Bunch so both JAX and tvboptim results have
         # dot-access: result.observations.BOLD_TVB  (not just dict indexing).
-        if isinstance(observations, Bunch):
-            self.observations = observations
-        elif observations:
-            self.observations = Bunch(observations)
+        # Observations carry the axis names their reduction declared at codegen, bound to
+        # the SAME node labels the trajectory just got — the one place holding both.
+        _odims = observation_dims or {}
+        if observations:
+            self.observations = Bunch({k: _observation_dataarray(v, _odims.get(k), nodes)
+                                       for k, v in observations.items()})
         else:
             self.observations = Bunch()
         self.transient = transient
@@ -2016,7 +2063,7 @@ class ExperimentResult:
         integ_obs = getattr(self.integration, "observations", None) if self.integration is not None else None
         if integ_obs and hasattr(integ_obs, "items"):
             for obs_name, obs in integ_obs.items():
-                da = getattr(obs, "data", obs)
+                da = _unwrap_observation(obs)
                 if hasattr(da, "dims"):
                     data_vars[f"integration__{_san(obs_name)}"] = da
 
@@ -2039,6 +2086,12 @@ class ExperimentResult:
                 return None
             if a.ndim == 0:
                 return xr.DataArray(a)
+            # An already-labelled value keeps its own dims and coords: observations are
+            # named at construction (`_observation_dataarray`), and re-deriving names here,
+            # from shape alone, could only contradict them.
+            if getattr(arr, "dims", None) and len(arr.dims) == a.ndim:
+                return xr.DataArray(a, dims=[str(d) for d in arr.dims],
+                                    coords=getattr(arr, "coords", None))
             return xr.DataArray(a, dims=[f"{name}_d{i}" for i in range(a.ndim)])
 
         def _numeric_leaves(prefix, obj):
@@ -2064,7 +2117,7 @@ class ExperimentResult:
             # _numeric_da drops whole (np.asarray(dict) raises → None → silently unsaved).
             # For an array value _numeric_leaves yields the single leaf unchanged, so this is
             # a superset — the same flattening already used for optimization fitted params.
-            for var, da in _numeric_leaves(key, getattr(obs, "data", obs)):
+            for var, da in _numeric_leaves(key, _unwrap_observation(obs)):
                 if var not in data_vars:
                     data_vars[var] = da
         for opt_name, opt in (self.optimizations or {}).items():

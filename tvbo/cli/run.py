@@ -279,14 +279,40 @@ def _study_analysis_stages(study) -> tuple[list, list]:
     return schedule(analyses) if analyses else ([], [])
 
 
+def _spec_base(spec: str) -> Path:
+    """The study file's own directory — the root ``used:`` references resolve against."""
+    spec_path = Path(spec)
+    return spec_path.resolve().parent if spec_path.is_file() else Path.cwd()
+
+
+def _container_root(spec: str, out_dir: Path | None) -> Path:
+    """The directory holding THIS run's result containers.
+
+    ``<root>/results/<name>/result.h5`` for an analysis, ``<root>/exp-N_*.h5`` for an
+    experiment; figures resolve them under ``<root's parent>/output/…``, so the root is
+    always a directory named ``output``. The single place ``--out-dir`` is mapped onto that
+    layout, because the analysis WRITER and the figure READER disagreeing is invisible:
+    with the documented ``-o output/nc`` the analyses landed in ``output/nc/results/``
+    while the figures looked in ``output/results/``, so one command rendered this run's
+    experiments against a previous run's analyses.
+    """
+    base = _spec_base(spec)
+    if out_dir is None:
+        return base / "output"
+    od = Path(out_dir).resolve()
+    if od.name == "nc" and od.parent.name == "output":
+        return od.parent
+    if od.name == "output":
+        return od
+    return od / "output"
+
+
 def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str) -> bool:
     """Execute one stage of a study's declarative ``analyses:``; True when the stage held.
 
     Each writes ``<root>/results/<name>/result.h5`` — the container a figure layer or a
-    later analysis binds with ``used: {analysis: <name>}``. ``<root>`` follows the
-    results: ``--out-dir`` when given (so an analysis finds the sibling experiments this
-    run actually wrote), else ``<study dir>/output``, the root every other ``used:``
-    resolves against.
+    later analysis binds with ``used: {analysis: <name>}``, at the root
+    :func:`_container_root` resolves for this run.
 
     The ``before`` stage raises on failure — nothing has run yet, and an experiment may
     source the missing analysis. The ``after`` stage reports and returns False instead:
@@ -298,9 +324,8 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
 
     if not analyses:
         return True
-    spec_path = Path(spec)
-    base = spec_path.resolve().parent if spec_path.is_file() else Path.cwd()
-    root = Path(out_dir).resolve() if out_dir is not None else base / "output"
+    base = _spec_base(spec)
+    root = _container_root(spec, out_dir)
     try:
         run_analyses(
             analyses, root,
@@ -339,8 +364,7 @@ def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
     if not figs:
         return
 
-    spec_path = Path(spec)
-    base = spec_path.resolve().parent if spec_path.is_file() else Path.cwd()
+    base = _spec_base(spec)
     # A run persists results only when --out-dir is given (see _exec_one). With no -o and
     # no results already on disk under <base>/output, every layer would resolve to nothing
     # and each panel would be an empty placeholder — skip and tell the user how to get
@@ -359,25 +383,10 @@ def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
             f"persist (no -o), so the figures reflect a PREVIOUS run, not this one. Pass -o "
             f"(e.g. `tvbo run {spec} -o output/nc`) to render this run's own results."
         )
-    # Figures resolve result containers under <fig_base>/output/… . Align fig_base with where
-    # this run actually wrote results (-o out_dir) so a relocation still resolves: an out_dir of
-    # `.../output/nc` or `.../output` maps to its parent(s); an unrelated out_dir can't be mapped,
-    # so warn rather than silently render empty panels against <base>/output.
-    fig_base = base
-    if out_dir is not None:
-        od = Path(out_dir).resolve()
-        if od.name == "nc" and od.parent.name == "output":
-            fig_base = od.parent.parent
-        elif od.name == "output":
-            fig_base = od.parent
-        elif (od / "output").is_dir():
-            fig_base = od
-        elif not str(od).startswith(str((base / "output").resolve())):
-            _common.warn(
-                f"results were written to {od}, but figures resolve containers under "
-                f"{base}/output; panels binding experiment results may be empty. Re-run "
-                f"`tvbo figure render {spec} --base-dir <results root>` if so."
-            )
+    # Figures resolve result containers under <fig_base>/output/… — the SAME mapping the
+    # analysis stage writes through, so the two cannot disagree about where this run's
+    # containers are.
+    fig_base = _container_root(spec, out_dir).parent
     out_figs = base / "figures"
     _common.info(f"rendering {len(figs)} figure(s) -> {out_figs}")
     try:
