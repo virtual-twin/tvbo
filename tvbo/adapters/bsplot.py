@@ -151,9 +151,14 @@ _AXIS_OPTS = {
     "xlabel", "ylabel", "title", "xlim", "ylim", "xticks", "yticks",
     "hide_xticklabels", "hide_yticklabels", "axhline", "axvline", "legend",
     "xscale", "yscale",   # axis scale (log/symlog/linear): part of the claim, not cosmetic
-    "aspect", "invert_x", "invert_y",   # frame geometry/direction: a matrix reads row 0 at top
+    "aspect", "invert_x", "invert_y", "frame",   # frame geometry/direction/visibility
     "zlabel", "zlim", "elev", "azim", "invert_z", "zoom",  # line3d only
 }
+
+
+# Axis directives the format pass can overwrite, so they are re-applied after it.
+_POST_FORMAT_OPTS = {"xticks", "yticks", "xlim", "ylim", "xscale", "yscale",
+                     "hide_xticklabels", "hide_yticklabels", "aspect", "frame"}
 
 
 def _panel_opts(panel) -> dict:
@@ -189,8 +194,13 @@ _PANEL_NUM_LOC = {
 }
 
 
-def _annotations(panel) -> list:
-    """Resolve ``Panel.annotations`` into ``[{text, x, y}]`` in axes-fraction coords."""
+def _annotations(panel, base_dir=Path(".")) -> list:
+    """Resolve ``Panel.annotations`` into ``[{text, x, y, layer}]`` in axes-fraction coords.
+
+    An annotation with a ``used:`` binding carries its resolved layer, so the emitted
+    script reads the number out of the container and formats ``text`` with it — a panel's
+    printed statistic is computed from the run, never typed into the spec.
+    """
     out = []
     for a in (getattr(panel, "annotations", None) or []):
         loc = getattr(a, "loc", None)
@@ -199,8 +209,30 @@ def _annotations(panel) -> list:
         else:
             x = a.x if getattr(a, "x", None) is not None else 0.5
             y = a.y if getattr(a, "y", None) is not None else 0.95
-        out.append({"text": a.text, "x": x, "y": y})
+        used = getattr(a, "used", None)
+        layer = _resolve_layer(_UsedOnly(used), "cartesian", base_dir) if used is not None else None
+        arrow = [float(v) for v in (getattr(a, "arrow", None) or [])] or None
+        text_kwargs = {k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color")
+                       if getattr(a, k, None) is not None}
+        text_kwargs.setdefault("ha", "center")
+        text_kwargs.setdefault("va", "center")
+        out.append({"text": a.text, "x": x, "y": y, "layer": layer, "arrow": arrow,
+                    "kwargs": text_kwargs})
     return out
+
+
+class _UsedOnly:
+    """A Layer-shaped view of a bare ``DataRef``, so an annotation binding resolves through
+    the one layer resolver instead of a copy of it."""
+
+    mark = None
+    encoding = None
+    transform = None
+    style = None
+    triangle = None
+
+    def __init__(self, used):
+        self.used = used
 
 
 @functools.lru_cache(maxsize=None)
@@ -333,6 +365,18 @@ def _resolve_layer(layer, panel_kind, base_dir):
     mark = str(layer.mark) if layer.mark else ("heatmap" if panel_kind == "heatmap" else "line")
     style = getattr(layer, "style", None)
     triangle = getattr(layer, "triangle", None)
+    color = getattr(enc, "color", None)
+    kwargs = _heatmap_kwargs(style) if mark == "heatmap" else _style_kwargs(style)
+    label = getattr(layer, "label", None)
+    # A `color` ENCODING fans one artist per entry and labels each with its own coordinate
+    # value, so a layer-wide colour or label would collide with the per-entry ones. Only
+    # the marks the template routes through that fan-out are affected: `scatter`/`bar` keep
+    # their own colour, and so does any mark drawn before the colour branch is reached.
+    _fans_by_color = bool(color) and mark not in ("scatter", "bar", "area", "heatmap")
+    if label and mark != "heatmap" and not _fans_by_color:
+        kwargs["label"] = str(label)    # matplotlib reads the legend entry off the artist
+    if _fans_by_color:
+        kwargs.pop("color", None)
     return {
         "container": _container_path(_used_ref(used), base_dir),
         "output": used.output,
@@ -340,11 +384,13 @@ def _resolve_layer(layer, panel_kind, base_dir):
         "x": getattr(enc, "x", None),
         "y": getattr(enc, "y", None),
         "z": getattr(enc, "z", None),
+        "color": color,
+        "cmap": getattr(style, "colormap", None),
         "transform": getattr(layer, "transform", None),
         "sel": sel,
         "sel_method": method,
         "triangle": str(triangle) if triangle else None,
-        "style": _heatmap_kwargs(style) if mark == "heatmap" else _style_kwargs(style),
+        "style": kwargs,
     }
 
 
@@ -361,11 +407,19 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         ctx = ({"layers": layers, "opts": _panel_opts(panel), "key": key, "base_dir": str(base_dir)}
                if kind == "custom" else None)
         # One colourbar per panel (not per layer — a split matrix is two layers, one scale),
-        # suppressed with `colorbar: false` where the paper prints none.
+        # suppressed with `colorbar: false` where the paper prints none. It is slim by
+        # default: matplotlib's own default steals ~20% of a small panel's width.
+        opts = _panel_opts(panel)
         colorbar = (any(l["mark"] == "heatmap" for l in layers)
-                    and _panel_opts(panel).get("colorbar", True) is not False)
+                    and opts.get("colorbar", True) is not False)
+        colorbar_kwargs = {"fraction": opts.get("colorbar_fraction", 0.046),
+                           "pad": opts.get("colorbar_pad", 0.04)}
         # Default the axis labels to the first layer's x-dim / output; opts override them.
         axopts = _axopts(panel)
+        # bsplot's format pass re-derives ticks and can re-normalise limits, so a DECLARED
+        # frame (the paper's own tick marks and ranges) is re-applied after it. Intent
+        # written in the spec must not be silently replaced by the tidy-up.
+        post = {k: v for k, v in axopts.items() if k in _POST_FORMAT_OPTS}
         if kind in ("cartesian", "heatmap", "line3d") and layers:
             axopts.setdefault("xlabel", layers[0]["x"] or "")
             axopts.setdefault("ylabel", layers[0]["y"] or layers[0]["output"])
@@ -387,9 +441,15 @@ def build_context(figure, base_dir, outfile: str) -> dict:
             "placeholder_only": bool(placeholder) and not layers and not render and not path,
             "layers": layers,
             "colorbar": colorbar,
+            "colorbar_kwargs": colorbar_kwargs,
+            "colorbar_label": opts.get("colorbar_label"),
+            # Cells of blank band between two triangle layers, so the halves read as two
+            # quantities rather than one field (the paper's own `extra_diagonal`).
+            "triangle_gap": int(opts.get("triangle_gap", 0) or 0),
             "axopts": axopts,
+            "post_axopts": {} if (placeholder and not layers and not render and not path) else post,
             "ctx": ctx,
-            "annotations": _annotations(panel),
+            "annotations": _annotations(panel, base_dir),
             "number_loc": getattr(panel, "number_loc", None),
             "number": getattr(panel, "number", None),
         })

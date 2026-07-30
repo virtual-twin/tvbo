@@ -181,13 +181,35 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
             write_matrix(pg, pmatrix, fmt=pfmt)
 
 
+def _nodes_are_placeholders(nodes, number_of_nodes) -> bool:
+    """True when ``nodes`` is exactly what ``Network(number_of_nodes=N)`` would synthesise.
+
+    A Network materialises `node_0 … node_{N-1}` whenever nodes are not authored, so
+    such a list carries no information the node count does not already hold — and at
+    mesh scale (32,492 vertices) writing it out makes the sidecar larger than the
+    matrices it describes.
+    """
+    if not nodes or len(nodes) != (number_of_nodes or 0):
+        return False
+    for i, node in enumerate(nodes):
+        if not isinstance(node, dict):
+            return False
+        extra = set(node) - {"id", "label", "record", "size"}
+        if extra or node.get("id") != i or node.get("label") != f"node_{i}":
+            return False
+        if node.get("record", True) is not True or node.get("size", 1) != 1:
+            return False
+    return True
+
+
 def _v07_postprocess(meta: dict) -> dict:
     """Transform a LinkML-dumped dict into strict v0.7 sidecar format.
 
     Applies the following transforms:
     1. Injects tvbo_class and schema_version at the top.
     2. Removes redundant inner name: from dict-keyed parameters.
-    3. Reorders top-level keys to match §4 of the v0.7 spec.
+    3. Drops a node list that is purely the default placeholders.
+    4. Reorders top-level keys to match §4 of the v0.7 spec.
     """
     # 1. Inject header fields
     meta["tvbo_class"] = "tvbo:Network"
@@ -209,7 +231,11 @@ def _v07_postprocess(meta: dict) -> dict:
         if isinstance(edge, dict):
             _strip_param_name(edge.get("parameters"))
 
-    # 3. Reorder keys: v0.7 §4 ordering
+    # 3. Placeholder nodes: `number_of_nodes` alone reconstitutes them on load
+    if _nodes_are_placeholders(meta.get("nodes"), meta.get("number_of_nodes")):
+        meta.pop("nodes")
+
+    # 4. Reorder keys: v0.7 §4 ordering
     key_order = [
         "tvbo_class",
         "schema_version",

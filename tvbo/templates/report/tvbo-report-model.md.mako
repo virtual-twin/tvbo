@@ -22,6 +22,7 @@ from sympy import latex, Eq, symbols, sympify, Symbol, Function, Derivative
 from tvbo.utils import report
 
 derivative_notation = context.get('derivative_notation', 'd')
+mul_symbol = context.get('mul_symbol', None)
 
 # Per-symbol display overrides {identifier Symbol -> LaTeX string}, populated from the
 # model's `symbol` slots once `model` is resolved (see _collect_symbols below). Passed to
@@ -45,7 +46,7 @@ def _dot_lhs(deriv, mul_symbol='*'):
     except Exception:
         return latex(deriv, mul_symbol=mul_symbol, symbol_names=symbol_names)
 
-def latex_equation(eq, mul_symbol='*'):
+def latex_equation(eq, mul_symbol=mul_symbol):
     if derivative_notation == 'dot' and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
         lhs = _dot_lhs(eq.lhs, mul_symbol=mul_symbol)
         rhs = latex(eq.rhs, mul_symbol=mul_symbol, symbol_names=symbol_names)
@@ -203,19 +204,19 @@ Shown **relative to the base model** (${_delta.base_label}) — only new or chan
 % if state_equations:
 **State Equations**
 
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in state_equations])}
+${'\n'.join([f"$$\n{latex_equation(eq)}\n$$" for eq in state_equations])}
 
 % endif
 % if derived_variables:
 where
 
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_variables])}
+${'\n'.join([f"$$\n{latex_equation(eq)}\n$$" for eq in derived_variables])}
 
 % endif
 % if functions:
 with
 
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in functions])}
+${'\n'.join([f"$$\n{latex_equation(eq)}\n$$" for eq in functions])}
 
 % endif
 <%
@@ -259,7 +260,7 @@ ${'\n'.join(events_lines)}
 % if derived_parameters:
 **Derived Parameters**
 
-${'\n'.join([f"$$\n{latex_equation(eq, mul_symbol='*')}\n$$" for eq in derived_parameters])}
+${'\n'.join([f"$$\n{latex_equation(eq)}\n$$" for eq in derived_parameters])}
 
 % endif
 % if ref_names and citeformat != 'quarto':

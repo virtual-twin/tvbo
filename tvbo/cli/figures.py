@@ -128,14 +128,137 @@ def render(
         _common.info(f"{spec_path.name}: no figures to render ({detail}).")
         return
 
-    if name:
-        wanted = [n.strip() for n in name.split(",") if n.strip()]
-        available = [getattr(f, "name", None) for f in figures]
-        figures = [f for f in figures if getattr(f, "name", None) in wanted]
-        if not figures:
-            _common.die(
-                f"{spec_path.name}: no figure named {wanted!r} "
-                f"(available: {[n for n in available if n]})."
-            )
-
+    figures = _select(figures, name, spec_path)
     render_figures(figures, base, out_dir)
+
+
+def _select(figures, name: str | None, spec_path: Path) -> list:
+    """The ``--name`` subset of *figures*, or all of them."""
+    if not name:
+        return figures
+    wanted = [n.strip() for n in name.split(",") if n.strip()]
+    available = [getattr(f, "name", None) for f in figures]
+    chosen = [f for f in figures if getattr(f, "name", None) in wanted]
+    if not chosen:
+        _common.die(
+            f"{spec_path.name}: no figure named {wanted!r} "
+            f"(available: {[n for n in available if n]})."
+        )
+    return chosen
+
+
+@app.command("compare", help="Measure how a rendered figure's LAYOUT differs from a reference image.")
+def compare(
+    spec: str = typer.Argument(
+        ..., help="Path to a Figure YAML or a SimulationStudy YAML with a figures: list."
+    ),
+    reference: Path = typer.Option(
+        None, "-r", "--reference",
+        help="Reference image, or a directory of them. Optional: by default each figure's "
+             "declared `reference_image:` is used, resolved against the study root.",
+    ),
+    figures_dir: Path = typer.Option(
+        None, "-f", "--figures",
+        help="Directory holding the rendered figures (default: <base-dir>/figures).",
+    ),
+    out: Path = typer.Option(
+        None, "-o", "--out",
+        help="Directory for the side-by-side overlays and the markdown summary "
+             "(default: <base-dir>/output/figure-compare).",
+    ),
+    base_dir: Path = typer.Option(
+        None, "--base-dir", help="Study root. Defaults to the spec file's directory."
+    ),
+    name: str = typer.Option(
+        None, "-n", "--name", help="Compare only the figure(s) with this name (comma-separated)."
+    ),
+) -> None:
+    """Compare each rendered figure against its published counterpart, by panel geometry.
+
+    Replication asks a figure to land on the original's layout — same aspect, same panel
+    grid, panels the same relative size in the same places. This decomposes both images
+    into panel boxes and reports the offsets, so "not well aligned" becomes a number per
+    panel rather than an impression. Writes one overlay PNG per figure plus a markdown
+    summary; the summary is what a report reads.
+    """
+    from tvbo.utils import figure_compare as fc
+
+    spec_path = Path(spec).expanduser()
+    if not spec_path.is_file():
+        _common.die(f"No such spec file: {spec_path}")
+    base = base_dir.expanduser().resolve() if base_dir else spec_path.resolve().parent
+    fig_dir = figures_dir.expanduser().resolve() if figures_dir else base / "figures"
+    out_dir = out.expanduser().resolve() if out else base / "output/figure-compare"
+    ref = reference.expanduser().resolve() if reference else None
+
+    figures = _select(_load_figures(spec_path)[0], name, spec_path)
+    if not figures:
+        _common.info(f"{spec_path.name}: no figures to compare.")
+        return
+
+    sections, summary_rows = [], []
+    for figure in figures:
+        fname = getattr(figure, "name", None) or "figure"
+        fmt = (getattr(figure, "format", None) or "png").lstrip(".")
+        ours = fig_dir / f"{fname}.{fmt}"
+        theirs = ref if (ref and ref.is_file()) else reference_image_for(figure, ref or base)
+        if not ours.exists():
+            _common.info(f"skip {fname}: not rendered ({ours})")
+            continue
+        if theirs is None or not theirs.exists():
+            _common.info(f"skip {fname}: no reference image (declare `reference_image:`, "
+                         f"or pass --reference)")
+            continue
+
+        result = fc.compare(ours, theirs)
+        image = fc.overlay(result, out_dir / f"{fname}_compare.png", titles=(fname, theirs.name))
+        _common.info(f"wrote {image}")
+        summary_rows.append([
+            fname, f'{result["ours"]["aspect"]:.3f}', f'{result["theirs"]["aspect"]:.3f}',
+            f'{result["ours"]["n_panels"]}/{result["theirs"]["n_panels"]}',
+            f'{result["mean_iou"]:.3f}', f'{result["mean_offset"]:.1f}',
+            f'{result["max_offset"]:.1f}',
+        ])
+        sections.append(f"### {fname}\n\nReference: `{theirs.name}`\n\n"
+                        f"{fc.report_table(result)}\n\n"
+                        f"![]({image.name})\n")
+
+    if not sections:
+        _common.info("nothing compared.")
+        return
+
+    from tvbo.utils.report import md_table
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    summary = md_table(
+        ["Figure", "Our aspect", "Ref aspect", "Panels (ours/ref)", "Mean IoU",
+         "Mean offset %", "Max offset %"],
+        summary_rows, aligns=["l", "r", "r", "r", "r", "r", "r"],
+    )
+    doc = out_dir / "figure-compare.md"
+    doc.write_text(
+        "# Figure A/B — layout against the published figures\n\n"
+        "Panel boxes are found by recursive XY-cut on each image and matched by overlap. "
+        "Offsets are in percent of page; IoU is 1.0 for a panel that coincides exactly.\n\n"
+        f"{summary}\n\n" + "\n".join(sections),
+        encoding="utf-8",
+    )
+    _common.info(f"wrote {doc}")
+
+
+def reference_image_for(figure, root: Path) -> Path | None:
+    """The published image *figure* reproduces, resolved against *root*.
+
+    Prefers the figure's declared `reference_image:`; otherwise falls back to a file
+    named after the figure. Returns None when neither exists.
+    """
+    declared = getattr(figure, "reference_image", None)
+    if declared:
+        candidate = Path(declared)
+        return candidate if candidate.is_absolute() else root / candidate
+    name = getattr(figure, "name", None) or "figure"
+    for suffix in (".png", ".jpg", ".jpeg", ".tif", ".tiff"):
+        candidate = root / f"{name}{suffix}"
+        if candidate.exists():
+            return candidate
+    return None

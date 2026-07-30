@@ -130,12 +130,17 @@ def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]
     edges are dropped — a rule cannot depend on a file that does not exist.
 
     The reference is read through ``bsplot._used_ref``, so the short ``experiment:`` and
-    ``analysis:`` forms register their dependency exactly as a full ``iri`` does.
+    ``analysis:`` forms register their dependency exactly as a full ``iri`` does. Both a
+    layer's ``used`` (a plotted result) and an annotation's ``used`` (a printed statistic
+    read from a run) carry the same PROV edge, so both are walked — a figure whose only
+    binding to an experiment is a computed annotation still waits for that run.
     """
     inputs, seen = [], set()
     for panel in as_list(getattr(figure, "panels", None)):
-        for layer in (getattr(panel, "layers", None) or []):
-            iri = bsplot._used_ref(getattr(layer, "used", None))
+        layers = getattr(panel, "layers", None) or []
+        annotations = getattr(panel, "annotations", None) or []
+        for holder in (*layers, *annotations):
+            iri = bsplot._used_ref(getattr(holder, "used", None))
             key = _exp_key_of(iri, exp_plans_by_key)
             if key is not None:
                 item = {"value": _wf.fan_input_expr(exp_plans_by_key[key]), "raw": True}

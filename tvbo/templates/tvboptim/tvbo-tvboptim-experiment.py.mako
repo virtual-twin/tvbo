@@ -1863,6 +1863,40 @@ def _realign_state_auxiliaries(sol, network):
 
 
 % endif
+<%doc>
+    ## Streaming BASE run. `reduce: streaming` used to fold in-carry only inside an
+    ## exploration or an algorithm post-eval; a plain forward simulation still materialised
+    ## the whole trajectory and folded it as one block, so an observation that reports 1/k
+    ## of its samples still paid for all of them (Pang exp-2: a 1,200-frame BOLD slice out
+    ## of a 1.93M-step trajectory, ~3 GB).
+    ##
+    ## Gated deliberately narrowly: stream ONLY when every raw observation is itself a
+    ## streaming reduction and every derived observation is computable from the streamed
+    ## values alone. Then nothing needs `result`, so nothing is lost by never forming it.
+    ## One non-streaming observation → the whole experiment keeps the materialise path
+    ## byte-for-byte, which is what makes this a zero-regression addition.
+</%doc>
+<%
+    from tvbo.templates.tvboptim.utils import streaming_post_eval_plan as _spep
+    _base_plan = _spep(experiment)
+    _base_stream_names = _base_plan['names']
+    _raw_obs = [n for n in observation_names
+                if n not in network_observation_names and n not in derived_observation_names]
+    # `reduce` rides the native block scan — tvboptim raises for a DiffraxSolver — so the
+    # solver family is part of the gate, not an assumption.
+    _base_stream = (bool(_base_stream_names)
+                    and str(solver_class) in ('Euler', 'Heun', 'RungeKutta4')
+                    and set(_raw_obs) == set(_base_stream_names)
+                    and set(derived_observation_names) <= set(_base_plan['deliverables']))
+    _base_bs = _base_plan['period_in_steps'] or 1000
+    # Axis names per observation, declared by the reduction that produces it — taken from
+    # the same plan that chose the reducers, so the two cannot disagree.
+    _obs_dims = _base_plan.get('dims') or {}
+%>
+# observation name -> the axis names its reduction declares (utils.reduction_dims).
+_OBSERVATION_DIMS = ${repr(_obs_dims)}
+
+
 def run_simulation(
     network: Network,
     t1: float = ${t1_default},
@@ -1956,6 +1990,34 @@ def run_simulation(
         if getattr(state, 'noise', None) is not None:
             state.noise.key = _noise_key
         % endif
+% if _base_stream:
+        _stream_fn, _ = prepare(   # folds in-carry over ${_base_bs}-step blocks; no trajectory
+            network, get_solver(block_size=${_base_bs}),
+            t0=t0 + t_transient, t1=t0 + t_transient + t1, dt=dt,
+            reduce=_compose_reducers(*[
+                _STREAMING_REDUCERS[_n][0](
+                    _STREAMING_REDUCERS[_n][1], dt,
+                    warm_history=(None if result_transient is None
+                                  else (result_transient.data if hasattr(result_transient, 'data')
+                                        else result_transient)[:, _STREAMING_REDUCERS[_n][1], :]),
+                )
+                for _n in ${repr(_base_stream_names)}
+            ]),
+        )
+        _stream_vals = dict(zip(${repr(_base_stream_names)}, _stream_fn(state)))
+        observations = Bunch(**_stream_vals)
+        _all_obs = compute_all_observations(
+            None, state, result_transient,
+            only=${repr(sorted(derived_observation_names))}, precomputed=_stream_vals)
+% for obs_name in sorted(derived_observation_names):
+        observations.${obs_name} = _all_obs.${obs_name}
+% endfor
+% for obs_name in observation_names:
+% if obs_name in network_observation_names:
+        observations.${obs_name} = ${obs_name}
+% endif
+% endfor
+% else:
         result = model_fn(state)
         % if _state_only_aux:
         result = _realign_state_auxiliaries(result, network)
@@ -1978,6 +2040,7 @@ def run_simulation(
 % for obs_name in sorted(derived_observation_names):
         observations.${obs_name} = _all_obs.${obs_name}
 % endfor
+% endif
 
         # Analysis observations (operate on the solve/loss, not result.data)
 % if analysis_observations_dict:
@@ -1991,6 +2054,9 @@ def run_simulation(
         result=result,
         result_transient=result_transient,
         observations=observations,
+% if _base_stream:
+        stream_fn=_stream_fn,   # re-fold a caller's own state without materialising
+% endif
     )
 
 <%include file="tvbo-tvboptim-observation.py.mako" />
@@ -3387,6 +3453,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             _arr, _axes_info, intrinsic_ts=_ts,
             n_trials=${expl.get('n_trials', 1)}, name=str(_obs_key),
             cell_coords=_cell_coords,
+            dims=_OBSERVATION_DIMS.get(str(_obs_key)),
         )
 % else:
     _stacked_results = _stacked
@@ -3552,17 +3619,37 @@ def run_experiment(
                             dst_coupling[key] = val
 
         # Re-run simulation with custom parameters (only if main simulation was requested)
+% if _base_stream:
+        # Re-fold through the SAME streaming reducers rather than `model_fn(use_state)`:
+        # materialising here would both defeat the reduction and pair a custom-state
+        # trajectory with the default state's observations.
+        _custom_stream = sim_result.stream_fn(use_state) if run_main else None
+        result = None
+% else:
+        _custom_stream = None
         if run_main:
             result = model_fn(use_state)
         else:
             result = None
+% endif
         state = use_state
     else:
+        _custom_stream = None
         state = default_state
         # Use raw result directly (run_simulation now returns raw results)
         result = sim_result.result
 
     # Compute observations only if main simulation was run
+% if _base_stream:
+    # Every observation folded in-carry, so the run_simulation Bunch IS the answer — or,
+    # for a caller-supplied state, the re-fold of that state computed above.
+    if not run_main:
+        observations = None
+    elif _custom_stream is not None:
+        observations = Bunch(**dict(zip(${repr(_base_stream_names)}, _custom_stream)))
+    else:
+        observations = sim_result.observations
+% else:
     if run_main and result is not None:
         observations = Bunch()
 % for obs_name in observation_names:
@@ -3589,6 +3676,7 @@ def run_experiment(
 % endif
     else:
         observations = None
+% endif
 
     # Save initial state from simulation (before any algorithms/optimization modify it)
     # This is the starting point for optimization unless depends_on is specified
@@ -3619,10 +3707,10 @@ def run_experiment(
     _main_sel = _select_channels(result)
     _transient_sel = _select_channels(transient)
     transient_result = SimulationResult(result=_transient_sel, state_names=${_output_names}, nodes=region_labels) if _transient_sel is not None else None
-    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${_output_names}, nodes=region_labels, transient=transient_result) if _main_sel is not None else None
+    main_result = SimulationResult(result=_main_sel, observations=observations, state_names=${_output_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, transient=transient_result) if (_main_sel is not None or observations is not None) else None
     % else:
     transient_result = SimulationResult(result=transient, state_names=${result_var_names}, nodes=region_labels) if transient is not None else None
-    main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, nodes=region_labels, transient=transient_result) if result is not None else None
+    main_result = SimulationResult(result=result, observations=observations, state_names=${result_var_names}, nodes=region_labels, observation_dims=_OBSERVATION_DIMS, transient=transient_result) if (result is not None or observations is not None) else None
     % endif
 
     results = Bunch(

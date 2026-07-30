@@ -15,7 +15,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import bsplot
 from bsplot import panels as _bpanels
-from tvbo.adapters.bsplot import TRANSFORMS as _TF, CUSTOM_PANELS as _CP, registered as _registered
+from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
+                                  load_layer as _load_layer, registered as _registered)
 from tvbo.data.dataref import match_output as _match_output
 % for m in code_modules:
 import ${m}  # noqa: F401 — registers this study's custom panels/transforms into _CP / _TF
@@ -69,17 +70,43 @@ def _placeholder(ax, label):
     _PLACEHOLDER_AXES.append(ax)
 
 
-def _triangle(C, which):
+def _triangle(C, which, gap=0):
     """One triangle of a square matrix, the other half NaN, so two layers compose one image.
 
     The halves are named as drawn: with the matrix convention (row 0 at top, ``invert_y``)
-    ``upper`` is the top-right triangle. The diagonal belongs to neither half.
+    ``upper`` is the top-right triangle. ``gap`` widens the matrix by that many cells and
+    slides the two halves apart along the diagonal, leaving a blank band between them —
+    without it the two quantities touch and read as one field.
     """
     if C.ndim != 2 or C.shape[0] != C.shape[1]:
         raise ValueError(f"triangle needs a square matrix, got shape {C.shape}")
+    n, g = C.shape[0], int(gap)
+    out = np.full((n + g, n + g), np.nan)
     ones = np.ones(C.shape, dtype=bool)
-    keep = np.triu(ones, 1) if which == "upper" else np.tril(ones, -1)
-    return np.where(keep, C, np.nan)
+    if which == "upper":
+        keep = np.triu(ones, 1)
+        out[:n, g:] = np.where(keep, C, np.nan)      # slid right, above the band
+    else:
+        keep = np.tril(ones, -1)
+        out[g:, :n] = np.where(keep, C, np.nan)      # slid down, below the band
+    return out
+
+
+def _color_dim(da, name):
+    """The dimension a colour encoding iterates, and the labels for its entries.
+
+    ``color`` may name a dimension (labels are its coordinate values, or indices when it
+    has none) or a NON-dimension coordinate defined along one — which is how a panel draws
+    one line per region and still labels them by name rather than by atlas number.
+    """
+    if name in da.dims:
+        vals = da.coords[name].values if name in da.coords else np.arange(da.sizes[name])
+        return name, [str(v) for v in vals]
+    if name not in da.coords:
+        raise KeyError(f"colour encoding {name!r} is neither a dim nor a coord "
+                       f"(dims {tuple(da.dims)}, coords {tuple(da.coords)}).")
+    coord = da.coords[name]
+    return str(coord.dims[0]), [str(v) for v in np.asarray(coord.values)]
 
 
 def _coord(da, name, axis):
@@ -110,6 +137,9 @@ def _apply_axopts(ax, o):
         ax.set_xlim(*o["xlim"])
     if o.get("ylim"):
         ax.set_ylim(*o["ylim"])
+    if o.get("frame") in ("off", False):
+        ax.set_frame_on(False)                      # a matrix has no measurable axis
+        ax.set_xticks([]); ax.set_yticks([])
     if o.get("aspect"):
         ax.set_aspect(o["aspect"])
     if o.get("invert_x"):
@@ -163,13 +193,22 @@ def _apply_axopts3d(ax, o):
 
 
 def _cell_axes(ax):
-    """A panel's own axes: the primary plus any twin (twinx/twiny) sharing its subplot cell."""
+    """A panel's own axes: the primary, any twin sharing its subplot cell, and every INSET
+    a composite drawer opened inside it (recursively, twins of those included).
+
+    A composite panel draws its cells as inset axes, which carry no subplotspec — so
+    without walking `child_axes` a grid's deliberate per-cell ticks are invisible to the
+    snapshot and the figure-wide format pass silently replaces them."""
     axes = [ax]
     sp = ax.get_subplotspec()
     if sp is not None:
         for a in ax.figure.axes:
             if a is not ax and a.get_subplotspec() is sp:
                 axes.append(a)
+    for a in list(axes):
+        for child in getattr(a, "child_axes", ()) or ():
+            if child not in axes:
+                axes.extend(_cell_axes(child))
     return axes
 
 
@@ -252,19 +291,37 @@ def _panel_${p['key']}(fig, ax):
     if _C.shape == (len(_x), len(_y)):
         _C = _C.T                                   # orient to (y, x) for pcolormesh
 % if L['triangle']:
-    _C = _triangle(_C, ${repr(L['triangle'])})
+    _C = _triangle(_C, ${repr(L['triangle'])}, ${p['triangle_gap']})
+    _x = _y = np.arange(_C.shape[0])                # the gap widens the frame
 % endif
     _im = ax.pcolormesh(_x, _y, _C, shading="auto", **${repr(L['style'])})
 % elif L['mark'] == 'scatter':
     _x = _coord(_da, ${repr(L['x'])}, 0)
     ax.scatter(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
+% elif L['mark'] == 'bar':
+    _x = _coord(_da, ${repr(L['x'])}, 0)
+    ax.bar(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
+% elif L['mark'] == 'area':
+    _x = _coord(_da, ${repr(L['x'])}, 0)
+    ax.fill_between(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
+% elif L['color']:
+    _dim, _labels = _color_dim(_da, ${repr(L['color'])})   # one line per entry, coloured along the map
+    _cmap = plt.get_cmap(${repr(L['cmap'] or 'viridis')})
+    for _i, _lab in enumerate(_labels):
+        _line = _da.isel({_dim: _i})
+        ax.plot(_coord(_line, ${repr(L['x'])}, 0), np.asarray(_line.values).squeeze(),
+                color=_cmap(_i / max(len(_labels) - 1, 1)), label=_lab, **${repr(L['style'])})
 % else:
     _x = _coord(_da, ${repr(L['x'])}, 0)
     ax.plot(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
 % endif
 % endfor
 % if p['colorbar']:
-    fig.colorbar(_im, ax=ax)                        # one scale per panel, not per layer
+    _cb = fig.colorbar(_im, ax=ax, **${repr(p['colorbar_kwargs'])})   # one scale per panel, not per layer
+% if p['colorbar_label']:
+    _cb.set_label(${repr(p['colorbar_label'])})
+% endif
+    _cb.outline.set_linewidth(0.5)
 % endif
     _apply_axopts(ax, ${repr(p['axopts'])})
 % endif
@@ -272,7 +329,22 @@ def _panel_${p['key']}(fig, ax):
     ax.set_title(${repr(p['title'])})
 % endif
 % for a in p['annotations']:
-    ax.text(${a['x']}, ${a['y']}, ${repr(a['text'])}, transform=ax.transAxes, ha="center", va="center")
+% if a['layer']:
+    _txt = ${repr(a['text'])}.format(       # the number is READ from the run, not typed
+        float(np.asarray(_load_layer(${repr(a['layer'])}).values).ravel()[0]))
+% else:
+    _txt = ${repr(a['text'])}
+% endif
+% if a['arrow']:
+    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
+                xytext=(${a['x'] - a['arrow'][0]}, ${a['y'] - a['arrow'][1]}),
+                textcoords="axes fraction", zorder=10, **${repr(a['kwargs'])},
+                arrowprops={"arrowstyle": "-|>", "color": "k", "lw": 0.8,
+                            "shrinkA": 0, "shrinkB": 0})   # above a composite panel's sub-axes
+% else:
+    ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.transAxes, zorder=10,
+            **${repr(a['kwargs'])})
+% endif
 % endfor
     return ax                                           # a line3d panel returns a NEW (3-D) axis; capture it
 
@@ -284,16 +356,16 @@ def main():
     bsplot.style.use(${repr(s['value'])})
 % endif
 % endfor
-% if font_size:
-    plt.rcParams.update({_k: ${font_size} for _k in (          # metadata base: every element the same size by default
-        "font.size", "axes.labelsize", "axes.titlesize",
-        "xtick.labelsize", "ytick.labelsize", "legend.fontsize", "figure.titlesize")})
-% endif
 % for s in style:
 % if s['path']:
-    plt.style.use(${repr(s['value'])})              # study .mplstyle last: overrides individual sizes if it sets them
+    plt.style.use(${repr(s['value'])})              # study .mplstyle supplies the defaults
 % endif
 % endfor
+% if font_size:
+    plt.rcParams.update({_k: ${font_size} for _k in (          # declared font_size WINS over the
+        "font.size", "axes.labelsize", "axes.titlesize",       # .mplstyle: it is the per-figure
+        "xtick.labelsize", "ytick.labelsize", "legend.fontsize", "figure.titlesize")})
+% endif
 % if spine_rcparams:
     plt.rcParams.update(${repr(spine_rcparams)})
 % endif
@@ -327,12 +399,23 @@ def main():
 % endif
     for _pax in _PLACEHOLDER_AXES:                          # a placeholder slot has no ticks to normalise
         _bare(_pax)
+% for p in panels:
+% if p['post_axopts']:
+    if axd[${repr(p['key'])}] not in _PLACEHOLDER_AXES:   # a slot that fell back to a placeholder stays bare
+        _apply_axopts(axd[${repr(p['key'])}], ${repr(p['post_axopts'])})   # declared frame wins over the tidy-up
+% endif
+% endfor
 % endif
 % for p in panels:
 % if p['kind'] == 'image' or p['axopts'].get('invert_y'):
     _iax = axd[${repr(p['key'])}]            # keep image/matrix top-down (format_fig normalises the y-axis)
     if _iax.get_ylim()[0] < _iax.get_ylim()[1]:
         _iax.invert_yaxis()
+% endif
+% if p['axopts'].get('invert_x'):
+    _iax = axd[${repr(p['key'])}]            # restore declared x-inversion (format_fig normalises the x-axis)
+    if _iax.get_xlim()[0] < _iax.get_xlim()[1]:
+        _iax.invert_xaxis()
 % endif
 % endfor
 % if panel_numbers:

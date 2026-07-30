@@ -2809,7 +2809,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Compute the maximum delay (ms) from the current network/connectome."""
         if self.network is None:
             return 0.0
-        delays = self.network.calculate_delays()
+        try:
+            delays = self.network.calculate_delays()
+        except ValueError:
+            return 0.0        # the network declares neither tract lengths nor edge delays
         # Use nanmax to ignore NaN values for non-existent edges
         max_val = np.nanmax(delays)
         return float(max_val) if not np.isnan(max_val) else 0.0
@@ -3337,14 +3340,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         existing = dynamics.get("events") if is_mapping else getattr(dynamics, "events", None)
         if existing:
             return
-        payload = {str(n): {"name": str(n)} for n in names if n}
         if is_mapping:
-            dynamics["events"] = payload
-        else:
-            try:
-                dynamics.events = payload
-            except (AttributeError, TypeError):
-                pass
+            dynamics["events"] = {str(n): {"name": str(n)} for n in names if n}
+            return
+        # A multivalued slot is coerced at construction only, so insert constructed Events
+        # into the container it already holds; assigning one would leave a bare JsonObj
+        # whose entries are never Events (writing-models: "Trust the slots").
+        from tvbo.datamodel.schema import Event
+
+        for n in names:
+            if n:
+                dynamics.events[str(n)] = Event(name=str(n))
 
     def _resolve_events(self) -> None:
         """Lower declarative stimulus/stimulation Event fields into the form the
@@ -3786,6 +3792,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         template_name: str = "tvbo-report-experiment",
         outputfile: str | None = None,
         derivative_notation: str = "dot",
+        mul_symbol: str | None = None,
     ) -> str:
         """Render a human-readable report for this experiment.
 
@@ -3797,6 +3804,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         - template_name: base name of the template without extension
         - outputfile: optional path to write the rendered report;
             when provided, extension defines output format (.md or .pdf)
+        - derivative_notation: 'dot' for `\\dot{x}`, anything else for `dx/dt`
+        - mul_symbol: how products are written in the rendered equations —
+            ``None`` (default) for implicit juxtaposition, or any symbol
+            ``sympy.latex`` accepts (``'dot'``, ``'times'``, ``'*'``)
         """
         normalized_format = format.lower() if isinstance(format, str) else None
 
@@ -3818,7 +3829,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError("format must be one of: markdown, pdf")
 
         md_template = templates.lookup.get_template(f"report/{template_name}.md.mako")
-        md_render = md_template.render(experiment=self, derivative_notation=derivative_notation)
+        md_render = md_template.render(experiment=self,
+                                       derivative_notation=derivative_notation,
+                                       mul_symbol=mul_symbol)
 
         render = md_render
 

@@ -35,6 +35,8 @@ enums:
       scatter: {description: "Points (fixed points, special points, per-node profiles)."}
       rule:    {description: "Reference line / span (threshold, stimulus window, vline)."}
       band:    {description: "Filled band between two series (error/CI)."}
+      area:    {description: "Series filled down to the baseline (a density/pdf, a cumulative share). Distinct from `band`, which spans two series, and from `bar`, which asserts the x values are discrete categories."}
+      bar:     {description: "Vertical bars, one per x (spectrum, per-category magnitude). Distinct from `line` because a spectrum read as a line implies interpolation between mode numbers that do not exist."}
 
   Triangle:
     description: "Which half of a square matrix a layer fills, leaving the other half to a sibling layer, so two quantities read as one image. The conventional way to show a model-vs-data (or data-vs-reconstruction) connectivity matrix. Named for the drawn halves: with the matrix convention (row 0 at top, set invert_y) 'upper' is the top-right triangle."
@@ -72,6 +74,9 @@ classes:
       format:
         range: string
         description: "Output format (pdf/svg/png). Unset defers to the renderer default."
+      reference_image:
+        range: string
+        description: "The published figure this one reproduces, as a path relative to the study root (e.g. original_study/img/fig_04.png). Names the A/B target for `tvbo figure compare`, which measures panel geometry against it; it is never a data source, and never rendered into a panel."
       width:
         range: float
         description: "Figure width in mm (physical print size). Font size is in points and independent of this, so a smaller figure makes text relatively larger."
@@ -188,6 +193,9 @@ classes:
       mark:
         range: MarkType
         description: "Cartesian mark; omitted for heatmap panels (implied by the panel kind)."
+      label:
+        range: string
+        description: "Legend entry for this layer. Needed whenever a panel's legend distinguishes layers rather than entries along a `color` dim, which supplies its own labels. Without it a layer is drawn but unnamed."
       triangle:
         range: Triangle
         description: "Fill only this triangle of a square matrix, masking the other half so a sibling layer fills it. Two layers then compose one matrix image whose halves are the quantities being compared."
@@ -208,11 +216,17 @@ classes:
       detail: {range: string, description: "Non-visual grouping dim (e.g. the hue/iterate dim)."}
 
   Annotation:
-    description: "A positioned text label on a panel, in axes-fraction coordinates."
+    description: "A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it."
     attributes:
       text:
         range: string
         required: true
+        description: "The label. With `used:` it is a Python format string applied to the referenced value, e.g. 'r = {:.2f}'."
+      used:
+        range: DataRef
+        inlined: true
+        slot_uri: prov:used
+        description: "Bind the annotation to a scalar in a result container (same reference form a Layer uses, and the same PROV edge). The referenced value is formatted through `text` at render time, so a statistic printed on a panel is computed, never transcribed."
       x:
         range: float
         description: "x in axes fraction (0 = left, 1 = right); defaults to 0.5."
@@ -222,6 +236,25 @@ classes:
       loc:
         range: string
         description: "Named corner ('upper right', 'upper left', 'center', ...) as an alternative to x/y."
+      arrow:
+        range: float
+        multivalued: true
+        description: "Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in axes fractions — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper's callout arrowheads are declared instead of drawn in code."
+      rotation:
+        range: float
+        description: "Text rotation in degrees counter-clockwise; 90 for a label running up the side of a reference line."
+      ha:
+        range: string
+        description: "Horizontal alignment against (x, y) — left, center, right. Defaults to center."
+      va:
+        range: string
+        description: "Vertical alignment against (x, y) — bottom, center, top, baseline. Defaults to center."
+      size:
+        range: float
+        description: "Text size in points, overriding the figure's font size for this label alone."
+      color:
+        range: string
+        description: "Text colour; defaults to the current text colour."
 
   Style:
     description: "Layer/panel styling, portable intent plus a namespaced backend passthrough. Reuses Argument for the passthrough (matplotlib implicit in the MVP)."

@@ -1317,6 +1317,28 @@ def _resolve_subsample_stream(obs: Any, experiment: Any = None) -> Optional[Dict
     return red
 
 
+_REDUCTION_DIMS = {
+    "convolution": ("time", "node"),   # HRF-Volterra BOLD: one kept sample per TR, per node
+    "stride": ("time", "node"),        # decimation: every k-th sample, per node
+    "comoment": ("node", "node_j"),    # cumulative co-moment FC: a node-by-node matrix
+    "recurrence": ("node",),           # a folded statistic: one value per node
+}
+
+
+def reduction_dims(red: Optional[Dict[str, Any]]) -> tuple:
+    """The axis names a reduction's output carries.
+
+    A reduction's output shape is fixed by its kind, so its axes are named here — where
+    the reducer is chosen — and travel with it to the result container. Naming them at
+    the point of production is what keeps a reduced observation keyed like every other
+    tvbo array without anyone re-deriving the axes from shape afterwards, which cannot
+    distinguish (say) a frequency-by-node spectrum from a node-by-node matrix.
+    """
+    if not red:
+        return ()
+    return _REDUCTION_DIMS.get(str(red.get("kind")), ())
+
+
 def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
     """Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction.
 
@@ -1618,7 +1640,10 @@ def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
       be materialised anyway;
     - ``period_in_steps``: the block-size unit — a multiple of every reducer's
       ``ds_steps * tr_stride`` — so BOLD TR boundaries align to integrator block
-      boundaries (a partial-TR block would misalign the reducer's slot writing).
+      boundaries (a partial-TR block would misalign the reducer's slot writing);
+    - ``dims``: each streamed observation's axis names, from the reduction that produces
+      it (:func:`reduction_dims`), so the result container binds declared labels rather
+      than inferring them from the array's shape.
 
     Both the experiment template (which builds the streaming ``post_model_fn``) and the
     algorithm template (which consumes it) call this, so the two sides cannot drift.
@@ -1640,7 +1665,7 @@ def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
         if r is not None and _is_streaming(o) and not r.get("windowed"):
             streaming[str(n)] = r
     if not streaming:
-        return {"names": [], "deliverables": [], "period_in_steps": None}
+        return {"names": [], "deliverables": [], "period_in_steps": None, "dims": {}}
 
     def _is_static_source(o):
         s = as_list(get_attr(o, "source"))
@@ -1685,7 +1710,8 @@ def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
         step = int(r["ds_steps"]) * int(r.get("tr_stride", 1))
         pis = pis * step // math.gcd(pis, step)
     period = pis if slotted else 1000
-    return {"names": sorted(streaming), "deliverables": deliverables, "period_in_steps": period}
+    return {"names": sorted(streaming), "deliverables": deliverables, "period_in_steps": period,
+            "dims": {n: reduction_dims(r) for n, r in streaming.items() if reduction_dims(r)}}
 
 
 def _literal_code(value: Any) -> str:
