@@ -256,3 +256,93 @@ def test_the_solve_form_of_analysis_still_validates():
 
     assert (a.type, a.target, list(a.wrt)) == ("lyapunov", "loss", ["G"])
     assert a.name is None and a.callable is None
+
+
+# ------------------------------------------------------- invalidation after a partial run
+
+
+def test_dependents_of_an_experiment_are_found_transitively(calls):
+    """A partial run leaves these holding the PREVIOUS run's numbers, and nothing raises.
+
+    The second-order rows are the point: a hand-written invalidation list reliably keeps the
+    landscape built from the reduction built from the run that just changed.
+    """
+    analyses = [
+        _analysis("reduction", "spectrum", {"n": {"used": {"experiment": 1, "output": "w"}}}),
+        _analysis("landscape", "total", {"power": {"used": {"analysis": "reduction"}}}),
+        _analysis("correlation", "total", {"power": {"used": {"analysis": "landscape"}}}),
+        _analysis("unrelated", "spectrum", {"n": {"used": {"experiment": 7, "output": "w"}}}),
+    ]
+
+    assert analysis_io.dependents_of_experiments(analyses, ["1"]) == [
+        "reduction", "landscape", "correlation"]
+    assert analysis_io.dependents_of_experiments(analyses, ["7"]) == ["unrelated"]
+    assert analysis_io.dependents_of_experiments(analyses, ["9"]) == []
+
+
+def test_dependents_of_an_analysis_are_found_transitively(calls):
+    """`--analysis` re-derives one container; everything reading it is now the stale side.
+
+    Same walk as for an experiment, seeded on the derivation instead — which is what makes
+    editing a callable safe to do piecemeal, since no cache invalidates on a code change.
+    """
+    analyses = [
+        _analysis("reduction", "spectrum", {"n": {"used": {"experiment": 1, "output": "w"}}}),
+        _analysis("landscape", "total", {"power": {"used": {"analysis": "reduction"}}}),
+        _analysis("correlation", "total", {"power": {"used": {"analysis": "landscape"}}}),
+        _analysis("unrelated", "spectrum", {"n": {"used": {"experiment": 7, "output": "w"}}}),
+    ]
+
+    assert analysis_io.dependents_of(analyses, changed_analyses=["reduction"]) == [
+        "reduction", "landscape", "correlation"]
+    assert analysis_io.dependents_of(analyses, changed_analyses=["landscape"]) == [
+        "landscape", "correlation"]
+    assert analysis_io.dependents_of(analyses, changed_analyses=["correlation"]) == [
+        "correlation"]
+    assert analysis_io.dependents_of(analyses, changed_analyses=["unrelated"]) == ["unrelated"]
+
+
+def test_naming_an_analysis_pulls_in_only_the_inputs_that_are_missing(calls):
+    """`--analysis` re-derives what was named; it is not a back-door whole-study run.
+
+    An input that already has a container is left alone — recomputing it is what the caller
+    chose not to do. One that has never been produced is pulled in, transitively, because it
+    cannot be read.
+    """
+    from tvbo.data.analysis_io import analysis_closure
+
+    analyses = [
+        _analysis("basis", "spectrum", {"n": {"used": {"experiment": 1, "output": "w"}}}),
+        _analysis("curves", "total", {"power": {"used": {"analysis": "basis"}}}),
+        _analysis("summary", "total", {"power": {"used": {"analysis": "curves"}}}),
+    ]
+
+    assert analysis_closure(analyses, ["summary"], exists=lambda n: True) == {"summary"}
+    assert analysis_closure(analyses, ["summary"], exists=lambda n: False) == {
+        "summary", "curves", "basis"}
+    # `curves` exists, so it is readable and the walk stops there — `basis` is never reached.
+    assert analysis_closure(analyses, ["summary"], exists=lambda n: n == "curves") == {
+        "summary"}
+    assert analysis_closure(analyses, ["summary"], exists=lambda n: n == "basis") == {
+        "summary", "curves"}
+
+
+@pytest.mark.parametrize("written", ["exp-1", "exp1", "1", 1])
+def test_every_spelling_of_an_experiment_id_is_the_same_edge(calls, written):
+    """A recipe may write `exp-3` where the runtime knows the experiment as `3`.
+
+    Matching only the literal string makes the whole staleness warning report nothing, and
+    an empty stale set is indistinguishable from a clean one.
+    """
+    analyses = [_analysis("reduction", "spectrum",
+                          {"n": {"used": {"experiment": written, "output": "w"}}})]
+
+    assert analysis_io.dependents_of_experiments(analyses, ["1"]) == ["reduction"]
+
+
+def test_an_iri_reference_counts_as_a_dependency(calls):
+    """A layer may name its source by IRI rather than by id; both are the same edge."""
+    analyses = [_analysis("from_iri", "spectrum",
+                          {"n": {"used": {"iri": "tvbo:exp/Study/exp-3", "output": "w"}}})]
+
+    assert analysis_io.dependents_of_experiments(analyses, ["3"]) == ["from_iri"]

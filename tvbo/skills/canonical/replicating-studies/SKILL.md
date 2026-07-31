@@ -111,6 +111,26 @@ figures that silently integrate the wrong attractor.
    genuinely bespoke panel interior is a registered `@bsplot.register_panel` callable in a
    `code_modules` module under `code/`. **No hand-written `main()` plotting driver.**
 9. **Verify against an independent reference** (Phase 7) before trusting any figure.
+10. **NEVER give a study its own execution machinery, and never add one to tvbo to serve a
+    study.** Parallelism, batching, device placement and scheduling belong to the framework —
+    tvboptim's `vmap`/`pmap` and `n_parallel` for a sweep, `tvbo workflow` for a cluster fan-out.
+    A replication declares WHAT is computed; HOW MANY PROCESSES is not metadata and does not
+    belong in the recipe, in `code/`, or in a new tvbo utility. Concretely forbidden: a process
+    pool, a thread pool, a `joblib` fan-out, a bespoke worker loop, a hand-written `sbatch`.
+    The pull is real, because an `Analysis` is the one place the recipe still permits arbitrary
+    Python (`is_a: FunctionCall` → a `code/` callable), so the framework cannot parallelise it
+    and it is tempting to do it yourself. Do not. When an analysis is too slow, in order:
+    **(a) profile it** — the bottleneck is usually I/O layout or redundant algebra, not cores
+    (in Pang2023 the per-subject cost was 52 % sparse ARPACK, 15 % an HDF5 chunking pathology
+    and 24 % a nested sweep recomputing its own Gram; the algebra alone gave 10×);
+    **(b) make it declarative** so the backend can run it, the way a symbolic `Observation`
+    with `reduce: streaming` is lowered into the jitted grid;
+    **(c) accept that it is serial and say so.** A sparse eigensolve, a CIFTI read and a mesh
+    rotation are host-side by nature and no backend will batch them.
+    What a study MAY do is make its own work resumable — cache per unit, skip what is cached —
+    because that is a property of the computation, not a scheduler. The cost of ignoring this
+    is not hypothetical: a five-process pool bolted onto one analysis returned **1.28×** on a
+    loaded machine and drove it into swap exhaustion until the OS killed the job.
 
 ---
 
@@ -394,7 +414,18 @@ check the returned count against the paper *for every condition* (P^G *and* P^R,
 patient), never just the first. (4) **When two callables compute the same quantity, they must
 use the same criterion.** A control *mask* and a solitary *ordering* that both mean "which nodes
 are solitary" drifted apart (one median-relative, one absolute) — reproducing one condition and
-breaking the other. Grep for siblings and align them.
+breaking the other. Grep for siblings and align them. (5) **A statistic that picks an EXTREMUM
+over a whole trace needs a physically admissible window.** A latency read as a global `argmax`
+will happily select numerical ripple that precedes the event: Pang2023's time-to-peak put one
+region's peak *before* the stimulus could reach it, on a 341× smaller amplitude than the real
+arrival, because a 200-mode truncation leaves pre-arrival oscillation everywhere. Restrict the
+search to what the physics allows (`t ≥ t_on + d_min/(γ_s r_s)`) — and before calling the
+difference a discrepancy, **run the same statistic on the deposit's own arrays**: theirs had the
+artefact too (7 of 180 regions non-causal, and the correction moves their own published P from
+0.034 to 0.093), which turns "our number disagrees" into a documented property of the published
+definition. The companion instinct to resist: **do not drop the inconvenient unit.** Check the
+released code for an actual exclusion first; when there is none — as here — the outlier is
+telling you the statistic is wrong, not that the region is bad.
 
 ## Phase 5 — Figures: declare them in the study's `figures:` block
 
@@ -625,6 +656,26 @@ Replication-specific rules on top of that mechanics:
   neighbour; the table still rendered, and the tally was simply wrong. Check that every row
   parsed to the full header width and that each value falls in its expected vocabulary
   (`core|extended|out`, `mech|dec`, `met|partial|out`) before believing the counts.
+- **Score every signed difference against the noise floor of the quantity it is a difference
+  OF — and doubt your own POSITIVE results, not only the discrepancies.** A margin between two
+  stochastic models measured at one seed is not a result; it is one draw. Declare an
+  `execution.random_seed` ensemble (Phase 4) for each model and report the margin in units of
+  the seed spread. Pang2023's wave-vs-mass-model comparison looked like three wins at seed 0;
+  against a ten-seed floor, edge FC (−0.005, 4/10 seeds) and node FC (+0.078, 7/10) are **not
+  established** and only the FCD KS survives (−0.223, 10/10, 6.2 sd). Two claims we would have
+  shipped. The same rule chooses the right floor for a *cohort* claim: a parcel bootstrap
+  answers a within-subject question, so an ordering asserted across subjects needs a paired
+  between-subject comparison (30 subjects, sign test) — which is what finally established the
+  link our bootstrap could not. And when a single realisation *is* what a panel shows, put the
+  ensemble's `mean ± sd` beside it so the reader sees the width.
+- **Prose that quotes a count of your own artifact must be COMPUTED from that artifact.**
+  Non-negotiable #2 is usually read as "don't type a simulation result", but the version that
+  actually bites is a sentence that was *true when written* and then aged: our abstract said
+  "fourteen places where they diverge; eight change a number" while the register it cited had
+  grown to 39 rows and 18 material verdicts. Nothing failed; the headline finding of the
+  replication was simply wrong by a factor of nearly three. Parse the artifact once in the setup
+  chunk and quote it inline everywhere — abstract, section prose and caption from the one parse,
+  never one computed table beside a hand-written summary of it.
 - **Reproduction vs. replication (NASEM framing).** Frame the study as replication, not
   bit-exact reproduction, and split the mechanism-level targets (they reproduce) from the
   decimal-level ones (capped by unavailable inputs, stated as accepted limitations). This
@@ -744,6 +795,79 @@ So, when you cannot verify:
 
 This is the same discipline as **doubting a claimed discrepancy** — default to "we may have
 misread this", and make the uncertainty visible instead of resolving it silently.
+
+### A derived object with a FREE CONVENTION: gauge it on the DISPLAY path, never in the solver
+
+Some products are defined only up to a convention the mathematics does not fix — an
+eigenvector's sign, an ICA/PCA component's sign, the ordering inside a degenerate eigengroup,
+the rotation inside an NMF factorisation, a gradient's direction. Half of any independent solve
+then comes out mirror-imaged against the paper, which reads to a reviewer as a wrong result. Four
+rules, in order; each of them was learned by breaking it.
+
+**1. Apply the convention only where the object is DISPLAYED.** If anything *integrates, fits or
+projects in* that basis, its coefficients are defined relative to the basis **as the run saw
+it**, so re-gauging afterwards projects the result through a convention the run never used. A
+deterministic sign rule placed inside Pang2023's eigensolvers scrambled the wave model:
+corr(field, V1 stimulus) = −0.33 where either self-consistent pairing gives +0.92, V1's response
+moved from 6.1 ms to 26.8 ms, node FC fell 0.618 → 0.205 — and the mismatch was exactly the gauge
+vector on all 200 modes. Structure it in the recipe as two nodes: `<name>_raw` (the solve) →
+`<name>` (one declarative `apply_signs`-style transform). Panels bind the aligned node;
+eigenvalues, stimulus weights, the noise covariance and every projection bind the raw one.
+**One-step diagnostic** when you suspect two bases are in play: correlate the quantity the run
+actually *drove with* against a freshly produced copy of it — ~+1 means one basis, a per-element
+±1 pattern names the transform that got inserted between them.
+
+**2. Measure that no principled rule exists before you write a literal one.** A hardcoded
+alignment vector is either an honest record of an arbitrary convention or a bug wearing a
+constant, and only a measurement tells them apart. Enumerate the candidate data-only rules
+(max-|value|, sum, third moment, positive mass, first element) and score each against the
+deposit. Pang2023's scored at **chance** — 94–106 of 200 modes — and its three graph bases
+disagree with *each other* on the leading mode, which Perron–Frobenius fixes as non-negative.
+That measurement is what licenses the literal vector; without it, do not write one.
+
+**3. Derive the constant from the exact container the recipe applies it to.** Not from a fresh
+call to the same solver — same modes, different signs, because an iterative eigensolver's output
+depends on restarts and thread order. Deriving Pang2023's vectors from a direct
+`surface_eigenmodes` call instead of the produced `*_raw` container left 99 modes wrong and read
+as a 101/200 near-chance result, which looks exactly like a failed alignment rather than a
+sampling mistake.
+
+**4. Prove the transform moves nothing scored, with a number.** Recompute every scored quantity
+with and without the gauge and assert the worst |Δ| is at rounding (ours: 0.000e+00). A cosmetic
+transform that changes a result is not cosmetic.
+
+**The recipe must run without the deposit; the ORACLE may read it.** This is the general split
+that makes a declared alignment legitimate rather than a hidden dependency on reference data. The
+literal vector goes in the spec as metadata (non-negotiable #1 — the recipe renders a figure
+with no deposit on disk); a `verify_identity` check re-derives it from the published arrays and
+fails on drift. Same rule for any hardcoded convention: constant in the spec, derivation in the
+oracle, and say in the report which it is.
+
+### A verification script must parse the SPEC with the loader, never with a regex
+
+An oracle that greps YAML is one refactor from silently checking nothing. Pang2023's declared-sign
+check matched analysis names with a regex; the spec then grew `!include` fragments and anchors, the
+pattern matched zero rows, and the check reported every vector as fine. Load the study
+(`SimulationStudy.from_file`) and walk the objects — then a renamed analysis fails loudly instead
+of passing vacuously. The same applies to any check that asserts something about the recipe:
+read it through the same loader the run uses, or you are testing a different document.
+
+**Cover every artifact the report QUOTES, not just the numbers you were last debugging.** A
+harness that asserts physics and polarity will happily pass while a headline deliverable the
+report parses — a divergence register, a targets table — is corrupt on disk (below). If the
+report reads a file to produce a number, the harness checks that file. Cheap and sufficient:
+re-parse it with the *same* helper the report uses and assert the structural invariants a
+corruption breaks (no duplicate row ids, more than one class present, every verdict in the
+declared vocabulary).
+
+**A standing check must compare a quantity against a reference of ITSELF.** A harness row that
+pits one convention against another measures the gap between definitions and reports it as a
+failure of your arithmetic. Ours compared a spin-test p computed under the reference
+implementation's one-sided, direction-averaged, uncorrected rule against a hand-rolled
+two-sided `(k+1)/(n+1)` p, and failed forever on a difference that was the point of having two
+definitions. Where a function offers several conventions, check *each* against a hand-rolled
+reference of that same convention — and treat a long-standing red row as a bug in the check
+until you have re-derived it, since a permanently-failing check trains you to ignore the table.
 
 ### For a LINEAR model, don't fit a scale — invert the transfer function
 
@@ -1138,7 +1262,55 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   correctly caught 17 including second-order ones like the FCD landscape and the myelin
   correlation) rather than hand-listing, which misses exactly the ones you did not think of. Then
   confirm the invalidation *worked* by checking that an unchanged quantity comes back identical —
-  trusting the pass is how you end up believing a stale number twice.
+  trusting the pass is how you end up believing a stale number twice. The hole is specifically
+  **`tvbo run --experiment N`**: a whole-study run recomputes every analysis, but a partial one
+  deliberately does not, so the containers keep the previous run's numbers beside a fresh result.
+  It now names the affected set (transitively, off the study's own `used:` edges) and tells you to
+  refresh — heed that warning rather than rendering on top of it.
+- **A cache is keyed on INPUTS, so editing a `code/` callable invalidates only what the key
+  actually covers — know which is which.** This is the same defect as the bullet above, one level
+  deeper, and it is worth knowing by name because the caches are invisible. Since the Pang2023
+  incident tvbo closes the worst of it: a `producer:` parameter's artifact digest now includes a
+  hash of the **source of the module defining the producer**, so editing that file yields a
+  different artifact rather than a stale hit. Two holes remain, and both are silent:
+  - the digest hashes only the producer's **own file**, so an edit to a helper in a *sibling*
+    module under `code/` is still invisible;
+  - a study's own `.npz` solve cache is keyed on its path, and an **analysis container** on its
+    name — neither hashes anything about the code, so re-deriving one is a deliberate act:
+    `tvbo run <Study>.yaml --analysis <name>` (which re-runs only that analysis and names the
+    downstream containers it just made stale), or delete the file.
+
+  Untreated, the symptom is that an experiment reads the artifact from *before* the edit while a
+  direct Python call to the same function returns the new value — two answers from one function,
+  and the run is the one that is wrong. In Pang2023 this drove the wave model with a pre-edit
+  stimulus projection for a whole afternoon and read as an unexplained "the run resolved a
+  different basis". Diagnose with file mtimes (`ls -la ~/.tvbo/constants` against the edit's
+  timestamp), and prefer arguments over code for anything you expect to vary, since an argument
+  IS in the key.
+- **A content-addressed cache must key its MEMORY and its DISK copy on the same thing.** Adding
+  the code digest to the artifact path but not to the in-process cache key is worse than not
+  adding it at all: a session that materialises, has its producer edited underneath it, and
+  materialises again computes the new path from the new source while the in-memory cache still
+  answers on the old one — writing pre-edit arrays under a digest that asserts they are
+  post-edit. Every later run then reads that file and trusts it. Whenever you add a term to a
+  cache key, grep for every other place that key is constructed. A test for this must assert the
+  **content** of the artifact, not that the filename changed; if it clears the cache between the
+  two calls, it is testing the filename and will pass over exactly this bug.
+- **NEVER text-edit a spec or a report artifact with `str.replace` on a computed slice.** The
+  idiom `old = t[t.index(A):t.index(B)]` returns the **empty string** whenever `B` precedes `A` in
+  the file — a table row that got reordered is enough — and `t.replace("", new)` then inserts
+  `new` between **every character**, so a 33 KB register becomes 81 MB of interleaved garbage and
+  the intended edit never lands. It is silent: the script prints its success message. Use the
+  Edit tool (it fails on a non-unique or absent match) or anchor on a full unique line; if a
+  script must do it, `assert old` before replacing, and re-parse the artifact afterwards with
+  whatever the report uses to read it. Recovery, if it happens: the original bytes are all still
+  there, so `corrupt.replace(new, "")` returns the file exactly — confirm with
+  `len(corrupt) == len(recovered) + (len(recovered) + 1) * len(new)`.
+- **Track `report/analysis/` from the first commit — it is the only copy.** The register, the
+  targets table and the figure map are authored deliverables with no upstream and no regenerating
+  script. A study left untracked "until it is ready" has no recovery path for exactly the files
+  that cannot be recomputed, and one bad `str.replace` (above) is then unrecoverable except by
+  luck. Gitignore the heavy generated trees, commit the analysis prose early.
 - **Two runs of the same field may name the same axis differently — reconcile by NAME, never
   broadcast.** A modal run projected onto the surface lands on `vertex`; the mesh run calls the
   same axis `node`. Subtracting them as they arrive broadcasts into a 32,492 × 32,492 outer

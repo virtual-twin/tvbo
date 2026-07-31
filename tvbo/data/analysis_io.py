@@ -33,8 +33,11 @@ from tvbo.utils import as_list
 
 __all__ = [
     "RENDERERS",
+    "analysis_closure",
     "container_path",
     "dependencies",
+    "dependents_of",
+    "dependents_of_experiments",
     "render_inprocess",
     "run_analyses",
     "run_analysis",
@@ -94,6 +97,12 @@ def dependencies(analysis) -> dict:
 
     Returns ``{"experiments": {...}, "analyses": {...}}`` — the ids/names that must have
     run before it. A literal argument contributes nothing.
+
+    An ``experiment:`` edge contributes BOTH the spelling the recipe used and its bare
+    numeric id, because a recipe may write ``exp-3``, ``exp3`` or ``3`` for the same
+    experiment while the runtime identifies it by ``{key, name, label, id}``. Keeping only
+    the literal string makes every dotted spelling silently match nothing — an empty stale
+    set reads exactly like a clean one.
     """
     exps: set[str] = set()
     anas: set[str] = set()
@@ -104,6 +113,9 @@ def dependencies(analysis) -> dict:
         exp = _slot(used, "experiment")
         if exp is not None:
             exps.add(str(exp))
+            eid = _dref.experiment_id(exp)
+            if eid is not None:
+                exps.add(eid)
         ana = _slot(used, "analysis")
         if ana is not None:
             anas.add(str(ana))
@@ -113,6 +125,69 @@ def dependencies(analysis) -> dict:
             if eid is not None:
                 exps.add(str(eid))
     return {"experiments": exps, "analyses": anas}
+
+
+def dependents_of(analyses, *, experiments=(), changed_analyses=()) -> list[str]:
+    """Every analysis downstream of the given experiments or analyses, in declaration order.
+
+    An analysis container records no link back to the run it was derived from, so re-running
+    part of a study leaves each downstream container holding the PREVIOUS run's numbers with
+    nothing to raise. This names the set to invalidate, and it must be transitive: the
+    second-order analyses (a landscape built from a per-cell reduction, a correlation built
+    from that) are exactly the ones a hand-written list forgets.
+
+    The seed is either kind of node, because both partial-run modes exist: ``--experiment``
+    re-runs a simulation, ``--analysis`` re-runs a derivation, and what goes stale downstream
+    is found by the same walk over the study's own ``used:`` edges. Analyses named in
+    ``changed_analyses`` come back in the result — a caller that just ran them drops them.
+    """
+    wanted = {str(e) for e in experiments}
+    stale = {str(a) for a in changed_analyses}
+    items = as_list(analyses)
+    changed = True
+    while changed:
+        changed = False
+        for analysis in items:
+            name = _name(analysis)
+            if name in stale:
+                continue
+            deps = dependencies(analysis)
+            if deps["experiments"] & wanted or deps["analyses"] & stale:
+                stale.add(name)
+                changed = True
+    return [_name(a) for a in items if _name(a) in stale]
+
+
+def dependents_of_experiments(analyses, experiment_ids) -> list[str]:
+    """Every analysis that reads those experiments, transitively, in declaration order."""
+    return dependents_of(analyses, experiments=experiment_ids)
+
+
+def analysis_closure(analyses, names, exists) -> set[str]:
+    """The named analyses plus the upstream ones that have no container yet.
+
+    The upstream counterpart of :func:`dependents_of`, and it belongs beside it: both walk
+    the study's ``used:`` edges, and a caller that needs one usually needs the other.
+
+    Asking for an analysis by name means asking for it to be RE-derived, so its own inputs
+    are left alone wherever they already exist — re-running them would be the whole study,
+    which is what asking by name is an alternative to. An input that has never been produced
+    is different: it cannot be read, so it is pulled in, and transitively, because the first
+    missing container's own inputs may be missing too.
+
+    Args:
+        analyses: The study's declared analyses.
+        names: The names asked for.
+        exists: Predicate saying whether an analysis's container is already on disk.
+    """
+    by_name = {_name(a): a for a in as_list(analyses)}
+    needed, queue = set(names), list(names)
+    while queue:
+        for dep in dependencies(by_name[queue.pop()])["analyses"]:
+            if dep in by_name and dep not in needed and not exists(dep):
+                needed.add(dep)
+                queue.append(dep)
+    return needed
 
 
 def _toposort(analyses) -> list:
