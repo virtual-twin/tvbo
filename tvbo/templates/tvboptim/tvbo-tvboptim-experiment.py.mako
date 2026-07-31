@@ -239,6 +239,17 @@ noise_sigma = noise_sigma_per_state if len(set(noise_sigma_per_state)) > 1 else 
 noise_sigma_targeted = [s for s in noise_sigma_per_state if s > 0]
 noise_sigma_value = noise_sigma_targeted[0] if noise_sigma_targeted else 0.0
 
+# A covariance declared over the STATE axis is the one case where the amplitude varies
+# ALONG the mixed axis (untargeted states sit at zero), and there `L diag(sigma)` is not
+# the declared `diag(sigma) C diag(sigma)` — for a rank-deficient C it is identically zero.
+# Fold the amplitudes into the covariance and drive every state at unit amplitude, so the
+# mixer receives an iid draw on the whole axis and applies the factor alone. A `node`-axis
+# covariance is untouched: sigma is uniform along nodes, where the two orders agree exactly.
+noise_cov_fold = bool(noise_cov) and str(noise_cov['axis']) == 'state'
+if noise_cov_fold:
+    noise_sigma_value = 1.0
+    noise_targets = list(model.state_variables.keys())
+
 # Network metadata
 n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)
 _cs = getattr(network, 'conduction_speed', None)
@@ -655,6 +666,8 @@ has_explorations = len(exploration_list) > 0
 # Parse explorations - uses schema ifabsent defaults
 # Schema defaults: n_parallel='auto', mode='product'
 explorations = []
+# Modules an ExplorationAxis.builder calls by dotted name; imported with the emit.
+exploration_builder_modules = set()
 for expl in exploration_list:
     assert expl.name, "exploration.name required in YAML"
     exp_info = {
@@ -813,6 +826,7 @@ for expl in exploration_list:
                     except Exception:
                         _lit = repr(_av)
                     _arg_strs.append("%s=%s" % (str(_an), _lit))
+            exploration_builder_modules.add(_bc.module)
             exp_info['axes'].append({
                 'name': pname,
                 'label': _axis_label,
@@ -1298,7 +1312,10 @@ for obs_name, obs in observations.items():
     }
     obs_list.append(obs_info)
 
-# Collect modules to import from derived observation pipelines
+# Modules the emitted code calls by dotted name: derived-observation pipeline stages and
+# exploration-axis builders. A builder axis emits `<module>.<fn>(...)` inline, so without
+# its import the generated script raises NameError at the first swept cell — the module is
+# never referenced anywhere else, and nothing else in the emit would pull it in.
 derived_obs_modules = set()
 for dobs_name, dobs in derived_observations_dict.items():
     if dobs.pipeline:
@@ -1308,6 +1325,7 @@ for dobs_name, dobs in derived_observations_dict.items():
                 call_module = getattr(c, 'module', None)
                 if call_module:
                     derived_obs_modules.add(call_module)
+derived_obs_modules |= exploration_builder_modules
 
 # First coupling name for docstring
 first_coupling_name = list(all_couplings.keys())[0] if all_couplings else 'None'
@@ -1351,7 +1369,7 @@ from tvboptim.experimental.network_dynamics.solvers import ${solver_class}
 from tvboptim.experimental.network_dynamics.solvers import BoundedSolver
 % endif
 % if noise_cov:
-from tvbo.classes.correlated_noise import CorrelatedNoiseSolver, covariance_factor
+from tvbo.classes.correlated_noise import CorrelatedNoiseSolver, covariance_factor, fold_amplitudes
 % endif
 % if has_noise:
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
@@ -1506,6 +1524,10 @@ def get_solver(block_size=None):
     _covariance = _load_param(${repr(noise_cov['lazy'][0])}, ${repr(noise_cov['lazy'][1])}, device=False)
 % else:
     _covariance = ${repr(noise_cov['value'])}
+% endif
+% if noise_cov_fold:
+    # Amplitudes folded in; the increment above is driven at unit amplitude.
+    _covariance = fold_amplitudes(_covariance, ${repr(noise_sigma_per_state)})
 % endif
     solver = CorrelatedNoiseSolver(
         solver, covariance_factor(_covariance), axis=${repr(noise_cov['axis'])}
@@ -3380,8 +3402,13 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
             name='${ax.get('label', ax['name'])}',
 % endif
 % if ax.get('builder_expr'):
-            ## Builder axis: values are runtime whole-vectors; the coordinate is the point index.
-            explored_values=jnp.arange(len(_axisvals_${ax['name']})),
+            ## Builder axis. When each point is a whole vector there is no scalar to key on,
+            ## so the coordinate is the point index; when the builder returns one value per
+            ## point — a computed sweep of a scalar parameter — those values ARE the
+            ## coordinate, and substituting an index would leave the container unlabelled
+            ## and every downstream binding plotting 0..n-1 instead of the parameter.
+            explored_values=(jnp.arange(len(_axisvals_${ax['name']}))
+                             if _axisvals_${ax['name']}.ndim > 1 else _axisvals_${ax['name']}),
             n=len(_axisvals_${ax['name']}),
 % elif 'values' in ax:
             explored_values=jnp.array(${ax['values']}),

@@ -289,11 +289,18 @@ def test_the_tier_column_never_carries_an_outcome_word():
 
 
 def test_the_three_shortfall_kinds_are_reported_separately():
+    """Each non-met outcome gets its own led group, in the order failure-first.
+
+    Asserted through ``VERDICTS`` rather than against literal headings, so rewording a
+    label cannot silently turn this into a test of nothing.
+    """
+    from tvbo.utils.report import VERDICTS
+
     prose = _scorecard().shortfall_prose()
     assert prose.count("**") >= 6                       # a bold lead per group
-    assert "short of criterion" in prose.lower()
-    assert "out of scope" in prose.lower() and "unobtainable" in prose.lower()
-    assert prose.index("Attempted") < prose.index("Declared out of scope")
+    leads = [prose.lower().find(VERDICTS[v]) for v in ("short", "out", "blocked")]
+    assert all(i >= 0 for i in leads), f"a shortfall group is unlabelled: {leads}"
+    assert leads == sorted(leads), "failure must be led first, never buried after a scope decision"
 
 
 def test_a_target_with_no_recorded_reason_says_so_rather_than_going_blank():

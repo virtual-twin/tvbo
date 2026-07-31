@@ -497,6 +497,11 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         spine_rcparams = {f"axes.spines.{s}": True for s in ("top", "right", "left", "bottom")}
     elif spines == "open":
         spine_rcparams = {"axes.spines.top": False, "axes.spines.right": False}
+    if getattr(figure, "trim_margins", None) is False:
+        # matplotlib reads `bbox_inches=None` as "use rcParams['savefig.bbox']", which the
+        # stylesheet sets to "tight" — so the declared `trim_margins: false` only takes effect
+        # if the rcParam itself is cleared.
+        spine_rcparams = {**spine_rcparams, "savefig.bbox": None}
 
     return {
         "name": figure.name or "figure",

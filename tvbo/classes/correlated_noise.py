@@ -19,10 +19,21 @@ Cholesky when ``C`` is positive definite, a symmetric eigendecomposition when it
 positive semi-definite (a rank-deficient covariance is legitimate — it says fewer
 independent sources than elements).
 
-The increment reaching `step` has already been scaled by the noise amplitude, so a scalar
-`intensity` σ realises covariance ``σ² dt C`` — the reading `Noise.covariance` documents.
-A per-node σ composes as ``L diag(σ)``, i.e. the declared correlation structure carried at
-each node's own amplitude.
+The declared reading is that σ carries the amplitude and ``C`` the correlation, so the
+realised covariance is ``diag(σ) C diag(σ) dt`` — for a scalar σ, ``σ² dt C``.
+
+That composition is ``diag(σ) L``, NOT ``L diag(σ)``. The two agree exactly when σ is
+uniform along the mixed axis, which is why a per-node covariance with a scalar amplitude is
+insensitive to the difference; they diverge when σ varies along that axis, and there the
+wrong order is not a small error but a silent loss of the process. With a rank-deficient
+``C`` — one independent source shared by two states, say — ``L``'s surviving column is
+placed by the eigendecomposition, and multiplying by a σ that is zero on the states the
+column happens to land on annihilates the increment entirely.
+
+So the amplitude is folded into the covariance (:func:`fold_amplitudes`) and the increment
+arrives at unit amplitude, leaving the mixer to apply ``L'`` alone. Conjugating instead —
+``diag(σ) L diag(1/σ⁺)`` — looks equivalent and is not, for the same reason: it drops the
+draw components at the zero-σ indices, which is where the rank-deficient source lives.
 """
 
 from __future__ import annotations
@@ -31,7 +42,7 @@ from collections.abc import Mapping
 
 import numpy as np
 
-__all__ = ["covariance_factor", "noise_mixer", "CorrelatedNoiseSolver"]
+__all__ = ["covariance_factor", "fold_amplitudes", "noise_mixer", "CorrelatedNoiseSolver"]
 
 _AXIS = {"state": -2, "node": -1, "region": -1}
 """`Noise.correlated_over` names mapped onto axes of the [n_noise_states, n_nodes]
@@ -88,6 +99,35 @@ def covariance_factor(cov, *, name: str = "covariance") -> np.ndarray:
             f"A covariance cannot have negative eigenvalues."
         )
     return evecs * np.sqrt(np.clip(evals, 0.0, None))
+
+
+def fold_amplitudes(cov, sigmas, *, name: str = "covariance") -> np.ndarray:
+    """``diag(σ) C diag(σ)`` — the declared covariance carried at each element's amplitude.
+
+    Folding the amplitude in here, and driving the increment at unit amplitude, is what
+    makes the realised covariance ``diag(σ) C diag(σ)`` rather than ``L diag(σ²) Lᵀ``. The
+    two coincide for uniform σ, so this is a no-op wherever σ does not vary along the
+    correlated axis; where it does vary, it is the difference between the declared process
+    and (for a rank-deficient ``C``) no process at all.
+
+    Args:
+        cov: The declared covariance, square in the correlated axis.
+        sigmas: Per-element amplitude along that axis, same length.
+        name: Label for error messages.
+
+    Returns:
+        The amplitude-carrying covariance, ready for :func:`covariance_factor`.
+    """
+    C = np.asarray(cov, dtype=float)
+    s = np.asarray(sigmas, dtype=float).ravel()
+    if C.ndim != 2 or C.shape[0] != C.shape[1]:
+        raise ValueError(f"{name}: expected a square matrix, got shape {C.shape}.")
+    if s.size != C.shape[0]:
+        raise ValueError(
+            f"{name}: {C.shape[0]}x{C.shape[0]} covariance against {s.size} amplitudes; "
+            f"the covariance must be square in the axis the amplitudes index."
+        )
+    return C * np.outer(s, s)
 
 
 def _axis_position(axis: str) -> int:

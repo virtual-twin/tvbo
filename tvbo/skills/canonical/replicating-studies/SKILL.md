@@ -847,6 +847,18 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   job — one row per cell, so a fanned sweep benchmarks every cell. This is how you turn "reason
   about resident memory" into a *measured* peak (a streaming BOLD fit that would OOM at hundreds
   of GB materialized shows a ~GB peak in the TSV), and how you size `slurm.mem` honestly.
+- **Size per-rule memory off the COMPILE peak, and set it PER EXPERIMENT — not one global
+  number.** Streaming bounds the *runtime* trajectory, but what OOM-kills a whole-brain fit is
+  usually ELSEWHERE: XLA/LLVM **compiling** a wide-vmapped long-scan graph (a G-sweep ×10, a seed
+  ensemble ×50) spikes far above the resident set — a 379-node fit that streams at ~2–6 GB still
+  needs ~32 GB to compile, and `float64` roughly doubles that. So an 8 GB request that ran the
+  tuning fine dies *later* with `Failed to materialize symbols` / `LLVM Cannot allocate memory`.
+  Express it as a modest **global `workflow.slurm` baseline overridden per experiment**: each
+  heavy experiment carries `workflow: {slurm: {mem: 32G, cpus_per_task: 4}}` (deep-merged over the
+  study block — only the set leaves change, partition/time/env inherit; DRY via a shared YAML
+  anchor), while the light ones (a DM circuit, a forward run) stay at the baseline. Ship only the
+  Snakefile when just the resources change — never re-extract the tarball over a running kit
+  (clobbers completed results + snakemake state).
 - **A dry run does NOT execute anything — smoke-test ONE experiment in the container
   FIRST.** `tvbo workflow submit --dry-run` (snakemake `-n`) only resolves the DAG
   (wildcards, inputs, resources); no `tvbo run` executes, so it cannot catch a runtime
@@ -891,6 +903,19 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   cannot honour a run-time flag that *changes* codegen (`--set integration.*`, `--pin` on a
   non-vectorized axis) — use `spec` for those. `frozen` and `spec` are byte-identical for a
   deterministic experiment (kit anatomy + the full contract: `docs/CLI/workflow-kits.qmd`).
+- **The frozen kit can run a DIFFERENT float precision than your dev run — pin it, or a stiff
+  fit silently NaNs on the cluster.** Frozen and spec agree with each other, but both honour the
+  recipe's `execution.precision` (which may be `float32`), whereas in-process `experiment.run()`
+  hardcodes `enable_x64=True` → **float64**. So you develop and validate in float64 (stable) while
+  the cluster kit runs float32 — and a gradient-based whole-brain FIC/EI fit is only *marginally*
+  stable in float32: it survives one `cpus_per_task` and NaNs under another (the XLA reduction
+  order shifts). The tell is a fit that ran finite once and NaNs on resubmit with nothing changed
+  but the cpu count — **the jax version and the cpu count are the red herrings; precision is the
+  cause.** Fix declaratively: `execution.precision: float64` AND `JAX_ENABLE_X64=1` in
+  `workflow.slurm.env` (forces x64 at runtime on the *already-frozen* scripts, so you re-ship only
+  the Snakefile, no re-render). Diagnose by A/B-ing `JAX_ENABLE_X64` 0 vs 1 with everything else
+  fixed. (Durable framework fix: make `experiment.run()` respect the declared precision so the two
+  paths can't diverge.)
 - **Run the orchestrator on a COMPUTE node, not the login node.** Login nodes are
   cgroup-capped (a per-user memory limit that OOM-kills a long `snakemake`); DAG
   resolution that takes seconds on a compute node crawls or dies on a starved login

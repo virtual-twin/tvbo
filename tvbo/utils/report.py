@@ -415,6 +415,56 @@ def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list
     return hits
 
 
+DIVERGENCE_CLASSES = {
+    "A": "Value drift — same symbol, different number",
+    "B": "Algorithm substitution — code computes a different operation",
+    "C": "Undocumented configuration — never stated at all",
+    "D": "Underdetermined prose — several readings, one correct",
+    "E": "Convention traps — same name, different meaning",
+    "F": "Unreleased — no code to compare against",
+}
+
+
+def divergence_register(source) -> dict:
+    """Parse a study's ``methods-vs-code.md`` into per-class counts and rows.
+
+    The register is a skill-mandated artifact of any replication whose study ships code,
+    and its counts are quoted in the report's prose. Parsing it here means the report can
+    never disagree with the register it cites — the drift the register itself documents.
+
+    Rows are recognised by a leading ``| <class><n> |`` cell. ``material`` counts only rows
+    whose final cell opens with a bold "Yes", which is the convention of the classes that
+    carry a materiality column; classes without one report ``material`` as ``None`` rather
+    than zero, so a caption can say what it actually counted.
+    """
+    text = Path(source).read_text() if Path(source).exists() else str(source)
+    classes: dict[str, dict] = {}
+    scores = False
+    for line in text.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
+        if cells and cells[0] in ("#", "ID"):
+            scores = any(c.lower().startswith("material") for c in cells)
+            continue
+        m = re.match(r"^\|\s*([A-Z])(\d+)\s*\|", line)
+        if not m:
+            continue
+        entry = classes.setdefault(m.group(1), {"ids": [], "material": None, "rows": []})
+        entry["ids"].append(f"{m.group(1)}{m.group(2)}")
+        entry["rows"].append(cells)
+        if scores:
+            entry["material"] = (entry["material"] or 0) + bool(re.match(r"\*\*Yes", cells[-1]))
+    for key, entry in classes.items():
+        entry["count"] = len(entry["ids"])
+        entry["title"] = DIVERGENCE_CLASSES.get(key, "")
+    scored = [e for e in classes.values() if e["material"] is not None]
+    return {
+        "classes": dict(sorted(classes.items())),
+        "total": sum(e["count"] for e in classes.values()),
+        "material": sum(e["material"] for e in scored),
+        "scored": sum(e["count"] for e in scored),
+    }
+
+
 def report_figure(ours, theirs=None, stage=Path("_figures"), credit: str = "the authors",
                   label: str = "", missing: str = "", width: float = 6.7,
                   dpi: int = 300, cleared: bool = False) -> Path | None:
@@ -471,15 +521,20 @@ def report_figure(ours, theirs=None, stage=Path("_figures"), credit: str = "the 
 VERDICTS = {
     "met": "met",
     "short": "short of criterion",
-    "out": "out of scope",
+    "out": "not attempted",
     "blocked": "input unobtainable",
 }
 """The four outcomes a replication target can have.
 
-`short` is the only one that is a failure of the replication: it was run and missed. `out` is a
-judgement made before running that the target tests nothing another target does not, `blocked` is
-an input that cannot be obtained. Collapsing them lets a scope decision read as a failure, and a
-failure hide inside a scope decision.
+`short` is the only one that is a failure of the replication: it was run and missed. `out` was
+declared before running and covers two cases its row must separate — the target tests nothing
+another target does not, or it is in scope and simply not done yet. `blocked` is an input that
+cannot be obtained. Collapsing them lets a scope decision read as a failure, and a failure hide
+inside a scope decision.
+
+`out` is labelled *not attempted* rather than *out of scope* precisely because of that second
+case: a target still owed is not a target judged unnecessary, and a column header saying
+"out of scope" would quietly assert the stronger claim for both.
 """
 
 TIERS = ("core", "extended")
@@ -590,7 +645,7 @@ class Scorecard:
         if short:
             said.append(f"{names(short)} attempted and short of its criterion")
         if out:
-            said.append(f"{names(out)} out of scope by declaration")
+            said.append(f"{names(out)} declared unattempted")
         if blocked:
             said.append(f"{names(blocked)} blocked on an unobtainable input")
         tail = f" Each is scored in {scored_in}." if (short or out or blocked) else ""
@@ -607,15 +662,18 @@ class Scorecard:
             return " ".join(f"**{r['ID']}**, {self.headline(r)}. {self.reason(r)}" for r in rows)
 
         blocks, groups = [], [
-            ("short", "Attempted and short of criterion", "These were run and did not meet the "
+            ("short", "Attempted and {}", "These were run and did not meet the "
              "criterion written for them, so they are the replication's own shortfall."),
-            ("out", "Declared out of scope", "Nothing was attempted here and nothing failed. "
-             "Each was judged, before anything was run, to add no test of the paper's claims "
-             "that another target does not already make; the justification is what follows."),
-            ("blocked", "Blocked on an unobtainable input", "These would be in scope, and the "
+            ("out", "Declared {}", "Nothing was attempted here and nothing failed. Each "
+             "row says which of two things it is: a target judged, before anything was run, to "
+             "add no test of the paper's claims that another target does not already make, or "
+             "one that is in scope and simply not done yet. The first is a closed decision, the "
+             "second an open commitment, and the row must not blur them."),
+            ("blocked", "Blocked — {}", "These would be in scope, and the "
              "method for them is the one already used elsewhere in this replication. What is "
              "missing is data we cannot get."),
         ]
+        groups = [(s, t.format(self.verdicts.get(s, s)), lead) for s, t, lead in groups]
         for status, title, lead in groups:
             rows = self.of(status)
             if rows:

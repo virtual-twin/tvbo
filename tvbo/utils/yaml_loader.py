@@ -32,6 +32,22 @@ generally-useful YAML idioms:
         - !include _experiments/exp1.yaml
         - !include _experiments/exp2.yaml
 
+  The two idioms **compose**: an ``!include`` may appear as the value of a
+  merge key, so a fragment file can be merged into a mapping alongside the
+  mapping's own entries and alongside other anchors. Without this a shared
+  fragment could only ever *replace* a whole slot, which forces every
+  consumer of a partial fragment (a haemodynamic cascade shared by two
+  models) to copy it instead:
+
+  .. code-block:: yaml
+
+      state_variables:
+        <<: !include _balloon_states.yaml
+        phi: {...}
+
+      parameters:
+        <<: [*model_params, !include _balloon_parameters.yaml]
+
 Both idioms are pure data-format machinery; they don't introduce any
 TVBO-specific semantics into user YAMLs. The wrapper is transparent —
 any LinkML class can still load through ``yaml_loader.load`` and get
@@ -89,6 +105,7 @@ def _flatten_map_constructor(loader: yaml.Loader, node: yaml.MappingNode, deep: 
             raise ValueError(f'Duplicate key: "{k}"')
 
     if has_merge:
+        _compose_include_merges(loader, node)
         loader.flatten_mapping(node)
 
     mapping: dict = {}
@@ -101,6 +118,56 @@ def _flatten_map_constructor(loader: yaml.Loader, node: yaml.MappingNode, deep: 
     return mapping
 
 
+def _compose_include_merges(loader: yaml.Loader, node: yaml.MappingNode) -> None:
+    """Replace ``!include`` nodes sitting under a ``<<:`` merge key with the composed file.
+
+    ``flatten_mapping`` works on the node tree and rejects anything that is not a mapping
+    node, so an ``!include`` — a scalar node until its constructor runs — cannot be merged.
+    Composing the referenced file into a node here, before the flatten, makes the two
+    idioms compose without touching PyYAML's merge semantics: the spliced node is an
+    ordinary mapping and precedence (explicit over merged, earlier merge over later)
+    stays exactly as it was.
+    """
+    for entry, (key_node, value_node) in enumerate(node.value):
+        if key_node.tag != _MERGE_TAG:
+            continue
+        if isinstance(value_node, yaml.SequenceNode):
+            value_node.value = [_compose_included(loader, s) if s.tag == _INCLUDE_TAG else s
+                                for s in value_node.value]
+        elif value_node.tag == _INCLUDE_TAG:
+            node.value[entry] = (key_node, _compose_included(loader, value_node))
+
+
+def _compose_included(loader: yaml.Loader, node: yaml.ScalarNode) -> yaml.Node:
+    """The ``!include`` target composed to a node tree rather than constructed to a dict.
+
+    Same file resolution and same anchor scoping as the ``!include`` constructor — the
+    fragment is composed with its own loader class, so its anchors stay file-local.
+    """
+    base_dir = getattr(loader, "_tvbo_base_dir", Path.cwd())
+    path = _include_path(loader.construct_scalar(node), base_dir)
+    with open(path, "r") as fh:
+        composed = yaml.compose(fh, _make_loader_class(path.parent))
+    if not isinstance(composed, yaml.MappingNode):
+        raise yaml.constructor.ConstructorError(
+            None, None,
+            f"a merged !include must hold a mapping, but {path} holds {composed.id}",
+            node.start_mark,
+        )
+    return composed
+
+
+def _include_path(rel: str, base_dir: Path) -> Path:
+    """An ``!include`` target resolved against the including file's directory."""
+    path = Path(rel)
+    if not path.is_absolute():
+        path = base_dir / path
+    path = path.resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"!include target not found: {path}")
+    return path
+
+
 def _make_include_constructor(base_dir: Path):
     """Build a ``!include`` constructor anchored at ``base_dir``."""
 
@@ -111,12 +178,7 @@ def _make_include_constructor(base_dir: Path):
             raise yaml.constructor.ConstructorError(
                 None, None, "!include expects a scalar (a file path)", node.start_mark
             )
-        path = Path(rel)
-        if not path.is_absolute():
-            path = base_dir / path
-        path = path.resolve()
-        if not path.exists():
-            raise FileNotFoundError(f"!include target not found: {path}")
+        path = _include_path(rel, base_dir)
         # Fresh loader instance for the included document so anchors are
         # file-local (no name capture from or into the parent document).
         with open(path, "r") as fh:
@@ -139,6 +201,8 @@ def _make_loader_class(base_dir: Path) -> Type[DupCheckYamlLoader]:
     include_ctor = _make_include_constructor(base_dir)
 
     class _TVBOLoader(DupCheckYamlLoader):
+        _tvbo_base_dir = base_dir
+
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, **kwargs)
             # Re-register the mapping constructor with merge-key support,
