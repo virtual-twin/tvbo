@@ -1272,9 +1272,14 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   deeper, and it is worth knowing by name because the caches are invisible. Since the Pang2023
   incident tvbo closes the worst of it: a `producer:` parameter's artifact digest now includes a
   hash of the **source of the module defining the producer**, so editing that file yields a
-  different artifact rather than a stale hit. Two holes remain, and both are silent:
+  different artifact rather than a stale hit — on the **next process**, which is what every
+  `tvbo run` is. Three holes remain, and all are silent:
   - the digest hashes only the producer's **own file**, so an edit to a helper in a *sibling*
     module under `code/` is still invisible;
+  - within one long-lived process (a Jupyter kernel, a report render) the digest is **pinned to
+    the source the module was loaded from**, because Python does not re-execute an imported
+    module: the edited function is not running either, so the artifact keeps matching the code
+    that filled it. Restart the kernel, exactly as you would to pick up the edit itself;
   - a study's own `.npz` solve cache is keyed on its path, and an **analysis container** on its
     name — neither hashes anything about the code, so re-deriving one is a deliberate act:
     `tvbo run <Study>.yaml --analysis <name>` (which re-runs only that analysis and names the
@@ -1293,9 +1298,17 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   materialises again computes the new path from the new source while the in-memory cache still
   answers on the old one — writing pre-edit arrays under a digest that asserts they are
   post-edit. Every later run then reads that file and trusts it. Whenever you add a term to a
-  cache key, grep for every other place that key is constructed. A test for this must assert the
-  **content** of the artifact, not that the filename changed; if it clears the cache between the
-  two calls, it is testing the filename and will pass over exactly this bug.
+  cache key, grep for every other place that key is constructed.
+
+  Two traps follow, and the second is subtle enough to have been got wrong twice here. First,
+  the term must describe **what the process will actually do**, not what is on disk: a digest
+  re-read from the file each time claims the artifact matches code that Python is not running.
+  Second, a test that edits the source mid-process is testing a **reload that never happens**,
+  so it can only pass by faking one — which is how a fix that closed nothing passed its own
+  test. Assert the invariant directly instead: that the memory key and the artifact path carry
+  the **same** digest, and that the digest tracks the loaded source rather than the file. Test
+  the end-to-end invalidation where it is actually defined — across two processes, i.e. with
+  the caches cleared between the two calls.
 - **NEVER text-edit a spec or a report artifact with `str.replace` on a computed slice.** The
   idiom `old = t[t.index(A):t.index(B)]` returns the **empty string** whenever `B` precedes `A` in
   the file — a table row that got reordered is enough — and `t.replace("", new)` then inserts

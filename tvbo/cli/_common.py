@@ -95,11 +95,20 @@ def experiment_ids(exp: Any) -> set[str]:
     """The identifiers an experiment can be selected by on the CLI.
 
     Its ``key``, ``name``, ``label``, and stringified ``id`` (dropping the empty
-    ones). Shared by ``tvbo run`` and ``tvbo workflow`` so ``--experiment`` matches
-    the same way in both.
+    ones), plus the bare numeric id those spell — ``exp-3``, ``exp3`` and ``3`` name one
+    experiment, and an experiment carrying only ``key: exp-3`` must still answer to ``3``.
+    Normalising HERE and in ``analysis_io.dependencies`` is what lets the two sides of the
+    staleness walk intersect; normalising one side only makes every dotted spelling match
+    nothing, and an empty stale set reads exactly like a clean one.
+
+    Shared by ``tvbo run`` and ``tvbo workflow`` so ``--experiment`` matches the same way
+    in both.
     """
-    return {getattr(exp, "key", None), getattr(exp, "name", None),
-            getattr(exp, "label", None), str(getattr(exp, "id", ""))} - {None, ""}
+    from tvbo.data.dataref import experiment_id
+
+    spellings = {getattr(exp, "key", None), getattr(exp, "name", None),
+                 getattr(exp, "label", None), str(getattr(exp, "id", ""))} - {None, ""}
+    return spellings | {experiment_id(s) for s in spellings} - {None}
 
 
 def experiment_key(exp: Any) -> str:

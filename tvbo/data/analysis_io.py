@@ -34,10 +34,10 @@ from tvbo.utils import as_list
 __all__ = [
     "RENDERERS",
     "analysis_closure",
+    "analysis_name",
     "container_path",
     "dependencies",
     "dependents_of",
-    "dependents_of_experiments",
     "render_inprocess",
     "run_analyses",
     "run_analysis",
@@ -56,7 +56,7 @@ def _slot(obj: Any, name: str, default: Any = None) -> Any:
     return default if value is None else value
 
 
-def _name(analysis) -> str:
+def analysis_name(analysis) -> str:
     """The analysis's declared name — its container key and its identity in a ``used:``."""
     name = _slot(analysis, "name")
     if not name:
@@ -143,24 +143,18 @@ def dependents_of(analyses, *, experiments=(), changed_analyses=()) -> list[str]
     """
     wanted = {str(e) for e in experiments}
     stale = {str(a) for a in changed_analyses}
-    items = as_list(analyses)
+    names = [analysis_name(a) for a in as_list(analyses)]
+    deps = {n: dependencies(a) for n, a in zip(names, as_list(analyses))}
     changed = True
     while changed:
         changed = False
-        for analysis in items:
-            name = _name(analysis)
+        for name in names:
             if name in stale:
                 continue
-            deps = dependencies(analysis)
-            if deps["experiments"] & wanted or deps["analyses"] & stale:
+            if deps[name]["experiments"] & wanted or deps[name]["analyses"] & stale:
                 stale.add(name)
                 changed = True
-    return [_name(a) for a in items if _name(a) in stale]
-
-
-def dependents_of_experiments(analyses, experiment_ids) -> list[str]:
-    """Every analysis that reads those experiments, transitively, in declaration order."""
-    return dependents_of(analyses, experiments=experiment_ids)
+    return [n for n in names if n in stale]
 
 
 def analysis_closure(analyses, names, exists) -> set[str]:
@@ -180,7 +174,7 @@ def analysis_closure(analyses, names, exists) -> set[str]:
         names: The names asked for.
         exists: Predicate saying whether an analysis's container is already on disk.
     """
-    by_name = {_name(a): a for a in as_list(analyses)}
+    by_name = {analysis_name(a): a for a in as_list(analyses)}
     needed, queue = set(names), list(names)
     while queue:
         for dep in dependencies(by_name[queue.pop()])["analyses"]:
@@ -199,7 +193,7 @@ def _toposort(analyses) -> list:
     analyses left unresolved.
     """
     items = list(analyses)
-    names = [_name(a) for a in items]
+    names = [analysis_name(a) for a in items]
     duplicates = sorted({n for n in names if names.count(n) > 1})
     if duplicates:
         raise ValueError(
@@ -211,7 +205,7 @@ def _toposort(analyses) -> list:
         missing = sorted(dependencies(a)["analyses"] - known)
         if missing:
             raise KeyError(
-                f"analysis {_name(a)!r} sources {missing} through a `used: {{analysis: …}}`, "
+                f"analysis {analysis_name(a)!r} sources {missing} through a `used: {{analysis: …}}`, "
                 f"which this study does not declare (have {sorted(known)})."
             )
 
@@ -223,12 +217,12 @@ def _toposort(analyses) -> list:
         if not ready:
             raise ValueError(
                 "study `analyses:` have a circular `used:` dependency among "
-                f"{sorted(_name(a) for a in pending)} — an analysis cannot consume its "
+                f"{sorted(analysis_name(a) for a in pending)} — an analysis cannot consume its "
                 "own result, directly or through a chain."
             )
         for a in ready:
             ordered.append(a)
-            done.add(_name(a))
+            done.add(analysis_name(a))
             pending.remove(a)
     return ordered
 
@@ -245,9 +239,9 @@ def schedule(analyses) -> tuple[list, list]:
     for a in ordered:
         deps = dependencies(a)
         if deps["experiments"] or (deps["analyses"] & deferred):
-            deferred.add(_name(a))
-    before = [a for a in ordered if _name(a) not in deferred]
-    after = [a for a in ordered if _name(a) in deferred]
+            deferred.add(analysis_name(a))
+    before = [a for a in ordered if analysis_name(a) not in deferred]
+    after = [a for a in ordered if analysis_name(a) in deferred]
     return before, after
 
 
@@ -288,7 +282,7 @@ def render_inprocess(analysis, kwargs):
     It imposes no array library: whatever the declared code uses is what runs. The
     written container is xarray either way.
     """
-    name = _name(analysis)
+    name = analysis_name(analysis)
 
     call = _slot(analysis, "callable")
     if call is not None:
@@ -333,7 +327,7 @@ def _render(analysis, kwargs):
     renderer = RENDERERS.get(key)
     if renderer is None:
         raise NotImplementedError(
-            f"analysis {_name(analysis)!r} declares `execution.backend: {backend}`, which "
+            f"analysis {analysis_name(analysis)!r} declares `execution.backend: {backend}`, which "
             f"has no analysis renderer (have {sorted(RENDERERS)}). An analysis is not run "
             "by a different backend than the one it asks for — either register a renderer "
             "for it or declare one that exists."
@@ -348,7 +342,7 @@ def _kwargs_of(analysis, results_root) -> dict:
     by :func:`tvbo.data.dataref.resolve_dataref`), never a bare positional array, so the
     callable selects by name.
     """
-    name = _name(analysis)
+    name = analysis_name(analysis)
     out: dict = {}
     for key, arg in _arg_items(_slot(analysis, "arguments")):
         used = _slot(arg, "used")
@@ -423,7 +417,7 @@ def _provenance(analysis, produced_keys: Iterable[str]) -> dict:
     invoked = call if call is not None else cls_ref
     backend = _slot(_slot(analysis, "execution"), "backend") or _DEFAULT_RENDERER
     return {
-        "name": _name(analysis),
+        "name": analysis_name(analysis),
         "label": _slot(analysis, "label"),
         "description": _slot(analysis, "description"),
         ("class_call" if call is None and cls_ref is not None else "callable"): {
@@ -439,7 +433,7 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
     """Execute one declared analysis and persist its result. Returns the container path."""
     import yaml
 
-    name = _name(analysis)
+    name = analysis_name(analysis)
     produced = _render(analysis, _kwargs_of(analysis, results_root))
     ds = _as_dataset(name, produced)
 
@@ -461,7 +455,7 @@ def run_analyses(analyses, results_root=None, *, compress: bool = True,
     """
     written: list[Path] = []
     for analysis in as_list(analyses):
-        name = _name(analysis)
+        name = analysis_name(analysis)
         if on_start:
             on_start(name)
         path = run_analysis(analysis, results_root, compress=compress)

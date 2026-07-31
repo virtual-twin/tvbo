@@ -43,6 +43,9 @@ import numpy as np
 # would silently serve one parameter's array for another's.
 _CACHE: dict[tuple, Any] = {}
 
+# module name -> digest of the source that module was LOADED from, pinned for the process
+_SOURCE_DIGESTS: dict[str, str] = {}
+
 def _default_cache_dir() -> Path:
     """On-disk home for materialised produced constants, alongside the network cache
     (``~/.tvbo/networks``). Resolved per call, not at import, so a harness that sets
@@ -53,6 +56,7 @@ def _default_cache_dir() -> Path:
 def clear_cache() -> None:
     """Drop every resolved array. Mainly for tests and long-lived processes."""
     _CACHE.clear()
+    _SOURCE_DIGESTS.clear()
 
 
 # --------------------------------------------------------------------------- helpers
@@ -178,7 +182,9 @@ def _hashable(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return tuple(_hashable(v) for v in value)
     if isinstance(value, np.ndarray):
-        return value.tobytes()
+        # dtype and shape too: `tobytes()` alone collides (2,3) with (3,2), and float32
+        # with the int32 of the same bytes, onto one key and one artifact path.
+        return (value.dtype.str, value.shape, value.tobytes())
     return value
 
 
@@ -200,7 +206,7 @@ def _producer_key(module: str, name: str, kwargs: dict) -> tuple:
 
 
 def _module_source_digest(module: str) -> str:
-    """A digest of the DEFINING MODULE's source, so editing a producer invalidates its artifact.
+    """A digest of the source the DEFINING MODULE is currently LOADED from.
 
     Without this the on-disk companion is keyed on ``(module, function, kwargs)`` alone, and
     editing the callable changes nothing the key can see: the run reads the array from before
@@ -208,20 +214,36 @@ def _module_source_digest(module: str) -> str:
     module rather than the function catches an edit to a helper the producer delegates to —
     which is where that bug actually landed — but only for a helper in the SAME file. An edit
     to a sibling module in ``code/`` still changes no byte here and is still invisible; a
-    producer that delegates across files must be re-derived deliberately. A module with no
-    readable source contributes nothing, which keeps the previous behaviour for anything not
-    backed by a file.
+    producer that delegates across files must be re-derived deliberately.
+
+    The digest describes the source the module was LOADED from, so it is taken once per
+    process and then pinned. Python does not re-execute an imported module, so re-reading
+    the file would let an edit rename the artifact while the stale function still fills it —
+    writing pre-edit arrays under a digest asserting they are post-edit, which every later
+    process then finds and trusts. That is worse than the stale hit this exists to prevent,
+    because a stale hit clears on restart and a mislabelled artifact never does. Pinning
+    keeps key and code in step without reloading the module, which would re-run its
+    import-time side effects (a ``code_modules`` module registers panels and transforms on
+    import). An in-session edit therefore needs a restart to take effect — exactly as the
+    edited function itself does. A module with no readable source contributes nothing,
+    keeping the previous behaviour for anything not backed by a file.
     """
     import hashlib
     import importlib
     import sys
 
+    if module in _SOURCE_DIGESTS:
+        return _SOURCE_DIGESTS[module]
     try:
         mod = sys.modules.get(module) or importlib.import_module(module)
         source = Path(getattr(mod, "__file__", "") or "")
-        return hashlib.sha256(source.read_bytes()).hexdigest()[:16] if source.is_file() else ""
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()[:16] if source.is_file() else ""
     except Exception:
+        # Uncached, so a transient read failure degrades this one lookup rather than
+        # pinning the digest-free key for the rest of the process.
         return ""
+    _SOURCE_DIGESTS[module] = digest
+    return digest
 
 
 # --------------------------------------------------------------------------- sources
@@ -277,7 +299,8 @@ def _producer_spec(producer: Any, param_name: str, context: Any) -> tuple:
 
 
 def _producer_bundle(
-    producer: Any, param_name: str, context: Any, spec: Optional[tuple] = None
+    producer: Any, param_name: str, context: Any, spec: Optional[tuple] = None,
+    key: Optional[tuple] = None,
 ) -> Any:
     """Everything the producer returns, cached on the CALL — no output selection.
 
@@ -287,7 +310,9 @@ def _producer_bundle(
 
     ``spec`` is an already-resolved ``_producer_spec``; pass it when the caller has one,
     since resolving arguments again would rebuild every referenced array (a whole node
-    position matrix) only to discard the copy.
+    position matrix) only to discard the copy. ``key`` is the matching ``_producer_key``,
+    for the same reason one step further on: hashing it re-runs ``tobytes()`` over every
+    array argument.
 
     The callable resolves by bare module name against the recipe's ``code_source``
     (already on ``sys.path`` once the study is loaded), so a study's own code produces
@@ -296,7 +321,7 @@ def _producer_bundle(
     import importlib
 
     module, name, kwargs = spec or _producer_spec(producer, param_name, context)
-    key = _producer_key(module, name, kwargs)
+    key = key if key is not None else _producer_key(module, name, kwargs)
     if key in _CACHE:
         return _CACHE[key]
     try:
@@ -427,14 +452,16 @@ def materialise(
 
     producer = _slot(param, "producer")
     module, fname, kwargs = _producer_spec(producer, name, context)
-    digest = hashlib.sha256(repr(_producer_key(module, fname, kwargs)).encode()).hexdigest()[:16]
+    key = _producer_key(module, fname, kwargs)
+    digest = hashlib.sha256(repr(key).encode()).hexdigest()[:16]
 
     root = Path(cache_dir).expanduser() if cache_dir else _default_cache_dir()
     root.mkdir(parents=True, exist_ok=True)
     path = root / f"{module}.{fname}.{digest}.h5"
 
     if not path.exists():
-        _write_bundle(path, _producer_bundle(producer, name, context, (module, fname, kwargs)))
+        _write_bundle(path, _producer_bundle(producer, name, context,
+                                             (module, fname, kwargs), key))
     return path, _checked_key(path, _slot(producer, "output", None), name)
 
 
