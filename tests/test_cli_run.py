@@ -273,3 +273,68 @@ def test_render_study_figures_swallows_render_error(monkeypatch, tmp_path: Path)
     run_cli._render_study_figures(
         SimpleNamespace(figures=[SimpleNamespace(name="Fig1")]), str(spec), out_dir=None
     )
+
+
+def _die_raises(monkeypatch):
+    """`_common.die` as an exception, so a refusal is observable in-process."""
+    def _die(msg):
+        raise SystemExit(msg)
+
+    monkeypatch.setattr("tvbo.cli._common.die", _die)
+
+
+def _run_kwargs(**over):
+    """Explicit defaults for a direct `run()` call.
+
+    Calling the typer-decorated function leaves every unpassed default an `OptionInfo`,
+    which `is not None` — so the flag-conflict check would see every flag as given.
+    """
+    base = dict(engine="local", experiment=None, shard=None, rendered=None, limit=None,
+                subject=None, duration=None, max_iterations=None, smoke=False,
+                set_=[], pin=[], container=None, out_dir=None)
+    base.update(over)
+    return base
+
+
+def test_analysis_is_refused_on_a_non_local_engine(monkeypatch, tmp_path: Path):
+    """The kit fans out experiments, so dispatching would run the WHOLE study.
+
+    Silently, and on a cluster — the same "exit 0 having simulated nothing" class the
+    local guards refuse, inverted into simulating everything the user excluded.
+    """
+    _die_raises(monkeypatch)
+    dispatched = False
+
+    def _fake_dispatch(*a, **k):
+        nonlocal dispatched
+        dispatched = True
+
+    monkeypatch.setattr(run_cli, "_dispatch_to_engine", _fake_dispatch)
+
+    with pytest.raises(SystemExit, match="local-only"):
+        run_cli.run(str(tmp_path / "Study.yaml"), analysis="fcd",
+                    **_run_kwargs(engine="slurm"))
+    assert dispatched is False
+
+
+def test_analysis_is_refused_beside_any_simulation_flag(monkeypatch, tmp_path: Path):
+    """Every flag that selects or reshapes simulation work, not just the first three."""
+    _die_raises(monkeypatch)
+    monkeypatch.setattr("tvbo.cli._common.resolve_spec",
+                        lambda spec: ("study", SimpleNamespace(name="s")))
+
+    for flag, over in (("--limit", {"limit": 4}), ("--pin", {"pin": ["G=2.1"]}),
+                       ("--subject", {"subject": "100610"}), ("--smoke", {"smoke": True}),
+                       ("--set", {"set_": ["integration.duration=8"]})):
+        with pytest.raises(SystemExit, match=flag):
+            run_cli.run(str(tmp_path / "Study.yaml"), analysis="fcd", **_run_kwargs(**over))
+
+
+def test_analysis_is_refused_when_the_spec_is_an_experiment(monkeypatch, tmp_path: Path):
+    """An experiment declares no `analyses:`, so the flag could only be ignored."""
+    _die_raises(monkeypatch)
+    monkeypatch.setattr("tvbo.cli._common.resolve_spec",
+                        lambda spec: ("experiment", SimpleNamespace(name="e")))
+
+    with pytest.raises(SystemExit, match="needs a study"):
+        run_cli.run(str(tmp_path / "exp-3.yaml"), analysis="spectrum", **_run_kwargs())

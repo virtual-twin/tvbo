@@ -274,10 +274,10 @@ def test_dependents_of_an_experiment_are_found_transitively(calls):
         _analysis("unrelated", "spectrum", {"n": {"used": {"experiment": 7, "output": "w"}}}),
     ]
 
-    assert analysis_io.dependents_of_experiments(analyses, ["1"]) == [
+    assert analysis_io.dependents_of(analyses, experiments=["1"]) == [
         "reduction", "landscape", "correlation"]
-    assert analysis_io.dependents_of_experiments(analyses, ["7"]) == ["unrelated"]
-    assert analysis_io.dependents_of_experiments(analyses, ["9"]) == []
+    assert analysis_io.dependents_of(analyses, experiments=["7"]) == ["unrelated"]
+    assert analysis_io.dependents_of(analyses, experiments=["9"]) == []
 
 
 def test_dependents_of_an_analysis_are_found_transitively(calls):
@@ -337,7 +337,7 @@ def test_every_spelling_of_an_experiment_id_is_the_same_edge(calls, written):
     analyses = [_analysis("reduction", "spectrum",
                           {"n": {"used": {"experiment": written, "output": "w"}}})]
 
-    assert analysis_io.dependents_of_experiments(analyses, ["1"]) == ["reduction"]
+    assert analysis_io.dependents_of(analyses, experiments=["1"]) == ["reduction"]
 
 
 def test_an_iri_reference_counts_as_a_dependency(calls):
@@ -345,4 +345,25 @@ def test_an_iri_reference_counts_as_a_dependency(calls):
     analyses = [_analysis("from_iri", "spectrum",
                           {"n": {"used": {"iri": "tvbo:exp/Study/exp-3", "output": "w"}}})]
 
-    assert analysis_io.dependents_of_experiments(analyses, ["3"]) == ["from_iri"]
+    assert analysis_io.dependents_of(analyses, experiments=["3"]) == ["from_iri"]
+
+
+def test_an_experiment_known_only_by_key_still_matches_a_numeric_used_edge(calls):
+    """Both sides of the staleness walk must normalise, or neither side ever intersects.
+
+    `dependencies` emits the recipe spelling AND the bare id; the wanted set comes from
+    `experiment_ids`. An experiment carrying only `key: exp-1` yields nothing numeric
+    unless that side normalises too — and an empty stale set reads exactly like a clean one.
+    """
+    from types import SimpleNamespace
+
+    from tvbo.cli._common import experiment_ids
+
+    exp = SimpleNamespace(key="exp-1")
+    analyses = [_analysis("reduction", "spectrum",
+                          {"n": {"used": {"experiment": "exp-1", "output": "w"}}})]
+
+    wanted = experiment_ids(exp)
+
+    assert "1" in wanted and "exp-1" in wanted
+    assert analysis_io.dependents_of(analyses, experiments=wanted) == ["reduction"]

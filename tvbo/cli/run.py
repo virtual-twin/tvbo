@@ -50,8 +50,8 @@ def run(
              "no experiments — for re-deriving a container after editing its callable, "
              "which no cache invalidates on its own. An input analysis is re-run only when "
              "it has no container yet; existing ones are read as they are. Figures are not "
-             "redrawn — follow with `tvbo figure render`. Not combinable with --experiment, "
-             "--shard or --rendered.",
+             "redrawn — follow with `tvbo figure render`. Local engine only, and not "
+             "combinable with any flag that selects or reshapes simulation work.",
     ),
     duration: float = typer.Option(
         None, "--duration", help="Override integration.duration (ms)."
@@ -145,6 +145,13 @@ def run(
     Non-local engines re-emit the run through `tvbo workflow ENGINE` and submit.
     """
     if engine != "local":
+        if analysis is not None:
+            _common.die(
+                f"--analysis is a local-only mode: the workflow kit fans out experiments, "
+                f"so --engine {engine} would run the WHOLE study instead of the named "
+                f"analyses. Re-derive them locally with `tvbo run {spec} --analysis "
+                f"{analysis}`."
+            )
         _dispatch_to_engine(engine, spec=spec, backend=backend,
                             experiment=experiment, container=container, out_dir=out_dir)
         return
@@ -154,6 +161,22 @@ def run(
         return
 
     kind, obj = _common.resolve_spec(spec)
+
+    if analysis is not None:
+        # Every flag here selects or reshapes SIMULATION work, which --analysis runs none of.
+        # Ignoring one would exit 0 having simulated nothing — on a cluster, a "success".
+        given = [f for f, v in (("--experiment", experiment), ("--shard", shard),
+                                ("--rendered", rendered), ("--limit", limit),
+                                ("--subject", subject), ("--duration", duration),
+                                ("--max-iterations", max_iterations),
+                                ("--smoke", smoke or None), ("--set", set_ or None),
+                                ("--pin", pin or None)) if v is not None]
+        if given:
+            _common.die(f"--analysis runs no experiments, so {', '.join(given)} "
+                        f"would be ignored. Run them as a separate command.")
+        if kind != "study":
+            _common.die(f"--analysis needs a study: {spec} resolves to a {kind}, which "
+                        f"declares no `analyses:`. Point it at the study that does.")
 
     # --smoke is shorthand for --max-iterations 1; an explicit --max-iterations wins.
     eff_max_iterations = max_iterations if max_iterations is not None else (1 if smoke else None)
@@ -192,12 +215,6 @@ def run(
         _import_figure_code_modules(obj)
         analyses_before, analyses_after = _study_analysis_stages(obj)
         if analysis is not None:
-            # Ignoring these would exit 0 having simulated nothing — on a cluster, a "success".
-            conflicts = [f for f, v in (("--experiment", experiment), ("--shard", shard),
-                                        ("--rendered", rendered)) if v is not None]
-            if conflicts:
-                _common.die(f"--analysis runs no experiments, so {', '.join(conflicts)} "
-                            f"would be ignored. Run them as a separate command.")
             _run_named_analyses(analyses_before + analyses_after, analysis, spec, out_dir)
             return
         whole_study = experiment is None and shard is None
@@ -239,7 +256,9 @@ def run(
             _apply_max_iterations(exp, eff_max_iterations)
             _run_one(exp, _effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after") if whole_study else True
-        if not whole_study:
+        if not whole_study and shard is None:
+            # Not per shard: an array task holds one slice of one sweep, so every task would
+            # repeat the warning and its "refresh now" remedy would run on a half-done grid.
             _warn_stale_analyses(
                 analyses_before + analyses_after, spec, out_dir,
                 experiments={i for exp in items for i in _common.experiment_ids(exp)})
@@ -302,7 +321,7 @@ def _study_analysis_stages(study) -> tuple[list, list]:
 
 
 def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experiments=(),
-                         changed=(), fresh=()) -> None:
+                         recomputed=()) -> None:
     """Name the containers a partial run just invalidated but did not recompute.
 
     Both partial modes need this and they need it identically. ``--experiment`` re-runs a
@@ -310,18 +329,19 @@ def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experimen
     downstream keeps the PREVIOUS numbers while the thing it reads is fresh. Nothing raises,
     so a figure or report built next mixes the two.
 
-    ``fresh`` names what this run actually produced — which is not the same as what was
-    ASKED for, because a named analysis may pull a never-produced upstream in with it.
-    Seeding on the request instead would miss every dependent of that upstream.
+    ``recomputed`` names what this run actually produced, which both seeds the walk and
+    drops out of its result. It is the CLOSURE, not what was asked for on the command line:
+    a named analysis pulls a never-produced upstream in with it, and seeding on the request
+    would miss every dependent of that upstream.
     """
     from tvbo.data.analysis_io import container_path, dependents_of
 
     if not analyses:
         return
     root = _container_root(spec, out_dir)
-    produced = set(fresh)
+    produced = set(recomputed)
     stale = [n for n in dependents_of(analyses, experiments=experiments,
-                                      changed_analyses=changed)
+                                      changed_analyses=produced)
              if n not in produced and container_path(n, root).exists()]
     if not stale:
         return
@@ -343,13 +363,15 @@ def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) 
     Its own upstream analyses are pulled in — a container that has never been produced cannot
     be read — while the experiments are left alone, which is the point.
     """
-    from tvbo.data.analysis_io import analysis_closure, container_path
+    from tvbo.data.analysis_io import analysis_closure, analysis_name, container_path
 
     names = [s.strip() for s in str(wanted).split(",") if s.strip()]
     if not names:
         _common.die("--analysis was given no names. Pass one or more declared analysis "
                     "names, comma-separated.")
-    by_name = {str(getattr(a, "name", "")): a for a in analyses}
+    # Through `analysis_name`, not `getattr`: the loader may hand these over as Mappings, which
+    # `analysis_closure` below already reads that way.
+    by_name = {analysis_name(a): a for a in analyses}
     missing = [n for n in names if n not in by_name]
     if missing:
         _common.die(f"No analysis named {', '.join(missing)} in {spec}. "
@@ -358,12 +380,12 @@ def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) 
     root = _container_root(spec, out_dir)
     needed = analysis_closure(analyses, names,
                               exists=lambda n: container_path(n, root).exists())
-    ordered = [a for a in analyses if str(getattr(a, "name", "")) in needed]
+    ordered = [a for a in analyses if analysis_name(a) in needed]
     if len(ordered) > len(names):
         _common.info(f"also producing {len(ordered) - len(names)} upstream analysis "
                      f"container(s) that do not exist yet")
     _run_study_analyses(ordered, spec, out_dir, stage="named")
-    _warn_stale_analyses(analyses, spec, out_dir, changed=needed, fresh=needed)
+    _warn_stale_analyses(analyses, spec, out_dir, recomputed=needed)
     _common.info("figures were NOT re-rendered; run `tvbo figure render "
                  f"{spec}` to redraw them from the refreshed container(s).")
 
