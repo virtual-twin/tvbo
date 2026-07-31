@@ -133,6 +133,52 @@ def constraint_expr(model, var_name):
     return expr[var_name].subs({sp.Symbol(c): 0 for c in local_cpls})
 
 
+def observable_terms(model, name):
+    """Symbolic observation row ``∂y/∂x`` of a declared observable ``y``.
+
+    ``y`` is either a state variable (the row is a selector) or a derived variable —
+    a BOLD signal, a firing rate, any declared readout — unfolded through the same
+    derived-variable chain the RHS uses, so the linear response can be carried through
+    whatever cascade the model declares rather than stopping at the state vector.
+
+    Returns the per-node Jacobian of ``y`` with respect to the state variables
+    (``Hloc``, ``1 × n_sv``) and with respect to the network coupling inputs
+    (``Hcpl``, ``1 × n_cpl``); the latter scatters through the connectome exactly as
+    ``Jcpl`` does, so an observable reading a coupling term stays correct.
+    """
+    svs, state_syms, net_cpls, _, _ = _dfun_symbols(model)
+    if name in svs:
+        expr = sp.Symbol(name)
+    else:
+        expr = constraint_expr(model, name)
+    row = sp.Matrix([expr])
+    cpl_syms = [sp.Symbol(c) for c in net_cpls]
+    return {
+        "Hloc": row.jacobian(state_syms),
+        "Hcpl": row.jacobian(cpl_syms) if cpl_syms else sp.zeros(1, 0),
+    }
+
+
+def noise_terms(model):
+    """Per-state-variable noise standard deviations declared on the model, or ``None``.
+
+    The Lyapunov equation's input matrix ``Q`` is ``diag(σ_k²)`` over the state blocks,
+    which is only ``σ² I`` when every state variable is driven. A model whose noise
+    enters two of six equations — two synaptic gating variables and a four-state
+    haemodynamic cascade that is driven, not forced — needs the declared per-state
+    amplitudes, and a uniform ``Q`` would put noise into the haemodynamics.
+
+    Returns ``None`` when no state variable declares noise at all, which is the signal
+    to fall back to a uniform amplitude supplied by the analysis observation.
+    """
+    from tvbo.utils import noise_sigma
+
+    sigmas = [noise_sigma(getattr(sv, "noise", None)) for sv in model.state_variables.values()]
+    if all(s is None for s in sigmas):
+        return None
+    return [0.0 if s is None else float(s) for s in sigmas]
+
+
 def linear_response_context(model):
     """Resolution for the linear-response codegen: symbolic terms + layout, NO code.
 
@@ -144,7 +190,8 @@ def linear_response_context(model):
     Returns the state / coupling / parameter layout — including which parameters are
     per-node (``pernode``: heterogeneous, gathered by node index) and the symbol set the
     printer must treat as plain symbols (``syms``) — plus the symbolic per-node RHS
-    (``rhs``), local Jacobian (``Jloc``) and coupling Jacobian (``Jcpl``).
+    (``rhs``), local Jacobian (``Jloc``), coupling Jacobian (``Jcpl``) and the declared
+    per-state noise amplitudes (``noise``, or ``None`` when the model declares none).
     """
     t = jacobian_terms(model)
     svs, net_cpls, src = t["state_vars"], t["net_couplings"], t["source_var"]
@@ -162,6 +209,7 @@ def linear_response_context(model):
         "rhs": t["rhs"],
         "Jloc": t["Jloc"],
         "Jcpl": t["Jcpl"],
+        "noise": noise_terms(model),
     }
 
 

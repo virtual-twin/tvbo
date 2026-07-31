@@ -167,30 +167,94 @@ _lr_params = Bunch({**_lr_params, '${free_param}': _lr_z[${n_sv} * _lr_N:]})   #
 _lr_A = ${jac}(_lr_fp, _lr_weights, _lr_params) / ${time_scale}
 </%def>\
 ##
+## The noise input matrix Q of the Lyapunov equation. Uniform σ² I when the analysis
+## observation states a σ; otherwise diag(σ_k²) over the state blocks from the noise each
+## state variable DECLARES. The distinction is not cosmetic: a model whose noise enters two
+## of six equations — two gating variables plus a haemodynamic cascade that is driven, not
+## forced — gets noise injected into its haemodynamics under a uniform Q.
+<%def name="lr_noise_matrix(ctx, sigma)">\
+% if sigma is not None or not ctx.get('noise'):
+    _Q = (${sigma if sigma is not None else 0.01} ** 2) * jnp.eye(_n)
+% else:
+    _Q = jnp.diag(jnp.concatenate([jnp.full(_N, _s ** 2) for _s in ${repr(ctx['noise'])}]))
+% endif
+</%def>\
+##
+## The observation row H = ∂y/∂x of a declared observable y, per node, scattered into an
+## (N, n_sv·N) matrix the same way the coupling Jacobian is. Lets the linear response be read
+## out through any declared cascade (a BOLD signal, a firing rate) instead of stopping at the
+## state vector — the covariance of y is then H Σ Hᵀ.
+<%def name="lr_observable(ctx, name, terms)">\
+<%
+    from tvbo.codegen import render_expression
+    _jc = lambda e: render_expression(e, format='jax', parameters=ctx['syms'])
+    n_sv, n_cpl, src_k = ctx['n_sv'], ctx['n_cpl'], ctx['src_k']
+%>\
+def ${name}_hloc(s, c, p_, _i):
+${self.lr_node_unpack(ctx)}\
+    return jnp.array([${', '.join(_jc(terms['Hloc'][0, l]) for l in range(n_sv))}])
+% if n_cpl:
+
+def ${name}_hcpl(s, c, p_, _i):
+${self.lr_node_unpack(ctx)}\
+    return jnp.array([${', '.join(_jc(terms['Hcpl'][0, cix]) for cix in range(n_cpl))}])
+% endif
+
+def ${name}(x, weights, p):
+    _W = jnp.asarray(weights); _X = jnp.asarray(x); _N = _W.shape[0]
+% if n_cpl:
+    _C = jnp.stack([_W @ _X[${src_k}] for _ in range(${n_cpl})])
+% else:
+    _C = jnp.zeros((0, _N))
+% endif
+    _Hl = jax.vmap(lambda i: ${name}_hloc(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))
+% if n_cpl:
+    _Hc = jax.vmap(lambda i: ${name}_hcpl(_X[:, i], _C[:, i], p, i))(jnp.arange(_N))
+% endif
+    _H = jnp.zeros((_N, ${n_sv} * _N))
+% for l in range(n_sv):
+    _H = _H.at[:, ${l}*_N:${l+1}*_N].add(jnp.diag(_Hl[:, ${l}]))
+% endfor
+% for cix in range(n_cpl):
+    _H = _H.at[:, ${src_k}*_N:${src_k+1}*_N].add(_Hc[:, ${cix}][:, None] * _W)
+% endfor
+    return _H
+</%def>\
+##
 ## Continuous Lyapunov Σ solve on the shared A (Deco 2014 Fig 5, Eq 24): A Σ + Σ Aᵀ + Q = 0,
-## Q = σ² I, by eigendecomposition Σ = V M Vᴴ, M = -(V⁻¹QV⁻ᴴ)/(λᵢ+λ̄ⱼ) — backend-independent
-## (jnp.linalg.eig/inv), no scipy. Returns the excitatory-block covariance P[:N,:N]. A stationary
-## covariance exists only when A is Hurwitz (all eigenvalues in the left half-plane); past a
-## bifurcation the operating point is unstable, so the result is masked to NaN (jittable guard,
-## survives vmap over a grid) rather than returning a meaningless non-PSD matrix.
-<%def name="lr_covariance(ctx, name, sigma, return_='covariance')">\
+## by eigendecomposition Σ = V M Vᴴ, M = -(V⁻¹QV⁻ᴴ)/(λᵢ+λ̄ⱼ) — backend-independent
+## (jnp.linalg.eig/inv), no scipy. Returns the covariance of the DECLARED observable: the
+## first state block by default (Deco's excitatory gating), otherwise H Σ Hᵀ through the
+## observation row. A stationary covariance exists only when A is Hurwitz (all eigenvalues in
+## the left half-plane); past a bifurcation the operating point is unstable, so the result is
+## masked to NaN (jittable guard, survives vmap over a grid) rather than returning a
+## meaningless non-PSD matrix.
+<%def name="lr_covariance(ctx, name, sigma, return_='covariance', obs_fn=None)">\
 def ${name}(A):
     _n = A.shape[0]; _N = _n // ${ctx['n_sv']}
-    _Q = (${sigma} ** 2) * jnp.eye(_n)
+${self.lr_noise_matrix(ctx, sigma)}\
     _lam, _V = jnp.linalg.eig(A)
     _Vi = jnp.linalg.inv(_V)
     _M = -(_Vi @ _Q.astype(_V.dtype) @ _Vi.conj().T) / (_lam[:, None] + jnp.conj(_lam)[None, :])
+% if obs_fn:
+    _H = ${obs_fn}(_lr_fp, _lr_weights, _lr_params)
+    _P = _H @ (_V @ _M @ _V.conj().T).real @ _H.T
+% else:
     _P = (_V @ _M @ _V.conj().T).real[:_N, :_N]
+% endif
     _P = jnp.where(jnp.max(_lam.real) < 0.0, _P, jnp.nan)   # no stationary covariance if A not Hurwitz
 % if return_ == 'correlation':
-    _d = jnp.sqrt(jnp.diag(_P))          # Pearson correlation of the excitatory gating (Deco 'Q')
+    _d = jnp.sqrt(jnp.diag(_P))          # Pearson correlation of the observable (Deco 'Q')
     return _P / jnp.outer(_d, _d)
 % else:
     return _P
 % endif
 </%def>\
 ##
-## Analytic power spectrum on the shared A (Deco 2014 Fig 5, Eq 28): per excitatory node,
+## Analytic power spectrum on the shared A (Deco 2014 Fig 5, Eq 28). Uniform-Q only: the
+## closed form below is diag(M Q Mᴴ) specialised to Q = σ² I, and it reads the first state
+## block. A per-state Q or a declared observable applies to the covariance, not here.
+## Per excitatory node,
 ## Φ_k(ω) = σ² Σ_l |(iωI − A)⁻¹_{kl}|², over a log-frequency grid (Hz). Returns [n_freq, N].
 ## A is already per-second (rescaled at the operating point), so ω = 2πf with f in Hz is consistent.
 <%def name="lr_psd(ctx, name, sigma, f_lo=0.1, f_hi=50.0, n_freq=128)">\
@@ -263,14 +327,17 @@ ${self.lr_jacobian(ctx)}\
 ## Deco FIC: the paper's fsolve on the steady state — solve [state, free_param] under the constraint,
 ## deterministically, instead of the stochastic tuning loop. Rebinds _lr_params with the solved param.
 ${self.lr_constraint_fn(ctx, '_lr_constraint', spec['constraint_expr'])}\
-${self.lr_constrained_operating_point(ctx, spec['op_constraint']['free_parameter'], '_lr_constraint', spec['op_constraint']['target'], time_scale=spec['time_scale'])}\
+${self.lr_constrained_operating_point(ctx, spec['op_constraint']['free_parameter'], '_lr_constraint', spec['op_constraint']['target'], dt=spec['settle_dt'], time_scale=spec['time_scale'])}\
 % else:
-${self.lr_operating_point(ctx, time_scale=spec['time_scale'])}\
+${self.lr_operating_point(ctx, dt=spec['settle_dt'], time_scale=spec['time_scale'])}\
 % endif
 % for o in spec['obs']:
 % if o['type'] == 'covariance':
-${self.lr_covariance(ctx, '_cov_' + o['name'], o['sigma'], o['return'])}\
-obs.${o['name']} = _cov_${o['name']}(_lr_A)     # excitatory-block stationary ${o['return']} (Lyapunov, Eq 24)
+% if o.get('observable_terms'):
+${self.lr_observable(ctx, '_H_' + o['name'], o['observable_terms'])}\
+% endif
+${self.lr_covariance(ctx, '_cov_' + o['name'], o['sigma'], o['return'], obs_fn=('_H_' + o['name']) if o.get('observable_terms') else None)}\
+obs.${o['name']} = _cov_${o['name']}(_lr_A)     # stationary ${o['return']} of ${o.get('observable') or ctx['svs'][0]} (Lyapunov, Eq 24)
 % elif o['type'] == 'psd':
 ${self.lr_psd(ctx, '_psd_' + o['name'], o['sigma'], o['f_lo'], o['f_hi'], o['n_freq'])}\
 obs.${o['name']} = _psd_${o['name']}(_lr_A)     # analytic power spectrum per excitatory node (Eq 28)
@@ -278,7 +345,7 @@ obs.${o['name']} = _psd_${o['name']}(_lr_A)     # analytic power spectrum per ex
 ## Fisher needs the stimulated variable per-node -> its own vector field / Jacobian from fisher_ctx.
 ${self.lr_vf(o['fisher_ctx'], name='_fvf_' + o['name'])}\
 ${self.lr_jacobian(o['fisher_ctx'], name='_fjac_' + o['name'])}\
-${self.lr_fisher(ctx, '_fisher_' + o['name'], o['stim_var'], o['nodes'], o['sigma'], o['dI_lo'], o['dI_hi'], o['dI_step'], '_fvf_' + o['name'], '_fjac_' + o['name'], time_scale=spec['time_scale'])}\
+${self.lr_fisher(ctx, '_fisher_' + o['name'], o['stim_var'], o['nodes'], o['sigma'], o['dI_lo'], o['dI_hi'], o['dI_step'], '_fvf_' + o['name'], '_fjac_' + o['name'], dt=spec['settle_dt'], time_scale=spec['time_scale'])}\
 obs.${o['name']} = _fisher_${o['name']}()     # Fisher information over the ΔI sweep (Eqs 33-34)
 % endif
 % endfor

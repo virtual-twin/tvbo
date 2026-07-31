@@ -1923,17 +1923,29 @@ def _analysis_wrt_access(wrt: List[str], coupling_keys: Set[str]) -> Optional[st
     return resolve_config_access(wrt[0], coupling_keys) if wrt else None
 
 
-def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor):
+def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
     """Resolve the linear-response analysis observations (covariance / psd / fisher) into the spec
     the ``lr_analysis_block`` Mako orchestrator emits — resolution only, no code strings. Provides
     the operating-point symbol layout (:func:`linear_response_context`), each observable's
     parameters, the Fisher stimulus (event → per-node target ``nodes`` + a heterogeneous-variable
     linearisation context), and — for a constraint-defined (Deco FIC) operating point — the
     unfolded constraint expression. The template owns the structure and orchestration.
+
+    The operating-point settle steps at ``settle_dt``, capped by the experiment's own
+    integration step: a settle step is in MODEL time units, so a fixed one is right for only
+    one time unit — 0.1 is a tenth of a millisecond for a millisecond model and a hundred
+    milliseconds for a second-based one, well past the stability boundary of a 10 ms
+    inhibitory time constant. The recipe already states a step that integrates this model
+    stably, so never exceeding it is the metadata-driven bound.
     """
-    from tvbo.analysis.linear_response import linear_response_context, constraint_expr
+    from tvbo.analysis.linear_response import (
+        constraint_expr,
+        linear_response_context,
+        observable_terms,
+    )
 
     ctx = linear_response_context(model)
+    settle_dt = min(0.1, float(dt)) if dt else 0.1
     obs_specs: List[Dict[str, Any]] = []
     for name, aobs in lr_obs.items():
         an = aobs.analysis
@@ -1941,8 +1953,17 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor):
         p = {str(k): (v.value if hasattr(v, "value") else v)
              for k, v in (getattr(an, "parameters", None) or {}).items()}
         if atype == "covariance":
+            # `sigma` states a UNIFORM noise amplitude; omitting it takes the per-state
+            # amplitudes the model declares (ctx['noise']). `observable` names the declared
+            # quantity whose covariance is wanted — a state variable or any derived variable,
+            # so the response can be read out through a declared cascade (BOLD) rather than
+            # off the state vector. Omitting it keeps the first state block.
+            observable = p.get("observable")
             obs_specs.append({"type": "covariance", "name": name,
-                              "sigma": float(p.get("sigma", 0.01)),
+                              "sigma": None if p.get("sigma") is None else float(p["sigma"]),
+                              "observable": None if observable is None else str(observable),
+                              "observable_terms": None if observable is None
+                              else observable_terms(model, str(observable)),
                               "return": str(p.get("return", "covariance"))})
         elif atype == "psd":
             obs_specs.append({"type": "psd", "name": name,
@@ -1969,7 +1990,7 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor):
                               "dI_step": float(p.get("dI_step", 0.006))})
     cexpr = constraint_expr(model, str(op_constraint["constraint_variable"])) if op_constraint else None
     return {"ctx": ctx, "op_constraint": op_constraint, "constraint_expr": cexpr,
-            "time_scale": time_si_factor, "obs": obs_specs}
+            "time_scale": time_si_factor, "settle_dt": settle_dt, "obs": obs_specs}
 
 
 def render_analysis_observations(
@@ -2020,7 +2041,7 @@ def render_analysis_observations(
     elif _lr_obs:
         from tvbo import templates as _templates
         _lr_tpl = _templates.lookup.get_template("_linear_response.py.mako")
-        _spec = _lr_analysis_spec(_lr_obs, model, events, op_constraint, time_si_factor)
+        _spec = _lr_analysis_spec(_lr_obs, model, events, op_constraint, time_si_factor, dt)
         lines += _lr_tpl.get_def("lr_analysis_block").render(spec=_spec).strip("\n").split("\n")
 
     # Finite-difference observations that share the exact same per-seed computation

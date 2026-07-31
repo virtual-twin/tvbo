@@ -157,3 +157,57 @@ def test_study_from_file_materialises_an_included_experiment(tmp_path: Path) -> 
     # ...and materialises with the `!include`d Dynamics fully resolved.
     exp = study.get_experiment(1)
     assert exp.dynamics.name == "Osc"
+
+
+def test_include_merges_into_a_mapping(tmp_path: Path) -> None:
+    """An `!include`d fragment merges alongside a mapping's own keys and other anchors.
+
+    Without this the two idioms do not compose — a fragment can only *replace* a whole
+    slot — so every consumer of a partial fragment (a haemodynamic cascade shared by two
+    models) has to copy it. Explicit keys must still win over merged ones, and an earlier
+    merge over a later one, exactly as with plain anchors.
+    """
+    _write(tmp_path / "frag.yaml", """
+        z: {rhs: 'a - z'}
+        f: {rhs: 'z'}
+        shared: from_fragment
+    """)
+    main = _write(tmp_path / "main.yaml", """
+        base: &base
+          shared: from_anchor
+          only_in_base: 1
+        solo:
+          <<: !include frag.yaml
+          phi: {rhs: 'w'}
+          z: {rhs: 'overridden'}
+        combined:
+          <<: [*base, !include frag.yaml]
+    """)
+    data = yaml_loader.load_as_dict(main)
+
+    assert set(data["solo"]) == {"z", "f", "shared", "phi"}
+    assert data["solo"]["f"] == {"rhs": "z"}
+    assert data["solo"]["z"] == {"rhs": "overridden"}      # explicit beats merged
+    assert data["combined"]["only_in_base"] == 1
+    assert data["combined"]["f"] == {"rhs": "z"}
+    assert data["combined"]["shared"] == "from_anchor"     # earlier merge wins
+
+
+def test_merged_include_anchors_stay_file_local(tmp_path: Path) -> None:
+    """A merged fragment's anchors resolve inside the fragment and do not leak out."""
+    _write(tmp_path / "frag.yaml", """
+        one: &shape {rhs: 'x'}
+        two: *shape
+    """)
+    main = _write(tmp_path / "main.yaml", """
+        block:
+          <<: !include frag.yaml
+    """)
+    assert yaml_loader.load_as_dict(main)["block"] == {"one": {"rhs": "x"}, "two": {"rhs": "x"}}
+
+
+def test_merged_include_must_hold_a_mapping(tmp_path: Path) -> None:
+    _write(tmp_path / "frag.yaml", "- 1\n- 2\n")
+    main = _write(tmp_path / "main.yaml", "block:\n  <<: !include frag.yaml\n")
+    with pytest.raises(Exception, match="must hold a mapping"):
+        yaml_loader.load_as_dict(main)
