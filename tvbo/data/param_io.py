@@ -183,13 +183,45 @@ def _hashable(value: Any) -> Any:
 
 
 def _producer_key(module: str, name: str, kwargs: dict) -> tuple:
-    """Keyed on the CALL, deliberately not on ``output``.
+    """Keyed on the CALL and on the producing SOURCE, deliberately not on ``output``.
 
     One producer typically returns a bundle of named arrays (a precompute emitting every
     mesh operator at once). Keying per-output would re-run that call once per parameter
     reading it — the expensive thing the cache exists to avoid.
+
+    The source digest belongs HERE rather than only in the artifact path, because the two
+    must key on the same thing. Keyed apart, a process that materialises, has its producer
+    edited underneath it, and materialises again computes the NEW path from the new source
+    while the in-memory cache still answers on the old one — writing pre-edit arrays under a
+    digest that asserts they are post-edit. Every later run then reads that file and trusts
+    it, which is worse than the stale hit this digest exists to prevent.
     """
-    return ("producer", module, name, _hashable(kwargs))
+    return ("producer", module, name, _hashable(kwargs), _module_source_digest(module))
+
+
+def _module_source_digest(module: str) -> str:
+    """A digest of the DEFINING MODULE's source, so editing a producer invalidates its artifact.
+
+    Without this the on-disk companion is keyed on ``(module, function, kwargs)`` alone, and
+    editing the callable changes nothing the key can see: the run reads the array from before
+    the edit while a direct call to the same function returns the new value. Hashing the whole
+    module rather than the function catches an edit to a helper the producer delegates to —
+    which is where that bug actually landed — but only for a helper in the SAME file. An edit
+    to a sibling module in ``code/`` still changes no byte here and is still invisible; a
+    producer that delegates across files must be re-derived deliberately. A module with no
+    readable source contributes nothing, which keeps the previous behaviour for anything not
+    backed by a file.
+    """
+    import hashlib
+    import importlib
+    import sys
+
+    try:
+        mod = sys.modules.get(module) or importlib.import_module(module)
+        source = Path(getattr(mod, "__file__", "") or "")
+        return hashlib.sha256(source.read_bytes()).hexdigest()[:16] if source.is_file() else ""
+    except Exception:
+        return ""
 
 
 # --------------------------------------------------------------------------- sources
@@ -390,15 +422,12 @@ def materialise(
             )
         return path, _checked_key(path, str(measure), name)
 
-    # Produced: materialise once, content-addressed on the producing call so an edited
-    # argument (a different k_ring) is a different artifact rather than a stale hit.
+    # The artifact is content-addressed on the SAME key the in-memory cache uses.
     import hashlib
 
     producer = _slot(param, "producer")
     module, fname, kwargs = _producer_spec(producer, name, context)
-    digest = hashlib.sha256(
-        repr(_producer_key(module, fname, kwargs)).encode()
-    ).hexdigest()[:16]
+    digest = hashlib.sha256(repr(_producer_key(module, fname, kwargs)).encode()).hexdigest()[:16]
 
     root = Path(cache_dir).expanduser() if cache_dir else _default_cache_dir()
     root.mkdir(parents=True, exist_ok=True)

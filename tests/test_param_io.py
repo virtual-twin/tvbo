@@ -356,6 +356,82 @@ def test_differing_producer_arguments_materialise_to_different_artifacts(
     assert two != three
 
 
+def _write_producer_module(tmp_path, fill, monkeypatch):
+    """A throwaway producer module whose source can be edited between calls.
+
+    Compiled straight from the text rather than imported: two writes a fraction of a second
+    apart share an mtime at CPython's one-second resolution, so any loader path replays the
+    first version's cached bytecode and the test would measure nothing.
+    """
+    import sys
+    import types
+
+    path = tmp_path / "edited_producer.py"
+    path.write_text(
+        "import numpy as np\n\n\n"
+        "def precompute():\n"
+        f"    return {{'op': np.full((2, 2), {fill})}}\n"
+    )
+    mod = types.ModuleType("edited_producer")
+    mod.__file__ = str(path)
+    exec(compile(path.read_text(), str(path), "exec"), mod.__dict__)
+    monkeypatch.setitem(sys.modules, "edited_producer", mod)
+    return FunctionCall(
+        callable=Callable(name="precompute", module="edited_producer"),
+        arguments={}, output="op",
+    )
+
+
+def test_editing_the_producers_code_materialises_a_new_artifact(tmp_path, monkeypatch):
+    """The key must see a code change, not only an argument change.
+
+    Keyed on `(module, function, kwargs)` alone, an edited callable is invisible: the run
+    reads the array from before the edit while a direct call returns the new value, and
+    nothing raises. Pang2023 drove a whole wave model off that stale artifact.
+    """
+    import h5py
+
+    cache = tmp_path / "constants"
+    before, _ = param_io.materialise(
+        Parameter(name="op", producer=_write_producer_module(tmp_path, 1.0, monkeypatch)), cache_dir=cache
+    )
+    # Deliberately NOT clearing the in-memory cache. A new path with the OLD arrays under it
+    # is worse than a stale hit — the digest then asserts the artifact matches the edited
+    # code — so the property under test is the CONTENT, not the filename.
+    after, _ = param_io.materialise(
+        Parameter(name="op", producer=_write_producer_module(tmp_path, 7.0, monkeypatch)), cache_dir=cache
+    )
+
+    assert before != after
+    with h5py.File(after) as f:
+        np.testing.assert_array_equal(f["op"][()], np.full((2, 2), 7.0))
+    with h5py.File(before) as f:
+        np.testing.assert_array_equal(f["op"][()], np.full((2, 2), 1.0))
+
+
+def test_an_unchanged_producer_still_hits_its_artifact(tmp_path, monkeypatch):
+    """The invalidation must not defeat the cache — identical source, identical artifact."""
+    cache = tmp_path / "constants"
+    first, _ = param_io.materialise(
+        Parameter(name="op", producer=_write_producer_module(tmp_path, 1.0, monkeypatch)), cache_dir=cache
+    )
+    param_io.clear_cache()
+    second, _ = param_io.materialise(
+        Parameter(name="op", producer=_write_producer_module(tmp_path, 1.0, monkeypatch)), cache_dir=cache
+    )
+
+    assert first == second
+
+
+def test_a_producer_with_no_source_file_still_materialises(producer_module, tmp_path):
+    """A module without readable source contributes no digest rather than raising."""
+    assert param_io._module_source_digest("builtins") == ""
+    path, _ = param_io.materialise(
+        Parameter(name="grad_op", producer=_producer("grad_op")), cache_dir=tmp_path
+    )
+    assert path.exists()
+
+
 def test_a_literal_parameter_cannot_be_materialised():
     """A literal inlines; asking for a file it does not have is a caller error."""
     with pytest.raises(ValueError, match="no file to read"):

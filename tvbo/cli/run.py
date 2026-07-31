@@ -44,6 +44,15 @@ def run(
     experiment: str = typer.Option(
         None, "--experiment", help="When SPEC is a Study, run only this named experiment."
     ),
+    analysis: str = typer.Option(
+        None, "--analysis",
+        help="When SPEC is a Study, run only these named `analyses:` (comma-separated) and "
+             "no experiments — for re-deriving a container after editing its callable, "
+             "which no cache invalidates on its own. An input analysis is re-run only when "
+             "it has no container yet; existing ones are read as they are. Figures are not "
+             "redrawn — follow with `tvbo figure render`. Not combinable with --experiment, "
+             "--shard or --rendered.",
+    ),
     duration: float = typer.Option(
         None, "--duration", help="Override integration.duration (ms)."
     ),
@@ -182,6 +191,15 @@ def run(
         # genuinely broken module surfaces at figure-render time with full context).
         _import_figure_code_modules(obj)
         analyses_before, analyses_after = _study_analysis_stages(obj)
+        if analysis is not None:
+            # Ignoring these would exit 0 having simulated nothing — on a cluster, a "success".
+            conflicts = [f for f, v in (("--experiment", experiment), ("--shard", shard),
+                                        ("--rendered", rendered)) if v is not None]
+            if conflicts:
+                _common.die(f"--analysis runs no experiments, so {', '.join(conflicts)} "
+                            f"would be ignored. Run them as a separate command.")
+            _run_named_analyses(analyses_before + analyses_after, analysis, spec, out_dir)
+            return
         whole_study = experiment is None and shard is None
         if whole_study:
             _run_study_analyses(analyses_before, spec, out_dir, stage="before")
@@ -221,6 +239,10 @@ def run(
             _apply_max_iterations(exp, eff_max_iterations)
             _run_one(exp, _effective_backend(exp, backend), out_dir, kwargs, chunk_i, chunk_n, limit)
         ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after") if whole_study else True
+        if not whole_study:
+            _warn_stale_analyses(
+                analyses_before + analyses_after, spec, out_dir,
+                experiments={i for exp in items for i in _common.experiment_ids(exp)})
         if figures and whole_study and ok:
             _render_study_figures(obj, spec, out_dir)
         return
@@ -279,6 +301,73 @@ def _study_analysis_stages(study) -> tuple[list, list]:
     return schedule(analyses) if analyses else ([], [])
 
 
+def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experiments=(),
+                         changed=(), fresh=()) -> None:
+    """Name the containers a partial run just invalidated but did not recompute.
+
+    Both partial modes need this and they need it identically. ``--experiment`` re-runs a
+    simulation, ``--analysis`` re-derives a container, and in each case everything
+    downstream keeps the PREVIOUS numbers while the thing it reads is fresh. Nothing raises,
+    so a figure or report built next mixes the two.
+
+    ``fresh`` names what this run actually produced — which is not the same as what was
+    ASKED for, because a named analysis may pull a never-produced upstream in with it.
+    Seeding on the request instead would miss every dependent of that upstream.
+    """
+    from tvbo.data.analysis_io import container_path, dependents_of
+
+    if not analyses:
+        return
+    root = _container_root(spec, out_dir)
+    produced = set(fresh)
+    stale = [n for n in dependents_of(analyses, experiments=experiments,
+                                      changed_analyses=changed)
+             if n not in produced and container_path(n, root).exists()]
+    if not stale:
+        return
+    _common.warn(
+        f"{len(stale)} analysis container(s) read something this run re-computed and were "
+        f"NOT recomputed themselves: {', '.join(stale)}. Any figure or report built now "
+        f"mixes fresh results with those stale reductions. Refresh them with "
+        f"`tvbo run {spec} --analysis {','.join(stale)}`, or a whole-study "
+        f"`tvbo run {spec}`, or delete them under {root / 'results'} first."
+    )
+
+
+def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) -> None:
+    """Run only the named ``analyses:``, plus whatever they read, in dependency order.
+
+    The counterpart to ``--experiment`` on the derivation side. It exists because an analysis
+    container is content-addressed on its INPUTS: editing the callable that produces it
+    changes nothing a cache can see, so the only way to refresh one is to ask for it by name.
+    Its own upstream analyses are pulled in — a container that has never been produced cannot
+    be read — while the experiments are left alone, which is the point.
+    """
+    from tvbo.data.analysis_io import analysis_closure, container_path
+
+    names = [s.strip() for s in str(wanted).split(",") if s.strip()]
+    if not names:
+        _common.die("--analysis was given no names. Pass one or more declared analysis "
+                    "names, comma-separated.")
+    by_name = {str(getattr(a, "name", "")): a for a in analyses}
+    missing = [n for n in names if n not in by_name]
+    if missing:
+        _common.die(f"No analysis named {', '.join(missing)} in {spec}. "
+                    f"Declared: {', '.join(sorted(by_name)) or '(none)'}")
+
+    root = _container_root(spec, out_dir)
+    needed = analysis_closure(analyses, names,
+                              exists=lambda n: container_path(n, root).exists())
+    ordered = [a for a in analyses if str(getattr(a, "name", "")) in needed]
+    if len(ordered) > len(names):
+        _common.info(f"also producing {len(ordered) - len(names)} upstream analysis "
+                     f"container(s) that do not exist yet")
+    _run_study_analyses(ordered, spec, out_dir, stage="named")
+    _warn_stale_analyses(analyses, spec, out_dir, changed=needed, fresh=needed)
+    _common.info("figures were NOT re-rendered; run `tvbo figure render "
+                 f"{spec}` to redraw them from the refreshed container(s).")
+
+
 def _spec_base(spec: str) -> Path:
     """The study file's own directory — the root ``used:`` references resolve against."""
     spec_path = Path(spec)
@@ -314,11 +403,13 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
     later analysis binds with ``used: {analysis: <name>}``, at the root
     :func:`_container_root` resolves for this run.
 
-    The ``before`` stage raises on failure — nothing has run yet, and an experiment may
-    source the missing analysis. The ``after`` stage reports and returns False instead:
-    the experiments already succeeded and must not be lost to a reduction, but the
-    figures that would read the missing container are then skipped rather than drawn
-    from stale or absent data.
+    A failure is only ever SWALLOWED when there are completed experiments to protect. The
+    ``before`` stage raises — nothing has run yet, and an experiment may source the missing
+    analysis. A ``named`` stage (``--analysis``) raises too: it ran no experiments, the
+    analysis is the whole of what was asked for, and a warning there would exit zero on a
+    job that produced nothing. Only the ``after`` stage reports and returns False, because
+    the experiments already succeeded and must not be lost to a reduction; the figures that
+    would read the missing container are then skipped rather than drawn from absent data.
     """
     from tvbo.data.analysis_io import run_analyses
 
@@ -334,7 +425,7 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
                 f"  wrote {p.relative_to(base) if p.is_relative_to(base) else p}"),
         )
     except Exception as e:
-        if stage == "before":
+        if stage in ("before", "named"):
             raise
         _common.warn(
             f"analysis stage failed after the experiments completed ({type(e).__name__}: {e}). "
