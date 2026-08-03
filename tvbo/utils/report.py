@@ -1210,6 +1210,39 @@ def render_citation(citation: Any, style: str = "apa") -> str:
         return "Unsupported citation style."
 
 
+_ET_AL_MARKERS = frozenset({"others", "et al.", "al."})
+
+
+def _format_person(person) -> str:
+    """One author as `Last, F.`, using only the name parts the entry actually carries.
+
+    BibTeX truncates an author list by ending it with `and others`, which pybtex parses as
+    a person whose sole name is `others` and who has no first name; the same idiom appears
+    in the wild as `et al.`. Taking a first initial unconditionally raised `IndexError` on
+    every entry written that way.
+    """
+    last = " ".join(person.last_names).strip()
+    if last.strip("{}").lower() in _ET_AL_MARKERS:
+        return "et al."
+    initials = " ".join(f"{name[0]}." for name in person.first_names if name)
+    return f"{last}, {initials}" if initials else last
+
+
+def _format_authors(persons) -> str:
+    """An APA author list: `A`, `A & B`, `A, B, & C` — with a trailing `et al.` absorbed."""
+    names = [_format_person(p) for p in persons]
+    if not names:
+        return ""
+    if names[-1] == "et al.":
+        others = names[:-1]
+        return f"{', '.join(others)} et al." if others else "et al."
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return f"{names[0]} & {names[1]}"
+    return f"{', '.join(names[:-1])}, & {names[-1]}"
+
+
 def get_citation(citation_key) -> str:
     """Retrieve a BibTeX entry by its citation key and render it as an APA-style plain text citation.
 
@@ -1222,18 +1255,7 @@ def get_citation(citation_key) -> str:
     bib_data = db.load_bibliography()
     if citation_key in bib_data.entries:
         entry = bib_data.entries[citation_key]
-        # Format authors
-        authors = entry.persons.get("author", [])
-        author_str = ""
-        if len(authors) == 1:
-            author_str = f"{authors[0].last_names[0]}, {authors[0].first_names[0][0]}."
-        elif len(authors) == 2:
-            author_str = f"{authors[0].last_names[0]}, {authors[0].first_names[0][0]}. & {authors[1].last_names[0]}, {authors[1].first_names[0][0]}."
-        elif len(authors) > 2:
-            author_str = (
-                ", ".join([f"{a.last_names[0]}, {a.first_names[0][0]}." for a in authors[:-1]])
-                + f", & {authors[-1].last_names[0]}, {authors[-1].first_names[0][0]}."
-            )
+        author_str = _format_authors(entry.persons.get("author", []))
 
         # Format title
         title = entry.fields.get("title", "").capitalize()
