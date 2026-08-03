@@ -539,8 +539,30 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path,
           scripts/<exp>.<ext>   # frozen backend code from experiment.render(backend)
           spec/<exp>.yaml       # frozen YAML snapshot of the experiment
           README.md             # provenance + how-to-run
+
+    The slurm array shards a sweep and lets the backend vectorize each shard
+    (``--shard``); it has NO per-cell ``--pin`` fan-out. An experiment that EXPLICITLY
+    declares ``distribute.workflow`` over model/coupling parameters asked for per-cell
+    fan-out (e.g. a non-jittable host observation computed once per cell) — slurm would
+    silently vectorize it, tracing that host observation inside the vmap
+    (TracerArrayConversionError). Such an experiment is rejected here with a pointer to
+    ``tvbo workflow snakemake``, which fans one ``--pin`` per cell (see
+    ``_emit_snakemake_study``'s fan-out note).
     """
     from tvbo import export as _export
+
+    # Explicit per-cell distribute.workflow fan-out is snakemake-only (see docstring).
+    _explicit_wf = set((plan.workflow_spec.get("distribute") or {}).get("workflow") or [])
+    _fanned_params = [ax for ax in plan.workflow_axes
+                      if ax.kind == "parameters" and (ax.parameter in _explicit_wf or ax.name in _explicit_wf)]
+    if engine == "slurm" and _fanned_params:
+        _axes = ", ".join(ax.parameter for ax in _fanned_params)
+        _common.die(
+            f"Experiment {plan.experiment_key!r} declares distribute.workflow over parameter "
+            f"axis(es) [{_axes}]: a per-cell fan-out the slurm emitter cannot serve — it shards + "
+            f"vectorizes, so a non-jittable per-cell observation (e.g. a host wave metric) traces "
+            f"inside the vmap and crashes. Emit with `tvbo workflow snakemake` (one --pin per cell)."
+        )
 
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "scripts").mkdir(exist_ok=True)
