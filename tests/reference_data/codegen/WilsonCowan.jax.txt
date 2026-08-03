@@ -1,0 +1,57 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    P = _p.P
+    Q = _p.Q
+    a_e = _p.a_e
+    a_i = _p.a_i
+    alpha_e = _p.alpha_e
+    alpha_i = _p.alpha_i
+    b_e = _p.b_e
+    b_i = _p.b_i
+    c_e = _p.c_e
+    c_ee = _p.c_ee
+    c_ei = _p.c_ei
+    c_i = _p.c_i
+    c_ie = _p.c_ie
+    c_ii = _p.c_ii
+    k_e = _p.k_e
+    k_i = _p.k_i
+    r_e = _p.r_e
+    r_i = _p.r_i
+    shift_sigmoid = _p.shift_sigmoid
+    tau_e = _p.tau_e
+    tau_i = _p.tau_i
+    theta_e = _p.theta_e
+    theta_i = _p.theta_i
+
+    # Coupling
+    c_glob = cX[0]
+    local_coupling = 0
+
+    # State variables
+    E = current_state[0]
+    I = current_state[1]
+
+    # Derived variables
+    lc_0 = E * local_coupling
+    lc_1 = I * local_coupling
+    x_e = alpha_e * (P + c_glob + lc_0 + lc_1 - theta_e + E * c_ee - I * c_ei)
+    x_i = alpha_i * (Q + lc_0 + lc_1 - theta_i + E * c_ie - I * c_ii)
+    s_e = c_e / (1.0 + jnp.exp(-a_e * (x_e - b_e))) - 1.0 * shift_sigmoid / (
+        1.0 + jnp.exp(a_e * b_e)
+    )
+    s_i = c_i / (1.0 + jnp.exp(-a_i * (x_i - b_i))) - 1.0 * shift_sigmoid / (
+        1.0 + jnp.exp(a_i * b_i)
+    )
+
+    # Derivatives
+    dE_dt = (-E + s_e * (k_e - E * r_e)) / tau_e
+    dI_dt = (-I + s_i * (k_i - I * r_i)) / tau_i
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dE_dt, dI_dt))
+
+    return derivatives

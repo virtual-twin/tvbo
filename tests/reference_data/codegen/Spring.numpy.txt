@@ -1,0 +1,21 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    k = _p.k
+    m = _p.m
+    omega = np.sqrt(k / m)
+
+    # State variables
+    x = current_state[0]
+    v = current_state[1]
+
+    # Derivatives
+    dx_dt = v
+    dv_dt = -x * omega**2
+
+    derivatives = np.array(np.broadcast_arrays(dx_dt, dv_dt))
+
+    return derivatives

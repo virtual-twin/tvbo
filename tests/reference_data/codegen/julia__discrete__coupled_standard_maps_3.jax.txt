@@ -1,0 +1,65 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    k0 = _p.k0
+    k1 = _p.k1
+    k2 = _p.k2
+    Gamma = _p.Gamma
+
+    # State variables
+    theta0 = current_state[0]
+    p0 = current_state[1]
+    theta1 = current_state[2]
+    p1 = current_state[3]
+    theta2 = current_state[4]
+    p2 = current_state[5]
+
+    # Derivatives
+    dtheta0_dt = jnp.mod(
+        p0
+        + theta0
+        + k0 * jnp.sin(theta0)
+        - Gamma * (-jnp.sin(theta0 - theta1) - jnp.sin(theta0 - theta2)),
+        2 * jnp.pi,
+    )
+    dp0_dt = jnp.mod(
+        p0
+        + k0 * jnp.sin(theta0)
+        - Gamma * (-jnp.sin(theta0 - theta1) - jnp.sin(theta0 - theta2)),
+        2 * jnp.pi,
+    )
+    dtheta1_dt = jnp.mod(
+        p1
+        + theta1
+        + k1 * jnp.sin(theta1)
+        - Gamma * (-jnp.sin(theta1 - theta2) + jnp.sin(theta0 - theta1)),
+        2 * jnp.pi,
+    )
+    dp1_dt = jnp.mod(
+        p1
+        + k1 * jnp.sin(theta1)
+        - Gamma * (-jnp.sin(theta1 - theta2) + jnp.sin(theta0 - theta1)),
+        2 * jnp.pi,
+    )
+    dtheta2_dt = jnp.mod(
+        p2
+        + theta2
+        + k2 * jnp.sin(theta2)
+        - Gamma * (jnp.sin(theta0 - theta2) + jnp.sin(theta1 - theta2)),
+        2 * jnp.pi,
+    )
+    dp2_dt = jnp.mod(
+        p2
+        + k2 * jnp.sin(theta2)
+        - Gamma * (jnp.sin(theta0 - theta2) + jnp.sin(theta1 - theta2)),
+        2 * jnp.pi,
+    )
+
+    derivatives = jnp.array(
+        jnp.broadcast_arrays(dtheta0_dt, dp0_dt, dtheta1_dt, dp1_dt, dtheta2_dt, dp2_dt)
+    )
+
+    return derivatives

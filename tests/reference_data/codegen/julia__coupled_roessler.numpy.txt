@@ -1,0 +1,35 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    omega1 = _p.omega1
+    omega2 = _p.omega2
+    a = _p.a
+    b = _p.b
+    c = _p.c
+    k1 = _p.k1
+    k2 = _p.k2
+
+    # State variables
+    x1 = current_state[0]
+    y1 = current_state[1]
+    z1 = current_state[2]
+    x2 = current_state[3]
+    y2 = current_state[4]
+    z2 = current_state[5]
+
+    # Derivatives
+    dx1_dt = -z1 - omega1 * y1
+    dy1_dt = a * y1 + k1 * (y2 - y1) + omega1 * x1
+    dz1_dt = b + z1 * (x1 - c)
+    dx2_dt = -z2 - omega2 * y2
+    dy2_dt = a * y2 + k2 * (y1 - y2) + omega2 * x2
+    dz2_dt = b + z2 * (x2 - c)
+
+    derivatives = np.array(
+        np.broadcast_arrays(dx1_dt, dy1_dt, dz1_dt, dx2_dt, dy2_dt, dz2_dt)
+    )
+
+    return derivatives

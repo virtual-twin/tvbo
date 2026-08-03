@@ -1,0 +1,47 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    G = _p.G
+    L1 = _p.L1
+    L2 = _p.L2
+    M1 = _p.M1
+    M2 = _p.M2
+
+    # State variables
+    theta1 = current_state[0]
+    omega1 = current_state[1]
+    theta2 = current_state[2]
+    omega2 = current_state[3]
+
+    # Derived variables
+    phi = theta2 - theta1
+    Delta = M1 + M2 - M2 * np.cos(phi) ** 2
+
+    # Derivatives
+    dtheta1_dt = omega1
+    domega1_dt = (
+        M2
+        * (
+            (G * np.sin(theta2) + L1 * omega1**2 * np.sin(phi)) * np.cos(phi)
+            + L2 * omega2**2 * np.sin(phi)
+        )
+        - G * (M1 + M2) * np.sin(theta1)
+    ) / (Delta * L1)
+    dtheta2_dt = omega2
+    domega2_dt = (
+        (M1 + M2)
+        * (
+            G * (-np.sin(theta2) + np.cos(phi) * np.sin(theta1))
+            - L1 * omega1**2 * np.sin(phi)
+        )
+        - L2 * M2 * omega2**2 * np.cos(phi) * np.sin(phi)
+    ) / (Delta * L2)
+
+    derivatives = np.array(
+        np.broadcast_arrays(dtheta1_dt, domega1_dt, dtheta2_dt, domega2_dt)
+    )
+
+    return derivatives

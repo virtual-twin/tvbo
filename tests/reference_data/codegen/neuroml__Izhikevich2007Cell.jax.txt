@@ -1,0 +1,34 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    C = _p.C
+    k = _p.k
+    vr = _p.vr
+    vt = _p.vt
+    vpeak = _p.vpeak
+    a = _p.a
+    b = _p.b
+    c = _p.c
+    d = _p.d
+
+    # State variables
+    v = current_state[0]
+    u = current_state[1]
+
+    # Derived variables
+    I_ext = jnp.where(
+        jnp.all(jnp.asarray([jnp.greater_equal(t, 0.05), jnp.less(t, 0.25)]), axis=0),
+        1000.0,
+        0.0,
+    )
+
+    # Derivatives
+    dv_dt = (I_ext - u + k * (v - vr) * (v - vt)) / C
+    du_dt = a * (-u + b * (v - vr))
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dv_dt, du_dt))
+
+    return derivatives

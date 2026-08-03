@@ -1,0 +1,29 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    C = _p.C
+    gL = _p.gL
+    EL = _p.EL
+    VT = _p.VT
+    thresh = _p.thresh
+    reset = _p.reset
+    delT = _p.delT
+    tauw = _p.tauw
+    a = _p.a
+    b = _p.b
+    I_ext = _p.I_ext
+
+    # State variables
+    v = current_state[0]
+    w = current_state[1]
+
+    # Derivatives
+    dv_dt = (I_ext - w - gL * (v - EL) + delT * gL * np.exp((v - VT) / delT)) / C
+    dw_dt = (-w + a * (v - EL)) / tauw
+
+    derivatives = np.array(np.broadcast_arrays(dv_dt, dw_dt))
+
+    return derivatives

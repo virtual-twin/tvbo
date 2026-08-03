@@ -1,0 +1,36 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    a = _p.a
+    b = _p.b
+    d = _p.d
+    gamma = _p.gamma
+    tau_s = _p.tau_s
+    w = _p.w
+    J_N = _p.J_N
+    I_o = _p.I_o
+
+    # Coupling
+    instant = cX[0]
+    delayed = cX[1]
+
+    # State variables
+    S = current_state[0]
+
+    # Functions
+    def H(x):
+        return (-b + a * x) / (1 - jnp.exp(-d * (-b + a * x)))
+
+    # Derived variables
+    x = I_o + J_N * delayed + J_N * instant + J_N * S * w
+    H_x = H(x)
+
+    # Derivatives
+    dS_dt = -S / tau_s + gamma * (1 - S) * H(x)
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dS_dt))
+
+    return derivatives

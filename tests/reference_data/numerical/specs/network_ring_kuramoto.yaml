@@ -1,0 +1,44 @@
+label: network_ring_kuramoto
+description: >-
+  Eight-node Watts-Strogatz ring (p=0, so fully deterministic without a seed).
+  Exercises what no single-node spec can: the Sum-over-IndexedBase coupling
+  expression, the weight matrix reaching the solver, and the per-node state axis.
+dynamics:
+  name: Kuramoto
+  parameters:
+    omega: {value: 0.06283185307179587}
+  coupling_inputs:
+    c: {}
+  state_variables:
+    theta:
+      equation: {rhs: "omega + c"}
+      initial_value: 0.1
+      variable_of_interest: true
+      coupling_variable: true
+  output: [theta]
+network:
+  label: eight_node_ring
+  number_of_nodes: 8
+  graph_generator:
+    name: watts_strogatz
+    type: WattsStrogatz
+    parameters:
+      k: {name: k, value: 2}
+      p: {name: p, value: 0}
+  coupling:
+    KuramotoCoupling:
+      name: KuramotoCoupling
+      delayed: false
+      parameters:
+        K: {value: 0.05}
+      incoming_states: [theta]
+      local_states: [theta]
+      pre_expression: {rhs: "sin(theta_j - theta_i)"}
+      post_expression: {rhs: "K * gx"}
+integration:
+  method: Heun
+  step_size: 0.5
+  duration: 100.0
+  transient_time: 0.0
+execution:
+  random_seed: 0

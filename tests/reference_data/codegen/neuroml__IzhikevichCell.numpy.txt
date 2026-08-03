@@ -1,0 +1,35 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    a = _p.a
+    b = _p.b
+    c = _p.c
+    d = _p.d
+    thresh = _p.thresh
+    I_amp = _p.I_amp
+    pulse_delay = _p.pulse_delay
+    pulse_duration = _p.pulse_duration
+
+    # State variables
+    v = current_state[0]
+    U = current_state[1]
+
+    # Derived variables
+    I_ext = np.where(
+        np.logical_and.reduce(
+            (np.less_equal(pulse_delay, t), np.less(t, pulse_delay + pulse_duration))
+        ),
+        I_amp,
+        0.0,
+    )
+
+    # Derivatives
+    dv_dt = 140 + I_ext - U + 5 * v + 0.04 * v**2
+    dU_dt = a * (-U + b * v)
+
+    derivatives = np.array(np.broadcast_arrays(dv_dt, dU_dt))
+
+    return derivatives

@@ -150,6 +150,7 @@ jobs:
         include:
           - shard: core
             paths: >-
+              tests/test_codegen_golden_corpus.py
               tests/test_model_loading.py
               tests/test_graph.py
               tests/test_package_structure.py
@@ -162,6 +163,7 @@ jobs:
             needs_julia_refdata: false
           - shard: tvboptim
             paths: >-
+              tests/test_numerical_golden_corpus.py
               tests/test_tvboptim_experiments.py
               tests/functional/test_simulation_backends_tvboptim.py
             needs_julia_refdata: false

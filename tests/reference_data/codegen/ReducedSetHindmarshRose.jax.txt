@@ -1,0 +1,87 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    a = _p.a
+    b = _p.b
+    c = _p.c
+    d = _p.d
+    r = _p.r
+    s = _p.s
+    xo = _p.xo
+    K11 = _p.K11
+    K12 = _p.K12
+    K21 = _p.K21
+    mu = _p.mu
+    sigma = _p.sigma
+    A_ik = _p.A_ik
+    B_ik = _p.B_ik
+    C_ik = _p.C_ik
+    iV0 = _p.iV0
+    iU0 = _p.iU0
+    iV3 = _p.iV3
+    iU3 = _p.iU3
+    iV4 = _p.iV4
+    iU4 = _p.iU4
+    iZV = _p.iZV
+    iZU = _p.iZU
+    IE_i = jnp.sqrt(sigma) * (iV0 * mu + iZV * sigma)
+    II_i = jnp.sqrt(sigma) * (iU0 * mu + iZU * sigma)
+    a_i = a * iV4 / sigma
+    b_i = b * iV3 / jnp.sqrt(sigma)
+    c_i = c * iV0 * jnp.sqrt(sigma)
+    d_i = d * iV3 / jnp.sqrt(sigma)
+    e_i = a * iU4 / sigma
+    f_i = b * iU3 / jnp.sqrt(sigma)
+    h_i = c * iU0 * jnp.sqrt(sigma)
+    m_i = iV0 * r * s * xo * jnp.sqrt(sigma)
+    n_i = iU0 * r * s * xo * jnp.sqrt(sigma)
+    p_i = d * iU3 / jnp.sqrt(sigma)
+
+    # Coupling
+    c_glob0 = cX[0]
+    c_glob1 = cX[1]
+    local_coupling = 0
+
+    # State variables
+    xi = current_state[0]
+    eta = current_state[1]
+    tau = current_state[2]
+    alpha = current_state[3]
+    beta = current_state[4]
+    gamma = current_state[5]
+
+    # Derivatives
+    dxi_dt = (
+        IE_i
+        + eta
+        - tau
+        + K11 * (-xi + jnp.dot(xi, A_ik))
+        + b_i * xi**2
+        + local_coupling * xi
+        - K12 * (-xi + jnp.dot(alpha, B_ik))
+        - a_i * xi**3
+        + jnp.sum(c_glob0, axis=-1, keepdims=True)
+    )
+    deta_dt = c_i - eta - d_i * xi**2
+    dtau_dt = -m_i - r * tau + r * s * xi
+    dalpha_dt = (
+        II_i
+        + beta
+        - gamma
+        + K21 * (-alpha + jnp.dot(xi, C_ik))
+        + f_i * alpha**2
+        + local_coupling * xi
+        - e_i * alpha**3
+        + jnp.sum(c_glob0, axis=-1, keepdims=True)
+    )
+    dbeta_dt = h_i - beta - p_i * alpha**2
+    dgamma_dt = -n_i - gamma * r + alpha * r * s
+
+    derivatives = jnp.array(
+        jnp.broadcast_arrays(dxi_dt, deta_dt, dtau_dt, dalpha_dt, dbeta_dt, dgamma_dt)
+    )
+
+    return derivatives

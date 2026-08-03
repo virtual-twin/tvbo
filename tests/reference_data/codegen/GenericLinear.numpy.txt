@@ -1,0 +1,21 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    gamma = _p.gamma
+
+    # Coupling
+    c_glob = cX[0]
+    local_coupling = 0
+
+    # State variables
+    x = current_state[0]
+
+    # Derivatives
+    dx_dt = c_glob + gamma * x + local_coupling * x
+
+    derivatives = np.array(np.broadcast_arrays(dx_dt))
+
+    return derivatives

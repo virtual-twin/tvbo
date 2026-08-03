@@ -1,0 +1,25 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    a = _p.a
+    b = _p.b
+    c = _p.c
+    d = _p.d
+
+    # State variables
+    x = current_state[0]
+    y = current_state[1]
+
+    # Derived variables
+    theta = c - d / (1 + x**2 + y**2)
+
+    # Derivatives
+    dx_dt = a + b * (x * jnp.cos(theta) - y * jnp.sin(theta))
+    dy_dt = b * (x * jnp.sin(theta) + y * jnp.cos(theta))
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dx_dt, dy_dt))
+
+    return derivatives

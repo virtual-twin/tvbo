@@ -1,0 +1,25 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    Delta = _p.Delta
+    eta = _p.eta
+    k = _p.k
+    v_syn = _p.v_syn
+
+    # Coupling
+    c_glob = cX[0]
+
+    # State variables
+    V = current_state[0]
+    r = current_state[1]
+
+    # Derivatives
+    dV_dt = c_glob + eta + V**2 - np.pi**2 * r**2 + np.pi * k * r * (v_syn - V)
+    dr_dt = Delta / np.pi + 2 * V * r - np.pi * k * r**2
+
+    derivatives = np.array(np.broadcast_arrays(dV_dt, dr_dt))
+
+    return derivatives

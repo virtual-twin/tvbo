@@ -305,6 +305,7 @@ jobs:
                 include:
                     - shard: core
                       paths: >-
+                          tests/test_codegen_golden_corpus.py
                           tests/test_model_loading.py
                           tests/test_graph.py
                           tests/test_package_structure.py
@@ -316,6 +317,7 @@ jobs:
                           tests/functional/test_simulation_backends_core.py
                     - shard: tvboptim
                       paths: >-
+                          tests/test_numerical_golden_corpus.py
                           tests/test_tvboptim_experiments.py
                           tests/functional/test_simulation_backends_tvboptim.py
                           tests/test_full_workflow_comparison.py

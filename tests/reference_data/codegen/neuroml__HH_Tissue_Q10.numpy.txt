@@ -1,0 +1,56 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    C = _p.C
+    g_Na = _p.g_Na
+    g_K = _p.g_K
+    g_L = _p.g_L
+    E_Na = _p.E_Na
+    E_K = _p.E_K
+    E_L = _p.E_L
+    I_amp = _p.I_amp
+    Q10_early = _p.Q10_early
+    Q10_late = _p.Q10_late
+    switch_time = _p.switch_time
+
+    # State variables
+    v = current_state[0]
+    m = current_state[1]
+    h = current_state[2]
+    n = current_state[3]
+
+    # Derived variables
+    I_ext = I_amp
+    Q10 = np.where(np.greater(switch_time, t), Q10_early, Q10_late)
+    alpha_h = 0.00271419454822054 * np.exp(-0.05 * v)
+    alpha_m = np.where(
+        np.equal(v, -40.0),
+        1.0,
+        (4.0 + 0.1 * v) / (1.0 - 0.0183156388887342 * np.exp(-0.1 * v)),
+    )
+    alpha_n = np.where(
+        np.equal(v, -55.0),
+        0.1,
+        (0.55 + 0.01 * v) / (1.0 - 0.00408677143846407 * np.exp(-0.1 * v)),
+    )
+    beta_h = 1.0 / (1.0 + 0.0301973834223185 * np.exp(-0.1 * v))
+    beta_m = 0.108087223804836 * np.exp(-0.0555555555555556 * v)
+    beta_n = 0.055468413760135 * np.exp(-0.0125 * v)
+
+    # Derivatives
+    dv_dt = (
+        1000 * I_ext
+        - g_L * (v - E_L)
+        - g_K * n**4 * (v - E_K)
+        - g_Na * h * m**3 * (v - E_Na)
+    ) / C
+    dm_dt = Q10 * (alpha_m * (1 - m) - beta_m * m)
+    dh_dt = Q10 * (alpha_h * (1 - h) - beta_h * h)
+    dn_dt = Q10 * (alpha_n * (1 - n) - beta_n * n)
+
+    derivatives = np.array(np.broadcast_arrays(dv_dt, dm_dt, dh_dt, dn_dt))
+
+    return derivatives

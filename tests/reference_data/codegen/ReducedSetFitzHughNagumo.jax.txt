@@ -1,0 +1,59 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    tau = _p.tau
+    a = _p.a
+    b = _p.b
+    K11 = _p.K11
+    K12 = _p.K12
+    K21 = _p.K21
+    mu = _p.mu
+    sigma = _p.sigma
+    Aik = _p.Aik
+    Bik = _p.Bik
+    Cik = _p.Cik
+    iV0 = _p.iV0
+    iU0 = _p.iU0
+    iV4 = _p.iV4
+    iU4 = _p.iU4
+    iZV = _p.iZV
+    iZU = _p.iZU
+    IE_i = jnp.sqrt(sigma) * (iV0 * mu + iZV * sigma)
+    II_i = jnp.sqrt(sigma) * (iU0 * mu + iZU * sigma)
+    e_i = iV4 / sigma
+    f_i = iU4 / sigma
+    m_i = a * iV0 * jnp.sqrt(sigma)
+    n_i = a * iU0 * jnp.sqrt(sigma)
+
+    # Coupling
+    c_glob0 = cX[0]
+    c_glob1 = cX[1]
+    local_coupling = 0
+
+    # State variables
+    xi = current_state[0]
+    eta = current_state[1]
+    alpha = current_state[2]
+    beta = current_state[3]
+
+    # Derivatives
+    dxi_dt = (
+        K11 * (-xi + jnp.dot(xi, Aik))
+        + tau * (IE_i + local_coupling * xi + jnp.sum(c_glob0, axis=-1, keepdims=True))
+        + tau * (xi - eta - 1 / 3 * e_i * xi**3)
+        - K12 * (-xi + jnp.dot(alpha, Bik))
+    )
+    deta_dt = (m_i + xi - b * eta) / tau
+    dalpha_dt = (
+        K21 * (-alpha + jnp.dot(xi, Cik))
+        + tau * (II_i + local_coupling * xi + jnp.sum(c_glob0, axis=-1, keepdims=True))
+        + tau * (alpha - beta - 1 / 3 * f_i * alpha**3)
+    )
+    dbeta_dt = (alpha + n_i - b * beta) / tau
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dxi_dt, deta_dt, dalpha_dt, dbeta_dt))
+
+    return derivatives

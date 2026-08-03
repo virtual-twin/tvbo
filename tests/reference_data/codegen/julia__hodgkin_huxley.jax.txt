@@ -1,0 +1,43 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    Cm = _p.Cm
+    gNa = _p.gNa
+    gK = _p.gK
+    gL = _p.gL
+    ENa = _p.ENa
+    EK = _p.EK
+    EL = _p.EL
+    Iext = _p.Iext
+
+    # State variables
+    V = current_state[0]
+    m = current_state[1]
+    h = current_state[2]
+    n = current_state[3]
+
+    # Derived variables
+    IK = gK * n**4 * (V - EK)
+    IL = gL * (V - EL)
+    INa = gNa * h * m**3 * (V - ENa)
+    alpha_h = 0.07 * jnp.exp(-13 / 4 - 1 / 20 * V)
+    alpha_m = (4.0 + 0.1 * V) / (1 - jnp.exp(-4 - 1 / 10 * V))
+    alpha_n = (0.55 + 0.01 * V) / (1 - jnp.exp(-11 / 2 - 1 / 10 * V))
+    beta_h = (1 + jnp.exp(-7 / 2 - 1 / 10 * V)) ** (-1.0)
+    beta_m = 4 * jnp.exp(-65 / 18 - 1 / 18 * V)
+    beta_n = 0.125 * jnp.exp(-13 / 16 - 1 / 80 * V)
+
+    # Derivatives
+    dV_dt = (
+        Iext - gL * (V - EL) - gK * n**4 * (V - EK) - gNa * h * m**3 * (V - ENa)
+    ) / Cm
+    dm_dt = alpha_m * (1 - m) - beta_m * m
+    dh_dt = alpha_h * (1 - h) - beta_h * h
+    dn_dt = alpha_n * (1 - n) - beta_n * n
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dV_dt, dm_dt, dh_dt, dn_dt))
+
+    return derivatives

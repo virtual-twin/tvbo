@@ -1,0 +1,107 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    He = _p.He
+    Hi = _p.Hi
+    P = _p.P
+    Q = _p.Q
+    U = _p.U
+    e0 = _p.e0
+    gamma_1T = _p.gamma_1T
+    gamma_1 = _p.gamma_1
+    gamma_2T = _p.gamma_2T
+    gamma_2 = _p.gamma_2
+    gamma_3T = _p.gamma_3T
+    gamma_3 = _p.gamma_3
+    gamma_4 = _p.gamma_4
+    gamma_5 = _p.gamma_5
+    ke = _p.ke
+    ki = _p.ki
+    rho_1 = _p.rho_1
+    rho_2 = _p.rho_2
+
+    # Coupling
+    c_glob = cX[0]
+    local_coupling = 0
+
+    # State variables
+    v1 = current_state[0]
+    v2 = current_state[1]
+    v3 = current_state[2]
+    v4 = current_state[3]
+    v5 = current_state[4]
+    v6 = current_state[5]
+    v7 = current_state[6]
+    y1 = current_state[7]
+    y2 = current_state[8]
+    y3 = current_state[9]
+    y4 = current_state[10]
+    y5 = current_state[11]
+
+    # Derived variables
+    coupled_input = (
+        2 * e0 / (1 + np.exp(rho_1 * (rho_2 - c_glob - local_coupling * v6)))
+    )
+    sigma_v1 = np.where(
+        np.greater(rho_1 * (rho_2 - v1), 709),
+        0,
+        2 * e0 / (1 + np.exp(rho_1 * (rho_2 - v1))),
+    )
+    sigma_v23 = np.where(
+        np.greater(rho_1 * (rho_2 + v3 - v2), 709),
+        0,
+        2 * e0 / (1 + np.exp(rho_1 * (rho_2 + v3 - v2))),
+    )
+    sigma_v45 = np.where(
+        np.greater(rho_1 * (rho_2 + v5 - v4), 709),
+        0,
+        2 * e0 / (1 + np.exp(rho_1 * (rho_2 + v5 - v4))),
+    )
+
+    # Derivatives
+    dv1_dt = y1
+    dv2_dt = y2
+    dv3_dt = y3
+    dv4_dt = y4
+    dv5_dt = y5
+    dv6_dt = y2 - y3
+    dv7_dt = y4 - y5
+    dy1_dt = (
+        -v1 * ke**2
+        - 2 * ke * y1
+        + He * ke * (gamma_1 * sigma_v23 + gamma_1T * (U + coupled_input))
+    )
+    dy2_dt = (
+        -v2 * ke**2
+        - 2 * ke * y2
+        + He * ke * (gamma_2 * sigma_v1 + gamma_2T * (P + coupled_input))
+    )
+    dy3_dt = -v3 * ki**2 - 2 * ki * y3 + Hi * gamma_4 * ki * sigma_v45
+    dy4_dt = (
+        -v4 * ke**2
+        - 2 * ke * y4
+        + He * ke * (gamma_3 * sigma_v23 + gamma_3T * (Q + coupled_input))
+    )
+    dy5_dt = -v5 * ke**2 - 2 * ki * y5 + Hi * gamma_5 * ki * sigma_v45
+
+    derivatives = np.array(
+        np.broadcast_arrays(
+            dv1_dt,
+            dv2_dt,
+            dv3_dt,
+            dv4_dt,
+            dv5_dt,
+            dv6_dt,
+            dv7_dt,
+            dy1_dt,
+            dy2_dt,
+            dy3_dt,
+            dy4_dt,
+            dy5_dt,
+        )
+    )
+
+    return derivatives

@@ -1,0 +1,51 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    A = _p.A
+    B = _p.B
+    C = _p.C
+    a = _p.a
+    b = _p.b
+    v0 = _p.v0
+    e0 = _p.e0
+    r = _p.r
+    p = _p.p
+    C1 = C
+    C2 = 0.8 * C
+    C3 = 0.25 * C
+    C4 = 0.25 * C
+
+    # Coupling
+    c_glob = cX[0]
+
+    # State variables
+    y0 = current_state[0]
+    y3 = current_state[1]
+    y1 = current_state[2]
+    y4 = current_state[3]
+    y2 = current_state[4]
+    y5 = current_state[5]
+
+    # Functions
+    def Sigm(v):
+        return 2 * e0 / (1 + jnp.exp(r * (v0 - v)))
+
+    # Derived variables
+    v_pyr = y1 - y2
+
+    # Derivatives
+    dy0_dt = y3
+    dy3_dt = -y0 * a**2 - 2 * a * y3 + A * a * Sigm(y1 - y2)
+    dy1_dt = y4
+    dy4_dt = -y1 * a**2 - 2 * a * y4 + A * a * (c_glob + p + C2 * Sigm(C1 * y0))
+    dy2_dt = y5
+    dy5_dt = -y2 * b**2 - 2 * b * y5 + B * C4 * b * Sigm(C3 * y0)
+
+    derivatives = jnp.array(
+        jnp.broadcast_arrays(dy0_dt, dy3_dt, dy1_dt, dy4_dt, dy2_dt, dy5_dt)
+    )
+
+    return derivatives
