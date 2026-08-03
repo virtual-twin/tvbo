@@ -666,9 +666,9 @@ def plan(
         cohort_subjects = [str(s) for s in experiment.dataset_subject_ids()]
         if not cohort_subjects:
             raise ValueError(
-                f"Experiment {getattr(experiment, 'id', experiment_key)!r} sets dataset.batch_mode: "
-                f"on_device but no subjects were discovered, so the single cohort job's per-subject "
-                f"outputs cannot be planned. Check dataset.bids_root / dataset.subjects."
+                f"Experiment {getattr(experiment, 'id', None)!r} sets dataset.batch_mode: on_device "
+                f"but no subjects were discovered, so the single cohort job's per-subject outputs "
+                f"cannot be planned. Check dataset.bids_root / dataset.subjects."
             )
         cohort_result_files = _cohort_result_files(experiment, cohort_subjects)
     else:
