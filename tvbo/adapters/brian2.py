@@ -311,7 +311,7 @@ class Brian2Adapter(BaseAdapter):
             # dynamics name is kept when a single node uses that dynamics; when several
             # do, the node id disambiguates (ExcitatoryCell_2 / ExcitatoryCell_6) so the
             # single-column output keys are unchanged.
-            v_sv = (getattr(dyn_obj, "state_variables", None) or {}).get("v")
+            v_sv = (dyn_obj.state_variables).get("v")
             if v_sv is None:
                 raise NotImplementedError(
                     f"Cell dynamics {dyn_name!r} declares no membrane variable 'v'; cannot build a NeuronGroup."
@@ -564,9 +564,9 @@ class Brian2Adapter(BaseAdapter):
         """
         import sympy as sp
 
-        svs = getattr(syn, "state_variables", None) or {}
-        dvs = getattr(syn, "derived_variables", None) or {}
-        events = getattr(syn, "events", None) or {}
+        svs = syn.state_variables
+        dvs = syn.derived_variables
+        events = syn.events
         if not svs:
             raise NotImplementedError(f"Synapse {getattr(syn,'name',syn)!r}: no state variables to render.")
         if "i" not in dvs:
@@ -701,7 +701,7 @@ class Brian2Adapter(BaseAdapter):
             })
             return
 
-        if "i" not in (getattr(syn, "derived_variables", None) or {}):
+        if "i" not in (syn.derived_variables):
             # Instantaneous (delta) PSC: the spike event jumps v_post directly; no conductance.
             r = self._reduce_delta_sparse(syn, sparams, float(weight), edge_idx)
             synapses.append({
@@ -733,7 +733,7 @@ class Brian2Adapter(BaseAdapter):
         freeze the value between spikes). The probe delivers nothing (its ``_post +=`` line is
         dropped), so the network's results are byte-identical; only the observation is added.
         """
-        svs = getattr(syn, "state_variables", None) or {}
+        svs = syn.state_variables
         recorded = [n for n, sv in svs.items() if bool(getattr(sv, "record", False))]
         if not recorded:
             return
@@ -779,8 +779,8 @@ class Brian2Adapter(BaseAdapter):
         """
         import sympy as sp
 
-        svs = getattr(syn, "state_variables", None) or {}
-        events = getattr(syn, "events", None) or {}
+        svs = syn.state_variables
+        events = syn.events
         syms = {n: sp.Symbol(n) for n in list(svs) + list(sparams) + ["v"]}
 
         def parse(rhs):
@@ -857,9 +857,9 @@ class Brian2Adapter(BaseAdapter):
         """
         import sympy as sp
 
-        svs = getattr(syn, "state_variables", None) or {}
-        dvs = getattr(syn, "derived_variables", None) or {}
-        events = getattr(syn, "events", None) or {}
+        svs = syn.state_variables
+        dvs = syn.derived_variables
+        events = syn.events
         if "i" not in dvs:
             raise NotImplementedError(f"Sparse synapse (edge {edge_idx}): no current derived variable 'i'.")
         syms = {n: sp.Symbol(n) for n in list(svs) + list(dvs) + list(sparams) + ["v"]}

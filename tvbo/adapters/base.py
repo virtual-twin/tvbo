@@ -395,11 +395,11 @@ class BaseAdapter:
         # Vertex derived-variable names (union across all dynamics)
         vertex_dv_names = []
         for dyn in dynamics_dict.values():
-            for dv_name in getattr(dyn, "derived_variables", None) or {}:
+            for dv_name in dyn.derived_variables:
                 if str(dv_name) not in vertex_dv_names:
                     vertex_dv_names.append(str(dv_name))
         # Also from default model
-        for dv_name in getattr(model, "derived_variables", None) or {}:
+        for dv_name in model.derived_variables:
             if str(dv_name) not in vertex_dv_names:
                 vertex_dv_names.append(str(dv_name))
 
@@ -410,7 +410,7 @@ class BaseAdapter:
         for dyn in list(dynamics_dict.values()) + [model]:
             if not dyn:
                 continue
-            for dv in (getattr(dyn, "derived_variables", None) or {}).values():
+            for dv in (dyn.derived_variables).values():
                 if getattr(dv, "conditional", False):
                     for case in getattr(dv, "cases", None) or []:
                         cond = getattr(case, "condition", "") or ""

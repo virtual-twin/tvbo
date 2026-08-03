@@ -55,8 +55,8 @@ def symbol_names(model):
     sv = list(model.state_variables.keys())
     params = list((model.parameters or {}).keys())
     coupling = list((model.coupling_terms or {}).keys()) if model.coupling_terms else []
-    derived_vars = list((getattr(model, "derived_variables", None) or {}).keys())
-    derived_params = list((getattr(model, "derived_parameters", None) or {}).keys())
+    derived_vars = list((model.derived_variables).keys())
+    derived_params = list((model.derived_parameters).keys())
     return sv, params, coupling, derived_vars, derived_params
 
 
@@ -119,7 +119,7 @@ def make_renderer(model, fmt="julia"):
     """
     sv, params, coupling, dvars, dparams = symbol_names(model)
     all_symbols = sv + params + coupling + dvars + dparams
-    func_names = {str(f): str(f) for f in (getattr(model, "functions", None) or {})}
+    func_names = {str(f): str(f) for f in (model.functions)}
     scope = model.get_symbolic_elements()
 
     def render(equation):
@@ -174,7 +174,7 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     csv_lo, csv_hi = csv_k * n_nodes + 1, (csv_k + 1) * n_nodes
 
     # Per coupling term: local → 0.0 per node; long-range → W·s matvec once + gather.
-    cinputs = getattr(model, "coupling_inputs", None) or {}
+    cinputs = model.coupling_inputs
     coupling_pre, coupling_body = [], []
     for c in coupling:
         ci = cinputs.get(c) if hasattr(cinputs, "get") else None
@@ -192,14 +192,14 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
         dfun.append((f"dx[{idx}] =", jl(s.equation)))
 
     functions = []
-    for fname, fdef in (getattr(model, "functions", None) or {}).items():
+    for fname, fdef in (model.functions).items():
         functions.append((str(fname), [str(a) for a in fdef.arguments], jl(fdef.equation)))
     derived_params = [
         (dp.name, jl(dp.equation))
-        for dp in (getattr(model, "derived_parameters", None) or {}).values()
+        for dp in (model.derived_parameters).values()
     ]
     derived_vars = []
-    for dv in (getattr(model, "derived_variables", None) or {}).values():
+    for dv in (model.derived_variables).values():
         if getattr(dv, "conditional", False) and getattr(dv, "cases", None):
             derived_vars.append((dv.name, build_ifelse(list(dv.cases), jl)))
         else:
@@ -236,7 +236,7 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     # in the BifurcationKit template), so the branch plots e.g. max r_E vs G.
     dv_names = {name for name, _ in derived_vars}
     record_obs = list(sv)
-    for o in [str(o) for o in (getattr(model, "output", None) or [])]:
+    for o in [str(o) for o in (model.output)]:
         if o in dv_names and o not in record_obs:
             record_obs.append(o)
 
@@ -343,17 +343,17 @@ def build_model_context(model, network=None, constraints=None) -> dict:
 
     # Custom functions (e.g. Sigm): (name, [args], body).
     functions = []
-    for fname, fdef in (getattr(model, "functions", None) or {}).items():
+    for fname, fdef in (model.functions).items():
         fargs = [str(name) for name in fdef.arguments]
         functions.append((str(fname), fargs, jl(fdef.equation)))
 
     # Derived parameters and derived variables (conditional ones folded to ifelse).
     derived_params = [
         (dp.name, jl(dp.equation))
-        for dp in (getattr(model, "derived_parameters", None) or {}).values()
+        for dp in (model.derived_parameters).values()
     ]
     derived_vars = []
-    for dv in (getattr(model, "derived_variables", None) or {}).values():
+    for dv in (model.derived_variables).values():
         if getattr(dv, "conditional", False) and getattr(dv, "cases", None):
             derived_vars.append((dv.name, build_ifelse(list(dv.cases), jl)))
         else:

@@ -33,6 +33,8 @@ from tvbo.adapters.smallscale.lowering import (
     safe_id,
     unique_component_id as _unique_component_id,
 )
+from tvbo.codegen.code import inline_functions
+from tvbo.parse.expression import function_bodies
 from tvbo.utils import normalize_params
 
 if TYPE_CHECKING:
@@ -199,67 +201,6 @@ def sympy_to_lems(expr_str, parameters=None):
     from tvbo.codegen.code import render_expression
 
     return render_expression(expr_str, format="lems", parameters=parameters)
-
-
-def inline_model_functions(expr, dynamics, all_names):
-    """Inline model-defined functions into a SymPy expression.
-
-    LEMS has no user-defined function mechanism, so calls like ``Sigm(y1 - y2)``
-    must be expanded to their body (e.g. ``2*e0/(1 + exp(r*(v0 - (y1-y2))))``)
-    before the expression is printed.
-
-    Parameters
-    ----------
-    expr : sympy.Basic
-        Already-parsed SymPy expression that may contain calls to model functions.
-    dynamics : Dynamics
-        The model whose ``functions`` dict holds body + formal arguments.
-    all_names : list of str
-        All symbol names in scope (parameters, state variables, …) so the body
-        is parsed with the correct local dict.
-    """
-    from sympy import Function, Symbol
-    from tvbo.parse.expression import parse_eq
-
-    functions = getattr(dynamics, "functions", None) or {}
-    if not functions:
-        return expr
-
-    # All model-function names, so that a call to one function inside another's
-    # body (e.g. ``muV(...)`` inside ``sigmaV``'s body) parses as a function
-    # application rather than ``Symbol('muV') * (fe, fi, ...)``.
-    fn_names = list(functions.keys())
-
-    # Pre-parse every function body once, registering the model function names.
-    bodies = {}
-    for fname, fn_obj in functions.items():
-        arguments = getattr(fn_obj, "arguments", None) or {}
-        # Function arguments are keyed by name (dict); tolerate a legacy list too.
-        arg_iter = arguments.values() if hasattr(arguments, "values") else arguments
-        arg_names = [getattr(a, "name", str(a)) for a in arg_iter]
-        rhs_str = getattr(getattr(fn_obj, "equation", None), "rhs", None)
-        if not rhs_str or not arg_names:
-            continue
-        arg_syms = [Symbol(n) for n in arg_names]
-        body = parse_eq(str(rhs_str), parameters=list(all_names) + arg_names, functions=fn_names)
-        bodies[fname] = (arg_syms, body)
-
-    # Inline to a fixpoint: substituting one body can introduce calls to
-    # functions already visited (the call graph is a DAG, e.g. TF_e → sigmaV →
-    # muV), so repeat until no model-function calls remain.
-    for _ in range(len(bodies) + 1):
-        replaced = False
-        for fname, (arg_syms, body) in bodies.items():
-            fn_cls = Function(fname)
-            if expr.has(fn_cls):
-                expr = expr.replace(
-                    fn_cls,
-                    lambda *actual, _body=body, _syms=arg_syms: _body.xreplace(dict(zip(_syms, actual))),
-                )
-                replaced = True
-        if not replaced:
-            break
-    return expr
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -581,8 +522,8 @@ def _nml_type_name(dynamics):
 
 def _is_custom_nml_type(dynamics):
     """Return True if this dynamics needs a custom LEMS ComponentType definition."""
-    dvs = getattr(dynamics, "derived_variables", None) or {}
-    svs = getattr(dynamics, "state_variables", None) or {}
+    dvs = dynamics.derived_variables
+    svs = dynamics.state_variables
     return bool(dvs or svs)
 
 
@@ -786,8 +727,8 @@ def _render_custom_component_type(dynamics, role_slot=None):
     if not type_name:
         return ""
 
-    params = getattr(dynamics, "parameters", None) or {}
-    dvs = getattr(dynamics, "derived_variables", None) or {}
+    params = dynamics.parameters
+    dvs = dynamics.derived_variables
 
     base_info = _NML_ROLE_BASES.get(role_slot)
     extends = base_info[0] if base_info else "baseComponent"
@@ -887,8 +828,8 @@ def _render_nml_subtree(dynamics, key_name, indent=8, custom_types=None, exclude
         return []
 
     pad = " " * indent
-    params = getattr(dynamics, "parameters", None) or {}
-    children = getattr(dynamics, "modes", None) or {}
+    params = dynamics.parameters
+    children = dynamics.modes
     is_role = key_name in _NML_ROLE_SLOTS
     is_custom = _is_custom_nml_type(dynamics)
 
@@ -1298,7 +1239,7 @@ def _render_compound_input_children(dyn_obj, indent=8):
     Each child component (pulseGenerator, sineGenerator, etc.) is rendered as
     a self-closing XML element with its parameters as attributes.
     """
-    components = getattr(dyn_obj, "components", None) or getattr(dyn_obj, "modes", None) or {}
+    components = getattr(dyn_obj, "components", None) or dyn_obj.modes
     if not components:
         return ""
     pad = " " * indent
@@ -1323,7 +1264,7 @@ def _render_event_children(dyn_obj, time_scale="ms", indent=8):
     """
     if dyn_obj is None:
         return ""
-    events = getattr(dyn_obj, "events", None) or {}
+    events = dyn_obj.events
     if not events:
         return ""
     pad = " " * indent
@@ -1680,7 +1621,7 @@ def _hier_build_dynamics(dyn, extends, all_params):
             )
 
     # ── Events → OnCondition ──
-    for ev_key, ev in (getattr(dyn, "events", None) or {}).items():
+    for ev_key, ev in (dyn.events).items():
         cond = getattr(getattr(ev, "condition", None), "rhs", None)
         if cond:
             cond_lems = _python_cond_to_lems(str(cond), all_names)
@@ -3103,9 +3044,9 @@ def build_lems_context(experiment):
 
     params = dyn.parameters or {}
     svs = dyn.state_variables or {}
-    dvs = getattr(dyn, "derived_variables", None) or {}
-    events = getattr(dyn, "events", None) or {}
-    coupling_inputs = getattr(dyn, "coupling_inputs", None) or []
+    dvs = dyn.derived_variables
+    events = dyn.events
+    coupling_inputs = dyn.coupling_inputs
 
     # Name of the global coupling output the dynamics consumes.  Use the model's
     # own global coupling-input name (e.g. c_glob) rather than a hard-coded
@@ -3186,7 +3127,7 @@ def build_lems_context(experiment):
         + [f"{sv}_j" for sv in svs.keys()]  # pre-synaptic symbols
         + [str(k) for k in coupling_params.keys()]  # coupling parameters
     )
-    fn_names = list((getattr(dyn, "functions", None) or {}).keys())
+    fn_names = list((dyn.functions).keys())
 
     # ── PyLEMS reserved function names ──
     # These names are hard-coded in PyLEMS's ExprParser and CANNOT be used
@@ -3223,8 +3164,13 @@ def build_lems_context(experiment):
     else:
         _lems_subs = {}
 
+    _bodies = function_bodies(dyn.functions, parameters=all_names)
+
     def lems_expr(e):
         """Parse (if needed), inline model functions, then print as LEMS.
+
+        LEMS has no user-defined function mechanism, so every call must be expanded to its
+        body before printing.
 
         Accepts an `Equation` as readily as an expression or a string, so a caller need not
         know whether the equation states itself as a right-hand side or as conditional
@@ -3238,7 +3184,7 @@ def build_lems_context(experiment):
             if old not in parse_names:
                 parse_names.append(old)
         e = parse_eq(e, parameters=parse_names, functions=fn_names)
-        e = inline_model_functions(e, dyn, all_names)
+        e = inline_functions(e, _bodies)
         if _lems_subs:
             e = e.subs(_lems_subs)
         return sympy_to_lems(e, parameters=all_names)
@@ -3365,9 +3311,9 @@ def build_lems_context(experiment):
         for ct_name, ct_dyn in net_ctx["cell_types"].items():
             ct_params = ct_dyn.parameters or {}
             ct_svs = ct_dyn.state_variables or {}
-            ct_dvs = getattr(ct_dyn, "derived_variables", None) or {}
-            ct_events = getattr(ct_dyn, "events", None) or {}
-            ct_coupling_inputs = getattr(ct_dyn, "coupling_inputs", None) or []
+            ct_dvs = ct_dyn.derived_variables
+            ct_events = ct_dyn.events
+            ct_coupling_inputs = ct_dyn.coupling_inputs
             ct_sv_names_set = set(str(k) for k in ct_svs.keys())
 
             ct_all_names = (
@@ -3376,13 +3322,15 @@ def build_lems_context(experiment):
                 + [str(k) for k in ct_dvs.keys()]
                 + [str(ci) for ci in ct_coupling_inputs]
             )
-            ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
+            ct_fn_names = list((ct_dyn.functions).keys())
 
             _svs_have_physical_units(ct_svs)
 
             _LEMS_CMP_RE = re.compile(r"\.(gt|lt|geq|leq|eq|neq)\.", re.IGNORECASE)
 
             def _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names):
+                ct_bodies = function_bodies(ct_dyn.functions, parameters=ct_all_names)
+
                 def ct_lems_expr(e):
                     # LEMS comparison operators (.gt., .lt., …) are not SymPy-parseable, so
                     # they pass through. Only a string can carry one; stringifying an
@@ -3390,7 +3338,7 @@ def build_lems_context(experiment):
                     if isinstance(e, str) and _LEMS_CMP_RE.search(e):
                         return e
                     e = parse_eq(e, parameters=ct_all_names, functions=ct_fn_names)
-                    e = inline_model_functions(e, ct_dyn, ct_all_names)
+                    e = inline_functions(e, ct_bodies)
                     return sympy_to_lems(e, parameters=ct_all_names)
 
                 return ct_lems_expr
@@ -3484,11 +3432,11 @@ def build_lems_context(experiment):
                         _p.unit = _pinfo["unit"]
                     ct_params[_pn] = _p
                 ct_svs = ct_dyn.state_variables or {}
-                ct_dvs = getattr(ct_dyn, "derived_variables", None) or {}
-                ct_events = getattr(ct_dyn, "events", None) or {}
-                ct_coupling_inputs = getattr(ct_dyn, "coupling_inputs", None) or []
+                ct_dvs = ct_dyn.derived_variables
+                ct_events = ct_dyn.events
+                ct_coupling_inputs = ct_dyn.coupling_inputs
                 ct_sv_names_set = set(str(k) for k in ct_svs.keys())
-                ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
+                ct_fn_names = list((ct_dyn.functions).keys())
                 _svs_have_physical_units(ct_svs)
                 ct_all_names = (
                     [str(k) for k in ct_params.keys()]

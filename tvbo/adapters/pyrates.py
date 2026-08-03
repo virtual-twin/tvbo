@@ -18,6 +18,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
+from tvbo.codegen.code import inline_functions
+from tvbo.parse.expression import function_bodies, parse_eq, states_an_expression
 from tvbo.utils import is_array_valued, as_list
 
 # Single source of truth (forward map + derived reverse) lives in
@@ -196,36 +198,6 @@ def _patch_pyrates_missing_funcs():
             return _orig_parse_expr(self)
 
         _pr_parser.ExpressionParser.parse_expr = _patched_parse_expr
-
-
-def _inline_model_functions(expr, dyn):
-    """Inline model-defined functions (e.g. H(x)) into a SymPy expression.
-
-    Replaces function calls like H(x) with the function body from
-    dyn.functions, substituting formal arguments with actual arguments.
-    """
-    import sympy as sp
-
-    functions = getattr(dyn, "functions", None)
-    if not functions:
-        return expr
-
-    for func_name, func_def in functions.items():
-        func_eq = getattr(func_def, "equation", None)
-        if not func_eq or not func_eq.rhs:
-            continue
-        args = getattr(func_def, "arguments", None) or {}
-        # Function arguments are keyed by name (dict); tolerate a legacy list too.
-        arg_iter = args.values() if hasattr(args, "values") else args
-        arg_names = [str(getattr(a, "name", a)) for a in arg_iter]
-        sym_func = sp.Function(func_name)
-        for match in expr.atoms(sp.Function(func_name)):
-            if match.func == sym_func:
-                body = sp.sympify(func_eq.rhs)
-                for formal, actual in zip(arg_names, match.args):
-                    body = body.subs(sp.Symbol(formal), actual)
-                expr = expr.subs(match, body)
-    return expr
 
 
 class PyRatesAdapter(BaseAdapter):
@@ -931,15 +903,17 @@ class PyRatesAdapter(BaseAdapter):
         """Compute algebraic outputs for a single node."""
         import sympy as sp
 
+        scope = dyn.get_symbolic_elements()
+        bodies = function_bodies(dyn.functions, local_dict=scope)
         for out_name in dyn.output:
             out_var = dyn.derived_variables.get(out_name)
             if out_var is None:
                 continue
             eq = out_var.equation
-            if not (eq and eq.rhs):
+            if not states_an_expression(eq):
                 continue
 
-            expr = _inline_model_functions(sp.sympify(eq.rhs), dyn)
+            expr = inline_functions(parse_eq(eq, local_dict=scope), bodies)
             subs = {}
 
             for sym in expr.free_symbols:
@@ -970,15 +944,17 @@ class PyRatesAdapter(BaseAdapter):
         """Compute algebraic outputs for single dynamics case."""
         import sympy as sp
 
+        scope = dyn.get_symbolic_elements()
+        bodies = function_bodies(dyn.functions, local_dict=scope)
         for out_name in dyn.output:
             out_var = dyn.derived_variables.get(out_name)
             if out_var is None:
                 continue
             eq = out_var.equation
-            if not (eq and eq.rhs):
+            if not states_an_expression(eq):
                 continue
 
-            expr = _inline_model_functions(sp.sympify(eq.rhs), dyn)
+            expr = inline_functions(parse_eq(eq, local_dict=scope), bodies)
             subs = {}
 
             for sym in expr.free_symbols:

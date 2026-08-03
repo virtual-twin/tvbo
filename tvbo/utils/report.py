@@ -909,6 +909,47 @@ def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=
     return latex(eq, mul_symbol=mul_symbol, symbol_names=symbol_names)
 
 
+EQUATION_GROUPS = {
+    "state": "state-equations",
+    "derived": "derived-variables",
+    "derived_parameters": "derived-parameters",
+    "functions": "functions",
+    "output": "output-transformations",
+}
+"""Display group → the key :meth:`Dynamics.get_equations` files it under."""
+
+
+def equation_name(eq):
+    """The name an equation defines: ``x`` for ``Eq(Derivative(x, t), …)``, ``Sigm`` for
+    ``Eq(Sigm(v), …)``."""
+    from sympy import Derivative, Symbol
+
+    lhs = eq.lhs.expr if isinstance(eq.lhs, Derivative) else eq.lhs
+    return lhs.name if isinstance(lhs, Symbol) else type(lhs).__name__
+
+
+def model_equations(model, delta=None):
+    """Every equation a model states, grouped for display and already parsed.
+
+    One call to :meth:`Dynamics.get_equations`, which resolves each equation against the
+    model's own scope and folds conditional branches into a ``Piecewise``. A template that
+    rebuilds any of these groups from ``equation.rhs`` instead re-parses without that scope
+    — the mistake :func:`equation_latex` exists to prevent — and drops outright every
+    equation written purely as branches, whose ``rhs`` is ``None``.
+
+    Args:
+        model: The `Dynamics` to read.
+        delta: Optional `model_delta` result; state and derived variables are narrowed to
+            the ones it reports as changed, so a derived model shows only its own additions.
+    """
+    groups = model.get_equations(format="dict")
+    equations = {name: list(groups.get(key, [])) for name, key in EQUATION_GROUPS.items()}
+    if delta is not None:
+        equations["state"] = [eq for eq in equations["state"] if equation_name(eq) in delta.eq_svars]
+        equations["derived"] = [eq for eq in equations["derived"] if equation_name(eq) in delta.dvars]
+    return equations
+
+
 def model_equations_latex(model, kind="state", derivative_notation="dot", mul_symbol=None):
     """A model's equations of one kind, each as LaTeX, straight from its symbolic form.
 
