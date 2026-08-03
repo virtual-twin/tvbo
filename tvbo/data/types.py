@@ -3210,7 +3210,9 @@ class TimeSeries:
 
         import sympy as sp
 
-        exp = sp.parse_expr(sv_label, equations._clash1, evaluate=False)
+        from tvbo.parse.symbols import BUILTIN_SHADOW
+
+        exp = BUILTIN_SHADOW.parse(sv_label, evaluate=False)
         data = {}
         for s in exp.free_symbols:
             data[str(s)] = self.data[:, self._get_index_of_state_variable(str(s)), :, :]

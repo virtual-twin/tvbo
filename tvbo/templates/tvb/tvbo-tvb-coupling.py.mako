@@ -1,7 +1,6 @@
 <%!
     import numpy as np
     from tvbo.codegen import render_expression
-    from tvbo.classes.equation import _clash1
 
     # Generic pycode - pass parameters on each call. Use the 'numpy' format: TVB coupling
     # pre/post operate on ARRAYS (history states), so functions must be numpy (np.sin), not

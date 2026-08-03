@@ -35,11 +35,8 @@ from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.codegen import templater
 from tvbo.ontology import owl as ontology, query
 from tvbo.classes import equation as equations
-from tvbo.classes.equation import (
-    _clash1,
-    conditionals2piecewise,
-    convert_ifelse_to_np_where,
-)
+from tvbo.classes.equation import convert_ifelse_to_np_where
+from tvbo.parse.symbols import BUILTIN_SHADOW
 
 
 def class2metadata(ontoclass):
@@ -351,20 +348,13 @@ class Stimulus(tvbo_datamodel.Stimulus):
             tuple: ``(expression, parameters)`` — the symbolic expression of the
             equation (or ``None``) and the resolved parameter substitution dict.
         """
-        # Define symbols dynamically
-        t = Symbol("t")
         params = {Symbol(k): v.value for k, v in self.parameters.items()}
-        _clash1.update({"t": t})
 
         if self.equation is None:
             return None, params
 
-        if self.equation.conditionals:
-            eq = conditionals2piecewise(self.equation)
-
-        # Parse the equation
-        else:
-            eq = sympify(self.equation.rhs, _clash1)
+        scope = BUILTIN_SHADOW.extend({str(p): p for p in params}, t=Symbol("t"))
+        eq = scope.parse(self.equation)
 
         if eq:
             self.function = lambdify("t", eq.subs(params), modules="numpy")

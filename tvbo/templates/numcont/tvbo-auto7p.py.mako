@@ -1,7 +1,6 @@
 <%
 import re
 from tvbo.codegen.code import render_equation as render_eq
-from tvbo.classes.equation import _clash1
 model = context['model']
 params = model.parameters.values()
 
