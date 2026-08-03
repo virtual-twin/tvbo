@@ -290,6 +290,8 @@ network_observation_names, observation_names = get_observation_refs(observations
 # Class name from model
 dynamics_class = model.name.replace(' ', '').replace('-', '') if model.name else 'GeneratedDynamics'
 
+from tvbo.utils import initial_value as _initial_value
+
 # Dynamics parameter info (shared utility)
 dyn_param_names, dyn_param_defaults, dyn_param_shapes = get_param_info(model.parameters)
 dyn_param_lazy = materialise_lazy_params(model.parameters, experiment)

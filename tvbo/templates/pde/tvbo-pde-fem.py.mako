@@ -20,6 +20,8 @@ from skfem.models.poisson import mass, laplace
 
 # Extract values directly from the experiment datamodel
 <%
+from tvbo.utils import initial_value as _initial_value
+
 fd = experiment.field_dynamics
 
 # Support both new (state_variables + fd.mesh) and old (fd.field) paths
