@@ -1248,5 +1248,96 @@ def run_${algo_name}(
 % endif
     )
 
+<%
+    # On-device cohort driver: emit only when this experiment's dataset runs on-device
+    # AND this algorithm consumes a per-subject dataset-sourced target the cohort varies.
+    # The shared network stays in the model closure; those targets are the vmap axis.
+    _ds_targets = set(getattr(experiment, 'dataset_observation_targets', None) or {})
+    batched_inputs = [i for i in external_inputs if i in _ds_targets]
+    shared_inputs = [i for i in external_inputs if i not in _ds_targets]
+    emit_cohort = bool(getattr(experiment, 'dataset_on_device', lambda: False)()) and len(batched_inputs) > 0
+    # One tuning schedule for both cases: Algorithm.stages, or a single synthetic stage
+    # from the algo defaults (n_iterations + hyperparameter values) when there are none.
+    _c_stages = list(getattr(algo, 'stages', None) or [])
+    c_stage_defs = []
+    for _st in _c_stages:
+        _over = {}
+        for _arg in (getattr(_st, 'arguments', None) or []):
+            _over[str(_arg.name)] = _arg.value
+        _sd = {'n_iterations': int(_st.n_iterations)}
+        for _hp_name, _hp_val in hyperparam_dict.items():
+            _sd[_hp_name] = _over.get(_hp_name, _hp_val)
+        c_stage_defs.append(_sd)
+    if not c_stage_defs:
+        c_stage_defs = [{'n_iterations': n_iterations, **dict(hyperparam_dict)}]
+%>
+% if emit_cohort:
+def run_cohort_${algo_name}(
+    algo_state,
+    model_fn,
+    key,
+% for _bi in batched_inputs:
+    ${_bi},
+% endfor
+% for _si in shared_inputs:
+    ${_si}=None,
+% endfor
+    save_every: int = None,
+    resync_every: int = None,
+):
+    """On-device cohort: jax.vmap the full ${algo_name} fit over subjects.
+
+    ${', '.join(batched_inputs)} carries a leading subject axis (n_subjects, ...); the
+    shared network lives in model_fn's closure, so only the per-subject target(s) + RNG
+    vary per lane. Every fit runs pure-jnp via run_${algo_name}(raw=True) — no host
+    wrapping inside the vmap. Returns the batched tuned state (leading subject axis);
+    wrap/save per subject on the host after this returns."""
+    _n_subjects = ${batched_inputs[0]}.shape[0]
+    _keys = jax.random.split(key, _n_subjects)
+    _stage_defs = [
+% for sd in c_stage_defs:
+        ${repr(sd)},
+% endfor
+    ]
+    def _fit_one_subject(${', '.join('_lane_%d' % i for i in range(len(batched_inputs)))}, _skey):
+        _st = algo_state
+        _mon = None
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+        _buf_${src_obs} = None
+% endfor
+% endif
+        for _si, _sd in enumerate(_stage_defs):
+            _r = run_${algo_name}(
+                _st, model_fn, jax.random.fold_in(_skey, _si), _sd['n_iterations'],
+% for hp in hyperparam_dict.keys():
+                ${hp}=_sd['${hp}'],
+% endfor
+% for _i, _bi in enumerate(batched_inputs):
+                ${_bi}=_lane_${_i},
+% endfor
+% for _si2 in shared_inputs:
+                ${_si2}=${_si2},
+% endfor
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+                ${src_obs}_buffer=_buf_${src_obs},
+% endfor
+                resync_every=resync_every,
+% endif
+                monitors=_mon, raw=True, run_post_tuning=False, verbose=False,
+                save_every=save_every,
+            )
+            _st = _r.state
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+            _buf_${src_obs} = _r.get('${src_obs}_buffer', _buf_${src_obs})
+% endfor
+% endif
+            _mon = _r.get('monitors', _mon)
+        return _st
+    return jax.vmap(_fit_one_subject)(${', '.join(batched_inputs)}, _keys)
+
+% endif
 % endfor
 % endif

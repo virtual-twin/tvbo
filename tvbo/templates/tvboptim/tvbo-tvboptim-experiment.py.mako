@@ -457,6 +457,15 @@ has_inference = len(inference_list) > 0
 algorithms_list = list(experiment.algorithms.values()) if experiment.algorithms else []
 has_algorithms = len(algorithms_list) > 0
 
+# On-device cohort: the per-subject dataset target is a leading-axis vmap batch
+# (run_cohort_<algo>) instead of one workflow job per subject. Render-time gate.
+_dataset_on_device = bool(getattr(experiment, 'dataset_on_device', lambda: False)())
+_dataset_target_names = set(getattr(experiment, 'dataset_observation_targets', None) or {})
+try:
+    _cohort_subject_ids = list(experiment.dataset_subject_ids()) if _dataset_on_device else []
+except Exception:
+    _cohort_subject_ids = []
+
 # Extract optimizable parameters from optimization stages
 optim_param_info = {}
 
@@ -4092,8 +4101,34 @@ def run_experiment(
         for _hp_name, _hp_val in hyperparams_dict.items():
             _sd[_hp_name] = _over.get(_hp_name, _hp_val)
         stage_defs.append(_sd)
+
+    # On-device cohort: split this algorithm's network-obs inputs into the per-subject
+    # dataset target(s) — the (B, ...) vmap axis — and the cohort-shared inputs.
+    cohort_batched_inputs = [i for i in network_obs_inputs if i in _dataset_target_names]
+    cohort_shared_inputs = [i for i in network_obs_inputs if i not in _dataset_target_names]
+    use_cohort = _dataset_on_device and len(cohort_batched_inputs) > 0
 %>
-% if has_stages:
+% if use_cohort:
+                # ── On-device cohort: jax.vmap the ${algo_name} fit over subjects ──
+                # One vectorised call over the whole (B, ...) target batch instead of
+                # one workflow job per subject. Returns the batched tuned state; the
+                # host unstacks + saves per subject after run().
+                algo_result = Bunch(
+                    name=algorithm_name,
+                    cohort_state=run_cohort_${algo_name}(
+                        algo_state, algo_model_fn, algo_key,
+% for _bi in cohort_batched_inputs:
+                        ${_bi}=${_bi},
+% endfor
+% for _si in cohort_shared_inputs:
+                        ${_si}=${_si},
+% endfor
+                        save_every=kwargs.get('${algo_name}_save_every', kwargs.get('save_every', None)),
+                        resync_every=kwargs.get('${algo_name}_resync_every', kwargs.get('resync_every', None)),
+                    ),
+                    subject_ids=${repr(_cohort_subject_ids)},
+                )
+% elif has_stages:
                 # ── Multi-stage schedule ──────────────────────────────────────
                 # Run the algorithm body once per stage, IN ORDER, carrying
                 # trajectory state + FC window buffer + monitors forward so the

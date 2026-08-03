@@ -359,17 +359,32 @@ def may_show_original(cleared: bool = False) -> bool:
 def figure_label(figure) -> tuple[str, int]:
     """The paper's own label for a figure, parsed from the name the recipe declares.
 
-    Returns ``("Fig", 4)`` or ``("EDF", 10)``; sorting on it puts the main-text figures in
-    order and the extended data after them, so a report never hardcodes a figure list.
+    Returns ``("Fig", 4)`` or ``("EDF", 10)``, and ``("New", 0)`` for a figure the paper has
+    no counterpart for. Sorting on it puts the main-text figures in order, the extended data
+    after them and our own last, so a report never hardcodes a figure list.
     """
     match = _FIG_LABEL_RE.search(slot(figure, "name", "") or "")
-    return (match.group(1), int(match.group(2))) if match else ("Fig", 99)
+    return (match.group(1), int(match.group(2))) if match else ("New", 0)
 
 
 def figure_title(figure) -> str:
-    """A figure's heading, as the paper would print it."""
+    """A figure's heading: the paper's number, or its own name where it has none.
+
+    A replication answers questions the paper left open, and those answers are figures with
+    no published counterpart. Titling one with a number would present it as the paper's, so
+    an unnumbered figure is headed by its declared ``label:``, or failing that by its own
+    name — visibly ours, which is the whole point of the distinction.
+    """
     kind, number = figure_label(figure)
-    return f"Extended Data Fig. {number}" if kind == "EDF" else f"Figure {number}"
+    if kind == "EDF":
+        return f"Extended Data Fig. {number}"
+    if kind == "Fig":
+        return f"Figure {number}"
+    declared = slot(figure, "label", "") or ""
+    if declared:
+        return str(declared)
+    name = str(slot(figure, "name", "") or "figure").split("_", 1)[-1]
+    return name.replace("_", " ").strip().capitalize()
 
 
 def find_figure(name: str, *studies):
@@ -394,9 +409,13 @@ def figure_caption(figure, *studies) -> str:
     return " ".join(str(slot(figure, "description", "") or "").split())
 
 
+_FIGURE_ORDER = {"Fig": 0, "EDF": 1, "New": 2}
+
+
 def figures_in_paper_order(figures) -> list:
-    """The study's figures, ordered as the paper prints them."""
-    return sorted(figures, key=lambda f: (figure_label(f)[0] == "EDF", figure_label(f)[1]))
+    """The study's figures, ordered as the paper prints them, with ours after."""
+    return sorted(figures, key=lambda f: (_FIGURE_ORDER[figure_label(f)[0]],
+                                          figure_label(f)[1], slot(f, "name", "")))
 
 
 def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list[dict]:
@@ -406,6 +425,8 @@ def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list
     beside it, so the two cannot disagree.
     """
     kind, number = figure_label(figure)
+    if kind == "New":
+        return []       # a figure the paper never printed carries none of its targets
     want = f"EDF{number}" if kind == "EDF" else str(number)
     hits = []
     for row in rows:
