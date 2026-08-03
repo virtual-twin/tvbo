@@ -48,6 +48,30 @@ def domain_enforcement(domain) -> str:
     return str(enf).rsplit(".", 1)[-1]
 
 
+#: Where a state variable starts when its spec does not say. Every backend reads
+#: ``initial_value`` through :func:`initial_value`, so an undeclared state starts at the
+#: same place everywhere instead of at whatever each template happened to write.
+DEFAULT_INITIAL_VALUE = 0.1
+
+
+def initial_value(sv, default=DEFAULT_INITIAL_VALUE) -> float:
+    """The initial value a state variable declares, else *default*.
+
+    ``StateVariable.initial_value`` has no schema default: undeclared is ``None`` and
+    means "the spec did not say", which is what makes the fallback the caller's to name.
+    A model state starts at :data:`DEFAULT_INITIAL_VALUE`; an observation reduction's
+    accumulator starts at its reduction identity ``0.0``, which is a different question
+    and so is passed explicitly.
+
+    The slot used to carry ``ifabsent: float(0.1)``, which materialised 0.1 for every
+    state variable. That made "undeclared" unrepresentable — every consumer's own
+    ``is None`` fallback was unreachable, and a reduction observer could not distinguish
+    a declared 0.1 from a spec that said nothing.
+    """
+    v = getattr(sv, "initial_value", None)
+    return float(v) if v is not None else float(default)
+
+
 def register_recipe_code_paths(source_file, code_source=None) -> list:
     """Make a recipe's callable code importable — the ``code/`` convention, or a
     declared :class:`CodeSource` (a local directory or a git repository).

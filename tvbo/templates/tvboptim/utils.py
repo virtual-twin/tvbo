@@ -917,12 +917,38 @@ def time_argument_ms(argument: Any, default: float) -> float:
     return value
 
 
+def _sv_default_initial_value() -> float:
+    """The schema's own default for ``StateVariable.initial_value``.
+
+    Read from the class so the "undeclared" sentinel in :func:`_reduction_init_value`
+    tracks the schema instead of duplicating its default as a literal.
+    """
+    from tvbo.datamodel.schema import StateVariable
+
+    return float(StateVariable(name="_").initial_value)
+
+
+_SV_DEFAULT_INITIAL_VALUE = _sv_default_initial_value()
+
+
 def _reduction_init_value(sv: Any) -> float:
     """Initial scalar for an observer state (its declared value, else 0.0).
 
-    Accumulators start at their reduction identity (0.0 for a sum); a memory state's
-    init is irrelevant (it is overwritten on the first step), so 0.0 is a safe default.
+    Accumulators start at their reduction identity (0.0 for a sum) and a memory state's
+    init is irrelevant (it is overwritten on the first step), so 0.0 is the default. An
+    observer that is a genuine ODE rather than an accumulator (the Balloon-Windkessel
+    hemodynamics, whose blood inflow, volume and deoxyhaemoglobin rest at 1.0) declares
+    ``initial_value``, which is honoured here.
+
+    ``StateVariable.initial_value`` carries a schema default meant for a *model* state,
+    so a value equal to that default is read as undeclared and keeps the reduction
+    identity; an observer wanting exactly the schema default as its init cannot express
+    that. The sentinel is taken from the class rather than hardcoded, so it tracks the
+    schema.
     """
+    declared = get_attr(sv, "initial_value")
+    if declared is not None and float(to_numeric(declared)) != _SV_DEFAULT_INITIAL_VALUE:
+        return float(to_numeric(declared))
     for holder in (sv, get_attr(sv, "domain"), get_attr(sv, "distribution")):
         v = get_attr(holder, "value") if holder is not None else None
         if v is not None:
@@ -1317,11 +1343,18 @@ def _resolve_subsample_stream(obs: Any, experiment: Any = None) -> Optional[Dict
     return red
 
 
+# The canonical symbol an observer's expressions use for the signal it observes, bound to
+# whatever the observation's `source` names. It is what lets an observation model be curated
+# once and pointed at any model's state variable, the same role `x_j` plays in a curated
+# coupling's pre_expression.
+OBSERVER_INPUT = "x"
+
 _REDUCTION_DIMS = {
     "convolution": ("time", "node"),   # HRF-Volterra BOLD: one kept sample per TR, per node
     "stride": ("time", "node"),        # decimation: every k-th sample, per node
     "comoment": ("node", "node_j"),    # cumulative co-moment FC: a node-by-node matrix
     "recurrence": ("node",),           # a folded statistic: one value per node
+    "monitor": ("time", "node"),       # a co-integrated observer emitting at its period
 }
 
 
@@ -1373,8 +1406,12 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     # dynamics-observer recurrence path below. A cumulative mean/std/variance over a source
     # (no HRF/BOLD pipeline) synthesizes a running-moment accumulator; an HRF-Volterra BOLD
     # pipeline lifts the convolution reducer.
+    # An observation that declares its own `dynamics` is already a reducer; `reduce:
+    # streaming` on it opts that reducer into the post-tuning carry (streaming_post_eval_plan)
+    # rather than selecting a pipeline-lifted one, so the observer path below owns it.
     _rm = get_attr(obs, "reduce")
-    if _rm is not None and str(getattr(_rm, "value", _rm)) == "streaming":
+    if (_rm is not None and str(getattr(_rm, "value", _rm)) == "streaming"
+            and get_attr(obs, "dynamics") is None):
         _agg = get_attr(obs, "aggregation", None)
         _agg = str(getattr(_agg, "value", _agg) or "").lower()
         _pipe = as_list(get_attr(obs, "pipeline"))
@@ -1455,11 +1492,20 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
             f"variable and a parameter; a symbol must denote one or the other."
         )
 
+    # A curated observer cannot know which model state a study will point it at, so it
+    # writes its input as the canonical OBSERVER_INPUT — the device a curated Coupling
+    # already uses for its presynaptic state (`x_j`) and summed input (`gx`). It is bound
+    # here to whatever `source` names, so every rendered expression carries the real symbol
+    # and no backend template needs to know about the alias. An observer that declares its
+    # own symbol of that name means that symbol, and no alias applies.
+    own = set(sv_names) | set(param_names) | set(dv_names)
+    alias = OBSERVER_INPUT if source and OBSERVER_INPUT not in own else None
+
     # Symbolic vocabulary: observer states + parameters + source + framework scalars are
     # Symbols; the observer's user functions are undefined Functions. Parse every RHS
     # against it.
-    allowed = (set(sv_names) | set(param_names) | set(dv_names)
-               | ({source} if source else set()) | {"dt", "count"})
+    allowed = (own | ({source} if source else set()) | {"dt", "count"}
+               | ({alias} if alias else set()))
     loc: Dict[str, Any] = {n: sp.Symbol(n) for n in allowed}
     loc["pi"] = sp.pi
     funcs = get_attr(dyn, "functions")
@@ -1480,9 +1526,10 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
             raise ValueError(
                 f"Observation reduction {where}: unknown symbol(s) {sorted(unknown)}; "
                 f"available are the observer states {sv_names}, its parameters "
-                f"{param_names}, the source {source!r}, and dt/count."
+                f"{param_names}, the source {source!r}"
+                f"{f' (also as {alias!r})' if alias else ''}, and dt/count."
             )
-        return expr
+        return expr.subs(sp.Symbol(alias), sp.Symbol(source)) if alias else expr
 
     states: List[Dict[str, Any]] = []
     windowed = False
@@ -1570,7 +1617,17 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
             "compare": ">=" if direction == "greater_equal" else "<=",
         })
 
+    # The readout: the (deprecated) `output` list, else the derived variable marked
+    # `record: true` — the current way a Dynamics names what it reports. Exactly one
+    # recorded variable can be the observation's value; several is ambiguous, not a default.
     outs = as_list(get_attr(dyn, "output"))
+    if not outs:
+        outs = [str(n) for n, d in dv_map.items() if get_attr(d, "record")]
+        if len(outs) > 1:
+            raise ValueError(
+                f"Observation reduction observer marks {sorted(outs)} as `record: true`; "
+                "an observation has one value, so exactly one derived variable may be recorded."
+            )
     output = None
     output_name = str(outs[0]) if outs else None
     if outs:
@@ -1606,7 +1663,36 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
             "reduced quantity's range."
         )
 
+    # `period` makes the observer a MONITOR: its output is emitted every period into a time
+    # series, instead of collapsing time into one value per node at the final step. That is
+    # the declared contract of Observation.dynamics ("read at the final step for a reduction
+    # ... or, when `period` is set, sub-sampled over time for a monitor"). The period is
+    # resolved against the integration grid, so it needs the experiment; the bare predicate
+    # call ("is this a reduction?") only asks whether the observer exists.
+    _period = get_attr(obs, "period")
+    _period = float(to_numeric(_period)) if _period is not None else None
+    _dt = get_attr(get_attr(experiment, "integration"), "step_size") if experiment is not None else None
+    _dt = float(to_numeric(_dt)) if _dt else None
+    period_steps = None
+    if _period and experiment is not None:
+        if not _dt:
+            raise ValueError(
+                f"Observation {get_attr(obs, 'name', None)!r} declares an observer `dynamics` "
+                f"and period {_period} ms, but the experiment has no integration step_size to "
+                "resolve it against; the observer cannot know how often to emit."
+            )
+        period_steps = int(round(_period / _dt))
+        if period_steps < 1:
+            raise ValueError(
+                f"Observation {get_attr(obs, 'name', None)!r}: period {_period} ms is shorter "
+                f"than the integration step {_dt} ms; an observer cannot emit faster than it advances."
+            )
+
     return {
+        # 'monitor' emits every period_steps into a time series; 'recurrence' folds the whole
+        # run into one value per node. Both render from the same observer context.
+        "kind": "monitor" if period_steps else "recurrence",
+        "period_steps": period_steps,
         "source": source,
         "states": states,
         "derived": derived,       # per-step DV chain (sympy Exprs, declaration order); [] for a simple observer
@@ -1702,12 +1788,14 @@ def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
     import math
     # A reducer that writes into a sample-indexed buffer carries a block to align to, so
     # that a slot boundary never falls inside a block: ds_steps * tr_stride for a
-    # convolution (BOLD) reducer, ds_steps for a plain stride. A scalar stat stream has
-    # none, so default the block to a plain 1000 steps.
-    slotted = [r for r in streaming.values() if r.get("kind") in ("convolution", "stride")]
+    # convolution (BOLD) reducer, ds_steps for a plain stride, period_steps for a monitor
+    # observer. A scalar stat stream has none, so default the block to a plain 1000 steps.
+    slotted = [r for r in streaming.values()
+               if r.get("kind") in ("convolution", "stride", "monitor")]
     pis = 1
     for r in slotted:
-        step = int(r["ds_steps"]) * int(r.get("tr_stride", 1))
+        step = int(r["period_steps"] if r.get("period_steps")
+                   else int(r["ds_steps"]) * int(r.get("tr_stride", 1)))
         pis = pis * step // math.gcd(pis, step)
     period = pis if slotted else 1000
     return {"names": sorted(streaming), "deliverables": deliverables, "period_in_steps": period,

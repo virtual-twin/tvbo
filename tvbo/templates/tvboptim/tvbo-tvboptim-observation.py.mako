@@ -805,11 +805,27 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         return _out[_skip_n:]
     return (_init, _update, _finalize)
 </%def>\
+## The two per-step observer fragments every reduction branch shares, emitted at the caller's
+## indentation `ind` with its expression printer `jc`. Kept separate because the histogram
+## fold evaluates its per-step sample BETWEEN them.
+<%def name="render_observer_dvs(dvs, jc, ind)">\
+% for _d in dvs:
+${ind}${_d['name']} = ${jc(_d['expr'])}
+% endfor
+</%def>\
+## `states` is the subset this branch advances: all of them, or memory-only for the
+## histogram fold (an accumulator there is the histogram itself).
+<%def name="render_observer_states(states, jc, ind)">\
+% for s in states:
+${ind}_new_${s['name']} = ${jc(s['update'])}
+% endfor
+</%def>\
 <%def name="render_recurrence_reduction(red, name, s_idx, dt)">\
 <%
     from tvbo.codegen import render_expression
     from tvbo.templates.tvboptim.utils import render_jax_default
     _is_median = red.get('statistic', 'mean') == 'median'
+    _period_steps = red.get('period_steps')
     # Pure accumulators (skip_inclusive) fold the sample AT skip; a memory-dependent
     # observer's first step has no predecessor, so it starts the step after (`>`).
     _gate = '>=' if red.get('skip_inclusive') else '>'
@@ -868,15 +884,11 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
             ${_mem_pre}_counts, _gstep = carry
             ${_src} = s_row[s_var]
             _accumulate = _gstep ${_gate} skip
-% for _d in _step_dvs:
-            ${_d['name']} = ${_jc(_d['expr'])}
-% endfor
+${render_observer_dvs(_step_dvs, _jc, ' ' * 12)}\
             _q_step = ${_jc(red['output'])}
             _b = jnp.clip(((_q_step - _hlo) / _hbw).astype(jnp.int32), 0, _hbins - 1)
             _counts = _counts.at[_b, jnp.arange(_counts.shape[1])].add(jnp.where(_accumulate, 1.0, 0.0))
-% for s in _mem:
-            _new_${s['name']} = ${_jc(s['update'])}
-% endfor
+${render_observer_states(_mem, _jc, ' ' * 12)}\
             return (${_mem_new}_counts, _gstep + 1), None
         return jax.lax.scan(_step, acc, block)[0]
     def _finalize(acc):
@@ -889,6 +901,57 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
         _frac = (_target - _cb) / jnp.maximum(jnp.take_along_axis(_counts, _bi[None, :], 0)[0], 1.0)
         return _hlo + (_bi + _frac) * _hbw
     return (_init, _update, _finalize)
+% elif _period_steps:
+    # Monitor form (Observation.period): the observer emits its output every _period
+    # integration steps into a preallocated time series, instead of collapsing time into one
+    # value per node at the final step. The block is scanned in period-length chunks, so
+    # exactly one sample leaves each chunk and its write slot is exact. States advance on
+    # EVERY step — an observer with its own relaxation (hemodynamics) has to warm up through
+    # the transient — and `skip` drops the leading transient SAMPLES at finalize, which is
+    # what the stride reducer does with the same argument.
+    _period = ${_period_steps}
+    def _init(template, n_steps):
+        n = template.shape[-1]
+        return (${", ".join("jnp.full((n,), %r)" % s['init'] for s in red['states'])},
+                jnp.zeros((n,)), jnp.zeros((n_steps // _period, n)), jnp.array(0))
+    def _update(acc, block):
+        *_st, _out, _count = acc
+        def _step(carry, s_row):
+            ${", ".join(_snames)}, _emit = carry
+            ${_src} = s_row[s_var]
+${render_observer_dvs(_step_dvs, _jc, ' ' * 12)}\
+${render_observer_states(red['states'], _jc, ' ' * 12)}\
+            # The output is evaluated from the ADVANCED state every step and carried in one
+            # [n] slot, so the chunk reads the sample landing on its boundary without the
+            # per-step values ever being stacked, and any expression the observer's step
+            # scope binds (its derived chain, the source) is in scope where it is used.
+            ${", ".join(_snames)} = ${", ".join("_new_%s" % _n for _n in _snames)}
+            return (${", ".join(_snames)}, ${_jc(red['output'])}), None
+        def _chunk(carry, rows):
+            carry = jax.lax.scan(_step, carry, rows)[0]
+            return carry, carry[-1]
+        if block.shape[0] % _period and block.shape[0] > _period:
+            # The chunk grid is anchored at the block start, so a block that is not a whole
+            # number of periods would shift every later sample off the global grid. Block
+            # sizes come from streaming_post_eval_plan's period_in_steps (a multiple of every
+            # reducer's stride); a block SHORTER than one period is the run's final tail and
+            # holds no whole sample.
+            raise ValueError(
+                f"monitor reducer: a {block.shape[0]}-step block is not a whole number of "
+                f"{_period}-step emission periods; size blocks from period_in_steps.")
+        _n_full = block.shape[0] // _period
+        _st, _samples = jax.lax.scan(
+            _chunk, tuple(_st),
+            block[:_n_full * _period].reshape(_n_full, _period, *block.shape[1:]))
+        _out = jax.lax.dynamic_update_slice(_out, _samples, (_count, 0))
+        if block.shape[0] % _period:
+            # A short tail block emits nothing; its steps still advance the observer.
+            _st = jax.lax.scan(_step, _st, block[_n_full * _period:])[0]
+        return (*_st, _out, _count + _n_full)
+    def _finalize(acc):
+        *_st, _out, _count = acc
+        return _out[skip // _period:]
+    return (_init, _update, _finalize)
 % else:
     def _init(template, n_steps):
         n = template.shape[-1]
@@ -898,12 +961,8 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
             ${", ".join(_snames)}, _count, _gstep = carry
             ${_src} = s_row[s_var]
             _accumulate = _gstep ${_gate} skip
-% for _d in _step_dvs:
-            ${_d['name']} = ${_jc(_d['expr'])}
-% endfor
-% for s in red['states']:
-            _new_${s['name']} = ${_jc(s['update'])}
-% endfor
+${render_observer_dvs(_step_dvs, _jc, ' ' * 12)}\
+${render_observer_states(red['states'], _jc, ' ' * 12)}\
 % for s in red['states']:
 % if s['is_accumulator']:
             _new_${s['name']} = jnp.where(_accumulate, _new_${s['name']}, ${s['name']})
@@ -1142,7 +1201,9 @@ class ${class_name}(AbstractMonitor):
 
     def __init__(self, history=None, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
         self.voi = voi
-        self.period = period if period is not None else dt
+        # A monitor observer reports at its declared period; a folded statistic has one
+        # value for the whole run, so its period is the integration step.
+        self.period = period if period is not None else ${repr(float(obs['period'])) if obs['reduction'].get('kind') == 'monitor' else 'dt'}
         self.dt = dt
 
     def __call__(self, result):

@@ -1,0 +1,125 @@
+# BOLD (Balloon-Windkessel) — hemodynamic forward model as a co-integrated observer
+#
+# The other BOLD observations here convolve the neural signal with an HRF kernel, which
+# needs a ring buffer of past samples to stream. This one states the hemodynamics as what
+# they are — a four-variable ODE driven by the neural signal — so it carries only its own
+# state and never needs a trajectory. Declared as an `Observation.dynamics` observer: the
+# four states advance in step with the model inside the integrator carry, and `period`
+# emits the BOLD signal at the TR, so peak memory is O(nodes) rather than O(time x nodes).
+#
+# The recurrences are the explicit-Euler step (`equation_type: recurrence`) on the seconds
+# grid the reference implementations integrate on; `dt` is the model's step in ms, so
+# `dt_s` converts once. Every derivative is read from the state BEFORE the step, then all
+# four commit together, matching Friston (2000) and tvboptim's BalloonWindkesselBold.
+#
+# References:
+# - Friston et al. (2000) NeuroImage 12:466-477 (Balloon-Windkessel)
+# - Deco et al. (2014) J Neurosci 34:7886-7898 (parameterisation used here)
+
+name: BOLD_Balloon
+label: BOLD (Balloon-Windkessel)
+iri: tvbo:BOLD_Balloon
+description: >-
+    BOLD fMRI observation model using the Balloon-Windkessel hemodynamic ODE,
+    co-integrated with the model rather than applied to a stored trajectory.
+    Vasodilatory signal, blood inflow, blood volume and deoxyhaemoglobin advance
+    alongside the neural state, and the BOLD signal is emitted at each TR, so peak
+    memory is O(nodes) instead of O(time x nodes).
+
+imaging_modality: BOLD
+
+period: 720.0
+
+dynamics:
+    name: BalloonWindkessel
+    description: >-
+        Four-variable Balloon-Windkessel hemodynamics driven by the observed neural
+        signal `x`, as an explicit-Euler recurrence on the seconds grid.
+    system_type: discrete
+
+    parameters:
+        tau_s:
+            value: 0.65
+            unit: s
+            description: Vasodilatory signal decay time constant
+        tau_f:
+            value: 0.41
+            unit: s
+            description: Autoregulatory feedback time constant
+        tau_o:
+            value: 0.98
+            unit: s
+            description: Transit time
+        alpha:
+            value: 0.32
+            description: Grubb's vessel stiffness exponent
+        E0:
+            value: 0.4
+            description: Resting oxygen extraction fraction
+        V0:
+            value: 0.04
+            description: Resting blood volume fraction
+        TE:
+            value: 0.04
+            unit: s
+            description: Echo time
+        nu_0:
+            value: 40.3
+            unit: Hz
+            description: Frequency offset at the outer surface of magnetised vessels
+        r_0:
+            value: 25.0
+            unit: Hz
+            description: Slope of intravascular relaxation rate against oxygen saturation
+
+    state_variables:
+        s:
+            initial_value: 0.0
+            equation_type: recurrence
+            equation:
+                rhs: "s + dt_s * (x - s / tau_s - (f - 1.0) / tau_f)"
+            description: Vasodilatory signal
+        f:
+            initial_value: 1.0
+            equation_type: recurrence
+            equation:
+                rhs: "f + dt_s * s"
+            description: Blood inflow
+        v:
+            initial_value: 1.0
+            equation_type: recurrence
+            equation:
+                rhs: "v + dt_s * (f - v ** (1.0 / alpha)) / tau_o"
+            description: Blood volume
+        q:
+            initial_value: 1.0
+            equation_type: recurrence
+            equation:
+                rhs: "q + dt_s * (f * (1.0 - (1.0 - E0) ** (1.0 / f)) / E0 - v ** (1.0 / alpha - 1.0) * q) / tau_o"
+            description: Deoxyhaemoglobin content
+
+    derived_variables:
+        dt_s:
+            equation: {rhs: "dt * 0.001"}
+            unit: s
+            description: The integration step on the seconds grid the hemodynamics use.
+        k1:
+            equation: {rhs: "4.3 * nu_0 * E0 * TE"}
+            description: Extravascular BOLD weighting (Friston 2000 / Obata 2004).
+        k2:
+            equation: {rhs: "r_0 * E0 * TE"}
+            description: >-
+                Intravascular weighting. The published form carries an intra- to
+                extra-vascular ratio epsilon on this term and (1 - epsilon) on k3; TVB and
+                tvboptim's BalloonWindkesselBold fix epsilon at 1 here and 0 in k3, which
+                cannot both hold. This keeps their constants, so the observer reproduces
+                every BOLD number computed with that monitor; a study that wants the
+                epsilon-consistent weighting overrides k2 and k3.
+        k3:
+            equation: {rhs: "1.0"}
+            description: Volume-change weighting; see the note on k2.
+        bold_signal:
+            record: true
+            equation:
+                rhs: "V0 * (k1 * (1.0 - q) + k2 * (1.0 - q / v) + k3 * (1.0 - v))"
+            description: BOLD signal

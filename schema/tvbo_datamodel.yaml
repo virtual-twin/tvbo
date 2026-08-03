@@ -2144,9 +2144,11 @@ classes:
                     Auxiliary state system co-integrated with the model to compute this
                     observation online, so the full trajectory need never be held. Its
                     state variables advance in step with the model, and the observation's
-                    value is this Dynamics' ``output`` — read at the final step for a
-                    reduction (e.g. effective frequency) or, when ``period`` is set,
-                    sub-sampled over time for a monitor. Backends fold it into their own
+                    value is the derived variable this Dynamics marks ``record: true`` —
+                    read at the final step for a reduction (e.g. effective frequency) or,
+                    when ``period`` is set, emitted at that period as a time series for a
+                    monitor (e.g. a Balloon-Windkessel hemodynamic forward model, which
+                    then costs O(nodes) instead of O(time x nodes)). Backends fold it into their own
                     integration so a batched parameter sweep carries only the accumulator,
                     not a per-cell trajectory. An alternative to the post-scan ``pipeline``
                     / ``class_reference`` for observations expressible as a time recurrence.
@@ -2155,7 +2157,12 @@ classes:
                     — scalar or array-valued (``value`` a nested list, ``shape`` declaring
                     its extent), so a fixed operator the reduction consumes (a mesh gradient,
                     a template matrix) is declared as data on the observer rather than
-                    hidden inside a backend callable.
+                    hidden inside a backend callable. Its expressions name the observed
+                    signal ``x``, bound to whatever this observation's ``source`` names —
+                    the same device a curated coupling's ``pre_expression`` uses with
+                    ``x_j`` — so an observation model is curated once and pointed at any
+                    model's state variable. An observer that declares its own ``x`` (state,
+                    parameter or derived variable) means that ``x`` and gets no binding.
 
             # Opt-in streaming evaluation of a post-scan pipeline observation.
             reduce:

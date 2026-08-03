@@ -356,7 +356,7 @@ def run_${algo_name}(
         print_every = _smart_interval(n_iterations)
     if save_every is None:
         save_every = _smart_interval(n_iterations)
-    state = copy.deepcopy(state)
+    state = jax.tree_util.tree_map(lambda _leaf: _leaf, state)  # fresh container; trace-safe (deepcopy of a jax typed key asserts under trace)
 
     # Update rule functions
 % for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
@@ -1284,14 +1284,23 @@ def run_cohort_${algo_name}(
 % endfor
     save_every: int = None,
     resync_every: int = None,
+    batch_size: int = None,
 ):
-    """On-device cohort: jax.vmap the full ${algo_name} fit over subjects.
+    """On-device cohort: vectorise the full ${algo_name} fit over subjects.
 
     ${', '.join(batched_inputs)} carries a leading subject axis (n_subjects, ...); the
     shared network lives in model_fn's closure, so only the per-subject target(s) + RNG
     vary per lane. Every fit runs pure-jnp via run_${algo_name}(raw=True) — no host
     wrapping inside the vmap. Returns the batched tuned state (leading subject axis);
-    wrap/save per subject on the host after this returns."""
+    wrap/save per subject on the host after this returns.
+
+    ``batch_size`` bounds how many subjects vectorise together: the whole cohort in
+    one ``vmap`` by default, or a Python loop of ``batch_size``-wide ``vmap`` slices
+    concatenated on the subject axis when a smaller width is requested (or the memory
+    budget resolves one). Each slice is a plain ``vmap`` run on its own, so only one
+    slice's working memory is live at a time. A narrower slice changes XLA's fusion
+    order, so per-subject results match the whole-cohort ``vmap`` to floating-point
+    rounding (~1 ULP), not bit-for-bit."""
     _n_subjects = ${batched_inputs[0]}.shape[0]
     _keys = jax.random.split(key, _n_subjects)
     _stage_defs = [
@@ -1336,7 +1345,15 @@ def run_cohort_${algo_name}(
 % endif
             _mon = _r.get('monitors', _mon)
         return _st
-    return jax.vmap(_fit_one_subject)(${', '.join(batched_inputs)}, _keys)
+    _example = (${', '.join('%s[0]' % bi for bi in batched_inputs)}, _keys[0])
+    _bs = resolve_cohort_batch_size(batch_size, _n_subjects, _fit_one_subject, _example)
+    if _bs >= _n_subjects:
+        return jax.vmap(_fit_one_subject)(${', '.join(batched_inputs)}, _keys)
+    _chunks = [
+        jax.vmap(_fit_one_subject)(${', '.join('%s[_i:_i + _bs]' % bi for bi in batched_inputs)}, _keys[_i:_i + _bs])
+        for _i in range(0, _n_subjects, _bs)
+    ]
+    return jax.tree_util.tree_map(lambda *_c: jnp.concatenate(_c, axis=0), *_chunks)
 
 % endif
 % endfor

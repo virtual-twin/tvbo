@@ -465,6 +465,8 @@ try:
     _cohort_subject_ids = list(experiment.dataset_subject_ids()) if _dataset_on_device else []
 except Exception:
     _cohort_subject_ids = []
+# dataset.batch_size: subjects per on-device batch (None = size against the memory budget).
+_cohort_batch_size = experiment.dataset_batch_size() if _dataset_on_device else None
 
 # Extract optimizable parameters from optimization stages
 optim_param_info = {}
@@ -1401,6 +1403,9 @@ from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 from tvboptim.types import Space, GridAxis, DataAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
 from tvbo.templates.tvboptim.callbacks import progress_ticker, resolve_exploration_n_vmap   # grid-batch progress; n_parallel → vmap width
+% endif
+% if _dataset_on_device:
+from tvbo.templates.tvboptim.callbacks import resolve_cohort_batch_size   # dataset.batch_size → subjects per on-device batch
 % endif
 % if has_nsga2:
 # Multi-objective search (Exploration.strategy == 'nsga2') + Pareto-seeded refinement.
@@ -4125,6 +4130,7 @@ def run_experiment(
 % endfor
                         save_every=kwargs.get('${algo_name}_save_every', kwargs.get('save_every', None)),
                         resync_every=kwargs.get('${algo_name}_resync_every', kwargs.get('resync_every', None)),
+                        batch_size=kwargs.get('cohort_batch_size', ${repr(_cohort_batch_size)}),
                     ),
                     subject_ids=${repr(_cohort_subject_ids)},
                 )

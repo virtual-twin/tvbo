@@ -1018,6 +1018,17 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
             for step in data["pipeline"]
         ]
 
+    # dynamics: a co-integrated observer (the alternative to a pipeline — the observation
+    # computed online as a recurrence). Fill if absent, exactly as the pipeline is; without
+    # this an `iri`-referenced observer arrives with no dynamics and codegen emits a
+    # pass-through monitor.
+    if data.get("dynamics") is not None and not getattr(obs, "dynamics", None):
+        dyn = data["dynamics"]
+        obs.dynamics = (
+            dyn if isinstance(dyn, tvbo_datamodel.Dynamics)
+            else tvbo_datamodel.Dynamics(**dyn)
+        )
+
     # class_reference: a monitor/class handle (e.g. tvb Bold). Fill if absent.
     if data.get("class_reference") is not None and not getattr(obs, "class_reference", None):
         cr = data["class_reference"]
