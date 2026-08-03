@@ -659,17 +659,17 @@ def plan(
     axes = extract_axes(experiment)
 
     # dataset.batch_mode: on_device runs the whole cohort as one job; fan_out shards per subject.
-    try:
-        on_device = bool(getattr(experiment, "dataset_on_device", lambda: False)())
-    except Exception:
-        on_device = False
+    on_device = bool(getattr(experiment, "dataset_on_device", lambda: False)())
     cohort_subjects: list[str] = []
     cohort_result_files: list[str] = []
     if on_device:
-        try:
-            cohort_subjects = [str(s) for s in experiment.dataset_subject_ids()]
-        except Exception:
-            cohort_subjects = []
+        cohort_subjects = [str(s) for s in experiment.dataset_subject_ids()]
+        if not cohort_subjects:
+            raise ValueError(
+                f"Experiment {getattr(experiment, 'id', experiment_key)!r} sets dataset.batch_mode: "
+                f"on_device but no subjects were discovered, so the single cohort job's per-subject "
+                f"outputs cannot be planned. Check dataset.bids_root / dataset.subjects."
+            )
         cohort_result_files = _cohort_result_files(experiment, cohort_subjects)
     else:
         subject_axis = _dataset_subject_axis(experiment)
