@@ -103,6 +103,35 @@ def test_save_records_labelled_estimate_for_free_params_only(tmp_path):
         ds.close()
 
 
+def test_save_records_bare_jax_array_params(tmp_path):
+    """The real tvboptim state stores tuned params as BARE jax arrays (``ArrayImpl``),
+    not wrapped in a ``__jax_array__`` object. A jax array carries an empty ``__dict__``,
+    so a container-vs-leaf guard that only excludes numpy arrays mis-recurses into it and
+    silently drops every per-node array param (J_i / wLRE / wFFI). Guard the leaf path
+    for the real representation, not just the ``_JaxParam`` mock."""
+    xr = pytest.importorskip("xarray")
+    jnp = pytest.importorskip("jax.numpy")
+    n = 4
+    labels = [f"R{i}" for i in range(n)]
+    state = SimpleNamespace(
+        dynamics=SimpleNamespace(J_i=jnp.arange(n, dtype=float)),
+        coupling=SimpleNamespace(EIBLinearCoupling=SimpleNamespace(
+            wLRE=jnp.full((n, n), 0.7), wFFI=jnp.full((n, n), 0.3))),
+    )
+    res = ExperimentResult(algorithms={"fic_eib": SimpleNamespace(state=state)},
+                           source=_fake_source(labels))
+    written = res.save(str(tmp_path), compress=False, record_only=False)
+    ds = xr.open_dataset([p for p in written if p.endswith(".h5")][0], engine="h5netcdf")
+    try:
+        names = set(ds.data_vars)
+        assert {"estimate__J_i", "estimate__wLRE", "estimate__wFFI"} <= names
+        assert ds["estimate__J_i"].dims == ("node",)
+        assert list(ds["estimate__J_i"]["node"].values) == labels
+        assert ds["estimate__wLRE"].dims == ("node_i", "node_j")
+    finally:
+        ds.close()
+
+
 def test_estimate_uses_resolved_not_placeholder_labels(tmp_path):
     """A bids: source can carry placeholder node_labels (region_<i>) until hydrated; the
     estimate must be recorded with the RESOLVED labels (what the consumer reconciles

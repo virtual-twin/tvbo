@@ -970,6 +970,9 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             "block": plan.engine_block or {},
             "axes": [{"name": ax.name, "parameter": ax.parameter, "values": list(ax.values)}
                      for ax in plan.workflow_axes],
+            # on_device cohort: the subjects this single job produces one result each for.
+            "cohort_subjects": list(plan.cohort_subjects),
+            "cohort_result_files": list(plan.cohort_result_files),
             "depends_on": [_key_of.get(str(d), _san(str(d))) for d in plan.depends_on],
         })
 

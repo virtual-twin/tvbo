@@ -3188,6 +3188,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         mode = getattr(mode, "value", mode)  # enum -> str
         return str(mode) == "on_device" and bool(self.dataset_observation_targets)
 
+    def dataset_batch_size(self):
+        """Subjects per on-device batch (``dataset.batch_size``), or ``None`` for auto.
+
+        Bounds how many subjects the cohort driver holds in one vectorised batch,
+        so a large cohort is chunked in-process instead of vmapped all at once.
+        ``None`` lets the driver size the batch against the working-memory budget
+        (as for exploration ``n_parallel: auto``). Only meaningful on-device.
+        """
+        ds = getattr(self, "dataset", None)
+        bs = getattr(ds, "batch_size", None) if ds is not None else None
+        return int(bs) if bs is not None else None
+
     def resolve_dataset_observations_batched(self, subjects: list = None):
         """Resolve every cohort subject's dataset target and stack over subjects.
 
