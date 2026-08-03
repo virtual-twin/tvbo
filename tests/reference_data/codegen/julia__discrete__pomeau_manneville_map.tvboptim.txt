@@ -39,8 +39,8 @@ class PomeauMannevilleMap(AbstractDynamics):
                 jnp.less(x, -0.5),
                 -4 * x - 1 * 3,
                 jnp.where(
-                    jnp.less_equal(abs(x), 0.5),
-                    x * (1 + (2 * abs(x)) ** (z - 1 * 1)),
+                    jnp.less_equal(jnp.abs(x), 0.5),
+                    x * (1 + jnp.abs(2 * x) ** (z - 1 * 1)),
                     0,
                 ),
             ),

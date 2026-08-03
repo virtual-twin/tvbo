@@ -16,7 +16,9 @@ def dfun(current_state, t, cX, _p):
         np.where(
             np.less(x, -0.5),
             -3 - 4 * x,
-            np.where(np.less_equal(abs(x), 0.5), x * (1 + (2 * abs(x)) ** (-1 + z)), 0),
+            np.where(
+                np.less_equal(np.abs(x), 0.5), x * (1 + np.abs(2 * x) ** (-1 + z)), 0
+            ),
         ),
     )
 

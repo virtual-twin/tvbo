@@ -17,7 +17,7 @@ def dfun(current_state, t, cX, _p):
             jnp.less(x, -0.5),
             -3 - 4 * x,
             jnp.where(
-                jnp.less_equal(abs(x), 0.5), x * (1 + (2 * abs(x)) ** (-1 + z)), 0
+                jnp.less_equal(jnp.abs(x), 0.5), x * (1 + jnp.abs(2 * x) ** (-1 + z)), 0
             ),
         ),
     )
