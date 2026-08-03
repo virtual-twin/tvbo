@@ -46,6 +46,7 @@ from tvbo.datamodel import schema as tvbo_datamodel
 from linkml_runtime.utils.yamlutils import YAMLRoot
 from linkml_runtime.utils.enumerations import EnumDefinitionImpl
 from tvbo.codegen import templater
+from tvbo.parse.symbols import assumptions_of, symbol_in
 from tvbo.codegen.templater import format_code
 from tvbo.classes.coupling import Coupling
 from tvbo.classes.noise import Integrator
@@ -1249,7 +1250,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return dyn_sym
 
         # Build coupling symbolic expressions
-        t = Symbol("t")
         coupling_exprs = {}
         for ct_name, coup in coupling_map.items():
             coupling_exprs[ct_name] = coup.symbolic(delays=delays)
@@ -1258,21 +1258,24 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         subs_index = {}
         subs_coupling = {}
 
-        # Node-index substitution: y0(t) → y0_i(t)
+        # Node-index substitution: y0(t) → y0_i(t). The symbol to replace is taken from the
+        # model's own table rather than rebuilt here: the two carry assumptions, and
+        # `Function("y0")` and `Function("y0", real=True)` compare unequal, so a rebuilt one
+        # substitutes nothing at all instead of raising.
+        scope = self.dynamics.get_symbolic_elements(time_dependent=True)
+        t = symbol_in(scope, "t")
         if indexed:
-            for sv_name in self.dynamics.state_variables:
-                old_f = Function(str(sv_name))
-                new_f = Function(str(sv_name) + "_i")
-                subs_index[old_f(t)] = new_f(t)
-            for dv_name in getattr(self.dynamics, "derived_variables", {}) or {}:
-                old_f = Function(str(dv_name))
-                new_f = Function(str(dv_name) + "_i")
-                subs_index[old_f(t)] = new_f(t)
+            indexable = list(self.dynamics.state_variables) + list(self.dynamics.derived_variables)
+            subs_index = {
+                scope[str(name)]: Function(f"{name}_i", **assumptions_of())(t)
+                for name in indexable
+                if str(name) in scope
+            }
 
         # Coupling substitution: Symbol(ct_name) → Sum(...)
         if integrate:
             for ct_name, expr in coupling_exprs.items():
-                subs_coupling[Symbol(str(ct_name))] = expr
+                subs_coupling[symbol_in(scope, ct_name)] = expr
 
         # Apply substitutions to all equation lists
         with sp.evaluate(False):

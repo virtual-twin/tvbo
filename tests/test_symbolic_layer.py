@@ -159,3 +159,65 @@ def test_every_group_is_keyed_by_the_name_it_defines(name: str):
     assert list(form["derived-variables"]) == list(model.derived_variables)
     assert list(form["derived-parameters"]) == list(model.derived_parameters)
     assert list(form["functions"]) == list(model.functions)
+
+
+@pytest.mark.backend_core
+def test_the_analysis_view_carries_assumptions(model: Dynamics):
+    """SymPy is told what the schema already knows: these quantities are real.
+
+    Without it every symbol is `real=None` and SymPy must consider complex branches, which
+    is the difference between an analysis returning and not.
+    """
+    equations = model.symbolic["state"]
+    symbols = {s for eq in equations for s in eq.rhs.free_symbols}
+    assert symbols, "no free symbols to check"
+    assert all(s.is_real for s in symbols), sorted(str(s) for s in symbols if not s.is_real)
+
+
+@pytest.mark.backend_core
+def test_a_declared_domain_becomes_a_sign_assumption():
+    """A lower bound at or above zero is the one further thing a domain clearly implies."""
+    model = Dynamics.from_file(str(MODEL_ROOT / "Generic2dOscillator.yaml"))
+    scope = model.get_symbolic_elements(time_dependent=True)
+    bounded = {
+        name: parameter
+        for name, parameter in model.parameters.items()
+        if getattr(parameter, "domain", None) is not None and parameter.domain.lo is not None
+    }
+    assert bounded, "fixture no longer declares a bounded parameter"
+    for name, parameter in bounded.items():
+        symbol = scope[str(name)]
+        if parameter.domain.lo > 0:
+            assert symbol.is_positive, f"{name} has lo={parameter.domain.lo} but is not positive"
+        elif parameter.domain.lo == 0:
+            assert symbol.is_nonnegative, f"{name} has lo=0 but is not nonnegative"
+
+
+@pytest.mark.backend_core
+def test_the_codegen_view_stays_plain(model: Dynamics):
+    """Assumptions enter `Symbol.sort_key`, so they reorder printed products.
+
+    A backend that parses, inlines and prints without ever simplifying gains nothing from
+    them and every emitted file is compared against a frozen reference, so the codegen view
+    is deliberately plain. This also keeps the two views unmixable: a symbol from one never
+    compares equal to the same name from the other.
+    """
+    codegen = model.get_symbolic_elements()
+    analysis = model.get_symbolic_elements(time_dependent=True)
+    name = next(iter(model.parameters))
+    assert codegen[name].is_real is None
+    assert analysis[name].is_real is True
+    assert codegen[name] != analysis[name]
+
+
+@pytest.mark.backend_core
+def test_the_parameter_map_substitutes_into_its_own_equations(model: Dynamics):
+    """`symbolic["parameters"]` must be keyed by the symbols the equations actually use.
+
+    Rebuilding those keys yields names that look identical and compare unequal, so the
+    substitution silently replaces nothing — the failure mode assumptions introduce.
+    """
+    symbolic = model.symbolic
+    substituted = symbolic["state"][0].rhs.subs(symbolic["parameters"])
+    remaining = {str(s) for s in substituted.free_symbols}
+    assert not (remaining & set(model.parameters)), f"parameters left unsubstituted: {remaining}"
