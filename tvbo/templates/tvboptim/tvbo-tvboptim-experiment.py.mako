@@ -2013,6 +2013,9 @@ def run_simulation(
 
     result = None
     observations = None
+% if _base_stream:
+    _stream_fn = None   # bound below only when run_main; keep the return's stream_fn= safe otherwise
+% endif
     if run_main:
         % if has_noise:
         if getattr(state, 'noise', None) is not None:
