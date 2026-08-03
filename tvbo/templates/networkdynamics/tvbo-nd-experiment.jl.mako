@@ -263,8 +263,9 @@ rng = MersenneTwister(${dist_seed})
 s.v[${node_idx}, :${sv.name}] = ${init_val}
 % elif has_dist:
 s.v[${node_idx}, :${sv.name}] = ${sample_expression(d, 'julia')}
-% elif sv.initial_value is not None:
-s.v[${node_idx}, :${sv.name}] = ${sv.initial_value}
+% else:
+<% from tvbo.utils import initial_value as _initial_value %>\
+s.v[${node_idx}, :${sv.name}] = ${_initial_value(sv)}
 % endif
 % endfor
 % if not find_fixpoint:

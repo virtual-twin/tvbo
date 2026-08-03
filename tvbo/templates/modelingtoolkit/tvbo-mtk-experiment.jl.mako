@@ -174,7 +174,8 @@ end
     @variables begin
 % for sv_name, sv in model.state_variables.items():
 <%
-    sv_init = sv.initial_value if sv.initial_value is not None else ''
+    from tvbo.utils import initial_value as _initial_value
+    sv_init = _initial_value(sv)
     sv_desc = jl_escape(sv.description or sv.label or '')
     meta = []
     if sv_desc:
