@@ -97,7 +97,13 @@ figures that silently integrate the wrong attractor.
    go to a gitignored `_dev/`. A fresh clone is small and reproducible; `DATA.md` says how to obtain
    every ignored input. (**`.gitignore` has no inline/trailing comments** — a `#` after a pattern
    becomes part of the pattern and silently breaks it, e.g. an un-ignored `figures/` or a dropped
-   `original_study/` exclusion; keep every comment on its own line.)
+   `original_study/` exclusion; keep every comment on its own line.) **And a negation cannot
+   rescue a file under a directory an ANCESTOR `.gitignore` excluded** — git does not descend into
+   an excluded directory, so `!original_study/analysis/**` in the study's own file is dead the
+   moment a parent ignores bare `original_study`. Three of our studies wrote exactly that pair and
+   silently kept their targets table, figure map and adherence notes untracked for weeks. Do not
+   try to carve an exception: authored work goes in `report/analysis/`, which nothing ignores.
+   Verify rather than assume — `git check-ignore -v <path>` names the file and line that won.
 7. **Replication, stated honestly.** Frame it as *replication* (independent code +
    independently-sourced data → same conclusions), not bit-exact *reproduction*. Ship a
    **scorecard** (met / short / out / blocked -- see below) with a **fidelity tier per target**
@@ -167,6 +173,21 @@ Classify each entry, because the classes have different detectability and differ
 | **C. Undocumented configuration** | a choice the paper never states at all | which of several shipped bases; how many modes; which mask |
 | **D. Underdetermined prose** | text admits several readings, one correct | where an average sits relative to a nonlinear step |
 | **E. Convention traps** | same name, different meaning across files | id numbering, time units, initial conditions |
+| **F. Unreleased** | the model or step the paper compares against is not in the deposit at all | a competitor whose figures are drawn from frozen arrays; no source anywhere for its symbols |
+
+**F is the one class you can find with no deposit to read, and it is usually the sharpest.** The
+others need code to compare prose against; F needs only the published equations and the published
+parameter values — put one into the other and see whether the reported operating point exists. In
+Pang2023 it does not: the competitor mass model was never deposited (a grep of every `.m` and
+`.py` for any inhibitory symbol returns nothing, and its panel is drawn from frozen arrays), and
+its four published weights, entered into the paper's own equations, yield no 3 Hz fixed point —
+the feedback-inhibition relation returns `w_IE` = 8.933 where the paper prints 7.13, and at 7.13
+the only roots are 0.002, 0.384 and 561 Hz. Note the order that makes such a claim safe: every
+input was falsified first (our solver reproduces the precursor paper's operating point, the
+symbols were re-extracted from the supplement's equation objects, the normalisation and target
+rate were confirmed against a third paper) — see the "doubt your own discrepancy" rule. The
+finding is not that a number is wrong but that **it cannot be checked**, and a target resting on
+it is `out` with that as its reason, not `short`.
 
 Record for each: what Methods says · what the code does · **how you established it** (read vs
 verified) · whether it changes a reported number. Keeping "read" and "verified" distinct is what
@@ -249,13 +270,14 @@ rejects (only the `from_string` doc path accepts it).
 **Surface feature gaps now**: a need not yet
 supported (e.g. the Lyapunov exponent of a *delayed* closed loop under `vmap`) BLOCKS
 its target — flag it as a framework/schema enhancement before you build, and mark the
-target `partial`/`out` in the eventual scorecard. This early gap-finding is what sets
+target `blocked` in the eventual scorecard. This early gap-finding is what sets
 honest expectations instead of surprising you mid-YAML. **But a gap is often an *addable
 general primitive*, not a permanent blocker** — an instantaneous δ-PSC synapse, a white-noise
 membrane drive, a timed current pulse, sparse random connectivity are backend features any study
 of that class wants. If the missing piece generalizes, add it root-cause to the backend (with a
-regression test) and un-block the target; reserve `partial`/`out` for gaps that don't generalize,
-need heavy new machinery, or that you won't build. State intent in the metadata either way (the
+regression test) and un-block the target; reserve `blocked` for gaps that don't generalize or
+need heavy new machinery, and `out` for the ones you judged not worth building because the other
+targets already test what they would. State intent in the metadata either way (the
 YAML declares a δ-jump or a `noise.intensity`, not a backend mechanism).
 
 **Data obtainability + fidelity tier — decide BEFORE building (the biggest time-saver).**
@@ -384,7 +406,7 @@ See **writing-models** for the Dynamics form and **running-simulations** for sou
   adiabatic branch via `Exploration.sweep_seeding: from_previous`, delayed self-terms
   via the coupling graph) — not a backend mechanism.
 
-## Phase 4 — Analysis callables (only for non-closed-form pipelines)
+## Phase 4 — Analyses: declare the non-simulation results too
 
 Study-specific reductions — order parameters, bifurcation / fixed-point detection, spectral
 peaks, control masks, fit residuals — → pure, backend-agnostic, independently-testable
@@ -395,6 +417,42 @@ paper's connectome/observable to your node order, match **by label**, never by p
 (guards silent hemisphere/order swaps). Note the host/grid split: *declared* observations
 run on the host (plain NumPy is fine); only what you put under `record:` runs inside the
 jitted/vmapped grid and must be backend-traceable (a non-traceable recording raises).
+
+**A result the report quotes but no simulation produces is an `Analysis` in the study's
+`analyses:` block — not a script you ran once.** This is the same rule as non-negotiable #1
+applied to the half of a replication that is *analysis* rather than dynamics: a paper's basis
+solve, a group average, a gradient decomposition, a cohort statistic. An `Analysis` `is_a
+FunctionCall`, so it names the `code/` callable and its arguments, and each argument is either a
+literal `{value: …}` or a declared input — `{used: {analysis: <name>, output: <var>}}` for
+another analysis, `{used: {experiment: <id>, output: <var>}}` for a run:
+
+```yaml
+analyses:
+  - name: fig1_basis_raw
+    label: "That basis on the 29,696 cortex vertices"
+    description: >-
+      The solve returns all 32,492 vertices (zeros in the wall); the analyses run on the
+      cortex vertices only ...
+    callable: {name: mask_vertices, module: pang2023_analysis}
+    arguments:
+      data: {used: {analysis: fig1_basis_solve, output: emodes}}
+      mask: {value: "input/sourcedata/templates/surfaces/fsLR_32k_cortex-lh_mask.txt"}
+```
+
+Declaring it buys four things a script cannot: it runs in dependency order alongside the
+experiments under a bare `tvbo run <Study>.yaml`; its output persists as a container a figure
+can bind (`used:` is the same PROV edge Phase 5 uses); the `used:` graph is what makes staleness
+computable at all (the transitive `after` set of the bullet on re-running experiments); and the
+`description:` is where the *convention* the analysis embodies gets stated as metadata — which
+of two bases, which mask, which polarity — instead of living as a comment in a function.
+
+Re-derive one with `tvbo run <Study>.yaml --analysis <name>`; it re-runs that analysis only and
+names the downstream containers it has just made stale. It is local-engine only and refuses to
+combine with any flag that selects or reshapes simulation work (`--experiment`, `--shard`,
+`--rendered`, `--limit`, `--smoke`, `--set`, `--pin`, …), because an ignored flag there would
+exit 0 having simulated nothing — a "success" on a cluster. An `Analysis` is also the one place
+the recipe still permits arbitrary Python, so non-negotiable #10 lands hardest here: make it
+resumable if it is slow, never parallel.
 
 Two scale/ensemble traps: (1) a **trial ensemble needs per-cell reseeding** — add an
 `execution.random_seed` sweep axis so each trial draws a fresh PRNG key; a codegen-constant
@@ -425,7 +483,16 @@ artefact too (7 of 180 regions non-causal, and the correction moves their own pu
 0.034 to 0.093), which turns "our number disagrees" into a documented property of the published
 definition. The companion instinct to resist: **do not drop the inconvenient unit.** Check the
 released code for an actual exclusion first; when there is none — as here — the outlier is
-telling you the statistic is wrong, not that the region is bad.
+telling you the statistic is wrong, not that the region is bad. (6) **A cohort reduction must be
+NaN-aware AND must report the N it actually scored.** In any real cohort some units are
+incomplete — a subject missing two of the paper's tasks, a parcel outside the mask. A plain
+`mean` propagates that one gap into the whole column, and, worse, a paired test computed
+afterwards divides by a denominator counting units it never scored, so the statistic is wrong in
+a direction no NaN reveals. Aggregate with `nanmean`/`nanstd`, drop non-finite pairs *before* the
+test, and carry the surviving N into the prose. (`xarray`'s `.mean(dim=)` already skips NaN for
+float dtypes; the trap is the raw-NumPy path beside it, which is why the two must be checked
+separately.) Pang2023's T32 lost one subject's EMOTION and RELATIONAL contrasts out of 255, and
+that alone NaN'd the entire task column.
 
 ## Phase 5 — Figures: declare them in the study's `figures:` block
 
@@ -655,7 +722,7 @@ Replication-specific rules on top of that mechanics:
   those rows silently shifted a column left and their Scope/Fidelity/Status read as each other's
   neighbour; the table still rendered, and the tally was simply wrong. Check that every row
   parsed to the full header width and that each value falls in its expected vocabulary
-  (`core|extended|out`, `mech|dec`, `met|partial|out`) before believing the counts.
+  (`core|extended|out`, `mech|dec`, `met|short|out|blocked`) before believing the counts.
 - **Score every signed difference against the noise floor of the quantity it is a difference
   OF — and doubt your own POSITIVE results, not only the discrepancies.** A margin between two
   stochastic models measured at one seed is not a result; it is one draw. Declare an
@@ -668,6 +735,21 @@ Replication-specific rules on top of that mechanics:
   between-subject comparison (30 subjects, sign test) — which is what finally established the
   link our bootstrap could not. And when a single realisation *is* what a panel shows, put the
   ensemble's `mean ± sd` beside it so the reader sees the width.
+- **Establish a direction along the whole nuisance axis, not at one point on it — then look for
+  a measure the artefact you fear would break the SAME way.** A comparison almost always sits on
+  an axis nobody is claiming anything about (mode count, window length, parcellation
+  granularity). One p at one point is a choice the reader cannot audit; sweeping the axis and
+  reporting where the direction is *established* is auditable and strictly more informative,
+  because it also shows where the direction reverses. Pang2023's T32 went from "individual beats
+  template" to "the individual basis is ahead at 44 of the 50 mode counts, the template at only
+  3 — all of them N = 5–12 — and the margin decays to nothing by N = 500": the same data, with
+  its own limits attached. Then the stronger move, when a *positive* result of yours could be
+  explained away by an artefact in your own pipeline: find a second measure that artefact must
+  corrupt in the same direction, and show it goes the other way. A misaligned or badly
+  conditioned per-subject basis loses on every measure — so individual-ahead on task maps *and*
+  template-ahead on resting FC cannot both come from bad alignment. That turns an unfalsifiable
+  "our solves are fine" into an internal control a reader can check. Two measures pointing in
+  opposite directions is evidence; two pointing the same way is also consistent with a bug.
 - **Prose that quotes a count of your own artifact must be COMPUTED from that artifact.**
   Non-negotiable #2 is usually read as "don't type a simulation result", but the version that
   actually bites is a sentence that was *true when written* and then aged: our abstract said
@@ -762,7 +844,8 @@ unrelated work that followed, which reads as a hung job rather than as the disk-
 diverged run, and do not quietly drop the target. Say what was measured (the step sizes tried,
 where it left the physical range, the growth rate at each), separate what that *does* exonerate
 (here: the analysis chain, verified end to end on the diverged container) from what stays open
-(the discretisation), and mark the row `partial`/open in the scorecard. An unresolved
+(the discretisation), and mark the row `short` with the open question as its reason — it was
+attempted and its criterion is not met, which is the one verdict that says so. An unresolved
 verification honestly reported is a result; a missing one is a gap in the replication.
 
 ### When NO output data is shipped, an unverified convention is an ASSUMPTION — label it

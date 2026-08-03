@@ -273,7 +273,10 @@ exec_config = experiment.execution
 n_workers = int(exec_config.n_workers) if exec_config and exec_config.n_workers else 1
 n_threads = int(exec_config.n_threads) if exec_config and exec_config.n_threads else -1
 precision = str(exec_config.precision) if exec_config and exec_config.precision else 'float64'
-accelerator = str(exec_config.accelerator) if exec_config and exec_config.accelerator else 'cpu'
+accelerator = str(exec_config.accelerator) if exec_config and exec_config.accelerator else 'auto'
+# accelerator -> JAX_PLATFORMS: 'auto' delegates to JAX's own device detection (None here);
+# an explicit tier pins the platform. gpu -> 'cuda' (the JAX platform name); cpu/tpu pass through.
+jax_platform = {'cpu': 'cpu', 'gpu': 'cuda', 'tpu': 'tpu'}.get(accelerator.lower(), accelerator.lower()) if accelerator.lower() != 'auto' else None
 enable_x64 = precision == 'float64'
 random_seed = int(exec_config.random_seed) if exec_config and exec_config.random_seed else 0
 
@@ -1341,6 +1344,9 @@ import logging
 # same way in-process and standalone (see the ``__main__`` block below).
 logger = logging.getLogger("tvbo.run")
 
+% if jax_platform:
+os.environ.setdefault("JAX_PLATFORMS", "${jax_platform}")  # from execution.accelerator=${accelerator}; 'auto' would let JAX detect
+% endif
 import jax
 % if enable_x64:
 jax.config.update("jax_enable_x64", True)  # Required for stable gradient computation

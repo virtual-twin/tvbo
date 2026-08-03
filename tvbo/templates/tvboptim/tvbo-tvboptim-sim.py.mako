@@ -88,6 +88,11 @@ stimulus_events = [ev for ev in events_list
                    if ('stimul' in str(getattr(ev, 'event_type', 'stimulus')))
                    or (str(getattr(ev, 'event_type', '')) in ('continuous', 'discrete'))]
 has_stimulus_events = len(stimulus_events) > 0
+
+# accelerator -> JAX_PLATFORMS (set before `import jax`); 'auto' delegates to JAX detection.
+_sim_exec = getattr(experiment, 'execution', None)
+_sim_accel = str(_sim_exec.accelerator) if _sim_exec and getattr(_sim_exec, 'accelerator', None) else 'auto'
+sim_jax_platform = {'cpu': 'cpu', 'gpu': 'cuda', 'tpu': 'tpu'}.get(_sim_accel.lower(), _sim_accel.lower()) if _sim_accel.lower() != 'auto' else None
 %>
 """
 ${dynamics_class} tvboptim Network Dynamics Simulation
@@ -107,6 +112,10 @@ Delayed: ${has_delay}
 # Imports
 # =============================================================================
 
+import os
+% if sim_jax_platform:
+os.environ.setdefault("JAX_PLATFORMS", "${sim_jax_platform}")  # from execution.accelerator=${_sim_accel}
+% endif
 import jax
 import jax.numpy as jnp
 import numpy as np

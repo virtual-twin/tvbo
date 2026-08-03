@@ -50,3 +50,4 @@ default-resources:
 % endif
 retries: ${retries}
 keep-going: True
+scheduler: greedy              # ILP scheduler stalls on large fan-outs (1000s of jobs); greedy scales
