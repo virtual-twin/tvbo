@@ -2492,7 +2492,14 @@ classes:
                 range: boolean
             initial_value:
                 range: float
-                ifabsent: float(0.1)
+                description: >-
+                    Value this state starts at. Absent means the spec does not say, and
+                    the consumer supplies its own documented fallback (``tvbo.utils.initial_value``:
+                    ``DEFAULT_INITIAL_VALUE`` for a model state, the reduction identity
+                    ``0.0`` for an observation reduction's accumulator). Carrying a schema
+                    default here instead would make "undeclared" unrepresentable — a
+                    co-integrated observer could not tell a state that rests at the default
+                    from one whose spec is silent.
             derivative_initial_value:
                 range: float
                 description: >-
