@@ -152,14 +152,15 @@ _AXIS_OPTS = {
     "hide_xticklabels", "hide_yticklabels", "axhline", "axvline", "legend",
     "xscale", "yscale",   # axis scale (log/symlog/linear): part of the claim, not cosmetic
     "nbins",              # tick budget: a small multi-panel slot cannot hold the automatic count
-    "aspect", "invert_x", "invert_y", "frame",   # frame geometry/direction/visibility
+    "aspect", "box_aspect", "invert_x", "invert_y", "frame",   # frame geometry/direction/visibility
     "zlabel", "zlim", "elev", "azim", "invert_z", "zoom",  # line3d only
 }
 
 
 # Axis directives the format pass can overwrite, so they are re-applied after it.
 _POST_FORMAT_OPTS = {"xticks", "yticks", "xlim", "ylim", "xscale", "yscale",
-                     "hide_xticklabels", "hide_yticklabels", "aspect", "frame", "nbins"}
+                     "hide_xticklabels", "hide_yticklabels", "aspect", "box_aspect",
+                     "frame", "nbins"}
 
 
 def _panel_opts(panel) -> dict:
@@ -183,6 +184,11 @@ def _axopts(panel) -> dict:
 
 _ANNOT_LOC = {"upper left": (0.03, 0.95), "upper right": (0.97, 0.95),
               "lower left": (0.03, 0.05), "lower right": (0.97, 0.05), "center": (0.5, 0.5)}
+
+# How much larger than the body font a panel letter is drawn when the figure does not say.
+# Journals set panel letters well above the body size; matching the body size makes the
+# letter read as another tick label.
+_PANEL_NUMBER_SCALE = 1.6
 
 # Panel-number placement per corner -> kwargs for bsplot.panels.add_panel_number.
 # In its coord="axes" mode the label lands at (x_shift, 1.0 + y_shift), so ha/va anchor
@@ -473,6 +479,9 @@ def build_context(figure, base_dir, outfile: str) -> dict:
     fmt = getattr(figure, "panel_number_format", None) or "{}"
     fig_loc = getattr(figure, "panel_number_loc", None)   # unset -> keep bsplot's own default placement
     font_size = getattr(figure, "font_size", None)
+    number_size = getattr(figure, "panel_number_size", None) or (
+        font_size * _PANEL_NUMBER_SCALE if font_size else None)
+    offset = [float(v) for v in (getattr(figure, "panel_number_offset", None) or [])]
     for p in panels:
         override = p.pop("number", None)   # overrides the mosaic key; "false" suppresses the letter (many cells = one paper panel)
         if override is not None and str(override).lower() in ("false", "none", ""):
@@ -485,8 +494,11 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         if loc:                                     # only override placement when a corner was asked for
             # loc is a Corner enum whose str() is the corner text in both datamodel flavors.
             place.update(_PANEL_NUM_LOC.get(str(loc), _PANEL_NUM_LOC["upper left"]))
-        if font_size:
-            place["fontsize"] = font_size
+        if number_size:
+            place["fontsize"] = number_size
+        if offset:
+            place["x_shift"] = place.get("x_shift", 0.0) + offset[0]
+            place["y_shift"] = place.get("y_shift", 0.0) + offset[1]
         p["number_kwargs"] = place                  # resolved here; the template just splats it
 
     # bsplot.figure.subplots kwargs, resolved here so the template just splats them.
@@ -518,6 +530,10 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         # if the rcParam itself is cleared.
         spine_rcparams = {**spine_rcparams, "savefig.bbox": None}
 
+    offset = getattr(figure, "spine_offset", None)
+    format_kwargs = {} if offset is None else {
+        "shift_left_spine": -float(offset), "shift_bottom_spine": -float(offset)}
+
     return {
         "name": figure.name or "figure",
         "style": _style_entries(figure, base_dir),
@@ -528,6 +544,7 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         "dpi": dpi,
         "font_size": font_size,
         "auto_format": getattr(figure, "auto_format", None) is not False,
+        "format_kwargs": format_kwargs,
         "panel_numbers": getattr(figure, "panel_numbers", None) is not False,
         "savefig_kwargs": savefig_kwargs,
         # study-shipped custom panels/transforms register when plot.py imports these

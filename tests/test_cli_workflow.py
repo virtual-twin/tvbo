@@ -616,6 +616,26 @@ def test_snakemake_fans_a_model_param_axis_via_pin_not_set():
     assert "--set=" not in smk
 
 
+def test_snakemake_fanned_parameter_experiment_is_spec_only(tmp_path: Path):
+    """A workflow-fanned `parameters` sweep (one `--pin` per cell — e.g. a per-cell host
+    observation) must NOT be frozen. A frozen script bakes the model/coupling params at one
+    point and hardcodes the whole grid, so the per-cell `--pin` never reaches them: every
+    cell re-runs the entire grid and a non-jittable host observation traces inside it
+    (TracerArrayConversionError, the Koller exp-41 failure). Such an experiment emits
+    spec-only — no frozen script and no `--rendered`, so it re-renders per cell (where the
+    pin collapses the exploration to the pinned point) even if the kit was packed
+    `--code-source frozen`."""
+    out = tmp_path / "kit"
+    r = runner.invoke(app, ["workflow", "snakemake", EXP, "--backend", "tvb",
+                            "-o", str(out), "--code-source", "frozen"])
+    assert r.exit_code == 0, r.stdout
+    # EXP (tvb) fans model/coupling params a,b (kind 'parameters') → no frozen script.
+    assert not (out / "scripts").exists(), "a fanned-parameter experiment must not freeze a script"
+    smk = (out / "Snakefile").read_text()
+    assert "--rendered" not in smk, "the fanned rule must re-render per cell, never run a frozen script"
+    assert "tvbo run spec/" in smk and "--pin=" in smk
+
+
 def test_submit_provisions_the_container_layer_before_submitting(tmp_path, monkeypatch):
     """`tvbo workflow submit <archive>` must run setup.sh itself, so the whole cluster step
     is one command (no manual `bash setup.sh`). A layer failure aborts the submit."""

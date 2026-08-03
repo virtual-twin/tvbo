@@ -829,7 +829,17 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
     AND as a pre-rendered ``scripts/<key>.<ext>`` (run as-is, no codegen). Each rule
     picks between them at run time from ``$TVBO_CODE_SOURCE`` (default *code_source*,
     ``'spec'`` for back-compat), so ONE kit runs either way; ``--stdout`` writes
-    nothing and its rules run ``tvbo run <source-spec> --experiment <id>``."""
+    nothing and its rules run ``tvbo run <source-spec> --experiment <id>``.
+
+    Fan-out note: an experiment that fans a ``parameters`` axis over the workflow (one
+    ``--pin`` per cell, e.g. a per-cell host observation) is emitted spec-mode ONLY, with
+    NO frozen script. A frozen script bakes the model/coupling/network parameters at a
+    single point and hardcodes the whole grid, so the per-cell ``--pin`` can never reach
+    them — pins collapse the exploration on the experiment OBJECT, which only a spec-mode
+    re-render reads. Skipping the (invalid) frozen script also means a run forcing
+    ``--code-source frozen`` still falls back to spec for these rules. Subject / seed / IC
+    fans keep their frozen script: their per-cell value reaches the frozen run at call
+    time (``--subject``, seed / initial-condition kwargs)."""
     study, experiments, study_key = _study_experiments(spec, experiment)
     out_dir = output or Path("output").joinpath(str(study_key), "snakemake")
     if not stdout:
@@ -880,6 +890,8 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             result_stem = exp.get_result_stem()
         except Exception:
             result_stem = "result"
+        # A fanned `parameters` sweep can't be frozen (see the docstring's fan-out note).
+        _fanned_parameter = any(ax.kind == "parameters" for ax in plan.workflow_axes)
         scripts_relpath = None
         if stdout:
             spec_relpath, select = spec, key
@@ -899,8 +911,11 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             # runs either way: `--code-source frozen` runs `scripts/<key>.<ext>` with no
             # codegen on the node. A render failure is non-fatal — the spec path still
             # works; the rule falls back to it when the script is absent.
-            scripts_relpath = _freeze_backend_script(exp, out_dir, plan.backend.name, key)
-            _common.info(f"froze experiment {key} ({len(plan.workflow_axes)} fan-out axes)")
+            if not _fanned_parameter:
+                scripts_relpath = _freeze_backend_script(exp, out_dir, plan.backend.name, key)
+                _common.info(f"froze experiment {key} ({len(plan.workflow_axes)} fan-out axes)")
+            else:
+                _common.info(f"experiment {key}: {len(plan.workflow_axes)} fanned parameter axis(es) → spec-mode per cell (no frozen script)")
         exp_plans.append({
             "key": key,
             "rule_name": "exp_" + key.replace("-", "_").replace(".", "_"),
@@ -909,8 +924,8 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             # mode or if the render failed, in which case the rule always uses the spec.
             "scripts_relpath": scripts_relpath,
             # Emit-time default code source baked into the rule (overridable at run time
-            # via $TVBO_CODE_SOURCE); 'spec' preserves the pre-existing behaviour.
-            "code_source": code_source,
+            # via $TVBO_CODE_SOURCE); a fanned-parameter experiment is spec-only.
+            "code_source": "spec" if _fanned_parameter else code_source,
             "select": select,
             # The plan resolves an unset backend to the experiment's execution.backend
             # (else tvboptim); emit that resolved name, never the raw None — otherwise the

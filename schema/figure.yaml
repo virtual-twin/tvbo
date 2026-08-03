@@ -104,6 +104,13 @@ classes:
       panel_number_loc:
         range: Corner
         description: "Which corner the panel letter sits in. Unset keeps bsplot's own default placement; many journals (and Taher Fig 5) use 'upper right'."
+      panel_number_offset:
+        range: float
+        multivalued: true
+        description: "[dx, dy] shift of every panel letter from its corner, in axes fractions. The default sits it on the axes corner, where a top y-tick label can reach it; a small negative dx clears the tick labels."
+      panel_number_size:
+        range: float
+        description: "Panel-letter size in points. Unset scales it above the body font_size, the convention most journals follow — a letter set at the body size reads as a tick label rather than as the panel's name."
       height_ratios:
         range: float
         multivalued: true
@@ -115,6 +122,9 @@ classes:
       spines:
         range: string
         description: "Axes spine style: 'box' (all 4 spines, closed boxes — e.g. Taher) or 'open' (left+bottom only). Unset defers to the active style. Pair 'box' with auto_format: false — bsplot's format_fig otherwise detaches and trims spines (the open 'nature' look)."
+      spine_offset:
+        range: float
+        description: "How far the left and bottom spines sit outside the data area, in axes fractions. 0 makes them meet at the corner; the default detaches them slightly (bsplot's house look). Journals differ on this, so a replication states which one the paper uses."
       workflow_overrides:
         range: WorkflowConfig
         inlined: true
