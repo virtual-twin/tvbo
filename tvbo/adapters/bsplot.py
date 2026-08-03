@@ -151,6 +151,7 @@ _AXIS_OPTS = {
     "xlabel", "ylabel", "title", "xlim", "ylim", "xticks", "yticks",
     "hide_xticklabels", "hide_yticklabels", "axhline", "axvline", "legend",
     "xscale", "yscale",   # axis scale (log/symlog/linear): part of the claim, not cosmetic
+    "nbins",              # tick budget: a small multi-panel slot cannot hold the automatic count
     "aspect", "invert_x", "invert_y", "frame",   # frame geometry/direction/visibility
     "zlabel", "zlim", "elev", "azim", "invert_z", "zoom",  # line3d only
 }
@@ -158,7 +159,7 @@ _AXIS_OPTS = {
 
 # Axis directives the format pass can overwrite, so they are re-applied after it.
 _POST_FORMAT_OPTS = {"xticks", "yticks", "xlim", "ylim", "xscale", "yscale",
-                     "hide_xticklabels", "hide_yticklabels", "aspect", "frame"}
+                     "hide_xticklabels", "hide_yticklabels", "aspect", "frame", "nbins"}
 
 
 def _panel_opts(panel) -> dict:
@@ -394,65 +395,79 @@ def _resolve_layer(layer, panel_kind, base_dir):
     }
 
 
+def _resolve_drawable(panel, key, base_dir) -> dict:
+    """Resolve one drawable — a mosaic Panel or an Inset — into its template entry.
+
+    An inset is a panel in everything that draws, so both go through this one function and
+    the template emits both from one partial. Splitting them would let an inset's heatmap,
+    triangle gap or colourbar quietly diverge from the identical panel beside it.
+    """
+    kind = str(panel.kind)                          # datamodel enum -> plain string (flavor-agnostic)
+    layers = [_resolve_layer(l, kind, base_dir)
+              for l in (getattr(panel, "layers", None) or [])]
+    # ``custom`` routes opts to its callable; grammar panels read the axis subset.
+    # base_dir lets a panel resolve study-relative inputs (e.g. a tvbo Network yaml).
+    opts = _panel_opts(panel)
+    ctx = ({"layers": layers, "opts": opts, "key": key, "base_dir": str(base_dir)}
+           if kind == "custom" else None)
+    # One colourbar per panel (not per layer — a split matrix is two layers, one scale),
+    # suppressed with `colorbar: false` where the paper prints none. It is slim by
+    # default: matplotlib's own default steals ~20% of a small panel's width.
+    colorbar = (any(l["mark"] == "heatmap" for l in layers)
+                and opts.get("colorbar", True) is not False)
+    colorbar_kwargs = {"fraction": opts.get("colorbar_fraction", 0.046),
+                       "pad": opts.get("colorbar_pad", 0.04)}
+    # Default the axis labels to the first layer's x-dim / output; opts override them.
+    axopts = _axopts(panel)
+    # bsplot's format pass re-derives ticks and can re-normalise limits, so a DECLARED
+    # frame (the paper's own tick marks and ranges) is re-applied after it. Intent
+    # written in the spec must not be silently replaced by the tidy-up.
+    post = {k: v for k, v in axopts.items() if k in _POST_FORMAT_OPTS}
+    if kind in ("cartesian", "heatmap", "line3d") and layers:
+        axopts.setdefault("xlabel", layers[0]["x"] or "")
+        axopts.setdefault("ylabel", layers[0]["y"] or layers[0]["output"])
+    if kind == "line3d" and layers:
+        axopts.setdefault("zlabel", layers[0]["z"] or "")
+    placeholder = getattr(panel, "placeholder", None)
+    render = getattr(panel, "render", None)
+    path = resolve_path(getattr(panel, "path", None), base_dir)
+    return {
+        "key": key,
+        "kind": kind,
+        "title": getattr(panel, "label", None),
+        "path": path,
+        "render": render,
+        "placeholder": placeholder,
+        # Nothing to draw at all: the placeholder IS the panel, not a fallback. Without
+        # this the guarded draw succeeds silently (no layer raises) and the slot renders
+        # as an empty 0-1 axes instead of the honest label.
+        "placeholder_only": bool(placeholder) and not layers and not render and not path,
+        "layers": layers,
+        "colorbar": colorbar,
+        "colorbar_kwargs": colorbar_kwargs,
+        "colorbar_label": opts.get("colorbar_label"),
+        # Cells of blank band between two triangle layers, so the halves read as two
+        # quantities rather than one field (the paper's own `extra_diagonal`).
+        "triangle_gap": int(opts.get("triangle_gap", 0) or 0),
+        "axopts": axopts,
+        "post_axopts": {} if (placeholder and not layers and not render and not path) else post,
+        "ctx": ctx,
+        "annotations": _annotations(panel, base_dir),
+        "number_loc": getattr(panel, "number_loc", None),
+        "number": getattr(panel, "number", None),
+        "insets": [
+            dict(_resolve_drawable(inset, f"{key}_inset{i}", base_dir),
+                 bounds=[float(b) for b in (getattr(inset, "bounds", None) or [])])
+            for i, inset in enumerate(getattr(panel, "insets", None) or [])
+        ],
+    }
+
+
 def build_context(figure, base_dir, outfile: str) -> dict:
     """Resolve a ``Figure`` into the template context (all IO paths + names resolved)."""
     base_dir = Path(base_dir)
-    panels = []
-    for key, panel in _items(figure.panels):
-        kind = str(panel.kind)                      # datamodel enum -> plain string (flavor-agnostic)
-        layers = [_resolve_layer(l, kind, base_dir)
-                  for l in (getattr(panel, "layers", None) or [])]
-        # ``custom`` routes Panel.opts to its callable; grammar panels read the axis subset.
-        # base_dir lets a panel resolve study-relative inputs (e.g. a tvbo Network yaml).
-        ctx = ({"layers": layers, "opts": _panel_opts(panel), "key": key, "base_dir": str(base_dir)}
-               if kind == "custom" else None)
-        # One colourbar per panel (not per layer — a split matrix is two layers, one scale),
-        # suppressed with `colorbar: false` where the paper prints none. It is slim by
-        # default: matplotlib's own default steals ~20% of a small panel's width.
-        opts = _panel_opts(panel)
-        colorbar = (any(l["mark"] == "heatmap" for l in layers)
-                    and opts.get("colorbar", True) is not False)
-        colorbar_kwargs = {"fraction": opts.get("colorbar_fraction", 0.046),
-                           "pad": opts.get("colorbar_pad", 0.04)}
-        # Default the axis labels to the first layer's x-dim / output; opts override them.
-        axopts = _axopts(panel)
-        # bsplot's format pass re-derives ticks and can re-normalise limits, so a DECLARED
-        # frame (the paper's own tick marks and ranges) is re-applied after it. Intent
-        # written in the spec must not be silently replaced by the tidy-up.
-        post = {k: v for k, v in axopts.items() if k in _POST_FORMAT_OPTS}
-        if kind in ("cartesian", "heatmap", "line3d") and layers:
-            axopts.setdefault("xlabel", layers[0]["x"] or "")
-            axopts.setdefault("ylabel", layers[0]["y"] or layers[0]["output"])
-        if kind == "line3d" and layers:
-            axopts.setdefault("zlabel", layers[0]["z"] or "")
-        placeholder = getattr(panel, "placeholder", None)
-        render = getattr(panel, "render", None)
-        path = resolve_path(getattr(panel, "path", None), base_dir)
-        panels.append({
-            "key": key,
-            "kind": kind,
-            "title": getattr(panel, "label", None),
-            "path": path,
-            "render": render,
-            "placeholder": placeholder,
-            # Nothing to draw at all: the placeholder IS the panel, not a fallback. Without
-            # this the guarded draw succeeds silently (no layer raises) and the slot renders
-            # as an empty 0-1 axes instead of the honest label.
-            "placeholder_only": bool(placeholder) and not layers and not render and not path,
-            "layers": layers,
-            "colorbar": colorbar,
-            "colorbar_kwargs": colorbar_kwargs,
-            "colorbar_label": opts.get("colorbar_label"),
-            # Cells of blank band between two triangle layers, so the halves read as two
-            # quantities rather than one field (the paper's own `extra_diagonal`).
-            "triangle_gap": int(opts.get("triangle_gap", 0) or 0),
-            "axopts": axopts,
-            "post_axopts": {} if (placeholder and not layers and not render and not path) else post,
-            "ctx": ctx,
-            "annotations": _annotations(panel, base_dir),
-            "number_loc": getattr(panel, "number_loc", None),
-            "number": getattr(panel, "number", None),
-        })
+    panels = [_resolve_drawable(panel, key, base_dir)
+              for key, panel in _items(figure.panels)]
     layout = (figure.layout or "".join(str(p["key"]) for p in panels) or "a")
     layout = layout.replace("/", "\n")                  # bsplot mosaics split rows on newline
     fmt = getattr(figure, "panel_number_format", None) or "{}"

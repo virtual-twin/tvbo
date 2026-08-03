@@ -146,6 +146,10 @@ def _apply_axopts(ax, o):
         ax.invert_xaxis()
     if o.get("invert_y"):
         ax.invert_yaxis()
+    if o.get("nbins"):
+        from matplotlib.ticker import MaxNLocator   # a declared tick budget, not a tidy-up
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=o["nbins"], prune=None))
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=o["nbins"], prune=None))
     if o.get("xticks") is not None:
         ax.set_xticks(o["xticks"])
     if o.get("yticks") is not None:
@@ -241,9 +245,7 @@ def _restore_fixed_axes(snap):
             a.yaxis.set_major_locator(yloc); a.yaxis.set_major_formatter(yfmt); a.set_ylim(ylim)
 
 
-% for p in panels:
-def _panel_${p['key']}(fig, ax):
-    """Panel ${p['key']} — ${p['kind']}."""
+<%def name="draw(p)">\
 % if p['placeholder_only']:
     _placeholder(ax, ${repr(p['placeholder'])})
 % elif p['kind'] == 'image':
@@ -345,6 +347,22 @@ def _panel_${p['key']}(fig, ax):
     ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.transAxes, zorder=10,
             **${repr(a['kwargs'])})
 % endif
+% endfor
+</%def>\
+% for p in panels:
+% for ins in p['insets']:
+def _${ins['key']}(fig, ax):
+    """Inset ${ins['key']} — ${ins['kind']}, at ${ins['bounds']} of panel ${p['key']}."""
+${draw(ins)}\
+    return ax
+
+
+% endfor
+def _panel_${p['key']}(fig, ax):
+    """Panel ${p['key']} — ${p['kind']}."""
+${draw(p)}\
+% for ins in p['insets']:
+    _${ins['key']}(fig, ax.inset_axes(${repr(ins['bounds'])}))   # drawn after the body, over it
 % endfor
     return ax                                           # a line3d panel returns a NEW (3-D) axis; capture it
 

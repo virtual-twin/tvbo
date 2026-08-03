@@ -538,6 +538,57 @@ def test_render_code_cell_axes_walks_insets():
     assert inner in found and deeper in found
 
 
+def _inset_figure(**inset_kw):
+    """The one-panel cartesian figure with one declared inset over the same container."""
+    fig = _cartesian_figure()
+    fig.panels["a"].insets = [
+        P.Inset(
+            bounds=inset_kw.pop("bounds", [0.55, 0.55, 0.4, 0.4]),
+            kind=inset_kw.pop("kind", "cartesian"),
+            layers=[
+                P.Layer(
+                    used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
+                    encoding=P.Encoding(x="KuramotoInertia.K", y="delta_omega"),
+                )
+            ],
+            **inset_kw,
+        )
+    ]
+    return fig
+
+
+def test_render_code_inset_draws_inside_its_host():
+    """A declared inset emits its own drawer and is opened on the HOST panel's axes.
+
+    The paper convention this serves is a zoom or thumbnail over a plot; the point of
+    declaring it is that the panel keeps its grammar instead of becoming a custom callable
+    whose whole interior is opaque to the spec."""
+    code = bsplot.render_code(_inset_figure(), TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert "def _a_inset0(fig, ax):" in code
+    assert "_a_inset0(fig, ax.inset_axes([0.55, 0.55, 0.4, 0.4]))" in code
+    # ...and it is called from the host panel, not from main().
+    host = code.split("def _panel_a(fig, ax):")[1].split("\ndef ")[0]
+    assert "_a_inset0(fig, ax.inset_axes(" in host
+
+
+def test_render_code_inset_shares_the_panel_drawing_rules():
+    """An inset resolves through the same path as a panel, so a heatmap inset gets the
+    triangle/colourbar treatment a heatmap panel gets rather than a reduced copy of it."""
+    fig = _inset_figure(kind="heatmap", opts={"colorbar": P.Argument(name="colorbar", value=False)})
+    fig.panels["a"].insets[0].layers[0].triangle = "upper"
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    ast.parse(code)
+    inset = code.split("def _a_inset0(fig, ax):")[1].split("\ndef ")[0]
+    assert "_triangle(_C, 'upper'" in inset
+    assert "fig.colorbar" not in inset          # declared off, as on a panel
+
+
+def test_render_code_no_insets_emits_no_inset_machinery():
+    """The common panel is unchanged: no inset declared, nothing emitted for one."""
+    assert "_inset0" not in _emit()
+
+
 def test_render_code_trim_margins_toggle():
     """Trimming re-crops to content, so the saved aspect can drift from width/height;
     ``trim_margins: false`` is the opt-out that preserves the declared proportions.
