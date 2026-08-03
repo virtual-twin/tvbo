@@ -30,11 +30,65 @@ from __future__ import annotations
 from typing import Any, Iterable, Mapping
 
 import sympy.abc
+from sympy import Symbol
 from sympy.parsing.sympy_parser import null as AUTO
 
 from tvbo.parse.expression import parse_eq
 
-__all__ = ["AUTO", "BUILTIN_SHADOW", "SymbolContext"]
+__all__ = [
+    "AUTO",
+    "BUILTIN_SHADOW",
+    "SymbolContext",
+    "assumptions_of",
+    "model_symbol",
+    "symbol_in",
+]
+
+
+def assumptions_of(element: Any = None) -> dict[str, bool]:
+    """The SymPy assumptions a declared quantity clearly implies.
+
+    A modelled quantity is real. That alone is the difference between SymPy answering a
+    question and not: asked for the fixed points of `Generic2dOscillator` it must otherwise
+    consider complex branches, and does not terminate in 45 s; told the parameters are real
+    it returns in under one.
+
+    A declared `domain` says more — a lower bound at or above zero makes the symbol positive
+    or nonnegative, which is what lets `sqrt(x**2)` reduce and a sign test resolve. Nothing
+    beyond that is inferred: a bound admitting negative values implies realness only, and an
+    absent domain implies nothing further. Assumptions SymPy is told are assumptions it will
+    act on, so an over-claim is a wrong answer rather than a missed simplification.
+    """
+    assumptions = {"real": True}
+    domain = getattr(element, "domain", None) if element is not None else None
+    lo = getattr(domain, "lo", None) if domain is not None else None
+    if lo is not None and lo >= 0:
+        assumptions["positive" if lo > 0 else "nonnegative"] = True
+    return assumptions
+
+
+def model_symbol(name: Any, element: Any = None) -> Symbol:
+    """The one symbol TVBO uses for a declared quantity, assumptions included.
+
+    Minting a symbol anywhere else risks a name that looks identical and compares unequal:
+    `Symbol("x") != Symbol("x", real=True)`, and `subs` across that mismatch does nothing at
+    all rather than raising. Code holding a model should ask it — `get_symbolic_elements` —
+    and code holding only a parsed expression's scope should use
+    [`symbol_in`](#tvbo.parse.symbols.symbol_in).
+    """
+    return Symbol(str(name), **assumptions_of(element))
+
+
+def symbol_in(scope: Mapping | None, name: Any) -> Symbol:
+    """The symbol a parsed expression uses for *name*.
+
+    For code that holds an expression and the namespace it was parsed against, but not the
+    model: resolving through the scope is what makes a later `subs` or `free_symbols` test
+    meet the same symbol the parser produced. Falls back to a bare symbol for a name the
+    scope does not declare, which is the right answer for one it never bound.
+    """
+    resolved = (scope or {}).get(str(name))
+    return resolved if isinstance(resolved, Symbol) else Symbol(str(name))
 
 
 def _rejects_mutation(method: str):

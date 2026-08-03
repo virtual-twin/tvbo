@@ -45,6 +45,7 @@ from tvbo.datamodel.schema import Case, ConditionalBlock, DerivedVariable, Equat
 from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
 from tvbo.parse.expression import function_bodies, parse_eq
+from tvbo.parse.symbols import assumptions_of, model_symbol
 from tvbo.utils import report
 
 logger = logging.getLogger(__name__)
@@ -1102,12 +1103,20 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         [Eq(signal(t), sin(theta(t)))]
         """
         form = self._symbolic_form(notation="function")
+        scope = self.get_symbolic_elements(time_dependent=True)
         return {
             "state": list(form["state-equations"].values()),
             "functions": list(form["functions"].values()),
             "derived_parameters": list(form["derived-parameters"].values()),
             "derived": list(form["derived-variables"].values()),
-            "parameters": {Symbol(str(p.name)): p.value for p in self.parameters.values()},
+            # Keyed by the scope's own symbols. Rebuilding them here would produce names
+            # that look identical and compare unequal, so substituting this map into these
+            # equations would silently replace nothing.
+            "parameters": {
+                scope[str(p.name)]: p.value
+                for p in self.parameters.values()
+                if str(p.name) in scope
+            },
         }
 
     def get_symbolic_elements(self, include_time_symbol: bool = True, time_dependent: bool = False):
@@ -1143,44 +1152,63 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         return dict(scopes[key])
 
     def _build_symbolic_elements(self, include_time_symbol: bool, time_dependent: bool):
-        """Assemble the symbol table. See `get_symbolic_elements`."""
-        t = Symbol("t")
+        """Assemble the symbol table. See `get_symbolic_elements`.
+
+        Assumptions ride on the time-dependent view only. They are what SymPy's analysis
+        machinery needs — without `real=True` the fixed points of a two-variable model do
+        not come back inside a minute — but they also enter `Symbol.sort_key`, so the same
+        product prints as `q*alpha` instead of `alpha*q`. That is no gain for a backend
+        that parses, inlines and prints without ever simplifying, and every emitted file is
+        compared against a frozen reference. The codegen view therefore stays plain, and
+        the two are never mixed: a `Symbol` from one does not compare equal to the same name
+        from the other, so nothing can substitute across them by accident.
+        """
+
+        def _assume(element=None):
+            return assumptions_of(element) if time_dependent else {}
+
+        def _symbol(name, element=None):
+            return Symbol(str(name), **_assume(element))
+
+        t = _symbol("t")
         scope: dict[str, object] = {}
 
-        def _variable(name):
-            return Function(str(name))(t) if time_dependent else Symbol(str(name))
+        def _variable(name, element=None):
+            if time_dependent:
+                return Function(str(name), **_assume(element))(t)
+            return _symbol(name, element)
 
         if include_time_symbol:
             scope["t"] = t
 
         for p in self.parameters.values():
-            scope[str(p.name)] = Symbol(str(p.name))
+            scope[str(p.name)] = _symbol(p.name, p)
 
         # Coupling inputs (named inputs from coupling function)
         for ci in self.coupling_inputs.keys():
-            scope[str(ci)] = Symbol(str(ci))
+            scope[str(ci)] = _symbol(ci)
 
         # A derived parameter is constant in time, so it stays a Symbol in both views.
         for name in self.derived_parameters.keys():
-            scope[str(name)] = Symbol(str(name))
-        for name in self.derived_variables.keys():
-            scope[str(name)] = _variable(name)
+            scope[str(name)] = _symbol(name)
+        for name, dv in self.derived_variables.items():
+            scope[str(name)] = _variable(name, dv)
 
         # Output is a list of string references
         for name in self.output:
-            scope[str(name)] = _variable(name)
+            scope[str(name)] = _variable(name, self.derived_variables.get(str(name)))
 
-        for name in self.state_variables.keys():
-            scope[str(name)] = _variable(name)
+        for name, sv in self.state_variables.items():
+            scope[str(name)] = _variable(name, sv)
 
         # Functions: undefined function heads; also add their argument symbols
         for fname, f in self.functions.items():
-            scope[str(fname)] = Function(str(fname))
+            scope[str(fname)] = Function(str(fname), **_assume())
             for name in f.arguments:  # arguments is a dict keyed by name
-                scope[str(name)] = Symbol(str(name))
+                scope[str(name)] = _symbol(name)
 
         for name in self.events:
-            scope[str(name)] = Symbol(str(name))
+            scope[str(name)] = _symbol(name)
 
         if "e" not in scope:
             from sympy import E
@@ -1314,19 +1342,25 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def _build_symbolic_form(self, notation: str, evaluate: bool):
         """Parse every equation the model states, once. See `_symbolic_form`.
 
-        The `"function"` view suppresses evaluation globally rather than at the parser, so
-        `Derivative` and `Eq` are built unevaluated too — that is what keeps
-        `Derivative(theta(t), t)` from collapsing and preserves authored term order like
-        `sin(v0 - v)`. Suppressing it only inside `parse_expr`, as the `"symbol"` view
-        does, would not.
-        """
-        import sympy as sp
+        The two views differ in what they are for, and the evaluation policy follows from
+        that rather than the other way round.
 
+        `"symbol"` feeds codegen, which parses, inlines and prints. It honours the caller's
+        *evaluate* so a backend can keep the term order its author wrote.
+
+        `"function"` is the analysis view — the one `Matrix.jacobian`, `solve` and `dsolve`
+        act on — so it is canonical. It used to suppress evaluation globally, which kept
+        `Derivative(theta(t), t)` from collapsing but also left the right-hand sides in a
+        nested unevaluated form that SymPy's solvers cannot make progress on: asked for the
+        fixed points of `Generic2dOscillator` in that form, `solve` returns nothing in 45 s;
+        canonical and with real symbols it answers in under one. `Derivative` is built
+        explicitly here, so nothing needs the global suppression to survive.
+        """
         time_dependent = notation == "function"
-        if time_dependent:
-            with sp.evaluate(False):
-                return self._assemble_equations(time_dependent=True, evaluate=evaluate)
-        return self._assemble_equations(time_dependent=False, evaluate=evaluate)
+        return self._assemble_equations(
+            time_dependent=time_dependent,
+            evaluate=True if time_dependent else evaluate,
+        )
 
     def _assemble_equations(self, time_dependent: bool, evaluate: bool):
         """Build the five equation groups against one scope. See `_build_symbolic_form`."""
