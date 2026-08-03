@@ -192,7 +192,7 @@ def plot_vector_field(
                 subs[sv_name] = float(np.asarray(data.sel(**sel_kw)).mean())
             else:
                 sv_obj = all_svs.get(sv_name)
-                subs[sv_name] = float(sv_obj.initial_value) if sv_obj and sv_obj.initial_value is not None else 0.0
+                subs[sv_name] = initial_value(sv_obj) if sv_obj else DEFAULT_INITIAL_VALUE
 
     rhs_x_sub = rhs_x.subs({sym_dict[k]: v for k, v in subs.items() if k in sym_dict})
     rhs_y_sub = rhs_y.subs({sym_dict[k]: v for k, v in subs.items() if k in sym_dict})
