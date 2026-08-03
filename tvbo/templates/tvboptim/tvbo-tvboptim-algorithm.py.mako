@@ -327,6 +327,7 @@ def run_${algo_name}(
     post_state: Any = None,
     history: Any = None,
     run_post_tuning: bool = True,  # set False when called as a nested inner loop
+    raw: bool = False,  # vmap-safe: skip pre_tuning sim + AlgorithmResult wrapping, return a Bunch of raw JAX arrays (for jax.vmap over a subject cohort)
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
     ${src_obs}_buffer: jnp.ndarray = None,  # Optional: passed from previous algorithm
@@ -434,7 +435,7 @@ def run_${algo_name}(
     _${obs}_samples = []
 % endfor
 
-    pre_tuning = model_fn(state)
+    pre_tuning = None if raw else model_fn(state)  # raw skips the diagnostic pre-sim; the host-side numpy wrap of a traced trajectory is not vmap-safe
 
     # Create observation monitors for pipeline-based observations (created once, reused in loop)
 <%
@@ -1200,6 +1201,23 @@ def run_${algo_name}(
 
     if verbose:
         logger.info(f"${algo_name} complete!")
+
+    if raw:
+        # vmap-safe cohort return: pure jnp arrays only; no AlgorithmResult/DataArray wrapping (host-side numpy conversion breaks under jax.vmap). Wrap per-subject host-side after the vmap.
+        return Bunch(
+            state=state,
+            history=result_history,
+            post_tuning_observations=post_tuning_observations,
+            monitors=_monitors_out,
+% for obs in collectible_observations:
+            ${obs}_buffer=_${obs}_buffer_out,
+% endfor
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+            ${src_obs}_buffer=_${src_obs}_buffer,
+% endfor
+% endif
+        )
 
     # Build hyperparameters Bunch for AlgorithmResult
     _hyperparams = Bunch(
