@@ -1,0 +1,43 @@
+
+
+
+
+
+function Roessler!(dx, _x, p, t = 0)
+
+    (;a, b, c) = p
+
+    x, y, z = _x
+
+
+
+
+    dx[1] = -y .- z
+    dx[2] = x .+ a .* y
+    dx[3] = b .+ z .* (x .- c)
+    dx
+end
+
+# Parameter values
+p = (a = 0.2, b = 0.2, c = 5.7)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        1.0,
+        -2.0,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Roessler!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

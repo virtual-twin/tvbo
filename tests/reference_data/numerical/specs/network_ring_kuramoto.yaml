@@ -1,8 +1,17 @@
 label: network_ring_kuramoto
 description: >-
-  Eight-node Watts-Strogatz ring (p=0, so fully deterministic without a seed).
-  Exercises what no single-node spec can: the Sum-over-IndexedBase coupling
-  expression, the weight matrix reaching the solver, and the per-node state axis.
+  Eight-node Kuramoto ring. Exercises what no single-node spec can: the
+  Sum-over-IndexedBase coupling expression, the weight matrix reaching the
+  solver, and the per-node state axis.
+
+  Two things here are load-bearing and were both wrong when this spec was
+  written. The ring is declared as explicit `edges` rather than through a
+  `graph_generator`, because a generator leaves `network.weights` all zero on
+  this run path and the coupling term then contributes nothing while the spec
+  still passes. And the initial phases are spread per node: with one shared
+  `initial_value` every phase difference is zero, so sin(theta_j - theta_i)
+  vanishes identically and setting K to zero reproduces the reference bit for
+  bit. Both faults are silent — the trajectory stays smooth and plausible.
 dynamics:
   name: Kuramoto
   parameters:
@@ -13,18 +22,33 @@ dynamics:
     theta:
       equation: {rhs: "omega + c"}
       initial_value: 0.1
+      distribution:
+        name: Uniform
+        seed: 12345
+        domain: {lo: 0.0, hi: 6.283185307179586}
       variable_of_interest: true
       coupling_variable: true
   output: [theta]
 network:
   label: eight_node_ring
   number_of_nodes: 8
-  graph_generator:
-    name: watts_strogatz
-    type: WattsStrogatz
-    parameters:
-      k: {name: k, value: 2}
-      p: {name: p, value: 0}
+  edges:
+    - {source: "7", target: "0", weight: 1.0}
+    - {source: "1", target: "0", weight: 1.0}
+    - {source: "0", target: "1", weight: 1.0}
+    - {source: "2", target: "1", weight: 1.0}
+    - {source: "1", target: "2", weight: 1.0}
+    - {source: "3", target: "2", weight: 1.0}
+    - {source: "2", target: "3", weight: 1.0}
+    - {source: "4", target: "3", weight: 1.0}
+    - {source: "3", target: "4", weight: 1.0}
+    - {source: "5", target: "4", weight: 1.0}
+    - {source: "4", target: "5", weight: 1.0}
+    - {source: "6", target: "5", weight: 1.0}
+    - {source: "5", target: "6", weight: 1.0}
+    - {source: "7", target: "6", weight: 1.0}
+    - {source: "6", target: "7", weight: 1.0}
+    - {source: "0", target: "7", weight: 1.0}
   coupling:
     KuramotoCoupling:
       name: KuramotoCoupling

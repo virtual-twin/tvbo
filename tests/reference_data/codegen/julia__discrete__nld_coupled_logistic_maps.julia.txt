@@ -1,0 +1,45 @@
+
+
+
+
+
+function NLDCoupledLogisticMaps4!(dx, x, p, t = 0)
+
+    (;lam, k) = p
+
+    x0, x1, x2, x3 = x
+
+
+
+
+    dx[1] = lam .- x0 .^ 2 .+ k .* (x1 .^ 2 .+ x2 .^ 2 .+ x3 .^ 2 .- 3 * x0 .^ 2)
+    dx[2] = lam .- x1 .^ 2 .+ k .* (x0 .^ 2 .+ x2 .^ 2 .+ x3 .^ 2 .- 3 * x1 .^ 2)
+    dx[3] = lam .- x2 .^ 2 .+ k .* (x0 .^ 2 .+ x1 .^ 2 .+ x3 .^ 2 .- 3 * x2 .^ 2)
+    dx[4] = lam .- x3 .^ 2 .+ k .* (x0 .^ 2 .+ x1 .^ 2 .+ x2 .^ 2 .- 3 * x3 .^ 2)
+    dx
+end
+
+# Parameter values
+p = (lam = 1.2, k = 0.08)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.0,
+        0.3333333333333333,
+        0.6666666666666666,
+        1.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(NLDCoupledLogisticMaps4!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

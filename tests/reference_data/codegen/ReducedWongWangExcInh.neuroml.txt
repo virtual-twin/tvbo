@@ -1,0 +1,136 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: ReducedWongWangExcInh
+       Generated from TVBO Dynamics: ReducedWongWangExcInh
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="ReducedWongWangExcInh">
+
+    <!-- Parameters -->
+    <Parameter name="G" dimension="none"/>
+    <Parameter name="I_ext" dimension="none"/>
+    <Parameter name="I_o" dimension="current"/>
+    <Parameter name="J_N" dimension="none"/>
+    <Parameter name="J_i" dimension="none"/>
+    <Parameter name="W_e" dimension="none"/>
+    <Parameter name="W_i" dimension="none"/>
+    <Parameter name="a_e" dimension="none"/>
+    <Parameter name="a_i" dimension="none"/>
+    <Parameter name="b_e" dimension="per_time"/>
+    <Parameter name="b_i" dimension="per_time"/>
+    <Parameter name="d_e" dimension="time"/>
+    <Parameter name="d_i" dimension="time"/>
+    <Parameter name="gamma_e" dimension="none"/>
+    <Parameter name="gamma_i" dimension="none"/>
+    <Parameter name="lamda" dimension="none"/>
+    <Parameter name="tau_e" dimension="time"/>
+    <Parameter name="tau_i" dimension="time"/>
+    <Parameter name="w_p" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob" dimension="none"/>
+    <Parameter name="local_coupling" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="S_e_0" dimension="none"/>
+    <Parameter name="S_i_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="S_e" dimension="none"/>
+    <Exposure name="S_i" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="S_e" dimension="none" exposure="S_e"/>
+      <StateVariable name="S_i" dimension="none" exposure="S_i"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="J_N_S_e" dimension="none" value="J_N*S_e"/>
+      <DerivedVariable name="coupling" dimension="none" value="G*J_N*(c_glob + S_e*local_coupling)"/>
+      <DerivedVariable name="x_e" dimension="none" value="-b_e + a_e*(I_ext + coupling + I_o*W_e + J_N_S_e*w_p - J_i*S_i)"/>
+      <DerivedVariable name="x_i" dimension="none" value="-b_i + a_i*(J_N_S_e - S_i + I_o*W_i + coupling*lamda)"/>
+      <DerivedVariable name="H_e" dimension="none" value="x_e/(1 - exp(-d_e*x_e))"/>
+      <DerivedVariable name="H_i" dimension="none" value="x_i/(1 - exp(-d_i*x_i))"/>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="S_e" value="(-S_e/tau_e + H_e*gamma_e*(1 - S_e)) / SEC"/>
+      <TimeDerivative variable="S_i" value="(H_i*gamma_i - S_i/tau_i) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="S_e" value="S_e_0"/>
+        <StateAssignment variable="S_i" value="S_i_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="ReducedWongWangExcInh_inst" type="ReducedWongWangExcInh" G="2.0" I_ext="0.0" I_o="0.382 nA" J_N="0.15" J_i="1.0" W_e="1.0" W_i="0.7" a_e="310.0" a_i="615.0" b_e="125.0 per_s" b_i="177.0 per_s" d_e="0.16 s" d_i="0.087 s" gamma_e="0.000641" gamma_i="0.001" lamda="0.0" tau_e="100.0 ms" tau_i="10.0 ms" w_p="1.4" c_glob="0" local_coupling="0" S_e_0="0.1" S_i_0="0.1"/>
+
+
+
+</Lems>

@@ -1,0 +1,140 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: HodgkinHuxley_Q10
+       Generated from TVBO Dynamics: HodgkinHuxley_Q10
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="HodgkinHuxley_Q10">
+
+    <!-- Parameters -->
+    <Parameter name="C" dimension="none"/>
+    <Parameter name="g_Na" dimension="none"/>
+    <Parameter name="g_K" dimension="none"/>
+    <Parameter name="g_L" dimension="none"/>
+    <Parameter name="E_Na" dimension="none"/>
+    <Parameter name="E_K" dimension="none"/>
+    <Parameter name="E_L" dimension="none"/>
+    <Parameter name="I_amp" dimension="none"/>
+    <Parameter name="pulse_delay" dimension="time"/>
+    <Parameter name="pulse_duration" dimension="time"/>
+    <Parameter name="Q10" dimension="none"/>
+    <!-- Coupling inputs -->
+    <!-- Initial condition parameters -->
+    <Parameter name="v_0" dimension="none"/>
+    <Parameter name="m_0" dimension="none"/>
+    <Parameter name="h_0" dimension="none"/>
+    <Parameter name="n_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="v" dimension="none"/>
+    <Exposure name="m" dimension="none"/>
+    <Exposure name="h" dimension="none"/>
+    <Exposure name="n" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="v" dimension="none" exposure="v"/>
+      <StateVariable name="m" dimension="none" exposure="m"/>
+      <StateVariable name="h" dimension="none" exposure="h"/>
+      <StateVariable name="n" dimension="none" exposure="n"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <ConditionalDerivedVariable name="I_ext" dimension="none">
+        <Case condition="pulse_delay .leq. t .and. t .lt. pulse_delay + pulse_duration" value="I_amp"/>
+        <Case value="0.0"/>
+      </ConditionalDerivedVariable>
+      <DerivedVariable name="alpha_h" dimension="none" value="0.00271419454822054*Q10*exp(-0.05*v)"/>
+      <DerivedVariable name="alpha_m" dimension="none" value="Q10*(4.0 + 0.1*v)/(1.0 - 0.0183156388887342*exp(-0.1*v))"/>
+      <DerivedVariable name="alpha_n" dimension="none" value="Q10*(0.55 + 0.01*v)/(1.0 - 0.00408677143846407*exp(-0.1*v))"/>
+      <DerivedVariable name="beta_h" dimension="none" value="1.0*Q10/(1.0 + 0.0301973834223185*exp(-0.1*v))"/>
+      <DerivedVariable name="beta_m" dimension="none" value="0.108087223804836*Q10*exp(-0.0555555555555556*v)"/>
+      <DerivedVariable name="beta_n" dimension="none" value="0.055468413760135*Q10*exp(-0.0125*v)"/>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="v" value="((1000*I_ext - g_L*(v - E_L) - g_K*n^4*(v - E_K) - g_Na*h*m^3*(v - E_Na))/C) / SEC"/>
+      <TimeDerivative variable="m" value="(alpha_m*(1 - m) - beta_m*m) / SEC"/>
+      <TimeDerivative variable="h" value="(alpha_h*(1 - h) - beta_h*h) / SEC"/>
+      <TimeDerivative variable="n" value="(alpha_n*(1 - n) - beta_n*n) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="v" value="v_0"/>
+        <StateAssignment variable="m" value="m_0"/>
+        <StateAssignment variable="h" value="h_0"/>
+        <StateAssignment variable="n" value="n_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="HodgkinHuxley_Q10_inst" type="HodgkinHuxley_Q10" C="10.0" g_Na="1200.0" g_K="360.0" g_L="3.0" E_Na="50.0" E_K="-77.0" E_L="-54.3" I_amp="0.08" pulse_delay="100.0 ms" pulse_duration="100.0 ms" Q10="0.333333" v_0="-65.0" m_0="0.052932" h_0="0.596121" n_0="0.317677"/>
+
+
+
+</Lems>

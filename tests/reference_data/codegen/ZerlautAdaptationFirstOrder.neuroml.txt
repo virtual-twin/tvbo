@@ -1,0 +1,223 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: ZerlautAdaptationFirstOrder
+       Generated from TVBO Dynamics: ZerlautAdaptationFirstOrder
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="ZerlautAdaptationFirstOrder">
+
+    <!-- Parameters -->
+    <Parameter name="C_m" dimension="none"/>
+    <Parameter name="DTvN0" dimension="none"/>
+    <Parameter name="DmuV0" dimension="none"/>
+    <Parameter name="DsV0" dimension="none"/>
+    <Parameter name="E_L_e" dimension="none"/>
+    <Parameter name="E_L_i" dimension="none"/>
+    <Parameter name="E_e" dimension="none"/>
+    <Parameter name="E_i" dimension="none"/>
+    <Parameter name="K_ext_e" dimension="none"/>
+    <Parameter name="K_ext_i" dimension="none"/>
+    <Parameter name="N_tot" dimension="none"/>
+    <Parameter name="P0_e" dimension="none"/>
+    <Parameter name="P0_i" dimension="none"/>
+    <Parameter name="P1_e" dimension="none"/>
+    <Parameter name="P1_i" dimension="none"/>
+    <Parameter name="P2_e" dimension="none"/>
+    <Parameter name="P2_i" dimension="none"/>
+    <Parameter name="P3_e" dimension="none"/>
+    <Parameter name="P3_i" dimension="none"/>
+    <Parameter name="P4_e" dimension="none"/>
+    <Parameter name="P4_i" dimension="none"/>
+    <Parameter name="P5_e" dimension="none"/>
+    <Parameter name="P5_i" dimension="none"/>
+    <Parameter name="P6_e" dimension="none"/>
+    <Parameter name="P6_i" dimension="none"/>
+    <Parameter name="P7_e" dimension="none"/>
+    <Parameter name="P7_i" dimension="none"/>
+    <Parameter name="P8_e" dimension="none"/>
+    <Parameter name="P8_i" dimension="none"/>
+    <Parameter name="P9_e" dimension="none"/>
+    <Parameter name="P9_i" dimension="none"/>
+    <Parameter name="P_e" dimension="none"/>
+    <Parameter name="P_i" dimension="none"/>
+    <Parameter name="Q_e" dimension="none"/>
+    <Parameter name="Q_i" dimension="none"/>
+    <Parameter name="S_i" dimension="none"/>
+    <Parameter name="T" dimension="none"/>
+    <Parameter name="TvN0" dimension="none"/>
+    <Parameter name="a_e" dimension="none"/>
+    <Parameter name="a_i" dimension="none"/>
+    <Parameter name="b_e" dimension="none"/>
+    <Parameter name="b_i" dimension="none"/>
+    <Parameter name="external_input_ex_ex" dimension="none"/>
+    <Parameter name="external_input_ex_in" dimension="none"/>
+    <Parameter name="external_input_in_ex" dimension="none"/>
+    <Parameter name="external_input_in_in" dimension="none"/>
+    <Parameter name="g_L" dimension="none"/>
+    <Parameter name="g" dimension="none"/>
+    <Parameter name="muV0" dimension="none"/>
+    <Parameter name="p_connect_e" dimension="none"/>
+    <Parameter name="p_connect_i" dimension="none"/>
+    <Parameter name="sV0" dimension="none"/>
+    <Parameter name="tau_OU" dimension="none"/>
+    <Parameter name="tau_e" dimension="none"/>
+    <Parameter name="tau_i" dimension="none"/>
+    <Parameter name="tau_w_e" dimension="none"/>
+    <Parameter name="tau_w_i" dimension="none"/>
+    <Parameter name="weight_noise" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob" dimension="none"/>
+    <Parameter name="local_coupling" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="E_0" dimension="none"/>
+    <Parameter name="I_0" dimension="none"/>
+    <Parameter name="W_e_0" dimension="none"/>
+    <Parameter name="W_i_0" dimension="none"/>
+    <Parameter name="ou_drift_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="E" dimension="none"/>
+    <Exposure name="I" dimension="none"/>
+    <Exposure name="W_e" dimension="none"/>
+    <Exposure name="W_i" dimension="none"/>
+    <Exposure name="ou_drift" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="E" dimension="none" exposure="E"/>
+      <StateVariable name="I" dimension="none" exposure="I"/>
+      <StateVariable name="W_e" dimension="none" exposure="W_e"/>
+      <StateVariable name="W_i" dimension="none" exposure="W_i"/>
+      <StateVariable name="ou_drift" dimension="none" exposure="ou_drift"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="lc_E" dimension="none" value="E*local_coupling"/>
+      <DerivedVariable name="lc_I" dimension="none" value="I*local_coupling"/>
+      <ConditionalDerivedVariable name="Fe_ext" dimension="none">
+        <Case condition="K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) .lt. 0" value="0"/>
+        <Case value="c_glob + lc_E + ou_drift*weight_noise"/>
+      </ConditionalDerivedVariable>
+      <DerivedVariable name="Fi_ext" dimension="none" value="lc_I"/>
+      <DerivedVariable name="fe_e" dimension="none" value="K_ext_e*(Fe_ext + external_input_ex_ex) + N_tot*p_connect_e*(1/1000000 + E)*(1.0 - g)"/>
+      <DerivedVariable name="fe_i" dimension="none" value="K_ext_e*(Fe_ext + external_input_in_ex) + N_tot*p_connect_e*(1/1000000 + E)*(1.0 - g)"/>
+      <DerivedVariable name="fi_e" dimension="none" value="K_ext_i*(Fi_ext + external_input_ex_in) + N_tot*g*p_connect_i*(1/1000000 + I)"/>
+      <DerivedVariable name="fi_i" dimension="none" value="K_ext_i*(Fi_ext + external_input_in_in) + N_tot*g*p_connect_i*(1/1000000 + I)"/>
+      <DerivedVariable name="mu_Ge_e" dimension="none" value="Q_e*fe_e*tau_e"/>
+      <DerivedVariable name="mu_Ge_i" dimension="none" value="Q_e*fe_i*tau_e"/>
+      <DerivedVariable name="mu_Gi_e" dimension="none" value="Q_i*fi_e*tau_i"/>
+      <DerivedVariable name="mu_Gi_i" dimension="none" value="Q_i*fi_i*tau_i"/>
+      <DerivedVariable name="mu_G_e" dimension="none" value="g_L + mu_Ge_e + mu_Gi_e"/>
+      <DerivedVariable name="mu_G_i" dimension="none" value="g_L + mu_Ge_i + mu_Gi_i"/>
+      <DerivedVariable name="T_m_e" dimension="none" value="C_m/mu_G_e"/>
+      <DerivedVariable name="T_m_i" dimension="none" value="C_m/mu_G_i"/>
+      <DerivedVariable name="mu_V_e" dimension="none" value="(-W_e + E_L_e*g_L + E_e*mu_Ge_e + E_i*mu_Gi_e)/mu_G_e"/>
+      <DerivedVariable name="mu_V_i" dimension="none" value="(-W_i + E_L_i*g_L + E_e*mu_Ge_i + E_i*mu_Gi_i)/mu_G_i"/>
+      <DerivedVariable name="U_e_e" dimension="none" value="Q_e*(E_e - mu_V_e)/mu_G_e"/>
+      <DerivedVariable name="U_e_i" dimension="none" value="Q_e*(E_e - mu_V_i)/mu_G_i"/>
+      <DerivedVariable name="U_i_e" dimension="none" value="Q_i*(E_i - mu_V_e)/mu_G_e"/>
+      <DerivedVariable name="U_i_i" dimension="none" value="Q_i*(E_i - mu_V_i)/mu_G_i"/>
+      <DerivedVariable name="V_e" dimension="none" value="(mu_V_e - muV0)/DmuV0"/>
+      <DerivedVariable name="V_i" dimension="none" value="(mu_V_i - muV0)/DmuV0"/>
+      <DerivedVariable name="T_V_e" dimension="none" value="(fe_e*U_e_e^2*tau_e^2 + fi_e*U_i_e^2*tau_i^2)/(fe_e*U_e_e^2*tau_e^2/(T_m_e + tau_e) + fi_e*U_i_e^2*tau_i^2/(T_m_e + tau_i))"/>
+      <DerivedVariable name="T_V_i" dimension="none" value="(fe_i*U_e_i^2*tau_e^2 + fi_i*U_i_i^2*tau_i^2)/(fe_i*U_e_i^2*tau_e^2/(T_m_i + tau_e) + fi_i*U_i_i^2*tau_i^2/(T_m_i + tau_i))"/>
+      <DerivedVariable name="sigma_V_e" dimension="none" value="sqrt(fe_e*U_e_e^2*tau_e^2/(2.0*T_m_e + 2.0*tau_e) + fi_e*U_i_e^2*tau_i^2/(2.0*T_m_e + 2.0*tau_i))"/>
+      <DerivedVariable name="sigma_V_i" dimension="none" value="sqrt(fe_i*U_e_i^2*tau_e^2/(2.0*T_m_i + 2.0*tau_e) + fi_i*U_i_i^2*tau_i^2/(2.0*T_m_i + 2.0*tau_i))"/>
+      <DerivedVariable name="S_e" dimension="none" value="(sigma_V_e - sV0)/DsV0"/>
+      <DerivedVariable name="S_i" dimension="none" value="(sigma_V_i - sV0)/DsV0"/>
+      <DerivedVariable name="T_e" dimension="none" value="(-TvN0 + T_V_e*g_L/C_m)/DTvN0"/>
+      <DerivedVariable name="T_i" dimension="none" value="(-TvN0 + T_V_i*g_L/C_m)/DTvN0"/>
+      <DerivedVariable name="V_thre_e" dimension="none" value="1000.0*P0_e + 1000.0*P1_e*V_e + 1000.0*P2_e*S_e + 1000.0*P3_e*T_e + 1000.0*P4_e*V_e^2 + 1000.0*P5_e*S_e^2 + 1000.0*P6_e*T_e^2 + 1000.0*P7_e*S_e*V_e + 1000.0*P8_e*T_e*V_e + 1000.0*P9_e*S_e*T_e"/>
+      <DerivedVariable name="V_thre_i" dimension="none" value="1000.0*P0_i + 1000.0*P1_i*V_i + 1000.0*P2_i*S_i + 1000.0*P3_i*T_i + 1000.0*P4_i*V_i^2 + 1000.0*P5_i*S_i^2 + 1000.0*P6_i*T_i^2 + 1000.0*P7_i*S_i*V_i + 1000.0*P8_i*T_i*V_i + 1000.0*P9_i*S_i*T_i"/>
+      <DerivedVariable name="f_out_e" dimension="none" value="erfc(sqrt(2)*(V_thre_e - mu_V_e)/(2*sigma_V_e))/(2*T_V_e)"/>
+      <DerivedVariable name="f_out_i" dimension="none" value="erfc(sqrt(2)*(V_thre_i - mu_V_i)/(2*sigma_V_i))/(2*T_V_i)"/>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="E" value="((f_out_e - E)/T) / SEC"/>
+      <TimeDerivative variable="I" value="((f_out_i - I)/T) / SEC"/>
+      <TimeDerivative variable="W_e" value="(E*b_e - W_e/tau_w_e + a_e*(mu_V_e - E_L_e)/tau_w_e) / SEC"/>
+      <TimeDerivative variable="W_i" value="(I*b_i - W_i/tau_w_i + a_i*(mu_V_i - E_L_i)/tau_w_i) / SEC"/>
+      <TimeDerivative variable="ou_drift" value="(-ou_drift/tau_OU) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="E" value="E_0"/>
+        <StateAssignment variable="I" value="I_0"/>
+        <StateAssignment variable="W_e" value="W_e_0"/>
+        <StateAssignment variable="W_i" value="W_i_0"/>
+        <StateAssignment variable="ou_drift" value="ou_drift_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="ZerlautAdaptationFirstOrder_inst" type="ZerlautAdaptationFirstOrder" C_m="200.0" DTvN0="1.0" DmuV0="10.0" DsV0="6.0" E_L_e="-65.0" E_L_i="-65.0" E_e="0.0" E_i="-80.0" K_ext_e="400.0" K_ext_i="0.0" N_tot="10000.0" P0_e="-0.04983106" P0_i="-0.05149122024209484" P1_e="0.005063550882777035" P1_i="0.004003689190271077" P2_e="-0.023470121807314552" P2_i="-0.008352013668528155" P3_e="0.0022951513725067503" P3_i="0.0002414237992765705" P4_e="-0.0004105302652029825" P4_i="-0.0005070645080016026" P5_e="0.010547051343547399" P5_i="0.0014345394104282397" P6_e="-0.03659252821136933" P6_i="-0.014686689498949967" P7_e="0.007437487505797858" P7_i="0.004502706285435741" P8_e="0.001265064721846073" P8_i="0.0028472190352532454" P9_e="-0.04072161294490446" P9_i="-0.015357804594594548" P_e="-0.04983106" P_i="-0.05149122024209484" Q_e="1.5" Q_i="5.0" S_i="1.0" T="20.0" TvN0="0.5" a_e="4.0" a_i="0.0" b_e="60.0" b_i="0.0" external_input_ex_ex="0.0" external_input_ex_in="0.0" external_input_in_ex="0.0" external_input_in_in="0.0" g_L="10.0" g="0.2" muV0="-60.0" p_connect_e="0.05" p_connect_i="0.05" sV0="4.0" tau_OU="5.0" tau_e="5.0" tau_i="5.0" tau_w_e="500.0" tau_w_i="1.0" weight_noise="10.5" c_glob="0" local_coupling="0" E_0="0.1" I_0="0.1" W_e_0="0.1" W_i_0="0.1" ou_drift_0="0.1"/>
+
+
+
+</Lems>

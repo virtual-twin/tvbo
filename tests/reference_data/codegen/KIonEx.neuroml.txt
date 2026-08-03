@@ -1,0 +1,188 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: KIonEx
+       Generated from TVBO Dynamics: KIonEx
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="KIonEx">
+
+    <!-- Parameters -->
+    <Parameter name="Cm" dimension="none"/>
+    <Parameter name="Delta" dimension="none"/>
+    <Parameter name="E" dimension="none"/>
+    <Parameter name="J" dimension="none"/>
+    <Parameter name="K_bath" dimension="none"/>
+    <Parameter name="R_minus" dimension="none"/>
+    <Parameter name="R_plus" dimension="none"/>
+    <Parameter name="Vstar" dimension="none"/>
+    <Parameter name="c_minus" dimension="none"/>
+    <Parameter name="c_plus" dimension="none"/>
+    <Parameter name="epsilon" dimension="none"/>
+    <Parameter name="eta" dimension="none"/>
+    <Parameter name="gamma" dimension="none"/>
+    <Parameter name="tau_n" dimension="none"/>
+    <Parameter name="Chn" dimension="none"/>
+    <Parameter name="Ckp" dimension="concentration"/>
+    <Parameter name="Cl_i0" dimension="concentration"/>
+    <Parameter name="Cl_o0" dimension="concentration"/>
+    <Parameter name="Cmna" dimension="voltage"/>
+    <Parameter name="Cnap" dimension="concentration"/>
+    <Parameter name="Cnk" dimension="voltage"/>
+    <Parameter name="DChn" dimension="none"/>
+    <Parameter name="DCkp" dimension="concentration"/>
+    <Parameter name="DCmna" dimension="voltage"/>
+    <Parameter name="DCnap" dimension="concentration"/>
+    <Parameter name="DCnk" dimension="voltage"/>
+    <Parameter name="K_i0" dimension="concentration"/>
+    <Parameter name="K_o0" dimension="concentration"/>
+    <Parameter name="Na_i0" dimension="concentration"/>
+    <Parameter name="Na_o0" dimension="concentration"/>
+    <Parameter name="g_Cl" dimension="conductance"/>
+    <Parameter name="g_K" dimension="conductance"/>
+    <Parameter name="g_Kl" dimension="conductance"/>
+    <Parameter name="g_Na" dimension="conductance"/>
+    <Parameter name="g_Nal" dimension="conductance"/>
+    <Parameter name="rho" dimension="current"/>
+    <Parameter name="w_i" dimension="none"/>
+    <Parameter name="w_o" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="DKi_0" dimension="none"/>
+    <Parameter name="Kg_0" dimension="none"/>
+    <Parameter name="V_0" dimension="none"/>
+    <Parameter name="n_0" dimension="none"/>
+    <Parameter name="x_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="DKi" dimension="none"/>
+    <Exposure name="Kg" dimension="none"/>
+    <Exposure name="V" dimension="none"/>
+    <Exposure name="n" dimension="none"/>
+    <Exposure name="x" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="DKi" dimension="none" exposure="DKi"/>
+      <StateVariable name="Kg" dimension="none" exposure="Kg"/>
+      <StateVariable name="V" dimension="none" exposure="V"/>
+      <StateVariable name="n" dimension="none" exposure="n"/>
+      <StateVariable name="x" dimension="none" exposure="x"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="DNa_i" dimension="none" value="-DKi"/>
+      <DerivedVariable name="I_Cl" dimension="none" value="g_Cl*(V + 26.64*log(Cl_o0/Cl_i0))"/>
+      <DerivedVariable name="K_i" dimension="none" value="DKi + K_i0"/>
+      <DerivedVariable name="beta" dimension="none" value="w_i/w_o"/>
+      <DerivedVariable name="h" dimension="none" value="1.1 - 1.0/(1.0 + 24.5325301971094*exp(-8.0*n))"/>
+      <DerivedVariable name="minf" dimension="none" value="1.0/(1.0 + exp((Cmna - V)/DCmna))"/>
+      <DerivedVariable name="ninf" dimension="none" value="1.0/(1.0 + exp((Cnk - V)/DCnk))"/>
+      <DerivedVariable name="r" dimension="none" value="R_minus*x/pi"/>
+      <DerivedVariable name="DK_o" dimension="none" value="-DKi*beta"/>
+      <DerivedVariable name="DNa_o" dimension="none" value="-DNa_i*beta"/>
+      <DerivedVariable name="Na_i" dimension="none" value="DNa_i + Na_i0"/>
+      <ConditionalDerivedVariable name="xcond" dimension="none">
+        <Case condition="V .leq. Vstar" value="Delta - J*r*x + 2*R_minus*x*(V - c_minus)"/>
+        <Case value="Delta - J*r*x + 2*R_plus*x*(V - c_plus)"/>
+      </ConditionalDerivedVariable>
+      <DerivedVariable name="K_o" dimension="none" value="DK_o + K_o0 + Kg"/>
+      <DerivedVariable name="Na_o" dimension="none" value="DNa_o + Na_o0"/>
+      <DerivedVariable name="I_K" dimension="none" value="(V - 26.64*log(K_o/K_i))*(g_Kl + g_K*n)"/>
+      <DerivedVariable name="I_Na" dimension="none" value="(V - 26.64*log(Na_o/Na_i))*(g_Nal + g_Na*h*minf)"/>
+      <DerivedVariable name="I_pump" dimension="none" value="1.0*rho/((1.0 + exp((Ckp - K_o)/DCkp))*(1.0 + exp((Cnap - Na_i)/DCnap)))"/>
+      <DerivedVariable name="V_temp" dimension="none" value="(-1.0*I_Cl - 1.0*I_K - 1.0*I_Na - 1.0*I_pump)/Cm"/>
+      <ConditionalDerivedVariable name="Vcond" dimension="none">
+        <Case condition="V .leq. Vstar" value="V_temp + eta - R_minus*x^2 + R_minus*c_glob*(E - V)/pi"/>
+        <Case value="V_temp + eta - R_plus*x^2 + R_minus*c_glob*(E - V)/pi"/>
+      </ConditionalDerivedVariable>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="DKi" value="(-gamma*(I_K - 2.0*I_pump)/w_i) / SEC"/>
+      <TimeDerivative variable="Kg" value="(epsilon*(K_bath - K_o)) / SEC"/>
+      <TimeDerivative variable="V" value="(Vcond) / SEC"/>
+      <TimeDerivative variable="n" value="((ninf - n)/tau_n) / SEC"/>
+      <TimeDerivative variable="x" value="(xcond) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="DKi" value="DKi_0"/>
+        <StateAssignment variable="Kg" value="Kg_0"/>
+        <StateAssignment variable="V" value="V_0"/>
+        <StateAssignment variable="n" value="n_0"/>
+        <StateAssignment variable="x" value="x_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="KIonEx_inst" type="KIonEx" Cm="1.0" Delta="1.0" E="0.0" J="0.1" K_bath="5.5" R_minus="0.5" R_plus="-0.5" Vstar="-31.0" c_minus="-40.0" c_plus="-20.0" epsilon="0.001" eta="0.0" gamma="0.04" tau_n="4.0" Chn="0.4" Ckp="5.5" Cl_i0="5.0" Cl_o0="112.0" Cmna="-24.0 mV" Cnap="21.0" Cnk="-19.0 mV" DChn="-8.0" DCkp="1.0" DCmna="12.0 mV" DCnap="2.0" DCnk="18.0 mV" K_i0="130.0" K_o0="4.8" Na_i0="16.0" Na_o0="138.0" g_Cl="7.5 nS" g_K="22.0 nS" g_Kl="0.12 nS" g_Na="40.0 nS" g_Nal="0.02 nS" rho="250.0 pA" w_i="2160.0" w_o="720.0" c_glob="0" DKi_0="0.1" Kg_0="0.1" V_0="0.1" n_0="0.1" x_0="0.1"/>
+
+
+
+</Lems>

@@ -1,0 +1,223 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class KIonEx(AbstractDynamics):
+    """KIonEx neural mass model."""
+
+    STATE_NAMES = ("DKi", "Kg", "V", "n", "x")
+    INITIAL_STATE = (0.1, 0.1, 0.1, 0.1, 0.1)
+    AUXILIARY_NAMES = (
+        "DNa_i",
+        "I_Cl",
+        "K_i",
+        "beta",
+        "h",
+        "minf",
+        "ninf",
+        "r",
+        "DK_o",
+        "DNa_o",
+        "Na_i",
+        "xcond",
+        "K_o",
+        "Na_o",
+        "I_K",
+        "I_Na",
+        "I_pump",
+        "V_temp",
+        "Vcond",
+    )
+
+    DEFAULT_PARAMS = Bunch(
+        Chn=0.4,
+        Ckp=5.5,
+        Cl_i0=5.0,
+        Cl_o0=112.0,
+        Cm=1.0,
+        Cmna=-24.0,
+        Cnap=21.0,
+        Cnk=-19.0,
+        DChn=-8.0,
+        DCkp=1.0,
+        DCmna=12.0,
+        DCnap=2.0,
+        DCnk=18.0,
+        Delta=1.0,
+        E=0.0,
+        J=0.1,
+        K_bath=5.5,
+        K_i0=130.0,
+        K_o0=4.8,
+        Na_i0=16.0,
+        Na_o0=138.0,
+        R_minus=0.5,
+        R_plus=-0.5,
+        Vstar=-31.0,
+        c_minus=-40.0,
+        c_plus=-20.0,
+        epsilon=0.001,
+        eta=0.0,
+        g_Cl=7.5,
+        g_K=22.0,
+        g_Kl=0.12,
+        g_Na=40.0,
+        g_Nal=0.02,
+        gamma=0.04,
+        rho=250.0,
+        tau_n=4.0,
+        w_i=2160.0,
+        w_o=720.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        Chn = params.Chn
+        Ckp = params.Ckp
+        Cl_i0 = params.Cl_i0
+        Cl_o0 = params.Cl_o0
+        Cm = params.Cm
+        Cmna = params.Cmna
+        Cnap = params.Cnap
+        Cnk = params.Cnk
+        DChn = params.DChn
+        DCkp = params.DCkp
+        DCmna = params.DCmna
+        DCnap = params.DCnap
+        DCnk = params.DCnk
+        Delta = params.Delta
+        E = params.E
+        J = params.J
+        K_bath = params.K_bath
+        K_i0 = params.K_i0
+        K_o0 = params.K_o0
+        Na_i0 = params.Na_i0
+        Na_o0 = params.Na_o0
+        R_minus = params.R_minus
+        R_plus = params.R_plus
+        Vstar = params.Vstar
+        c_minus = params.c_minus
+        c_plus = params.c_plus
+        epsilon = params.epsilon
+        eta = params.eta
+        g_Cl = params.g_Cl
+        g_K = params.g_K
+        g_Kl = params.g_Kl
+        g_Na = params.g_Na
+        g_Nal = params.g_Nal
+        gamma = params.gamma
+        rho = params.rho
+        tau_n = params.tau_n
+        w_i = params.w_i
+        w_o = params.w_o
+
+        DKi = state[0]
+        Kg = state[1]
+        V = state[2]
+        n = state[3]
+        x = state[4]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+
+        DNa_i = -DKi
+        I_Cl = g_Cl * (V + 26.64 * jnp.log(Cl_o0 / Cl_i0))
+        K_i = DKi + K_i0
+        beta = w_i / w_o
+        h = 1.1 - 1.0 / (1.0 + 24.5325301971094 * jnp.exp(-8.0 * n))
+        minf = 1.0 / (jnp.exp((Cmna - V) / DCmna) + 1.0)
+        ninf = 1.0 / (jnp.exp((Cnk - V) / DCnk) + 1.0)
+        r = R_minus * x / jnp.pi
+        DK_o = (-DKi) * beta
+        DNa_o = (-DNa_i) * beta
+        Na_i = DNa_i + Na_i0
+        xcond = jnp.where(
+            jnp.less_equal(V, Vstar),
+            Delta - J * r * x + 2 * R_minus * x * (V - c_minus),
+            Delta - J * r * x + 2 * R_plus * x * (V - c_plus),
+        )
+        K_o = DK_o + K_o0 + Kg
+        Na_o = DNa_o + Na_o0
+        I_K = (V - 26.64 * jnp.log(K_o / K_i)) * (g_K * n + g_Kl)
+        I_Na = (V - 26.64 * jnp.log(Na_o / Na_i)) * (g_Na * h * minf + g_Nal)
+        I_pump = (
+            1.0
+            * rho
+            / (
+                (
+                    (jnp.exp((Ckp - K_o) / DCkp) + 1.0)
+                    * (jnp.exp((Cnap - Na_i) / DCnap) + 1.0)
+                )
+            )
+        )
+        V_temp = -1.0 * (I_Cl + I_K + I_Na + I_pump) / Cm
+        Vcond = jnp.where(
+            jnp.less_equal(V, Vstar),
+            R_minus * c_glob * (-V + E) / jnp.pi - R_minus * x**2 + V_temp + eta,
+            R_minus * c_glob * (-V + E) / jnp.pi - R_plus * x**2 + V_temp + eta,
+        )
+
+        dDKi_dt = (-gamma) * (I_K - 2.0 * I_pump) / w_i
+        dKg_dt = epsilon * (K_bath - K_o)
+        dV_dt = Vcond
+        dn_dt = (-n + ninf) / tau_n
+        dx_dt = xcond
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dDKi_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dDKi_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dKg_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dV_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dn_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(DNa_i), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(I_Cl), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(K_i), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(h), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(minf), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(ninf), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(r), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(DK_o), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(DNa_o), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(Na_i), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(xcond), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(K_o), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(Na_o), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(I_K), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(I_Na), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(I_pump), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(V_temp), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(Vcond), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

@@ -1,0 +1,41 @@
+
+
+
+
+
+function AdaptiveExponentialIF!(dx, x, p, t = 0)
+
+    (;C, gL, EL, VT, thresh, reset, delT, tauw, a, b, I_ext) = p
+
+    v, w = x
+
+
+
+
+    dx[1] = (I_ext .- w .- gL .* (v .- EL) .+ delT .* gL .* exp((v .- VT) ./ delT)) ./ C
+    dx[2] = (-w .+ a .* (v .- EL)) ./ tauw
+    dx
+end
+
+# Parameter values
+p = (C = 281.0, gL = 30.0, EL = -70.6, VT = -50.4, thresh = -40.4, reset = -48.5, delT = 2.0, tauw = 40.0, a = 4.0, b = 0.08, I_ext = 0.8)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -70.6,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(AdaptiveExponentialIF!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

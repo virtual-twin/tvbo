@@ -1,0 +1,54 @@
+
+
+
+
+
+import NaNMath
+function Epileptor5D!(dx, x, p, t = 0)
+
+    (;Iext2, Iext, Kf, Ks, Kvf, a, aa, b, bb, c, d, modification, r, s, slope, tau, tt, x0, c_glob0, c_glob1, local_coupling) = p
+
+    g, x1, x2, y1, y2, z = x
+
+
+
+    x1cond = ifelse(x1 < 0, b .* x1 .- a .* x1 .^ 2, slope .- x2 .+ 0.6 * (-4.0 .+ z) .^ 2)
+    y2cond = ifelse(x2 < -0.25, 0.0, aa .* (0.25 .+ x2))
+    zcond = ifelse(z < 0, -0.1 * z .^ 7, 0.0)
+    h = ifelse(modification > 0, x0 .+ 3 ./ (1 .+ 0.00673794699908547 * exp(-10.0 * x1)), zcond .- 4 * x0 .+ 4 * x1)
+
+    dx[1] = tt .* (0.001 * x1 .- 0.01 * g)
+    dx[2] = tt .* (Iext .+ y1 .- z .+ Kvf .* c_glob0 .+ local_coupling .* x1 .+ x1 .* x1cond)
+    dx[3] = tt .* (1.05 .+ Iext2 .+ x2 .- y2 .- x2 .^ 3 .- 0.3 * z .+ Kf .* c_glob1 .+ bb .* g)
+    dx[4] = tt .* (c .- y1 .- d .* x1 .^ 2)
+    dx[5] = tt .* (y2cond .- y2) ./ tau
+    dx[6] = r .* tt .* (h .- z .+ Ks .* c_glob0)
+    dx
+end
+
+# Parameter values
+p = (Iext2 = 0.45, Iext = 3.1, Kf = 0.0, Ks = 0.0, Kvf = 0.0, a = 1.0, aa = 6.0, b = 3.0, bb = 2.0, c = 1.0, d = 5.0, modification = 0.0, r = 0.00035, s = 4.0, slope = 0.0, tau = 10.0, tt = 1.0, x0 = -1.6, c_glob0 = 0.0, c_glob1 = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Epileptor5D!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

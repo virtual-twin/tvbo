@@ -1,0 +1,147 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: JansenRit
+       Generated from TVBO Dynamics: JansenRit
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="JansenRit">
+
+    <!-- Parameters -->
+    <Parameter name="A" dimension="voltage"/>
+    <Parameter name="B" dimension="voltage"/>
+    <Parameter name="J" dimension="none"/>
+    <Parameter name="a_1" dimension="none"/>
+    <Parameter name="a_2" dimension="none"/>
+    <Parameter name="a_3" dimension="none"/>
+    <Parameter name="a_4" dimension="none"/>
+    <Parameter name="a" dimension="per_time"/>
+    <Parameter name="b" dimension="per_time"/>
+    <Parameter name="mu" dimension="per_time"/>
+    <Parameter name="nu_max" dimension="per_time"/>
+    <Parameter name="r" dimension="none"/>
+    <Parameter name="v0" dimension="voltage"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob" dimension="none"/>
+    <Parameter name="local_coupling" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="y0_0" dimension="none"/>
+    <Parameter name="y1_0" dimension="none"/>
+    <Parameter name="y2_0" dimension="none"/>
+    <Parameter name="y3_0" dimension="none"/>
+    <Parameter name="y4_0" dimension="none"/>
+    <Parameter name="y5_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="y0" dimension="none"/>
+    <Exposure name="y1" dimension="none"/>
+    <Exposure name="y2" dimension="none"/>
+    <Exposure name="y3" dimension="none"/>
+    <Exposure name="y4" dimension="none"/>
+    <Exposure name="y5" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="y0" dimension="none" exposure="y0"/>
+      <StateVariable name="y1" dimension="none" exposure="y1"/>
+      <StateVariable name="y2" dimension="none" exposure="y2"/>
+      <StateVariable name="y3" dimension="none" exposure="y3"/>
+      <StateVariable name="y4" dimension="none" exposure="y4"/>
+      <StateVariable name="y5" dimension="none" exposure="y5"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="sigma_y0_1" dimension="none" value="2.0*nu_max/(1.0 + exp(r*(v0 - J*a_1*y0)))"/>
+      <DerivedVariable name="sigma_y0_3" dimension="none" value="2.0*nu_max/(1.0 + exp(r*(v0 - J*a_3*y0)))"/>
+      <DerivedVariable name="sigma_y1_y2" dimension="none" value="2.0*nu_max/(1.0 + exp(r*(v0 + y2 - y1)))"/>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="y0" value="(y3) / SEC"/>
+      <TimeDerivative variable="y1" value="(y4) / SEC"/>
+      <TimeDerivative variable="y2" value="(y5) / SEC"/>
+      <TimeDerivative variable="y3" value="(-y0*a^2 - 2.0*a*y3 + A*a*sigma_y1_y2) / SEC"/>
+      <TimeDerivative variable="y4" value="(-y1*a^2 - 2.0*a*y4 + A*a*(c_glob + mu + local_coupling*(y1 - y2) + J*a_2*sigma_y0_1)) / SEC"/>
+      <TimeDerivative variable="y5" value="(-y2*b^2 - 2.0*b*y5 + B*J*a_4*b*sigma_y0_3) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="y0" value="y0_0"/>
+        <StateAssignment variable="y1" value="y1_0"/>
+        <StateAssignment variable="y2" value="y2_0"/>
+        <StateAssignment variable="y3" value="y3_0"/>
+        <StateAssignment variable="y4" value="y4_0"/>
+        <StateAssignment variable="y5" value="y5_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="JansenRit_inst" type="JansenRit" A="3.25 mV" B="22.0 mV" J="135.0" a_1="1.0" a_2="0.8" a_3="0.25" a_4="0.25" a="0.1 per_ms" b="0.05 per_ms" mu="0.22 per_ms" nu_max="0.0025 per_ms" r="0.56" v0="5.52 mV" c_glob="0" local_coupling="0" y0_0="0.1" y1_0="0.1" y2_0="0.1" y3_0="0.1" y4_0="0.1" y5_0="0.1"/>
+
+
+
+</Lems>

@@ -52,14 +52,23 @@ def pytest_sessionfinish(session, exitstatus):
     Regeneration asserts nothing — it overwrites every reference with whatever the current
     code produces. A green run would be indistinguishable from a suite that passed, which
     is exactly how an unreviewed re-baseline reaches main.
+
+    A run that actually failed keeps its own status. Overriding that too would hide the
+    case that matters most: if a model raised while regenerating, its reference was never
+    written, and reporting that identically to a clean regeneration is how a corpus with a
+    hole in it gets committed.
     """
-    if session.config.getoption("--regenerate-golden", default=False):
-        session.exitstatus = pytest.ExitCode.USAGE_ERROR
-        reporter = session.config.pluginmanager.get_plugin("terminalreporter")
-        if reporter is not None:
-            reporter.write_sep(
-                "=",
-                "golden corpora REGENERATED — nothing was asserted; review the diff and "
-                "commit it on its own",
-                red=True,
-            )
+    if not session.config.getoption("--regenerate-golden", default=False):
+        return
+    if exitstatus not in (pytest.ExitCode.OK, pytest.ExitCode.NO_TESTS_COLLECTED):
+        return
+
+    session.exitstatus = pytest.ExitCode.USAGE_ERROR
+    reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+    if reporter is not None:
+        reporter.write_sep(
+            "=",
+            "golden corpora REGENERATED — nothing was asserted; review the diff and "
+            "commit it on its own",
+            red=True,
+        )

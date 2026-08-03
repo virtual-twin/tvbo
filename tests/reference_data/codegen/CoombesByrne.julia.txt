@@ -1,0 +1,45 @@
+
+
+
+
+
+function CoombesByrne!(dx, x, p, t = 0)
+
+    (;Delta, alpha, eta, k, v_syn, c_glob) = p
+
+    V, g, q, r = x
+
+
+
+
+    dx[1] = c_glob .+ eta .+ V .^ 2 .+ g .* (v_syn .- V) .- pi ^ 2 * r .^ 2
+    dx[2] = alpha .* q
+    dx[3] = alpha .* (-g .- 2 * q .+ pi * k .* r)
+    dx[4] = Delta / pi .- g .* r .+ 2 * V .* r
+    dx
+end
+
+# Parameter values
+p = (Delta = 0.5, alpha = 0.95, eta = 20.0, k = 1.0, v_syn = -10.0, c_glob = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(CoombesByrne!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

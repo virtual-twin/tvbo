@@ -1,20 +1,30 @@
 label: conditional_piecewise
 description: >-
-  A Piecewise right-hand side. The only numerical spec that exercises
-  conditionals2piecewise through codegen into a running solver, so a change in
+  A Piecewise right-hand side. The only numerical spec that exercises the
+  conditional-branch path through codegen into a running solver, so a change in
   Piecewise printing or branch order shows up as a number, not just a diff.
+
+  Both branches drive the state the same way, so it rises through `thr` instead
+  of settling on it. The obvious construction — a restoring branch above the
+  threshold — puts a stable equilibrium exactly at `thr`, and the state then
+  parks there forever: it never actually crosses, and the branch is selected
+  only inside the Heun predictor by a margin near machine epsilon. That margin
+  is finer than the difference between two CPUs, so the branch taken where the
+  reference was frozen need not be the branch taken on CI. Here the crossing is
+  transversal and the two regimes differ by an order of magnitude, so dropping
+  the conditional entirely lands at 2.5 rather than ~3.7.
 dynamics:
   name: PiecewiseToy
   parameters:
-    a: {value: 0.5}
-    thr: {value: 0.3}
+    a: {value: 0.05}
+    thr: {value: 0.5}
   state_variables:
     v:
       initial_value: 0.0
       equation:
         rhs: "0.05"
         conditionals:
-          - {condition: "v > thr", expression: "-a*v"}
+          - {condition: "v > thr", expression: "a*v"}
   output: [v]
 integration:
   method: Heun

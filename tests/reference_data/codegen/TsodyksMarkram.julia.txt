@@ -1,0 +1,45 @@
+
+
+
+
+
+function TsodyksMarkram!(dx, _x, p, t = 0)
+
+    (;J, alpha, E0, tau, tauD, tauF, U0) = p
+
+    E, x, u = _x
+
+
+
+    SS0 = E0 .+ E .* J .* u .* x
+    SS1 = alpha .* log(1 .+ exp(SS0 ./ alpha))
+
+    dx[1] = (SS1 .- E) ./ tau
+    dx[2] = (1 .- x) ./ tauD .- E .* u .* x
+    dx[3] = (U0 .- u) ./ tauF .+ E .* U0 .* (1 .- u)
+    dx
+end
+
+# Parameter values
+p = (J = 3.07, alpha = 1.5, E0 = -2.0, tau = 0.013, tauD = 0.2, tauF = 1.5, U0 = 0.3)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.238616,
+        0.982747,
+        0.367876,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(TsodyksMarkram!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

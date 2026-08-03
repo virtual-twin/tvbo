@@ -1,0 +1,41 @@
+
+
+
+
+
+function VanDerPolForced!(dx, _x, p, t = 0)
+
+    (;mu, F, T) = p
+
+    x, y = _x
+
+
+
+
+    dx[1] = y
+    dx[2] = -x .+ F .* sin(2 * pi * t ./ T) .+ mu .* y .* (1 .- x .^ 2)
+    dx
+end
+
+# Parameter values
+p = (mu = 1.5, F = 1.2, T = 10.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.5,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(VanDerPolForced!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

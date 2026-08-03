@@ -1,0 +1,154 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: DumontGutkin
+       Generated from TVBO Dynamics: DumontGutkin
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="DumontGutkin">
+
+    <!-- Parameters -->
+    <Parameter name="Delta_e" dimension="none"/>
+    <Parameter name="Delta_i" dimension="none"/>
+    <Parameter name="Gamma" dimension="none"/>
+    <Parameter name="I_e" dimension="none"/>
+    <Parameter name="I_i" dimension="none"/>
+    <Parameter name="J_ee" dimension="none"/>
+    <Parameter name="J_ei" dimension="none"/>
+    <Parameter name="J_ie" dimension="none"/>
+    <Parameter name="J_ii" dimension="none"/>
+    <Parameter name="eta_e" dimension="none"/>
+    <Parameter name="eta_i" dimension="none"/>
+    <Parameter name="tau_e" dimension="none"/>
+    <Parameter name="tau_i" dimension="none"/>
+    <Parameter name="tau_s" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="V_e_0" dimension="none"/>
+    <Parameter name="V_i_0" dimension="none"/>
+    <Parameter name="r_e_0" dimension="none"/>
+    <Parameter name="r_i_0" dimension="none"/>
+    <Parameter name="s_ee_0" dimension="none"/>
+    <Parameter name="s_ei_0" dimension="none"/>
+    <Parameter name="s_ie_0" dimension="none"/>
+    <Parameter name="s_ii_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="V_e" dimension="none"/>
+    <Exposure name="V_i" dimension="none"/>
+    <Exposure name="r_e" dimension="none"/>
+    <Exposure name="r_i" dimension="none"/>
+    <Exposure name="s_ee" dimension="none"/>
+    <Exposure name="s_ei" dimension="none"/>
+    <Exposure name="s_ie" dimension="none"/>
+    <Exposure name="s_ii" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="V_e" dimension="none" exposure="V_e"/>
+      <StateVariable name="V_i" dimension="none" exposure="V_i"/>
+      <StateVariable name="r_e" dimension="none" exposure="r_e"/>
+      <StateVariable name="r_i" dimension="none" exposure="r_i"/>
+      <StateVariable name="s_ee" dimension="none" exposure="s_ee"/>
+      <StateVariable name="s_ei" dimension="none" exposure="s_ei"/>
+      <StateVariable name="s_ie" dimension="none" exposure="s_ie"/>
+      <StateVariable name="s_ii" dimension="none" exposure="s_ii"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="V_e" value="((I_e + eta_e + V_e^2 + s_ee*tau_e - s_ei*tau_e - pi^2*r_e^2*tau_e^2)/tau_e) / SEC"/>
+      <TimeDerivative variable="V_i" value="((I_i + eta_i + V_i^2 + s_ie*tau_i - s_ii*tau_i - pi^2*r_i^2*tau_i^2)/tau_i) / SEC"/>
+      <TimeDerivative variable="r_e" value="((2*V_e*r_e + Delta_e/(pi*tau_e))/tau_e) / SEC"/>
+      <TimeDerivative variable="r_i" value="((2*V_i*r_i + Delta_i/(pi*tau_i))/tau_i) / SEC"/>
+      <TimeDerivative variable="s_ee" value="((c_glob - s_ee + J_ee*r_e)/tau_s) / SEC"/>
+      <TimeDerivative variable="s_ei" value="((-s_ei + J_ei*r_i)/tau_s) / SEC"/>
+      <TimeDerivative variable="s_ie" value="((-s_ie + Gamma*c_glob + J_ie*r_e)/tau_s) / SEC"/>
+      <TimeDerivative variable="s_ii" value="((-s_ii + J_ii*r_i)/tau_s) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="V_e" value="V_e_0"/>
+        <StateAssignment variable="V_i" value="V_i_0"/>
+        <StateAssignment variable="r_e" value="r_e_0"/>
+        <StateAssignment variable="r_i" value="r_i_0"/>
+        <StateAssignment variable="s_ee" value="s_ee_0"/>
+        <StateAssignment variable="s_ei" value="s_ei_0"/>
+        <StateAssignment variable="s_ie" value="s_ie_0"/>
+        <StateAssignment variable="s_ii" value="s_ii_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="DumontGutkin_inst" type="DumontGutkin" Delta_e="1.0" Delta_i="1.0" Gamma="5.0" I_e="0.0" I_i="0.0" J_ee="0.0" J_ei="10.0" J_ie="0.0" J_ii="15.0" eta_e="-5.0" eta_i="-5.0" tau_e="10.0" tau_i="10.0" tau_s="1.0" c_glob="0" V_e_0="0.1" V_i_0="0.1" r_e_0="0.1" r_i_0="0.1" s_ee_0="0.1" s_ei_0="0.1" s_ie_0="0.1" s_ii_0="0.1"/>
+
+
+
+</Lems>

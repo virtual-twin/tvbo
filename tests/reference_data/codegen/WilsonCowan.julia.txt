@@ -1,0 +1,47 @@
+
+
+
+
+
+function WilsonCowan!(dx, x, p, t = 0)
+
+    (;P, Q, a_e, a_i, alpha_e, alpha_i, b_e, b_i, c_e, c_ee, c_ei, c_i, c_ie, c_ii, k_e, k_i, r_e, r_i, shift_sigmoid, tau_e, tau_i, theta_e, theta_i, c_glob, local_coupling) = p
+
+    E, I = x
+
+
+
+    lc_0 = E .* local_coupling
+    lc_1 = I .* local_coupling
+    x_e = alpha_e .* (P .+ c_glob .+ lc_0 .+ lc_1 .- theta_e .+ E .* c_ee .- I .* c_ei)
+    x_i = alpha_i .* (Q .+ lc_0 .+ lc_1 .- theta_i .+ E .* c_ie .- I .* c_ii)
+    s_e = c_e ./ (1.0 .+ exp(-a_e .* (x_e .- b_e))) .- 1.0 * shift_sigmoid ./ (1.0 .+ exp(a_e .* b_e))
+    s_i = c_i ./ (1.0 .+ exp(-a_i .* (x_i .- b_i))) .- 1.0 * shift_sigmoid ./ (1.0 .+ exp(a_i .* b_i))
+
+    dx[1] = (-E .+ s_e .* (k_e .- E .* r_e)) ./ tau_e
+    dx[2] = (-I .+ s_i .* (k_i .- I .* r_i)) ./ tau_i
+    dx
+end
+
+# Parameter values
+p = (P = 0.0, Q = 0.0, a_e = 1.2, a_i = 1.0, alpha_e = 1.0, alpha_i = 1.0, b_e = 2.8, b_i = 4.0, c_e = 1.0, c_ee = 12.0, c_ei = 4.0, c_i = 1.0, c_ie = 13.0, c_ii = 11.0, k_e = 1.0, k_i = 1.0, r_e = 1.0, r_i = 1.0, shift_sigmoid = 1.0, tau_e = 10.0, tau_i = 10.0, theta_e = 0.0, theta_i = 0.0, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(WilsonCowan!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

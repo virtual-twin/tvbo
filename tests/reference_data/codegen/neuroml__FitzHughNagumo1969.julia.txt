@@ -1,0 +1,41 @@
+
+
+
+
+
+function FitzHughNagumo1969!(dx, x, p, t = 0)
+
+    (;a, b, I, phi) = p
+
+    V, W = x
+
+
+
+
+    dx[1] = I .+ V .- W .- V .^ 3 / 3
+    dx[2] = phi .* (V .+ a .- W .* b)
+    dx
+end
+
+# Parameter values
+p = (a = 0.7, b = 0.08, I = 1.0, phi = 0.08)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(FitzHughNagumo1969!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

@@ -1,0 +1,62 @@
+
+
+
+
+
+function ReducedSetFitzHughNagumo!(dx, x, p, t = 0)
+
+    (;tau, a, b, K11, K12, K21, mu, sigma, Aik, Bik, Cik, iV0, iU0, iV4, iU4, iZV, iZU, c_glob0, c_glob1, local_coupling) = p
+
+    xi = @view x[1:3]
+    eta = @view x[4:6]
+    alpha = @view x[7:9]
+    beta = @view x[10:12]
+
+
+    IE_i = sqrt(sigma) .* (iV0 .* mu .+ iZV .* sigma)
+    II_i = sqrt(sigma) .* (iU0 .* mu .+ iZU .* sigma)
+    e_i = iV4 ./ sigma
+    f_i = iU4 ./ sigma
+    m_i = a .* iV0 .* sqrt(sigma)
+    n_i = a .* iU0 .* sqrt(sigma)
+
+
+    dx[1:3] .= K11 .* (-xi .+ (reduce(hcat, Aik) * xi)) .+ tau .* (IE_i .+ local_coupling .* xi .+ sum(c_glob0)) .+ tau .* (xi .- eta .- e_i .* xi .^ 3 / 3) .- K12 .* (-xi .+ (reduce(hcat, Bik) * alpha))
+    dx[4:6] .= (m_i .+ xi .- b .* eta) ./ tau
+    dx[7:9] .= K21 .* (-alpha .+ (reduce(hcat, Cik) * xi)) .+ tau .* (II_i .+ local_coupling .* xi .+ sum(c_glob0)) .+ tau .* (alpha .- beta .- f_i .* alpha .^ 3 / 3)
+    dx[10:12] .= (alpha .+ n_i .- b .* beta) ./ tau
+    dx
+end
+
+# Parameter values
+p = (tau = 3.0, a = 0.45, b = 0.9, K11 = 0.5, K12 = 0.15, K21 = 0.15, mu = 0.0, sigma = 0.35, Aik = [[0.3328165811190223, 0.18525241779532714, 0.3328165811190241], [0.5984537933538554, 0.3331114447027479, 0.5984537933538587], [0.33281658111902046, 0.18525241779532614, 0.33281658111902235]], Bik = [[0.3328165811190223, 0.5984537933538554, 0.33281658111902046], [0.18525241779532714, 0.3331114447027479, 0.18525241779532614], [0.3328165811190241, 0.5984537933538587, 0.33281658111902235]], Cik = [[0.3328165811190223, 0.18525241779532714, 0.3328165811190241], [0.5984537933538554, 0.3331114447027479, 0.5984537933538587], [0.33281658111902046, 0.18525241779532614, 0.33281658111902235]], iV0 = [1.6668762461300366, 0.9278169186250886, 1.666876246130046], iU0 = [1.6668762461300366, 0.9278169186250886, 1.666876246130046], iV4 = [0.35990947874643836, 1.1616503426964113, 0.3599094787464342], iU4 = [0.35990947874643836, 1.1616503426964113, 0.3599094787464342], iZV = [-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998], iZU = [-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998], c_glob0 = 0.0, c_glob1 = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ReducedSetFitzHughNagumo!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

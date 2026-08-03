@@ -1,0 +1,49 @@
+
+
+
+
+
+function CoupledRoessler!(dx, x, p, t = 0)
+
+    (;omega1, omega2, a, b, c, k1, k2) = p
+
+    x1, y1, z1, x2, y2, z2 = x
+
+
+
+
+    dx[1] = -z1 .- omega1 .* y1
+    dx[2] = a .* y1 .+ k1 .* (y2 .- y1) .+ omega1 .* x1
+    dx[3] = b .+ z1 .* (x1 .- c)
+    dx[4] = -z2 .- omega2 .* y2
+    dx[5] = a .* y2 .+ k2 .* (y1 .- y2) .+ omega2 .* x2
+    dx[6] = b .+ z2 .* (x2 .- c)
+    dx
+end
+
+# Parameter values
+p = (omega1 = 0.18, omega2 = 0.22, a = 0.2, b = 0.2, c = 5.7, k1 = 0.115, k2 = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        1.0,
+        -2.0,
+        0.0,
+        0.11,
+        0.2,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(CoupledRoessler!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

@@ -1,0 +1,66 @@
+
+
+
+
+
+import NaNMath
+function ZetterbergJansen!(dx, x, p, t = 0)
+
+    (;He, Hi, P, Q, U, e0, gamma_1T, gamma_1, gamma_2T, gamma_2, gamma_3T, gamma_3, gamma_4, gamma_5, ke, ki, rho_1, rho_2, c_glob, local_coupling) = p
+
+    v1, v2, v3, v4, v5, v6, v7, y1, y2, y3, y4, y5 = x
+
+
+
+    coupled_input = 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .- c_glob .- local_coupling .* v6)))
+    sigma_v1 = ifelse(rho_1*(rho_2 - v1) > 709, 0, 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .- v1))))
+    sigma_v23 = ifelse(rho_1*(rho_2 - (v2 - v3)) > 709, 0, 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .+ v3 .- v2))))
+    sigma_v45 = ifelse(rho_1*(rho_2 - (v4 - v5)) > 709, 0, 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .+ v5 .- v4))))
+
+    dx[1] = y1
+    dx[2] = y2
+    dx[3] = y3
+    dx[4] = y4
+    dx[5] = y5
+    dx[6] = y2 .- y3
+    dx[7] = y4 .- y5
+    dx[8] = -v1 .* ke .^ 2 .- 2 * ke .* y1 .+ He .* ke .* (gamma_1 .* sigma_v23 .+ gamma_1T .* (U .+ coupled_input))
+    dx[9] = -v2 .* ke .^ 2 .- 2 * ke .* y2 .+ He .* ke .* (gamma_2 .* sigma_v1 .+ gamma_2T .* (P .+ coupled_input))
+    dx[10] = -v3 .* ki .^ 2 .- 2 * ki .* y3 .+ Hi .* gamma_4 .* ki .* sigma_v45
+    dx[11] = -v4 .* ke .^ 2 .- 2 * ke .* y4 .+ He .* ke .* (gamma_3 .* sigma_v23 .+ gamma_3T .* (Q .+ coupled_input))
+    dx[12] = -v5 .* ke .^ 2 .- 2 * ki .* y5 .+ Hi .* gamma_5 .* ki .* sigma_v45
+    dx
+end
+
+# Parameter values
+p = (He = 3.25, Hi = 22.0, P = 0.12, Q = 0.12, U = 0.12, e0 = 0.0025, gamma_1T = 1.0, gamma_1 = 135.0, gamma_2T = 1.0, gamma_2 = 108.0, gamma_3T = 1.0, gamma_3 = 33.75, gamma_4 = 33.75, gamma_5 = 15.0, ke = 0.1, ki = 0.05, rho_1 = 0.56, rho_2 = 6.0, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ZetterbergJansen!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

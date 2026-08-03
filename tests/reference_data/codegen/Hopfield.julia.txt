@@ -1,0 +1,42 @@
+
+
+
+
+
+import NaNMath
+function Hopfield!(dx, _x, p, t = 0)
+
+    (;tauT, taux, dynamic, c_glob0, c_glob1) = p
+
+    theta, x = _x
+
+
+
+
+    dx[1] = ifelse(dynamic > 0, (c_glob1 .- theta) ./ tauT, (c_glob0 .- x) ./ taux)
+    dx[2] = (c_glob0 .- x) ./ taux
+    dx
+end
+
+# Parameter values
+p = (tauT = 5.0, taux = 1.0, dynamic = 0.0, c_glob0 = 0.0, c_glob1 = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Hopfield!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

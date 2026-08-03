@@ -1,0 +1,43 @@
+
+
+
+
+
+function MoreChaosExample!(dx, _x, p, t = 0)
+
+    (;) = p
+
+    x, y, z = _x
+
+
+
+
+    dx[1] = y
+    dx[2] = -x .- y .* sign(z)
+    dx[3] = y .^ 2 .- exp(-x .^ 2)
+    dx
+end
+
+# Parameter values
+p = ()
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.0246,
+        0.79752,
+        0.3535866,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(MoreChaosExample!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

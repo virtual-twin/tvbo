@@ -23,7 +23,7 @@ import os
 import re
 import tempfile
 from os.path import basename, dirname, join, splitext
-from typing import Any
+from typing import Any, Callable, Mapping
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -31,7 +31,8 @@ import numpy as np
 import owlready2
 from tvbo.utils import yaml_loader
 from matplotlib import colormaps
-from sympy import Derivative, Eq, Function, Symbol, latex, pycode, symbols
+from sympy import Derivative, Eq, Function, Symbol, latex, symbols
+from sympy.core.sympify import SympifyError
 
 from tvbo import templates
 from tvbo.analysis import BifurcationResult
@@ -596,15 +597,6 @@ def update_equations(model):
             # xreplace + order='none' preserve authored term order (substitutions
             # is Symbol->Symbol, so this matches subs but does not re-canonicalize)
             eq_sub = eq.xreplace(substitutions)
-            rhs_substitution = pycode(
-                eq_sub,
-                fully_qualified_modules=False,
-                user_functions={k: k for k in model.functions.keys()},
-                order="none",
-            )
-
-            if "euqation" in metadata_dict[variable_key]:
-                metadata_dict[variable_key].equation.rhs = rhs_substitution
 
             if time_derivative:
                 lhs = Derivative(Symbol(variable_key), t)
@@ -623,6 +615,28 @@ def update_equations(model):
         substitute_equations(model.derived_variables, substitutions, equations)
 
     return equations
+
+
+def stable_rhs(stored: Any, expression: Any, scope: Mapping, serialise: Callable) -> str:
+    """The stored right-hand side if it already denotes `expression`, else a fresh one.
+
+    Serialising is not a fixed point. SymPy's `StrPrinter` renders an unevaluated
+    ``Mul(Integer(-1), Float(3.5))`` as ``- 1*3.5``, which parses back to a differently
+    nested product that prints as ``- 3.5`` — so the round trip oscillates with period two.
+    `Dynamics.update_metadata` re-serialises every equation and runs on every
+    `render_code`, so an equation flipped between two spellings and the emitted code
+    depended on how many times the model had been rendered.
+
+    Re-serialising an expression the stored text already denotes cannot add information,
+    only spelling, so the stored text wins and normalisation becomes idempotent.
+    """
+    if stored:
+        try:
+            if parse_eq(str(stored), local_dict=scope, evaluate=False) == expression:
+                return str(stored)
+        except (SympifyError, TypeError, ValueError, AttributeError, SyntaxError):
+            pass
+    return serialise(expression)
 
 
 def sort_equations(model: Any, variable_type: str):
@@ -658,11 +672,12 @@ def sort_equations(model: Any, variable_type: str):
                 str(var_name)
             )
 
-    for missing_key in original_metadata:
-        sorted_variables_metadata = {
-            missing_key: original_metadata[missing_key],
-            **sorted_variables_metadata,
-        }
+    # Variables the dependency graph does not mention keep the order they came in and stay
+    # ahead of the sorted ones. Prepending them one at a time instead reverses them, and
+    # because each call re-sorts whatever order the last one left behind, that made the
+    # result alternate: rendering a model twice emitted its derived variables in opposite
+    # orders, so generated code depended on how often it had been generated before.
+    sorted_variables_metadata = {**original_metadata, **sorted_variables_metadata}
 
     # Update the original dictionary in-place
     model[variable_type].clear()
@@ -1437,8 +1452,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             if REORDER_EQUATIONS
             else StrPrinter(settings={"order": "none"}).doprint
         )
+        scope = self.get_symbolic_elements()
         for v, eq in all_eqs.items():
-            equation = tvbo_datamodel.Equation(lhs=str(eq.lhs), rhs=_rhs_str(eq.rhs))
+            target = self.state_variables.get(v, self.derived_variables.get(v))
+            stored = getattr(getattr(target, "equation", None), "rhs", None)
+            equation = tvbo_datamodel.Equation(
+                lhs=str(eq.lhs), rhs=stable_rhs(stored, eq.rhs, scope, _rhs_str)
+            )
             if v in self.state_variables:
                 self.state_variables[v].equation = equation
             elif v in self.derived_variables:
@@ -2426,8 +2446,16 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def render_code(self, format="tvb", alt_label=None, **kwargs):
         """Generate backend source code for this model.
 
-        Refreshes metadata, then dispatches to the template (or adapter) for
-        the requested backend and returns the formatted source.
+        Dispatches to the template (or adapter) for the requested backend and returns the
+        formatted source. Reads the model and does not modify it, so the source depends on
+        the model alone and not on how often it has been rendered.
+
+        Normalisation belongs to construction: every path that builds a `Dynamics` runs
+        [`update_metadata`](#tvbo.classes.dynamics.DynamicalSystem.update_metadata)
+        already. Repeating it here made rendering a command as well as a query, and because
+        the normalisation was not idempotent the emitted code alternated between two
+        spellings depending on the number of previous renders. A model mutated by hand
+        after construction should be normalised by whoever mutated it.
 
         Args:
             format: Target backend, e.g. `"tvb"`, `"jax"`, `"numpy"`,
@@ -2442,8 +2470,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Raises:
             ValueError: If `format` is not a supported backend.
         """
-        self.update_metadata()
-
         if format == "tvb":
             template = templates.lookup.get_template("tvbo-tvb-model.py.mako")
 
@@ -3325,6 +3351,11 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
     ):
         """Render a human-readable report of the model.
 
+        Reads the model and does not modify it, for the same reason as
+        [`render_code`](#tvbo.classes.dynamics.DynamicalSystem.render_code): normalisation
+        belongs to construction, and repeating it here made a report a command as well as a
+        query.
+
         Refreshes metadata and renders the Markdown report template; the
         result is optionally written to `outputfile` (as Markdown or, for
         `format="pdf"`, a PDF).
@@ -3351,7 +3382,6 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
         Raises:
             ValueError: If `format` is not one of `markdown`, `md`, or `pdf`.
         """
-        self.update_metadata()
         normalized_format = format.lower() if isinstance(format, str) else "markdown"
         if normalized_format not in ["markdown", "md", "pdf"]:
             raise ValueError("format must be one of: markdown, pdf")

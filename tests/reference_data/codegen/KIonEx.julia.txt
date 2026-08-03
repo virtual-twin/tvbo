@@ -1,0 +1,67 @@
+
+
+
+
+
+import NaNMath
+function KIonEx!(dx, _x, p, t = 0)
+
+    (;Cm, Delta, E, J, K_bath, R_minus, R_plus, Vstar, c_minus, c_plus, epsilon, eta, gamma, tau_n, Chn, Ckp, Cl_i0, Cl_o0, Cmna, Cnap, Cnk, DChn, DCkp, DCmna, DCnap, DCnk, K_i0, K_o0, Na_i0, Na_o0, g_Cl, g_K, g_Kl, g_Na, g_Nal, rho, w_i, w_o, c_glob) = p
+
+    DKi, Kg, V, n, x = _x
+
+
+
+    DNa_i = -DKi
+    I_Cl = g_Cl .* (V .+ 26.64 * log(Cl_o0 ./ Cl_i0))
+    K_i = DKi .+ K_i0
+    beta = w_i ./ w_o
+    h = 1.1 .- 1.0 ./ (1.0 .+ 24.5325301971094 * exp(-8.0 * n))
+    minf = 1.0 ./ (1.0 .+ exp((Cmna .- V) ./ DCmna))
+    ninf = 1.0 ./ (1.0 .+ exp((Cnk .- V) ./ DCnk))
+    r = R_minus .* x / pi
+    DK_o = -DKi .* beta
+    DNa_o = -DNa_i .* beta
+    Na_i = DNa_i .+ Na_i0
+    xcond = ifelse(V <= Vstar, Delta .- J .* r .* x .+ 2 * R_minus .* x .* (V .- c_minus), Delta .- J .* r .* x .+ 2 * R_plus .* x .* (V .- c_plus))
+    K_o = DK_o .+ K_o0 .+ Kg
+    Na_o = DNa_o .+ Na_o0
+    I_K = (V .- 26.64 * log(K_o ./ K_i)) .* (g_Kl .+ g_K .* n)
+    I_Na = (V .- 26.64 * log(Na_o ./ Na_i)) .* (g_Nal .+ g_Na .* h .* minf)
+    I_pump = 1.0 * rho ./ ((1.0 .+ exp((Ckp .- K_o) ./ DCkp)) .* (1.0 .+ exp((Cnap .- Na_i) ./ DCnap)))
+    V_temp = (-1.0 * I_Cl .- 1.0 * I_K .- 1.0 * I_Na .- 1.0 * I_pump) ./ Cm
+    Vcond = ifelse(V <= Vstar, V_temp .+ eta .- R_minus .* x .^ 2 .+ R_minus .* c_glob .* (E .- V) / pi, V_temp .+ eta .- R_plus .* x .^ 2 .+ R_minus .* c_glob .* (E .- V) / pi)
+
+    dx[1] = -gamma .* (I_K .- 2.0 * I_pump) ./ w_i
+    dx[2] = epsilon .* (K_bath .- K_o)
+    dx[3] = Vcond
+    dx[4] = (ninf .- n) ./ tau_n
+    dx[5] = xcond
+    dx
+end
+
+# Parameter values
+p = (Cm = 1.0, Delta = 1.0, E = 0.0, J = 0.1, K_bath = 5.5, R_minus = 0.5, R_plus = -0.5, Vstar = -31.0, c_minus = -40.0, c_plus = -20.0, epsilon = 0.001, eta = 0.0, gamma = 0.04, tau_n = 4.0, Chn = 0.4, Ckp = 5.5, Cl_i0 = 5.0, Cl_o0 = 112.0, Cmna = -24.0, Cnap = 21.0, Cnk = -19.0, DChn = -8.0, DCkp = 1.0, DCmna = 12.0, DCnap = 2.0, DCnk = 18.0, K_i0 = 130.0, K_o0 = 4.8, Na_i0 = 16.0, Na_o0 = 138.0, g_Cl = 7.5, g_K = 22.0, g_Kl = 0.12, g_Na = 40.0, g_Nal = 0.02, rho = 250.0, w_i = 2160.0, w_o = 720.0, c_glob = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(KIonEx!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

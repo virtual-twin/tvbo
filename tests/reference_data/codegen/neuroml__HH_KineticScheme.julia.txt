@@ -1,0 +1,37 @@
+
+
+
+
+
+function HH_KineticScheme!(dx, x, p, t = 0)
+
+    (;C, v0, thresh, pulse_delay, pulse_duration, I_amp) = p
+
+     = x
+
+
+
+
+    dx
+end
+
+# Parameter values
+p = (C = 1, v0 = -65, thresh = -20, pulse_delay = 100, pulse_duration = 100, I_amp = 0.005)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(HH_KineticScheme!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

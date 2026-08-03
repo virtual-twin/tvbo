@@ -1,0 +1,245 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class CakanObermayer(Model):
+
+    C = NArray(
+        label=r":math:`C`",
+        default=np.array([200.0]),
+        domain=Range(lo=50.0, hi=500.0, step=1.0),
+        doc="""Membrane capacitance of a single AdEx neuron.""",
+    )
+    E_L = NArray(
+        label=r":math:`E_L`",
+        default=np.array([-65.0]),
+        domain=Range(lo=-90.0, hi=-50.0, step=1.0),
+        doc="""Leak reversal potential of a single AdEx neuron.""",
+    )
+    E_A = NArray(
+        label=r":math:`E_A`",
+        default=np.array([-80.0]),
+        domain=Range(lo=-100.0, hi=-50.0, step=1.0),
+        doc="""Reversal potential of the adaptation current.""",
+    )
+    I_A = NArray(
+        label=r":math:`I_A`",
+        default=np.array([0.0]),
+        domain=Range(lo=0.0, hi=50.0, step=0.1),
+        doc="""Subthreshold adaptation conductance amplitude (a in AdEx).""",
+    )
+    J_EE = NArray(
+        label=r":math:`J_EE`",
+        default=np.array([2.43]),
+        domain=Range(lo=0.0, hi=10.0, step=0.01),
+        doc="""Maximum excitatory-to-excitatory PSC amplitude (Jee_max in neurolib).""",
+    )
+    J_EI = NArray(
+        label=r":math:`J_EI`",
+        default=np.array([-3.3]),
+        domain=Range(lo=-10.0, hi=0.0, step=0.01),
+        doc="""Maximum inhibitory-to-excitatory PSC amplitude (Jei_max in neurolib, signed negative).""",
+    )
+    J_IE = NArray(
+        label=r":math:`J_IE`",
+        default=np.array([2.6]),
+        domain=Range(lo=0.0, hi=10.0, step=0.01),
+        doc="""Maximum excitatory-to-inhibitory PSC amplitude (Jie_max in neurolib).""",
+    )
+    J_II = NArray(
+        label=r":math:`J_II`",
+        default=np.array([-1.64]),
+        domain=Range(lo=-10.0, hi=0.0, step=0.01),
+        doc="""Maximum inhibitory-to-inhibitory PSC amplitude (Jii_max in neurolib, signed negative).""",
+    )
+    mu_E = NArray(
+        label=r":math:`mu_E`",
+        default=np.array([0.4]),
+        domain=Range(lo=-2.0, hi=5.0, step=0.01),
+        doc="""Mean external input current to the excitatory population (mue_ext_mean).""",
+    )
+    mu_I = NArray(
+        label=r":math:`mu_I`",
+        default=np.array([0.3]),
+        domain=Range(lo=-2.0, hi=5.0, step=0.01),
+        doc="""Mean external input current to the inhibitory population (mui_ext_mean).""",
+    )
+    s_EE = NArray(
+        label=r":math:`s_EE`",
+        default=np.array([1.5]),
+        domain=Range(lo=0.1, hi=5.0, step=0.1),
+        doc="""Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the E->E channel (sigmae_ext component).""",
+    )
+    s_EI = NArray(
+        label=r":math:`s_EI`",
+        default=np.array([1.5]),
+        domain=Range(lo=0.1, hi=5.0, step=0.1),
+        doc="""Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the I->E channel.""",
+    )
+    s_IE = NArray(
+        label=r":math:`s_IE`",
+        default=np.array([1.5]),
+        domain=Range(lo=0.1, hi=5.0, step=0.1),
+        doc="""Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the E->I channel.""",
+    )
+    s_II = NArray(
+        label=r":math:`s_II`",
+        default=np.array([1.5]),
+        domain=Range(lo=0.1, hi=5.0, step=0.1),
+        doc="""Standard deviation of the random-coupling-driven membrane-potential fluctuations entering the I->I channel.""",
+    )
+    tau_se = NArray(
+        label=r":math:`tau_se`",
+        default=np.array([2.0]),
+        domain=Range(lo=0.1, hi=20.0, step=0.1),
+        doc="""Synaptic time constant of excitatory PSCs (E->E and E->I).""",
+    )
+    tau_si = NArray(
+        label=r":math:`tau_si`",
+        default=np.array([5.0]),
+        domain=Range(lo=0.1, hi=20.0, step=0.1),
+        doc="""Synaptic time constant of inhibitory PSCs (I->E and I->I).""",
+    )
+    tau_A = NArray(
+        label=r":math:`tau_A`",
+        default=np.array([200.0]),
+        domain=Range(lo=10.0, hi=1000.0, step=1.0),
+        doc="""Time constant of the adaptation current.""",
+    )
+    r_max = NArray(
+        label=r":math:`r_max`",
+        default=np.array([0.2]),
+        domain=Range(lo=0.001, hi=1.0, step=0.001),
+        doc="""Asymptotic firing rate used in the sigmoid surrogate for the aLN transfer function (sigmoid stand-in for the precomputed lookup table).""",
+    )
+    mu_th = NArray(
+        label=r":math:`mu_th`",
+        default=np.array([1.0]),
+        domain=Range(lo=-5.0, hi=5.0, step=0.01),
+        doc="""Half-maximum input of the sigmoid transfer-function surrogate.""",
+    )
+    k_phi = NArray(
+        label=r":math:`k_phi`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.01, hi=10.0, step=0.01),
+        doc="""Steepness of the sigmoid transfer-function surrogate.""",
+    )
+
+    _nvar = 3
+    state_variables = ["mu_se", "mu_si", "I_A_var"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "mu_se": np.array([-5.0, 5.0]),
+            "mu_si": np.array([-5.0, 5.0]),
+            "I_A_var": np.array([0.0, 500.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("mu_se", "mu_si", "I_A_var"),
+        default=("mu_se",),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "C",
+            "E_L",
+            "E_A",
+            "I_A",
+            "J_EE",
+            "J_EI",
+            "J_IE",
+            "J_II",
+            "mu_E",
+            "mu_I",
+            "s_EE",
+            "s_EI",
+            "s_IE",
+            "s_II",
+            "tau_se",
+            "tau_si",
+            "tau_A",
+            "r_max",
+            "mu_th",
+            "k_phi",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "mu_se": "(c_glob + mu_E - mu_se + J_EE*r_E + J_EI*r_I - I_A_var/C)/tau_se",
+            "mu_si": "(mu_I - mu_si + J_IE*r_E + J_II*r_I)/tau_si",
+            "I_A_var": "(-I_A_var + I_A*(mu_se - E_A))/tau_A",
+        },
+    )
+
+    cvar = np.array([0], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["c_glob"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        mu_se = state_variables[0, :]
+        mu_si = state_variables[1, :]
+        I_A_var = state_variables[2, :]
+
+        C = self.C
+        E_L = self.E_L
+        E_A = self.E_A
+        I_A = self.I_A
+        J_EE = self.J_EE
+        J_EI = self.J_EI
+        J_IE = self.J_IE
+        J_II = self.J_II
+        mu_E = self.mu_E
+        mu_I = self.mu_I
+        s_EE = self.s_EE
+        s_EI = self.s_EI
+        s_IE = self.s_IE
+        s_II = self.s_II
+        tau_se = self.tau_se
+        tau_si = self.tau_si
+        tau_A = self.tau_A
+        r_max = self.r_max
+        mu_th = self.mu_th
+        k_phi = self.k_phi
+
+        # Coupling Terms (from coupling array)
+        c_glob = coupling[0, :]
+
+        # Derived Variables
+        self.r_E = r_E = r_max / (1 + np.exp(-k_phi * (mu_se - mu_th)))
+        self.r_I = r_I = r_max / (1 + np.exp(-k_phi * (mu_si - mu_th)))
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(
+                (c_glob + mu_E - mu_se + J_EE * r_E + J_EI * r_I - I_A_var / C) / tau_se
+            ),  # mu_se
+            np.asarray((mu_I - mu_si + J_IE * r_E + J_II * r_I) / tau_si),  # mu_si
+            np.asarray((-I_A_var + I_A * (mu_se - E_A)) / tau_A),  # I_A_var
+        )
+        return np.array(_derivs)

@@ -1,0 +1,41 @@
+
+
+
+
+
+function CoombesByrne2D!(dx, x, p, t = 0)
+
+    (;Delta, eta, k, v_syn, c_glob) = p
+
+    V, r = x
+
+
+
+
+    dx[1] = c_glob .+ eta .+ V .^ 2 .- pi ^ 2 * r .^ 2 .+ pi * k .* r .* (v_syn .- V)
+    dx[2] = Delta / pi .+ 2 * V .* r .- pi * k .* r .^ 2
+    dx
+end
+
+# Parameter values
+p = (Delta = 1.0, eta = 2.0, k = 1.0, v_syn = -4.0, c_glob = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(CoombesByrne2D!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

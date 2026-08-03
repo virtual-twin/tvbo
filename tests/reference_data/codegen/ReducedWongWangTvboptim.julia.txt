@@ -1,0 +1,42 @@
+
+
+
+
+
+function ReducedWongWangTvboptim!(dx, x, p, t = 0)
+
+    (;a, b, d, gamma, tau_s, w, J_N, I_o, instant, delayed) = p
+
+    S = x[1]
+
+    H(x) = (-b .+ a .* x) ./ (1 .- exp(-d .* (-b .+ a .* x)))
+
+
+    x = I_o .+ J_N .* delayed .+ J_N .* instant .+ J_N .* S .* w
+    H_x = H(x)
+
+    dx[1] = -S ./ tau_s .+ gamma .* (1 .- S) .* H(x)
+    dx
+end
+
+# Parameter values
+p = (a = 0.27, b = 0.108, d = 154.0, gamma = 0.641, tau_s = 100.0, w = 0.5, J_N = 0.2609, I_o = 0.34, instant = 0.0, delayed = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ReducedWongWangTvboptim!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

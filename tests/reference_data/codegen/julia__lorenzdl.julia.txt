@@ -1,0 +1,43 @@
+
+
+
+
+
+function LorenzDiffusionless!(dx, _x, p, t = 0)
+
+    (;R,) = p
+
+    x, y, z = _x
+
+
+
+
+    dx[1] = y .- x
+    dx[2] = -x .* z
+    dx[3] = -R .+ x .* y
+    dx
+end
+
+# Parameter values
+p = (R = 4.7,)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(LorenzDiffusionless!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+
