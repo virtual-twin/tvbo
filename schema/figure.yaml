@@ -89,6 +89,9 @@ classes:
       trim_margins:
         range: boolean
         description: "Trim surrounding whitespace from the saved figure (default true). Trimming re-crops to the drawn content, so the saved aspect can differ from width/height; set false to preserve the declared width×height proportions exactly, e.g. to match an original figure. Renders as bbox_inches='tight' on a matplotlib backend."
+      pad:
+        range: float
+        description: "Whitespace left around the content when trimming, in inches. Defaults to the backend's own margin (0.1 in for matplotlib), which is visible padding at journal column widths; 0 crops flush to the drawn content. Ignored when trim_margins is false, where the declared canvas fixes the margins instead."
       font_size:
         range: float
         description: "Base font size in points (physical: 1 pt = 1/72 inch). The real text size, unchanged by figure size or dpi; set it (or the width) so labels are legible at print size."
