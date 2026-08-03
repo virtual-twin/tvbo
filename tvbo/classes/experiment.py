@@ -56,6 +56,7 @@ from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
 from tvbo.utils import traverse_metadata
 from tvbo.utils import Bunch
 from tvbo.utils import as_list
+from tvbo.utils import initial_value
 from tvbo.log import ensure_configured
 
 logger = logging.getLogger(__name__)
