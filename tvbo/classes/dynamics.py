@@ -44,7 +44,7 @@ from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.datamodel.schema import Case, ConditionalBlock, DerivedVariable, Equation
 from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
-from tvbo.parse.expression import parse_eq
+from tvbo.parse.expression import function_bodies, parse_eq
 from tvbo.utils import report
 
 logger = logging.getLogger(__name__)
@@ -83,10 +83,10 @@ def clean_code(code):
 def _normalize_conditionals(model):
     """Ensure dv.equation.conditionals is populated for all conditional DVs.
 
-    If dv.cases is populated but dv.equation.conditionals is empty,
-    copy the cases into equation.conditionals as ConditionalBlock objects
-    and build the Piecewise rhs string. This makes dv.equation.conditionals
-    the single canonical location for conditional data.
+    If dv.cases is populated but dv.equation.conditionals is empty, copy the cases into
+    equation.conditionals as ConditionalBlock objects. This makes dv.equation.conditionals
+    the single canonical location for conditional data; nothing is written back to
+    `equation.rhs`, which stays whatever the model's author wrote.
 
     dv.cases is deprecated — new models should define conditionals
     directly on the equation.
@@ -121,7 +121,7 @@ def _migrate_coupling_terms(model):
        (backward compat for templates that still read coupling_terms)
     """
     ct = getattr(model, "coupling_terms", None) or {}
-    getattr(model, "coupling_inputs", None) or {}
+    model.coupling_inputs
 
     # Forward: coupling_terms → coupling_inputs
     if ct:
@@ -1076,7 +1076,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
     def keyed_parameters(self):
         """Mapping of each parameter as a SymPy `Symbol` to its numeric value."""
         return {
-            Symbol(p.name): p.value for p in getattr(self, "parameters", {}).values()
+            Symbol(p.name): p.value for p in self.parameters.values()
         }
 
     @property
@@ -1118,15 +1118,15 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
         for p in self.parameters.values():
             scope[str(p.name)] = Symbol(str(p.name))
-        for ci in getattr(self, "coupling_inputs", {}).keys():
+        for ci in self.coupling_inputs.keys():
             scope[str(ci)] = Symbol(str(ci))
-        for name in getattr(self, "derived_parameters", {}):
+        for name in self.derived_parameters:
             scope[str(name)] = Symbol(str(name))
-        for name in getattr(self, "derived_variables", {}):
+        for name in self.derived_variables:
             # Derived variables that appear in state equations
             # should resolve to their Function(t) form
             scope[str(name)] = Function(str(name))(t)
-        for fname, f in getattr(self, "functions", {}).items():
+        for fname, f in self.functions.items():
             scope[str(fname)] = Function(str(fname))
             for name in f.arguments:  # arguments is a dict keyed by name
                 scope[str(name)] = Symbol(str(name))
@@ -1151,19 +1151,19 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
             # Derived parameter equations
             dp_eqs = []
-            for name, dp in getattr(self, "derived_parameters", {}).items():
+            for name, dp in self.derived_parameters.items():
                 rhs = parse_eq(dp.equation, local_dict=scope)
                 dp_eqs.append(sp.Eq(Symbol(str(name)), rhs))
 
             # Derived variable equations
             dv_eqs = []
-            for name, dv in getattr(self, "derived_variables", {}).items():
+            for name, dv in self.derived_variables.items():
                 rhs = parse_eq(dv.equation, local_dict=scope)
                 dv_eqs.append(sp.Eq(Function(str(name))(t), rhs))
 
             # Function definitions: Eq(Sigm(v), 2*e0/(1+exp(r*(v0-v))))
             func_eqs = []
-            for fname, f in getattr(self, "functions", {}).items():
+            for fname, f in self.functions.items():
                 arguments = [Symbol(str(name)) for name in f.arguments]
                 lhs = Function(str(fname))(*arguments)
                 rhs = parse_eq(f.equation, local_dict=scope)
@@ -1204,34 +1204,34 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             scope["t"] = Symbol("t")
 
         # Parameters as Symbols
-        for p in getattr(self, "parameters", {}).values():
+        for p in self.parameters.values():
             scope[str(p.name)] = Symbol(str(p.name))
 
         # Coupling inputs (named inputs from coupling function)
-        for ci in getattr(self, "coupling_inputs", {}).keys():
+        for ci in self.coupling_inputs.keys():
             scope[str(ci)] = Symbol(str(ci))
 
         # Derived parameters / variables / output transforms as Symbols
-        for name in getattr(self, "derived_parameters", {}).keys():
+        for name in self.derived_parameters.keys():
             scope[str(name)] = Symbol(str(name))
-        for name in getattr(self, "derived_variables", {}).keys():
+        for name in self.derived_variables.keys():
             scope[str(name)] = Symbol(str(name))
 
         # Output is a list of string references
-        for name in getattr(self, "output", []):
+        for name in self.output:
             scope[str(name)] = Symbol(str(name))
 
         # State variables as Symbols
-        for name in getattr(self, "state_variables", {}).keys():
+        for name in self.state_variables.keys():
             scope[str(name)] = Symbol(str(name))
 
         # Functions: undefined function heads; also add their argument symbols
-        for fname, f in getattr(self, "functions", {}).items():
+        for fname, f in self.functions.items():
             scope[str(fname)] = Function(str(fname))
             for name in f.arguments:  # arguments is a dict keyed by name
                 scope[str(name)] = Symbol(str(name))
 
-        for name in getattr(self, "events", {}) or {}:
+        for name in self.events:
             scope[str(name)] = Symbol(str(name))
 
         if "e" not in scope:
@@ -1810,22 +1810,15 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Returns:
             The rendered equation in the requested format.
         """
-        from tvbo.classes.equation import sympify as tvbo_sympify
         from tvbo.codegen.code import render_equation
 
         scope = self.get_symbolic_elements()
         # Tell the printer which names are functions so it emits f(x) cleanly
-        uf = {str(name): str(name) for name in getattr(self, "functions", {}).keys()}
+        uf = {str(name): str(name) for name in self.functions}
 
-        # Build inline_funcs dict if requested
-        inline_funcs = None
-        if inline_functions and hasattr(self, "functions") and self.functions:
-            inline_funcs = {}
-            for fname, fdef in self.functions.items():
-                arg_names = [str(name) for name in fdef.arguments]
-                body = tvbo_sympify(fdef.equation.rhs)
-                inline_funcs[fname] = (arg_names, body)
-            # Don't emit function names as user_functions if we're inlining them
+        inline_funcs = function_bodies(self.functions, local_dict=scope) if inline_functions else None
+        if inline_funcs:
+            # Inlined calls leave no function heads for the printer to name
             uf = {}
 
         return render_equation(
@@ -1846,18 +1839,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         per occurrence. Builds the same symbolic scope / user-function set as
         :meth:`render_equation`; see :func:`tvbo.codegen.code.render_equation_cse`.
         """
-        from tvbo.classes.equation import sympify as tvbo_sympify
         from tvbo.codegen.code import render_equation_cse
 
         scope = self.get_symbolic_elements()
-        uf = {str(name): str(name) for name in getattr(self, "functions", {}).keys()}
+        uf = {str(name): str(name) for name in self.functions}
 
-        inline_funcs = None
-        if inline_functions and getattr(self, "functions", None):
-            inline_funcs = {}
-            for fname, fdef in self.functions.items():
-                arg_names = [str(name) for name in fdef.arguments]
-                inline_funcs[fname] = (arg_names, tvbo_sympify(fdef.equation.rhs))
+        inline_funcs = function_bodies(self.functions, local_dict=scope) if inline_functions else None
+        if inline_funcs:
             uf = {}
 
         return render_equation_cse(
@@ -2008,7 +1996,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         sub = self.keyed_parameters
         sub.update(kwargs)
         # Set all coupling inputs to 0 for fixed-point analysis
-        for ci in getattr(self, "coupling_inputs", {}).keys():
+        for ci in self.coupling_inputs.keys():
             sub[ci] = 0
         return [eq.subs(sub) for eq in self.get_equations().values()]
 
@@ -2087,7 +2075,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         symbol_onto_mapping = {}
         onto_symbol_mapping = {}
         # Coupling inputs don't have model-specific suffixes in ontology
-        coupling_term_names = set(getattr(self, "coupling_inputs", {}).keys())
+        coupling_term_names = set(self.coupling_inputs.keys())
         for n in G.nodes:
             suffix = (
                 ontology.get_model_suffix(self.ontology or self.name)
@@ -2413,7 +2401,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
             params = self.keyed_parameters
             params.update(
-                {Symbol(str(ci)): 0.0 for ci in getattr(self, "coupling_inputs", {})}
+                {Symbol(str(ci)): 0.0 for ci in self.coupling_inputs}
             )
             params.update({Symbol("local_coupling"): 0.0})
 

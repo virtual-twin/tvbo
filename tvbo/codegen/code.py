@@ -15,7 +15,7 @@ import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
 import sympy.printing.fortran as spf
 from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
-from sympy import Symbol, S, Function, preorder_traversal
+from sympy import Symbol, S, Function
 from sympy import latex
 from sympy.printing import StrPrinter
 from tvbo.datamodel.schema import Equation
@@ -147,16 +147,26 @@ ARRAY_FUNCTION_MAPPINGS = {
 
 def inline_functions(expr, func_defs):
     """
-    Inline all function applications in an expression.
+    Replace every call to a model-defined function with that function's body.
+
+    The one inliner in TVBO. Backends with no user-function mechanism (LEMS, PyRates)
+    must expand every call before printing, and the generic printers expand on request;
+    all of them arrive here. Build *func_defs* with
+    [`Dynamics.function_bodies`](../classes/dynamics.qmd#Dynamics.function_bodies), which
+    parses each body once against the model's own scope.
+
+    Substitution repeats to a fixed point. A body may itself call a function already
+    visited — the call graph is a DAG, e.g. Zerlaut's ``TF_e`` calls ``sigmaV`` calls
+    ``muV`` — so a single pass over *func_defs* leaves calls behind whenever the
+    dictionary order runs against the dependency order.
 
     Parameters
     ----------
     expr : sympy.Expr
         The expression containing function calls to inline.
     func_defs : dict
-        Dictionary mapping function name -> (arg_names, body_expr)
-        where arg_names is a list of argument names and body_expr is the
-        sympy expression for the function body.
+        Maps function name -> (arg_names, body_expr). *arg_names* are the formal
+        arguments, as strings or as Symbols; *body_expr* is the parsed body.
 
     Returns
     -------
@@ -165,29 +175,32 @@ def inline_functions(expr, func_defs):
 
     Example
     -------
-    >>> from sympy import symbols, Function
-    >>> x, y, v = symbols('x y v')
-    >>> # Define Sigm(v) = 2*e0/(1 + exp(r*(v0 - v)))
-    >>> func_defs = {'Sigm': (['v'], 2*e0/(1 + exp(r*(v0 - v))))}
-    >>> expr = A*Sigm(x - y)
-    >>> inline_functions(expr, func_defs)
+    >>> from sympy import symbols, Function, exp
+    >>> A, x, y, e0, r, v0 = symbols('A x y e0 r v0')
+    >>> func_defs = {'Sigm': (['v'], 2*e0/(1 + exp(r*(v0 - symbols('v')))))}
+    >>> inline_functions(A*Function('Sigm')(x - y), func_defs)
     2*A*e0/(1 + exp(r*(v0 - x + y)))
     """
-    result = expr
-    for func_name, (arg_names, body) in func_defs.items():
-        F = Function(func_name)
-        # Find all applications of this function and replace them
-        for sub_expr in list(preorder_traversal(result)):
-            if hasattr(sub_expr, "func") and sub_expr.func == F:
-                # Get the actual arguments
-                actual_args = sub_expr.args
-                # Create substitution dict: formal arg -> actual arg
-                subs = {Symbol(name): arg for name, arg in zip(arg_names, actual_args)}
-                # Substitute into body
-                inlined = body.subs(subs)
-                # Replace in result
-                result = result.subs(sub_expr, inlined)
-    return result
+    if not func_defs:
+        return expr
+    bodies = {
+        name: (tuple(a if isinstance(a, Symbol) else Symbol(str(a)) for a in arg_names), body)
+        for name, (arg_names, body) in func_defs.items()
+    }
+    for _ in range(len(bodies) + 1):
+        replaced = False
+        for name, (formals, body) in bodies.items():
+            head = Function(name)
+            if not expr.has(head):
+                continue
+            expr = expr.replace(
+                head,
+                lambda *actual, _body=body, _formals=formals: _body.xreplace(dict(zip(_formals, actual))),
+            )
+            replaced = True
+        if not replaced:
+            break
+    return expr
 
 
 def print_Piecewise(Printer, expr, verbose=False):
@@ -1441,17 +1454,36 @@ class LEMSPrinter(StrPrinter):
     # ── Piecewise → Heaviside product ─────────────────────────────────
 
     def _print_Piecewise(self, expr):
-        # LEMS has no ternary; use H(cond)*val summation as fallback.
-        # True branch last (otherwise case).
-        from sympy import S as sympy_S
+        """Lower an ordered `Piecewise` to a sum of Heaviside-gated terms.
 
-        terms = []
+        LEMS has no ternary and no `Piecewise`, so each branch becomes `H(cond) * value`
+        and the branches are summed. `Piecewise` is *first match wins*, so a term is only
+        reached when no earlier condition held — hence the `(1 - H(earlier))` factors. The
+        final `True` branch is gated by all of them and nothing else.
+
+        Summing the terms un-gated is correct only when the default is zero and the
+        conditions are mutually exclusive. Otherwise the else-branch is added to whichever
+        branch was taken: `tent_map` evaluated to `mu*x + mu*(1 - x)` on its whole lower
+        arm, and `Hopfield` added its entire un-thresholded term to the thresholded one.
+        """
+        from sympy import S as sympy_S
+        from sympy.printing.precedence import PRECEDENCE
+
+        terms, taken = [], []
         for val, cond in expr.args:
+            unreached = "".join(f"(1 - H({c})) * " for c in taken)
+            value = self.parenthesize(val, PRECEDENCE["Mul"])
             if cond == sympy_S.true:
-                terms.append(self._print(val))
-            else:
-                terms.append(f"H({self._print(cond)}) * {self._print(val)}")
-        return " + ".join(terms)
+                # A zero default contributes nothing to a sum; emitting it would append a
+                # `(1 - H(…)) * 0` tail to every single-branch expression.
+                if not val.is_zero:
+                    terms.append(f"{unreached}{value}" if unreached else value)
+                break
+            condition = self._print(cond)
+            if not val.is_zero:
+                terms.append(f"{unreached}H({condition}) * {value}")
+            taken.append(condition)
+        return " + ".join(terms) if terms else "0"
 
 
 class PythonCodePrinter(_PythonCodePrinter):

@@ -1684,19 +1684,8 @@ single-sim path (or the dt-converged reference) — Phase 7.
 
 ## Trust the pydantic schema: drop the defensive collection guards
 
-`getattr(model, "derived_variables", None) or {}` appears **72 times** across the codebase
-(14 in `adapters/neuroml.py`, 11 in `adapters/julia_model.py`, 6 in `classes/experiment.py`,
-the rest in templates and adapters). It is dead weight: every collection slot on `Dynamics`
-— `state_variables`, `derived_variables`, `derived_parameters`, `functions`, `parameters`,
-`coupling_inputs`, `events`, `output` — is generated with an empty-collection default and is
-never `None` and never absent. Verified on a bare `Dynamics()` and across all 108 curated
-models: zero slots ever `None` or missing.
+**Largely done.** 74 sites dropped across the adapters, `classes/dynamics.py`, `classes/experiment.py` and `templates/tvboptim/utils.py` — each on a slot the generated schema declares with an empty-collection `default_factory`, so it is never `None` and never absent. Replaced with the plain attribute: the guard hid a genuine `AttributeError` if a slot were ever renamed, turning a loud failure into a silently empty loop, and `or {}` also swallowed a deliberately-set `None`.
 
-Replace with the plain attribute (`model.derived_variables`). Two reasons beyond brevity: the
-guard hides a genuine `AttributeError` if a slot is ever renamed, turning a loud failure into
-a silently empty loop; and `or {}` also swallows a deliberately-set `None`, so a bug that
-nulls a collection reads as "no derived variables" instead of raising.
+Two corrections to the original note. "72" counted one spelling of the pattern; the full set is nearer 200, most of it outside `Dynamics`. And `coupling_terms` does **not** genuinely admit `None` — it too carries an empty-collection default, as does every collection slot surveyed on `Network`, `Coupling`, `Equation`, `Edge`, `Node`, `Event`, `Function`, `Figure`, `Panel`, `Observation`, `Exploration`, `Continuation`, `Analysis`, `Stimulus`, `SimulationExperiment` and `SimulationStudy`. The one genuinely nullable slot found is **`Network.bids`**.
 
-Each site still needs checking against *its own* class — the guarantee verified here is for
-`Dynamics`; `Experiment`, `Network` and the deprecated `coupling_terms` slot (which genuinely
-can be `None`) have not been surveyed.
+What remains is the ~130 sites whose receiver is a local name in a Mako template (`panel`, `fig`, `expl`, `an`, `bc`, `po`, …). Each needs its class established from surrounding context first, and a receiver that is sometimes a plain dict rather than a schema object would raise where it currently returns empty. Worth doing per template, not as a sweep.

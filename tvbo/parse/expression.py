@@ -173,18 +173,73 @@ ARRAY_FUNCTIONS = {
 }
 
 
+def function_bodies(functions, local_dict=None, parameters=None):
+    """Parse a model's function definitions once, as ``{name: (arg_names, body)}``.
+
+    The table [`inline_functions`](../codegen/code.qmd#inline_functions) consumes. A free
+    function rather than a `Dynamics` method because both flavours of model need it: the
+    runtime `Dynamics` in `tvbo.classes`, which can supply its own symbolic scope, and the
+    generated `Dynamics` in `tvbo.datamodel.schema` that an edge's `resolved_dyn` is, which
+    has the collections but no scope and must be given a name list instead.
+
+    Every function name is registered as a function while parsing, so a call to one inside
+    another's body parses as an application rather than a product — Zerlaut's `sigmaV`
+    calls `muV`. Functions with no arguments or no equation are skipped: there is nothing to
+    substitute into, and a call to one is left for the printer to emit verbatim.
+
+    Args:
+        functions: The model's `functions` mapping.
+        local_dict: The model's symbolic scope, when the caller has one
+            (`Dynamics.get_symbolic_elements()`).
+        parameters: Names to parse against, for a caller with no scope.
+    """
+    if not functions:
+        return {}
+    names = list(functions)
+    bodies = {}
+    for name, fn in functions.items():
+        arg_names = [str(arg) for arg in fn.arguments]
+        if not arg_names or not fn.equation:
+            continue
+        bodies[str(name)] = (
+            arg_names,
+            parse_eq(
+                fn.equation,
+                local_dict=dict(local_dict or {}),
+                parameters=list(parameters or []) + arg_names,
+                functions=names,
+            ),
+        )
+    return bodies
+
+
+def states_an_expression(equation) -> bool:
+    """Whether `equation` states anything to parse — a right-hand side, or branches.
+
+    An `Equation` carries its expression in either slot, so a caller that guards with
+    `if eq.rhs:` silently skips every equation written purely as conditional branches.
+    Guard with this instead and hand the whole `Equation` to
+    [`parse_eq`](#parse_eq), which resolves both spellings.
+    """
+    if isinstance(equation, str):
+        return bool(equation)
+    if equation is None:
+        return False
+    return bool(equation.rhs or equation.conditionals)
+
+
 def _has_unfolded_conditionals(equation: Equation) -> bool:
     """Whether `equation`'s branches still need folding into its right-hand side.
 
-    `rhs` means two different things over an equation's life. As authored it is the
-    Piecewise's *default* branch — the value when no condition holds — so the branches must
-    be folded in around it. But `Dynamics.update_metadata` later overwrites that same slot
-    with the whole Piecewise, stringified, while leaving `conditionals` populated; folding
-    again there would nest the expression inside its own default branch.
+    `rhs` means two different things depending on how a model was authored. Written out
+    as branches, `rhs` is the Piecewise's *default* — the value when no condition holds —
+    and the branches fold in around it. But 42 curated equations instead state the whole
+    `Piecewise(...)` in `rhs` directly while still populating `conditionals`; folding those
+    again would nest the expression inside its own default branch.
 
-    Sniffing the string is how TVBO has always told the two apart. It was previously spelled
-    out at two of the five call sites and omitted at the other three, which is why those
-    sites could disagree; stating it once is what lets them agree.
+    Sniffing the string is how TVBO tells the two spellings apart. It was previously
+    written out at two of the five call sites and omitted at the other three, which is why
+    those sites could disagree; stating it once is what lets them agree.
     """
     conditionals = getattr(equation, "conditionals", None)
     if not conditionals:

@@ -218,7 +218,7 @@ def _resolve_coupling(experiment):
     if dyn:
         cvars = [
             str(sv.name)
-            for sv in (getattr(dyn, "state_variables", None) or {}).values()
+            for sv in dyn.state_variables.values()
             if getattr(sv, "coupling_variable", False)
         ]
         if cvars:

@@ -43,7 +43,7 @@ class GillespieAdapter:
         """
         sv_names = list(model.state_variables)
         params = {k: float(v.value) for k, v in model.parameters.items()}
-        derived_names = list(getattr(model, "derived_variables", None) or {})
+        derived_names = list(model.derived_variables)
         allsyms = {n: sp.Symbol(n) for n in (*sv_names, *params, *derived_names)}
 
         # Inline derived variables into pure (state-variable, parameter) expressions.
@@ -63,7 +63,7 @@ class GillespieAdapter:
             e = sp.sympify(parse_eq(model.state_variables[name].equation, symbols=allsyms))
             return e.xreplace(derived_subs).xreplace(param_subs)
 
-        activity = list(getattr(model, "output", None) or sv_names)[0]
+        activity = list(model.output or sv_names)[0]
         a_sym = allsyms[activity]
         r_a = rhs(activity)
         leak = r_a.coeff(a_sym, 1)  # coefficient of the linear -X/tau relaxation term
