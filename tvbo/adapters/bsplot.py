@@ -522,6 +522,9 @@ def build_context(figure, base_dir, outfile: str) -> dict:
     savefig_kwargs = {"dpi": dpi}
     if getattr(figure, "trim_margins", None) is not False:
         savefig_kwargs["bbox_inches"] = "tight"
+        pad = getattr(figure, "pad", None)
+        if pad is not None:
+            savefig_kwargs["pad_inches"] = float(pad)
 
     spines = getattr(figure, "spines", None)
     spine_rcparams = {}
