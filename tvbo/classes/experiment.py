@@ -2265,6 +2265,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 for obs_name, da in self.resolve_dataset_observations(self._active_subject).items():
                     net_obs = dict(net_obs or {})
                     net_obs[obs_name] = np.asarray(da.values)
+            elif self.dataset_on_device():
+                # On-device cohort: stack the whole cohort into a leading subject
+                # axis (B, ...) so the generated vmap driver maps one lane per
+                # subject, instead of one workflow job per subject.
+                _batched, _subj_ids = self.resolve_dataset_observations_batched()
+                for obs_name, arr in _batched.items():
+                    net_obs = dict(net_obs or {})
+                    net_obs[obs_name] = arr
+                self._cohort_subject_ids = _subj_ids
             if net_obs:
                 kwargs.setdefault("network_observations", net_obs)
 
@@ -3164,6 +3173,41 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 )
             resolved[name] = da
         return resolved
+
+    def dataset_on_device(self) -> bool:
+        """True when the cohort's per-subject fits run as one on-device vmap batch.
+
+        Driven by ``dataset.batch_mode == on_device`` (default ``fan_out`` keeps
+        the per-subject workflow fan-out). Only meaningful when the experiment
+        actually has a per-subject dataset-sourced target to batch over.
+        """
+        ds = getattr(self, "dataset", None)
+        if ds is None:
+            return False
+        mode = getattr(ds, "batch_mode", None)
+        mode = getattr(mode, "value", mode)  # enum -> str
+        return str(mode) == "on_device" and bool(self.dataset_observation_targets)
+
+    def resolve_dataset_observations_batched(self, subjects: list = None):
+        """Resolve every cohort subject's dataset target and stack over subjects.
+
+        Returns ``({obs_name: ndarray (n_subjects, ...)}, subject_ids)``. Each
+        subject is reconciled by :meth:`resolve_dataset_observations`, so the
+        per-subject arrays already share one node-label set (identical across the
+        cohort) and stack cleanly along a leading subject axis. This batched
+        target feeds the on-device ``jax.vmap`` cohort driver; the shared network
+        stays in the model closure, only these per-subject targets vary per lane.
+        """
+        subjects = subjects if subjects is not None else self.dataset_subject_ids()
+        if not subjects:
+            return {}, []
+        per_subject = [self.resolve_dataset_observations(s) for s in subjects]
+        names = list(per_subject[0].keys())
+        batched = {
+            name: np.stack([np.asarray(ps[name].values) for ps in per_subject], axis=0)
+            for name in names
+        }
+        return batched, list(subjects)
 
     def dataset_reconcile_index(self, shared_labels: list, model_labels: list = None) -> np.ndarray:
         """Indices into the model network's nodes for *shared_labels* (keyed).

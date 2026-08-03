@@ -14,6 +14,7 @@ import typer
 from . import _backends, _common, _workflow  # noqa: F401
 
 from . import (
+    cache as _cache_cmd,
     config as _config_cmd,
     export as _export_cmd,
     figures as _figures_cmd,
@@ -67,6 +68,7 @@ app.command("version", help="Print the tvbo version.")(_version_cmd.version)
 # Sub-trees (registered as their own Typer apps)
 app.add_typer(_validate_cmd.app, name="validate", help="Validate YAML / OMEX / BIDS / SED-ML files.")
 app.add_typer(_config_cmd.app, name="config", help="Manage CLI configuration.")
+app.add_typer(_cache_cmd.app, name="cache", help="Inspect and reclaim tvbo's caches.")
 app.add_typer(_network_cmd.app, name="network", help="Build connectomes from a tractogram + parcellation (MRtrix wrapper).")
 app.add_typer(_figures_cmd.app, name="figure", help="Render declarative figures (Figure / SimulationStudy YAML) via bsplot codegen.")
 app.add_typer(_workflow_cmd.app, name="workflow", help="Plan / emit HPC + pipeline artefacts (slurm, snakemake, nextflow).")

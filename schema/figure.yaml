@@ -77,6 +77,9 @@ classes:
       reference_image:
         range: string
         description: "The published figure this one reproduces, as a path relative to the study root (e.g. original_study/img/fig_04.png). Names the A/B target for `tvbo figure compare`, which measures panel geometry against it; it is never a data source, and never rendered into a panel."
+      label:
+        range: string
+        description: "The heading this figure carries in a report. Unset, a report reads the paper's own number out of the name (Fig4, EDF10). A replication that answers a question the paper left open produces figures with no published counterpart, and those need a title of their own rather than a number that would read as the paper's."
       width:
         range: float
         description: "Figure width in mm (physical print size). Font size is in points and independent of this, so a smaller figure makes text relatively larger."
