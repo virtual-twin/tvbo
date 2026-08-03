@@ -81,7 +81,7 @@
       <!-- ── Flat dynamics (no spike events) ── -->
 
       <!-- Time derivatives -->
-      <TimeDerivative variable="x" value="(H(x .lt. 0.5) * mu*x + mu*(1 - x)) / SEC"/>
+      <TimeDerivative variable="x" value="(H(x .lt. 0.5) * (mu*x) + (1 - H(x .lt. 0.5)) * (mu*(1 - x))) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

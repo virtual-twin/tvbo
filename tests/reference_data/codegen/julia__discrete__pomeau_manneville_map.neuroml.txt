@@ -81,7 +81,7 @@
       <!-- ── Flat dynamics (no spike events) ── -->
 
       <!-- Time derivatives -->
-      <TimeDerivative variable="x" value="(H(x .gt. 0.5) * -4*x + 3 + H(x .lt. -0.5) * -4*x - 1*3 + H(abs(x) .leq. 0.5) * x*(1 + abs(2*x)^(z - 1*1)) + 0) / SEC"/>
+      <TimeDerivative variable="x" value="(H(x .gt. 0.5) * (-4*x + 3) + (1 - H(x .gt. 0.5)) * H(x .lt. -0.5) * (-4*x - 1*3) + (1 - H(x .gt. 0.5)) * (1 - H(x .lt. -0.5)) * H(abs(x) .leq. 0.5) * (x*(1 + abs(2*x)^(z - 1*1)))) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

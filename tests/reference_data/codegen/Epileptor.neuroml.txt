@@ -123,7 +123,7 @@
       </ConditionalDerivedVariable>
       <ConditionalDerivedVariable name="h" dimension="none">
         <Case condition="modification .gt. 0" value="x0 + 3/(1 + 0.00673794699908547*exp(-10.0*x1))"/>
-        <Case value="-4*x0 + 4*x1 + H(z .lt. 0) * -0.1*z^7 + 0"/>
+        <Case value="-4*x0 + 4*x1 + H(z .lt. 0) * (-0.1*z^7)"/>
       </ConditionalDerivedVariable>
       <DerivedVariable name="lfp" dimension="none" value="x2 - x1"/>
 

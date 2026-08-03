@@ -108,7 +108,7 @@
       <DerivedVariable name="cardano_d" dimension="none" value="-mu2^3/27 + mu1^2/4"/>
       <ConditionalDerivedVariable name="xs" dimension="none">
         <Case condition="cardano_d .lt. 0" value="2*(cardano_a^2 - cardano_d)^(1/6)*cos(atan2(sqrt(-cardano_d), cardano_a)/3)"/>
-        <Case value="H(cardano_a + sqrt(cardano_d) .geq. 0) * (cardano_a + sqrt(cardano_d))^(1/3) + abs(cardano_a + sqrt(cardano_d))^(1/3)/2 + H(cardano_a - sqrt(cardano_d) .geq. 0) * (cardano_a - sqrt(cardano_d))^(1/3) + abs(cardano_a - sqrt(cardano_d))^(1/3)/2"/>
+        <Case value="H(cardano_a + sqrt(cardano_d) .geq. 0) * (cardano_a + sqrt(cardano_d))^(1/3) + (1 - H(cardano_a + sqrt(cardano_d) .geq. 0)) * (abs(cardano_a + sqrt(cardano_d))^(1/3)/2) + H(cardano_a - sqrt(cardano_d) .geq. 0) * (cardano_a - sqrt(cardano_d))^(1/3) + (1 - H(cardano_a - sqrt(cardano_d) .geq. 0)) * (abs(cardano_a - sqrt(cardano_d))^(1/3)/2)"/>
       </ConditionalDerivedVariable>
 
       <!-- ── Flat dynamics (no spike events) ── -->
@@ -116,7 +116,7 @@
       <!-- Time derivatives -->
       <TimeDerivative variable="x" value="(-y) / SEC"/>
       <TimeDerivative variable="y" value="(x^3 - mu1 - mu2*x - y*(nu + x^2 + b*x)) / SEC"/>
-      <TimeDerivative variable="z" value="(-c*(sqrt(y^2 + (x - xs)^2) - dstar + Ks*c_glob + H(modification .gt. 0) * (-1/2 + z)^7/10 + 0)) / SEC"/>
+      <TimeDerivative variable="z" value="(-c*(sqrt(y^2 + (x - xs)^2) - dstar + Ks*c_glob + H(modification .gt. 0) * ((-1/2 + z)^7/10))) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>
