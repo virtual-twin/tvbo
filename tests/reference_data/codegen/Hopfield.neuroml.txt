@@ -88,7 +88,7 @@
       <!-- ── Flat dynamics (no spike events) ── -->
 
       <!-- Time derivatives -->
-      <TimeDerivative variable="theta" value="(H(dynamic .gt. 0) * (c_glob1 - theta)/tauT + (c_glob0 - x)/taux) / SEC"/>
+      <TimeDerivative variable="theta" value="(H(dynamic .gt. 0) * ((c_glob1 - theta)/tauT) + (1 - H(dynamic .gt. 0)) * ((c_glob0 - x)/taux)) / SEC"/>
       <TimeDerivative variable="x" value="((c_glob0 - x)/taux) / SEC"/>
 
       <!-- Initial conditions -->
