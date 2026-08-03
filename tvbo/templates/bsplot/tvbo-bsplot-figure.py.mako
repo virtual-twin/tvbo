@@ -142,6 +142,8 @@ def _apply_axopts(ax, o):
         ax.set_xticks([]); ax.set_yticks([])
     if o.get("aspect"):
         ax.set_aspect(o["aspect"])
+    if o.get("box_aspect"):
+        ax.set_box_aspect(o["box_aspect"])           # frame shape, independent of the data ranges
     if o.get("invert_x"):
         ax.invert_xaxis()
     if o.get("invert_y"):
@@ -410,7 +412,7 @@ def main():
 % if custom_keys:
     _fixed = [_snapshot_fixed_axes(axd[_k]) for _k in ${repr(custom_keys)}]   # drawer's own fixed ticks
 % endif
-    bsplot.style.format_fig(fig, add_panel_numbers=False)   # normalise ticks/labels; panel letters below
+    bsplot.style.format_fig(fig, add_panel_numbers=False, **${repr(format_kwargs)})   # normalise ticks/labels; panel letters below
 % if custom_keys:
     for _s in _fixed:                                       # ...restored so the format pass can't overwrite them
         _restore_fixed_axes(_s)

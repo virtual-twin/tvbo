@@ -343,6 +343,8 @@ def run_${algo_name}(
     import copy
     import equinox as eqx
 
+    model_fn = jax.jit(model_fn)  # tvboptim's solve fn is un-jitted by design (its tests jit it); jit once so warmup/tuning calls fuse+cache instead of eager per-step dispatch
+
     def _smart_interval(n):
         """Compute smart interval: 1 for 0-10, 10 for 10-100, 100 for 100-1000, etc."""
         if n <= 10:
