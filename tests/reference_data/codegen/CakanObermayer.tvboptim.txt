@@ -1,0 +1,112 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class CakanObermayer(AbstractDynamics):
+    """CakanObermayer neural mass model."""
+
+    STATE_NAMES = ("mu_se", "mu_si", "I_A_var")
+    INITIAL_STATE = (0.0, 0.0, 0.0)
+    AUXILIARY_NAMES = ("r_E", "r_I")
+
+    DEFAULT_PARAMS = Bunch(
+        C=200.0,
+        E_A=-80.0,
+        E_L=-65.0,
+        I_A=0.0,
+        J_EE=2.43,
+        J_EI=-3.3,
+        J_IE=2.6,
+        J_II=-1.64,
+        k_phi=1.0,
+        mu_E=0.4,
+        mu_I=0.3,
+        mu_th=1.0,
+        r_max=0.2,
+        s_EE=1.5,
+        s_EI=1.5,
+        s_IE=1.5,
+        s_II=1.5,
+        tau_A=200.0,
+        tau_se=2.0,
+        tau_si=5.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        C = params.C
+        E_A = params.E_A
+        E_L = params.E_L
+        I_A = params.I_A
+        J_EE = params.J_EE
+        J_EI = params.J_EI
+        J_IE = params.J_IE
+        J_II = params.J_II
+        k_phi = params.k_phi
+        mu_E = params.mu_E
+        mu_I = params.mu_I
+        mu_th = params.mu_th
+        r_max = params.r_max
+        s_EE = params.s_EE
+        s_EI = params.s_EI
+        s_IE = params.s_IE
+        s_II = params.s_II
+        tau_A = params.tau_A
+        tau_se = params.tau_se
+        tau_si = params.tau_si
+
+        mu_se = state[0]
+        mu_si = state[1]
+        I_A_var = state[2]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+
+        r_E = r_max / (1 + jnp.exp((-k_phi) * (mu_se - mu_th)))
+        r_I = r_max / (1 + jnp.exp((-k_phi) * (mu_si - mu_th)))
+
+        dmu_se_dt = (
+            J_EE * r_E + J_EI * r_I + mu_E + c_glob - I_A_var / C - mu_se
+        ) / tau_se
+        dmu_si_dt = (J_IE * r_E + J_II * r_I + mu_I - mu_si) / tau_si
+        dI_A_var_dt = (I_A * (mu_se - E_A) - I_A_var) / tau_A
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dmu_se_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dmu_se_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dmu_si_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dI_A_var_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(r_E), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(r_I), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

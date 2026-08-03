@@ -1,0 +1,99 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class Lorenz84(Model):
+
+    F = NArray(
+        label=r":math:`F`", default=np.array([6.846]), doc="""Baroclinic forcing F."""
+    )
+    G = NArray(
+        label=r":math:`G`",
+        default=np.array([1.287]),
+        doc="""Annual cycle modulation G.""",
+    )
+    a = NArray(
+        label=r":math:`a`",
+        default=np.array([0.25]),
+        doc="""Linear damping parameter a.""",
+    )
+    b = NArray(
+        label=r":math:`b`", default=np.array([4.0]), doc="""Coupling parameter b."""
+    )
+
+    _nvar = 3
+    state_variables = ["x", "y", "z"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "x": np.array([-1000000000.0, 1000000000.0]),
+            "y": np.array([-1000000000.0, 1000000000.0]),
+            "z": np.array([-1000000000.0, 1000000000.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("x", "y", "z"),
+        default=("x", "y", "z"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=["F", "G", "a", "b"],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "x": "-y**2 - z**2 + F*a - a*x",
+            "y": "G - y + x*y - b*x*z",
+            "z": "-z + x*z + b*x*y",
+        },
+    )
+
+    cvar = np.array([], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=[])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        x = state_variables[0, :]
+        y = state_variables[1, :]
+        z = state_variables[2, :]
+
+        F = self.F
+        G = self.G
+        a = self.a
+        b = self.b
+
+        # Coupling Terms (from coupling array)
+
+        # Derived Variables
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(-(y**2) - z**2 + F * a - a * x),  # x
+            np.asarray(G - y + x * y - b * x * z),  # y
+            np.asarray(-z + x * z + b * x * y),  # z
+        )
+        return np.array(_derivs)

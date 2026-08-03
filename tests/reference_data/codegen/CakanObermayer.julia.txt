@@ -1,0 +1,45 @@
+
+
+
+
+
+function CakanObermayer!(dx, x, p, t = 0)
+
+    (;C, E_L, E_A, I_A, J_EE, J_EI, J_IE, J_II, mu_E, mu_I, s_EE, s_EI, s_IE, s_II, tau_se, tau_si, tau_A, r_max, mu_th, k_phi, c_glob) = p
+
+    mu_se, mu_si, I_A_var = x
+
+
+
+    r_E = r_max ./ (1 .+ exp(-k_phi .* (mu_se .- mu_th)))
+    r_I = r_max ./ (1 .+ exp(-k_phi .* (mu_si .- mu_th)))
+
+    dx[1] = (c_glob .+ mu_E .- mu_se .+ J_EE .* r_E .+ J_EI .* r_I .- I_A_var ./ C) ./ tau_se
+    dx[2] = (mu_I .- mu_si .+ J_IE .* r_E .+ J_II .* r_I) ./ tau_si
+    dx[3] = (-I_A_var .+ I_A .* (mu_se .- E_A)) ./ tau_A
+    dx
+end
+
+# Parameter values
+p = (C = 200.0, E_L = -65.0, E_A = -80.0, I_A = 0.0, J_EE = 2.43, J_EI = -3.3, J_IE = 2.6, J_II = -1.64, mu_E = 0.4, mu_I = 0.3, s_EE = 1.5, s_EI = 1.5, s_IE = 1.5, s_II = 1.5, tau_se = 2.0, tau_si = 5.0, tau_A = 200.0, r_max = 0.2, mu_th = 1.0, k_phi = 1.0, c_glob = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.0,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(CakanObermayer!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

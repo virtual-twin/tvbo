@@ -1,0 +1,41 @@
+
+
+
+
+
+function ReducedWongWang!(dx, x, p, t = 0)
+
+    (;I_o, J_N, a, b, d, gamma, tau_s, w, c_glob, local_coupling) = p
+
+    S = x[1]
+
+
+
+    x = I_o .+ J_N .* c_glob .+ J_N .* S .* local_coupling .+ J_N .* S .* w
+    H = (-b .+ a .* x) ./ (1 .- exp(-d .* (-b .+ a .* x)))
+
+    dx[1] = -S ./ tau_s .+ H .* gamma .* (1 .- S)
+    dx
+end
+
+# Parameter values
+p = (I_o = 0.33, J_N = 0.2609, a = 0.27, b = 0.108, d = 154.0, gamma = 0.641, tau_s = 100.0, w = 0.6, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ReducedWongWang!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

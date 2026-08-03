@@ -1,0 +1,86 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class IaFCell(Model):
+
+    tau = NArray(
+        label=r":math:`tau`",
+        default=np.array([20.0]),
+        doc="""C/gL = 1nF/50nS = 0.02s = 20ms""",
+    )
+    leakReversal = NArray(
+        label=r":math:`leakReversal`", default=np.array([-60.0]), doc="""mV"""
+    )
+    thresh = NArray(label=r":math:`thresh`", default=np.array([-55.0]), doc="""mV""")
+    reset = NArray(label=r":math:`reset`", default=np.array([-62.0]), doc="""mV""")
+
+    _nvar = 1
+    state_variables = ["v"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={"v": np.array([-1000000000.0, 1000000000.0])},
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("v",),
+        default=("v",),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=["tau", "leakReversal", "thresh", "reset"],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "v": "I_ext + (leakReversal - v)/tau",
+        },
+    )
+
+    cvar = np.array([], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=[])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        v = state_variables[0, :]
+
+        tau = self.tau
+        leakReversal = self.leakReversal
+        thresh = self.thresh
+        reset = self.reset
+
+        # Coupling Terms (from coupling array)
+
+        # Derived Variables
+        self.I_ext = I_ext = np.where(
+            np.logical_and.reduce((np.greater_equal(t, 0.1), np.less(t, 0.2))), 0.3, 0.0
+        )
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(I_ext + (leakReversal - v) / tau),  # v
+        )
+        return np.array(_derivs)

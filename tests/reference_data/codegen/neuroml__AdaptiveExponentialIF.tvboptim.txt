@@ -1,0 +1,76 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class AdaptiveExponentialIF(AbstractDynamics):
+    """AdaptiveExponentialIF neural mass model."""
+
+    STATE_NAMES = ("v", "w")
+    INITIAL_STATE = (-70.6, 0.0)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        C=281.0,
+        EL=-70.6,
+        I_ext=0.8,
+        VT=-50.4,
+        a=4.0,
+        b=0.08,
+        delT=2.0,
+        gL=30.0,
+        reset=-48.5,
+        tauw=40.0,
+        thresh=-40.4,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        C = params.C
+        EL = params.EL
+        I_ext = params.I_ext
+        VT = params.VT
+        a = params.a
+        b = params.b
+        delT = params.delT
+        gL = params.gL
+        reset = params.reset
+        tauw = params.tauw
+        thresh = params.thresh
+
+        v = state[0]
+        w = state[1]
+
+        dv_dt = (
+            (-gL) * (v - EL) + gL * delT * jnp.exp((v - VT) / delT) - w + I_ext
+        ) / C
+        dw_dt = (a * (v - EL) - w) / tauw
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dv_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dv_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dw_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

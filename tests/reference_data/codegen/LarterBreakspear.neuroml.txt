@@ -1,0 +1,154 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: LarterBreakspear
+       Generated from TVBO Dynamics: LarterBreakspear
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="LarterBreakspear">
+
+    <!-- Parameters -->
+    <Parameter name="C" dimension="none"/>
+    <Parameter name="I_ext" dimension="none"/>
+    <Parameter name="Q_Vmax" dimension="per_time"/>
+    <Parameter name="Q_Zmax" dimension="per_time"/>
+    <Parameter name="T_Ca" dimension="none"/>
+    <Parameter name="T_K" dimension="none"/>
+    <Parameter name="T_Na" dimension="none"/>
+    <Parameter name="V_Ca" dimension="none"/>
+    <Parameter name="V_K" dimension="none"/>
+    <Parameter name="V_L" dimension="none"/>
+    <Parameter name="V_Na" dimension="none"/>
+    <Parameter name="V_T" dimension="none"/>
+    <Parameter name="Z_T" dimension="none"/>
+    <Parameter name="a_ee" dimension="none"/>
+    <Parameter name="a_ei" dimension="none"/>
+    <Parameter name="a_ie" dimension="none"/>
+    <Parameter name="a_ne" dimension="none"/>
+    <Parameter name="a_ni" dimension="none"/>
+    <Parameter name="b" dimension="none"/>
+    <Parameter name="delta_Ca" dimension="none"/>
+    <Parameter name="delta_K" dimension="none"/>
+    <Parameter name="delta_Na" dimension="none"/>
+    <Parameter name="delta_V" dimension="none"/>
+    <Parameter name="delta_Z" dimension="none"/>
+    <Parameter name="g_Ca" dimension="none"/>
+    <Parameter name="g_K" dimension="none"/>
+    <Parameter name="g_L" dimension="none"/>
+    <Parameter name="g_Na" dimension="none"/>
+    <Parameter name="phi" dimension="none"/>
+    <Parameter name="r_NMDA" dimension="none"/>
+    <Parameter name="t_scale" dimension="none"/>
+    <Parameter name="tau_K" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob" dimension="none"/>
+    <Parameter name="local_coupling" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="V_0" dimension="none"/>
+    <Parameter name="W_0" dimension="none"/>
+    <Parameter name="Z_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="V" dimension="none"/>
+    <Exposure name="W" dimension="none"/>
+    <Exposure name="Z" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="V" dimension="none" exposure="V"/>
+      <StateVariable name="W" dimension="none" exposure="W"/>
+      <StateVariable name="Z" dimension="none" exposure="Z"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <DerivedVariable name="Q_V" dimension="none" value="0.5*Q_Vmax*(1 + tanh((V - V_T)/delta_V))"/>
+      <DerivedVariable name="Q_Z" dimension="none" value="0.5*Q_Zmax*(1 + tanh((Z - Z_T)/delta_Z))"/>
+      <DerivedVariable name="m_Ca" dimension="none" value="0.5 + 0.5*tanh((V - T_Ca)/delta_Ca)"/>
+      <DerivedVariable name="m_K" dimension="none" value="0.5 + 0.5*tanh((V - T_K)/delta_K)"/>
+      <DerivedVariable name="m_Na" dimension="none" value="0.5 + 0.5*tanh((V - T_Na)/delta_Na)"/>
+      <DerivedVariable name="lc_0" dimension="none" value="Q_V*local_coupling"/>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="V" value="(t_scale*(I_ext*a_ne - g_L*(V - V_L) - (V - V_Na)*(g_Na*m_Na + C*a_ee*c_glob + a_ee*(1.0 - C)*(Q_V + lc_0)) + m_Ca*(V - V_Ca)*(-g_Ca - C*a_ee*c_glob*r_NMDA - a_ee*r_NMDA*(1.0 - C)*(Q_V + lc_0)) - Q_Z*Z*a_ie - W*g_K*(V - V_K))) / SEC"/>
+      <TimeDerivative variable="W" value="(phi*t_scale*(m_K - W)/tau_K) / SEC"/>
+      <TimeDerivative variable="Z" value="(b*t_scale*(I_ext*a_ni + Q_V*V*a_ei)) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="V" value="V_0"/>
+        <StateAssignment variable="W" value="W_0"/>
+        <StateAssignment variable="Z" value="Z_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="LarterBreakspear_inst" type="LarterBreakspear" C="0.1" I_ext="0.3" Q_Vmax="1.0 per_ms" Q_Zmax="1.0 per_ms" T_Ca="-0.01" T_K="0.0" T_Na="0.3" V_Ca="1.0" V_K="-0.7" V_L="-0.5" V_Na="0.53" V_T="0.0" Z_T="0.0" a_ee="0.4" a_ei="2.0" a_ie="2.0" a_ne="1.0" a_ni="0.4" b="0.1" delta_Ca="0.15" delta_K="0.3" delta_Na="0.15" delta_V="0.65" delta_Z="0.7" g_Ca="1.1" g_K="2.0" g_L="0.5" g_Na="6.7" phi="0.7" r_NMDA="0.25" t_scale="1.0" tau_K="1.0" c_glob="0" local_coupling="0" V_0="0.1" W_0="0.1" Z_0="0.1"/>
+
+
+
+</Lems>

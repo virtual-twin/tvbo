@@ -1,0 +1,81 @@
+
+
+
+
+
+function StefanescuJirsa3D!(dx, x, p, t = 0)
+
+    (;r, a, b, c, d, s, x_0, K_11, K_12, K_21, sigma, mu, c_glob, local_coupling) = p
+
+    xi = @view x[1:3]
+    eta = @view x[4:6]
+    tau = @view x[7:9]
+    alpha = @view x[10:12]
+    beta = @view x[13:15]
+    gamma = @view x[16:18]
+
+
+
+    A_ik = 0.500000000000000
+    B_ik = 0.500000000000000
+    C_ik = 0.500000000000000
+    IE_i = 0.0
+    II_i = 0.0
+    a_i = a
+    b_i = b
+    c_i = c
+    d_i = d
+    e_i = a
+    f_i = b
+    h_i = c
+    m_i = r .* s .* x_0
+    n_i = r .* s .* x_0
+    p_i = d
+
+    dx[1:3] .= IE_i .+ c_glob .+ eta .- tau .+ K_11 .* (-xi .+ A_ik .* xi) .+ b_i .* xi .^ 2 .+ local_coupling .* xi .- K_12 .* (-xi .+ B_ik .* alpha) .- a_i .* xi .^ 3
+    dx[4:6] .= c_i .- eta .- d_i .* xi .^ 2
+    dx[7:9] .= -m_i .- r .* tau .+ r .* s .* xi
+    dx[10:12] .= II_i .+ beta .+ c_glob .- gamma .+ K_21 .* (-alpha .+ C_ik .* xi) .+ f_i .* alpha .^ 2 .+ local_coupling .* xi .- e_i .* alpha .^ 3
+    dx[13:15] .= h_i .- beta .- p_i .* alpha .^ 2
+    dx[16:18] .= -n_i .- gamma .* r .+ alpha .* r .* s
+    dx
+end
+
+# Parameter values
+p = (r = 0.006, a = 1.0, b = 3.0, c = 1.0, d = 5.0, s = 4.0, x_0 = -1.6, K_11 = 0.5, K_12 = 0.1, K_21 = 0.15, sigma = 0.3, mu = 3.3, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(StefanescuJirsa3D!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

@@ -1,0 +1,41 @@
+
+
+
+
+
+function MontbrioPazoRoxin!(dx, x, p, t = 0)
+
+    (;Delta, I, J, cr, cv, eta, tau, c_glob0, c_glob1) = p
+
+    V, r = x
+
+
+
+
+    dx[1] = (I .+ eta .+ V .^ 2 .+ c_glob1 .* cv .+ J .* r .* tau .+ c_glob0 .* cr .* tau .- pi ^ 2 * r .^ 2 .* tau .^ 2) ./ tau
+    dx[2] = (2 * V .* r .+ Delta ./ (pi * tau)) ./ tau
+    dx
+end
+
+# Parameter values
+p = (Delta = 1.0, I = 0.0, J = 15.0, cr = 1.0, cv = 0.0, eta = -5.0, tau = 1.0, c_glob0 = 0.0, c_glob1 = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(MontbrioPazoRoxin!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

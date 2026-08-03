@@ -1,0 +1,55 @@
+
+
+
+
+
+function JansenRit1995!(dx, x, p, t = 0)
+
+    (;A, B, C, a, b, v0, e0, r, p, c_intercolumn) = p
+
+    y0, y3, y1, y4, y2, y5 = x
+
+    Sigm(v) = 2 * e0 ./ (1 .+ exp(r .* (v0 .- v)))
+
+    C1 = C
+    C2 = 0.8 * C
+    C3 = 0.25 * C
+    C4 = 0.25 * C
+
+    v_pyr = y1 .- y2
+
+    dx[1] = y3
+    dx[2] = -y0 .* a .^ 2 .- 2 * a .* y3 .+ A .* a .* Sigm(y1 .- y2)
+    dx[3] = y4
+    dx[4] = -y1 .* a .^ 2 .- 2 * a .* y4 .+ A .* a .* (c_intercolumn .+ p .+ C2 .* Sigm(C1 .* y0))
+    dx[5] = y5
+    dx[6] = -y2 .* b .^ 2 .- 2 * b .* y5 .+ B .* C4 .* b .* Sigm(C3 .* y0)
+    dx
+end
+
+# Parameter values
+p = (A = 3.25, B = 22, C = 135, a = 100, b = 50, v0 = 6, e0 = 2.5, r = 0.56, p = 220, c_intercolumn = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(JansenRit1995!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

@@ -1,0 +1,68 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class IaFCell(AbstractDynamics):
+    """IaFCell neural mass model."""
+
+    STATE_NAMES = ("v",)
+    INITIAL_STATE = (-60.0,)
+    AUXILIARY_NAMES = ("I_ext",)
+
+    DEFAULT_PARAMS = Bunch(
+        leakReversal=-60.0,
+        reset=-62.0,
+        tau=20.0,
+        thresh=-55.0,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        leakReversal = params.leakReversal
+        reset = params.reset
+        tau = params.tau
+        thresh = params.thresh
+
+        v = state[0]
+
+        I_ext = jnp.where(
+            jnp.all(jnp.asarray([jnp.greater_equal(t, 0.1), jnp.less(t, 0.2)]), axis=0),
+            0.3,
+            0.0,
+        )
+
+        dv_dt = (leakReversal - v) / tau + I_ext
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dv_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dv_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(I_ext), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

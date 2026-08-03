@@ -1,0 +1,42 @@
+
+
+
+
+
+function IkedaMap!(dx, _x, p, t = 0)
+
+    (;a, b, c, d) = p
+
+    x, y = _x
+
+
+
+    theta = c .- d ./ (1 .+ x .^ 2 .+ y .^ 2)
+
+    dx[1] = a .+ b .* (x .* cos(theta) .- y .* sin(theta))
+    dx[2] = b .* (x .* sin(theta) .+ y .* cos(theta))
+    dx
+end
+
+# Parameter values
+p = (a = 1.0, b = 1.0, c = 0.4, d = 6.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        1.0,
+        1.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(IkedaMap!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

@@ -1,0 +1,41 @@
+
+
+
+
+
+function StommelThermohaline!(dx, x, p, t = 0)
+
+    (;eta1, eta2, eta3) = p
+
+    T, S = x
+
+
+
+
+    dx[1] = eta1 .- T .- T .* abs(T .- S)
+    dx[2] = eta2 .- S .* eta3 .- S .* abs(T .- S)
+    dx
+end
+
+# Parameter values
+p = (eta1 = 3.0, eta2 = 1.0, eta3 = 0.3)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.3,
+        0.2,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(StommelThermohaline!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

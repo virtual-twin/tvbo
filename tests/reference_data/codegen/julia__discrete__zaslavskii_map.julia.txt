@@ -1,0 +1,42 @@
+
+
+
+
+
+function ZaslavskiiMap!(dx, _x, p, t = 0)
+
+    (;eps, nu, r) = p
+
+    x, y = _x
+
+
+
+    mu = (1 .- exp(-r)) ./ r
+
+    dx[1] = (x .- floor(x .+ nu .* (1 .+ mu .* y) .+ eps .* mu .* nu .* cos(2 * pi * x)) .+ nu .* (1 .+ mu .* y) .+ eps .* mu .* nu .* cos(2 * pi * x))
+    dx[2] = (y .+ eps .* cos(2 * pi * x)) .* exp(-r)
+    dx
+end
+
+# Parameter values
+p = (eps = 5.0, nu = 0.2, r = 2.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.2,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ZaslavskiiMap!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

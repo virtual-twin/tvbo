@@ -1,0 +1,109 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class MagneticPendulum(AbstractDynamics):
+    """MagneticPendulum neural mass model."""
+
+    STATE_NAMES = ("x", "y", "vx", "vy")
+    INITIAL_STATE = (0.7803612880645133, 0.6253313812821787, 0.0, 0.0)
+    AUXILIARY_NAMES = ("sum_gamma_terms_x", "sum_gamma_terms_y")
+
+    DEFAULT_PARAMS = Bunch(
+        N=3.0,
+        alpha=0.2,
+        d=0.3,
+        gamma=1.0,
+        omega=0.5,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        N = params.N
+        alpha = params.alpha
+        d = params.d
+        gamma = params.gamma
+        omega = params.omega
+
+        x = state[0]
+        y = state[1]
+        vx = state[2]
+        vy = state[3]
+
+        sum_gamma_terms_x = gamma * (
+            (x - 1) / ((x - 1) ** 2 + y**2 + d**2) ** (3 / 2)
+            + (x - jnp.cos(2 * jnp.pi / 3))
+            / (
+                (x - jnp.cos(2 * jnp.pi / 3)) ** 2
+                + (y - jnp.sin(2 * jnp.pi / 3)) ** 2
+                + d**2
+            )
+            ** (3 / 2)
+            + (x - jnp.cos(4 * jnp.pi / 3))
+            / (
+                (x - jnp.cos(4 * jnp.pi / 3)) ** 2
+                + (y - jnp.sin(4 * jnp.pi / 3)) ** 2
+                + d**2
+            )
+            ** (3 / 2)
+        )
+        sum_gamma_terms_y = gamma * (
+            y / ((x - 1) ** 2 + y**2 + d**2) ** (3 / 2)
+            + (y - jnp.sin(2 * jnp.pi / 3))
+            / (
+                (x - jnp.cos(2 * jnp.pi / 3)) ** 2
+                + (y - jnp.sin(2 * jnp.pi / 3)) ** 2
+                + d**2
+            )
+            ** (3 / 2)
+            + (y - jnp.sin(4 * jnp.pi / 3))
+            / (
+                (x - jnp.cos(4 * jnp.pi / 3)) ** 2
+                + (y - jnp.sin(4 * jnp.pi / 3)) ** 2
+                + d**2
+            )
+            ** (3 / 2)
+        )
+
+        dx_dt = vx
+        dy_dt = vy
+        dvx_dt = (-(omega**2)) * x - alpha * vx - sum_gamma_terms_x
+        dvy_dt = (-(omega**2)) * y - alpha * vy - sum_gamma_terms_y
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dvx_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dvy_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(sum_gamma_terms_x), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(sum_gamma_terms_y), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

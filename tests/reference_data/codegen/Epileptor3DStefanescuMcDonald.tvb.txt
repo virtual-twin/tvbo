@@ -1,0 +1,94 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class Epileptor3DStefanescuMcDonald(Model):
+
+    N = NArray(
+        label=r":math:`N`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.1, hi=10.0, step=0.1),
+        doc="""Effective population size / scaling of the resting-state regulation term.""",
+    )
+    x_0 = NArray(
+        label=r":math:`x_0`",
+        default=np.array([-1.6]),
+        domain=Range(lo=-2.4, hi=-0.5, step=0.01),
+        doc="""Excitability parameter (Epileptor convention).""",
+    )
+    tau_z = NArray(
+        label=r":math:`tau_z`",
+        default=np.array([2857.0]),
+        domain=Range(lo=100.0, hi=10000.0, step=1.0),
+        doc="""Slow timescale for the z permittivity variable.""",
+    )
+
+    _nvar = 2
+    state_variables = ["x1", "z"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={"x1": np.array([-2.0, 2.0]), "z": np.array([2.0, 5.0])},
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("x1", "z"),
+        default=("x1",),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=["N", "x_0", "tau_z"],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "x1": "N*(c_glob + x1 - z - 1/3*x1**3)",
+            "z": "(-z - 4*x_0 + 4*x1)/tau_z",
+        },
+    )
+
+    cvar = np.array([0], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["c_glob"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        x1 = state_variables[0, :]
+        z = state_variables[1, :]
+
+        N = self.N
+        x_0 = self.x_0
+        tau_z = self.tau_z
+
+        # Coupling Terms (from coupling array)
+        c_glob = coupling[0, :]
+
+        # Derived Variables
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(N * (c_glob + x1 - z - 1 / 3 * x1**3)),  # x1
+            np.asarray((-z - 4 * x_0 + 4 * x1) / tau_z),  # z
+        )
+        return np.array(_derivs)

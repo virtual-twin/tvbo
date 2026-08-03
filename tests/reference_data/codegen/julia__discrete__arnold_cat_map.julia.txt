@@ -1,0 +1,41 @@
+
+
+
+
+
+function ArnoldCatMap!(dx, _x, p, t = 0)
+
+    (;) = p
+
+    x, y = _x
+
+
+
+
+    dx[1] = (y .- floor(y .+ 2 * x) .+ 2 * x)
+    dx[2] = (x .+ y .- floor(x .+ y))
+    dx
+end
+
+# Parameter values
+p = ()
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.001245,
+        0.00875,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ArnoldCatMap!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

@@ -1,0 +1,41 @@
+
+
+
+
+
+function Generic2dOscillator!(dx, x, p, t = 0)
+
+    (;I, a, alpha, b, beta, c, d, e, f, g, gamma, tau, c_glob, local_coupling) = p
+
+    V, W = x
+
+
+
+
+    dx[1] = d .* tau .* (I .* gamma .+ V .* g .+ V .* local_coupling .+ W .* alpha .+ c_glob .* gamma .+ e .* V .^ 2 .- f .* V .^ 3)
+    dx[2] = d .* (a .+ V .* b .+ c .* V .^ 2 .- W .* beta) ./ tau
+    dx
+end
+
+# Parameter values
+p = (I = 0.0, a = -2.0, alpha = 1.0, b = -10.0, beta = 1.0, c = 0.0, d = 0.02, e = 3.0, f = 1.0, g = 0.0, gamma = 1.0, tau = 1.0, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Generic2dOscillator!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

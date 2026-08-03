@@ -1,0 +1,43 @@
+
+
+
+
+
+function HindmarshRose!(dx, _x, p, t = 0)
+
+    (;a, b, c, d, r, s, xr, I) = p
+
+    x, y, z = _x
+
+
+
+
+    dx[1] = I .+ y .- z .+ b .* x .^ 2 .- a .* x .^ 3
+    dx[2] = c .- y .- d .* x .^ 2
+    dx[3] = r .* (-z .+ s .* (x .- xr))
+    dx
+end
+
+# Parameter values
+p = (a = 1.0, b = 3.0, c = 1.0, d = 5.0, r = 0.001, s = 4.0, xr = -1.6, I = 2.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -1.0,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(HindmarshRose!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

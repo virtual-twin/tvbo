@@ -1,0 +1,191 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class PinskyRinzelCA3(AbstractDynamics):
+    """PinskyRinzelCA3 neural mass model."""
+
+    STATE_NAMES = ("Vs", "Vd", "Cad", "hs", "ns", "sd", "cd", "qd", "Si", "Wi")
+    INITIAL_STATE = (-60.0, -60.0, 0.0, 0.999, 0.001, 0.009, 0.007, 0.0, 0.0, 0.0)
+    AUXILIARY_NAMES = (
+        "ICa_d",
+        "alpha_cd",
+        "alpha_hs",
+        "alpha_ms",
+        "alpha_ns",
+        "alpha_qd",
+        "alpha_sd",
+        "beta_hs",
+        "beta_ms",
+        "beta_ns",
+        "beta_sd",
+        "chi_d",
+        "beta_cd",
+        "minf_s",
+    )
+
+    DEFAULT_PARAMS = Bunch(
+        cm=3.0,
+        eCa=80.0,
+        eK=-75.0,
+        eL=-60.0,
+        eNa=60.0,
+        gCa=10.0,
+        gKC=15.0,
+        gKahp=0.8,
+        gKdr=15.0,
+        gLd=0.1,
+        gLs=0.1,
+        gNa=30.0,
+        gc=2.1,
+        iDend=0.0,
+        iSoma=0.75,
+        pp=0.5,
+    )
+
+    COUPLING_INPUTS = {}
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        cm = params.cm
+        eCa = params.eCa
+        eK = params.eK
+        eL = params.eL
+        eNa = params.eNa
+        gCa = params.gCa
+        gKC = params.gKC
+        gKahp = params.gKahp
+        gKdr = params.gKdr
+        gLd = params.gLd
+        gLs = params.gLs
+        gNa = params.gNa
+        gc = params.gc
+        iDend = params.iDend
+        iSoma = params.iSoma
+        pp = params.pp
+
+        Vs = state[0]
+        Vd = state[1]
+        Cad = state[2]
+        hs = state[3]
+        ns = state[4]
+        sd = state[5]
+        cd = state[6]
+        qd = state[7]
+        Si = state[8]
+        Wi = state[9]
+
+        ICa_d = gCa * sd**2 * (Vd - eCa)
+        alpha_cd = jnp.where(
+            jnp.less(Vd, -10.0),
+            jnp.exp((Vd + 50.0) / 11.0 - (Vd + 53.5) / 27.0) / 18.975,
+            2.0 * jnp.exp((-53.5 - Vd) / 27.0),
+        )
+        alpha_hs = 0.128 * jnp.exp((-43.0 - Vs) / 18.0)
+        alpha_ms = jnp.where(
+            jnp.equal(Vs, -46.9),
+            0.32 / 4.0,
+            0.32 * (-46.9 - Vs) / (jnp.exp((-46.9 - Vs) / 4.0) - 1.0),
+        )
+        alpha_ns = jnp.where(
+            jnp.equal(Vs, -24.9),
+            0.016 / 5.0,
+            0.016 * (-24.9 - Vs) / (jnp.exp((-24.9 - Vs) / 5.0) - 1.0),
+        )
+        alpha_qd = functools.reduce(jnp.minimum, [0.01, 2.0e-5 * Cad])
+        alpha_sd = 1.6 / (1.0 + jnp.exp(-0.072 * (Vd - 5.0)))
+        beta_hs = 4.0 / (1.0 + jnp.exp((-20.0 - Vs) / 5.0))
+        beta_ms = jnp.where(
+            jnp.equal(Vs, -19.9),
+            0.28 / 5.0,
+            0.28 * (Vs + 19.9) / (jnp.exp((Vs + 19.9) / 5.0) - 1.0),
+        )
+        beta_ns = 0.25 * jnp.exp(-1.0 - 0.025 * Vs)
+        beta_sd = jnp.where(
+            jnp.equal(Vd, -8.9),
+            0.02 / 5.0,
+            0.02 * (Vd + 8.9) / (jnp.exp((Vd + 8.9) / 5.0) - 1.0),
+        )
+        chi_d = functools.reduce(jnp.minimum, [1.0, Cad / 250.0])
+        beta_cd = jnp.where(
+            jnp.less(Vd, -10.0), 2.0 * jnp.exp((-53.5 - Vd) / 27.0) - alpha_cd, 0.0
+        )
+        minf_s = alpha_ms / (alpha_ms + beta_ms)
+
+        dVs_dt = (
+            (-gLs) * (Vs - eL)
+            - gNa * minf_s**2 * hs * (Vs - eNa)
+            - gKdr * ns * (Vs - eK)
+            + gc * (Vd - Vs) / pp
+            + iSoma / pp
+        ) / cm
+        dVd_dt = (
+            (-gLd) * (Vd - eL)
+            - ICa_d
+            - gKahp * qd * (Vd - eK)
+            - gKC * cd * chi_d * (Vd - eK)
+            + gc * (Vs - Vd) / (1.0 - pp)
+            + iDend / (1.0 - pp)
+        ) / cm
+        dCad_dt = -0.13 * ICa_d - 0.075 * Cad
+        dhs_dt = alpha_hs - (alpha_hs + beta_hs) * hs
+        dns_dt = alpha_ns - (alpha_ns + beta_ns) * ns
+        dsd_dt = alpha_sd - (alpha_sd + beta_sd) * sd
+        dcd_dt = alpha_cd - (alpha_cd + beta_cd) * cd
+        dqd_dt = alpha_qd - (alpha_qd + 0.001) * qd
+        dSi_dt = (-Si) / 150.0
+        dWi_dt = (-Wi) / 2.0
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dVs_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dVs_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dVd_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dCad_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dhs_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dns_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dsd_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dcd_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dqd_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dSi_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dWi_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(ICa_d), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_cd), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_hs), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_ms), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_ns), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_qd), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(alpha_sd), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_hs), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_ms), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_ns), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_sd), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(chi_d), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(beta_cd), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(minf_s), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

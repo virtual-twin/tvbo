@@ -1,0 +1,431 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class KIonEx(Model):
+
+    Cm = NArray(
+        label=r":math:`Cm`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.5, hi=1.5, step=0.1),
+        doc="""membrane capacitance""",
+    )
+    Delta = NArray(
+        label=r":math:`Delta`",
+        default=np.array([1.0]),
+        domain=Range(lo=0.0, hi=10.0, step=0.01),
+        doc="""HWHM heterogeneous noise""",
+    )
+    E = NArray(
+        label=r":math:`E`",
+        default=np.array([0.0]),
+        domain=Range(lo=-80.0, hi=0.0, step=0.5),
+        doc="""Reversal Potential""",
+    )
+    J = NArray(
+        label=r":math:`J`",
+        default=np.array([0.1]),
+        domain=Range(lo=0.001, hi=40.0, step=0.01),
+        doc="""Mean Synaptic weight""",
+    )
+    K_bath = NArray(
+        label=r":math:`K_bath`",
+        default=np.array([5.5]),
+        domain=Range(lo=3.0, hi=40.0, step=0.25),
+        doc="""Potassium concentration in bath""",
+    )
+    R_minus = NArray(
+        label=r":math:`R_minus`",
+        default=np.array([0.5]),
+        domain=Range(lo=0.0001, hi=5.0, step=0.01),
+        doc="""curvature left parabola""",
+    )
+    R_plus = NArray(
+        label=r":math:`R_plus`",
+        default=np.array([-0.5]),
+        domain=Range(lo=-5.0, hi=-0.0001, step=0.01),
+        doc="""curvature right parabola""",
+    )
+    Vstar = NArray(
+        label=r":math:`Vstar`",
+        default=np.array([-31.0]),
+        domain=Range(lo=-55.0, hi=-15.0, step=0.5),
+        doc="""x-coordinate meeting point of parabolas""",
+    )
+    c_minus = NArray(
+        label=r":math:`c_minus`",
+        default=np.array([-40.0]),
+        domain=Range(lo=-100.0, hi=-10.0, step=0.5),
+        doc="""x-coordinate left parabola""",
+    )
+    c_plus = NArray(
+        label=r":math:`c_plus`",
+        default=np.array([-20.0]),
+        domain=Range(lo=-80.0, hi=0.0, step=0.5),
+        doc="""x-coordinate right parabola""",
+    )
+    epsilon = NArray(
+        label=r":math:`epsilon`",
+        default=np.array([0.001]),
+        domain=Range(lo=0.0005, hi=0.0015, step=0.0001),
+        doc="""diffusion rate""",
+    )
+    eta = NArray(
+        label=r":math:`eta`",
+        default=np.array([0.0]),
+        domain=Range(lo=-10.0, hi=10.0, step=0.1),
+        doc="""Mean heterogeneous noise""",
+    )
+    gamma = NArray(
+        label=r":math:`gamma`",
+        default=np.array([0.04]),
+        domain=Range(lo=0.02, hi=0.06, step=0.005),
+        doc="""conversion factor""",
+    )
+    tau_n = NArray(
+        label=r":math:`tau_n`",
+        default=np.array([4.0]),
+        domain=Range(lo=2.0, hi=6.0, step=0.5),
+        doc="""time constant of gating variable""",
+    )
+    Chn = NArray(
+        label=r":math:`Chn`",
+        default=np.array([0.4]),
+        domain=Range(lo=0.4, hi=0.4, step=0.0),
+    )
+    Ckp = NArray(
+        label=r":math:`Ckp`",
+        default=np.array([5.5]),
+        domain=Range(lo=5.5, hi=5.5, step=0.0),
+    )
+    Cl_i0 = NArray(
+        label=r":math:`Cl_i0`",
+        default=np.array([5.0]),
+        domain=Range(lo=5.0, hi=5.0, step=0.0),
+        doc="""initial concentration of intracellular Cl""",
+    )
+    Cl_o0 = NArray(
+        label=r":math:`Cl_o0`",
+        default=np.array([112.0]),
+        domain=Range(lo=112.0, hi=112.0, step=0.0),
+        doc="""initial concentration of extracellular Cl""",
+    )
+    Cmna = NArray(
+        label=r":math:`Cmna`",
+        default=np.array([-24.0]),
+        domain=Range(lo=-24.0, hi=-24.0, step=0.0),
+    )
+    Cnap = NArray(
+        label=r":math:`Cnap`",
+        default=np.array([21.0]),
+        domain=Range(lo=21.0, hi=21.0, step=0.0),
+    )
+    Cnk = NArray(
+        label=r":math:`Cnk`",
+        default=np.array([-19.0]),
+        domain=Range(lo=-19.0, hi=-19.0, step=0.0),
+    )
+    DChn = NArray(
+        label=r":math:`DChn`",
+        default=np.array([-8.0]),
+        domain=Range(lo=-8.0, hi=-8.0, step=0.0),
+    )
+    DCkp = NArray(
+        label=r":math:`DCkp`",
+        default=np.array([1.0]),
+        domain=Range(lo=1.0, hi=1.0, step=0.0),
+    )
+    DCmna = NArray(
+        label=r":math:`DCmna`",
+        default=np.array([12.0]),
+        domain=Range(lo=12.0, hi=12.0, step=0.0),
+    )
+    DCnap = NArray(
+        label=r":math:`DCnap`",
+        default=np.array([2.0]),
+        domain=Range(lo=2.0, hi=2.0, step=0.0),
+    )
+    DCnk = NArray(
+        label=r":math:`DCnk`",
+        default=np.array([18.0]),
+        domain=Range(lo=18.0, hi=18.0, step=0.0),
+    )
+    K_i0 = NArray(
+        label=r":math:`K_i0`",
+        default=np.array([130.0]),
+        domain=Range(lo=130.0, hi=130.0, step=0.0),
+        doc="""initial concentration of intracellular K""",
+    )
+    K_o0 = NArray(
+        label=r":math:`K_o0`",
+        default=np.array([4.8]),
+        domain=Range(lo=4.8, hi=4.8, step=0.0),
+        doc="""initial concentration of extracellular K""",
+    )
+    Na_i0 = NArray(
+        label=r":math:`Na_i0`",
+        default=np.array([16.0]),
+        domain=Range(lo=16.0, hi=16.0, step=0.0),
+        doc="""initial concentration of intracellular Na""",
+    )
+    Na_o0 = NArray(
+        label=r":math:`Na_o0`",
+        default=np.array([138.0]),
+        domain=Range(lo=138.0, hi=138.0, step=0.0),
+        doc="""initial concentration of extracellular Na""",
+    )
+    g_Cl = NArray(
+        label=r":math:`g_Cl`",
+        default=np.array([7.5]),
+        domain=Range(lo=7.5, hi=7.5, step=0.0),
+        doc="""chloride conductance""",
+    )
+    g_K = NArray(
+        label=r":math:`g_K`",
+        default=np.array([22.0]),
+        domain=Range(lo=22.0, hi=22.0, step=0.0),
+        doc="""maximal potassium conductance""",
+    )
+    g_Kl = NArray(
+        label=r":math:`g_Kl`",
+        default=np.array([0.12]),
+        domain=Range(lo=0.12, hi=0.12, step=0.0),
+        doc="""potassium leak conductance""",
+    )
+    g_Na = NArray(
+        label=r":math:`g_Na`",
+        default=np.array([40.0]),
+        domain=Range(lo=40.0, hi=40.0, step=0.0),
+        doc="""maximal sodiumconductance""",
+    )
+    g_Nal = NArray(
+        label=r":math:`g_Nal`",
+        default=np.array([0.02]),
+        domain=Range(lo=0.02, hi=0.02, step=0.0),
+        doc="""sodium leak conductance""",
+    )
+    rho = NArray(
+        label=r":math:`rho`",
+        default=np.array([250.0]),
+        domain=Range(lo=250.0, hi=250.0, step=0.0),
+        doc="""maximal Na/K pump current""",
+    )
+    w_i = NArray(
+        label=r":math:`w_i`",
+        default=np.array([2160.0]),
+        domain=Range(lo=2160.0, hi=2160.0, step=0.0),
+        doc="""intracellular volume""",
+    )
+    w_o = NArray(
+        label=r":math:`w_o`",
+        default=np.array([720.0]),
+        domain=Range(lo=720.0, hi=720.0, step=0.0),
+        doc="""extracellular volume""",
+    )
+
+    _nvar = 5
+    state_variables = ["DKi", "Kg", "V", "n", "x"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "DKi": np.array([-10.0, 0.0]),
+            "Kg": np.array([-20.0, -5.0]),
+            "V": np.array([-90.0, 10.0]),
+            "n": np.array([0.0, 1.0]),
+            "x": np.array([0.0, 1.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    state_variable_boundaries = Final(
+        label="State Variable boundaries [lo, hi]",
+        default={
+            "DKi": np.array([-100.0, np.inf]),
+            "Kg": np.array([-100.0, np.inf]),
+            "V": np.array([-500.0, np.inf]),
+            "n": np.array([0.0, np.inf]),
+            "x": np.array([0.0, np.inf]),
+        },
+        doc="""State variable boundaries for phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("DKi", "Kg", "V", "n", "x"),
+        default=("DKi", "Kg", "V", "n", "x"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "Cm",
+            "Delta",
+            "E",
+            "J",
+            "K_bath",
+            "R_minus",
+            "R_plus",
+            "Vstar",
+            "c_minus",
+            "c_plus",
+            "epsilon",
+            "eta",
+            "gamma",
+            "tau_n",
+            "Chn",
+            "Ckp",
+            "Cl_i0",
+            "Cl_o0",
+            "Cmna",
+            "Cnap",
+            "Cnk",
+            "DChn",
+            "DCkp",
+            "DCmna",
+            "DCnap",
+            "DCnk",
+            "K_i0",
+            "K_o0",
+            "Na_i0",
+            "Na_o0",
+            "g_Cl",
+            "g_K",
+            "g_Kl",
+            "g_Na",
+            "g_Nal",
+            "rho",
+            "w_i",
+            "w_o",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "DKi": "-gamma*(I_K - 2.0*I_pump)/w_i",
+            "Kg": "epsilon*(K_bath - K_o)",
+            "V": "Vcond",
+            "n": "(ninf - n)/tau_n",
+            "x": "xcond",
+        },
+    )
+
+    cvar = np.array([4], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["c_glob"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        DKi = state_variables[0, :]
+        Kg = state_variables[1, :]
+        V = state_variables[2, :]
+        n = state_variables[3, :]
+        x = state_variables[4, :]
+
+        Cm = self.Cm
+        Delta = self.Delta
+        E = self.E
+        J = self.J
+        K_bath = self.K_bath
+        R_minus = self.R_minus
+        R_plus = self.R_plus
+        Vstar = self.Vstar
+        c_minus = self.c_minus
+        c_plus = self.c_plus
+        epsilon = self.epsilon
+        eta = self.eta
+        gamma = self.gamma
+        tau_n = self.tau_n
+        Chn = self.Chn
+        Ckp = self.Ckp
+        Cl_i0 = self.Cl_i0
+        Cl_o0 = self.Cl_o0
+        Cmna = self.Cmna
+        Cnap = self.Cnap
+        Cnk = self.Cnk
+        DChn = self.DChn
+        DCkp = self.DCkp
+        DCmna = self.DCmna
+        DCnap = self.DCnap
+        DCnk = self.DCnk
+        K_i0 = self.K_i0
+        K_o0 = self.K_o0
+        Na_i0 = self.Na_i0
+        Na_o0 = self.Na_o0
+        g_Cl = self.g_Cl
+        g_K = self.g_K
+        g_Kl = self.g_Kl
+        g_Na = self.g_Na
+        g_Nal = self.g_Nal
+        rho = self.rho
+        w_i = self.w_i
+        w_o = self.w_o
+
+        # Coupling Terms (from coupling array)
+        c_glob = coupling[0, :]
+
+        # Derived Variables
+        self.DNa_i = DNa_i = -DKi
+        self.I_Cl = I_Cl = g_Cl * (V + 26.64 * np.log(Cl_o0 / Cl_i0))
+        self.K_i = K_i = DKi + K_i0
+        self.beta = beta = w_i / w_o
+        self.h = h = 1.1 - 1.0 / (1.0 + 24.5325301971094 * np.exp(-8.0 * n))
+        self.minf = minf = 1.0 / (1.0 + np.exp((Cmna - V) / DCmna))
+        self.ninf = ninf = 1.0 / (1.0 + np.exp((Cnk - V) / DCnk))
+        self.r = r = R_minus * x / np.pi
+        self.DK_o = DK_o = -DKi * beta
+        self.DNa_o = DNa_o = -DNa_i * beta
+        self.Na_i = Na_i = DNa_i + Na_i0
+        self.xcond = xcond = np.where(
+            np.less_equal(V, Vstar),
+            Delta - J * r * x + 2 * R_minus * x * (V - c_minus),
+            Delta - J * r * x + 2 * R_plus * x * (V - c_plus),
+        )
+        self.K_o = K_o = DK_o + K_o0 + Kg
+        self.Na_o = Na_o = DNa_o + Na_o0
+        self.I_K = I_K = (V - 26.64 * np.log(K_o / K_i)) * (g_Kl + g_K * n)
+        self.I_Na = I_Na = (V - 26.64 * np.log(Na_o / Na_i)) * (g_Nal + g_Na * h * minf)
+        self.I_pump = I_pump = (
+            1.0
+            * rho
+            / (
+                (1.0 + np.exp((Ckp - K_o) / DCkp))
+                * (1.0 + np.exp((Cnap - Na_i) / DCnap))
+            )
+        )
+        self.V_temp = V_temp = (
+            -1.0 * I_Cl - 1.0 * I_K - 1.0 * I_Na - 1.0 * I_pump
+        ) / Cm
+        self.Vcond = Vcond = np.where(
+            np.less_equal(V, Vstar),
+            V_temp + eta - R_minus * x**2 + R_minus * c_glob * (E - V) / np.pi,
+            V_temp + eta - R_plus * x**2 + R_minus * c_glob * (E - V) / np.pi,
+        )
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(-gamma * (I_K - 2.0 * I_pump) / w_i),  # DKi
+            np.asarray(epsilon * (K_bath - K_o)),  # Kg
+            np.asarray(Vcond),  # V
+            np.asarray((ninf - n) / tau_n),  # n
+            np.asarray(xcond),  # x
+        )
+        return np.array(_derivs)

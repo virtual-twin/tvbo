@@ -1,0 +1,52 @@
+
+
+
+
+
+function JansenRit!(dx, x, p, t = 0)
+
+    (;A, B, J, a_1, a_2, a_3, a_4, a, b, mu, nu_max, r, v0, c_glob, local_coupling) = p
+
+    y0, y1, y2, y3, y4, y5 = x
+
+
+
+    sigma_y0_1 = 2.0 * nu_max ./ (1.0 .+ exp(r .* (v0 .- J .* a_1 .* y0)))
+    sigma_y0_3 = 2.0 * nu_max ./ (1.0 .+ exp(r .* (v0 .- J .* a_3 .* y0)))
+    sigma_y1_y2 = 2.0 * nu_max ./ (1.0 .+ exp(r .* (v0 .+ y2 .- y1)))
+
+    dx[1] = y3
+    dx[2] = y4
+    dx[3] = y5
+    dx[4] = -y0 .* a .^ 2 .- 2.0 * a .* y3 .+ A .* a .* sigma_y1_y2
+    dx[5] = -y1 .* a .^ 2 .- 2.0 * a .* y4 .+ A .* a .* (c_glob .+ mu .+ local_coupling .* (y1 .- y2) .+ J .* a_2 .* sigma_y0_1)
+    dx[6] = -y2 .* b .^ 2 .- 2.0 * b .* y5 .+ B .* J .* a_4 .* b .* sigma_y0_3
+    dx
+end
+
+# Parameter values
+p = (A = 3.25, B = 22.0, J = 135.0, a_1 = 1.0, a_2 = 0.8, a_3 = 0.25, a_4 = 0.25, a = 0.1, b = 0.05, mu = 0.22, nu_max = 0.0025, r = 0.56, v0 = 5.52, c_glob = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(JansenRit!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

@@ -55,7 +55,7 @@ def dfun(current_state, t, cX, _p):
     dz_dt = r * tt * (h - z + Ks * c_glob0)
     dx2_dt = tt * (1.05 + Iext2 + x2 - y2 - x2**3 - 0.3 * z + Kf * c_glob1 + bb * g)
     dy2_dt = tt * (f2 - y2) / tau
-    dg_dt = -0.01 * tt * (g - 0.1 * x1)
+    dg_dt = tt * (0.001 * x1 - 0.01 * g)
 
     derivatives = jnp.array(
         jnp.broadcast_arrays(dx1_dt, dy1_dt, dz_dt, dx2_dt, dy2_dt, dg_dt)

@@ -1,0 +1,158 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class StefanescuJirsa2D(AbstractDynamics):
+    """StefanescuJirsa2D neural mass model."""
+
+    STATE_NAMES = (
+        "xi__mode0",
+        "xi__mode1",
+        "xi__mode2",
+        "eta__mode0",
+        "eta__mode1",
+        "eta__mode2",
+        "alpha__mode0",
+        "alpha__mode1",
+        "alpha__mode2",
+        "beta__mode0",
+        "beta__mode1",
+        "beta__mode2",
+    )
+    INITIAL_STATE = (0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1)
+    AUXILIARY_NAMES = ("Aik", "Bik", "Cik", "e_i", "f_i", "IE_i", "II_i", "m_i", "n_i")
+
+    DEFAULT_PARAMS = Bunch(
+        K11=0.5,
+        K12=0.15,
+        K21=0.15,
+        a=0.45,
+        b=0.9,
+        mu=0.0,
+        sigma=0.35,
+        tau=3.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+        "local_coupling": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        K11 = params.K11
+        K12 = params.K12
+        K21 = params.K21
+        a = params.a
+        b = params.b
+        mu = params.mu
+        sigma = params.sigma
+        tau = params.tau
+
+        xi = jnp.stack([state[0], state[1], state[2]], axis=-1)
+        eta = jnp.stack([state[3], state[4], state[5]], axis=-1)
+        alpha = jnp.stack([state[6], state[7], state[8]], axis=-1)
+        beta = jnp.stack([state[9], state[10], state[11]], axis=-1)
+
+        c_glob = (
+            jnp.moveaxis(coupling.c_glob, 0, -1) if hasattr(coupling, "c_glob") else 0.0
+        )
+        local_coupling = (
+            jnp.moveaxis(coupling.local_coupling, 0, -1)
+            if hasattr(coupling, "local_coupling")
+            else 0.0
+        )
+
+        Aik = 0.500000000000000
+        Bik = 0.500000000000000
+        Cik = 0.500000000000000
+        e_i = 1.00000000000000
+        f_i = 1.00000000000000
+        IE_i = 0.0
+        II_i = 0.0
+        m_i = a
+        n_i = a
+
+        dxi_dt = (
+            tau * (xi - e_i * xi**3 / 3 - eta)
+            + K11 * (Aik * xi - xi)
+            - K12 * (Bik * alpha - xi)
+            + tau * (IE_i + c_glob + local_coupling * xi)
+        )
+        deta_dt = (xi - b * eta + m_i) / tau
+        dalpha_dt = (
+            tau * (alpha - f_i * alpha**3 / 3 - beta)
+            + K21 * (Cik * xi - alpha)
+            + tau * (II_i + c_glob + local_coupling * xi)
+        )
+        dbeta_dt = (alpha - b * beta + n_i) / tau
+
+        # Mode fold-back: split each variable's (n_nodes, n_modes) derivative into
+        # its n_modes scalar slots, in the same (variable, mode) order as STATE_NAMES.
+        _mode_ref = jnp.atleast_2d(dxi_dt)
+        derivatives = jnp.concatenate(
+            [
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(dxi_dt), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(deta_dt), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(dalpha_dt), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(dbeta_dt), _mode_ref.shape), -1, 0
+                ),
+            ],
+            axis=0,
+        )
+
+        # Fold auxiliaries per-mode too (same layout as the derivatives), so a
+        # multi-mode model with recorded derived variables produces a valid,
+        # mode-consistent auxiliary array (``_mode_ref`` from the derivative fold).
+        auxiliaries = jnp.concatenate(
+            [
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(Aik), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(Bik), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(Cik), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(e_i), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(f_i), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(IE_i), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(II_i), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(m_i), _mode_ref.shape), -1, 0
+                ),
+                jnp.moveaxis(
+                    jnp.broadcast_to(jnp.atleast_2d(n_i), _mode_ref.shape), -1, 0
+                ),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

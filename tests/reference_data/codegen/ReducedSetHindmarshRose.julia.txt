@@ -1,0 +1,78 @@
+
+
+
+
+
+function ReducedSetHindmarshRose!(dx, x, p, t = 0)
+
+    (;a, b, c, d, r, s, xo, K11, K12, K21, mu, sigma, A_ik, B_ik, C_ik, iV0, iU0, iV3, iU3, iV4, iU4, iZV, iZU, c_glob0, c_glob1, local_coupling) = p
+
+    xi = @view x[1:3]
+    eta = @view x[4:6]
+    tau = @view x[7:9]
+    alpha = @view x[10:12]
+    beta = @view x[13:15]
+    gamma = @view x[16:18]
+
+
+    IE_i = sqrt(sigma) .* (iV0 .* mu .+ iZV .* sigma)
+    II_i = sqrt(sigma) .* (iU0 .* mu .+ iZU .* sigma)
+    a_i = a .* iV4 ./ sigma
+    b_i = b .* iV3 ./ sqrt(sigma)
+    c_i = c .* iV0 .* sqrt(sigma)
+    d_i = d .* iV3 ./ sqrt(sigma)
+    e_i = a .* iU4 ./ sigma
+    f_i = b .* iU3 ./ sqrt(sigma)
+    h_i = c .* iU0 .* sqrt(sigma)
+    m_i = iV0 .* r .* s .* xo .* sqrt(sigma)
+    n_i = iU0 .* r .* s .* xo .* sqrt(sigma)
+    p_i = d .* iU3 ./ sqrt(sigma)
+
+
+    dx[1:3] .= IE_i .+ eta .- tau .+ K11 .* (-xi .+ (reduce(hcat, A_ik) * xi)) .+ b_i .* xi .^ 2 .+ local_coupling .* xi .- K12 .* (-xi .+ (reduce(hcat, B_ik) * alpha)) .- a_i .* xi .^ 3 .+ sum(c_glob0)
+    dx[4:6] .= c_i .- eta .- d_i .* xi .^ 2
+    dx[7:9] .= -m_i .- r .* tau .+ r .* s .* xi
+    dx[10:12] .= II_i .+ beta .- gamma .+ K21 .* (-alpha .+ (reduce(hcat, C_ik) * xi)) .+ f_i .* alpha .^ 2 .+ local_coupling .* xi .- e_i .* alpha .^ 3 .+ sum(c_glob0)
+    dx[13:15] .= h_i .- beta .- p_i .* alpha .^ 2
+    dx[16:18] .= -n_i .- gamma .* r .+ alpha .* r .* s
+    dx
+end
+
+# Parameter values
+p = (a = 1.0, b = 3.0, c = 1.0, d = 5.0, r = 0.006, s = 4.0, xo = -1.6, K11 = 0.5, K12 = 0.1, K21 = 0.15, mu = 3.3, sigma = 0.3, A_ik = [[0.3328165811190223, 0.18525241779532714, 0.3328165811190241], [0.5984537933538554, 0.3331114447027479, 0.5984537933538587], [0.33281658111902046, 0.18525241779532614, 0.33281658111902235]], B_ik = [[0.3328165811190223, 0.5984537933538554, 0.33281658111902046], [0.18525241779532714, 0.3331114447027479, 0.18525241779532614], [0.3328165811190241, 0.5984537933538587, 0.33281658111902235]], C_ik = [[0.3328165811190223, 0.18525241779532714, 0.3328165811190241], [0.5984537933538554, 0.3331114447027479, 0.5984537933538587], [0.33281658111902046, 0.18525241779532614, 0.33281658111902235]], iV0 = [1.6668762461300366, 0.9278169186250886, 1.666876246130046], iU0 = [1.6668762461300366, 0.9278169186250886, 1.666876246130046], iV3 = [0.5999245608794813, 1.0777988414803623, 0.5999245608794778], iU3 = [0.5999245608794813, 1.0777988414803623, 0.5999245608794778], iV4 = [0.35990947874643836, 1.1616503426964113, 0.3599094787464342], iU4 = [0.35990947874643836, 1.1616503426964113, 0.3599094787464342], iZV = [-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998], iZU = [-3.033148827134955, 1.3877787807814457e-17, 3.033148827134998], c_glob0 = 0.0, c_glob1 = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        3.0,
+        3.0,
+        3.0,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        3.0,
+        3.0,
+        3.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ReducedSetHindmarshRose!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

@@ -30,11 +30,11 @@ def dfun(current_state, t, cX, _p):
     gamma = current_state[5]
 
     # Derived variables
-    II_i = 0.0
-    IE_i = 0.0
-    C_ik = 0.500000000000000
-    B_ik = 0.500000000000000
     A_ik = 0.500000000000000
+    B_ik = 0.500000000000000
+    C_ik = 0.500000000000000
+    IE_i = 0.0
+    II_i = 0.0
     a_i = a
     b_i = b
     c_i = c

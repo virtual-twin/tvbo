@@ -1,0 +1,41 @@
+
+
+
+
+
+import NaNMath
+function IaFCell!(dx, x, p, t = 0)
+
+    (;tau, leakReversal, thresh, reset) = p
+
+    v = x[1]
+
+
+
+    I_ext = ifelse(t >= 0.1 && t < 0.2, 0.3, 0.0)
+
+    dx[1] = I_ext .+ (leakReversal .- v) ./ tau
+    dx
+end
+
+# Parameter values
+p = (tau = 20.0, leakReversal = -60.0, thresh = -55.0, reset = -62.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -60.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(IaFCell!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

@@ -1,0 +1,40 @@
+
+
+
+
+
+import NaNMath
+function PomeauMannevilleMap!(dx, _x, p, t = 0)
+
+    (;z,) = p
+
+    x = _x[1]
+
+
+
+
+    dx[1] = ifelse(x > 0.5, 3 .- 4 * x, ifelse(x < -0.5, -3 .- 4 * x, ifelse(abs(x) <= 0.5, x .* (1 .+ (2 * abs(x)) .^ (-1 .+ z)), 0)))
+    dx
+end
+
+# Parameter values
+p = (z = 2.5,)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.2,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(PomeauMannevilleMap!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

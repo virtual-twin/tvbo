@@ -1,0 +1,43 @@
+
+
+
+
+
+function ThomasCyclical!(dx, _x, p, t = 0)
+
+    (;b,) = p
+
+    x, y, z = _x
+
+
+
+
+    dx[1] = -b .* x .+ sin(y)
+    dx[2] = -b .* y .+ sin(z)
+    dx[3] = -b .* z .+ sin(x)
+    dx
+end
+
+# Parameter values
+p = (b = 0.2,)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        1.0,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(ThomasCyclical!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+

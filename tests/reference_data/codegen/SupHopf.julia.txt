@@ -1,0 +1,42 @@
+
+
+
+
+
+function SupHopf!(dx, _x, p, t = 0)
+
+    (;a, omega, c_glob0, c_glob1, local_coupling) = p
+
+    x, y = _x
+
+
+
+    lc_0 = local_coupling .* x
+
+    dx[1] = c_glob0 .+ lc_0 .+ x .* (a .- x .^ 2 .- y .^ 2) .- omega .* y
+    dx[2] = c_glob1 .+ omega .* x .+ y .* (a .- x .^ 2 .- y .^ 2)
+    dx
+end
+
+# Parameter values
+p = (a = -0.5, omega = 1.0, c_glob0 = 0.0, c_glob1 = 0.0, local_coupling = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.1,
+        0.1,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(SupHopf!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
+
+
