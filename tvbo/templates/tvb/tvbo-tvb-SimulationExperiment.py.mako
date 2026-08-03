@@ -15,9 +15,11 @@ _TVBO_MODEL_CLS = ${context['experiment'].dynamics.name}
 <%
 experiment = context['experiment']
 
+from tvbo.utils import initial_value as _initial_value
+
 initial_conditions = np.array([
-    np.full(((getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions),), v.initial_value)
-    if np.isscalar(v.initial_value) else v.initial_value
+    np.full(((getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions),), _initial_value(v))
+    if v.initial_value is None or np.isscalar(v.initial_value) else v.initial_value
     for k, v in experiment.dynamics.state_variables.items()
 ]).reshape(
     1,

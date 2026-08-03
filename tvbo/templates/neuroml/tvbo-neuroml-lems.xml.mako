@@ -352,7 +352,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
  refract="0 ${time_scale}"\
 % endif
 % for sv_name, sv in ct_svs.items():
-<% iv = getattr(sv, 'initial_value', None) %>\
+<% from tvbo.utils import initial_value as _initial_value; iv = _initial_value(sv) %>\
 <% sv_unit = ct_lems_sym(getattr(sv, 'unit', None)) %>\
  ${sv_name}_0="${iv if iv is not None else 0.0}${(' ' + sv_unit) if sv_unit else ''}"\
 % endfor
@@ -508,7 +508,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % endif
 % endfor
 % for sv_name, sv in ct_svs.items():
-<% iv = getattr(sv, 'initial_value', None) %>\
+<% from tvbo.utils import initial_value as _initial_value; iv = _initial_value(sv) %>\
 <% sv_unit = ct_lems_sym(getattr(sv, 'unit', None)) %>\
  ${sv_name}_0="${iv if iv is not None else 0.0}${(' ' + sv_unit) if sv_unit else ''}"\
 % endfor
