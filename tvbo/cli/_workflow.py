@@ -688,6 +688,12 @@ def plan(
     if "setup" in engine_block:
         engine_block["setup"] = _as_lines(engine_block["setup"])
 
+    # A 'gpu' accelerator ⇒ the scheduler must actually allocate a GPU (Slurm gres),
+    # unless the workflow block already pins one; the site-specific partition stays explicit.
+    _accel = str(getattr(getattr(experiment, "execution", None), "accelerator", "") or "").lower()
+    if _accel == "gpu" and engine in ("slurm", "snakemake"):
+        engine_block.setdefault("gres", "gpu:1")
+
     # Software dependencies come from the experiment's schema-native
     # environment.requirements (overridable via workflow_spec["requirements"]).
     _exp_env = getattr(experiment, "environment", None)
