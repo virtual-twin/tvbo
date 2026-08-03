@@ -57,7 +57,7 @@ def _resolve(dim, dynamics):
             break
         expr = new
 
-    from tvbo.utils import initial_value, is_array_valued
+    from tvbo.utils import is_array_valued
 
     param_subs = {
         sp.Symbol(name): float(p.value)
@@ -334,6 +334,8 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
         sv_idx.append(state_names.index(str(expr)))
 
     sv_objs = list(dynamics.state_variables.values())
+
+    from tvbo.utils import initial_value
 
     def _range(sv):
         if sv.domain and sv.domain.lo is not None and sv.domain.hi is not None:
