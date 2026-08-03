@@ -904,7 +904,7 @@ class PyRatesAdapter(BaseAdapter):
         import sympy as sp
 
         scope = dyn.get_symbolic_elements()
-        bodies = function_bodies(dyn.functions, local_dict=scope)
+        bodies = function_bodies(dyn)
         for out_name in dyn.output:
             out_var = dyn.derived_variables.get(out_name)
             if out_var is None:
@@ -945,7 +945,7 @@ class PyRatesAdapter(BaseAdapter):
         import sympy as sp
 
         scope = dyn.get_symbolic_elements()
-        bodies = function_bodies(dyn.functions, local_dict=scope)
+        bodies = function_bodies(dyn)
         for out_name in dyn.output:
             out_var = dyn.derived_variables.get(out_name)
             if out_var is None:
