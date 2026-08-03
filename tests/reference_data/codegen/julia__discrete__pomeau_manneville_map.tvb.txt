@@ -39,7 +39,7 @@ class PomeauMannevilleMap(Model):
     state_variable_dfuns = Final(
         label="Drift functions",
         default={
-            "x": "np.where(np.greater(x, 0.5), 3 - 4*x, np.where(np.less(x, -0.5), -3 - 4*x, np.where(np.less_equal(np.abs(x), 0.5), x*(1 + np.abs(2*x)**(-1 + z)), 0)))",
+            "x": "np.where(np.greater(x, 0.5), -4*x + 3, np.where(np.less(x, -0.5), -4*x - 3, np.where(np.less_equal(np.abs(x), 0.5), x*(1 + np.abs(2*x)**(z - 1)), 0)))",
         },
     )
 
@@ -71,13 +71,13 @@ class PomeauMannevilleMap(Model):
             np.asarray(
                 np.where(
                     np.greater(x, 0.5),
-                    3 - 4 * x,
+                    -4 * x + 3,
                     np.where(
                         np.less(x, -0.5),
-                        -3 - 4 * x,
+                        -4 * x - 3,
                         np.where(
                             np.less_equal(np.abs(x), 0.5),
-                            x * (1 + np.abs(2 * x) ** (-1 + z)),
+                            x * (1 + np.abs(2 * x) ** (z - 1)),
                             0,
                         ),
                     ),

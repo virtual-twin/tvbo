@@ -12,12 +12,12 @@ def dfun(current_state, t, cX, _p):
     # Derivatives
     dx_dt = np.where(
         np.greater(x, 0.5),
-        3 - 4 * x,
+        -4 * x + 3,
         np.where(
             np.less(x, -0.5),
-            -3 - 4 * x,
+            -4 * x - 3,
             np.where(
-                np.less_equal(np.abs(x), 0.5), x * (1 + np.abs(2 * x) ** (-1 + z)), 0
+                np.less_equal(np.abs(x), 0.5), x * (1 + np.abs(2 * x) ** (z - 1)), 0
             ),
         ),
     )
