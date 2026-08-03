@@ -27,13 +27,13 @@ if fd.state_variables:
     primary = fd.state_variables[0]
     meshinfo = fd.mesh or getattr(primary, 'mesh', None)
     primary_label = primary.label or primary.name
-    u0_val = float(primary.initial_value) if primary.initial_value is not None else 0.0
+    u0_val = _initial_value(primary)
     bcs = primary.boundary_conditions or fd.boundary_conditions or []
 else:
     primary = fd.field
     meshinfo = primary.mesh or fd.mesh
     primary_label = primary.label
-    u0_val = float(primary.initial_value)
+    u0_val = _initial_value(primary)
     bcs = fd.boundary_conditions or []
 
 # Resolve mesh file: prefer mesh_file, fall back to dataLocation

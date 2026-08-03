@@ -304,7 +304,7 @@ for _np_name in node_param_overrides:
 # Per-node initial state overrides from node ``state:`` entries
 # e.g. nodes[0].state = {theta: 0.8} → overrides default initial_value per node
 _default_init = [
-    (float(sv.initial_value) if sv.initial_value is not None else 0.0)
+    _initial_value(sv)
     for sv in model.state_variables.values()
     for _ in range(n_modes)  # one entry per (variable, mode) solver slot
 ]

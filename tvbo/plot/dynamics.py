@@ -338,7 +338,7 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
     def _range(sv):
         if sv.domain and sv.domain.lo is not None and sv.domain.hi is not None:
             return float(sv.domain.lo), float(sv.domain.hi)
-        v = float(sv.initial_value) if sv.initial_value is not None else 0.0
+        v = initial_value(sv)
         return v - 1.0, v + 1.0
 
     if ax is None:

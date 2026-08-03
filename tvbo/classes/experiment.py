@@ -3531,7 +3531,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             history.append(self.dynamics.get_initial_values(N=n_nodes))
         else:
             for sv in self.dynamics.state_variables.values():
-                history.append(np.repeat(sv.initial_value, n_nodes).astype(float))
+                history.append(np.repeat(initial_value(sv), n_nodes).astype(float))
 
         history = np.vstack(history)
         history = np.repeat(history[:, :, None], repeats=n_modes, axis=2)
