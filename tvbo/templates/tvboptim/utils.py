@@ -917,46 +917,18 @@ def time_argument_ms(argument: Any, default: float) -> float:
     return value
 
 
-def _sv_default_initial_value() -> float:
-    """The schema's own default for ``StateVariable.initial_value``.
-
-    Read from the class so the "undeclared" sentinel in :func:`_reduction_init_value`
-    tracks the schema instead of duplicating its default as a literal.
-    """
-    from tvbo.datamodel.schema import StateVariable
-
-    return float(StateVariable(name="_").initial_value)
-
-
-_SV_DEFAULT_INITIAL_VALUE = _sv_default_initial_value()
-
-
 def _reduction_init_value(sv: Any) -> float:
-    """Initial scalar for an observer state (its declared value, else 0.0).
+    """Initial scalar for an observer state: its declared ``initial_value``, else 0.0.
 
-    Accumulators start at their reduction identity (0.0 for a sum) and a memory state's
-    init is irrelevant (it is overwritten on the first step), so 0.0 is the default. An
-    observer that is a genuine ODE rather than an accumulator (the Balloon-Windkessel
-    hemodynamics, whose blood inflow, volume and deoxyhaemoglobin rest at 1.0) declares
-    ``initial_value``, which is honoured here.
-
-    ``StateVariable.initial_value`` carries a schema default meant for a *model* state,
-    so a value equal to that default is read as undeclared and keeps the reduction
-    identity; an observer wanting exactly the schema default as its init cannot express
-    that. The sentinel is taken from the class rather than hardcoded, so it tracks the
-    schema.
+    An accumulator starts at its reduction identity (0.0 for a sum) and a memory state's
+    init is irrelevant (it is overwritten on the first step), so 0.0 is the fallback —
+    which is why this passes its own default rather than the model-state one. An observer
+    that is a genuine ODE (the Balloon-Windkessel hemodynamics, whose blood inflow, volume
+    and deoxyhaemoglobin rest at 1.0) declares ``initial_value`` and gets it.
     """
-    declared = get_attr(sv, "initial_value")
-    if declared is not None and float(to_numeric(declared)) != _SV_DEFAULT_INITIAL_VALUE:
-        return float(to_numeric(declared))
-    for holder in (sv, get_attr(sv, "domain"), get_attr(sv, "distribution")):
-        v = get_attr(holder, "value") if holder is not None else None
-        if v is not None:
-            try:
-                return float(to_numeric(v))
-            except Exception:
-                pass
-    return 0.0
+    from tvbo.utils import initial_value
+
+    return initial_value(sv, default=0.0)
 
 
 def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
