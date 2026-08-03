@@ -23,7 +23,7 @@ import os
 import re
 import tempfile
 from os.path import basename, dirname, join, splitext
-from typing import Any, Callable, Mapping
+from typing import Any
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -32,7 +32,6 @@ import owlready2
 from tvbo.utils import yaml_loader
 from matplotlib import colormaps
 from sympy import Derivative, Eq, Function, Symbol, latex, symbols
-from sympy.core.sympify import SympifyError
 
 from tvbo import templates
 from tvbo.analysis import BifurcationResult
@@ -466,177 +465,28 @@ REORDER_EQUATIONS = False
 
 
 def update_equations(model):
-    """Normalize equation symbols on *model* (in place).
+    """Return the model's equations keyed by variable, each coerced to a `sympy.Eq`.
 
-    Builds a substitution map that rewrites raw RHS strings into canonical
-    SymPy form: `*_dot` / `dot*` names become time derivatives, derived
-    variables are inlined, and Heaviside / acronym placeholders are resolved.
+    A `*_dot` / `dot*` key names a derivative, so its left-hand side becomes
+    `Derivative(var, t)` while the entry is filed under the bare variable name.
+
+    Resolves nothing against the ontology. It used to: any symbol not found among the
+    model's own parameters, state variables, coupling inputs or derived variables was
+    looked up by label and, if a synonym matched a parameter, substituted. Across the
+    whole curated database that fired 326 ontology searches per load and changed no model
+    at all, while costing 46% of total load time. Ontology content reaches a model
+    deliberately — stated inline, or pointed at with an `iri` — not by guessing at symbols
+    that failed to resolve.
     """
-    _evaluate = REORDER_EQUATIONS
-    substitutions = {}
-
     t = symbols("t")
-    equations = model.get_equations(evaluate=_evaluate)
+    equations = model.get_equations(evaluate=REORDER_EQUATIONS)
 
-    for k, eq in model.get_equations(evaluate=_evaluate).items():
-        k_orig = k.replace("_dot", "").replace("dot", "")
-
-        if "dot" in k:
-            k = k.replace("_dot", "").replace("dot", "")
-            # k = rf"\dot{{{k}}}"
-            # k = Function(k)(t)
-            # k = diff(k, t)
-            k = Derivative(symbols(k), t)
-        else:
-            k = symbols(k)
-
-        # Always coerce entries to sympy.Eq so downstream code can rely on .lhs/.rhs
-        # Previously we only wrapped missing keys, which left existing items as raw
-        # expressions (e.g., Mul) without lhs/rhs and caused AttributeError later.
-        equations[k_orig] = eq if isinstance(eq, Eq) else Eq(k, eq)
-
-        # Coupling inputs (and time ``t``) are defined by the model spec, not missing
-        # specifications — excluding them keeps a fully-specified model from reaching into
-        # the ontology (an expensive, load-triggering lookup) just to resolve a symbol that
-        # is already known. The ontology is consulted only for genuinely unresolved symbols.
-        missing_symbols = [
-            s
-            for s in eq.free_symbols
-            if str(s) not in model.parameters
-            and str(s) not in model.state_variables
-            and str(s) not in (model.coupling_inputs or {})
-            and str(s) != "t"
-            and str(s) not in (model.derived_variables or {})
-        ]
-
-        if missing_symbols:
-            for s in missing_symbols:
-                labelsearch = query.label_search(
-                    str(s),
-                    root_class=model.ontology,
-                    exact_match=["symbol", "synonym", "tvbSourceVariable"],
-                    case_sensitive=True,
-                )
-                if len(labelsearch) > 1:
-                    # print(labelsearch)
-                    labelsearch = query.label_search(
-                        str(s),
-                        root_class=model.ontology,
-                        exact_match="all",
-                        case_sensitive=True,
-                    )
-                    # print(labelsearch)
-
-                if not labelsearch:
-                    # if str(s) != "t":
-                    #     print(str(s))
-                    #     print("for equation:", k, s, "not found in ontology")
-                    continue
-
-                if len(labelsearch) > 1:
-                    labelsearch = list(
-                        np.array(labelsearch)[
-                            [
-                                ontology.replace_suffix(lbl) == str(s)
-                                for lbl in labelsearch
-                            ]
-                        ]
-                    )
-
-                if not labelsearch:
-                    # The suffix filter above can drop every candidate when no
-                    # label matches the symbol exactly; nothing to substitute.
-                    continue
-
-                synonyms = labelsearch[0].synonym + labelsearch[0].symbol
-
-                match = next(
-                    (syn for syn in synonyms if str(syn) in model.parameters),
-                    None,
-                )
-
-                if match:
-                    substitutions.update({s: Symbol(match)})
-
-    def substitute_equations(
-        metadata_dict, substitutions, equations, time_derivative=False
-    ):
-        """Rewrite each variable's equation with `substitutions` and store it back.
-
-        Iterates `metadata_dict` (state or derived variables), resolves each
-        entry's equation (from `equations` or the entry's own `equation`),
-        applies the Symbol→Symbol `substitutions` while preserving authored
-        term order, and writes the resulting `sympy.Eq` back into `equations`
-        keyed by variable name.
-
-        Args:
-            metadata_dict: Mapping of variable name to its schema object.
-            substitutions: Symbol→Symbol replacement map applied to each RHS.
-            equations: Equation store, read for existing entries and updated
-                in place.
-            time_derivative: If `True`, build the LHS as a time derivative of
-                the variable rather than the bare symbol.
-        """
-        for variable_key, v in metadata_dict.items():
-            if (
-                isinstance(v.equation, type(None))
-                and str(variable_key) in equations.keys()
-            ):
-                eq = tvbo_datamodel.Equation(rhs=equations[str(variable_key)])
-            elif str(variable_key) in equations.keys():
-                eq = equations[str(variable_key)]
-            else:
-                if not isinstance(v.equation, type(None)):
-                    eq = v.equation
-                else:
-                    raise ValueError(f"{v}, {equations.keys()}")
-
-            # Use model-scoped symbolic elements for parsing instead of global clash
-            eq = parse_eq(eq, local_dict=model.get_symbolic_elements(), evaluate=False)
-
-            # xreplace + order='none' preserve authored term order (substitutions
-            # is Symbol->Symbol, so this matches subs but does not re-canonicalize)
-            eq_sub = eq.xreplace(substitutions)
-
-            if time_derivative:
-                lhs = Derivative(Symbol(variable_key), t)
-            else:
-                lhs = Symbol(variable_key)
-
-            equations[variable_key] = Eq(lhs, eq_sub)
-
-    if substitutions != {}:
-        substitute_equations(
-            model.state_variables,
-            substitutions,
-            equations,
-            time_derivative=True,
-        )
-        substitute_equations(model.derived_variables, substitutions, equations)
+    for key, equation in list(equations.items()):
+        name = key.replace("_dot", "").replace("dot", "")
+        lhs = Derivative(symbols(name), t) if "dot" in key else symbols(key)
+        equations[name] = equation if isinstance(equation, Eq) else Eq(lhs, equation)
 
     return equations
-
-
-def stable_rhs(stored: Any, expression: Any, scope: Mapping, serialise: Callable) -> str:
-    """The stored right-hand side if it already denotes `expression`, else a fresh one.
-
-    Serialising is not a fixed point. SymPy's `StrPrinter` renders an unevaluated
-    ``Mul(Integer(-1), Float(3.5))`` as ``- 1*3.5``, which parses back to a differently
-    nested product that prints as ``- 3.5`` — so the round trip oscillates with period two.
-    `Dynamics.update_metadata` re-serialises every equation and runs on every
-    `render_code`, so an equation flipped between two spellings and the emitted code
-    depended on how many times the model had been rendered.
-
-    Re-serialising an expression the stored text already denotes cannot add information,
-    only spelling, so the stored text wins and normalisation becomes idempotent.
-    """
-    if stored:
-        try:
-            if parse_eq(str(stored), local_dict=scope, evaluate=False) == expression:
-                return str(stored)
-        except (SympifyError, TypeError, ValueError, AttributeError, SyntaxError):
-            pass
-    return serialise(expression)
 
 
 def sort_equations(model: Any, variable_type: str):
@@ -1438,30 +1288,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         # Collect all equations (state + derived) and update stored Equation objects
         all_eqs = update_equations(self)
 
-        from sympy.printing import StrPrinter
-
-        _rhs_str = (
-            (lambda e: str(e))
-            if REORDER_EQUATIONS
-            else StrPrinter(settings={"order": "none"}).doprint
-        )
-        scope = self.get_symbolic_elements()
-        for v, eq in all_eqs.items():
-            target = self.state_variables.get(v, self.derived_variables.get(v))
-            stored = getattr(getattr(target, "equation", None), "rhs", None)
-            equation = tvbo_datamodel.Equation(
-                lhs=str(eq.lhs), rhs=stable_rhs(stored, eq.rhs, scope, _rhs_str)
-            )
-            if v in self.state_variables:
-                self.state_variables[v].equation = equation
-            elif v in self.derived_variables:
-                # Preserve conditionals through the equation update
-                old_conds = getattr(
-                    self.derived_variables[v].equation, "conditionals", None
-                )
-                if old_conds:
-                    equation.conditionals = old_conds
-                self.derived_variables[v].equation = equation
         # Build dependency order without storing state
         _ = self.get_dependency_tree()
         sort_equations(self, "derived_parameters")

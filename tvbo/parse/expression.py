@@ -14,6 +14,7 @@ caller, normally as a [`SymbolContext`](symbols.qmd#SymbolContext).
 """
 
 from sympy import parse_expr, Symbol, Function, IndexedBase, Piecewise, Sum, Product, sqrt, true
+from sympy.core.basic import Basic
 from sympy.parsing.sympy_parser import (
     standard_transformations,
     convert_xor,
@@ -310,6 +311,8 @@ def parse_eq(
         local_dict.update(objs)
 
     # Determine expression string to parse
+    if isinstance(equation, Basic):
+        return equation  # already parsed; accepted so callers need not test for it
     if isinstance(equation, str):
         expression = equation
     elif _has_unfolded_conditionals(equation):
