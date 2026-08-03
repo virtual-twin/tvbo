@@ -57,7 +57,7 @@ def _resolve(dim, dynamics):
             break
         expr = new
 
-    from tvbo.utils import is_array_valued
+    from tvbo.utils import initial_value, is_array_valued
 
     param_subs = {
         sp.Symbol(name): float(p.value)

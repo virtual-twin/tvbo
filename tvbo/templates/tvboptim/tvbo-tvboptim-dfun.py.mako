@@ -17,6 +17,7 @@ Output:
 import textwrap
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names, render_jax_default, get_mode_layout
+from tvbo.utils import initial_value as _initial_value
 
 # Get model from context
 if 'experiment' in context.keys():

@@ -170,7 +170,7 @@ def plot_vector_field(
     rhs_y = parse_expr(str(all_svs[ylabel].equation.rhs), local_dict=sym_dict)
 
     # Parameter values
-    from tvbo.utils import is_array_valued
+    from tvbo.utils import DEFAULT_INITIAL_VALUE, initial_value, is_array_valued
 
     param_vals = {
         pname: float(p.value)
