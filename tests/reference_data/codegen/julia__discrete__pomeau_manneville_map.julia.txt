@@ -13,7 +13,7 @@ function PomeauMannevilleMap!(dx, _x, p, t = 0)
 
 
 
-    dx[1] = ifelse(x > 0.5, 3 .- 4 * x, ifelse(x < -0.5, -3 .- 4 * x, ifelse(abs(x) <= 0.5, x .* (1 .+ (2 * abs(x)) .^ (-1 .+ z)), 0)))
+    dx[1] = ifelse(x > 0.5, 3 .- 4 * x, ifelse(x < -0.5, -3 .- 4 * x, ifelse(abs(x) <= 0.5, x .* (1 .+ abs(2 * x) .^ (-1 .+ z)), 0)))
     dx
 end
 
