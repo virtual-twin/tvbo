@@ -4,13 +4,9 @@ if 'experiment' in context.keys():
 else:
     stimulus = context['stimulus']
 
-from tvbo.classes.equation import (
-    conditionals2piecewise,
-    piecewise2numpy,
-    _clash1,
-    convert_ifelse_to_np_where,
-)
-from sympy import pycode, parse_expr, Symbol
+from tvbo.classes.equation import convert_ifelse_to_np_where
+from tvbo.parse.symbols import BUILTIN_SHADOW
+from sympy import pycode, Symbol
 
 
 if stimulus.equation.pycode:
@@ -18,13 +14,13 @@ if stimulus.equation.pycode:
 elif stimulus.equation.conditionals:
     default_expression = convert_ifelse_to_np_where(
         pycode(
-            conditionals2piecewise(stimulus.equation).subs("t", Symbol("var")),
+            BUILTIN_SHADOW.parse(stimulus.equation).subs("t", Symbol("var")),
             fully_qualified_modules=False,
         )
     )
 else:
     default_expression = pycode(
-        parse_expr(stimulus.equation.rhs, _clash1), fully_qualified_modules=False
+        BUILTIN_SHADOW.parse(stimulus.equation.rhs), fully_qualified_modules=False
     )
 %>
 ################################################################################

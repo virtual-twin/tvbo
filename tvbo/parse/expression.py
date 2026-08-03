@@ -5,9 +5,15 @@ string) into a SymPy expression, along with the custom aggregation symbols and t
 `ARRAY_FUNCTIONS` registry of array reduction/manipulation functions (`sum`, `mean`,
 `slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to
 backend-specific calls.
+
+`parse_eq` is the only parser in TVBO. An `Equation` states its right-hand side either
+directly or as a list of conditional branches, and `parse_eq` resolves both, so callers
+never have to ask which form they were given — the branch that used to be written out at
+each call site now lives here once. The namespace to parse against is supplied by the
+caller, normally as a [`SymbolContext`](symbols.qmd#SymbolContext).
 """
 
-from sympy import parse_expr, Symbol, Function, IndexedBase, Sum, Product, sqrt
+from sympy import parse_expr, Symbol, Function, IndexedBase, Piecewise, Sum, Product, sqrt, true
 from sympy.parsing.sympy_parser import (
     standard_transformations,
     convert_xor,
@@ -166,6 +172,44 @@ ARRAY_FUNCTIONS = {
 }
 
 
+def _has_unfolded_conditionals(equation: Equation) -> bool:
+    """Whether `equation`'s branches still need folding into its right-hand side.
+
+    `rhs` means two different things over an equation's life. As authored it is the
+    Piecewise's *default* branch — the value when no condition holds — so the branches must
+    be folded in around it. But `Dynamics.update_metadata` later overwrites that same slot
+    with the whole Piecewise, stringified, while leaving `conditionals` populated; folding
+    again there would nest the expression inside its own default branch.
+
+    Sniffing the string is how TVBO has always told the two apart. It was previously spelled
+    out at two of the five call sites and omitted at the other three, which is why those
+    sites could disagree; stating it once is what lets them agree.
+    """
+    conditionals = getattr(equation, "conditionals", None)
+    if not conditionals:
+        return False
+    return "Piecewise" not in str(equation.rhs or "")
+
+
+def _piecewise_from_conditionals(equation: Equation, local_dict):
+    """Assemble an equation's conditional branches into one `Piecewise`.
+
+    Parsed unevaluated so the authored term order reaches the printers intact. The final
+    branch is the equation's own `rhs` — the value when no condition holds — or zero when it
+    has none; it is unreachable whenever the last conditional is itself unconditional, and
+    SymPy drops it then.
+    """
+    branches = [
+        (
+            parse_eq(conditional.expression, local_dict=local_dict, evaluate=False),
+            parse_eq(conditional.condition, local_dict=local_dict, evaluate=False),
+        )
+        for conditional in equation.conditionals
+    ]
+    default = parse_eq(equation.rhs, local_dict=local_dict, evaluate=False) if equation.rhs else 0
+    return Piecewise(*branches, (default, true))
+
+
 def parse_eq(
     equation: Equation,
     parameters=None,
@@ -268,6 +312,8 @@ def parse_eq(
     # Determine expression string to parse
     if isinstance(equation, str):
         expression = equation
+    elif _has_unfolded_conditionals(equation):
+        return _piecewise_from_conditionals(equation, local_dict)
     else:
         expression = equation.rhs
 

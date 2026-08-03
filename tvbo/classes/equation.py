@@ -24,12 +24,12 @@ from sympy import (
     Symbol,
     pycode,
 )
-from sympy.abc import _clash1
 from sympy.core.basic import Basic
 from sympy.core.symbol import symbols
 from sympy.printing.printer import Printer
 
 from tvbo.ontology import owl as ontology
+from tvbo.parse.symbols import BUILTIN_SHADOW
 
 # Term order only — NOT `init_printing`, which also installs global IPython display
 # formatters. Under a Jupyter kernel sympy resolves those to `use_latex='png'` and claims
@@ -37,25 +37,16 @@ from tvbo.ontology import owl as ontology
 # a number. This is the setting `init_printing` itself applies, without that side effect.
 Printer.set_global_settings(order="none")
 
-_clash1.update(
-    {
-        "gamma": "",
-        "beta": "",
-        "lambda": "",
-        "omega": "",
-        "E": Symbol("E"),
-        "local_coupling": Symbol("local_coupling"),
-        "I": Symbol("I"),
-        "Q": Symbol("Q"),
-        "x_j": IndexedBase("x_j"),
-        "var": Symbol("var"),
-        "onset": Symbol("onset"),
-        "T": Symbol("T"),
-        "tau": Symbol("tau"),
-        "amp": Symbol("amp"),
-        "Piecewise": Piecewise,  # Add Piecewise for discrete maps
-    }
-)
+ONTOLOGY_SCOPE = BUILTIN_SHADOW.extend(E=IndexedBase("E"), F=IndexedBase("F"))
+"""Namespace for equations read out of the OWL ontology.
+
+`E` and `F` are indexed there — an ontology equation writes `E[i]` for a population's
+input — so they are bound to `IndexedBase` rather than left to
+[`BUILTIN_SHADOW`](../parse/symbols.qmd#BUILTIN_SHADOW), which would make them symbols.
+Everything else an ontology equation names is declared per equation by
+[`sympify_value`](#tvbo.classes.equation.sympify_value) from that equation's own
+parameters, functions and state variables.
+"""
 
 coupling_variables = ["lrc", "short_range_coupling", "coupling", "lc_0", "c_0", "lc_1"]
 lambda_symbol = sp.symbols("lambda")
@@ -185,25 +176,22 @@ def convert_ifelse_to_np_where(code_str):
     return f"where({condition}, {true_expr}, {false_expr})"
 
 
-def convert_numpy_where_to_sympy(python_string):
-    """
-    Converts a numpy.where expression to a sympy Piecewise expression.
+def convert_numpy_where_to_sympy(python_string, scope=ONTOLOGY_SCOPE):
+    """Convert a `numpy.where(cond, a, b)` string into a SymPy `Piecewise`.
+
     Args:
-    - condition_str: The condition string.
-    - if_true_str: The expression if the condition is True.
-    - if_false_str: The expression if the condition is False.
+        python_string: The `where(...)` call to convert.
+        scope: Namespace the three operands parse against.
+
     Returns:
-    - A sympy Piecewise expression.
+        A SymPy `Piecewise` equivalent to the `where` call.
     """
     python_string = python_string.replace("numpy.", "").replace("np.", "")
     condition_str, if_true_str, if_false_str = extract_parts_from_numpy_where(python_string)
-    # Parse the strings into sympy expressions
-    condition = parse_expr(condition_str, _clash1, evaluate=False)
-    if_true = parse_expr(if_true_str, _clash1, evaluate=False)
-    if_false = parse_expr(if_false_str, _clash1, evaluate=False)
-
-    # Construct the Piecewise expression
-    return Piecewise((if_true, condition), (if_false, True))
+    return Piecewise(
+        (scope.parse(if_true_str, evaluate=False), scope.parse(condition_str, evaluate=False)),
+        (scope.parse(if_false_str, evaluate=False), True),
+    )
 
 
 def sympify_value(v, acronym="", evaluate=False):
@@ -243,30 +231,16 @@ def sympify_value(v, acronym="", evaluate=False):
     v = v.replace("numpy.", "").replace("np.", "") if v else ""
     v = unify_coupling_terms(v)
     eq = add_spaces_around_operators(v)
-    # If x_j is indexed, remove time-dimension from the expression
-    ## TODO: fix this in the ontology or find a better solution
+    scope = ONTOLOGY_SCOPE.extend(symbols_dict)
+    # An indexed x_j carries a time dimension the expression does not model
     if "x_j" in eq and "[:" in eq:
-        _clash1.update(
-            {
-                "x_j": IndexedBase("x_j"),
-            }
-        )
         eq = eq.replace("[:,", "[")
-    else:
-        _clash1.pop("x_j", None)
 
-    _clash1.update(symbols_dict)
     if "where(" in v:
-        return convert_numpy_where_to_sympy(v)
-
-    _clash1.update({"E": IndexedBase("E"), "F": IndexedBase("F")})  # TODO: Remove this hack
+        return convert_numpy_where_to_sympy(v, scope)
 
     try:
-        eq = parse_expr(
-            eq,
-            _clash1,
-            evaluate=False,
-        )
+        eq = scope.parse(eq, evaluate=False)
     except Exception as e:
         logger.debug("Error parsing equation %r: %s", eq, e)
         raise ValueError(f"Failed to parse equation: {eq}. Ensure the equation is in a valid format.")
@@ -1108,38 +1082,6 @@ def topological_sort_equations(variable_dict, dependency_tree):
 #################
 # Piecewise     #
 #################
-def conditionals2piecewise(metadata_equation):
-    """Convert a metadata equation's conditionals into a SymPy `Piecewise`.
-
-    Parses each conditional's expression and condition into `(expr, cond)` pairs
-    and appends a default branch using the equation's `rhs` (or `0` when absent)
-    guarded by `True`.
-
-    Args:
-        metadata_equation: A metadata equation exposing `conditionals` (each with
-            `expression` and `condition`) and an optional `rhs`.
-
-    Returns:
-        A SymPy `Piecewise` expression representing the conditional map.
-    """
-
-    return Piecewise(
-        *[
-            (
-                parse_expr(cond.expression, _clash1, evaluate=False),
-                parse_expr(cond.condition, _clash1, evaluate=False),
-            )
-            for cond in metadata_equation.conditionals
-        ]
-        + [
-            (
-                (parse_expr(metadata_equation.rhs, _clash1, evaluate=False) if metadata_equation.rhs else 0),
-                True,
-            )
-        ]
-    )
-
-
 def piecewise2numpy(piecewise_expr, fully_qualified_modules=False) -> str:
     """
     Convert a sympy Piecewise expression to an equivalent nested numpy.where expression.
@@ -1165,41 +1107,3 @@ def piecewise2numpy(piecewise_expr, fully_qualified_modules=False) -> str:
     return str(where_expr)
 
 
-#################
-# Julia Adapter #
-#################
-
-
-def piecewise2julia(piecewise_expr) -> str:
-    """
-    Convert a sympy Piecewise expression to a Julia ifelse expression string.
-
-    Parameters:
-    piecewise_expr (sympy.Piecewise): A sympy Piecewise object.
-
-    Returns:
-    str: A Julia-compatible string representing the Piecewise expression using nested ifelse.
-    """
-    piecewise_expr = piecewise_expr.replace("^", "**")
-    parsed_expr = parse_expr(piecewise_expr, local_dict=_clash1, evaluate=False)
-    if not isinstance(parsed_expr, Piecewise):
-        return piecewise_expr
-    else:
-        piecewise_expr = parsed_expr
-
-    def process_piecewise(args):
-        """
-        Recursively convert sympy Piecewise args to Julia's ifelse syntax.
-        """
-        if not args:
-            return "nothing"  # Julia's fallback for no conditions
-
-        expr, cond = args[0]
-        if cond:  # Sympy uses True to indicate "otherwise"
-            return f"{expr}"
-        elif str(cond) == "modification":
-            cond = f"{cond} > 0"
-        return f"ifelse({cond}, {expr}, {process_piecewise(args[1:])})"
-
-    # Process the Piecewise arguments
-    return process_piecewise(piecewise_expr.args)

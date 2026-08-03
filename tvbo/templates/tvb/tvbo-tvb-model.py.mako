@@ -3,7 +3,6 @@
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%
 import numpy as np
-from tvbo.classes.equation import _clash1
 if 'experiment' in context.keys():
     model = context['experiment'].dynamics
     standalone = False

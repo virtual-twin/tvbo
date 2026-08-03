@@ -1308,14 +1308,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             # Derived variable equations
             dv_eqs = []
             for name, dv in getattr(self, "derived_variables", {}).items():
-                has_conds = (
-                    bool(getattr(dv.equation, "conditionals", None))
-                    and len(getattr(dv.equation, "conditionals", [])) > 0
-                )
-                if getattr(dv, "conditional", False) and has_conds:
-                    rhs = _equation_mod.conditionals2piecewise(dv.equation)
-                else:
-                    rhs = parse_eq(dv.equation, local_dict=scope)
+                rhs = parse_eq(dv.equation, local_dict=scope)
                 dv_eqs.append(sp.Eq(Function(str(name))(t), rhs))
 
             # Function definitions: Eq(Sigm(v), 2*e0/(1+exp(r*(v0-v))))
@@ -2009,21 +2002,8 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             # Don't emit function names as user_functions if we're inlining them
             uf = {}
 
-        # For conditional derived variables, use conditionals2piecewise
-        # which reads from dv.equation.conditionals (canonical location).
-        eq_to_render = obj.equation
-        if getattr(obj, "conditional", False) and getattr(
-            obj.equation, "conditionals", None
-        ):
-            eq_rhs_str = str(obj.equation.rhs) if obj.equation.rhs else ""
-            if "Piecewise" not in eq_rhs_str:
-                pw = _equation_mod.conditionals2piecewise(obj.equation)
-                from types import SimpleNamespace
-
-                eq_to_render = SimpleNamespace(rhs=str(pw))
-
         return render_equation(
-            eq_to_render,
+            obj.equation,
             local_dict=scope,
             format=format,
             user_functions=uf,
@@ -2054,16 +2034,8 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 inline_funcs[fname] = (arg_names, tvbo_sympify(fdef.equation.rhs))
             uf = {}
 
-        eq_to_render = obj.equation
-        if getattr(obj, "conditional", False) and getattr(obj.equation, "conditionals", None):
-            if "Piecewise" not in (str(obj.equation.rhs) if obj.equation.rhs else ""):
-                from types import SimpleNamespace
-
-                pw = _equation_mod.conditionals2piecewise(obj.equation)
-                eq_to_render = SimpleNamespace(rhs=str(pw))
-
         return render_equation_cse(
-            eq_to_render,
+            obj.equation,
             local_dict=scope,
             format=format,
             user_functions=uf,
@@ -2119,15 +2091,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
         equations["derived-variables"] = []
         for k, dv in self.derived_variables.items():
-            # Use equation.conditionals (canonical location for conditional data)
-            has_conditionals = bool(getattr(dv.equation, "conditionals", None)) and (
-                len(getattr(dv.equation, "conditionals", [])) > 0
-            )
-            if getattr(dv, "conditional", False) and has_conditionals:
-                expression = _equation_mod.conditionals2piecewise(dv.equation)
-            else:
-                expression = parse_eq(dv.equation, local_dict=scope, evaluate=evaluate)
-
+            expression = parse_eq(dv.equation, local_dict=scope, evaluate=evaluate)
             equations["derived-variables"].append(Eq(lhs=Symbol(k), rhs=expression))
 
         equations["state-equations"] = []
@@ -2136,14 +2100,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 continue
             t = Symbol("t")
             sv_symbol = Symbol(k)
-            # Prefer conditionals on the Equation if present; fallback to rhs parsing
-            has_conditionals = bool(getattr(sv.equation, "conditionals", None)) and (
-                len(getattr(sv.equation, "conditionals", [])) > 0
-            )
-            if has_conditionals:
-                expression = _equation_mod.conditionals2piecewise(sv.equation)
-            else:
-                expression = parse_eq(sv.equation, local_dict=scope, evaluate=evaluate)
+            expression = parse_eq(sv.equation, local_dict=scope, evaluate=evaluate)
 
             order = int(getattr(sv, "equation_order", 1) or 1)
             if discrete:
