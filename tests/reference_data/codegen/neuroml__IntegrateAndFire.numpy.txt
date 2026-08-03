@@ -1,0 +1,20 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    leakReversal = _p.leakReversal
+    tau = _p.tau
+    thresh = _p.thresh
+    reset = _p.reset
+
+    # State variables
+    v = current_state[0]
+
+    # Derivatives
+    dv_dt = (leakReversal - v) / tau
+
+    derivatives = np.array(np.broadcast_arrays(dv_dt))
+
+    return derivatives

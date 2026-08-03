@@ -1,0 +1,69 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    C = _p.C
+    g_Na = _p.g_Na
+    g_K = _p.g_K
+    g_L = _p.g_L
+    E_Na = _p.E_Na
+    E_K = _p.E_K
+    E_L = _p.E_L
+    thresh = _p.thresh
+    rate_am = _p.rate_am
+    midpoint_am = _p.midpoint_am
+    scale_am = _p.scale_am
+    rate_bm = _p.rate_bm
+    midpoint_bm = _p.midpoint_bm
+    scale_bm = _p.scale_bm
+    rate_ah = _p.rate_ah
+    midpoint_ah = _p.midpoint_ah
+    scale_ah = _p.scale_ah
+    rate_bh = _p.rate_bh
+    midpoint_bh = _p.midpoint_bh
+    scale_bh = _p.scale_bh
+    rate_an = _p.rate_an
+    midpoint_an = _p.midpoint_an
+    scale_an = _p.scale_an
+    rate_bn = _p.rate_bn
+    midpoint_bn = _p.midpoint_bn
+    scale_bn = _p.scale_bn
+
+    # Coupling
+    I_syn = cX[0]
+
+    # State variables
+    v = current_state[0]
+    m = current_state[1]
+    h = current_state[2]
+    n = current_state[3]
+
+    # Derived variables
+    alpha_h = rate_ah * np.exp((v - midpoint_ah) / scale_ah)
+    alpha_m = (
+        rate_am
+        * (v - midpoint_am)
+        / (scale_am * (1 - np.exp((midpoint_am - v) / scale_am)))
+    )
+    alpha_n = (
+        rate_an
+        * (v - midpoint_an)
+        / (scale_an * (1 - np.exp((midpoint_an - v) / scale_an)))
+    )
+    beta_h = rate_bh / (1 + np.exp((midpoint_bh - v) / scale_bh))
+    beta_m = rate_bm * np.exp((v - midpoint_bm) / scale_bm)
+    beta_n = rate_bn * np.exp((v - midpoint_bn) / scale_bn)
+
+    # Derivatives
+    dv_dt = (
+        I_syn - g_L * (v - E_L) - g_K * n**4 * (v - E_K) - g_Na * h * m**3 * (v - E_Na)
+    ) / C
+    dm_dt = alpha_m * (1 - m) - beta_m * m
+    dh_dt = alpha_h * (1 - h) - beta_h * h
+    dn_dt = alpha_n * (1 - n) - beta_n * n
+
+    derivatives = np.array(np.broadcast_arrays(dv_dt, dm_dt, dh_dt, dn_dt))
+
+    return derivatives

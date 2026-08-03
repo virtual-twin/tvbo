@@ -1,0 +1,27 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    beta = _p.beta
+    r = _p.r
+    rho = _p.rho
+    sigma = _p.sigma
+
+    # State variables
+    X = current_state[0]
+    Y = current_state[1]
+    Z = current_state[2]
+
+    # Derived variables
+    f = 1 - (X**2 + Y**2 + Z**2) / r**2
+
+    # Derivatives
+    dX_dt = f * sigma * (Y - X)
+    dY_dt = f * (-Y + X * (rho - Z))
+    dZ_dt = f * (X * Y - Z * beta)
+
+    derivatives = np.array(np.broadcast_arrays(dX_dt, dY_dt, dZ_dt))
+
+    return derivatives

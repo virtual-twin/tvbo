@@ -1,0 +1,25 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    z = _p.z
+
+    # State variables
+    x = current_state[0]
+
+    # Derivatives
+    dx_dt = np.where(
+        np.greater(x, 0.5),
+        3 - 4 * x,
+        np.where(
+            np.less(x, -0.5),
+            -3 - 4 * x,
+            np.where(np.less_equal(abs(x), 0.5), x * (1 + (2 * abs(x)) ** (-1 + z)), 0),
+        ),
+    )
+
+    derivatives = np.array(np.broadcast_arrays(dx_dt))
+
+    return derivatives

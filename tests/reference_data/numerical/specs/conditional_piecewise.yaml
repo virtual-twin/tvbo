@@ -1,0 +1,24 @@
+label: conditional_piecewise
+description: >-
+  A Piecewise right-hand side. The only numerical spec that exercises
+  conditionals2piecewise through codegen into a running solver, so a change in
+  Piecewise printing or branch order shows up as a number, not just a diff.
+dynamics:
+  name: PiecewiseToy
+  parameters:
+    a: {value: 0.5}
+    thr: {value: 0.3}
+  state_variables:
+    v:
+      initial_value: 0.0
+      equation:
+        rhs: "0.05"
+        conditionals:
+          - {condition: "v > thr", expression: "-a*v"}
+  output: [v]
+integration:
+  method: Heun
+  step_size: 0.1
+  duration: 50
+execution:
+  random_seed: 0

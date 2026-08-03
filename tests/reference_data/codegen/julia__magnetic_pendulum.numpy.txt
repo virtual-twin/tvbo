@@ -1,0 +1,43 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    gamma = _p.gamma
+    d = _p.d
+    alpha = _p.alpha
+    omega = _p.omega
+    N = _p.N
+
+    # State variables
+    x = current_state[0]
+    y = current_state[1]
+    vx = current_state[2]
+    vy = current_state[3]
+
+    # Derived variables
+    sum_gamma_terms_x = gamma * (
+        (-1 + x) / (d**2 + y**2 + (-1 + x) ** 2) ** (3 / 2)
+        + (1 / 2 + x)
+        / (d**2 + (1 / 2 + x) ** 2 + (y + (1 / 2) * np.sqrt(3)) ** 2) ** (3 / 2)
+        + (1 / 2 + x)
+        / (d**2 + (1 / 2 + x) ** 2 + (y - 1 / 2 * np.sqrt(3)) ** 2) ** (3 / 2)
+    )
+    sum_gamma_terms_y = gamma * (
+        y / (d**2 + y**2 + (-1 + x) ** 2) ** (3 / 2)
+        + (y + (1 / 2) * np.sqrt(3))
+        / (d**2 + (1 / 2 + x) ** 2 + (y + (1 / 2) * np.sqrt(3)) ** 2) ** (3 / 2)
+        + (y - 1 / 2 * np.sqrt(3))
+        / (d**2 + (1 / 2 + x) ** 2 + (y - 1 / 2 * np.sqrt(3)) ** 2) ** (3 / 2)
+    )
+
+    # Derivatives
+    dx_dt = vx
+    dy_dt = vy
+    dvx_dt = -sum_gamma_terms_x - alpha * vx - x * omega**2
+    dvy_dt = -sum_gamma_terms_y - alpha * vy - y * omega**2
+
+    derivatives = np.array(np.broadcast_arrays(dx_dt, dy_dt, dvx_dt, dvy_dt))
+
+    return derivatives

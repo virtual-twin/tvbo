@@ -1,0 +1,46 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    I = _p.I
+    a = _p.a
+    alpha = _p.alpha
+    b = _p.b
+    beta = _p.beta
+    c = _p.c
+    d = _p.d
+    e = _p.e
+    f = _p.f
+    g = _p.g
+    gamma = _p.gamma
+    tau = _p.tau
+
+    # Coupling
+    c_glob = cX[0]
+    local_coupling = 0
+
+    # State variables
+    V = current_state[0]
+    W = current_state[1]
+
+    # Derivatives
+    dV_dt = (
+        d
+        * tau
+        * (
+            I * gamma
+            + V * g
+            + V * local_coupling
+            + W * alpha
+            + c_glob * gamma
+            + e * V**2
+            - f * V**3
+        )
+    )
+    dW_dt = d * (a + V * b + c * V**2 - W * beta) / tau
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dV_dt, dW_dt))
+
+    return derivatives

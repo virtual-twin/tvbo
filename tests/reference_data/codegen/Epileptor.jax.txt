@@ -1,0 +1,64 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    a = _p.a
+    b = _p.b
+    c = _p.c
+    d = _p.d
+    r = _p.r
+    s = _p.s
+    x0 = _p.x0
+    Iext = _p.Iext
+    slope = _p.slope
+    Iext2 = _p.Iext2
+    tau = _p.tau
+    aa = _p.aa
+    bb = _p.bb
+    Kvf = _p.Kvf
+    Kf = _p.Kf
+    Ks = _p.Ks
+    tt = _p.tt
+    modification = _p.modification
+
+    # Coupling
+    c_glob0 = cX[0]
+    c_glob1 = cX[1]
+    local_coupling = 0
+
+    # State variables
+    x1 = current_state[0]
+    y1 = current_state[1]
+    z = current_state[2]
+    x2 = current_state[3]
+    y2 = current_state[4]
+    g = current_state[5]
+
+    # Derived variables
+    Iext_total = Iext + local_coupling * x1
+    f1 = jnp.where(
+        jnp.less(x1, 0), b * x1 - a * x1**2, slope - x2 + 0.6 * (-4.0 + z) ** 2
+    )
+    f2 = jnp.where(jnp.less(x2, -0.25), 0, aa * (0.25 + x2))
+    h = jnp.where(
+        jnp.greater(modification, 0),
+        x0 + 3 / (1 + 0.00673794699908547 * jnp.exp(-10.0 * x1)),
+        -4 * x0 + 4 * x1 + jnp.where(jnp.less(z, 0), -0.1 * z**7, 0),
+    )
+    lfp = x2 - x1
+
+    # Derivatives
+    dx1_dt = tt * (Iext_total + y1 - z + Kvf * c_glob0 + f1 * x1)
+    dy1_dt = tt * (c - y1 - d * x1**2)
+    dz_dt = r * tt * (h - z + Ks * c_glob0)
+    dx2_dt = tt * (1.05 + Iext2 + x2 - y2 - x2**3 - 0.3 * z + Kf * c_glob1 + bb * g)
+    dy2_dt = tt * (f2 - y2) / tau
+    dg_dt = -0.01 * tt * (g - 0.1 * x1)
+
+    derivatives = jnp.array(
+        jnp.broadcast_arrays(dx1_dt, dy1_dt, dz_dt, dx2_dt, dy2_dt, dg_dt)
+    )
+
+    return derivatives

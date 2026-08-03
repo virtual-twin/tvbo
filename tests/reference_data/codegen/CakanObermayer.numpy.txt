@@ -1,0 +1,47 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    C = _p.C
+    E_L = _p.E_L
+    E_A = _p.E_A
+    I_A = _p.I_A
+    J_EE = _p.J_EE
+    J_EI = _p.J_EI
+    J_IE = _p.J_IE
+    J_II = _p.J_II
+    mu_E = _p.mu_E
+    mu_I = _p.mu_I
+    s_EE = _p.s_EE
+    s_EI = _p.s_EI
+    s_IE = _p.s_IE
+    s_II = _p.s_II
+    tau_se = _p.tau_se
+    tau_si = _p.tau_si
+    tau_A = _p.tau_A
+    r_max = _p.r_max
+    mu_th = _p.mu_th
+    k_phi = _p.k_phi
+
+    # Coupling
+    c_glob = cX[0]
+
+    # State variables
+    mu_se = current_state[0]
+    mu_si = current_state[1]
+    I_A_var = current_state[2]
+
+    # Derived variables
+    r_E = r_max / (1 + np.exp(-k_phi * (mu_se - mu_th)))
+    r_I = r_max / (1 + np.exp(-k_phi * (mu_si - mu_th)))
+
+    # Derivatives
+    dmu_se_dt = (c_glob + mu_E - mu_se + J_EE * r_E + J_EI * r_I - I_A_var / C) / tau_se
+    dmu_si_dt = (mu_I - mu_si + J_IE * r_E + J_II * r_I) / tau_si
+    dI_A_var_dt = (-I_A_var + I_A * (mu_se - E_A)) / tau_A
+
+    derivatives = np.array(np.broadcast_arrays(dmu_se_dt, dmu_si_dt, dI_A_var_dt))
+
+    return derivatives

@@ -1,0 +1,17 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    r = _p.r
+
+    # State variables
+    x = current_state[0]
+
+    # Derivatives
+    dx_dt = r * x * (1 - x)
+
+    derivatives = np.array(np.broadcast_arrays(dx_dt))
+
+    return derivatives

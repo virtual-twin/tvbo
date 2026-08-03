@@ -1,0 +1,78 @@
+import jax.numpy as jnp
+import jax.scipy as jsp
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    C = _p.C
+    I_ext = _p.I_ext
+    Q_Vmax = _p.Q_Vmax
+    Q_Zmax = _p.Q_Zmax
+    T_Ca = _p.T_Ca
+    T_K = _p.T_K
+    T_Na = _p.T_Na
+    V_Ca = _p.V_Ca
+    V_K = _p.V_K
+    V_L = _p.V_L
+    V_Na = _p.V_Na
+    V_T = _p.V_T
+    Z_T = _p.Z_T
+    a_ee = _p.a_ee
+    a_ei = _p.a_ei
+    a_ie = _p.a_ie
+    a_ne = _p.a_ne
+    a_ni = _p.a_ni
+    b = _p.b
+    delta_Ca = _p.delta_Ca
+    delta_K = _p.delta_K
+    delta_Na = _p.delta_Na
+    delta_V = _p.delta_V
+    delta_Z = _p.delta_Z
+    g_Ca = _p.g_Ca
+    g_K = _p.g_K
+    g_L = _p.g_L
+    g_Na = _p.g_Na
+    phi = _p.phi
+    r_NMDA = _p.r_NMDA
+    t_scale = _p.t_scale
+    tau_K = _p.tau_K
+
+    # Coupling
+    c_glob = cX[0]
+    local_coupling = 0
+
+    # State variables
+    V = current_state[0]
+    W = current_state[1]
+    Z = current_state[2]
+
+    # Derived variables
+    Q_V = 0.5 * Q_Vmax * (1 + jnp.tanh((V - V_T) / delta_V))
+    Q_Z = 0.5 * Q_Zmax * (1 + jnp.tanh((Z - Z_T) / delta_Z))
+    m_Ca = 0.5 + 0.5 * jnp.tanh((V - T_Ca) / delta_Ca)
+    m_K = 0.5 + 0.5 * jnp.tanh((V - T_K) / delta_K)
+    m_Na = 0.5 + 0.5 * jnp.tanh((V - T_Na) / delta_Na)
+    lc_0 = Q_V * local_coupling
+
+    # Derivatives
+    dV_dt = t_scale * (
+        I_ext * a_ne
+        - g_L * (V - V_L)
+        - (V - V_Na)
+        * (g_Na * m_Na + C * a_ee * c_glob + a_ee * (1.0 - C) * (Q_V + lc_0))
+        + m_Ca
+        * (V - V_Ca)
+        * (
+            -g_Ca
+            - C * a_ee * c_glob * r_NMDA
+            - a_ee * r_NMDA * (1.0 - C) * (Q_V + lc_0)
+        )
+        - Q_Z * Z * a_ie
+        - W * g_K * (V - V_K)
+    )
+    dW_dt = phi * t_scale * (m_K - W) / tau_K
+    dZ_dt = b * t_scale * (I_ext * a_ni + Q_V * V * a_ei)
+
+    derivatives = jnp.array(jnp.broadcast_arrays(dV_dt, dW_dt, dZ_dt))
+
+    return derivatives

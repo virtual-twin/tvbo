@@ -1,0 +1,98 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    Cm = _p.Cm
+    Delta = _p.Delta
+    E = _p.E
+    J = _p.J
+    K_bath = _p.K_bath
+    R_minus = _p.R_minus
+    R_plus = _p.R_plus
+    Vstar = _p.Vstar
+    c_minus = _p.c_minus
+    c_plus = _p.c_plus
+    epsilon = _p.epsilon
+    eta = _p.eta
+    gamma = _p.gamma
+    tau_n = _p.tau_n
+    Chn = _p.Chn
+    Ckp = _p.Ckp
+    Cl_i0 = _p.Cl_i0
+    Cl_o0 = _p.Cl_o0
+    Cmna = _p.Cmna
+    Cnap = _p.Cnap
+    Cnk = _p.Cnk
+    DChn = _p.DChn
+    DCkp = _p.DCkp
+    DCmna = _p.DCmna
+    DCnap = _p.DCnap
+    DCnk = _p.DCnk
+    K_i0 = _p.K_i0
+    K_o0 = _p.K_o0
+    Na_i0 = _p.Na_i0
+    Na_o0 = _p.Na_o0
+    g_Cl = _p.g_Cl
+    g_K = _p.g_K
+    g_Kl = _p.g_Kl
+    g_Na = _p.g_Na
+    g_Nal = _p.g_Nal
+    rho = _p.rho
+    w_i = _p.w_i
+    w_o = _p.w_o
+
+    # Coupling
+    c_glob = cX[0]
+
+    # State variables
+    DKi = current_state[0]
+    Kg = current_state[1]
+    V = current_state[2]
+    n = current_state[3]
+    x = current_state[4]
+
+    # Derived variables
+    DNa_i = -DKi
+    I_Cl = g_Cl * (V + 26.64 * np.log(Cl_o0 / Cl_i0))
+    K_i = DKi + K_i0
+    beta = w_i / w_o
+    h = 1.1 - 1.0 / (1.0 + 24.5325301971094 * np.exp(-8.0 * n))
+    minf = 1.0 / (1.0 + np.exp((Cmna - V) / DCmna))
+    ninf = 1.0 / (1.0 + np.exp((Cnk - V) / DCnk))
+    r = R_minus * x / np.pi
+    DK_o = -DKi * beta
+    DNa_o = -DNa_i * beta
+    Na_i = DNa_i + Na_i0
+    xcond = np.where(
+        np.less_equal(V, Vstar),
+        Delta - J * r * x + 2 * R_minus * x * (V - c_minus),
+        Delta - J * r * x + 2 * R_plus * x * (V - c_plus),
+    )
+    K_o = DK_o + K_o0 + Kg
+    Na_o = DNa_o + Na_o0
+    I_K = (V - 26.64 * np.log(K_o / K_i)) * (g_Kl + g_K * n)
+    I_Na = (V - 26.64 * np.log(Na_o / Na_i)) * (g_Nal + g_Na * h * minf)
+    I_pump = (
+        1.0
+        * rho
+        / ((1.0 + np.exp((Ckp - K_o) / DCkp)) * (1.0 + np.exp((Cnap - Na_i) / DCnap)))
+    )
+    V_temp = (-1.0 * I_Cl - 1.0 * I_K - 1.0 * I_Na - 1.0 * I_pump) / Cm
+    Vcond = np.where(
+        np.less_equal(V, Vstar),
+        V_temp + eta - R_minus * x**2 + R_minus * c_glob * (E - V) / np.pi,
+        V_temp + eta - R_plus * x**2 + R_minus * c_glob * (E - V) / np.pi,
+    )
+
+    # Derivatives
+    dDKi_dt = -gamma * (I_K - 2.0 * I_pump) / w_i
+    dKg_dt = epsilon * (K_bath - K_o)
+    dV_dt = Vcond
+    dn_dt = (ninf - n) / tau_n
+    dx_dt = xcond
+
+    derivatives = np.array(np.broadcast_arrays(dDKi_dt, dKg_dt, dV_dt, dn_dt, dx_dt))
+
+    return derivatives

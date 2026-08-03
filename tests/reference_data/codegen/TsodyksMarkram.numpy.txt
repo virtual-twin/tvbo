@@ -1,0 +1,31 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    J = _p.J
+    alpha = _p.alpha
+    E0 = _p.E0
+    tau = _p.tau
+    tauD = _p.tauD
+    tauF = _p.tauF
+    U0 = _p.U0
+
+    # State variables
+    E = current_state[0]
+    x = current_state[1]
+    u = current_state[2]
+
+    # Derived variables
+    SS0 = E0 + E * J * u * x
+    SS1 = alpha * np.log(1 + np.exp(SS0 / alpha))
+
+    # Derivatives
+    dE_dt = (SS1 - E) / tau
+    dx_dt = (1 - x) / tauD - E * u * x
+    du_dt = (U0 - u) / tauF + E * U0 * (1 - u)
+
+    derivatives = np.array(np.broadcast_arrays(dE_dt, dx_dt, du_dt))
+
+    return derivatives

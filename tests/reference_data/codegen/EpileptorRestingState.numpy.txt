@@ -1,0 +1,88 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    I_rs = _p.I_rs
+    Iext2 = _p.Iext2
+    Iext = _p.Iext
+    K_rs = _p.K_rs
+    Kf = _p.Kf
+    Ks = _p.Ks
+    Kvf = _p.Kvf
+    a = _p.a
+    a_rs = _p.a_rs
+    aa = _p.aa
+    alpha_rs = _p.alpha_rs
+    b = _p.b
+    b_rs = _p.b_rs
+    bb = _p.bb
+    beta_rs = _p.beta_rs
+    c = _p.c
+    d = _p.d
+    d_rs = _p.d_rs
+    e_rs = _p.e_rs
+    f_rs = _p.f_rs
+    gamma_rs = _p.gamma_rs
+    p = _p.p
+    r = _p.r
+    slope = _p.slope
+    tau = _p.tau
+    tau_rs = _p.tau_rs
+    tt = _p.tt
+    x0 = _p.x0
+
+    # Coupling
+    c_glob0 = cX[0]
+    c_glob1 = cX[1]
+    c_glob2 = cX[2]
+    local_coupling = 0
+
+    # State variables
+    g = current_state[0]
+    x1 = current_state[1]
+    x2 = current_state[2]
+    x_rs = current_state[3]
+    y1 = current_state[4]
+    y2 = current_state[5]
+    y_rs = current_state[6]
+    z = current_state[7]
+
+    # Derived variables
+    lc_1 = local_coupling * x_rs
+    output = p * (x2 - x1) + x_rs * (1 - p)
+    x1cond = np.where(
+        np.less(x1, 0), b * x1 - a * x1**2, slope - x2 + 0.6 * (-4.0 + z) ** 2
+    )
+    y2cond = np.where(np.less(x2, -0.25), 0.0, aa * (0.25 + x2))
+    zcond = np.where(np.less(z, 0), -0.1 * z**7, 0.0)
+
+    # Derivatives
+    dg_dt = tt * (0.001 * x1 - 0.01 * g)
+    dx1_dt = tt * (Iext + y1 - z + Kvf * c_glob0 + local_coupling * x1 + x1 * x1cond)
+    dx2_dt = tt * (1.05 + Iext2 + x2 - y2 - x2**3 - 0.3 * z + Kf * c_glob1 + bb * g)
+    dx_rs_dt = (
+        d_rs
+        * tau_rs
+        * (
+            lc_1
+            + I_rs * gamma_rs
+            + alpha_rs * y_rs
+            + e_rs * x_rs**2
+            - f_rs * x_rs**3
+            + K_rs * c_glob2 * gamma_rs
+        )
+    )
+    dy1_dt = tt * (c - y1 - d * x1**2)
+    dy2_dt = tt * (y2cond - y2) / tau
+    dy_rs_dt = d_rs * (a_rs + b_rs * x_rs - beta_rs * y_rs) / tau_rs
+    dz_dt = r * tt * (zcond - z - 4 * x0 + 4 * x1 + Ks * c_glob0)
+
+    derivatives = np.array(
+        np.broadcast_arrays(
+            dg_dt, dx1_dt, dx2_dt, dx_rs_dt, dy1_dt, dy2_dt, dy_rs_dt, dz_dt
+        )
+    )
+
+    return derivatives

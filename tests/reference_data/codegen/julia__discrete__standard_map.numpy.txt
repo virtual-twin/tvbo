@@ -1,0 +1,19 @@
+import numpy as np
+import scipy.special
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    k = _p.k
+
+    # State variables
+    theta = current_state[0]
+    p = current_state[1]
+
+    # Derivatives
+    dtheta_dt = np.mod(p + theta + k * np.sin(theta), 2 * np.pi)
+    dp_dt = np.mod(p + k * np.sin(theta), 2 * np.pi)
+
+    derivatives = np.array(np.broadcast_arrays(dtheta_dt, dp_dt))
+
+    return derivatives
