@@ -1681,3 +1681,22 @@ fixed IC in a non-chaotic regime (and a degenerate distribution returns its poin
 (2) consider recording the true IC (E at t=0, pre-step) so a trial's sampled IC is inspectable
 without the one-step offset. Until then, integrate sensitive-regime transients on the
 single-sim path (or the dt-converged reference) — Phase 7.
+
+## Trust the pydantic schema: drop the defensive collection guards
+
+`getattr(model, "derived_variables", None) or {}` appears **72 times** across the codebase
+(14 in `adapters/neuroml.py`, 11 in `adapters/julia_model.py`, 6 in `classes/experiment.py`,
+the rest in templates and adapters). It is dead weight: every collection slot on `Dynamics`
+— `state_variables`, `derived_variables`, `derived_parameters`, `functions`, `parameters`,
+`coupling_inputs`, `events`, `output` — is generated with an empty-collection default and is
+never `None` and never absent. Verified on a bare `Dynamics()` and across all 108 curated
+models: zero slots ever `None` or missing.
+
+Replace with the plain attribute (`model.derived_variables`). Two reasons beyond brevity: the
+guard hides a genuine `AttributeError` if a slot is ever renamed, turning a loud failure into
+a silently empty loop; and `or {}` also swallows a deliberately-set `None`, so a bug that
+nulls a collection reads as "no derived variables" instead of raising.
+
+Each site still needs checking against *its own* class — the guarantee verified here is for
+`Dynamics`; `Experiment`, `Network` and the deprecated `coupling_terms` slot (which genuinely
+can be `None`) have not been surveyed.

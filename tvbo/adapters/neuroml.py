@@ -3224,27 +3224,38 @@ def build_lems_context(experiment):
         _lems_subs = {}
 
     def lems_expr(e):
-        """Parse (if needed), inline model functions, then print as LEMS."""
-        if not isinstance(e, _SympyBasic):
-            # Parse with ORIGINAL names so SymPy recognises the symbols
-            parse_names = all_names[:]
-            for old in _lems_rename:
-                if old not in parse_names:
-                    parse_names.append(old)
-            e = parse_eq(str(e), parameters=parse_names, functions=fn_names)
+        """Parse (if needed), inline model functions, then print as LEMS.
+
+        Accepts an `Equation` as readily as an expression or a string, so a caller need not
+        know whether the equation states itself as a right-hand side or as conditional
+        branches. Reaching for `.rhs` yields `None` for the second kind, and the templates
+        skipped such an element entirely — emitting a LEMS component with no dynamics
+        rather than failing.
+        """
+        # Parse with ORIGINAL names so SymPy recognises the symbols
+        parse_names = all_names[:]
+        for old in _lems_rename:
+            if old not in parse_names:
+                parse_names.append(old)
+        e = parse_eq(e, parameters=parse_names, functions=fn_names)
         e = inline_model_functions(e, dyn, all_names)
         if _lems_subs:
             e = e.subs(_lems_subs)
         return sympy_to_lems(e, parameters=all_names)
 
-    def _parse_piecewise(rhs_str):
-        """Return [(condition_str, value_str)] if rhs is Piecewise, else None."""
+    def _parse_piecewise(equation):
+        """Return [(condition_str, value_str)] if the equation is a Piecewise, else None.
+
+        Takes an `Equation` as readily as a string, for the same reason `lems_expr` does:
+        an equation stated purely as conditional branches has no `rhs` to stringify, and
+        that is exactly the shape this function exists to recognise.
+        """
         try:
             parse_names = all_names[:]
             for old in _lems_rename:
                 if old not in parse_names:
                     parse_names.append(old)
-            expr = parse_eq(str(rhs_str), parameters=parse_names, functions=fn_names)
+            expr = parse_eq(equation, parameters=parse_names, functions=fn_names)
             # Rewrite Min/Max and similar forms to Piecewise when possible.
             expr = expr.rewrite(Piecewise)
             # Support wrapped forms like Q10*Piecewise(...) by folding to a
@@ -3373,22 +3384,21 @@ def build_lems_context(experiment):
 
             def _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names):
                 def ct_lems_expr(e):
-                    e_str = str(e)
-                    # LEMS comparison operators (.gt., .lt., etc.) are not SymPy parseable;
-                    # return them as-is.
-                    if _LEMS_CMP_RE.search(e_str):
-                        return e_str
-                    if not isinstance(e, _SympyBasic):
-                        e = parse_eq(e_str, parameters=ct_all_names, functions=ct_fn_names)
+                    # LEMS comparison operators (.gt., .lt., …) are not SymPy-parseable, so
+                    # they pass through. Only a string can carry one; stringifying an
+                    # Equation to check would also hand its repr to the parser.
+                    if isinstance(e, str) and _LEMS_CMP_RE.search(e):
+                        return e
+                    e = parse_eq(e, parameters=ct_all_names, functions=ct_fn_names)
                     e = inline_model_functions(e, ct_dyn, ct_all_names)
                     return sympy_to_lems(e, parameters=ct_all_names)
 
                 return ct_lems_expr
 
             def _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr_fn):
-                def ct_parse_pw(rhs_str):
+                def ct_parse_pw(equation):
                     try:
-                        expr = parse_eq(str(rhs_str), parameters=ct_all_names, functions=ct_fn_names)
+                        expr = parse_eq(equation, parameters=ct_all_names, functions=ct_fn_names)
                         expr = expr.rewrite(Piecewise)
                         if not isinstance(expr, Piecewise) and expr.has(Piecewise):
                             expr = piecewise_fold(expr)

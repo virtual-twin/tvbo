@@ -77,7 +77,7 @@ All template variables are injected by the calling template's render context
 % for dv_name, dv in dvs.items():
 <%
   eq = getattr(dv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
   dv_dim = _dim(getattr(dv, 'unit', None))
   pw_cases = _parse_piecewise(rhs) if rhs else None
 %>\
@@ -117,7 +117,7 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
 %>\
 % if rhs:
 % if all_dimensioned:
@@ -138,7 +138,7 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
 %>\
 % if rhs and sv_name not in regime_data['reset_vars']:
 % if all_dimensioned:
@@ -166,7 +166,7 @@ All template variables are injected by the calling template's render context
 % for sv_name, sv in svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = getattr(eq, 'rhs', None) if eq else None
+  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
 %>\
 % if rhs:
 % if all_dimensioned:

@@ -16,6 +16,7 @@ from __future__ import annotations
 import re
 
 from tvbo.codegen import render_expression
+from tvbo.parse.expression import parse_eq
 
 # Solver name → the minimal OrdinaryDiffEq sub-package that provides it. Splitting
 # out the umbrella package keeps Julia precompilation cheap / avoids Bus errors.
@@ -60,18 +61,21 @@ def symbol_names(model):
 
 
 def equation_rhs_text(model) -> str:
-    """Concatenated RHS text of all SV / derived-variable / derived-parameter equations.
+    """Concatenated text of every SV / derived-variable / derived-parameter equation.
 
-    Used to sniff which optional Julia packages the emitted model needs.
+    Used to sniff which optional Julia packages the emitted model needs. Resolved through
+    the parser rather than read off `.rhs`, because an equation stated purely as
+    conditional branches has no `rhs` to read: the sniff would see `"None"`, miss the
+    `Piecewise` it contains, and emit a model that uses NaNMath without importing it.
     """
-    parts = []
-    for sv in model.state_variables.values():
-        parts.append(str(sv.equation.rhs))
-    for dv in (getattr(model, "derived_variables", None) or {}).values():
-        parts.append(str(dv.equation.rhs))
-    for dp in (getattr(model, "derived_parameters", None) or {}).values():
-        parts.append(str(dp.equation.rhs))
-    return " ".join(parts)
+    scope = model.get_symbolic_elements()
+    collections = (model.state_variables, model.derived_variables, model.derived_parameters)
+    return " ".join(
+        str(parse_eq(element.equation, local_dict=scope))
+        for collection in collections
+        for element in collection.values()
+        if element.equation is not None
+    )
 
 
 def needs_special_functions(model) -> bool:
@@ -97,22 +101,34 @@ def build_ifelse(cases, render) -> str:
     condition is ``true`` (or the final case) becomes the else branch.
     """
     if len(cases) == 1:
-        return render(cases[0].equation.rhs)
+        return render(cases[0].equation)
     first = cases[0]
     cond = str(first.condition).strip()
     if cond.lower() == "true":
-        return render(first.equation.rhs)
-    return f"ifelse({cond}, {render(first.equation.rhs)}, {build_ifelse(cases[1:], render)})"
+        return render(first.equation)
+    return f"ifelse({cond}, {render(first.equation)}, {build_ifelse(cases[1:], render)})"
 
 
 def make_renderer(model, fmt="julia"):
-    """Return an ``expr -> str`` renderer bound to this model's symbol table."""
+    """Return a renderer bound to this model's symbol table.
+
+    Takes an `Equation` as readily as an expression or a string, resolving it through the
+    one parser, so a caller never has to know whether the equation states itself as a
+    right-hand side or as conditional branches. Reaching for `.rhs` at the call site works
+    only for the first kind and yields `None` for the second.
+    """
     sv, params, coupling, dvars, dparams = symbol_names(model)
     all_symbols = sv + params + coupling + dvars + dparams
     func_names = {str(f): str(f) for f in (getattr(model, "functions", None) or {})}
-    return lambda expr: render_expression(
-        expr, format=fmt, parameters=all_symbols, user_functions=func_names
-    )
+    scope = model.get_symbolic_elements()
+
+    def render(equation):
+        return render_expression(
+            parse_eq(equation, local_dict=scope),
+            format=fmt, parameters=all_symbols, user_functions=func_names,
+        )
+
+    return render
 
 
 def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
@@ -173,13 +189,13 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     for k, (name, s) in enumerate(model.state_variables.items()):
         idx = "i" if k == 0 else f"{k * n_nodes} + i"
         unpack.append(f"{name} = {arg_x}[{idx}]")
-        dfun.append((f"dx[{idx}] =", jl(s.equation.rhs)))
+        dfun.append((f"dx[{idx}] =", jl(s.equation)))
 
     functions = []
     for fname, fdef in (getattr(model, "functions", None) or {}).items():
-        functions.append((str(fname), [str(a) for a in fdef.arguments], jl(fdef.equation.rhs)))
+        functions.append((str(fname), [str(a) for a in fdef.arguments], jl(fdef.equation)))
     derived_params = [
-        (dp.name, jl(dp.equation.rhs))
+        (dp.name, jl(dp.equation))
         for dp in (getattr(model, "derived_parameters", None) or {}).values()
     ]
     derived_vars = []
@@ -187,7 +203,7 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
         if getattr(dv, "conditional", False) and getattr(dv, "cases", None):
             derived_vars.append((dv.name, build_ifelse(list(dv.cases), jl)))
         else:
-            derived_vars.append((dv.name, jl(dv.equation.rhs)))
+            derived_vars.append((dv.name, jl(dv.equation)))
 
     # Parameters. A heterogeneous per-node parameter (value is a length-n_nodes
     # array, e.g. the FIC-tuned J_i) is emitted as a Julia vector ``<name>_vec``
@@ -312,7 +328,7 @@ def build_model_context(model, network=None, constraints=None) -> dict:
     unpack = []
     dfun = []
     for i, (name, s) in enumerate(model.state_variables.items()):
-        rhs = jl(s.equation.rhs)
+        rhs = jl(s.equation)
         if n_modes > 1:
             lo, hi = i * n_modes + 1, (i + 1) * n_modes
             unpack.append(f"{name} = @view {arg_x}[{lo}:{hi}]")
@@ -329,11 +345,11 @@ def build_model_context(model, network=None, constraints=None) -> dict:
     functions = []
     for fname, fdef in (getattr(model, "functions", None) or {}).items():
         fargs = [str(name) for name in fdef.arguments]
-        functions.append((str(fname), fargs, jl(fdef.equation.rhs)))
+        functions.append((str(fname), fargs, jl(fdef.equation)))
 
     # Derived parameters and derived variables (conditional ones folded to ifelse).
     derived_params = [
-        (dp.name, jl(dp.equation.rhs))
+        (dp.name, jl(dp.equation))
         for dp in (getattr(model, "derived_parameters", None) or {}).values()
     ]
     derived_vars = []
@@ -341,7 +357,7 @@ def build_model_context(model, network=None, constraints=None) -> dict:
         if getattr(dv, "conditional", False) and getattr(dv, "cases", None):
             derived_vars.append((dv.name, build_ifelse(list(dv.cases), jl)))
         else:
-            derived_vars.append((dv.name, jl(dv.equation.rhs)))
+            derived_vars.append((dv.name, jl(dv.equation)))
 
     # `p = (...)` parameter tuple (coupling terms default to 0.0 for single-node).
     pval_parts = [f"{p.name} = {p.value}" for p in model.parameters.values()]
