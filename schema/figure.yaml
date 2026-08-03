@@ -178,6 +178,49 @@ classes:
         inlined: true
         inlined_as_list: true
         description: "Positioned text labels drawn on the panel (e.g. 'K≈272') — a declarative alternative to a custom callable."
+      insets:
+        range: Inset
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        description: "Sub-axes drawn inside this panel after its own body — the zoom windows, corner thumbnails and small key maps papers place over a plot. Declaring them keeps a panel that needs one from becoming a custom callable, which would take its whole interior out of the grammar."
+
+  Inset:
+    description: "A sub-axes inside a panel, positioned in axes fractions. It is a Panel in every respect that draws — same kinds, layers, opts, annotations — minus the things only a mosaic cell has (a panel letter, a placeholder, a position in the layout). A figure states WHERE it sits; everything else it states the same way the host panel does, so the two cannot drift apart in behaviour."
+    slots:
+      - label
+    attributes:
+      bounds:
+        range: float
+        multivalued: true
+        required: true
+        description: "[x0, y0, width, height] in host-axes fractions, as matplotlib's inset_axes takes them. Values outside 0-1 place the inset beyond the host frame, which is how a thumbnail sits in the margin above a plot."
+      kind:
+        range: PanelKind
+        required: true
+      layers:
+        range: Layer
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        description: "Marks sharing the inset's axes. Grammar kinds only."
+      render:
+        range: string
+        description: "Name of a registered custom-panel callable (custom kind) — the same registry the host panel draws from."
+      opts:
+        range: Argument
+        multivalued: true
+        inlined: true
+        description: "Keyword options for the custom callable, and the axis directives for a grammar inset."
+      path:
+        range: string
+        description: "External image file (image kind)."
+      annotations:
+        range: Annotation
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        description: "Positioned text labels drawn on the inset, in ITS axes fractions."
 
   Layer:
     description: "One mark bound to one data reference, with its encoding."
