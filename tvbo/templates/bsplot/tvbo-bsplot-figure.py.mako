@@ -339,7 +339,14 @@ def _restore_fixed_axes(snap):
 % else:
     _txt = ${repr(a['text'])}
 % endif
-% if a['arrow']:
+% if a['tail']:
+    _ty = float(np.asarray(_load_layer(${repr(a['tail']['layer'])}).values).ravel()[0])
+    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
+                xytext=(${a['tail']['x']}, _ty), textcoords="data",   # tail ON the computed point
+                zorder=10, **${repr(a['kwargs'])},
+                arrowprops={"arrowstyle": "-|>", "color": "k", "lw": 0.8,
+                            "shrinkA": 2, "shrinkB": 2})
+% elif a['arrow']:
     ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
                 xytext=(${a['x'] - a['arrow'][0]}, ${a['y'] - a['arrow'][1]}),
                 textcoords="axes fraction", zorder=10, **${repr(a['kwargs'])},

@@ -293,6 +293,14 @@ classes:
         range: float
         multivalued: true
         description: "Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in axes fractions — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper's callout arrowheads are declared instead of drawn in code."
+      tail_x:
+        range: float
+        description: "Start the arrow at this x in DATA coordinates instead of at an axes-fraction offset. Pair with tail_used, which supplies the y: together they anchor the arrow's tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set."
+      tail_used:
+        range: DataRef
+        inlined: true
+        slot_uri: prov:used
+        description: "The arrow tail's y, read from a result container (same reference form a Layer uses). What lets a panel point AT a computed value — a curve's height at a marked x — without that height being typed into the spec."
       rotation:
         range: float
         description: "Text rotation in degrees counter-clockwise; 90 for a label running up the side of a reference line."

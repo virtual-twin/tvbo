@@ -219,12 +219,17 @@ def _annotations(panel, base_dir=Path(".")) -> list:
         used = getattr(a, "used", None)
         layer = _resolve_layer(_UsedOnly(used), "cartesian", base_dir) if used is not None else None
         arrow = [float(v) for v in (getattr(a, "arrow", None) or [])] or None
+        tail_used = getattr(a, "tail_used", None)
+        tail = None
+        if tail_used is not None and getattr(a, "tail_x", None) is not None:
+            tail = {"x": float(a.tail_x),
+                    "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir)}
         text_kwargs = {k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color")
                        if getattr(a, k, None) is not None}
         text_kwargs.setdefault("ha", "center")
         text_kwargs.setdefault("va", "center")
         out.append({"text": a.text, "x": x, "y": y, "layer": layer, "arrow": arrow,
-                    "kwargs": text_kwargs})
+                    "tail": tail, "kwargs": text_kwargs})
     return out
 
 
