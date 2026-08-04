@@ -122,6 +122,38 @@ def estimate_per_cell_bytes(observable_fn, state) -> Optional[int]:
         return None
 
 
+def resolve_cohort_batch_size(spec, n_subjects, fit_fn=None, example_args=None):
+    """Resolve ``dataset.batch_size`` to a subject count per on-device batch.
+
+    An explicit integer passes straight through (clamped to ``[1, n_subjects]``) —
+    the caller opted in, so no memory bound applies. ``None`` requests automatic
+    sizing: the whole cohort in one batch unless one lane's estimated peak memory
+    (:func:`estimate_per_cell_bytes`, compiling *fit_fn* on *example_args*) times the
+    shared-RAM device count would exceed :func:`auto_nvmap_budget_bytes`, in which
+    case the batch is narrowed to fit. Without an estimate it degrades to the whole
+    cohort, i.e. the un-chunked vmap. Unlike :func:`resolve_n_vmap`, no fixed count
+    cap applies: a cohort's batch is bounded by memory, not an exploration-grid cap.
+    """
+    n = max(1, int(n_subjects))
+    if spec is not None:
+        return max(1, min(int(spec), n))
+    per_lane = (
+        estimate_per_cell_bytes(lambda a: fit_fn(*a), example_args)
+        if fit_fn is not None and example_args is not None
+        else None
+    )
+    if not per_lane or per_lane <= 0:
+        return n
+    n_pmap = max(1, shared_ram_device_count())
+    width = auto_nvmap_budget_bytes() // (int(per_lane) * n_pmap)
+    width = max(1, min(n, int(width)))
+    logger.debug(
+        "dataset.batch_size=auto -> %d/%d subjects/batch (per_lane=%s B, n_pmap=%d)",
+        width, n, per_lane, n_pmap,
+    )
+    return width
+
+
 def resolve_exploration_n_vmap(spec, grid_n, observable_fn, state):
     """Resolve ``Exploration.n_parallel`` to a vmap chunk width for a grid run.
 

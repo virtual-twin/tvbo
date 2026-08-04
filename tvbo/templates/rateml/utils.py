@@ -263,13 +263,9 @@ def has_boundaries(model) -> bool:
 
 def get_initial_value(sv) -> float:
     """Get initial value for state variable, with sensible default."""
-    if hasattr(sv, "initial_value") and sv.initial_value is not None:
-        return float(sv.initial_value)
-    if hasattr(sv, "domain") and sv.domain:
-        lo = getattr(sv.domain, "lo", 0.0) or 0.0
-        hi = getattr(sv.domain, "hi", 1.0) or 1.0
-        return (lo + hi) / 2
-    return 0.0
+    from tvbo.utils import initial_value
+
+    return initial_value(sv)
 
 
 def get_domain_str(obj) -> str:
