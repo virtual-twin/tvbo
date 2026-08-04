@@ -616,6 +616,85 @@ def test_snakemake_fans_a_model_param_axis_via_pin_not_set():
     assert "--set=" not in smk
 
 
+def test_snakemake_fanned_parameter_experiment_is_spec_only(tmp_path: Path):
+    """A workflow-fanned `parameters` sweep (one `--pin` per cell — e.g. a per-cell host
+    observation) must NOT be frozen. A frozen script bakes the model/coupling params at one
+    point and hardcodes the whole grid, so the per-cell `--pin` never reaches them: every
+    cell re-runs the entire grid and a non-jittable host observation traces inside it
+    (TracerArrayConversionError, the Koller exp-41 failure). Such an experiment emits
+    spec-only — no frozen script and no `--rendered`, so it re-renders per cell (where the
+    pin collapses the exploration to the pinned point) even if the kit was packed
+    `--code-source frozen`."""
+    out = tmp_path / "kit"
+    r = runner.invoke(app, ["workflow", "snakemake", EXP, "--backend", "tvb",
+                            "-o", str(out), "--code-source", "frozen"])
+    assert r.exit_code == 0, r.stdout
+    # EXP (tvb) fans model/coupling params a,b (kind 'parameters') → no frozen script.
+    assert not (out / "scripts").exists(), "a fanned-parameter experiment must not freeze a script"
+    smk = (out / "Snakefile").read_text()
+    assert "--rendered" not in smk, "the fanned rule must re-render per cell, never run a frozen script"
+    assert "tvbo run spec/" in smk and "--pin=" in smk
+
+
+_FANNED_WORKFLOW_RECIPE = """
+id: 200
+dynamics:
+  name: Kuramoto
+  label: Kuramoto
+  parameters:
+    omega: {name: omega, value: 0.0628, unit: rad_per_ms}
+  coupling_inputs:
+    c: {name: c, description: "coupling"}
+  state_variables:
+    theta:
+      name: theta
+      unit: rad
+      equation: {lhs: "Derivative(theta, t)", rhs: "omega + c"}
+      variable_of_interest: true
+      coupling_variable: true
+  output: [theta]
+  number_of_modes: 1
+network:
+  number_of_nodes: 2
+  nodes: [{id: 0, label: r0}, {id: 1, label: r1}]
+  edges: [{source: 0, target: 1, weight: 0.5}, {source: 1, target: 0, weight: 0.5}]
+integration: {method: RungeKutta4thOrder, duration: 10.0, step_size: 1.0, transient_time: 0.0}
+explorations:
+  sweep:
+    name: sweep
+    mode: product
+    space:
+      - {parameter: Kuramoto.omega, explored_values: [0.05, 0.06, 0.07]}
+workflow:
+  distribute:
+    workflow: [Kuramoto.omega]
+"""
+
+
+def test_slurm_rejects_explicit_per_cell_workflow_fanout(tmp_path: Path):
+    """The slurm array shards + vectorizes a sweep — it has no per-cell `--pin` fan-out.
+    An experiment that EXPLICITLY declares `distribute.workflow` over model params asked
+    for per-cell fan-out (e.g. a non-jittable host observation per cell); slurm would
+    silently vectorize it, tracing the host obs inside the vmap (the exp-41 crash). The
+    slurm emitter fails fast and points at snakemake — and the SAME recipe emits cleanly
+    via snakemake (spec-only, one --pin per cell)."""
+    recipe = tmp_path / "fanned.yaml"
+    recipe.write_text(_FANNED_WORKFLOW_RECIPE)
+
+    r = runner.invoke(app, ["workflow", "slurm", str(recipe), "--backend", "tvb",
+                            "-o", str(tmp_path / "slurm")])
+    assert r.exit_code != 0
+    combined = (r.stdout or "") + (r.stderr or "")
+    assert "snakemake" in combined and "distribute.workflow" in combined
+    assert not (tmp_path / "slurm" / "run.sbatch").exists()
+
+    r2 = runner.invoke(app, ["workflow", "snakemake", str(recipe), "--backend", "tvb",
+                             "-o", str(tmp_path / "smk")])
+    assert r2.exit_code == 0, r2.stdout
+    assert not (tmp_path / "smk" / "scripts").exists()
+    assert "--pin=" in (tmp_path / "smk" / "Snakefile").read_text()
+
+
 def test_submit_provisions_the_container_layer_before_submitting(tmp_path, monkeypatch):
     """`tvbo workflow submit <archive>` must run setup.sh itself, so the whole cluster step
     is one command (no manual `bash setup.sh`). A layer failure aborts the submit."""
