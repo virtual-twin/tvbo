@@ -7,6 +7,7 @@ touched — which is what lets the generated datamodel stay untouched.
 """
 
 import sys
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -555,3 +556,51 @@ def test_rebinding_a_bundle_key_cannot_poison_the_cache(producer_module):
     param_io.resolve(p)["grad_op"] = "junk"
 
     np.testing.assert_array_equal(param_io.resolve(p)["grad_op"], np.full((2, 2), 2.0))
+
+
+# ------------------------------------------------------- reclaiming superseded artifacts
+# The content address keys on the producing module's source, so editing a callable writes a
+# NEW artifact and deliberately leaves the old one — nothing at write time knows whether
+# another study still reads it. These pin what may then be reclaimed, and what may not.
+
+
+class _Study:
+    """The smallest thing the walk has to find a producer inside of."""
+
+    def __init__(self, *parameters):
+        self.experiments = [SimpleNamespace(parameters={p.name: p for p in parameters})]
+
+
+def test_an_artifact_of_an_unedited_producer_is_never_superseded(tmp_path, monkeypatch):
+    cache = tmp_path / "constants"
+    p = Parameter(name="op", producer=_write_producer_module(tmp_path, 1.0, monkeypatch))
+    param_io.materialise(p, cache_dir=cache)
+
+    assert param_io.superseded_artifacts(_Study(p), cache_dir=cache) == []
+
+
+def test_editing_the_producer_supersedes_the_artifact_written_before_it(tmp_path, monkeypatch):
+    cache = tmp_path / "constants"
+    before, _ = param_io.materialise(
+        Parameter(name="op", producer=_write_producer_module(tmp_path, 1.0, monkeypatch)),
+        cache_dir=cache)
+    param_io.clear_cache()                       # a second `tvbo run` — a fresh process
+    edited = Parameter(name="op", producer=_write_producer_module(tmp_path, 2.0, monkeypatch))
+    after, _ = param_io.materialise(edited, cache_dir=cache)
+    assert before != after
+
+    dead = param_io.superseded_artifacts(_Study(edited), cache_dir=cache)
+
+    assert dead == [before]
+
+
+def test_an_artifact_of_a_producer_this_study_never_declares_is_left_alone(tmp_path, monkeypatch):
+    """It is very likely ANOTHER study's; reading one spec cannot decide that."""
+    cache = tmp_path / "constants"
+    param_io.materialise(
+        Parameter(name="op", producer=_write_producer_module(tmp_path, 1.0, monkeypatch)),
+        cache_dir=cache)
+    stranger = cache / "someone_else.precompute.0123456789abcdef.h5"
+    stranger.write_bytes(b"")
+
+    assert stranger not in param_io.superseded_artifacts(_Study(), cache_dir=cache)

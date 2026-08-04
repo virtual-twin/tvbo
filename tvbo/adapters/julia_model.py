@@ -17,6 +17,7 @@ import re
 
 from tvbo.codegen import render_expression
 from tvbo.parse.expression import parse_eq, states_an_expression
+from tvbo.utils import initial_value
 
 # Solver name → the minimal OrdinaryDiffEq sub-package that provides it. Splitting
 # out the umbrella package keeps Julia precompilation cheap / avoids Bus errors.
@@ -226,7 +227,7 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
 
     u0 = []
     for s in model.state_variables.values():
-        u0.extend([s.initial_value] * n_nodes)
+        u0.extend([initial_value(s)] * n_nodes)
 
     # Observables to record along the branch: every state variable plus any
     # derived variable listed in the model's ``output`` (e.g. the firing rate
@@ -365,7 +366,7 @@ def build_model_context(model, network=None, constraints=None) -> dict:
     u0 = []
     for s in model.state_variables.values():
         for _ in range(n_modes if n_modes > 1 else 1):
-            u0.append(s.initial_value)
+            u0.append(initial_value(s))
 
     return {
         "func_name": model.name,

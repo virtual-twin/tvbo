@@ -77,6 +77,9 @@ classes:
       reference_image:
         range: string
         description: "The published figure this one reproduces, as a path relative to the study root (e.g. original_study/img/fig_04.png). Names the A/B target for `tvbo figure compare`, which measures panel geometry against it; it is never a data source, and never rendered into a panel."
+      label:
+        range: string
+        description: "The heading this figure carries in a report. Unset, a report reads the paper's own number out of the name (Fig4, EDF10). A replication that answers a question the paper left open produces figures with no published counterpart, and those need a title of their own rather than a number that would read as the paper's."
       width:
         range: float
         description: "Figure width in mm (physical print size). Font size is in points and independent of this, so a smaller figure makes text relatively larger."
@@ -89,6 +92,9 @@ classes:
       trim_margins:
         range: boolean
         description: "Trim surrounding whitespace from the saved figure (default true). Trimming re-crops to the drawn content, so the saved aspect can differ from width/height; set false to preserve the declared width×height proportions exactly, e.g. to match an original figure. Renders as bbox_inches='tight' on a matplotlib backend."
+      pad:
+        range: float
+        description: "Whitespace left around the content when trimming, in inches. Defaults to the backend's own margin (0.1 in for matplotlib), which is visible padding at journal column widths; 0 crops flush to the drawn content. Ignored when trim_margins is false, where the declared canvas fixes the margins instead."
       font_size:
         range: float
         description: "Base font size in points (physical: 1 pt = 1/72 inch). The real text size, unchanged by figure size or dpi; set it (or the width) so labels are legible at print size."
@@ -104,6 +110,13 @@ classes:
       panel_number_loc:
         range: Corner
         description: "Which corner the panel letter sits in. Unset keeps bsplot's own default placement; many journals (and Taher Fig 5) use 'upper right'."
+      panel_number_offset:
+        range: float
+        multivalued: true
+        description: "[dx, dy] shift of every panel letter from its corner, in axes fractions. The default sits it on the axes corner, where a top y-tick label can reach it; a small negative dx clears the tick labels."
+      panel_number_size:
+        range: float
+        description: "Panel-letter size in points. Unset scales it above the body font_size, the convention most journals follow — a letter set at the body size reads as a tick label rather than as the panel's name."
       height_ratios:
         range: float
         multivalued: true
@@ -115,6 +128,9 @@ classes:
       spines:
         range: string
         description: "Axes spine style: 'box' (all 4 spines, closed boxes — e.g. Taher) or 'open' (left+bottom only). Unset defers to the active style. Pair 'box' with auto_format: false — bsplot's format_fig otherwise detaches and trims spines (the open 'nature' look)."
+      spine_offset:
+        range: float
+        description: "How far the left and bottom spines sit outside the data area, in axes fractions. 0 makes them meet at the corner; the default detaches them slightly (bsplot's house look). Journals differ on this, so a replication states which one the paper uses."
       workflow_overrides:
         range: WorkflowConfig
         inlined: true
@@ -283,6 +299,14 @@ classes:
         range: float
         multivalued: true
         description: "Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in axes fractions — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper's callout arrowheads are declared instead of drawn in code."
+      tail_x:
+        range: float
+        description: "Start the arrow at this x in DATA coordinates instead of at an axes-fraction offset. Pair with tail_used, which supplies the y: together they anchor the arrow's tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set."
+      tail_used:
+        range: DataRef
+        inlined: true
+        slot_uri: prov:used
+        description: "The arrow tail's y, read from a result container (same reference form a Layer uses). What lets a panel point AT a computed value — a curve's height at a marked x — without that height being typed into the spec."
       rotation:
         range: float
         description: "Text rotation in degrees counter-clockwise; 90 for a label running up the side of a reference line."

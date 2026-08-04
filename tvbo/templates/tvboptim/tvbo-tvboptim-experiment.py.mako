@@ -290,6 +290,8 @@ network_observation_names, observation_names = get_observation_refs(observations
 # Class name from model
 dynamics_class = model.name.replace(' ', '').replace('-', '') if model.name else 'GeneratedDynamics'
 
+from tvbo.utils import initial_value as _initial_value
+
 # Dynamics parameter info (shared utility)
 dyn_param_names, dyn_param_defaults, dyn_param_shapes = get_param_info(model.parameters)
 dyn_param_lazy = materialise_lazy_params(model.parameters, experiment)
@@ -304,7 +306,7 @@ for _np_name in node_param_overrides:
 # Per-node initial state overrides from node ``state:`` entries
 # e.g. nodes[0].state = {theta: 0.8} → overrides default initial_value per node
 _default_init = [
-    (float(sv.initial_value) if sv.initial_value is not None else 0.0)
+    _initial_value(sv)
     for sv in model.state_variables.values()
     for _ in range(n_modes)  # one entry per (variable, mode) solver slot
 ]
@@ -456,6 +458,17 @@ has_inference = len(inference_list) > 0
 # Schema: experiment.algorithms is multivalued dict
 algorithms_list = list(experiment.algorithms.values()) if experiment.algorithms else []
 has_algorithms = len(algorithms_list) > 0
+
+# On-device cohort: the per-subject dataset target is a leading-axis vmap batch
+# (run_cohort_<algo>) instead of one workflow job per subject. Render-time gate.
+_dataset_on_device = bool(getattr(experiment, 'dataset_on_device', lambda: False)())
+_dataset_target_names = set(getattr(experiment, 'dataset_observation_targets', None) or {})
+try:
+    _cohort_subject_ids = list(experiment.dataset_subject_ids()) if _dataset_on_device else []
+except Exception:
+    _cohort_subject_ids = []
+# dataset.batch_size: subjects per on-device batch (None = size against the memory budget).
+_cohort_batch_size = experiment.dataset_batch_size() if _dataset_on_device else None
 
 # Extract optimizable parameters from optimization stages
 optim_param_info = {}
@@ -1338,6 +1351,7 @@ import os
 import copy
 import functools  # render_expression emits functools.reduce for Min/Max over lists
 import logging
+import time  # per-phase elapsed in the run log (tuning vs post-tuning wall-time)
 
 # Progress is logged, not printed: this generated script shares the ``tvbo``
 # logger hierarchy, so ``TVBO_LOG_LEVEL`` / ``tvbo.set_log_level`` control it the
@@ -1392,6 +1406,9 @@ from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
 from tvboptim.types import Space, GridAxis, DataAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
 from tvbo.templates.tvboptim.callbacks import progress_ticker, resolve_exploration_n_vmap   # grid-batch progress; n_parallel → vmap width
+% endif
+% if _dataset_on_device:
+from tvbo.templates.tvboptim.callbacks import resolve_cohort_batch_size   # dataset.batch_size → subjects per on-device batch
 % endif
 % if has_nsga2:
 # Multi-objective search (Exploration.strategy == 'nsga2') + Pareto-seeded refinement.
@@ -3566,9 +3583,11 @@ def run_experiment(
     # level decides what is shown.
     _quiet = kwargs.pop("quiet", False)
 
+    _run_t0 = time.perf_counter()
+
     def _log(msg):
         if not _quiet:
-            logger.info(msg)
+            logger.info("[+%.0fs] %s" % (time.perf_counter() - _run_t0, msg))
 % if network_observation_names:
     # Materialize network-observation constants (empirical targets) from the
     # supplied matrices, keyed by observation name (e.g. {'fc_target': FC}).
@@ -3913,6 +3932,7 @@ def run_experiment(
             if algo_verbose:
                 _log(f"\\n>>> Running algorithm: {algorithm_name} (seed={_algo_seed})")
             algo_result = None
+            _algo_wall0 = time.perf_counter()
 
 % for algo in algorithms_list:
 <%
@@ -4092,8 +4112,35 @@ def run_experiment(
         for _hp_name, _hp_val in hyperparams_dict.items():
             _sd[_hp_name] = _over.get(_hp_name, _hp_val)
         stage_defs.append(_sd)
+
+    # On-device cohort: split this algorithm's network-obs inputs into the per-subject
+    # dataset target(s) — the (B, ...) vmap axis — and the cohort-shared inputs.
+    cohort_batched_inputs = [i for i in network_obs_inputs if i in _dataset_target_names]
+    cohort_shared_inputs = [i for i in network_obs_inputs if i not in _dataset_target_names]
+    use_cohort = _dataset_on_device and len(cohort_batched_inputs) > 0
 %>
-% if has_stages:
+% if use_cohort:
+                # ── On-device cohort: jax.vmap the ${algo_name} fit over subjects ──
+                # One vectorised call over the whole (B, ...) target batch instead of
+                # one workflow job per subject. Returns the batched tuned state; the
+                # host unstacks + saves per subject after run().
+                algo_result = Bunch(
+                    name=algorithm_name,
+                    cohort_state=run_cohort_${algo_name}(
+                        algo_state, algo_model_fn, algo_key,
+% for _bi in cohort_batched_inputs:
+                        ${_bi}=${_bi},
+% endfor
+% for _si in cohort_shared_inputs:
+                        ${_si}=${_si},
+% endfor
+                        save_every=kwargs.get('${algo_name}_save_every', kwargs.get('save_every', None)),
+                        resync_every=kwargs.get('${algo_name}_resync_every', kwargs.get('resync_every', None)),
+                        batch_size=kwargs.get('cohort_batch_size', ${repr(_cohort_batch_size)}),
+                    ),
+                    subject_ids=${repr(_cohort_subject_ids)},
+                )
+% elif has_stages:
                 # ── Multi-stage schedule ──────────────────────────────────────
                 # Run the algorithm body once per stage, IN ORDER, carrying
                 # trajectory state + FC window buffer + monitors forward so the
@@ -4227,6 +4274,8 @@ def run_experiment(
             if algo_result is not None:
                 # Store result for this algorithm
                 algorithms_results[algorithm_name] = algo_result
+                if algo_verbose:
+                    _log(f"  {algorithm_name} done: {time.perf_counter() - _algo_wall0:.1f}s wall (tuning + post-tuning eval)")
                 # Results are stored; dependent algorithms will look them up via algorithms_results
 
         # End of algorithms_to_run loop

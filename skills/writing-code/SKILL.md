@@ -80,6 +80,36 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Same budget in codegen templates (Mako `##` / `<% %>`): terse code beats an annotated wall.
 - Aim for maximally readable: someone should follow the code without the comments.
 
+## 6. Use the Dependency's Own API
+
+**Before hand-rolling a mechanism around a library, read what the library already exposes.**
+
+A helper that duplicates a dependency's feature is worse than no helper: it drifts from the
+library's semantics, misses its later fixes, and hides that the sanctioned path exists.
+
+- Skim the module you are about to wrap. `optim/callbacks.py`, `types.py`, an `__init__`
+  export list — a minute of reading beats a plausible reimplementation.
+- Symptoms you are about to duplicate something: you are tracking "best so far", retrying,
+  logging progress, early-stopping, or caching. Frameworks almost always ship these.
+- If the library's version really does not fit, say why in the docstring, so the next
+  reader knows it was a decision rather than an oversight.
+
+**tvboptim specifically** — fitting goes through `OptaxOptimizer` and its callbacks; do not
+re-implement them:
+
+| need | use |
+|---|---|
+| keep the best-scoring state, not the last | `SaveBestSeenCallback` → `fitting_data["best"]` |
+| several callbacks at once | `MultiCallback([...])` |
+| stop when the loss plateaus | `StopConvergenceCallback(patience, min_delta)` |
+| stop at a target loss / wall-clock | `StopLossCallback`, `StopTimeCallback` |
+| record loss or parameter history | `SavingLossCallback`, `SavingParametersCallback` |
+
+`opt.run()` returns `(final_state, fitting_data)`. **`final_state` is the LAST state, not the
+best one.** Any non-monotone trajectory — an optimiser that overshoots, or a penalty term that
+trades one component for another — makes those different, and taking the last silently reports
+a worse model than the run found.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

@@ -214,6 +214,18 @@ from ${jax_module} import ${name} as ${name}
         else:
             resolved_pipeline.append(fc)
 
+    # This backend renders an observation as a post-scan function pipeline, so an
+    # observation with none (an `Observation.dynamics` observer, a bare `class_reference`)
+    # has nothing to render. Say so here; without this the template reaches for the
+    # pipeline's last step and dies with an IndexError that names nothing.
+    if not resolved_pipeline:
+        raise ValueError(
+            f"Observation {observation.name!r} declares no pipeline. The jax backend "
+            "renders observations as a post-scan pipeline and has no path for an "
+            "Observation.dynamics observer or a bare class_reference; export it with the "
+            "tvboptim backend, which folds an observer into the integrator carry."
+        )
+
     func_name_to_output = {get_func_name(func): func.output for func in resolved_pipeline if get_func_name(func)}
     # Resolve temporal-sampling step counts once, backend-independently.
     sampling_overrides_map = build_sampling_overrides(resolved_pipeline, obs_sampling)
