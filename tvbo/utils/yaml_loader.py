@@ -71,6 +71,16 @@ from linkml_runtime.utils.yamlutils import DupCheckYamlLoader
 _MERGE_TAG = "tag:yaml.org,2002:merge"
 _INCLUDE_TAG = "!include"
 
+ENVELOPE_KEYS = ("tvbo_class", "schema_version")
+"""Document-level keys that annotate a serialized file, not slots of the class in it.
+
+TVBO writes them itself — every one of the 121 network sidecars in the database opens with
+`tvbo_class: tvbo:Network` — so its own loader has to accept them. Stated here, in the one
+normalisation both the string path and the dict path route through, rather than in each
+loader: three separate copies of this tuple is how the LinkML path came to reject documents
+the pydantic path accepted.
+"""
+
 
 def _flatten_map_constructor(loader: yaml.Loader, node: yaml.MappingNode, deep: bool = False) -> dict:
     """``DupCheckYamlLoader`` map constructor augmented with merge-key support.
@@ -387,9 +397,10 @@ def _normalize_loaded(data: Any) -> Any:
 
     Slot aliases are folded at construction by the generated datamodel (see
     ``hatch_build._alias_support``), so this handles only what a class cannot: the
-    edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable
+    document envelope (`ENVELOPE_KEYS`), the edge-template
+    ``source_variable``/``target_variable`` snapshot, the legacy state-variable
     ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries),
-    and lifts the terse ``distribution: {lo, hi}`` shortcut into
+    and the terse ``distribution: {lo, hi}`` shortcut into
     ``distribution: {domain: {lo, hi}}``. Both the string path (``load``/``loads`` →
     LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``)
     route through here so the two cannot diverge. Order matters: the boundaries fold
@@ -399,6 +410,9 @@ def _normalize_loaded(data: Any) -> Any:
 
     # The passes below mutate in place; never reach through to the caller's object.
     data = copy.deepcopy(data)
+    if isinstance(data, dict):
+        for envelope_key in ENVELOPE_KEYS:
+            data.pop(envelope_key, None)
     data = _fold_edge_var_aliases(data)
     data = _fold_state_variable_domains(data)
     data = _lift_distribution_shortcut(data)

@@ -584,6 +584,15 @@ enums:
                     declared pipeline), cumulative mean/std/variance aggregations,
                     and a matrix co-moment FC (compute_fc as a running covariance).
 
+    ReducerEmitKind:
+        description: >-
+            How often a streaming reducer reads its value out (see Reducer.emit_kind).
+        permissible_values:
+            window:
+                description: "Emit every step, over the current window (a sliding FC)."
+            stride:
+                description: "Emit once per stride, at the window boundary (dFC / FCD)."
+
     ContinuationAlgorithm:
         description: >-
             Predictor-corrector algorithm for numerical continuation.
@@ -5500,3 +5509,74 @@ classes:
             - label
             - description
             - parameters
+
+    Assignment:
+        class_uri: tvbo:Assignment
+        description: >-
+            One step of a sequential recurrence: the expression assigned to a target
+            name. Sequential rather than simultaneous — a later step's expression sees
+            the value the steps above it assigned — which is what lets a reducer's
+            update be authored as ordinary arithmetic instead of with `new_*`
+            temporaries. Authored terse as a `[target, expression]` pair and lifted to
+            this form on load.
+        attributes:
+            target:
+                range: string
+                required: true
+                description: "The state name this step assigns to."
+            expression:
+                range: string
+                required: true
+                description: "Symbolic right-hand side, parsed and printed per backend."
+
+    Reducer:
+        class_uri: tvbo:Reducer
+        description: >-
+            A streaming reduction, authored as symbolic recurrences over its own state
+            rather than as backend code. Folded into the integrator carry so a windowed
+            observable (a sliding-window FC, a running mean) is computed without ever
+            materialising the trajectory. `add` folds an arriving sample in, `evict`
+            takes a leaving one back out, `resync` rebuilds the state exactly from the
+            window when incremental drift would accumulate, and `emit` reads the reduced
+            value out. TVBO lowers all four through the sympy printers, so no backend
+            ships a reducer and adding one is a YAML file rather than code.
+        attributes:
+            replaces:
+                range: string
+                multivalued: true
+                description: "Dotted references to the post-scan pipeline reducers this streams."
+            backends:
+                range: string
+                multivalued: true
+                description: "Codegen backends this recipe is registered for; others recompute."
+            emit_kind:
+                range: ReducerEmitKind
+                ifabsent: string(window)
+                description: "Whether the reduced value is read out every step or every stride."
+            state:
+                range: string
+                multivalued: true
+                required: true
+                description: "The names carried across steps — the reducer's own carry."
+            add:
+                range: Assignment
+                multivalued: true
+                inlined_as_list: true
+                description: "Recurrence folding one arriving sample `v` into the state."
+            evict:
+                range: Assignment
+                multivalued: true
+                inlined_as_list: true
+                description: "Recurrence taking one leaving sample `v` back out of the state."
+            resync:
+                range: Assignment
+                multivalued: true
+                inlined_as_list: true
+                description: "Recurrence rebuilding the state exactly from the whole window `x`."
+            emit:
+                range: string
+                required: true
+                description: "Expression reading the reduced value out of the state."
+        slots:
+            - name
+            - description

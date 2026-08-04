@@ -52,10 +52,9 @@ __all__ = ["load", "loads", "validate", "normalize", "dump", "DEFAULT_TARGET"]
 #: Default datamodel class used when a caller does not specify ``target_class``.
 DEFAULT_TARGET = "SimulationExperiment"
 
-#: File-envelope metadata keys that annotate a serialized object's class and
-#: schema version but are not datamodel slots. TVBO strips these at construction
-#: (see ``tvbo.classes.phenotype``), so we drop them before validation too.
-_ENVELOPE_KEYS = ("tvbo_class", "schema_version")
+#: Document-envelope keys, defined once in ``yaml_loader`` and dropped here too because
+#: this path constructs models from an already-parsed dict rather than through it.
+_ENVELOPE_KEYS = yaml_loader.ENVELOPE_KEYS
 
 
 # --------------------------------------------------------------------------- #
