@@ -64,6 +64,7 @@ classes:
       - name
       - abbreviation
       - alternateName
+      - description
       - unit
       - license
     class_uri: atom:atlas/Transformation

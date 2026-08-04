@@ -343,6 +343,7 @@ jobs:
                     - shard: extras
                       paths: >-
                           tests/test_units.py
+                          tests/test_database_golden_dump.py
                           tests/test_yaml_loader.py
                           tests/test_pydantic_loader.py
                           tests/test_linkml_compatibility.py
