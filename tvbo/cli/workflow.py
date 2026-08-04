@@ -7,7 +7,7 @@ import os
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import typer
 from mako.template import Template
@@ -539,8 +539,30 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path,
           scripts/<exp>.<ext>   # frozen backend code from experiment.render(backend)
           spec/<exp>.yaml       # frozen YAML snapshot of the experiment
           README.md             # provenance + how-to-run
+
+    The slurm array shards a sweep and lets the backend vectorize each shard
+    (``--shard``); it has NO per-cell ``--pin`` fan-out. An experiment that EXPLICITLY
+    declares ``distribute.workflow`` over model/coupling parameters asked for per-cell
+    fan-out (e.g. a non-jittable host observation computed once per cell) — slurm would
+    silently vectorize it, tracing that host observation inside the vmap
+    (TracerArrayConversionError). Such an experiment is rejected here with a pointer to
+    ``tvbo workflow snakemake``, which fans one ``--pin`` per cell (see
+    ``_emit_snakemake_study``'s fan-out note).
     """
     from tvbo import export as _export
+
+    # Explicit per-cell distribute.workflow fan-out is snakemake-only (see docstring).
+    _explicit_wf = set((plan.workflow_spec.get("distribute") or {}).get("workflow") or [])
+    _fanned_params = [ax for ax in plan.workflow_axes
+                      if ax.kind == "parameters" and (ax.parameter in _explicit_wf or ax.name in _explicit_wf)]
+    if engine == "slurm" and _fanned_params:
+        _axes = ", ".join(ax.parameter for ax in _fanned_params)
+        _common.die(
+            f"Experiment {plan.experiment_key!r} declares distribute.workflow over parameter "
+            f"axis(es) [{_axes}]: a per-cell fan-out the slurm emitter cannot serve — it shards + "
+            f"vectorizes, so a non-jittable per-cell observation (e.g. a host wave metric) traces "
+            f"inside the vmap and crashes. Emit with `tvbo workflow snakemake` (one --pin per cell)."
+        )
 
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "scripts").mkdir(exist_ok=True)
@@ -829,7 +851,17 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
     AND as a pre-rendered ``scripts/<key>.<ext>`` (run as-is, no codegen). Each rule
     picks between them at run time from ``$TVBO_CODE_SOURCE`` (default *code_source*,
     ``'spec'`` for back-compat), so ONE kit runs either way; ``--stdout`` writes
-    nothing and its rules run ``tvbo run <source-spec> --experiment <id>``."""
+    nothing and its rules run ``tvbo run <source-spec> --experiment <id>``.
+
+    Fan-out note: an experiment that fans a ``parameters`` axis over the workflow (one
+    ``--pin`` per cell, e.g. a per-cell host observation) is emitted spec-mode ONLY, with
+    NO frozen script. A frozen script bakes the model/coupling/network parameters at a
+    single point and hardcodes the whole grid, so the per-cell ``--pin`` can never reach
+    them — pins collapse the exploration on the experiment OBJECT, which only a spec-mode
+    re-render reads. Skipping the (invalid) frozen script also means a run forcing
+    ``--code-source frozen`` still falls back to spec for these rules. Subject / seed / IC
+    fans keep their frozen script: their per-cell value reaches the frozen run at call
+    time (``--subject``, seed / initial-condition kwargs)."""
     study, experiments, study_key = _study_experiments(spec, experiment)
     out_dir = output or Path("output").joinpath(str(study_key), "snakemake")
     if not stdout:
@@ -862,10 +894,10 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
         _max_iter = spec_dict.pop("max_iterations", None)
         if spec_dict.pop("smoke", False) and _max_iter is None:
             _max_iter = 1
-        # Engine-native benchmarking: `--benchmark` / `--set benchmark=true` makes each rule
-        # carry Snakemake's `benchmark:` directive. Like the smoke cap it is a run modifier,
-        # not a workflow-block field, so pop it before the plan/freeze.
-        _benchmark = bool(spec_dict.pop("benchmark", False))
+        # Engine-native benchmarking: each rule carries Snakemake's `benchmark:` directive
+        # (near-zero-overhead resource TSV). ON by default; --no-benchmark / --set benchmark=false
+        # opts out. A run modifier, not a workflow-block field, so pop it before the plan/freeze.
+        _benchmark = bool(spec_dict.pop("benchmark", True))
         plan = _wf.plan(study_key=str(study_key), experiment=exp, backend=backend,
                         engine="snakemake", workflow_spec=spec_dict,
                         overrides=parsed["records"], source_spec=spec, experiment_selector=key)
@@ -880,6 +912,8 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             result_stem = exp.get_result_stem()
         except Exception:
             result_stem = "result"
+        # A fanned `parameters` sweep can't be frozen (see the docstring's fan-out note).
+        _fanned_parameter = any(ax.kind == "parameters" for ax in plan.workflow_axes)
         scripts_relpath = None
         if stdout:
             spec_relpath, select = spec, key
@@ -899,8 +933,11 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             # runs either way: `--code-source frozen` runs `scripts/<key>.<ext>` with no
             # codegen on the node. A render failure is non-fatal — the spec path still
             # works; the rule falls back to it when the script is absent.
-            scripts_relpath = _freeze_backend_script(exp, out_dir, plan.backend.name, key)
-            _common.info(f"froze experiment {key} ({len(plan.workflow_axes)} fan-out axes)")
+            if not _fanned_parameter:
+                scripts_relpath = _freeze_backend_script(exp, out_dir, plan.backend.name, key)
+                _common.info(f"froze experiment {key} ({len(plan.workflow_axes)} fan-out axes)")
+            else:
+                _common.info(f"experiment {key}: {len(plan.workflow_axes)} fanned parameter axis(es) → spec-mode per cell (no frozen script)")
         exp_plans.append({
             "key": key,
             "rule_name": "exp_" + key.replace("-", "_").replace(".", "_"),
@@ -909,8 +946,8 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             # mode or if the render failed, in which case the rule always uses the spec.
             "scripts_relpath": scripts_relpath,
             # Emit-time default code source baked into the rule (overridable at run time
-            # via $TVBO_CODE_SOURCE); 'spec' preserves the pre-existing behaviour.
-            "code_source": code_source,
+            # via $TVBO_CODE_SOURCE); a fanned-parameter experiment is spec-only.
+            "code_source": "spec" if _fanned_parameter else code_source,
             "select": select,
             # The plan resolves an unset backend to the experiment's execution.backend
             # (else tvboptim); emit that resolved name, never the raw None — otherwise the
@@ -933,6 +970,9 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             "block": plan.engine_block or {},
             "axes": [{"name": ax.name, "parameter": ax.parameter, "values": list(ax.values)}
                      for ax in plan.workflow_axes],
+            # on_device cohort: the subjects this single job produces one result each for.
+            "cohort_subjects": list(plan.cohort_subjects),
+            "cohort_result_files": list(plan.cohort_result_files),
             "depends_on": [_key_of.get(str(d), _san(str(d))) for d in plan.depends_on],
         })
 
@@ -1355,11 +1395,12 @@ def snakemake(
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
     pack: bool = typer.Option(False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."),
-    benchmark: bool = typer.Option(
-        False, "--benchmark",
+    benchmark: Optional[bool] = typer.Option(
+        None, "--benchmark/--no-benchmark",
         help="Attach Snakemake's native `benchmark:` directive to every rule: a per-cell TSV "
              "(wall time, max_rss/max_vms/max_uss/max_pss MB, CPU time, I/O) written next to "
-             "each output — locally or as a SLURM job. Sugar for --set benchmark=true.",
+             "each output — locally or as a SLURM job. ON by default (a 30 s psutil sampler, "
+             "near-zero overhead); pass --no-benchmark to skip. Sugar for --set benchmark=<bool>.",
     ),
     smoke: bool = typer.Option(
         False, "--smoke",
@@ -1398,7 +1439,7 @@ def snakemake(
     # rule at emit): keep the kit the single source of truth, no separate config.
     override = [
         *override,
-        *(["benchmark=true"] if benchmark else []),
+        *([f"benchmark={'true' if benchmark else 'false'}"] if benchmark is not None else []),
         *(["smoke=true"] if smoke else []),
         *([f"max_iterations={max_iterations}"] if max_iterations is not None else []),
     ]

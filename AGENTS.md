@@ -57,6 +57,7 @@ tvbo skills uninstall          # remove previously installed user skills
 | Skill | Description | Location |
 |-------|-------------|----------|
 | `codegen-templates` | How TVBO's code generation works — template engines, backend dispatch in tvbo/codegen/, and the contract for adding a new backend. | `.claude/skills/codegen-templates/SKILL.md` |
+| `fitting-and-sweeps` | Hygiene for parameter fits, working-point tuning and sweeps: gate on convergence, never argmax onto a grid edge or into a degenerate regime, and make the selection criterion match the claim. Use when tuning a model to a working point, sweeping a coupling, or fitting parameters against data. | `.claude/skills/fitting-and-sweeps/SKILL.md` |
 | `git` | Rules for git operations in TVBO. The user manages all version control. Use when clarifying what git actions are allowed or when a task involves version control. | `.claude/skills/git/SKILL.md` |
 | `linkml-schema` | How to edit the LinkML schema in schema/*.yaml and why tvbo/datamodel/** is generated and must never be hand-edited. | `.claude/skills/linkml-schema/SKILL.md` |
 | `mermaid` | Create, validate and preview Mermaid diagrams through the Mermaid Chart VS Code extension: the LM tools to call, the real command IDs, and the @mermaid-chart slash commands. Use when asked to draw, edit or visualize any diagram. | `.claude/skills/mermaid/SKILL.md` |
