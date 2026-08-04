@@ -48,18 +48,12 @@ def domain_enforcement(domain) -> str:
     return str(enf).rsplit(".", 1)[-1]
 
 
-#: Where a state variable starts when its spec does not say. Every backend reads
-#: ``initial_value`` through :func:`initial_value`, so an undeclared state starts at the
-#: same place everywhere instead of at whatever each template happened to write.
-DEFAULT_INITIAL_VALUE = 0.1
-
-
-def initial_value(sv, default=DEFAULT_INITIAL_VALUE) -> float:
+def initial_value(sv, default=0.1) -> float:
     """The initial value a state variable declares, else *default*.
 
     ``StateVariable.initial_value`` has no schema default: undeclared is ``None`` and
     means "the spec did not say", which is what makes the fallback the caller's to name.
-    A model state starts at :data:`DEFAULT_INITIAL_VALUE`; an observation reduction's
+    A model state starts at the generic 0.1; an observation reduction's
     accumulator starts at its reduction identity ``0.0``, which is a different question
     and so is passed explicitly.
 

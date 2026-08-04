@@ -17,9 +17,10 @@ experiment = context['experiment']
 
 from tvbo.utils import initial_value as _initial_value
 
+_n_reg = getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions
 initial_conditions = np.array([
-    np.full(((getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions),), _initial_value(v))
-    if v.initial_value is None or np.isscalar(v.initial_value) else v.initial_value
+    np.full((_n_reg,), _initial_value(v)) if np.isscalar(v.initial_value) or v.initial_value is None
+    else v.initial_value
     for k, v in experiment.dynamics.state_variables.items()
 ]).reshape(
     1,

@@ -98,7 +98,7 @@ dynamics:
                 rhs: "q + dt_s * (f * (1.0 - (1.0 - E0) ** (1.0 / f)) / E0 - v ** (1.0 / alpha - 1.0) * q) / tau_o"
             description: Deoxyhaemoglobin content
 
-    derived_variables:
+    derived_parameters:
         dt_s:
             equation: {rhs: "dt * 0.001"}
             unit: s
@@ -118,6 +118,8 @@ dynamics:
         k3:
             equation: {rhs: "1.0"}
             description: Volume-change weighting; see the note on k2.
+
+    derived_variables:
         bold_signal:
             record: true
             equation:
