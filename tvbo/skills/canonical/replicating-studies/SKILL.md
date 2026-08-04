@@ -42,6 +42,20 @@ no network. Each phase you do has a REQUIRED output. The scorecard in Phase 6 ma
 to the criteria you write in Phase 1, and Phase 7 verification is what stops you trusting
 figures that silently integrate the wrong attractor.
 
+**This skill is a spine plus six reference files.** Everything below is the spine: the
+invariants, and the decision each phase has to make. The mechanics of a phase live in a
+reference file next to this one, meant to be read when you reach that phase — or handed to a
+subagent doing that phase alone.
+
+| file | read it when |
+|---|---|
+| `assets/sweeps.md` | the paper's sweep is a branch / continuation / IC ensemble, not a product grid (Phase 3) |
+| `assets/figures.md` | writing the `figures:` block — layout keys, the size/aspect/type-size protocol, panel binding (Phase 5) |
+| `assets/verification.md` | building the oracle — identity harness, assumption labelling, free conventions, linear inversion (Phase 7) |
+| `assets/deposit-forensics.md` | a number of yours disagrees with a published one and the deposit ships their arrays (Phase 7) |
+| `assets/cluster.md` | packing and submitting a cluster kit (Phase 8) |
+| `assets/traps.md` | something returns plausible-but-wrong numbers — indexed by symptom at the end of this file |
+
 ## The non-negotiables (MUST)
 
 1. **ONE declarative recipe, rooted at `<Study>.yaml`.** All targeted experiments **and**
@@ -206,6 +220,25 @@ Watch for the trap that the *printed* equation is not the one the figures use (T
 Eq. 9 has a √N normalization typo; the figures use the plain std). Record the quantity
 the *figures* actually show, with the discrepancy noted.
 
+**The register is hand-maintained, so guard it like data.** It has no upstream and no
+regenerating script, which means a structural failure in it is silent: a `divergence_register`
+parse once returned 183 rows all of one class and the report printed that as its headline. Add
+it to the identity harness — ids unique, more than one class, `material ≤ scored` — and let a
+duplicate id fail the build rather than the reader. (Two different rows both numbered `C10` sat
+there through several sessions of both being cited.)
+
+**When a row is superseded, REWRITE it and say what it replaced.** A register entry is a dated
+measurement, not a permanent fact, and its worst failure mode is hardening into a documented
+"impossible" that stops anyone re-measuring. Pang2023's D4 recorded that no function of the
+deposit's own affinity matrix reproduces the published variance ("every candidate gives ≈ 4 %")
+and that embedding it does not return its own gradients ("median |r| 0.42"). Both were true when
+written and both were artifacts of a configuration two changes later superseded — the dense
+graph, and a voxel ordering that was simply wrong. They then blocked the right investigation for
+a while, because the handoff said the step was unverifiable. Keep a short **"corrections to
+earlier claims (do not re-introduce)"** list beside the register, with the superseded sentence
+quoted and the number that replaces it, so the next session inherits the correction rather than
+the claim.
+
 ## Phase 1.5 — Scope, then backend-fit + gaps → `backend-fit.md`
 
 **Scope.** Pick which targets to replicate: **all** (default) or a **selected subset**
@@ -327,6 +360,17 @@ Write `input/DATA.md` (from `assets/DATA.md.tmpl`) as the **one tracked pointer*
 input: exact upstream source (author, year, DOI, licence), the sheet/column → paper-quantity
 map, checksums, **exact download + regenerate steps**, and which quantities are synthesised
 vs sourced. Name the true upstream source, never a derived intermediate.
+
+**Match the MODALITY the Methods name, not the one that is easiest to load.** "The same data"
+from one release comes in forms that are not interchangeable: a volumetric NIfTI and the
+grayordinate CIFTI derived from it differ in voxel set, in coverage and — the one that bites —
+in spatial smoothness. Pang2023's Methods say connectopic mapping was applied to *"the volumetric
+voxel-wise resting-state fMRI data"*; using the CIFTI subcortical grayordinates instead covered
+88 % of the ROI's voxels rather than 100 %, and produced a similarity field whose spatial
+autocorrelation was several times shorter, which was the whole of a target's shortfall for two
+sessions. **Record the modality in `DATA.md` as a decision, with the Methods sentence quoted**,
+and treat a coverage mismatch against the deposit's own arrays (their matrix is N × N over the
+full mask, yours is over a subset) as the first evidence that you took a different file.
 
 **Do not vendor sizable or upstream data into git — gitignore it and document how to fetch it.**
 Place data by provenance:
@@ -518,77 +562,15 @@ there too, so a figure and the report that embeds it can never point at differen
 `scripts/plot_<name>.py`
 are both regenerable artifacts.
 
-**A `Figure` is layout + binding + style; keep compute and plotting code out of it.**
-- **Layout is metadata:** `layout` (bsplot mosaic string, e.g. `aab/ccb` — letters = panel
-  keys, `/` = new row, repeated letters span, `.` = empty), `width`/`height` (mm), `dpi`,
-  `font_size`, `height_ratios`/`width_ratios`, `style` (`.mplstyle` paths), `spines`,
-  `panel_numbers`/`panel_number_format`/`panel_number_loc`. Set the paper's physical size and
-  type scale here, once — never in code.
-
-**Size, aspect and type size are MEASURED off the original, not guessed — get them right on
-the first render.** Three defaults are wrong for a replication and cost a re-render every time:
-
-- **Aspect.** Derive `height` from the original's own pixel aspect: `height = width ×
-  (h_px / w_px)` of the paper's figure scan (a Nature two-column figure is `width: 183`, a
-  single-column one `88`). Then set **`trim_margins: false`** — the default trims to content
-  (`bbox_inches="tight"`), which re-crops the saved PNG and makes its aspect drift away from
-  the declared `width × height`, which is exactly the "why is my figure the wrong shape"
-  symptom. Check it: the rendered PNG's `h/w` must equal `height/width` to ~1 %.
-  **But `trim_margins: false` also exposes a layout failure that trimming used to hide.**
-  A dense mosaic (many panels, a very short row, empty `.` cells) can starve matplotlib's
-  constrained-layout solver — it warns `axes sizes collapsed to zero` and silently drops
-  EVERY axes back to the default 12 % subplot margins, giving a figure ringed by ~8 % white
-  that neither `set_layout_engine("none")` nor `subplots_adjust` nor `height_ratios` will
-  shift. Diagnose by measuring the ink bounding box of the PNG; if padding is ~8 % on all
-  four sides while a sibling figure is at ~1 %, that is this bug and not your margins. The
-  fix is to let it trim and declare the size OVERSIZE so the trimmed result lands on the
-  target (iterate twice — measure, rescale, re-render), and **re-measure after any type-size
-  change**, because the trim moves with it.
-- **Panel proportions.** A mosaic alone distributes rows/columns EQUALLY. If the paper's rows
-  or columns are unequal (a short schematic row above tall matrix panels), measure their pixel
-  extents in the original and set `height_ratios` / `width_ratios` — otherwise every panel is
-  subtly the wrong shape even though the figure size is right.
-- **Type size — the single most repeated defect in this skill's history. VERIFY IT IN PIXELS,
-  every time, before you call a figure done.** Set **`font_size: 9`** for a 183 mm figure and
-  **10** for an 88 mm one as the *starting* value, never below 8. Then MEASURE, because two
-  independent traps make the declared number a lie:
-
-  1. **A study `.mplstyle` silently overrides `font_size`.** If the study ships a style file
-     that sets `font.size`, it used to be applied *after* the declared size and won — so
-     `font_size: 8` in the spec rendered as whatever the style said (Pang2023: 5 pt) with
-     nothing in the spec, the log, or the emitted script to show it. tvbo now applies the
-     `.mplstyle` FIRST and the declared `font_size` last (regression-tested), but **any style
-     file you write must still be checked**: grep it for `font.size`, `axes.labelsize`,
-     `xtick.labelsize`.
-  2. **A point size is meaningless without the width it was measured at.** Apparent size is
-     the ratio of glyph height to figure WIDTH. Pixel forensics on a 120 mm (1.5-column)
-     original that you then reproduce at 183 mm yields type ~1.5× too small — and the same
-     error scales every `linewidth`, `markersize` and tick length in the file. If a
-     `.mplstyle` is derived from measurements, record the width they were taken at and
-     rescale by `target_mm / measured_mm`.
-
-  **The check (do it, don't assume):** binarise the rendered PNG and the paper's own scan,
-  take connected components with `5 <= h <= 40 px`, and compare the modal glyph height as a
-  PERCENTAGE OF IMAGE WIDTH. That ratio is resolution-independent, so it compares a 953 px
-  scan with a 2161 px render directly. Journals run ~0.7–0.85 %; land within that or slightly
-  above. **Aim a little above the original** — a Nature figure's 6 pt labels are legible at
-  183 mm in print and illegible on screen at 2000 px, and every replication we have shipped
-  erred small, three of them after this rule was already written down.
-- **Grammar panels need zero code.** A `cartesian` or `heatmap` panel binds data through its
-  `layers`: `used: {iri: tvbo:exp/<Study>/exp-3, output: <var|observation__name>, sel: {dim: label}}`
-  (label-keyed, never positional — this binding **is** the PROV `used` edge), plus `mark`
-  (`line`/`scatter`/`rule`/`band`; implied for heatmap) and `encoding: {x, y, color}` naming
-  container dims/coords. `transform:` names an optional presentation-only reduction. Bind an
-  **in-study** experiment by id — `used: {experiment: 3}` — rather than spelling a full `iri`:
-  it needs no hardcoded study key and registers the run-order dependency (that experiment runs
-  before the figure). Reserve an explicit `iri` for a curated/external container.
-- **Only a bespoke interior is code.** A `custom` panel sets `render: <fn>` + `opts:`, where
-  `<fn>` is a `@bsplot.register_panel` callable `fn(fig, ax, ctx)` in a module named in the
-  figure's `code_modules:` (a flat file in `code/`, e.g. `code/<study>_figures.py`). It reads its resolved layers with
-  `bsplot.load_layer(ctx["layers"][i])` and draws. A reused reduction is a
-  `@bsplot.register_transform` `fn(da)->da`. This is the escape hatch — reach for it only when
-  the grammar genuinely can't express the panel (twin axes, connectome, brain surface, dense
-  nested subgrids), not by default.
+**A `Figure` is layout + binding + style; keep compute and plotting code out of it.** The
+mechanics are in **`assets/figures.md`** — every `layout` key, the size/aspect/type-size
+measurement protocol, how a grammar panel binds its data through `layers`/`used`/`encoding`,
+when a bespoke `@bsplot.register_panel` interior is warranted, how to choose *which* point a
+marker marks, and how the paper's own published data binds by IRI. Read it before writing the
+block: three of its rules — derive `height` from the original's pixel aspect, set
+`trim_margins: false`, and VERIFY type size in pixels rather than trusting the declared
+`font_size` — are the most-repeated defects in this skill's history, and every one of them
+costs a re-render.
 
 **Compute lives upstream, never in the figure** (the ladder, design decision #4): prefer an
 **Observation** declared on the experiment (plot-ready, recorded as `observation__<name>`) →
@@ -634,25 +616,6 @@ paper's style, not a `①` glyph. Use matplotlib **mathtext** for symbols (`$\si
 `$\Gamma$`, `$t/T$`), and a hyphen, not an em-dash, in titles. This is the figure-side of the same
 LaTeX-not-Unicode rule the report captions follow.
 
-**A marked/sampled point must match what the paper says it IS — read the figure description, then
-verify via the panel it feeds.** When a `custom` panel marks sample points on a curve (three
-periodic orbits 1/2/3 on a period-vs-parameter branch), select each from the paper's figure
-caption/description, not a guessed heuristic: the description names what the point is — its period
-band **and its morphology** ("point 2 = the *mid* orbit, an asymmetric spike with a slow rise") —
-and that fixes which branch point to take. Then verify against the panel the marker drives: the
-marked orbit's waveform sub-panel must show the described shape. (An argmin-on-period heuristic put
-our "2" at the bottom-corner fold — a too-symmetric spike; the description's "asymmetric spike +
-slow rise" is what identified the elbow one bend up as the right orbit.) This is Phase 7's
-shape-check applied to marker placement — the caption/description is the oracle for *which* point,
-not just how to word it.
-
-**External published paper data binds by IRI too.** When a panel pairs TVBO output against the
-paper's own figure data, wrap that data as an external `Dataset` and bind
-`used: {iri: tvbo:dataset/<Study>_source, output: <var>, sel: {figure: 6, panel: c}}` — the
-same declarative path, figure/panel as coordinates you `sel` into. Until wrapped, a **flat,
-label-keyed** per-panel `.nc` set (`xarray` named coords, not filesystem-keyed) is an accepted
-stopgap; don't build an elaborate filename tree — it's throwaway once the `Dataset` binding lands.
-
 ## Phase 6 — Report: `report/report.qmd` (every number computed)
 
 **The report MUST carry a "Where the Methods and the code diverge" section** whenever the study
@@ -663,6 +626,57 @@ section of its own rather than burying it in Limitations; the full evidence live
 `report/analysis/methods-vs-code.md`. State plainly that the divergences are *visible* only
 because the deposit is open — otherwise the section reads as a criticism of the most transparent
 papers.
+
+**Every choice RECOVERED by matching the deposit must be disclosed in the REPORT, not only in
+the register — and the report must say what it does and does not license.** This is the single
+easiest way for a replication to overclaim, and it is easy precisely because nothing looks
+wrong: the recipe is honest, the register is honest, the report quotes computed numbers, and a
+reader still cannot tell that part of the pipeline was tuned until it matched. Pang2023 shipped
+a report saying "T30 met, all six numbers within 3.1 points" while three determining choices —
+the graph sparsification, the variance weight and window, and the input field's smoothing — had
+each been fixed by scoring against the authors' own arrays, and the words "sparsified",
+"smoothed" and "1/λ" appeared nowhere in the PDF.
+
+Write the disclosure as its own Limitations bullet, and give it all three parts:
+
+- **Name each recovered choice and read its value FROM THE SPEC**, never typed — the same rule
+  as any other number (`analysis_argument(<analysis>, <argument>)` off the loaded study, so the
+  prose cannot outlive a change to the recipe).
+- **State the consequence in the reader's terms**: the agreement is evidence about the *paper's*
+  pipeline — it says these steps are what the published figure was made with — and it is **not**
+  an independent check of yours, because yours was tuned until it matched.
+- **State the counterweight, if you have one.** What in the chain was *not* fitted (masks,
+  meshes, the eigensolve, the correlation), which alternative causes were excluded first, and
+  what makes the choice a recovery rather than a fit — a single value repairing several
+  independent structures at once, with the answer flat over a range, is the strongest form.
+
+The same bullet is where a **declared deviation from the paper's own code** belongs (a corrected
+statistic, a causality constraint), with the uncorrected numbers computed and printed beside the
+corrected ones so the reader can see both.
+
+**A number computed in a scratchpad is not a computed number.** Diagnostics done outside the
+recipe — a sensitivity sweep, a cross-tabulation against the deposit — produce exactly the kind
+of striking figure that ends up typed into prose, where nothing recomputes it and nothing catches
+it drifting. Promote them before they enter the report, and there are only two homes:
+
+- **A declared analysis**, when the diagnostic runs on your own artifacts. A mode-count
+  sensitivity sweep becomes `<fig>_sensitivity` with its own arguments, and if it needs
+  something the recipe does not otherwise declare (a basis carried past the model's mode count)
+  it declares that too, labelled as being for the check and nothing else.
+- **The identity harness**, when it must read the deposit — the one place where that is
+  legitimate. Give the harness's report object a `values` dict alongside its pass/fail rows,
+  persist it with the summary, and bind the numbers by name. Keep one genuine assertion in the
+  check so it can still fail (the deposit's own vector through your code must return the
+  deposit's own published number); the rest are measurements.
+
+Two mechanical points that bite here. Shared scalars a diagnostic must agree with the model
+about (`γ_s`, the stimulus window, the step size) should be **YAML-anchored once and referenced
+twice**, so the check cannot drift from the model it is testing — but an alias resolves only
+*after* its anchor, and `analyses:` precedes `experiments:` in the recipe, so the anchor has to
+sit at the first use, in the analysis. And **audit the prose for typed decimals before shipping**:
+strip the `{python}` spans, regex the remainder for numbers, and classify every hit as the
+*paper's* (a literal, correctly) or *yours* (a bug). The one-line audit found eleven of ours in
+prose that had been written the same afternoon.
 
 See **writing-reports** for the report mechanics: the IMRAD structure, the metrics cell
 that computes every number from the containers (nothing hand-typed), the native
@@ -790,639 +804,129 @@ substitute SC gave FC r=0.27 — the same as tvboptim's 0.32 — proving the sho
 connectome, not the engine; without it we'd have chased an implementation bug that wasn't
 there.)
 
-### When the paper deposits its own ANALYSIS OUTPUTS, demand identity (r = 1, RMSE ~1e-15)
+**When the deposit ships the authors' own derived arrays, verification becomes exact** — run
+our implementation on their inputs and require machine precision. Write it as a standing
+harness (`code/verify_identity.py`) that prints one table, because it is what you re-run after
+every refactor. Classify every check before writing it, because mixing the classes is how a
+replication overclaims: `identity` (deterministic, same algorithm — RMSE ≲ 1e-12, and **a
+failure is OUR bug**), `convergent` (solver-tolerance-limited — agreement stated with its
+floor), `stochastic` (depends on an unpublished seed — distributional only, since matching an
+exact number would mean we tuned to it).
 
-Many deposits ship not just inputs but the authors' own *derived* arrays (accuracy curves,
-power spectra, permutation sets). That converts verification from "do we agree roughly?" into
-an exact test: run **our** implementation on **their** inputs and require machine precision.
-Write it as a standing harness (`code/verify_identity.py`) that prints one table, because it
-is the thing you re-run after every refactor. Classify each check up front — mixing the
-classes is how a replication overclaims:
+Two rules hold whatever the deposit contains:
 
-| class | meaning | criterion |
-|---|---|---|
-| `identity` | deterministic, same inputs, same algorithm | RMSE ≲ 1e-12. **A failure is OUR bug.** |
-| `convergent` | deterministic but solver-tolerance-limited | agreement stated *with its floor* |
-| `stochastic` | depends on an unpublished seed | distributional only — matching an exact number would mean we tuned to it |
+- **A check that cannot run must FAIL, not vanish.** A summary reading "50 checks, 0 failing"
+  has to mean fifty were attempted. A check that raises before registering itself reports
+  success for itself forever, and ours guarded the sign vectors of every displayed basis.
+- **A convention you cannot verify is an ASSUMPTION — write it down as one**, in `targets.md`
+  beside the target it feeds, with the alternatives you rejected and a sensitivity test. Most
+  deposits ship no derived outputs at all, so this is the common case, not the exception, and
+  an assumption hardening into an assertion through repetition is the standard way a
+  replication states something it never established.
 
-Identity is a *discriminating instrument*, not a rubber stamp — it localises bugs that a
-correlation would hide. Four traps it caught in one study (Pang2023), each of which would
-have produced plausible, wrong figures:
+**`assets/verification.md`** has the instrument itself: the four identity traps (several
+versions of "the same" array, where a nonlinear step sits relative to an average, why
+"improving" the reference algorithm breaks it, NaN poisoning a least-squares solve), harness
+construction (parse the spec with the loader not a regex, cover every artifact the report
+*quotes*, compare a quantity against a reference of ITSELF), the assumption-labelling
+procedure, gauging a free convention on the DISPLAY path and never inside the solver,
+inverting a linear stage instead of fitting a scale, and verifying a figure's shape rather
+than only its numbers.
 
-- **The deposit ships several versions of "the same" array.** The basis under
-  `results/basis_geometric_*` differed from `template_eigenmodes/*_emode_200.txt` by 4.2e-2.
-  Both look right; only one gives identity (5.6e-16 vs 2.6e-6). **Try every candidate and let
-  identity pick** — never assume the obviously-named file is the one the figures used.
-- **Order of a nonlinear step.** A normalised power spectrum averaged over subjects is NOT
-  the spectrum of the subject-averaged map: r = 0.885 vs r = 1.0000000000. Whenever a
-  statistic normalises, establish *where* the averaging happens; the paper's prose often
-  won't say, and only identity distinguishes them.
-- **"Improving" the reference algorithm breaks it.** Symmetrising a Gram matrix before
-  solving is numerically defensible and *wrong here* — port the reference's arithmetic
-  exactly (`(Ψ'Ψ)\(Ψ'y)`), because identity against it is the criterion.
-- **Masked/NaN vertices silently poison a least-squares solve.** One NaN turns an entire
-  reconstruction into NaN. Restrict to the analysis mask the paper uses (its cortex mask),
-  and treat an all-NaN result as a convention bug, not a data problem.
-
-Two mechanical ones worth a checklist line: when loading a `.mat`/HDF5 reference, select the
-dataset **by name** (`eig_vec`), never "the first key" — sibling arrays like `eig_val` sort
-first and load silently; and MATLAB HDF5 arrives **transposed**, so confirm orientation
-against a known dimension rather than by eye.
-
-**A cross-check experiment should RECORD on the grid it will be compared against.** When one
-experiment exists to bound another's error, declare its observation at the *other* run's
-sampling period (`iri: tvbo:SubSample`, `period: <the other run's dt>`, `reduce: streaming`)
-rather than recording its own — much finer — solver step. The two then share one time
-coordinate by construction, so the comparison needs no interpolation and no positional
-decimation, and the container stops being an artifact in its own right: Pang2023's vertex-space
-check went 2.3 GB → 151 MB and 10 min → 1m23, because the *write*, not the solve, was eight of
-those ten minutes. Recording every step of a 32,492-node field "in case we need it" is also how
-you stall the whole machine — that write filled the page cache and collapsed throughput for
-unrelated work that followed, which reads as a hung job rather than as the disk-bound write it is.
-
-**Report a cross-check that does not converge AS unresolved.** Do not quote a bound from a
-diverged run, and do not quietly drop the target. Say what was measured (the step sizes tried,
-where it left the physical range, the growth rate at each), separate what that *does* exonerate
-(here: the analysis chain, verified end to end on the diverged container) from what stays open
-(the discretisation), and mark the row `short` with the open question as its reason — it was
-attempted and its criterion is not met, which is the one verdict that says so. An unresolved
-verification honestly reported is a result; a missing one is a gap in the replication.
-
-### When NO output data is shipped, an unverified convention is an ASSUMPTION — label it
-
-The identity checks above only exist because that deposit happened to include the authors'
-derived arrays. **Most do not.** The failure mode is subtle and expensive: with nothing to
-test against, a plausible reading of the Methods gets written into `targets.md` as though it
-were established, every downstream number inherits it, and the report states it as fact.
-
-The tell is that the paper's prose *underdetermines* the computation. "The power spectrum of
-the group-averaged maps" does not say whether the averaging precedes or follows a nonlinear
-normalisation — and those differ by r = 0.885 vs 1.0. Prose almost never pins down: where an
-average sits relative to a nonlinear step; which of several shipped files is "the" basis;
-whether an analysis runs on all vertices or a cortex mask; 0- vs 1-based indices; whether a
-"correlation" is over vertices or parcels.
-
-So, when you cannot verify:
-
-1. **Write the assumption down as an assumption**, in `targets.md`, next to the target it
-   feeds — not as a statement of what the paper did. Phrase it "we read X as Y; not
-   verifiable from the deposit".
-2. **Enumerate the plausible alternatives you rejected**, and say why. If you cannot name an
-   alternative, you have not understood the choice well enough to make it.
-3. **Test sensitivity.** Compute the target under each candidate convention. If they agree
-   to within the reported precision, the ambiguity is harmless — say so and move on. If they
-   disagree materially, that is a *first-class limitation* of the replication, and the
-   scorecard must show the range, not one arbitrarily-chosen member of it.
-4. **Never let an assumption harden into an assertion** through repetition. A convention you
-   guessed in Phase 1 is still a guess in Phase 6 unless something verified it in between.
-
-This is the same discipline as **doubting a claimed discrepancy** — default to "we may have
-misread this", and make the uncertainty visible instead of resolving it silently.
-
-### A derived object with a FREE CONVENTION: gauge it on the DISPLAY path, never in the solver
-
-Some products are defined only up to a convention the mathematics does not fix — an
-eigenvector's sign, an ICA/PCA component's sign, the ordering inside a degenerate eigengroup,
-the rotation inside an NMF factorisation, a gradient's direction. Half of any independent solve
-then comes out mirror-imaged against the paper, which reads to a reviewer as a wrong result. Four
-rules, in order; each of them was learned by breaking it.
-
-**1. Apply the convention only where the object is DISPLAYED.** If anything *integrates, fits or
-projects in* that basis, its coefficients are defined relative to the basis **as the run saw
-it**, so re-gauging afterwards projects the result through a convention the run never used. A
-deterministic sign rule placed inside Pang2023's eigensolvers scrambled the wave model:
-corr(field, V1 stimulus) = −0.33 where either self-consistent pairing gives +0.92, V1's response
-moved from 6.1 ms to 26.8 ms, node FC fell 0.618 → 0.205 — and the mismatch was exactly the gauge
-vector on all 200 modes. Structure it in the recipe as two nodes: `<name>_raw` (the solve) →
-`<name>` (one declarative `apply_signs`-style transform). Panels bind the aligned node;
-eigenvalues, stimulus weights, the noise covariance and every projection bind the raw one.
-**One-step diagnostic** when you suspect two bases are in play: correlate the quantity the run
-actually *drove with* against a freshly produced copy of it — ~+1 means one basis, a per-element
-±1 pattern names the transform that got inserted between them.
-
-**2. Measure that no principled rule exists before you write a literal one.** A hardcoded
-alignment vector is either an honest record of an arbitrary convention or a bug wearing a
-constant, and only a measurement tells them apart. Enumerate the candidate data-only rules
-(max-|value|, sum, third moment, positive mass, first element) and score each against the
-deposit. Pang2023's scored at **chance** — 94–106 of 200 modes — and its three graph bases
-disagree with *each other* on the leading mode, which Perron–Frobenius fixes as non-negative.
-That measurement is what licenses the literal vector; without it, do not write one.
-
-**3. Derive the constant from the exact container the recipe applies it to.** Not from a fresh
-call to the same solver — same modes, different signs, because an iterative eigensolver's output
-depends on restarts and thread order. Deriving Pang2023's vectors from a direct
-`surface_eigenmodes` call instead of the produced `*_raw` container left 99 modes wrong and read
-as a 101/200 near-chance result, which looks exactly like a failed alignment rather than a
-sampling mistake.
-
-**4. Prove the transform moves nothing scored, with a number.** Recompute every scored quantity
-with and without the gauge and assert the worst |Δ| is at rounding (ours: 0.000e+00). A cosmetic
-transform that changes a result is not cosmetic.
-
-**The recipe must run without the deposit; the ORACLE may read it.** This is the general split
-that makes a declared alignment legitimate rather than a hidden dependency on reference data. The
-literal vector goes in the spec as metadata (non-negotiable #1 — the recipe renders a figure
-with no deposit on disk); a `verify_identity` check re-derives it from the published arrays and
-fails on drift. Same rule for any hardcoded convention: constant in the spec, derivation in the
-oracle, and say in the report which it is.
-
-### A verification script must parse the SPEC with the loader, never with a regex
-
-An oracle that greps YAML is one refactor from silently checking nothing. Pang2023's declared-sign
-check matched analysis names with a regex; the spec then grew `!include` fragments and anchors, the
-pattern matched zero rows, and the check reported every vector as fine. Load the study
-(`SimulationStudy.from_file`) and walk the objects — then a renamed analysis fails loudly instead
-of passing vacuously. The same applies to any check that asserts something about the recipe:
-read it through the same loader the run uses, or you are testing a different document.
-
-**Cover every artifact the report QUOTES, not just the numbers you were last debugging.** A
-harness that asserts physics and polarity will happily pass while a headline deliverable the
-report parses — a divergence register, a targets table — is corrupt on disk (below). If the
-report reads a file to produce a number, the harness checks that file. Cheap and sufficient:
-re-parse it with the *same* helper the report uses and assert the structural invariants a
-corruption breaks (no duplicate row ids, more than one class present, every verdict in the
-declared vocabulary).
-
-**A standing check must compare a quantity against a reference of ITSELF.** A harness row that
-pits one convention against another measures the gap between definitions and reports it as a
-failure of your arithmetic. Ours compared a spin-test p computed under the reference
-implementation's one-sided, direction-averaged, uncorrected rule against a hand-rolled
-two-sided `(k+1)/(n+1)` p, and failed forever on a difference that was the point of having two
-definitions. Where a function offers several conventions, check *each* against a hand-rolled
-reference of that same convention — and treat a long-standing red row as a bug in the check
-until you have re-derived it, since a permanently-failing check trains you to ignore the table.
-
-### For a LINEAR model, don't fit a scale — invert the transfer function
-
-When a replication's output has the right shape but the wrong magnitude, the instinct is to
-report a best-fit scale factor. For a linear model that is the weak measurement, because the
-fit absorbs every other residual — basis truncation above all — and lands on a number that is
-neither the true scale nor obviously wrong. In Pang2023 the forward fit read 1.85 against a
-4–8 % truncation floor, and sat unexplained for a long time.
-
-Invert the model instead. A linear system's own transfer function is exactly invertible, so
-the deposited OUTPUT determines the INPUT that produced it:
-`Q(ω) = Φ(ω)·[−ω² + 2iωγ_s + γ_s²(1 + r_s²λ)]/γ_s²`. That returned a flat boxcar of amplitude
-**10.00 ± 0.05** where the Methods said 20 — a factor of exactly 2, settled in one step.
-
-Two reasons this beats fitting:
-
-- **It is truncation-consistent.** The same basis appears on both sides, so the error that
-  contaminates a forward comparison cancels instead of biasing the estimate.
-- **The recovered input's SHAPE is a self-test of the whole model.** A flat rectangle can only
-  come out if `γ_s`, the damping term, the eigenvalues and the stiffness are all right; any
-  error makes the recovery frequency-shaped. So the measurement validates the model and
-  quantifies the discrepancy at once — you are not merely asserting agreement.
-
-Generalises to any linear or linearised stage: a haemodynamic convolution, a filter, a modal
-projection. Where the model is nonlinear, invert around the operating point and say so.
-
-**Port a statistical procedure from the reference implementation, not from its description.**
-A spin test is the canonical example: naive nearest-neighbour matching of rotated parcels is
-*not a permutation* (parcels get duplicated and dropped), which biases the null; the published
-method (Váša `rotate_parcellation.m`) does a greedy "most distant minimum" assignment
-**without replacement**. Also force `det = +1` — the QR of a Gaussian matrix can be a
-*reflection*, which is not a rotation of the sphere. Where the deposit ships its own
-permutation set, use **theirs** to verify your statistic, which isolates the test from your
-RNG; then check your own generator separately (every row a true permutation).
-
-**Measure the layout, then eyeball the shape.** Declare each figure's published counterpart
-with `reference_image: original_study/img/fig_0N.png` and run `tvbo figure compare
-<Study>.yaml`: it decomposes both images into panel boxes (recursive XY-cut), matches them by
-overlap, and writes a per-panel offset table plus a side-by-side overlay. Page **aspect** is
-the number to read first — it is exactly reproducible and it catches the whole class of "the
-figure is the wrong shape" that survives every value check. A deliberate aspect difference
-(a panel of the paper's you do not draw) is fine, but it belongs in the figure's
-`description:` as a stated departure, not as an unexplained 1.14-against-1.75. The panel
-counts often disagree because a published raster's panels touch where yours have gutters;
-read the offsets only where the counts agree. Identifying the counterpart is itself worth the
-few minutes: deposits number their images `fig_01…fig_NN` with no mapping to "Extended Data
-Fig 10", the offset from main-text numbering is *not* uniform, and the only reliable way is to
-open the candidates — doing so is what turned Pang2023's `r_s` landscape from an
-uncomparable panel into one measurable at aspect 1.272 against 1.280.
-
-**Eyeball every reproduced panel's *shape* against the paper — the A/B internal composite is
-the instrument, not a formality.** Inline-computed numbers (non-negotiable #2) catch a wrong
-*value*, but a curve that plateaus where the paper's descends, a flipped monotonicity, a sign
-error, or a saturated axis still *computes* a number and sails through a value check. Lay the
-reproduction beside the original panel-for-panel and confirm the qualitative shape before
-declaring a figure done — a mismatch there is a modelling/analysis bug the reference
-integration alone won't surface. (Taher Fig 9(d): one strategy curve sat as a flat plateau
-instead of the paper's staircase descent — the visible tell of a broken solitary set, invisible
-in the scalar metrics.) This is also the moment a stale caption shows up: prose written before a
-later fix (a "not yet wired" follow-up that since shipped) must be reconciled with what the
-panel now shows.
+**When a number of ours disagrees with a published one, `assets/deposit-forensics.md` is the
+playbook** — inventory the deposit by content rather than by filename, find an order-invariant
+oracle before trusting any positional comparison, measure the statistic's own stability under
+a choice the paper never fixes before blaming your implementation, prove a step inert with
+algebra rather than hunting it with sweeps, compare two derived matrices as a function of a
+covariate, and keep "their result" and "their printed p" as separate claims. It operates under
+the default this skill states everywhere: **a claimed discrepancy is our bug until a
+falsification test says otherwise.**
 
 ## Phase 8 — Scale out to a cluster (ONLY when one node genuinely won't do)
 
 **Skip this phase unless the work is irreducibly large** — a per-subject cohort (one
-independent fit × N subjects) or a fit whose single run is itself heavy. First try NOT
-to need it: a big *graph* → `graph_representation: sparse` + vectorized coupling; a big
-*parameter grid* → a streaming reduced observable (Phase 4). Both routinely turn a
-"needs HPC" run into minutes on one GPU, numerically identical (~1e-16). Assess this
-before packaging anything.
+independent fit × N subjects) or a fit whose single run is itself heavy. First try NOT to need
+it: a big *graph* → `graph_representation: sparse` + vectorized coupling; a big *parameter
+grid* → a streaming reduced observable (Phase 4). Both routinely turn a "needs HPC" run into
+minutes on one GPU, numerically identical (~1e-16). Assess this before packaging anything.
 
 REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site facts).
 
-- **The kit is the same recipe, one command — no drivers, no bash.** `tvbo workflow
-  snakemake <Study>.yaml -o <out> --pack` emits the whole study as ONE Snakemake DAG
-  (one rule per experiment; dataset experiments fan out per subject; a `from_experiment`
-  dependency becomes the DAG edge). Everything stays declarative in the recipe's
-  `workflow:` block: runtime env via `workflow.container: docker://…` (each rule runs
-  inside it via Apptainer — no venv/module activation); per-subject inputs via
-  `Dataset.bundle: true` (`--pack` copies them in and rewrites `bids_root` relative);
-  custom builders/analysis via `code_source:`; per-rule resources
-  (`cpus_per_task`/`mem`/`time`/`partition`) via `workflow.slurm`. The kit is one
-  `.tar.gz`; `tvbo workflow submit <kit>` runs it. This is invariant #1 (one recipe,
-  no drivers) extended to the cluster — never hand-write sbatch.
-- **Every run-time knob is a `--set` on the emit, never a recipe hand-edit or a hand-written
-  sbatch.** The corollary of "no sbatch": any per-run override — swap the whole runtime
-  substrate, retarget the queue, resize a job — is a flag on `tvbo workflow snakemake`, so the
-  recipe stays the portable source of truth and the same study emits for CPU-container *and*
-  GPU-venv without editing it. A **GPU run** is exactly this: drop the container and point at a
-  `jax[cuda]` venv — `--set container= --set slurm.venv=/path/to/.venv --set slurm.partition=gpu
-  --set slurm.gres=gpu:1 --set slurm.mem=… --set slurm.time=…` (the SLURM executor turns
-  `gres` into `--gres` itself; on a GPU node let JAX auto-detect — do **not** force
-  `JAX_PLATFORMS=cuda`, which drops the CPU device a `jax.debug.print` progress callback needs;
-  use `cuda,cpu` if you must set it, and match the `jax-cuda12-*` plugin to `jaxlib`). Env vars
-  are `--set 'slurm.env=[{name: …, value: …}]'`. Install the venv from a **compute node**
-  (`srun`), never the login node.
-- **Prove the memory/streaming fix — don't eyeball it — with engine-native benchmarking.**
-  `tvbo workflow snakemake … --benchmark` (or `--set benchmark=true`) attaches Snakemake's
-  native `benchmark:` directive to every rule: a per-cell TSV (wall time, `max_rss`/`vms`/
-  `uss`/`pss` MB, io, cpu_time) written next to each output, whether run locally or as a SLURM
-  job — one row per cell, so a fanned sweep benchmarks every cell. This is how you turn "reason
-  about resident memory" into a *measured* peak (a streaming BOLD fit that would OOM at hundreds
-  of GB materialized shows a ~GB peak in the TSV), and how you size `slurm.mem` honestly.
-- **Size per-rule memory off the COMPILE peak, and set it PER EXPERIMENT — not one global
-  number.** Streaming bounds the *runtime* trajectory, but what OOM-kills a whole-brain fit is
-  usually ELSEWHERE: XLA/LLVM **compiling** a wide-vmapped long-scan graph (a G-sweep ×10, a seed
-  ensemble ×50) spikes far above the resident set — a 379-node fit that streams at ~2–6 GB still
-  needs ~32 GB to compile, and `float64` roughly doubles that. So an 8 GB request that ran the
-  tuning fine dies *later* with `Failed to materialize symbols` / `LLVM Cannot allocate memory`.
-  Express it as a modest **global `workflow.slurm` baseline overridden per experiment**: each
-  heavy experiment carries `workflow: {slurm: {mem: 32G, cpus_per_task: 4}}` (deep-merged over the
-  study block — only the set leaves change, partition/time/env inherit; DRY via a shared YAML
-  anchor), while the light ones (a DM circuit, a forward run) stay at the baseline. Ship only the
-  Snakefile when just the resources change — never re-extract the tarball over a running kit
-  (clobbers completed results + snakemake state).
-- **A dry run does NOT execute anything — smoke-test ONE experiment in the container
-  FIRST.** `tvbo workflow submit --dry-run` (snakemake `-n`) only resolves the DAG
-  (wildcards, inputs, resources); no `tvbo run` executes, so it cannot catch a runtime
-  bug. A per-rule bug fails all N jobs identically (we once launched 1106 that all died
-  the same way). Before the real submit, run a single experiment end-to-end inside the
-  SIF (`apptainer exec --bind … <sif> tvbo run spec/<id>/experiment.yaml`), then its
-  dependents, then the full submit. This is Phase 7's "run END-TO-END, not `from_file`"
-  at cluster scale. **A *fit* can't be "run once" to smoke-test it** — its whole cost is the
-  tuning iterations. Cap them: `tvbo run … --smoke` (= `--max-iterations 1`) or
-  `--max-iterations N` reaches the post-tuning evaluation in one/N iterations (the recipe
-  untouched), which is how you verify a long fit runs and *streams within memory* in minutes
-  rather than days. At kit level it is a run modifier like any other: `--smoke` /
-  `--set smoke=true` / `--set max_iterations=N` on `tvbo workflow snakemake`.
-- **The container filesystem is READ-ONLY — a bug class that ONLY bites in-container.**
-  Anything writing into the installed package or `$HOME/.cache` at import/run time
-  fails only inside the SIF, never locally or in a dry run: codegen compiling templates
-  into the package dir, `templateflow`/`matplotlib` writing caches, a `$HOME` that
-  symlinks into another filesystem (the link dangles in-container). Fixes: writable
-  temp dirs for codegen caches, and **bind the site filesystem** (`--bind /data/…`,
-  declared in `workflow.slurm` container args). The single-experiment smoke test
-  surfaces every one at once.
-- **Know which fixes need a container rebuild vs a re-emit.** The container runs the
-  *pushed* branch; your emitter is your *working tree*. A schema or codegen-**template**
-  change takes effect only after push → image rebuild → SIF re-pull; an emit-side change
-  (freezing/packaging in the CLI) just needs a re-emit of the kit. Confirm a fix is
-  actually live before assuming — and when you re-pull an image, assert the fix is
-  present (a tag can rebuild to stale cached content; a SIF is named by the URL hash, so
-  it lands at the same path — force the pull).
-- **Ship the kit dual-mode so a version-skewed node can still run YOUR code —
-  `--code-source {frozen,spec}`.** A Snakemake study kit emits BOTH the frozen pre-rendered
-  `scripts/<exp>` and the `spec/<exp>`, and each rule can run either: **spec** (default)
-  re-generates the backend code from the spec at run time (needs a node `tvbo` whose codegen
-  matches the emit-time behaviour); **frozen** runs the pre-rendered script as-is via `tvbo run
-  --rendered scripts/<exp>`, so the reducer/streaming logic is already baked into the script and
-  the node's `tvbo` needs no matching codegen. This is the clean fix for the *version-skew* trap
-  above — when the cluster's released `tvbo` lags a codegen feature the recipe relies on (a new
-  streaming reducer), emit `--code-source frozen` and the node runs the frozen code with no
-  container rebuild. Set the emit-time default (`tvbo workflow snakemake … --code-source
-  frozen`) or override per submission (`tvbo workflow submit … --code-source frozen`, or
-  `TVBO_CODE_SOURCE=frozen snakemake …`); a rule with no `scripts/<exp>` (a cross-experiment
-  analysis has no standalone sim to render) falls back to spec automatically, and `frozen`
-  cannot honour a run-time flag that *changes* codegen (`--set integration.*`, `--pin` on a
-  non-vectorized axis) — use `spec` for those. `frozen` and `spec` are byte-identical for a
-  deterministic experiment (kit anatomy + the full contract: `docs/CLI/workflow-kits.qmd`).
-- **The frozen kit can run a DIFFERENT float precision than your dev run — pin it, or a stiff
-  fit silently NaNs on the cluster.** Frozen and spec agree with each other, but both honour the
-  recipe's `execution.precision` (which may be `float32`), whereas in-process `experiment.run()`
-  hardcodes `enable_x64=True` → **float64**. So you develop and validate in float64 (stable) while
-  the cluster kit runs float32 — and a gradient-based whole-brain FIC/EI fit is only *marginally*
-  stable in float32: it survives one `cpus_per_task` and NaNs under another (the XLA reduction
-  order shifts). The tell is a fit that ran finite once and NaNs on resubmit with nothing changed
-  but the cpu count — **the jax version and the cpu count are the red herrings; precision is the
-  cause.** Fix declaratively: `execution.precision: float64` AND `JAX_ENABLE_X64=1` in
-  `workflow.slurm.env` (forces x64 at runtime on the *already-frozen* scripts, so you re-ship only
-  the Snakefile, no re-render). Diagnose by A/B-ing `JAX_ENABLE_X64` 0 vs 1 with everything else
-  fixed. (Durable framework fix: make `experiment.run()` respect the declared precision so the two
-  paths can't diverge.)
-- **Run the orchestrator on a COMPUTE node, not the login node.** Login nodes are
-  cgroup-capped (a per-user memory limit that OOM-kills a long `snakemake`); DAG
-  resolution that takes seconds on a compute node crawls or dies on a starved login
-  node. Wrap `tvbo workflow submit` in a long-partition job — it is resumable
-  (snakemake skips completed outputs, so a walltime cap just means resubmit). Never
-  install or build on the login node.
-- **Big, flaky transfers: chunk + checksum.** A multi-hundred-MB kit over an unreliable
-  link won't survive one `scp`/`rsync` stream (macOS ships `openrsync`, which doesn't
-  resume); split into ~32 MB chunks, size-verify each with retries, reassemble, then
-  **sha256 the result against the source** — a stale-but-right-sized kit passes a
-  byte-count glance (we shipped one twice before checking the hash). Iterate with small
-  (spec-only) uploads, not the full kit.
+**The kit is the same recipe, one command — no drivers, no bash.** `tvbo workflow snakemake
+<Study>.yaml -o <out> --pack` emits the whole study as ONE Snakemake DAG (one rule per
+experiment; dataset experiments fan out per subject; a `from_experiment` dependency becomes the
+DAG edge), and `tvbo workflow submit <kit>` runs it. Everything stays declarative in the
+recipe's `workflow:` block. This is invariant #1 extended to the cluster — never hand-write
+sbatch — and its corollary is that every run-time knob (swap the runtime substrate, retarget
+the queue, resize a job, go to GPU) is a `--set` on the emit, never a recipe hand-edit.
+
+**`assets/cluster.md` is the operational detail**, and a first cluster run needs all of it:
+sizing per-rule memory off the COMPILE peak rather than the streaming runtime, benchmarking to
+measure that peak instead of reasoning about it, the frozen-vs-spec dual-mode kit for a
+version-skewed node, the float32 divergence that NaNs a stiff fit on the cluster but never
+locally, the read-only container filesystem, which fixes need an image rebuild vs a re-emit,
+why a dry run catches no runtime bug (smoke-test one experiment in the container first), and
+running the orchestrator off the login node.
 
 ---
 
-## Dynamical & numerical traps (these cost us the most time)
+## Symptom index — something is wrong, start here
 
-- **Size `step_size` from the STIFFEST thing the experiment actually integrates — not from the
-  paper's fitted parameter, and not from the sibling experiment whose `integration:` block you
-  inherited.** A step chosen for the optimum is wrong for the sweep that visits the rest of the
-  grid, and wrong again for the same equation solved in a different space. Both failures are
-  SILENT: the sweep returns plausible numbers from the cells that happened to converge. Two
-  measured cases from Pang2023, both from one inherited anchor. (1) The resting model's fastest
-  mode is `γ_s·√(1 + r_s²·λ_max)` — 114 Hz at the fitted `r_s` = 28.9 mm but **390 Hz at the
-  grid's 100 mm**. At the single run's 0.5 ms every cell from `r_s` = 76 mm up returned a growing
-  fraction of non-finite modes (11 % → 47 %) while the low-`r_s` cells looked perfectly healthy —
-  and the *converged* part of the landscape was distorted too: halving to 0.25 ms did not merely
-  remove NaNs, it sharpened the optimum from KS 0.065 in a flat well to **0.029 against 0.068 at
-  its neighbour**, moving the very quantity the paper's optimisation minimises. (2) The same PDE
-  on the mesh instead of in a 200-mode basis: the truncated basis stops at |λ| = 0.044 mm⁻² while
-  the full cotangent LBO reaches **16.0 mm⁻²**, ~360× stiffer, and the inherited 0.1 ms step
-  diverged to 1e116. Measure the operator's spectral radius
-  (`scipy.sparse.linalg.eigsh(L, k=1, which='LM')`), form `dt·ω`, pick the step from that, then
-  confirm the boundary empirically — a sweep locates its own (ours sat at `dt·ω ≈ 0.9` for Heun).
-  Give the swept or differently-discretised experiment its OWN `integration:` block
-  (`<<: *anchor` + an overriding `step_size:`) and say why in a comment, or a reader reads the
-  difference as drift rather than as the measurement it is.
-- **A stability claim needs the FULL production window — a short probe proves nothing.** We
-  tested the vertex-space run over 20 ms, watched it decay, and declared the finer step stable;
-  over the declared 100 ms it holds to ~25 ms and then passes 1e7. A marginal instability grows
-  per STEP, so its blow-up *time* scales with the step — which is also the diagnostic that
-  separates it from a sign/operator error: a genuine positive eigenvalue blows up at the same
-  time whatever the step, whereas ours slowed from 2150 s⁻¹ to 735 s⁻¹ when the step shrank 5×.
-  Measure that growth rate at two steps before concluding which failure you have.
-- **A swept cell must be the SAME computation as the single run — check the frame count, not the
-  code.** The two paths differ structurally: a single run integrates the transient separately and
-  streams only the main window, while a sweep folds transient + main into ONE window and asks the
-  reducer to drop the transient. If that `skip` is accepted and ignored, the sweep silently keeps
-  `skip/stride` extra leading samples — 1,338 BOLD frames where the same experiment run alone
-  gives 1,200 — and every FC/FCD statistic is then computed over a window contaminated by the
-  start-up transient the single run discards. After any sweep, assert the per-cell shape equals
-  the base run's before believing a landscape.
-- **The integrator, not the physics, can move the attractor.** An explicit scheme
-  (Heun/RK2) at too large a `dt` sustains lightly-damped fast librations at high
-  coupling: the *time-averaged* spread climbs and reads like desynchronization, but it is
-  numerical. Halve `dt` (or switch to RK4) and confirm the transition / operating point
-  are unaffected. A paper's quoted "Δt" is often a Lyapunov / rescaling unit, **not** the
-  solver step — do not copy it into `step_size`. Phase 7's reference integration is how
-  you tell numerical drift from real dynamics.
-- **Seeding a *delayed* system needs the delay HISTORY, not just a snapshot.** A
-  `from_experiment` seed carries the state but not the τ seconds of history a delayed term
-  reads; feedback engaging against an unfilled buffer spikes or fails to converge. Fill it
-  with a τ-second **transient pre-roll** (`transient_time: τ`) that replays the operating
-  point; the recorded onset is then `gate.t_on − transient_time` (derive it, never hardcode).
-- **Big graphs: make the coupling sparse/vectorized before reaching for HPC.** For an
-  N-node grid the per-step dense N×N coupling matmul dominates; `network.graph_representation:
-  sparse` (with a factored/angle-addition coupling) turned a multi-hour sweep into minutes
-  locally, numerically identical (~1e-16). Assess this first — often no cluster is needed.
-  For a big *parameter* grid, pair this with a streaming reduced observable (Phase 4) so vmap
-  memory stays bounded and the whole grid fits one GPU.
-- **A fit at the paper's real length: EVERY long-running observable must stream, and
-  the pre-tuning base sim is spurious.** The Phase-4 streaming rule is not just for
-  parameter grids. A fit runs the paper's actual simulation length (long, for stable
-  FC/statistics), and a post-hoc observation that stacks the full trajectory at that
-  length is enormous: Schirner's 10 h × dt=1 ms × 379 nodes × 4 states ≈ 440 GB for ONE
-  FC evaluation → OOM even on a highmem node. Compute BOLD/FC/moments as **streaming
-  reductions** (fold-in-carry over a block scan) that never materialize the trajectory —
-  the result is byte-identical. Two materialization traps specifically: (1) a fitting
-  experiment's *pre-tuning* forward sim is not a deliverable (the tuning algorithm is);
-  don't run a full-length materialized base sim before it. (2) the *post-tuning*
-  evaluation must stream too. Neither shows in a short smoke test — reason about
-  resident memory = `n_steps × n_nodes × n_states × 8 B` up front, and if a needed
-  streaming observable doesn't exist yet, that's a Phase-1.5 framework gap.
-  **You request streaming declaratively — `reduce: streaming` on the observation** (opt-in,
-  byte-identical to the post-scan value to f64 rounding, zero effect on any other
-  observation), which folds it into the integrator carry as an (init, update, finalize)
-  reducer via `prepare(reduce=…)` instead of stacking a trajectory. Supported for the
-  HRF-Volterra BOLD pipeline (the resolver lifts the kernel, downsample stride, TR stride and
-  Volterra `k_1`/`V_0` from the declared pipeline), for cumulative **mean / std / variance**
-  aggregations (Welford, folded per block), and for a **matrix co-moment FC** (`compute_fc` — a
-  running covariance emitted at the end, never a trajectory) — the last is what turns Schirner's
-  ~440 GB FC evaluation into a ~GB peak. Byte-identical noise-off; with tvboptim's *per-block*
-  noise draw the realization shifts with block size (ergodically vanishing — the same accepted
-  tradeoff as the shipped BOLD stream), so treat a noisy streamed metric as distributional, not
-  bit-exact across block sizes. **A streamed observation must decimate
-  by a stride/`subsample`, never `temporal_average`** — a stride is block-additive so it is
-  identical whether or not it is folded in-carry, whereas `temporal_average` is not (and
-  `temporal_average(1)` is not even the identity — it shifts by one). Verify it reaches the
-  streaming post-eval within memory *without* running the whole fit via `--smoke` (below).
-- **Metastable / FC metrics are duration-, trial-, and regime-sensitive — don't call a
-  ceiling early.** A single short run's FC/PLV/order-parameter is noise-dominated (one lucky
-  trial read 0.17; the 8-trial mean was 0.09). Match the paper's **full duration and trial
-  count**, and locate its **operating regime** (the near-critical (K, v) pocket a paper's 2-D
-  grid exists to find) before concluding "structure-limited". We twice declared a gap that
-  duration/trials/regime then closed.
-- **Reconcile the coupling scale with the paper's weight normalization.** A global K that
-  looks orders of magnitude off is usually a normalization convention, not a bug: a coupling
-  `a·gx/N` on *raw* SC (in-strength ~1e4) puts the operating point near K~1e-6, vs the paper's
-  K~0.03 on *normalized* SC. Match how the paper normalizes weights before sweeping K, or the
-  sweep hunts the wrong decade.
-- **A near-bifurcation operating point is implementation-specific — re-tune it to the phenomenon,
-  with precedent.** When a paper selects a regime with a control parameter sitting near a
-  bifurcation (a background drive µ that flips activity-silent → persistent → asynchronous, a
-  coupling at a synchronization onset), the paper's *exact* value need not reproduce that regime in
-  YOUR discretization — a δ-PSC / Euler network's transition sits at a different µ than the paper's
-  kinetic/exact one. Re-tune the control parameter to reproduce the *phenomenon* (the regime and its
-  ordering), document the shift, and cite the precedent: published reproductions routinely re-tune
-  the same knob (the Mongillo NEST reproduction shifted µ_ext ≈0.5 mV after changing the PSC kernel;
-  ours shifted comparably, activity-silent at 22.4 not the SOM's 23.1 mV). Faithful = the phenomenon
-  at a re-tuned operating point, not a byte-identical control value — decimal- vs mechanism-level
-  (Phase 1.5) applied to a control parameter, stated as such in the scorecard. Locate the transition
-  with a quick 3–4 point scan of the control parameter *before* committing the recipe value.
+Every entry below **raises nothing**: plausible numbers, a clean summary, a figure that
+renders. That is exactly why they are indexed by symptom and not by topic — you cannot go
+looking for the section whose name you do not yet know. Find the line matching what you are
+seeing, then read its entry in full in **`assets/traps.md`** (dynamical and numerical traps
+first, then workflow pitfalls).
 
-## Pitfalls we hit (so you don't)
+**The dynamics are plausible and wrong**
 
-- **A metric's *definition and the empirical modality it's compared against* are part of the
-  claim — read them from the METHODS, not the figure caption.** t_c (1/e vs exponential-fit),
-  ⟨Δω⟩ (std about the mean vs the median), λ₁ units; and *what* the sim is compared to
-  (Koller's Fig-8 "FC" is band-specific **MEG-PLV**, not fMRI — sim FC is PLV on the
-  off-diagonal). Pick a documented definition, state it, compute it. A magnitude that differs
-  may be a unit/rescaling convention rather than a physics gap — but **confirm that from the
-  methods**, don't assume it (we labelled it "likely" and it stayed unverified).
+- Some sweep cells return a growing non-finite fraction while the low-parameter cells look healthy → the step was sized for the paper's *fitted* parameter, not the stiffest thing the grid visits.
+- Halving the step does not merely remove NaNs, it *moves the optimum* → same cause; the converged part of the landscape was distorted too.
+- The same equation diverges when solved on the mesh instead of in a truncated basis → the full operator is ~360× stiffer than the truncated one; measure the spectral radius, don't inherit the `integration:` anchor.
+- A run that decayed over a short probe blows up over the production window → a marginal instability grows per STEP; measure the growth rate at two steps to tell it from a sign/operator error.
+- A sweep's per-cell frame count differs from the same experiment run alone → the sweep folded transient + main into one window and the reducer's `skip` was ignored; every FC/FCD statistic is then contaminated.
+- Spread climbs with coupling and reads as desynchronization → an explicit scheme at too large a `dt` sustaining numerical librations.
+- A `from_experiment` seed spikes or fails to converge → a delayed system needs the τ seconds of HISTORY, not a state snapshot.
+- A chaotic or multistable *network* settles on a different attractor → coupling evaluated once per step; needs `coupling_evaluation: per_stage` (a no-op for a single node — there the knob is `dt`).
+- The operating point sits decades away from the paper's K → a weight-normalisation convention, not a bug.
+- The paper's exact control value gives the wrong regime → a near-bifurcation operating point is discretisation-specific; re-tune to the phenomenon and cite the precedent.
+- An FC/PLV/order-parameter number well below the paper's → duration, trial count and operating regime, before "structure-limited".
 
-- **Coupling evaluated once per step** silently integrates a different, multistable
-  attractor. Use `Integrator.coupling_evaluation: per_stage` for chaotic/multistable
-  **networked** systems and verify against the reference (Phase 7). It re-evaluates the
-  *network* coupling term at each integrator stage, so it is a **no-op for a single node**
-  (no network coupling to re-evaluate) — there the attractor-moving knob is `dt` (RK4 / halve
-  the step), not per_stage. Don't reach for it to explain a single-node discrepancy.
-- **Hardcoded fidelity numbers** creep into captions ("t_c ≈ 2.6 s") and read as
-  matches when they aren't. Compute them (Phase 6). A recomputed value that *differs*
-  from the paper is honest; a typed one that matches is not.
-- **Realization dependence.** Exact solitary counts / magnitudes depend on unpublished
-  seeds — count median-relative, state the difference as an accepted limitation, don't
-  chase the integer.
-- **Geometry / eigenmode decompositions: match the *invariant*, not the magnitudes.**
-  Reproduce the paper's exact operator (e.g. an `igl` cotangent-Laplacian at the paper's mesh
-  resolution — parcel-level, not a dense-surface substitute); the reproduced result is the
-  modal *structure* and where power concentrates (a field living in the lowest spatial-frequency
-  modes), while absolute scales (wavelengths) track the surface mesh — inflated meshes differ
-  ~1.3× across sources. Report it mechanism-level with the scale caveat.
-- **Large or derived array constants: declare their provenance, never inline them.** A mesh
-  operator, an empirical matrix, or any precomputed array a model/observation consumes is a
-  `Parameter` declared by *where it comes from*, not a literal: `source:` (WHERE) + `measure:`
-  (WHICH key) for an existing file, or `producer:` (a `FunctionCall` — HOW to compute it) for
-  one derived from the study's own inputs (arguments may reference `network.nodes.position` /
-  `network.mesh.*`). Sourced/produced values are resolved lazily and materialised to a
-  content-addressed companion — never baked into generated source (a 66 MB operator inlined is
-  a source file that will not compile). Reserve inline `value:` for genuine scalars/small
-  arrays. This keeps the spec the single source of truth (a pre-built file drifts from the mesh
-  it came from) and the emitted code self-contained.
-- **Some targets are irreproducible from the paper's OWN source data.** A panel can be
-  internally inconsistent in the published workbook (Koller Fig 2e: the per-node spread
-  disagrees across the steady-state vs transient windows) — a source-data defect, not a
-  model gap. Identify these, scope them `out`, say why; don't chase them.
-- **Redundant scripts.** One prep script (emits the tvbo Network directly); figures are
-  the declarative `figures:` block, not scripts. Don't hand-write per-figure `plot_*.py`
-  or an A/B compose driver — the renderer emits the plot scripts, and bespoke panel code
-  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in `figures/scripts/`
-  is *generated*; never author or commit it.)
-- **Moving a module changes what `Path(__file__).parents[N]` means — grep for the climb
-  BEFORE you flatten.** Study code routinely locates the study root by climbing from its own
-  file (`_ROOT = Path(__file__).resolve().parents[2]`, written when it lived in `code/recipe/`).
-  Flattening it into `code/` makes every such climb overshoot by one, so paths resolve into the
-  *sibling-studies* directory. The failure is loud only if nothing exists there — otherwise you
-  silently read another study's tree. After any move, `grep -rn "parents\[" code/`, fix each N,
-  and re-run one figure end-to-end to confirm the containers still resolve.
-- **No dead vendored cruft — but a *live* dependency is not cruft.** Keep ONE pristine copy
-  of the paper's own code under `original_study/`; don't duplicate it into `code/`. If the
-  paper's algorithm is reused at runtime (e.g. a Helmholtz–Hodge flow-potential), *reference*
-  that one copy (put its dir on `sys.path`), don't re-vendor. **Before deleting vendored code
-  as "unused", confirm it against the actual RUN paths — run a representative experiment
-  END-TO-END, not just `from_file` load.** Loading a study does not import a
-  flow-potential/observation callable, so a load-only check will wrongly call a live
-  dependency dead (this cost us a broken flow-potential path).
-- **Generated files never land in git at the study root.** KPI/targets tables, extracted
-  arrays, the report PDF/logs → write them into `output/` (gitignored). A generated file
-  tracked at the root reads as a hand-curated deliverable and silently drifts stale.
-- **Cross-references.** The report must stand alone — no "as in the sibling X study".
-- **A lineage of related papers → sibling studies sharing a curated model; pin every
-  original-figure lookup.** When one model spans several papers (a foundation and its
-  successor, e.g. a synapse used first at the single-synapse level then in a network), make
-  each paper its own self-contained study and share the model by a curated `iri:` — don't
-  cram both into one recipe (the scales and reports differ). Keep only the paper being
-  replicated under that study's `original_study/`; when it also holds a precursor/successor's
-  figures, an unpinned `original_study.rglob("fig_03.png")` in the report's `ab()` silently
-  grabs the WRONG paper's `fig_03.png`. Pin the lookup to the specific paper dir
-  (`glob("Author1997*")/"img"`), and eyeball the internal A/B once to confirm the original is
-  the right figure.
-- **A run persists a container ONLY with `-o`, and figures read whatever container is on disk —
-  fresh or stale.** Two silent failure modes. (1) `tvbo run` *without* `-o` computes the result
-  and DISCARDS it, so a re-run after a recipe change leaves the OLD container in place and every
-  figure/report reads STALE data — you then reason about the new recipe from the previous run's
-  output. This is the costliest silent trap here: it produced a whole wrong "the backend can't
-  reproduce this" diagnosis before the container turned out to be days old. Always pass
-  `-o output/nc`, and before trusting a figure confirm its container is FRESH — the file timestamp
-  is from this run and its dims/coords match the current recipe (the exploration axis you just
-  changed is the dim you now see), not a leftover. (The CLI now warns on a no-`-o` run, but the
-  discipline is: persist, then verify freshness.) (2) A pure forward run that only records a raw
-  trajectory (no exploration, no declared observation) — e.g. a NeuroML EPSP-train run — must
-  still write `output/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
-  `iri: tvbo:result/<Study>/exp-N` can't resolve an unwritten container). Run END-TO-END, not
-  `from_file`.
-- **Re-running an experiment does NOT invalidate the analyses computed from it.** An analysis
-  container carries no link back to the result it was derived from, and any "run what is missing"
-  pass skips whatever already exists — so after re-running an experiment the figures render THIS
-  run's dynamics against the PREVIOUS run's analyses, and nothing raises. Delete the dependent
-  containers explicitly before recomputing, and take the dependency set from the study's own
-  schedule (the `after` stage of `_study_analysis_stages`, which is transitive — for Pang2023 it
-  correctly caught 17 including second-order ones like the FCD landscape and the myelin
-  correlation) rather than hand-listing, which misses exactly the ones you did not think of. Then
-  confirm the invalidation *worked* by checking that an unchanged quantity comes back identical —
-  trusting the pass is how you end up believing a stale number twice. The hole is specifically
-  **`tvbo run --experiment N`**: a whole-study run recomputes every analysis, but a partial one
-  deliberately does not, so the containers keep the previous run's numbers beside a fresh result.
-  It now names the affected set (transitively, off the study's own `used:` edges) and tells you to
-  refresh — heed that warning rather than rendering on top of it.
-- **A cache is keyed on INPUTS, so editing a `code/` callable invalidates only what the key
-  actually covers — know which is which.** This is the same defect as the bullet above, one level
-  deeper, and it is worth knowing by name because the caches are invisible. Since the Pang2023
-  incident tvbo closes the worst of it: a `producer:` parameter's artifact digest now includes a
-  hash of the **source of the module defining the producer**, so editing that file yields a
-  different artifact rather than a stale hit — on the **next process**, which is what every
-  `tvbo run` is. Three holes remain, and all are silent:
-  - the digest hashes only the producer's **own file**, so an edit to a helper in a *sibling*
-    module under `code/` is still invisible;
-  - within one long-lived process (a Jupyter kernel, a report render) the digest is **pinned to
-    the source the module was loaded from**, because Python does not re-execute an imported
-    module: the edited function is not running either, so the artifact keeps matching the code
-    that filled it. Restart the kernel, exactly as you would to pick up the edit itself;
-  - a study's own `.npz` solve cache is keyed on its path, and an **analysis container** on its
-    name — neither hashes anything about the code, so re-deriving one is a deliberate act:
-    `tvbo run <Study>.yaml --analysis <name>` (which re-runs only that analysis and names the
-    downstream containers it just made stale), or delete the file.
+**It ran out of memory, or took absurdly long**
 
-  Untreated, the symptom is that an experiment reads the artifact from *before* the edit while a
-  direct Python call to the same function returns the new value — two answers from one function,
-  and the run is the one that is wrong. In Pang2023 this drove the wave model with a pre-edit
-  stimulus projection for a whole afternoon and read as an unexplained "the run resolved a
-  different basis". Diagnose with file mtimes (`ls -la ~/.tvbo/constants` against the edit's
-  timestamp), and prefer arguments over code for anything you expect to vary, since an argument
-  IS in the key.
-- **A content-addressed cache must key its MEMORY and its DISK copy on the same thing.** Adding
-  the code digest to the artifact path but not to the in-process cache key is worse than not
-  adding it at all: a session that materialises, has its producer edited underneath it, and
-  materialises again computes the new path from the new source while the in-memory cache still
-  answers on the old one — writing pre-edit arrays under a digest that asserts they are
-  post-edit. Every later run then reads that file and trusts it. Whenever you add a term to a
-  cache key, grep for every other place that key is constructed.
+- A full-length FC evaluation OOMs at hundreds of GB → the observable must stream (`reduce: streaming`), and the *pre-tuning* forward sim of a fit is not a deliverable at all.
+- A dense N×N coupling matmul dominates every step → `graph_representation: sparse` before any thought of HPC.
+- A stage looks I/O-bound → profile it on a COLD cache; ours was one linear-algebra call at 16.6 s of a 19 s subject while a 438 MB read cost 0.2 s.
+- A comment explains why a slow path is necessary → that is a claim; measure the risk it names before accepting *or* removing it.
 
-  Two traps follow, and the second is subtle enough to have been got wrong twice here. First,
-  the term must describe **what the process will actually do**, not what is on disk: a digest
-  re-read from the file each time claims the artifact matches code that Python is not running.
-  Second, a test that edits the source mid-process is testing a **reload that never happens**,
-  so it can only pass by faking one — which is how a fix that closed nothing passed its own
-  test. Assert the invariant directly instead: that the memory key and the artifact path carry
-  the **same** digest, and that the digest tracks the loaded source rather than the file. Test
-  the end-to-end invalidation where it is actually defined — across two processes, i.e. with
-  the caches cleared between the two calls.
-- **NEVER text-edit a spec or a report artifact with `str.replace` on a computed slice.** The
-  idiom `old = t[t.index(A):t.index(B)]` returns the **empty string** whenever `B` precedes `A` in
-  the file — a table row that got reordered is enough — and `t.replace("", new)` then inserts
-  `new` between **every character**, so a 33 KB register becomes 81 MB of interleaved garbage and
-  the intended edit never lands. It is silent: the script prints its success message. Use the
-  Edit tool (it fails on a non-unique or absent match) or anchor on a full unique line; if a
-  script must do it, `assert old` before replacing, and re-parse the artifact afterwards with
-  whatever the report uses to read it. Recovery, if it happens: the original bytes are all still
-  there, so `corrupt.replace(new, "")` returns the file exactly — confirm with
-  `len(corrupt) == len(recovered) + (len(recovered) + 1) * len(new)`.
-- **Track `report/analysis/` from the first commit — it is the only copy.** The register, the
-  targets table and the figure map are authored deliverables with no upstream and no regenerating
-  script. A study left untracked "until it is ready" has no recovery path for exactly the files
-  that cannot be recomputed, and one bad `str.replace` (above) is then unrecoverable except by
-  luck. Gitignore the heavy generated trees, commit the analysis prose early.
-- **Two runs of the same field may name the same axis differently — reconcile by NAME, never
-  broadcast.** A modal run projected onto the surface lands on `vertex`; the mesh run calls the
-  same axis `node`. Subtracting them as they arrive broadcasts into a 32,492 × 32,492 outer
-  product instead of an elementwise difference — 8 GB and a meaningless answer, with no error
-  raised. Match the non-shared dims by size, rename, transpose, and only then subtract. Where the
-  two sample a *shared* axis differently (a stiffer run needs a finer step), align on its
-  COORDINATE — `.sel(time=…, method="nearest", tolerance=…)` — never by decimating positionally,
-  and better still make the coincidence structural (next bullet).
-- **A single-value exploration axis silently OVERRIDES the base parameter — never use one as
-  ensemble scaffolding.** An `Exploration` axis with one `explored_values` entry (or a 1-point
-  domain) still *writes that value over* the Dynamics/Coupling parameter it names. So a stand-in
-  axis added only to give a trial-only ensemble a `space` (a) runs the whole study at the axis's
-  value, not the model's — a typo or a stale number (`explored_values: [-1.76]` where the model
-  sets `-1.76128`) silently integrates the wrong regime, and reads as a backend failure — and
-  (b) is unnecessary. Express the ensemble with the mechanism that actually varies it: `n_trials`
-  (+ a per-SV `distribution`) for a stochastic IC ensemble, or an `initial_conditions.<state_var>`
-  sweep for a deterministic one (`assets/sweeps.md`). To pin a parameter, set it on the
-  Dynamics/Coupling, never as a degenerate axis.
-- **Framework gaps surface late** if you skip Phase 1.5. Find them before the YAML.
+**The artifact is stale, or is the wrong file**
+
+- You are reasoning about a new recipe from an old run's output → `tvbo run` without `-o` DISCARDS the container and leaves the previous one on disk.
+- Figures show this run's dynamics against the previous run's analyses → re-running an experiment does not invalidate the analyses derived from it; take the dependency set from the study's own transitive `after` stage.
+- A direct Python call returns the new value while the run reads the old → a cache keyed on inputs, not code; know which of the three remaining holes you are in.
+- A PDF predates the figures it embeds, or a comparison artifact predates both → the framework's staleness detector only sees what a run touched; audit container → figure → compare → PDF at the end of every session.
+- An A/B composite shows the wrong paper's figure → an unpinned `rglob("fig_03.png")` across a lineage of sibling studies.
+- A documented "we established this is impossible" → a measurement with a date on it; any change that could bear on it invalidates it.
+
+**The edit did not take, or landed somewhere else**
+
+- A script reports success and the intended edit never appears (or the file explodes to megabytes) → `str.replace` on a computed slice that evaluated to the empty string.
+- Paths silently resolve into a sibling study's tree → `Path(__file__).parents[N]` after the module moved; grep for the climb.
+- A partly-refilled cache mixes two algorithms inside one cohort mean → deleting the cache is part of editing the callable that fills it; key the path on the choice that changed.
+
+**The claim is wrong even though the numbers are right**
+
+- A metric matches in shape but not magnitude → the definition and the empirical modality it is compared against are part of the claim; read them from the Methods.
+- An exact count differs from the paper's integer → realization dependence on an unpublished seed; state it, never tune the seed to hit it.
+- Wavelengths differ ~1.3× across mesh sources → match the *invariant* of a geometric decomposition, not the magnitudes.
+- The whole study ran at an exploration axis's value rather than the model's → a single-value axis still OVERRIDES the parameter it names; express an ensemble with `n_trials` or an `initial_conditions` sweep.
+- An 8 GB outer product instead of an elementwise difference → two runs naming the same axis differently; reconcile by NAME, align by COORDINATE.
+- A published panel is internally inconsistent with the paper's own workbook → a source-data defect; scope it `out` and say why.
+- A generated source file will not compile → a large derived array was inlined instead of declared by `source:`/`producer:`.
+
+**Also in `assets/traps.md`**: keep generated files out of git at the study root; track
+`report/analysis/` from the first commit (it is the only copy of the register, the targets
+table and the figure map); the report must stand alone with no cross-references to a sibling
+study; hand-written `plot_*.py` and A/B compose drivers are redundant; a *live* vendored
+dependency is not cruft, so confirm against the actual run paths END-TO-END before deleting
+it; and framework gaps surface late if you skip Phase 1.5 — find them before the YAML.

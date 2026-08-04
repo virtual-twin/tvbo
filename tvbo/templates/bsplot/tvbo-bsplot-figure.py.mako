@@ -142,6 +142,8 @@ def _apply_axopts(ax, o):
         ax.set_xticks([]); ax.set_yticks([])
     if o.get("aspect"):
         ax.set_aspect(o["aspect"])
+    if o.get("box_aspect"):
+        ax.set_box_aspect(o["box_aspect"])           # frame shape, independent of the data ranges
     if o.get("invert_x"):
         ax.invert_xaxis()
     if o.get("invert_y"):
@@ -337,7 +339,14 @@ def _restore_fixed_axes(snap):
 % else:
     _txt = ${repr(a['text'])}
 % endif
-% if a['arrow']:
+% if a['tail']:
+    _ty = float(np.asarray(_load_layer(${repr(a['tail']['layer'])}).values).ravel()[0])
+    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
+                xytext=(${a['tail']['x']}, _ty), textcoords="data",   # tail ON the computed point
+                zorder=10, **${repr(a['kwargs'])},
+                arrowprops={"arrowstyle": "-|>", "color": "k", "lw": 0.8,
+                            "shrinkA": 2, "shrinkB": 2})
+% elif a['arrow']:
     ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
                 xytext=(${a['x'] - a['arrow'][0]}, ${a['y'] - a['arrow'][1]}),
                 textcoords="axes fraction", zorder=10, **${repr(a['kwargs'])},
@@ -410,7 +419,7 @@ def main():
 % if custom_keys:
     _fixed = [_snapshot_fixed_axes(axd[_k]) for _k in ${repr(custom_keys)}]   # drawer's own fixed ticks
 % endif
-    bsplot.style.format_fig(fig, add_panel_numbers=False)   # normalise ticks/labels; panel letters below
+    bsplot.style.format_fig(fig, add_panel_numbers=False, **${repr(format_kwargs)})   # normalise ticks/labels; panel letters below
 % if custom_keys:
     for _s in _fixed:                                       # ...restored so the format pass can't overwrite them
         _restore_fixed_axes(_s)

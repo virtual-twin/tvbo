@@ -13,6 +13,7 @@ import numpy as np
 
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.classes.coupling import Coupling
+from tvbo.utils import initial_value
 from tvbo.classes import dynamics as localdynamics
 from tvbo.run import compgraph
 
@@ -205,7 +206,7 @@ class GraphRunner:
         """
         for node in self.graph.nodes:
             self.graph.nodes[node]["state"] = np.array(
-                [sv.initial_value for sv in self.graph.nodes[node]["model"].state_variables.values()]
+                [initial_value(sv) for sv in self.graph.nodes[node]["model"].state_variables.values()]
             )
             # self.graph.nodes[node]["state"] = np.random.uniform(-1, 1, size=2)
 
