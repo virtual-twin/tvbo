@@ -1,0 +1,128 @@
+# Phase 8 reference — scaling a replication out to a cluster
+
+Read this only once Phase 8 of **replicating-studies** has established that one
+node genuinely will not do. Everything here assumes the recipe already runs
+locally: a cluster kit is an emit of the same recipe, never a rewrite of it.
+
+## Phase 8 — Scale out to a cluster (ONLY when one node genuinely won't do)
+
+**Skip this phase unless the work is irreducibly large** — a per-subject cohort (one
+independent fit × N subjects) or a fit whose single run is itself heavy. First try NOT
+to need it: a big *graph* → `graph_representation: sparse` + vectorized coupling; a big
+*parameter grid* → a streaming reduced observable (Phase 4). Both routinely turn a
+"needs HPC" run into minutes on one GPU, numerically identical (~1e-16). Assess this
+before packaging anything.
+
+REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site facts).
+
+- **The kit is the same recipe, one command — no drivers, no bash.** `tvbo workflow
+  snakemake <Study>.yaml -o <out> --pack` emits the whole study as ONE Snakemake DAG
+  (one rule per experiment; dataset experiments fan out per subject; a `from_experiment`
+  dependency becomes the DAG edge). Everything stays declarative in the recipe's
+  `workflow:` block: runtime env via `workflow.container: docker://…` (each rule runs
+  inside it via Apptainer — no venv/module activation); per-subject inputs via
+  `Dataset.bundle: true` (`--pack` copies them in and rewrites `bids_root` relative);
+  custom builders/analysis via `code_source:`; per-rule resources
+  (`cpus_per_task`/`mem`/`time`/`partition`) via `workflow.slurm`. The kit is one
+  `.tar.gz`; `tvbo workflow submit <kit>` runs it. This is invariant #1 (one recipe,
+  no drivers) extended to the cluster — never hand-write sbatch.
+- **Every run-time knob is a `--set` on the emit, never a recipe hand-edit or a hand-written
+  sbatch.** The corollary of "no sbatch": any per-run override — swap the whole runtime
+  substrate, retarget the queue, resize a job — is a flag on `tvbo workflow snakemake`, so the
+  recipe stays the portable source of truth and the same study emits for CPU-container *and*
+  GPU-venv without editing it. A **GPU run** is exactly this: drop the container and point at a
+  `jax[cuda]` venv — `--set container= --set slurm.venv=/path/to/.venv --set slurm.partition=gpu
+  --set slurm.gres=gpu:1 --set slurm.mem=… --set slurm.time=…` (the SLURM executor turns
+  `gres` into `--gres` itself; on a GPU node let JAX auto-detect — do **not** force
+  `JAX_PLATFORMS=cuda`, which drops the CPU device a `jax.debug.print` progress callback needs;
+  use `cuda,cpu` if you must set it, and match the `jax-cuda12-*` plugin to `jaxlib`). Env vars
+  are `--set 'slurm.env=[{name: …, value: …}]'`. Install the venv from a **compute node**
+  (`srun`), never the login node.
+- **Prove the memory/streaming fix — don't eyeball it — with engine-native benchmarking.**
+  `tvbo workflow snakemake … --benchmark` (or `--set benchmark=true`) attaches Snakemake's
+  native `benchmark:` directive to every rule: a per-cell TSV (wall time, `max_rss`/`vms`/
+  `uss`/`pss` MB, io, cpu_time) written next to each output, whether run locally or as a SLURM
+  job — one row per cell, so a fanned sweep benchmarks every cell. This is how you turn "reason
+  about resident memory" into a *measured* peak (a streaming BOLD fit that would OOM at hundreds
+  of GB materialized shows a ~GB peak in the TSV), and how you size `slurm.mem` honestly.
+- **Size per-rule memory off the COMPILE peak, and set it PER EXPERIMENT — not one global
+  number.** Streaming bounds the *runtime* trajectory, but what OOM-kills a whole-brain fit is
+  usually ELSEWHERE: XLA/LLVM **compiling** a wide-vmapped long-scan graph (a G-sweep ×10, a seed
+  ensemble ×50) spikes far above the resident set — a 379-node fit that streams at ~2–6 GB still
+  needs ~32 GB to compile, and `float64` roughly doubles that. So an 8 GB request that ran the
+  tuning fine dies *later* with `Failed to materialize symbols` / `LLVM Cannot allocate memory`.
+  Express it as a modest **global `workflow.slurm` baseline overridden per experiment**: each
+  heavy experiment carries `workflow: {slurm: {mem: 32G, cpus_per_task: 4}}` (deep-merged over the
+  study block — only the set leaves change, partition/time/env inherit; DRY via a shared YAML
+  anchor), while the light ones (a DM circuit, a forward run) stay at the baseline. Ship only the
+  Snakefile when just the resources change — never re-extract the tarball over a running kit
+  (clobbers completed results + snakemake state).
+- **A dry run does NOT execute anything — smoke-test ONE experiment in the container
+  FIRST.** `tvbo workflow submit --dry-run` (snakemake `-n`) only resolves the DAG
+  (wildcards, inputs, resources); no `tvbo run` executes, so it cannot catch a runtime
+  bug. A per-rule bug fails all N jobs identically (we once launched 1106 that all died
+  the same way). Before the real submit, run a single experiment end-to-end inside the
+  SIF (`apptainer exec --bind … <sif> tvbo run spec/<id>/experiment.yaml`), then its
+  dependents, then the full submit. This is Phase 7's "run END-TO-END, not `from_file`"
+  at cluster scale. **A *fit* can't be "run once" to smoke-test it** — its whole cost is the
+  tuning iterations. Cap them: `tvbo run … --smoke` (= `--max-iterations 1`) or
+  `--max-iterations N` reaches the post-tuning evaluation in one/N iterations (the recipe
+  untouched), which is how you verify a long fit runs and *streams within memory* in minutes
+  rather than days. At kit level it is a run modifier like any other: `--smoke` /
+  `--set smoke=true` / `--set max_iterations=N` on `tvbo workflow snakemake`.
+- **The container filesystem is READ-ONLY — a bug class that ONLY bites in-container.**
+  Anything writing into the installed package or `$HOME/.cache` at import/run time
+  fails only inside the SIF, never locally or in a dry run: codegen compiling templates
+  into the package dir, `templateflow`/`matplotlib` writing caches, a `$HOME` that
+  symlinks into another filesystem (the link dangles in-container). Fixes: writable
+  temp dirs for codegen caches, and **bind the site filesystem** (`--bind /data/…`,
+  declared in `workflow.slurm` container args). The single-experiment smoke test
+  surfaces every one at once.
+- **Know which fixes need a container rebuild vs a re-emit.** The container runs the
+  *pushed* branch; your emitter is your *working tree*. A schema or codegen-**template**
+  change takes effect only after push → image rebuild → SIF re-pull; an emit-side change
+  (freezing/packaging in the CLI) just needs a re-emit of the kit. Confirm a fix is
+  actually live before assuming — and when you re-pull an image, assert the fix is
+  present (a tag can rebuild to stale cached content; a SIF is named by the URL hash, so
+  it lands at the same path — force the pull).
+- **Ship the kit dual-mode so a version-skewed node can still run YOUR code —
+  `--code-source {frozen,spec}`.** A Snakemake study kit emits BOTH the frozen pre-rendered
+  `scripts/<exp>` and the `spec/<exp>`, and each rule can run either: **spec** (default)
+  re-generates the backend code from the spec at run time (needs a node `tvbo` whose codegen
+  matches the emit-time behaviour); **frozen** runs the pre-rendered script as-is via `tvbo run
+  --rendered scripts/<exp>`, so the reducer/streaming logic is already baked into the script and
+  the node's `tvbo` needs no matching codegen. This is the clean fix for the *version-skew* trap
+  above — when the cluster's released `tvbo` lags a codegen feature the recipe relies on (a new
+  streaming reducer), emit `--code-source frozen` and the node runs the frozen code with no
+  container rebuild. Set the emit-time default (`tvbo workflow snakemake … --code-source
+  frozen`) or override per submission (`tvbo workflow submit … --code-source frozen`, or
+  `TVBO_CODE_SOURCE=frozen snakemake …`); a rule with no `scripts/<exp>` (a cross-experiment
+  analysis has no standalone sim to render) falls back to spec automatically, and `frozen`
+  cannot honour a run-time flag that *changes* codegen (`--set integration.*`, `--pin` on a
+  non-vectorized axis) — use `spec` for those. `frozen` and `spec` are byte-identical for a
+  deterministic experiment (kit anatomy + the full contract: `docs/CLI/workflow-kits.qmd`).
+- **The frozen kit can run a DIFFERENT float precision than your dev run — pin it, or a stiff
+  fit silently NaNs on the cluster.** Frozen and spec agree with each other, but both honour the
+  recipe's `execution.precision` (which may be `float32`), whereas in-process `experiment.run()`
+  hardcodes `enable_x64=True` → **float64**. So you develop and validate in float64 (stable) while
+  the cluster kit runs float32 — and a gradient-based whole-brain FIC/EI fit is only *marginally*
+  stable in float32: it survives one `cpus_per_task` and NaNs under another (the XLA reduction
+  order shifts). The tell is a fit that ran finite once and NaNs on resubmit with nothing changed
+  but the cpu count — **the jax version and the cpu count are the red herrings; precision is the
+  cause.** Fix declaratively: `execution.precision: float64` AND `JAX_ENABLE_X64=1` in
+  `workflow.slurm.env` (forces x64 at runtime on the *already-frozen* scripts, so you re-ship only
+  the Snakefile, no re-render). Diagnose by A/B-ing `JAX_ENABLE_X64` 0 vs 1 with everything else
+  fixed. (Durable framework fix: make `experiment.run()` respect the declared precision so the two
+  paths can't diverge.)
+- **Run the orchestrator on a COMPUTE node, not the login node.** Login nodes are
+  cgroup-capped (a per-user memory limit that OOM-kills a long `snakemake`); DAG
+  resolution that takes seconds on a compute node crawls or dies on a starved login
+  node. Wrap `tvbo workflow submit` in a long-partition job — it is resumable
+  (snakemake skips completed outputs, so a walltime cap just means resubmit). Never
+  install or build on the login node.
+- **Big, flaky transfers: chunk + checksum.** A multi-hundred-MB kit over an unreliable
+  link won't survive one `scp`/`rsync` stream (macOS ships `openrsync`, which doesn't
+  resume); split into ~32 MB chunks, size-verify each with retries, reassemble, then
+  **sha256 the result against the source** — a stale-but-right-sized kit passes a
+  byte-count glance (we shipped one twice before checking the hash). Iterate with small
+  (spec-only) uploads, not the full kit.
