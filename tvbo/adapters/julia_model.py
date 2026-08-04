@@ -112,21 +112,6 @@ def needs_nanmath(model) -> bool:
     return "Piecewise" in equation_rhs_text(model)
 
 
-def build_ifelse(cases, render) -> str:
-    """Fold a list of conditional ``cases`` into nested Julia ``ifelse(...)`` calls.
-
-    ``render`` turns an equation RHS into a Julia expression string. A case whose
-    condition is ``true`` (or the final case) becomes the else branch.
-    """
-    if len(cases) == 1:
-        return render(cases[0].equation)
-    first = cases[0]
-    cond = str(first.condition).strip()
-    if cond.lower() == "true":
-        return render(first.equation)
-    return f"ifelse({cond}, {render(first.equation)}, {build_ifelse(cases[1:], render)})"
-
-
 def make_renderer(model, fmt="julia"):
     """Return a renderer bound to this model's symbol table.
 
@@ -216,12 +201,7 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
         (dp.name, jl(dp.equation))
         for dp in (model.derived_parameters).values()
     ]
-    derived_vars = []
-    for dv in (model.derived_variables).values():
-        if getattr(dv, "conditional", False) and getattr(dv, "cases", None):
-            derived_vars.append((dv.name, build_ifelse(list(dv.cases), jl)))
-        else:
-            derived_vars.append((dv.name, jl(dv.equation)))
+    derived_vars = [(dv.name, jl(dv.equation)) for dv in (model.derived_variables).values()]
 
     # Parameters. A heterogeneous per-node parameter (value is a length-n_nodes
     # array, e.g. the FIC-tuned J_i) is emitted as a Julia vector ``<name>_vec``
@@ -370,12 +350,7 @@ def build_model_context(model, network=None, constraints=None) -> dict:
         (dp.name, jl(dp.equation))
         for dp in (model.derived_parameters).values()
     ]
-    derived_vars = []
-    for dv in (model.derived_variables).values():
-        if getattr(dv, "conditional", False) and getattr(dv, "cases", None):
-            derived_vars.append((dv.name, build_ifelse(list(dv.cases), jl)))
-        else:
-            derived_vars.append((dv.name, jl(dv.equation)))
+    derived_vars = [(dv.name, jl(dv.equation)) for dv in (model.derived_variables).values()]
 
     # `p = (...)` parameter tuple (coupling terms default to 0.0 for single-node).
     pval_parts = [f"{p.name} = {p.value}" for p in model.parameters.values()]
