@@ -7,11 +7,13 @@ else:
 from sympy import Symbol
 from tvbo.codegen.code import get_printer
 
-# TVB binds the stimulus argument as `var`, whatever the metadata calls time.
-expression, _ = stimulus.get_expression()
-default_expression = stimulus.equation.pycode or get_printer("tvb").doprint(
-    expression.subs(Symbol("t"), Symbol("var"))
-)
+# An authored `pycode` is the escape hatch for an expression TVBO cannot print, so it is
+# consulted BEFORE parsing — parsing first would raise on exactly the equations it exists
+# for. TVB binds the stimulus argument as `var`, whatever the metadata calls time.
+default_expression = stimulus.equation.pycode
+if not default_expression:
+    expression, _ = stimulus.get_expression()
+    default_expression = get_printer("tvb").doprint(expression.subs(Symbol("t"), Symbol("var")))
 %>
 ################################################################################
 from tvb.datatypes.equations import Equation, TemporalApplicableEquation

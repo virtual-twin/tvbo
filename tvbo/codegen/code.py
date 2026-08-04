@@ -597,17 +597,6 @@ class _ArrayFunctionPrinterMixin:
         """
         return f"{self._module}.{name}" if self._module else name
 
-    def _module_format(self, fqn, register=True):
-        """Drop the separator SymPy leaves behind when the printer has no module.
-
-        SymPy builds some of its own names as ``self._module + ".sqrt"``, which for a
-        module-less printer is the unparseable ``.sqrt``. Stated here rather than per
-        printer because ``_module`` is this mixin's contract, and a no-op for every
-        printer that has one.
-        """
-        formatted = super()._module_format(fqn, register)
-        return formatted[1:] if not self._module and formatted.startswith(".") else formatted
-
     def _where3(self, cond, a, b):
         return f"{self._afn('where')}({cond}, {a}, {b})"
 
@@ -829,8 +818,23 @@ class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
         self._kf.update({"erfc": "scipy.special.erfc"})
         self._kf.update({"erf": "scipy.special.erf"})
         super().__init__(settings=settings)
-        # Add array function mappings
-        self.known_functions.update(ARRAY_FUNCTION_MAPPINGS["numpy"])
+        # Re-qualified rather than used verbatim: the table is authored `np.`-prefixed, so
+        # a module-less printer would emit `np.sum` — the one spelling its target rejects.
+        self.known_functions.update(
+            _qualify(module, {name: target.removeprefix("np.") for name, target in ARRAY_FUNCTION_MAPPINGS["numpy"].items()})
+        )
+
+    def _module_format(self, fqn, register=True):
+        """Drop the separator SymPy leaves behind when this printer has no module.
+
+        SymPy builds some of its own names as ``self._module + ".sqrt"``, which for a
+        module-less printer is the unparseable ``.sqrt``. Declared here rather than on
+        ``_ArrayFunctionPrinterMixin``: that mixin also serves the Julia printers, whose
+        base has no ``_module_format`` to delegate to, so the override would be a latent
+        ``AttributeError`` there. A no-op for any printer that does have a module.
+        """
+        formatted = super()._module_format(fqn, register)
+        return formatted[1:] if not self._module and formatted.startswith(".") else formatted
 
 
 class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
