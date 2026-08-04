@@ -28,24 +28,21 @@ def _require_librosa():
 
 import owlready2 as owl
 from scipy.interpolate import UnivariateSpline
-from sympy import Symbol, lambdify, pycode, sympify
+from sympy import Symbol, lambdify
 
 from tvbo import templates
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.codegen import templater
 from tvbo.ontology import owl as ontology, query
-from tvbo.classes import equation as equations
-from tvbo.classes.equation import convert_ifelse_to_np_where
 from tvbo.parse.symbols import BUILTIN_SHADOW
 
 
 def class2metadata(ontoclass):
     """Build `Stimulus` metadata from an ontology stimulus class.
 
-    Reads the class's defining equation and, if it uses `where`, rewrites it
-    into sympy form. The class name (identifier) and definition become the
-    stimulus label and description, and every descendant `Parameter` is added
-    with its default value and definition.
+    Reads the class's defining equation. The class name (identifier) and definition
+    become the stimulus label and description, and every descendant `Parameter` is
+    added with its default value and definition.
 
     Args:
         ontoclass: An owlready2 stimulus class whose `value`, `definition` and
@@ -57,9 +54,6 @@ def class2metadata(ontoclass):
     """
 
     onto_eq = ontoclass.value.first()
-    if "where" in onto_eq:
-        onto_eq = equations.convert_numpy_where_to_sympy(onto_eq)
-
     metadata = tvbo_datamodel.Stimulus(label=ontoclass.name, description=ontoclass.definition.first())
     metadata.equation = tvbo_datamodel.Equation(rhs=onto_eq)
     parameters = ontology.intersection(
@@ -344,6 +338,10 @@ class Stimulus(tvbo_datamodel.Stimulus):
         """
         Generate a sympy expression for the equation using metadata.
 
+        The one place a stimulus is parsed: the equation's parameters shadow the SymPy
+        builtins they collide with, and `t` is the time symbol whichever spelling the
+        metadata used — a right-hand side or a list of conditional branches.
+
         Returns:
             tuple: ``(expression, parameters)`` — the symbolic expression of the
             equation (or ``None``) and the resolved parameter substitution dict.
@@ -355,16 +353,7 @@ class Stimulus(tvbo_datamodel.Stimulus):
 
         scope = BUILTIN_SHADOW.extend({str(p): p for p in params}, t=Symbol("t"))
         eq = scope.parse(self.equation)
-
-        if eq:
-            self.function = lambdify("t", eq.subs(params), modules="numpy")
-            python_code = pycode(eq, fully_qualified_modules=False)
-
-        if self.equation.pycode:
-            self.python_expression = self.equation.pycode
-        else:
-            self.python_expression = convert_ifelse_to_np_where(python_code) if "if" in python_code else python_code
-
+        self.function = lambdify("t", eq.subs(params), modules="numpy")
         return eq, params
 
     def plot(self, duration=1000, dt=0.1, ax=None, plot_onset=True, cut_transient=0, **kwargs):

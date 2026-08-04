@@ -331,6 +331,7 @@ jobs:
                       paths: >-
                           tests/test_tvb_comparison.py
                           tests/test_tvb_interop.py
+                          tests/test_stimulus_rendering.py
                           tests/functional/test_simulation_backends_tvb.py
                     - shard: pyrates
                       paths: >-

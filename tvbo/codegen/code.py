@@ -589,8 +589,24 @@ class _ArrayFunctionPrinterMixin:
 
     # --- backend-abstracted array primitives (numpy/jax defaults) ---
     def _afn(self, name):
-        """Module-qualify an array function, e.g. ``jnp.take``."""
-        return f"{self._module}.{name}"
+        """Module-qualify an array function, e.g. ``jnp.take``.
+
+        A printer with no module prefix emits the bare name, for the targets that
+        resolve the array vocabulary themselves rather than through an import — TVB's
+        `numexpr`-evaluated equation DSL, and Brian2's.
+        """
+        return f"{self._module}.{name}" if self._module else name
+
+    def _module_format(self, fqn, register=True):
+        """Drop the separator SymPy leaves behind when the printer has no module.
+
+        SymPy builds some of its own names as ``self._module + ".sqrt"``, which for a
+        module-less printer is the unparseable ``.sqrt``. Stated here rather than per
+        printer because ``_module`` is this mixin's contract, and a no-op for every
+        printer that has one.
+        """
+        formatted = super()._module_format(fqn, register)
+        return formatted[1:] if not self._module and formatted.startswith(".") else formatted
 
     def _where3(self, cond, a, b):
         return f"{self._afn('where')}({cond}, {a}, {b})"
@@ -715,7 +731,7 @@ class _ArrayFunctionPrinterMixin:
 
     def _linalg(self, name):
         """Module path for a linear-algebra routine (``np.linalg.eigvals``)."""
-        return f"{self._module}.linalg.{name}"
+        return self._afn(f"linalg.{name}")
 
     def _sample(self, distribution, key, substream, params, shape):
         """A draw from ``distribution`` given explicit PRNG state and a sub-stream index.
@@ -727,7 +743,7 @@ class _ArrayFunctionPrinterMixin:
         cross-backend divergence the RNG contract exists to prevent.
         """
         shape_arg = f", size=({', '.join(shape)},)" if shape else ""
-        rng = f"{self._module}.random.default_rng({key} + {substream})"
+        rng = f"{self._afn('random.default_rng')}({key} + {substream})"
         return f"{rng}.{distribution}({', '.join(params)}{shape_arg})"
 
     def _pearson(self, x, y):
@@ -781,6 +797,16 @@ class _ArrayFunctionPrinterMixin:
         return f"{self._afn('take')}({base}, {rng}, axis={axis})"
 
 
+def _qualify(module, names):
+    """Prefix a SymPy name table with a printer's module, or leave it bare without one.
+
+    An empty module is how a printer says its target resolves the array vocabulary
+    itself — see [`_ArrayFunctionPrinterMixin._afn`](#_ArrayFunctionPrinterMixin).
+    """
+    prefix = f"{module}." if module else ""
+    return {name: prefix + target for name, target in names.items()}
+
+
 class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
     """NumPy code printer for TVBO symbolic expressions.
 
@@ -797,9 +823,8 @@ class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
 
     def __init__(self, settings=None, module="np"):
         self._module = module
-        m = module + "."
-        self._kf = {k: m + v for k, v in spn._known_functions_numpy.items()}
-        self._kc = {k: m + v for k, v in spn._known_constants_numpy.items()}
+        self._kf = _qualify(module, spn._known_functions_numpy)
+        self._kc = _qualify(module, spn._known_constants_numpy)
 
         self._kf.update({"erfc": "scipy.special.erfc"})
         self._kf.update({"erf": "scipy.special.erf"})
@@ -824,9 +849,8 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
 
     def __init__(self, settings=None, module="jnp"):
         self._module = module
-        m = module + "."
-        self._kf = {k: m + v for k, v in spn._known_functions_numpy.items()}
-        self._kc = {k: m + v for k, v in spn._known_constants_numpy.items()}
+        self._kf = _qualify(module, spn._known_functions_numpy)
+        self._kc = _qualify(module, spn._known_constants_numpy)
 
         self._kf.update({"erfc": "jsp.special.erfc"})
         self._kf.update({"erf": "jsp.special.erf"})
@@ -1655,12 +1679,39 @@ class Brian2Printer(PythonCodePrinter):
         return f"sign({self._print(expr.args[0])})"
 
 
+class TVBEquationPrinter(NumPyPrinter):
+    """Print an expression for TVB's ``Equation.equation`` DSL.
+
+    TVB evaluates that string with `numexpr` (falling back to `eval` against
+    ``numpy.__dict__``), a vocabulary narrower than NumPy's in three ways: names are
+    unqualified, comparisons are operators rather than ``numpy.greater`` calls, and
+    boolean connectives are bitwise. Everything else is NumPy — in particular a
+    `Piecewise` still lowers to ``where(...)`` through the one shared
+    [`print_Piecewise`](#print_Piecewise), which is what makes a conditional stimulus
+    array-safe. Rendering one as a Python ``a if c else b`` instead, as TVBO did before,
+    produces a string `numexpr` refuses outright.
+
+    The relational and boolean methods come from `StrPrinter`, whose operator spelling is
+    already exactly the accepted one, so this printer states only which vocabulary it
+    borrows rather than restating how to print a comparison.
+    """
+
+    _print_Relational = StrPrinter._print_Relational
+    _print_And = StrPrinter._print_And
+    _print_Or = StrPrinter._print_Or
+    _print_Not = StrPrinter._print_Not
+
+    def __init__(self, settings=None):
+        super().__init__(settings=settings, module="")
+
+
 def get_printer(format, parameters=None, order=None):
     """Return a code printer instance for the given target format.
 
     Args:
         format: Target output format. One of `numpy`, `jax`, `julia`, `mtk`,
-            `fortran`, `python`, `lems`, or `sympy`/`symbolic`/`pyrates`.
+            `fortran`, `python`, `brian2`, `tvb`, `lems`, or
+            `sympy`/`symbolic`/`pyrates`.
         parameters: Parameter names passed to `LEMSPrinter`; used only for the
             `lems` format.
         order: Term ordering passed to the printer; `none` preserves source term
@@ -1689,6 +1740,8 @@ def get_printer(format, parameters=None, order=None):
         return PythonCodePrinter(settings=extra) if extra else PythonCodePrinter()
     elif format == "brian2":
         return Brian2Printer(settings=extra) if extra else Brian2Printer()
+    elif format == "tvb":
+        return TVBEquationPrinter(settings=extra) if extra else TVBEquationPrinter()
     elif format == "lems":
         return LEMSPrinter(settings={"parameters": parameters or [], **extra})
     elif format in ["sympy", "symbolic", "pyrates"]:
