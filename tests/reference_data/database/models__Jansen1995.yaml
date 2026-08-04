@@ -97,7 +97,6 @@ state_variables:
     coupling_variable: false
     equation_type: differential
     equation_order: 1
-    initial_value: 0.1
   y3:
     name: y3
     label: Pyramidal EPSP drive (velocity)
@@ -110,7 +109,6 @@ state_variables:
     coupling_variable: false
     equation_type: differential
     equation_order: 1
-    initial_value: 0.1
   y1:
     name: y1
     label: Excitatory interneuron membrane potential (position)
@@ -123,7 +121,6 @@ state_variables:
     coupling_variable: true
     equation_type: differential
     equation_order: 1
-    initial_value: 0.1
   y4:
     name: y4
     label: Excitatory EPSP drive (velocity) with global input
@@ -136,7 +133,6 @@ state_variables:
     coupling_variable: false
     equation_type: differential
     equation_order: 1
-    initial_value: 0.1
   y2:
     name: y2
     label: Inhibitory interneuron membrane potential (position)
@@ -149,7 +145,6 @@ state_variables:
     coupling_variable: true
     equation_type: differential
     equation_order: 1
-    initial_value: 0.1
   y5:
     name: y5
     label: Inhibitory IPSP drive (velocity)
@@ -162,7 +157,6 @@ state_variables:
     coupling_variable: false
     equation_type: differential
     equation_order: 1
-    initial_value: 0.1
 number_of_modes: 1
 functions:
   Sigm:
