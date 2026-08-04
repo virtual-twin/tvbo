@@ -16,7 +16,7 @@ from __future__ import annotations
 import re
 
 from tvbo.codegen import render_expression
-from tvbo.parse.expression import parse_eq
+from tvbo.parse.expression import parse_eq, states_an_expression
 
 # Solver name → the minimal OrdinaryDiffEq sub-package that provides it. Splitting
 # out the umbrella package keeps Julia precompilation cheap / avoids Bus errors.
@@ -60,6 +60,24 @@ def symbol_names(model):
     return sv, params, coupling, derived_vars, derived_params
 
 
+def parse_namespace(model) -> dict:
+    """How this model's equations parse, as keyword arguments for `parse_eq`.
+
+    Both flavours of model reach this adapter: the runtime `Dynamics` in `tvbo.classes`,
+    which carries the symbolic layer, and the generated `tvbo.datamodel.schema.Dynamics`
+    that a heterogeneous node's inline dynamics is, which has the collections but no layer
+    and must be parsed against its own names. Mirrors the dispatch in `function_bodies`.
+    """
+    elements = getattr(model, "get_symbolic_elements", None)
+    if elements is not None:
+        return {"local_dict": elements()}
+    sv, params, coupling, dvars, dparams = symbol_names(model)
+    return {
+        "parameters": sv + params + coupling + dvars + dparams,
+        "functions": [str(f) for f in model.functions],
+    }
+
+
 def equation_rhs_text(model) -> str:
     """Concatenated text of every SV / derived-variable / derived-parameter equation.
 
@@ -68,13 +86,13 @@ def equation_rhs_text(model) -> str:
     conditional branches has no `rhs` to read: the sniff would see `"None"`, miss the
     `Piecewise` it contains, and emit a model that uses NaNMath without importing it.
     """
-    scope = model.get_symbolic_elements()
+    namespace = parse_namespace(model)
     collections = (model.state_variables, model.derived_variables, model.derived_parameters)
     return " ".join(
-        str(parse_eq(element.equation, local_dict=scope))
+        str(parse_eq(element.equation, **namespace))
         for collection in collections
         for element in collection.values()
-        if element.equation is not None
+        if states_an_expression(element.equation)
     )
 
 
@@ -120,11 +138,11 @@ def make_renderer(model, fmt="julia"):
     sv, params, coupling, dvars, dparams = symbol_names(model)
     all_symbols = sv + params + coupling + dvars + dparams
     func_names = {str(f): str(f) for f in (model.functions)}
-    scope = model.get_symbolic_elements()
+    namespace = parse_namespace(model)
 
     def render(equation):
         return render_expression(
-            parse_eq(equation, local_dict=scope),
+            parse_eq(equation, **namespace),
             format=fmt, parameters=all_symbols, user_functions=func_names,
         )
 
