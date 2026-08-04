@@ -1,0 +1,35 @@
+name: SpineML
+description: A declarative XML-based language for describing spiking neural network
+  models using a component-based approach. Designed for simulator independence.
+homepage: https://spineml.github.io
+license: BSD-3-Clause
+repository: https://github.com/SpineML
+application_category: specification
+scale:
+- neuron
+- neural_network
+- network_system
+model_paradigm:
+- spiking
+tool_role:
+- specification_language
+programming_language:
+- XML
+runtime_platform:
+- backend-dependent
+interoperates_with:
+- SpineCreator
+- BRAHMS
+- PyNN
+date_created: '2014-01-01'
+development_status: inactive
+author:
+- Alex Cope
+- Kevin Gurney
+maintainer:
+- SpineML Team
+keywords:
+- model description
+- XML
+- spiking network
+is_accessible_for_free: true

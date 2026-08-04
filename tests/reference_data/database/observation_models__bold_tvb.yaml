@@ -1,0 +1,113 @@
+name: BOLD_TVB
+label: BOLD (First Order Volterra)
+description: BOLD fMRI observation model using the Balloon-Windkessel hemodynamic
+  model. Transforms neural activity into simulated BOLD signal via convolution with
+  a hemodynamic response function (First Order Volterra kernel), followed by a nonlinear
+  Volterra transformation.
+parameters:
+  TR:
+    name: TR
+    value: 720.0
+    description: Repetition time (sampling period)
+    unit: ms
+time_scale: ms
+imaging_modality: BOLD
+reconcile: by_label
+pipeline:
+- equation:
+    rhs: window_mean(X, stepsize)
+    latex: false
+  name: temporal_average_interim
+  output: interim_averaged
+  apply_on_dimension: time
+  arguments:
+    stepsize:
+      name: stepsize
+      description: Interim averaging window in integration steps. Resolved from the
+        integration dt (= stock_dt / dt), not a raw-grid literal, so every backend
+        downsamples the neural trace onto the same stock grid.
+- acronym: HRF
+  equation:
+    parameters:
+      tau_f:
+        name: tau_f
+        value: 0.4
+        unit: s
+      tau_s:
+        name: tau_s
+        value: 0.8
+        unit: s
+    rhs: 1/3 * exp(-0.5*(t / tau_s)) * sin(sqrt(1/tau_f - 1/(4*tau_s**2)) * t) / sqrt(1/tau_f
+      - 1/(4*tau_s**2))
+    latex: false
+  name: hemodynamic_response
+  output: hrf_kernel
+  arguments:
+    duration:
+      name: duration
+      value: 20
+      unit: s
+    stock_dt:
+      name: stock_dt
+      value: 0.004
+      unit: s
+  time_range:
+    enforce: none
+    lo: 0
+    hi: duration
+    step: stock_dt
+    log_scale: false
+- name: convolve
+  callable:
+    name: fftconvolve
+    module: scipy.signal
+  input: temporal_average_interim
+  output: convolved
+  arguments:
+    in2:
+      name: in2
+      value: hrf_kernel
+    mode:
+      name: mode
+      value: same
+- equation:
+    rhs: subsample(X, start, stepsize)
+    latex: false
+  name: subsample_to_period
+  input: convolve
+  output: subsampled
+  apply_on_dimension: time
+  arguments:
+    start:
+      name: start
+      description: Index of the first output sample. Resolved to stepsize - 1 so the
+        first sample lands at the same interim step TVB emits at (step % istep ==
+        0, 1-indexed), matching tvboptim/tvb.
+    stepsize:
+      name: stepsize
+      description: Number of interim (stock-grid) samples per output sample. Resolved
+        from the integration dt (= (TR / dt) / interim_istep), not a raw-grid literal,
+        so all backends emit the same number of samples.
+- equation:
+    parameters:
+      k_1:
+        name: k_1
+        value: 5.6
+        description: Intravascular signal contribution
+      V_0:
+        name: V_0
+        value: 0.02
+        description: Resting blood volume fraction
+    rhs: (X - 1.0) * k_1 * V_0
+    latex: false
+  name: volterra_transform
+  input: subsample_to_period
+  output: Bold
+class_reference:
+  name: Bold
+  module: tvb.simulator.monitors
+  constructor_args:
+  - name: hrf_kernel
+    value: FirstOrderVolterra
+  - name: hrf_length
+    value: 20000.0

@@ -1,0 +1,276 @@
+id: 8
+references:
+- tvboptim Stimulation_with_Bayesian_Inference.qmd
+description: 'Recover stimulus amplitude and excitability I of a pulse-driven Generic2dOscillator
+  from one noisy recording, via numpyro NUTS/MCMC. Three prior scenarios steer the
+  posterior along the amplitude/excitability degeneracy ridge. Replicates tvboptim.
+
+  '
+label: Bayesian Inference (Stimulation)
+dynamics:
+  name: Generic2dOscillator
+  label: Generic 2D Oscillator (quiescent regime)
+  iri: tvbo:Generic2dOscillator
+  parameters:
+    a:
+      name: a
+      value: -1.5
+    alpha:
+      name: alpha
+      value: 1.0
+    b:
+      name: b
+      value: -15.0
+    beta:
+      name: beta
+      value: 1.0
+    c:
+      name: c
+      value: 0.0
+    d:
+      name: d
+      value: 0.015
+    e:
+      name: e
+      value: 3.0
+    f:
+      name: f
+      value: 1.0
+    g:
+      name: g
+      value: 0.0
+    gamma:
+      name: gamma
+      value: 1.0
+    tau:
+      name: tau
+      value: 4.0
+    I:
+      name: I
+      value: 0.1
+  state_variables:
+    V:
+      name: V
+      equation:
+        rhs: d*tau*(I*gamma - V**3*f + V**2*e + V*g + V*local_coupling + W*alpha +
+          c_glob*gamma) + stimulus
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: true
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+    W:
+      name: W
+      equation:
+        rhs: d*(V**2*c + V*b - W*beta + a)/tau
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+  number_of_modes: 1
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: Heun
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.2
+  time_scale: ms
+  duration: 150.0
+  transient_time: 0.0
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  label: Single node
+  description: Single-region model — stimulus and excitability trade off here.
+  coupling:
+    c_lin:
+      name: c_lin
+      label: Linear coupling
+      iri: tvbo:Linear
+      parameters:
+        G:
+          name: G
+          value: 0.0
+          description: No inter-node coupling (single node)
+      sparse: false
+      incoming_states:
+      - V
+      delayed: false
+      interpolate_delays: false
+      vectorized: false
+      symmetry: directed
+  graph_representation: auto
+  number_of_nodes: 1
+  distance_unit: mm
+  time_unit: ms
+observations:
+  recorded_ts:
+    name: recorded_ts
+    label: Recorded fast variable V (subsampled)
+    description: 'The observed time series: V at node 0, subsampled every 15 steps.'
+    time_scale: ms
+    source:
+    - V
+    reconcile: by_label
+    pipeline:
+    - function: subsample_ts
+functions:
+  subsample_ts:
+    name: subsample_ts
+    description: Subsample the recording every 15 steps (reference obs_idx).
+    arguments:
+      data:
+        name: data
+    source_code: data[::15, 0, 0]
+events:
+  stimulus:
+    name: stimulus
+    label: Pulse stimulus
+    description: 1 ms rectangular pulse of amplitude A at onset=10 ms, driving V.
+    parameters:
+      amplitude:
+        name: amplitude
+        value: 0.4
+        description: True pulse amplitude (inferred)
+      onset:
+        name: onset
+        value: 10.0
+        unit: ms
+      duration:
+        name: duration
+        value: 1.0
+        unit: ms
+    event_type: stimulus
+    equation:
+      rhs: Piecewise((amplitude, (t >= onset) & (t < onset + duration)), (0.0, True))
+      latex: false
+    nodes:
+    - 0
+    weights:
+    - 1.0
+    sampling_rate: 1.0
+    interpolation: linear
+inferences:
+  scenario_A:
+    name: scenario_A
+    likelihood:
+      source:
+      - recorded_ts
+      name: Normal
+      sigma: 0.2
+    label: A — no hypothesis (wide priors)
+    priors:
+      stimulus.amplitude:
+        name: stimulus.amplitude
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.2
+            std:
+              name: std
+              value: 0.2
+          axis: space
+      Generic2dOscillator.I:
+        name: Generic2dOscillator.I
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.0
+            std:
+              name: std
+              value: 0.1
+          axis: space
+    sampler: nuts
+    num_samples: 2000
+    num_warmup: 500
+    num_chains: 1
+    seed: 0
+  scenario_B:
+    name: scenario_B
+    likelihood:
+      source:
+      - recorded_ts
+      name: Normal
+      sigma: 0.2
+    label: 'B — H1: higher excitability (tight amplitude prior)'
+    priors:
+      stimulus.amplitude:
+        name: stimulus.amplitude
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.2
+            std:
+              name: std
+              value: 0.1
+          axis: space
+      Generic2dOscillator.I:
+        name: Generic2dOscillator.I
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.0
+            std:
+              name: std
+              value: 0.1
+          axis: space
+    sampler: nuts
+    num_samples: 2000
+    num_warmup: 500
+    num_chains: 1
+    seed: 0
+  scenario_C:
+    name: scenario_C
+    likelihood:
+      source:
+      - recorded_ts
+      name: Normal
+      sigma: 0.2
+    label: 'C — H2: stronger stimulus (tight excitability prior)'
+    priors:
+      stimulus.amplitude:
+        name: stimulus.amplitude
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.2
+            std:
+              name: std
+              value: 0.2
+          axis: space
+      Generic2dOscillator.I:
+        name: Generic2dOscillator.I
+        distribution:
+          name: Normal
+          parameters:
+            mean:
+              name: mean
+              value: 0.0
+            std:
+              name: std
+              value: 0.05
+          axis: space
+    sampler: nuts
+    num_samples: 2000
+    num_warmup: 500
+    num_chains: 1
+    seed: 0

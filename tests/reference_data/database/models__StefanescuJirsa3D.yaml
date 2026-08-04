@@ -1,0 +1,432 @@
+name: StefanescuJirsa3D
+iri: tvbo:StefanescuJirsa3D
+parameters:
+  r:
+    name: r
+    definition: Adaptation parameter (Hindmarsh-Rose r).
+    value: 0.006
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 0.1
+      step: 0.0005
+      log_scale: false
+  a:
+    name: a
+    definition: Hindmarsh-Rose dimensionless coefficient a.
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+  b:
+    name: b
+    definition: Hindmarsh-Rose dimensionless coefficient b.
+    value: 3.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 3.0
+      step: 0.01
+      log_scale: false
+  c:
+    name: c
+    definition: Hindmarsh-Rose dimensionless coefficient c.
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+  d:
+    name: d
+    definition: Hindmarsh-Rose dimensionless coefficient d.
+    value: 5.0
+    domain:
+      enforce: none
+      lo: 2.5
+      hi: 7.5
+      step: 0.01
+      log_scale: false
+  s:
+    name: s
+    definition: Adaptation feedback parameter.
+    value: 4.0
+    domain:
+      enforce: none
+      lo: 2.0
+      hi: 6.0
+      step: 0.01
+      log_scale: false
+  x_0:
+    name: x_0
+    definition: Leftmost equilibrium point of x in the Hindmarsh-Rose oscillator.
+    value: -1.6
+    domain:
+      enforce: none
+      lo: -2.4
+      hi: -0.8
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0042391
+  K_11:
+    name: K_11
+    definition: Internal coupling, excitatory to excitatory.
+    value: 0.5
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0060079
+  K_12:
+    name: K_12
+    definition: Internal coupling, inhibitory to excitatory.
+    value: 0.1
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0060080
+  K_21:
+    name: K_21
+    definition: Internal coupling, excitatory to inhibitory.
+    value: 0.15
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0060079
+  sigma:
+    name: sigma
+    definition: Standard deviation of the Gaussian heterogeneity distribution.
+    value: 0.3
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 1.0
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0042391
+  mu:
+    name: mu
+    definition: Mean of the Gaussian heterogeneity distribution.
+    value: 3.3
+    domain:
+      enforce: none
+      lo: 1.1
+      hi: 3.3
+      step: 0.01
+      log_scale: false
+    grounding:
+    - GO:0060079
+description: Reduced set of Hindmarsh-Rose oscillators (Stefanescu & Jirsa 2008).
+  A low-dimensional description of globally coupled heterogeneous excitatory and inhibitory
+  Hindmarsh-Rose populations. The reduction projects an infinite population onto `number_of_modes`
+  modes and yields per-mode scalar state variables (xi, eta, tau) for the excitatory
+  and (alpha, beta, gamma) for the inhibitory subnetwork. The mode-coupling matrices
+  A_ik, B_ik, C_ik and the per-mode coefficients a_i, b_i, c_i, d_i, e_i, f_i, h_i,
+  p_i, IE_i, II_i, m_i, n_i are derived offline by Gaussian quadrature over the heterogeneity
+  distribution N(mu, sigma^2); see TVB reference implementation `tvb.simulator.models.stefanescu_jirsa.ReducedSetHindmarshRose`.
+references:
+- StefanescuJirsa2008
+derived_variables:
+  A_ik:
+    name: A_ik
+    description: Excitatory-to-excitatory mode-coupling matrix from Gaussian quadrature.
+    equation:
+      lhs: A_ik
+      rhs: '0.5'
+      latex: false
+    record: false
+    grounding:
+    - GO:0060079
+    conditional: false
+  B_ik:
+    name: B_ik
+    description: Inhibitory-to-excitatory mode-coupling matrix.
+    equation:
+      lhs: B_ik
+      rhs: '0.5'
+      latex: false
+    record: false
+    grounding:
+    - GO:0060080
+    conditional: false
+  C_ik:
+    name: C_ik
+    description: Excitatory-to-inhibitory mode-coupling matrix.
+    equation:
+      lhs: C_ik
+      rhs: '0.5'
+      latex: false
+    record: false
+    grounding:
+    - GO:0060079
+    conditional: false
+  a_i:
+    name: a_i
+    description: Per-mode cubic coefficient for the excitatory xi dynamics (a * <V|V^3>).
+    equation:
+      lhs: a_i
+      rhs: a
+      latex: false
+    record: false
+    conditional: false
+  b_i:
+    name: b_i
+    description: Per-mode quadratic coefficient for the excitatory xi dynamics.
+    equation:
+      lhs: b_i
+      rhs: b
+      latex: false
+    record: false
+    conditional: false
+  c_i:
+    name: c_i
+    description: Per-mode constant for the excitatory eta dynamics.
+    equation:
+      lhs: c_i
+      rhs: c
+      latex: false
+    record: false
+    conditional: false
+  d_i:
+    name: d_i
+    description: Per-mode quadratic coefficient for the excitatory eta dynamics.
+    equation:
+      lhs: d_i
+      rhs: d
+      latex: false
+    record: false
+    grounding:
+    - GO:0060079
+    conditional: false
+  e_i:
+    name: e_i
+    description: Per-mode cubic coefficient for the inhibitory alpha dynamics.
+    equation:
+      lhs: e_i
+      rhs: a
+      latex: false
+    record: false
+    conditional: false
+  f_i:
+    name: f_i
+    description: Per-mode quadratic coefficient for the inhibitory alpha dynamics.
+    equation:
+      lhs: f_i
+      rhs: b
+      latex: false
+    record: false
+    conditional: false
+  h_i:
+    name: h_i
+    description: Per-mode constant for the inhibitory beta dynamics.
+    equation:
+      lhs: h_i
+      rhs: c
+      latex: false
+    record: false
+    conditional: false
+  p_i:
+    name: p_i
+    description: Per-mode quadratic coefficient for the inhibitory beta dynamics.
+    equation:
+      lhs: p_i
+      rhs: d
+      latex: false
+    record: false
+    grounding:
+    - GO:0060080
+    conditional: false
+  IE_i:
+    name: IE_i
+    description: Per-mode constant excitatory input.
+    equation:
+      lhs: IE_i
+      rhs: '0.0'
+      latex: false
+    record: false
+    grounding:
+    - GO:0060079
+    conditional: false
+  II_i:
+    name: II_i
+    description: Per-mode constant inhibitory input.
+    equation:
+      lhs: II_i
+      rhs: '0.0'
+      latex: false
+    record: false
+    grounding:
+    - GO:0060080
+    conditional: false
+  m_i:
+    name: m_i
+    description: Per-mode adaptation offset entering the tau dynamics.
+    equation:
+      lhs: m_i
+      rhs: r*s*x_0
+      latex: false
+    record: false
+    conditional: false
+  n_i:
+    name: n_i
+    description: Per-mode adaptation offset entering the gamma dynamics.
+    equation:
+      lhs: n_i
+      rhs: r*s*x_0
+      latex: false
+    record: false
+    conditional: false
+coupling_inputs:
+  c_glob:
+    name: c_glob
+    dimension: 1
+    local: false
+  local_coupling:
+    name: local_coupling
+    dimension: 1
+    local: true
+state_variables:
+  xi:
+    name: xi
+    domain:
+      enforce: none
+      lo: -4.0
+      hi: 4.0
+      log_scale: false
+    description: Excitatory fast variable (per mode).
+    equation:
+      lhs: Derivative(xi, t)
+      rhs: eta - a_i*xi**3 + b_i*xi**2 - tau + K_11*(A_ik*xi - xi) - K_12*(B_ik*alpha
+        - xi) + IE_i + c_glob + local_coupling*xi
+      latex: false
+    record: true
+    grounding:
+    - GO:0042391
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  eta:
+    name: eta
+    domain:
+      enforce: none
+      lo: -25.0
+      hi: 20.0
+      log_scale: false
+    description: Excitatory recovery variable (per mode).
+    equation:
+      lhs: Derivative(eta, t)
+      rhs: c_i - d_i*xi**2 - eta
+      latex: false
+    record: true
+    grounding:
+    - GO:0060079
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  tau:
+    name: tau
+    domain:
+      enforce: none
+      lo: 2.0
+      hi: 10.0
+      log_scale: false
+    description: Excitatory slow adaptation variable (per mode).
+    equation:
+      lhs: Derivative(tau, t)
+      rhs: r*s*xi - r*tau - m_i
+      latex: false
+    record: true
+    grounding:
+    - GO:0060079
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  alpha:
+    name: alpha
+    domain:
+      enforce: none
+      lo: -4.0
+      hi: 4.0
+      log_scale: false
+    description: Inhibitory fast variable (per mode).
+    equation:
+      lhs: Derivative(alpha, t)
+      rhs: beta - e_i*alpha**3 + f_i*alpha**2 - gamma + K_21*(C_ik*xi - alpha) + II_i
+        + c_glob + local_coupling*xi
+      latex: false
+    record: false
+    grounding:
+    - GO:0060080
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  beta:
+    name: beta
+    domain:
+      enforce: none
+      lo: -20.0
+      hi: 20.0
+      log_scale: false
+    description: Inhibitory recovery variable (per mode).
+    equation:
+      lhs: Derivative(beta, t)
+      rhs: h_i - p_i*alpha**2 - beta
+      latex: false
+    record: false
+    grounding:
+    - GO:0042391
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  gamma:
+    name: gamma
+    domain:
+      enforce: none
+      lo: 2.0
+      hi: 10.0
+      log_scale: false
+    description: Inhibitory slow adaptation variable (per mode).
+    equation:
+      lhs: Derivative(gamma, t)
+      rhs: r*s*alpha - r*gamma - n_i
+      latex: false
+    record: false
+    grounding:
+    - GO:0060080
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 3
+model_type: neural_mass
+autonomous: true
+cse: false
+compile: false

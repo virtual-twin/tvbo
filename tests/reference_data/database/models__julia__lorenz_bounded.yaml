@@ -1,0 +1,77 @@
+name: LorenzBounded
+parameters:
+  beta:
+    name: beta
+    value: 2.667
+    description: β parameter from original Lorenz with confinement.
+  r:
+    name: r
+    value: 64.0
+    description: Radius of confining potential sphere.
+  rho:
+    name: rho
+    value: 28.0
+    description: ρ parameter as in Lorenz.
+  sigma:
+    name: sigma
+    value: 10.0
+    description: σ parameter as in Lorenz.
+description: 'Lorenz system modified by smooth radial confinement factor f = 1 - (||X||^2)/r^2
+
+  producing bounded dynamics with altered basin geometry while retaining core
+
+  stretching and folding mechanisms.'
+source: https://github.com/JuliaDynamics/PredefinedDynamicalSystems.jl/blob/main/src/continuous_famous_systems.jl
+references:
+- SprottXiong2015
+derived_variables:
+  f:
+    name: f
+    equation:
+      lhs: f
+      rhs: 1 - (X**2 + Y**2 + Z**2)/r**2
+      latex: false
+    record: false
+    conditional: false
+state_variables:
+  X:
+    name: X
+    equation:
+      lhs: Derivative(X, t)
+      rhs: sigma*(Y - X)*f
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -13.284881
+  Y:
+    name: Y
+    equation:
+      lhs: Derivative(Y, t)
+      rhs: (X*(rho - Z) - Y)*f
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -12.444334
+  Z:
+    name: Z
+    equation:
+      lhs: Derivative(Z, t)
+      rhs: (X*Y - beta*Z)*f
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 34.188198
+number_of_modes: 1
+model_type: generic
+autonomous: true
+cse: false
+compile: false

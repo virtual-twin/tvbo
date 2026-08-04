@@ -1,0 +1,167 @@
+name: BOLD_HRF_strided
+label: BOLD (First Order Volterra, strided convolution)
+description: 'BOLD fMRI observation model identical to BOLD_TVB''s HRF+Volterra forward
+  model, but with the HRF convolution and TR subsampling fused into a single strided
+  convolution (strided_convolve): the convolution is evaluated only at the retained
+  [stride::stride] output samples, avoiding the full-length FFT. Byte-identical to
+  a direct full ''valid'' convolution + subsample; equal to the FFT path to FFT roundoff
+  (~1e-12 float64 / ~1e-6 float32); ~70x cheaper with no FFT buffer.'
+iri: tvbo:BOLD_HRF_strided
+parameters:
+  TR:
+    name: TR
+    value: 720.0
+    description: Repetition time (sampling period)
+    unit: ms
+time_scale: ms
+references:
+- Schirner2023
+functions:
+  hrf_kernel:
+    name: hrf_kernel
+    equation:
+      parameters:
+        tau_s:
+          name: tau_s
+          value: 0.8
+          description: Signal decay time constant (seconds)
+        tau_f:
+          name: tau_f
+          value: 0.4
+          description: Feedback time constant (seconds)
+      description: h(t) = (1/3)·exp(-t/(2τ_s))·sin(ωt)/ω, ω = sqrt(1/τ_f − 1/(4τ_s²))
+      rhs: (1/3)*exp(-0.5*(t/1000)/tau_s)*sin(sqrt(1/tau_f - 1/(4*tau_s**2))*(t/1000))/sqrt(1/tau_f
+        - 1/(4*tau_s**2))
+      latex: false
+    description: Hemodynamic response function kernel (balloon-model impulse response),
+      sampled on the integration grid to one kernel support (5000 samples).
+    arguments:
+      duration:
+        name: duration
+        description: HRF kernel duration in ms
+        value: 20000.0
+    time_range:
+      enforce: none
+      lo: 0
+      hi: duration
+      n: 5000
+      log_scale: false
+  subsample:
+    name: subsample
+    equation:
+      rhs: subsample(data, step - 1, step)
+      latex: false
+    description: 'Pure-stride temporal decimation: `data[step-1::step]` (SubSampling).
+      This is the stream-safe decimation `streaming_hrf_bold` requires — unlike an
+      averaging `temporal_average` window, a stride is block-additive, so the strided
+      BOLD is byte-identical whether or not it is folded in-carry (reduce: streaming).
+      At step=1 it is a TRUE identity (no one-sample shift). Backend-independent (the
+      `subsample` array-op).'
+    arguments:
+      data:
+        name: data
+        description: Input time series (time, nodes)
+      step:
+        name: step
+        description: Decimation stride = round(downsample_period / dt)
+        value: 1
+  prepend_history:
+    name: prepend_history
+    description: Fit the (downsampled) transient history to one kernel length and
+      prepend it, zero-padding at the front when shorter — matches HRFBold._process_history.
+    arguments:
+      data:
+        name: data
+        description: Downsampled input time series
+      history:
+        name: history
+        description: Downsampled transient history data
+      kernel_samples:
+        name: kernel_samples
+        description: Kernel support = ceil(kernel_duration / downsample_period)
+        value: 5000
+    source_code: jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],)
+      + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples
+      else history[-kernel_samples:]), data], axis=0)
+  strided_hrf:
+    name: strided_hrf
+    equation:
+      rhs: strided_convolve(data, kernel, stride)
+      latex: false
+    description: 'Fused HRF convolution + TR subsampling: the ''valid'' convolution
+      of the prepended signal with the HRF kernel, evaluated ONLY at the [stride::stride]
+      output indices via a windowed matmul (strided_convolve array-op). Replaces fftconvolve(...,
+      ''valid'') + subsample_bold data[stride::stride] with no FFT buffer. Byte-identical
+      to a direct full convolution + subsample.'
+    arguments:
+      data:
+        name: data
+        description: Prepended neural signal (time, 1, node)
+      kernel:
+        name: kernel
+        description: HRF kernel
+      stride:
+        name: stride
+        description: Output-sample stride = TR / integration_dt (720 ms / 4 ms = 180),
+          the same factor the FFT pipeline applies as subsample_bold(s=180). Grid-specific
+          like that step (it assumes the neural trace is on the integration grid,
+          period_samples=1); set it to TR/dt for another grid.
+        value: 180
+downsample_period: 4.0
+imaging_modality: BOLD
+reconcile: by_label
+pipeline:
+- function: hrf_kernel
+- function: subsample
+  output: downsampled_data
+  arguments:
+    data:
+      name: data
+      value: integration.result
+    step:
+      name: step
+      value: 1
+- function: subsample
+  output: downsampled_history
+  arguments:
+    data:
+      name: data
+      value: integration.transient
+    step:
+      name: step
+      value: 1
+- function: prepend_history
+  arguments:
+    data:
+      name: data
+      value: downsampled_data
+    history:
+      name: history
+      value: downsampled_history
+    kernel_samples:
+      name: kernel_samples
+      value: 5000
+- function: strided_hrf
+  output: bold_convolve
+  arguments:
+    data:
+      name: data
+      value: prepend_history
+    kernel:
+      name: kernel
+      value: hrf_kernel
+- equation:
+    parameters:
+      k_1:
+        name: k_1
+        value: 5.6
+        description: Intravascular signal contribution
+      V_0:
+        name: V_0
+        value: 0.02
+        description: Resting blood volume fraction
+    rhs: (X - 1.0) * k_1 * V_0
+    latex: false
+  name: volterra_transform
+  input: bold_convolve
+  output: Bold

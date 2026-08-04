@@ -1,0 +1,64 @@
+label: SmileyNetwork
+parameters:
+  conduction_speed:
+    name: conduction_speed
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+nodes:
+- id: 0
+  label: node_0
+  record: true
+  size: 1
+- id: 1
+  label: node_1
+  record: true
+  size: 1
+- id: 2
+  label: node_2
+  record: true
+  size: 1
+- id: 3
+  label: node_3
+  record: true
+  size: 1
+- id: 4
+  label: node_4
+  record: true
+  size: 1
+- id: 5
+  label: node_5
+  record: true
+  size: 1
+- id: 6
+  label: node_6
+  record: true
+  size: 1
+- id: 7
+  label: node_7
+  record: true
+  size: 1
+- id: 8
+  label: node_8
+  record: true
+  size: 1
+edges:
+- label: sc
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+  allow_self_connections: true
+- label: fc
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+  allow_self_connections: true
+graph_representation: auto
+number_of_nodes: 9
+data_file: SmileyNetwork.h5
+distance_unit: mm
+time_unit: ms
