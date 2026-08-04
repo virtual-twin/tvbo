@@ -17,7 +17,6 @@ from matplotlib.animation import FuncAnimation
 import xarray as xr
 import tvbo.jax.xarray_pytrees  # noqa: F401 – registers xr types as JAX pytrees
 
-from tvbo.classes import equation as equations
 from tvbo.utils import Bunch
 from tvbo.classes.network import Network
 from tvbo.utils import format_pytree_as_string

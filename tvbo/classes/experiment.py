@@ -1207,6 +1207,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         |          |        |       | ``delays=True`` implies ``indexed=True``.  |
         +----------+--------+-------+--------------------------------------------+
 
+        Every symbol substituted here — the node index `y0(t)` → `y0_i(t)`, the coupling
+        terms, `t` — is taken from the model's own table rather than rebuilt. The table's
+        symbols carry assumptions, `Function("y0") != Function("y0", real=True)`, and `subs`
+        across that mismatch replaces nothing at all instead of raising.
+
         Parameters
         ----------
         integrate : bool
@@ -1224,7 +1229,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             ``'derived_parameters'``, ``'derived'``, ``'parameters'``.
         """
         import sympy as sp
-        from sympy import Symbol, Function
+        from sympy import Function
 
         if delays:
             indexed = True
@@ -1254,14 +1259,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         for ct_name, coup in coupling_map.items():
             coupling_exprs[ct_name] = coup.symbolic(delays=delays)
 
-        # Substitution maps (built conditionally)
         subs_index = {}
         subs_coupling = {}
 
-        # Node-index substitution: y0(t) → y0_i(t). The symbol to replace is taken from the
-        # model's own table rather than rebuilt here: the two carry assumptions, and
-        # `Function("y0")` and `Function("y0", real=True)` compare unequal, so a rebuilt one
-        # substitutes nothing at all instead of raising.
         scope = self.dynamics.get_symbolic_elements(time_dependent=True)
         t = symbol_in(scope, "t")
         if indexed:

@@ -382,6 +382,13 @@ def parse_eq(
     else:
         expression = equation.rhs
 
+    if expression is None:
+        raise ValueError(
+            f"{equation!r} states no right-hand side and no conditionals, so there is "
+            "nothing to parse. Callers that tolerate an element stating nothing should "
+            "ask `states_an_expression` first rather than parse and test the result."
+        )
+
     # If it's already an Expr, return it directly
     if not isinstance(expression, str):
         return expression

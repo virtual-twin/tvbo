@@ -34,7 +34,7 @@ from tvbo.adapters.smallscale.lowering import (
     unique_component_id as _unique_component_id,
 )
 from tvbo.codegen.code import inline_functions
-from tvbo.parse.expression import function_bodies
+from tvbo.parse.expression import function_bodies, states_an_expression
 from tvbo.utils import normalize_params
 
 if TYPE_CHECKING:
@@ -3015,7 +3015,6 @@ def build_lems_context(experiment):
     """
     from sympy import Piecewise, S as sympy_S, Eq as sympy_Eq
     from sympy.functions.elementary.piecewise import piecewise_fold
-    from sympy.core.basic import Basic as _SympyBasic
     from tvbo.parse.expression import parse_eq
 
     dyn = experiment.dynamics
@@ -3288,6 +3287,7 @@ def build_lems_context(experiment):
         dt=dt,
         duration=duration,
         lems_expr=lems_expr,
+        states_an_expression=states_an_expression,
         _parse_piecewise=_parse_piecewise,
         lems_dim=_lems_dim,
         lems_sym=_lems_sym,
@@ -3332,11 +3332,18 @@ def build_lems_context(experiment):
                 ct_bodies = function_bodies(ct_dyn, parameters=ct_all_names)
 
                 def ct_lems_expr(e):
-                    # LEMS comparison operators (.gt., .lt., …) are not SymPy-parseable, so
-                    # they pass through. Only a string can carry one; stringifying an
-                    # Equation to check would also hand its repr to the parser.
-                    if isinstance(e, str) and _LEMS_CMP_RE.search(e):
-                        return e
+                    """Render *e* as LEMS, passing through text already written in it.
+
+                    LEMS comparison operators (`.gt.`, `.lt.`, …) are not SymPy-parseable, so
+                    a right-hand side already written in LEMS — one round-tripped from a LEMS
+                    import — is emitted verbatim. The test and the passthrough both use the
+                    stated *text*: matching on `str(e)` would also match an `Equation` whose
+                    repr merely contains the operator, and then emit that repr into the
+                    document.
+                    """
+                    text = e if isinstance(e, str) else getattr(e, "rhs", None)
+                    if isinstance(text, str) and _LEMS_CMP_RE.search(text):
+                        return text
                     e = parse_eq(e, parameters=ct_all_names, functions=ct_fn_names)
                     e = inline_functions(e, ct_bodies)
                     return sympy_to_lems(e, parameters=ct_all_names)
@@ -3398,6 +3405,7 @@ def build_lems_context(experiment):
                 "sv_names_set": ct_sv_names_set,
                 "needs_sec": ct_needs_sec,
                 "lems_expr": ct_lems_expr,
+                "states_an_expression": states_an_expression,
                 "_parse_piecewise": ct_parse_pw,
                 "lems_dim": ct_lems_dim,
                 "lems_sym": ct_lems_sym_fn,
@@ -3495,6 +3503,7 @@ def build_lems_context(experiment):
                     "sv_names_set": ct_sv_names_set,
                     "needs_sec": syn_needs_sec,
                     "lems_expr": ct_lems_expr,
+                    "states_an_expression": states_an_expression,
                     "_parse_piecewise": ct_parse_pw,
                     "lems_dim": syn_lems_dim,
                     "lems_sym": syn_lems_sym_fn,

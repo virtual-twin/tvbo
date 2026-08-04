@@ -10,6 +10,7 @@ expression and prints it for the chosen backend.
 """
 
 import logging
+from functools import lru_cache
 
 import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
@@ -155,10 +156,15 @@ def inline_functions(expr, func_defs):
     [`Dynamics.function_bodies`](../classes/dynamics.qmd#Dynamics.function_bodies), which
     parses each body once against the model's own scope.
 
-    Substitution repeats to a fixed point. A body may itself call a function already
-    visited — the call graph is a DAG, e.g. Zerlaut's ``TF_e`` calls ``sigmaV`` calls
-    ``muV`` — so a single pass over *func_defs* leaves calls behind whenever the
-    dictionary order runs against the dependency order.
+    A body may itself call a function — the call graph is a DAG, e.g. Zerlaut's ``TF_e``
+    calls ``sigmaV`` calls ``muV`` — so the bodies are first expanded into *each other*,
+    once, and only then substituted into *expr* in a single pass.
+
+    Reaching the fixed point on *expr* instead re-probes every body against an expression
+    that grows as it is inlined: Zerlaut's NeuroML render spent 5.6 s of 10 s here, walking
+    a 12 000-node expression four times over to find nothing on the last pass. Flattening
+    the bodies costs the same work once, over expressions that are small, and the result is
+    memoised because every equation in a model inlines against the same table.
 
     Parameters
     ----------
@@ -183,24 +189,66 @@ def inline_functions(expr, func_defs):
     """
     if not func_defs:
         return expr
-    bodies = {
-        name: (tuple(a if isinstance(a, Symbol) else Symbol(str(a)) for a in arg_names), body)
+    definitions = tuple(
+        (
+            str(name),
+            tuple(a if isinstance(a, Symbol) else Symbol(str(a)) for a in arg_names),
+            body,
+        )
         for name, (arg_names, body) in func_defs.items()
-    }
-    for _ in range(len(bodies) + 1):
-        replaced = False
-        for name, (formals, body) in bodies.items():
-            head = Function(name)
-            if not expr.has(head):
-                continue
+    )
+    for name, formals, body in _flattened_bodies(definitions):
+        head = Function(name)
+        if expr.has(head):
             expr = expr.replace(
                 head,
-                lambda *actual, _body=body, _formals=formals: _body.xreplace(dict(zip(_formals, actual))),
+                lambda *actual, _n=name, _b=body, _f=formals: _substitute(_n, _f, _b, *actual),
             )
-            replaced = True
-        if not replaced:
-            break
     return expr
+
+
+def _substitute(name, formals, body, *actual):
+    """Bind *actual* to *formals*, refusing a call whose arity does not match.
+
+    `zip` would truncate silently: an extra argument is dropped and a missing one leaves its
+    formal free, so the surplus symbol prints into the emitted source as an undeclared name
+    and fails at run time in whichever backend consumed it.
+    """
+    if len(actual) != len(formals):
+        raise ValueError(
+            f"{name}() takes {len(formals)} argument(s) "
+            f"({', '.join(str(f) for f in formals) or 'none'}) but is called with {len(actual)}"
+        )
+    return body.xreplace(dict(zip(formals, actual)))
+
+
+@lru_cache(maxsize=64)
+def _flattened_bodies(definitions):
+    """Function bodies with every nested call already expanded, so one pass inlines them all.
+
+    Keyed on the definitions themselves — SymPy expressions are hashable — because every
+    equation in a model inlines against the same table, and flattening it once is what turns
+    a fixed point over the growing target expression into a single pass over small ones.
+    """
+    bodies = {name: (formals, body) for name, formals, body in definitions}
+    for _ in range(len(bodies) + 1):
+        expanded = False
+        for name, (formals, body) in bodies.items():
+            for other, (other_formals, other_body) in bodies.items():
+                head = Function(other)
+                if other == name or not body.has(head):
+                    continue
+                body = body.replace(
+                    head,
+                    lambda *actual, _n=other, _b=other_body, _f=other_formals: _substitute(
+                        _n, _f, _b, *actual
+                    ),
+                )
+                expanded = True
+            bodies[name] = (formals, body)
+        if not expanded:
+            break
+    return tuple((name, formals, body) for name, (formals, body) in bodies.items())
 
 
 def print_Piecewise(Printer, expr, verbose=False):
@@ -1465,6 +1513,12 @@ class LEMSPrinter(StrPrinter):
         conditions are mutually exclusive. Otherwise the else-branch is added to whichever
         branch was taken: `tent_map` evaluated to `mu*x + mu*(1 - x)` on its whole lower
         arm, and `Hopfield` added its entire un-thresholded term to the thresholded one.
+
+        A zero default is dropped: it contributes nothing to a sum, and emitting it would
+        append a `(1 - H(…)) * 0` tail to every single-branch expression.
+
+        Bracketing is not decided here — see `parenthesize`, which tells an enclosing
+        operator that this output binds like the sum it is.
         """
         from sympy import S as sympy_S
         from sympy.printing.precedence import PRECEDENCE
@@ -1474,8 +1528,6 @@ class LEMSPrinter(StrPrinter):
             unreached = "".join(f"(1 - H({c})) * " for c in taken)
             value = self.parenthesize(val, PRECEDENCE["Mul"])
             if cond == sympy_S.true:
-                # A zero default contributes nothing to a sum; emitting it would append a
-                # `(1 - H(…)) * 0` tail to every single-branch expression.
                 if not val.is_zero:
                     terms.append(f"{unreached}{value}" if unreached else value)
                 break
@@ -1484,6 +1536,29 @@ class LEMSPrinter(StrPrinter):
                 terms.append(f"{unreached}H({condition}) * {value}")
             taken.append(condition)
         return " + ".join(terms) if terms else "0"
+
+    def parenthesize(self, item, level, strict=False):
+        """Bracket a `Piecewise` operand as the sum this printer renders it into.
+
+        SymPy gives `Piecewise` `Func` precedence — right for the printers that emit
+        `np.where(...)` or `ifelse(...)`, which really are atoms, and wrong here, where the
+        output is `H(c) * a + (1 - H(c)) * b`. Without this an enclosing `Mul`, `Pow` or
+        negation binds to the first arm alone.
+
+        Declaring the precedence rather than wrapping in `_print_Piecewise` keeps the
+        brackets to the contexts that need them: `parenthesize` is only ever called by an
+        enclosing operator, so a top-level equation stays unwrapped.
+        """
+        from sympy import Piecewise
+        from sympy.printing.precedence import PRECEDENCE
+
+        if isinstance(item, Piecewise):
+            printed = self._print(item)
+            as_sum = PRECEDENCE["Add"]
+            if as_sum < level or (not strict and as_sum <= level):
+                return f"({printed})"
+            return printed
+        return super().parenthesize(item, level, strict)
 
 
 class PythonCodePrinter(_PythonCodePrinter):

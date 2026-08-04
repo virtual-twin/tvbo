@@ -136,7 +136,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for dv_name, dv in ct_dvs.items():
 <%
   eq = getattr(dv, 'equation', None)
-  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
+  rhs = eq if states_an_expression(eq) else None
   dv_dim = ct_lems_dim(getattr(dv, 'unit', None))
   pw_cases = ct_parse_piecewise(rhs) if rhs else None
 %>\
@@ -172,7 +172,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if ct_needs_sec:
@@ -192,7 +192,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs and sv_name not in ct_regime_data['reset_vars']:
 % if ct_needs_sec:
@@ -241,7 +241,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if ct_needs_sec:
@@ -269,7 +269,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if ct_needs_sec:
@@ -296,7 +296,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if ct_needs_sec:
@@ -420,7 +420,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for dv_name, dv in ct_dvs.items():
 <%
   eq = getattr(dv, 'equation', None)
-  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
+  rhs = eq if states_an_expression(eq) else None
   dv_dim = ct_lems_dim(getattr(dv, 'unit', None))
   pw_cases = ct_parse_piecewise(rhs) if rhs else None
 %>\
@@ -447,7 +447,7 @@ Variables available: dyn, dyn_id, params, svs, dvs, events,
 % for sv_name, sv in ct_svs.items():
 <%
   eq = getattr(sv, 'equation', None)
-  rhs = eq  # the Equation itself; lems_expr resolves rhs or conditionals
+  rhs = eq if states_an_expression(eq) else None
 %>\
 % if rhs:
 % if ct_needs_sec:
