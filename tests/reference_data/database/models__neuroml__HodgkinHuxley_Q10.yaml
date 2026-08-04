@@ -1,0 +1,143 @@
+name: HodgkinHuxley_Q10
+parameters:
+  C:
+    name: C
+    value: 10.0
+  g_Na:
+    name: g_Na
+    value: 1200.0
+  g_K:
+    name: g_K
+    value: 360.0
+  g_L:
+    name: g_L
+    value: 3.0
+  E_Na:
+    name: E_Na
+    value: 50.0
+  E_K:
+    name: E_K
+    value: -77.0
+  E_L:
+    name: E_L
+    value: -54.3
+  I_amp:
+    name: I_amp
+    value: 0.08
+  pulse_delay:
+    name: pulse_delay
+    value: 100.0
+    unit: ms
+  pulse_duration:
+    name: pulse_duration
+    value: 100.0
+    unit: ms
+  Q10:
+    name: Q10
+    value: 0.333333
+    description: Q10 factor = 3^((22-32)/10)
+source: 'NeuroML2 example: Ex10_Q10'
+derived_variables:
+  I_ext:
+    name: I_ext
+    equation:
+      rhs: Piecewise((I_amp, (t >= pulse_delay) & (t < pulse_delay + pulse_duration)),
+        (0.0, True))
+      latex: false
+    record: false
+    conditional: false
+  alpha_m:
+    name: alpha_m
+    equation:
+      rhs: Q10 * Piecewise((1.0, Eq(v, -40.0)), (0.1*(v + 40.0)/(1.0 - exp(-(v + 40.0)/10.0)),
+        True))
+      latex: false
+    record: false
+    conditional: false
+  beta_m:
+    name: beta_m
+    equation:
+      rhs: Q10 * 4.0*exp(-(v + 65.0)/18.0)
+      latex: false
+    record: false
+    conditional: false
+  alpha_h:
+    name: alpha_h
+    equation:
+      rhs: Q10 * 0.07*exp(-(v + 65.0)/20.0)
+      latex: false
+    record: false
+    conditional: false
+  beta_h:
+    name: beta_h
+    equation:
+      rhs: Q10 * 1.0/(1.0 + exp(-(v + 35.0)/10.0))
+      latex: false
+    record: false
+    conditional: false
+  alpha_n:
+    name: alpha_n
+    equation:
+      rhs: Q10 * Piecewise((0.1, Eq(v, -55.0)), (0.01*(v + 55.0)/(1.0 - exp(-(v +
+        55.0)/10.0)), True))
+      latex: false
+    record: false
+    conditional: false
+  beta_n:
+    name: beta_n
+    equation:
+      rhs: Q10 * 0.125*exp(-(v + 65.0)/80.0)
+      latex: false
+    record: false
+    conditional: false
+state_variables:
+  v:
+    name: v
+    equation:
+      rhs: (-g_Na*m**3*h*(v - E_Na) - g_K*n**4*(v - E_K) - g_L*(v - E_L) + I_ext*1000)
+        / C
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -65.0
+  m:
+    name: m
+    equation:
+      rhs: alpha_m*(1 - m) - beta_m*m
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.052932
+  h:
+    name: h
+    equation:
+      rhs: alpha_h*(1 - h) - beta_h*h
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.596121
+  n:
+    name: n
+    equation:
+      rhs: alpha_n*(1 - n) - beta_n*n
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.317677
+number_of_modes: 1
+model_type: spiking
+autonomous: true
+cse: false
+compile: false

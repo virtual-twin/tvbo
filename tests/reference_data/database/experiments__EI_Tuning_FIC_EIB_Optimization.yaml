@@ -1,0 +1,1085 @@
+id: 3
+references:
+- Schirner, M., Deco, G., & Ritter, P. (2023). Learning how network structure shapes
+  decision-making for bio-inspired computing. Nature Communications, 14(1), Article
+  1.
+- Wong, K.-F., & Wang, X.-J. (2006). A recurrent network mechanism of time integration
+  in perceptual decisions. J Neurosci, 26:1314-1328.
+- Deco, G., Ponce-Alvarez, A., Mantini, D., Romani, G.L., Hagmann, P., & Corbetta,
+  M. (2013). Resting-state functional connectivity emerges from structurally and dynamically
+  shaped slow linear fluctuations. J Neurosci, 33(27):11239-11252.
+description: 'Fitting functional connectivity using the two-population Reduced Wong-Wang
+  model with explicit excitatory and inhibitory populations. Combines Feedback Inhibition
+  Control (FIC) to maintain local E-I balance with EIB tuning to globally optimize
+  network connectivity. Supports both iterative (FIC+EIB) and gradient-based optimization
+  approaches.
+
+  '
+label: 'EI Tuning: Functional Connectivity Fitting'
+dynamics:
+  name: ReducedWongWangEIB
+  label: Two-Population Reduced Wong-Wang Model
+  parameters:
+    a_e:
+      name: a_e
+      label: Excitatory input gain
+      value: 310.0
+      unit: per_nC
+    b_e:
+      name: b_e
+      label: Excitatory input shift
+      value: 125.0
+      unit: Hz
+    d_e:
+      name: d_e
+      label: Excitatory input scaling
+      value: 0.16
+      unit: s
+    gamma_e:
+      name: gamma_e
+      label: Excitatory kinetic parameter
+      value: 0.000641
+      description: gamma_e = 0.641/1000
+    tau_e:
+      name: tau_e
+      label: Excitatory NMDA decay time constant
+      value: 100.0
+      unit: ms
+    w_p:
+      name: w_p
+      label: Excitatory recurrence weight
+      value: 1.4
+    W_e:
+      name: W_e
+      label: External input scaling (excitatory)
+      value: 1.0
+    a_i:
+      name: a_i
+      label: Inhibitory input gain
+      value: 615.0
+      unit: per_nC
+    b_i:
+      name: b_i
+      label: Inhibitory input shift
+      value: 177.0
+      unit: Hz
+    d_i:
+      name: d_i
+      label: Inhibitory input scaling
+      value: 0.087
+      unit: s
+    gamma_i:
+      name: gamma_i
+      label: Inhibitory kinetic parameter
+      value: 0.001
+      description: gamma_i = 1.0/1000
+    tau_i:
+      name: tau_i
+      label: Inhibitory NMDA decay time constant
+      value: 10.0
+      unit: ms
+    W_i:
+      name: W_i
+      label: External input scaling (inhibitory)
+      value: 0.7
+    J_N:
+      name: J_N
+      label: NMDA current
+      value: 0.15
+      unit: nA
+    J_i:
+      name: J_i
+      label: Inhibitory synaptic weight
+      value: 1.0
+      description: Tuned by FIC algorithm, can be heterogeneous
+      heterogeneous: true
+      free: true
+      shape: (n_nodes,)
+    I_o:
+      name: I_o
+      label: Background input current
+      value: 0.382
+    I_ext:
+      name: I_ext
+      label: External stimulation current
+      value: 0.0
+    lamda:
+      name: lamda
+      label: Inhibitory coupling scaling (lambda)
+      value: 1.0
+  description: 'Biophysically-based neural mass model with explicit excitatory (E)
+    and inhibitory (I) populations. Each population has separate synaptic gating variables
+    (S_e, S_i) and transfer functions. Enables independent control of E-I balance
+    via the J_i parameter.
+
+    '
+  derived_variables:
+    J_N_S_e:
+      name: J_N_S_e
+      label: NMDA-scaled excitatory gating
+      equation:
+        rhs: J_N * S_e
+        latex: false
+      record: false
+      conditional: false
+    J_N_c_ffi:
+      name: J_N_c_ffi
+      label: NMDA-scaled feedforward inhibition
+      equation:
+        rhs: J_N * c_ffi
+        latex: false
+      record: false
+      conditional: false
+    x_e_pre:
+      name: x_e_pre
+      label: Excitatory pre-activation
+      equation:
+        rhs: w_p * J_N_S_e - J_i * S_i + W_e * I_o + J_N * c_lre + I_ext
+        latex: false
+      record: false
+      conditional: false
+    x_e:
+      name: x_e
+      label: Excitatory activation
+      equation:
+        rhs: a_e * x_e_pre - b_e
+        latex: false
+      record: false
+      conditional: false
+    H_e:
+      name: H_e
+      label: Excitatory firing rate
+      description: Sigmoidal transfer function for excitatory population
+      equation:
+        rhs: x_e / (1.0 - exp(-d_e * x_e))
+        latex: false
+      record: false
+      conditional: false
+    x_i_pre:
+      name: x_i_pre
+      label: Inhibitory pre-activation
+      equation:
+        rhs: J_N_S_e - S_i + W_i * I_o + lamda * J_N_c_ffi
+        latex: false
+      record: false
+      conditional: false
+    x_i:
+      name: x_i
+      label: Inhibitory activation
+      equation:
+        rhs: a_i * x_i_pre - b_i
+        latex: false
+      record: false
+      conditional: false
+    H_i:
+      name: H_i
+      label: Inhibitory firing rate
+      description: Sigmoidal transfer function for inhibitory population
+      equation:
+        rhs: x_i / (1.0 - exp(-d_i * x_i))
+        latex: false
+      record: false
+      conditional: false
+  coupling_inputs:
+    EIBLinearCoupling:
+      name: EIBLinearCoupling
+      description: 'Multi-output coupling: long-range excitation (c_lre) and feedforward
+        inhibition (c_ffi)'
+      dimension: 2
+      keys:
+      - c_lre
+      - c_ffi
+      local: false
+  state_variables:
+    S_e:
+      name: S_e
+      label: Excitatory synaptic gating
+      domain:
+        enforce: clamp
+        lo: 0.0
+        hi: 1.0
+        log_scale: false
+      description: Fraction of open NMDA channels (excitatory)
+      equation:
+        rhs: -(S_e / tau_e) + (1.0 - S_e) * H_e * gamma_e
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: true
+      equation_type: differential
+      equation_order: 1
+      noise:
+        parameters:
+          sigma:
+            name: sigma
+            value: 0.01
+            description: Noise intensity for S_e
+        noise_type: gaussian
+        gaussian: false
+        additive: true
+        seed: 42
+      initial_value: 0.001
+    S_i:
+      name: S_i
+      label: Inhibitory synaptic gating
+      domain:
+        enforce: clamp
+        lo: 0.0
+        hi: 1.0
+        log_scale: false
+      description: Fraction of open NMDA channels (inhibitory)
+      equation:
+        rhs: -(S_i / tau_i) + H_i * gamma_i
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.001
+  output:
+  - S_e
+  - S_i
+  - H_e
+  - H_i
+  number_of_modes: 1
+  autonomous: true
+  cse: false
+  compile: false
+integration:
+  method: Heun
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 4.0
+  time_scale: ms
+  duration: 300000.0
+  description: Heun integrator
+  transient_time: 300000.0
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  label: Desikan-Killiany
+  description: Structural connectivity from dk_average dataset
+  parameters:
+    conduction_speed:
+      name: conduction_speed
+      value: 3.0
+      unit: mm_per_ms
+  coupling:
+    EIBLinearCoupling:
+      name: EIBLinearCoupling
+      label: EIB Linear Coupling
+      parameters:
+        wLRE:
+          name: wLRE
+          label: Long-range excitation weights
+          value: 1.0
+          domain:
+            enforce: none
+            lo: 0.0
+            log_scale: false
+          description: Weight matrix for excitatory long-range coupling
+          heterogeneous: true
+          free: true
+          shape: (n_nodes, n_nodes)
+        wFFI:
+          name: wFFI
+          label: Feedforward inhibition weights
+          value: 1.0
+          domain:
+            enforce: none
+            lo: 0.0
+            log_scale: false
+          description: Weight matrix for feedforward inhibition
+          heterogeneous: true
+          free: true
+          shape: (n_nodes, n_nodes)
+      description: 'Dual-weight coupling producing two outputs from excitatory activity:
+        long-range excitation (wLRE) and feedforward inhibition (wFFI). Separate weight
+        matrices enable independent tuning of E and I pathways. N_OUTPUT_STATES =
+        2.
+
+        '
+      sparse: false
+      pre_expression:
+        description: Apply separate weight matrices to S_e, returns [LRE, FFI] outputs
+        rhs: '[S_e * wLRE, S_e * wFFI]'
+        latex: false
+      post_expression:
+        description: Pass through summed inputs
+        rhs: gx
+        latex: false
+      incoming_states:
+      - S_e
+      delayed: false
+      interpolate_delays: false
+      vectorized: false
+      symmetry: directed
+  graph_representation: auto
+  transforms:
+  - name: weight
+    equation:
+      rhs: W / max(W)
+      latex: false
+  bids_dir: ../networks/bids/dk_average
+  structural_measures:
+  - streamlineCount
+  - tractLength
+  observational_measures:
+  - BoldCorrelation
+  distance_unit: mm
+  time_unit: ms
+observations:
+  bold:
+    name: bold
+    label: Simulated BOLD Signal
+    description: BOLD signal from hemodynamic response function
+    time_scale: ms
+    source:
+    - S_e
+    period: 720.0
+    reconcile: by_label
+    pipeline:
+    - function: hrf_kernel
+    - function: temporal_average
+      output: downsampled_data
+      arguments:
+        data:
+          name: data
+          value: integration.result
+        period_samples:
+          name: period_samples
+          value: 1
+    - function: temporal_average
+      output: downsampled_history
+      arguments:
+        data:
+          name: data
+          value: integration.transient
+        period_samples:
+          name: period_samples
+          value: 1
+    - function: prepend_history
+      arguments:
+        data:
+          name: data
+          value: downsampled_data
+        history:
+          name: history
+          value: downsampled_history
+        kernel_samples:
+          name: kernel_samples
+          value: 5000
+    - callable:
+        name: fftconvolve
+        module: jax.scipy.signal
+      output: bold_convolve
+      apply_on_dimension: node
+      arguments:
+        in1:
+          name: in1
+          value: prepend_history
+        in2:
+          name: in2
+          value: hrf_kernel
+        mode:
+          name: mode
+          value: valid
+    - function: volterra_transform
+      arguments:
+        data:
+          name: data
+          value: bold_convolve
+    - function: subsample_bold
+      arguments:
+        data:
+          name: data
+          value: volterra_transform
+  mean_S_e:
+    name: mean_S_e
+    label: Mean Excitatory Activity
+    description: Mean S_e over simulation window (for FIC algorithms)
+    time_scale: ms
+    source:
+    - S_e
+    reconcile: by_label
+    aggregation: mean
+  mean_S_e_final:
+    name: mean_S_e_final
+    label: Mean Excitatory Activity (Final 500 Timesteps)
+    description: Mean S_e over final 500 timesteps (for gradient optimization loss)
+    time_scale: ms
+    source:
+    - S_e
+    reconcile: by_label
+    tail_samples: 500
+    aggregation: mean
+  mean_S_i:
+    name: mean_S_i
+    label: Mean Inhibitory Activity
+    description: Mean S_i over simulation window (for FIC)
+    time_scale: ms
+    source:
+    - S_i
+    reconcile: by_label
+    aggregation: mean
+  fc_target:
+    name: fc_target
+    label: Empirical Functional Connectivity
+    description: Target FC matrix from network observations (loaded from BIDS)
+    time_scale: ms
+    source:
+    - network.observations.BoldCorrelation
+    reconcile: by_label
+  fc:
+    name: fc
+    label: Simulated Functional Connectivity (Post-Tuning)
+    description: Pearson correlation matrix from BOLD time series (skip_t=20 for post-tuning
+      evaluation)
+    time_scale: ms
+    source:
+    - bold
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: compute_fc
+        module: tvboptim.observations.observation
+      arguments:
+        timeseries:
+          name: timeseries
+          value: bold
+        skip_t:
+          name: skip_t
+          description: Skip first 20 TRs for transient removal in post-tuning
+          value: 20
+  fc_inloop:
+    name: fc_inloop
+    label: Simulated Functional Connectivity (In-Loop)
+    description: FC computed on sliding window without transient skip (for algorithm
+      in-loop)
+    time_scale: ms
+    source:
+    - bold
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: compute_fc
+        module: tvboptim.observations.observation
+      arguments:
+        timeseries:
+          name: timeseries
+          value: bold
+        skip_t:
+          name: skip_t
+          description: No skip for in-loop FC (sliding window already handles transient)
+          value: 0
+  fc_gradient:
+    name: fc_gradient
+    label: Simulated FC for Gradient Optimization
+    description: FC computation for gradient optimization (skip_t=30 as in original)
+    time_scale: ms
+    source:
+    - bold
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: compute_fc
+        module: tvboptim.observations.observation
+      arguments:
+        timeseries:
+          name: timeseries
+          value: bold
+        skip_t:
+          name: skip_t
+          description: Skip first 30 TRs as in original gradient optimization
+          value: 30
+  fc_corr:
+    name: fc_corr
+    label: FC Correlation with Target
+    description: Pearson correlation between simulated FC and empirical FC target
+    time_scale: ms
+    source:
+    - fc
+    - fc_target
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: fc_corr
+        module: tvboptim.observations.observation
+      arguments:
+        A:
+          name: A
+          value: fc
+        B:
+          name: B
+          value: fc_target
+  fc_rmse:
+    name: fc_rmse
+    label: FC RMSE with Target
+    description: Root mean squared error between simulated FC and empirical FC target
+    time_scale: ms
+    source:
+    - fc
+    - fc_target
+    reconcile: by_label
+    pipeline:
+    - callable:
+        name: rmse
+        module: tvboptim.observations.observation
+      arguments:
+        A:
+          name: A
+          value: fc
+        B:
+          name: B
+          value: fc_target
+functions:
+  hrf_kernel:
+    name: hrf_kernel
+    equation:
+      parameters:
+        tau_s:
+          name: tau_s
+          value: 0.8
+          description: Signal decay time constant (seconds)
+        tau_f:
+          name: tau_f
+          value: 0.4
+          description: Feedback time constant (seconds)
+      description: h(t) = (1/3) * exp(-t/(2τ_s)) * sin(ωt)/ω, where ω = sqrt(1/τ_f
+        - 1/(4τ_s²))
+      rhs: (1/3)*exp(-0.5*(t/1000)/tau_s)*sin(sqrt(1/tau_f - 1/(4*tau_s**2))*(t/1000))/sqrt(1/tau_f
+        - 1/(4*tau_s**2))
+      latex: false
+    description: 'Hemodynamic response function kernel (Lotka-Volterra).
+
+      Analytical solution for balloon model impulse response.
+
+      '
+    arguments:
+      duration:
+        name: duration
+        description: HRF kernel duration in ms
+        value: 20000.0
+    time_range:
+      enforce: none
+      lo: 0
+      hi: duration
+      n: 5000
+      log_scale: false
+  temporal_average:
+    name: temporal_average
+    description: 'Downsample by averaging over non-overlapping windows of `period_samples`
+      samples (centered indices, t0-independent) — reproduces tvboptim TemporalAverage
+      exactly.
+
+      '
+    arguments:
+      data:
+        name: data
+        description: Input time series (time, nodes)
+      period_samples:
+        name: period_samples
+        description: Samples per window = round(downsample_period / dt)
+        value: 1
+    source_code: 'jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) +
+      (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0])
+      + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0],
+      period_samples).shape[0]]'
+  prepend_history:
+    name: prepend_history
+    description: 'Fit the (downsampled) transient history to one kernel length and
+      prepend it, zero-padding at the front when shorter — matches HRFBold._process_history.
+
+      '
+    arguments:
+      data:
+        name: data
+        description: Downsampled input time series
+      history:
+        name: history
+        description: Downsampled transient history data
+      kernel_samples:
+        name: kernel_samples
+        description: Kernel support = ceil(kernel_duration / downsample_period)
+        value: 5000
+    source_code: jnp.concatenate([(jnp.vstack([jnp.zeros((kernel_samples - history.shape[0],)
+      + history.shape[1:], history.dtype), history]) if history.shape[0] < kernel_samples
+      else history[-kernel_samples:]), data], axis=0)
+  volterra_transform:
+    name: volterra_transform
+    equation:
+      parameters:
+        k_1:
+          name: k_1
+          value: 5.6
+          description: Intravascular signal contribution
+        V_0:
+          name: V_0
+          value: 0.02
+          description: Resting blood volume fraction
+      description: BOLD[t,i] = k₁ * V₀ * (activity[t,i] - 1)
+      rhs: k_1 * V_0 * (data[t,i] - 1)
+      latex: false
+    description: 'Volterra nonlinear BOLD transformation.
+
+      Linear approximation of BOLD signal from neural activity.
+
+      '
+    arguments:
+      data:
+        name: data
+        description: Input neural activity data
+  subsample_bold:
+    name: subsample_bold
+    description: 'Sample at the end of each BOLD TR: indices arange(s, N, s), anchored
+      at the first full TR (index 0, the zero-padded warm-up, is skipped), uncapped.
+
+      '
+    arguments:
+      data:
+        name: data
+        description: Input time series (T x n)
+      s:
+        name: s
+        description: Subsample factor (TR/dt = 720/4 = 180)
+        value: 180
+    source_code: data[s::s]
+  rmse:
+    name: rmse
+    equation:
+      description: RMSE_i = sqrt(1/m * sum_j((a_ij - b_ij)^2))
+      rhs: sqrt(Sum((a[i,j] - b[i,j])**2, (j, 0, m-1)) / m)
+      latex: false
+    description: 'Row-wise root mean squared error using pure mathematical notation.
+
+      Uses SymPy indexed notation: Sum((a[i,j] - b[i,j])**2, (j, 0, m-1))
+
+      The code generator automatically infers axis=1 from the j index position.
+
+      When used with 2D expressions, broadcasting is automatically added.
+
+      '
+    arguments:
+      a:
+        name: a
+        description: First matrix (n x m)
+      b:
+        name: b
+        description: Second matrix (n x m)
+      m:
+        name: m
+        description: Number of columns (for normalization)
+  correlation:
+    name: correlation
+    equation:
+      description: ρ = Σ_t(x_t - x̄)(y_t - ȳ) / (σ_x * σ_y)
+      rhs: Sum((x[t] - mean(x))*(y[t] - mean(y)), (t, 0, T-1)) / (sqrt(Sum((x[t] -
+        mean(x))**2, (t, 0, T-1))) * sqrt(Sum((y[t] - mean(y))**2, (t, 0, T-1))))
+      latex: false
+    description: 'Pearson correlation coefficient between two vectors.
+
+      Mathematical definition using indexed notation.
+
+      '
+    arguments:
+      x:
+        name: x
+        description: First vector (length T)
+      y:
+        name: y
+        description: Second vector (length T)
+      T:
+        name: T
+        description: Vector length
+  fc_corr:
+    name: fc_corr
+    equation:
+      description: ρ(A, B) = correlation between flattened matrices
+      rhs: Sum((A[i,j] - mean(A))*(B[i,j] - mean(B)), (i, 0, N_nodes-1), (j, 0, N_nodes-1))
+        / (sqrt(Sum((A[i,j] - mean(A))**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1)))
+        * sqrt(Sum((B[i,j] - mean(B))**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1))))
+      latex: false
+    description: 'Correlation between two FC matrices (flattened).
+
+      Measures similarity between predicted and target functional connectivity.
+
+      '
+    arguments:
+      A:
+        name: A
+        description: First FC matrix (N_nodes x N_nodes)
+      B:
+        name: B
+        description: Second FC matrix (N_nodes x N_nodes)
+  fc_rmse:
+    name: fc_rmse
+    equation:
+      description: RMSE(A, B) = sqrt(mean((A - B)^2))
+      rhs: sqrt(Sum((A[i,j] - B[i,j])**2, (i, 0, N_nodes-1), (j, 0, N_nodes-1)) /
+        (N_nodes*N_nodes))
+      latex: false
+    description: 'Root mean squared error between two FC matrices.
+
+      Measures discrepancy between predicted and target functional connectivity.
+
+      '
+    arguments:
+      A:
+        name: A
+        description: First FC matrix (N_nodes x N_nodes)
+      B:
+        name: B
+        description: Second FC matrix (N_nodes x N_nodes)
+  compute_fc:
+    name: compute_fc
+    equation:
+      description: FC[i,j] = ρ(X[:,i], X[:,j]) with FC[i,i] = 0
+      rhs: Sum((X[t,i] - mean_i)*(X[t,j] - mean_j), (t, 0, T-1)) / (sqrt(Sum((X[t,i]
+        - mean_i)**2, (t, 0, T-1))) * sqrt(Sum((X[t,j] - mean_j)**2, (t, 0, T-1))))
+      latex: false
+    description: 'Functional connectivity matrix as Pearson correlations between node
+      time series.
+
+      FC[i,j] = correlation(timeseries[:, i], timeseries[:, j])
+
+      Diagonal is set to 0 (no self-connections in FC).
+
+      '
+    arguments:
+      X:
+        name: X
+        description: Time series matrix (T x n) - time by nodes
+      T:
+        name: T
+        description: Number of time points
+      mean_i:
+        name: mean_i
+        description: 'Mean of time series at node i: (1/T)*Σ_t X[t,i]'
+      mean_j:
+        name: mean_j
+        description: 'Mean of time series at node j: (1/T)*Σ_t X[t,j]'
+  mean_activity:
+    name: mean_activity
+    equation:
+      description: mean_i = (1/T) * Σ_t X[t,i]
+      rhs: Sum(X[t,i], (t, 0, T-1)) / T
+      latex: false
+    description: 'Temporal mean of activity at each node.
+
+      Computes mean over time dimension for a specific state variable.
+
+      '
+    arguments:
+      X:
+        name: X
+        description: Time series data (T x n) for one state variable
+      T:
+        name: T
+        description: Number of time points
+  FIC_update_rule:
+    name: FIC_update_rule
+    equation:
+      description: J_i[k] += η * S_i[k] * (S_e[k] - target)
+      rhs: J_i[k] + eta * mean_S_i[k] * (mean_S_e[k] - target)
+      latex: false
+    description: 'Feedback Inhibition Control (FIC) update rule.
+
+      Adjusts inhibitory weight J_i to drive mean excitatory activity toward target.
+
+      Based on: ΔJ_i ∝ S_i * (S_e - target)
+
+      '
+    arguments:
+      J_i:
+        name: J_i
+        description: Current inhibitory weights (per node)
+      mean_S_e:
+        name: mean_S_e
+        description: Mean excitatory activity (per node)
+      mean_S_i:
+        name: mean_S_i
+        description: Mean inhibitory activity (per node)
+      eta:
+        name: eta
+        description: FIC learning rate
+        value: 0.1
+      target:
+        name: target
+        description: Target excitatory activity
+        value: 0.25
+  EIB_update_wLRE:
+    name: EIB_update_wLRE
+    equation:
+      description: wLRE[i,k] += η * (T[i,k] - P[i,k]) * RMSE_i
+      rhs: wLRE[i,k] + eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j]
+        - fc[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)
+      latex: false
+    description: 'EIB update for long-range excitation (wLRE).
+
+      Increases coupling where FC is below target, scaled by node-wise RMSE.
+
+      '
+    arguments:
+      wLRE:
+        name: wLRE
+        description: Current LRE weights matrix (N_nodes x N_nodes)
+      fc_target:
+        name: fc_target
+        description: Target FC matrix (N_nodes x N_nodes)
+      fc:
+        name: fc
+        description: Predicted FC matrix (N_nodes x N_nodes)
+      eta:
+        name: eta
+        description: EIB learning rate
+        value: 0.005
+  EIB_update_wFFI:
+    name: EIB_update_wFFI
+    equation:
+      description: wFFI[i,k] -= η * (T[i,k] - P[i,k]) * RMSE_i
+      rhs: wFFI[i,k] - eta * (fc_target[i,k] - fc[i,k]) * sqrt(Sum((fc_target[i,j]
+        - fc[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)
+      latex: false
+    description: 'EIB update for feedforward inhibition (wFFI).
+
+      Decreases inhibition where FC is below target, scaled by node-wise RMSE.
+
+      '
+    arguments:
+      wFFI:
+        name: wFFI
+        description: Current FFI weights matrix (N_nodes x N_nodes)
+      fc_target:
+        name: fc_target
+        description: Target FC matrix (N_nodes x N_nodes)
+      fc:
+        name: fc
+        description: Predicted FC matrix (N_nodes x N_nodes)
+      eta:
+        name: eta
+        description: EIB learning rate
+        value: 0.005
+  combined_loss:
+    name: combined_loss
+    equation:
+      description: L = RMSE(FC) + MSE(activity deviation)
+      rhs: sqrt(Sum((fc_pred[i,j] - fc_target[i,j])**2, (i, 0, N_nodes-1), (j, 0,
+        N_nodes-1)) / (N_nodes*N_nodes)) + Sum((mean_activity[k] - target_activity)**2,
+        (k, 0, N_nodes-1)) / N_nodes
+      latex: false
+    description: 'Combined loss for gradient-based EI tuning.
+
+      L = RMSE(FC_pred, FC_target) + MSE(activity, target_activity)
+
+      Note: No alpha scaling - both terms contribute equally as in original.
+
+      '
+    arguments:
+      fc_pred:
+        name: fc_pred
+        description: Predicted FC matrix (N_nodes x N_nodes)
+      fc_target:
+        name: fc_target
+        description: Target empirical FC matrix (N_nodes x N_nodes)
+      mean_activity:
+        name: mean_activity
+        description: Mean excitatory activity per region (N_nodes,)
+      target_activity:
+        name: target_activity
+        description: Target excitatory activity for FIC
+        value: 0.25
+optimizations:
+  gradient_eib:
+    name: gradient_eib
+    label: Gradient-Based EI Tuning
+    description: 'Alternative to iterative FIC+EIB: define combined loss and use automatic
+      differentiation with modern optimizers. Loss combines FC error and activity
+      deviation from FIC target.
+
+      # Integration settings for optimization (creates fresh model_fn with prepare())
+      # Original notebook uses: t1_opt = 5 * 60_000, dt_opt = 4.0
+
+      '
+    free_parameters:
+    - parameter: ReducedWongWangEIB.J_i
+      heterogeneous: true
+      shape: (n_nodes,)
+    - parameter: ReducedWongWangEIB.wLRE
+      heterogeneous: true
+      shape: (n_nodes, n_nodes)
+    - parameter: ReducedWongWangEIB.wFFI
+      heterogeneous: true
+      shape: (n_nodes, n_nodes)
+    algorithm: adamaxw
+    learning_rate: 0.033
+    max_iterations: 66
+    integration:
+      method: heun
+      abs_tol: 1.0e-10
+      rel_tol: 1.0e-10
+      step_size: 4.0
+      time_scale: ms
+      duration: 300000.0
+      transient_time: 0.0
+      scipy_ode_base: false
+      number_of_stages: 1
+      delayed: true
+      coupling_evaluation: per_step
+    loss:
+      function: combined_loss
+      arguments:
+        fc_pred:
+          name: fc_pred
+          description: Predicted functional connectivity from simulation (skip_t=30)
+          value: observations.fc_gradient.data
+        fc_target:
+          name: fc_target
+          description: Empirical functional connectivity matrix from network observations
+          value: observations.fc_target.data
+        mean_activity:
+          name: mean_activity
+          description: Mean excitatory activity over final 500 timesteps
+          value: observations.mean_S_e_final.data
+        target_activity:
+          name: target_activity
+          description: Target excitatory activity for FIC
+          value: 0.25
+algorithms:
+  fic:
+    name: fic
+    description: 'Feedback Inhibition Control adjusts local inhibitory weight (J_i)
+      to maintain excitatory activity at target level. When S_e > target, J_i increases;
+      when S_e < target, J_i decreases.
+
+      '
+    execution:
+      n_workers: 1
+      n_threads: -1
+      precision: float64
+      accelerator: auto
+      random_seed: 0
+      find_fixpoint: false
+    objective:
+      description: Maintain mean S_e at 0.25
+      type: activity_target
+      target_variable: S_e
+      target_value: 0.25
+    observations:
+    - mean_S_e
+    - mean_S_i
+    - bold
+    update_rules:
+    - name: J_i_update
+      target_parameter:
+        name: J_i
+      equation:
+        rhs: J_i + eta * (mean_S_i * mean_S_e - target * mean_S_i)
+        latex: false
+      bounds:
+        enforce: none
+        lo: 0.0
+        hi: 5.0
+        log_scale: false
+    hyperparameters:
+    - name: eta
+      value: 0.5
+    - name: target
+      value: 0.25
+    learning_rate_warmup: false
+    n_iterations: 200
+    simulation_period: 720.0
+    apply_every: 1
+  fic_eib:
+    name: fic_eib
+    description: 'Combined FIC+EIB tuning loop. Applies both Feedback Inhibition Control
+      (J_i adjustment) and Excitation-Inhibition Balance tuning (wLRE, wFFI) in each
+      iteration. Matches Schirner et al. 2023 implementation.
+
+      '
+    execution:
+      n_workers: 1
+      n_threads: -1
+      precision: float64
+      accelerator: auto
+      random_seed: 0
+      find_fixpoint: false
+    includes:
+    - algorithm: fic
+      arguments:
+      - name: eta
+        value: 0.1
+      mode: combined
+    objective:
+      description: Match predicted FC to empirical FC target while maintaining E-I
+        balance
+      type: fc_matching
+      target_variable: fc_inloop
+    observations:
+    - mean_S_e
+    - mean_S_i
+    - bold
+    - fc_inloop
+    - fc_target
+    update_rules:
+    - name: wLRE_update
+      target_parameter:
+        name: wLRE
+      equation:
+        rhs: wLRE[i,k] + eta * (fc_target[i,k] - fc_inloop[i,k]) * sqrt(Sum((fc_target[i,j]
+          - fc_inloop[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)
+        latex: false
+      bounds:
+        enforce: none
+        lo: 0.0
+        log_scale: false
+      warmup: true
+    - name: wFFI_update
+      target_parameter:
+        name: wFFI
+      equation:
+        rhs: wFFI[i,k] - eta * (fc_target[i,k] - fc_inloop[i,k]) * sqrt(Sum((fc_target[i,j]
+          - fc_inloop[i,j])**2, (j, 0, N_nodes-1)) / N_nodes)
+        latex: false
+      bounds:
+        enforce: none
+        lo: 0.0
+        log_scale: false
+      warmup: true
+    hyperparameters:
+    - name: eta
+      value: 0.005
+    - name: window_size
+      value: 150
+    learning_rate_warmup: false
+    n_iterations: 2000
+    simulation_period: 720.0
+    apply_every: 1
+    functions:
+    - function: fc_corr
+      arguments:
+        A:
+          name: A
+          value: fc_inloop
+        B:
+          name: B
+          value: fc_target
+    - function: fc_rmse
+      arguments:
+        A:
+          name: A
+          value: fc_inloop
+        B:
+          name: B
+          value: fc_target
+    depends_on:
+    - fic
+execution:
+  n_workers: 8
+  n_threads: -1
+  precision: float64
+  accelerator: auto
+  random_seed: 0
+  find_fixpoint: false

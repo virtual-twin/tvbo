@@ -1,0 +1,4974 @@
+label: HCPMMP1 (avgMatrix SC+FC)
+description: Group-average HCP connectome on the Glasser HCP-MMP1 atlas (360 cortical
+  + 19 subcortical = 379 nodes). SC = average structural connectivity (streamline
+  weights); FC = HCP1200 average resting-state functional connectivity. Node order
+  is canonical L-cortical, R-cortical, L-subcortical, R-subcortical, Brainstem (identical
+  to the rec-dTOR HCPMMP1 network). Node coordinates are fsLR den-32k midthickness
+  parcel centroids (templateflow) for cortex and MNI152 2mm voxel centroids (Glasser
+  dlabel Atlas_ROIs) for subcortex. Per-node HCP-MMP colours stored as the 'color'
+  parameter.
+parameters:
+  conduction_speed:
+    name: conduction_speed
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+nodes:
+- id: 0
+  label: L_V1
+  parameters:
+    color:
+      name: color
+      value: '#430affff'
+  record: true
+  size: 1
+  position:
+    x: -12.163594
+    y: -83.101452
+    z: 0.855575
+  region: V1
+- id: 1
+  label: L_MST
+  parameters:
+    color:
+      name: color
+      value: '#315b7fff'
+  record: true
+  size: 1
+  position:
+    x: -42.674244
+    y: -66.612837
+    z: 6.882162
+  region: MST
+- id: 2
+  label: L_V6
+  parameters:
+    color:
+      name: color
+      value: '#3155a8ff'
+  record: true
+  size: 1
+  position:
+    x: -13.261005
+    y: -78.296159
+    z: 29.896317
+  region: V6
+- id: 3
+  label: L_V2
+  parameters:
+    color:
+      name: color
+      value: '#0d33edff'
+  record: true
+  size: 1
+  position:
+    x: -10.962131
+    y: -82.187907
+    z: 3.82041
+  region: V2
+- id: 4
+  label: L_V3
+  parameters:
+    color:
+      name: color
+      value: '#0522e9ff'
+  record: true
+  size: 1
+  position:
+    x: -16.603719
+    y: -86.901853
+    z: 6.20615
+  region: V3
+- id: 5
+  label: L_V4
+  parameters:
+    color:
+      name: color
+      value: '#0914d5ff'
+  record: true
+  size: 1
+  position:
+    x: -27.73943
+    y: -83.492776
+    z: -2.278403
+  region: V4
+- id: 6
+  label: L_V8
+  parameters:
+    color:
+      name: color
+      value: '#1229bfff'
+  record: true
+  size: 1
+  position:
+    x: -31.324331
+    y: -73.938111
+    z: -13.697674
+  region: V8
+- id: 7
+  label: L_4
+  parameters:
+    color:
+      name: color
+      value: '#1cae15ff'
+  record: true
+  size: 1
+  position:
+    x: -26.576809
+    y: -20.011207
+    z: 54.331367
+  region: '4'
+- id: 8
+  label: L_3b
+  parameters:
+    color:
+      name: color
+      value: '#1dcc13ff'
+  record: true
+  size: 1
+  position:
+    x: -36.773789
+    y: -23.709419
+    z: 52.239787
+  region: 3b
+- id: 9
+  label: L_FEF
+  parameters:
+    color:
+      name: color
+      value: '#848f89ff'
+  record: true
+  size: 1
+  position:
+    x: -38.668038
+    y: -5.173355
+    z: 49.793503
+  region: FEF
+- id: 10
+  label: L_PEF
+  parameters:
+    color:
+      name: color
+      value: '#8a9c94ff'
+  record: true
+  size: 1
+  position:
+    x: -45.311239
+    y: -0.30349
+    z: 38.533115
+  region: PEF
+- id: 11
+  label: L_55b
+  parameters:
+    color:
+      name: color
+      value: '#3c5731ff'
+  record: true
+  size: 1
+  position:
+    x: -45.41167
+    y: -0.033758
+    z: 48.310837
+  region: 55b
+- id: 12
+  label: L_V3A
+  parameters:
+    color:
+      name: color
+      value: '#023cf7ff'
+  record: true
+  size: 1
+  position:
+    x: -15.176218
+    y: -88.482671
+    z: 26.06593
+  region: V3A
+- id: 13
+  label: L_RSC
+  parameters:
+    color:
+      name: color
+      value: '#97407cff'
+  record: true
+  size: 1
+  position:
+    x: -5.66912
+    y: -35.782062
+    z: 20.527453
+  region: RSC
+- id: 14
+  label: L_POS2
+  parameters:
+    color:
+      name: color
+      value: '#bb5ebbff'
+  record: true
+  size: 1
+  position:
+    x: -9.601426
+    y: -70.206878
+    z: 37.263493
+  region: POS2
+- id: 15
+  label: L_V7
+  parameters:
+    color:
+      name: color
+      value: '#0949bcff'
+  record: true
+  size: 1
+  position:
+    x: -22.719746
+    y: -82.344799
+    z: 29.276105
+  region: V7
+- id: 16
+  label: L_IPS1
+  parameters:
+    color:
+      name: color
+      value: '#2f6ba5ff'
+  record: true
+  size: 1
+  position:
+    x: -22.621498
+    y: -72.206302
+    z: 36.031965
+  region: IPS1
+- id: 17
+  label: L_FFC
+  parameters:
+    color:
+      name: color
+      value: '#395576ff'
+  record: true
+  size: 1
+  position:
+    x: -40.94869
+    y: -57.919462
+    z: -16.598564
+  region: FFC
+- id: 18
+  label: L_V3B
+  parameters:
+    color:
+      name: color
+      value: '#1430caff'
+  record: true
+  size: 1
+  position:
+    x: -26.877169
+    y: -80.415554
+    z: 18.696474
+  region: V3B
+- id: 19
+  label: L_LO1
+  parameters:
+    color:
+      name: color
+      value: '#0029b8ff'
+  record: true
+  size: 1
+  position:
+    x: -38.305979
+    y: -83.700628
+    z: 5.764722
+  region: LO1
+- id: 20
+  label: L_LO2
+  parameters:
+    color:
+      name: color
+      value: '#091db6ff'
+  record: true
+  size: 1
+  position:
+    x: -42.736358
+    y: -80.662948
+    z: -3.13242
+  region: LO2
+- id: 21
+  label: L_PIT
+  parameters:
+    color:
+      name: color
+      value: '#1b20adff'
+  record: true
+  size: 1
+  position:
+    x: -39.431305
+    y: -79.331017
+    z: -11.377183
+  region: PIT
+- id: 22
+  label: L_MT
+  parameters:
+    color:
+      name: color
+      value: '#185161ff'
+  record: true
+  size: 1
+  position:
+    x: -44.849263
+    y: -71.855098
+    z: 9.651426
+  region: MT
+- id: 23
+  label: L_A1
+  parameters:
+    color:
+      name: color
+      value: '#e2172aff'
+  record: true
+  size: 1
+  position:
+    x: -41.826316
+    y: -24.702923
+    z: 10.642002
+  region: A1
+- id: 24
+  label: L_PSL
+  parameters:
+    color:
+      name: color
+      value: '#63492fff'
+  record: true
+  size: 1
+  position:
+    x: -56.96323
+    y: -45.72357
+    z: 24.319571
+  region: PSL
+- id: 25
+  label: L_SFL
+  parameters:
+    color:
+      name: color
+      value: '#143116ff'
+  record: true
+  size: 1
+  position:
+    x: -8.010232
+    y: 16.07419
+    z: 61.911857
+  region: SFL
+- id: 26
+  label: L_PCV
+  parameters:
+    color:
+      name: color
+      value: '#82859aff'
+  record: true
+  size: 1
+  position:
+    x: -7.231239
+    y: -51.339265
+    z: 49.284141
+  region: PCV
+- id: 27
+  label: L_STV
+  parameters:
+    color:
+      name: color
+      value: '#85534aff'
+  record: true
+  size: 1
+  position:
+    x: -58.530391
+    y: -49.277096
+    z: 16.691475
+  region: STV
+- id: 28
+  label: L_7Pm
+  parameters:
+    color:
+      name: color
+      value: '#98b8bbff'
+  record: true
+  size: 1
+  position:
+    x: -6.408564
+    y: -65.204266
+    z: 49.927811
+  region: 7Pm
+- id: 29
+  label: L_7m
+  parameters:
+    color:
+      name: color
+      value: '#222425ff'
+  record: true
+  size: 1
+  position:
+    x: -5.097779
+    y: -61.060793
+    z: 36.228208
+  region: 7m
+- id: 30
+  label: L_POS1
+  parameters:
+    color:
+      name: color
+      value: '#4f3958ff'
+  record: true
+  size: 1
+  position:
+    x: -11.540075
+    y: -58.368782
+    z: 13.651636
+  region: POS1
+- id: 31
+  label: L_23d
+  parameters:
+    color:
+      name: color
+      value: '#6f3851ff'
+  record: true
+  size: 1
+  position:
+    x: -2.470651
+    y: -21.828828
+    z: 37.69559
+  region: 23d
+- id: 32
+  label: L_v23ab
+  parameters:
+    color:
+      name: color
+      value: '#130008ff'
+  record: true
+  size: 1
+  position:
+    x: -4.344417
+    y: -54.768255
+    z: 19.358342
+  region: v23ab
+- id: 33
+  label: L_d23ab
+  parameters:
+    color:
+      name: color
+      value: '#431c32ff'
+  record: true
+  size: 1
+  position:
+    x: -2.989679
+    y: -39.23479
+    z: 30.882795
+  region: d23ab
+- id: 34
+  label: L_31pv
+  parameters:
+    color:
+      name: color
+      value: '#301129ff'
+  record: true
+  size: 1
+  position:
+    x: -8.920362
+    y: -46.423165
+    z: 31.514623
+  region: 31pv
+- id: 35
+  label: L_5m
+  parameters:
+    color:
+      name: color
+      value: '#26a631ff'
+  record: true
+  size: 1
+  position:
+    x: -5.784989
+    y: -40.057262
+    z: 63.107639
+  region: 5m
+- id: 36
+  label: L_5mv
+  parameters:
+    color:
+      name: color
+      value: '#90ac84ff'
+  record: true
+  size: 1
+  position:
+    x: -13.586224
+    y: -39.416901
+    z: 50.407742
+  region: 5mv
+- id: 37
+  label: L_23c
+  parameters:
+    color:
+      name: color
+      value: '#cfbcbfff'
+  record: true
+  size: 1
+  position:
+    x: -11.218426
+    y: -31.010282
+    z: 41.596932
+  region: 23c
+- id: 38
+  label: L_5L
+  parameters:
+    color:
+      name: color
+      value: '#359e42ff'
+  record: true
+  size: 1
+  position:
+    x: -12.788981
+    y: -43.724307
+    z: 69.662075
+  region: 5L
+- id: 39
+  label: L_24dd
+  parameters:
+    color:
+      name: color
+      value: '#3ba026ff'
+  record: true
+  size: 1
+  position:
+    x: -7.625543
+    y: -19.288938
+    z: 48.359988
+  region: 24dd
+- id: 40
+  label: L_24dv
+  parameters:
+    color:
+      name: color
+      value: '#779b43ff'
+  record: true
+  size: 1
+  position:
+    x: -9.14151
+    y: -4.293543
+    z: 42.78543
+  region: 24dv
+- id: 41
+  label: L_7AL
+  parameters:
+    color:
+      name: color
+      value: '#69c588ff'
+  record: true
+  size: 1
+  position:
+    x: -19.259821
+    y: -51.658492
+    z: 65.082727
+  region: 7AL
+- id: 42
+  label: L_SCEF
+  parameters:
+    color:
+      name: color
+      value: '#649053ff'
+  record: true
+  size: 1
+  position:
+    x: -6.399115
+    y: 1.997595
+    z: 55.858995
+  region: SCEF
+- id: 43
+  label: L_6ma
+  parameters:
+    color:
+      name: color
+      value: '#8cae86ff'
+  record: true
+  size: 1
+  position:
+    x: -16.641387
+    y: 3.026459
+    z: 65.96148
+  region: 6ma
+- id: 44
+  label: L_7Am
+  parameters:
+    color:
+      name: color
+      value: '#b1f4dfff'
+  record: true
+  size: 1
+  position:
+    x: -9.89832
+    y: -57.641111
+    z: 59.86755
+  region: 7AM
+- id: 45
+  label: L_7PL
+  parameters:
+    color:
+      name: color
+      value: '#adffefff'
+  record: true
+  size: 1
+  position:
+    x: -13.208151
+    y: -70.253309
+    z: 53.282277
+  region: 7Pl
+- id: 46
+  label: L_7PC
+  parameters:
+    color:
+      name: color
+      value: '#3eb06cff'
+  record: true
+  size: 1
+  position:
+    x: -32.941025
+    y: -48.155337
+    z: 59.973697
+  region: 7PC
+- id: 47
+  label: L_LIPv
+  parameters:
+    color:
+      name: color
+      value: '#3f70a4ff'
+  record: true
+  size: 1
+  position:
+    x: -28.19089
+    y: -55.558578
+    z: 52.645432
+  region: LIPv
+- id: 48
+  label: L_VIP
+  parameters:
+    color:
+      name: color
+      value: '#2e8e8bff'
+  record: true
+  size: 1
+  position:
+    x: -21.178826
+    y: -61.529538
+    z: 59.337764
+  region: VIP
+- id: 49
+  label: L_MIP
+  parameters:
+    color:
+      name: color
+      value: '#82ccc8ff'
+  record: true
+  size: 1
+  position:
+    x: -22.271382
+    y: -63.854916
+    z: 45.416005
+  region: MIP
+- id: 50
+  label: L_1
+  parameters:
+    color:
+      name: color
+      value: '#0bc223ff'
+  record: true
+  size: 1
+  position:
+    x: -46.103586
+    y: -24.784679
+    z: 54.605519
+  region: '1'
+- id: 51
+  label: L_2
+  parameters:
+    color:
+      name: color
+      value: '#2cb03fff'
+  record: true
+  size: 1
+  position:
+    x: -35.842251
+    y: -34.46308
+    z: 52.700233
+  region: '2'
+- id: 52
+  label: L_3a
+  parameters:
+    color:
+      name: color
+      value: '#2cdd16ff'
+  record: true
+  size: 1
+  position:
+    x: -34.153104
+    y: -21.208924
+    z: 42.197056
+  region: 3a
+- id: 53
+  label: L_6d
+  parameters:
+    color:
+      name: color
+      value: '#16a123ff'
+  record: true
+  size: 1
+  position:
+    x: -32.267898
+    y: -13.417131
+    z: 64.217779
+  region: 6d
+- id: 54
+  label: L_6mp
+  parameters:
+    color:
+      name: color
+      value: '#3ea12aff'
+  record: true
+  size: 1
+  position:
+    x: -12.197197
+    y: -15.17022
+    z: 68.524084
+  region: 6mp
+- id: 55
+  label: L_6v
+  parameters:
+    color:
+      name: color
+      value: '#43ab35ff'
+  record: true
+  size: 1
+  position:
+    x: -56.733115
+    y: 3.380795
+    z: 32.471283
+  region: 6v
+- id: 56
+  label: L_p24pr
+  parameters:
+    color:
+      name: color
+      value: '#858363ff'
+  record: true
+  size: 1
+  position:
+    x: -2.947867
+    y: -4.235284
+    z: 38.979887
+  region: p24pr
+- id: 57
+  label: L_33pr
+  parameters:
+    color:
+      name: color
+      value: '#817065ff'
+  record: true
+  size: 1
+  position:
+    x: -2.958652
+    y: 2.691616
+    z: 30.787508
+  region: 33pr
+- id: 58
+  label: L_a24pr
+  parameters:
+    color:
+      name: color
+      value: '#9f7b76ff'
+  record: true
+  size: 1
+  position:
+    x: -4.802045
+    y: 16.386937
+    z: 30.741487
+  region: a24pr
+- id: 59
+  label: L_p32pr
+  parameters:
+    color:
+      name: color
+      value: '#978a74ff'
+  record: true
+  size: 1
+  position:
+    x: -8.854846
+    y: 12.907305
+    z: 38.385979
+  region: p32pr
+- id: 60
+  label: L_a24
+  parameters:
+    color:
+      name: color
+      value: '#410b15ff'
+  record: true
+  size: 1
+  position:
+    x: -5.483124
+    y: 40.282427
+    z: -3.050996
+  region: a24
+- id: 61
+  label: L_d32
+  parameters:
+    color:
+      name: color
+      value: '#5b292fff'
+  record: true
+  size: 1
+  position:
+    x: -8.585177
+    y: 41.355387
+    z: 22.382241
+  region: d32
+- id: 62
+  label: L_8BM
+  parameters:
+    color:
+      name: color
+      value: '#6c5152ff'
+  record: true
+  size: 1
+  position:
+    x: -5.278719
+    y: 30.955748
+    z: 44.557647
+  region: 8BM
+- id: 63
+  label: L_p32
+  parameters:
+    color:
+      name: color
+      value: '#5d2134ff'
+  record: true
+  size: 1
+  position:
+    x: -9.894879
+    y: 49.622634
+    z: -1.07598
+  region: p32
+- id: 64
+  label: L_10r
+  parameters:
+    color:
+      name: color
+      value: '#140500ff'
+  record: true
+  size: 1
+  position:
+    x: -7.103936
+    y: 50.760729
+    z: -8.942061
+  region: 10r
+- id: 65
+  label: L_47m
+  parameters:
+    color:
+      name: color
+      value: '#64524dff'
+  record: true
+  size: 1
+  position:
+    x: -34.596691
+    y: 31.243101
+    z: -13.217279
+  region: 47m
+- id: 66
+  label: L_8Av
+  parameters:
+    color:
+      name: color
+      value: '#37392fff'
+  record: true
+  size: 1
+  position:
+    x: -35.535508
+    y: 16.470744
+    z: 50.312775
+  region: 8Av
+- id: 67
+  label: L_8Ad
+  parameters:
+    color:
+      name: color
+      value: '#3e3e2fff'
+  record: true
+  size: 1
+  position:
+    x: -21.64244
+    y: 26.763862
+    z: 42.718427
+  region: 8Ad
+- id: 68
+  label: L_9m
+  parameters:
+    color:
+      name: color
+      value: '#252716ff'
+  record: true
+  size: 1
+  position:
+    x: -6.956106
+    y: 51.964306
+    z: 23.960587
+  region: 9m
+- id: 69
+  label: L_8BL
+  parameters:
+    color:
+      name: color
+      value: '#182612ff'
+  record: true
+  size: 1
+  position:
+    x: -10.386124
+    y: 35.83357
+    z: 52.283325
+  region: 8BL
+- id: 70
+  label: L_9p
+  parameters:
+    color:
+      name: color
+      value: '#25291cff'
+  record: true
+  size: 1
+  position:
+    x: -16.030387
+    y: 45.273633
+    z: 38.780395
+  region: 9p
+- id: 71
+  label: L_10d
+  parameters:
+    color:
+      name: color
+      value: '#20231bff'
+  record: true
+  size: 1
+  position:
+    x: -9.987545
+    y: 64.510402
+    z: 10.096959
+  region: 10d
+- id: 72
+  label: L_8C
+  parameters:
+    color:
+      name: color
+      value: '#634f53ff'
+  record: true
+  size: 1
+  position:
+    x: -39.166589
+    y: 13.245766
+    z: 38.0336
+  region: 8C
+- id: 73
+  label: L_44
+  parameters:
+    color:
+      name: color
+      value: '#485338ff'
+  record: true
+  size: 1
+  position:
+    x: -50.682025
+    y: 16.102175
+    z: 12.257261
+  region: '44'
+- id: 74
+  label: L_45
+  parameters:
+    color:
+      name: color
+      value: '#2e4029ff'
+  record: true
+  size: 1
+  position:
+    x: -47.762354
+    y: 27.837513
+    z: 4.600759
+  region: '45'
+- id: 75
+  label: L_47l
+  parameters:
+    color:
+      name: color
+      value: '#27321eff'
+  record: true
+  size: 1
+  position:
+    x: -44.078756
+    y: 29.807641
+    z: -9.616209
+  region: 47l
+- id: 76
+  label: L_a47r
+  parameters:
+    color:
+      name: color
+      value: '#514a45ff'
+  record: true
+  size: 1
+  position:
+    x: -39.293079
+    y: 46.81916
+    z: -10.638725
+  region: a47r
+- id: 77
+  label: L_6r
+  parameters:
+    color:
+      name: color
+      value: '#accd93ff'
+  record: true
+  size: 1
+  position:
+    x: -50.509753
+    y: 6.599189
+    z: 17.488806
+  region: 6r
+- id: 78
+  label: L_IFJa
+  parameters:
+    color:
+      name: color
+      value: '#736b5cff'
+  record: true
+  size: 1
+  position:
+    x: -39.450707
+    y: 11.609626
+    z: 24.894834
+  region: IFJa
+- id: 79
+  label: L_IFJp
+  parameters:
+    color:
+      name: color
+      value: '#808d7aff'
+  record: true
+  size: 1
+  position:
+    x: -38.19904
+    y: 3.222121
+    z: 29.859344
+  region: IFJp
+- id: 80
+  label: L_IFSp
+  parameters:
+    color:
+      name: color
+      value: '#65625cff'
+  record: true
+  size: 1
+  position:
+    x: -43.631589
+    y: 21.169825
+    z: 22.851549
+  region: IFSp
+- id: 81
+  label: L_IFSa
+  parameters:
+    color:
+      name: color
+      value: '#babdafff'
+  record: true
+  size: 1
+  position:
+    x: -42.927939
+    y: 32.800231
+    z: 13.36669
+  region: IFSa
+- id: 82
+  label: L_p9-46v
+  parameters:
+    color:
+      name: color
+      value: '#8c9088ff'
+  record: true
+  size: 1
+  position:
+    x: -42.034125
+    y: 28.209017
+    z: 29.110151
+  region: p9-46v
+- id: 83
+  label: L_46
+  parameters:
+    color:
+      name: color
+      value: '#cad3c4ff'
+  record: true
+  size: 1
+  position:
+    x: -34.384205
+    y: 36.758584
+    z: 30.211532
+  region: '46'
+- id: 84
+  label: L_a9-46v
+  parameters:
+    color:
+      name: color
+      value: '#8c6e82ff'
+  record: true
+  size: 1
+  position:
+    x: -36.333094
+    y: 50.54241
+    z: 7.844579
+  region: a9-46v
+- id: 85
+  label: L_9-46d
+  parameters:
+    color:
+      name: color
+      value: '#81707fff'
+  record: true
+  size: 1
+  position:
+    x: -26.521672
+    y: 44.984919
+    z: 22.926629
+  region: 9-46d
+- id: 86
+  label: L_9a
+  parameters:
+    color:
+      name: color
+      value: '#2f362fff'
+  record: true
+  size: 1
+  position:
+    x: -17.552747
+    y: 55.44868
+    z: 26.687882
+  region: 9a
+- id: 87
+  label: L_10v
+  parameters:
+    color:
+      name: color
+      value: '#031f0bff'
+  record: true
+  size: 1
+  position:
+    x: -4.04324
+    y: 53.07225
+    z: -16.827678
+  region: 10v
+- id: 88
+  label: L_a10p
+  parameters:
+    color:
+      name: color
+      value: '#5c4352ff'
+  record: true
+  size: 1
+  position:
+    x: -24.676038
+    y: 57.990665
+    z: -4.311867
+  region: a10p
+- id: 89
+  label: L_10pp
+  parameters:
+    color:
+      name: color
+      value: '#363338ff'
+  record: true
+  size: 1
+  position:
+    x: -12.231628
+    y: 62.305105
+    z: -12.351696
+  region: 10pp
+- id: 90
+  label: L_11l
+  parameters:
+    color:
+      name: color
+      value: '#816a77ff'
+  record: true
+  size: 1
+  position:
+    x: -25.03038
+    y: 47.622526
+    z: -12.90152
+  region: 11l
+- id: 91
+  label: L_13l
+  parameters:
+    color:
+      name: color
+      value: '#583f4aff'
+  record: true
+  size: 1
+  position:
+    x: -22.619202
+    y: 27.898775
+    z: -18.394373
+  region: 13l
+- id: 92
+  label: L_OFC
+  parameters:
+    color:
+      name: color
+      value: '#282723ff'
+  record: true
+  size: 1
+  position:
+    x: -9.799218
+    y: 32.413039
+    z: -22.372805
+  region: OFC
+- id: 93
+  label: L_47s
+  parameters:
+    color:
+      name: color
+      value: '#3e2623ff'
+  record: true
+  size: 1
+  position:
+    x: -31.346023
+    y: 20.224277
+    z: -17.329051
+  region: 47s
+- id: 94
+  label: L_LIPd
+  parameters:
+    color:
+      name: color
+      value: '#9baccbff'
+  record: true
+  size: 1
+  position:
+    x: -28.70165
+    y: -54.912527
+    z: 42.605772
+  region: LIPd
+- id: 95
+  label: L_6a
+  parameters:
+    color:
+      name: color
+      value: '#7ac088ff'
+  record: true
+  size: 1
+  position:
+    x: -22.891222
+    y: -3.568281
+    z: 54.392107
+  region: 6a
+- id: 96
+  label: L_i6-8
+  parameters:
+    color:
+      name: color
+      value: '#62655aff'
+  record: true
+  size: 1
+  position:
+    x: -28.642496
+    y: 7.859275
+    z: 54.205207
+  region: i6-8
+- id: 97
+  label: L_s6-8
+  parameters:
+    color:
+      name: color
+      value: '#5d5a4cff'
+  record: true
+  size: 1
+  position:
+    x: -19.904105
+    y: 21.611387
+    z: 55.817114
+  region: s6-8
+- id: 98
+  label: L_43
+  parameters:
+    color:
+      name: color
+      value: '#86893dff'
+  record: true
+  size: 1
+  position:
+    x: -56.787202
+    y: 0.468002
+    z: 9.699312
+  region: '43'
+- id: 99
+  label: L_OP4
+  parameters:
+    color:
+      name: color
+      value: '#62972aff'
+  record: true
+  size: 1
+  position:
+    x: -56.668714
+    y: -11.785332
+    z: 14.058129
+  region: OP4
+- id: 100
+  label: L_OP1
+  parameters:
+    color:
+      name: color
+      value: '#5e9926ff'
+  record: true
+  size: 1
+  position:
+    x: -46.716209
+    y: -21.84124
+    z: 18.132792
+  region: OP1
+- id: 101
+  label: L_OP2-3
+  parameters:
+    color:
+      name: color
+      value: '#867732ff'
+  record: true
+  size: 1
+  position:
+    x: -38.155981
+    y: -18.169235
+    z: 17.784564
+  region: OP2-3
+- id: 102
+  label: L_52
+  parameters:
+    color:
+      name: color
+      value: '#d04c3dff'
+  record: true
+  size: 1
+  position:
+    x: -38.249231
+    y: -22.446971
+    z: 0.684354
+  region: '52'
+- id: 103
+  label: L_RI
+  parameters:
+    color:
+      name: color
+      value: '#a64519ff'
+  record: true
+  size: 1
+  position:
+    x: -38.080324
+    y: -34.134248
+    z: 17.947017
+  region: RI
+- id: 104
+  label: L_PFcm
+  parameters:
+    color:
+      name: color
+      value: '#b2915aff'
+  record: true
+  size: 1
+  position:
+    x: -49.544493
+    y: -32.775376
+    z: 21.718643
+  region: PFcm
+- id: 105
+  label: L_PoI2
+  parameters:
+    color:
+      name: color
+      value: '#7b7f51ff'
+  record: true
+  size: 1
+  position:
+    x: -38.920807
+    y: -2.670903
+    z: -2.22438
+  region: PoI2
+- id: 106
+  label: L_TA2
+  parameters:
+    color:
+      name: color
+      value: '#7e2817ff'
+  record: true
+  size: 1
+  position:
+    x: -50.639284
+    y: 1.484131
+    z: -5.986167
+  region: TA2
+- id: 107
+  label: L_FOP4
+  parameters:
+    color:
+      name: color
+      value: '#a98a7aff'
+  record: true
+  size: 1
+  position:
+    x: -37.745071
+    y: 13.234388
+    z: 7.07279
+  region: FOP4
+- id: 108
+  label: L_MI
+  parameters:
+    color:
+      name: color
+      value: '#956f68ff'
+  record: true
+  size: 1
+  position:
+    x: -35.830909
+    y: 9.984465
+    z: 1.548281
+  region: MI
+- id: 109
+  label: L_Pir
+  parameters:
+    color:
+      name: color
+      value: '#5b4741ff'
+  record: true
+  size: 1
+  position:
+    x: -30.707687
+    y: 5.811078
+    z: -18.100452
+  region: Pir
+- id: 110
+  label: L_AVI
+  parameters:
+    color:
+      name: color
+      value: '#854653ff'
+  record: true
+  size: 1
+  position:
+    x: -29.904609
+    y: 24.187355
+    z: -3.376526
+  region: AVI
+- id: 111
+  label: L_AAIC
+  parameters:
+    color:
+      name: color
+      value: '#552228ff'
+  record: true
+  size: 1
+  position:
+    x: -32.651547
+    y: 13.79832
+    z: -11.211633
+  region: AAIC
+- id: 112
+  label: L_FOP1
+  parameters:
+    color:
+      name: color
+      value: '#8e904eff'
+  record: true
+  size: 1
+  position:
+    x: -48.569525
+    y: 1.973446
+    z: 4.810739
+  region: FOP1
+- id: 113
+  label: L_FOP3
+  parameters:
+    color:
+      name: color
+      value: '#ad8564ff'
+  record: true
+  size: 1
+  position:
+    x: -35.178873
+    y: 2.52887
+    z: 12.136672
+  region: FOP3
+- id: 114
+  label: L_FOP2
+  parameters:
+    color:
+      name: color
+      value: '#629c39ff'
+  record: true
+  size: 1
+  position:
+    x: -40.950412
+    y: -4.510732
+    z: 13.88225
+  region: FOP2
+- id: 115
+  label: L_PFt
+  parameters:
+    color:
+      name: color
+      value: '#88df8dff'
+  record: true
+  size: 1
+  position:
+    x: -52.539922
+    y: -27.537711
+    z: 36.961346
+  region: PFt
+- id: 116
+  label: L_AIP
+  parameters:
+    color:
+      name: color
+      value: '#8adba5ff'
+  record: true
+  size: 1
+  position:
+    x: -36.898482
+    y: -41.388192
+    z: 42.578634
+  region: AIP
+- id: 117
+  label: L_EC
+  parameters:
+    color:
+      name: color
+      value: '#2f3227ff'
+  record: true
+  size: 1
+  position:
+    x: -20.606784
+    y: -13.41121
+    z: -27.210985
+  region: EC
+- id: 118
+  label: L_PreS
+  parameters:
+    color:
+      name: color
+      value: '#603d59ff'
+  record: true
+  size: 1
+  position:
+    x: -16.712652
+    y: -32.981312
+    z: -8.703255
+  region: PreS
+- id: 119
+  label: L_H
+  parameters:
+    color:
+      name: color
+      value: '#3f392dff'
+  record: true
+  size: 1
+  position:
+    x: -28.656666
+    y: -25.830988
+    z: -14.248954
+  region: H
+- id: 120
+  label: L_ProS
+  parameters:
+    color:
+      name: color
+      value: '#5c47b0ff'
+  record: true
+  size: 1
+  position:
+    x: -19.187519
+    y: -52.173769
+    z: 1.324938
+  region: ProS
+- id: 121
+  label: L_PeEc
+  parameters:
+    color:
+      name: color
+      value: '#3e4139ff'
+  record: true
+  size: 1
+  position:
+    x: -29.192191
+    y: -8.756661
+    z: -32.778209
+  region: PeEc
+- id: 122
+  label: L_STGa
+  parameters:
+    color:
+      name: color
+      value: '#2f2e18ff'
+  record: true
+  size: 1
+  position:
+    x: -50.938825
+    y: 12.698064
+    z: -15.134341
+  region: STGa
+- id: 123
+  label: L_PBelt
+  parameters:
+    color:
+      name: color
+      value: '#bc1a08ff'
+  record: true
+  size: 1
+  position:
+    x: -52.551153
+    y: -26.647658
+    z: 8.963142
+  region: PBelt
+- id: 124
+  label: L_A5
+  parameters:
+    color:
+      name: color
+      value: '#5a2c0aff'
+  record: true
+  size: 1
+  position:
+    x: -60.276464
+    y: -17.485891
+    z: -0.554868
+  region: A5
+- id: 125
+  label: L_PHA1
+  parameters:
+    color:
+      name: color
+      value: '#473554ff'
+  record: true
+  size: 1
+  position:
+    x: -19.761636
+    y: -35.987054
+    z: -14.197597
+  region: PHA1
+- id: 126
+  label: L_PHA3
+  parameters:
+    color:
+      name: color
+      value: '#6a687cff'
+  record: true
+  size: 1
+  position:
+    x: -31.502432
+    y: -39.608043
+    z: -13.297598
+  region: PHA3
+- id: 127
+  label: L_STSda
+  parameters:
+    color:
+      name: color
+      value: '#3f3523ff'
+  record: true
+  size: 1
+  position:
+    x: -52.20849
+    y: -5.86775
+    z: -11.247121
+  region: STSda
+- id: 128
+  label: L_STSdp
+  parameters:
+    color:
+      name: color
+      value: '#393a23ff'
+  record: true
+  size: 1
+  position:
+    x: -50.293012
+    y: -33.973218
+    z: 0.969551
+  region: STSdp
+- id: 129
+  label: L_STSvp
+  parameters:
+    color:
+      name: color
+      value: '#403534ff'
+  record: true
+  size: 1
+  position:
+    x: -53.01341
+    y: -33.798108
+    z: -4.015204
+  region: STSvp
+- id: 130
+  label: L_TGd
+  parameters:
+    color:
+      name: color
+      value: '#1c2518ff'
+  record: true
+  size: 1
+  position:
+    x: -38.604395
+    y: 10.699011
+    z: -32.054459
+  region: TGd
+- id: 131
+  label: L_TE1a
+  parameters:
+    color:
+      name: color
+      value: '#030f01ff'
+  record: true
+  size: 1
+  position:
+    x: -59.14968
+    y: -9.070863
+    z: -19.612661
+  region: TE1a
+- id: 132
+  label: L_TE1p
+  parameters:
+    color:
+      name: color
+      value: '#686461ff'
+  record: true
+  size: 1
+  position:
+    x: -59.319979
+    y: -45.058518
+    z: -8.877668
+  region: TE1p
+- id: 133
+  label: L_TE2a
+  parameters:
+    color:
+      name: color
+      value: '#44403cff'
+  record: true
+  size: 1
+  position:
+    x: -54.371782
+    y: -22.685018
+    z: -25.780876
+  region: TE2a
+- id: 134
+  label: L_TF
+  parameters:
+    color:
+      name: color
+      value: '#3d4738ff'
+  record: true
+  size: 1
+  position:
+    x: -41.682987
+    y: -22.464881
+    z: -26.407563
+  region: TF
+- id: 135
+  label: L_TE2p
+  parameters:
+    color:
+      name: color
+      value: '#728d80ff'
+  record: true
+  size: 1
+  position:
+    x: -46.97985
+    y: -44.858447
+    z: -17.41494
+  region: TE2p
+- id: 136
+  label: L_PHT
+  parameters:
+    color:
+      name: color
+      value: '#e9fbe4ff'
+  record: true
+  size: 1
+  position:
+    x: -56.895599
+    y: -56.802439
+    z: 1.343704
+  region: PHT
+- id: 137
+  label: L_PH
+  parameters:
+    color:
+      name: color
+      value: '#5478a1ff'
+  record: true
+  size: 1
+  position:
+    x: -44.880041
+    y: -61.944267
+    z: -7.149546
+  region: PH
+- id: 138
+  label: L_TPOJ1
+  parameters:
+    color:
+      name: color
+      value: '#765c45ff'
+  record: true
+  size: 1
+  position:
+    x: -49.966771
+    y: -47.253035
+    z: 9.564768
+  region: TPOJ1
+- id: 139
+  label: L_TPOJ2
+  parameters:
+    color:
+      name: color
+      value: '#989a8bff'
+  record: true
+  size: 1
+  position:
+    x: -49.040444
+    y: -59.987398
+    z: 12.095611
+  region: TPOJ2
+- id: 140
+  label: L_TPOJ3
+  parameters:
+    color:
+      name: color
+      value: '#768892ff'
+  record: true
+  size: 1
+  position:
+    x: -42.61851
+    y: -68.623635
+    z: 18.192938
+  region: TPOJ3
+- id: 141
+  label: L_DVT
+  parameters:
+    color:
+      name: color
+      value: '#727ac1ff'
+  record: true
+  size: 1
+  position:
+    x: -18.11932
+    y: -70.360169
+    z: 30.772349
+  region: DVT
+- id: 142
+  label: L_PGp
+  parameters:
+    color:
+      name: color
+      value: '#a2bce6ff'
+  record: true
+  size: 1
+  position:
+    x: -38.816361
+    y: -81.008495
+    z: 23.803888
+  region: PGp
+- id: 143
+  label: L_IP2
+  parameters:
+    color:
+      name: color
+      value: '#b8a6b4ff'
+  record: true
+  size: 1
+  position:
+    x: -38.845585
+    y: -50.531948
+    z: 41.287377
+  region: IP2
+- id: 144
+  label: L_IP1
+  parameters:
+    color:
+      name: color
+      value: '#7a7b88ff'
+  record: true
+  size: 1
+  position:
+    x: -30.951624
+    y: -66.682482
+    z: 42.207973
+  region: IP1
+- id: 145
+  label: L_IP0
+  parameters:
+    color:
+      name: color
+      value: '#729aceff'
+  record: true
+  size: 1
+  position:
+    x: -30.147546
+    y: -75.878678
+    z: 27.731224
+  region: IP0
+- id: 146
+  label: L_PFop
+  parameters:
+    color:
+      name: color
+      value: '#b0ca8cff'
+  record: true
+  size: 1
+  position:
+    x: -59.54857
+    y: -22.401699
+    z: 26.102733
+  region: PFop
+- id: 147
+  label: L_PF
+  parameters:
+    color:
+      name: color
+      value: '#fff9dfff'
+  record: true
+  size: 1
+  position:
+    x: -56.572296
+    y: -38.166386
+    z: 37.486801
+  region: PF
+- id: 148
+  label: L_PFm
+  parameters:
+    color:
+      name: color
+      value: '#8a6773ff'
+  record: true
+  size: 1
+  position:
+    x: -48.281306
+    y: -55.277965
+    z: 42.178254
+  region: PFm
+- id: 149
+  label: L_PGi
+  parameters:
+    color:
+      name: color
+      value: '#334033ff'
+  record: true
+  size: 1
+  position:
+    x: -45.138839
+    y: -58.876339
+    z: 24.076054
+  region: PGi
+- id: 150
+  label: L_PGs
+  parameters:
+    color:
+      name: color
+      value: '#44463cff'
+  record: true
+  size: 1
+  position:
+    x: -40.634928
+    y: -71.624939
+    z: 37.020242
+  region: PGs
+- id: 151
+  label: L_V6A
+  parameters:
+    color:
+      name: color
+      value: '#1c5ca6ff'
+  record: true
+  size: 1
+  position:
+    x: -19.273496
+    y: -83.829089
+    z: 40.887858
+  region: V6A
+- id: 152
+  label: L_VMV1
+  parameters:
+    color:
+      name: color
+      value: '#3d3fb1ff'
+  record: true
+  size: 1
+  position:
+    x: -19.209536
+    y: -54.435068
+    z: -6.140828
+  region: VMV1
+- id: 153
+  label: L_VMV3
+  parameters:
+    color:
+      name: color
+      value: '#3139a6ff'
+  record: true
+  size: 1
+  position:
+    x: -28.042738
+    y: -60.781287
+    z: -8.848856
+  region: VMV3
+- id: 154
+  label: L_PHA2
+  parameters:
+    color:
+      name: color
+      value: '#5b555aff'
+  record: true
+  size: 1
+  position:
+    x: -29.541388
+    y: -36.690472
+    z: -12.676367
+  region: PHA2
+- id: 155
+  label: L_V4t
+  parameters:
+    color:
+      name: color
+      value: '#0b4c81ff'
+  record: true
+  size: 1
+  position:
+    x: -43.993716
+    y: -76.15305
+    z: 1.663295
+  region: V4t
+- id: 156
+  label: L_FST
+  parameters:
+    color:
+      name: color
+      value: '#539596ff'
+  record: true
+  size: 1
+  position:
+    x: -46.378747
+    y: -65.364376
+    z: 1.018015
+  region: FST
+- id: 157
+  label: L_V3CD
+  parameters:
+    color:
+      name: color
+      value: '#0f2fb4ff'
+  record: true
+  size: 1
+  position:
+    x: -33.648088
+    y: -85.490675
+    z: 13.661663
+  region: V3CD
+- id: 158
+  label: L_LO3
+  parameters:
+    color:
+      name: color
+      value: '#355aaaff'
+  record: true
+  size: 1
+  position:
+    x: -44.24028
+    y: -77.992975
+    z: 12.192097
+  region: LO3
+- id: 159
+  label: L_VMV2
+  parameters:
+    color:
+      name: color
+      value: '#453da9ff'
+  record: true
+  size: 1
+  position:
+    x: -27.428156
+    y: -53.635497
+    z: -5.227011
+  region: VMV2
+- id: 160
+  label: L_31pd
+  parameters:
+    color:
+      name: color
+      value: '#372237ff'
+  record: true
+  size: 1
+  position:
+    x: -11.367406
+    y: -50.365944
+    z: 36.442753
+  region: 31pd
+- id: 161
+  label: L_31a
+  parameters:
+    color:
+      name: color
+      value: '#91657dff'
+  record: true
+  size: 1
+  position:
+    x: -5.070294
+    y: -39.718997
+    z: 42.243692
+  region: 31a
+- id: 162
+  label: L_VVC
+  parameters:
+    color:
+      name: color
+      value: '#33397cff'
+  record: true
+  size: 1
+  position:
+    x: -30.020629
+    y: -53.454785
+    z: -16.710808
+  region: VVC
+- id: 163
+  label: L_25
+  parameters:
+    color:
+      name: color
+      value: '#1e180aff'
+  record: true
+  size: 1
+  position:
+    x: -4.45743
+    y: 22.820498
+    z: -14.678128
+  region: '25'
+- id: 164
+  label: L_s32
+  parameters:
+    color:
+      name: color
+      value: '#2d2313ff'
+  record: true
+  size: 1
+  position:
+    x: -6.577245
+    y: 35.147227
+    z: -14.005381
+  region: s32
+- id: 165
+  label: L_pOFC
+  parameters:
+    color:
+      name: color
+      value: '#523a42ff'
+  record: true
+  size: 1
+  position:
+    x: -13.832644
+    y: 12.857688
+    z: -18.880408
+  region: pOFC
+- id: 166
+  label: L_PoI1
+  parameters:
+    color:
+      name: color
+      value: '#a97366ff'
+  record: true
+  size: 1
+  position:
+    x: -38.222266
+    y: -12.923776
+    z: -4.073842
+  region: PoI1
+- id: 167
+  label: L_Ig
+  parameters:
+    color:
+      name: color
+      value: '#5c8b25ff'
+  record: true
+  size: 1
+  position:
+    x: -36.043361
+    y: -12.716173
+    z: 13.933898
+  region: Ig
+- id: 168
+  label: L_FOP5
+  parameters:
+    color:
+      name: color
+      value: '#986166ff'
+  record: true
+  size: 1
+  position:
+    x: -34.23715
+    y: 26.639944
+    z: 5.5132
+  region: FOP5
+- id: 169
+  label: L_p10p
+  parameters:
+    color:
+      name: color
+      value: '#5d4054ff'
+  record: true
+  size: 1
+  position:
+    x: -21.593478
+    y: 59.864027
+    z: 5.443589
+  region: p10p
+- id: 170
+  label: L_p47r
+  parameters:
+    color:
+      name: color
+      value: '#867674ff'
+  record: true
+  size: 1
+  position:
+    x: -42.370654
+    y: 42.581497
+    z: 0.356429
+  region: p47r
+- id: 171
+  label: L_TGv
+  parameters:
+    color:
+      name: color
+      value: '#263529ff'
+  record: true
+  size: 1
+  position:
+    x: -41.504488
+    y: -1.162595
+    z: -42.337029
+  region: TGv
+- id: 172
+  label: L_MBelt
+  parameters:
+    color:
+      name: color
+      value: '#b61412ff'
+  record: true
+  size: 1
+  position:
+    x: -45.217665
+    y: -15.931121
+    z: 1.959909
+  region: MBelt
+- id: 173
+  label: L_LBelt
+  parameters:
+    color:
+      name: color
+      value: '#e6141bff'
+  record: true
+  size: 1
+  position:
+    x: -42.797777
+    y: -30.457002
+    z: 9.305933
+  region: LBelt
+- id: 174
+  label: L_A4
+  parameters:
+    color:
+      name: color
+      value: '#922504ff'
+  record: true
+  size: 1
+  position:
+    x: -62.449767
+    y: -24.601921
+    z: 7.813015
+  region: A4
+- id: 175
+  label: L_STSva
+  parameters:
+    color:
+      name: color
+      value: '#191f12ff'
+  record: true
+  size: 1
+  position:
+    x: -50.757319
+    y: -9.894742
+    z: -15.999568
+  region: STSva
+- id: 176
+  label: L_TE1m
+  parameters:
+    color:
+      name: color
+      value: '#433031ff'
+  record: true
+  size: 1
+  position:
+    x: -61.607717
+    y: -28.060033
+    z: -12.821664
+  region: TE1m
+- id: 177
+  label: L_PI
+  parameters:
+    color:
+      name: color
+      value: '#7a3532ff'
+  record: true
+  size: 1
+  position:
+    x: -43.020014
+    y: -2.88172
+    z: -14.366846
+  region: PI
+- id: 178
+  label: L_a32pr
+  parameters:
+    color:
+      name: color
+      value: '#804256ff'
+  record: true
+  size: 1
+  position:
+    x: -8.876969
+    y: 29.238582
+    z: 28.782519
+  region: a32pr
+- id: 179
+  label: L_p24
+  parameters:
+    color:
+      name: color
+      value: '#762646ff'
+  record: true
+  size: 1
+  position:
+    x: -4.570086
+    y: 36.205653
+    z: 15.587967
+  region: p24
+- id: 180
+  label: R_V1
+  parameters:
+    color:
+      name: color
+      value: '#4c05ffff'
+  record: true
+  size: 1
+  position:
+    x: 14.872931
+    y: -78.030716
+    z: 3.343193
+  region: V1
+- id: 181
+  label: R_MST
+  parameters:
+    color:
+      name: color
+      value: '#346c84ff'
+  record: true
+  size: 1
+  position:
+    x: 44.44414
+    y: -63.395039
+    z: 4.15544
+  region: MST
+- id: 182
+  label: R_V6
+  parameters:
+    color:
+      name: color
+      value: '#435eabff'
+  record: true
+  size: 1
+  position:
+    x: 18.411155
+    y: -75.407298
+    z: 30.629672
+  region: V6
+- id: 183
+  label: R_V2
+  parameters:
+    color:
+      name: color
+      value: '#1a36efff'
+  record: true
+  size: 1
+  position:
+    x: 13.400549
+    y: -78.368871
+    z: 5.105835
+  region: V2
+- id: 184
+  label: R_V3
+  parameters:
+    color:
+      name: color
+      value: '#1220f0ff'
+  record: true
+  size: 1
+  position:
+    x: 20.596032
+    y: -86.416684
+    z: 8.425188
+  region: V3
+- id: 185
+  label: R_V4
+  parameters:
+    color:
+      name: color
+      value: '#1424dfff'
+  record: true
+  size: 1
+  position:
+    x: 29.555277
+    y: -80.630414
+    z: -0.437897
+  region: V4
+- id: 186
+  label: R_V8
+  parameters:
+    color:
+      name: color
+      value: '#1e3ed0ff'
+  record: true
+  size: 1
+  position:
+    x: 30.890472
+    y: -71.741735
+    z: -12.318317
+  region: V8
+- id: 187
+  label: R_4
+  parameters:
+    color:
+      name: color
+      value: '#27af1cff'
+  record: true
+  size: 1
+  position:
+    x: 27.650132
+    y: -18.595861
+    z: 55.829536
+  region: '4'
+- id: 188
+  label: R_3b
+  parameters:
+    color:
+      name: color
+      value: '#28c217ff'
+  record: true
+  size: 1
+  position:
+    x: 35.985563
+    y: -22.703452
+    z: 53.158377
+  region: 3b
+- id: 189
+  label: R_FEF
+  parameters:
+    color:
+      name: color
+      value: '#899094ff'
+  record: true
+  size: 1
+  position:
+    x: 42.077548
+    y: -1.738433
+    z: 50.712953
+  region: FEF
+- id: 190
+  label: R_PEF
+  parameters:
+    color:
+      name: color
+      value: '#a6b3a9ff'
+  record: true
+  size: 1
+  position:
+    x: 44.521887
+    y: 2.697805
+    z: 36.157851
+  region: PEF
+- id: 191
+  label: R_55b
+  parameters:
+    color:
+      name: color
+      value: '#6f694dff'
+  record: true
+  size: 1
+  position:
+    x: 47.35421
+    y: 2.782097
+    z: 46.141564
+  region: 55b
+- id: 192
+  label: R_V3A
+  parameters:
+    color:
+      name: color
+      value: '#1846fdff'
+  record: true
+  size: 1
+  position:
+    x: 19.73259
+    y: -86.345773
+    z: 28.01531
+  region: V3A
+- id: 193
+  label: R_RSC
+  parameters:
+    color:
+      name: color
+      value: '#9d427fff'
+  record: true
+  size: 1
+  position:
+    x: 6.377467
+    y: -34.730318
+    z: 21.5294
+  region: RSC
+- id: 194
+  label: R_POS2
+  parameters:
+    color:
+      name: color
+      value: '#d273caff'
+  record: true
+  size: 1
+  position:
+    x: 12.755189
+    y: -68.987013
+    z: 38.490307
+  region: POS2
+- id: 195
+  label: R_V7
+  parameters:
+    color:
+      name: color
+      value: '#1a5cc1ff'
+  record: true
+  size: 1
+  position:
+    x: 27.278834
+    y: -80.106615
+    z: 32.18834
+  region: V7
+- id: 196
+  label: R_IPS1
+  parameters:
+    color:
+      name: color
+      value: '#397bacff'
+  record: true
+  size: 1
+  position:
+    x: 27.256143
+    y: -69.543124
+    z: 35.62138
+  region: IPS1
+- id: 197
+  label: R_FFC
+  parameters:
+    color:
+      name: color
+      value: '#395e79ff'
+  record: true
+  size: 1
+  position:
+    x: 40.313498
+    y: -53.533233
+    z: -17.651185
+  region: FFC
+- id: 198
+  label: R_V3B
+  parameters:
+    color:
+      name: color
+      value: '#2949deff'
+  record: true
+  size: 1
+  position:
+    x: 30.630445
+    y: -75.713602
+    z: 20.589471
+  region: V3B
+- id: 199
+  label: R_LO1
+  parameters:
+    color:
+      name: color
+      value: '#1143cfff'
+  record: true
+  size: 1
+  position:
+    x: 38.965004
+    y: -79.432987
+    z: 4.779888
+  region: LO1
+- id: 200
+  label: R_LO2
+  parameters:
+    color:
+      name: color
+      value: '#1535b6ff'
+  record: true
+  size: 1
+  position:
+    x: 44.747056
+    y: -78.932134
+    z: -3.550584
+  region: LO2
+- id: 201
+  label: R_PIT
+  parameters:
+    color:
+      name: color
+      value: '#2136bbff'
+  record: true
+  size: 1
+  position:
+    x: 41.811089
+    y: -78.33021
+    z: -10.380633
+  region: PIT
+- id: 202
+  label: R_MT
+  parameters:
+    color:
+      name: color
+      value: '#225d6aff'
+  record: true
+  size: 1
+  position:
+    x: 47.585305
+    y: -68.605497
+    z: 7.731544
+  region: MT
+- id: 203
+  label: R_A1
+  parameters:
+    color:
+      name: color
+      value: '#e80c2bff'
+  record: true
+  size: 1
+  position:
+    x: 42.476054
+    y: -21.411567
+    z: 10.725649
+  region: A1
+- id: 204
+  label: R_PSL
+  parameters:
+    color:
+      name: color
+      value: '#bc9087ff'
+  record: true
+  size: 1
+  position:
+    x: 61.954797
+    y: -34.83112
+    z: 24.064338
+  region: PSL
+- id: 205
+  label: R_SFL
+  parameters:
+    color:
+      name: color
+      value: '#413933ff'
+  record: true
+  size: 1
+  position:
+    x: 9.190758
+    y: 13.58659
+    z: 63.694931
+  region: SFL
+- id: 206
+  label: R_PCV
+  parameters:
+    color:
+      name: color
+      value: '#858e9bff'
+  record: true
+  size: 1
+  position:
+    x: 7.736017
+    y: -52.858421
+    z: 49.264258
+  region: PCV
+- id: 207
+  label: R_STV
+  parameters:
+    color:
+      name: color
+      value: '#90706cff'
+  record: true
+  size: 1
+  position:
+    x: 56.728324
+    y: -40.653963
+    z: 18.735462
+  region: STV
+- id: 208
+  label: R_7Pm
+  parameters:
+    color:
+      name: color
+      value: '#9ecdbfff'
+  record: true
+  size: 1
+  position:
+    x: 8.26965
+    y: -66.621944
+    z: 51.325523
+  region: 7Pm
+- id: 209
+  label: R_7m
+  parameters:
+    color:
+      name: color
+      value: '#312e31ff'
+  record: true
+  size: 1
+  position:
+    x: 6.24859
+    y: -60.243664
+    z: 36.186725
+  region: 7m
+- id: 210
+  label: R_POS1
+  parameters:
+    color:
+      name: color
+      value: '#5e526bff'
+  record: true
+  size: 1
+  position:
+    x: 12.623788
+    y: -55.244939
+    z: 13.858366
+  region: POS1
+- id: 211
+  label: R_23d
+  parameters:
+    color:
+      name: color
+      value: '#863457ff'
+  record: true
+  size: 1
+  position:
+    x: 3.74087
+    y: -22.839191
+    z: 38.50654
+  region: 23d
+- id: 212
+  label: R_v23ab
+  parameters:
+    color:
+      name: color
+      value: '#1d0614ff'
+  record: true
+  size: 1
+  position:
+    x: 5.435677
+    y: -51.419732
+    z: 20.469193
+  region: v23ab
+- id: 213
+  label: R_d23ab
+  parameters:
+    color:
+      name: color
+      value: '#551c36ff'
+  record: true
+  size: 1
+  position:
+    x: 4.283223
+    y: -37.296516
+    z: 33.234144
+  region: d23ab
+- id: 214
+  label: R_31pv
+  parameters:
+    color:
+      name: color
+      value: '#461434ff'
+  record: true
+  size: 1
+  position:
+    x: 10.008037
+    y: -45.31382
+    z: 32.369871
+  region: 31pv
+- id: 215
+  label: R_5m
+  parameters:
+    color:
+      name: color
+      value: '#30ab32ff'
+  record: true
+  size: 1
+  position:
+    x: 6.75727
+    y: -38.479306
+    z: 66.480483
+  region: 5m
+- id: 216
+  label: R_5mv
+  parameters:
+    color:
+      name: color
+      value: '#8d9e81ff'
+  record: true
+  size: 1
+  position:
+    x: 12.622914
+    y: -40.065295
+    z: 53.824546
+  region: 5mv
+- id: 217
+  label: R_23c
+  parameters:
+    color:
+      name: color
+      value: '#d7bfc3ff'
+  record: true
+  size: 1
+  position:
+    x: 12.414741
+    y: -31.821304
+    z: 42.265411
+  region: 23c
+- id: 218
+  label: R_5L
+  parameters:
+    color:
+      name: color
+      value: '#42a048ff'
+  record: true
+  size: 1
+  position:
+    x: 14.260265
+    y: -43.675098
+    z: 71.731658
+  region: 5L
+- id: 219
+  label: R_24dd
+  parameters:
+    color:
+      name: color
+      value: '#48a02dff'
+  record: true
+  size: 1
+  position:
+    x: 7.929394
+    y: -19.075112
+    z: 50.68297
+  region: 24dd
+- id: 220
+  label: R_24dv
+  parameters:
+    color:
+      name: color
+      value: '#779a43ff'
+  record: true
+  size: 1
+  position:
+    x: 10.059197
+    y: -5.874654
+    z: 44.64453
+  region: 24dv
+- id: 221
+  label: R_7AL
+  parameters:
+    color:
+      name: color
+      value: '#78bf82ff'
+  record: true
+  size: 1
+  position:
+    x: 21.038851
+    y: -51.0507
+    z: 65.239206
+  region: 7AL
+- id: 222
+  label: R_SCEF
+  parameters:
+    color:
+      name: color
+      value: '#889569ff'
+  record: true
+  size: 1
+  position:
+    x: 7.413438
+    y: 0.985439
+    z: 58.41718
+  region: SCEF
+- id: 223
+  label: R_6ma
+  parameters:
+    color:
+      name: color
+      value: '#98a989ff'
+  record: true
+  size: 1
+  position:
+    x: 18.819377
+    y: 2.799987
+    z: 65.337198
+  region: 6ma
+- id: 224
+  label: R_7Am
+  parameters:
+    color:
+      name: color
+      value: '#aaf6dcff'
+  record: true
+  size: 1
+  position:
+    x: 10.972175
+    y: -58.978265
+    z: 60.853599
+  region: 7AM
+- id: 225
+  label: R_7PL
+  parameters:
+    color:
+      name: color
+      value: '#a7ffe8ff'
+  record: true
+  size: 1
+  position:
+    x: 16.664919
+    y: -69.932141
+    z: 54.738065
+  region: 7Pl
+- id: 226
+  label: R_7PC
+  parameters:
+    color:
+      name: color
+      value: '#4bb269ff'
+  record: true
+  size: 1
+  position:
+    x: 33.010812
+    y: -47.468232
+    z: 61.237073
+  region: 7PC
+- id: 227
+  label: R_LIPv
+  parameters:
+    color:
+      name: color
+      value: '#4181b0ff'
+  record: true
+  size: 1
+  position:
+    x: 28.769299
+    y: -54.237507
+    z: 51.824564
+  region: LIPv
+- id: 228
+  label: R_VIP
+  parameters:
+    color:
+      name: color
+      value: '#3c9696ff'
+  record: true
+  size: 1
+  position:
+    x: 21.923839
+    y: -61.041904
+    z: 59.129927
+  region: VIP
+- id: 229
+  label: R_MIP
+  parameters:
+    color:
+      name: color
+      value: '#81cac5ff'
+  record: true
+  size: 1
+  position:
+    x: 26.125004
+    y: -63.484105
+    z: 46.124985
+  region: MIP
+- id: 230
+  label: R_1
+  parameters:
+    color:
+      name: color
+      value: '#1cc22aff'
+  record: true
+  size: 1
+  position:
+    x: 46.711155
+    y: -22.403723
+    z: 54.882741
+  region: '1'
+- id: 231
+  label: R_2
+  parameters:
+    color:
+      name: color
+      value: '#3ab348ff'
+  record: true
+  size: 1
+  position:
+    x: 36.389435
+    y: -31.801509
+    z: 51.821174
+  region: '2'
+- id: 232
+  label: R_3a
+  parameters:
+    color:
+      name: color
+      value: '#35de1cff'
+  record: true
+  size: 1
+  position:
+    x: 34.232485
+    y: -19.656998
+    z: 43.526889
+  region: 3a
+- id: 233
+  label: R_6d
+  parameters:
+    color:
+      name: color
+      value: '#25a22aff'
+  record: true
+  size: 1
+  position:
+    x: 35.863926
+    y: -12.053434
+    z: 62.633983
+  region: 6d
+- id: 234
+  label: R_6mp
+  parameters:
+    color:
+      name: color
+      value: '#4d9f32ff'
+  record: true
+  size: 1
+  position:
+    x: 15.583282
+    y: -12.530129
+    z: 66.79206
+  region: 6mp
+- id: 235
+  label: R_6v
+  parameters:
+    color:
+      name: color
+      value: '#59b543ff'
+  record: true
+  size: 1
+  position:
+    x: 57.406693
+    y: 5.319997
+    z: 31.096232
+  region: 6v
+- id: 236
+  label: R_p24pr
+  parameters:
+    color:
+      name: color
+      value: '#989070ff'
+  record: true
+  size: 1
+  position:
+    x: 4.948504
+    y: -2.559596
+    z: 40.121173
+  region: p24pr
+- id: 237
+  label: R_33pr
+  parameters:
+    color:
+      name: color
+      value: '#795d5bff'
+  record: true
+  size: 1
+  position:
+    x: 4.026153
+    y: 7.38455
+    z: 29.726582
+  region: 33pr
+- id: 238
+  label: R_a24pr
+  parameters:
+    color:
+      name: color
+      value: '#af7c7dff'
+  record: true
+  size: 1
+  position:
+    x: 4.569252
+    y: 18.283729
+    z: 31.974968
+  region: a24pr
+- id: 239
+  label: R_p32pr
+  parameters:
+    color:
+      name: color
+      value: '#ab8f81ff'
+  record: true
+  size: 1
+  position:
+    x: 10.192275
+    y: 12.236177
+    z: 39.629218
+  region: p32pr
+- id: 240
+  label: R_a24
+  parameters:
+    color:
+      name: color
+      value: '#500b23ff'
+  record: true
+  size: 1
+  position:
+    x: 5.553107
+    y: 37.216615
+    z: -1.912579
+  region: a24
+- id: 241
+  label: R_d32
+  parameters:
+    color:
+      name: color
+      value: '#742940ff'
+  record: true
+  size: 1
+  position:
+    x: 10.354038
+    y: 38.537493
+    z: 23.688948
+  region: d32
+- id: 242
+  label: R_8BM
+  parameters:
+    color:
+      name: color
+      value: '#85505cff'
+  record: true
+  size: 1
+  position:
+    x: 6.484653
+    y: 26.728115
+    z: 46.834789
+  region: 8BM
+- id: 243
+  label: R_p32
+  parameters:
+    color:
+      name: color
+      value: '#79334fff'
+  record: true
+  size: 1
+  position:
+    x: 10.7112
+    y: 47.39511
+    z: -1.306882
+  region: p32
+- id: 244
+  label: R_10r
+  parameters:
+    color:
+      name: color
+      value: '#1b0006ff'
+  record: true
+  size: 1
+  position:
+    x: 7.687986
+    y: 49.464165
+    z: -9.147418
+  region: 10r
+- id: 245
+  label: R_47m
+  parameters:
+    color:
+      name: color
+      value: '#5d353cff'
+  record: true
+  size: 1
+  position:
+    x: 32.929011
+    y: 32.435991
+    z: -13.727792
+  region: 47m
+- id: 246
+  label: R_8Av
+  parameters:
+    color:
+      name: color
+      value: '#5b4443ff'
+  record: true
+  size: 1
+  position:
+    x: 37.567004
+    y: 19.848459
+    z: 48.122722
+  region: 8Av
+- id: 247
+  label: R_8Ad
+  parameters:
+    color:
+      name: color
+      value: '#403c30ff'
+  record: true
+  size: 1
+  position:
+    x: 22.924837
+    y: 27.444453
+    z: 43.460738
+  region: 8Ad
+- id: 248
+  label: R_9m
+  parameters:
+    color:
+      name: color
+      value: '#321b18ff'
+  record: true
+  size: 1
+  position:
+    x: 8.576121
+    y: 51.827517
+    z: 20.365173
+  region: 9m
+- id: 249
+  label: R_8BL
+  parameters:
+    color:
+      name: color
+      value: '#292018ff'
+  record: true
+  size: 1
+  position:
+    x: 12.589475
+    y: 37.674988
+    z: 50.198738
+  region: 8BL
+- id: 250
+  label: R_9p
+  parameters:
+    color:
+      name: color
+      value: '#423333ff'
+  record: true
+  size: 1
+  position:
+    x: 19.255376
+    y: 47.140181
+    z: 34.780606
+  region: 9p
+- id: 251
+  label: R_10d
+  parameters:
+    color:
+      name: color
+      value: '#2a1b19ff'
+  record: true
+  size: 1
+  position:
+    x: 10.193041
+    y: 65.214073
+    z: 6.756414
+  region: 10d
+- id: 252
+  label: R_8C
+  parameters:
+    color:
+      name: color
+      value: '#7b545cff'
+  record: true
+  size: 1
+  position:
+    x: 39.266618
+    y: 17.216761
+    z: 35.759307
+  region: 8C
+- id: 253
+  label: R_44
+  parameters:
+    color:
+      name: color
+      value: '#875e5bff'
+  record: true
+  size: 1
+  position:
+    x: 51.700841
+    y: 19.853492
+    z: 11.032756
+  region: '44'
+- id: 254
+  label: R_45
+  parameters:
+    color:
+      name: color
+      value: '#533e38ff'
+  record: true
+  size: 1
+  position:
+    x: 50.220978
+    y: 29.631274
+    z: 3.653521
+  region: '45'
+- id: 255
+  label: R_47l
+  parameters:
+    color:
+      name: color
+      value: '#3a1b1fff'
+  record: true
+  size: 1
+  position:
+    x: 45.610566
+    y: 31.258478
+    z: -11.120727
+  region: 47l
+- id: 256
+  label: R_a47r
+  parameters:
+    color:
+      name: color
+      value: '#634248ff'
+  record: true
+  size: 1
+  position:
+    x: 38.145242
+    y: 50.001164
+    z: -7.346111
+  region: a47r
+- id: 257
+  label: R_6r
+  parameters:
+    color:
+      name: color
+      value: '#bac89bff'
+  record: true
+  size: 1
+  position:
+    x: 50.034024
+    y: 8.795721
+    z: 16.228244
+  region: 6r
+- id: 258
+  label: R_IFJa
+  parameters:
+    color:
+      name: color
+      value: '#8b7265ff'
+  record: true
+  size: 1
+  position:
+    x: 41.631026
+    y: 17.425747
+    z: 23.952997
+  region: IFJa
+- id: 259
+  label: R_IFJp
+  parameters:
+    color:
+      name: color
+      value: '#838b80ff'
+  record: true
+  size: 1
+  position:
+    x: 37.01502
+    y: 8.090872
+    z: 27.129488
+  region: IFJp
+- id: 260
+  label: R_IFSp
+  parameters:
+    color:
+      name: color
+      value: '#846975ff'
+  record: true
+  size: 1
+  position:
+    x: 45.832749
+    y: 26.588649
+    z: 20.391221
+  region: IFSp
+- id: 261
+  label: R_IFSa
+  parameters:
+    color:
+      name: color
+      value: '#d3c6bcff'
+  record: true
+  size: 1
+  position:
+    x: 44.561511
+    y: 37.403909
+    z: 7.281463
+  region: IFSa
+- id: 262
+  label: R_p9-46v
+  parameters:
+    color:
+      name: color
+      value: '#998888ff'
+  record: true
+  size: 1
+  position:
+    x: 43.881929
+    y: 31.524421
+    z: 27.733223
+  region: p9-46v
+- id: 263
+  label: R_46
+  parameters:
+    color:
+      name: color
+      value: '#c4c7baff'
+  record: true
+  size: 1
+  position:
+    x: 34.305095
+    y: 36.838739
+    z: 30.23495
+  region: '46'
+- id: 264
+  label: R_a9-46v
+  parameters:
+    color:
+      name: color
+      value: '#b07896ff'
+  record: true
+  size: 1
+  position:
+    x: 38.563263
+    y: 51.135761
+    z: 10.219396
+  region: a9-46v
+- id: 265
+  label: R_9-46d
+  parameters:
+    color:
+      name: color
+      value: '#a17b92ff'
+  record: true
+  size: 1
+  position:
+    x: 27.624077
+    y: 47.249326
+    z: 23.294801
+  region: 9-46d
+- id: 266
+  label: R_9a
+  parameters:
+    color:
+      name: color
+      value: '#47393cff'
+  record: true
+  size: 1
+  position:
+    x: 17.054767
+    y: 59.804858
+    z: 21.88611
+  region: 9a
+- id: 267
+  label: R_10v
+  parameters:
+    color:
+      name: color
+      value: '#000801ff'
+  record: true
+  size: 1
+  position:
+    x: 5.090297
+    y: 54.033812
+    z: -14.845594
+  region: 10v
+- id: 268
+  label: R_a10p
+  parameters:
+    color:
+      name: color
+      value: '#80556fff'
+  record: true
+  size: 1
+  position:
+    x: 23.822245
+    y: 59.922744
+    z: -6.257824
+  region: a10p
+- id: 269
+  label: R_10pp
+  parameters:
+    color:
+      name: color
+      value: '#3b2c36ff'
+  record: true
+  size: 1
+  position:
+    x: 13.02909
+    y: 61.932922
+    z: -13.239963
+  region: 10pp
+- id: 270
+  label: R_11l
+  parameters:
+    color:
+      name: color
+      value: '#7e5e6fff'
+  record: true
+  size: 1
+  position:
+    x: 25.682131
+    y: 46.217611
+    z: -13.892056
+  region: 11l
+- id: 271
+  label: R_13l
+  parameters:
+    color:
+      name: color
+      value: '#765763ff'
+  record: true
+  size: 1
+  position:
+    x: 22.091664
+    y: 28.203988
+    z: -17.08108
+  region: 13l
+- id: 272
+  label: R_OFC
+  parameters:
+    color:
+      name: color
+      value: '#352528ff'
+  record: true
+  size: 1
+  position:
+    x: 9.711283
+    y: 35.279957
+    z: -22.868131
+  region: OFC
+- id: 273
+  label: R_47s
+  parameters:
+    color:
+      name: color
+      value: '#452024ff'
+  record: true
+  size: 1
+  position:
+    x: 29.934291
+    y: 21.173434
+    z: -17.861858
+  region: 47s
+- id: 274
+  label: R_LIPd
+  parameters:
+    color:
+      name: color
+      value: '#95b1c5ff'
+  record: true
+  size: 1
+  position:
+    x: 32.762022
+    y: -52.570347
+    z: 44.373828
+  region: LIPd
+- id: 275
+  label: R_6a
+  parameters:
+    color:
+      name: color
+      value: '#80c590ff'
+  record: true
+  size: 1
+  position:
+    x: 26.578455
+    y: -1.312946
+    z: 51.600444
+  region: 6a
+- id: 276
+  label: R_i6-8
+  parameters:
+    color:
+      name: color
+      value: '#7b756aff'
+  record: true
+  size: 1
+  position:
+    x: 33.058714
+    y: 10.897566
+    z: 54.777577
+  region: i6-8
+- id: 277
+  label: R_s6-8
+  parameters:
+    color:
+      name: color
+      value: '#685952ff'
+  record: true
+  size: 1
+  position:
+    x: 20.364123
+    y: 18.397042
+    z: 57.385007
+  region: s6-8
+- id: 278
+  label: R_43
+  parameters:
+    color:
+      name: color
+      value: '#968842ff'
+  record: true
+  size: 1
+  position:
+    x: 57.489598
+    y: 0.80569
+    z: 10.466757
+  region: '43'
+- id: 279
+  label: R_OP4
+  parameters:
+    color:
+      name: color
+      value: '#659d2bff'
+  record: true
+  size: 1
+  position:
+    x: 56.53966
+    y: -11.602638
+    z: 15.837978
+  region: OP4
+- id: 280
+  label: R_OP1
+  parameters:
+    color:
+      name: color
+      value: '#5d8f24ff'
+  record: true
+  size: 1
+  position:
+    x: 44.206229
+    y: -20.494196
+    z: 18.7855
+  region: OP1
+- id: 281
+  label: R_OP2-3
+  parameters:
+    color:
+      name: color
+      value: '#91763dff'
+  record: true
+  size: 1
+  position:
+    x: 36.746956
+    y: -17.671667
+    z: 18.97582
+  region: OP2-3
+- id: 282
+  label: R_52
+  parameters:
+    color:
+      name: color
+      value: '#ca4438ff'
+  record: true
+  size: 1
+  position:
+    x: 38.559132
+    y: -21.537118
+    z: 2.301368
+  region: '52'
+- id: 283
+  label: R_RI
+  parameters:
+    color:
+      name: color
+      value: '#a4542bff'
+  record: true
+  size: 1
+  position:
+    x: 40.50138
+    y: -30.017859
+    z: 17.811485
+  region: RI
+- id: 284
+  label: R_PFcm
+  parameters:
+    color:
+      name: color
+      value: '#ac9259ff'
+  record: true
+  size: 1
+  position:
+    x: 48.639598
+    y: -28.237371
+    z: 23.500131
+  region: PFcm
+- id: 285
+  label: R_PoI2
+  parameters:
+    color:
+      name: color
+      value: '#847c53ff'
+  record: true
+  size: 1
+  position:
+    x: 39.666391
+    y: -2.344067
+    z: -0.476699
+  region: PoI2
+- id: 286
+  label: R_TA2
+  parameters:
+    color:
+      name: color
+      value: '#88241eff'
+  record: true
+  size: 1
+  position:
+    x: 51.376164
+    y: 0.725835
+    z: -5.501365
+  region: TA2
+- id: 287
+  label: R_FOP4
+  parameters:
+    color:
+      name: color
+      value: '#c7948eff'
+  record: true
+  size: 1
+  position:
+    x: 37.247982
+    y: 15.391759
+    z: 8.006748
+  region: FOP4
+- id: 288
+  label: R_MI
+  parameters:
+    color:
+      name: color
+      value: '#a67772ff'
+  record: true
+  size: 1
+  position:
+    x: 37.665168
+    y: 9.527795
+    z: 2.151567
+  region: MI
+- id: 289
+  label: R_Pir
+  parameters:
+    color:
+      name: color
+      value: '#6b4f48ff'
+  record: true
+  size: 1
+  position:
+    x: 31.827991
+    y: 7.605821
+    z: -18.36597
+  region: Pir
+- id: 290
+  label: R_AVI
+  parameters:
+    color:
+      name: color
+      value: '#984a5bff'
+  record: true
+  size: 1
+  position:
+    x: 32.847869
+    y: 24.564028
+    z: -3.340677
+  region: AVI
+- id: 291
+  label: R_AAIC
+  parameters:
+    color:
+      name: color
+      value: '#61282fff'
+  record: true
+  size: 1
+  position:
+    x: 34.204355
+    y: 16.039123
+    z: -10.109283
+  region: AAIC
+- id: 292
+  label: R_FOP1
+  parameters:
+    color:
+      name: color
+      value: '#947d52ff'
+  record: true
+  size: 1
+  position:
+    x: 47.238438
+    y: 3.737241
+    z: 6.278339
+  region: FOP1
+- id: 293
+  label: R_FOP3
+  parameters:
+    color:
+      name: color
+      value: '#b9856bff'
+  record: true
+  size: 1
+  position:
+    x: 35.491975
+    y: 6.178526
+    z: 11.913236
+  region: FOP3
+- id: 294
+  label: R_FOP2
+  parameters:
+    color:
+      name: color
+      value: '#639c38ff'
+  record: true
+  size: 1
+  position:
+    x: 39.970825
+    y: -2.859817
+    z: 14.798251
+  region: FOP2
+- id: 295
+  label: R_PFt
+  parameters:
+    color:
+      name: color
+      value: '#6cca73ff'
+  record: true
+  size: 1
+  position:
+    x: 54.747206
+    y: -23.474826
+    z: 39.906739
+  region: PFt
+- id: 296
+  label: R_AIP
+  parameters:
+    color:
+      name: color
+      value: '#83d7a2ff'
+  record: true
+  size: 1
+  position:
+    x: 38.44145
+    y: -39.494691
+    z: 44.728017
+  region: AIP
+- id: 297
+  label: R_EC
+  parameters:
+    color:
+      name: color
+      value: '#383228ff'
+  record: true
+  size: 1
+  position:
+    x: 20.843261
+    y: -14.901878
+    z: -25.805611
+  region: EC
+- id: 298
+  label: R_PreS
+  parameters:
+    color:
+      name: color
+      value: '#674461ff'
+  record: true
+  size: 1
+  position:
+    x: 18.267225
+    y: -32.658641
+    z: -7.166703
+  region: PreS
+- id: 299
+  label: R_H
+  parameters:
+    color:
+      name: color
+      value: '#423f2eff'
+  record: true
+  size: 1
+  position:
+    x: 30.154588
+    y: -22.652033
+    z: -15.904561
+  region: H
+- id: 300
+  label: R_ProS
+  parameters:
+    color:
+      name: color
+      value: '#6353b1ff'
+  record: true
+  size: 1
+  position:
+    x: 19.176786
+    y: -46.208538
+    z: -0.009933
+  region: ProS
+- id: 301
+  label: R_PeEc
+  parameters:
+    color:
+      name: color
+      value: '#403c36ff'
+  record: true
+  size: 1
+  position:
+    x: 28.979298
+    y: -8.177687
+    z: -33.496526
+  region: PeEc
+- id: 302
+  label: R_STGa
+  parameters:
+    color:
+      name: color
+      value: '#3a2d1bff'
+  record: true
+  size: 1
+  position:
+    x: 51.223892
+    y: 15.786114
+    z: -16.959246
+  region: STGa
+- id: 303
+  label: R_PBelt
+  parameters:
+    color:
+      name: color
+      value: '#c5160dff'
+  record: true
+  size: 1
+  position:
+    x: 56.81498
+    y: -18.828644
+    z: 7.928065
+  region: PBelt
+- id: 304
+  label: R_A5
+  parameters:
+    color:
+      name: color
+      value: '#702906ff'
+  record: true
+  size: 1
+  position:
+    x: 60.765166
+    y: -15.728676
+    z: -1.141999
+  region: A5
+- id: 305
+  label: R_PHA1
+  parameters:
+    color:
+      name: color
+      value: '#4a3d56ff'
+  record: true
+  size: 1
+  position:
+    x: 20.524226
+    y: -33.352468
+    z: -14.902346
+  region: PHA1
+- id: 306
+  label: R_PHA3
+  parameters:
+    color:
+      name: color
+      value: '#5f6b7eff'
+  record: true
+  size: 1
+  position:
+    x: 34.131324
+    y: -35.822858
+    z: -14.444408
+  region: PHA3
+- id: 307
+  label: R_STSda
+  parameters:
+    color:
+      name: color
+      value: '#48382aff'
+  record: true
+  size: 1
+  position:
+    x: 50.801266
+    y: -1.269244
+    z: -16.285874
+  region: STSda
+- id: 308
+  label: R_STSdp
+  parameters:
+    color:
+      name: color
+      value: '#604136ff'
+  record: true
+  size: 1
+  position:
+    x: 47.829956
+    y: -25.910989
+    z: -3.424777
+  region: STSdp
+- id: 309
+  label: R_STSvp
+  parameters:
+    color:
+      name: color
+      value: '#5e3540ff'
+  record: true
+  size: 1
+  position:
+    x: 58.044618
+    y: -28.208613
+    z: -5.115287
+  region: STSvp
+- id: 310
+  label: R_TGd
+  parameters:
+    color:
+      name: color
+      value: '#25221bff'
+  record: true
+  size: 1
+  position:
+    x: 38.253684
+    y: 13.764306
+    z: -32.907652
+  region: TGd
+- id: 311
+  label: R_TE1a
+  parameters:
+    color:
+      name: color
+      value: '#090700ff'
+  record: true
+  size: 1
+  position:
+    x: 59.616207
+    y: -2.984596
+    z: -23.375406
+  region: TE1a
+- id: 312
+  label: R_TE1p
+  parameters:
+    color:
+      name: color
+      value: '#716867ff'
+  record: true
+  size: 1
+  position:
+    x: 61.17778
+    y: -40.221172
+    z: -11.304608
+  region: TE1p
+- id: 313
+  label: R_TE2a
+  parameters:
+    color:
+      name: color
+      value: '#483939ff'
+  record: true
+  size: 1
+  position:
+    x: 53.782078
+    y: -15.402177
+    z: -28.971012
+  region: TE2a
+- id: 314
+  label: R_TF
+  parameters:
+    color:
+      name: color
+      value: '#444a3fff'
+  record: true
+  size: 1
+  position:
+    x: 41.939611
+    y: -19.953646
+    z: -27.16982
+  region: TF
+- id: 315
+  label: R_TE2p
+  parameters:
+    color:
+      name: color
+      value: '#6d8b80ff'
+  record: true
+  size: 1
+  position:
+    x: 48.293114
+    y: -41.192008
+    z: -17.368202
+  region: TE2p
+- id: 316
+  label: R_PHT
+  parameters:
+    color:
+      name: color
+      value: '#cff6d6ff'
+  record: true
+  size: 1
+  position:
+    x: 58.993166
+    y: -51.165012
+    z: -2.483045
+  region: PHT
+- id: 317
+  label: R_PH
+  parameters:
+    color:
+      name: color
+      value: '#4b80a1ff'
+  record: true
+  size: 1
+  position:
+    x: 47.516968
+    y: -59.370722
+    z: -10.564838
+  region: PH
+- id: 318
+  label: R_TPOJ1
+  parameters:
+    color:
+      name: color
+      value: '#7d5e4eff'
+  record: true
+  size: 1
+  position:
+    x: 51.623842
+    y: -40.619955
+    z: 9.165295
+  region: TPOJ1
+- id: 319
+  label: R_TPOJ2
+  parameters:
+    color:
+      name: color
+      value: '#869e8bff'
+  record: true
+  size: 1
+  position:
+    x: 53.904121
+    y: -54.632079
+    z: 8.037739
+  region: TPOJ2
+- id: 320
+  label: R_TPOJ3
+  parameters:
+    color:
+      name: color
+      value: '#668c8fff'
+  record: true
+  size: 1
+  position:
+    x: 43.426847
+    y: -61.441611
+    z: 15.570993
+  region: TPOJ3
+- id: 321
+  label: R_DVT
+  parameters:
+    color:
+      name: color
+      value: '#7c84c6ff'
+  record: true
+  size: 1
+  position:
+    x: 21.49468
+    y: -66.670693
+    z: 29.907296
+  region: DVT
+- id: 322
+  label: R_PGp
+  parameters:
+    color:
+      name: color
+      value: '#98c9ddff'
+  record: true
+  size: 1
+  position:
+    x: 42.770432
+    y: -76.148337
+    z: 24.223856
+  region: PGp
+- id: 323
+  label: R_IP2
+  parameters:
+    color:
+      name: color
+      value: '#beb0b2ff'
+  record: true
+  size: 1
+  position:
+    x: 44.023652
+    y: -43.500575
+    z: 43.541473
+  region: IP2
+- id: 324
+  label: R_IP1
+  parameters:
+    color:
+      name: color
+      value: '#837481ff'
+  record: true
+  size: 1
+  position:
+    x: 36.85132
+    y: -62.516541
+    z: 43.810823
+  region: IP1
+- id: 325
+  label: R_IP0
+  parameters:
+    color:
+      name: color
+      value: '#6ea4d2ff'
+  record: true
+  size: 1
+  position:
+    x: 35.061429
+    y: -71.588745
+    z: 29.005563
+  region: IP0
+- id: 326
+  label: R_PFop
+  parameters:
+    color:
+      name: color
+      value: '#a4be82ff'
+  record: true
+  size: 1
+  position:
+    x: 60.159698
+    y: -18.872741
+    z: 26.741854
+  region: PFop
+- id: 327
+  label: R_PF
+  parameters:
+    color:
+      name: color
+      value: '#fff7d8ff'
+  record: true
+  size: 1
+  position:
+    x: 58.733314
+    y: -30.095341
+    z: 37.048711
+  region: PF
+- id: 328
+  label: R_PFm
+  parameters:
+    color:
+      name: color
+      value: '#ab7b87ff'
+  record: true
+  size: 1
+  position:
+    x: 53.344213
+    y: -46.258281
+    z: 39.790279
+  region: PFm
+- id: 329
+  label: R_PGi
+  parameters:
+    color:
+      name: color
+      value: '#3d3f38ff'
+  record: true
+  size: 1
+  position:
+    x: 49.537079
+    y: -54.630801
+    z: 23.925689
+  region: PGi
+- id: 330
+  label: R_PGs
+  parameters:
+    color:
+      name: color
+      value: '#695252ff'
+  record: true
+  size: 1
+  position:
+    x: 46.124249
+    y: -64.210911
+    z: 38.090063
+  region: PGs
+- id: 331
+  label: R_V6A
+  parameters:
+    color:
+      name: color
+      value: '#3466b3ff'
+  record: true
+  size: 1
+  position:
+    x: 22.629293
+    y: -80.403734
+    z: 43.75871
+  region: V6A
+- id: 332
+  label: R_VMV1
+  parameters:
+    color:
+      name: color
+      value: '#3c46aeff'
+  record: true
+  size: 1
+  position:
+    x: 18.330706
+    y: -53.297312
+    z: -7.286788
+  region: VMV1
+- id: 333
+  label: R_VMV3
+  parameters:
+    color:
+      name: color
+      value: '#3342a4ff'
+  record: true
+  size: 1
+  position:
+    x: 28.654741
+    y: -59.046006
+    z: -8.300941
+  region: VMV3
+- id: 334
+  label: R_PHA2
+  parameters:
+    color:
+      name: color
+      value: '#586064ff'
+  record: true
+  size: 1
+  position:
+    x: 30.996296
+    y: -32.710601
+    z: -14.846888
+  region: PHA2
+- id: 335
+  label: R_V4t
+  parameters:
+    color:
+      name: color
+      value: '#125d84ff'
+  record: true
+  size: 1
+  position:
+    x: 46.297076
+    y: -74.284414
+    z: -0.641978
+  region: V4t
+- id: 336
+  label: R_FST
+  parameters:
+    color:
+      name: color
+      value: '#4ba093ff'
+  record: true
+  size: 1
+  position:
+    x: 46.99103
+    y: -61.773335
+    z: -2.26462
+  region: FST
+- id: 337
+  label: R_V3CD
+  parameters:
+    color:
+      name: color
+      value: '#1c47cbff'
+  record: true
+  size: 1
+  position:
+    x: 36.14251
+    y: -81.381913
+    z: 13.376167
+  region: V3CD
+- id: 338
+  label: R_LO3
+  parameters:
+    color:
+      name: color
+      value: '#4166afff'
+  record: true
+  size: 1
+  position:
+    x: 45.537416
+    y: -74.130528
+    z: 10.851195
+  region: LO3
+- id: 339
+  label: R_VMV2
+  parameters:
+    color:
+      name: color
+      value: '#444ab0ff'
+  record: true
+  size: 1
+  position:
+    x: 28.550349
+    y: -52.118706
+    z: -5.723376
+  region: VMV2
+- id: 340
+  label: R_31pd
+  parameters:
+    color:
+      name: color
+      value: '#642c52ff'
+  record: true
+  size: 1
+  position:
+    x: 12.173526
+    y: -50.874796
+    z: 37.776264
+  region: 31pd
+- id: 341
+  label: R_31a
+  parameters:
+    color:
+      name: color
+      value: '#93637dff'
+  record: true
+  size: 1
+  position:
+    x: 7.472333
+    y: -41.035044
+    z: 41.38379
+  region: 31a
+- id: 342
+  label: R_VVC
+  parameters:
+    color:
+      name: color
+      value: '#3b437cff'
+  record: true
+  size: 1
+  position:
+    x: 29.059654
+    y: -45.548555
+    z: -17.568306
+  region: VVC
+- id: 343
+  label: R_25
+  parameters:
+    color:
+      name: color
+      value: '#24130dff'
+  record: true
+  size: 1
+  position:
+    x: 3.931712
+    y: 20.71527
+    z: -13.255906
+  region: '25'
+- id: 344
+  label: R_s32
+  parameters:
+    color:
+      name: color
+      value: '#210a07ff'
+  record: true
+  size: 1
+  position:
+    x: 5.758421
+    y: 33.923402
+    z: -12.963619
+  region: s32
+- id: 345
+  label: R_pOFC
+  parameters:
+    color:
+      name: color
+      value: '#653946ff'
+  record: true
+  size: 1
+  position:
+    x: 12.846404
+    y: 14.427728
+    z: -18.132894
+  region: pOFC
+- id: 346
+  label: R_PoI1
+  parameters:
+    color:
+      name: color
+      value: '#b6716aff'
+  record: true
+  size: 1
+  position:
+    x: 38.586181
+    y: -11.410765
+    z: -4.458385
+  region: PoI1
+- id: 347
+  label: R_Ig
+  parameters:
+    color:
+      name: color
+      value: '#6a8028ff'
+  record: true
+  size: 1
+  position:
+    x: 36.533956
+    y: -13.17209
+    z: 14.145336
+  region: Ig
+- id: 348
+  label: R_FOP5
+  parameters:
+    color:
+      name: color
+      value: '#ae5e6eff'
+  record: true
+  size: 1
+  position:
+    x: 37.320055
+    y: 27.330423
+    z: 5.117595
+  region: FOP5
+- id: 349
+  label: R_p10p
+  parameters:
+    color:
+      name: color
+      value: '#694959ff'
+  record: true
+  size: 1
+  position:
+    x: 24.811101
+    y: 57.58691
+    z: 5.912355
+  region: p10p
+- id: 350
+  label: R_p47r
+  parameters:
+    color:
+      name: color
+      value: '#a2717eff'
+  record: true
+  size: 1
+  position:
+    x: 44.525323
+    y: 43.014869
+    z: -3.669153
+  region: p47r
+- id: 351
+  label: R_TGv
+  parameters:
+    color:
+      name: color
+      value: '#3f4037ff'
+  record: true
+  size: 1
+  position:
+    x: 36.883355
+    y: 0.55917
+    z: -43.809763
+  region: TGv
+- id: 352
+  label: R_MBelt
+  parameters:
+    color:
+      name: color
+      value: '#bd0a17ff'
+  record: true
+  size: 1
+  position:
+    x: 44.994407
+    y: -16.529588
+    z: 3.987498
+  region: MBelt
+- id: 353
+  label: R_LBelt
+  parameters:
+    color:
+      name: color
+      value: '#d5171eff'
+  record: true
+  size: 1
+  position:
+    x: 47.641123
+    y: -24.638042
+    z: 10.154682
+  region: LBelt
+- id: 354
+  label: R_A4
+  parameters:
+    color:
+      name: color
+      value: '#9b2309ff'
+  record: true
+  size: 1
+  position:
+    x: 64.531082
+    y: -18.690099
+    z: 6.781347
+  region: A4
+- id: 355
+  label: R_STSva
+  parameters:
+    color:
+      name: color
+      value: '#2b241cff'
+  record: true
+  size: 1
+  position:
+    x: 53.130459
+    y: -8.003063
+    z: -17.728209
+  region: STSva
+- id: 356
+  label: R_TE1m
+  parameters:
+    color:
+      name: color
+      value: '#5c353dff'
+  record: true
+  size: 1
+  position:
+    x: 62.781429
+    y: -22.822098
+    z: -14.692183
+  region: TE1m
+- id: 357
+  label: R_PI
+  parameters:
+    color:
+      name: color
+      value: '#7f3538ff'
+  record: true
+  size: 1
+  position:
+    x: 43.84038
+    y: -3.614656
+    z: -12.735621
+  region: PI
+- id: 358
+  label: R_a32pr
+  parameters:
+    color:
+      name: color
+      value: '#9e4d6aff'
+  record: true
+  size: 1
+  position:
+    x: 9.982318
+    y: 27.513422
+    z: 30.117339
+  region: a32pr
+- id: 359
+  label: R_p24
+  parameters:
+    color:
+      name: color
+      value: '#7e264bff'
+  record: true
+  size: 1
+  position:
+    x: 5.473575
+    y: 35.155526
+    z: 15.555276
+  region: p24
+- id: 360
+  label: L_Cerebellum
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: -23.136985
+    y: -61.759789
+    z: -36.552073
+  region: Cerebellum-Cortex
+- id: 361
+  label: L_Thalamus
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: -10.599379
+    y: -19.128882
+    z: 5.996894
+  region: Thalamus-Proper
+- id: 362
+  label: L_Caudate
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: -12.64011
+    y: 7.818681
+    z: 10.082418
+  region: Caudate
+- id: 363
+  label: L_Putamen
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: -26.016981
+    y: -0.045283
+    z: -0.967925
+  region: Putamen
+- id: 364
+  label: L_Pallidum
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: -19.286195
+    y: -4.40404
+    z: -2.06734
+  region: Pallidum
+- id: 365
+  label: L_Hippocampus
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: -24.680628
+    y: -22.63089
+    z: -14.086387
+  region: Hippocampus
+- id: 366
+  label: L_Amygdala
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: -23.047619
+    y: -4.577778
+    z: -20.025397
+  region: Amygdala
+- id: 367
+  label: L_Accumbens
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: -7.288889
+    y: 9.481481
+    z: -8.414815
+  region: Accumbens-area
+- id: 368
+  label: L_VentralDC
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: -10.05949
+    y: -15.050992
+    z: -10.447592
+  region: VentralDC
+- id: 369
+  label: R_Cerebellum
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: 23.643045
+    y: -61.543088
+    z: -36.584864
+  region: Cerebellum-Cortex
+- id: 370
+  label: R_Thalamus
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: 11.512821
+    y: -18.040064
+    z: 6.307692
+  region: Thalamus-Proper
+- id: 371
+  label: R_Caudate
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: 13.435762
+    y: 8.884768
+    z: 10.328477
+  region: Caudate
+- id: 372
+  label: R_Putamen
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: 26.29703
+    y: 1.770297
+    z: -1.031683
+  region: Putamen
+- id: 373
+  label: R_Pallidum
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: 20.069231
+    y: -3.523077
+    z: -1.707692
+  region: Pallidum
+- id: 374
+  label: R_Hippocampus
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: 26.306918
+    y: -21.486792
+    z: -13.906918
+  region: Hippocampus
+- id: 375
+  label: R_Amygdala
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: 23.879518
+    y: -3.566265
+    z: -20.0
+  region: Amygdala
+- id: 376
+  label: R_Accumbens
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: 8.085714
+    y: 10.542857
+    z: -8.057143
+  region: Accumbens-area
+- id: 377
+  label: R_VentralDC
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: 11.176966
+    y: -14.418539
+    z: -10.123596
+  region: VentralDC
+- id: 378
+  label: Brain-Stem
+  parameters:
+    color:
+      name: color
+      value: '#8D8D8D'
+  record: true
+  size: 1
+  position:
+    x: 0.415899
+    y: -30.24712
+    z: -32.798963
+  region: Brainstem
+edges:
+- label: weight
+  description: Average HCP structural connectivity (streamline weights, max-normalised
+    to [0,1])
+  unit: arbitrary_unit
+  format: dense
+  weighted: true
+  valid_diagonal: false
+  non_negative: true
+  directed: false
+  allow_self_connections: true
+- label: fc
+  description: Average HCP resting-state functional connectivity (Pearson correlation
+    of BOLD)
+  unit: dimensionless
+  format: dense
+  weighted: true
+  valid_diagonal: true
+  non_negative: false
+  directed: false
+  allow_self_connections: true
+graph_representation: auto
+number_of_nodes: 379
+parcellation:
+  atlas:
+    name: HCPMMP1
+    coordinateSpace: fsLR
+data_file: tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-avgMatrix_atlas-HCPMMP1_desc-SCFC_relmat.h5
+descriptor: SCFC
+distance_unit: mm
+time_unit: ms

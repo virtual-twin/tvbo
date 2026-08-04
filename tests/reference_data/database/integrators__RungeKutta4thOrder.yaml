@@ -1,0 +1,44 @@
+method: RungeKutta4thOrder
+abs_tol: 1.0e-10
+rel_tol: 1.0e-10
+step_size: 0.01220703125
+time_scale: ms
+duration: 1000.0
+transient_time: 0.0
+scipy_ode_base: false
+number_of_stages: 4
+intermediate_expressions:
+  X1:
+    name: X1
+    equation:
+      lhs: X1
+      rhs: X + (dt / 2) * dX0
+      latex: false
+    record: false
+    conditional: false
+  X2:
+    name: X2
+    equation:
+      lhs: X2
+      rhs: X + (dt / 2) * dX1
+      latex: false
+    record: false
+    conditional: false
+  X3:
+    name: X3
+    equation:
+      lhs: X3
+      rhs: X + dt * dX2
+      latex: false
+    record: false
+    conditional: false
+update_expression:
+  name: dX
+  equation:
+    lhs: X_{t+1}
+    rhs: (dt / 6) * (dX0 + 2.0 * dX1 + 2.0 * dX2 + dX3)
+    latex: false
+  record: false
+  conditional: false
+delayed: true
+coupling_evaluation: per_step

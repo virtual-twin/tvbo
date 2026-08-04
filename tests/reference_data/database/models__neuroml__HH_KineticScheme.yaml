@@ -1,0 +1,242 @@
+name: HH_KineticScheme
+iri: neuroml:pointCellCondBased
+parameters:
+  C:
+    name: C
+    value: 1
+    description: nml:1pF
+  v0:
+    name: v0
+    value: -65
+    description: nml:-65mV
+  thresh:
+    name: thresh
+    value: -20
+    description: nml:-20mV
+  pulse_delay:
+    name: pulse_delay
+    value: 100
+    description: nml:100ms
+  pulse_duration:
+    name: pulse_duration
+    value: 100
+    description: nml:100ms
+  I_amp:
+    name: I_amp
+    value: 0.005
+    description: nml:0.005 nA
+description: 'Cell with HH Na channel and kinetic-scheme K channel, matching NeuroML2
+  Ex4.
+
+  '
+source: 'NeuroML2 example: Ex4_KS'
+number_of_modes: 1
+modes:
+  na:
+    name: na
+    iri: neuroml:ionChannelHH
+    parameters:
+      conductance:
+        name: conductance
+        value: 20
+        description: nml:20pS
+      number:
+        name: number
+        value: 6000
+      erev:
+        name: erev
+        value: 50
+        description: nml:50mV
+    number_of_modes: 1
+    modes:
+      m:
+        name: m
+        iri: neuroml:gateHHrates
+        parameters:
+          instances:
+            name: instances
+            value: 3
+        number_of_modes: 1
+        modes:
+          forwardRate:
+            name: forwardRate
+            iri: neuroml:HHExpLinearRate
+            parameters:
+              rate:
+                name: rate
+                value: 1
+                description: nml:1per_ms
+              midpoint:
+                name: midpoint
+                value: -40
+                description: nml:-40mV
+              scale:
+                name: scale
+                value: 10
+                description: nml:10mV
+            number_of_modes: 1
+            autonomous: true
+            cse: false
+            compile: false
+          reverseRate:
+            name: reverseRate
+            iri: neuroml:HHExpRate
+            parameters:
+              rate:
+                name: rate
+                value: 4
+                description: nml:4per_ms
+              midpoint:
+                name: midpoint
+                value: -65
+                description: nml:-65mV
+              scale:
+                name: scale
+                value: -18
+                description: nml:-18mV
+            number_of_modes: 1
+            autonomous: true
+            cse: false
+            compile: false
+        autonomous: true
+        cse: false
+        compile: false
+      h:
+        name: h
+        iri: neuroml:gateHHrates
+        parameters:
+          instances:
+            name: instances
+            value: 1
+        number_of_modes: 1
+        modes:
+          forwardRate:
+            name: forwardRate
+            iri: neuroml:HHExpRate
+            parameters:
+              rate:
+                name: rate
+                value: 0.07
+                description: nml:0.07per_ms
+              midpoint:
+                name: midpoint
+                value: -65
+                description: nml:-65mV
+              scale:
+                name: scale
+                value: -20
+                description: nml:-20mV
+            number_of_modes: 1
+            autonomous: true
+            cse: false
+            compile: false
+          reverseRate:
+            name: reverseRate
+            iri: neuroml:HHSigmoidRate
+            parameters:
+              rate:
+                name: rate
+                value: 1
+                description: nml:1per_ms
+              midpoint:
+                name: midpoint
+                value: -35
+                description: nml:-35mV
+              scale:
+                name: scale
+                value: 10
+                description: nml:10mV
+            number_of_modes: 1
+            autonomous: true
+            cse: false
+            compile: false
+        autonomous: true
+        cse: false
+        compile: false
+    autonomous: true
+    cse: false
+    compile: false
+  k_vh:
+    name: k_vh
+    iri: neuroml:ionChannelKS
+    parameters:
+      conductance:
+        name: conductance
+        value: 8
+        description: nml:8pS
+      number:
+        name: number
+        value: 1800
+      erev:
+        name: erev
+        value: -77
+        description: nml:-77mV
+    number_of_modes: 1
+    modes:
+      n:
+        name: n
+        iri: neuroml:gateKS
+        parameters:
+          instances:
+            name: instances
+            value: 1
+        number_of_modes: 1
+        modes:
+          c1:
+            name: c1
+            iri: neuroml:closedState
+            number_of_modes: 1
+            autonomous: true
+            cse: false
+            compile: false
+          o1:
+            name: o1
+            iri: neuroml:openState
+            number_of_modes: 1
+            autonomous: true
+            cse: false
+            compile: false
+          vh1:
+            name: vh1
+            iri: neuroml:vHalfTransition
+            parameters:
+              from:
+                name: from
+                value: 0
+                description: nml:c1
+              to:
+                name: to
+                value: 0
+                description: nml:o1
+              vHalf:
+                name: vHalf
+                value: 0
+                description: nml:0mV
+              z:
+                name: z
+                value: 1.5
+              gamma:
+                name: gamma
+                value: 0.75
+              tau:
+                name: tau
+                value: 3.2
+                description: nml:3.2ms
+              tauMin:
+                name: tauMin
+                value: 0.3
+                description: nml:0.3ms
+            number_of_modes: 1
+            autonomous: true
+            cse: false
+            compile: false
+        autonomous: true
+        cse: false
+        compile: false
+    autonomous: true
+    cse: false
+    compile: false
+model_type: spiking
+autonomous: true
+cse: false
+compile: false

@@ -1,0 +1,119 @@
+id: 905
+description: 'Reproduces NeuroML2 LEMS canonical example 8, adExIaFCell. Bursting
+  variant (adExBurst2) simulated for 300ms at 0.025ms step. Uses constant I_ext=800
+  pA matching the pulse generator amplitude (0.8 nA).
+
+  '
+label: 'NeuroML Ex8: AdEx (bursting)'
+dynamics:
+  name: AdaptiveExponentialIF
+  parameters:
+    C:
+      name: C
+      value: 281.0
+      description: Membrane capacitance (pF)
+    gL:
+      name: gL
+      value: 30.0
+      description: Leak conductance (nS)
+    EL:
+      name: EL
+      value: -70.6
+      description: Leak reversal potential (mV)
+    VT:
+      name: VT
+      value: -50.4
+      description: Spike threshold for exponential term (mV)
+    thresh:
+      name: thresh
+      value: -40.4
+      description: Detection threshold for spike event (mV)
+    reset:
+      name: reset
+      value: -48.5
+      description: Reset potential after spike (mV)
+    delT:
+      name: delT
+      value: 2.0
+      description: Slope factor (mV)
+    tauw:
+      name: tauw
+      value: 40.0
+      description: Adaptation time constant (ms)
+    a:
+      name: a
+      value: 4.0
+      description: Subthreshold adaptation conductance (nS)
+    b:
+      name: b
+      value: 80.0
+      description: Spike-triggered adaptation increase (pA, = 0.08 nA)
+  description: 'Adaptive Exponential Integrate-and-Fire model from NeuroML2 adExIaFCell.
+    Brette R and Gerstner W (2005) J Neurophysiol 94:3637-3642.
+
+    '
+  derived_variables:
+    I_ext:
+      name: I_ext
+      description: 'Constant current 0.8 nA = 800 pA (pulseGen1: delay=0, duration=2000ms)'
+      equation:
+        rhs: '800.0'
+        latex: false
+      record: false
+      conditional: false
+  state_variables:
+    v:
+      name: v
+      equation:
+        rhs: (-gL*(v - EL) + gL*delT*exp((v - VT)/delT) - w + I_ext) / C
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: -70.6
+    w:
+      name: w
+      equation:
+        rhs: (a*(v - EL) - w) / tauw
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: differential
+      equation_order: 1
+      initial_value: 0.0
+  number_of_modes: 1
+  autonomous: true
+  events:
+    spike:
+      name: spike
+      event_type: stimulus
+      condition:
+        rhs: v > thresh
+        latex: false
+      affect:
+        rhs: v = reset; w = w + b
+        latex: false
+      sampling_rate: 1.0
+      interpolation: linear
+  cse: false
+  compile: false
+integration:
+  method: euler
+  abs_tol: 1.0e-10
+  rel_tol: 1.0e-10
+  step_size: 0.025
+  time_scale: ms
+  duration: 300.0
+  transient_time: 0.0
+  scipy_ode_base: false
+  number_of_stages: 1
+  delayed: true
+  coupling_evaluation: per_step
+network:
+  graph_representation: auto
+  number_of_nodes: 1
+  distance_unit: mm
+  time_unit: ms

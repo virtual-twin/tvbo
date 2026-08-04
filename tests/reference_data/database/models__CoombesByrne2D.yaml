@@ -1,0 +1,109 @@
+name: CoombesByrne2D
+iri: tvbo:CoombesByrne2D
+parameters:
+  Delta:
+    name: Delta
+    definition: Half-width of heterogeneous noise distribution
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 10.0
+      step: 0.01
+      log_scale: false
+    description: Half-width of heterogeneous noise distribution
+  eta:
+    name: eta
+    definition: "Constant parameter to scale the rate of feedback from the\n     \
+      \       firing rate variable to itself"
+    value: 2.0
+    domain:
+      enforce: none
+      lo: -10.0
+      hi: 10.0
+      step: 0.0001
+      log_scale: false
+    description: Constant parameter to scale the rate of feedback from the             firing
+      rate variable to itself
+    grounding:
+    - GO:0099605
+  k:
+    name: k
+    definition: Local coupling strength
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 5.0
+      step: 0.01
+      log_scale: false
+    description: Local coupling strength
+  v_syn:
+    name: v_syn
+    definition: QIF membrane reversal potential
+    value: -4.0
+    domain:
+      enforce: none
+      lo: -20.0
+      hi: 0.0
+      step: 0.01
+      log_scale: false
+    description: QIF membrane reversal potential
+    grounding:
+    - GO:0042391
+description: ''
+references:
+- Byrne2020
+coupling_inputs:
+  c_glob:
+    name: c_glob
+    dimension: 1
+    local: false
+state_variables:
+  V:
+    name: V
+    domain:
+      enforce: none
+      lo: -2.0
+      hi: 1.5
+      log_scale: false
+    equation:
+      lhs: Derivative(V, t)
+      rhs: V**2 + c_glob + eta + pi*k*r*(-V + v_syn) - pi**2*r**2
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+  r:
+    name: r
+    domain:
+      enforce: clamp
+      lo: 0.0
+      hi: .inf
+      log_scale: false
+    equation:
+      lhs: Derivative(r, t)
+      rhs: Delta/pi + 2*V*r - pi*k*r**2
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+    distribution:
+      name: Uniform
+      domain:
+        enforce: none
+        lo: 0.0
+        hi: 2.0
+        log_scale: false
+      axis: space
+number_of_modes: 1
+model_type: mean_field
+autonomous: true
+cse: false
+compile: false

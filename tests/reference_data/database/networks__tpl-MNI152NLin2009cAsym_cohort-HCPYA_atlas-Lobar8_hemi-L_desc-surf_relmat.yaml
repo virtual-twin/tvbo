@@ -1,0 +1,24 @@
+label: Lobar8 LH surface (fsaverage 164k, 163842 vertices)
+parameters:
+  conduction_speed:
+    name: conduction_speed
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+graph_representation: auto
+number_of_nodes: 163842
+parcellation:
+  atlas:
+    name: Lobar8
+    coordinateSpace: MNI152NLin2009cAsym
+data_file: tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_hemi-L_desc-surf_relmat.h5
+descriptor: surf
+bids:
+  template: MNI152NLin2009cAsym
+  cohort: HCPYA
+  atlas: Lobar8
+  hemi: L
+parent_network: tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.yaml
+node_mapping: /mesh/region_mapping
+distance_unit: mm
+time_unit: ms

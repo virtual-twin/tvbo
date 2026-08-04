@@ -1,0 +1,90 @@
+name: KuramotoModel2
+iri: tvbo:KuramotoModel2
+parameters:
+  omega:
+    name: omega
+    definition: Sets the base line frequency for the Kuramoto oscillator in [rad/ms].
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 0.01
+      hi: 200.0
+      step: 0.1
+      log_scale: false
+derived_parameters:
+  f:
+    name: f
+    description: Intrinsic frequency of node n on its limit cycle
+    equation:
+      rhs: (omega/(2*pi))*1000
+      latex: false
+    unit: Hz
+derived_variables:
+  lc_0:
+    name: lc_0
+    equation:
+      lhs: lc_0
+      rhs: sin(local_coupling*theta)
+      latex: false
+    record: false
+    conditional: false
+  I:
+    name: I
+    description: '`I` is the input via local and long range connectivity, passing
+      first through the Kuramoto coupling function'
+    equation:
+      lhs: I
+      rhs: c_glob+lc_0
+      latex: false
+    record: false
+    conditional: false
+  phase:
+    name: phase
+    description: Normalized phase output
+    equation:
+      rhs: theta / (2*pi)
+      latex: false
+    record: true
+    conditional: false
+  signal:
+    name: signal
+    description: Sinusoidal signal output
+    equation:
+      rhs: sin(theta)
+      latex: false
+    record: true
+    conditional: false
+coupling_inputs:
+  c_glob:
+    name: c_glob
+    dimension: 1
+    local: false
+  local_coupling:
+    name: local_coupling
+    dimension: 1
+    local: true
+state_variables:
+  theta:
+    name: theta
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 6.283185307179586
+      log_scale: false
+    description: The Kuramoto model has only one state variable representing oscillations
+      in general
+    equation:
+      lhs: thetadot
+      rhs: omega + I
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.1
+number_of_modes: 1
+model_type: phase_oscillator
+autonomous: true
+cse: false
+compile: false
