@@ -13,9 +13,9 @@ function ZetterbergJansen!(dx, x, p, t = 0)
 
 
     coupled_input = 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .- c_glob .- local_coupling .* v6)))
-    sigma_v1 = ifelse(rho_1*(rho_2 - v1) > 709, 0, 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .- v1))))
-    sigma_v23 = ifelse(rho_1*(rho_2 - (v2 - v3)) > 709, 0, 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .+ v3 .- v2))))
-    sigma_v45 = ifelse(rho_1*(rho_2 - (v4 - v5)) > 709, 0, 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .+ v5 .- v4))))
+    sigma_v1 = ifelse(rho_1 .* (rho_2 .- v1) > 709, 0, 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .- v1))))
+    sigma_v23 = ifelse(rho_1 .* (rho_2 .+ v3 .- v2) > 709, 0, 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .+ v3 .- v2))))
+    sigma_v45 = ifelse(rho_1 .* (rho_2 .+ v5 .- v4) > 709, 0, 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .+ v5 .- v4))))
 
     dx[1] = y1
     dx[2] = y2
