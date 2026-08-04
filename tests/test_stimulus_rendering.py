@@ -103,9 +103,16 @@ def test_a_stimulus_names_time_the_way_tvb_binds_it():
     assert "var" in names and "t" not in names, default
 
 
-def test_an_authored_pycode_still_wins():
-    """`Equation.pycode` is the escape hatch for an expression TVBO cannot print."""
-    stimulus = _stimulus(rhs="0.0", pycode="where(var > 5, 1.0, 0.0)")
+def test_an_authored_pycode_wins_over_an_equation_tvbo_cannot_parse():
+    """`Equation.pycode` is the escape hatch, so it must be consulted *before* parsing.
+
+    The right-hand side here is deliberately unparseable, because that is the only
+    situation `pycode` exists for. Written with a *parseable* `rhs` — as this test first
+    was — it passes whether or not the escape hatch works, which is how a template that
+    parsed unconditionally shipped green: it raised on exactly the equations `pycode` was
+    there to rescue.
+    """
+    stimulus = _stimulus(rhs="some_undeclared_thing(var, ??)", pycode="where(var > 5, 1.0, 0.0)")
     assert 'default="where(var > 5, 1.0, 0.0)"' in stimulus.render_code(format="tvb")
 
 
