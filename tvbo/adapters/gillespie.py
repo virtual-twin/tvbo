@@ -25,6 +25,7 @@ import numpy as np
 import sympy as sp
 
 from tvbo.parse.expression import parse_eq
+from tvbo.utils import initial_value
 
 
 class GillespieAdapter:
@@ -116,7 +117,7 @@ class GillespieAdapter:
         rec_dt = float(getattr(integ, "step_size", None) or 1e-3)  # output sampling cadence
 
         state = {
-            n: float(getattr(model.state_variables[n], "initial_value", 0.0) or 0.0)
+            n: initial_value(model.state_variables[n])
             for n in sv_names
         }
         n_count = int(round(omega * state[activity]))

@@ -161,6 +161,24 @@ classes:
           same query that scopes the fan-out — so no CLI selection is needed.
           Declares the packaging intent in metadata instead of a ``--bundle-dataset``
           flag; a subset is scoped via ``subjects``.
+      batch_mode:
+        range: SubjectBatchMode
+        ifabsent: string(fan_out)
+        description: >-
+          How the per-subject fits are executed. ``fan_out`` (default) runs one
+          per-subject job, each binding its own targets at run time. ``on_device``
+          evaluates the whole cohort together as one vectorised batch on a single
+          device — the subject axis mapped in parallel while the shared network is
+          reused across subjects. Backend-independent intent: the scientific spec
+          is identical either way; only the execution strategy differs (a backend
+          realises the batch with its own vectorised-map primitive).
+      batch_size:
+        range: integer
+        description: >-
+          On-device chunk width — how many subjects form one vectorised batch.
+          Absent = the whole cohort in one batch, bounded by the working-memory
+          budget (as for exploration ``n_parallel``). Ignored when ``batch_mode``
+          is ``fan_out``.
       conditions:
         multivalued: true
         range: string
@@ -173,6 +191,14 @@ classes:
         description: "DOI or citation for this dataset."
 
 enums:
+  SubjectBatchMode:
+    description: >-
+      How a multi-subject dataset's per-subject fits are executed.
+    permissible_values:
+      fan_out:
+        description: "One per-subject job; each binds its own targets at run time."
+      on_device:
+        description: "The whole cohort evaluated together as one vectorised on-device batch."
   SexEnum:
     permissible_values:
       male:

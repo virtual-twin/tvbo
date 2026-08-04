@@ -2153,18 +2153,26 @@ classes:
                     Auxiliary state system co-integrated with the model to compute this
                     observation online, so the full trajectory need never be held. Its
                     state variables advance in step with the model, and the observation's
-                    value is this Dynamics' ``output`` — read at the final step for a
-                    reduction (e.g. effective frequency) or, when ``period`` is set,
-                    sub-sampled over time for a monitor. Backends fold it into their own
-                    integration so a batched parameter sweep carries only the accumulator,
-                    not a per-cell trajectory. An alternative to the post-scan ``pipeline``
+                    value is the derived variable this Dynamics marks ``record: true`` —
+                    read at the final step for a reduction (e.g. effective frequency) or,
+                    when ``period`` is set, emitted at that period as a time series for a
+                    monitor (e.g. a Balloon-Windkessel hemodynamic forward model, which
+                    then costs O(nodes) instead of O(time x nodes)). A backend that
+                    implements this folds the observer into its own integration, so a
+                    batched parameter sweep carries only the accumulator and not a per-cell
+                    trajectory; ``tvboptim`` does. An alternative to the post-scan ``pipeline``
                     / ``class_reference`` for observations expressible as a time recurrence.
                     Its ``parameters`` are the observer's named constants, bound by name in
                     every recurrence expression exactly as a model Dynamics' parameters are
                     — scalar or array-valued (``value`` a nested list, ``shape`` declaring
                     its extent), so a fixed operator the reduction consumes (a mesh gradient,
                     a template matrix) is declared as data on the observer rather than
-                    hidden inside a backend callable.
+                    hidden inside a backend callable. Its expressions name the observed
+                    signal ``x``, bound to whatever this observation's ``source`` names —
+                    the same device a curated coupling's ``pre_expression`` uses with
+                    ``x_j`` — so an observation model is curated once and pointed at any
+                    model's state variable. An observer that declares its own ``x`` (state,
+                    parameter or derived variable) means that ``x`` and gets no binding.
 
             # Opt-in streaming evaluation of a post-scan pipeline observation.
             reduce:
@@ -2494,7 +2502,10 @@ classes:
                 range: boolean
             initial_value:
                 range: float
-                ifabsent: float(0.1)
+                description: >-
+                    Value this state starts at. Absent means undeclared: the consumer
+                    supplies its own fallback via ``tvbo.utils.initial_value``, which
+                    documents why this slot carries no schema default.
             derivative_initial_value:
                 range: float
                 description: >-
@@ -5383,9 +5394,10 @@ classes:
                 range: boolean
                 ifabsent: false
             initial_value:
-                description: "Constant initial value for the field."
+                description: >-
+                    Constant initial value for the field. Absent means undeclared; see
+                    ``StateVariable.initial_value``.
                 range: float
-                ifabsent: float(0.1)
             initial_expression:
                 description: "Analytic initial condition for the field."
                 range: Equation
