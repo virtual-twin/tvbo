@@ -357,6 +357,7 @@ def run_${algo_name}(
     if save_every is None:
         save_every = _smart_interval(n_iterations)
     state = jax.tree_util.tree_map(lambda _leaf: _leaf, state)  # fresh container; trace-safe (deepcopy of a jax typed key asserts under trace)
+    _algo_t0 = time.perf_counter()
 
     # Update rule functions
 % for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
@@ -1200,7 +1201,7 @@ def run_${algo_name}(
 % endfor
 
     if verbose:
-        logger.info(f"${algo_name} complete!")
+        logger.info(f"${algo_name} complete! (tuning {time.perf_counter() - _algo_t0:.1f}s, {n_iterations} iters)")
 
     if raw:
         # vmap-safe cohort return: pure jnp arrays only; no AlgorithmResult/DataArray wrapping (host-side numpy conversion breaks under jax.vmap). Wrap per-subject host-side after the vmap.

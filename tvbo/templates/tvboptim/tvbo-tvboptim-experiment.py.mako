@@ -1351,6 +1351,7 @@ import os
 import copy
 import functools  # render_expression emits functools.reduce for Min/Max over lists
 import logging
+import time  # per-phase elapsed in the run log (tuning vs post-tuning wall-time)
 
 # Progress is logged, not printed: this generated script shares the ``tvbo``
 # logger hierarchy, so ``TVBO_LOG_LEVEL`` / ``tvbo.set_log_level`` control it the
@@ -3582,9 +3583,11 @@ def run_experiment(
     # level decides what is shown.
     _quiet = kwargs.pop("quiet", False)
 
+    _run_t0 = time.perf_counter()
+
     def _log(msg):
         if not _quiet:
-            logger.info(msg)
+            logger.info("[+%.0fs] %s" % (time.perf_counter() - _run_t0, msg))
 % if network_observation_names:
     # Materialize network-observation constants (empirical targets) from the
     # supplied matrices, keyed by observation name (e.g. {'fc_target': FC}).
@@ -3929,6 +3932,7 @@ def run_experiment(
             if algo_verbose:
                 _log(f"\\n>>> Running algorithm: {algorithm_name} (seed={_algo_seed})")
             algo_result = None
+            _algo_wall0 = time.perf_counter()
 
 % for algo in algorithms_list:
 <%
@@ -4270,6 +4274,8 @@ def run_experiment(
             if algo_result is not None:
                 # Store result for this algorithm
                 algorithms_results[algorithm_name] = algo_result
+                if algo_verbose:
+                    _log(f"  {algorithm_name} done: {time.perf_counter() - _algo_wall0:.1f}s wall (tuning + post-tuning eval)")
                 # Results are stored; dependent algorithms will look them up via algorithms_results
 
         # End of algorithms_to_run loop

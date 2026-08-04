@@ -1722,12 +1722,35 @@ trajectory** unless the post-eval streams, blowing memory → stall.
 **compute**: `integration.duration: 36e6 ms` @ `step_size 1 ms` = **36M steps** over 379 nodes,
 and `accelerator: auto` → the CPU node `hpc-cpu-96`. The post-tuning eval re-integrates that whole
 sim on CPU (no progress ticker) → looks hung. **Fix = GPU** (user chose GPU, full duration).
-**DONE:** emitted `exp34gpu_out.tar.gz` from `/tmp/gen34_harness/spec_gpu34/` (copy of the frozen
-spec with `accelerator: gpu`, `workflow.slurm.partition: gpu`, dropped the `JAX_PLATFORMS=cpu`
-force; venv `koller2024replication/.venv` is already jax[cuda]). Emitter auto-added `gres=gpu:1`;
-codegen sets `JAX_PLATFORMS=cuda`. Uploaded to `~/work/schirner2023replication/`. **Remaining
-(user):** on a login node, koller venv active, in tmux — `tvbo workflow submit exp34gpu_out.tar.gz`
-(optionally `--dry-run` first); monitor `exp34gpu_out/logs/rule_exp_34/<jobid>.log`.
+**DONE:** emitted `exp34gpu_out.tar.gz` (`spec_gpu34/`, `accelerator: gpu`, `partition: gpu`,
+dropped `JAX_PLATFORMS=cpu`; koller `.venv` is jax[cuda]); ran as SLURM 28212657 on hpc-gpu-2.
+**OUTCOME (2026-08-04, measured):** the GPU run is HEALTHY but the GPU barely helps — `nvidia-smi`
+= 54% util / 2.5 GB VRAM, `sstat` = one CPU core pinned 100% / 2.4 GB RSS. It's a **launch-latency-
+bound sequential scan** (36M steps, 379 nodes) — NOT OOM (streaming already bounds RAM), NOT
+deadlocked, just dispatch-bound-slow. So a single-subject sequential run doesn't benefit from a
+GPU; letting it finish for the result, but the RIGHT default is **single subject → CPU, batched
+cohort → GPU** (the on-device cohort fills the GPU). See [[reference-single-subject-gpu-launch-bound]].
+**Follow-ups below.**
+
+## exp_34 post-tuning finalization: ~45 min of silent CPU-bound compute after the BOLD eval (2026-08-04)
+
+After the post-tuning BOLD ticker hit `50000/50000`, the job spent 45+ min GPU/CPU-busy with NO
+log output and no result yet — a phase (FC compute + observations + result assembly/save over
+50000 TRs × 379) that emits no `i/N` ticker. Not a hang (it's computing), but it's an opaque
+black box. **Improve:** add per-phase elapsed + a completion log to the post-tuning evaluation /
+finalization in `tvbo-tvboptim-experiment.py.mako` (STEP 3 post-eval), and confirm the finalization
+isn't doing redundant work (e.g. a second full-duration sim, or an O(T²) FC step). The new `_log`
+`[+Xs]` prefix + per-algo `complete! (tuning Xs)` (done this session) cover tuning; extend the same
+to the post-eval so a busy-but-silent phase is never mistaken for a hang again.
+
+## Accelerator default guidance: single→CPU, cohort→GPU (2026-08-04)
+
+Measured that a single-subject sequential fic_eib run is launch-bound on a V100 (above). Consider a
+gentle heuristic/log-note when `accelerator: gpu` is requested for a single-subject sequential
+experiment (no cohort vmap, no wide exploration fan) — "GPU may not help a sequential run; consider
+CPU or an on-device cohort." Keep it advisory (backend-independent intent), not a hard block. The
+benchmark TSV + phase timeline now make the CPU-vs-GPU-vs-cohort call **data-driven** — re-benchmark
+before committing. Ties into the tune-on-CPU / eval-on-GPU `from_experiment` split idea above.
 
 ## Commit the uncommitted streaming + initial_value fixes (2026-08-04)
 

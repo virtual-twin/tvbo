@@ -7,7 +7,7 @@ import os
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import typer
 from mako.template import Template
@@ -894,10 +894,10 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
         _max_iter = spec_dict.pop("max_iterations", None)
         if spec_dict.pop("smoke", False) and _max_iter is None:
             _max_iter = 1
-        # Engine-native benchmarking: `--benchmark` / `--set benchmark=true` makes each rule
-        # carry Snakemake's `benchmark:` directive. Like the smoke cap it is a run modifier,
-        # not a workflow-block field, so pop it before the plan/freeze.
-        _benchmark = bool(spec_dict.pop("benchmark", False))
+        # Engine-native benchmarking: each rule carries Snakemake's `benchmark:` directive
+        # (near-zero-overhead resource TSV). ON by default; --no-benchmark / --set benchmark=false
+        # opts out. A run modifier, not a workflow-block field, so pop it before the plan/freeze.
+        _benchmark = bool(spec_dict.pop("benchmark", True))
         plan = _wf.plan(study_key=str(study_key), experiment=exp, backend=backend,
                         engine="snakemake", workflow_spec=spec_dict,
                         overrides=parsed["records"], source_spec=spec, experiment_selector=key)
@@ -1395,11 +1395,12 @@ def snakemake(
     override: list[str] = typer.Option([], "--set"),
     stdout: bool = typer.Option(False, "--stdout", help="Print artefact only; do not write a kit."),
     pack: bool = typer.Option(False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."),
-    benchmark: bool = typer.Option(
-        False, "--benchmark",
+    benchmark: Optional[bool] = typer.Option(
+        None, "--benchmark/--no-benchmark",
         help="Attach Snakemake's native `benchmark:` directive to every rule: a per-cell TSV "
              "(wall time, max_rss/max_vms/max_uss/max_pss MB, CPU time, I/O) written next to "
-             "each output — locally or as a SLURM job. Sugar for --set benchmark=true.",
+             "each output — locally or as a SLURM job. ON by default (a 30 s psutil sampler, "
+             "near-zero overhead); pass --no-benchmark to skip. Sugar for --set benchmark=<bool>.",
     ),
     smoke: bool = typer.Option(
         False, "--smoke",
@@ -1438,7 +1439,7 @@ def snakemake(
     # rule at emit): keep the kit the single source of truth, no separate config.
     override = [
         *override,
-        *(["benchmark=true"] if benchmark else []),
+        *([f"benchmark={'true' if benchmark else 'false'}"] if benchmark is not None else []),
         *(["smoke=true"] if smoke else []),
         *([f"max_iterations={max_iterations}"] if max_iterations is not None else []),
     ]
