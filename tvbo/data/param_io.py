@@ -522,6 +522,72 @@ def _write_bundle(path: Path, produced: Any) -> None:
             tmp.unlink()
 
 
+def _declared_producers(root: Any, _seen: Optional[set] = None):
+    """Every object under *root* that declares a ``producer:``, wherever it sits.
+
+    Walked generically rather than from a list of the places producers are allowed: a
+    parameter, a noise covariance and a coupling weight all declare one, and a reclaimer
+    that enumerated those three would silently spare — that is, treat as dead — every
+    artifact belonging to the fourth.
+    """
+    _seen = set() if _seen is None else _seen
+    if root is None or id(root) in _seen or isinstance(root, (str, bytes, int, float, bool)):
+        return
+    _seen.add(id(root))
+    if isinstance(root, dict):
+        children = list(root.values())
+    elif isinstance(root, (list, tuple, set)):
+        children = list(root)
+    else:
+        if _slot(root, "producer") is not None:
+            yield root
+        children = list(getattr(root, "__dict__", {}).values())
+    for child in children:
+        yield from _declared_producers(child, _seen)
+
+
+def live_artifacts(root: Any, cache_dir: Optional[Path] = None) -> tuple[set, set]:
+    """``(paths, producers)`` this study still reaches in the produced-constant store.
+
+    *producers* is every ``module.function`` whose liveness could be decided; a producer
+    whose arguments cannot be resolved is left out of BOTH sets, so its artifacts are
+    never judged dead on the strength of a failure to look at them.
+    """
+    import hashlib
+
+    root_dir = Path(cache_dir).expanduser() if cache_dir else _default_cache_dir()
+    paths, producers = set(), set()
+    for owner in _declared_producers(root):
+        name = str(_slot(owner, "name", "<unnamed>"))
+        try:
+            module, fname, kwargs = _producer_spec(_slot(owner, "producer"), name, root)
+            digest = hashlib.sha256(
+                repr(_producer_key(module, fname, kwargs)).encode()).hexdigest()[:16]
+        except Exception:
+            continue
+        producers.add(f"{module}.{fname}")
+        paths.add(root_dir / f"{module}.{fname}.{digest}.h5")
+    return paths, producers
+
+
+def superseded_artifacts(root: Any, cache_dir: Optional[Path] = None) -> list:
+    """Artifacts of THIS study's producers that it no longer reaches, newest first.
+
+    Superseded, not merely old: the content address keys on the producing call *and* on
+    its module's source, so an artifact of a producer this study uses, at a digest this
+    study no longer computes, can only be a version left behind by an edit or by a
+    changed argument. Files belonging to producers not seen here are never listed — they
+    may well be another study's, and this reads one study.
+    """
+    root_dir = Path(cache_dir).expanduser() if cache_dir else _default_cache_dir()
+    if not root_dir.is_dir():
+        return []
+    keep, producers = live_artifacts(root, cache_dir)
+    dead = [p for p in sorted(root_dir.glob("*.h5"))
+            if p not in keep and p.name.rsplit(".", 2)[0] in producers]
+    return sorted(dead, key=lambda p: -p.stat().st_size)
+
+
 def resolve(param: Any, source_dir: Optional[Path] = None, context: Any = None) -> Any:
     """This parameter's value, resolving ``source``/``producer`` on demand.
 

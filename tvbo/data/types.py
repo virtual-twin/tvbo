@@ -6,6 +6,7 @@ the bundled simulation state (initial conditions, network, noise, parameters,
 stimulus, and monitor settings) handed to the integration backends.
 """
 
+import copy
 import logging
 from copy import deepcopy
 
@@ -953,7 +954,13 @@ class OptimizationResult:
 
     @staticmethod
     def _flatten_params(state, prefix=""):
-        """Flatten a (possibly nested) state dict to ``{name: ndarray}``."""
+        """Flatten a (possibly nested) state to ``{dotted_name: ndarray}``.
+
+        Recurses into containers (dicts, objects) and returns array-like values as
+        leaves. A leaf is anything exposing ``ndim`` — numpy and jax alike; a jax
+        array carries an empty ``__dict__``, so it is detected as a leaf here rather
+        than recursed into as an empty container.
+        """
         flat = {}
         if state is None:
             return flat
@@ -971,7 +978,7 @@ class OptimizationResult:
         items = None
         if isinstance(state, dict):
             items = state.items()
-        elif hasattr(state, "__dict__") and not isinstance(state, np.ndarray):
+        elif hasattr(state, "__dict__") and not hasattr(state, "ndim"):
             items = ((k, v) for k, v in vars(state).items() if not k.startswith("_"))
         if items is not None:
             for k, v in items:
@@ -2022,6 +2029,76 @@ class ExperimentResult:
                 keep.add(name)
         return keep & present if present else keep
 
+    def _cohort_subject_states(self):
+        """Unstack an on-device cohort into per-subject tuned states, or None.
+
+        The on-device cohort driver (``dataset.batch_mode == on_device``) returns
+        ONE batched tuned state per algorithm — a leading subject axis over the
+        whole cohort — instead of a per-subject :class:`AlgorithmResult`, plus the
+        cohort's ``subject_ids``. Every array leaf carries the subject axis at
+        position 0, so slicing it apart yields one per-subject state, saved exactly
+        like the per-subject fan-out (one result per subject). Returns
+        ``(subject_ids, [{algo_name: per_subject_AlgorithmResult}, ...])``, or
+        ``None`` for an ordinary run so the normal single-result save path runs.
+        """
+        algos = self.algorithms or {}
+        batched = [(n, a) for n, a in algos.items()
+                   if getattr(a, "cohort_state", None) is not None]
+        if not batched:
+            return None
+        subject_ids = list(getattr(batched[0][1], "subject_ids", None) or [])
+        if not subject_ids:
+            raise ValueError(
+                "On-device cohort result carries a batched cohort_state but no subject_ids "
+                "to split it by. Every leaf is a (n_subjects, ...) batch, so without the "
+                "cohort's subject ids it cannot be written as per-subject results."
+            )
+        per_subject = []
+        for i in range(len(subject_ids)):
+            algos_i = {}
+            for name, algo in batched:
+                state_i = jax.tree_util.tree_map(
+                    lambda x, _i=i: x[_i] if hasattr(x, "ndim") else x,
+                    algo.cohort_state,
+                )
+                algos_i[name] = AlgorithmResult(name=name, state=state_i)
+            per_subject.append(algos_i)
+        return subject_ids, per_subject
+
+    def _save_per_subject(self, out_dir, cohort, compress, record_only):
+        """Persist an on-device cohort as one ``sub-<id>_..._result`` per subject.
+
+        Mirrors the per-subject fan-out: each subject file carries only that
+        subject's tuned parameters (``estimate__<param>``) — on-device tuning
+        produces per-subject parameters, not a per-subject trajectory, so the
+        shared base run's observations/integration are not duplicated per subject.
+        """
+        subject_ids, per_subject = cohort
+        src = self.source
+        if src is None:
+            raise ValueError(
+                "Cannot save an on-device cohort without a source experiment: the "
+                "per-subject result stem (sub-<id>_...) comes from the source's "
+                "_active_subject, so every subject would overwrite the same file."
+            )
+        _saved_active = getattr(src, "_active_subject", None)
+        written = []
+        try:
+            for sid, algos_i in zip(subject_ids, per_subject):
+                src._active_subject = str(sid)  # drives the sub-<id>_ result stem
+                view = copy.copy(self)
+                view.algorithms = algos_i
+                view.integration = None
+                view.observations = Bunch()
+                view.explorations = {}
+                view.optimizations = {}
+                view.continuations = {}
+                written += ExperimentResult.save(
+                    view, out_dir, compress=compress, record_only=record_only)
+        finally:
+            src._active_subject = _saved_active
+        return written
+
     def save(self, out_dir, compress: bool = True, record_only: bool = True):
         """Persist the run as one keyed HDF5 result plus a YAML provenance sidecar.
 
@@ -2033,8 +2110,15 @@ class ExperimentResult:
         key-value name (``ses-<id>_desc-<label>``). The **same** artifact is
         produced by a local run and by the HPC gather pass, so they are
         interchangeable. Returns the written paths.
+
+        An on-device cohort run fans here into one per-subject result (see
+        :meth:`_save_per_subject`), mirroring the per-subject workflow fan-out.
         """
         import os
+
+        _cohort = self._cohort_subject_states()
+        if _cohort is not None:
+            return self._save_per_subject(out_dir, _cohort, compress, record_only)
 
         os.makedirs(out_dir, exist_ok=True)
 
