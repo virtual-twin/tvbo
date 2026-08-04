@@ -275,8 +275,9 @@ def test_build_context_resolves_everything():
     _centred = {"ha": "center", "va": "center"}    # the default when none is declared
     assert a["annotations"] == [
         {"text": "corner", "x": 0.03, "y": 0.95, "layer": None, "arrow": None,
-         "kwargs": _centred},                                            # literal text
-        {"text": "xy", "x": 0.2, "y": 0.3, "layer": None, "arrow": None, "kwargs": _centred},
+         "tail": None, "kwargs": _centred},                              # literal text
+        {"text": "xy", "x": 0.2, "y": 0.3, "layer": None, "arrow": None, "tail": None,
+         "kwargs": _centred},
     ]
     assert a["placeholder"] is None
 
@@ -974,3 +975,38 @@ def test_emit_figure_rules_input_from_annotation_used():
     text = fw.emit_figure_rules([figure], base_dir=TAHER_BASE)
     assert "input:" in text
     assert _EXP3_CONTAINER in text
+
+
+def test_annotation_tail_anchors_on_a_computed_point():
+    """An arrow tail declared with ``tail_x``/``tail_used`` is READ from the container.
+
+    The callout convention this serves is a paper's "this point produced that picture"
+    arrow. Its tail has to sit on a value the run computed — a curve's height at a marked
+    x — and typing that height into the spec would make the arrow drift the moment the
+    curve moved, which is the whole failure mode declarative figures exist to remove.
+    """
+    fig = _cartesian_figure()
+    fig.panels["a"].annotations = [
+        P.Annotation(
+            text="",
+            x=0.4,
+            y=0.6,
+            tail_x=25.0,
+            tail_used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
+        )
+    ]
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert '_ty = float(np.asarray(_load_layer(' in code
+    assert 'xytext=(25.0, _ty), textcoords="data"' in code
+    assert 'xy=(0.4, 0.6), xycoords="axes fraction"' in code
+
+
+def test_annotation_without_a_tail_keeps_the_offset_arrow():
+    """``arrow`` alone still means an axes-fraction offset — the tail slots are additive."""
+    fig = _cartesian_figure()
+    fig.panels["a"].annotations = [P.Annotation(text="hi", x=0.4, y=0.6, arrow=[-0.1, 0.05])]
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    ast.parse(code)
+    assert 'textcoords="axes fraction"' in code
+    assert 'textcoords="data"' not in code

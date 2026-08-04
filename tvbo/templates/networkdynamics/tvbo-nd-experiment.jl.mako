@@ -1,3 +1,6 @@
+<%!
+from tvbo.utils import initial_value as _initial_value
+%>\
 ## -*- coding: utf-8 -*-
 <%doc>
 NetworkDynamics.jl full experiment template.
@@ -263,8 +266,8 @@ rng = MersenneTwister(${dist_seed})
 s.v[${node_idx}, :${sv.name}] = ${init_val}
 % elif has_dist:
 s.v[${node_idx}, :${sv.name}] = ${sample_expression(d, 'julia')}
-% elif sv.initial_value is not None:
-s.v[${node_idx}, :${sv.name}] = ${sv.initial_value}
+% else:
+s.v[${node_idx}, :${sv.name}] = ${_initial_value(sv)}
 % endif
 % endfor
 % if not find_fixpoint:
@@ -294,8 +297,8 @@ s.p.v[${node_idx}, :${p_name}] = ${sample_expression(d, 'julia')}
 for node in 1:nv(g)
     s.v[node, :${sv.name}] = ${sample_expression(d, 'julia')}
 end
-% elif sv.initial_value is not None:
-s.v[1:nv(g), :${sv.name}] .= ${sv.initial_value}
+% else:
+s.v[1:nv(g), :${sv.name}] .= ${_initial_value(sv)}
 % endif
 % endfor
 % for p_name, p_obj, d in collect_param_distributions(model):

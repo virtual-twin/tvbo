@@ -17,6 +17,7 @@ Output:
 import textwrap
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names, render_jax_default, get_mode_layout
+from tvbo.utils import initial_value as _initial_value
 
 # Get model from context
 if 'experiment' in context.keys():
@@ -58,7 +59,7 @@ jaxcode_obj = lambda obj: model.render_equation(obj, format='jax', preserve_orde
 n_modes, state_names, var_slots = get_mode_layout(model)
 var_names = list(model.state_variables.keys())
 _init_value = {
-    sv_name: (float(sv.initial_value) if sv.initial_value is not None else 0.0)
+    sv_name: _initial_value(sv)
     for sv_name, sv in model.state_variables.items()
 }
 initial_state = [_init_value[v] for v in var_names for _ in range(n_modes)]
