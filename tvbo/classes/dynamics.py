@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import owlready2
-from tvbo.utils import yaml_loader
+from tvbo.utils import initial_value, yaml_loader
 from matplotlib import colormaps
 from sympy import Derivative, Eq, Function, Symbol, latex, symbols
 
@@ -2724,19 +2724,11 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                     sv_init = np.random.uniform(lo, hi, size=N)
                 else:
                     # No distribution, no random flag → use initial_value
-                    sv_init = np.repeat(
-                        (
-                            float(sv.initial_value)
-                            if sv.initial_value is not None
-                            else default
-                        ),
-                        N,
-                    )
+                    sv_init = np.repeat(initial_value(sv, default), N)
                 init.append(sv_init)
         else:
             init = [
-                float(sv.initial_value) if sv.initial_value is not None else default
-                for sv in self.state_variables.values()
+                initial_value(sv, default) for sv in self.state_variables.values()
             ]
         return np.array(init)
 

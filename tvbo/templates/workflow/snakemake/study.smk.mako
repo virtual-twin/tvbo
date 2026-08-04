@@ -30,7 +30,8 @@ _figure_outputs = context.get('figure_outputs') or []
 import shlex
 
 from tvbo.cli._workflow import (mem_mb as _mem_mb, runtime_minutes as _runtime_min,
-                                cell_out_relpath as _cell_out, fan_expand_kwargs as _expand_kwargs)
+                                cell_out_relpath as _cell_out, fan_expand_kwargs as _expand_kwargs,
+                                cohort_out_relpaths as _cohort_out)
 
 def _activation(block):
     """Shell lines that put the declared environment in place, in activation order.
@@ -101,8 +102,12 @@ OUT_DIR = "${exp_plans[0]['out_dir'] if exp_plans else 'results'}"
 rule all:
     input:
 % for ep in exp_plans:
-<% axes = ep["axes"] %>\
-% if axes:
+<% axes = ep["axes"]; cohort = _cohort_out(ep) %>\
+% if cohort:
+% for _r in cohort:
+        f"{OUT_DIR}/${ep['key']}/${_r}",
+% endfor
+% elif axes:
         expand(
             f"{OUT_DIR}/${ep['key']}/${_cell_out(ep)}",
 % for ax in axes:
@@ -124,8 +129,12 @@ rule ${ep["rule_name"]}:
     # so Snakemake orders it before this rule (its operating point seeds this run).
     input:
 % for _dep in ep["depends_on"]:
-<% _dep_ep = _ep_by_key.get(_dep) %>\
-% if _dep_ep and _dep_ep["axes"]:
+<% _dep_ep = _ep_by_key.get(_dep); _dep_cohort = _cohort_out(_dep_ep) if _dep_ep else [] %>\
+% if _dep_cohort:
+% for _r in _dep_cohort:
+        f"{OUT_DIR}/${_dep}/${_r}",
+% endfor
+% elif _dep_ep and _dep_ep["axes"]:
         expand(f"{OUT_DIR}/${_dep}/${_cell_out(_dep_ep)}", ${_expand_kwargs(_dep_ep)}),
 % elif _dep_ep:
         f"{OUT_DIR}/${_dep}/${_cell_out(_dep_ep)}",
@@ -133,7 +142,14 @@ rule ${ep["rule_name"]}:
 % endfor
 % endif
     output:
+<% _cohort = _cohort_out(ep) %>\
+% if _cohort:
+% for _r in _cohort:
+        f"{OUT_DIR}/${ep['key']}/${_r}"${"," if not loop.last else ""}
+% endfor
+% else:
         f"{OUT_DIR}/${ep['key']}/${_cell_out(ep)}"
+% endif
 % if ep.get("benchmark"):
     ## Engine-native benchmarking (`--benchmark` / `--set benchmark=true`): Snakemake times
     ## the rule and writes a TSV — wall time (s and h:m:s), max_rss / max_vms / max_uss /
@@ -209,6 +225,10 @@ rule ${ep["rule_name"]}:
 % for _flag in _run_flags(ep):
         "${_flag} "
 % endfor
+% if _cohort_out(ep):
+        "-o $(dirname {output[0]})"
+% else:
         "-o $(dirname {output})"
+% endif
 
 % endfor

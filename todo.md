@@ -1682,6 +1682,112 @@ fixed IC in a non-chaotic regime (and a degenerate distribution returns its poin
 without the one-step offset. Until then, integrate sensitive-regime transients on the
 single-sim path (or the dt-converged reference) — Phase 7.
 
+## Streaming monitor reducer: single-state deferred readout breaks the scan carry — ✅ FIXED 2026-08-04
+
+`tvbo/templates/tvboptim/tvbo-tvboptim-observation.py.mako`, monitor-reducer
+`output_per_step=False` branch. For an observer with **exactly one** state variable codegen
+emitted `return (_new_x), None` — parens around one expr are **not a tuple** — and unpacked
+`x = carry`, while `_init`/`tuple(_st)` supply a 1-tuple → `jax.lax.scan` carry mismatch at
+trace time. BOLD (4 states) hid it.
+**Fixed:** trailing commas so a 1-element carry stays a tuple — `…snames…, = carry` (both the
+`_step` and `_chunk` unpacks) and `return (…_new_x…,), None`. Verified with a single-state
+`output_per_step=False` repro (`/tmp/gen34_harness/repro_single_state_monitor.py`) + 27/27 suite
+still green. STILL TODO: add that single-state case as a permanent regression test (none exists
+— why 27/27 passed before). (code-review 2026-08-04, #5.)
+
+## Streaming monitor reducer: guard forbids the host whole-trajectory block it can receive (2026-08-04)
+
+Same file, monitor `_update`: `if _rem and _n_full: raise` rejects a block longer than one
+period but not a whole number of periods. This is a **deliberate, tested** contract
+(`tests/test_streaming_monitor_reduction.py::test_a_block_that_is_not_a_whole_number_of_periods_raises`;
+streaming blocks are period-aligned by `streaming_post_eval_plan`). BUT `AbstractMonitor.__call__`
+folds the **entire trajectory as one block**, and `_init` (`n_steps // _period` slots) + the
+tail branch already *handle* a remainder — so a **host-evaluated monitor whose run length
+isn't a multiple of period-in-steps crashes** (e.g. BOLD TR=720ms, dt=0.1 → 7200 steps;
+n_steps=1e6 → raise). The 27 tests pass only because they use period-multiple lengths.
+**Decision needed — do NOT just delete the guard (it breaks the test):** either (a) require
+TR-multiple run lengths upstream and keep the strict guard, or (b) let the reducer drop the
+partial tail on the host path (remove the guard, update the raise-test). (code-review 2026-08-04, #1.)
+
+## Whole-brain post-tuning evaluation must stream — exp_34 hung (2026-08-04)
+
+exp_34 (`~/work/schirner2023replication/schirner34_validate`, SLURM 28169921) **hung in
+post-tuning** and was **cancelled by the user at 11:43** (no result — `results/34/` empty).
+Timeline: `fic_eib complete!` at 09:58, entered post-tuning (2nd warmup, 300 samples), then
+~1h45m of zero output. The tuning itself converged (mean_H_e ≈ 4 Hz). The hang is the known
+whole-brain failure mode — the **post-tuning evaluation materializes a full-length 379-node
+trajectory** unless the post-eval streams, blowing memory → stall.
+**Corrected root cause (2026-08-04):** NOT a missing stream — the `schirner34_validate` kit
+*already* declares BOLD `reduce: streaming`, so memory was fine. The real bottleneck is
+**compute**: `integration.duration: 36e6 ms` @ `step_size 1 ms` = **36M steps** over 379 nodes,
+and `accelerator: auto` → the CPU node `hpc-cpu-96`. The post-tuning eval re-integrates that whole
+sim on CPU (no progress ticker) → looks hung. **Fix = GPU** (user chose GPU, full duration).
+**DONE:** emitted `exp34gpu_out.tar.gz` (`spec_gpu34/`, `accelerator: gpu`, `partition: gpu`,
+dropped `JAX_PLATFORMS=cpu`; koller `.venv` is jax[cuda]); ran as SLURM 28212657 on hpc-gpu-2.
+**OUTCOME (2026-08-04, measured):** the GPU run is HEALTHY but the GPU barely helps — `nvidia-smi`
+= 54% util / 2.5 GB VRAM, `sstat` = one CPU core pinned 100% / 2.4 GB RSS. It's a **launch-latency-
+bound sequential scan** (36M steps, 379 nodes) — NOT OOM (streaming already bounds RAM), NOT
+deadlocked, just dispatch-bound-slow. So a single-subject sequential run doesn't benefit from a
+GPU; letting it finish for the result, but the RIGHT default is **single subject → CPU, batched
+cohort → GPU** (the on-device cohort fills the GPU). See [[reference-single-subject-gpu-launch-bound]].
+**Follow-ups below.**
+
+## exp_34 post-tuning finalization: ~45 min of silent CPU-bound compute after the BOLD eval (2026-08-04)
+
+After the post-tuning BOLD ticker hit `50000/50000`, the job spent 45+ min GPU/CPU-busy with NO
+log output and no result yet — a phase (FC compute + observations + result assembly/save over
+50000 TRs × 379) that emits no `i/N` ticker. Not a hang (it's computing), but it's an opaque
+black box. **Improve:** add per-phase elapsed + a completion log to the post-tuning evaluation /
+finalization in `tvbo-tvboptim-experiment.py.mako` (STEP 3 post-eval), and confirm the finalization
+isn't doing redundant work (e.g. a second full-duration sim, or an O(T²) FC step). The new `_log`
+`[+Xs]` prefix + per-algo `complete! (tuning Xs)` (done this session) cover tuning; extend the same
+to the post-eval so a busy-but-silent phase is never mistaken for a hang again.
+
+## Accelerator default guidance: single→CPU, cohort→GPU (2026-08-04)
+
+Measured that a single-subject sequential fic_eib run is launch-bound on a V100 (above). Consider a
+gentle heuristic/log-note when `accelerator: gpu` is requested for a single-subject sequential
+experiment (no cohort vmap, no wide exploration fan) — "GPU may not help a sequential run; consider
+CPU or an on-device cohort." Keep it advisory (backend-independent intent), not a hard block. The
+benchmark TSV + phase timeline now make the CPU-vs-GPU-vs-cohort call **data-driven** — re-benchmark
+before committing. Ties into the tune-on-CPU / eval-on-GPU `from_experiment` split idea above.
+
+## Commit the uncommitted streaming + initial_value fixes (2026-08-04)
+
+Working tree (dev) has, uncommitted and mixed: the **initial_value refactor** crash-fixes
+applied 2026-08-04 (missing `initial_value` imports in `gillespie.py`/`neuroml.py`/`run/graph.py`,
+pyrates-template indentation, `julia_model.py` migration) + the **streaming #3/#7** fixes
+(`observation.py.mako` period `float(to_numeric)`, collapsed comment blocks) + pre-existing
+streaming/initial_value WIP. Cohort work is already committed. Split into logical commits (one
+initial_value crash-fix, one streaming reducer); `git add -p` unavailable in-session, stage by file.
+
+## on_device cohort: per-subject results carry only `estimate__*` (2026-08-04) — by design, revisit
+
+An on_device cohort saves per-subject `sub-<id>_..._result.h5` with only the tuned params
+(`estimate__J_i/wLRE/wFFI`), NOT per-subject observations/optimizations (on-device tunes
+parameters, not per-subject trajectories). A study whose figures read
+`observation__*`/`optimization__*__final_loss` works under `fan_out` but silently `KeyError`s
+under `on_device`. Deliberate (mirrors the fan-out param contract) — but consider a warning at
+save time, or a post-tuning per-subject eval when a downstream figure needs per-subject
+observations. (code-review, left deliberately.)
+
+## on_device large cohort writes N duplicate connectome sidecars (2026-08-04) — efficiency, revisit
+
+`_save_per_subject` calls the full `ExperimentResult.save` per subject, so `freeze_yaml`
+re-writes an identical `sub-<id>_..._network.h5` for every subject (N copies of the shared
+connectome). Mirrors fan_out (each fan_out job also freezes the shared net), so per-subject
+results stay self-contained — but a 200-subject whole-brain cohort writes 200 identical dense
+connectomes. Consider a shared-network reference for big cohorts if disk/serialization bites.
+(code-review, left deliberately.)
+
+## on_device auto batch_size double-compiles the fit (2026-08-04) — minor
+
+`resolve_cohort_batch_size` auto path (`dataset.batch_size` absent) AOT-compiles the full
+single-subject fit via `estimate_per_cell_bytes` just to size the batch, then the run compiles
+the vmapped fit — two full compiles of an expensive fit. Mirrors `n_parallel:auto` (consistent),
+only on the auto path, avoidable with an explicit `batch_size`. Optimize with a cheaper peak
+estimate (e.g. reduced iterations) if compile time bites. (code-review, accepted.)
+
 ## Trust the pydantic schema: drop the defensive collection guards
 
 `getattr(model, "derived_variables", None) or {}` appears **72 times** across the codebase

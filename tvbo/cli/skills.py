@@ -27,6 +27,7 @@ from tvbo.skills import (
     CANONICAL_PACKAGE_DIR,
     CANONICAL_REPO_DIR,
     Skill,
+    asset_refs,
     is_asset_noise,
     is_managed_file,
     load_canonical,
@@ -190,6 +191,22 @@ def _find_leaked_refs(skills: list[Skill]) -> list[str]:
     ]
 
 
+def _find_dead_asset_refs(skills: list[Skill]) -> list[str]:
+    """``assets/…`` paths a body points at that do not exist on disk.
+
+    Same class as :func:`_find_leaked_refs`: a pointer the reader cannot
+    follow. It matters most for a body that *defers* detail to a reference
+    chapter, where a dead pointer silently drops that content instead of
+    erroring.
+    """
+    return [
+        f"{skill.source}: references missing asset {ref!r}"
+        for skill in skills
+        for ref in asset_refs(skill.body)
+        if skill.assets_dir is None or not (skill.assets_dir / ref).exists()
+    ]
+
+
 def _find_bad_extras(skills: list[Skill], repo_root: Path) -> list[str]:
     """``requires_extras`` entries naming no real optional-dependency group."""
     pyproject = repo_root / "pyproject.toml"
@@ -231,6 +248,13 @@ def _lint(
             leaks,
             "`tvbo skills install` ships only the user root, so these pointers are "
             "dead outside this repo. Inline the guidance, or drop the reference.",
+        ))
+    if dead := _find_dead_asset_refs(skills):
+        findings.append((
+            "skills referencing assets that do not exist:",
+            dead,
+            "Add the file under the skill's assets/, or drop the reference. A body that "
+            "defers detail to a missing chapter loses it silently.",
         ))
     if bad := _find_bad_extras(skills, repo_root):
         findings.append((
