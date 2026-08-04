@@ -1,0 +1,154 @@
+name: BOLD_Balloon
+label: BOLD (Balloon-Windkessel)
+description: BOLD fMRI observation model using the Balloon-Windkessel hemodynamic
+  ODE, co-integrated with the model rather than applied to a stored trajectory. Vasodilatory
+  signal, blood inflow, blood volume and deoxyhaemoglobin advance alongside the neural
+  state, and the BOLD signal is emitted at each TR, so peak memory is O(nodes) instead
+  of O(time x nodes).
+iri: tvbo:BOLD_Balloon
+time_scale: ms
+period: 720.0
+imaging_modality: BOLD
+reconcile: by_label
+dynamics:
+  name: BalloonWindkessel
+  parameters:
+    tau_s:
+      name: tau_s
+      value: 0.65
+      description: Vasodilatory signal decay time constant
+      unit: s
+    tau_f:
+      name: tau_f
+      value: 0.41
+      description: Autoregulatory feedback time constant
+      unit: s
+    tau_o:
+      name: tau_o
+      value: 0.98
+      description: Transit time
+      unit: s
+    alpha:
+      name: alpha
+      value: 0.32
+      description: Grubb's vessel stiffness exponent
+    E0:
+      name: E0
+      value: 0.4
+      description: Resting oxygen extraction fraction
+    V0:
+      name: V0
+      value: 0.04
+      description: Resting blood volume fraction
+    TE:
+      name: TE
+      value: 0.04
+      description: Echo time
+      unit: s
+    nu_0:
+      name: nu_0
+      value: 40.3
+      description: Frequency offset at the outer surface of magnetised vessels
+      unit: Hz
+    r_0:
+      name: r_0
+      value: 25.0
+      description: Slope of intravascular relaxation rate against oxygen saturation
+      unit: Hz
+  description: Four-variable Balloon-Windkessel hemodynamics driven by the observed
+    neural signal `x`, as an explicit-Euler recurrence on the seconds grid.
+  derived_parameters:
+    dt_s:
+      name: dt_s
+      description: The integration step on the seconds grid the hemodynamics use.
+      equation:
+        rhs: dt * 0.001
+        latex: false
+      unit: s
+    k1:
+      name: k1
+      description: Extravascular BOLD weighting (Friston 2000 / Obata 2004).
+      equation:
+        rhs: 4.3 * nu_0 * E0 * TE
+        latex: false
+    k2:
+      name: k2
+      description: Intravascular weighting. The published form carries an intra- to
+        extra-vascular ratio epsilon on this term and (1 - epsilon) on k3; TVB and
+        tvboptim's BalloonWindkesselBold fix epsilon at 1 here and 0 in k3, which
+        cannot both hold. This keeps their constants, so the observer reproduces every
+        BOLD number computed with that monitor; a study that wants the epsilon-consistent
+        weighting overrides k2 and k3.
+      equation:
+        rhs: r_0 * E0 * TE
+        latex: false
+    k3:
+      name: k3
+      description: Volume-change weighting; see the note on k2.
+      equation:
+        rhs: '1.0'
+        latex: false
+  derived_variables:
+    bold_signal:
+      name: bold_signal
+      description: BOLD signal
+      equation:
+        rhs: V0 * (k1 * (1.0 - q) + k2 * (1.0 - q / v) + k3 * (1.0 - v))
+        latex: false
+      record: true
+      conditional: false
+  state_variables:
+    s:
+      name: s
+      description: Vasodilatory signal
+      equation:
+        rhs: s + dt_s * (x - s / tau_s - (f - 1.0) / tau_f)
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: recurrence
+      equation_order: 1
+      initial_value: 0.0
+    f:
+      name: f
+      description: Blood inflow
+      equation:
+        rhs: f + dt_s * s
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: recurrence
+      equation_order: 1
+      initial_value: 1.0
+    v:
+      name: v
+      description: Blood volume
+      equation:
+        rhs: v + dt_s * (f - v ** (1.0 / alpha)) / tau_o
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: recurrence
+      equation_order: 1
+      initial_value: 1.0
+    q:
+      name: q
+      description: Deoxyhaemoglobin content
+      equation:
+        rhs: q + dt_s * (f * (1.0 - (1.0 - E0) ** (1.0 / f)) / E0 - v ** (1.0 / alpha
+          - 1.0) * q) / tau_o
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: recurrence
+      equation_order: 1
+      initial_value: 1.0
+  number_of_modes: 1
+  system_type: discrete
+  autonomous: true
+  cse: false
+  compile: false
