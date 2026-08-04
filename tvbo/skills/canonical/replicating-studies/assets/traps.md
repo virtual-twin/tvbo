@@ -1,0 +1,330 @@
+# Symptom index — dynamical, numerical and workflow traps
+
+These cost this project the most time, and they share a shape: **nothing raises**.
+A wrong step size, a stale container, a single-value exploration axis and a
+mis-keyed cache all return plausible numbers. So the entry point is the symptom,
+not the topic — find yours in the spine's symptom index, then read its entry here
+in full.
+
+## Dynamical & numerical traps (these cost us the most time)
+
+- **Size `step_size` from the STIFFEST thing the experiment actually integrates — not from the
+  paper's fitted parameter, and not from the sibling experiment whose `integration:` block you
+  inherited.** A step chosen for the optimum is wrong for the sweep that visits the rest of the
+  grid, and wrong again for the same equation solved in a different space. Both failures are
+  SILENT: the sweep returns plausible numbers from the cells that happened to converge. Two
+  measured cases from Pang2023, both from one inherited anchor. (1) The resting model's fastest
+  mode is `γ_s·√(1 + r_s²·λ_max)` — 114 Hz at the fitted `r_s` = 28.9 mm but **390 Hz at the
+  grid's 100 mm**. At the single run's 0.5 ms every cell from `r_s` = 76 mm up returned a growing
+  fraction of non-finite modes (11 % → 47 %) while the low-`r_s` cells looked perfectly healthy —
+  and the *converged* part of the landscape was distorted too: halving to 0.25 ms did not merely
+  remove NaNs, it sharpened the optimum from KS 0.065 in a flat well to **0.029 against 0.068 at
+  its neighbour**, moving the very quantity the paper's optimisation minimises. (2) The same PDE
+  on the mesh instead of in a 200-mode basis: the truncated basis stops at |λ| = 0.044 mm⁻² while
+  the full cotangent LBO reaches **16.0 mm⁻²**, ~360× stiffer, and the inherited 0.1 ms step
+  diverged to 1e116. Measure the operator's spectral radius
+  (`scipy.sparse.linalg.eigsh(L, k=1, which='LM')`), form `dt·ω`, pick the step from that, then
+  confirm the boundary empirically — a sweep locates its own (ours sat at `dt·ω ≈ 0.9` for Heun).
+  Give the swept or differently-discretised experiment its OWN `integration:` block
+  (`<<: *anchor` + an overriding `step_size:`) and say why in a comment, or a reader reads the
+  difference as drift rather than as the measurement it is.
+- **A stability claim needs the FULL production window — a short probe proves nothing.** We
+  tested the vertex-space run over 20 ms, watched it decay, and declared the finer step stable;
+  over the declared 100 ms it holds to ~25 ms and then passes 1e7. A marginal instability grows
+  per STEP, so its blow-up *time* scales with the step — which is also the diagnostic that
+  separates it from a sign/operator error: a genuine positive eigenvalue blows up at the same
+  time whatever the step, whereas ours slowed from 2150 s⁻¹ to 735 s⁻¹ when the step shrank 5×.
+  Measure that growth rate at two steps before concluding which failure you have.
+- **A swept cell must be the SAME computation as the single run — check the frame count, not the
+  code.** The two paths differ structurally: a single run integrates the transient separately and
+  streams only the main window, while a sweep folds transient + main into ONE window and asks the
+  reducer to drop the transient. If that `skip` is accepted and ignored, the sweep silently keeps
+  `skip/stride` extra leading samples — 1,338 BOLD frames where the same experiment run alone
+  gives 1,200 — and every FC/FCD statistic is then computed over a window contaminated by the
+  start-up transient the single run discards. After any sweep, assert the per-cell shape equals
+  the base run's before believing a landscape.
+- **The integrator, not the physics, can move the attractor.** An explicit scheme
+  (Heun/RK2) at too large a `dt` sustains lightly-damped fast librations at high
+  coupling: the *time-averaged* spread climbs and reads like desynchronization, but it is
+  numerical. Halve `dt` (or switch to RK4) and confirm the transition / operating point
+  are unaffected. A paper's quoted "Δt" is often a Lyapunov / rescaling unit, **not** the
+  solver step — do not copy it into `step_size`. Phase 7's reference integration is how
+  you tell numerical drift from real dynamics.
+- **Seeding a *delayed* system needs the delay HISTORY, not just a snapshot.** A
+  `from_experiment` seed carries the state but not the τ seconds of history a delayed term
+  reads; feedback engaging against an unfilled buffer spikes or fails to converge. Fill it
+  with a τ-second **transient pre-roll** (`transient_time: τ`) that replays the operating
+  point; the recorded onset is then `gate.t_on − transient_time` (derive it, never hardcode).
+- **Big graphs: make the coupling sparse/vectorized before reaching for HPC.** For an
+  N-node grid the per-step dense N×N coupling matmul dominates; `network.graph_representation:
+  sparse` (with a factored/angle-addition coupling) turned a multi-hour sweep into minutes
+  locally, numerically identical (~1e-16). Assess this first — often no cluster is needed.
+  For a big *parameter* grid, pair this with a streaming reduced observable (Phase 4) so vmap
+  memory stays bounded and the whole grid fits one GPU.
+- **A fit at the paper's real length: EVERY long-running observable must stream, and
+  the pre-tuning base sim is spurious.** The Phase-4 streaming rule is not just for
+  parameter grids. A fit runs the paper's actual simulation length (long, for stable
+  FC/statistics), and a post-hoc observation that stacks the full trajectory at that
+  length is enormous: Schirner's 10 h × dt=1 ms × 379 nodes × 4 states ≈ 440 GB for ONE
+  FC evaluation → OOM even on a highmem node. Compute BOLD/FC/moments as **streaming
+  reductions** (fold-in-carry over a block scan) that never materialize the trajectory —
+  the result is byte-identical. Two materialization traps specifically: (1) a fitting
+  experiment's *pre-tuning* forward sim is not a deliverable (the tuning algorithm is);
+  don't run a full-length materialized base sim before it. (2) the *post-tuning*
+  evaluation must stream too. Neither shows in a short smoke test — reason about
+  resident memory = `n_steps × n_nodes × n_states × 8 B` up front, and if a needed
+  streaming observable doesn't exist yet, that's a Phase-1.5 framework gap.
+  **You request streaming declaratively — `reduce: streaming` on the observation** (opt-in,
+  byte-identical to the post-scan value to f64 rounding, zero effect on any other
+  observation), which folds it into the integrator carry as an (init, update, finalize)
+  reducer via `prepare(reduce=…)` instead of stacking a trajectory. Supported for the
+  HRF-Volterra BOLD pipeline (the resolver lifts the kernel, downsample stride, TR stride and
+  Volterra `k_1`/`V_0` from the declared pipeline), for cumulative **mean / std / variance**
+  aggregations (Welford, folded per block), and for a **matrix co-moment FC** (`compute_fc` — a
+  running covariance emitted at the end, never a trajectory) — the last is what turns Schirner's
+  ~440 GB FC evaluation into a ~GB peak. Byte-identical noise-off; with tvboptim's *per-block*
+  noise draw the realization shifts with block size (ergodically vanishing — the same accepted
+  tradeoff as the shipped BOLD stream), so treat a noisy streamed metric as distributional, not
+  bit-exact across block sizes. **A streamed observation must decimate
+  by a stride/`subsample`, never `temporal_average`** — a stride is block-additive so it is
+  identical whether or not it is folded in-carry, whereas `temporal_average` is not (and
+  `temporal_average(1)` is not even the identity — it shifts by one). Verify it reaches the
+  streaming post-eval within memory *without* running the whole fit via `--smoke` (below).
+- **Metastable / FC metrics are duration-, trial-, and regime-sensitive — don't call a
+  ceiling early.** A single short run's FC/PLV/order-parameter is noise-dominated (one lucky
+  trial read 0.17; the 8-trial mean was 0.09). Match the paper's **full duration and trial
+  count**, and locate its **operating regime** (the near-critical (K, v) pocket a paper's 2-D
+  grid exists to find) before concluding "structure-limited". We twice declared a gap that
+  duration/trials/regime then closed.
+- **Reconcile the coupling scale with the paper's weight normalization.** A global K that
+  looks orders of magnitude off is usually a normalization convention, not a bug: a coupling
+  `a·gx/N` on *raw* SC (in-strength ~1e4) puts the operating point near K~1e-6, vs the paper's
+  K~0.03 on *normalized* SC. Match how the paper normalizes weights before sweeping K, or the
+  sweep hunts the wrong decade.
+- **A near-bifurcation operating point is implementation-specific — re-tune it to the phenomenon,
+  with precedent.** When a paper selects a regime with a control parameter sitting near a
+  bifurcation (a background drive µ that flips activity-silent → persistent → asynchronous, a
+  coupling at a synchronization onset), the paper's *exact* value need not reproduce that regime in
+  YOUR discretization — a δ-PSC / Euler network's transition sits at a different µ than the paper's
+  kinetic/exact one. Re-tune the control parameter to reproduce the *phenomenon* (the regime and its
+  ordering), document the shift, and cite the precedent: published reproductions routinely re-tune
+  the same knob (the Mongillo NEST reproduction shifted µ_ext ≈0.5 mV after changing the PSC kernel;
+  ours shifted comparably, activity-silent at 22.4 not the SOM's 23.1 mV). Faithful = the phenomenon
+  at a re-tuned operating point, not a byte-identical control value — decimal- vs mechanism-level
+  (Phase 1.5) applied to a control parameter, stated as such in the scorecard. Locate the transition
+  with a quick 3–4 point scan of the control parameter *before* committing the recipe value.
+
+## Pitfalls we hit (so you don't)
+
+- **A metric's *definition and the empirical modality it's compared against* are part of the
+  claim — read them from the METHODS, not the figure caption.** t_c (1/e vs exponential-fit),
+  ⟨Δω⟩ (std about the mean vs the median), λ₁ units; and *what* the sim is compared to
+  (Koller's Fig-8 "FC" is band-specific **MEG-PLV**, not fMRI — sim FC is PLV on the
+  off-diagonal). Pick a documented definition, state it, compute it. A magnitude that differs
+  may be a unit/rescaling convention rather than a physics gap — but **confirm that from the
+  methods**, don't assume it (we labelled it "likely" and it stayed unverified).
+
+- **Coupling evaluated once per step** silently integrates a different, multistable
+  attractor. Use `Integrator.coupling_evaluation: per_stage` for chaotic/multistable
+  **networked** systems and verify against the reference (Phase 7). It re-evaluates the
+  *network* coupling term at each integrator stage, so it is a **no-op for a single node**
+  (no network coupling to re-evaluate) — there the attractor-moving knob is `dt` (RK4 / halve
+  the step), not per_stage. Don't reach for it to explain a single-node discrepancy.
+- **Hardcoded fidelity numbers** creep into captions ("t_c ≈ 2.6 s") and read as
+  matches when they aren't. Compute them (Phase 6). A recomputed value that *differs*
+  from the paper is honest; a typed one that matches is not.
+- **Realization dependence.** Exact solitary counts / magnitudes depend on unpublished
+  seeds — count median-relative, state the difference as an accepted limitation, don't
+  chase the integer.
+- **Geometry / eigenmode decompositions: match the *invariant*, not the magnitudes.**
+  Reproduce the paper's exact operator (e.g. an `igl` cotangent-Laplacian at the paper's mesh
+  resolution — parcel-level, not a dense-surface substitute); the reproduced result is the
+  modal *structure* and where power concentrates (a field living in the lowest spatial-frequency
+  modes), while absolute scales (wavelengths) track the surface mesh — inflated meshes differ
+  ~1.3× across sources. Report it mechanism-level with the scale caveat.
+- **Large or derived array constants: declare their provenance, never inline them.** A mesh
+  operator, an empirical matrix, or any precomputed array a model/observation consumes is a
+  `Parameter` declared by *where it comes from*, not a literal: `source:` (WHERE) + `measure:`
+  (WHICH key) for an existing file, or `producer:` (a `FunctionCall` — HOW to compute it) for
+  one derived from the study's own inputs (arguments may reference `network.nodes.position` /
+  `network.mesh.*`). Sourced/produced values are resolved lazily and materialised to a
+  content-addressed companion — never baked into generated source (a 66 MB operator inlined is
+  a source file that will not compile). Reserve inline `value:` for genuine scalars/small
+  arrays. This keeps the spec the single source of truth (a pre-built file drifts from the mesh
+  it came from) and the emitted code self-contained.
+- **Some targets are irreproducible from the paper's OWN source data.** A panel can be
+  internally inconsistent in the published workbook (Koller Fig 2e: the per-node spread
+  disagrees across the steady-state vs transient windows) — a source-data defect, not a
+  model gap. Identify these, scope them `out`, say why; don't chase them.
+- **Redundant scripts.** One prep script (emits the tvbo Network directly); figures are
+  the declarative `figures:` block, not scripts. Don't hand-write per-figure `plot_*.py`
+  or an A/B compose driver — the renderer emits the plot scripts, and bespoke panel code
+  lives in ONE `code_modules` module in `code/`. (`plot_<name>.py` in `figures/scripts/`
+  is *generated*; never author or commit it.)
+- **Moving a module changes what `Path(__file__).parents[N]` means — grep for the climb
+  BEFORE you flatten.** Study code routinely locates the study root by climbing from its own
+  file (`_ROOT = Path(__file__).resolve().parents[2]`, written when it lived in `code/recipe/`).
+  Flattening it into `code/` makes every such climb overshoot by one, so paths resolve into the
+  *sibling-studies* directory. The failure is loud only if nothing exists there — otherwise you
+  silently read another study's tree. After any move, `grep -rn "parents\[" code/`, fix each N,
+  and re-run one figure end-to-end to confirm the containers still resolve.
+- **No dead vendored cruft — but a *live* dependency is not cruft.** Keep ONE pristine copy
+  of the paper's own code under `original_study/`; don't duplicate it into `code/`. If the
+  paper's algorithm is reused at runtime (e.g. a Helmholtz–Hodge flow-potential), *reference*
+  that one copy (put its dir on `sys.path`), don't re-vendor. **Before deleting vendored code
+  as "unused", confirm it against the actual RUN paths — run a representative experiment
+  END-TO-END, not just `from_file` load.** Loading a study does not import a
+  flow-potential/observation callable, so a load-only check will wrongly call a live
+  dependency dead (this cost us a broken flow-potential path).
+- **Generated files never land in git at the study root.** KPI/targets tables, extracted
+  arrays, the report PDF/logs → write them into `output/` (gitignored). A generated file
+  tracked at the root reads as a hand-curated deliverable and silently drifts stale.
+- **Cross-references.** The report must stand alone — no "as in the sibling X study".
+- **A lineage of related papers → sibling studies sharing a curated model; pin every
+  original-figure lookup.** When one model spans several papers (a foundation and its
+  successor, e.g. a synapse used first at the single-synapse level then in a network), make
+  each paper its own self-contained study and share the model by a curated `iri:` — don't
+  cram both into one recipe (the scales and reports differ). Keep only the paper being
+  replicated under that study's `original_study/`; when it also holds a precursor/successor's
+  figures, an unpinned `original_study.rglob("fig_03.png")` in the report's `ab()` silently
+  grabs the WRONG paper's `fig_03.png`. Pin the lookup to the specific paper dir
+  (`glob("Author1997*")/"img"`), and eyeball the internal A/B once to confirm the original is
+  the right figure.
+- **A run persists a container ONLY with `-o`, and figures read whatever container is on disk —
+  fresh or stale.** Two silent failure modes. (1) `tvbo run` *without* `-o` computes the result
+  and DISCARDS it, so a re-run after a recipe change leaves the OLD container in place and every
+  figure/report reads STALE data — you then reason about the new recipe from the previous run's
+  output. This is the costliest silent trap here: it produced a whole wrong "the backend can't
+  reproduce this" diagnosis before the container turned out to be days old. Always pass
+  `-o output/nc`, and before trusting a figure confirm its container is FRESH — the file timestamp
+  is from this run and its dims/coords match the current recipe (the exploration axis you just
+  changed is the dim you now see), not a leftover. (The CLI now warns on a no-`-o` run, but the
+  discipline is: persist, then verify freshness.) (2) A pure forward run that only records a raw
+  trajectory (no exploration, no declared observation) — e.g. a NeuroML EPSP-train run — must
+  still write `output/…_result.h5`; confirm `wrote [...]` is non-empty (a figure binding
+  `iri: tvbo:result/<Study>/exp-N` can't resolve an unwritten container). Run END-TO-END, not
+  `from_file`.
+- **Re-running an experiment does NOT invalidate the analyses computed from it.** An analysis
+  container carries no link back to the result it was derived from, and any "run what is missing"
+  pass skips whatever already exists — so after re-running an experiment the figures render THIS
+  run's dynamics against the PREVIOUS run's analyses, and nothing raises. Delete the dependent
+  containers explicitly before recomputing, and take the dependency set from the study's own
+  schedule (the `after` stage of `_study_analysis_stages`, which is transitive — for Pang2023 it
+  correctly caught 17 including second-order ones like the FCD landscape and the myelin
+  correlation) rather than hand-listing, which misses exactly the ones you did not think of. Then
+  confirm the invalidation *worked* by checking that an unchanged quantity comes back identical —
+  trusting the pass is how you end up believing a stale number twice. The hole is specifically
+  **`tvbo run --experiment N`**: a whole-study run recomputes every analysis, but a partial one
+  deliberately does not, so the containers keep the previous run's numbers beside a fresh result.
+  It now names the affected set (transitively, off the study's own `used:` edges) and tells you to
+  refresh — heed that warning rather than rendering on top of it.
+- **A cache is keyed on INPUTS, so editing a `code/` callable invalidates only what the key
+  actually covers — know which is which.** This is the same defect as the bullet above, one level
+  deeper, and it is worth knowing by name because the caches are invisible. Since the Pang2023
+  incident tvbo closes the worst of it: a `producer:` parameter's artifact digest now includes a
+  hash of the **source of the module defining the producer**, so editing that file yields a
+  different artifact rather than a stale hit — on the **next process**, which is what every
+  `tvbo run` is. Three holes remain, and all are silent:
+  - the digest hashes only the producer's **own file**, so an edit to a helper in a *sibling*
+    module under `code/` is still invisible;
+  - within one long-lived process (a Jupyter kernel, a report render) the digest is **pinned to
+    the source the module was loaded from**, because Python does not re-execute an imported
+    module: the edited function is not running either, so the artifact keeps matching the code
+    that filled it. Restart the kernel, exactly as you would to pick up the edit itself;
+  - a study's own `.npz` solve cache is keyed on its path, and an **analysis container** on its
+    name — neither hashes anything about the code, so re-deriving one is a deliberate act:
+    `tvbo run <Study>.yaml --analysis <name>` (which re-runs only that analysis and names the
+    downstream containers it just made stale), or delete the file.
+
+  Untreated, the symptom is that an experiment reads the artifact from *before* the edit while a
+  direct Python call to the same function returns the new value — two answers from one function,
+  and the run is the one that is wrong. In Pang2023 this drove the wave model with a pre-edit
+  stimulus projection for a whole afternoon and read as an unexplained "the run resolved a
+  different basis". Diagnose with file mtimes (`ls -la ~/.tvbo/constants` against the edit's
+  timestamp), and prefer arguments over code for anything you expect to vary, since an argument
+  IS in the key.
+- **A content-addressed cache must key its MEMORY and its DISK copy on the same thing.** Adding
+  the code digest to the artifact path but not to the in-process cache key is worse than not
+  adding it at all: a session that materialises, has its producer edited underneath it, and
+  materialises again computes the new path from the new source while the in-memory cache still
+  answers on the old one — writing pre-edit arrays under a digest that asserts they are
+  post-edit. Every later run then reads that file and trusts it. Whenever you add a term to a
+  cache key, grep for every other place that key is constructed.
+
+  Two traps follow, and the second is subtle enough to have been got wrong twice here. First,
+  the term must describe **what the process will actually do**, not what is on disk: a digest
+  re-read from the file each time claims the artifact matches code that Python is not running.
+  Second, a test that edits the source mid-process is testing a **reload that never happens**,
+  so it can only pass by faking one — which is how a fix that closed nothing passed its own
+  test. Assert the invariant directly instead: that the memory key and the artifact path carry
+  the **same** digest, and that the digest tracks the loaded source rather than the file. Test
+  the end-to-end invalidation where it is actually defined — across two processes, i.e. with
+  the caches cleared between the two calls.
+- **NEVER text-edit a spec or a report artifact with `str.replace` on a computed slice.** The
+  idiom `old = t[t.index(A):t.index(B)]` returns the **empty string** whenever `B` precedes `A` in
+  the file — a table row that got reordered is enough — and `t.replace("", new)` then inserts
+  `new` between **every character**, so a 33 KB register becomes 81 MB of interleaved garbage and
+  the intended edit never lands. It is silent: the script prints its success message. Use the
+  Edit tool (it fails on a non-unique or absent match) or anchor on a full unique line; if a
+  script must do it, `assert old` before replacing, and re-parse the artifact afterwards with
+  whatever the report uses to read it. Recovery, if it happens: the original bytes are all still
+  there, so `corrupt.replace(new, "")` returns the file exactly — confirm with
+  `len(corrupt) == len(recovered) + (len(recovered) + 1) * len(new)`.
+- **Track `report/analysis/` from the first commit — it is the only copy.** The register, the
+  targets table and the figure map are authored deliverables with no upstream and no regenerating
+  script. A study left untracked "until it is ready" has no recovery path for exactly the files
+  that cannot be recomputed, and one bad `str.replace` (above) is then unrecoverable except by
+  luck. Gitignore the heavy generated trees, commit the analysis prose early.
+- **Two runs of the same field may name the same axis differently — reconcile by NAME, never
+  broadcast.** A modal run projected onto the surface lands on `vertex`; the mesh run calls the
+  same axis `node`. Subtracting them as they arrive broadcasts into a 32,492 × 32,492 outer
+  product instead of an elementwise difference — 8 GB and a meaningless answer, with no error
+  raised. Match the non-shared dims by size, rename, transpose, and only then subtract. Where the
+  two sample a *shared* axis differently (a stiffer run needs a finer step), align on its
+  COORDINATE — `.sel(time=…, method="nearest", tolerance=…)` — never by decimating positionally,
+  and better still make the coincidence structural (next bullet).
+- **A single-value exploration axis silently OVERRIDES the base parameter — never use one as
+  ensemble scaffolding.** An `Exploration` axis with one `explored_values` entry (or a 1-point
+  domain) still *writes that value over* the Dynamics/Coupling parameter it names. So a stand-in
+  axis added only to give a trial-only ensemble a `space` (a) runs the whole study at the axis's
+  value, not the model's — a typo or a stale number (`explored_values: [-1.76]` where the model
+  sets `-1.76128`) silently integrates the wrong regime, and reads as a backend failure — and
+  (b) is unnecessary. Express the ensemble with the mechanism that actually varies it: `n_trials`
+  (+ a per-SV `distribution`) for a stochastic IC ensemble, or an `initial_conditions.<state_var>`
+  sweep for a deterministic one (`assets/sweeps.md`). To pin a parameter, set it on the
+  Dynamics/Coupling, never as a degenerate axis.
+- **A documented "we established this is impossible" is a measurement with a date on it.**
+  Handoff notes and register rows harden fast: once `figure-state.md` says a step is
+  unverifiable, nobody re-measures it, and the claim outlives the configuration it was measured
+  in. **Any change that could bear on a recorded negative result invalidates it** — re-run the
+  test rather than inheriting the conclusion. Two of Pang2023's flatly-stated impossibilities
+  ("the gradients are decimal-level unobtainable", "no spectrum reproduces the published
+  variance") were both measured on a graph construction that a later fix superseded, and both
+  fell in an afternoon once re-measured. Cheap habit: when writing a negative result, record the
+  *configuration* it holds under in the same sentence.
+- **A comment justifying a slow or awkward path is a claim — measure it before accepting it,
+  and before "optimising" it away.** `_subject_similarity` carried a deliberate note that the
+  full SVD was kept because η² is not invariant to a per-component sign flip and a cheaper Gram
+  eigendecomposition "would silently change the similarity". True, and the size was never
+  measured: rms 3.6e-4 against the matrix's own sd of 0.047 (r = 0.99997), while the discarded
+  factor cost 16.6 s of every 19 s subject — 20 hours against 40 minutes over a 765-subject
+  cohort. Measure the stated risk, put the number in the docstring, then decide. (The converse
+  discipline holds too: neither sign convention is canonical, so the difference is a property of
+  the printed method, which is a register line, not a silent choice.)
+- **Profile before you optimise, on a COLD cache.** The same run looked I/O-bound and was not:
+  reading a 438 MB CIFTI took 0.2 s from an external volume, while one linear-algebra call took
+  16.6 s of a 19 s subject. A one-file timing harness (print elapsed after each stage) settled in
+  30 seconds what an afternoon of restructuring the recipe would have got wrong.
+- **Deleting a cache is part of editing the callable that fills it.** Caches key on inputs, not
+  on code, so a changed algorithm silently reuses the old answer — and a *partly* refilled cache
+  is worse than a stale one, because it mixes two algorithms inside one cohort mean. Key the
+  cache path on the choice that changed (`..._fwhm-4.npz`) so the two cannot mix, and delete the
+  superseded files explicitly, saying how many and why.
+- **The framework's staleness detector only sees what a run touched — audit the whole chain at
+  the end.** Artifacts *outside* the container tree go stale silently: a figure-comparison
+  summary the internal report quotes was six days old while the figures it described had both
+  changed, and the PDFs predated the figures they embed. Close every session with an ordering
+  check — newest container ≤ oldest figure ≤ compare artifacts ≤ both PDFs — and rebuild until
+  it holds. Beware that *running* the detector can create the staleness it reports: recomputing
+  one analysis to test it invalidates everything downstream.
+- **Framework gaps surface late** if you skip Phase 1.5. Find them before the YAML.
