@@ -116,13 +116,18 @@ def test_lems_branches_evaluate_as_the_piecewise_does(label: str):
 
 
 @pytest.mark.backend_core
-@pytest.mark.parametrize("fmt", ["numpy", "jax"])
+@pytest.mark.parametrize("fmt", ["numpy", "jax", "tvb"])
 @pytest.mark.parametrize("label", list(CASES), ids=list(CASES))
 def test_array_backends_branch_as_the_piecewise_does(fmt: str, label: str):
-    """`np.where` / `jnp.where` lowering agrees with SymPy, on arrays.
+    """`np.where` / `jnp.where` / TVB `where` lowering agrees with SymPy, on arrays.
 
     Arrays rather than scalars on purpose: `where` evaluates *both* arms and selects
     elementwise, so a lowering that is right for a scalar can still be wrong for a vector.
+
+    `tvb` is evaluated by `numexpr` — the evaluator TVB actually hands an
+    `Equation.equation` string to — rather than by `eval`. That is the whole point of the
+    target: `numexpr` rejects a Python `a if c else b` and Python's `and`/`or` outright, so
+    a stimulus lowered that way is not merely differently spelled, it does not run.
 
     The tolerance follows the backend's own precision — JAX computes in float32 unless x64
     is enabled, which this must not turn on process-wide. What is under test is which arm
@@ -132,14 +137,18 @@ def test_array_backends_branch_as_the_piecewise_does(fmt: str, label: str):
     emitted = get_printer(fmt).doprint(expr)
 
     env = _sample(seed=1)
-    if fmt == "jax":
-        import jax.numpy as jnp
-
-        env["jnp"] = jnp
+    if fmt == "tvb":
+        numexpr = pytest.importorskip("numexpr")
+        raw = numexpr.evaluate(emitted, {s.name: env[s.name] for s in SYMBOLS})
     else:
-        env["np"] = np
+        if fmt == "jax":
+            import jax.numpy as jnp
 
-    raw = eval(emitted, {}, env)  # noqa: S307
+            env["jnp"] = jnp
+        else:
+            env["np"] = np
+        raw = eval(emitted, {}, env)  # noqa: S307
+
     tolerance = 1e-6 if np.asarray(raw).dtype == np.float32 else 1e-12
     produced = np.asarray(raw, dtype=float)
     expected = _reference(expr, env)
@@ -162,3 +171,37 @@ def test_branch_value_cannot_escape_its_gate():
     """A branch whose value prints as a sum stays inside its own `H(...) *` term."""
     emitted = get_printer("lems").doprint(sp.Piecewise((-4 * x + 3, x > sp.Rational(1, 2)), (0, True)))
     assert emitted == "H(x .gt. 1/2) * (3 - 4*x)", emitted
+
+
+@pytest.mark.backend_core
+@pytest.mark.parametrize(
+    "module, names",
+    [
+        (
+            "tvbo.classes.equation",
+            [
+                "piecewise2numpy",
+                "convert_ifelse_to_np_where",
+                "convert_numpy_where_to_sympy",
+                "extract_parts_from_numpy_where",
+                "get_latex_equation",
+                "render_latex_equations",
+            ],
+        ),
+        ("tvbo.codegen.templater", ["boolean2bitwise", "equation2class", "model2class", "get_model_info"]),
+    ],
+)
+def test_no_second_lowering_path_survives(module: str, names: list[str]):
+    """Nothing may re-enter the string-rewriting path a `Piecewise` used to take.
+
+    A `Piecewise` is now built in exactly one place (`parse_eq`), printed in exactly one
+    place (`print_Piecewise`, through each printer's `_where3`), and rendered for humans in
+    exactly one place (`sympy.latex`). Each of these names was the second of one of those,
+    reachable by importing it — which is how the two spellings drifted apart in the first
+    place. Asserting their absence is what keeps the count at one.
+    """
+    import importlib
+
+    imported = importlib.import_module(module)
+    present = [name for name in names if hasattr(imported, name)]
+    assert not present, f"{module} still exposes {present}"

@@ -4,24 +4,14 @@ if 'experiment' in context.keys():
 else:
     stimulus = context['stimulus']
 
-from tvbo.classes.equation import convert_ifelse_to_np_where
-from tvbo.parse.symbols import BUILTIN_SHADOW
-from sympy import pycode, Symbol
+from sympy import Symbol
+from tvbo.codegen.code import get_printer
 
-
-if stimulus.equation.pycode:
-    default_expression = stimulus.equation.pycode
-elif stimulus.equation.conditionals:
-    default_expression = convert_ifelse_to_np_where(
-        pycode(
-            BUILTIN_SHADOW.parse(stimulus.equation).subs("t", Symbol("var")),
-            fully_qualified_modules=False,
-        )
-    )
-else:
-    default_expression = pycode(
-        BUILTIN_SHADOW.parse(stimulus.equation.rhs), fully_qualified_modules=False
-    )
+# TVB binds the stimulus argument as `var`, whatever the metadata calls time.
+expression, _ = stimulus.get_expression()
+default_expression = stimulus.equation.pycode or get_printer("tvb").doprint(
+    expression.subs(Symbol("t"), Symbol("var"))
+)
 %>
 ################################################################################
 from tvb.datatypes.equations import Equation, TemporalApplicableEquation
