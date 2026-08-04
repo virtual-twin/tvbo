@@ -33,7 +33,7 @@ from tvbo.adapters.smallscale.lowering import (
     safe_id,
     unique_component_id as _unique_component_id,
 )
-from tvbo.utils import normalize_params
+from tvbo.utils import normalize_params, initial_value
 
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult
@@ -2034,10 +2034,8 @@ def _build_std_fhn_context(experiment, cell_type):
         for pname in ("a", "b", "I", "phi"):
             p = params.get(pname)
             cell_attrs[pname] = str(getattr(p, "value", 0) if p else 0)
-        V0 = getattr(svs.get("V"), "initial_value", None)
-        W0 = getattr(svs.get("W"), "initial_value", None)
-        cell_attrs["V0"] = str(V0 if V0 is not None else 0.0)
-        cell_attrs["W0"] = str(W0 if W0 is not None else 0.0)
+        cell_attrs["V0"] = str(initial_value(svs.get("V")))
+        cell_attrs["W0"] = str(initial_value(svs.get("W")))
     else:
         I_param = params.get("I")
         I_val = getattr(I_param, "value", 0.8) if I_param else 0.8

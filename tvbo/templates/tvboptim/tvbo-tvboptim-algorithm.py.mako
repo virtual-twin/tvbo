@@ -327,6 +327,7 @@ def run_${algo_name}(
     post_state: Any = None,
     history: Any = None,
     run_post_tuning: bool = True,  # set False when called as a nested inner loop
+    raw: bool = False,  # vmap-safe: skip pre_tuning sim + AlgorithmResult wrapping, return a Bunch of raw JAX arrays (for jax.vmap over a subject cohort)
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
     ${src_obs}_buffer: jnp.ndarray = None,  # Optional: passed from previous algorithm
@@ -343,6 +344,8 @@ def run_${algo_name}(
     import copy
     import equinox as eqx
 
+    model_fn = jax.jit(model_fn)  # tvboptim's solve fn is un-jitted by design (its tests jit it); jit once so warmup/tuning calls fuse+cache instead of eager per-step dispatch
+
     def _smart_interval(n):
         """Compute smart interval: 1 for 0-10, 10 for 10-100, 100 for 100-1000, etc."""
         if n <= 10:
@@ -353,7 +356,8 @@ def run_${algo_name}(
         print_every = _smart_interval(n_iterations)
     if save_every is None:
         save_every = _smart_interval(n_iterations)
-    state = copy.deepcopy(state)
+    state = jax.tree_util.tree_map(lambda _leaf: _leaf, state)  # fresh container; trace-safe (deepcopy of a jax typed key asserts under trace)
+    _algo_t0 = time.perf_counter()
 
     # Update rule functions
 % for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
@@ -432,7 +436,7 @@ def run_${algo_name}(
     _${obs}_samples = []
 % endfor
 
-    pre_tuning = model_fn(state)
+    pre_tuning = None if raw else model_fn(state)  # raw skips the diagnostic pre-sim; the host-side numpy wrap of a traced trajectory is not vmap-safe
 
     # Create observation monitors for pipeline-based observations (created once, reused in loop)
 <%
@@ -477,6 +481,39 @@ def run_${algo_name}(
     n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else history.data.shape[2] if history is not None else N_NODES
 
 % for src_obs in source_observations_needed:
+    # Warmup fill as an inner lax.scan (functional; vmap-safe; == the host for-loop).
+    def _warmup_step_${src_obs}(_wc, _):
+        state, key, _buf, _mon = _wc
+        key, subkey = jax.random.split(key)
+        _wr = model_fn(state)
+        state = eqx.tree_at(lambda s: s.initial_state.dynamics, state, _wr.data[-1][:${len(state_names)}])
+        if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
+            state = eqx.tree_at(lambda s: s.noise.key, state, subkey)
+        elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
+            state = eqx.tree_at(lambda s: s._internal.noise_samples, state,
+                                jax.random.normal(key=subkey, shape=state._internal.noise_samples.shape))
+        _wd = _mon(_wr)
+        _wd = _wd.data if hasattr(_wd, 'data') else _wd
+        _buf = jnp.roll(_buf, -1, axis=0)
+        if _wd.ndim == 2:
+            _buf = _buf.at[-1, 0, :].set(_wd[0, :])
+        elif _wd.ndim == 3:
+            _buf = _buf.at[-1, :, :].set(_wd[0, :, :])
+        else:
+            _buf = _buf.at[-1, 0, :].set(_wd)
+        if hasattr(_mon, '_history') and _mon._history is not None:
+            _nh = jnp.roll(_mon._history, -_wr.data.shape[0], axis=0)
+            _nh = _nh.at[-_wr.data.shape[0]:, :, :].set(_wr.data[:, 0:1, :])
+            _mon = eqx.tree_at(history_accessor, _mon, _nh)
+        return (state, key, _buf, _mon), None
+
+    def _run_warmup_${src_obs}(state, key, _buf, _mon, _nsteps):
+        if _nsteps <= 0:
+            return state, key, _buf, _mon
+        (state, key, _buf, _mon), _ = jax.lax.scan(
+            _warmup_step_${src_obs}, (state, key, _buf, _mon), None, length=_nsteps)
+        return state, key, _buf, _mon
+
     if ${src_obs}_buffer is not None:
         _passed_buffer = ${src_obs}_buffer
         _passed_len = _passed_buffer.shape[0]
@@ -504,33 +541,8 @@ def run_${algo_name}(
             _buffer_idx = _passed_len
             if verbose:
                 logger.info(f"  Passed ${src_obs} buffer too small ({_passed_len} < {int(window_size)}), running warmup for remaining {int(window_size) - _passed_len} samples...")
-            for _warmup_i in range(int(window_size) - _passed_len):
-                key, subkey = jax.random.split(key)
-                _warmup_result = model_fn(state)
-                state.initial_state.dynamics = _warmup_result.data[-1][:${len(state_names)}]
-                if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
-                    # Resample the in-scan noise by swapping the PRNG key — the
-                    # live randomness source. _internal.noise_samples is an
-                    # optional injection slot that defaults to None. Matches the
-                    # reference EI_Tuning workflow (state.noise.key = subkey).
-                    state.noise.key = subkey
-                elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
-                    state._internal.noise_samples = jax.random.normal(
-                        key=subkey, shape=state._internal.noise_samples.shape
-                    )
-                _warmup_${src_obs} = _${src_obs}_monitor(_warmup_result)
-                _warmup_${src_obs}_data = _warmup_${src_obs}.data if hasattr(_warmup_${src_obs}, 'data') else _warmup_${src_obs}
-                _${src_obs}_buffer = jnp.roll(_${src_obs}_buffer, -1, axis=0)
-                if _warmup_${src_obs}_data.ndim == 2:
-                    _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data[0, :])
-                elif _warmup_${src_obs}_data.ndim == 3:
-                    _${src_obs}_buffer = _${src_obs}_buffer.at[-1, :, :].set(_warmup_${src_obs}_data[0, :, :])
-                else:
-                    _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data)
-                if hasattr(_${src_obs}_monitor, '_history') and _${src_obs}_monitor._history is not None:
-                    _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
-                    _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
-                    _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
+            state, key, _${src_obs}_buffer, _${src_obs}_monitor = _run_warmup_${src_obs}(
+                state, key, _${src_obs}_buffer, _${src_obs}_monitor, int(window_size) - _passed_len)
             _buffer_idx = int(window_size)
             if verbose:
                 logger.info(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
@@ -542,34 +554,8 @@ def run_${algo_name}(
         if verbose:
             logger.info(f"  Warmup: filling ${src_obs} buffer with {int(window_size)} samples...")
 
-        for _warmup_i in range(int(window_size)):
-            key, subkey = jax.random.split(key)
-            _warmup_result = model_fn(state)
-            state.initial_state.dynamics = _warmup_result.data[-1][:${len(state_names)}]
-            if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
-                # Resample the in-scan noise by swapping the PRNG key (live
-                # randomness source); _internal.noise_samples defaults to None.
-                state.noise.key = subkey
-            elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
-                state._internal.noise_samples = jax.random.normal(
-                    key=subkey, shape=state._internal.noise_samples.shape
-                )
-
-            _warmup_${src_obs} = _${src_obs}_monitor(_warmup_result)
-            _warmup_${src_obs}_data = _warmup_${src_obs}.data if hasattr(_warmup_${src_obs}, 'data') else _warmup_${src_obs}
-            _${src_obs}_buffer = jnp.roll(_${src_obs}_buffer, -1, axis=0)
-            if _warmup_${src_obs}_data.ndim == 2:
-                _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data[0, :])
-            elif _warmup_${src_obs}_data.ndim == 3:
-                _${src_obs}_buffer = _${src_obs}_buffer.at[-1, :, :].set(_warmup_${src_obs}_data[0, :, :])
-            else:
-                _${src_obs}_buffer = _${src_obs}_buffer.at[-1, 0, :].set(_warmup_${src_obs}_data)
-
-            if hasattr(_${src_obs}_monitor, '_history') and _${src_obs}_monitor._history is not None:
-                _new_history = jnp.roll(_${src_obs}_monitor._history, -_warmup_result.data.shape[0], axis=0)
-                _new_history = _new_history.at[-_warmup_result.data.shape[0]:, :, :].set(_warmup_result.data[:, 0:1, :])
-                _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
-
+        state, key, _${src_obs}_buffer, _${src_obs}_monitor = _run_warmup_${src_obs}(
+            state, key, _${src_obs}_buffer, _${src_obs}_monitor, int(window_size))
         _buffer_idx = int(window_size)
         if verbose:
             logger.info(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
@@ -634,7 +620,47 @@ def run_${algo_name}(
     if verbose:
         logger.info(f"Running ${algo_name} algorithm for {n_iterations} iterations...")
 
-    for i in range(n_iterations):
+% if nested_includes:
+    raise NotImplementedError(
+        "scan-based tuning does not yet support nested-mode algorithm includes "
+        "(scan-in-scan needs an inner pure core); use mode: combined (the shipped path)."
+    )
+% endif
+    # Functional lax.scan tuning loop, byte-identical to the host for-loop (mutations -> eqx.tree_at; record positions == host `(i+1)%save_every==0 or i==0`).
+    _rec_positions = [_ri for _ri in range(n_iterations) if (_ri + 1) % save_every == 0 or _ri == 0]
+    _rec_idx = jnp.asarray(_rec_positions)
+    _n_records = len(_rec_positions)
+% for rule, rule_source, arg_overrides in all_update_rules_with_source:
+<%
+    _tn = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter)
+    _ck = coupling_param_to_key.get(_tn, None)
+    _src = ('state.coupling.%s.%s' % (_ck, _tn)) if _ck is not None else ('state.dynamics.%s' % _tn)
+%>
+    _rec_${_tn}_buf0 = jnp.zeros((_n_records,) + tuple(jnp.shape(${_src})), dtype=jnp.asarray(${_src}).dtype)
+% endfor
+
+    def _tuning_step(_ls, _i):
+        state = _ls['state']
+        key = _ls['key']
+% for src_obs in source_observations_needed:
+        _${src_obs}_buffer = _ls['${src_obs}__buf']
+% endfor
+% for dobs_name in streaming_map.keys():
+        _${dobs_name}_acc = _ls['${dobs_name}__acc']
+% endfor
+% for obs, obs_class in pipeline_observations:
+        _${obs}_monitor = _ls['${obs}__mon']
+% endfor
+% for src_obs, src_class in source_monitors:
+% if src_obs not in [o[0] for o in pipeline_observations]:
+        _${src_obs}_monitor = _ls['${src_obs}__mon']
+% endif
+% endfor
+% for rule, rule_source, arg_overrides in all_update_rules_with_source:
+<% _tn = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter) %>
+        _rec_${_tn}_buf = _ls['${_tn}__rec']
+% endfor
+        _wptr = _ls['wptr']
         key, subkey = jax.random.split(key)
 % for ni in nested_includes:
         # [NESTED INNER LOOP] Re-converge '${ni['name']}' before the outer update.
@@ -656,15 +682,12 @@ def run_${algo_name}(
         ).state
 % endfor
         result = model_fn(state)
-        state.initial_state.dynamics = result.data[-1][:${len(state_names)}]
+        state = eqx.tree_at(lambda s: s.initial_state.dynamics, state, result.data[-1][:${len(state_names)}])
         if getattr(state, 'noise', None) is not None and getattr(state.noise, 'key', None) is not None:
-            # Resample the in-scan noise by swapping the PRNG key (live
-            # randomness source); _internal.noise_samples defaults to None.
-            state.noise.key = subkey
+            state = eqx.tree_at(lambda s: s.noise.key, state, subkey)
         elif hasattr(state, '_internal') and getattr(state._internal, 'noise_samples', None) is not None:
-            state._internal.noise_samples = jax.random.normal(
-                key=subkey, shape=state._internal.noise_samples.shape
-            )
+            state = eqx.tree_at(lambda s: s._internal.noise_samples, state,
+                                jax.random.normal(key=subkey, shape=state._internal.noise_samples.shape))
 
 % if use_sliding_window:
 % for src_obs in source_observations_needed:
@@ -702,13 +725,13 @@ def run_${algo_name}(
             _new_history = _new_history.at[-result.data.shape[0]:, :, :].set(result.data[:, 0:1, :])
             _${src_obs}_monitor = eqx.tree_at(history_accessor, _${src_obs}_monitor, _new_history)
 % endfor
-        _buffer_idx = min(_buffer_idx + 1, int(window_size))
 % for dobs_name, sinfo in streaming_map.items():
-        # Periodic exact re-sync: rebuild the accumulator from the ring buffer to
-        # reset the float drift the running sums accumulate (add/evict are not
-        # exactly reversible in floating point). resync_every<=0 disables it.
-        if _${dobs_name}_resync_every > 0 and (i + 1) % _${dobs_name}_resync_every == 0:
-            _${dobs_name}_acc = _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer)
+        # Periodic exact re-sync (float-drift reset; add/evict not exactly reversible); resync_every<=0 disables it.
+        if _${dobs_name}_resync_every > 0:
+            _${dobs_name}_acc = jax.lax.cond(
+                (_i + 1) % _${dobs_name}_resync_every == 0,
+                lambda _a: _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer),
+                lambda _a: _a, _${dobs_name}_acc)
 % endfor
 
 % for obs in simulated_observations:
@@ -850,11 +873,11 @@ def run_${algo_name}(
         ${obs} = jnp.squeeze(${obs})  # Remove extra dimensions for scalar/vector operations
 
 % if obs in collectible_observations:
-        # Collect raw sample for passing to next algorithm (handle different result shapes)
+        # Collect raw sample every step for chaining -> scan ys (a host-list append would leak a tracer out of the scan).
         if hasattr(_${obs}_result, 'ys') and _${obs}_result.ys.ndim >= 3:
-            _${obs}_samples.append(_${obs}_result.ys[0, 0, :])
+            _${obs}_collect = _${obs}_result.ys[0, 0, :]
         else:
-            _${obs}_samples.append(${obs})
+            _${obs}_collect = ${obs}
 % endif
 
         # Update monitor history for hemodynamic state continuity (only if monitor has history)
@@ -878,32 +901,10 @@ def run_${algo_name}(
 % endif
 
 % if has_warmup:
-        # Compute learning rate warmup scale: (i+1) / n_iterations
-        eta_scale = (i + 1) / n_iterations
+        eta_scale = (_i + 1) / n_iterations
 % endif
 
-        # Record history at save_every intervals
-        if (i + 1) % save_every == 0 or i == 0:
-            # Record simulated observations (mean value for scalars)
-% for obs in simulated_observations:
-            result_history.${obs}.append(jnp.mean(${obs}))
-% endfor
-
-            # Record parameter values (captures current values)
-% for rule, rule_source, arg_overrides in all_update_rules_with_source:
-<%
-    target_name = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter)
-    rec_coupling_key = coupling_param_to_key.get(target_name, None)
-    is_rec_coupling_param = rec_coupling_key is not None
-%>
-% if is_rec_coupling_param:
-            result_history.${target_name}.append(state.coupling.${rec_coupling_key}.${target_name})
-% else:
-            result_history.${target_name}.append(state.dynamics.${target_name})
-% endif
-% endfor
-
-            # Compute and record algorithm functions (metrics, derived quantities)
+        # Sparse recording: param snapshots -> carried buffers (lax.cond @ _do_rec); obs/function scalars -> scan ys, subsampled after. Byte-identical to the host `.append`.
 % for func_call in algo_functions:
 <%
     func_name = get_func_name(func_call)
@@ -911,9 +912,35 @@ def run_${algo_name}(
     call_args = ', '.join([f"{k}={v}" for k, v in arg_values.items()])
     func_call_str = f"{func_name}({call_args})"
 %>
-            _${func_name}_val = ${func_call_str}
-            result_history.${func_name}.append(_${func_name}_val)
+        _${func_name}_val = ${func_call_str}
 % endfor
+        _do_rec = ((_i + 1) % save_every == 0) | (_i == 0)
+        def _rec_write(_carry_rec):
+            _bufs, _p = _carry_rec
+            _bufs = (
+% for _ri2, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
+<%
+    target_name = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter)
+    rec_coupling_key = coupling_param_to_key.get(target_name, None)
+    _rsrc = ('state.coupling.%s.%s' % (rec_coupling_key, target_name)) if rec_coupling_key is not None else ('state.dynamics.%s' % target_name)
+%>
+                jax.lax.dynamic_update_index_in_dim(_bufs[${_ri2}], ${_rsrc}, _p, 0),
+% endfor
+            )
+            return _bufs, _p + 1
+        (
+% for rule, rule_source, arg_overrides in all_update_rules_with_source:
+<% target_name = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter) %>
+            _rec_${target_name}_buf,
+% endfor
+        ), _wptr = jax.lax.cond(
+            _do_rec, _rec_write, lambda _c: _c,
+            ((
+% for rule, rule_source, arg_overrides in all_update_rules_with_source:
+<% target_name = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter) %>
+                _rec_${target_name}_buf,
+% endfor
+            ), _wptr))
 
         # NOW compute and apply update rules (after recording)
 % for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
@@ -957,9 +984,9 @@ def run_${algo_name}(
 % endif
         )
 % if is_coupling_param:
-        state.coupling.${coupling_key}.${target_name} = new_${target_name}
+        state = eqx.tree_at(lambda s: s.coupling.${coupling_key}.${target_name}, state, new_${target_name})
 % else:
-        state.dynamics.${target_name} = new_${target_name}
+        state = eqx.tree_at(lambda s: s.dynamics.${target_name}, state, new_${target_name})
 % endif
 % endfor
 
@@ -983,15 +1010,109 @@ def run_${algo_name}(
     progress_parts = [f"{item}={{float(result_history.{item}[-1]):.4f}}" for item in progress_items]
     progress_str = ", ".join(progress_parts)
 %>
+        # ── Progress logging: scan-safe host callback, fires only at print_every ──
 % if progress_items:
-        # Gate on isEnabledFor so the progress f-string is only built when shown.
-        if verbose and logger.isEnabledFor(logging.INFO) and (i + 1) % print_every == 0:
-            logger.info(f"  {i+1}/{n_iterations}: ${progress_str}")
-% else:
-        # Configuration guard — must fire regardless of the log level.
-        if verbose and (i + 1) % print_every == 0:
-            raise ValueError("Algorithm must have functions or simulated_observations for progress display")
+<%
+    _prog_names = list(progress_items)
+    _sim_obs_names = [str(o) for o in simulated_observations]
+    _prog_vals = ['jnp.mean(%s)' % _pn if _pn in _sim_obs_names else '_%s_val' % _pn for _pn in _prog_names]
+%>
+        if verbose:  # trace-time gate: batched/vmap runs (verbose=False) emit no host callback
+            def _log_cb(_ii, *_vals):
+                if logger.isEnabledFor(logging.INFO):
+                    _pn = ${repr(_prog_names)}
+                    logger.info("  %d/%d: %s" % (int(_ii) + 1, n_iterations,
+                        ", ".join("%s=%.4f" % (_pn[_z], float(_vals[_z])) for _z in range(len(_pn)))))
+            def _do_log():
+                jax.debug.callback(_log_cb, _i, ${', '.join(_prog_vals)})
+                return 0
+            jax.lax.cond((_i + 1) % print_every == 0, _do_log, lambda: 0)
 % endif
+        # Per-step ys: obs-mean/function scalars (subsampled after) + collectible raw samples (kept in full for chaining).
+        _ys = (
+% for obs in simulated_observations:
+            jnp.mean(${obs}),
+% endfor
+% for func_call in algo_functions:
+            _${get_func_name(func_call)}_val,
+% endfor
+% for cobs in collectible_observations:
+            _${cobs}_collect,
+% endfor
+        )
+        _ls_out = {
+            'state': state, 'key': key,
+% for src_obs in source_observations_needed:
+            '${src_obs}__buf': _${src_obs}_buffer,
+% endfor
+% for dobs_name in streaming_map.keys():
+            '${dobs_name}__acc': _${dobs_name}_acc,
+% endfor
+% for obs, obs_class in pipeline_observations:
+            '${obs}__mon': _${obs}_monitor,
+% endfor
+% for src_obs, src_class in source_monitors:
+% if src_obs not in [o[0] for o in pipeline_observations]:
+            '${src_obs}__mon': _${src_obs}_monitor,
+% endif
+% endfor
+% for rule, rule_source, arg_overrides in all_update_rules_with_source:
+<% _tn = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter) %>
+            '${_tn}__rec': _rec_${_tn}_buf,
+% endfor
+            'wptr': _wptr,
+        }
+        return _ls_out, _ys
+
+    _ls_init = {
+        'state': state, 'key': key,
+% for src_obs in source_observations_needed:
+        '${src_obs}__buf': _${src_obs}_buffer,
+% endfor
+% for dobs_name in streaming_map.keys():
+        '${dobs_name}__acc': _${dobs_name}_acc,
+% endfor
+% for obs, obs_class in pipeline_observations:
+        '${obs}__mon': _${obs}_monitor,
+% endfor
+% for src_obs, src_class in source_monitors:
+% if src_obs not in [o[0] for o in pipeline_observations]:
+        '${src_obs}__mon': _${src_obs}_monitor,
+% endif
+% endfor
+% for rule, rule_source, arg_overrides in all_update_rules_with_source:
+<% _tn = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter) %>
+        '${_tn}__rec': _rec_${_tn}_buf0,
+% endfor
+        'wptr': jnp.asarray(0),
+    }
+    _ls_final, _ys_all = jax.lax.scan(_tuning_step, _ls_init, jnp.arange(n_iterations))
+    state = _ls_final['state']
+% for src_obs in source_observations_needed:
+    _${src_obs}_buffer = _ls_final['${src_obs}__buf']
+% endfor
+% for obs, obs_class in pipeline_observations:
+    _${obs}_monitor = _ls_final['${obs}__mon']
+% endfor
+% for src_obs, src_class in source_monitors:
+% if src_obs not in [o[0] for o in pipeline_observations]:
+    _${src_obs}_monitor = _ls_final['${src_obs}__mon']
+% endif
+% endfor
+    # Rebuild result_history: scalars subsampled at record positions; param snapshots from the carried buffers.
+    result_history = Bunch(
+% for _k, obs in enumerate(simulated_observations):
+        ${obs}=_ys_all[${_k}][_rec_idx],
+% endfor
+<% _nso = len(simulated_observations) %>
+% for _j, func_call in enumerate(algo_functions):
+        ${get_func_name(func_call)}=_ys_all[${_nso + _j}][_rec_idx],
+% endfor
+% for rule, rule_source, arg_overrides in all_update_rules_with_source:
+<% _tn = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter) %>
+        ${_tn}=_ls_final['${_tn}__rec'],
+% endfor
+    )
 
     # Run post-tuning simulation (use full integration setup if provided).
     # Carry over the TUNED PARAMETERS (dynamics J_i, coupling wLRE/wFFI) but
@@ -1056,22 +1177,16 @@ def run_${algo_name}(
         post_tuning = None
         post_tuning_observations = None
 
-    # Convert result_history lists to arrays
-    for k in list(result_history.keys()):
-        v = result_history[k]
-        if len(v) > 0:
-            first = v[0]
-            if isinstance(first, (int, float)):
-                result_history[k] = jnp.array(v)
-            elif hasattr(first, 'shape'):
-                if first.shape == ():
-                    result_history[k] = jnp.array([float(x) for x in v])
-                else:
-                    result_history[k] = jnp.stack(v, axis=0)
+    # result_history is already stacked arrays (scan ys + carried buffers); no list->array rebuild here keeps run_${algo_name} vmap-traceable for subject-batching.
 
     # Convert collected observation samples to arrays (for passing to next algorithm)
-% for obs in collectible_observations:
-    _${obs}_buffer_out = jnp.array(_${obs}_samples) if _${obs}_samples else None
+<%
+    _nso_c = len(simulated_observations)
+    _nf_c = len(algo_functions)
+%>
+% for _ci, obs in enumerate(collectible_observations):
+    # Collectible samples were emitted as scan ys (index after obs-means + functions).
+    _${obs}_buffer_out = _ys_all[${_nso_c + _nf_c + _ci}]
 % endfor
 
     # Collect monitors for passing to next algorithm (hemodynamic continuity)
@@ -1086,7 +1201,24 @@ def run_${algo_name}(
 % endfor
 
     if verbose:
-        logger.info(f"${algo_name} complete!")
+        logger.info(f"${algo_name} complete! (tuning {time.perf_counter() - _algo_t0:.1f}s, {n_iterations} iters)")
+
+    if raw:
+        # vmap-safe cohort return: pure jnp arrays only; no AlgorithmResult/DataArray wrapping (host-side numpy conversion breaks under jax.vmap). Wrap per-subject host-side after the vmap.
+        return Bunch(
+            state=state,
+            history=result_history,
+            post_tuning_observations=post_tuning_observations,
+            monitors=_monitors_out,
+% for obs in collectible_observations:
+            ${obs}_buffer=_${obs}_buffer_out,
+% endfor
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+            ${src_obs}_buffer=_${src_obs}_buffer,
+% endfor
+% endif
+        )
 
     # Build hyperparameters Bunch for AlgorithmResult
     _hyperparams = Bunch(
@@ -1117,5 +1249,113 @@ def run_${algo_name}(
 % endif
     )
 
+<%
+    # On-device cohort driver: emit only when this experiment's dataset runs on-device
+    # AND this algorithm consumes a per-subject dataset-sourced target the cohort varies.
+    # The shared network stays in the model closure; those targets are the vmap axis.
+    _ds_targets = set(getattr(experiment, 'dataset_observation_targets', None) or {})
+    batched_inputs = [i for i in external_inputs if i in _ds_targets]
+    shared_inputs = [i for i in external_inputs if i not in _ds_targets]
+    emit_cohort = bool(getattr(experiment, 'dataset_on_device', lambda: False)()) and len(batched_inputs) > 0
+    # One tuning schedule for both cases: Algorithm.stages, or a single synthetic stage
+    # from the algo defaults (n_iterations + hyperparameter values) when there are none.
+    _c_stages = list(getattr(algo, 'stages', None) or [])
+    c_stage_defs = []
+    for _st in _c_stages:
+        _over = {}
+        for _arg in (getattr(_st, 'arguments', None) or []):
+            _over[str(_arg.name)] = _arg.value
+        _sd = {'n_iterations': int(_st.n_iterations)}
+        for _hp_name, _hp_val in hyperparam_dict.items():
+            _sd[_hp_name] = _over.get(_hp_name, _hp_val)
+        c_stage_defs.append(_sd)
+    if not c_stage_defs:
+        c_stage_defs = [{'n_iterations': n_iterations, **dict(hyperparam_dict)}]
+%>
+% if emit_cohort:
+def run_cohort_${algo_name}(
+    algo_state,
+    model_fn,
+    key,
+% for _bi in batched_inputs:
+    ${_bi},
+% endfor
+% for _si in shared_inputs:
+    ${_si}=None,
+% endfor
+    save_every: int = None,
+    resync_every: int = None,
+    batch_size: int = None,
+):
+    """On-device cohort: vectorise the full ${algo_name} fit over subjects.
+
+    ${', '.join(batched_inputs)} carries a leading subject axis (n_subjects, ...); the
+    shared network lives in model_fn's closure, so only the per-subject target(s) + RNG
+    vary per lane. Every fit runs pure-jnp via run_${algo_name}(raw=True) — no host
+    wrapping inside the vmap. Returns the batched tuned state (leading subject axis);
+    wrap/save per subject on the host after this returns.
+
+    ``batch_size`` bounds how many subjects vectorise together: the whole cohort in
+    one ``vmap`` by default, or a Python loop of ``batch_size``-wide ``vmap`` slices
+    concatenated on the subject axis when a smaller width is requested (or the memory
+    budget resolves one). Each slice is a plain ``vmap`` run on its own, so only one
+    slice's working memory is live at a time. A narrower slice changes XLA's fusion
+    order, so per-subject results match the whole-cohort ``vmap`` to floating-point
+    rounding (~1 ULP), not bit-for-bit."""
+    _n_subjects = ${batched_inputs[0]}.shape[0]
+    _keys = jax.random.split(key, _n_subjects)
+    _stage_defs = [
+% for sd in c_stage_defs:
+        ${repr(sd)},
+% endfor
+    ]
+    def _fit_one_subject(${', '.join('_lane_%d' % i for i in range(len(batched_inputs)))}, _skey):
+        _st = algo_state
+        _mon = None
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+        _buf_${src_obs} = None
+% endfor
+% endif
+        for _si, _sd in enumerate(_stage_defs):
+            _r = run_${algo_name}(
+                _st, model_fn, jax.random.fold_in(_skey, _si), _sd['n_iterations'],
+% for hp in hyperparam_dict.keys():
+                ${hp}=_sd['${hp}'],
+% endfor
+% for _i, _bi in enumerate(batched_inputs):
+                ${_bi}=_lane_${_i},
+% endfor
+% for _si2 in shared_inputs:
+                ${_si2}=${_si2},
+% endfor
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+                ${src_obs}_buffer=_buf_${src_obs},
+% endfor
+                resync_every=resync_every,
+% endif
+                monitors=_mon, raw=True, run_post_tuning=False, verbose=False,
+                save_every=save_every,
+            )
+            _st = _r.state
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+            _buf_${src_obs} = _r.get('${src_obs}_buffer', _buf_${src_obs})
+% endfor
+% endif
+            _mon = _r.get('monitors', _mon)
+        return _st
+    _example = (${', '.join('%s[0]' % bi for bi in batched_inputs)}, _keys[0])
+    _bs = resolve_cohort_batch_size(batch_size, _n_subjects, _fit_one_subject, _example)
+    if _bs >= _n_subjects:
+        return jax.vmap(_fit_one_subject)(${', '.join(batched_inputs)}, _keys)
+    _chunks = [
+        jax.vmap(_fit_one_subject)(${', '.join('%s[_i:_i + _bs]' % bi for bi in batched_inputs)}, _keys[_i:_i + _bs])
+        for _i in range(0, _n_subjects, _bs)
+    ]
+    return jax.tree_util.tree_map(lambda *_c: jnp.concatenate(_c, axis=0), *_chunks)
+
+% endif
 % endfor
 % endif

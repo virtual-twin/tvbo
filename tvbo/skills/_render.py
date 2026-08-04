@@ -35,10 +35,13 @@ User-target installs (``claude-code`` / ``cursor`` invoked by
 safely overwrite our own files on upgrade without clobbering user edits.
 
 A skill directory may carry an ``assets/`` sibling of its ``SKILL.md`` (helper
-scripts, templates, a skeleton). Only the directory-shaped ``claude-code``
-target can hold it: the renderer mirrors ``assets/`` next to the rendered
-``SKILL.md`` and prunes it on uninstall. The flat targets (``cursor``,
-``copilot``, ``prompt``, ``agents-md``) carry the body only.
+scripts, templates, a skeleton, reference chapters the body defers detail to).
+Only the directory-shaped ``claude-code`` target can hold it: the renderer
+mirrors ``assets/`` next to the rendered ``SKILL.md`` and prunes it on
+uninstall. The flat targets (``cursor``, ``copilot``, ``prompt``,
+``agents-md``) have nowhere to put a mirror, so they inline every referenced
+``assets/*.md`` into the body instead — a deferred chapter must not become an
+unreachable pointer just because the target is a single file.
 """
 from __future__ import annotations
 
@@ -168,6 +171,39 @@ def load_canonical(roots: Iterable[Path]) -> list[Skill]:
     return sorted(skills.values(), key=lambda s: s.name)
 
 
+ASSET_REF = re.compile(r"`assets/([^`\s]+)`")
+"""Every ``assets/…`` path a skill body points at, backtick-quoted."""
+
+
+def asset_refs(body: str) -> list[str]:
+    """Distinct ``assets/`` paths referenced by *body*, in first-mention order."""
+    return list(dict.fromkeys(ref.rstrip("/") for ref in ASSET_REF.findall(body)))
+
+
+def flat_body(skill: Skill) -> str:
+    """Body with every referenced ``assets/*.md`` chapter appended.
+
+    The flat targets carry no ``assets/`` mirror, so a body that defers detail
+    to a reference file would *lose* that detail rather than defer it. Inlining
+    keeps those consumers whole; the directory-shaped target leaves the pointer
+    alone so the agent reads the chapter only when it reaches that phase.
+    """
+    if skill.assets_dir is None:
+        return skill.body
+    chapters = [
+        (ref, skill.assets_dir / ref)
+        for ref in asset_refs(skill.body)
+        if ref.endswith(".md")
+    ]
+    parts = [skill.body.rstrip()]
+    parts += [
+        f"<!-- inlined from assets/{ref} -->\n\n{path.read_text(encoding='utf-8').strip()}"
+        for ref, path in chapters
+        if path.is_file()
+    ]
+    return skill.body if len(parts) == 1 else "\n\n---\n\n".join(parts) + "\n"
+
+
 def _dump_frontmatter(data: dict) -> str:
     return yaml.safe_dump(data, sort_keys=False, default_flow_style=False).strip()
 
@@ -231,7 +267,7 @@ def render_copilot(skill: Skill, dest_dir: Path) -> Path:
     fm = {"applyTo": apply_to}
     out = dest_dir / f"{skill.name}.instructions.md"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(_wrap(fm, skill.body), encoding="utf-8")
+    out.write_text(_wrap(fm, flat_body(skill)), encoding="utf-8")
     return out
 
 
@@ -256,7 +292,7 @@ def render_cursor(
             fm["tvbo-version"] = tvbo_version
     out = dest_dir / f"{target_name}.mdc"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(_wrap(fm, skill.body), encoding="utf-8")
+    out.write_text(_wrap(fm, flat_body(skill)), encoding="utf-8")
     return out
 
 
@@ -268,7 +304,7 @@ def render_prompt(skills: list[Skill], dest: Path | None = None) -> str:
         if skill.description:
             parts.append(f"*{skill.description}*")
             parts.append("")
-        parts.append(skill.body.rstrip())
+        parts.append(flat_body(skill).rstrip())
         parts.append("")
     text = "\n".join(parts).rstrip() + "\n"
     if dest is not None:

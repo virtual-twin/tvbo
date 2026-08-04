@@ -127,6 +127,8 @@ class WorkflowPlan:
 
     vectorize_axes: list[SweepAxis] = field(default_factory=list)
     workflow_axes: list[SweepAxis] = field(default_factory=list)
+    cohort_subjects: list[str] = field(default_factory=list)  # on_device: the whole cohort runs as ONE job producing these per-subject results
+    cohort_result_files: list[str] = field(default_factory=list)  # canonical per-subject result filenames (build_result_path), one per cohort_subjects entry
 
     chunk: int = 1                    # workflow-fanned: cells per array task;
                                       # fully-vectorized sweep: number of array shards
@@ -567,6 +569,38 @@ def cell_out_relpath(ep: dict) -> str:
     return stem + ".h5"
 
 
+def _cohort_result_files(experiment, subjects: list[str]) -> list[str]:
+    """Canonical per-subject result filenames for an on_device cohort, one per subject.
+
+    Built through the same :func:`tvbo.adapters.bids.build_result_path` that
+    :meth:`ExperimentResult.save` writes through — the subject is injected as the
+    ``_active_subject`` entity, exactly as the per-subject save does — so the rule's
+    declared outputs cannot drift from the files the cohort job actually produces.
+    """
+    from tvbo.adapters.bids import build_result_path
+
+    saved = getattr(experiment, "_active_subject", None)
+    files: list[str] = []
+    try:
+        for sid in subjects:
+            experiment._active_subject = str(sid)
+            files.append(build_result_path(experiment, extension=".h5"))
+    finally:
+        experiment._active_subject = saved
+    return files
+
+
+def cohort_out_relpaths(ep: dict) -> list[str]:
+    """Per-subject output relpaths an on_device cohort job writes (one per subject).
+
+    The whole cohort runs as ONE vectorised job that saves one result per subject (the
+    same filenames the fan-out produces), so the rule declares them all as its outputs.
+    The filenames are the canonical :func:`_cohort_result_files` set computed at plan
+    time. Empty for a non-cohort experiment.
+    """
+    return list(ep.get("cohort_result_files") or [])
+
+
 def fan_expand_kwargs(ep: dict) -> str:
     """``axis=EXP_<RULE>_<AXIS>`` kwargs binding an ``expand()`` to the fan's value lists.
 
@@ -585,6 +619,9 @@ def fan_input_expr(ep: dict) -> str:
     is the ``expand()`` over its wildcard-value lists — every cell. Emitted verbatim into a
     rule's ``input:``, so a figure that reads a fanned experiment depends on its whole grid.
     """
+    cohort = cohort_out_relpaths(ep)
+    if cohort:
+        return "[" + ", ".join('f"{OUT_DIR}/%s/%s"' % (ep["key"], r) for r in cohort) + "]"
     single = 'f"{OUT_DIR}/%s/%s"' % (ep["key"], cell_out_relpath(ep))
     if not ep["axes"]:
         return single
@@ -621,12 +658,23 @@ def plan(
 
     axes = extract_axes(experiment)
 
-    # A per-subject empirical target adds an implicit "subject" fan-out axis: one
-    # shard per subject, each resolving its own target. It reuses the same
-    # wildcard/array machinery as sweep axes, so no separate per-subject path.
-    subject_axis = _dataset_subject_axis(experiment)
-    if subject_axis is not None:
-        axes = [subject_axis, *axes]
+    # dataset.batch_mode: on_device runs the whole cohort as one job; fan_out shards per subject.
+    on_device = bool(getattr(experiment, "dataset_on_device", lambda: False)())
+    cohort_subjects: list[str] = []
+    cohort_result_files: list[str] = []
+    if on_device:
+        cohort_subjects = [str(s) for s in experiment.dataset_subject_ids()]
+        if not cohort_subjects:
+            raise ValueError(
+                f"Experiment {getattr(experiment, 'id', None)!r} sets dataset.batch_mode: on_device "
+                f"but no subjects were discovered, so the single cohort job's per-subject outputs "
+                f"cannot be planned. Check dataset.bids_root / dataset.subjects."
+            )
+        cohort_result_files = _cohort_result_files(experiment, cohort_subjects)
+    else:
+        subject_axis = _dataset_subject_axis(experiment)
+        if subject_axis is not None:
+            axes = [subject_axis, *axes]
 
     vectorize: list[SweepAxis] = []
     workflow: list[SweepAxis] = []
@@ -659,6 +707,15 @@ def plan(
             workflow.append(SweepAxis(**{**ax.__dict__, "placement": "workflow"}))
         else:
             vectorize.append(SweepAxis(**{**ax.__dict__, "placement": "vectorize"}))
+
+    if on_device and workflow:
+        _fanned = ", ".join(sorted(ax.parameter for ax in workflow))
+        raise ValueError(
+            f"An on_device cohort runs the whole cohort as ONE job, so it cannot also fan "
+            f"a workflow axis ({_fanned}). Vectorise the axis (distribute.vectorize) so it "
+            f"stays inside the single job, or set dataset.batch_mode: fan_out to shard per "
+            f"subject instead."
+        )
 
     chunk = int(distribute.get("chunk") or spec.get("chunk") or 1)
     engine_block = dict(spec.get(engine) or {})
@@ -811,6 +868,8 @@ def plan(
         provenance=bool(spec.get("emit_provenance", True)),
         vectorize_axes=vectorize,
         workflow_axes=workflow,
+        cohort_subjects=cohort_subjects,
+        cohort_result_files=cohort_result_files,
         chunk=max(1, chunk),
         engine_block=engine_block,
         overrides=list(overrides or []),
