@@ -16,6 +16,7 @@ BibTeX database.
 import glob
 import os
 from collections import namedtuple
+from functools import lru_cache
 
 from linkml_runtime.loaders import yaml_loader
 
@@ -109,8 +110,13 @@ def load_study(citationkey: str):
     return SimulationStudy.from_file(getattr(study_metadata_files, citationkey))
 
 
+@lru_cache(maxsize=1)
 def load_bibliography():
     """Parse the bundled BibTeX literature database.
+
+    Cached: the file ships with the package and cannot change within a process, while
+    `get_citation` is called once per reference from inside template comprehensions — an
+    eight-reference report re-read the same 45 KiB, 115-entry file eight times at ~30 ms each.
 
     Returns:
         The parsed `pybtex` bibliography for `tvbo/database/references.bib`.

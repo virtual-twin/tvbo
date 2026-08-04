@@ -116,12 +116,13 @@ def test_reordering_does_not_reparse_but_does_reorder(model: Dynamics, count_par
 
     `update_metadata` sorts three collections on every load, so treating a reorder as a
     content change would re-parse the whole model several times over for no new result.
+
+    The collection is reordered in place, the way `sort_equations` does it: assigning to a
+    multivalued slot replaces it with a `JsonObj`, which is not how this is ever reordered.
     """
     model.get_equations()
     count_parses.clear()
 
-    # In place, the way `sort_equations` does it — assigning to a multivalued slot
-    # replaces it with a `JsonObj` and is not how this collection is ever reordered.
     reversed_items = dict(reversed(list(model.derived_variables.items())))
     model.derived_variables.clear()
     model.derived_variables.update(reversed_items)
@@ -208,6 +209,106 @@ def test_the_codegen_view_stays_plain(model: Dynamics):
     assert codegen[name].is_real is None
     assert analysis[name].is_real is True
     assert codegen[name] != analysis[name]
+
+
+@pytest.mark.backend_core
+def test_the_analysis_view_is_a_system_of_odes(model: Dynamics):
+    """`Derivative(y0(t), t)` must survive `doit()`, which pins the two `t`s together.
+
+    The derivative is taken with respect to a symbol resolved from the scope, so it is the
+    same object as the one inside `y0(t)`. Built fresh it is not, and SymPy then reads the
+    left-hand side as a derivative with respect to an absent variable and evaluates it to
+    **zero** — while `str()` still prints `Derivative(y0(t), t)`, which is why nothing else
+    in this suite noticed. Every consumer that treats `symbolic` as a system of ODEs
+    (`Matrix.jacobian`, `dsolve`, fixed-point `solve`) is handed `0 = rhs` instead.
+    """
+    equation = model.symbolic["state"][0]
+
+    assert equation.lhs.doit() == equation.lhs, f"{equation.lhs} evaluates to {equation.lhs.doit()}"
+    assert equation.lhs.doit() != 0
+
+
+@pytest.mark.backend_core
+@pytest.mark.parametrize("name", ["Jansen1995", "JansenRit", "ZerlautAdaptationSecondOrder"])
+def test_every_left_hand_side_is_the_symbol_the_equations_use(name: str):
+    """A left-hand side is resolved from the scope, never minted beside it.
+
+    `Symbol("x") != Symbol("x", real=True)` and `Function("f") != Function("f", real=True)`;
+    both pairs `srepr` identically and `subs` across either does nothing rather than
+    raising. So a derived parameter whose left-hand side was rebuilt substitutes into none
+    of its own equations, and a function's formal argument does not occur in its own body.
+    """
+    model = Dynamics.from_file(str(MODEL_ROOT / f"{name}.yaml"))
+    scope = model.get_symbolic_elements(time_dependent=True)
+    form = model._symbolic_form(notation="function")
+
+    for equation in form["derived-parameters"].values():
+        assert equation.lhs is scope[str(equation.lhs)]
+
+    for fname, equation in form["functions"].items():
+        assert type(equation.lhs) is scope[fname], f"{fname} head was rebuilt"
+        for formal in equation.lhs.args:
+            assert formal in equation.rhs.free_symbols or not equation.rhs.free_symbols
+
+    definitions = {eq.lhs: eq.rhs for eq in form["derived-parameters"].values()}
+    if definitions:
+        for equation in form["state-equations"].values():
+            names = {str(s) for s in equation.rhs.free_symbols}
+            if names & {str(k) for k in definitions}:
+                assert equation.rhs.subs(definitions) != equation.rhs
+
+
+@pytest.mark.backend_core
+@pytest.mark.parametrize("name", ["ReducedWongWangTvboptim", "ReducedWongWangFunc"])
+def test_a_function_formal_does_not_shadow_a_variable(name: str):
+    """`H(x)`'s bound `x` and a derived variable `x` are different quantities.
+
+    Both models declare a function `H(x)` and a derived variable `x`. Registering formals in
+    the model-wide table let the formal win, so the analysis view held `x` constant: its own
+    definition read `Eq(x, … S(t) …)` — a constant equal to a function of time — and every
+    Jacobian taken through `H` silently lost the chain-rule term.
+
+    A formal is bound by its function, like a lambda parameter. Keeping it out of the model's
+    namespace is also what lets a function be declared once and reused, where its argument is
+    not tied to any one host's variables.
+    """
+    from sympy import Symbol
+
+    # `ReducedWongWangFunc` is one of the two curated models spelled `.yml`.
+    path = next(p for ext in ("yaml", "yml") for p in MODEL_ROOT.rglob(f"{name}.{ext}"))
+    model = Dynamics.from_file(str(path))
+    scope = model.get_symbolic_elements(time_dependent=True)
+    form = model._symbolic_form(notation="function")
+
+    assert scope["x"] == form["derived-variables"]["x"].lhs, "the variable lost its own name"
+    assert scope["x"].func.__name__ == "x", "the derived variable is not time-dependent"
+
+    formal = form["functions"]["H"].lhs.args[0]
+    assert isinstance(formal, Symbol), "a bound formal must not be a function of time"
+    assert formal != scope["x"], "the formal and the variable are the same object"
+
+    state = next(iter(form["state-equations"].values()))
+    assert "Derivative(x(t), t)" in str(state.rhs.diff(scope["t"])), "chain-rule term lost"
+
+
+@pytest.mark.backend_core
+def test_editing_a_domain_invalidates_the_cache():
+    """A `domain` is not an equation, but it decides a symbol's sign assumption.
+
+    `assumptions_of` reads `domain.lo`, so a cache keyed only on equations serves symbols
+    carrying the old assumptions — and those compare unequal to freshly parsed ones, so
+    nothing substitutes across the two.
+    """
+    model = Dynamics.from_file(str(MODEL_ROOT / "Generic2dOscillator.yaml"))
+    name = next(
+        n for n, p in model.parameters.items()
+        if getattr(p, "domain", None) is not None and p.domain.lo is not None and p.domain.lo < 0
+    )
+    assert model.get_symbolic_elements(time_dependent=True)[name].is_positive is not True
+
+    model.parameters[name].domain.lo = 1.0
+
+    assert model.get_symbolic_elements(time_dependent=True)[name].is_positive is True
 
 
 @pytest.mark.backend_core

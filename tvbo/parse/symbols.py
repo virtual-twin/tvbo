@@ -30,7 +30,8 @@ from __future__ import annotations
 from typing import Any, Iterable, Mapping
 
 import sympy.abc
-from sympy import Symbol
+from sympy import Basic, Symbol
+from sympy.core.function import UndefinedFunction
 from sympy.parsing.sympy_parser import null as AUTO
 
 from tvbo.parse.expression import parse_eq
@@ -40,7 +41,6 @@ __all__ = [
     "BUILTIN_SHADOW",
     "SymbolContext",
     "assumptions_of",
-    "model_symbol",
     "symbol_in",
 ]
 
@@ -67,28 +67,23 @@ def assumptions_of(element: Any = None) -> dict[str, bool]:
     return assumptions
 
 
-def model_symbol(name: Any, element: Any = None) -> Symbol:
-    """The one symbol TVBO uses for a declared quantity, assumptions included.
-
-    Minting a symbol anywhere else risks a name that looks identical and compares unequal:
-    `Symbol("x") != Symbol("x", real=True)`, and `subs` across that mismatch does nothing at
-    all rather than raising. Code holding a model should ask it — `get_symbolic_elements` —
-    and code holding only a parsed expression's scope should use
-    [`symbol_in`](#tvbo.parse.symbols.symbol_in).
-    """
-    return Symbol(str(name), **assumptions_of(element))
-
-
-def symbol_in(scope: Mapping | None, name: Any) -> Symbol:
-    """The symbol a parsed expression uses for *name*.
+def symbol_in(scope: Mapping | None, name: Any) -> Any:
+    """Whatever a parsed expression uses for *name* — symbol, `y0(t)`, or function head.
 
     For code that holds an expression and the namespace it was parsed against, but not the
     model: resolving through the scope is what makes a later `subs` or `free_symbols` test
     meet the same symbol the parser produced. Falls back to a bare symbol for a name the
-    scope does not declare, which is the right answer for one it never bound.
+    scope does not declare, which is the right answer for one it never bound — an unbound
+    name is exactly what SymPy's `auto_symbol` turns into a bare symbol while parsing.
+
+    Function heads resolve too, because `Function("f") != Function("f", real=True)` and the
+    two `srepr` identically: rebuilding a head to write `f(x)` on a left-hand side yields a
+    different class from the one every calling equation contains.
     """
     resolved = (scope or {}).get(str(name))
-    return resolved if isinstance(resolved, Symbol) else Symbol(str(name))
+    if isinstance(resolved, (Basic, UndefinedFunction)):
+        return resolved
+    return Symbol(str(name))
 
 
 def _rejects_mutation(method: str):
@@ -151,14 +146,28 @@ class SymbolContext(dict):
         return type(self)({k: v for k, v in self.items() if k not in dropped})
 
     def parse(self, expression, **kwargs):
-        """Parse `expression` against a private copy of this namespace.
+        """Parse `expression` against this namespace, which `parse_eq` copies before use.
 
         The copy is what makes freezing workable: SymPy resolves an
         [`AUTO`](#tvbo.parse.symbols.AUTO) name by writing the object it chose back into the
         `local_dict`, and `parse_expr` pops its bookkeeping key afterwards. Both writes land
-        on the copy, so a context yields the same result however many times it is used.
+        on `parse_eq`'s own copy, so a context yields the same result however many times it
+        is used — and equally for a caller that hands a context straight to `parse_eq`.
         """
-        return parse_eq(expression, local_dict=dict(self), **kwargs)
+        return parse_eq(expression, local_dict=self, **kwargs)
+
+    def __reduce__(self):
+        """Rebuild by construction, because restoring a `dict` subclass assigns its items.
+
+        `copy`, `deepcopy` and `pickle` all reach for `__reduce_ex__`, which replays items
+        through `__setitem__` — exactly what freezing blocks. Without this, any object graph
+        holding a context is uncopyable, and an `Exploration` deep-copies one per cell.
+        """
+        return type(self), (dict(self),)
+
+    def __deepcopy__(self, memo) -> SymbolContext:
+        """Share rather than duplicate: a frozen context has no per-copy state to protect."""
+        return self
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({dict.__repr__(self)})"

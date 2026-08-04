@@ -31,7 +31,7 @@ import numpy as np
 import owlready2
 from tvbo.utils import yaml_loader
 from matplotlib import colormaps
-from sympy import Derivative, Eq, Function, Symbol, latex, symbols
+from sympy import Derivative, Eq, Function, Symbol, latex
 
 from tvbo import templates
 from tvbo.analysis import BifurcationResult
@@ -44,8 +44,8 @@ from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.datamodel.schema import Case, ConditionalBlock, DerivedVariable, Equation
 from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
-from tvbo.parse.expression import function_bodies, parse_eq
-from tvbo.parse.symbols import assumptions_of, model_symbol
+from tvbo.parse.expression import function_bodies, parse_eq, states_an_expression
+from tvbo.parse.symbols import assumptions_of, symbol_in
 from tvbo.utils import report
 
 logger = logging.getLogger(__name__)
@@ -462,52 +462,33 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
 # When False (default), authored equation term order is preserved end-to-end
 # (parse unevaluated + stringify order='none'); set True to restore SymPy's
 # canonical Add/Mul re-sorting. Generated dynamics then read like the source.
-REORDER_EQUATIONS = False
 
 
-def update_equations(model):
-    """Return the model's equations keyed by variable, each coerced to a `sympy.Eq`.
-
-    A `*_dot` / `dot*` key names a derivative, so its left-hand side becomes
-    `Derivative(var, t)` while the entry is filed under the bare variable name.
-
-    Resolves nothing against the ontology. It used to: any symbol not found among the
-    model's own parameters, state variables, coupling inputs or derived variables was
-    looked up by label and, if a synonym matched a parameter, substituted. Across the
-    whole curated database that fired 326 ontology searches per load and changed no model
-    at all, while costing 46% of total load time. Ontology content reaches a model
-    deliberately — stated inline, or pointed at with an `iri` — not by guessing at symbols
-    that failed to resolve.
-    """
-    t = symbols("t")
-    equations = model.get_equations(evaluate=REORDER_EQUATIONS)
-
-    for key, equation in list(equations.items()):
-        name = key.replace("_dot", "").replace("dot", "")
-        lhs = Derivative(symbols(name), t) if "dot" in key else symbols(key)
-        equations[name] = equation if isinstance(equation, Eq) else Eq(lhs, equation)
-
-    return equations
-
-
-def sort_equations(model: Any, variable_type: str):
+def sort_equations(model: Any, variable_type: str, graph=None):
     """Reorder `model[variable_type]` by topological dependency order, in place.
 
     Resolves the model's equation dependency DAG and reorders the variables
     so each equation appears after the variables it references — required by
     backends that emit straight-line code (JAX, NumPy printers).
 
+    Variables the dependency graph does not mention keep the order they came in and stay
+    ahead of the sorted ones. Prepending them one at a time instead reverses them, and
+    because each call re-sorts whatever order the last one left behind, that made the result
+    alternate: rendering a model twice emitted its derived variables in opposite orders, so
+    generated code depended on how often it had been generated before.
+
     Args:
         model: The dynamics model whose equations should be sorted.
         variable_type: Attribute name — typically `"state_variables"`,
             `"derived_variables"`, or `"functions"`.
+        graph: An already-built dependency graph. Reordering a collection does not change
+            the graph's edges, so a caller sorting several collections builds it once.
     """
     # Skip sorting for list format (e.g., output as list of names)
     if isinstance(model[variable_type], list):
         return
 
-    # sort equations (compute dependency tree on the fly; avoid stored state)
-    G_dep = model.get_dependency_tree()
+    G_dep = model.get_dependency_tree() if graph is None else graph
     if isinstance(G_dep, tuple):
         G_dep = G_dep[0]
     sorted_variables = []
@@ -523,11 +504,6 @@ def sort_equations(model: Any, variable_type: str):
                 str(var_name)
             )
 
-    # Variables the dependency graph does not mention keep the order they came in and stay
-    # ahead of the sorted ones. Prepending them one at a time instead reverses them, and
-    # because each call re-sorts whatever order the last one left behind, that made the
-    # result alternate: rendering a model twice emitted its derived variables in opposite
-    # orders, so generated code depended on how often it had been generated before.
     sorted_variables_metadata = {**original_metadata, **sorted_variables_metadata}
 
     # Update the original dictionary in-place
@@ -671,6 +647,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
     Most users should construct via [`Dynamics`](#tvbo.classes.dynamics.Dynamics)
     or `Dynamics.from_db(name)` — this class is the implementation base.
+
+    `_skip_ontology` says the model arrives fully specified — an `iri=` registry entry, a
+    PyRates import — so the slow ontology lookup is pointless. It does **not** mean the
+    record needs no normalising: every path runs `update_metadata`, which migrates the
+    deprecated `cases:` slot into conditionals and sorts derived variables into the
+    dependency order the straight-line JAX and NumPy emitters require. Returning early on
+    this flag left `cases:` models rendering with no branches at all.
     """
 
     def __init__(
@@ -708,17 +691,11 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         # Initialize datamodel (base class sets up empty containers)
         super().__init__(**kwargs)
 
-        # Skip ontology lookup when model is fully specified (e.g., from PyRates import)
-        if _skip_ontology:
-            return
-
         # Auto-populate only when a name was provided; keep default Dynamics() empty
         if name != "Dynamics":
-            # Opt-in: resolve ontology class by name and backfill missing fields
-            if use_ontology:
+            if use_ontology and not _skip_ontology:
                 self._populate_from_ontology_by_name()
 
-            # Finalize metadata/equations
             self.update_metadata()
             self.calculate_derived_parameters()
 
@@ -1093,7 +1070,9 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         dict
             ``{'state': [...], 'derived': [...], 'parameters': {...}}``
             where each list contains ``sympy.Eq`` objects and parameters
-            maps ``Symbol → value``.
+            maps ``Symbol → value``. That map is keyed by the scope's own
+            symbols: rebuilt keys look identical, compare unequal, and make
+            substituting it into these equations silently replace nothing.
 
         Example
         -------
@@ -1109,9 +1088,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             "functions": list(form["functions"].values()),
             "derived_parameters": list(form["derived-parameters"].values()),
             "derived": list(form["derived-variables"].values()),
-            # Keyed by the scope's own symbols. Rebuilding them here would produce names
-            # that look identical and compare unequal, so substituting this map into these
-            # equations would silently replace nothing.
             "parameters": {
                 scope[str(p.name)]: p.value
                 for p in self.parameters.values()
@@ -1153,6 +1129,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
     def _build_symbolic_elements(self, include_time_symbol: bool, time_dependent: bool):
         """Assemble the symbol table. See `get_symbolic_elements`.
+
+        Holds only the names the *model* declares. A function's formal arguments are bound by
+        that function, exactly as a lambda binds its parameters, and are supplied as an
+        overlay while its body is parsed — see `_assemble_equations`. Registering them here
+        let a formal shadow a variable of the same name: `ReducedWongWangTvboptim` declares
+        both `H(x)` and a derived variable `x`, and the formal won, so the analysis view held
+        `x` constant and dropped the chain-rule term from every Jacobian through `H`.
 
         Assumptions ride on the time-dependent view only. They are what SymPy's analysis
         machinery needs — without `real=True` the fixed points of a two-variable model do
@@ -1201,11 +1184,8 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         for name, sv in self.state_variables.items():
             scope[str(name)] = _variable(name, sv)
 
-        # Functions: undefined function heads; also add their argument symbols
-        for fname, f in self.functions.items():
+        for fname in self.functions:
             scope[str(fname)] = Function(str(fname), **_assume())
-            for name in f.arguments:  # arguments is a dict keyed by name
-                scope[str(name)] = _symbol(name)
 
         for name in self.events:
             scope[str(name)] = _symbol(name)
@@ -1250,16 +1230,30 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 bool(equation.latex),
             )
 
+        def _assumed(element):
+            """Keyed on `assumptions_of` itself, so the key cannot drift from what it reads.
+
+            A `domain` is not an equation, but it decides whether a symbol is `positive` or
+            merely `real`, and `Symbol('a', positive=True) != Symbol('a', real=True)`. Naming
+            the fields here instead would leave the key stale the day `assumptions_of` starts
+            reading one more of them.
+            """
+            return tuple(sorted(assumptions_of(element).items()))
+
         content = (
             self.system_type,
-            frozenset(str(name) for name in self.parameters),
+            {str(name): _assumed(p) for name, p in self.parameters.items()},
             frozenset(str(name) for name in self.coupling_inputs),
             frozenset(str(name) for name in self.events),
             frozenset(str(name) for name in self.output),
             {str(k): _equation(v) for k, v in self.derived_parameters.items()},
-            {str(k): _equation(v) for k, v in self.derived_variables.items()},
+            {str(k): (_equation(v), _assumed(v)) for k, v in self.derived_variables.items()},
             {
-                str(k): (_equation(v), int(v.equation_order or 1) if v.equation_order else 1)
+                str(k): (
+                    _equation(v),
+                    int(v.equation_order or 1) if v.equation_order else 1,
+                    _assumed(v),
+                )
                 for k, v in self.state_variables.items()
             },
             {
@@ -1363,35 +1357,67 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         )
 
     def _assemble_equations(self, time_dependent: bool, evaluate: bool):
-        """Build the five equation groups against one scope. See `_build_symbolic_form`."""
+        """Build the five equation groups against one scope. See `_build_symbolic_form`.
+
+        Every symbol an equation's left-hand side names is resolved through `scope` — the
+        same table the right-hand sides were parsed against. Minting one here instead
+        produces a name that prints identically and compares unequal once the analysis view
+        attaches assumptions, and `subs` across that mismatch replaces nothing rather than
+        raising: a derivative taken w.r.t. a freshly built `t` leaves `doit()` returning 0,
+        and a derived parameter's definition substitutes into none of its own equations.
+        """
         scope = self.get_symbolic_elements(time_dependent=time_dependent)
-        t = Symbol("t")
+        t = symbol_in(scope, "t")
         discrete = self.system_type == "discrete"
 
         def _lhs(name):
-            return scope[str(name)] if time_dependent else Symbol(str(name))
+            return symbol_in(scope, name)
 
-        def _parse(element):
-            return parse_eq(element.equation, local_dict=scope, evaluate=evaluate)
+        def _states(element):
+            """Whether the element has anything to parse — see `states_an_expression`.
+
+            An element declared with no `rhs` and no conditionals is skipped rather than
+            parsed. Every rendering path now funnels through here, so one such element used
+            to break all of them at once instead of only `get_equations`.
+            """
+            return states_an_expression(getattr(element, "equation", None))
+
+        def _parse(element, namespace=None):
+            return parse_eq(element.equation, local_dict=namespace or scope, evaluate=evaluate)
+
+        def _formal(name):
+            """A function's bound argument — a quantity, never a state, so never `name(t)`."""
+            return Symbol(str(name), **(assumptions_of() if time_dependent else {}))
+
+        def _function_scope(function):
+            """The model's names with this function's formals bound over them."""
+            return {**scope, **{str(a): _formal(a) for a in function.arguments}}
 
         form = {
             "derived-parameters": {
-                str(k): Eq(lhs=Symbol(str(k)), rhs=_parse(dp))
+                str(k): Eq(lhs=_lhs(k), rhs=_parse(dp))
                 for k, dp in self.derived_parameters.items()
+                if _states(dp)
             },
             "functions": {
-                str(k): Eq(lhs=Function(str(k))(*[Symbol(str(a)) for a in f.arguments]), rhs=_parse(f))
+                str(k): Eq(
+                    lhs=_lhs(k)(*[_formal(a) for a in f.arguments]),
+                    rhs=_parse(f, _function_scope(f)),
+                )
                 for k, f in self.functions.items()
+                if _states(f) and f.arguments
             },
             "derived-variables": {
-                str(k): Eq(lhs=_lhs(k), rhs=_parse(dv)) for k, dv in self.derived_variables.items()
+                str(k): Eq(lhs=_lhs(k), rhs=_parse(dv))
+                for k, dv in self.derived_variables.items()
+                if _states(dv)
             },
             "state-equations": {},
             "output-transformations": {},
         }
 
         for k, sv in self.state_variables.items():
-            if not sv.equation:
+            if not _states(sv):
                 continue
             order = int(sv.equation_order or 1)
             lhs = _lhs(k) if discrete else Derivative(_lhs(k), *([t] * order))
@@ -1402,9 +1428,10 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         for name in self.output:
             name = str(name)
             if name in self.derived_variables:
-                form["output-transformations"][name] = Eq(
-                    lhs=_lhs(name), rhs=_parse(self.derived_variables[name])
-                )
+                if _states(self.derived_variables[name]):
+                    form["output-transformations"][name] = Eq(
+                        lhs=_lhs(name), rhs=_parse(self.derived_variables[name])
+                    )
             elif name not in self.state_variables:
                 raise ValueError(
                     f"Output variable '{name}' not found in derived_variables or state_variables"
@@ -1453,30 +1480,27 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         }
 
     def update_metadata(self):
-        """Normalize and finalize the model's equation metadata in place.
+        """Normalize the model's equation metadata in place.
 
-        Migrates deprecated fields (`cases`→`conditionals`, `coupling_terms`→
-        `coupling_inputs`), canonicalizes every state and derived-variable
-        equation via
-        [`update_equations`](#tvbo.classes.dynamics.update_equations), and
-        sorts derived parameters, derived variables, and outputs into
-        dependency order.
+        Migrates the deprecated `cases` and `coupling_terms` slots onto `conditionals` and
+        `coupling_inputs`, then sorts derived parameters, derived variables and outputs into
+        dependency order — which the backends emitting straight-line code (JAX, NumPy)
+        require. Every construction path runs this, including the ones that skip the
+        ontology lookup because the model already arrived fully specified.
+
+        It used to also call `update_equations`, whose result it discarded. Once
+        `get_equations` became a projection of the symbolic layer, returning `Eq` objects
+        already keyed by the bare variable name, that call's loop re-filed each entry under
+        the key it already had: verified a no-op on all 106 curated models.
         """
-        # Normalize dv.cases → dv.equation.conditionals (dv.cases is deprecated)
         _normalize_conditionals(self)
-
-        # Migrate coupling_terms → coupling_inputs (coupling_terms is deprecated)
         _migrate_coupling_terms(self)
 
-        # Collect all equations (state + derived) and update stored Equation objects
-        all_eqs = update_equations(self)
-
-        # Build dependency order without storing state
-        _ = self.get_dependency_tree()
-        sort_equations(self, "derived_parameters")
-        sort_equations(self, "derived_variables")
-        sort_equations(self, "output")
-        # sort_equations(self, "state_variables") #TODO: Test if sorting is really not necessary
+        # Reordering a collection does not change the graph's edges, so all three sorts run
+        # against one build — three cost 11 ms per load on the largest model.
+        graph = self.get_dependency_tree()
+        for collection in ("derived_parameters", "derived_variables", "output"):
+            sort_equations(self, collection, graph=graph)
 
     # -----------------------
     # Fluent builder helpers and setters
