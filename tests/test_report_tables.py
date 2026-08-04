@@ -114,8 +114,8 @@ def test_a_path_to_a_markdown_file_is_read(tmp_path):
 # One implementation serves every study's report; these pin the behaviour the reports rely on.
 
 
-def _fig(name, description=""):
-    return SimpleNamespace(name=name, description=description)
+def _fig(name, description="", label=""):
+    return SimpleNamespace(name=name, description=description, label=label)
 
 
 def _png(path, size=(40, 60)):
@@ -127,18 +127,29 @@ def _png(path, size=(40, 60)):
     return path
 
 
-def test_extended_data_figures_sort_after_the_main_text():
-    order = figures_in_paper_order([_fig("S_EDF10_x"), _fig("S_Fig4_y"), _fig("S_Fig1_z")])
-    assert [f.name for f in order] == ["S_Fig1_z", "S_Fig4_y", "S_EDF10_x"]
+def test_extended_data_figures_sort_after_the_main_text_and_our_own_last():
+    order = figures_in_paper_order([_fig("S_ours_x"), _fig("S_EDF10_x"), _fig("S_Fig4_y"),
+                                    _fig("S_Fig1_z")])
+    assert [f.name for f in order] == ["S_Fig1_z", "S_Fig4_y", "S_EDF10_x", "S_ours_x"]
 
 
 @pytest.mark.parametrize("name,expected", [
     ("Pang2023_Fig4_wave", "Figure 4"),
     ("Pang2023_EDF10_rs", "Extended Data Fig. 10"),
-    ("something_unlabelled", "Figure 99"),
 ])
 def test_a_figure_titles_itself_from_its_declared_name(name, expected):
     assert figure_title(_fig(name)) == expected
+
+
+def test_a_figure_the_paper_never_printed_is_titled_by_its_own_label():
+    fig = _fig("Pang2023_BEI_fit_landscape", label="The BEI fit landscape")
+    assert figure_title(fig) == "The BEI fit landscape"
+    assert figure_targets(fig, TARGET_ROWS) == []
+
+
+def test_an_unnumbered_unlabelled_figure_falls_back_to_its_name_not_a_number():
+    # Never "Figure 99": a number would present our own figure as one of the paper's.
+    assert figure_title(_fig("Pang2023_fit_landscape")) == "Fit landscape"
 
 
 def test_a_caption_is_the_recipe_description_with_its_line_breaks_flattened():
