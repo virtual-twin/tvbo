@@ -1681,3 +1681,86 @@ fixed IC in a non-chaotic regime (and a degenerate distribution returns its poin
 (2) consider recording the true IC (E at t=0, pre-step) so a trial's sampled IC is inspectable
 without the one-step offset. Until then, integrate sensitive-regime transients on the
 single-sim path (or the dt-converged reference) — Phase 7.
+
+## Streaming monitor reducer: single-state deferred readout breaks the scan carry — ✅ FIXED 2026-08-04
+
+`tvbo/templates/tvboptim/tvbo-tvboptim-observation.py.mako`, monitor-reducer
+`output_per_step=False` branch. For an observer with **exactly one** state variable codegen
+emitted `return (_new_x), None` — parens around one expr are **not a tuple** — and unpacked
+`x = carry`, while `_init`/`tuple(_st)` supply a 1-tuple → `jax.lax.scan` carry mismatch at
+trace time. BOLD (4 states) hid it.
+**Fixed:** trailing commas so a 1-element carry stays a tuple — `…snames…, = carry` (both the
+`_step` and `_chunk` unpacks) and `return (…_new_x…,), None`. Verified with a single-state
+`output_per_step=False` repro (`/tmp/gen34_harness/repro_single_state_monitor.py`) + 27/27 suite
+still green. STILL TODO: add that single-state case as a permanent regression test (none exists
+— why 27/27 passed before). (code-review 2026-08-04, #5.)
+
+## Streaming monitor reducer: guard forbids the host whole-trajectory block it can receive (2026-08-04)
+
+Same file, monitor `_update`: `if _rem and _n_full: raise` rejects a block longer than one
+period but not a whole number of periods. This is a **deliberate, tested** contract
+(`tests/test_streaming_monitor_reduction.py::test_a_block_that_is_not_a_whole_number_of_periods_raises`;
+streaming blocks are period-aligned by `streaming_post_eval_plan`). BUT `AbstractMonitor.__call__`
+folds the **entire trajectory as one block**, and `_init` (`n_steps // _period` slots) + the
+tail branch already *handle* a remainder — so a **host-evaluated monitor whose run length
+isn't a multiple of period-in-steps crashes** (e.g. BOLD TR=720ms, dt=0.1 → 7200 steps;
+n_steps=1e6 → raise). The 27 tests pass only because they use period-multiple lengths.
+**Decision needed — do NOT just delete the guard (it breaks the test):** either (a) require
+TR-multiple run lengths upstream and keep the strict guard, or (b) let the reducer drop the
+partial tail on the host path (remove the guard, update the raise-test). (code-review 2026-08-04, #1.)
+
+## Whole-brain post-tuning evaluation must stream — exp_34 hung (2026-08-04)
+
+exp_34 (`~/work/schirner2023replication/schirner34_validate`, SLURM 28169921) **hung in
+post-tuning** and was **cancelled by the user at 11:43** (no result — `results/34/` empty).
+Timeline: `fic_eib complete!` at 09:58, entered post-tuning (2nd warmup, 300 samples), then
+~1h45m of zero output. The tuning itself converged (mean_H_e ≈ 4 Hz). The hang is the known
+whole-brain failure mode — the **post-tuning evaluation materializes a full-length 379-node
+trajectory** unless the post-eval streams, blowing memory → stall.
+**Corrected root cause (2026-08-04):** NOT a missing stream — the `schirner34_validate` kit
+*already* declares BOLD `reduce: streaming`, so memory was fine. The real bottleneck is
+**compute**: `integration.duration: 36e6 ms` @ `step_size 1 ms` = **36M steps** over 379 nodes,
+and `accelerator: auto` → the CPU node `hpc-cpu-96`. The post-tuning eval re-integrates that whole
+sim on CPU (no progress ticker) → looks hung. **Fix = GPU** (user chose GPU, full duration).
+**DONE:** emitted `exp34gpu_out.tar.gz` from `/tmp/gen34_harness/spec_gpu34/` (copy of the frozen
+spec with `accelerator: gpu`, `workflow.slurm.partition: gpu`, dropped the `JAX_PLATFORMS=cpu`
+force; venv `koller2024replication/.venv` is already jax[cuda]). Emitter auto-added `gres=gpu:1`;
+codegen sets `JAX_PLATFORMS=cuda`. Uploaded to `~/work/schirner2023replication/`. **Remaining
+(user):** on a login node, koller venv active, in tmux — `tvbo workflow submit exp34gpu_out.tar.gz`
+(optionally `--dry-run` first); monitor `exp34gpu_out/logs/rule_exp_34/<jobid>.log`.
+
+## Commit the uncommitted streaming + initial_value fixes (2026-08-04)
+
+Working tree (dev) has, uncommitted and mixed: the **initial_value refactor** crash-fixes
+applied 2026-08-04 (missing `initial_value` imports in `gillespie.py`/`neuroml.py`/`run/graph.py`,
+pyrates-template indentation, `julia_model.py` migration) + the **streaming #3/#7** fixes
+(`observation.py.mako` period `float(to_numeric)`, collapsed comment blocks) + pre-existing
+streaming/initial_value WIP. Cohort work is already committed. Split into logical commits (one
+initial_value crash-fix, one streaming reducer); `git add -p` unavailable in-session, stage by file.
+
+## on_device cohort: per-subject results carry only `estimate__*` (2026-08-04) — by design, revisit
+
+An on_device cohort saves per-subject `sub-<id>_..._result.h5` with only the tuned params
+(`estimate__J_i/wLRE/wFFI`), NOT per-subject observations/optimizations (on-device tunes
+parameters, not per-subject trajectories). A study whose figures read
+`observation__*`/`optimization__*__final_loss` works under `fan_out` but silently `KeyError`s
+under `on_device`. Deliberate (mirrors the fan-out param contract) — but consider a warning at
+save time, or a post-tuning per-subject eval when a downstream figure needs per-subject
+observations. (code-review, left deliberately.)
+
+## on_device large cohort writes N duplicate connectome sidecars (2026-08-04) — efficiency, revisit
+
+`_save_per_subject` calls the full `ExperimentResult.save` per subject, so `freeze_yaml`
+re-writes an identical `sub-<id>_..._network.h5` for every subject (N copies of the shared
+connectome). Mirrors fan_out (each fan_out job also freezes the shared net), so per-subject
+results stay self-contained — but a 200-subject whole-brain cohort writes 200 identical dense
+connectomes. Consider a shared-network reference for big cohorts if disk/serialization bites.
+(code-review, left deliberately.)
+
+## on_device auto batch_size double-compiles the fit (2026-08-04) — minor
+
+`resolve_cohort_batch_size` auto path (`dataset.batch_size` absent) AOT-compiles the full
+single-subject fit via `estimate_per_cell_bytes` just to size the batch, then the run compiles
+the vmapped fit — two full compiles of an expensive fit. Mirrors `n_parallel:auto` (consistent),
+only on the auto path, avoidable with an explicit `batch_size`. Optimize with a cheaper peak
+estimate (e.g. reduced iterations) if compile time bites. (code-review, accepted.)

@@ -1,3 +1,6 @@
+<%!
+from tvbo.utils import initial_value as _initial_value
+%>\
 ## -*- coding: utf-8 -*-
 <%doc>
 Standalone ModelingToolkit.jl experiment template.
@@ -174,14 +177,13 @@ end
     @variables begin
 % for sv_name, sv in model.state_variables.items():
 <%
-    from tvbo.utils import initial_value as _initial_value
     sv_init = _initial_value(sv)
     sv_desc = jl_escape(sv.description or sv.label or '')
     meta = []
     if sv_desc:
         meta.append(f'description="{sv_desc}"')
     meta_str = ', [' + ', '.join(meta) + ']' if meta else ''
-    default_str = f'={sv_init}' if sv_init != '' else ''
+    default_str = f'={sv_init}'
 %>\
         ${sv_name}(t)${default_str}${meta_str}
 % endfor

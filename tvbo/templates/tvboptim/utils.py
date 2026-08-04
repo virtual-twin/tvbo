@@ -917,6 +917,17 @@ def time_argument_ms(argument: Any, default: float) -> float:
     return value
 
 
+def _integration_dt(experiment: Any) -> Optional[float]:
+    """The experiment's integration step in ms, or ``None`` when there is no grid.
+
+    Every reducer that turns a declared period into a number of steps needs this, so it
+    is read in one place rather than re-walking ``experiment.integration.step_size`` at
+    each call site.
+    """
+    dt = get_attr(get_attr(experiment, "integration"), "step_size") if experiment is not None else None
+    return float(to_numeric(dt)) if dt else None
+
+
 def _reduction_init_value(sv: Any) -> float:
     """Initial scalar for an observer state: its declared ``initial_value``, else 0.0.
 
@@ -1044,8 +1055,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
     # `step` / strided `stride` are grid-specific (they assume one dt) and wrong on another
     # grid — so derive from `downsample_period`, the observation's TR (`period`) and `dt`
     # when available, falling back to the declared strides only when they are not.
-    _dt = get_attr(get_attr(experiment, "integration"), "step_size")
-    _dt = float(to_numeric(_dt)) if _dt else None
+    _dt = _integration_dt(experiment)
     _dsp = get_attr(obs, "downsample_period")
     _dsp = float(to_numeric(_dsp)) if _dsp else None
     _period = get_attr(obs, "period")
@@ -1296,8 +1306,7 @@ def _resolve_subsample_stream(obs: Any, experiment: Any = None) -> Optional[Dict
                 return get_attr(a, "value", a)
         return None
 
-    dt = get_attr(get_attr(experiment, "integration"), "step_size")
-    dt = float(to_numeric(dt)) if dt else None
+    dt = _integration_dt(experiment)
     period = next((_arg(st, "period") for st in pipeline if _arg(st, "period") is not None),
                   get_attr(obs, "period"))
     if period is not None and dt:
@@ -1420,6 +1429,12 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     dv_map = dict(dvs.items()) if hasattr(dvs, "items") else {}
     dv_names = [str(n) for n in dv_map]
 
+    # Derived PARAMETERS are constants (see below); their names bind in every expression
+    # exactly as a parameter's does.
+    dps = get_attr(dyn, "derived_parameters")
+    dp_map = dict(dps.items()) if hasattr(dps, "items") else {}
+    dp_names = [str(n) for n in dp_map]
+
     # Named constants the observer's expressions bind by name — resolved exactly as a
     # model Dynamics' parameters are (same helper), so a scalar and an array-valued
     # constant (e.g. a mesh operator) declare identically and need no observer-specific
@@ -1470,7 +1485,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     # here to whatever `source` names, so every rendered expression carries the real symbol
     # and no backend template needs to know about the alias. An observer that declares its
     # own symbol of that name means that symbol, and no alias applies.
-    own = set(sv_names) | set(param_names) | set(dv_names)
+    own = set(sv_names) | set(param_names) | set(dv_names) | set(dp_names)
     alias = OBSERVER_INPUT if source and OBSERVER_INPUT not in own else None
 
     # Symbolic vocabulary: observer states + parameters + source + framework scalars are
@@ -1540,6 +1555,27 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
         if drhs is None:
             continue
         derived.append({"name": str(dname), "expr": _parse(str(drhs), f"derived variable {dname!r}")})
+
+    # `derived_parameters` are constants of the observer — functions of its parameters and
+    # `dt`, never of a state or the observed signal — so they are bound ONCE in the reducer's
+    # preamble rather than recomputed per step. This is the slot every other backend already
+    # uses for exactly this (model Dynamics do the same), and it is what lets a readout built
+    # only from states and constants be evaluated per emitted sample instead of per step.
+    derived_constants = []
+    for pname, pobj in (dp_map.items() if hasattr(dp_map, "items") else []):
+        peq = get_attr(pobj, "equation")
+        prhs = get_attr(peq, "rhs") if peq is not None else None
+        if prhs is None:
+            continue
+        expr = _parse(str(prhs), f"derived parameter {pname!r}")
+        bad = {str(s) for s in expr.free_symbols} & (set(sv_names) | set(dv_names) | ({source} if source else set()))
+        if bad:
+            raise ValueError(
+                f"Observation reduction derived parameter {str(pname)!r} references {sorted(bad)}, "
+                "which vary per step; a derived parameter is a constant. Declare it as a "
+                "derived variable instead."
+            )
+        derived_constants.append({"name": str(pname), "expr": expr})
 
     # Permutation-significance surrogates: a derived variable may declare a `surrogate`
     # (re-evaluate a named statistic DV under permutations of a field, report the exceedance
@@ -1643,8 +1679,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     # call ("is this a reduction?") only asks whether the observer exists.
     _period = get_attr(obs, "period")
     _period = float(to_numeric(_period)) if _period is not None else None
-    _dt = get_attr(get_attr(experiment, "integration"), "step_size") if experiment is not None else None
-    _dt = float(to_numeric(_dt)) if _dt else None
+    _dt = _integration_dt(experiment)
     period_steps = None
     if _period and experiment is not None:
         if not _dt:
@@ -1660,11 +1695,19 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
                 f"than the integration step {_dt} ms; an observer cannot emit faster than it advances."
             )
 
+    # A readout built only from states and constants is the same value whether it is
+    # evaluated every step or once per emitted sample, so a monitor evaluates it per sample.
+    # One that reads the observed signal or a per-step derived variable cannot be deferred.
+    _step_ctx = ({source} if source else set()) | {d["name"] for d in derived if d["name"] != output_name}
+    output_per_step = bool(output is not None and {str(s) for s in output.free_symbols} & _step_ctx)
+
     return {
         # 'monitor' emits every period_steps into a time series; 'recurrence' folds the whole
         # run into one value per node. Both render from the same observer context.
         "kind": "monitor" if period_steps else "recurrence",
         "period_steps": period_steps,
+        "derived_constants": derived_constants,  # bound once in the reducer preamble
+        "output_per_step": output_per_step,
         "source": source,
         "states": states,
         "derived": derived,       # per-step DV chain (sympy Exprs, declaration order); [] for a simple observer

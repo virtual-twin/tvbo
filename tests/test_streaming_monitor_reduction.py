@@ -26,6 +26,7 @@ jax.config.update("jax_enable_x64", True)
 
 from tvbo.classes.observation import Observation as CuratedObservation
 from tvbo.datamodel.schema import (
+    DerivedParameter,
     DerivedVariable,
     Dynamics,
     Equation,
@@ -309,6 +310,54 @@ def test_the_reducer_holds_no_trajectory():
     acc = update(init(data[0], n_steps), data)
     carried = sum(int(np.asarray(a).size) for a in jax.tree_util.tree_leaves(acc))
 
-    # 4 hemodynamic states + the emit slot, plus the output buffer and the counter.
-    assert carried == 5 * n_node + (n_steps // period_steps) * n_node + 1
+    # The 4 hemodynamic states, the output buffer and the counter — nothing else. The BOLD
+    # readout is a function of the states alone, so it is not carried through the scan.
+    assert carried == 4 * n_node + (n_steps // period_steps) * n_node + 1
     assert carried < n_steps * n_node
+
+
+def test_a_state_only_readout_is_evaluated_once_per_sample():
+    """The readout runs per emitted sample, not per integration step.
+
+    BOLD is a function of the hemodynamic states alone, so evaluating it every step and
+    discarding all but the boundary value is ~`period` times more work than needed. The
+    resolver decides this symbolically: a readout that reads the observed signal or a
+    per-step derived variable cannot be deferred and stays in the scan body.
+    """
+    obs = CuratedObservation.from_db("BOLD_Balloon")
+    obs.source = ["r"]
+    assert resolve_reduction(obs, _Exp())["output_per_step"] is False
+
+    # ... whereas one that reads the source itself must stay per-step.
+    reads_source = _observer(source="r", period=720.0, states={"acc": ("acc + r", None)},
+                             dvs={"out": ("acc * r", True)})
+    assert resolve_reduction(reads_source, _Exp())["output_per_step"] is True
+
+
+def test_derived_parameters_are_bound_once_outside_the_scan():
+    """Observer constants belong in the preamble, not recomputed every step.
+
+    `derived_parameters` is the slot every other backend already uses for this; declaring
+    them as `derived_variables` instead would put them in the per-step body AND force the
+    readout that reads them onto the per-step path.
+    """
+    obs = CuratedObservation.from_db("BOLD_Balloon")
+    obs.source = ["r"]
+    red = resolve_reduction(obs, _Exp())
+    assert [d["name"] for d in red["derived_constants"]] == ["dt_s", "k1", "k2", "k3"]
+    assert red["derived"] == [] or all(d["name"] == "bold_signal" for d in red["derived"])
+
+    src = _OBS_TEMPLATE.get_def("render_recurrence_reduction").render(
+        red=red, name="bold", s_idx=0, dt=1.0)
+    body = src.split("def _step(")[1]
+    assert "k1 = " not in body and "dt_s = " not in body
+
+
+def test_a_derived_parameter_that_varies_per_step_is_rejected():
+    """A constant that reads a state is not a constant; say so instead of emitting it."""
+    obs = _observer(period=720.0)
+    # multivalued slot: mutate in place, an assignment does not go through the normaliser
+    obs.dynamics.derived_parameters["bad"] = DerivedParameter(
+        name="bad", equation=Equation(rhs="acc * 2"))
+    with pytest.raises(ValueError, match="which vary per step"):
+        resolve_reduction(obs, _Exp())

@@ -1,3 +1,6 @@
+<%!
+from tvbo.utils import initial_value as _initial_value
+%>\
 ## -*- coding: utf-8 -*-
 ##
 ## PyRates Model Template (OperatorTemplate only)
@@ -135,7 +138,6 @@
         display_k = repl.get(k, k)
         raw_eq = m.render_equation(sv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)
         equations.append(f"{display_k}' = {_pyrates_compat(raw_eq)}")
-        from tvbo.utils import initial_value as _initial_value
         iv = _initial_value(sv)
         variables[display_k] = f"variable({iv})"
 
