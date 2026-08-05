@@ -144,6 +144,32 @@ def test_lems_time_normalisation_is_not_the_base_dimension_vector():
     assert unit_dimensions("mV")["second"] == Fraction(-3)
 
 
+def test_an_uncurated_unit_is_recorded_rather_than_rejected():
+    """The `unit` range is open, so a unit nobody curated yet can still be written down.
+
+    `nM` used to raise `ValueError: Unknown UnitEnum enumeration code`, which left an
+    author two options — misdeclare the quantity as something in the enum, or declare
+    nothing. Both lose more than an unrecognised string does. It is recorded verbatim
+    and carries no dimensional claim, so anything reasoning about it reports
+    underdetermined instead of guessing.
+    """
+    from tvbo.datamodel import schema
+
+    parameter = schema.Parameter(name="concentration", value=1.0, unit="nM")
+
+    assert str(parameter.unit) == "nM"
+    assert unit_facts("nM") is None
+    assert unit_dimensions("nM") is None
+
+
+def test_opening_the_range_leaves_a_curated_unit_untouched():
+    """`unit: mV` means what it meant, which is why the dump corpus does not move."""
+    from tvbo.datamodel import schema
+
+    assert str(schema.Parameter(name="v", value=1.0, unit="mV").unit) == "mV"
+    assert unit_dimensions("mV") is not None
+
+
 def test_the_vendored_file_is_current():
     """A `UnitEnum` change without `make gen-units` leaves the two out of step."""
     stale = set(ENUM).symmetric_difference(VENDORED)

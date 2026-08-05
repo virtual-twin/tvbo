@@ -141,11 +141,21 @@ slots:
         inlined: true
     unit:
         slot_uri: qudt:unit
-        range: UnitEnum
+        any_of:
+            - range: UnitEnum
+            - range: string
         description: >-
-            Physical unit of measurement. Values are drawn from the QUDT
-            ontology (http://qudt.org/vocab/unit/) with UO cross-references
-            where available.
+            Physical unit of measurement. `UnitEnum` is the curated vocabulary — each
+            of its values is vendored from QUDT (`ontology/tvb-o-units.ttl`) and can be
+            reasoned about dimensionally. The range is deliberately open beyond it: a
+            unit nobody has curated yet is recorded as written and reported `uncurated`,
+            because a closed range forces the author to either misdeclare the quantity
+            or leave it undeclared, and both lose more than an unrecognised string does.
+            An uncurated unit carries no dimensional claim, so a check involving it
+            reports `underdetermined` rather than guessing. Promote one with
+            `tvbo units add <unit>`, which pulls its QUDT record into the vendored
+            module — so every unit TVBO *reasons* about stays authoritative, and only
+            what it *records* is open.
     derived_from:
         slot_uri: prov:wasDerivedFrom
     provenance:
