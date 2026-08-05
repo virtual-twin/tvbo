@@ -1,11 +1,9 @@
 import jax.numpy as jnp
-import jax.scipy as jsp
 
 
 def dfun(current_state, t, cX, _p):
     # Parameters
     F = _p.F
-    N = _p.N
 
     # State variables
     x0 = current_state[0]

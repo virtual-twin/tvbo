@@ -1,15 +1,8 @@
-
-
-
-
-
 function Epileptor3DStefanescuMcDonald!(dx, x, p, t = 0)
 
     (;N, x_0, tau_z, c_glob) = p
 
     x1, z = x
-
-
 
 
     dx[1] = N .* (c_glob .+ x1 .- z .- x1 .^ 3 / 3)
@@ -37,5 +30,3 @@ prob = ODEProblem(Epileptor3DStefanescuMcDonald!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

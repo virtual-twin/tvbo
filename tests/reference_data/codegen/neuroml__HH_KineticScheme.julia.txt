@@ -1,15 +1,8 @@
-
-
-
-
-
 function HH_KineticScheme!(dx, x, p, t = 0)
 
     (;C, v0, thresh, pulse_delay, pulse_duration, I_amp) = p
 
      = x
-
-
 
 
     dx
@@ -33,5 +26,3 @@ prob = ODEProblem(HH_KineticScheme!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

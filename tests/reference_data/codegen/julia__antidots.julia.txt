@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function Antidots!(dx, _x, p, t = 0)
 
     (;d0, c, B) = p
 
     x, y, vx, vy = _x
-
 
 
     xt = -0.5 .+ (-floor(1.0 * x) .+ 1.0 * x)
@@ -47,5 +41,3 @@ prob = ODEProblem(Antidots!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

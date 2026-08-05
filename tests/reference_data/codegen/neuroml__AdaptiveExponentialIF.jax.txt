@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-import jax.scipy as jsp
 
 
 def dfun(current_state, t, cX, _p):
@@ -8,12 +7,9 @@ def dfun(current_state, t, cX, _p):
     gL = _p.gL
     EL = _p.EL
     VT = _p.VT
-    thresh = _p.thresh
-    reset = _p.reset
     delT = _p.delT
     tauw = _p.tauw
     a = _p.a
-    b = _p.b
     I_ext = _p.I_ext
 
     # State variables

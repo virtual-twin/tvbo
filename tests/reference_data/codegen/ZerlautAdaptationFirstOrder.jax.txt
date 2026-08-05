@@ -35,8 +35,6 @@ def dfun(current_state, t, cX, _p):
     P8_i = _p.P8_i
     P9_e = _p.P9_e
     P9_i = _p.P9_i
-    P_e = _p.P_e
-    P_i = _p.P_i
     Q_e = _p.Q_e
     Q_i = _p.Q_i
     S_i = _p.S_i

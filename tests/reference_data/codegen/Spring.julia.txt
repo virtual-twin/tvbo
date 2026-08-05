@@ -1,8 +1,3 @@
-
-
-
-
-
 function Dynamics!(dx, _x, p, t = 0)
 
     (;k, m) = p
@@ -38,5 +33,3 @@ prob = ODEProblem(Dynamics!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

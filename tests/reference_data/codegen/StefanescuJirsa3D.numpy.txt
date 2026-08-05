@@ -1,5 +1,4 @@
 import numpy as np
-import scipy.special
 
 
 def dfun(current_state, t, cX, _p):
@@ -14,8 +13,6 @@ def dfun(current_state, t, cX, _p):
     K_11 = _p.K_11
     K_12 = _p.K_12
     K_21 = _p.K_21
-    sigma = _p.sigma
-    mu = _p.mu
 
     # Coupling
     c_glob = cX[0]

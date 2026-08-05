@@ -1,15 +1,8 @@
-
-
-
-
-
 function ArnoldCatMap!(dx, _x, p, t = 0)
 
     (;) = p
 
     x, y = _x
-
-
 
 
     dx[1] = (y .- floor(y .+ 2 * x) .+ 2 * x)
@@ -37,5 +30,3 @@ prob = ODEProblem(ArnoldCatMap!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

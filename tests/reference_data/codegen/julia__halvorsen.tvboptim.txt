@@ -31,7 +31,6 @@ class Halvorsen(AbstractDynamics):
         external: Bunch,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         a = params.a
-        b = params.b
         c = params.c
 
         x = state[0]

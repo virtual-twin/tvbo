@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function HH_Tissue_Q10!(dx, x, p, t = 0)
 
     (;C, g_Na, g_K, g_L, E_Na, E_K, E_L, I_amp, Q10_early, Q10_late, switch_time) = p
 
     v, m, h, n = x
-
 
 
     I_ext = I_amp
@@ -50,5 +44,3 @@ prob = ODEProblem(HH_Tissue_Q10!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

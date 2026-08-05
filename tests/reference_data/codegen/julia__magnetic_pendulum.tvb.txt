@@ -91,7 +91,6 @@ class MagneticPendulum(Model):
         d = self.d
         alpha = self.alpha
         omega = self.omega
-        N = self.N
 
         # Coupling Terms (from coupling array)
 

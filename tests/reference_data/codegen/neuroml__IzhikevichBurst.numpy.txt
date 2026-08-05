@@ -1,14 +1,10 @@
 import numpy as np
-import scipy.special
 
 
 def dfun(current_state, t, cX, _p):
     # Parameters
     a = _p.a
     b = _p.b
-    c = _p.c
-    d = _p.d
-    thresh = _p.thresh
     I_amp = _p.I_amp
     pulse_delay = _p.pulse_delay
     pulse_duration = _p.pulse_duration

@@ -43,12 +43,9 @@ class AdaptiveExponentialIF(AbstractDynamics):
         I_ext = params.I_ext
         VT = params.VT
         a = params.a
-        b = params.b
         delT = params.delT
         gL = params.gL
-        reset = params.reset
         tauw = params.tauw
-        thresh = params.thresh
 
         v = state[0]
         w = state[1]

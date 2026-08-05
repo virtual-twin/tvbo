@@ -1,14 +1,8 @@
-
-
-
-
-
 function WilsonCowan!(dx, x, p, t = 0)
 
     (;P, Q, a_e, a_i, alpha_e, alpha_i, b_e, b_i, c_e, c_ee, c_ei, c_i, c_ie, c_ii, k_e, k_i, r_e, r_i, shift_sigmoid, tau_e, tau_i, theta_e, theta_i, c_glob, local_coupling) = p
 
     E, I = x
-
 
 
     lc_0 = E .* local_coupling
@@ -43,5 +37,3 @@ prob = ODEProblem(WilsonCowan!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

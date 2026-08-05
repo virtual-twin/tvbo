@@ -1,14 +1,8 @@
-
-
-
-
-
 function LarterBreakspear!(dx, x, p, t = 0)
 
     (;C, I_ext, Q_Vmax, Q_Zmax, T_Ca, T_K, T_Na, V_Ca, V_K, V_L, V_Na, V_T, Z_T, a_ee, a_ei, a_ie, a_ne, a_ni, b, delta_Ca, delta_K, delta_Na, delta_V, delta_Z, g_Ca, g_K, g_L, g_Na, phi, r_NMDA, t_scale, tau_K, c_glob, local_coupling) = p
 
     V, W, Z = x
-
 
 
     Q_V = 0.5 * Q_Vmax .* (1 .+ tanh((V .- V_T) ./ delta_V))
@@ -45,5 +39,3 @@ prob = ODEProblem(LarterBreakspear!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

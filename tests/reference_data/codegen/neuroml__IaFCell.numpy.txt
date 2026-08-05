@@ -1,13 +1,10 @@
 import numpy as np
-import scipy.special
 
 
 def dfun(current_state, t, cX, _p):
     # Parameters
     tau = _p.tau
     leakReversal = _p.leakReversal
-    thresh = _p.thresh
-    reset = _p.reset
 
     # State variables
     v = current_state[0]

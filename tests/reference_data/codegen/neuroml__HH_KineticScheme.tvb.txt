@@ -64,13 +64,6 @@ class HH_KineticScheme(Model):
 
         # shape (n_sv, n_modes)
 
-        C = self.C
-        v0 = self.v0
-        thresh = self.thresh
-        pulse_delay = self.pulse_delay
-        pulse_duration = self.pulse_duration
-        I_amp = self.I_amp
-
         # Coupling Terms (from coupling array)
 
         # Derived Variables

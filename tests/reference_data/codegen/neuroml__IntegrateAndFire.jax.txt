@@ -1,13 +1,10 @@
 import jax.numpy as jnp
-import jax.scipy as jsp
 
 
 def dfun(current_state, t, cX, _p):
     # Parameters
     leakReversal = _p.leakReversal
     tau = _p.tau
-    thresh = _p.thresh
-    reset = _p.reset
 
     # State variables
     v = current_state[0]

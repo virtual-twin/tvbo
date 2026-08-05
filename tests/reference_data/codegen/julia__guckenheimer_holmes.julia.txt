@@ -1,15 +1,8 @@
-
-
-
-
-
 function GuckenheimerHolmes!(dx, _x, p, t = 0)
 
     (;a, b, c, d, e, f) = p
 
     x, y, z = _x
-
-
 
 
     dx[1] = a .* x .+ x .* (y .^ 2 .+ z .^ 2) .+ d .* y .* z
@@ -39,5 +32,3 @@ prob = ODEProblem(GuckenheimerHolmes!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

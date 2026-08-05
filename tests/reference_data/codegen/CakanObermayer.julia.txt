@@ -1,14 +1,8 @@
-
-
-
-
-
 function CakanObermayer!(dx, x, p, t = 0)
 
     (;C, E_L, E_A, I_A, J_EE, J_EI, J_IE, J_II, mu_E, mu_I, s_EE, s_EI, s_IE, s_II, tau_se, tau_si, tau_A, r_max, mu_th, k_phi, c_glob) = p
 
     mu_se, mu_si, I_A_var = x
-
 
 
     r_E = r_max ./ (1 .+ exp(-k_phi .* (mu_se .- mu_th)))
@@ -41,5 +35,3 @@ prob = ODEProblem(CakanObermayer!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

@@ -213,7 +213,6 @@ class Epileptor(Model):
         c = self.c
         d = self.d
         r = self.r
-        s = self.s
         x0 = self.x0
         Iext = self.Iext
         slope = self.slope

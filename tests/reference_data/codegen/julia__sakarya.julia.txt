@@ -1,15 +1,8 @@
-
-
-
-
-
 function Sakarya!(dx, _x, p, t = 0)
 
     (;a, b, m) = p
 
     x, y, z = _x
-
-
 
 
     dx[1] = y .+ a .* x .+ y .* z
@@ -39,5 +32,3 @@ prob = ODEProblem(Sakarya!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

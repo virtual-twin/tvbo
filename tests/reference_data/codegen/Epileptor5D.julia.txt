@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function Epileptor5D!(dx, x, p, t = 0)
 
     (;Iext2, Iext, Kf, Ks, Kvf, a, aa, b, bb, c, d, modification, r, s, slope, tau, tt, x0, c_glob0, c_glob1, local_coupling) = p
 
     g, x1, x2, y1, y2, z = x
-
 
 
     x1cond = ifelse(x1 < 0, b .* x1 .- a .* x1 .^ 2, slope .- x2 .+ 0.6 * (-4.0 .+ z) .^ 2)
@@ -50,5 +44,3 @@ prob = ODEProblem(Epileptor5D!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

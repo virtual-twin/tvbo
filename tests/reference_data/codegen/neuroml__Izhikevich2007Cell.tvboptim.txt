@@ -39,10 +39,7 @@ class Izhikevich2007Cell(AbstractDynamics):
         C = params.C
         a = params.a
         b = params.b
-        c = params.c
-        d = params.d
         k = params.k
-        vpeak = params.vpeak
         vr = params.vr
         vt = params.vt
 

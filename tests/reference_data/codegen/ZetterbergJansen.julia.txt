@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function ZetterbergJansen!(dx, x, p, t = 0)
 
     (;He, Hi, P, Q, U, e0, gamma_1T, gamma_1, gamma_2T, gamma_2, gamma_3T, gamma_3, gamma_4, gamma_5, ke, ki, rho_1, rho_2, c_glob, local_coupling) = p
 
     v1, v2, v3, v4, v5, v6, v7, y1, y2, y3, y4, y5 = x
-
 
 
     coupled_input = 2 * e0 ./ (1 .+ exp(rho_1 .* (rho_2 .- c_glob .- local_coupling .* v6)))
@@ -62,5 +56,3 @@ prob = ODEProblem(ZetterbergJansen!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

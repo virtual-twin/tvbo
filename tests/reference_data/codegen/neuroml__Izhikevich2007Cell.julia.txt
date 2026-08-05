@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function Izhikevich2007Cell!(dx, x, p, t = 0)
 
     (;C, k, vr, vt, vpeak, a, b, c, d) = p
 
     v, u = x
-
 
 
     I_ext = ifelse(t >= 0.05 && t < 0.25, 1000.0, 0.0)
@@ -39,5 +33,3 @@ prob = ODEProblem(Izhikevich2007Cell!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

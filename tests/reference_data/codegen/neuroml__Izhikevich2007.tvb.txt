@@ -91,11 +91,8 @@ class Izhikevich2007(Model):
         k = self.k
         vr = self.vr
         vt = self.vt
-        vpeak = self.vpeak
         a = self.a
         b = self.b
-        c = self.c
-        d = self.d
 
         # Coupling Terms (from coupling array)
 

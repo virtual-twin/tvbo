@@ -1,15 +1,8 @@
-
-
-
-
-
 function LotkaVolterraPredPrey!(dx, _x, p, t = 0)
 
     (;alpha, beta, delta, gamma) = p
 
     x, y = _x
-
-
 
 
     dx[1] = alpha .* x .- beta .* x .* y
@@ -37,5 +30,3 @@ prob = ODEProblem(LotkaVolterraPredPrey!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

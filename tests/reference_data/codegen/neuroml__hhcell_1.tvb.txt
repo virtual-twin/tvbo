@@ -202,7 +202,6 @@ class hhcell_1(Model):
         E_Na = self.E_Na
         E_K = self.E_K
         E_L = self.E_L
-        thresh = self.thresh
         rate_am = self.rate_am
         midpoint_am = self.midpoint_am
         scale_am = self.scale_am

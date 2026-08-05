@@ -1,15 +1,8 @@
-
-
-
-
-
 function HindmarshRose!(dx, _x, p, t = 0)
 
     (;a, b, c, d, r, s, xr, I) = p
 
     x, y, z = _x
-
-
 
 
     dx[1] = I .+ y .- z .+ b .* x .^ 2 .- a .* x .^ 3
@@ -39,5 +32,3 @@ prob = ODEProblem(HindmarshRose!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

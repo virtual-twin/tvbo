@@ -1,8 +1,3 @@
-
-
-
-
-
 import NaNMath
 function ZerlautAdaptationSecondOrder!(dx, x, p, t = 0)
 
@@ -75,5 +70,3 @@ prob = ODEProblem(ZerlautAdaptationSecondOrder!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

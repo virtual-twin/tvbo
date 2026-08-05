@@ -1,15 +1,8 @@
-
-
-
-
-
 function QuadrupoleBosonHamiltonian!(dx, x, p, t = 0)
 
     (;A, B, D) = p
 
     q0, p0, q2, p2 = x
-
-
 
 
     dx[1] = A .* p0
@@ -41,5 +34,3 @@ prob = ODEProblem(QuadrupoleBosonHamiltonian!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

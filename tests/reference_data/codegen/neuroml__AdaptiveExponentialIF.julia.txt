@@ -1,15 +1,8 @@
-
-
-
-
-
 function AdaptiveExponentialIF!(dx, x, p, t = 0)
 
     (;C, gL, EL, VT, thresh, reset, delT, tauw, a, b, I_ext) = p
 
     v, w = x
-
-
 
 
     dx[1] = (I_ext .- w .- gL .* (v .- EL) .+ delT .* gL .* exp((v .- VT) ./ delT)) ./ C
@@ -37,5 +30,3 @@ prob = ODEProblem(AdaptiveExponentialIF!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

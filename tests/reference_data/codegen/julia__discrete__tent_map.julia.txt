@@ -1,16 +1,9 @@
-
-
-
-
-
 import NaNMath
 function TentMap!(dx, _x, p, t = 0)
 
     (;mu,) = p
 
     x = _x[1]
-
-
 
 
     dx[1] = ifelse(x < 0.5, mu .* x, mu .* (1 .- x))
@@ -36,5 +29,3 @@ prob = ODEProblem(TentMap!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

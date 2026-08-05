@@ -1,14 +1,8 @@
-
-
-
-
-
 function Kuramoto!(dx, x, p, t = 0)
 
     (;omega, c_glob, local_coupling) = p
 
     theta = x[1]
-
 
 
     lc_0 = sin(local_coupling .* theta)
@@ -37,5 +31,3 @@ prob = ODEProblem(Kuramoto!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

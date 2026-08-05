@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function EpileptorRestingState!(dx, x, p, t = 0)
 
     (;I_rs, Iext2, Iext, K_rs, Kf, Ks, Kvf, a, a_rs, aa, alpha_rs, b, b_rs, bb, beta_rs, c, d, d_rs, e_rs, f_rs, gamma_rs, p, r, slope, tau, tau_rs, tt, x0, c_glob0, c_glob1, c_glob2, local_coupling) = p
 
     g, x1, x2, x_rs, y1, y2, y_rs, z = x
-
 
 
     lc_1 = local_coupling .* x_rs
@@ -55,5 +49,3 @@ prob = ODEProblem(EpileptorRestingState!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

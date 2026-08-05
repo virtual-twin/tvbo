@@ -80,7 +80,6 @@ class hhcell_1(AbstractDynamics):
         scale_bh = params.scale_bh
         scale_bm = params.scale_bm
         scale_bn = params.scale_bn
-        thresh = params.thresh
 
         v = state[0]
         m = state[1]

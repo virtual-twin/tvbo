@@ -1,15 +1,8 @@
-
-
-
-
-
 function Generic2dOscillator!(dx, x, p, t = 0)
 
     (;I, a, alpha, b, beta, c, d, e, f, g, gamma, tau, c_glob, local_coupling) = p
 
     V, W = x
-
-
 
 
     dx[1] = d .* tau .* (I .* gamma .+ V .* g .+ V .* local_coupling .+ W .* alpha .+ c_glob .* gamma .+ e .* V .^ 2 .- f .* V .^ 3)
@@ -37,5 +30,3 @@ prob = ODEProblem(Generic2dOscillator!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

@@ -1,15 +1,8 @@
-
-
-
-
-
 function HenonMap!(dx, _x, p, t = 0)
 
     (;a, b) = p
 
     x, y = _x
-
-
 
 
     dx[1] = 1 .+ y .- a .* x .^ 2
@@ -37,5 +30,3 @@ prob = ODEProblem(HenonMap!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

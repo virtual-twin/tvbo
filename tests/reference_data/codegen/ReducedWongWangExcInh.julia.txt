@@ -1,14 +1,8 @@
-
-
-
-
-
 function ReducedWongWangExcInh!(dx, x, p, t = 0)
 
     (;G, I_ext, I_o, J_N, J_i, W_e, W_i, a_e, a_i, b_e, b_i, d_e, d_i, gamma_e, gamma_i, lamda, tau_e, tau_i, w_p, c_glob, local_coupling) = p
 
     S_e, S_i = x
-
 
 
     J_N_S_e = J_N .* S_e
@@ -43,5 +37,3 @@ prob = ODEProblem(ReducedWongWangExcInh!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

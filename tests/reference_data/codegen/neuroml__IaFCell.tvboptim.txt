@@ -32,9 +32,7 @@ class IaFCell(AbstractDynamics):
         external: Bunch,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         leakReversal = params.leakReversal
-        reset = params.reset
         tau = params.tau
-        thresh = params.thresh
 
         v = state[0]
 

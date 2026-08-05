@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function Epileptor!(dx, x, p, t = 0)
 
     (;a, b, c, d, r, s, x0, Iext, slope, Iext2, tau, aa, bb, Kvf, Kf, Ks, tt, modification, c_glob0, c_glob1, local_coupling) = p
 
     x1, y1, z, x2, y2, g = x
-
 
 
     Iext_total = Iext .+ local_coupling .* x1
@@ -51,5 +45,3 @@ prob = ODEProblem(Epileptor!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-
