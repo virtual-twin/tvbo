@@ -81,7 +81,6 @@ integration:
   abs_tol: 1.0e-10
   rel_tol: 1.0e-10
   step_size: 0.2
-  time_scale: ms
   duration: 150.0
   transient_time: 0.0
   scipy_ode_base: false
@@ -111,13 +110,11 @@ network:
   graph_representation: auto
   number_of_nodes: 1
   distance_unit: mm
-  time_unit: ms
 observations:
   recorded_ts:
     name: recorded_ts
     label: Recorded fast variable V (subsampled)
     description: 'The observed time series: V at node 0, subsampled every 15 steps.'
-    time_scale: ms
     source:
     - V
     reconcile: by_label

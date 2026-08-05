@@ -17,7 +17,6 @@ parameters:
     description: 'Re-referencing scheme. Options: - Electrode label (e.g. "Cz"): subtract
       that electrode signal - "average": subtract mean across all channels - null:
       ideal reference-free recording'
-time_scale: ms
 period: 0.9765625
 imaging_modality: EEG
 data_source:

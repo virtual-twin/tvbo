@@ -2,7 +2,6 @@ name: SubSample
 label: Temporal Decimation
 description: Temporal decimation of selected state variables. Records every N-th integration
   step without any averaging or smoothing.
-time_scale: ms
 period: 0.9765625
 reconcile: by_label
 pipeline:

@@ -8,7 +8,6 @@ parameters:
     name: spatial_mask
     description: Vector of length N_nodes mapping each node to a region index (0-indexed).
       Inferred from network topology if not provided.
-time_scale: ms
 period: 0.9765625
 reconcile: by_label
 pipeline:

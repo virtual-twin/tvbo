@@ -5,6 +5,7 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+time_unit: ms
 nodes:
 - id: 1
   label: '1'
@@ -173,4 +174,3 @@ bids:
   cohort: HCPYA
   reconstruction: dTOR
 distance_unit: mm
-time_unit: ms

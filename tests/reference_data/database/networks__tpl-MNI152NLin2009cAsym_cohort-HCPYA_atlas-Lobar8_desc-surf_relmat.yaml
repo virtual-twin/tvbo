@@ -5,6 +5,7 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+time_unit: ms
 graph_representation: auto
 number_of_nodes: 327684
 parcellation:
@@ -20,4 +21,3 @@ bids:
 parent_network: tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.yaml
 node_mapping: /mesh/region_mapping
 distance_unit: mm
-time_unit: ms

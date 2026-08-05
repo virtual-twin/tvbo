@@ -5,6 +5,7 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+time_unit: ms
 nodes:
 - id: 0
   label: node_0
@@ -61,4 +62,3 @@ graph_representation: auto
 number_of_nodes: 9
 data_file: SmileyNetwork.h5
 distance_unit: mm
-time_unit: ms

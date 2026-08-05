@@ -6,7 +6,6 @@ description: BOLD fMRI observation model using the Balloon-Windkessel hemodynami
   state, and the BOLD signal is emitted at each TR, so peak memory is O(nodes) instead
   of O(time x nodes).
 iri: tvbo:BOLD_Balloon
-time_scale: ms
 period: 720.0
 imaging_modality: BOLD
 reconcile: by_label

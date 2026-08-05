@@ -9,6 +9,7 @@ description: "Per-region MEG alpha-band amplitude values aligned with the 68 cor
   \ reservoir-computing frequency-gradient\ntargets, JR-MEG peak-frequency optimisation).\
   \ The values are\ndimensionless normalised amplitudes; downstream consumers rescale\n\
   to a task-appropriate range (e.g. omega in Hz).\n"
+time_unit: ms
 nodes:
 - id: 0
   label: ctx-lh-bankssts
@@ -696,4 +697,3 @@ descriptor: MEGAlpha
 observational_measures:
 - megalpha
 distance_unit: mm
-time_unit: ms

@@ -169,7 +169,6 @@ integration:
   abs_tol: 1.0e-10
   rel_tol: 1.0e-10
   step_size: 1.0
-  time_scale: ms
   duration: 60000.0
   transient_time: 60000.0
   scipy_ode_base: false
@@ -211,12 +210,10 @@ network:
   observational_measures:
   - BoldCorrelation
   distance_unit: mm
-  time_unit: ms
 observations:
   psd:
     name: psd
     label: Welch PSD (per node)
-    time_scale: ms
     source:
     - x
     reconcile: by_label
@@ -230,7 +227,6 @@ observations:
   fitted_peaks:
     name: fitted_peaks
     label: Soft-argmax peak frequency (per node)
-    time_scale: ms
     source:
     - x
     reconcile: by_label
@@ -250,14 +246,12 @@ observations:
   empirical_fc:
     name: empirical_fc
     label: Empirical FC (dk_average BOLD correlation)
-    time_scale: ms
     source:
     - network.observations.BoldCorrelation
     reconcile: by_label
   bold:
     name: bold
     label: Simulated BOLD (x, First-Order Volterra HRF)
-    time_scale: ms
     source:
     - x
     period: 1000.0
@@ -342,7 +336,6 @@ observations:
   fc:
     name: fc
     label: Simulated FC
-    time_scale: ms
     source:
     - bold
     reconcile: by_label
@@ -360,7 +353,6 @@ observations:
   fc_corr_val:
     name: fc_corr_val
     label: FC correlation (simulated vs empirical)
-    time_scale: ms
     source:
     - fc
     reconcile: by_label
@@ -379,7 +371,6 @@ observations:
   one_minus_fc:
     name: one_minus_fc
     label: 1 - FC correlation (GA objective, lower is better)
-    time_scale: ms
     source:
     - fc
     reconcile: by_label
@@ -396,7 +387,6 @@ observations:
   psd_mae:
     name: psd_mae
     label: PSD MAE to uniform 9 Hz
-    time_scale: ms
     source:
     - x
     reconcile: by_label
@@ -422,7 +412,6 @@ observations:
   freq_grad_corr:
     name: freq_grad_corr
     label: Correlation of fitted peaks to target frequency gradient
-    time_scale: ms
     source:
     - x
     reconcile: by_label

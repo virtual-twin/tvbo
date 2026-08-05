@@ -8,7 +8,6 @@ parameters:
     name: TR
     value: 2000.0
     unit: ms
-time_scale: ms
 imaging_modality: BOLD
 reconcile: by_label
 pipeline:

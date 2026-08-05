@@ -2,7 +2,6 @@ method: Identity
 abs_tol: 1.0e-10
 rel_tol: 1.0e-10
 step_size: 0.01220703125
-time_scale: ms
 duration: 1000.0
 transient_time: 0.0
 scipy_ode_base: false

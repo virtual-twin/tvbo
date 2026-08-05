@@ -13,7 +13,6 @@ parameters:
     name: fisher_z
     value: true
     description: Apply Fisher z-transformation to correlations
-time_scale: ms
 period: 720.0
 reconcile: by_label
 pipeline:

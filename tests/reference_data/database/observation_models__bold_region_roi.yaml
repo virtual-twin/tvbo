@@ -9,7 +9,6 @@ parameters:
     name: hrf_length
     value: 20000.0
     unit: ms
-time_scale: ms
 period: 2000.0
 imaging_modality: BOLD
 reconcile: by_label

@@ -10,7 +10,6 @@ parameters:
     value: 720.0
     description: Repetition time (sampling period)
     unit: ms
-time_scale: ms
 imaging_modality: BOLD
 reconcile: by_label
 pipeline:

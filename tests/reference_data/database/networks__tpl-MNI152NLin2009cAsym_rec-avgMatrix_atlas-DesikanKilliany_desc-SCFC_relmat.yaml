@@ -5,6 +5,7 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+time_unit: ms
 nodes:
 - id: 0
   label: L.BSTS
@@ -718,4 +719,3 @@ bids:
   template: MNI152NLin2009cAsym
   reconstruction: avgMatrix
 distance_unit: mm
-time_unit: ms

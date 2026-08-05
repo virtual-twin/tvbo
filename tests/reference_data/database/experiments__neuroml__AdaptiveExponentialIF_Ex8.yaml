@@ -105,7 +105,7 @@ integration:
   abs_tol: 1.0e-10
   rel_tol: 1.0e-10
   step_size: 0.025
-  time_scale: ms
+  time_unit: ms
   duration: 300.0
   transient_time: 0.0
   scipy_ode_base: false
@@ -116,4 +116,3 @@ network:
   graph_representation: auto
   number_of_nodes: 1
   distance_unit: mm
-  time_unit: ms

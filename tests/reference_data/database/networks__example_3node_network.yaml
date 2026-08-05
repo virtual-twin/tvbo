@@ -143,4 +143,3 @@ coupling:
 graph_representation: auto
 number_of_nodes: 3
 distance_unit: mm
-time_unit: ms

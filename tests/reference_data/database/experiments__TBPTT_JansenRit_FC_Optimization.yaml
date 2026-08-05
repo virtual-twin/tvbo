@@ -175,7 +175,6 @@ integration:
   abs_tol: 1.0e-10
   rel_tol: 1.0e-10
   step_size: 1.0
-  time_scale: ms
   duration: 60000.0
   transient_time: 20000.0
   scipy_ode_base: false
@@ -238,19 +237,16 @@ network:
   observational_measures:
   - BoldCorrelation
   distance_unit: mm
-  time_unit: ms
 observations:
   empirical_fc:
     name: empirical_fc
     label: Empirical Functional Connectivity
-    time_scale: ms
     source:
     - network.observations.BoldCorrelation
     reconcile: by_label
   bold:
     name: bold
     label: Simulated BOLD Signal
-    time_scale: ms
     source:
     - y0
     period: 720.0
@@ -314,7 +310,6 @@ observations:
   fc:
     name: fc
     label: Simulated Functional Connectivity
-    time_scale: ms
     source:
     - bold
     reconcile: by_label
@@ -334,7 +329,6 @@ observations:
     label: FC-RMSE loss
     description: RMSE between simulated and empirical FC (the optimization/diagnostic
       objective)
-    time_scale: ms
     source:
     - fc
     - empirical_fc
@@ -352,7 +346,6 @@ observations:
     name: lyapunov
     label: Top Lyapunov exponent
     description: Largest Lyapunov exponent on a short segment (marks the chaos onset)
-    time_scale: ms
     reconcile: by_label
     analysis:
       parameters:
@@ -373,7 +366,6 @@ observations:
     label: AD gradient of loss w.r.t. G
     description: Reverse-mode autodiff gradient of the FC-RMSE loss w.r.t. global
       coupling G
-    time_scale: ms
     reconcile: by_label
     analysis:
       parameters:
@@ -392,7 +384,6 @@ observations:
       the tape-free ground-truth reference for the AD gradient in the chaotic band.
 
       '
-    time_scale: ms
     reconcile: by_label
     analysis:
       parameters:
@@ -421,7 +412,6 @@ observations:
       mean.
 
       '
-    time_scale: ms
     reconcile: by_label
     analysis:
       parameters:

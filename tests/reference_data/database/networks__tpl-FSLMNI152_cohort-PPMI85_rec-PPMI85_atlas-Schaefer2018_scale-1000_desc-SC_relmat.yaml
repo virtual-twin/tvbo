@@ -5,6 +5,7 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+time_unit: ms
 nodes:
 - id: 0
   label: node_0
@@ -4037,4 +4038,3 @@ bids:
   reconstruction: PPMI85
   scale: '1000'
 distance_unit: mm
-time_unit: ms

@@ -2,7 +2,6 @@ name: TemporalAverage
 label: Temporal Average
 description: Running temporal mean over a sliding window of configurable length. Returns
   one averaged sample per period.
-time_scale: ms
 period: 0.9765625
 reconcile: by_label
 pipeline:

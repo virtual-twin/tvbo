@@ -251,7 +251,6 @@ integration:
   abs_tol: 1.0e-10
   rel_tol: 1.0e-10
   step_size: 4.0
-  time_scale: ms
   duration: 300000.0
   description: Heun integrator
   transient_time: 300000.0
@@ -330,13 +329,11 @@ network:
   observational_measures:
   - BoldCorrelation
   distance_unit: mm
-  time_unit: ms
 observations:
   bold:
     name: bold
     label: Simulated BOLD Signal
     description: BOLD signal from hemodynamic response function
-    time_scale: ms
     source:
     - S_e
     period: 720.0
@@ -401,7 +398,6 @@ observations:
     name: mean_S_e
     label: Mean Excitatory Activity
     description: Mean S_e over simulation window (for FIC algorithms)
-    time_scale: ms
     source:
     - S_e
     reconcile: by_label
@@ -410,7 +406,6 @@ observations:
     name: mean_S_e_final
     label: Mean Excitatory Activity (Final 500 Timesteps)
     description: Mean S_e over final 500 timesteps (for gradient optimization loss)
-    time_scale: ms
     source:
     - S_e
     reconcile: by_label
@@ -420,7 +415,6 @@ observations:
     name: mean_S_i
     label: Mean Inhibitory Activity
     description: Mean S_i over simulation window (for FIC)
-    time_scale: ms
     source:
     - S_i
     reconcile: by_label
@@ -429,7 +423,6 @@ observations:
     name: fc_target
     label: Empirical Functional Connectivity
     description: Target FC matrix from network observations (loaded from BIDS)
-    time_scale: ms
     source:
     - network.observations.BoldCorrelation
     reconcile: by_label
@@ -438,7 +431,6 @@ observations:
     label: Simulated Functional Connectivity (Post-Tuning)
     description: Pearson correlation matrix from BOLD time series (skip_t=20 for post-tuning
       evaluation)
-    time_scale: ms
     source:
     - bold
     reconcile: by_label
@@ -459,7 +451,6 @@ observations:
     label: Simulated Functional Connectivity (In-Loop)
     description: FC computed on sliding window without transient skip (for algorithm
       in-loop)
-    time_scale: ms
     source:
     - bold
     reconcile: by_label
@@ -479,7 +470,6 @@ observations:
     name: fc_gradient
     label: Simulated FC for Gradient Optimization
     description: FC computation for gradient optimization (skip_t=30 as in original)
-    time_scale: ms
     source:
     - bold
     reconcile: by_label
@@ -499,7 +489,6 @@ observations:
     name: fc_corr
     label: FC Correlation with Target
     description: Pearson correlation between simulated FC and empirical FC target
-    time_scale: ms
     source:
     - fc
     - fc_target
@@ -519,7 +508,6 @@ observations:
     name: fc_rmse
     label: FC RMSE with Target
     description: Root mean squared error between simulated FC and empirical FC target
-    time_scale: ms
     source:
     - fc
     - fc_target
@@ -921,7 +909,6 @@ optimizations:
       abs_tol: 1.0e-10
       rel_tol: 1.0e-10
       step_size: 4.0
-      time_scale: ms
       duration: 300000.0
       transient_time: 0.0
       scipy_ode_base: false

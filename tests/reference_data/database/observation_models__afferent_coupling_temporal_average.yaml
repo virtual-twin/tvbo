@@ -2,7 +2,6 @@ name: AfferentCouplingTemporalAverage
 label: Afferent Coupling Temporal Average
 description: Temporally averaged afferent coupling input at each node. Combines coupling
   input recording with temporal averaging.
-time_scale: ms
 source:
 - coupling
 period: 0.9765625

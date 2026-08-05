@@ -7,6 +7,7 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+time_unit: ms
 nodes:
 - id: 0
   label: Fp1
@@ -543,4 +544,3 @@ descriptor: sensors
 bids:
   acquisition: EEGBrainstorm65
 distance_unit: mm
-time_unit: ms

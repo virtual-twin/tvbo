@@ -13,6 +13,7 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+time_unit: ms
 nodes:
 - id: 0
   label: L_V1
@@ -4971,4 +4972,3 @@ parcellation:
 data_file: tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-avgMatrix_atlas-HCPMMP1_desc-SCFC_relmat.h5
 descriptor: SCFC
 distance_unit: mm
-time_unit: ms

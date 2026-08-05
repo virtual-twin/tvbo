@@ -122,7 +122,6 @@ integration:
   abs_tol: 1.0e-10
   rel_tol: 1.0e-10
   step_size: 4.0
-  time_scale: ms
   duration: 120000.0
   transient_time: 120000.0
   scipy_ode_base: false
@@ -176,13 +175,11 @@ network:
   observational_measures:
   - BoldCorrelation
   distance_unit: mm
-  time_unit: ms
 observations:
   empirical_fc:
     name: empirical_fc
     label: Empirical Functional Connectivity
     description: Target FC matrix from network observations (loaded from BIDS)
-    time_scale: ms
     source:
     - network.observations.BoldCorrelation
     reconcile: by_label
@@ -191,7 +188,6 @@ observations:
     label: Simulated BOLD Signal
     description: BOLD signal from hemodynamic response function (matches tvboptim
       Bold)
-    time_scale: ms
     source:
     - S
     period: 1000.0
@@ -256,7 +252,6 @@ observations:
     name: fc
     label: Simulated Functional Connectivity
     description: Pearson correlation matrix from BOLD time series
-    time_scale: ms
     source:
     - bold
     reconcile: by_label

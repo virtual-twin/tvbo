@@ -884,4 +884,3 @@ bids:
   atlas: Schaefer2018
 node_mapping: /nodes/parent_index
 distance_unit: mm
-time_unit: ms

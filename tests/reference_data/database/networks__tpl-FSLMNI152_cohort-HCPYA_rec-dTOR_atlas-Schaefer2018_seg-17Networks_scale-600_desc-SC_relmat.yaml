@@ -5,6 +5,7 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+time_unit: ms
 nodes:
 - id: 0
   label: 17Networks_LH_VisCent_Striate_1
@@ -4839,4 +4840,3 @@ bids:
   scale: '600'
 node_mapping: /nodes/parent_index
 distance_unit: mm
-time_unit: ms

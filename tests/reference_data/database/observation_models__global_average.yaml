@@ -2,7 +2,6 @@ name: GlobalAverage
 label: Global Spatial Average
 description: Spatial mean across all network nodes at each sampling period. Reduces
   spatial dimension to a single global signal per state variable.
-time_scale: ms
 period: 0.9765625
 reconcile: by_label
 pipeline:

@@ -194,7 +194,6 @@ integration:
   abs_tol: 1.0e-10
   rel_tol: 1.0e-10
   step_size: 1.0
-  time_scale: ms
   duration: 1000.0
   noise:
     parameters:
@@ -267,13 +266,11 @@ network:
   - streamlineCount
   - tractLength
   distance_unit: mm
-  time_unit: ms
 observations:
   simulated_psd:
     name: simulated_psd
     label: Simulated Power Spectral Density
     description: Power spectral density using Welch's method on simulated y0
-    time_scale: ms
     source:
     - y0
     reconcile: by_label
@@ -314,7 +311,6 @@ observations:
     name: avg_spectrum
     label: Average Spectrum
     description: Mean power spectrum across all regions
-    time_scale: ms
     source:
     - simulated_psd
     reconcile: by_label
@@ -336,7 +332,6 @@ observations:
     name: peak_frequencies
     label: Peak Frequencies per Region
     description: Peak frequency for each brain region from its PSD
-    time_scale: ms
     source:
     - simulated_psd
     reconcile: by_label
@@ -377,7 +372,6 @@ observations:
     name: peak_frequency
     label: Peak Frequency
     description: Extract peak frequency from average spectrum
-    time_scale: ms
     source:
     - avg_spectrum
     - simulated_psd

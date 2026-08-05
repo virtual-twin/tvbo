@@ -5,6 +5,7 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+time_unit: ms
 nodes:
 - id: 1
   label: L_V1
@@ -3070,4 +3071,3 @@ bids:
   reconstruction: MghUscHcp32
   segmentation: ordered
 distance_unit: mm
-time_unit: ms
