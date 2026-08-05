@@ -30,6 +30,33 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_slow)
 
 
+@pytest.fixture(autouse=True)
+def _isolate_tvbo_logging():
+    """Restore the ``tvbo`` logger after each test.
+
+    ``tvbo.log.configure_logging`` installs a stream handler and sets
+    ``propagate = False`` so the CLI owns its output and does not double-print through a
+    host application's root logger. That is right for a CLI and wrong to leave behind in a
+    test process: it is global and sticky, so once any test invokes the CLI, every later
+    ``caplog`` assertion reads empty — caplog's handler sits on the root logger, which the
+    records no longer reach — and the captured stream it kept is closed by then, so the
+    handler raises ``I/O operation on closed file`` on the way past.
+
+    Autouse because the pollution is invisible at the point it bites: the failing test is
+    never the one that configured logging.
+    """
+    import logging
+
+    logger = logging.getLogger("tvbo")
+    handlers, propagate, level = list(logger.handlers), logger.propagate, logger.level
+    try:
+        yield
+    finally:
+        logger.handlers[:] = handlers
+        logger.propagate = propagate
+        logger.setLevel(level)
+
+
 @pytest.fixture
 def unwrapped():
     """``fn(code)`` -> *code* with all whitespace removed, for substring checks on codegen.

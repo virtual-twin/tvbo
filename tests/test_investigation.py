@@ -102,6 +102,70 @@ def test_verify_coverage_is_bidirectional(investigation, tmp_path):
     assert any("parcels" in p and "never cited" in p for p in problems)
 
 
+# --------------------------------------------------------------------------- count
+
+
+@pytest.fixture
+def count_investigation(tmp_path):
+    (tmp_path / "members").mkdir()
+    (tmp_path / "members" / "toy.yaml").write_text(
+        "title: Toy\nkey: toy\n"
+        "figures:\n"
+        "  - {name: f1, layout: a, panels: {a: {panel_key: a, kind: image}}}\n"
+        "  - {name: f2, layout: a, panels: {a: {panel_key: a, kind: image}}}\n"
+        "  - {name: f3, layout: a, panels: {a: {panel_key: a, kind: image}}}\n",
+        encoding="utf-8",
+    )
+    spec = tmp_path / "tvbo_manuscript.yaml"
+    spec.write_text(
+        "title: TVB-O\ncitekey: tvbo_manuscript\n"
+        "members:\n  - {recipe: members/toy.yaml, label: toy}\n"
+        "results:\n"
+        "  - {key: n_members, count: members}\n"
+        "  - {key: n_toy_figs, count: 'toy.figures'}\n",
+        encoding="utf-8",
+    )
+    return tvbo.Investigation.from_file(str(spec))
+
+
+def test_count_tallies_member_and_investigation_collections(count_investigation, tmp_path):
+    results, prov, problems = I.resolve_results(count_investigation, tmp_path / "output")
+    assert problems == []
+    assert results["n_members"] == "1"                                  # bare collection on the investigation
+    assert results["n_toy_figs"] == "3"                                 # counted from the loaded member spec
+    assert prov["n_toy_figs"] == {"computed": True, "count": "toy.figures"}
+
+
+def test_count_unknown_collection_is_a_build_problem(tmp_path):
+    (tmp_path / "members").mkdir()
+    (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nkey: toy\n", encoding="utf-8")
+    spec = tmp_path / "tvbo_manuscript.yaml"
+    spec.write_text(
+        "title: TVB-O\ncitekey: tvbo_manuscript\n"
+        "members:\n  - {recipe: members/toy.yaml, label: toy}\n"
+        "results:\n  - {key: oops, count: 'toy.bogus'}\n",
+        encoding="utf-8",
+    )
+    inv = tvbo.Investigation.from_file(str(spec))
+    _, _, problems = I.resolve_results(inv, tmp_path / "output")
+    assert any("oops" in p and "bogus" in p for p in problems)          # typo fails the build, not tallies to 0
+
+
+def test_count_value_used_are_mutually_exclusive(tmp_path):
+    (tmp_path / "members").mkdir()
+    (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nkey: toy\n", encoding="utf-8")
+    spec = tmp_path / "tvbo_manuscript.yaml"
+    spec.write_text(
+        "title: TVB-O\ncitekey: tvbo_manuscript\n"
+        "members:\n  - {recipe: members/toy.yaml, label: toy}\n"
+        "results:\n  - {key: bad, count: members, value: '5'}\n",
+        encoding="utf-8",
+    )
+    inv = tvbo.Investigation.from_file(str(spec))
+    _, _, problems = I.resolve_results(inv, tmp_path / "output")
+    assert any("bad" in p and "mutually exclusive" in p for p in problems)
+
+
 # --------------------------------------------------------------------------- captions
 
 

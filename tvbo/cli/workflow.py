@@ -829,14 +829,32 @@ def _bundle_script_constants(code: str, out_dir: Path) -> int:
     import shutil
 
     dest = out_dir / "constants"
-    n = 0
+    staged: dict[str, Path] = {}
+    missing: list[str] = []
     for p in sorted(set(re.findall(r'_load_constant\(\s*["\']([^"\']+)["\']', code))):
         src = Path(p)
-        if src.is_file():
-            dest.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dest / src.name)
-            n += 1
-    return n
+        if not src.is_file():
+            missing.append(p)
+            continue
+        # The rendered `_load_constant` resolves a missing path BY BASENAME, so two
+        # constants sharing one would fit against whichever was copied last.
+        prior = staged.get(src.name)
+        if prior is not None and prior != src.resolve():
+            _common.die(
+                f"two constants are named {src.name!r} but come from different files:\n"
+                f"  - {prior}\n  - {src.resolve()}\n"
+                "The kit resolves them by basename, so one would silently stand in for "
+                "the other. Rename one, or point both at the same file."
+            )
+        dest.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest / src.name)
+        staged[src.name] = src.resolve()
+    if missing:
+        _common.warn(
+            "these constants were not found on this machine and are NOT in the kit; the "
+            "job will fail on the node unless they exist there:\n  - " + "\n  - ".join(missing)
+        )
+    return len(staged)
 
 
 def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: str) -> str | None:
@@ -1245,18 +1263,21 @@ def _experiment_targets(kit_dir: Path, experiment: str) -> list:
     import re
 
     snakefile = kit_dir / _ARTEFACT_NAME["snakemake"]
-    rules = (set(re.findall(r"^rule\s+(exp_[A-Za-z0-9_]+)\s*:", snakefile.read_text(), re.M))
-             if snakefile.is_file() else set())
+    if not snakefile.is_file():
+        _common.die(f"--experiment needs the kit's {snakefile.name} to validate against, "
+                    f"and {kit_dir} has none.")
+    rules = set(re.findall(r"^rule\s+(exp_[A-Za-z0-9_]+)\s*:", snakefile.read_text(), re.M))
     targets, missing = [], []
     for tok in (t.strip() for t in str(experiment).split(",") if t.strip()):
         rule = "exp_" + re.sub(r"[^0-9A-Za-z]", "_", tok)
-        (targets if rule in rules else missing).append(tok)
+        (targets if rule in rules else missing).append(rule)
     if missing:
         _common.die(
-            f"--experiment: the kit has no rule for {missing}; its experiments are "
+            f"--experiment: the kit has no rule for "
+            f"{[r[len('exp_'):] for r in missing]}; its experiments are "
             f"{sorted(r[len('exp_'):] for r in rules)}."
         )
-    return ["exp_" + re.sub(r"[^0-9A-Za-z]", "_", t.strip()) for t in str(experiment).split(",") if t.strip()]
+    return targets
 
 
 def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | None = None,
@@ -1343,6 +1364,11 @@ def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = No
     :func:`_execute_engine_artefact`).
     """
     if engine == "slurm" and not dry_run:
+        # The chain submits the whole array; it has no per-experiment target, so an
+        # ignored selector would burn the study's allocation on work nobody asked for.
+        if experiment:
+            _common.die(f"--experiment selects experiments from a snakemake study kit; "
+                        f"this is a {engine!r} kit.")
         _submit_slurm_chain(out_dir, slurm_array=slurm_array, code_source=code_source)
     else:
         _execute_engine_artefact(engine, out_dir / _ARTEFACT_NAME[engine],

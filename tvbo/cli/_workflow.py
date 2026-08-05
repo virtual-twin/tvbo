@@ -854,7 +854,7 @@ def plan(
             for _barg in (list(_bargs.values()) if hasattr(_bargs, "values") else _as_list(_bargs or [])):
                 _dep_from_used(getattr(_barg, "used", None))
 
-    # An explicit run venv wins over a declared container: declaring both is the "container silently ignores the venv" footgun, so a set venv drops the container (with a notice) instead of making the caller also clear `container:`.
+    # An explicit run venv wins over a declared container, with a notice.
     _container = resolve_container_ref(spec.get("container"))
     _run_venv = str(engine_block.get("venv") or "").strip()
     if _container and _run_venv:

@@ -212,6 +212,67 @@ A `SimulationStudy` aggregates multiple experiments (e.g. parameter sweeps). Loa
 one with `SimulationStudy.from_db(name)` (see `list_entries("SimulationStudy")`),
 or `tvbo run study:<name>`. See `tvbo/classes/study.py`.
 
+## Before you trust a number: converge the *statistic*, not the trajectory
+
+A run that looks right can still carry enough integration error to change what you
+report. The trap is that the two things have very different sensitivity: a
+**derived statistic** — an argmax, a peak latency, a threshold crossing, an event
+count, any extremum — can move by a large factor while the trajectory it is read
+from barely moves at all.
+
+A measured case: the same linear equation, same basis, same stimulus, same
+parameters, integrated with an adaptive solver at its **default** tolerances
+(`rel_tol` 1e-3 / `abs_tol` 1e-6) versus tight ones (1e-8 / 1e-10). The
+trajectories agree at r ≈ 0.998. The statistic actually being reported — a
+per-region peak latency — flagged **24–26** anomalous regions at the default
+tolerance against **3** at the tight one, and the headline correlation moved from
+−0.19 to −0.41. Nothing warned; both runs completed cleanly.
+
+So converge on the number you will publish:
+
+```python
+base = exp.run("jax")
+
+exp.integration.step_size /= 4        # fixed-step (Heun, RK4): halve/quarter dt
+exp.integration.rel_tol = 1e-12       # adaptive (Tsit5, Vern9, Rodas5): tighten
+exp.integration.abs_tol = 1e-12
+refined = exp.run("jax")
+
+# compare YOUR statistic, not ||trajectory||
+assert abs(my_metric(refined) - my_metric(base)) < a_tolerance_you_can_defend
+```
+
+`exp.integration` is an `Integrator`; `method`, `step_size`, `rel_tol`, `abs_tol`
+and `duration` are plain assignable fields on it. Which knob bites depends on the
+method — tolerances do nothing for a fixed-step `Heun`, `step_size` does nothing
+for an adaptive one.
+
+Three habits that make this cheap:
+
+- **Refine until the reported number stops moving**, using the knob your method
+  actually reads. TVBO defaults `rel_tol` / `abs_tol` to **1e-10** — far tighter
+  than most external tools (MATLAB `ode45` ships 1e-3 / 1e-6), so a disagreement
+  with another package is often a comparison of tolerances rather than of models.
+  Check theirs before concluding anything about yours.
+- **Watch adaptive solvers around brief inputs.** An adaptive solver sizes its
+  step from local error, and through a quiescent stretch before a stimulus that
+  error is ≈ 0 — so it can take one enormous step straight over a short pulse and
+  never notice. Cap the step, or use a fixed step no larger than the input's
+  width. In the case above, most modes had a natural period shorter than the
+  solver's own default maximum step.
+- **Prefer an oracle to another integrator.** Where the system admits a closed
+  form — a linear model under a step, pulse or sinusoidal drive usually does —
+  compare against *that*; it settles in one line what a solver-versus-solver
+  comparison cannot, because two integrators can be wrong in the same direction.
+  Otherwise cross-check two backends (`run("jax")` vs `run("numpy")` /
+  `run("julia")`), which is part of what the `format=` split is for.
+
+The same discipline covers any other resolution knob. For a modal or field model
+the **mode count is a model parameter, not a detail**: sweep it and report the
+sensitivity rather than trusting one truncation. For regime-dependent step-size
+traps (a step sized for one parameter value that a sweep then leaves behind), see
+the symptom index in the **replicating-studies** skill.
+
 ## Pitfalls
 
 - **Backend selection is `format=`, not `backend=`.** There is no `backend=`

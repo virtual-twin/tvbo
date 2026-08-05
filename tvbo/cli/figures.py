@@ -84,15 +84,14 @@ def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
         _common.info(f"wrote {outfile}")
         _common.info(f"wrote {script_path}")
         written.append(outfile)
-        # A composed caption partial beside the image: the figure's structural facts derived
-        # from its panels, plus the authored lead/interpretation, for `{{< include >}}` in the
-        # prose. Emitted only when there is something to say, and never fatal to a render.
-        if bsplot.compose_caption(figure):
-            try:
-                cap = bsplot.write_caption(figure, out_dir, name=name)
+        # Caption partial beside the image, for `{{< include >}}` in the prose.
+        try:
+            cap = (bsplot.write_caption(figure, out_dir, name=name)
+                   if bsplot.compose_caption(figure) else None)
+            if cap:
                 _common.info(f"wrote {cap}")
-            except Exception as e:  # noqa: BLE001 — a caption must never lose a rendered figure
-                _common.info(f"caption for {name} not written ({type(e).__name__}: {e})")
+        except Exception as e:  # noqa: BLE001 — a caption must never lose a rendered figure
+            _common.info(f"caption for {name} not written ({type(e).__name__}: {e})")
     return written
 
 

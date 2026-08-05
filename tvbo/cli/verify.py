@@ -20,19 +20,31 @@ _META_KEY = re.compile(r"\{\{<\s*meta\s+results\.([A-Za-z0-9_]+)\s*>\}\}")
 
 
 def _scan_meta_keys(target: Path) -> set[str]:
-    """The ``results.<key>`` tokens cited across a manuscript file or directory tree."""
+    """The ``results.<key>`` tokens cited across a manuscript file or directory tree.
+
+    A path that does not exist is an error, not an empty scan. Swallowing it produced the
+    worst possible diagnostic: every declared key reported as "never cited", burying the
+    one real problem (the typo) under a wall of wrong ones.
+    """
     target = Path(target)
+    if not target.exists():
+        _common.die(f"--manuscript: no such file or directory: {target}")
     files = (
         [p for p in target.rglob("*") if p.suffix.lower() in {".qmd", ".md"}]
         if target.is_dir()
         else [target]
     )
+    if not files:
+        _common.die(f"--manuscript: {target} contains no .qmd or .md files to scan.")
     keys: set[str] = set()
+    unreadable: list[str] = []
     for f in files:
         try:
             keys.update(_META_KEY.findall(f.read_text(encoding="utf-8")))
-        except OSError:
-            continue
+        except OSError as e:
+            unreadable.append(f"{f}: {e.strerror or e}")
+    if unreadable:
+        _common.die("--manuscript: could not read:\n  - " + "\n  - ".join(unreadable))
     return keys
 
 
