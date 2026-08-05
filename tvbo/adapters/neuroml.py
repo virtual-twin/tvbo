@@ -383,17 +383,6 @@ def _uses_neuroml_types(dynamics):
     return iri.startswith("neuroml:")
 
 
-_TVBO_TO_NML_UNIT = {
-    "mmol_per_m3": "mM",
-}
-"""Map TVBO canonical unit names to NeuroML/LEMS unit symbols where they differ.
-
-Most TVBO UnitEnum names already match NeuroML symbols exactly (mV, ms, pS, …).
-Only add entries here for genuine mismatches.  The authoritative NeuroML unit list
-lives in ``NeuroML2CoreTypes/NeuroMLCoreDimensions.xml``.
-"""
-
-
 def _nml_attr(param, default=""):
     """Extract a NeuroML XML attribute value from a TVBO Parameter.
 
@@ -418,7 +407,7 @@ def _nml_attr(param, default=""):
         else:
             formatted = str(val)
         if unit:
-            nml_unit = _TVBO_TO_NML_UNIT.get(unit, unit)
+            nml_unit = unit
             return f"{formatted} {nml_unit}"
         return formatted
 
@@ -1283,7 +1272,7 @@ def _render_event_children(dyn_obj, time_scale="ms", indent=8):
     if not events:
         return ""
     pad = " " * indent
-    nml_unit = _TVBO_TO_NML_UNIT.get(str(time_scale), str(time_scale))
+    nml_unit = str(time_scale)
     children = []
     spike_idx = 0
     for ev in events.values():
@@ -1466,7 +1455,7 @@ def _hier_format_attr_value(param):
     else:
         formatted = str(val)
     if unit:
-        nml_unit = _TVBO_TO_NML_UNIT.get(unit, unit)
+        nml_unit = unit
         return f"{formatted}{nml_unit}"
     return formatted
 
@@ -2147,7 +2136,7 @@ def _build_std_network_context(experiment):
                     if val is None:
                         continue
                     if unit:
-                        nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                        nml_unit = str(unit)
                         param_strs[str(pn)] = f"{val} {nml_unit}"
                     else:
                         param_strs[str(pn)] = str(val)
@@ -2192,7 +2181,7 @@ def _build_std_network_context(experiment):
                     unit = getattr(pv, "unit", None) or ""
                     if val is not None:
                         if unit:
-                            nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                            nml_unit = str(unit)
                             param_strs[str(pn)] = f"{val} {nml_unit}"
                         else:
                             param_strs[str(pn)] = str(val)
@@ -2381,7 +2370,7 @@ def _build_std_network_context(experiment):
                         _seg_targeting[pname] = float(val)
             else:
                 if unit:
-                    nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit))
+                    nml_unit = str(unit)
                     syn_params[pname] = f"{val} {nml_unit}"
                 else:
                     syn_params[pname] = str(val)
@@ -2682,7 +2671,7 @@ def _build_network_context(experiment):
                     if val is None:
                         continue
                     unit = getattr(pv, "unit", None) or ""
-                    nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit)) if unit else ""
+                    nml_unit = str(unit) if unit else ""
                     param_strs[str(pn)] = f"{val} {nml_unit}" if nml_unit else str(val)
                 input_key = (dyn_name, tuple(sorted(param_strs.items())))
                 input_id = input_ids.get(input_key)
@@ -2711,7 +2700,7 @@ def _build_network_context(experiment):
                     val = getattr(pv, "value", pv)
                     if val is not None:
                         unit = getattr(pv, "unit", None) or ""
-                        nml_unit = _TVBO_TO_NML_UNIT.get(str(unit), str(unit)) if unit else ""
+                        nml_unit = str(unit) if unit else ""
                         param_strs[str(pn)] = f"{val} {nml_unit}" if nml_unit else str(val)
                 comp_id = safe_id(dyn_name)
                 pop_id = f"{safe_id(dyn_name)}_pop"

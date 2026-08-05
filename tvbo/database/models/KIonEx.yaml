@@ -143,7 +143,7 @@ parameters:
       hi: 5.0
       step: 0.0
     description: initial concentration of intracellular Cl
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Cl_o0:
     definition: initial concentration of extracellular Cl
     value: 112.0
@@ -152,7 +152,7 @@ parameters:
       hi: 112.0
       step: 0.0
     description: initial concentration of extracellular Cl
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Cmna:
     value: -24.0
     domain:
@@ -216,7 +216,7 @@ parameters:
       hi: 130.0
       step: 0.0
     description: initial concentration of intracellular K
-    unit: mmol_per_m3
+    unit: mol_per_m3
   K_o0:
     definition: initial concentration of extracellular K
     value: 4.8
@@ -225,7 +225,7 @@ parameters:
       hi: 4.8
       step: 0.0
     description: initial concentration of extracellular K
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Na_i0:
     definition: initial concentration of intracellular Na
     value: 16.0
@@ -234,7 +234,7 @@ parameters:
       hi: 16.0
       step: 0.0
     description: initial concentration of intracellular Na
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Na_o0:
     definition: initial concentration of extracellular Na
     value: 138.0
@@ -243,7 +243,7 @@ parameters:
       hi: 138.0
       step: 0.0
     description: initial concentration of extracellular Na
-    unit: mmol_per_m3
+    unit: mol_per_m3
   g_Cl:
     definition: chloride conductance
     value: 7.5
