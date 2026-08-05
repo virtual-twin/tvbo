@@ -27,7 +27,8 @@
     integration = experiment.integration
 
     dt = integration.step_size if integration is not None else 0.1
-    cvar = [i for i, sv in enumerate(experiment.dynamics.state_variables.values()) if sv.coupling_variable]
+    from tvbo.templates.base.utils import gathered_state_indices
+    cvar = gathered_state_indices(model, coupling)
     vois = [sv.name for sv in experiment.dynamics.state_variables.values() if getattr(sv, 'record', True)]
 
     svars = list(model.state_variables.keys())
@@ -121,29 +122,24 @@ ${obs.create_all_observations(experiment, obs_sampling=context.get('obs_sampling
 % endif
 
 ## Transformation for derived parameters
+<%
+    from tvbo.codegen.templater import derived_parameter_inputs
+    derived_params = list(experiment.dynamics.derived_parameters.values())
+    ## Unpack only what the derived expressions read; the rest would be dead bindings.
+    unpacked_params = derived_parameter_inputs(experiment.dynamics)
+%>
 def transform_parameters(_p):
-% if experiment.dynamics.parameters:
-    ${", ".join([p.name for p in experiment.dynamics.parameters.values()])} = _p.${", _p.".join([p.name for p in experiment.dynamics.parameters.values()])}
+% if unpacked_params:
+    ${", ".join(unpacked_params)} = _p.${", _p.".join(unpacked_params)}
+
 % endif
-    \
-## % for par in [p.name for p in experiment.dynamics.parameters.values()]:
-## ${par}, \
-## % endfor
-## = params_dfun
-
-    % for par in experiment.dynamics.derived_parameters.values():
+% for par in derived_params:
     ${par.name} = ${jaxcode_obj(par)}
-    % endfor
-    %if len(experiment.dynamics.derived_parameters.values()) > 0:
-    _p.${", _p.".join([p.name for p in experiment.dynamics.derived_parameters.values()])} = ${", ".join([p.name for p in experiment.dynamics.derived_parameters.values()])}
-    % endif
+% endfor
+% if derived_params:
+    _p.${", _p.".join([p.name for p in derived_params])} = ${", ".join([p.name for p in derived_params])}
+% endif
     return _p
-
-##     return (\
-## % for par in [p.name for p in experiment.dynamics.parameters.values()] + [p.name for p in experiment.dynamics.derived_parameters.values()]:
-## ${par}, \
-## % endfor
-## )
 c_vars = ${utils.array_input(np.array(cvar))}.astype(jnp.int32)
 
 ## Main Function
@@ -153,9 +149,15 @@ def kernel(state):
     # problem dimensions
     n_nodes = ${getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions}
     n_svar = ${len(experiment.dynamics.state_variables)}
+## n_cvar sizes the delay-history pad; nh slices it and the returned ICs. Emitting
+## either outside the branch that reads it leaves a binding nothing consumes.
+% if is_delayed and small_dt:
     n_cvar = ${len(cvar) if len(cvar) > 0 else len(experiment.dynamics.state_variables)}
+% endif
     n_modes = ${experiment.dynamics.number_of_modes}
+% if is_delayed or return_new_ics:
     nh = ${experiment.horizon}
+% endif
 
     %if is_delayed:
     %if len(cvar) > 0:
@@ -185,11 +187,8 @@ def kernel(state):
 
     # Generate batch noise using xi with per-state sigma_vec.
     # Prefer state-provided sigma_vec (supports vmapped sweeps); fallback to experiment-level constants.
-    seed = getattr(state.noise, 'seed', 0) if hasattr(state.noise, 'seed') else 0
-    try:
-        sigma_vec_runtime = getattr(state.noise, 'sigma_vec', None)
-    except Exception:
-        sigma_vec_runtime = None
+    seed = getattr(state.noise, 'seed', 0)
+    sigma_vec_runtime = getattr(state.noise, 'sigma_vec', None)
     sigma_vec = sigma_vec_runtime if sigma_vec_runtime is not None else ${utils.array_input(sw)}
     noise = g(dt, nt, n_svar, n_nodes, n_modes, seed=seed, sigma_vec=sigma_vec)
 

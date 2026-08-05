@@ -65,12 +65,12 @@ def _spec(dist_seed=None, exec_seed=None):
     return spec
 
 
-def test_distribution_seed_overrides_execution_random_seed():
+def test_distribution_seed_overrides_execution_random_seed(unwrapped):
     """A distribution's own seed wins over execution.random_seed, and each trial folds it in."""
     code = SimulationExperiment(**_spec(dist_seed=7, exec_seed=99)).render_code("tvboptim")
     assert "jax.random.key(7)" in code                          # distribution.seed, not 99
     assert "jax.random.fold_in(jax.random.key(7)" in code       # per-trial key = fold_in(key(seed), i)
-    assert "jax.vmap(_sample_ics)(jnp.arange(_n_trials))" in code
+    assert unwrapped("jax.vmap(_sample_ics)(jnp.arange(_n_trials))") in unwrapped(code)
     assert "jax.random.key(99)" not in code                     # execution seed is overridden
 
 

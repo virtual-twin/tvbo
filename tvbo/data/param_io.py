@@ -137,6 +137,25 @@ def _mesh_array(net: Any, field: str) -> np.ndarray:
         ) from None
 
 
+_NODE_MEASURES = ("positions", "instrength")
+
+
+def resolve_network_node(net: Any, measure: str) -> Optional[np.ndarray]:
+    """Per-node vector for a ``network.<measure>`` reference — the single definition shared
+    by the producer-argument path (``_resolve_ref``) and the observation-embedding path
+    (``utils.collect_network_node_arrays``), so both resolve ``network.positions`` /
+    ``network.instrength`` identically. ``positions`` → region centroids ``(n_nodes, 3)``;
+    ``instrength`` → weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming,
+    the TVB/Koller convention). Returns None when the measure is unknown or unbuildable.
+    """
+    if measure == "positions" and hasattr(net, "node_positions"):
+        return np.asarray(net.node_positions(), dtype=float)
+    if measure == "instrength" and hasattr(net, "matrix"):
+        w = net.matrix("weight")
+        return np.asarray(w, dtype=float).sum(axis=1) if w is not None else None
+    return None
+
+
 def is_reference(value: Any) -> bool:
     """True when an argument value points at an entity rather than being a literal."""
     return isinstance(value, str) and value.startswith(_REF_PREFIX)
@@ -158,9 +177,13 @@ def _resolve_ref(ref: str, context: Any, where: str) -> Any:
 
     rest = ref[len(_REF_PREFIX):]
     if rest == "nodes.position":
-        if not hasattr(net, "node_positions"):
-            raise ValueError(f"{where}: {ref!r} needs a Network, got {type(net).__name__}.")
-        return net.node_positions()
+        rest = "positions"   # legacy spelling of network.positions
+    if rest in _NODE_MEASURES:
+        vec = resolve_network_node(net, rest)
+        if vec is None:
+            raise ValueError(f"{where}: {ref!r} needs a network that can build {rest!r}, "
+                             f"got {type(net).__name__}.")
+        return vec
     if rest.startswith("mesh."):
         return _mesh_array(net, rest.split(".", 1)[1])
     if rest.startswith("edges."):
@@ -170,8 +193,8 @@ def _resolve_ref(ref: str, context: Any, where: str) -> Any:
             raise ValueError(f"{where}: the network has no {label!r} matrix.")
         return np.asarray(mat, dtype=float)
     raise ValueError(
-        f"{where}: unsupported reference {ref!r}; supported are network.nodes.position, "
-        f"network.mesh.<vertices|elements|normals>, network.edges.<label>."
+        f"{where}: unsupported reference {ref!r}; supported are network.positions, "
+        f"network.instrength, network.mesh.<vertices|elements|normals>, network.edges.<label>."
     )
 
 
@@ -262,6 +285,13 @@ def _read_source(path: Path, measure: Optional[str]) -> Any:
         f"{path} holds {len(arrays)} arrays {sorted(arrays)}; the parameter must name "
         f"one with `measure:`."
     )
+
+
+def read_artifact(path: Any, key: Optional[str] = None) -> Any:
+    """Load a materialised ``(path, key)`` artifact back to its array — for codegen probes
+    that need a produced/sourced constant's shape (e.g. a partition's group count) without
+    re-running the producer."""
+    return _read_source(Path(path), key)
 
 
 # ------------------------------------------------------------------------- producers
@@ -364,6 +394,15 @@ def _call_producer(producer: Any, param_name: str, context: Any) -> Any:
 
 # ------------------------------------------------------------------------------- API
 
+def _declared_name(obj: Any) -> str:
+    """What to call this thing in a cache key and an error message.
+
+    Everything carrying the provenance triple is named, but not all of it is named
+    ``name``: an ``Edge`` is identified by its ``label`` (the matrix it supplies).
+    """
+    return str(_slot(obj, "name") or _slot(obj, "label") or "<unnamed>")
+
+
 def _provenance(param: Any) -> Optional[str]:
     """Which of ``value``/``source``/``producer`` this parameter declares.
 
@@ -375,7 +414,7 @@ def _provenance(param: Any) -> Optional[str]:
     declared = [n for n in ("value", "source", "producer") if _slot(param, n) is not None]
     if len(declared) > 1:
         raise ValueError(
-            f"Parameter {str(_slot(param, 'name', '<unnamed>'))!r} declares "
+            f"{_declared_name(param)!r} declares "
             f"{declared}; value/source/producer are mutually exclusive — a literal, "
             f"bytes to read, and a recipe to compute are three different claims about "
             f"where the value comes from."
@@ -429,7 +468,7 @@ def materialise(
     Raises for a literal (there is nothing to read; it inlines) or for a parameter with
     no declared value.
     """
-    name = str(_slot(param, "name", "<unnamed>"))
+    name = _declared_name(param)
     kind = _provenance(param)
     if kind not in ("source", "producer"):
         raise ValueError(
@@ -606,7 +645,7 @@ def resolve(param: Any, source_dir: Optional[Path] = None, context: Any = None) 
     if kind is None:
         return None
 
-    name = str(_slot(param, "name", "<unnamed>"))
+    name = _declared_name(param)
     if kind == "producer":
         return _call_producer(_slot(param, "producer"), name, context)
 

@@ -45,6 +45,12 @@ class StreamingReducerSpec:
         add: ordered ``(lhs, rhs)`` assignments folding one arriving sample ``v``.
         evict: ordered assignments dropping one leaving sample ``v`` (sliding window).
         resync: ordered assignments rebuilding the state exactly from the window ``x``.
+        resync_masked: optional assignments rebuilding the state from a max-sized ring
+            buffer whose valid window is the last ``L`` rows, selected by the boolean
+            mask ``m`` (row-vector over the full buffer) with count ``L``. Present so a
+            reducer can be resynced over a fixed-shape buffer with a traced window
+            length — the tuning scan then compiles once across varying window sizes.
+            Empty when the reducer has no masked form (the masked path is not offered).
         emit: readout expression over the final state (the reduced value).
         emit_kind: ``"window"`` (emit every step; wired today) or ``"stride"`` (emit a
             per-window observation for a downstream reduction — the dFC / FCD
@@ -57,6 +63,7 @@ class StreamingReducerSpec:
     evict: tuple
     resync: tuple
     emit: str
+    resync_masked: tuple = ()
     emit_kind: str = "window"
 
 
@@ -143,6 +150,7 @@ def _spec_from_metadata(meta: dict) -> StreamingReducerSpec:
         add=_assigns("add"),
         evict=_assigns("evict"),
         resync=_assigns("resync"),
+        resync_masked=_assigns("resync_masked"),
         emit=str(meta["emit"]),
         emit_kind=str(meta.get("emit_kind", "window")),
     )

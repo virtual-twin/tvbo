@@ -37,10 +37,16 @@ from tvbo.utils import initial_value as _initial_value
     # Convert Abs(x) -> sign(x)*x
     import sympy
     from tvbo.classes.equation import sympify as tvbo_sympify
+    from tvbo.utils import parameter_number as _parameter_number
+
+    # The model's own scope, so a declared name shadows SymPy's globals: PinskyRinzelCA3's
+    # `chi` would otherwise parse as the hyperbolic cosine integral. Keyed by the renamed
+    # spelling, since `repl` has already been applied to the equation strings.
+    _model_locals = {repl.get(k, k): v for k, v in m.get_symbolic_elements().items()}
 
     def _pyrates_compat(eq_str):
         """Post-process a rendered equation string for PyRates compatibility."""
-        expr = tvbo_sympify(eq_str)
+        expr = tvbo_sympify(eq_str, locals=_model_locals)
         expr = _piecewise_to_sign(expr)
         expr = _abs_to_sign(expr)
         expr = _mod_to_fmod(expr)
@@ -150,8 +156,7 @@ from tvbo.utils import initial_value as _initial_value
         if param_name in repl:
             param_name = repl[param_name]
 
-        val = param.value
-        variables[param_name] = float(val)
+        variables[param_name] = _parameter_number(param.value)
 
     # Add derived parameters as equations — apply repl to keys
     for dp_name, dp in (m.derived_parameters or {}).items():

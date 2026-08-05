@@ -1336,6 +1336,7 @@ _REDUCTION_DIMS = {
     "comoment": ("node", "node_j"),    # cumulative co-moment FC: a node-by-node matrix
     "recurrence": ("node",),           # a folded statistic: one value per node
     "monitor": ("time", "node"),       # a co-integrated observer emitting at its period
+    "wave": ("group", "metric"),       # grouped wave detector: per-group scalar metrics
 }
 
 
@@ -1351,6 +1352,71 @@ def reduction_dims(red: Optional[Dict[str, Any]]) -> tuple:
     if not red:
         return ()
     return _REDUCTION_DIMS.get(str(red.get("kind")), ())
+
+
+def _partition_group_count(pdef: Dict[str, Any], gather: str) -> int:
+    """Group count for a `partition` = the leading axis of its (n_groups, n) gather table.
+    Fixed at codegen: from the declared shape's literal leading dim, the literal value's outer
+    length, or the leading dim of the materialised (produced/sourced) gather artifact."""
+    shape = pdef.get("shape")
+    if shape is not None:
+        head = shape[0] if isinstance(shape, (list, tuple)) else str(shape).strip().lstrip("(").split(",")[0].strip()
+        try:
+            return int(head)
+        except (TypeError, ValueError):
+            pass
+    val = pdef.get("value")
+    if val is not None:
+        try:
+            return len(val)
+        except TypeError:
+            pass
+    lazy = pdef.get("lazy")
+    if lazy:
+        import numpy as np
+        from tvbo.data import param_io
+        path, key = lazy
+        return int(np.asarray(param_io.read_artifact(path, key)).shape[0])
+    raise ValueError(
+        f"partition gather {gather!r}: cannot determine the group count from its shape ({shape!r}), "
+        "value, or materialised artifact; declare a literal (n_groups, n) leading dimension."
+    )
+
+
+def _toposort_derived(derived: List[Dict[str, Any]], dv_names: set) -> List[Dict[str, Any]]:
+    """Order observer derived variables so each follows the DVs its expression reads — a
+    STABLE topological sort of the DV dependency DAG. The observer's derived variables form a
+    DAG (each RHS reads earlier DVs, states, parameters, or the source), but the keyed
+    collection does not preserve authoring order, so a chain like ``U = f(pgn)`` declared
+    before ``pgn = g(pg)`` would otherwise emit ``U`` above its input and reference an unbound
+    name. Independent variables keep their incoming order (an already-valid or single-DV chain
+    is unchanged, so existing observers emit byte-identically); raises on a dependency cycle.
+    """
+    def _deps(entry: Dict[str, Any]) -> set:
+        if "surrogate" in entry:
+            s = entry["surrogate"]
+            d = {n for n in (str(x) for x in s["expr"].free_symbols) if n in dv_names}
+            d.add(s["statistic"])   # the observed value reuses the statistic DV
+            return d & dv_names
+        return {n for n in (str(x) for x in entry["expr"].free_symbols) if n in dv_names}
+
+    idx = {d["name"]: i for i, d in enumerate(derived)}
+    deps = {d["name"]: _deps(d) for d in derived}
+    placed: set = set()
+    ordered: List[Dict[str, Any]] = []
+    remaining = list(derived)
+    while remaining:
+        ready = [d for d in remaining if deps[d["name"]] <= placed]
+        if not ready:
+            raise ValueError(
+                "Observation reduction has a cyclic derived-variable dependency among "
+                f"{sorted(d['name'] for d in remaining)}."
+            )
+        nxt = min(ready, key=lambda d: idx[d["name"]])
+        ordered.append(nxt)
+        placed.add(nxt["name"])
+        remaining.remove(nxt)
+    return ordered
 
 
 def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
@@ -1382,6 +1448,25 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     error. The context carries sympy ``Expr`` objects; the partial renders them per
     backend via ``render_expression`` (which accepts sympy directly). Returns ``None``
     when the observation declares no ``dynamics`` (the post-scan path runs).
+
+    Backend array primitives (``take``, ``sum_axis``, ``clip``, ``matmul``, …) join that
+    vocabulary as undefined ``Function``s the printer lowers later, exactly as ``parse_eq``
+    registers them — without it a name colliding with a SymPy builtin (``take`` is
+    ``sympy.utilities.iterables.take``) is evaluated at parse time and blows up.
+
+    A derived variable's ``surrogate`` reuses the already-computed statistic DV as its
+    observed value, so the statistic has to be declared BEFORE it; the reverse order would
+    reference a name assigned further down the emitted function, a runtime ``NameError``
+    with nothing failing at codegen. The family-wise (Westfall–Young) extremum follows the
+    test sidedness — max-T for a ``>=`` test, min-T for ``<=`` — and is derived here rather
+    than author-set, so an incoherent extremum/direction pairing cannot be expressed. Each
+    surrogate's p-value DV is interleaved back into the chain at its declaration position so
+    a DV consuming it is emitted after it; a surrogate entry carries no ``expr``, because the
+    renderer emits the vmap-fold over the permutation table instead.
+
+    A ``partition`` lifts the observer into a GROUPED reduction (``kind: 'wave'``): the
+    per-step chain is written once for a single group, vmapped over the partition axis, and
+    folded to per-group scalar metrics.
     """
     # Opt-in streaming of a post-scan observation: lifted to a block reducer instead of the
     # dynamics-observer recurrence path below. A cumulative mean/std/variance over a source
@@ -1495,6 +1580,10 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
                | ({alias} if alias else set()))
     loc: Dict[str, Any] = {n: sp.Symbol(n) for n in allowed}
     loc["pi"] = sp.pi
+    # setdefault, so a declared symbol of the same name still wins over the primitive.
+    from tvbo.parse.expression import ARRAY_FUNCTIONS
+    for _afn in ARRAY_FUNCTIONS:
+        loc.setdefault(str(_afn), sp.Function(str(_afn)))
     funcs = get_attr(dyn, "functions")
     functions: Dict[str, Any] = {}
     for fname, fn in (funcs.items() if hasattr(funcs, "items") else []):
@@ -1605,6 +1694,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
         raise ValueError(f"surrogate statistic {stat_name!r} expansion did not converge (cyclic derived variables?)")
 
     surrogates = []
+    _dv_order = [str(k) for k in dv_map]   # declaration order = the emitted per-step chain order
     for dname, dvobj in dv_map.items():
         surr = get_attr(dvobj, "surrogate")
         if surr is None:
@@ -1615,15 +1705,58 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
                 f"surrogate on derived variable {str(dname)!r} names statistic {stat_name!r}, "
                 f"which is not a derived variable with an equation ({sorted(dv_expr)})."
             )
+        if _dv_order.index(stat_name) >= _dv_order.index(str(dname)):
+            raise ValueError(
+                f"surrogate on derived variable {str(dname)!r} names statistic {stat_name!r} that is "
+                "declared at or after it; the statistic must be computed before its surrogate — "
+                "declare it earlier in the observer's derived variables."
+            )
         permute = str(get_attr(surr, "permute"))
+        if permute not in allowed:
+            raise ValueError(
+                f"surrogate on derived variable {str(dname)!r} permutes {permute!r}, which is "
+                f"not an observer symbol (states {sv_names}, parameters {param_names}, source "
+                f"{source!r})."
+            )
+        perms = str(get_attr(surr, "permutations"))
+        if perms not in param_names:
+            raise ValueError(
+                f"surrogate on derived variable {str(dname)!r} names permutation table {perms!r}, "
+                f"which is not an observer parameter ({param_names}); declare the fixed "
+                "(n_perm, n) index array as a produced/sourced constant."
+            )
         direction = str(get_attr(surr, "direction") or "greater_equal")
+        if direction not in ("greater_equal", "less_equal"):
+            raise ValueError(
+                f"surrogate on derived variable {str(dname)!r} sets direction {direction!r}; "
+                "expected 'greater_equal' (positive/max-T) or 'less_equal' (negative/min-T). A "
+                "silent fallthrough would flip the test sidedness and the family-wise extremum."
+            )
+        family_reduce = (("nanmax" if direction == "greater_equal" else "nanmin")
+                         if bool(get_attr(surr, "family_wise")) else None)
         surrogates.append({
             "name": str(dname),
             "expr": _expand_stat(stat_name, permute),   # statistic as a function of `permute`
+            "statistic": stat_name,   # observed value reuses the already-computed statistic DV
             "permute": permute,
-            "perms": str(get_attr(surr, "permutations")),
+            "perms": perms,
             "compare": ">=" if direction == "greater_equal" else "<=",
+            "family_reduce": family_reduce,  # nan-aware FWE extremum, or None → per-element
         })
+
+    if surrogates:
+        _surr_by_name = {s["name"]: s for s in surrogates}
+        _eqn_by_name = {d["name"]: d for d in derived}
+        derived = [
+            {"name": str(n), "surrogate": _surr_by_name[str(n)]} if str(n) in _surr_by_name
+            else _eqn_by_name[str(n)]
+            for n in dv_map if str(n) in _surr_by_name or str(n) in _eqn_by_name
+        ]
+
+    # Emit each derived variable AFTER the DVs its expression reads. The keyed collection does
+    # not preserve authoring order, so without this a valid DAG can emit an assignment above
+    # its input (an unbound-name crash); the stable sort leaves an already-ordered chain as is.
+    derived = _toposort_derived(derived, {d["name"] for d in derived})
 
     # The readout: the (deprecated) `output` list, else the derived variable marked
     # `record: true` — the current way a Dynamics names what it reports. Exactly one
@@ -1701,7 +1834,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     _step_ctx = ({source} if source else set()) | {d["name"] for d in derived if d["name"] != output_name}
     output_per_step = bool(output is not None and {str(s) for s in output.free_symbols} & _step_ctx)
 
-    return {
+    red = {
         # 'monitor' emits every period_steps into a time series; 'recurrence' folds the whole
         # run into one value per node. Both render from the same observer context.
         "kind": "monitor" if period_steps else "recurrence",
@@ -1720,6 +1853,49 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
         "histogram": histogram,
         "windowed": windowed,     # True if any state declares an evict_equation (sliding window)
     }
+
+    partition = get_attr(obs, "partition", None)
+    if partition is not None:
+        if _period is None:
+            raise ValueError(
+                f"Observation {get_attr(obs, 'name', None)!r} declares a `partition` (grouped wave "
+                "reduction) but no `period`; a wave detector samples the phase on a downsample "
+                "period, so `period` is required."
+            )
+        _roles = {r: get_attr(partition, r, None) for r in ("waves", "directed", "correlation")}
+        _unset = [r for r, v in _roles.items() if v is None]
+        if _unset:
+            raise ValueError(
+                f"Observation {get_attr(obs, 'name', None)!r}: its `partition` names no derived "
+                f"variable for {_unset}. The wave reduction emits proportion-of-waves, "
+                "proportion-directed and rho together, so all three roles must be named."
+            )
+        gather = str(get_attr(partition, "gather"))
+        if gather not in parameters:
+            raise ValueError(
+                f"Observation {get_attr(obs, 'name', None)!r} partition gathers on {gather!r}, which "
+                f"is not an observer parameter ({sorted(parameters)}); it must be the produced "
+                "(n_groups, n) node-index table."
+            )
+        over = [str(x) for x in as_list(get_attr(partition, "over"))]
+        _missing = [p for p in over if p not in parameters]
+        if _missing:
+            raise ValueError(
+                f"Observation {get_attr(obs, 'name', None)!r} partition lists group-indexed operator(s) "
+                f"{_missing} in `over` that are not observer parameters ({sorted(parameters)})."
+            )
+        red.update({
+            "kind": "wave",
+            # n_groups reads the produced gather table, so it needs the materialised artifact
+            # (experiment supplied). The bare predicate call (experiment=None) only asks IS this a
+            # streaming reducer, so leave it deferred there rather than force an igl precompute.
+            "n_groups": _partition_group_count(parameters[gather], gather) if experiment is not None else None,
+            "group_vmap": {"gather": gather, "over": over},
+            "wave_present": str(get_attr(partition, "waves")),
+            "sig_corr": str(get_attr(partition, "directed")),
+            "corr": str(get_attr(partition, "correlation")),
+        })
+    return red
 
 
 def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
@@ -3158,6 +3334,18 @@ def normalize_n_parallel(expl: Any):
     return int(v)
 
 
+def jax_platform(accelerator: Any) -> Optional[str]:
+    """Map an ``ExecutionConfig.accelerator`` to the JAX platform name it pins.
+
+    ``'auto'`` (the schema default) means "let JAX detect the machine", which is
+    expressed by leaving ``JAX_PLATFORMS`` unset — hence ``None`` rather than a
+    string. ``'gpu'`` is JAX's ``'cuda'``; any other tier passes through lowercased,
+    so a platform JAX gains needs no change here.
+    """
+    accel = str(accelerator or "auto").strip().lower()
+    return None if accel == "auto" else {"gpu": "cuda"}.get(accel, accel)
+
+
 def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn=None) -> Dict:
     """Parse exploration specification from YAML.
 
@@ -3539,21 +3727,14 @@ def collect_network_node_arrays(experiment: Any) -> Dict[str, list]:
     convention, ``koller2024_networks.instrength_normalize``). Raises if a
     referenced vector cannot be built.
     """
-    import numpy as np
+    from tvbo.data import param_io
     net = get_attr(experiment, "network", None)
     obs_map = get_attr(experiment, "observations", None) or {}
     obs_iter = obs_map.values() if hasattr(obs_map, "values") else obs_map
     arrays: Dict[str, list] = {}
 
     def _resolve(measure: str):
-        if net is None:
-            return None
-        if measure == "positions":
-            return np.asarray(net.node_positions(), dtype=float)
-        if measure == "instrength":
-            w = net.matrix("weight")
-            return np.asarray(w, dtype=float).sum(axis=1) if w is not None else None
-        return None
+        return None if net is None else param_io.resolve_network_node(net, measure)
 
     def add(val: Any) -> None:
         name = val if isinstance(val, str) else get_attr(val, "name", None)

@@ -53,6 +53,291 @@ def register_panel(name):
     return deco
 
 
+@functools.lru_cache(maxsize=None)
+def _read_mesh_cached(path: str, kind: str, mesh_format):
+    """One parse per distinct mesh, so a grid of surfaces reads its file once."""
+    import numpy as _np
+
+    if kind == "network":
+        from tvbo.classes.network import Network
+
+        net = Network.from_file(path)
+        try:
+            return (_np.asarray(object.__getattribute__(net, "_mesh_vertices")),
+                    _np.asarray(object.__getattribute__(net, "_mesh_elements")))
+        except AttributeError:
+            raise ValueError(
+                f"surface panel: network {path!r} carries no mesh. Its companion needs a "
+                "`mesh` group (vertices + elements); a network built from edges alone has "
+                "no geometry to paint on."
+            ) from None
+    if path.endswith(".npz"):
+        with _np.load(path) as data:
+            missing = {"vertices", "faces"} - set(data)
+            if missing:
+                raise ValueError(
+                    f"surface panel: mesh {path!r} is missing {sorted(missing)}; an npz "
+                    "mesh names its arrays `vertices` (n, 3) and `faces` (m, 3)."
+                )
+            return _np.asarray(data["vertices"]), _np.asarray(data["faces"])
+    from tvbo.data.mesh_io import read_mesh
+
+    return read_mesh(path, mesh_format)
+
+
+def _read_mesh(path: str, kind: str, mesh_format):
+    """Per-caller mesh: the parse is cached (once per file), but each caller gets its OWN
+    arrays. The cached tuple must never be handed out directly — a grid of surfaces would
+    then share one geometry, and any in-place consumer (recenter/normalize) would corrupt it
+    for every later cell. Copying outside the cache (not freezing) also avoids aliasing a
+    network's own live ``_mesh_vertices`` array."""
+    vertices, faces = _read_mesh_cached(path, kind, mesh_format)
+    return vertices.copy(), faces.copy()
+
+
+def _surface_mesh(ctx):
+    """``(vertices, faces)`` for a ``surface`` panel, from whichever source it declares.
+
+    Three tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group
+    (geometry belongs to the network, and ``network_io`` already writes it), a surface mesh
+    FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that
+    ``Mesh.mesh_file`` has always declared — or an ``.npz`` holding ``vertices``/``faces``
+    (what an analysis emits when the mesh is derived rather than measured).
+    """
+    opts, base = ctx.get("opts", {}), ctx.get("base_dir")
+    net_path, mesh_path = opts.get("network"), opts.get("mesh")
+    if net_path:
+        return _read_mesh(str(resolve_path(net_path, base)), "network", None)
+    if mesh_path:
+        return _read_mesh(str(resolve_path(mesh_path, base)), "file",
+                          opts.get("mesh_format"))
+    raise ValueError(
+        "surface panel: declare where the mesh comes from — `network:` (a tvbo Network whose "
+        "companion carries a mesh group) or `mesh:` (a GIFTI/VTK/FreeSurfer surface, or an "
+        "npz with `vertices`/`faces`)."
+    )
+
+
+def _vertex_values(da, n_vertices):
+    """A layer's values on the FULL mesh, placed BY LABEL from a vertex-subset array.
+
+    An analysis that runs on a subset of the mesh — the cortex vertices, with the medial
+    wall cut away — returns fewer values than the mesh has vertices and carries the kept
+    indices as a ``vertex`` coordinate. Scattering by that coordinate puts each value on
+    its own vertex and leaves the rest NaN, which renders grey; placing them positionally
+    would silently rotate the map into a plausible-looking wrong one.
+    """
+    import numpy as _np
+
+    values = _np.asarray(da.values, dtype=float).squeeze()
+    if values.ndim != 1:
+        raise ValueError(
+            f"surface panel: expected one value per vertex, got shape {values.shape} over "
+            f"dims {tuple(da.dims)}. Add a `sel:` to the layer picking a single map "
+            "(e.g. `sel: {mode: 1}`)."
+        )
+    if values.size == n_vertices:
+        return values
+    idx = da.coords["vertex"].values if "vertex" in da.coords else None
+    if idx is None or _np.size(idx) != values.size:
+        raise ValueError(
+            f"surface panel: the layer supplies {values.size} values for a mesh of "
+            f"{n_vertices} vertices and carries no `vertex` coordinate to place them by. "
+            "This kind paints PER-VERTEX values; an analysis on a vertex subset must carry "
+            "the kept indices, and a parcellated quantity must be mapped to vertices "
+            "upstream, where the mapping is declared and testable."
+        )
+    idx = _np.asarray(idx, dtype=int)
+    if idx.size and (idx.min() < 0 or idx.max() >= n_vertices):
+        raise ValueError(
+            f"surface panel: the layer's `vertex` coordinate reaches vertex {int(idx.max())} on "
+            f"a {n_vertices}-vertex mesh — the kept-index sidecar does not match this mesh "
+            "(wrong parcellation or hemisphere?)."
+        )
+    full = _np.full(n_vertices, _np.nan)
+    full[idx] = values
+    return full
+
+
+@register_panel("surface")
+def surface_panel(fig, ax, ctx):
+    """Per-vertex values painted on a mesh — the built-in ``kind: surface``.
+
+    A brain map is the most-drawn panel in a network-neuroscience paper and needs no study
+    code: the mesh is geometry the network already carries, the values are a layer like any
+    other, and everything else is presentation. Registered here rather than shipped per
+    study, so ``kind: surface`` works with no ``code_modules``.
+
+    opts:
+        network / mesh: where the geometry comes from (see :func:`_surface_mesh`).
+        view: bsplot's camera name (lateral, medial, dorsal, ventral, anterior, posterior).
+        hemi: 'lh' | 'rh' (default 'lh').
+        cmap: colormap name; symmetric/vmin/vmax/percentile set the colour limits.
+        symmetric: centre the limits on zero so zero is the colormap's midpoint (default
+            true, because a map of signed deviations read on an off-centre scale is
+            misleading in a way no axis label catches).
+        percentile: clip the symmetric limit to this percentile of |values| (default 100),
+            so one outlier vertex cannot wash the map out.
+        mask: per-vertex 0/1 file; vertices OUTSIDE it (a medial wall) are drawn grey and
+            excluded from the colour range rather than being coloured as zeros.
+        color: draw the mesh itself in one flat colour instead of painting a map on it.
+            With no layer that is the bare geometry; with ``geometry: true`` the layer
+            supplies (V, 3) vertex COORDINATES, so what the panel shows is the surface a
+            reconstruction rebuilt rather than a field living on a fixed surface.
+        edgecolor / edge_linewidth: draw the triangulation, for a panel whose subject is
+            the mesh the model is solved on.
+    """
+    import bsplot
+    import numpy as _np
+
+    from tvbo.adapters.colormaps import resolve as _resolve_cmap
+
+    opts, base = ctx.get("opts", {}), ctx.get("base_dir")
+    verts, faces = _surface_mesh(ctx)
+    layers = ctx.get("layers") or []
+    geometry = bool(opts.get("geometry", False))
+    if not layers and not (opts.get("color") or opts.get("edgecolor")):
+        raise ValueError(
+            "surface panel: needs a layer supplying the per-vertex values, or a `color:` / "
+            "`edgecolor:` to draw the bare geometry."
+        )
+
+    values, grey = None, None
+    if layers and geometry:
+        verts = _np.asarray(load_layer(layers[0]).values, dtype=float)
+        if verts.ndim != 2 or verts.shape[1] != 3:
+            raise ValueError(
+                f"surface panel: `geometry: true` means the layer supplies (V, 3) vertex "
+                f"coordinates; got shape {verts.shape}."
+            )
+    elif layers:
+        values = _vertex_values(load_layer(layers[0]), len(verts))
+        if opts.get("mask"):
+            grey = ~_np.loadtxt(str(resolve_path(opts["mask"], base))).astype(bool)
+            if grey.shape != (len(verts),):
+                raise ValueError(
+                    f"surface panel: mask {opts['mask']!r} has shape {grey.shape} but the mesh "
+                    f"has {len(verts)} vertices — a per-vertex 0/1 mask needs exactly one value "
+                    "per vertex (wrong parcellation or hemisphere sidecar?)."
+                )
+            values = _np.where(grey, _np.nan, values)   # also keeps it out of the limits
+
+    vmin, vmax = opts.get("vmin"), opts.get("vmax")
+    if values is not None:
+        finite = values[_np.isfinite(values)]
+        if (vmin is None or vmax is None) and opts.get("symmetric", True) and finite.size:
+            lim = float(_np.percentile(_np.abs(finite),
+                                       float(opts.get("percentile", 100.0)))) or 1.0
+            # Each end is filled independently: a declared one is a fixed scale to honour.
+            vmin = -lim if vmin is None else vmin
+            vmax = lim if vmax is None else vmax
+
+    edges = ({"edgecolor": str(opts["edgecolor"]),
+              "linewidth": float(opts.get("edge_linewidth", 0.08))}
+             if opts.get("edgecolor") else None)
+    bsplot.plot_surf(
+        vertices=verts, faces=faces, overlay=values, ax=ax, mask=grey,
+        hemi=str(opts.get("hemi", "lh")), view=str(opts.get("view", "lateral")),
+        cmap=_resolve_cmap(opts.get("cmap", "viridis")), vmin=vmin, vmax=vmax,
+        color=opts.get("color"), faces_kwargs=edges,
+    )
+    ax.set_aspect("equal")      # a surface's frame is anatomy, not a coordinate system
+    ax.axis("off")
+    if opts.get("title"):
+        ax.set_title(str(opts["title"]))
+
+
+@register_panel("colorbar")
+def colorbar_panel(fig, ax, ctx):
+    """A colour scale occupying its own mosaic slot — the built-in ``kind: colorbar``.
+
+    Panels that share one scale cannot each own the bar: attaching it to any one of them
+    steals that panel's width and implies the scale is local to it. The paper puts it in
+    an empty cell instead, and so does this.
+
+    opts:
+        cmap / vmin / vmax: the scale. With a layer bound and no explicit limits, the
+            limits are read from the data, so the bar cannot drift from what it describes.
+        orientation: 'vertical' (default) or 'horizontal'.
+        width: fraction of the slot the bar itself occupies across its short axis.
+        ticks / ticklabels: the marks. A quantity in arbitrary units is labelled at its
+            ends (Minimum..Maximum) rather than with numbers that mean nothing.
+        label: the axis label beside the bar.
+    """
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    import numpy as _np
+
+    from tvbo.adapters.colormaps import resolve as _resolve_cmap
+
+    opts = ctx.get("opts", {})
+    vmin, vmax = opts.get("vmin"), opts.get("vmax")
+    layers = ctx.get("layers") or []
+    if (vmin is None or vmax is None) and layers:
+        values = _np.asarray(load_layer(layers[0]).values, dtype=float)
+        finite = values[_np.isfinite(values)]
+        if finite.size:
+            vmin = float(finite.min()) if vmin is None else vmin
+            vmax = float(finite.max()) if vmax is None else vmax
+
+    vertical = str(opts.get("orientation", "vertical")) == "vertical"
+    frac = float(opts.get("width", 0.22))
+    ax.axis("off")
+    box = [0.0, 0.18, frac, 0.64] if vertical else [0.18, 0.0, 0.64, frac]
+    norm = mpl.colors.Normalize(vmin=float(vmin if vmin is not None else 0.0),
+                                vmax=float(vmax if vmax is not None else 1.0))
+    mappable = mpl.cm.ScalarMappable(norm=norm,
+                                     cmap=_resolve_cmap(opts.get("cmap", "viridis")))
+    cb = fig.colorbar(mappable, cax=ax.inset_axes(box),
+                      orientation="vertical" if vertical else "horizontal")
+    cb.outline.set_linewidth(0.6)
+    cb.ax.tick_params(direction="in", labelsize=plt.rcParams["ytick.labelsize"])
+    if opts.get("ticks") is not None:
+        cb.set_ticks([float(t) for t in opts["ticks"]])
+    if opts.get("ticklabels") is not None:
+        cb.set_ticklabels([str(t) for t in opts["ticklabels"]])
+    if opts.get("label"):
+        cb.set_label(str(opts["label"]))
+
+
+@register_panel("legend")
+def legend_panel(fig, ax, ctx):
+    """A free-standing key occupying its own mosaic slot — the built-in ``kind: legend``.
+
+    A convention shared by several panels belongs to none of them; drawing it inside one
+    both shrinks that panel and implies the convention is local to it. Papers put it in the
+    grid's spare cell, which is what this kind is.
+
+    The entries are parallel declared lists rather than one encoded string per entry, so
+    each is a typed value the spec can validate: ``labels`` names them and ``colors`` /
+    ``linestyles`` / ``markers`` style them, each falling back to a sensible default when
+    shorter than ``labels``.
+
+    opts: labels, colors, linestyles, markers, title, loc, handlelength.
+    """
+    from matplotlib.lines import Line2D
+
+    opts = ctx.get("opts", {})
+    labels = [str(t) for t in (opts.get("labels") or [])]
+    if not labels:
+        raise ValueError("legend panel: declare the entries it names in `labels:`.")
+
+    def _at(name, i, default):
+        values = list(opts.get(name) or [])
+        return values[i] if i < len(values) else default
+
+    handles = []
+    for i in range(len(labels)):
+        marker = _at("markers", i, None)
+        handles.append(Line2D([], [], color=str(_at("colors", i, "k")),
+                              linestyle=str(_at("linestyles", i, "-")),
+                              **({"marker": str(marker)} if marker else {})))
+    ax.axis("off")
+    ax.legend(handles, labels, loc=str(opts.get("loc", "center")), frameon=False,
+              title=opts.get("title"),
+              handlelength=float(opts.get("handlelength", 2.2)))
+
+
 def registered(registry, name, kind):
     """Look a spec-declared name up in a registry, or raise an actionable error (public API).
 
@@ -199,6 +484,52 @@ _PANEL_NUM_LOC = {
     "lower left":  {"x_shift": 0.02, "y_shift": 0.02,  "ha": "left",  "va": "bottom"},
     "lower right": {"x_shift": 0.98, "y_shift": 0.02,  "ha": "right", "va": "bottom"},
 }
+
+
+def _group_axis(opts, axis: str) -> dict | None:
+    """A categorical axis whose entries fall into named groups, from ``<axis>groups`` opts.
+
+    A paper labels 47 task contrasts as seven families, not as 47 tick labels: one name per
+    family, centred on its block, with a rule between blocks. The same shape recurs wherever
+    a categorical axis has structure — ROIs by system, nodes by module, subjects by cohort —
+    so it is an axis feature rather than something a bespoke panel redraws each time.
+
+    ``bounds`` are the cumulative COUNTS at which each group ends, which is what makes the
+    group sizes readable off the declaration and the last bound the axis length. Entry *i*
+    of a categorical axis is drawn centred on coordinate *i*, so the boundary after count
+    *n* lies half a unit below it — the rules and the label centres carry that shift, and a
+    bound is therefore declared as "how many", never as a plotted coordinate.
+    """
+    spec = opts.get(f"{axis}groups")
+    if not spec:
+        return None
+    # A nested opt value arrives as a LinkML JsonObj, whose plain-dict() carries internals.
+    spec = ({k: v for k, v in vars(spec).items() if not k.startswith("_")}
+            if hasattr(spec, "__dict__") and not isinstance(spec, dict)
+            else dict(spec) if isinstance(spec, dict) else {"bounds": spec})
+    bounds = [float(b) for b in (spec.get("bounds") or [])]
+    labels = [str(t) for t in (spec.get("labels") or [])]
+    if not bounds:
+        raise ValueError(
+            f"`{axis}groups` needs `bounds:` — the cumulative index where each group ends.")
+    if labels and len(labels) != len(bounds):
+        raise ValueError(
+            f"`{axis}groups` has {len(bounds)} bounds and {len(labels)} labels; a group is "
+            "one bound and one name, so the two lists have to be parallel.")
+    starts = [0.0] + bounds[:-1]
+    edge = float(spec.get("edge_offset", -0.5))     # count -> plotted coordinate of the gap
+    return {
+        "axis": axis,
+        "rules": [b + edge for b in bounds[:-1]],   # interior only: the last is the axis end
+        "rule_kwargs": {"color": str(spec.get("color", "k")),
+                        "linewidth": float(spec.get("linewidth", 0.6))},
+        "labels": [{"text": t, "at": (s + e) / 2.0 + edge}
+                   for (s, e), t in zip(zip(starts, bounds), labels)],
+        "pad": float(spec.get("pad", 0.04)),
+        "kwargs": {"ha": "right" if axis == "y" else "center",
+                   "va": "center" if axis == "y" else "top",
+                   **{k: spec[k] for k in ("rotation", "size", "color") if k in spec}},
+    }
 
 
 def _annotations(panel, base_dir=Path(".")) -> list:
@@ -406,6 +737,161 @@ def _resolve_layer(layer, panel_kind, base_dir):
     }
 
 
+# Interior drawn by a callable or sub-axes, so its ticks must survive the format pass.
+_DRAWER_KINDS = {"custom", "surface", "grid", "line3d"}
+
+# Kinds whose interior is a built-in callable, needing no `render:` and no code_modules.
+_BUILTIN_PANELS = {"surface", "colorbar", "legend"}
+
+
+class _GridCell:
+    """One cell of a ``grid`` panel: the shared ``cell:`` template with this cell's overrides.
+
+    Shaped like a Panel so it resolves through :func:`_resolve_drawable` — a grid cell must
+    draw exactly as the same kind draws in a mosaic slot, and a second resolution path is
+    how the two would drift apart.
+    """
+
+    def __init__(self, template, cell, layers, opts):
+        self.kind = getattr(cell, "kind", None) or getattr(template, "kind", None)
+        self.render = getattr(cell, "render", None) or getattr(template, "render", None)
+        self.path = getattr(cell, "path", None) or getattr(template, "path", None)
+        self.label = getattr(cell, "label", None)
+        self.layers = layers
+        self.opts = opts
+        self.annotations = getattr(cell, "annotations", None)
+        self.legend = getattr(cell, "legend", None)
+        self.placeholder = self.number = self.number_loc = self.insets = None
+
+
+def _grid_geometry(opts, n_cells):
+    """Cell boxes and label anchors of a ``grid``, in the host panel's axes fractions.
+
+    Rows and columns are labelled ONCE, at the left and top, which is the whole reason a
+    paper's composite panel is one lettered panel rather than n of them: declaring each
+    cell as its own mosaic entry repeats the row name in every cell and renumbers panels
+    the paper letters once. The label strips are reserved out of the drawable area (``left``
+    and ``top``), so the cells shrink to make room instead of being drawn over.
+
+    A column header sits just above the cells rather than at the panel's own top: parked at
+    a fixed fraction it would leave a dead band whenever ``top`` is opened up for something
+    else, and stop reading as belonging to its column. ``between`` writes text in the gap
+    BEFORE each cell, which is what turns a row of maps into a paper's decomposition
+    equation ``y = a1 x psi_1 + a2 x psi_2 + ...``.
+
+    An unset ``nrows`` holds every cell, so declaring only ``ncols`` wraps rather than
+    drops. An explicit ``nrows`` still caps the grid — cropping the extras deliberately.
+    ``bottom`` is ``top``'s counterpart: cells that carry tick labels or a shared axis
+    label need that strip reserved, or the labels are drawn outside the panel's own box.
+    """
+    rows = list(opts.get("row_labels") or [])
+    cols = list(opts.get("col_labels") or [])
+    ncols = int(opts.get("ncols", n_cells) or 1)
+    nrows = int(opts.get("nrows") or -(-n_cells // ncols))
+    wspace, hspace = float(opts.get("wspace", 0.02)), float(opts.get("hspace", 0.02))
+    left = float(opts.get("left", 0.16 if rows else 0.0))
+    top = float(opts.get("top", 0.10 if cols else 0.0))
+    bottom = float(opts.get("bottom", 0.0))
+    cw, ch = (1.0 - left) / ncols, (1.0 - top - bottom) / nrows
+
+    boxes = []
+    for n in range(n_cells):
+        r, c = divmod(n, ncols)
+        if r >= nrows:
+            break
+        boxes.append([left + c * cw + wspace / 2, 1.0 - top - (r + 1) * ch + hspace / 2,
+                      cw - wspace, ch - hspace])
+
+    def _text(text, x, y, **kw):
+        kwargs = {"ha": "center", "va": "center", **kw}
+        return {"text": str(text), "x": x, "y": y, "layer": None, "arrow": None,
+                "tail": None, "kwargs": kwargs}
+
+    labels = []
+    _col_size = {"size": float(opts["col_label_size"])} if opts.get("col_label_size") else {}
+    for c, text in enumerate(cols[:ncols]):
+        labels.append(_text(text, left + (c + 0.5) * cw,
+                            1.0 - top + float(opts.get("col_label_pad", 0.012)),
+                            va="bottom", **_col_size))
+    rotation = float(opts.get("row_label_rotation", 0.0))
+    for r, text in enumerate(rows[:nrows]):
+        labels.append(_text(text, left * (0.55 if rotation else 0.9),
+                            1.0 - top - (r + 0.5) * ch,
+                            ha="center" if rotation else "right",
+                            **({"rotation": rotation} if rotation else {})))
+    for n, text in enumerate(list(opts.get("between") or [])[:n_cells]):
+        if str(text).strip():
+            r, c = divmod(n, ncols)
+            labels.append(_text(text, left + c * cw, 1.0 - top - (r + 0.5) * ch))
+    if opts.get("trailing"):
+        r, c = divmod(n_cells - 1, ncols)
+        labels.append(_text(opts["trailing"], min(left + (c + 1) * cw + wspace / 4, 0.99),
+                            1.0 - top - (r + 0.5) * ch))
+    return boxes, labels
+
+
+def _grid_cells(panel, key, base_dir, opts) -> tuple:
+    """Resolve a ``grid`` panel into positioned cell drawables plus its label annotations.
+
+    Cells come either from ``cells:`` (one entry each, with its own layers) or from the
+    panel's ``layers:``, one cell per layer drawn by the shared ``cell:`` template.
+
+    An opt named ``row.<name>`` or ``col.<name>`` supplies ``<name>`` one value per row or
+    column, which is how an option that belongs to the ROW — the same frames shown
+    laterally and then medially — is declared once instead of repeated in every cell of it.
+    """
+    template = getattr(panel, "cell", None)
+    template_opts = _panel_opts(template) if template is not None else {}
+    declared = list(getattr(panel, "cells", None) or [])
+    layers = list(getattr(panel, "layers", None) or [])
+    if declared and layers:
+        raise ValueError(
+            f"grid panel {key!r}: declare either `cells:` (a cell each, with its own "
+            "layers) or `layers:` (one cell per layer, all drawn by `cell:`) — not both."
+        )
+    if not declared and not layers:
+        raise ValueError(
+            f"grid panel {key!r}: nothing to draw. Give it `layers:` (one cell each) or "
+            "`cells:`."
+        )
+    if template is None and not declared:
+        raise ValueError(
+            f"grid panel {key!r}: `layers:` fills the grid with cells drawn by `cell:`, "
+            "which declares what kind of cell they are; it is missing."
+        )
+
+    ncols = int(opts.get("ncols", len(declared or layers)) or 1)
+    row_opts = {k.split(".", 1)[1]: v for k, v in opts.items() if k.startswith("row.")}
+    col_opts = {k.split(".", 1)[1]: v for k, v in opts.items() if k.startswith("col.")}
+    cells = []
+    for n, item in enumerate(declared or layers):
+        r, c = divmod(n, ncols)
+        merged = dict(template_opts)
+        merged.update({k: v[min(r, len(v) - 1)] for k, v in row_opts.items() if len(v)})
+        merged.update({k: v[min(c, len(v) - 1)] for k, v in col_opts.items() if len(v)})
+        cell = item if declared else None
+        merged.update(_panel_opts(cell) if cell is not None else {})
+        cell_layers = list(getattr(cell, "layers", None) or []) if declared else [item]
+        cells.append(_GridCell(template, cell, cell_layers, merged))
+
+    boxes, labels = _grid_geometry(opts, len(cells))
+    resolved = [dict(_resolve_drawable(cell, f"{key}_cell{i}", base_dir), bounds=box)
+                for i, (cell, box) in enumerate(zip(cells, boxes))]
+    return resolved, labels
+
+
+def _inset_bounds(inset, key, i) -> list:
+    """An inset's declared ``[x0, y0, w, h]``, which only a grid cell may leave unset."""
+    bounds = [float(b) for b in (getattr(inset, "bounds", None) or [])]
+    if len(bounds) != 4:
+        raise ValueError(
+            f"panel {key!r} inset {i}: `bounds:` must be [x0, y0, width, height] in host-axes "
+            f"fractions, got {bounds or 'nothing'}. Only a `grid` cell may omit them — there "
+            "the grid computes the position from the row and column the cell lands in."
+        )
+    return bounds
+
+
 def _resolve_drawable(panel, key, base_dir) -> dict:
     """Resolve one drawable — a mosaic Panel or an Inset — into its template entry.
 
@@ -414,13 +900,14 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
     triangle gap or colourbar quietly diverge from the identical panel beside it.
     """
     kind = str(panel.kind)                          # datamodel enum -> plain string (flavor-agnostic)
-    layers = [_resolve_layer(l, kind, base_dir)
-              for l in (getattr(panel, "layers", None) or [])]
-    # ``custom`` routes opts to its callable; grammar panels read the axis subset.
-    # base_dir lets a panel resolve study-relative inputs (e.g. a tvbo Network yaml).
     opts = _panel_opts(panel)
+    # A grid's `layers:` belong to its cells, so they are not also drawn on the host axes.
+    cells, cell_labels = _grid_cells(panel, key, base_dir, opts) if kind == "grid" else ([], [])
+    layers = [] if kind == "grid" else [
+        _resolve_layer(l, kind, base_dir) for l in (getattr(panel, "layers", None) or [])]
+    # A callable-drawn kind gets the whole opts dict; grammar panels read the axis subset.
     ctx = ({"layers": layers, "opts": opts, "key": key, "base_dir": str(base_dir)}
-           if kind == "custom" else None)
+           if kind == "custom" or kind in _BUILTIN_PANELS else None)
     # One colourbar per panel (not per layer — a split matrix is two layers, one scale),
     # suppressed with `colorbar: false` where the paper prints none. It is slim by
     # default: matplotlib's own default steals ~20% of a small panel's width.
@@ -440,11 +927,13 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
     if kind == "line3d" and layers:
         axopts.setdefault("zlabel", layers[0]["z"] or "")
     placeholder = getattr(panel, "placeholder", None)
-    render = getattr(panel, "render", None)
+    # A built-in kind names no `render:` and falls back to the callable core registers.
+    render = getattr(panel, "render", None) or (kind if kind in _BUILTIN_PANELS else None)
     path = resolve_path(getattr(panel, "path", None), base_dir)
     return {
         "key": key,
         "kind": kind,
+        "drawer": kind in _DRAWER_KINDS,
         "title": getattr(panel, "label", None),
         "path": path,
         "render": render,
@@ -463,12 +952,13 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
         "axopts": axopts,
         "post_axopts": {} if (placeholder and not layers and not render and not path) else post,
         "ctx": ctx,
-        "annotations": _annotations(panel, base_dir),
+        "annotations": _annotations(panel, base_dir) + cell_labels,
+        "groups": [g for g in (_group_axis(opts, "x"), _group_axis(opts, "y")) if g],
         "number_loc": getattr(panel, "number_loc", None),
         "number": getattr(panel, "number", None),
-        "insets": [
+        "insets": cells + [   # a grid cell IS an inset; only who computes the bounds differs
             dict(_resolve_drawable(inset, f"{key}_inset{i}", base_dir),
-                 bounds=[float(b) for b in (getattr(inset, "bounds", None) or [])])
+                 bounds=_inset_bounds(inset, key, i))
             for i, inset in enumerate(getattr(panel, "insets", None) or [])
         ],
     }

@@ -13,10 +13,13 @@ Layout
     reference/exp_<id>_seed<seed>.yaml          (descriptor + provenance)
     reference/exp_<id>_seed<seed>.h5
     └── parameters/
-        ├── w_LRE     (n_nodes, n_nodes) float32
-        ├── w_FFI     (n_nodes, n_nodes) float32
-        ├── J_i       (n_nodes,)         float32
+        ├── w_LRE     (n_nodes, n_nodes)
+        ├── w_FFI     (n_nodes, n_nodes)
+        ├── J_i       (n_nodes,)
         └── ...
+
+Each array is stored at the precision it was computed at, which is the precision
+the descriptor's ``parameters[].dtype`` reports.
 
 Cache invalidation
 ------------------
@@ -114,7 +117,7 @@ def save_sidecar(*, parameters: Mapping[str, np.ndarray],
     with h5py.File(h5_path, "w") as f:
         pg = f.create_group("parameters")
         for name, arr in parameters.items():
-            pg.create_dataset(name, data=np.asarray(arr, dtype=np.float32))
+            pg.create_dataset(name, data=np.asarray(arr))
 
     # yaml descriptor
     descriptor = {
