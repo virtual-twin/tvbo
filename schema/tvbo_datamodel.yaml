@@ -5358,12 +5358,13 @@ classes:
         class_uri: tvbo:ResultBinding
         description: >-
             One entry in an Investigation's results manifest: a manuscript key bound to
-            the value it stands for. Either COMPUTED — ``used:`` a DataRef reading a
-            scalar out of a member's or the investigation's own analysis/experiment,
-            formatted through ``format`` — or AUTHORED — a literal ``value`` quoted from
-            prior work and attributed by ``source``. The same used/value idiom a figure
-            Annotation uses, so a number printed in prose is computed, never transcribed,
-            and an authored constant is marked as such.
+            the value it stands for. Exactly one of three forms: COMPUTED FROM A RUN —
+            ``used:`` a DataRef reading a scalar out of a member's or the investigation's
+            own analysis/experiment, formatted through ``format`` — COMPUTED FROM THE SPEC
+            — ``count:`` a structural tally of a collection (e.g. the figures a member
+            regenerates), needing no run — or AUTHORED — a literal ``value`` quoted from
+            prior work and attributed by ``source``. So a number printed in prose is
+            computed or an authored constant marked as such, never transcribed by hand.
         slots:
             - description
         attributes:
@@ -5381,7 +5382,15 @@ classes:
                 description: >-
                     Bind the key to a computed scalar in a result container (same
                     reference form a figure Layer uses, and the same PROV edge).
-                    Mutually exclusive with ``value``.
+                    Mutually exclusive with ``value`` and ``count``.
+            count:
+                range: string
+                description: >-
+                    A structural tally computed from the specification, not a run:
+                    ``<member>.<collection>`` counts a collection on a member study
+                    (e.g. ``Jansen1995.figures``), or a bare ``<collection>`` counts one
+                    on the investigation itself (e.g. ``members``). Mutually exclusive
+                    with ``used`` and ``value``.
             format:
                 range: string
                 description: >-
