@@ -1,0 +1,2005 @@
+{
+ "base_dimensions": [
+  "ampere",
+  "candela",
+  "kelvin",
+  "kilogram",
+  "meter",
+  "mole",
+  "second"
+ ],
+ "source": "QUDT (http://qudt.org/vocab/unit/), vendored by scripts/ontology/gen_units.py",
+ "units": {
+  "A": {
+   "curated": true,
+   "description": "Ampere",
+   "dimensions": {
+    "ampere": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "A": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "CurrentLinkage",
+    "ElectricCurrent",
+    "ElectricCurrentPhasor",
+    "MagneticTension"
+   ],
+   "qudt": "A",
+   "symbol": "A",
+   "ucum_code": "A"
+  },
+  "H_per_m": {
+   "curated": true,
+   "description": "Henry per metre (permeability)",
+   "dimensions": {
+    "ampere": [
+     -2,
+     1
+    ],
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     1,
+     1
+    ],
+    "second": [
+     -2,
+     1
+    ]
+   },
+   "factors": {
+    "H-PER-M": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ElectromagneticPermeability",
+    "Permeability"
+   ],
+   "qudt": "H-PER-M",
+   "symbol": "H/m",
+   "ucum_code": "H.m-1"
+  },
+  "Hz": {
+   "curated": true,
+   "description": "Hertz (s\u207b\u00b9)",
+   "dimensions": {
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "HZ": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Frequency"
+   ],
+   "qudt": "HZ",
+   "symbol": "Hz",
+   "ucum_code": "Hz"
+  },
+  "Hz_per_nA": {
+   "curated": true,
+   "description": "Hertz per nanoampere (neural gain)",
+   "dimensions": {
+    "ampere": [
+     -1,
+     1
+    ],
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "HZ": 1,
+    "NanoA": -1
+   },
+   "multiplier": [
+    1000000000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "MW": {
+   "curated": true,
+   "description": "Megawatt (10\u2076 W); grid real/net power",
+   "dimensions": {
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     2,
+     1
+    ],
+    "second": [
+     -3,
+     1
+    ]
+   },
+   "factors": {
+    "MegaW": 1
+   },
+   "multiplier": [
+    1000000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ElectricPower",
+    "Power"
+   ],
+   "qudt": "MegaW",
+   "symbol": "MW",
+   "ucum_code": "MW"
+  },
+  "Mohm": {
+   "curated": true,
+   "description": "Megaohm (M\u03a9)",
+   "dimensions": {
+    "ampere": [
+     -2,
+     1
+    ],
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     2,
+     1
+    ],
+    "second": [
+     -3,
+     1
+    ]
+   },
+   "factors": {
+    "MegaOHM": 1
+   },
+   "multiplier": [
+    1000000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "N_per_m": {
+   "curated": true,
+   "description": "Newton per metre (spring constant)",
+   "dimensions": {
+    "kilogram": [
+     1,
+     1
+    ],
+    "second": [
+     -2,
+     1
+    ]
+   },
+   "factors": {
+    "N-PER-M": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ForcePerLength"
+   ],
+   "qudt": "N-PER-M",
+   "symbol": "N/m",
+   "ucum_code": "N.m-1"
+  },
+  "S_per_cm2": {
+   "curated": true,
+   "description": "Siemens per square centimetre (conductance density)",
+   "dimensions": {
+    "ampere": [
+     2,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -4,
+     1
+    ],
+    "second": [
+     3,
+     1
+    ]
+   },
+   "factors": {
+    "CentiM": -2,
+    "S": 1
+   },
+   "multiplier": [
+    10000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "S_per_m": {
+   "curated": true,
+   "description": "Siemens per metre (conductivity)",
+   "dimensions": {
+    "ampere": [
+     2,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -3,
+     1
+    ],
+    "second": [
+     3,
+     1
+    ]
+   },
+   "factors": {
+    "S-PER-M": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ElectricConductivity",
+    "ElectrolyticConductivity"
+   ],
+   "qudt": "S-PER-M",
+   "symbol": "S/m",
+   "ucum_code": "S.m-1"
+  },
+  "S_per_m2": {
+   "curated": true,
+   "description": "Siemens per square metre (conductance density, SI)",
+   "dimensions": {
+    "ampere": [
+     2,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -4,
+     1
+    ],
+    "second": [
+     3,
+     1
+    ]
+   },
+   "factors": {
+    "M": -2,
+    "S": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "V": {
+   "curated": true,
+   "description": "Volt",
+   "dimensions": {
+    "ampere": [
+     -1,
+     1
+    ],
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     2,
+     1
+    ],
+    "second": [
+     -3,
+     1
+    ]
+   },
+   "factors": {
+    "V": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ElectricPotential",
+    "ElectricPotentialDifference",
+    "EnergyPerElectricCharge",
+    "Voltage",
+    "VoltagePhasor"
+   ],
+   "qudt": "V",
+   "symbol": "V",
+   "ucum_code": "V"
+  },
+  "W": {
+   "curated": true,
+   "description": "Watt (power)",
+   "dimensions": {
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     2,
+     1
+    ],
+    "second": [
+     -3,
+     1
+    ]
+   },
+   "factors": {
+    "W": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ElectricPower",
+    "Power"
+   ],
+   "qudt": "W",
+   "symbol": "W",
+   "ucum_code": "W"
+  },
+  "arbitrary_unit": {
+   "curated": true,
+   "description": "Arbitrary units (a.u.)",
+   "dimensions": {},
+   "factors": {
+    "UNITLESS": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "cm": {
+   "curated": true,
+   "description": "Centimetre",
+   "dimensions": {
+    "meter": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "CentiM": 1
+   },
+   "multiplier": [
+    1,
+    100
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Length"
+   ],
+   "qudt": "CentiM",
+   "symbol": "cm",
+   "ucum_code": "cm"
+  },
+  "degC": {
+   "curated": true,
+   "description": "Degree Celsius",
+   "dimensions": {
+    "kelvin": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "DEG_C": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": "273.15",
+   "quantity_kinds": [
+    "BoilingPoint",
+    "CelsiusTemperature",
+    "ColdReceptorThreshold",
+    "DewPointTemperature",
+    "DryBulbTemperature",
+    "FlashPoint",
+    "MeltingPoint",
+    "Temperature",
+    "WetBulbTemperature"
+   ],
+   "qudt": "DEG_C",
+   "symbol": "\u00b0C",
+   "ucum_code": "Cel"
+  },
+  "dimensionless": {
+   "curated": true,
+   "description": "Dimensionless (unitless)",
+   "dimensions": {},
+   "factors": {
+    "UNITLESS": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Absorptance",
+    "ActivityCoefficient",
+    "AtomScatteringFactor",
+    "AverageLogarithmicEnergyDecrement",
+    "BindingFraction",
+    "BioconcentrationFactor",
+    "BucklingFactor",
+    "CanonicalPartitionFunction",
+    "CharacteristicNumber",
+    "ChargeNumber",
+    "Chromaticity",
+    "CoefficientOfPerformance",
+    "Constringence",
+    "CouplingFactor",
+    "DebyeWallerFactor",
+    "DegreeOfDissociation",
+    "Dimensionless",
+    "DimensionlessRatio",
+    "Dissipance",
+    "DoseEquivalentQualityFactor",
+    "DragCoefficient",
+    "DutyCycle",
+    "Duv",
+    "EinsteinTransitionProbability",
+    "ElectricSusceptibility",
+    "Emissivity",
+    "EquilibriumConstant",
+    "EquilibriumConstantOnConcentrationBasis",
+    "EquilibriumConstantOnPressureBasis",
+    "FastFissionFactor",
+    "FissionFuelUtilizationFactor",
+    "FissionMultiplicationFactor",
+    "FrictionCoefficient",
+    "GFactorOfNucleus",
+    "Gain",
+    "GeneralizedCoordinate",
+    "GeneralizedForce",
+    "GeneralizedMomentum",
+    "GeneralizedVelocity",
+    "GruneisenParameter",
+    "HeatCapacityRatio",
+    "HyperfineStructureQuantumNumber",
+    "IncidenceProportion",
+    "InternalConversionFactor",
+    "IonTransportNumber",
+    "IsentropicExponent",
+    "LandauGinzburgNumber",
+    "LandeGFactor",
+    "LeakageFactor",
+    "LengthRatio",
+    "Lethargy",
+    "LiftCoefficient",
+    "Log2FrequencyInterval",
+    "LogOctanolAirPartitionCoefficient",
+    "LogOctanolWaterPartitionCoefficient",
+    "LogarithmicFrequencyInterval",
+    "LongRangeOrderParameter",
+    "LossFactor",
+    "Loudness",
+    "LoudnessLevel",
+    "LuminousFluxRatio",
+    "MadelungConstant",
+    "MagneticQuantumNumber",
+    "MagneticSusceptability",
+    "MassFraction",
+    "MassFractionOfDryMatter",
+    "MassFractionOfWater",
+    "MassRatioOfWaterToDryMatter",
+    "MassRatioOfWaterVapourToDryGas",
+    "MobilityRatio",
+    "MoleFraction",
+    "MultiplicationFactor",
+    "NapierianAbsorbance",
+    "NeutralRatio",
+    "NeutronYieldPerAbsorption",
+    "NeutronYieldPerFission",
+    "NonLeakageProbability",
+    "OpeningRatio",
+    "OrbitalAngularMomentumQuantumNumber",
+    "OrderOfReflection",
+    "OsmoticCoefficient",
+    "PackingFraction",
+    "PayloadRatio",
+    "PermittivityRatio",
+    "PoissonRatio",
+    "PowerFactor",
+    "PressureBurningRateConstant",
+    "PressureBurningRateIndex",
+    "PrincipalQuantumNumber",
+    "QualityFactor",
+    "QuantumNumber",
+    "RadianceFactor",
+    "RatioOfSpecificHeatCapacities",
+    "Reactivity",
+    "Reflectance",
+    "ReflectanceFactor",
+    "RefractiveIndex",
+    "RelativeAtomicMass",
+    "RelativeMassConcentrationOfVapour",
+    "RelativeMassDefect",
+    "RelativeMassDensity",
+    "RelativeMassExcess",
+    "RelativeMassRatioOfVapour",
+    "RelativeMolecularMass",
+    "ResistanceRatio",
+    "ResonanceEscapeProbability",
+    "ResonanceEscapeProbabilityForFission",
+    "ReynoldsNumber",
+    "ServiceFactor",
+    "ShortRangeOrderParameter",
+    "SignalDetectionThreshold",
+    "SpecificHeatsRatio",
+    "SpectralLuminousEfficiency",
+    "SpeedRatio",
+    "SpinQuantumNumber",
+    "StandardAbsoluteActivity",
+    "StatisticalWeight",
+    "StoichiometricNumber",
+    "StructuralEfficiency",
+    "StructureFactor",
+    "ThermalDiffusionFactor",
+    "ThermalDiffusionRatio",
+    "ThermalEfficiency",
+    "ThermalUtilizationFactor",
+    "ThermalUtilizationFactorForFission",
+    "ThrustCoefficient",
+    "ThrustToWeightRatio",
+    "TimeRatio",
+    "TotalAngularMomentumQuantumNumber",
+    "TotalIonization",
+    "Transmittance",
+    "TransmittanceDensity",
+    "VoltageRatio",
+    "VolumeFlowRatio",
+    "VolumeStrain"
+   ],
+   "qudt": "UNITLESS",
+   "symbol": "\u4e00",
+   "ucum_code": null
+  },
+  "kHz": {
+   "curated": true,
+   "description": "Kilohertz",
+   "dimensions": {
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "KiloHZ": 1
+   },
+   "multiplier": [
+    1000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Frequency"
+   ],
+   "qudt": "KiloHZ",
+   "symbol": "kHz",
+   "ucum_code": "kHz"
+  },
+  "kg": {
+   "curated": true,
+   "description": "Kilogram",
+   "dimensions": {
+    "kilogram": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "KiloGM": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "CO2Equivalent",
+    "Mass"
+   ],
+   "qudt": "KiloGM",
+   "symbol": "kg",
+   "ucum_code": "kg"
+  },
+  "kg_m2": {
+   "curated": true,
+   "description": "Kilogram metre squared (moment of inertia)",
+   "dimensions": {
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     2,
+     1
+    ]
+   },
+   "factors": {
+    "KiloGM-M2": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "MomentOfInertia",
+    "ProductOfInertia",
+    "RotationalMass"
+   ],
+   "qudt": "KiloGM-M2",
+   "symbol": "kg\u00b7m\u00b2",
+   "ucum_code": "kg.m2"
+  },
+  "kg_per_s": {
+   "curated": true,
+   "description": "Kilogram per second",
+   "dimensions": {
+    "kilogram": [
+     1,
+     1
+    ],
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "KiloGM": 1,
+    "SEC": -1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "kohm_cm": {
+   "curated": true,
+   "description": "Kilo-ohm centimetre (axial resistivity)",
+   "dimensions": {
+    "ampere": [
+     -2,
+     1
+    ],
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     3,
+     1
+    ],
+    "second": [
+     -3,
+     1
+    ]
+   },
+   "factors": {
+    "CentiM": 1,
+    "KiloOHM": 1
+   },
+   "multiplier": [
+    10,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "m": {
+   "curated": true,
+   "description": "Metre",
+   "dimensions": {
+    "meter": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "M": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ElevationRelativeToNAP",
+    "Length"
+   ],
+   "qudt": "M",
+   "symbol": "m",
+   "ucum_code": "m"
+  },
+  "mS_per_cm2": {
+   "curated": true,
+   "description": "Millisiemens per square centimetre (conductance density)",
+   "dimensions": {
+    "ampere": [
+     2,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -4,
+     1
+    ],
+    "second": [
+     3,
+     1
+    ]
+   },
+   "factors": {
+    "CentiM": -2,
+    "MilliS": 1
+   },
+   "multiplier": [
+    10,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "mV": {
+   "curated": true,
+   "description": "Millivolt",
+   "dimensions": {
+    "ampere": [
+     -1,
+     1
+    ],
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     2,
+     1
+    ],
+    "second": [
+     -3,
+     1
+    ]
+   },
+   "factors": {
+    "MilliV": 1
+   },
+   "multiplier": [
+    1,
+    1000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ElectricPotential",
+    "ElectricPotentialDifference",
+    "EnergyPerElectricCharge",
+    "Voltage",
+    "VoltagePhasor"
+   ],
+   "qudt": "MilliV",
+   "symbol": "mV",
+   "ucum_code": "mV"
+  },
+  "mV_per_ms": {
+   "curated": true,
+   "description": "Millivolt per millisecond",
+   "dimensions": {
+    "ampere": [
+     -1,
+     1
+    ],
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     2,
+     1
+    ],
+    "second": [
+     -4,
+     1
+    ]
+   },
+   "factors": {
+    "MilliSEC": -1,
+    "MilliV": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "mV_per_s": {
+   "curated": true,
+   "description": "Millivolt per second",
+   "dimensions": {
+    "ampere": [
+     -1,
+     1
+    ],
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     2,
+     1
+    ],
+    "second": [
+     -4,
+     1
+    ]
+   },
+   "factors": {
+    "MilliV": 1,
+    "SEC": -1
+   },
+   "multiplier": [
+    1,
+    1000
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "m_per_s": {
+   "curated": true,
+   "description": "Metre per second",
+   "dimensions": {
+    "meter": [
+     1,
+     1
+    ],
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "M-PER-SEC": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ElectromagneticWavePhaseSpeed",
+    "LinearVelocity",
+    "SpecificThrust",
+    "Speed",
+    "Velocity"
+   ],
+   "qudt": "M-PER-SEC",
+   "symbol": "m/s",
+   "ucum_code": "m.s-1"
+  },
+  "m_per_s2": {
+   "curated": true,
+   "description": "Metre per second squared (acceleration)",
+   "dimensions": {
+    "meter": [
+     1,
+     1
+    ],
+    "second": [
+     -2,
+     1
+    ]
+   },
+   "factors": {
+    "M-PER-SEC2": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Acceleration",
+    "LinearAcceleration"
+   ],
+   "qudt": "M-PER-SEC2",
+   "symbol": "m/s\u00b2",
+   "ucum_code": "m.s-2"
+  },
+  "mm": {
+   "curated": true,
+   "description": "Millimetre",
+   "dimensions": {
+    "meter": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "MilliM": 1
+   },
+   "multiplier": [
+    1,
+    1000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Length"
+   ],
+   "qudt": "MilliM",
+   "symbol": "mm",
+   "ucum_code": "mm"
+  },
+  "mm_per_ms": {
+   "curated": true,
+   "description": "Millimetre per millisecond (= m/s)",
+   "dimensions": {
+    "meter": [
+     1,
+     1
+    ],
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "MilliM": 1,
+    "MilliSEC": -1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "mmol_per_m3": {
+   "curated": true,
+   "description": "Millimole per cubic metre (mmol/m\u00b3 \u2248 mM)",
+   "dimensions": {
+    "meter": [
+     -3,
+     1
+    ],
+    "mole": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "MilliMOL-PER-M3": 1
+   },
+   "multiplier": [
+    1,
+    1000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Concentration",
+    "WaterSolubility"
+   ],
+   "qudt": "MilliMOL-PER-M3",
+   "symbol": "mmol/m\u00b3",
+   "ucum_code": "mmol.m-3"
+  },
+  "mol_per_cm3": {
+   "curated": true,
+   "description": "Mole per cubic centimetre (mol/cm\u00b3)",
+   "dimensions": {
+    "meter": [
+     -3,
+     1
+    ],
+    "mole": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "CentiM": -3,
+    "MOL": 1
+   },
+   "multiplier": [
+    1000000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "mol_per_m3": {
+   "curated": true,
+   "description": "Mole per cubic metre (mol/m\u00b3)",
+   "dimensions": {
+    "meter": [
+     -3,
+     1
+    ],
+    "mole": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "MOL-PER-M3": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Concentration",
+    "EquilibriumConstantBasedOnConcentration",
+    "WaterSolubility"
+   ],
+   "qudt": "MOL-PER-M3",
+   "symbol": "mol/m\u00b3",
+   "ucum_code": "mol.m-3"
+  },
+  "mol_per_m_per_A_per_s": {
+   "curated": true,
+   "description": "Mole per metre per ampere per second (concentration-current coupling)",
+   "dimensions": {
+    "ampere": [
+     -1,
+     1
+    ],
+    "meter": [
+     -1,
+     1
+    ],
+    "mole": [
+     1,
+     1
+    ],
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "A": -1,
+    "M": -1,
+    "MOL": 1,
+    "SEC": -1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "ms": {
+   "curated": true,
+   "description": "Millisecond",
+   "dimensions": {
+    "second": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "MilliSEC": 1
+   },
+   "multiplier": [
+    1,
+    1000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ActionTime",
+    "BurnTime",
+    "IgnitionIntervalTime",
+    "InductanceBasedTimeConstant",
+    "RelaxationTime",
+    "ResistanceBasedInductance",
+    "SpecificImpulse",
+    "Time",
+    "WebTime"
+   ],
+   "qudt": "MilliSEC",
+   "symbol": "ms",
+   "ucum_code": "ms"
+  },
+  "nA": {
+   "curated": true,
+   "description": "Nanoampere",
+   "dimensions": {
+    "ampere": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "NanoA": 1
+   },
+   "multiplier": [
+    1,
+    1000000000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ElectricCurrent"
+   ],
+   "qudt": "NanoA",
+   "symbol": "nA",
+   "ucum_code": "nA"
+  },
+  "nF": {
+   "curated": true,
+   "description": "Nanofarad",
+   "dimensions": {
+    "ampere": [
+     2,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -2,
+     1
+    ],
+    "second": [
+     4,
+     1
+    ]
+   },
+   "factors": {
+    "NanoFARAD": 1
+   },
+   "multiplier": [
+    1,
+    1000000000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Capacitance"
+   ],
+   "qudt": "NanoFARAD",
+   "symbol": "nF",
+   "ucum_code": "nF"
+  },
+  "nS": {
+   "curated": true,
+   "description": "Nanosiemens",
+   "dimensions": {
+    "ampere": [
+     2,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -2,
+     1
+    ],
+    "second": [
+     3,
+     1
+    ]
+   },
+   "factors": {
+    "NanoS": 1
+   },
+   "multiplier": [
+    1,
+    1000000000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Admittance",
+    "Conductance",
+    "ElectricalConductance",
+    "ReciprocalElectricResistance"
+   ],
+   "qudt": "NanoS",
+   "symbol": "nS",
+   "ucum_code": "nS"
+  },
+  "nS_per_mV": {
+   "curated": true,
+   "description": "Nanosiemens per millivolt",
+   "dimensions": {
+    "ampere": [
+     3,
+     1
+    ],
+    "kilogram": [
+     -2,
+     1
+    ],
+    "meter": [
+     -4,
+     1
+    ],
+    "second": [
+     6,
+     1
+    ]
+   },
+   "factors": {
+    "MilliV": -1,
+    "NanoS": 1
+   },
+   "multiplier": [
+    1,
+    1000000
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "ohm": {
+   "curated": true,
+   "description": "Ohm (\u03a9)",
+   "dimensions": {
+    "ampere": [
+     -2,
+     1
+    ],
+    "kilogram": [
+     1,
+     1
+    ],
+    "meter": [
+     2,
+     1
+    ],
+    "second": [
+     -3,
+     1
+    ]
+   },
+   "factors": {
+    "OHM": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Impedance",
+    "Reactance",
+    "Resistance"
+   ],
+   "qudt": "OHM",
+   "symbol": "\u03a9",
+   "ucum_code": "Ohm"
+  },
+  "pA": {
+   "curated": true,
+   "description": "Picoampere",
+   "dimensions": {
+    "ampere": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "PicoA": 1
+   },
+   "multiplier": [
+    1,
+    1000000000000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ElectricCurrent"
+   ],
+   "qudt": "PicoA",
+   "symbol": "pA",
+   "ucum_code": "pA"
+  },
+  "pF": {
+   "curated": true,
+   "description": "Picofarad",
+   "dimensions": {
+    "ampere": [
+     2,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -2,
+     1
+    ],
+    "second": [
+     4,
+     1
+    ]
+   },
+   "factors": {
+    "PicoFARAD": 1
+   },
+   "multiplier": [
+    1,
+    1000000000000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Capacitance"
+   ],
+   "qudt": "PicoFARAD",
+   "symbol": "pF",
+   "ucum_code": "pF"
+  },
+  "pS": {
+   "curated": true,
+   "description": "Picosiemens",
+   "dimensions": {
+    "ampere": [
+     2,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -2,
+     1
+    ],
+    "second": [
+     3,
+     1
+    ]
+   },
+   "factors": {
+    "PicoS": 1
+   },
+   "multiplier": [
+    1,
+    1000000000000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Admittance",
+    "Conductance",
+    "ElectricalConductance",
+    "ReciprocalElectricResistance"
+   ],
+   "qudt": "PicoS",
+   "symbol": "pS",
+   "ucum_code": "pS"
+  },
+  "per_m2": {
+   "curated": true,
+   "description": "Per square metre (m\u207b\u00b2)",
+   "dimensions": {
+    "meter": [
+     -2,
+     1
+    ]
+   },
+   "factors": {
+    "PER-M2": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "InverseArea"
+   ],
+   "qudt": "PER-M2",
+   "symbol": "/m\u00b2",
+   "ucum_code": "m-2"
+  },
+  "per_mV": {
+   "curated": true,
+   "description": "Reciprocal millivolt (mV\u207b\u00b9)",
+   "dimensions": {
+    "ampere": [
+     1,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -2,
+     1
+    ],
+    "second": [
+     3,
+     1
+    ]
+   },
+   "factors": {
+    "MilliV": -1
+   },
+   "multiplier": [
+    1000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "per_mm2": {
+   "curated": true,
+   "description": "Per square millimetre (mm\u207b\u00b2). The unit of a Laplace-Beltrami eigenvalue and of Gaussian curvature.",
+   "dimensions": {
+    "meter": [
+     -2,
+     1
+    ]
+   },
+   "factors": {
+    "MilliM": -2
+   },
+   "multiplier": [
+    1000000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "per_ms": {
+   "curated": true,
+   "description": "Per millisecond (ms\u207b\u00b9)",
+   "dimensions": {
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "PER-MilliSEC": 1
+   },
+   "multiplier": [
+    1000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "DecayConstant",
+    "Frequency"
+   ],
+   "qudt": "PER-MilliSEC",
+   "symbol": "/ms",
+   "ucum_code": "ms-1"
+  },
+  "per_nC": {
+   "curated": true,
+   "description": "Reciprocal nanocoulomb (nC\u207b\u00b9)",
+   "dimensions": {
+    "ampere": [
+     -1,
+     1
+    ],
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "NanoC": -1
+   },
+   "multiplier": [
+    1000000000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "per_pC": {
+   "curated": true,
+   "description": "Reciprocal picocoulomb (pC\u207b\u00b9)",
+   "dimensions": {
+    "ampere": [
+     -1,
+     1
+    ],
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "PicoC": -1
+   },
+   "multiplier": [
+    1000000000000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "per_s": {
+   "curated": true,
+   "description": "Per second (s\u207b\u00b9)",
+   "dimensions": {
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "PER-SEC": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "DecayConstant",
+    "Frequency"
+   ],
+   "qudt": "PER-SEC",
+   "symbol": "/s",
+   "ucum_code": "s-1"
+  },
+  "per_unit": {
+   "curated": false,
+   "description": "Per-unit (dimensionless power-systems convention)",
+   "reason": "Per-unit is a power-systems normalisation, not a physical unit; QUDT publishes no IRI for it and it has no uses in the database."
+  },
+  "percent": {
+   "curated": true,
+   "description": "Percent (%)",
+   "dimensions": {},
+   "factors": {
+    "PERCENT": 1
+   },
+   "multiplier": [
+    1,
+    100
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "BioconcentrationFactor",
+    "CoefficientOfPerformance",
+    "CompressibilityFactor",
+    "DimensionlessRatio",
+    "DutyCycle",
+    "EccentricityOfOrbit",
+    "Efficiency",
+    "ElectricCurrentImbalance",
+    "Emissivity",
+    "FissionCoreRadiusToHeightRatio",
+    "FrictionCoefficient",
+    "Gain",
+    "HeatCapacityRatio",
+    "IncidenceProportion",
+    "LengthRatio",
+    "LuminousFluxRatio",
+    "MassFraction",
+    "MoleFraction",
+    "OpeningRatio",
+    "PayloadRatio",
+    "PressureRatio",
+    "Prevalence",
+    "Reflectance",
+    "RelativeMassDefect",
+    "RelativeMolecularMass",
+    "ResistanceRatio",
+    "ServiceFactor",
+    "SignalDetectionThreshold",
+    "SpecificHeatsRatio",
+    "SpeedRatio",
+    "StateOfCharge",
+    "ThermalEfficiency",
+    "ThrustToWeightRatio",
+    "TimeRatio",
+    "Transmittance",
+    "VoltageImbalance",
+    "VoltageRatio",
+    "VolumeFlowRatio",
+    "VolumeStrain"
+   ],
+   "qudt": "PERCENT",
+   "symbol": "%",
+   "ucum_code": "%"
+  },
+  "rad": {
+   "curated": true,
+   "description": "Radian",
+   "dimensions": {},
+   "factors": {
+    "RAD": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Angle",
+    "PlaneAngle"
+   ],
+   "qudt": "RAD",
+   "symbol": "rad",
+   "ucum_code": "rad"
+  },
+  "rad_per_ms": {
+   "curated": true,
+   "description": "Radian per millisecond",
+   "dimensions": {
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "MilliSEC": -1,
+    "RAD": 1
+   },
+   "multiplier": [
+    1000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "rad_per_s": {
+   "curated": true,
+   "description": "Radian per second (angular velocity)",
+   "dimensions": {
+    "second": [
+     -1,
+     1
+    ]
+   },
+   "factors": {
+    "RAD-PER-SEC": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "AngularFrequency",
+    "AngularVelocity"
+   ],
+   "qudt": "RAD-PER-SEC",
+   "symbol": "rad/s",
+   "ucum_code": "rad.s-1"
+  },
+  "s": {
+   "curated": true,
+   "description": "Second",
+   "dimensions": {
+    "second": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "SEC": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "ActionTime",
+    "BurnTime",
+    "CarrierLifetime",
+    "HalfLife",
+    "IgnitionIntervalTime",
+    "InductanceBasedTimeConstant",
+    "MeanLifetime",
+    "Period",
+    "ReactorTimeConstant",
+    "RelaxationTime",
+    "ResistanceBasedInductance",
+    "ReverberationTime",
+    "SpecificImpulse",
+    "Time",
+    "WebTime"
+   ],
+   "qudt": "SEC",
+   "symbol": "s",
+   "ucum_code": "s"
+  },
+  "s2": {
+   "curated": true,
+   "description": "Second squared (inertia constant)",
+   "dimensions": {
+    "second": [
+     2,
+     1
+    ]
+   },
+   "factors": {
+    "SEC2": 1
+   },
+   "multiplier": [
+    1,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "SquareTime"
+   ],
+   "qudt": "SEC2",
+   "symbol": "s\u00b2",
+   "ucum_code": "s2"
+  },
+  "uA_per_cm2": {
+   "curated": true,
+   "description": "Microampere per square centimetre (current density)",
+   "dimensions": {
+    "ampere": [
+     1,
+     1
+    ],
+    "meter": [
+     -2,
+     1
+    ]
+   },
+   "factors": {
+    "CentiM": -2,
+    "MicroA": 1
+   },
+   "multiplier": [
+    1,
+    100
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "uF_per_cm2": {
+   "curated": true,
+   "description": "Microfarad per square centimetre (specific capacitance)",
+   "dimensions": {
+    "ampere": [
+     2,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -4,
+     1
+    ],
+    "second": [
+     4,
+     1
+    ]
+   },
+   "factors": {
+    "CentiM": -2,
+    "MicroFARAD": 1
+   },
+   "multiplier": [
+    1,
+    100
+   ],
+   "offset": null,
+   "quantity_kinds": [],
+   "qudt": null,
+   "symbol": null,
+   "ucum_code": null
+  },
+  "uS": {
+   "curated": true,
+   "description": "Microsiemens",
+   "dimensions": {
+    "ampere": [
+     2,
+     1
+    ],
+    "kilogram": [
+     -1,
+     1
+    ],
+    "meter": [
+     -2,
+     1
+    ],
+    "second": [
+     3,
+     1
+    ]
+   },
+   "factors": {
+    "MicroS": 1
+   },
+   "multiplier": [
+    1,
+    1000000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Admittance",
+    "Conductance",
+    "ElectricalConductance",
+    "ReciprocalElectricResistance"
+   ],
+   "qudt": "MicroS",
+   "symbol": "\u03bcS",
+   "ucum_code": "uS"
+  },
+  "um3": {
+   "curated": true,
+   "description": "Cubic micrometre (\u00b5m\u00b3)",
+   "dimensions": {
+    "meter": [
+     3,
+     1
+    ]
+   },
+   "factors": {
+    "MicroM3": 1
+   },
+   "multiplier": [
+    1,
+    1000000000000000000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Volume"
+   ],
+   "qudt": "MicroM3",
+   "symbol": "\u03bcm\u00b3",
+   "ucum_code": "um3"
+  },
+  "us": {
+   "curated": true,
+   "description": "Microsecond",
+   "dimensions": {
+    "second": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "MicroSEC": 1
+   },
+   "multiplier": [
+    1,
+    1000000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "CarrierLifetime",
+    "InductanceBasedTimeConstant",
+    "ResistanceBasedInductance",
+    "Time"
+   ],
+   "qudt": "MicroSEC",
+   "symbol": "\u03bcs",
+   "ucum_code": "us"
+  }
+ }
+}

@@ -69,13 +69,10 @@ enums:
                     - UO:0000247
                 description: "Millivolt"
             per_mV:
-                meaning: qudt:PER-MilliV
                 description: "Reciprocal millivolt (mV⁻¹)"
             mV_per_ms:
-                meaning: qudt:MilliV-PER-MilliSEC
                 description: "Millivolt per millisecond"
             mV_per_s:
-                meaning: qudt:MilliV-PER-SEC
                 description: "Millivolt per second"
             # ── Current ──
             A:
@@ -122,10 +119,8 @@ enums:
                 description: "Nanosiemens per millivolt"
             # ── Charge (inverse) ──
             per_nC:
-                meaning: qudt:PER-NanoC
                 description: "Reciprocal nanocoulomb (nC⁻¹)"
             per_pC:
-                meaning: qudt:PER-PicoC
                 description: "Reciprocal picocoulomb (pC⁻¹)"
             # ── Concentration ──
             mol_per_m3:
@@ -162,7 +157,6 @@ enums:
                 description: "Centimetre"
             # ── Reciprocal area (spatial eigenvalues, curvature) ──
             per_mm2:
-                meaning: qudt:PER-MilliM2
                 description: >-
                     Per square millimetre (mm⁻²). The unit of a Laplace-Beltrami
                     eigenvalue and of Gaussian curvature.
@@ -174,7 +168,6 @@ enums:
                 meaning: qudt:M-PER-SEC
                 description: "Metre per second"
             mm_per_ms:
-                meaning: qudt:MilliM-PER-MilliSEC
                 description: "Millimetre per millisecond (= m/s)"
             # ── Gain / compound ──
             Hz_per_nA:
