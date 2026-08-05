@@ -112,6 +112,55 @@ def _unit_meta_getattribute(cls, item):
 
 _UnitEnumMeta.__getattribute__ = _unit_meta_getattribute
 
+
+def _canonicalize_unit_slot(cls):
+    """Give the open ``unit`` slot the canonical spelling of a curated unit.
+
+    That slot's range is open — ``UnitEnum`` or a bare string — so a unit nobody
+    has curated is recorded as the author wrote it. Being open also takes it off
+    LinkML's enum path, which is where a curated alias used to become its one
+    canonical spelling, so without this ``mV/ms`` and ``mV_per_ms`` would both
+    reach the published record as if they were different units. An uncurated unit
+    still passes through untouched: `normalize_unit` answers ``None`` for it.
+    """
+    original = cls.__post_init__
+
+    def __post_init__(self, *args, **kwargs):
+        original(self, *args, **kwargs)
+        if self.unit is not None:
+            text = _unit_text(self.unit)
+            self.unit = _normalize_unit(text) or text
+
+    cls.__post_init__ = __post_init__
+
+
+def _open_unit_slot_classes():
+    """Generated classes declaring the shared open ``unit`` slot.
+
+    Read off the generated annotation rather than listed by hand, so a class that
+    gains the slot later is covered without anyone remembering to add it.
+    ``ToolUnit.unit`` is a class-scoped key and is annotated as such, which keeps
+    it out: it names a unit in a *tool's* vocabulary, where ``mM`` and
+    ``mol_per_m3`` are separate entries answering different questions.
+    """
+    import dataclasses
+    import typing
+
+    from tvbo.datamodel import schema as _schema
+
+    for obj in vars(_schema).values():
+        if not (isinstance(obj, type) and dataclasses.is_dataclass(obj)):
+            continue
+        if obj.__module__ != _schema.__name__:
+            continue
+        for field in dataclasses.fields(obj):
+            if field.name == "unit" and field.type == typing.Optional[str]:
+                yield obj
+
+
+for _unit_bearing in _open_unit_slot_classes():
+    _canonicalize_unit_slot(_unit_bearing)
+
 # Backward-compat aliases for old module names
 import sys
 from tvbo.datamodel import schema as tvbo_datamodel  # noqa: E402, F401

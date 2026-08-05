@@ -288,6 +288,7 @@ def unit_has_time_dimension(unit):
 
 # ── UnitEnum → SI conversion factor ─────────────────────────────────
 
+
 def unit_to_si_factor(unit):
     """Return the multiplicative factor to convert from *unit* to SI base units.
 
@@ -550,7 +551,7 @@ _LEGACY_TO_ENUM = {
     "mMol/m^3": "mmol_per_m3",
     "mmol/m**3": "mmol_per_m3",
     "mmol/m3": "mmol_per_m3",
-    "mM": "mmol_per_m3",
+    "mM": "mol_per_m3",
     "mmol_per_m3": "mmol_per_m3",
     "millimole_per_cubic_metre": "mmol_per_m3",
     "mol_per_m_per_A_per_s": "mol_per_m_per_A_per_s",
@@ -570,7 +571,6 @@ _LEGACY_TO_ENUM = {
     "centimetre": "cm",
     # Velocity
     "m/s": "m_per_s",
-    "m/ms": "m_per_s",
     "m_per_s": "m_per_s",
     "mm/ms": "mm_per_ms",
     "mm_per_ms": "mm_per_ms",
@@ -612,9 +612,6 @@ _LEGACY_TO_ENUM = {
     "kg/s^2": "N_per_m",
     "kg/s**2": "N_per_m",
     "kg/s²": "N_per_m",
-    "kg/ms^2": "N_per_m",
-    "kg/ms**2": "N_per_m",
-    "kg/ms²": "N_per_m",
     # Acceleration
     "m/s²": "m_per_s2",
     "m/s^2": "m_per_s2",
@@ -663,10 +660,15 @@ _SUPERSCRIPT_TO_ASCII = str.maketrans(
 )
 
 _UNIT_EQUIVALENTS = {
-    "m_per_ms": "m_per_s",
     "kg_per_s2": "N_per_m",
-    "kg_per_ms2": "N_per_m",
 }
+"""Composed candidate -> the curated unit it is *exactly* equal to.
+
+A row here and in `_LEGACY_TO_ENUM` states that two spellings are the same
+quantity, which makes every row checkable: `tests/test_unit_aliases.py` composes
+each one from the vendored facts and refuses a ratio other than 1. Six rows that
+dropped a milli prefix from a denominator survived until that check was written.
+"""
 
 
 def _clean_unit_text(raw):
@@ -746,7 +748,9 @@ def normalize_unit(raw):
     """Convert a legacy free-text unit string to a UnitEnum value name.
 
     Accepts abbreviations, full names, slash notation, and exponent notation.
-    Returns ``None`` if the string cannot be mapped.
+    Returns ``None`` if the string cannot be mapped — which is the answer for a
+    unit that is real but uncurated, such as ``kg/ms^2``: the slot records it as
+    written rather than rounding it to the nearest curated name it is not equal to.
 
     >>> normalize_unit("mV")
     'mV'
@@ -754,7 +758,7 @@ def normalize_unit(raw):
     'mV'
     >>> normalize_unit("ms^-1")
     'per_ms'
-    >>> normalize_unit("kg/ms^2")
+    >>> normalize_unit("kg/s^2")
     'N_per_m'
     >>> normalize_unit(None)
     """

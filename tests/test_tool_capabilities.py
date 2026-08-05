@@ -86,16 +86,18 @@ def test_a_tool_may_name_units_outside_the_curated_vocabulary(lems):
 
 
 def test_an_alias_keeps_the_spelling_the_tool_asked_for(lems):
-    """`mM` normalises onto the curated `mmol_per_m3`, and LEMS still writes `mM`.
+    """`mM` normalises onto the curated `mol_per_m3`, and LEMS still writes `mM`.
 
     The two are separate entries because they are separate questions: what the
-    quantity *is* (concentration, from QUDT) and what this backend *writes*.
+    quantity *is* (concentration, from QUDT) and what this backend *writes*. A
+    tool's key is therefore left exactly as the tool spells it, which is also why
+    `mM` and `mol_per_m3` can both appear in one vocabulary.
     """
     from tvbo.utils.units import normalize_unit
 
-    assert normalize_unit("mM") == "mmol_per_m3"
+    assert normalize_unit("mM") == "mol_per_m3"
     assert lems.symbol_of("mM") == "mM"
-    assert lems.dimension_of("mmol_per_m3") == "concentration"
+    assert lems.dimension_of("mol_per_m3") == "concentration"
 
 
 def test_the_module_level_helpers_read_the_record(lems):

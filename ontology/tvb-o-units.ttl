@@ -502,7 +502,7 @@ tvbounit:mm_per_ms a qudt:Unit ;
 
 tvbounit:mmol_per_m3 a qudt:Unit ;
     rdfs:label "mmol_per_m3" ;
-    rdfs:comment "Millimole per cubic metre (mmol/m³ ≈ mM)" ;
+    rdfs:comment "Millimole per cubic metre (mmol/m³), a thousandth of mM" ;
     owl:sameAs unit:MilliMOL-PER-M3 ;
     qudt:conversionMultiplier 0.001 ;
     qudt:hasDimensionVector qkdv:A1E0L-3I0M0H0T0D0 ;
@@ -521,7 +521,7 @@ tvbounit:mol_per_cm3 a qudt:Unit ;
 
 tvbounit:mol_per_m3 a qudt:Unit ;
     rdfs:label "mol_per_m3" ;
-    rdfs:comment "Mole per cubic metre (mol/m³)" ;
+    rdfs:comment "Mole per cubic metre (mol/m³), which is millimolar exactly: one mM is one mmol per litre and a litre is 10⁻³ m³." ;
     owl:sameAs unit:MOL-PER-M3 ;
     qudt:conversionMultiplier 1 ;
     qudt:hasDimensionVector qkdv:A1E0L-3I0M0H0T0D0 ;

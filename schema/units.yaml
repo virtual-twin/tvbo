@@ -141,14 +141,16 @@ enums:
             # ── Concentration ──
             mol_per_m3:
                 meaning: qudt:MOL-PER-M3
-                description: "Mole per cubic metre (mol/m³)"
+                description: >-
+                    Mole per cubic metre (mol/m³), which is millimolar exactly: one mM
+                    is one mmol per litre and a litre is 10⁻³ m³.
+                aliases:
+                    - mM
             mol_per_cm3:
                 description: "Mole per cubic centimetre (mol/cm³)"
             mmol_per_m3:
                 meaning: qudt:MilliMOL-PER-M3
-                description: "Millimole per cubic metre (mmol/m³ ≈ mM)"
-                aliases:
-                    - mM
+                description: "Millimole per cubic metre (mmol/m³), a thousandth of mM"
             mol_per_m_per_A_per_s:
                 description: "Mole per metre per ampere per second (concentration-current coupling)"
             # ── Volume ──

@@ -1156,7 +1156,7 @@
   },
   "mmol_per_m3": {
    "curated": true,
-   "description": "Millimole per cubic metre (mmol/m\u00b3 \u2248 mM)",
+   "description": "Millimole per cubic metre (mmol/m\u00b3), a thousandth of mM",
    "dimensions": {
     "meter": [
      -3,
@@ -1212,7 +1212,7 @@
   },
   "mol_per_m3": {
    "curated": true,
-   "description": "Mole per cubic metre (mol/m\u00b3)",
+   "description": "Mole per cubic metre (mol/m\u00b3), which is millimolar exactly: one mM is one mmol per litre and a litre is 10\u207b\u00b3 m\u00b3.",
    "dimensions": {
     "meter": [
      -3,

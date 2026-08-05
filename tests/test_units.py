@@ -17,8 +17,7 @@ from tvbo.utils.units import normalize_unit, unit_to_symbol
         ("m/s²", "m_per_s2"),
         ("N/m", "N_per_m"),
         ("kg/s^2", "N_per_m"),
-        ("kg/ms^2", "N_per_m"),
-        ("m/ms", "m_per_s"),
+        ("mM", "mol_per_m3"),
         ("µF/cm²", "uF_per_cm2"),
         ("nS/mV", "nS_per_mV"),
     ],
@@ -29,12 +28,13 @@ def test_normalize_unit_aliases(raw, canonical):
 
 
 def test_unit_enum_attribute_aliases():
-    assert str(getattr(UnitEnum, "kg/ms^2")) == "N_per_m"
-    assert str(getattr(UnitEnum, "m/ms")) == "m_per_s"
+    assert str(getattr(UnitEnum, "kg/s^2")) == "N_per_m"
+    assert str(getattr(UnitEnum, "mV/ms")) == "mV_per_ms"
 
 
-def test_dynamics_accepts_human_readable_spring_units():
-    spring = Dynamics(
+def _spring(velocity_unit, stiffness_unit):
+    """A spring-mass model whose two compound units are written by hand."""
+    return Dynamics(
         name="SpringMass",
         state_variables={
             "x": {
@@ -45,7 +45,7 @@ def test_dynamics_accepts_human_readable_spring_units():
             },
             "v": {
                 "description": "Velocity",
-                "unit": "m/ms",
+                "unit": velocity_unit,
                 "equation": {"rhs": "-(k/m) * x"},
                 "initial_value": 0.0,
             },
@@ -53,7 +53,7 @@ def test_dynamics_accepts_human_readable_spring_units():
         parameters={
             "k": {
                 "description": "Spring stiffness",
-                "unit": "kg/ms^2",
+                "unit": stiffness_unit,
                 "value": 0.0001,
             },
             "m": {
@@ -64,6 +64,25 @@ def test_dynamics_accepts_human_readable_spring_units():
         },
     )
 
+
+def test_dynamics_accepts_human_readable_spring_units():
+    """Slash notation reaches the record under the curated name for the same unit."""
+    spring = _spring(velocity_unit="m/s", stiffness_unit="kg/s^2")
+
     assert str(spring.state_variables["v"].unit) == "m_per_s"
     assert str(spring.parameters["k"].unit) == "N_per_m"
     assert unit_to_symbol(spring.parameters["k"].unit) == "N/m"
+
+
+def test_dynamics_records_an_uncurated_unit_as_written():
+    """`m/ms` and `kg/ms²` are real units TVBO has not curated.
+
+    Both used to be rewritten to the curated unit a thousand (and a million) times
+    away — `m/s` and `N/m` — which loads and runs and is wrong. Recording them as
+    written keeps the declaration honest and leaves the checker able to say it
+    cannot settle them.
+    """
+    spring = _spring(velocity_unit="m/ms", stiffness_unit="kg/ms^2")
+
+    assert str(spring.state_variables["v"].unit) == "m/ms"
+    assert str(spring.parameters["k"].unit) == "kg/ms^2"
