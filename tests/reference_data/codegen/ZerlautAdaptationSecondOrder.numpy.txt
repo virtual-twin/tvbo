@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.special
 
 
 def dfun(current_state, t, cX, _p):
