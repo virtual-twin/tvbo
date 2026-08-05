@@ -3,7 +3,6 @@
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%
 import numpy as np
-from tvbo.classes.equation import _clash1
 from tvbo.codegen.templater import time_dependent_equations
 from tvbo.templates.base.utils import model_expressions, referenced
 if 'experiment' in context.keys():

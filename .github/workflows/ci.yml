@@ -3,8 +3,8 @@ name: Lint & Test
 on:
     push:
         branches: ["main"]
+    # No branch filter: a PR stacked on another PR's branch must be tested too.
     pull_request:
-        branches: ["main", "dev"]
     workflow_dispatch:
 
 # Cancel redundant runs: same branch/PR triggers supersede previous runs
@@ -320,9 +320,12 @@ jobs:
                           tests/test_citation_formatting.py
                           tests/test_numerical_golden_corpus.py
                           tests/test_codegen_golden_corpus.py
+                          tests/test_symbol_context.py
+                          tests/test_symbolic_layer.py
+                          tests/test_piecewise_lowering.py
+                          tests/test_branches_only_equations.py
                     - shard: tvboptim
                       paths: >-
-                          tests/test_numerical_golden_corpus.py
                           tests/test_tvboptim_experiments.py
                           tests/functional/test_simulation_backends_tvboptim.py
                           tests/test_full_workflow_comparison.py
@@ -331,6 +334,7 @@ jobs:
                       paths: >-
                           tests/test_tvb_comparison.py
                           tests/test_tvb_interop.py
+                          tests/test_stimulus_rendering.py
                           tests/functional/test_simulation_backends_tvb.py
                     - shard: pyrates
                       paths: >-
@@ -342,6 +346,7 @@ jobs:
                     - shard: extras
                       paths: >-
                           tests/test_units.py
+                          tests/test_database_golden_dump.py
                           tests/test_yaml_loader.py
                           tests/test_pydantic_loader.py
                           tests/test_linkml_compatibility.py

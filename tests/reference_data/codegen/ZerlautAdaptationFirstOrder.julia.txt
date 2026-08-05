@@ -9,7 +9,7 @@ function ZerlautAdaptationFirstOrder!(dx, x, p, t = 0)
 
     lc_E = E .* local_coupling
     lc_I = I .* local_coupling
-    Fe_ext = ifelse(K_ext_e*(c_glob + lc_E + ou_drift*weight_noise) < 0, 0, c_glob .+ lc_E .+ ou_drift .* weight_noise)
+    Fe_ext = ifelse(K_ext_e .* (c_glob .+ lc_E .+ ou_drift .* weight_noise) < 0, 0, c_glob .+ lc_E .+ ou_drift .* weight_noise)
     Fi_ext = lc_I
     fe_e = K_ext_e .* (Fe_ext .+ external_input_ex_ex) .+ N_tot .* p_connect_e .* (1 // 1000000 .+ E) .* (1.0 .- g)
     fe_i = K_ext_e .* (Fe_ext .+ external_input_in_ex) .+ N_tot .* p_connect_e .* (1 // 1000000 .+ E) .* (1.0 .- g)

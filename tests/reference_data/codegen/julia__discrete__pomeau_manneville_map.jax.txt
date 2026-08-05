@@ -11,12 +11,12 @@ def dfun(current_state, t, cX, _p):
     # Derivatives
     dx_dt = jnp.where(
         jnp.greater(x, 0.5),
-        3 - 4 * x,
+        -4 * x + 3,
         jnp.where(
             jnp.less(x, -0.5),
-            -3 - 4 * x,
+            -4 * x - 3,
             jnp.where(
-                jnp.less_equal(abs(x), 0.5), x * (1 + (2 * abs(x)) ** (-1 + z)), 0
+                jnp.less_equal(jnp.abs(x), 0.5), x * (1 + jnp.abs(2 * x) ** (z - 1)), 0
             ),
         ),
     )

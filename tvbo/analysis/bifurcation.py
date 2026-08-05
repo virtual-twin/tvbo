@@ -22,9 +22,9 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sympy import parse_expr, pycode, symbols
+from sympy import pycode, symbols
 
-from tvbo.classes import equation as equations  # for VOI parsing consistency
+from tvbo.parse.symbols import BUILTIN_SHADOW
 
 
 # ── Publication-quality color palette (tvbo viridis cycle) ──────────
@@ -439,7 +439,7 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
         return df[VOI]
 
     # Parse the VOI expression
-    exp = parse_expr(VOI, equations._clash1)
+    exp = BUILTIN_SHADOW.parse(VOI)
     variables = list(exp.free_symbols)
 
     # Legacy: single variable in a vector 'x' column

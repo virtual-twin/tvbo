@@ -72,7 +72,9 @@ class Phenotype(tvbo_datamodel.Phenotype):
         with open(path) as f:
             data = yaml.safe_load(f) or {}
 
-        inst = cls(**{k: v for k, v in data.items() if k != "tvbo_class"})
+        from tvbo.utils.yaml_loader import ENVELOPE_KEYS
+
+        inst = cls(**{k: v for k, v in data.items() if k not in ENVELOPE_KEYS})
         inst._yaml_path = str(path)
 
         # Resolve the h5 companion path relative to the YAML

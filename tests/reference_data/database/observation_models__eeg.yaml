@@ -1,0 +1,74 @@
+name: EEG
+label: Scalp EEG
+description: 'Forward solution for scalp electroencephalography. Projects source neural
+  activity through a lead field (gain) matrix to electrode locations on the scalp.
+  If no precomputed gain is available, uses a single-sphere analytic approximation
+  (Sarvas 1987, Eq. 12). Supports re-referencing: common average, single-electrode,
+  or ideal reference-free recording.'
+parameters:
+  conductivity:
+    name: conductivity
+    value: 1.0
+    description: Volume conductor conductivity for the single-sphere analytic approximation.
+      Only used when no precomputed gain is available.
+    unit: S_per_m
+  reference_electrode:
+    name: reference_electrode
+    description: 'Re-referencing scheme. Options: - Electrode label (e.g. "Cz"): subtract
+      that electrode signal - "average": subtract mean across all channels - null:
+      ideal reference-free recording'
+time_scale: ms
+period: 0.9765625
+imaging_modality: EEG
+data_source:
+  name: sensor_network
+  description: EEG sensor array network. Each node is an electrode with spatial coordinates.
+    The associated data file stores the precomputed lead field matrix (gain) linking
+    sensor nodes to source nodes.
+  path: acq-EEGBrainstorm65_sensors.yaml
+reconcile: by_label
+pipeline:
+- equation:
+    parameters:
+      sigma:
+        name: sigma
+        value: 1.0
+        unit: S_per_m
+    rhs: sum(Q * (a / norm(a)**3), axis=1) / (4 * pi * sigma)
+    latex: false
+  description: 'Construct the lead field (gain) matrix. If a precomputed gain is available
+    from the sensor network data file, use it. Otherwise compute via single-sphere
+    analytic formula: V(r) = (1 / 4*pi*sigma) * sum_i Q_i . (r_s - r_i) / |r_s - r_i|^3'
+  name: compute_gain
+  output: gain
+  arguments:
+    Q:
+      name: Q
+      description: Source dipole moment orientations (n_sources, 3)
+    a:
+      name: a
+      description: 'Source-to-sensor vectors: r_sensor - r_source (n_sources, 3)'
+- equation:
+    rhs: gain @ sum(X, axis=-1) / period_steps
+    latex: false
+  name: lead_field_projection
+  output: projected
+  apply_on_dimension: node
+  arguments:
+    gain:
+      name: gain
+      description: Lead field matrix (n_sensors, n_sources)
+    period_steps:
+      name: period_steps
+      description: Number of integration steps per sampling period
+- description: 'Apply reference subtraction. For average reference: subtract mean
+    across all channels. For single electrode: subtract that channel.'
+  name: rereference
+  input: lead_field_projection
+  output: EEG
+class_reference:
+  name: EEG
+  module: tvb.simulator.monitors
+  constructor_args:
+  - name: sigma
+    value: 1.0

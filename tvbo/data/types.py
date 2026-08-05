@@ -18,7 +18,6 @@ from matplotlib.animation import FuncAnimation
 import xarray as xr
 import tvbo.jax.xarray_pytrees  # noqa: F401 – registers xr types as JAX pytrees
 
-from tvbo.classes import equation as equations
 from tvbo.utils import Bunch
 from tvbo.classes.network import Network
 from tvbo.utils import format_pytree_as_string
@@ -3359,7 +3358,9 @@ class TimeSeries:
 
         import sympy as sp
 
-        exp = sp.parse_expr(sv_label, equations._clash1, evaluate=False)
+        from tvbo.parse.symbols import BUILTIN_SHADOW
+
+        exp = BUILTIN_SHADOW.parse(sv_label, evaluate=False)
         data = {}
         for s in exp.free_symbols:
             data[str(s)] = self.data[:, self._get_index_of_state_variable(str(s)), :, :]

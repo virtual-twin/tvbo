@@ -4,28 +4,16 @@ if 'experiment' in context.keys():
 else:
     stimulus = context['stimulus']
 
-from tvbo.classes.equation import (
-    conditionals2piecewise,
-    piecewise2numpy,
-    _clash1,
-    convert_ifelse_to_np_where,
-)
-from sympy import pycode, parse_expr, Symbol
+from sympy import Symbol
+from tvbo.codegen.code import get_printer
 
-
-if stimulus.equation.pycode:
-    default_expression = stimulus.equation.pycode
-elif stimulus.equation.conditionals:
-    default_expression = convert_ifelse_to_np_where(
-        pycode(
-            conditionals2piecewise(stimulus.equation).subs("t", Symbol("var")),
-            fully_qualified_modules=False,
-        )
-    )
-else:
-    default_expression = pycode(
-        parse_expr(stimulus.equation.rhs, _clash1), fully_qualified_modules=False
-    )
+# An authored `pycode` is the escape hatch for an expression TVBO cannot print, so it is
+# consulted BEFORE parsing — parsing first would raise on exactly the equations it exists
+# for. TVB binds the stimulus argument as `var`, whatever the metadata calls time.
+default_expression = stimulus.equation.pycode
+if not default_expression:
+    expression, _ = stimulus.get_expression()
+    default_expression = get_printer("tvb").doprint(expression.subs(Symbol("t"), Symbol("var")))
 %>
 ################################################################################
 from tvb.datatypes.equations import Equation, TemporalApplicableEquation

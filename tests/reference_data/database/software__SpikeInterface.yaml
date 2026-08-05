@@ -1,0 +1,44 @@
+name: SpikeInterface
+description: A unified framework for spike sorting, providing a common interface to
+  many spike sorting algorithms, preprocessing tools, and quality metrics.
+homepage: https://spikeinterface.readthedocs.io
+license: MIT
+repository: https://github.com/SpikeInterface/spikeinterface
+doi: 10.7554/eLife.61834
+ecosystem:
+- pypi
+application_category: analysis
+scale:
+- neuron
+- network_system
+model_paradigm:
+- generic
+tool_role:
+- analysis_tool
+programming_language:
+- Python
+runtime_platform:
+- Python
+interoperates_with:
+- NWB
+- Neo
+- MNE-Python
+date_created: '2020-01-01'
+development_status: active
+author:
+- Alessio Buccino
+- Cole Hurwitz
+- Samuel Garcia
+maintainer:
+- SpikeInterface Developers
+funder:
+- Allen Institute
+- CatalystNeuro
+reference_publication: 10.7554/eLife.61834
+keywords:
+- spike sorting
+- electrophysiology
+- Python
+- reproducibility
+issue_tracker: https://github.com/SpikeInterface/spikeinterface/issues
+is_accessible_for_free: true

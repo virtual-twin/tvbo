@@ -173,7 +173,7 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
     _, state_names, _ = get_mode_layout(model) if model and model.state_variables else (1, [], {})
     aux_names = list(model.derived_variables.keys()) if model and getattr(model, "derived_variables", None) else []
 
-    output_vars = getattr(model, "output", None) or []
+    output_vars = model.output
     if isinstance(output_vars, str):
         output_vars = [output_vars]
     requested_aux = [v for v in output_vars if v in aux_names]
@@ -228,8 +228,8 @@ def _state_recomputable_derived(model: Any) -> Set[str]:
     dvars = model.derived_variables or {}
     if not dvars:
         return set()
-    dparams = getattr(model, "derived_parameters", None) or {}
-    params = getattr(model, "parameters", None) or {}
+    dparams = model.derived_parameters
+    params = model.parameters
     state_vars = model.state_variables or {}
 
     def _is_time_stochastic(p):
@@ -360,7 +360,7 @@ def resolve_model_output_indices(model: Any, experiment: Any = None) -> Tuple[Li
     n_modes, _, _ = get_mode_layout(model)
     state_vars = (model.state_variables or {}) if model else {}
 
-    output_vars = getattr(model, "output", None) or []
+    output_vars = model.output
     if isinstance(output_vars, str):
         output_vars = [output_vars]
 

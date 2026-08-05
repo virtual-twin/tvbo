@@ -1,0 +1,72 @@
+name: MEG
+label: MEG
+description: Forward solution for magnetoencephalography. Projects source neural activity
+  through a lead field matrix to MEG sensor locations using oriented gradiometers.
+  If no precomputed gain is available, uses the single-sphere analytic formula (Sarvas
+  1987, Eq. 25) for the magnetic field produced by current dipoles in a conducting
+  sphere.
+parameters:
+  permeability:
+    name: permeability
+    value: 1.25663706e-06
+    description: Magnetic constant (permeability of free space)
+    unit: H_per_m
+time_scale: ms
+period: 0.9765625
+imaging_modality: MEG
+data_source:
+  name: sensor_network
+  description: MEG sensor array network. Each node is a SQUID sensor with spatial
+    coordinates and orientation vector. The associated data file stores the precomputed
+    lead field matrix (gain).
+  path: acq-MEGBrainstorm276_sensors.yaml
+reconcile: by_label
+pipeline:
+- equation:
+    parameters:
+      mu:
+        name: mu
+        value: 1.25663706e-06
+        unit: H_per_m
+    rhs: (mu / (4 * pi * F**2)) * (cross(F * Q, r_0) - sum(cross(Q, r_0) * (r_s *
+      dF), axis=1))
+    latex: false
+  description: Construct the MEG lead field matrix using Sarvas 1987 Eq. 25.
+  name: compute_gain
+  output: gain
+  arguments:
+    Q:
+      name: Q
+      description: Source dipole orientations (n_sources, 3)
+    r_0:
+      name: r_0
+      description: Source dipole positions (n_sources, 3)
+    r_s:
+      name: r_s
+      description: Sensor positions (n_sensors, 3)
+- equation:
+    rhs: gain @ sum(X, axis=-1) / period_steps
+    latex: false
+  name: lead_field_projection
+  output: projected
+  apply_on_dimension: node
+  arguments:
+    gain:
+      name: gain
+      description: Lead field matrix (n_sensors, n_sources)
+    period_steps:
+      name: period_steps
+      description: Number of integration steps per sampling period
+- equation:
+    rhs: X + noise
+    latex: false
+  name: add_noise
+  input: lead_field_projection
+  output: MEG
+  arguments:
+    noise:
+      name: noise
+      description: Observation noise (n_sensors, 1)
+class_reference:
+  name: MEG
+  module: tvb.simulator.monitors

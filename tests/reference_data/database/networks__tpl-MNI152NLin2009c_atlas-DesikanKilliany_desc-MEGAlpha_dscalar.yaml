@@ -1,0 +1,699 @@
+label: Desikan-Killiany 68 cortical parcels with MEG alpha amplitudes per region
+description: "Per-region MEG alpha-band amplitude values aligned with the 68 cortical\
+  \ parcels\nof the Desikan-Killiany atlas. Sourced from\ntvb-ontology-optim-workshop/notebooks/data/{lh,rh}_megalpha_parc.csv.\n\
+  \nThe measure exhibits the canonical cortical-hierarchy gradient:\n  - unimodal\
+  \ sensory regions (pericalcarine, cuneus, lateraloccipital,\n    transversetemporal)\
+  \ score high  (~0.40)\n  - transmodal regions       (rostralanteriorcingulate, frontalpole,\n\
+  \    temporalpole, medialorbitofrontal) score low (~0.15)\n\nUsed as a per-region\
+  \ cortical-gradient signal in experiments that need\nto ground a hierarchy (e.g.\
+  \ reservoir-computing frequency-gradient\ntargets, JR-MEG peak-frequency optimisation).\
+  \ The values are\ndimensionless normalised amplitudes; downstream consumers rescale\n\
+  to a task-appropriate range (e.g. omega in Hz).\n"
+nodes:
+- id: 0
+  label: ctx-lh-bankssts
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.33940002
+      unit: dimensionless
+  record: true
+  size: 1
+  region: bankssts
+- id: 1
+  label: ctx-lh-caudalanteriorcingulate
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.17210498
+      unit: dimensionless
+  record: true
+  size: 1
+  region: caudalanteriorcingulate
+- id: 2
+  label: ctx-lh-caudalmiddlefrontal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.21096417
+      unit: dimensionless
+  record: true
+  size: 1
+  region: caudalmiddlefrontal
+- id: 3
+  label: ctx-lh-cuneus
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.42327237
+      unit: dimensionless
+  record: true
+  size: 1
+  region: cuneus
+- id: 4
+  label: ctx-lh-entorhinal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.20268749
+      unit: dimensionless
+  record: true
+  size: 1
+  region: entorhinal
+- id: 5
+  label: ctx-lh-fusiform
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3271923
+      unit: dimensionless
+  record: true
+  size: 1
+  region: fusiform
+- id: 6
+  label: ctx-lh-inferiorparietal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.36409962
+      unit: dimensionless
+  record: true
+  size: 1
+  region: inferiorparietal
+- id: 7
+  label: ctx-lh-inferiortemporal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.30679196
+      unit: dimensionless
+  record: true
+  size: 1
+  region: inferiortemporal
+- id: 8
+  label: ctx-lh-isthmuscingulate
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.26500952
+      unit: dimensionless
+  record: true
+  size: 1
+  region: isthmuscingulate
+- id: 9
+  label: ctx-lh-lateraloccipital
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3838526
+      unit: dimensionless
+  record: true
+  size: 1
+  region: lateraloccipital
+- id: 10
+  label: ctx-lh-lateralorbitofrontal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.21757728
+      unit: dimensionless
+  record: true
+  size: 1
+  region: lateralorbitofrontal
+- id: 11
+  label: ctx-lh-lingual
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.35500178
+      unit: dimensionless
+  record: true
+  size: 1
+  region: lingual
+- id: 12
+  label: ctx-lh-medialorbitofrontal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.1857318
+      unit: dimensionless
+  record: true
+  size: 1
+  region: medialorbitofrontal
+- id: 13
+  label: ctx-lh-middletemporal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.30817792
+      unit: dimensionless
+  record: true
+  size: 1
+  region: middletemporal
+- id: 14
+  label: ctx-lh-parahippocampal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.318048
+      unit: dimensionless
+  record: true
+  size: 1
+  region: parahippocampal
+- id: 15
+  label: ctx-lh-paracentral
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.29057974
+      unit: dimensionless
+  record: true
+  size: 1
+  region: paracentral
+- id: 16
+  label: ctx-lh-parsopercularis
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.22726226
+      unit: dimensionless
+  record: true
+  size: 1
+  region: parsopercularis
+- id: 17
+  label: ctx-lh-parsorbitalis
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.205437
+      unit: dimensionless
+  record: true
+  size: 1
+  region: parsorbitalis
+- id: 18
+  label: ctx-lh-parstriangularis
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.21461688
+      unit: dimensionless
+  record: true
+  size: 1
+  region: parstriangularis
+- id: 19
+  label: ctx-lh-pericalcarine
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.40054607
+      unit: dimensionless
+  record: true
+  size: 1
+  region: pericalcarine
+- id: 20
+  label: ctx-lh-postcentral
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.31032804
+      unit: dimensionless
+  record: true
+  size: 1
+  region: postcentral
+- id: 21
+  label: ctx-lh-posteriorcingulate
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.23263463
+      unit: dimensionless
+  record: true
+  size: 1
+  region: posteriorcingulate
+- id: 22
+  label: ctx-lh-precentral
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.26747593
+      unit: dimensionless
+  record: true
+  size: 1
+  region: precentral
+- id: 23
+  label: ctx-lh-precuneus
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.36445525
+      unit: dimensionless
+  record: true
+  size: 1
+  region: precuneus
+- id: 24
+  label: ctx-lh-rostralanteriorcingulate
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.14805126
+      unit: dimensionless
+  record: true
+  size: 1
+  region: rostralanteriorcingulate
+- id: 25
+  label: ctx-lh-rostralmiddlefrontal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.19185714
+      unit: dimensionless
+  record: true
+  size: 1
+  region: rostralmiddlefrontal
+- id: 26
+  label: ctx-lh-superiorfrontal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.20464197
+      unit: dimensionless
+  record: true
+  size: 1
+  region: superiorfrontal
+- id: 27
+  label: ctx-lh-superiorparietal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.37183717
+      unit: dimensionless
+  record: true
+  size: 1
+  region: superiorparietal
+- id: 28
+  label: ctx-lh-superiortemporal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.30095902
+      unit: dimensionless
+  record: true
+  size: 1
+  region: superiortemporal
+- id: 29
+  label: ctx-lh-supramarginal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.32715484
+      unit: dimensionless
+  record: true
+  size: 1
+  region: supramarginal
+- id: 30
+  label: ctx-lh-frontalpole
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.18128875
+      unit: dimensionless
+  record: true
+  size: 1
+  region: frontalpole
+- id: 31
+  label: ctx-lh-temporalpole
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.16658704
+      unit: dimensionless
+  record: true
+  size: 1
+  region: temporalpole
+- id: 32
+  label: ctx-lh-transversetemporal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3251972
+      unit: dimensionless
+  record: true
+  size: 1
+  region: transversetemporal
+- id: 33
+  label: ctx-lh-insula
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.2672371
+      unit: dimensionless
+  record: true
+  size: 1
+  region: insula
+- id: 34
+  label: ctx-rh-bankssts
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.33860522990398284
+      unit: dimensionless
+  record: true
+  size: 1
+  region: bankssts
+- id: 35
+  label: ctx-rh-caudalanteriorcingulate
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.217242867362926
+      unit: dimensionless
+  record: true
+  size: 1
+  region: caudalanteriorcingulate
+- id: 36
+  label: ctx-rh-caudalmiddlefrontal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.20915781550053944
+      unit: dimensionless
+  record: true
+  size: 1
+  region: caudalmiddlefrontal
+- id: 37
+  label: ctx-rh-cuneus
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.4268686648944941
+      unit: dimensionless
+  record: true
+  size: 1
+  region: cuneus
+- id: 38
+  label: ctx-rh-entorhinal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.27110407865443037
+      unit: dimensionless
+  record: true
+  size: 1
+  region: entorhinal
+- id: 39
+  label: ctx-rh-fusiform
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.32955605155458473
+      unit: dimensionless
+  record: true
+  size: 1
+  region: fusiform
+- id: 40
+  label: ctx-rh-inferiorparietal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.363210433183154
+      unit: dimensionless
+  record: true
+  size: 1
+  region: inferiorparietal
+- id: 41
+  label: ctx-rh-inferiortemporal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.30750624252294234
+      unit: dimensionless
+  record: true
+  size: 1
+  region: inferiortemporal
+- id: 42
+  label: ctx-rh-isthmuscingulate
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3056429551155288
+      unit: dimensionless
+  record: true
+  size: 1
+  region: isthmuscingulate
+- id: 43
+  label: ctx-rh-lateraloccipital
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3848565261965327
+      unit: dimensionless
+  record: true
+  size: 1
+  region: lateraloccipital
+- id: 44
+  label: ctx-rh-lateralorbitofrontal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.21821242002442845
+      unit: dimensionless
+  record: true
+  size: 1
+  region: lateralorbitofrontal
+- id: 45
+  label: ctx-rh-lingual
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3570348219836009
+      unit: dimensionless
+  record: true
+  size: 1
+  region: lingual
+- id: 46
+  label: ctx-rh-medialorbitofrontal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.2020377229909042
+      unit: dimensionless
+  record: true
+  size: 1
+  region: medialorbitofrontal
+- id: 47
+  label: ctx-rh-middletemporal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.31117835396336124
+      unit: dimensionless
+  record: true
+  size: 1
+  region: middletemporal
+- id: 48
+  label: ctx-rh-parahippocampal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3186995072117082
+      unit: dimensionless
+  record: true
+  size: 1
+  region: parahippocampal
+- id: 49
+  label: ctx-rh-paracentral
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.2911795764593629
+      unit: dimensionless
+  record: true
+  size: 1
+  region: paracentral
+- id: 50
+  label: ctx-rh-parsopercularis
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.2271188454563853
+      unit: dimensionless
+  record: true
+  size: 1
+  region: parsopercularis
+- id: 51
+  label: ctx-rh-parsorbitalis
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.20493463463057424
+      unit: dimensionless
+  record: true
+  size: 1
+  region: parsorbitalis
+- id: 52
+  label: ctx-rh-parstriangularis
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.21444314467180678
+      unit: dimensionless
+  record: true
+  size: 1
+  region: parstriangularis
+- id: 53
+  label: ctx-rh-pericalcarine
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.4031539820768123
+      unit: dimensionless
+  record: true
+  size: 1
+  region: pericalcarine
+- id: 54
+  label: ctx-rh-postcentral
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3090034087316347
+      unit: dimensionless
+  record: true
+  size: 1
+  region: postcentral
+- id: 55
+  label: ctx-rh-posteriorcingulate
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.2643216004694747
+      unit: dimensionless
+  record: true
+  size: 1
+  region: posteriorcingulate
+- id: 56
+  label: ctx-rh-precentral
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.2664495160943267
+      unit: dimensionless
+  record: true
+  size: 1
+  region: precentral
+- id: 57
+  label: ctx-rh-precuneus
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3632469338346798
+      unit: dimensionless
+  record: true
+  size: 1
+  region: precuneus
+- id: 58
+  label: ctx-rh-rostralanteriorcingulate
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.19281715125413115
+      unit: dimensionless
+  record: true
+  size: 1
+  region: rostralanteriorcingulate
+- id: 59
+  label: ctx-rh-rostralmiddlefrontal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.19215582453457228
+      unit: dimensionless
+  record: true
+  size: 1
+  region: rostralmiddlefrontal
+- id: 60
+  label: ctx-rh-superiorfrontal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.20166881908860987
+      unit: dimensionless
+  record: true
+  size: 1
+  region: superiorfrontal
+- id: 61
+  label: ctx-rh-superiorparietal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3732693064786571
+      unit: dimensionless
+  record: true
+  size: 1
+  region: superiorparietal
+- id: 62
+  label: ctx-rh-superiortemporal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.30611147850147324
+      unit: dimensionless
+  record: true
+  size: 1
+  region: superiortemporal
+- id: 63
+  label: ctx-rh-supramarginal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.32571767454498385
+      unit: dimensionless
+  record: true
+  size: 1
+  region: supramarginal
+- id: 64
+  label: ctx-rh-frontalpole
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.18247603110181607
+      unit: dimensionless
+  record: true
+  size: 1
+  region: frontalpole
+- id: 65
+  label: ctx-rh-temporalpole
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.2265698696522512
+      unit: dimensionless
+  record: true
+  size: 1
+  region: temporalpole
+- id: 66
+  label: ctx-rh-transversetemporal
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.3250967701098067
+      unit: dimensionless
+  record: true
+  size: 1
+  region: transversetemporal
+- id: 67
+  label: ctx-rh-insula
+  parameters:
+    megalpha:
+      name: megalpha
+      value: 0.2762052267403877
+      unit: dimensionless
+  record: true
+  size: 1
+  region: insula
+graph_representation: auto
+number_of_nodes: 68
+descriptor: MEGAlpha
+observational_measures:
+- megalpha
+distance_unit: mm
+time_unit: ms

@@ -1,7 +1,6 @@
 <%!
     import numpy as np
     from tvbo.codegen import render_expression
-    from tvbo.classes.equation import _clash1
     from tvbo.templates.base.utils import referenced
 
     # Generic pycode - pass parameters on each call. Use the 'numpy' format: TVB coupling

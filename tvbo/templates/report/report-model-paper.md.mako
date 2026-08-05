@@ -1,5 +1,5 @@
 <%
-from sympy import latex, Eq, symbols, sympify, Symbol, Function, Derivative
+from sympy import latex, Eq, Symbol, Derivative
 from tvbo.utils import report
 
 derivative_notation = context.get('derivative_notation', 'd')
@@ -32,24 +32,12 @@ def format_aligned_equations(equations):
     joined = ' \\\\\n'.join(lines)
     return f"$$\n\\begin{{aligned}}\n{joined}\n\\end{{aligned}}\n$$"
 
-state_equations = [eq for k, eq in model.get_equations().items() if k in model.state_variables]
-
-derived_variables = [eq for k, eq in model.get_equations().items() if k in model.derived_variables]
-
-if isinstance(model.output, list):
-    output = [eq for k, eq in model.get_equations().items() if k in model.output]
-else:
-    output = [
-        Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-        for p in model.output.values()
-    ]
-
-derived_parameters = [
-    Eq(symbols(p.name), sympify(p.equation.rhs, strict=False))
-    for p in model.derived_parameters.values()
-]
-
-functions = [Eq(Function(f.name)(*[Symbol(arg) for arg in f.arguments.keys()]), sympify(f.equation.rhs, strict=False)) for f in model.functions.values()]
+_equations = report.model_equations(model)
+state_equations = _equations['state']
+derived_variables = _equations['derived']
+derived_parameters = _equations['derived_parameters']
+functions = _equations['functions']
+output = _equations['output']
 
 rows = "\n".join([
     f"${latex(Symbol(p.name))}$ & {p.value} & {p.unit if p.unit else '1'} & {p.definition or p.description} \\\\"

@@ -44,7 +44,7 @@ function EpileptorCodim3SlowMod!(dx, _x, p, t = 0)
     nu = R .* (E2 .* cos(z) .+ F2 .* sin(z))
     disc = -mu2 .^ 3 / 27 .+ mu1 .^ 2 / 4
     sqdisc = sqrt(abs(disc))
-    xs = ifelse(disc >= 0, abs(sqdisc .+ mu1 / 2) .^ (1 // 3) .* cos(atan(0, sqdisc .+ mu1 / 2) / 3) .+ abs(mu1 / 2 .- sqdisc) .^ (1 // 3) .* cos(atan(0, mu1 / 2 .- sqdisc) / 3), (sqdisc .^ 2 .+ mu1 .^ 2 / 4) .^ (1 // 6) .* cos(atan(sqdisc, mu1 / 2) / 3) .+ (sqdisc .^ 2 .+ mu1 .^ 2 / 4) .^ (1 // 6) .* cos(atan(-sqdisc, mu1 / 2) / 3))
+    xs = ifelse(disc >= 0, NaNMath.pow(abs(sqdisc .+ mu1 / 2), 1 // 3) .* cos(atan(0, sqdisc .+ mu1 / 2) / 3) .+ NaNMath.pow(abs(mu1 / 2 .- sqdisc), 1 // 3) .* cos(atan(0, mu1 / 2 .- sqdisc) / 3), NaNMath.pow(sqdisc .^ 2 .+ mu1 .^ 2 / 4, 1 // 6) .* cos(atan(sqdisc, mu1 / 2) / 3) .+ NaNMath.pow(sqdisc .^ 2 .+ mu1 .^ 2 / 4, 1 // 6) .* cos(atan(-sqdisc, mu1 / 2) / 3))
 
     dx[1] = -y
     dx[2] = x .^ 3 .- mu1 .- mu2 .* x .- y .* (nu .+ x .^ 2 .+ b .* x)

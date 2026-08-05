@@ -144,7 +144,7 @@
       <!-- Time derivatives -->
       <TimeDerivative variable="x" value="(-y) / SEC"/>
       <TimeDerivative variable="y" value="(x^3 - mu1 - mu2*x - y*(nu + x^2 + b*x)) / SEC"/>
-      <TimeDerivative variable="z" value="(-c*(sqrt(y^2 + (x - xs)^2) - dstar + Ks*c_glob + H(modification .gt. 0) * (-1/2 + z)^7/10 + 0)) / SEC"/>
+      <TimeDerivative variable="z" value="(-c*(sqrt(y^2 + (x - xs)^2) - dstar + Ks*c_glob + H(modification .gt. 0) * ((-1/2 + z)^7/10))) / SEC"/>
       <TimeDerivative variable="uA" value="(cA) / SEC"/>
       <TimeDerivative variable="uB" value="(cB) / SEC"/>
 
