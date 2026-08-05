@@ -5,8 +5,9 @@ The build gate, in two modes. Offline (where the run containers live) it resolve
 generated artifacts that are never committed, so ``--manifest manuscript_results.yml`` runs it
 CONTAINER-FREE: the declared bindings and, with ``--manuscript``, the prose's
 ``{{< meta results.* >}}`` keys are checked against the committed manifest instead of being
-resolved. Either way a citation with no number, a number no one cites, or a binding added
-without regenerating the manifest is caught. A non-empty problem list exits non-zero, so a
+resolved. Either way a citation with no number, a number no one cites, a binding added
+without regenerating the manifest, or a committed ``<figure>.caption.qmd`` that no longer
+matches the caption its spec composes is caught. A non-empty problem list exits non-zero, so a
 Quarto pre-render step fails loudly instead of rendering a stale or wrong figure.
 """
 from __future__ import annotations
@@ -69,6 +70,12 @@ def verify(
              "against this committed manifest instead of resolving DataRefs into run containers "
              "— the build gate, since those containers are generated and never committed.",
     ),
+    captions: Path = typer.Option(
+        None, "--captions",
+        help="Directory holding the composed `<figure>.caption.qmd` partials (default: "
+             "<collection-dir>/figures). Each committed caption is recomposed from the spec and a "
+             "mismatch (a stale caption the manuscript would still render) is a failure.",
+    ),
 ) -> None:
     """Verify a StudyCollection's completeness, staleness and manifest coverage."""
     kind, obj = _common.resolve_spec(spec)
@@ -82,7 +89,8 @@ def verify(
 
     base = Path(getattr(obj, "_source_file", spec)).resolve().parent
     keys = _scan_meta_keys(manuscript) if manuscript is not None else None
-    problems = _verify(obj, base, results_root=results_root, manuscript_keys=keys, manifest_path=manifest)
+    problems = _verify(obj, base, results_root=results_root, manuscript_keys=keys,
+                       manifest_path=manifest, captions_dir=captions)
     if problems:
         _common.die("verification failed:\n  - " + "\n  - ".join(problems))
     _common.info(f"verification passed ({len(list(getattr(obj, 'members', None) or []))} member(s)).")

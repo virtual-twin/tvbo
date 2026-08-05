@@ -434,3 +434,61 @@ def test_a_manifest_is_not_written_when_an_analysis_stage_failed(tmp_path, monke
     with pytest.raises((SystemExit, typer.Exit, typer.BadParameter)):
         run_cli._run_study_collection(obj, str(spec), tmp_path / "output")
     assert not emitted, "the manifest was written from a failed run"
+
+
+# ------------------------------------------------- caption staleness gate
+
+
+@pytest.fixture
+def figured(tmp_path):
+    """A collection with one composed figure whose caption is written to `figures/`."""
+    spec = tmp_path / "tvbo_manuscript.yaml"
+    spec.write_text(
+        "title: Fig test\ncitekey: figtest\n"
+        "figures:\n"
+        "  - name: fig-1\n"
+        "    layout: ab\n"
+        "    description: Overview.\n"
+        "    panels:\n"
+        "      a:\n"
+        "        kind: cartesian\n"
+        "        label: Time series\n"
+        "        layers: [{used: {experiment: sweep}, mark: line, encoding: {x: time, y: rate}}]\n"
+        "      b:\n"
+        "        kind: heatmap\n"
+        "        label: FC\n"
+        "        description: reproduces the gradient\n"
+        "        layers: [{used: {analysis: fc}, encoding: {x: region, y: region}}]\n",
+        encoding="utf-8",
+    )
+    inv = tvbo.StudyCollection.from_file(str(spec))
+    caps = tmp_path / "figures"
+    bsplot.write_caption(inv.figures[0], caps)
+    return inv, caps
+
+
+def test_stale_captions_passes_when_committed_matches_spec(figured):
+    inv, caps = figured
+    assert I._stale_captions(inv, caps) == []
+
+
+def test_stale_captions_flags_a_drifted_committed_caption(figured):
+    """A spec edit not recomposed leaves a caption the manuscript would still render."""
+    inv, caps = figured
+    p = caps / "fig-1.caption.qmd"
+    p.write_text(p.read_text().replace("Overview.", "A different lead."), encoding="utf-8")
+    assert any("fig-1" in m and "stale" in m for m in I._stale_captions(inv, caps))
+
+
+def test_stale_captions_skips_a_figure_with_no_committed_partial(figured, tmp_path):
+    """No partial means nothing to be stale — the gate must not invent a problem."""
+    inv, _caps = figured
+    empty = tmp_path / "other-figures"
+    empty.mkdir()
+    assert I._stale_captions(inv, empty) == []
+
+
+def test_verify_surfaces_a_stale_caption_end_to_end(figured, tmp_path):
+    inv, caps = figured
+    (caps / "fig-1.caption.qmd").write_text("**Wrong.**\n", encoding="utf-8")
+    assert any("stale" in p for p in I.verify(inv, tmp_path, captions_dir=caps))

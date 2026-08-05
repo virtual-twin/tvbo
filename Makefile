@@ -36,7 +36,7 @@ help: ## Show this help
 	@echo "  make docs-rm-py         Remove .py files from Usage"
 	@echo ""
 	@echo "Documentation Testing:"
-	@echo "  make docs-test          Test all .qmd files (parallel execution)"
+	@echo "  make docs-test          Test all .qmd files, slow ones included"
 	@echo "  make docs-pytest        Run doc tests with pytest (fail-fast)"
 	@echo "  make docs-pytest-all    Run all doc tests with pytest (no early exit)"
 	@echo "  make docs-test-all      Full test pipeline (jupyter → test → quarto)"
@@ -225,70 +225,23 @@ docs-rm-py:
 	find ./docs/Usage -name '*.py' -exec rm {} \;
 
 DOCS_TEST_JOBS ?= 4
+# Docs live in one module, so the default loadscope would pin them all to one worker.
+DOCS_PYTEST = pytest tests/test_docs.py -v --tb=short -n $(DOCS_TEST_JOBS) --dist=load
 
+# Every doc, slow ones included; tests/test_docs.py owns discovery and kernel pinning.
 docs-test:
 	@echo "Testing all .qmd files in docs/ ($(DOCS_TEST_JOBS) parallel jobs)..."
-	@echo "========================================"
-	@resultsdir=$$(mktemp -d); \
-	test_one() { \
-		qmd="$$1"; resdir="$$2"; \
-		name=$$(basename "$$qmd"); \
-		if ! grep -q '```{python}' "$$qmd"; then \
-			echo "⊘ SKIPPED (no python cells): $$qmd"; \
-			echo "skip" > "$$resdir/$${name}.result"; \
-			return; \
-		fi; \
-		ipynb="$${qmd%.qmd}.ipynb"; \
-		if ! quarto convert "$$qmd" --output "$$ipynb" 2>/dev/null; then \
-			echo "✗ FAILED (quarto convert): $$qmd"; \
-			echo "fail:quarto convert failed" > "$$resdir/$${name}.result"; \
-			return; \
-		fi; \
-		errlog=$$(mktemp); \
-		if MPLBACKEND=Agg jupyter execute "$$ipynb" --allow-errors 2>"$$errlog"; then \
-			echo "✓ PASSED: $$qmd"; \
-			echo "pass" > "$$resdir/$${name}.result"; \
-		else \
-			errmsg=$$(tail -1 "$$errlog" | head -c 100); \
-			echo "✗ FAILED: $$qmd - $$errmsg"; \
-			echo "fail:$$errmsg" > "$$resdir/$${name}.result"; \
-		fi; \
-		rm -f "$$ipynb" "$$errlog"; \
-	}; \
-	export -f test_one; \
-	find ./docs -name '*.qmd' -type f | sort | \
-		xargs -P $(DOCS_TEST_JOBS) -I {} bash -c 'test_one "$$1" "$$2"' _ {} "$$resultsdir"; \
-	echo ""; \
-	echo "========================================"; \
-	passed=$$(grep -l '^pass$$' "$$resultsdir"/*.result 2>/dev/null | wc -l | tr -d ' '); \
-	skipped=$$(grep -l '^skip$$' "$$resultsdir"/*.result 2>/dev/null | wc -l | tr -d ' '); \
-	failed=$$(grep -l '^fail:' "$$resultsdir"/*.result 2>/dev/null | wc -l | tr -d ' '); \
-	total=$$((passed + skipped + failed)); \
-	echo "Test Summary: $$passed passed, $$failed failed, $$skipped skipped ($$total total)"; \
-	if [ "$$failed" -gt 0 ]; then \
-		echo ""; \
-		echo "Failed tests:"; \
-		for f in "$$resultsdir"/*.result; do \
-			if grep -q '^fail:' "$$f"; then \
-				name=$$(basename "$$f" .result); \
-				reason=$$(cat "$$f" | sed 's/^fail://'); \
-				echo "  $$name: $$reason"; \
-			fi; \
-		done; \
-	fi; \
-	echo "========================================"; \
-	rm -rf "$$resultsdir"; \
-	[ "$$failed" -eq 0 ]
+	$(DOCS_PYTEST) --run-slow
 
 # Pytest-based docs testing (for CI/CD)
 # Requires: pip install pytest-xdist
 docs-pytest:
 	@echo "Running documentation tests with pytest ($(DOCS_TEST_JOBS) workers)..."
-	pytest tests/test_docs.py -v -x --tb=short -n $(DOCS_TEST_JOBS)
+	$(DOCS_PYTEST) -x
 
 docs-pytest-all:
 	@echo "Running all documentation tests ($(DOCS_TEST_JOBS) workers, no early exit)..."
-	pytest tests/test_docs.py -v --tb=short -n $(DOCS_TEST_JOBS)
+	$(DOCS_PYTEST)
 
 docs-test-all: docs-jupyter docs-test docs-quarto
 	@echo "Full test pipeline completed!"
