@@ -76,6 +76,42 @@ def _count(spec: str, inv: Any) -> int:
     return len(as_list(getattr(target, coll)))
 
 
+def container_roots(inv: Any, results_root: Optional[Path]) -> list[Path]:
+    """Every directory an investigation's result containers can live under, in search order.
+
+    The investigation's own root first, then one per member. A member study runs in its own
+    directory and writes ``<member-dir>/output/results/<name>/result.h5``, so a ``used:``
+    binding into a member — which ``Investigation.results`` explicitly documents as
+    supported — is not reachable from the investigation's root alone.
+    """
+    roots: list[Path] = [Path(results_root)] if results_root else []
+    try:
+        members = list(inv.member_recipes()) if inv is not None else []
+    except Exception:  # noqa: BLE001 — a malformed member list is reported elsewhere
+        members = []
+    for _label, path in members:
+        root = Path(path).resolve().parent / "output"
+        if root not in roots:
+            roots.append(root)
+    return roots
+
+
+def _resolve_across_roots(used: Any, results_root: Optional[Path], inv: Any):
+    """Resolve *used* against the first container root that holds it.
+
+    The first failure is re-raised when none do, so the reported problem names the
+    investigation's own root rather than whichever member happened to be searched last.
+    """
+    roots = container_roots(inv, results_root)
+    first_error: Optional[Exception] = None
+    for root in roots or [None]:
+        try:
+            return resolve_dataref(used, results_root=str(root) if root else None)
+        except Exception as e:  # noqa: BLE001 — try the next root, report the first
+            first_error = first_error or e
+    raise first_error  # type: ignore[misc]
+
+
 def resolve_binding(binding: Any, results_root: Optional[Path], *, inv: Any = None) -> tuple[str, dict]:
     """Resolve one ``ResultBinding`` to ``(rendered_string, provenance)``.
 
@@ -114,7 +150,7 @@ def resolve_binding(binding: Any, results_root: Optional[Path], *, inv: Any = No
             prov["description"] = str(desc)
         return rendered, prov
 
-    da = resolve_dataref(used, results_root=str(results_root) if results_root else None)
+    da = _resolve_across_roots(used, results_root, inv)
     rendered = _format(_scalar(da), fmt)
     ref = "/".join(
         p for p in (getattr(used, "analysis", None) or getattr(used, "experiment", None)
@@ -203,25 +239,53 @@ def _missing_members(inv: Any, base: Path) -> list[str]:
     return missing
 
 
-def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Optional[Path]) -> list[str]:
-    """Analyses whose container is missing, or older than the spec that declares them.
+def _analysis_fingerprint(analysis: Any) -> str:
+    """A stable digest of the one analysis, over the fields that change its numbers."""
+    import hashlib
+    import json
 
-    Missing means never run; older-than-spec means the recipe was edited after the container
-    was written, so the reported numbers reflect a superseded spec. Both are drift the build
-    must not paper over. This is the reused ``analysis_io`` container convention; a full
-    content-addressed check can tighten it later.
+    def plain(obj, depth=0):
+        if depth > 6 or obj is None or isinstance(obj, (str, int, float, bool)):
+            return obj
+        if isinstance(obj, (list, tuple)):
+            return [plain(o, depth + 1) for o in obj]
+        if hasattr(obj, "items"):
+            return {str(k): plain(v, depth + 1) for k, v in sorted(obj.items())}
+        fields = getattr(obj, "model_fields", None) or getattr(obj, "__dict__", {})
+        return {str(k): plain(getattr(obj, k, None), depth + 1)
+                for k in sorted(fields) if not str(k).startswith("_")}
+
+    blob = json.dumps(plain(analysis), sort_keys=True, default=str)
+    return hashlib.sha256(blob.encode()).hexdigest()[:16]
+
+
+def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Optional[Path]) -> list[str]:
+    """Analyses whose container is missing, or written from a different declaration.
+
+    Staleness is per analysis, keyed on a digest of THAT analysis's own declaration, not on
+    the spec file's mtime. Comparing against the file made every unrelated edit — a caption,
+    a new figure, a typo in a description — mark every analysis as needing a re-run, so a
+    one-word change failed the build and demanded hours of recomputation it could not affect.
+
+    The digest is recorded beside the container when it is written. A container from before
+    this check existed carries none, and is accepted: the alternative is failing every build
+    once, which teaches people to bypass the gate.
     """
     from tvbo.data.analysis_io import study_analyses, analysis_name, container_path
 
     problems: list[str] = []
-    spec_mtime = source_file.stat().st_mtime if source_file and Path(source_file).exists() else None
     for analysis in study_analyses(inv):
         name = analysis_name(analysis)
         path = container_path(name, results_root)
         if not path.exists():
             problems.append(f"{name}: analysis container missing (never run): {path}")
-        elif spec_mtime is not None and path.stat().st_mtime < spec_mtime:
-            problems.append(f"{name}: analysis container older than the spec (edited but not re-run)")
+            continue
+        stamp = path.parent / ".fingerprint"
+        if stamp.exists() and stamp.read_text().strip() != _analysis_fingerprint(analysis):
+            problems.append(
+                f"{name}: analysis declaration changed since its container was written "
+                f"(edited but not re-run)"
+            )
     return problems
 
 

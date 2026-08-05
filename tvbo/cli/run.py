@@ -186,21 +186,37 @@ def run(
 
     kind, obj = _common.resolve_spec(spec)
 
+    # Flags that select or reshape SIMULATION work.
+    _sim_flags = [f for f, v in (("--experiment", experiment), ("--shard", shard),
+                                 ("--rendered", rendered), ("--limit", limit),
+                                 ("--subject", subject), ("--duration", duration),
+                                 ("--max-iterations", max_iterations),
+                                 ("--smoke", smoke or None), ("--set", set_ or None),
+                                 ("--pin", pin or None)) if v is not None]
+
     if kind == "investigation":
+        # An investigation runs every member end to end with fixed save options, so any
+        # of these is silently dropped — turning a one-container request into the whole
+        # study, or reporting success for a --save-all that saved record-only.
+        rejected = _sim_flags + [f for f, v in (
+            ("--analysis", analysis), ("--save-all", save_all or None),
+            ("--no-compress", None if compress else True),
+            ("--results-root", results_root)) if v is not None]
+        if rejected:
+            _common.die(
+                f"{spec} is an investigation, which runs every member study end to end; "
+                f"{', '.join(rejected)} would be ignored. Point the flag at the member "
+                "study that declares the work."
+            )
         _run_investigation(obj, spec, out_dir, backend=backend, figures=figures,
                            skip=skip, all_members=all_members, dry_run=dry_run,
                            manifest_only=manifest_only)
         return
 
     if analysis is not None:
-        # Every flag here selects or reshapes SIMULATION work, which --analysis runs none of.
-        # Ignoring one would exit 0 having simulated nothing — on a cluster, a "success".
-        given = [f for f, v in (("--experiment", experiment), ("--shard", shard),
-                                ("--rendered", rendered), ("--limit", limit),
-                                ("--subject", subject), ("--duration", duration),
-                                ("--max-iterations", max_iterations),
-                                ("--smoke", smoke or None), ("--set", set_ or None),
-                                ("--pin", pin or None)) if v is not None]
+        # --analysis runs no experiments; ignoring one would exit 0 having simulated
+        # nothing — on a cluster, a "success".
+        given = _sim_flags
         if given:
             _common.die(f"--analysis runs no experiments, so {', '.join(given)} "
                         f"would be ignored. Run them as a separate command.")
@@ -624,6 +640,10 @@ def _run_investigation(inv, spec: str, out_dir: Path | None, *, backend: str | N
         _emit()
         return
 
+    # A failed analysis stage means the containers the manifest reads are stale or absent,
+    # so emitting from them would report a number the run did not produce. Members are all
+    # attempted first — one broken member should not hide the state of the others.
+    failed: list[str] = []
     for label, p in to_run:
         _common.info(f"=== member: {label} ({p}) ===")
         kind, mobj = _common.resolve_spec(str(p))
@@ -631,9 +651,15 @@ def _run_investigation(inv, spec: str, out_dir: Path | None, *, backend: str | N
             _common.warn(f"member {label!r} resolves to a {kind}, not a study; skipping.")
             continue
         member_out = Path(p).resolve().parent / "output" / "nc"
-        _run_whole_study(mobj, str(p), member_out, backend=backend, figures=figures)
+        if not _run_whole_study(mobj, str(p), member_out, backend=backend, figures=figures):
+            failed.append(label)
 
-    _run_whole_study(inv, spec, inv_out, backend=backend, figures=figures)
+    if not _run_whole_study(inv, spec, inv_out, backend=backend, figures=figures):
+        failed.append(getattr(inv, "title", None) or spec)
+    if failed:
+        _common.die("analysis stage failed for: " + ", ".join(failed)
+                    + "\nThe results manifest was NOT written; it would have reported "
+                      "numbers from stale or missing containers.")
     _emit()
 
 

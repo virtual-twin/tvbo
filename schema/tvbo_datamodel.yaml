@@ -5380,6 +5380,8 @@ classes:
             key:
                 key: true
                 range: string
+                annotations:
+                    collection_key: true
                 description: >-
                     The manuscript token this number is cited by (e.g. ``n_errors_found``),
                     addressed in prose as ``{{< meta results.<key> >}}``. Unique within
