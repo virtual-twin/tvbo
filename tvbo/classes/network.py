@@ -231,6 +231,53 @@ def _discover_bids_measures(bids_dir) -> list[str]:
     return result or measures
 
 
+def _bids_measure_units(bids_dir, measures) -> dict:
+    """`MeasureUnits` from each measure's BEP017 sidecar, normalised onto `UnitEnum`.
+
+    `to_bids` has always *written* this field from an edge's `unit`; nothing read
+    it back, so a connectome that round-tripped through BIDS came home unitless
+    and fell to the `mm` default no matter what its sidecar said.
+
+    Entries whose spelling does not normalise are kept verbatim rather than
+    dropped: the value is what the dataset claims, and reporting an unrecognised
+    unit is a better answer than reporting none.
+    """
+    import json
+
+    from tvbo.utils.units import normalize_unit
+
+    bids_dir = Path(bids_dir)
+    units = {}
+    for measure in measures:
+        for sidecar in sorted(bids_dir.glob(f"*meas-{measure}_relmat*.json")):
+            try:
+                declared = json.loads(sidecar.read_text()).get("MeasureUnits")
+            except (OSError, ValueError):
+                continue
+            if declared:
+                units[measure] = normalize_unit(declared) or declared
+            break
+    return units
+
+
+def _declared_length_unit(measure_units: dict, length_measure) -> Optional[str]:
+    """The length measure's declared unit, if it really is a length.
+
+    A network's `distance_unit` divides its `conduction_speed` to give delays, so
+    accepting a non-length here would produce delays in a unit that means nothing
+    — worse than the `mm` default, which is at least wrong in a known direction.
+    `streamlineCount` is declared `arbitrary` in the shipped sidecars and is the
+    second structural measure in datasets that ship no tract lengths, so this is
+    reached in practice rather than defensively.
+    """
+    from tvbo.utils.units import unit_dimensions
+
+    declared = measure_units.get(length_measure) if length_measure else None
+    if declared is None:
+        return None
+    return declared if unit_dimensions(declared) == {"meter": 1} else None
+
+
 def get_normative_connectome_data(
     atlas: str,
     tractogram: str = "dTOR",
@@ -1594,6 +1641,8 @@ class Network(tvbo_datamodel.Network):
             # Load TSV (dense format - no header, tab-separated)
             return np.loadtxt(matches[0], delimiter="\t")
 
+        measure_units = _bids_measure_units(bids_dir, [*structural_measures, *observational_measures])
+
         # Load structural measures
         weights = None
         lengths = None
@@ -1627,6 +1676,10 @@ class Network(tvbo_datamodel.Network):
         # Build network. Declare the observational measures we actually
         # loaded so the `observations` property (which gates on
         # ``observational_measures``) can resolve them.
+        length_measure = structural_measures[1] if len(structural_measures) > 1 else None
+        declared_length_unit = _declared_length_unit(measure_units, length_measure)
+        if declared_length_unit:
+            kwargs.setdefault("distance_unit", declared_length_unit)
         instance = cls(
             nodes=nodes,
             edges=[],
@@ -1642,6 +1695,7 @@ class Network(tvbo_datamodel.Network):
         object.__setattr__(instance, "_cached_lengths", lengths)
         object.__setattr__(instance, "_bids_dir", str(bids_dir))
         object.__setattr__(instance, "_bids_observations", observations)
+        object.__setattr__(instance, "_bids_measure_units", measure_units)
 
         # Record the parcellation atlas so get_atlas()/get_centers() can resolve
         # region centres from the named atlas's entities by label.

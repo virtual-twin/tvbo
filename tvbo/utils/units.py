@@ -601,7 +601,9 @@ _LEGACY_TO_ENUM = {
     "%": "percent",
     "percent": "percent",
     "a.u.": "arbitrary_unit",
+    "arbitrary": "arbitrary_unit",
     "arbitrary_unit": "arbitrary_unit",
+    "r": "dimensionless",
     "r_pearson": "dimensionless",
 }
 
