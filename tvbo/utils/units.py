@@ -53,6 +53,22 @@ DEFAULT_TIME_UNIT = "ms"
 _TIME_UNIT_ATTRIBUTES = ("time_unit", "time_scale", "unit")
 
 
+def _field(scope, name):
+    """Read *name* off a datamodel object or a parsed-YAML mapping alike.
+
+    The multi-scale lowering works on the parsed dict before it is loaded into
+    the datamodel, and asks the same question about the same slot.
+    """
+    if isinstance(scope, dict):
+        return scope.get(name)
+    return getattr(scope, name, None)
+
+
+def _chain(scope):
+    """A scope argument as the tuple of scopes it stands for."""
+    return scope if isinstance(scope, tuple) else (scope,)
+
+
 def time_unit_of(*scopes):
     """The time unit governing *scopes*, resolved outwards, `ms` if nobody declares one.
 
@@ -60,7 +76,8 @@ def time_unit_of(*scopes):
     `simulation_period`, `sampling_period` — is in the unit this returns. Pass the
     scopes innermost first (`time_unit_of(node.subnetwork, network, integrator,
     experiment)`); the first that declares a unit wins, and `None` entries are skipped
-    so callers need not pre-filter.
+    so callers need not pre-filter. A scope's own `integration` is consulted before
+    moving outwards, so passing a Network is enough to reach the clock it declares.
 
     This is the only place the `ms` fallback is stated. It used to be stated in every
     scope at once through `ifabsent: ms`, which made an unset unit indistinguishable
@@ -71,20 +88,26 @@ def time_unit_of(*scopes):
     declares `s`, so those disagreed on real data.
     """
     for scope in scopes:
-        if scope is None:
-            continue
-        for attribute in _TIME_UNIT_ATTRIBUTES:
-            declared = getattr(scope, attribute, None)
-            if declared is None:
+        for candidate in (scope, _field(scope, "integration") if scope is not None else None):
+            if candidate is None:
                 continue
-            text = str(getattr(declared, "text", declared)).strip()
-            if text and text.lower() not in ("none", "null"):
-                return text
+            for attribute in _TIME_UNIT_ATTRIBUTES:
+                declared = _field(candidate, attribute)
+                if declared is None:
+                    continue
+                text = str(getattr(declared, "text", declared)).strip()
+                if text and text.lower() not in ("none", "null"):
+                    return text
     return DEFAULT_TIME_UNIT
 
 
 def time_unit_factor(from_scope, to_scope):
     """The exact factor converting a time-valued number from one scope's unit to another's.
+
+    Either side may be a single scope or a tuple of them resolved innermost-first,
+    so a subnetwork can be asked *with* its enclosing scopes: one that declares no
+    unit of its own inherits the parent's, and the factor is then exactly 1 rather
+    than a conversion onto the fallback.
 
     `Fraction`, not float: a subnetwork in `s` folding into a parent in `ms` is exactly
     1000, and a factor of 1000 living only in a modeller's head is invisible in every
@@ -94,7 +117,7 @@ def time_unit_factor(from_scope, to_scope):
         ValueError: If either unit is not time-valued, or they are dimensionally
             incompatible — a silent conversion between them would be worse than none.
     """
-    source, target = time_unit_of(from_scope), time_unit_of(to_scope)
+    source, target = (time_unit_of(*_chain(scope)) for scope in (from_scope, to_scope))
     ratios = []
     for unit in (source, target):
         dimensions = unit_dimensions(unit)

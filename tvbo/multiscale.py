@@ -39,7 +39,7 @@ engine emitting the procedure on-device).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -201,8 +201,7 @@ def flatten_reservoir(
             "post_expression": {"rhs": "gx"},  # gain folded into W_global
         }
     }
-    integ = dict(exp.get("integration") or {"method": "Heun", "step_size": 1.0,
-                                            "duration": 1000, "transient_time": 0})
+    integ = _folded_integration(exp, subnet)
 
     fr = FlatReservoir(
         dynamics=flat_dynamics, coupling=flat_coupling, integration=integ,
@@ -210,6 +209,39 @@ def flatten_reservoir(
     )
     fr.noise_sigma = noise_sigma  # type: ignore[attr-defined]
     return fr
+
+
+def _folded_integration(exp: dict, subnet: dict) -> dict:
+    """The one clock the flat network runs on, in the parent's time unit.
+
+    Flattening leaves a single network, so it leaves a single clock, and the
+    parent's unit is the one that survives — the flat nodes *are* the parent's
+    nodes. Two things then have to happen, and neither did before: a subnetwork
+    that declares a finer ``step_size`` has to impose it, or its dynamics are
+    integrated at the macro step they were never meant to be; and if the two
+    scales declare different ``time_unit``s, that step has to be *converted*
+    rather than copied. A reservoir with ``step_size: 0.1`` in ``s`` folding into
+    a network in ``ms`` needs 100, not 0.1 — a factor of 1000 that is invisible
+    in the output of every backend, because the number stays plausible.
+
+    ``duration`` and ``transient_time`` stay the parent's: they measure the
+    experiment, not the reservoir.
+    """
+    from tvbo.utils.units import time_unit_factor
+
+    parent = dict(exp.get("integration") or {"method": "Heun", "step_size": 1.0,
+                                             "duration": 1000, "transient_time": 0})
+    inner = subnet.get("integration") or {}
+    if inner.get("step_size") is None:
+        return parent
+
+    outer = (exp.get("integration"), exp)
+    factor = time_unit_factor((subnet, *outer), outer)
+    inner_step = float(inner["step_size"]) * float(factor)
+    parent_step = parent.get("step_size")
+    if parent_step is None or inner_step < float(parent_step):
+        parent["step_size"] = inner_step
+    return parent
 
 
 def _gain_param_name(coupling_spec: dict) -> str:

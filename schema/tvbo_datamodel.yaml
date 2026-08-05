@@ -1380,6 +1380,15 @@ classes:
             - provenance
             - time_unit
         attributes:
+            integration:
+                range: Integrator
+                inlined: true
+                description: >-
+                    Clock this network's nodes run on. A subnetwork declaring its
+                    own is how a finer scale runs on a finer step than its parent:
+                    the fold reads both and converts between their `time_unit`,
+                    since a factor of 1000 living only in a modeller's head is
+                    invisible in every backend's output.
             # New node/edge-based representation
             nodes:
                 multivalued: true

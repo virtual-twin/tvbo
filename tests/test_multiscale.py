@@ -124,3 +124,72 @@ def test_size_guard_raises_before_allocation(patched_engine):
 def test_size_guard_disabled_with_none(patched_engine):
     fr = multiscale.flatten_reservoir(_minimal_experiment(), max_flat_nodes=None)
     assert fr.weights.shape == (R * N, R * N)
+
+
+class TestCrossScaleClock:
+    """Flattening leaves one network, so it leaves one clock.
+
+    The subnetwork's `step_size` and the parent's are numbers on two different
+    scales that may be written in two different units. Copying one onto the other
+    — which is what happened before — is wrong twice over: it integrates the
+    reservoir at the macro step, and it does so without converting the unit.
+    """
+
+    def _two_scale(self, *, inner_unit=None, inner_step=0.1, outer_unit=None):
+        spec = _minimal_experiment()
+        subnet = spec["network"]["node_template"]["subnetwork"]
+        subnet["integration"] = {"step_size": inner_step}
+        if inner_unit:
+            subnet["integration"]["time_unit"] = inner_unit
+        if outer_unit:
+            spec["integration"]["time_unit"] = outer_unit
+        return spec
+
+    def test_a_finer_subnetwork_step_imposes_itself(self, patched_engine):
+        """0.1 against the parent's 1.0: the reservoir sets the flat step."""
+        fr = multiscale.flatten_reservoir(self._two_scale())
+
+        assert fr.integration["step_size"] == 0.1
+        assert fr.integration["duration"] == 10
+
+    def test_a_coarser_subnetwork_step_does_not_slow_the_parent(self, patched_engine):
+        """The finer of the two wins; a subnetwork cannot under-resolve the macro net."""
+        fr = multiscale.flatten_reservoir(self._two_scale(inner_step=5.0))
+
+        assert fr.integration["step_size"] == 1.0
+
+    def test_a_step_in_another_unit_is_converted_not_copied(self, patched_engine):
+        """0.1 s into a network clocked in ms is 100 ms — coarser than the parent's 1.0.
+
+        Copied verbatim it would read 0.1 and silently win, integrating the whole
+        network 1000x finer than either scale asked for. The number stays plausible,
+        which is exactly why nothing catches this downstream.
+        """
+        fr = multiscale.flatten_reservoir(self._two_scale(inner_unit="s", outer_unit="ms"))
+
+        assert fr.integration["step_size"] == 1.0
+
+    def test_the_conversion_is_exact(self, patched_engine):
+        """0.5 ms into a network clocked in s is 0.0005 s, and finer than 1.0."""
+        fr = multiscale.flatten_reservoir(
+            self._two_scale(inner_unit="ms", inner_step=0.5, outer_unit="s")
+        )
+
+        assert fr.integration["step_size"] == 0.0005
+
+    def test_an_undeclared_subnetwork_inherits_the_parents_unit(self, patched_engine):
+        """Silence means "same clock", not "the `ms` fallback".
+
+        Resolved against the fallback instead, a subnetwork in a network clocked in
+        `s` would be converted by 1/1000 for having said nothing at all.
+        """
+        fr = multiscale.flatten_reservoir(self._two_scale(outer_unit="s"))
+
+        assert fr.integration["step_size"] == 0.1
+
+    def test_a_subnetwork_with_no_clock_of_its_own_changes_nothing(self, patched_engine):
+        """The single-scale case has to stay exactly as it was."""
+        fr = multiscale.flatten_reservoir(_minimal_experiment())
+
+        assert fr.integration == {"method": "Heun", "step_size": 1.0,
+                                  "duration": 10, "transient_time": 0}
