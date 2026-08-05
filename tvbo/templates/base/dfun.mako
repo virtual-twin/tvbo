@@ -7,7 +7,7 @@ Signatures:
 </%doc>
 <%!
 import textwrap
-from tvbo.templates.base.utils import get_coupling_terms, get_func_name, get_func_args, np_module, needs_scipy_special, model_expressions, referenced
+from tvbo.templates.base.utils import get_coupling_terms, get_func_name, get_func_args, np_module, needs_scipy_special, referenced_parameters
 %>
 
 ## The special-function import is gated on the equations actually using it — emitting it
@@ -31,7 +31,7 @@ import scipy.special
 <%def name="params(model, fmt, source='_p')">
 <%
 render = lambda obj: model.render_equation(obj, format=fmt)
-pnames = referenced([p.name for p in model.parameters.values()], model_expressions(model))
+pnames = referenced_parameters(model, [p.name for p in model.parameters.values()])
 %>\
 % if source == '_p' and pnames:
 # Parameters
