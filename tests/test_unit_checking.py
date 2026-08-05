@@ -185,11 +185,14 @@ class TestCuratedModels:
         assert "mu_se" in inconsistent[0].detail
         assert "1000/second" in inconsistent[0].detail
 
-    def test_no_curated_model_crashes_the_checker(self):
-        """Every shipped model reaches a verdict — a crash is not a third answer."""
-        import glob
+    def test_every_verdict_is_one_of_the_three(self):
+        """A crash is not a fourth answer.
 
-        for path in sorted(glob.glob("tvbo/database/models/*.yaml")):
-            verdicts = check_units(Dynamics.from_file(path))
-            assert verdicts, f"{path} produced no verdicts"
-            assert all(v.status in (CONSISTENT, INCONSISTENT, UNDERDETERMINED) for v in verdicts)
+        Coverage of the whole database — all 106 registered models, including the
+        subdirectories a top-level glob misses — is frozen in
+        `test_unit_verdict_corpus.py`; this only pins the return type.
+        """
+        verdicts = check_units(Dynamics.from_file("tvbo/database/models/ZetterbergJansen.yaml"))
+
+        assert verdicts
+        assert all(v.status in (CONSISTENT, INCONSISTENT, UNDERDETERMINED) for v in verdicts)
