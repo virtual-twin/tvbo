@@ -13,7 +13,7 @@ For standalone mathematical functions, use base/function-def.mako directly.
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%!
 from tvbo.codegen import render_expression
-from tvbo.templates.base.utils import get_source_code
+from tvbo.templates.base.utils import get_source_code, retime, time_series_inputs
 %>
 <%def name="generate_function(func, func_name)" filter="trim">
 <%
@@ -31,17 +31,13 @@ from tvbo.templates.base.utils import get_source_code
                         value = f"'{value}'"
                     params[arg.name] = value
                 else:
-                    # No default: becomes a required positional parameter so the
-                    # symbol is always in scope inside the function body.
+                    # No default: this argument IS the pipeline input, bound in the body.
                     params_required.append(arg.name)
     if getattr(func, 'equation', None) and hasattr(func.equation, 'parameters') and func.equation.parameters:
         for name, param in func.equation.parameters.items():
             if hasattr(param, 'value') and param.value is not None:
                 params[name] = param.value
-    # Required args first, then keyword args with defaults
-    param_args_parts = list(params_required)
-    param_args_parts += [f"{name}={value}" for name, value in params.items()]
-    param_args = ', '.join(param_args_parts)
+    param_args = ', '.join(f"{name}={value}" for name, value in params.items())
 
     # Store callable reference to avoid name collision
     callable_ref = f"_jax_{func.callable.name}" if func.callable else None
@@ -137,16 +133,24 @@ def ${func_name}(ts, ${param_args}):
     # Check if transformation applies on time dimension (handle both string and enum)
     apply_on_dim = str(func.apply_on_dimension) if func.apply_on_dimension else None
     has_apply_on_time = apply_on_dim in ['time', 'DimensionType.time']
+    # The body may name the incoming samples `X` or by the argument the spec declared
+    # without a default; bind whichever it reads, and nothing it does not.
+    inputs = time_series_inputs(['X'] + params_required, jax_code)
+    time_code = retime(jax_code, inputs)
 %>
 def ${func_name}(ts, ${param_args}):
 % if hasattr(func, 'description') and func.description:
     """${func.description}"""
 % endif
-    X = ts.data
+% for name in inputs:
+    ${name} = ts.data
+% endfor
 % if has_apply_on_time:
-    t_X = ts.time
+% for name in inputs:
+    t_${name} = ts.time
+% endfor
     data = ${jax_code}
-    time = ${jax_code.replace('X', 't_X')}
+    time = ${time_code}
     return ts.duplicate(time=time, data=data, title='${func_name}')
 % else:
     data = ${jax_code}

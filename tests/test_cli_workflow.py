@@ -94,6 +94,23 @@ def test_workflow_plan_tvb_fans_out_both_axes():
     assert p["n_workflow_cells"] == 32 * 32
 
 
+def test_a_run_venv_wins_over_a_declared_container():
+    """Declaring both a container and a run venv silently ran tasks in the container and
+    ignored the venv; an explicit slurm.venv must WIN — drop the container — so a venv/GPU
+    run needs only `--set slurm.venv=…`, not also `--set container=`."""
+    import json
+    img = "docker://ghcr.io/virtual-twin/tvbo:dev"
+    both = runner.invoke(app, ["workflow", "plan", EXP, "--backend", "jax", "--engine", "snakemake",
+                               "--set", f"container={img}", "--set", "slurm.venv=/w/.venv", "--json"])
+    assert both.exit_code == 0, both.stdout
+    assert json.loads(both.stdout)["container"] is None       # venv won → container dropped
+
+    solo = runner.invoke(app, ["workflow", "plan", EXP, "--backend", "jax", "--engine", "snakemake",
+                               "--set", f"container={img}", "--set", "slurm.venv=", "--json"])
+    assert solo.exit_code == 0, solo.stdout
+    assert json.loads(solo.stdout)["container"] == img        # no venv → container kept
+
+
 _USED_DEP_RECIPE = """
 id: 100
 dynamics:

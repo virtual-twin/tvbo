@@ -3733,9 +3733,10 @@ def run_experiment(
         observations = None
 % endif
 
-    # Save initial state from simulation (before any algorithms/optimization modify it)
-    # This is the starting point for optimization unless depends_on is specified
+% if algorithms_list or has_optimization:
+    # Starting point for the algorithms and optimization below, before either modifies `state`.
     initial_state = copy.deepcopy(state)
+% endif
 
 <%
     # Result labels + record=True output channels are resolved in Python (the
@@ -4340,8 +4341,10 @@ def run_experiment(
                 # mode='all' - skip optimization if missing inputs
                 _log(f"  Skipping optimization (missing: {_missing_inputs})")
         else:
+% if has_refine or len(optimization_stages) > 1:
             # Stage results storage (use Bunch for dot-notation access)
             stage_results = Bunch()
+% endif
 
 % if has_refine:
             # Refine reuses the shared base warm-up (model_fn/state/transient) — the same

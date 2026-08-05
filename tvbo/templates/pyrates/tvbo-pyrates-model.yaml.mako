@@ -1,6 +1,3 @@
-<%!
-from tvbo.utils import initial_value as _initial_value
-%>\
 ## -*- coding: utf-8 -*-
 ##
 ## PyRates Model Template (OperatorTemplate only)
@@ -19,158 +16,10 @@ from tvbo.utils import initial_value as _initial_value
 
 <%def name="render_operator(m, op_name=None)">
 <%
-    # Reserved-name renaming map (PyRates-safe suffixes for names that SymPy's
-    # sympify would otherwise resolve to functions/singletons, plus the Python
-    # keyword `lambda` and PyRates' internal `y`/`dy`/`epsilon` slots). Single
-    # source of truth — imported, not redefined — so it can't drift from the
-    # adapter / reverse map. See PYRATES_REPL in tvbo/codegen/pyrates.py for the
-    # full rationale (and why capital `Gamma`/`Beta` are intentionally absent).
-    from tvbo.codegen.pyrates import PYRATES_REPL as repl
-
-    # Get model name
-    name = m.name or "tvbo_model"
-    _op_name = op_name or f"{name}_op"
-
-    # --- PyRates-compatibility helpers ---
-    # PyRates does not support Piecewise or Abs in equations.
-    # Convert Piecewise((a, cond), (b, True)) -> (a+b)/2 + (a-b)/2 * sign(cond_expr)
-    # Convert Abs(x) -> sign(x)*x
-    import sympy
-    from tvbo.classes.equation import sympify as tvbo_sympify
-    from tvbo.utils import parameter_number as _parameter_number
-
-    # The model's own scope, so a declared name shadows SymPy's globals: PinskyRinzelCA3's
-    # `chi` would otherwise parse as the hyperbolic cosine integral. Keyed by the renamed
-    # spelling, since `repl` has already been applied to the equation strings.
-    _model_locals = {repl.get(k, k): v for k, v in m.get_symbolic_elements().items()}
-
-    def _pyrates_compat(eq_str):
-        """Post-process a rendered equation string for PyRates compatibility."""
-        expr = tvbo_sympify(eq_str, locals=_model_locals)
-        expr = _piecewise_to_sign(expr)
-        expr = _abs_to_sign(expr)
-        expr = _mod_to_fmod(expr)
-        return str(expr)
-
-    def _piecewise_to_sign(expr):
-        """Recursively replace Piecewise with sign-based arithmetic."""
-        if not expr.args:
-            return expr
-        # First recurse into children
-        new_args = [_piecewise_to_sign(a) for a in expr.args]
-        expr = expr.func(*new_args) if new_args != list(expr.args) else expr
-        if isinstance(expr, sympy.Piecewise):
-            return _convert_piecewise(expr)
-        return expr
-
-    def _convert_piecewise(pw):
-        """Convert a 2-branch Piecewise to sign-based expression.
-
-        Piecewise((a, x > c), (b, True))
-          -> (a + b)/2 + (a - b)/2 * sign(x - c)
-
-        For Piecewise((a, x < c), (b, True))
-          -> (a + b)/2 - (a - b)/2 * sign(x - c)
-
-        Multi-branch: nest from last to first.
-        """
-        pieces = list(pw.args)
-        # Start with default (last piece, condition=True)
-        result = pieces[-1][0]
-        for val, cond in reversed(pieces[:-1]):
-            # Extract comparison: cond is a relational like x > c or x < c
-            sign_arg, negate = _extract_sign_arg(cond)
-            if sign_arg is not None:
-                s = sympy.Function('sign')(sign_arg)
-                if negate:
-                    s = -s
-                # result = old_default; new = (val + result)/2 + (val - result)/2 * s
-                result = (val + result) / 2 + (val - result) / 2 * s
-            else:
-                # Fallback: cannot convert, keep as-is (will likely fail in PyRates)
-                return pw
-        return result
-
-    def _extract_sign_arg(cond):
-        """Extract sign argument from a relational condition.
-
-        Returns (sign_arg, negate) where:
-        - sign(sign_arg) is positive when condition is True
-        - negate=True means we should flip the sign
-        """
-        if isinstance(cond, (sympy.StrictGreaterThan, sympy.GreaterThan)):  # x > c
-            return cond.lhs - cond.rhs, False
-        elif isinstance(cond, (sympy.StrictLessThan, sympy.LessThan)):  # x < c
-            return cond.lhs - cond.rhs, True
-        return None, False
-
-    def _abs_to_sign(expr):
-        """Replace Abs(x) with sign(x)*x throughout expression."""
-        return expr.replace(
-            lambda e: isinstance(e, sympy.Abs),
-            lambda e: sympy.Function('sign')(e.args[0]) * e.args[0]
-        )
-
-    def _mod_to_fmod(expr):
-        """Replace Mod(a, b) with fmod(a, b) for numpy compatibility."""
-        return expr.replace(
-            lambda e: isinstance(e, sympy.Mod),
-            lambda e: sympy.Function('fmod')(e.args[0], e.args[1])
-        )
-
-    # Collect equations and variables
-    equations = []
-    variables = {}
-
-    # Build list of terms to remove - only remove local_coupling if not explicitly defined
-    # as a coupling input or coupling term
-    coupling_input_names = list((m.coupling_inputs or {}).keys()) if hasattr(m, 'coupling_inputs') else []
-    coupling_term_names = list((m.coupling_terms or {}).keys())
-    defined_coupling_names = coupling_input_names + coupling_term_names
-
-    remove_terms = []
-    if 'local_coupling' not in defined_coupling_names:
-        remove_terms.append('local_coupling')
-
-    # Add derived variables (algebraic equations) — apply repl to keys too
-    for k, dv in m.derived_variables.items():
-        display_k = repl.get(k, k)
-        raw_eq = m.render_equation(dv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)
-        equations.append(f"{display_k} = {_pyrates_compat(raw_eq)}")
-        variables[display_k] = "variable"
-
-    # Add state variable equations (differential equations) — apply repl to keys/LHS
-    for k, sv in (m.state_variables or {}).items():
-        display_k = repl.get(k, k)
-        raw_eq = m.render_equation(sv, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)
-        equations.append(f"{display_k}' = {_pyrates_compat(raw_eq)}")
-        iv = _initial_value(sv)
-        variables[display_k] = f"variable({iv})"
-
-    # For non-autonomous models, add time variable 't' so PyRates can resolve it
-    if getattr(m, 'autonomous', True) is False:
-        variables["t"] = "variable"
-
-    # Add parameters as constants — apply repl to keys
-    for param_name, param in (m.parameters or {}).items():
-        if param_name in repl:
-            param_name = repl[param_name]
-
-        variables[param_name] = _parameter_number(param.value)
-
-    # Add derived parameters as equations — apply repl to keys
-    for dp_name, dp in (m.derived_parameters or {}).items():
-        display_dp = repl.get(dp_name, dp_name)
-        eq_str = m.render_equation(dp, format='sympy', inline_functions=True, replace=repl, remove=remove_terms)
-        equations.append(f"{display_dp} = {eq_str}")
-        variables[display_dp] = "variable"
-
-    # Add coupling inputs as PyRates input variables
-    _ci = getattr(m, 'coupling_inputs', None) or getattr(m, 'coupling_terms', None) or {}
-    for ct_name in _ci.keys():
-        variables[ct_name] = "input"
-
-    description = (m.description or f"TVBO model: {name}").replace('\\', '\\\\').replace('"', "'")
+    from tvbo.codegen.pyrates import operator_template
+    _op = operator_template(m, op_name)
+    _op_name, description = _op['op_name'], _op['description']
+    equations, variables = _op['equations'], _op['variables']
 %>\
 ${_op_name}:
   base: OperatorTemplate
@@ -185,11 +34,7 @@ ${_op_name}:
 % endif
   variables:
 % for var_name, var_spec in variables.items():
-% if isinstance(var_spec, float):
     ${var_name}: ${var_spec}
-% else:
-    ${var_name}: ${var_spec}
-% endif
 % endfor
 </%def>\
 ##
