@@ -330,6 +330,7 @@ jobs:
                           tests/functional/test_simulation_backends_tvboptim.py
                           tests/test_full_workflow_comparison.py
                           tests/test_tvboptim_byte_identity.py
+                          tests/functional/test_observation_backend_consistency.py
                     - shard: tvb
                       paths: >-
                           tests/test_tvb_comparison.py
@@ -343,6 +344,7 @@ jobs:
                     - shard: neuroml
                       paths: >-
                           tests/functional/test_simulation_backends_neuroml.py
+                          tests/functional/test_brian2_backend.py
                     - shard: extras
                       paths: >-
                           tests/test_units.py
