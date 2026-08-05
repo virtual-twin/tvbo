@@ -761,6 +761,11 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
     ds.to_netcdf(path, engine="h5netcdf", encoding=encoding)
     record = _provenance(analysis, (str(v)[len("observation__"):] for v in ds.data_vars))
     (path.parent / "result.yaml").write_text(yaml.safe_dump(record, sort_keys=False))
+    # Digest of the declaration this container came from, so staleness is per analysis
+    # rather than "the spec file was touched" (see investigation._stale_or_missing_analyses).
+    from tvbo.data.investigation import _analysis_fingerprint
+
+    (path.parent / ".fingerprint").write_text(_analysis_fingerprint(analysis))
     return path
 
 

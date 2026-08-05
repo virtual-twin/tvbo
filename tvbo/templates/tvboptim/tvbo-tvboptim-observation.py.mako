@@ -1096,7 +1096,7 @@ ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
                 f"wave reducer: a {block.shape[0]}-step block is not a whole number of "
                 f"{_period}-step downsample periods; size streaming blocks from period_in_steps.")
         _theta = block[_period - 1 :: _period, s_var, :]        # downsample to (_m, n)
-        _c, _w, _s = jax.vmap(_sample)(_theta)                  # (_m, n_groups) each
+        _c, _w, _s = jax.lax.map(_sample, _theta, batch_size=1)  # scan frames; the per-frame surrogate is too heavy to vmap a whole block (peak O(block*perms*verts*faces) VRAM)
         _row = _count // _period
         _corr_buf = jax.lax.dynamic_update_slice(_corr_buf, _c, (_row, 0))
         _wave_buf = jax.lax.dynamic_update_slice(_wave_buf, _w, (_row, 0))

@@ -615,6 +615,25 @@ def test_snakemake_rule_prepends_the_container_layer_to_pythonpath():
     assert "container:" in smk and "/w/tvbo-dev.sif" in smk
 
 
+def test_a_venv_rule_opts_out_of_the_study_global_container():
+    """Mixed study — most experiments containerized, one declaring a venv. The venv rule must
+    emit `container: None` to opt out of the study-wide `container:`, else apptainer deployment
+    wraps its venv activation in the image and the image's interpreter shadows the venv."""
+    from tvbo.cli.workflow import _render_template
+
+    img = {"key": "30", "rule_name": "exp_30", "spec_relpath": "spec/30/experiment.yaml",
+           "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
+           "container": "docker://img:dev", "needs_env_layer": False, "extras_venv": None,
+           "block": {}, "axes": [], "depends_on": []}
+    venv = {**img, "key": "34", "rule_name": "exp_34",
+            "spec_relpath": "spec/34/experiment.yaml", "container": None}
+    smk = _render_template("snakemake/study.smk.mako", exp_plans=[img, venv],
+                           block={}, bundled_code=False)
+    assert 'container: "docker://img:dev"' in smk        # study-wide global (keyed on the first experiment)
+    assert "    container:\n        None" in smk         # the venv rule opts out
+    assert smk.count("    container:\n") == 1            # the containerized rule inherits the global, no directive of its own
+
+
 def test_snakemake_fans_a_model_param_axis_via_pin_not_set():
     """A fanned exploration axis must emit `--pin`, not `--set`: `--pin` sets the base
     parameter AND drops the axis so the cell is a single point (its host observation lands
