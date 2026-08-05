@@ -1,11 +1,12 @@
 ---
 id: https://w3id.org/tvbo/units
 name: tvbo_units
-title: TVB-O Units and Physical Dimensions
+title: TVB-O Units
 description: >-
-  Controlled vocabulary of physical units (UnitEnum) and dimension categories
-  (PhysicalDimension) used across the TVB-O schema. Units are mapped to QUDT
-  with UO cross-references where available.
+  Controlled vocabulary of physical units (UnitEnum) used across the TVB-O
+  schema. Each is mapped to QUDT, from which its dimension vector and SI
+  multiplier are vendored; a tool's own name for a dimension belongs to that
+  tool, and is recorded on its SimulationTool entry.
 
 prefixes:
   linkml: https://w3id.org/linkml/
@@ -266,37 +267,3 @@ enums:
             # ── Per-unit (power systems) ──
             per_unit:
                 description: "Per-unit (dimensionless power-systems convention)"
-
-    PhysicalDimension:
-        description: >-
-            Physical dimension categories for LEMS and dimensional analysis.
-            Each dimension decomposes into SI base dimensions (M, L, T, I, K, N).
-        permissible_values:
-            none:
-                description: "Dimensionless"
-            time:
-                description: "Time [T]"
-            per_time:
-                description: "Inverse time [T⁻¹]"
-            voltage:
-                description: "Voltage [M L² T⁻³ I⁻¹]"
-            current:
-                description: "Electric current [I]"
-            capacitance:
-                description: "Capacitance [M⁻¹ L⁻² T⁴ I²]"
-            conductance:
-                description: "Conductance [M⁻¹ L⁻² T³ I²]"
-            resistance:
-                description: "Resistance [M L² T⁻³ I⁻²]"
-            charge:
-                description: "Electric charge [T I]"
-            concentration:
-                description: "Concentration [L⁻³ N]"
-            substance:
-                description: "Amount of substance [N]"
-            length:
-                description: "Length [L]"
-            volume:
-                description: "Volume [L³]"
-            temperature:
-                description: "Temperature [K]"

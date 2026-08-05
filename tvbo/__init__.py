@@ -147,6 +147,7 @@ _LAZY_IMPORTS = {
     "Atlas": ".classes.atlas",
     "SimulationExperiment": ".classes",
     "SimulationStudy": ".classes",
+    "SimulationTool": ".classes.software",
     "Dynamics": ".classes.dynamics",
     "DynamicalSystem": ".classes.dynamics",
     "Continuation": ".classes.continuation",

@@ -2,8 +2,9 @@
 Unit and Dimension Utilities
 ============================
 
-Central mapping between TVBO's ``UnitEnum`` (QUDT-backed), LEMS dimensions,
-SymPy units, and legacy free-text unit strings found in older model YAMLs.
+Central mapping between TVBO's ``UnitEnum`` (QUDT-backed), a backend's own unit
+vocabulary, SymPy units, and legacy free-text unit strings found in older model
+YAMLs.
 
 The ``UnitEnum`` values use conventional abbreviations (ms, mV, nA, etc.)
 as defined in the LinkML schema (``schema/tvbo_datamodel.yaml``).
@@ -148,123 +149,32 @@ def unit_expression(unit):
     return expression * Integer(1)
 
 
-# ── UnitEnum → LEMS dimension ────────────────────────────────────────
+# ── UnitEnum → a backend's own vocabulary ────────────────────────────
 
-_UNIT_TO_LEMS_DIM = {
-    # Time
-    "s": "time",
-    "ms": "time",
-    "us": "time",
-    # Rates / inverse time
-    "per_s": "per_time",
-    "per_ms": "per_time",
-    "Hz": "per_time",
-    "kHz": "per_time",
-    # Voltage
-    "V": "voltage",
-    "mV": "voltage",
-    # Inverse voltage
-    "per_mV": "none",
-    # Voltage rates
-    "mV_per_ms": "none",
-    "mV_per_s": "none",
-    # Current
-    "A": "current",
-    "nA": "current",
-    "pA": "current",
-    # Capacitance
-    "pF": "capacitance",
-    "nF": "capacitance",
-    # Conductance
-    "nS": "conductance",
-    "uS": "conductance",
-    # Charge (inverse)
-    "per_nC": "none",
-    "per_pC": "none",
-    # Concentration
-    "mol_per_m3": "concentration",
-    "mmol_per_m3": "concentration",
-    # Volume
-    "um3": "none",
-    # Length
-    "m": "none",
-    "mm": "none",
-    "cm": "none",
-    # Velocity
-    "m_per_s": "none",
-    "mm_per_ms": "none",
-    # Gain / compound
-    "Hz_per_nA": "none",
-    # Conductivity / permeability
-    "S_per_m": "none",
-    "H_per_m": "none",
-    # Angular rate
-    "rad_per_ms": "per_time",
-    "rad_per_s": "per_time",
-    # Angle
-    "rad": "none",
-    # Mass
-    "kg": "none",
-    "kg_per_s": "none",
-    # Acceleration
-    "m_per_s2": "none",
-    # Force / stiffness
-    "N_per_m": "none",
-    # Time squared
-    "s2": "none",
-    # Per-unit (power systems)
-    "per_unit": "none",
-    # Dimensionless
-    "dimensionless": "none",
-    "percent": "none",
-    "arbitrary_unit": "none",
-}
+
+@lru_cache(maxsize=None)
+def _tool(format_key):
+    """The `SimulationTool` entry TVBO emits *format_key* for, or `None`.
+
+    Cached because the two lookups below are called once per parameter per
+    rendered model, and the answer is a database file that does not change
+    within a process.
+    """
+    from tvbo.classes.software import SimulationTool
+
+    return SimulationTool.for_format(format_key)
 
 
 def unit_to_lems_dimension(unit):
     """Return the LEMS dimension name for a UnitEnum value (or string).
 
-    Returns the proper LEMS dimension (e.g. ``"voltage"``, ``"capacitance"``)
-    when the unit has a known mapping, or ``"none"`` for dimensionless /
-    unknown units.
+    Read from the LEMS entry in the software database, which is where a claim
+    about what LEMS calls things belongs. Units LEMS has no dimension for —
+    including every one it simply has no name for — come back ``"none"``, its
+    own spelling of dimensionless.
     """
-    if unit is None:
-        return "none"
-    key = str(unit).strip()
-    return _UNIT_TO_LEMS_DIM.get(key, "none")
-
-
-# ── UnitEnum → LEMS symbol (for Component values) ───────────────────
-
-_UNIT_TO_LEMS_SYMBOL = {
-    "s": "s",
-    "ms": "ms",
-    "us": "us",
-    "per_s": "per_s",
-    "per_ms": "per_ms",
-    "Hz": "per_s",
-    "kHz": "per_ms",
-    "V": "V",
-    "mV": "mV",
-    "A": "A",
-    "nA": "nA",
-    "pA": "pA",
-    "pF": "pF",
-    "nF": "nF",
-    "uF": "uF",
-    "nS": "nS",
-    "uS": "uS",
-    "mS": "mS",
-    "pS": "pS",
-    "kohm": "kohm",
-    "Mohm": "Mohm",
-    "uA": "uA",
-    "mM": "mM",
-    "M": "M",
-    "degC": "degC",
-    "K": "K",
-    "dimensionless": "",
-}
+    tool = _tool("neuroml")
+    return "none" if tool is None else tool.dimension_of(unit)
 
 
 def unit_to_lems_symbol(unit):
@@ -274,10 +184,8 @@ def unit_to_lems_symbol(unit):
     matching LEMS unit symbol.  For dimensionless or unknown units, returns
     ``""``.
     """
-    if unit is None:
-        return ""
-    key = str(unit).strip()
-    return _UNIT_TO_LEMS_SYMBOL.get(key, "")
+    tool = _tool("neuroml")
+    return "" if tool is None else tool.symbol_of(unit)
 
 
 # ── Time-dimension detection (for SEC inference) ─────────────────────
