@@ -301,7 +301,7 @@ jobs:
             github.event_name == 'pull_request'
             || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         runs-on: ubuntu-latest
-        timeout-minutes: 45
+        timeout-minutes: ${{ matrix.timeout || 45 }}
         strategy:
             fail-fast: false
             matrix:
@@ -330,6 +330,7 @@ jobs:
                           tests/functional/test_simulation_backends_tvboptim.py
                           tests/test_full_workflow_comparison.py
                           tests/test_tvboptim_byte_identity.py
+                          tests/functional/test_observation_backend_consistency.py
                     - shard: tvb
                       paths: >-
                           tests/test_tvb_comparison.py
@@ -343,6 +344,7 @@ jobs:
                     - shard: neuroml
                       paths: >-
                           tests/functional/test_simulation_backends_neuroml.py
+                          tests/functional/test_brian2_backend.py
                     - shard: extras
                       paths: >-
                           tests/test_units.py
@@ -356,6 +358,15 @@ jobs:
                           tests/test_run_models.py
                           tests/test_tvboptim_observation_codegen.py
                           tests/functional/test_plot_layouts.py
+                    # The shards above name paths, so a new test file joins none of them
+                    # and is never run; this one takes the directory itself.
+                    - shard: rest
+                      paths: >-
+                          tests/
+                          --ignore=tests/test_docs.py
+                          --ignore=tests/test_database_validation.py
+                      pytest_args: -n auto
+                      timeout: 60
         steps:
             - uses: actions/checkout@v6
             - uses: astral-sh/setup-uv@v8.1.0
@@ -387,7 +398,7 @@ jobs:
                   pytest -x -v --tb=short \
                       --timeout=600 --timeout-method=thread \
                       --override-ini="addopts=" \
-                      ${{ matrix.paths }}
+                      ${{ matrix.pytest_args }} ${{ matrix.paths }}
 
     # ─── Julia backends: cached depot keeps precompilation off the hot path ──
     # juliacall/juliapkg install Julia 1.10 + the DifferentialEquations /
