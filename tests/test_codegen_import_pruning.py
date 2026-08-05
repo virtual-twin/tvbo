@@ -223,6 +223,59 @@ def test_unparseable_source_is_returned_unchanged_by_the_assignment_pass():
     assert prune_dead_assignments(src) == src
 
 
+# --------------------------------------------------- rewriting by line, safely
+
+def test_the_only_statement_of_a_block_is_kept():
+    """Emptying a suite is a SyntaxError, not a tidier module.
+
+    Left alone rather than replaced with ``pass``: that would trade a lint warning for
+    a line that means nothing.
+    """
+    src = "def f(flag, w):\n    if flag:\n        n = w.shape[0]\n    return 1\n"
+    assert prune_dead_assignments(src) == src
+
+
+def test_the_only_import_of_a_block_is_kept():
+    """The import equivalent — an emptied ``try:`` does not compile."""
+    src = "try:\n    import ujson as json\nexcept ImportError:\n    import json\n\nx = 1\n"
+    assert prune_unused_imports(src) == src
+
+
+def test_a_statement_sharing_its_line_is_kept():
+    """Deleting by line would drop the ``g()`` call and strand the name it bound.
+
+    This one parses afterwards, so nothing downstream would have caught it — the exact
+    class of silent change :func:`_is_pure` exists to prevent.
+    """
+    src = "def f(w, g):\n    n = w.shape[0]; m = g()\n    return m\n"
+    assert prune_dead_assignments(src) == src
+
+
+def test_a_single_line_suite_is_kept():
+    """``if x: n = 1`` re-parses as the ``if``, so its lines are not the assignment's."""
+    src = "def f(x, w):\n    if x: n = w.shape[0]\n    return 1\n"
+    assert prune_dead_assignments(src) == src
+
+
+@pytest.mark.parametrize("src", [
+    pytest.param(
+        "from numpy import pi\n\nclass M:\n    pi = 3\n\n    def dfun(self, x):\n        return x * pi\n",
+        id="class-attribute-does-not-shadow-in-methods",
+    ),
+    pytest.param(
+        "import functools\n\n\n@functools.lru_cache\ndef f():\n    functools = 1\n    return functools\n",
+        id="decorator-is-evaluated-in-the-enclosing-scope",
+    ),
+])
+def test_only_a_functions_own_body_shadows_a_module_import(src):
+    """A class body is not a scope its methods see, and a signature runs outside the body.
+
+    Treating either as shadowing dropped an import the generated module still resolves
+    through — a ``NameError`` at call time for the first, at import for the second.
+    """
+    assert not unused_import_names(src)
+
+
 @pytest.mark.parametrize("fmt", ["tvb", "jax", "tvboptim"])
 def test_backends_emit_no_unused_imports(fmt):
     """The end-to-end claim: a rendered experiment carries no import it does not use."""
@@ -236,3 +289,17 @@ def test_backends_emit_no_unused_imports(fmt):
         pytest.skip(f"{fmt} backend unavailable: {exc}")
     leftover = unused_import_names(code)
     assert not leftover, f"{fmt} still imports unused {sorted(leftover)}"
+
+
+def test_retime_leaves_an_attribute_of_the_same_name_alone():
+    """``\\b`` matches right after a dot, so a plain word boundary is not enough.
+
+    A pipeline function whose input argument is named ``data`` and whose body touches
+    ``ts.data`` had its time branch rewritten to ``ts.t_data`` — ``AttributeError`` on
+    the TimeSeries at run time.
+    """
+    from tvbo.templates.base.utils import retime
+
+    out = retime("jnp.mean(ts.data, axis=0) + data.shape[0]", ["data"])
+    assert "ts.data" in out
+    assert "t_data.shape" in out

@@ -16,6 +16,7 @@ import re
 from pathlib import Path
 
 from tvbo.templates import lookup
+from tvbo.utils import as_list
 
 
 @functools.lru_cache(maxsize=None)
@@ -979,11 +980,12 @@ def build_context(figure, base_dir, outfile: str) -> dict:
     offset = [float(v) for v in (getattr(figure, "panel_number_offset", None) or [])]
     for p in panels:
         override = p.pop("number", None)   # overrides the mosaic key; "false" suppresses the letter (many cells = one paper panel)
-        if override is not None and str(override).lower() in ("false", "none", ""):
+        ident = _letter_identity(override, p["key"])
+        if ident is None:
             p["letter"] = None
             p["number_kwargs"] = {}
             continue
-        p["letter"] = fmt.format(override if override is not None else p["key"])
+        p["letter"] = fmt.format(ident)
         place = {"option": "numbers"}               # label is given verbatim, no int->letter conversion
         loc = p["number_loc"] or fig_loc
         if loc:                                     # only override placement when a corner was asked for
@@ -1064,3 +1066,142 @@ def render(figure, base_dir=".", outfile="figure.png", script_path=None):
     namespace: dict = {}
     exec(compile(code, script_path or "<figure>", "exec"), namespace)
     return namespace["main"]()
+
+
+# --------------------------------------------------------------------------- captions
+
+
+def _letter_identity(number, key):
+    """The letter a panel carries — its ``number`` override, else its mosaic ``key`` — or None
+    when the override suppresses it (``false``/``none``/``""``: many cells under one paper letter).
+
+    Shared by :func:`build_context` (which formats it onto the figure) and the caption composer,
+    so a caption's ``(a)`` can never disagree with the letter drawn on the panel.
+    """
+    if number is not None and str(number).lower() in ("false", "none", ""):
+        return None
+    return number if number is not None else key
+
+
+def _panel_layout_order(figure) -> list[str]:
+    """Panel keys in reading order — first appearance in the ``layout`` mosaic, then any
+    declared panel the mosaic omits, so a caption walks panels the way a reader meets them."""
+    declared = [k for k, _ in _items(figure.panels)]
+    layout = getattr(figure, "layout", None)
+    if not layout:
+        return declared
+    order: list[str] = []
+    for ch in str(layout):
+        if ch in declared and ch not in order:
+            order.append(ch)
+    for k in declared:
+        if k not in order:
+            order.append(k)
+    return order
+
+
+def _used_source(used) -> str | None:
+    """A short human clause for a layer's ``used:`` DataRef — ``experiment X (out)`` /
+    ``analysis Y`` / the container name for an ``iri`` — or None for a local/unbound layer."""
+    if used is None:
+        return None
+    out = getattr(used, "output", None)
+    for attr, word in (("experiment", "experiment"), ("analysis", "analysis")):
+        val = getattr(used, attr, None)
+        if val:
+            return f"{word} {val}" + (f" ({out})" if out else "")
+    iri = getattr(used, "iri", None)
+    if iri:
+        return Path(str(iri)).name
+    return None
+
+
+def _panel_descriptor(panel) -> str:
+    """The auto-derived structural half of a panel's caption clause, read from its spec.
+
+    From each layer's ``mark`` + ``encoding`` (which quantity is on which axis) and its ``used:``
+    DataRef (which run/analysis it came from), so the description follows the figure: move a panel
+    or rebind a layer and the sentence changes with it. Units live in the runtime container and
+    are folded in by the renderer, not typed here.
+    """
+    kind = str(getattr(panel, "kind", "") or "")
+    if kind == "image":
+        src = getattr(panel, "source", None)
+        return f"rendered from {Path(str(src)).name}" if src else ""
+
+    parts: list[str] = []
+    for layer in as_list(getattr(panel, "layers", None)):
+        enc = getattr(layer, "encoding", None)
+        x = getattr(enc, "x", None) if enc else None
+        y = getattr(enc, "y", None) if enc else None
+        z = getattr(enc, "z", None) if enc else None
+        mark = str(getattr(layer, "mark", None) or "")
+        if kind == "heatmap":
+            body = f"{y or x or 'field'} as a matrix"
+        elif z:
+            body = f"{mark or 'trajectory'} of {y} vs {x} vs {z}"
+        elif x and y:
+            body = f"{mark or 'line'} of {y} vs {x}"
+        elif y or x:
+            body = f"{mark or 'line'} of {y or x}"
+        else:
+            body = mark or kind
+        src = _used_source(getattr(layer, "used", None))
+        if src:
+            body += f" from {src}"
+        parts.append(body)
+    return "; ".join(p for p in parts if p) or kind
+
+
+def _sentence(text: str) -> str:
+    """Trim and terminate a clause with a single period, for concatenation into a caption."""
+    text = (text or "").strip()
+    if not text:
+        return ""
+    return text if text.endswith((".", "!", "?", ":")) else text + "."
+
+
+def compose_caption(figure) -> str:
+    """Compose a figure's caption from its spec — the authored lead plus one clause per panel.
+
+    Each panel contributes ``(letter) label — <structural descriptor> <Panel.description>`` in
+    layout order, the letter taken from the same identity the panel draws (:func:`_letter_identity`)
+    so caption and figure cannot disagree. The structural descriptor is derived from the panel's
+    layers (:func:`_panel_descriptor`); the authored ``Figure.description`` (lead) and
+    ``Panel.description`` (per-panel interpretation) are the only parts a human writes.
+    """
+    spec_by_key = {k: p for k, p in _items(figure.panels)}
+    lead: list[str] = []
+    label = getattr(figure, "label", None)
+    if label:
+        lead.append(f"**{str(label).strip()}.**")   # journal convention: a bold figure title
+    lead.append(_sentence(getattr(figure, "description", None) or ""))
+    clauses: list[str] = []
+    for key in _panel_layout_order(figure):
+        panel = spec_by_key.get(key)
+        if panel is None:
+            continue
+        ident = _letter_identity(getattr(panel, "number", None), key)
+        if ident is None:
+            continue
+        label = _sentence(getattr(panel, "label", None) or "")
+        struct = _sentence(_panel_descriptor(panel))
+        interp = _sentence(getattr(panel, "description", None) or "")
+        body = " ".join(s for s in (label, struct, interp) if s)
+        clauses.append(f"**({ident})** {body}".strip())
+    return " ".join(s for s in (lead + clauses) if s).strip()
+
+
+def write_caption(figure, out_dir, *, name: str | None = None) -> Path:
+    """Write a figure's composed caption to ``<out_dir>/<name>.caption.qmd`` and return the path.
+
+    A Quarto partial the manuscript pulls in with ``{{< include <name>.caption.qmd >}}``, so the
+    caption is generated from the figure spec and regenerates whenever a panel moves or a layer
+    is rebound — never hand-maintained beside the figure it describes.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stem = name or getattr(figure, "name", None) or "figure"
+    path = out_dir / f"{stem}.caption.qmd"
+    path.write_text(compose_caption(figure) + "\n", encoding="utf-8")
+    return path

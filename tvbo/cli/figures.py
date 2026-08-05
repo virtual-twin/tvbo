@@ -37,7 +37,7 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
     if not isinstance(data, dict):
         _common.die(f"{spec_path} is not a Figure or SimulationStudy spec (got {type(data).__name__}).")
 
-    study_markers = ("experiments", "simulation_experiments", "figures")
+    study_markers = ("experiments", "simulation_experiments", "figures", "members")
     if "panels" in data and not any(k in data for k in study_markers):
         from tvbo.datamodel import schema as dm
 
@@ -46,7 +46,8 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
 
     import tvbo
 
-    study = tvbo.SimulationStudy.from_file(str(spec_path))
+    loader = tvbo.Investigation if "members" in data else tvbo.SimulationStudy
+    study = loader.from_file(str(spec_path))
     return as_list(getattr(study, "figures", None)), "study"
 
 
@@ -83,6 +84,15 @@ def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
         _common.info(f"wrote {outfile}")
         _common.info(f"wrote {script_path}")
         written.append(outfile)
+        # A composed caption partial beside the image: the figure's structural facts derived
+        # from its panels, plus the authored lead/interpretation, for `{{< include >}}` in the
+        # prose. Emitted only when there is something to say, and never fatal to a render.
+        if bsplot.compose_caption(figure):
+            try:
+                cap = bsplot.write_caption(figure, out_dir, name=name)
+                _common.info(f"wrote {cap}")
+            except Exception as e:  # noqa: BLE001 — a caption must never lose a rendered figure
+                _common.info(f"caption for {name} not written ({type(e).__name__}: {e})")
     return written
 
 
@@ -145,6 +155,45 @@ def _select(figures, name: str | None, spec_path: Path) -> list:
             f"(available: {[n for n in available if n]})."
         )
     return chosen
+
+
+@app.command("caption", help="Compose figure captions from the spec (no rendering) into .caption.qmd partials.")
+def caption(
+    spec: str = typer.Argument(
+        ..., help="Path to a Figure / SimulationStudy / Investigation YAML."
+    ),
+    out: Path = typer.Option(
+        None, "-o", "--out",
+        help="Directory for the .caption.qmd partials (default: <base-dir>/figures).",
+    ),
+    name: str = typer.Option(
+        None, "-n", "--name",
+        help="Caption only the figure(s) with this name (comma-separated). Default: all.",
+    ),
+) -> None:
+    """Compose each figure's caption from its spec and write a ``<name>.caption.qmd`` partial.
+
+    The render-free sibling of ``figure render``: it emits only the composed captions (figure
+    lead + per-panel structural descriptor + authored ``Panel.description``), so the prose can
+    ``{{< include >}}`` a caption that regenerates from the spec without recomputing the figure.
+    """
+    from tvbo.adapters import bsplot
+
+    spec_path = Path(spec).expanduser()
+    if not spec_path.is_file():
+        _common.die(f"No such spec file: {spec_path}")
+    figures, kind = _load_figures(spec_path)
+    if not figures:
+        _common.info(f"{spec_path.name}: no figures to caption.")
+        return
+    figures = _select(figures, name, spec_path)
+    out_dir = out.expanduser().resolve() if out else spec_path.resolve().parent / "figures"
+    for figure in figures:
+        fig_name = getattr(figure, "name", None) or "figure"
+        if not bsplot.compose_caption(figure):
+            _common.info(f"{fig_name}: nothing to caption (no description or panel labels).")
+            continue
+        _common.info(f"wrote {bsplot.write_caption(figure, out_dir)}")
 
 
 @app.command("compare", help="Measure how a rendered figure's LAYOUT differs from a reference image.")
