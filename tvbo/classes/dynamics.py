@@ -1080,7 +1080,11 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         [Eq(Derivative(theta(t), t), I + omega)]
         >>> model.symbolic['derived']
         [Eq(signal(t), sin(theta(t)))]
+        >>> model.symbolic['units']
+        {omega: 'per_ms', I: None}
         """
+        from tvbo.analysis.units import declared_units
+
         form = self._symbolic_form(notation="function")
         scope = self.get_symbolic_elements(time_dependent=True)
         return {
@@ -1093,7 +1097,21 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 for p in self.parameters.values()
                 if str(p.name) in scope
             },
+            "units": declared_units(self),
         }
+
+    def check_units(self, strictness: str = "dimensional", time_unit: str | None = None):
+        """Per-equation dimensional verdicts for this model.
+
+        See [`tvbo.analysis.units.check_units`](../analysis/units.qmd#check_units). Each
+        verdict is `consistent`, `inconsistent` or `underdetermined`; the third is a
+        distinct answer, not a soft failure, because 24 of the 39 curated models declare
+        no units and calling those wrong would pressure fake declarations into the
+        published record.
+        """
+        from tvbo.analysis.units import check_units
+
+        return check_units(self, strictness=strictness, time_unit=time_unit)
 
     def get_symbolic_elements(self, include_time_symbol: bool = True, time_dependent: bool = False):
         """Build a unified local_dict for parsing model expressions.
@@ -1184,8 +1202,15 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         for name, sv in self.state_variables.items():
             scope[str(name)] = _variable(name, sv)
 
+        # A function head is notation-independent: `Sigm` is the same function whether the
+        # variables around it are Symbols or Functions of t. Building it with the view's
+        # assumptions made it two different classes — `Function("Sigm", real=True)` here and
+        # `Function("Sigm")` there — which print identically, compare unequal, and make
+        # `expr.has(Sigm)` False on an expression that visibly contains a call to it. Every
+        # inliner then matched nothing, silently: the same hazard as
+        # `Symbol("x") != Symbol("x", real=True)`, on function heads.
         for fname in self.functions:
-            scope[str(fname)] = Function(str(fname), **_assume())
+            scope[str(fname)] = Function(str(fname), **assumptions_of())
 
         for name in self.events:
             scope[str(name)] = _symbol(name)

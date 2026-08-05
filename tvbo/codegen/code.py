@@ -16,7 +16,7 @@ import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
 import sympy.printing.fortran as spf
 from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
-from sympy import Symbol, S, Function
+from sympy import Symbol, S
 from sympy import latex
 from sympy.printing import StrPrinter
 from tvbo.datamodel.schema import Equation
@@ -198,13 +198,24 @@ def inline_functions(expr, func_defs):
         for name, (arg_names, body) in func_defs.items()
     )
     for name, formals, body in _flattened_bodies(definitions):
-        head = Function(name)
-        if expr.has(head):
-            expr = expr.replace(
-                head,
-                lambda *actual, _n=name, _b=body, _f=formals: _substitute(_n, _f, _b, *actual),
-            )
+        expr = _replace_calls(expr, name, formals, body)
     return expr
+
+
+def _replace_calls(expr, name, formals, body):
+    """Substitute every call to *name* in *expr* with *body*.
+
+    The head is matched by name rather than by rebuilding `Function(name)`. An
+    `UndefinedFunction` carrying assumptions is a *different class* from a bare one, so a
+    reconstructed head silently matches nothing wherever the scope built its heads with
+    `real=True`: the expression visibly contains `Sigm(...)` while
+    `expr.has(Function("Sigm"))` is False. A model function is identified by its name;
+    its assumptions are not part of that identity.
+    """
+    return expr.replace(
+        lambda e: e.is_Function and getattr(e.func, "__name__", None) == name,
+        lambda e: _substitute(name, formals, body, *e.args),
+    )
 
 
 def _substitute(name, formals, body, *actual):
@@ -235,16 +246,11 @@ def _flattened_bodies(definitions):
         expanded = False
         for name, (formals, body) in bodies.items():
             for other, (other_formals, other_body) in bodies.items():
-                head = Function(other)
-                if other == name or not body.has(head):
+                if other == name:
                     continue
-                body = body.replace(
-                    head,
-                    lambda *actual, _n=other, _b=other_body, _f=other_formals: _substitute(
-                        _n, _f, _b, *actual
-                    ),
-                )
-                expanded = True
+                replaced = _replace_calls(body, other, other_formals, other_body)
+                if replaced != body:
+                    body, expanded = replaced, True
             bodies[name] = (formals, body)
         if not expanded:
             break
