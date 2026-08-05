@@ -20,9 +20,11 @@ from collections import namedtuple
 from linkml_runtime.loaders import yaml_loader
 
 try:
-    from pybtex.database import parse_file
+    from pybtex.database import Person, parse_file
 except ImportError:
-    parse_file = None  # pybtex is optional (docs extra)
+    Person = parse_file = None  # pybtex is optional (docs extra)
+
+PYBTEX_MISSING = "pybtex is required for bibliography support. Install it with: pip install tvbo[docs]"
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -119,5 +121,5 @@ def load_bibliography():
         ImportError: If the optional `pybtex` dependency is not installed.
     """
     if parse_file is None:
-        raise ImportError("pybtex is required for bibliography support. Install it with: pip install tvbo[docs]")
+        raise ImportError(PYBTEX_MISSING)
     return parse_file(bib_file)
