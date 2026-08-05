@@ -916,18 +916,32 @@ def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=
         symbol_names: ``{Symbol: latex}`` display overrides (``Dynamics.symbol_map()``).
         mul_symbol: Passed through to ``sympy.latex``.
     """
-    from sympy import Derivative, Eq, Symbol, latex
+    from sympy import Derivative, Eq, latex
 
     symbol_names = symbol_names or {}
     if derivative_notation == "dot" and isinstance(eq, Eq) and isinstance(eq.lhs, Derivative):
         deriv = eq.lhs
-        order = sum(1 for v in deriv.variables if v == Symbol("t"))
         base = latex(deriv.expr, mul_symbol=mul_symbol, symbol_names=symbol_names)
-        dots = {1: "dot", 2: "ddot", 3: "dddot"}.get(order)
-        lhs = (f"\\{dots}{{{base}}}" if dots
-               else f"\\frac{{d^{order}}}{{d t^{order}}} {base}")
+        lhs = derivative_latex(base, time_order(deriv))
         return f"{lhs} = {latex(eq.rhs, mul_symbol=mul_symbol, symbol_names=symbol_names)}"
     return latex(eq, mul_symbol=mul_symbol, symbol_names=symbol_names)
+
+
+def time_order(derivative):
+    """How many times *derivative* differentiates with respect to time.
+
+    By name: ``Symbol("t")`` and ``Symbol("t", real=True)`` are different objects
+    that print identically, so an identity test reads order 0 for a first
+    derivative taken in a scope that carries assumptions — and prints
+    ``\\frac{d^0}{d t^0}``.
+    """
+    return sum(1 for variable in derivative.variables if str(variable) == "t")
+
+
+def derivative_latex(base, order):
+    """``base`` under ``order`` time derivatives, dotted where dots exist."""
+    dots = {1: "dot", 2: "ddot", 3: "dddot"}.get(order)
+    return f"\\{dots}{{{base}}}" if dots else f"\\frac{{d^{order}}}{{d t^{order}}} {base}"
 
 
 EQUATION_GROUPS = {
@@ -1037,7 +1051,7 @@ def state_variable_table(svars):
     return md_table(["Variable", "Initial Value", "Unit", "Equation", "Domain / Sampling", "Flags", "Description"], rows)
 
 
-def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
+def param_table(collection, name_header="Parameter", symbolic=True, flags=None, derived=None):
     """Markdown table for any parameter-like collection, empty columns dropped.
 
     Renders the full column set (name, value, default, unit, domain/sampling,
@@ -1053,12 +1067,16 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
         symbolic: Render the name as inline-LaTeX ``$symbol$`` when true, else plain.
         flags: ``(attr, label)`` pairs for :func:`flag_text`; defaults to the
             standard parameter flags.
+        derived: ``name -> unit`` the dimensional check *forced* rather than read,
+            from :func:`derived_units`. Such a unit renders parenthesised, so a
+            reader can tell what the model states from what its equations imply.
     """
     def _name(name, p):
         return f"${display_symbol(p, name)}$" if symbolic else str(name)
 
     rows = [
-        [_name(name, p), format_number(slot(p, "value", "")), format_number(slot(p, "default", "")), unit_text(slot(p, "unit")),
+        [_name(name, p), format_number(slot(p, "value", "")), format_number(slot(p, "default", "")),
+         unit_text(slot(p, "unit")) or derived_unit_text(derived, name),
          metadata_text(p), flag_text(p, flags),
          slot(p, "description", "") or slot(p, "definition", "") or ""]
         for name, p in name_items(collection)
@@ -1067,9 +1085,106 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
                     rows, aligns=["l", "r", "l", "l", "l", "l", "l"])
 
 
-def parameter_table(params):
+def derived_unit_text(derived, name):
+    """A propagation-derived unit in parentheses, or nothing.
+
+    Parenthesised because it is not a claim the model makes: additive homogeneity
+    forces it from the quantities beside it. Printing it bare would put a unit
+    nobody wrote into the published record.
+    """
+    latex = (derived or {}).get(str(name))
+    return f"(${latex}$)" if latex else ""
+
+
+def unit_latex(unit):
+    """A propagated unit expression as inline LaTeX, named where it has a name.
+
+    Propagation yields `kilogram*meter**2/(1000*ampere*second**3)`; that is `mV`,
+    and reads far better said that way. Only where no curated unit matches does
+    the base-unit product itself get typeset. Upright roman either way — a unit
+    is not a variable, and italic `mV` reads as `m` times `V`.
+    """
+    from sympy import latex
+
+    from tvbo.utils.units import unit_named, unit_to_latex
+
+    if unit is None:
+        return ""
+    named = unit_named(unit)
+    return unit_to_latex(named) if named else latex(unit)
+
+
+def derived_units(verdicts):
+    """Units the dimensional check *forced*, keyed by quantity name, as LaTeX.
+
+    A quantity beside declared ones in a sum is not free: additive homogeneity
+    fixes it exactly. That is worth showing — it is the difference between a
+    model whose units are unstated and one whose units are unstatable — but it
+    has to be shown as *derived*, never merged into what the model declares.
+    """
+    from tvbo.analysis.units import quantity_name
+
+    return {
+        quantity_name(symbol): unit_latex(unit)
+        for verdict in verdicts
+        for symbol, unit in verdict.inferred.items()
+        if unit is not None
+    }
+
+
+def unit_verdict_table(verdicts):
+    """Markdown table of each equation's dimensional standing.
+
+    Three-valued, because two of the three answers are not failures.
+    `underdetermined` says the model does not declare enough to check, which is
+    the honest answer for the 24 of 39 curated models that declare no units at
+    all; reporting those as inconsistent would pressure invented declarations
+    into the published record.
+    """
+    from tvbo.analysis.units import CONSISTENT, INCONSISTENT
+
+    labels = {CONSISTENT: "consistent", INCONSISTENT: "**inconsistent**"}
+    rows = [
+        [_inline(_verdict_symbol(verdict)), _inline(unit_latex(verdict.unit)),
+         labels.get(verdict.status, verdict.status), verdict.detail]
+        for verdict in verdicts
+    ]
+    return md_table(["Equation", "Unit", "Dimensional check", "Detail"], rows)
+
+
+def _verdict_symbol(verdict):
+    """The equation's left-hand side in the report's own notation.
+
+    Built from the quantity's name rather than the SymPy left-hand side: the
+    analysis view holds state variables as functions of `t`, and `\\dot{y_0(t)}`
+    says the same thing as `\\dot{y_0}` twice.
+    """
+    from sympy import Derivative
+
+    lhs = getattr(verdict.equation, "lhs", None)
+    base = display_symbol(None, verdict.name)
+    return derivative_latex(base, time_order(lhs)) if isinstance(lhs, Derivative) else base
+
+
+def _inline(latex):
+    """Wrap already-rendered LaTeX for inline display, or nothing."""
+    return f"${latex}$" if latex else ""
+
+
+def unit_verdicts(model, strictness="dimensional"):
+    """Every equation's dimensional verdict, for the tables above.
+
+    Resolved once per report: the check inlines every model function each time
+    it runs, and both the verdict table and the derived-unit marking read it.
+    """
+    from tvbo.analysis.units import check_units
+
+    return check_units(model, strictness=strictness)
+
+
+def parameter_table(params, derived=None):
     """Markdown model Parameters table (empty columns dropped) from a name->obj map."""
-    return param_table(params, name_header="Parameter")
+    return param_table(params, name_header="Parameter", derived=derived)
 
 
 def model_delta(model, baseline):

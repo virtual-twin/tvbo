@@ -172,6 +172,45 @@ def unit_expression(unit):
     return expression * Integer(1)
 
 
+@lru_cache(maxsize=1)
+def _by_expression():
+    """Curated units indexed by their SI expression, for naming a derived one."""
+    index = {}
+    for unit in _vendored():
+        try:
+            expression = unit_expression(unit)
+        except ValueError:
+            continue
+        if expression is not None:
+            index.setdefault(expression, []).append(unit)
+    return index
+
+
+def unit_named(expression):
+    """The one curated unit whose expression is exactly *expression*, or `None`.
+
+    The inverse of `unit_expression`, used to give a *derived* unit back its
+    ordinary name: propagation produces `kilogram*meter**2/(1000*ampere*second**3)`,
+    which is `mV` and reads far better said that way. Exact because the
+    expressions are built from `Fraction` multipliers, so `mm/ms` and `m/s` are
+    the same key rather than two that differ by 1e-16.
+
+    `None` when several units share the expression, which is not a gap in the
+    vocabulary but a limit on what dimensional analysis can tell you: `Hz`,
+    `per_s` and `rad_per_s` are all exactly `1/second`, as are `dimensionless`,
+    `arbitrary_unit` and `rad` all exactly `1`. Five such groups exist among the
+    curated units. Naming a derived quantity `Hz` would assert it is a frequency
+    on evidence that says only "per second", so the base expression is printed
+    instead — a weaker claim, and the true one.
+    """
+    from sympy import Integer
+
+    if expression is None:
+        return None
+    candidates = _by_expression().get(expression * Integer(1), ())
+    return candidates[0] if len(candidates) == 1 else None
+
+
 # ── UnitEnum → a backend's own vocabulary ────────────────────────────
 
 

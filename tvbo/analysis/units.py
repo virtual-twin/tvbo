@@ -73,6 +73,19 @@ class Verdict:
         return self.status == CONSISTENT
 
 
+def quantity_name(expression):
+    """The name of the quantity *expression* stands for.
+
+    `y0` for all of `y0`, `y0(t)` and `Derivative(y0(t), t)` — a quantity is the
+    same quantity however the notation renders it, and every caller (a verdict's
+    label, a report row keyed by parameter name) wants that one name.
+    """
+    target = expression.expr if isinstance(expression, sp.Derivative) else expression
+    if isinstance(target, sp.core.function.AppliedUndef):
+        return target.func.__name__
+    return str(target)
+
+
 def _as_unit(declared):
     """A declared unit string as a SymPy quantity, or `None` when it says nothing."""
     if declared is None:
@@ -218,7 +231,7 @@ class _Propagator:
 
         reference = known[0].unit
         clashes = {
-            str(term.expression): sp.nsimplify(sp.simplify(term.unit / reference))
+            quantity_name(term.expression): sp.nsimplify(sp.simplify(term.unit / reference))
             for term in known[1:]
             if sp.simplify(term.unit / reference) != 1
         }
@@ -327,7 +340,7 @@ def check_units(model, strictness: str = "dimensional", time_unit: str | None = 
     verdicts = []
 
     for equation in model.symbolic["state"]:
-        name = str(equation.lhs)
+        name = quantity_name(equation.lhs)
         propagator = _Propagator(units, clock)
         try:
             left = propagator.unit_of(equation.lhs)
@@ -338,7 +351,7 @@ def check_units(model, strictness: str = "dimensional", time_unit: str | None = 
                     name,
                     equation,
                     UNDERDETERMINED,
-                    f"{unresolved.symbol} has no declared unit",
+                    f"{quantity_name(unresolved.symbol)} has no declared unit",
                     inferred=dict(propagator.inferred),
                     undeclared=tuple(sorted(map(str, propagator.undeclared))),
                 )

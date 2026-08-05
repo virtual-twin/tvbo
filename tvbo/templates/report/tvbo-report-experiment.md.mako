@@ -274,6 +274,8 @@ observed = getattr(model, 'observed', {}) or {}
 # lives on the experiment, so the experiment's definition wins where both name an event.
 events = dict(report.name_items(getattr(model, 'events', None)))
 events.update(dict(report.name_items(getattr(exp, 'events', None))))
+unit_verdicts = report.unit_verdicts(model) if model else []
+derived_units = report.derived_units(unit_verdicts)
 model_summary = []
 if _p(model, 'model_type', None):
     model_summary.append(f"type: {_p(model, 'model_type')}")
@@ -353,17 +355,23 @@ ${report.state_variable_table(svars)}
 % if params:
 **Parameters**
 
-${report.parameter_table(params)}
+${report.parameter_table(params, derived=derived_units)}
+
+% endif
+% if unit_verdicts:
+**Dimensional Check**
+
+${report.unit_verdict_table(unit_verdicts)}
 
 % endif
 % if dparams:
 **Derived Parameters**
 
-| Parameter | Expression | Description |
-|:----------|:-----------|:------------|
+| Parameter | Expression | Unit | Description |
+|:----------|:-----------|:-----|:------------|
 % for name, dp in dparams.items():
 <% dp_eq = getattr(dp, 'equation', None); dp_rhs = getattr(dp_eq, 'rhs', '') if dp_eq else ''; dp_desc = _p(dp, 'description', '') or 'Derived' %>\
-| $${latex(Symbol(name))}$ | $${safe_latex(dp_rhs)}$ | ${dp_desc} |
+| $${latex(Symbol(name))}$ | $${safe_latex(dp_rhs)}$ | ${_unit_text(_p(dp, 'unit', None)) or report.derived_unit_text(derived_units, name)} | ${dp_desc} |
 % endfor
 % endif
 
