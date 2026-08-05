@@ -14,7 +14,7 @@ executable TVBO/TVB source using the templates in `tvbo.templates`.
 import logging
 from typing import Any
 
-import black
+import sympy as sp
 
 from tvbo import templates
 
@@ -78,19 +78,99 @@ def source_observations(obs: Any, experiment: Any) -> list:
     return out
 
 
-def format_code(code: str, format: str = "python", use_black: bool = True, **kwargs: Any) -> str:
-    """Format code using black for Python variants.
+COMPONENT_LANGUAGES = {
+    "python": "python",
+    "numpy": "python",
+    "scipy": "python",
+    "autodiff": "python",
+    "pyrates": "yaml",
+}
+"""Component-level ``format`` aliases, which name no export format, to their language."""
+
+
+def source_language(format: str) -> str:
+    """Return the output language of *format*, or ``""`` when it emits none.
+
+    Resolves through the export registry so a backend declares its language once,
+    on its :class:`~tvbo.export.registry.ExportFormat`. The component-level aliases
+    in :data:`COMPONENT_LANGUAGES` are not registered formats and are mapped here.
+    """
+    if format in COMPONENT_LANGUAGES:
+        return COMPONENT_LANGUAGES[format]
+    from tvbo.export import registry
+
+    try:
+        return registry.resolve(format).language
+    except ValueError:
+        return ""
+
+
+def format_code(code: str, format: str = "python", use_black: bool = True) -> str:
+    """Format generated *code* for the backend named by *format*.
+
+    Component-level renders (a Dynamics, a Coupling, an Observation) come through
+    here; whole-experiment renders are formatted by
+    :func:`tvbo.export.registry.render`. Both resolve the language the same way and
+    both route to :mod:`tvbo.codegen.style`, so they cannot drift apart.
 
     Args:
         code: Source code string to format
-        format: Language/variant (python, jax, numpy, scipy, tvboptim)
-        use_black: Whether to apply black formatting (default True)
-        **kwargs: Additional black.FileMode options (line_length, etc.)
+        format: Backend key or component-level alias (python, jax, numpy, tvboptim…)
+        use_black: Set False to return *code* untouched
+
+    Raises:
+        tvbo.codegen.style.GeneratedSourceError: *code* does not parse as its language.
     """
-    if format in ["tvb", "python", "autodiff", "jax", "numpy", "scipy", "tvboptim"]:
-        if use_black:
-            code = black.format_str(code, mode=black.FileMode(**kwargs))
-    return code
+    from tvbo.codegen.style import format_source
+
+    return format_source(code, source_language(format)) if use_black else code
+
+
+def time_dependent_equations(model) -> list[str]:
+    """Names whose equation reads the time symbol ``t``, sorted.
+
+    A backend whose derivative signature carries no time — TVB's ``Model.dfun`` —
+    cannot express these, and emitting the term anyway yields an unbound name. The
+    equations are the ground truth rather than the ``autonomous`` slot, which is
+    author-declared and can disagree with them.
+    """
+    t = sp.Symbol("t")
+    # Only integrated and derived quantities: a `functions:` entry taking an argument
+    # named `t` binds it as a parameter, so its rhs naming `t` is not time dependence.
+    scoped = set(model.state_variables) | set(model.derived_variables) | set(model.derived_parameters)
+    # `t` denotes integrator time ONLY when the model does not itself declare a symbol named
+    # `t`. A model with a parameter/state literally called `t` (a time constant, threshold, …)
+    # means that symbol, not the reserved time — flagging it would block a valid, autonomous export.
+    if "t" in scoped | set(model.parameters):
+        return []
+    return sorted(
+        name for name, eq in (model.get_equations() or {}).items()
+        if name in scoped and t in eq.rhs.free_symbols
+    )
+
+
+def derived_parameter_inputs(model) -> list[str]:
+    """Base parameter names the derived-parameter expressions read, in model order.
+
+    A backend that computes derived parameters must first unpack the base parameters
+    they depend on — ``ReducedSetHindmarshRose`` derives twelve of them from ``a``,
+    ``b``, ``sigma`` and friends, so dropping the unpack breaks the model. Unpacking
+    *every* parameter instead leaves the unread ones as dead bindings, so this returns
+    exactly the ones consumed.
+
+    Returns an empty list when the model derives no parameters, which is the case
+    where the whole unpack is dead.
+    """
+    derived = getattr(model, "derived_parameters", None) or {}
+    if not derived:
+        return []
+    equations = model.get_equations() or {}
+    consumed = set()
+    for name in derived:
+        eq = equations.get(name)
+        if eq is not None:
+            consumed |= {str(sym) for sym in eq.rhs.free_symbols}
+    return [name for name in model.parameters if name in consumed]
 
 
 ### Integrator ###

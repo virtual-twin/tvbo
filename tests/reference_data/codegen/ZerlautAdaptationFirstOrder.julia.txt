@@ -1,8 +1,3 @@
-
-
-
-
-
 using SpecialFunctions
 import NaNMath
 function ZerlautAdaptationFirstOrder!(dx, x, p, t = 0)
@@ -10,7 +5,6 @@ function ZerlautAdaptationFirstOrder!(dx, x, p, t = 0)
     (;C_m, DTvN0, DmuV0, DsV0, E_L_e, E_L_i, E_e, E_i, K_ext_e, K_ext_i, N_tot, P0_e, P0_i, P1_e, P1_i, P2_e, P2_i, P3_e, P3_i, P4_e, P4_i, P5_e, P5_i, P6_e, P6_i, P7_e, P7_i, P8_e, P8_i, P9_e, P9_i, P_e, P_i, Q_e, Q_i, S_i, T, TvN0, a_e, a_i, b_e, b_i, external_input_ex_ex, external_input_ex_in, external_input_in_ex, external_input_in_in, g_L, g, muV0, p_connect_e, p_connect_i, sV0, tau_OU, tau_e, tau_i, tau_w_e, tau_w_i, weight_noise, c_glob, local_coupling) = p
 
     E, I, W_e, W_i, ou_drift = x
-
 
 
     lc_E = E .* local_coupling
@@ -81,5 +75,3 @@ prob = ODEProblem(ZerlautAdaptationFirstOrder!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

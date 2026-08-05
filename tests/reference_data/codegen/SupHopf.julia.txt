@@ -1,14 +1,8 @@
-
-
-
-
-
 function SupHopf!(dx, _x, p, t = 0)
 
     (;a, omega, c_glob0, c_glob1, local_coupling) = p
 
     x, y = _x
-
 
 
     lc_0 = local_coupling .* x
@@ -38,5 +32,3 @@ prob = ODEProblem(SupHopf!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

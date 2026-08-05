@@ -166,8 +166,6 @@ class StefanescuJirsa3D(Model):
         K_11 = self.K_11
         K_12 = self.K_12
         K_21 = self.K_21
-        sigma = self.sigma
-        mu = self.mu
 
         # Coupling Terms (from coupling array)
         c_glob = coupling[0, :]

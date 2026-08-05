@@ -231,3 +231,49 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             raise TypeError(f"Expected str or dict, got {type(source)}")
 
         return cls(**data)
+
+
+class Investigation(SimulationStudy, tvbo_datamodel.Investigation):
+    """A whole manuscript as one runnable specification.
+
+    Aggregates the member studies a paper reports (`members`) and owns the
+    paper's own demonstration experiments, analyses and figures (inherited from
+    `SimulationStudy`). `tvbo run` walks the members and the owned content, emits
+    every reported number to a results manifest (`results`) and every figure with
+    its composed caption, then packages the run as a COMBINE/OMEX archive
+    (`archive`) — so the paper becomes an instance of the reproducibility it
+    argues for. Load with `from_file(path)` (inherited).
+    """
+
+    def __repr__(self) -> str:
+        title = self.title or "Untitled Investigation"
+        n_members = len(getattr(self, "members", None) or [])
+        n_results = len(getattr(self, "results", None) or [])
+        n_figures = len(getattr(self, "figures", None) or [])
+        return (
+            f"Investigation(\n"
+            f"  title={title!r},\n"
+            f"  members={n_members}, results={n_results}, figures={n_figures}\n"
+            f")"
+        )
+
+    def member_recipes(self, base=None, *, include_optional: bool = True) -> list[tuple[str, "Path"]]:
+        """The member study recipes as ``(label, resolved_path)`` pairs.
+
+        Each ``recipe`` is resolved relative to *base* (the investigation file's
+        directory) when it is not an IRI or an absolute path. ``optional`` members
+        are dropped when *include_optional* is False (a ``--skip``-style light run).
+        """
+        from pathlib import Path
+
+        base = Path(base) if base is not None else Path(getattr(self, "_source_file", ".")).resolve().parent
+        out: list[tuple[str, Path]] = []
+        for m in (getattr(self, "members", None) or []):
+            if getattr(m, "optional", None) and not include_optional:
+                continue
+            recipe = str(getattr(m, "recipe", ""))
+            label = getattr(m, "label", None) or Path(recipe).stem
+            p = Path(recipe)
+            resolved = p if p.is_absolute() or "://" in recipe else (base / recipe)
+            out.append((str(label), resolved))
+        return out

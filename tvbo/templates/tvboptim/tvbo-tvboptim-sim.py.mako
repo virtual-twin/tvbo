@@ -90,9 +90,10 @@ stimulus_events = [ev for ev in events_list
 has_stimulus_events = len(stimulus_events) > 0
 
 # accelerator -> JAX_PLATFORMS (set before `import jax`); 'auto' delegates to JAX detection.
+from tvbo.templates.tvboptim.utils import jax_platform as _jax_platform_of
 _sim_exec = getattr(experiment, 'execution', None)
 _sim_accel = str(_sim_exec.accelerator) if _sim_exec and getattr(_sim_exec, 'accelerator', None) else 'auto'
-sim_jax_platform = {'cpu': 'cpu', 'gpu': 'cuda', 'tpu': 'tpu'}.get(_sim_accel.lower(), _sim_accel.lower()) if _sim_accel.lower() != 'auto' else None
+sim_jax_platform = _jax_platform_of(_sim_accel)
 %>
 """
 ${dynamics_class} tvboptim Network Dynamics Simulation

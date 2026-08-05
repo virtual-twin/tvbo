@@ -1,15 +1,8 @@
-
-
-
-
-
 function Roessler!(dx, _x, p, t = 0)
 
     (;a, b, c) = p
 
     x, y, z = _x
-
-
 
 
     dx[1] = -y .- z
@@ -39,5 +32,3 @@ prob = ODEProblem(Roessler!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

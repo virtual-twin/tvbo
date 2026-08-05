@@ -854,13 +854,21 @@ def plan(
             for _barg in (list(_bargs.values()) if hasattr(_bargs, "values") else _as_list(_bargs or [])):
                 _dep_from_used(getattr(_barg, "used", None))
 
+    # An explicit run venv wins over a declared container, with a notice.
+    _container = resolve_container_ref(spec.get("container"))
+    _run_venv = str(engine_block.get("venv") or "").strip()
+    if _container and _run_venv:
+        from ._common import info as _info
+        _info(f"slurm.venv set ({_run_venv}) → running in the venv; ignoring the declared container ({_container})")
+        _container = None
+
     return WorkflowPlan(
         study_key=study_key,
         experiment_key=experiment_key,
         backend=bk,
         engine=engine,
         out_dir=out_dir,
-        container=resolve_container_ref(spec.get("container")),
+        container=_container,
         container_binds=[str(b) for b in _as_list(spec.get("container_binds") or [])],
         container_args=(spec.get("container_args") or None),
         retries=int(spec.get("retries") or 0),

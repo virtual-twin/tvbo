@@ -1,15 +1,8 @@
-
-
-
-
-
 function ForcedPendulum!(dx, _x, p, t = 0)
 
     (;omega, f, d) = p
 
     x, v = _x
-
-
 
 
     dx[1] = v
@@ -37,5 +30,3 @@ prob = ODEProblem(ForcedPendulum!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

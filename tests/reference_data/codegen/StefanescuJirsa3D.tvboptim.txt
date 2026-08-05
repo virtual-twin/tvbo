@@ -103,10 +103,8 @@ class StefanescuJirsa3D(AbstractDynamics):
         b = params.b
         c = params.c
         d = params.d
-        mu = params.mu
         r = params.r
         s = params.s
-        sigma = params.sigma
         x_0 = params.x_0
 
         xi = jnp.stack([state[0], state[1], state[2]], axis=-1)

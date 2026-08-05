@@ -66,6 +66,24 @@ def initial_value(sv, default=0.1) -> float:
     return float(v) if v is not None else float(default)
 
 
+def parameter_number(value):
+    """A parameter's declared value as plain numbers, uniform sequences collapsed.
+
+    ``Parameter.value`` is scalar for most models, one entry per mode for a multi-mode
+    one, and a matrix for a mode-coupled one (``ReducedSetHindmarshRose``'s ``A_ik``),
+    so it nests to arbitrary depth. A sequence whose entries are all equal collapses to
+    the scalar it means; anything else keeps its shape, because reducing a genuinely
+    heterogeneous value to its first entry would silently change the model.
+
+    Backends that can only emit scalars use this to decide, rather than each deciding
+    differently — or, as the PyRates emitter did, calling ``float()`` and raising.
+    """
+    if isinstance(value, (list, tuple)):
+        items = [parameter_number(v) for v in value]
+        return items[0] if items and all(i == items[0] for i in items) else items
+    return float(value)
+
+
 def register_recipe_code_paths(source_file, code_source=None) -> list:
     """Make a recipe's callable code importable — the ``code/`` convention, or a
     declared :class:`CodeSource` (a local directory or a git repository).

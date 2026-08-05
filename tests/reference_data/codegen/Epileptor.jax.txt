@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-import jax.scipy as jsp
 
 
 def dfun(current_state, t, cX, _p):
@@ -9,7 +8,6 @@ def dfun(current_state, t, cX, _p):
     c = _p.c
     d = _p.d
     r = _p.r
-    s = _p.s
     x0 = _p.x0
     Iext = _p.Iext
     slope = _p.slope

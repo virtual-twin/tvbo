@@ -60,9 +60,9 @@ dependencies = [
     "pydot>=3.0.3",
 
     # Templating
-    "mako>=1.3.10",
-    # One stable style: black formats emitted code, so a style bump rewrites every codegen reference at once.
-    "black>=25.9.0,<26",
+    "mako>=1.3.12",
+    # Major pinned: its annual style bump would re-baseline every emitted-code reference.
+    "black>=26.5,<27",
 
     # BIDS dataset support
     "pybids>=0.16.0",
@@ -177,8 +177,11 @@ tvboptim = ["tvboptim", "pymoo>=0.6.0"]
 # deps travel declaratively via `environment.requirements` and are provisioned by setup.sh.
 workflow = ["snakemake>=8.0.0", "snakemake-executor-plugin-slurm>=0.11.0"]
 
+# Minor pinned so a local run and the CI ruff-action agree on the rule set.
+lint = ["ruff>=0.16.1,<0.17"]
+
 # Full install (all features)
-all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow]"]
+all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow,lint]"]
 
 [project.urls]
 homepage = "https://tvbo.charite.de"

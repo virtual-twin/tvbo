@@ -1,8 +1,8 @@
-# conftest.py — early environment setup for tests
-#
-# Must run before any JAX import to force CPU backend (avoids jax-metal
-# XLA errors on Apple Silicon) and to set up virtual XLA devices for
-# tests that use pmap.
+"""Early environment setup for the test suite, plus helpers shared across test modules.
+
+The environment part must run before any JAX import: it forces the CPU backend (jax-metal
+raises XLA errors on Apple Silicon) and sets up the virtual XLA devices the pmap tests need.
+"""
 
 import os
 
@@ -68,7 +68,45 @@ def pytest_sessionfinish(session, exitstatus):
     if reporter is not None:
         reporter.write_sep(
             "=",
-            "golden corpora REGENERATED — nothing was asserted; review the diff and "
-            "commit it on its own",
+            "golden corpora REGENERATED — nothing was asserted; review the diff and commit it on its own",
             red=True,
         )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_tvbo_logging():
+    """Restore the ``tvbo`` logger after each test.
+
+    ``tvbo.log.configure_logging`` installs a stream handler and sets
+    ``propagate = False`` so the CLI owns its output and does not double-print through a
+    host application's root logger. That is right for a CLI and wrong to leave behind in a
+    test process: it is global and sticky, so once any test invokes the CLI, every later
+    ``caplog`` assertion reads empty — caplog's handler sits on the root logger, which the
+    records no longer reach — and the captured stream it kept is closed by then, so the
+    handler raises ``I/O operation on closed file`` on the way past.
+
+    Autouse because the pollution is invisible at the point it bites: the failing test is
+    never the one that configured logging.
+    """
+    import logging
+
+    logger = logging.getLogger("tvbo")
+    handlers, propagate, level = list(logger.handlers), logger.propagate, logger.level
+    try:
+        yield
+    finally:
+        logger.handlers[:] = handlers
+        logger.propagate = propagate
+        logger.setLevel(level)
+
+
+@pytest.fixture
+def unwrapped():
+    """``fn(code)`` -> *code* with all whitespace removed, for substring checks on codegen.
+
+    Generated Python is black-formatted, so a long statement is split across lines at a
+    column black chooses. Asserting on the statement's text rather than on its layout keeps
+    a codegen test about what the emitter produces, not about how it was wrapped. A fixture
+    rather than an importable helper because ``tests/`` is not a package.
+    """
+    return lambda code: "".join(code.split())

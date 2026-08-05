@@ -1,15 +1,8 @@
-
-
-
-
-
 function CoupledStandardMaps3!(dx, x, p, t = 0)
 
     (;k0, k1, k2, Gamma) = p
 
     theta0, p0, theta1, p1, theta2, p2 = x
-
-
 
 
     dx[1] = (p0 .+ theta0 .+ k0 .* sin(theta0) .- Gamma .* (-sin(theta0 .- theta1) .- sin(theta0 .- theta2)) .- 2 * pi * floor((p0 .+ theta0 .+ k0 .* sin(theta0) .- Gamma .* (-sin(theta0 .- theta1) .- sin(theta0 .- theta2))) / (2 * pi)))
@@ -45,5 +38,3 @@ prob = ODEProblem(CoupledStandardMaps3!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

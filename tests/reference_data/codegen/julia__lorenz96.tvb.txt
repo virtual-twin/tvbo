@@ -93,7 +93,6 @@ class Lorenz96(Model):
         x9 = state_variables[9, :]
 
         F = self.F
-        N = self.N
 
         # Coupling Terms (from coupling array)
 

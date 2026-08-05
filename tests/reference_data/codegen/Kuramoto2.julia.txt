@@ -1,8 +1,3 @@
-
-
-
-
-
 function KuramotoModel2!(dx, x, p, t = 0)
 
     (;omega, c_glob, local_coupling) = p
@@ -40,5 +35,3 @@ prob = ODEProblem(KuramotoModel2!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

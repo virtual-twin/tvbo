@@ -13,7 +13,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from tvbo.data.types import ExperimentResult, _free_param_names
+from tvbo.data.types import ExperimentResult, _free_param_names, _algo_tuned_params
 
 
 def _param(name, free):
@@ -153,6 +153,89 @@ def test_estimate_uses_resolved_not_placeholder_labels(tmp_path):
     ds = xr.open_dataset([p for p in written if p.endswith(".h5")][0], engine="h5netcdf")
     try:
         assert [str(x) for x in ds["estimate__J_i"]["node"].values] == ["L_V1", "R_V1"]
+    finally:
+        ds.close()
+
+
+def _rule(target):
+    return SimpleNamespace(target_parameter=SimpleNamespace(name=target))
+
+
+def _source_with_algos(labels):
+    """A FIC pre-pass that fits only J_i, then an EIB pass that fits wLRE/wFFI and
+    ``includes`` FIC (so it also fits J_i via the combined inner loop)."""
+    src = _fake_source(labels)
+    src.algorithms = {
+        "fic": SimpleNamespace(update_rules=[_rule("J_i")], includes=[]),
+        "fic_eib": SimpleNamespace(
+            update_rules=[_rule("wLRE"), _rule("wFFI")],
+            includes=[SimpleNamespace(algorithm="fic")],
+        ),
+    }
+    return src
+
+
+def _state_with(n, wlre, wffi, ji):
+    return SimpleNamespace(
+        coupling=SimpleNamespace(EIBLinearCoupling=SimpleNamespace(
+            wLRE=_JaxParam(np.full((n, n), wlre)),
+            wFFI=_JaxParam(np.full((n, n), wffi)),
+        )),
+        dynamics=SimpleNamespace(J_i=_JaxParam(np.full(n, ji))),
+    )
+
+
+def test_algo_tuned_params_maps_rules_and_includes():
+    src = _source_with_algos([f"n{i}" for i in range(2)])
+    tuned = _algo_tuned_params(src)
+    assert tuned == {"fic": {"J_i"}, "fic_eib": {"J_i", "wLRE", "wFFI"}}
+    assert _algo_tuned_params(None) == {}
+    assert _algo_tuned_params(_fake_source(["a"])) == {}   # no .algorithms → empty
+
+
+def test_estimate_prefers_fitting_algorithm_not_pre_pass(tmp_path):
+    """A FIC pre-pass carries wLRE/wFFI at their init 1.0; the EIB pass fits them. The
+    saved estimate must come from the pass that FITS each param (EIB), not the earlier
+    pass that merely holds it fixed — otherwise the tuned coupling is silently lost."""
+    xr = pytest.importorskip("xarray")
+    n = 4
+    labels = [f"R{i}" for i in range(n)]
+    res = ExperimentResult(
+        algorithms={   # run order: fic (only J_i) then fic_eib (all three)
+            "fic": SimpleNamespace(state=_state_with(n, wlre=1.0, wffi=1.0, ji=0.5)),
+            "fic_eib": SimpleNamespace(state=_state_with(n, wlre=0.7, wffi=0.3, ji=1.9)),
+        },
+        source=_source_with_algos(labels),
+    )
+    ds = xr.open_dataset(
+        [p for p in res.save(str(tmp_path), compress=False, record_only=False)
+         if p.endswith(".h5")][0], engine="h5netcdf")
+    try:
+        np.testing.assert_allclose(ds["estimate__wLRE"].values, 0.7)   # EIB, not 1.0
+        np.testing.assert_allclose(ds["estimate__wFFI"].values, 0.3)   # EIB, not 1.0
+        np.testing.assert_allclose(ds["estimate__J_i"].values, 1.9)    # EIB, not 0.5
+    finally:
+        ds.close()
+
+
+def test_save_persists_algorithm_post_tuning_fc_corr(tmp_path):
+    """The achieved fit quality (fc_corr / fc_rmse vs the empirical target) must land in the
+    saved result — the tuned params alone don't record how well they fit."""
+    xr = pytest.importorskip("xarray")
+    n = 3
+    labels = [f"R{i}" for i in range(n)]
+    algo = SimpleNamespace(
+        state=_state_with(n, wlre=0.7, wffi=0.3, ji=1.9),
+        post_tuning=SimpleNamespace(observations={"fc_corr": 0.87, "fc_rmse": 0.12}),
+    )
+    res = ExperimentResult(algorithms={"fic_eib": algo}, source=_source_with_algos(labels))
+    ds = xr.open_dataset(
+        [p for p in res.save(str(tmp_path), compress=False, record_only=False)
+         if p.endswith(".h5")][0], engine="h5netcdf")
+    try:
+        assert "algorithm__fic_eib__fc_corr" in set(ds.data_vars)
+        np.testing.assert_allclose(float(ds["algorithm__fic_eib__fc_corr"].values), 0.87)
+        np.testing.assert_allclose(float(ds["algorithm__fic_eib__fc_rmse"].values), 0.12)
     finally:
         ds.close()
 

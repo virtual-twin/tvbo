@@ -1,14 +1,8 @@
-
-
-
-
-
 function ZaslavskiiMap!(dx, _x, p, t = 0)
 
     (;eps, nu, r) = p
 
     x, y = _x
-
 
 
     mu = (1 .- exp(-r)) ./ r
@@ -38,5 +32,3 @@ prob = ODEProblem(ZaslavskiiMap!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

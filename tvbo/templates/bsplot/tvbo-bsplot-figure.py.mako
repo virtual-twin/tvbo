@@ -253,7 +253,9 @@ def _restore_fixed_axes(snap):
 % elif p['kind'] == 'image':
     ax.imshow(plt.imread(${repr(p['path'])}), origin="upper")
     ax.axis("off")
-% elif p['kind'] == 'custom':
+% elif p['kind'] == 'grid':
+    ax.axis("off")          # the cells below carry the drawing; this axes is only their frame
+% elif p['kind'] in ('custom', 'surface', 'colorbar', 'legend'):
     _registered(_CP, ${repr(p['render'])}, "custom panel")(fig, ax, ${repr(p['ctx'])})
 % elif p['kind'] == 'line3d':
     _spec = ax.get_subplotspec(); ax.remove()           # swap the 2-D cell for a 3-D axis
@@ -332,6 +334,20 @@ def _restore_fixed_axes(snap):
 % if p['title']:
     ax.set_title(${repr(p['title'])})
 % endif
+% for g in p['groups']:
+% for _r in g['rules']:
+    ax.ax${'h' if g['axis'] == 'y' else 'v'}line(${_r}, **${repr(g['rule_kwargs'])})
+% endfor
+% for _l in g['labels']:
+% if g['axis'] == 'y':
+    ax.text(${-g['pad']}, ${_l['at']}, ${repr(_l['text'])},   # x in axes fraction, y in data
+            transform=ax.get_yaxis_transform(), **${repr(g['kwargs'])})
+% else:
+    ax.text(${_l['at']}, ${-g['pad']}, ${repr(_l['text'])},   # x in data, y in axes fraction
+            transform=ax.get_xaxis_transform(), **${repr(g['kwargs'])})
+% endif
+% endfor
+% endfor
 % for a in p['annotations']:
 % if a['layer']:
     _txt = ${repr(a['text'])}.format(       # the number is READ from the run, not typed
@@ -358,24 +374,22 @@ def _restore_fixed_axes(snap):
 % endif
 % endfor
 </%def>\
-% for p in panels:
-% for ins in p['insets']:
-def _${ins['key']}(fig, ax):
-    """Inset ${ins['key']} — ${ins['kind']}, at ${ins['bounds']} of panel ${p['key']}."""
-${draw(ins)}\
+<%def name="emit(d, name, what)">\
+% for ins in d['insets']:
+${emit(ins, '_' + str(ins['key']), 'Sub-axes')}\
+% endfor
+def ${name}(fig, ax):
+    """${what} ${d['key']} — ${d['kind']}."""
+${draw(d)}\
+% for ins in d['insets']:
+    _${ins['key']}(fig, ax.inset_axes(${repr(ins['bounds'])}))   # drawn after the body, over it
+% endfor
     return ax
 
 
-% endfor
-def _panel_${p['key']}(fig, ax):
-    """Panel ${p['key']} — ${p['kind']}."""
-${draw(p)}\
-% for ins in p['insets']:
-    _${ins['key']}(fig, ax.inset_axes(${repr(ins['bounds'])}))   # drawn after the body, over it
-% endfor
-    return ax                                           # a line3d panel returns a NEW (3-D) axis; capture it
-
-
+</%def>\
+% for p in panels:
+${emit(p, '_panel_' + str(p['key']), 'Panel')}\
 % endfor
 def main():
 % for s in style:
@@ -415,7 +429,7 @@ def main():
 % endfor
 
 % if auto_format:
-<% custom_keys = [p['key'] for p in panels if p['kind'] in ('custom', 'line3d')] %>\
+<% custom_keys = [p['key'] for p in panels if p['drawer']] %>\
 % if custom_keys:
     _fixed = [_snapshot_fixed_axes(axd[_k]) for _k in ${repr(custom_keys)}]   # drawer's own fixed ticks
 % endif

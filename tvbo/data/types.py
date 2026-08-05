@@ -1837,6 +1837,58 @@ def _free_param_names(source) -> set:
     return names
 
 
+def _algo_tuned_params(source) -> dict:
+    """Map each algorithm name to the set of free parameters it FITS.
+
+    A parameter counts as fit by an algorithm when an ``update_rule`` targets it — the
+    algorithm's own rules or, recursively, those of an algorithm it ``includes``. Lets
+    ``estimate__<param>`` be sourced from the algorithm that actually tunes a parameter
+    rather than one that merely carries it at its initial value (e.g. a FIC pre-pass that
+    holds ``wLRE``/``wFFI`` fixed must not shadow the EIB pass that fits them). Empty dict
+    when *source* exposes no introspectable algorithms; each present algorithm maps to a
+    (possibly empty) set.
+    """
+    def _as_list(coll):
+        if coll is None:
+            return []
+        if hasattr(coll, "values"):
+            return list(coll.values())
+        if isinstance(coll, (list, tuple)):
+            return list(coll)
+        return [coll]
+
+    algos = getattr(source, "algorithms", None)
+    if not algos:
+        return {}
+    by_name = algos if hasattr(algos, "get") else {
+        str(getattr(a, "name", i)): a for i, a in enumerate(_as_list(algos))
+    }
+
+    def _targets(algo):
+        out = set()
+        for rule in _as_list(getattr(algo, "update_rules", None)):
+            tp = getattr(rule, "target_parameter", None)
+            nm = getattr(tp, "name", None) or (str(tp) if tp is not None else None)
+            if nm:
+                out.add(str(nm))
+        return out
+
+    def _tuned(name, seen):
+        algo = by_name.get(name)
+        if algo is None or name in seen:
+            return set()
+        seen.add(name)
+        out = _targets(algo)
+        for inc in _as_list(getattr(algo, "includes", None)):
+            inc_name = getattr(inc, "algorithm", None)
+            inc_name = getattr(inc_name, "name", None) or inc_name
+            if inc_name:
+                out |= _tuned(str(inc_name), seen)
+        return out
+
+    return {name: _tuned(name, set()) for name in by_name}
+
+
 class ExperimentResult:
     """Result from a complete experiment run.
 
@@ -2213,13 +2265,23 @@ class ExperimentResult:
                 for name, da in _numeric_leaves(f"optimization__{_san(opt_name)}__fitted", fitted):
                     data_vars[name] = da
 
+        # Persist algorithm post-tuning observations (achieved fc_corr / fc_rmse / fc) so the fit outcome is legible from the saved result, not only the tuned parameters.
+        for algo_name, algo in (self.algorithms or {}).items():
+            post = getattr(algo, "post_tuning", None)
+            post_obs = getattr(post, "observations", None) if post is not None else None
+            for obs_name, obs in (post_obs or {}).items():
+                for var, da in _numeric_leaves(f"algorithm__{_san(algo_name)}__{_san(obs_name)}", _unwrap_observation(obs)):
+                    if var not in data_vars:
+                        data_vars[var] = da
+
         # Persist each tuned FREE parameter's fitted value as ``estimate__<param>`` so a
         # from_experiment warm-start can reload it as a prior location (point prior). Kept
         # on LABELLED node axes (``node`` for vectors, ``node_i``+``node_j`` for per-edge
         # matrices) — the same convention FC matrices use — so the consumer reconciles by
         # label with the existing `.sel` path, no bespoke reindex. Container-layer only
         # (values already live in AlgorithmResult.state) → no codegen change; free params
-        # only, so it can't shadow a ``<sv>_final`` key; first-writer-wins per param.
+        # only, so it can't shadow a ``<sv>_final`` key; sourced from the algorithm that FITS
+        # each param (last-writer among fitting passes, see _algo_tuned_params).
         free_names = _free_param_names(self.source) if self.algorithms else set()
         if free_names:   # nothing tunable → skip the flatten entirely
             # Use the RESOLVED node labels (hydrates `bids:` placeholders like region_<i>)
@@ -2231,11 +2293,14 @@ class ExperimentResult:
                 or getattr(getattr(self.source, "network", None), "node_labels", None)
             src_labels = [str(l) for l in src_labels] if src_labels else None
             nn = len(src_labels) if src_labels else None
-            for algo in self.algorithms.values():
+            # Source each estimate from the algorithm that FITS the param (last/most-converged wins), not one that merely carries its init value.
+            tuned_by = _algo_tuned_params(self.source)
+            for algo_name, algo in self.algorithms.items():
+                fits = tuned_by.get(algo_name, free_names)
                 for dotted, arr in OptimizationResult._flatten_params(getattr(algo, "state", None)).items():
                     param = dotted.rsplit(".", 1)[-1]
                     key = f"estimate__{_san(param)}"
-                    if param not in free_names or key in data_vars:
+                    if param not in free_names or param not in fits:
                         continue
                     a = np.asarray(getattr(arr, "values", arr))
                     if a.dtype == object or a.size == 0:

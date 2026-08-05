@@ -1,14 +1,8 @@
-
-
-
-
-
 function JansenRit!(dx, x, p, t = 0)
 
     (;A, B, J, a_1, a_2, a_3, a_4, a, b, mu, nu_max, r, v0, c_glob, local_coupling) = p
 
     y0, y1, y2, y3, y4, y5 = x
-
 
 
     sigma_y0_1 = 2.0 * nu_max ./ (1.0 .+ exp(r .* (v0 .- J .* a_1 .* y0)))
@@ -48,5 +42,3 @@ prob = ODEProblem(JansenRit!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

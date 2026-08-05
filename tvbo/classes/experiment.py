@@ -47,7 +47,6 @@ from linkml_runtime.utils.yamlutils import YAMLRoot
 from linkml_runtime.utils.enumerations import EnumDefinitionImpl
 from tvbo.codegen import templater
 from tvbo.parse.symbols import assumptions_of, symbol_in
-from tvbo.codegen.templater import format_code
 from tvbo.classes.coupling import Coupling
 from tvbo.classes.noise import Integrator
 from tvbo.classes.continuation import Continuation
@@ -3468,9 +3467,40 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if tr and not (len(tr) == 1 and tr[0].lower() == "all"):
                 regions = [int(labels.get(x, x)) for x in tr]
 
+            weighting = list(getattr(ev, "weights", None) or getattr(ev, "weighting", None) or [])
+
+            # weight_parameter -> weights array: a derived weighting states WHERE it came
+            # from (`source:`/`producer:`) and is read here, never inlined into the spec.
+            wp = getattr(ev, "weight_parameter", None)
+            if wp is not None and not weighting:
+                from pathlib import Path as _Path
+
+                from tvbo.data import param_io
+
+                src_file = getattr(self, "_source_file", None)
+                resolved = param_io.resolve(
+                    wp,
+                    source_dir=_Path(src_file).parent if src_file else None,
+                    context=self,
+                )
+                if resolved is None:
+                    raise ValueError(
+                        f"event {_key!r}: `weight_parameter` "
+                        f"{str(getattr(wp, 'name', '') or '<unnamed>')!r} declares no "
+                        "`value`, `source` or `producer`, so there is no weighting to read."
+                    )
+                weighting = [float(x) for x in np.asarray(resolved).ravel()]
+                if not regions:
+                    regions = list(range(int(n_nodes)))
+                if len(weighting) != len(regions):
+                    raise ValueError(
+                        f"event {_key!r}: `weight_parameter` resolved to {len(weighting)} "
+                        f"weights but the event targets {len(regions)} node(s). A stimulus "
+                        "weighting is aligned with `nodes`, so the two must agree."
+                    )
+
             # weight_distribution -> weights array (canonical, seeded resolver)
             wd = getattr(ev, "weight_distribution", None)
-            weighting = list(getattr(ev, "weights", None) or getattr(ev, "weighting", None) or [])
             if wd is not None and not weighting:
                 n = len(regions) if regions else int(n_nodes)
                 try:
@@ -3784,7 +3814,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if fmt.key == "pdf":
             fmt.renderer(self, outputfile=str(path), **kwargs)
         else:
-            rendered = fmt.renderer(self, **kwargs)
+            # Through render(), not fmt.renderer: the file must carry the same
+            # formatting render_code() returns.
+            rendered = _export.render(self, fmt.key, **kwargs)
             with path.open("w", encoding="utf-8") as f:
                 f.write(rendered)
 

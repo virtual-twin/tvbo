@@ -1,14 +1,8 @@
-
-
-
-
-
 function Chua!(dx, _x, p, t = 0)
 
     (;a, b, m0, m1) = p
 
     x, y, z = _x
-
 
 
     h_x = m1 .* x .+ (-abs(-1 .+ x) .+ abs(1 .+ x)) .* (0.5 * m0 .- 0.5 * m1)
@@ -40,5 +34,3 @@ prob = ODEProblem(Chua!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

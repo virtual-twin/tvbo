@@ -1,14 +1,8 @@
-
-
-
-
-
 function ReducedWongWang!(dx, x, p, t = 0)
 
     (;I_o, J_N, a, b, d, gamma, tau_s, w, c_glob, local_coupling) = p
 
     S = x[1]
-
 
 
     x = I_o .+ J_N .* c_glob .+ J_N .* S .* local_coupling .+ J_N .* S .* w
@@ -37,5 +31,3 @@ prob = ODEProblem(ReducedWongWang!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

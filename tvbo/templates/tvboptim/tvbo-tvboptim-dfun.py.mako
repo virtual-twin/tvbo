@@ -16,6 +16,7 @@ Output:
 <%
 import textwrap
 from tvbo.codegen import render_expression
+from tvbo.templates.base.utils import referenced_parameters
 from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names, render_jax_default, get_mode_layout
 from tvbo.utils import initial_value as _initial_value
 
@@ -197,7 +198,7 @@ class ${class_name}(AbstractDynamics):
         coupling: Bunch,
         external: Bunch,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        % for name in param_names:
+        % for name in referenced_parameters(model, param_names):
         ${name} = params.${name}
         % endfor
         % for sp_name, sp_info in stochastic_params.items():

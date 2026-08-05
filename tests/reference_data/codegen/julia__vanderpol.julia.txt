@@ -1,15 +1,8 @@
-
-
-
-
-
 function VanDerPolForced!(dx, _x, p, t = 0)
 
     (;mu, F, T) = p
 
     x, y = _x
-
-
 
 
     dx[1] = y
@@ -37,5 +30,3 @@ prob = ODEProblem(VanDerPolForced!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

@@ -7,9 +7,11 @@ from sympy import Symbol
 if 'experiment' in context.keys():
     integration = experiment.integration
     model = experiment.dynamics
+    coupling = experiment.coupling
 elif 'integration' in context.keys():
     integration = context['integration']
     model = context['model']
+    coupling = context.get('coupling', None)
 else:
     raise ValueError("No integration metadata found")
 
@@ -77,11 +79,20 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
     ${integration.method} Integration
     ${'=' * len(integration.method) + '='*len(" Integration")}
     """
+<%
+    from tvbo.templates.base.utils import referenced
+    _scheme = "\n".join(
+        [str(integration.update_expression.equation.rhs)]
+        + [str(s.equation.rhs) for s in integration.intermediate_expressions.values()]
+    )
+%>\
     %if stochastic:
     t, noise = external_input
     % else:
     t, _ = external_input
+    % if referenced(['noise'], _scheme):
     noise = 0
+    % endif
     % endif
 
     ## dt = ${integration.step_size}
@@ -91,7 +102,7 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
     history, current_state = state
     % if has_stimulus:
     stimulus = get_stimulus(t, params_stimulus)
-    % else:
+    % elif referenced(['stimulus'], _scheme):
     stimulus = 0
     % endif
 
@@ -106,8 +117,10 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
     cX = jax.vmap(cfun, in_axes=(None, -1, -1, None, None, None), out_axes=-1)(weights, history, current_state, params_cfun, delay_indices, t)
 
     dX0 = dfun(current_state, t, cX, params_dfun)
+% if referenced(['X'], _scheme):
 
     X = current_state
+% endif
 
     ## % for i, exp in enumerate(integration.intermediate_expressions.values()):
     ## inter_k${i+1} = ${exp.equation.rhs}
@@ -179,7 +192,8 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
 ## Return for scan: carry, result
 % if is_delayed:
     <%
-    cvar_list = [i for i, sv in enumerate(model.state_variables.values()) if sv.coupling_variable]
+    from tvbo.templates.base.utils import gathered_state_indices
+    cvar_list = gathered_state_indices(model, coupling)
     %>
     %if len(cvar_list) > 0:
     cvar = ${array_input(np.array(cvar_list))}

@@ -1,15 +1,8 @@
-
-
-
-
-
 function MannevilleSimpleMap!(dx, _x, p, t = 0)
 
     (;epsilon,) = p
 
     x = _x[1]
-
-
 
 
     dx[1] = (-floor(x .* (1 .+ epsilon) .+ x .^ 2 .* (1 .- epsilon)) .+ x .* (1 .+ epsilon) .+ x .^ 2 .* (1 .- epsilon))
@@ -35,5 +28,3 @@ prob = ODEProblem(MannevilleSimpleMap!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

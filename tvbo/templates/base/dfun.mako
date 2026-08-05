@@ -7,23 +7,31 @@ Signatures:
 </%doc>
 <%!
 import textwrap
-from tvbo.templates.base.utils import get_coupling_terms, get_func_name, get_func_args, np_module, needs_scipy_special
+from tvbo.templates.base.utils import get_coupling_terms, get_func_name, get_func_args, np_module, needs_scipy_special, referenced_parameters
 %>
 
+## The special-function import is gated on the equations actually using it — emitting it
+## unconditionally is what left `jsp` unused in every JAX module. `model=None` cannot be
+## checked, so it keeps the old unconditional form.
 <%def name="imports(model=None, fmt='jax')">
+<% _scipy = needs_scipy_special(model, fmt) if model is not None else True %>\
 % if fmt == 'jax':
 import jax.numpy as jnp
+% if _scipy:
 import jax.scipy as jsp
+% endif
 % else:
 import numpy as np
+% if _scipy:
 import scipy.special
+% endif
 % endif
 </%def>
 
 <%def name="params(model, fmt, source='_p')">
 <%
 render = lambda obj: model.render_equation(obj, format=fmt)
-pnames = [p.name for p in model.parameters.values()]
+pnames = referenced_parameters(model, [p.name for p in model.parameters.values()])
 %>\
 % if source == '_p' and pnames:
 # Parameters

@@ -56,8 +56,6 @@ class StefanescuJirsa2D(AbstractDynamics):
         K21 = params.K21
         a = params.a
         b = params.b
-        mu = params.mu
-        sigma = params.sigma
         tau = params.tau
 
         xi = jnp.stack([state[0], state[1], state[2]], axis=-1)

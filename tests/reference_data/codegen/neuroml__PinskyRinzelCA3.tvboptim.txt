@@ -103,7 +103,7 @@ class PinskyRinzelCA3(AbstractDynamics):
             0.016 / 5.0,
             0.016 * (-24.9 - Vs) / (jnp.exp((-24.9 - Vs) / 5.0) - 1.0),
         )
-        alpha_qd = functools.reduce(jnp.minimum, [0.01, 2.0e-5 * Cad])
+        alpha_qd = jnp.minimum(0.01, 2.0e-5 * Cad)
         alpha_sd = 1.6 / (1.0 + jnp.exp(-0.072 * (Vd - 5.0)))
         beta_hs = 4.0 / (1.0 + jnp.exp((-20.0 - Vs) / 5.0))
         beta_ms = jnp.where(
@@ -117,7 +117,7 @@ class PinskyRinzelCA3(AbstractDynamics):
             0.02 / 5.0,
             0.02 * (Vd + 8.9) / (jnp.exp((Vd + 8.9) / 5.0) - 1.0),
         )
-        chi_d = functools.reduce(jnp.minimum, [1.0, Cad / 250.0])
+        chi_d = jnp.minimum(1.0, Cad / 250.0)
         beta_cd = jnp.where(
             jnp.less(Vd, -10.0), 2.0 * jnp.exp((-53.5 - Vd) / 27.0) - alpha_cd, 0.0
         )

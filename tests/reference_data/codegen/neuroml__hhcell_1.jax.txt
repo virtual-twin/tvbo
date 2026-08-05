@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-import jax.scipy as jsp
 
 
 def dfun(current_state, t, cX, _p):
@@ -11,7 +10,6 @@ def dfun(current_state, t, cX, _p):
     E_Na = _p.E_Na
     E_K = _p.E_K
     E_L = _p.E_L
-    thresh = _p.thresh
     rate_am = _p.rate_am
     midpoint_am = _p.midpoint_am
     scale_am = _p.scale_am

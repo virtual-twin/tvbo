@@ -1,15 +1,8 @@
-
-
-
-
-
 function StuartLandauOscillator!(dx, _x, p, t = 0)
 
     (;mu, omega, b) = p
 
     x, y = _x
-
-
 
 
     dx[1] = x .* (mu .- x .^ 2 .- y .^ 2) .- omega .* y .- b .* y .* (x .^ 2 .+ y .^ 2)
@@ -37,5 +30,3 @@ prob = ODEProblem(StuartLandauOscillator!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

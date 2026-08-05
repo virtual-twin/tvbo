@@ -1,11 +1,9 @@
 import numpy as np
-import scipy.special
 
 
 def dfun(current_state, t, cX, _p):
     # Parameters
     C = _p.C
-    E_L = _p.E_L
     E_A = _p.E_A
     I_A = _p.I_A
     J_EE = _p.J_EE
@@ -14,10 +12,6 @@ def dfun(current_state, t, cX, _p):
     J_II = _p.J_II
     mu_E = _p.mu_E
     mu_I = _p.mu_I
-    s_EE = _p.s_EE
-    s_EI = _p.s_EI
-    s_IE = _p.s_IE
-    s_II = _p.s_II
     tau_se = _p.tau_se
     tau_si = _p.tau_si
     tau_A = _p.tau_A

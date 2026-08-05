@@ -1,14 +1,8 @@
-
-
-
-
-
 function SwingingAtwood!(dx, x, p, t = 0)
 
     (;g, l, m1, m2) = p
 
     theta, omega, y, v = x
-
 
 
     energy = 0.5 * m1 .* (v .^ 2 .+ l .^ 2 .* omega .^ 2 .+ 2 * l .* omega .* v .* sin(theta)) .+ 0.5 * m2 .* v .^ 2 .+ g .* y .* (m1 .+ m2) .+ g .* l .* m1 .* (1 .- cos(theta))
@@ -42,5 +36,3 @@ prob = ODEProblem(SwingingAtwood!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

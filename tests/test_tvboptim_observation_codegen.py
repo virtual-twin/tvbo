@@ -60,8 +60,11 @@ def test_tvboptim_uses_native_monitors_for_tvb_class_references():
 
     code = experiment.render_code("tvboptim")
 
-    assert "from tvbo.templates.tvboptim.observations import TVBBold as _ExtTVBBold" in code
-    assert "from tvbo.templates.tvboptim.observations import TVBTemporalAverage as _ExtTVBTemporalAverage" in code
+    # The aliased import substring, not the whole `from ... import ...` line: black wraps the
+    # longer aliased import (>88 chars) into a parenthesized group, so an exact single-line
+    # match is brittle. The alias appears only in the native-monitor import either way.
+    assert "TVBBold as _ExtTVBBold" in code
+    assert "TVBTemporalAverage as _ExtTVBTemporalAverage" in code
     assert "'hrf_kernel': 'FirstOrderVolterra'" not in code
 
     namespace = experiment.execute("tvboptim")

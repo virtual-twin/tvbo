@@ -1,15 +1,8 @@
-
-
-
-
-
 function HyperRoessler!(dx, _x, p, t = 0)
 
     (;a, b, c, d) = p
 
     x, y, z, w = _x
-
-
 
 
     dx[1] = -y .- z
@@ -41,5 +34,3 @@ prob = ODEProblem(HyperRoessler!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

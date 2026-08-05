@@ -38,11 +38,8 @@ class IzhikevichCell(AbstractDynamics):
         I_amp = params.I_amp
         a = params.a
         b = params.b
-        c = params.c
-        d = params.d
         pulse_delay = params.pulse_delay
         pulse_duration = params.pulse_duration
-        thresh = params.thresh
 
         v = state[0]
         U = state[1]

@@ -1,15 +1,8 @@
-
-
-
-
-
 function StandardMap!(dx, x, p, t = 0)
 
     (;k,) = p
 
     theta, p = x
-
-
 
 
     dx[1] = (p .+ theta .+ k .* sin(theta) .- 2 * pi * floor((p .+ theta .+ k .* sin(theta)) / (2 * pi)))
@@ -37,5 +30,3 @@ prob = ODEProblem(StandardMap!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

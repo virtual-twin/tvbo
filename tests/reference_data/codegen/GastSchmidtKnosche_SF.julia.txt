@@ -1,15 +1,8 @@
-
-
-
-
-
 function GastSchmidtKnosche_SF!(dx, x, p, t = 0)
 
     (;Delta, I, J, alpha, cr, cv, eta, tau_A, tau, c_glob0, c_glob1) = p
 
     A, B, V, r = x
-
-
 
 
     dx[1] = B ./ tau_A
@@ -41,5 +34,3 @@ prob = ODEProblem(GastSchmidtKnosche_SF!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

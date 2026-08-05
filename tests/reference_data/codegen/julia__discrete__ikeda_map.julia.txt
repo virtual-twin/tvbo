@@ -1,14 +1,8 @@
-
-
-
-
-
 function IkedaMap!(dx, _x, p, t = 0)
 
     (;a, b, c, d) = p
 
     x, y = _x
-
 
 
     theta = c .- d ./ (1 .+ x .^ 2 .+ y .^ 2)
@@ -38,5 +32,3 @@ prob = ODEProblem(IkedaMap!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

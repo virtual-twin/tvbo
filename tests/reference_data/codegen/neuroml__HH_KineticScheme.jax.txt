@@ -1,16 +1,7 @@
 import jax.numpy as jnp
-import jax.scipy as jsp
 
 
 def dfun(current_state, t, cX, _p):
-    # Parameters
-    C = _p.C
-    v0 = _p.v0
-    thresh = _p.thresh
-    pulse_delay = _p.pulse_delay
-    pulse_duration = _p.pulse_duration
-    I_amp = _p.I_amp
-
     # State variables
 
     # Derivatives

@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function EpileptorCodim3!(dx, _x, p, t = 0)
 
     (;mu1_start, mu2_start, nu_start, mu1_stop, mu2_stop, nu_stop, b, R, c, dstar, Ks, modification, c_glob) = p
 
     x, y, z = _x
-
 
 
     E0 = mu2_start ./ sqrt(mu1_start .^ 2 .+ mu2_start .^ 2 .+ nu_start .^ 2)
@@ -52,5 +46,3 @@ prob = ODEProblem(EpileptorCodim3!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function IzhikevichCell!(dx, x, p, t = 0)
 
     (;a, b, c, d, thresh, I_amp, pulse_delay, pulse_duration) = p
 
     v, U = x
-
 
 
     I_ext = ifelse(pulse_delay <= t && t < pulse_delay .+ pulse_duration, I_amp, 0.0)
@@ -39,5 +33,3 @@ prob = ODEProblem(IzhikevichCell!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

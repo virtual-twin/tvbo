@@ -1,15 +1,8 @@
-
-
-
-
-
 function CoombesByrne!(dx, x, p, t = 0)
 
     (;Delta, alpha, eta, k, v_syn, c_glob) = p
 
     V, g, q, r = x
-
-
 
 
     dx[1] = c_glob .+ eta .+ V .^ 2 .+ g .* (v_syn .- V) .- pi ^ 2 * r .^ 2
@@ -41,5 +34,3 @@ prob = ODEProblem(CoombesByrne!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

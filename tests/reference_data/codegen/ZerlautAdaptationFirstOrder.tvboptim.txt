@@ -156,8 +156,6 @@ class ZerlautAdaptationFirstOrder(AbstractDynamics):
         P8_i = params.P8_i
         P9_e = params.P9_e
         P9_i = params.P9_i
-        P_e = params.P_e
-        P_i = params.P_i
         Q_e = params.Q_e
         Q_i = params.Q_i
         S_i = params.S_i

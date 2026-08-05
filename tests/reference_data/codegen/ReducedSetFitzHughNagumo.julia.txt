@@ -1,8 +1,3 @@
-
-
-
-
-
 function ReducedSetFitzHughNagumo!(dx, x, p, t = 0)
 
     (;tau, a, b, K11, K12, K21, mu, sigma, Aik, Bik, Cik, iV0, iU0, iV4, iU4, iZV, iZU, c_glob0, c_glob1, local_coupling) = p
@@ -58,5 +53,3 @@ prob = ODEProblem(ReducedSetFitzHughNagumo!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

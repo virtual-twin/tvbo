@@ -118,12 +118,9 @@ class AdaptiveExponentialIF(Model):
         gL = self.gL
         EL = self.EL
         VT = self.VT
-        thresh = self.thresh
-        reset = self.reset
         delT = self.delT
         tauw = self.tauw
         a = self.a
-        b = self.b
         I_ext = self.I_ext
 
         # Coupling Terms (from coupling array)

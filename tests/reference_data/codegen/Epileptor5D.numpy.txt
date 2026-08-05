@@ -1,5 +1,4 @@
 import numpy as np
-import scipy.special
 
 
 def dfun(current_state, t, cX, _p):
@@ -17,7 +16,6 @@ def dfun(current_state, t, cX, _p):
     d = _p.d
     modification = _p.modification
     r = _p.r
-    s = _p.s
     slope = _p.slope
     tau = _p.tau
     tt = _p.tt

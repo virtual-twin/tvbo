@@ -1,15 +1,8 @@
-
-
-
-
-
 function TowelMap!(dx, _x, p, t = 0)
 
     (;b,) = p
 
     x, y, z = _x
-
-
 
 
     dx[1] = -(1 .- 2 * z) .* (0.0175 .+ 0.05 * y) .+ 3.8 * x .* (1 .- x)
@@ -39,5 +32,3 @@ prob = ODEProblem(TowelMap!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

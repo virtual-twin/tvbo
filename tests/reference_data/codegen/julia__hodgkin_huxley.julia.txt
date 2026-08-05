@@ -1,14 +1,8 @@
-
-
-
-
-
 function HodgkinHuxley!(dx, x, p, t = 0)
 
     (;Cm, gNa, gK, gL, ENa, EK, EL, Iext) = p
 
     V, m, h, n = x
-
 
 
     IK = gK .* n .^ 4 .* (V .- EK)
@@ -50,5 +44,3 @@ prob = ODEProblem(HodgkinHuxley!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

@@ -36,4 +36,10 @@ resync:                                     # rebuild the state exactly from the
   - {target: comoment, expression: "matmul(transpose(xc), xc)"}
   - {target: count,    expression: "shape(x, 0)"}
 
+resync_masked:                              # rebuild from a max-sized ring: window = the `L` rows selected by mask `m`
+  - {target: count,    expression: "L"}
+  - {target: mean,     expression: "sum_axis(x * m, 0) / L"}
+  - {target: xc,       expression: "(x - mean) * m"}
+  - {target: comoment, expression: "matmul(transpose(xc), xc)"}
+
 emit: "zero_diagonal(comoment / outer(sqrt(diag(comoment)), sqrt(diag(comoment))))"

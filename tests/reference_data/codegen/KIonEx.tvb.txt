@@ -350,14 +350,12 @@ class KIonEx(Model):
         eta = self.eta
         gamma = self.gamma
         tau_n = self.tau_n
-        Chn = self.Chn
         Ckp = self.Ckp
         Cl_i0 = self.Cl_i0
         Cl_o0 = self.Cl_o0
         Cmna = self.Cmna
         Cnap = self.Cnap
         Cnk = self.Cnk
-        DChn = self.DChn
         DCkp = self.DCkp
         DCmna = self.DCmna
         DCnap = self.DCnap

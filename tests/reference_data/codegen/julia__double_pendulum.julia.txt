@@ -1,14 +1,8 @@
-
-
-
-
-
 function DoublePendulum!(dx, x, p, t = 0)
 
     (;G, L1, L2, M1, M2) = p
 
     theta1, omega1, theta2, omega2 = x
-
 
 
     phi = theta2 .- theta1
@@ -43,5 +37,3 @@ prob = ODEProblem(DoublePendulum!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

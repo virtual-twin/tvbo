@@ -1,16 +1,9 @@
-
-
-
-
-
 import NaNMath
 function Hopfield!(dx, _x, p, t = 0)
 
     (;tauT, taux, dynamic, c_glob0, c_glob1) = p
 
     theta, x = _x
-
-
 
 
     dx[1] = ifelse(dynamic > 0, (c_glob1 .- theta) ./ tauT, (c_glob0 .- x) ./ taux)
@@ -38,5 +31,3 @@ prob = ODEProblem(Hopfield!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function IaFCell!(dx, x, p, t = 0)
 
     (;tau, leakReversal, thresh, reset) = p
 
     v = x[1]
-
 
 
     I_ext = ifelse(t >= 0.1 && t < 0.2, 0.3, 0.0)
@@ -37,5 +31,3 @@ prob = ODEProblem(IaFCell!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

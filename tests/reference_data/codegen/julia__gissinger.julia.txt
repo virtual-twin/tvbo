@@ -1,15 +1,8 @@
-
-
-
-
-
 function Gissinger!(dx, x, p, t = 0)
 
     (;mu, nu, Gamma) = p
 
     Q, D, V = x
-
-
 
 
     dx[1] = Q .* mu .- D .* V
@@ -39,5 +32,3 @@ prob = ODEProblem(Gissinger!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

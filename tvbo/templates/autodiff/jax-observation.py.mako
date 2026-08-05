@@ -227,6 +227,8 @@ from ${jax_module} import ${name} as ${name}
         )
 
     func_name_to_output = {get_func_name(func): func.output for func in resolved_pipeline if get_func_name(func)}
+    # `output:` is optional; an unnamed step needs a name anyway (`None = f(...)` is not Python).
+    step_names = [f.output or f"_step{i}" for i, f in enumerate(resolved_pipeline)]
     # Resolve temporal-sampling step counts once, backend-independently.
     sampling_overrides_map = build_sampling_overrides(resolved_pipeline, obs_sampling)
     # Collect imports for this observation
@@ -294,9 +296,9 @@ def ${observation.name}(ts: TimeSeries, state=${_state_default}):
         else:
             # Unknown input - use as variable name
             input_name = _func_input
-    elif i_step > 0 and resolved_pipeline[i_step - 1].output:
-        # Auto-chain: use previous step's output
-        input_name = resolved_pipeline[i_step - 1].output
+    elif i_step > 0:
+        # Auto-chain: use previous step's result, named or positional
+        input_name = step_names[i_step - 1]
     else:
         input_name = 'ts'
 
@@ -312,9 +314,9 @@ def ${observation.name}(ts: TimeSeries, state=${_state_default}):
         args.append(f"{arg_name}={arg_value}")
     args_str = ', '.join(args)
 %>
-    ${func.output} = ${get_func_name(func)}(${args_str})
+    ${step_names[i_step]} = ${get_func_name(func)}(${args_str})
 % endfor
-    return ${resolved_pipeline[-1].output}
+    return ${step_names[-1]}
 </%def>
 
 % if 'observation' in context.keys():

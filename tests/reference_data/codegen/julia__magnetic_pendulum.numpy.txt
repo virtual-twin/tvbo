@@ -1,5 +1,4 @@
 import numpy as np
-import scipy.special
 
 
 def dfun(current_state, t, cX, _p):
@@ -8,7 +7,6 @@ def dfun(current_state, t, cX, _p):
     d = _p.d
     alpha = _p.alpha
     omega = _p.omega
-    N = _p.N
 
     # State variables
     x = current_state[0]

@@ -124,7 +124,7 @@ class Phenotype(tvbo_datamodel.Phenotype):
         with h5py.File(h5_path, "w") as f:
             mg = f.create_group("measures")
             for m in self.measures:
-                mg.create_dataset(m, data=np.asarray(values[m], dtype=np.float32))
+                mg.create_dataset(m, data=np.asarray(values[m]))
 
         # yaml descriptor (round-trip via the pydantic model_dump)
         meta = self.model_dump(exclude_none=True)

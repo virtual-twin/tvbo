@@ -483,8 +483,6 @@ class ZerlautAdaptationFirstOrder(Model):
         P8_i = self.P8_i
         P9_e = self.P9_e
         P9_i = self.P9_i
-        P_e = self.P_e
-        P_i = self.P_i
         Q_e = self.Q_e
         Q_i = self.Q_i
         S_i = self.S_i

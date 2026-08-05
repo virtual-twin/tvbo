@@ -1,15 +1,8 @@
-
-
-
-
-
 function DumontGutkin!(dx, x, p, t = 0)
 
     (;Delta_e, Delta_i, Gamma, I_e, I_i, J_ee, J_ei, J_ie, J_ii, eta_e, eta_i, tau_e, tau_i, tau_s, c_glob) = p
 
     V_e, V_i, r_e, r_i, s_ee, s_ei, s_ie, s_ii = x
-
-
 
 
     dx[1] = (I_e .+ eta_e .+ V_e .^ 2 .+ s_ee .* tau_e .- s_ei .* tau_e .- pi ^ 2 * r_e .^ 2 .* tau_e .^ 2) ./ tau_e
@@ -49,5 +42,3 @@ prob = ODEProblem(DumontGutkin!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

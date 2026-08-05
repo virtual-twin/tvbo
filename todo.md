@@ -1732,16 +1732,19 @@ GPU; letting it finish for the result, but the RIGHT default is **single subject
 cohort → GPU** (the on-device cohort fills the GPU). See [[reference-single-subject-gpu-launch-bound]].
 **Follow-ups below.**
 
-## exp_34 post-tuning finalization: ~45 min of silent CPU-bound compute after the BOLD eval (2026-08-04)
+## fic_eib multi-stage tuning recompiles per stage — the real wall-time sink (2026-08-04)
 
-After the post-tuning BOLD ticker hit `50000/50000`, the job spent 45+ min GPU/CPU-busy with NO
-log output and no result yet — a phase (FC compute + observations + result assembly/save over
-50000 TRs × 379) that emits no `i/N` ticker. Not a hang (it's computing), but it's an opaque
-black box. **Improve:** add per-phase elapsed + a completion log to the post-tuning evaluation /
-finalization in `tvbo-tvboptim-experiment.py.mako` (STEP 3 post-eval), and confirm the finalization
-isn't doing redundant work (e.g. a second full-duration sim, or an O(T²) FC step). The new `_log`
-`[+Xs]` prefix + per-algo `complete! (tuning Xs)` (done this session) cover tuning; extend the same
-to the post-eval so a busy-but-silent phase is never mistaken for a hang again.
+**Corrected diagnosis:** the exp_34 "silent 45+ min" was NOT post-tuning finalization — `fic_eib`
+is a **6-stage** tuning (Schirner: `window_size` doubles 150→300→600→1200→2400→4800, eta halves).
+Each "`fic_eib complete!`" ends ONE stage; the silent gaps between stages are **full XLA recompiles**
+of the tuning scan, because `window_size` is baked into the array shapes (BOLD buffer + FC window),
+so every stage is a new shape → new compile. On the launch-bound GPU each recompile is ~an hour →
+6 compiles dominate the run. **Improve:** make `window_size` a **fixed max shape with runtime
+masking** (or otherwise keep shapes constant across stages) so the scan compiles **once**, not 6×.
+Likely the single biggest speedup for whole-brain multi-stage tuning, independent of CPU vs GPU.
+(Diagnosis was opaque only because the inter-stage compile emits no ticker — the new `_log [+Xs]`
++ per-algo `complete! (tuning Xs)` / `done: Xs wall` from this session now make it visible; a
+`compiling…`/`stage k/n` elapsed line would make it obvious.)
 
 ## Accelerator default guidance: single→CPU, cohort→GPU (2026-08-04)
 

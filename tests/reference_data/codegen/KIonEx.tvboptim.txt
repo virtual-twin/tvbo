@@ -87,7 +87,6 @@ class KIonEx(AbstractDynamics):
         coupling: Bunch,
         external: Bunch,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        Chn = params.Chn
         Ckp = params.Ckp
         Cl_i0 = params.Cl_i0
         Cl_o0 = params.Cl_o0
@@ -95,7 +94,6 @@ class KIonEx(AbstractDynamics):
         Cmna = params.Cmna
         Cnap = params.Cnap
         Cnk = params.Cnk
-        DChn = params.DChn
         DCkp = params.DCkp
         DCmna = params.DCmna
         DCnap = params.DCnap

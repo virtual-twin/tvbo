@@ -203,7 +203,6 @@ class CakanObermayer(Model):
         I_A_var = state_variables[2, :]
 
         C = self.C
-        E_L = self.E_L
         E_A = self.E_A
         I_A = self.I_A
         J_EE = self.J_EE
@@ -212,10 +211,6 @@ class CakanObermayer(Model):
         J_II = self.J_II
         mu_E = self.mu_E
         mu_I = self.mu_I
-        s_EE = self.s_EE
-        s_EI = self.s_EI
-        s_IE = self.s_IE
-        s_II = self.s_II
         tau_se = self.tau_se
         tau_si = self.tau_si
         tau_A = self.tau_A

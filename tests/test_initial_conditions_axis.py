@@ -120,21 +120,21 @@ def _render(tmp_path, axis, dist=""):
     return exp.render_code("tvboptim")
 
 
-def test_domain_axis_lowers_to_slot_and_wrapper(tmp_path):
+def test_domain_axis_lowers_to_slot_and_wrapper(tmp_path, unwrapped):
     """A domain lo/hi/n IC axis emits a GridAxis dummy slot and the injecting wrapper."""
     code = _render(tmp_path, "        domain: {lo: 0.0, hi: 1.0, n: 5}\n")
     assert "grid_state.dynamics._ic_theta = GridAxis(" in code
     # The wrapper writes the swept value into theta's row (row 0) of the initial state.
-    assert "s.initial_state.dynamics = s.initial_state.dynamics.at[0].set(s.dynamics._ic_theta)" in code
+    assert unwrapped("s.initial_state.dynamics = s.initial_state.dynamics.at[0].set(s.dynamics._ic_theta)") in unwrapped(code)
     # The result dimension keeps the declared dotted name.
     assert "initial_conditions.theta" in code
 
 
-def test_explored_values_axis_lowers_to_data_slot(tmp_path):
+def test_explored_values_axis_lowers_to_data_slot(tmp_path, unwrapped):
     """Explicit explored_values emit a DataAxis dummy slot."""
     code = _render(tmp_path, "        explored_values: [0.1, 0.2, 0.3]\n")
     assert "grid_state.dynamics._ic_theta = DataAxis(" in code
-    assert "s.initial_state.dynamics.at[0].set(s.dynamics._ic_theta)" in code
+    assert unwrapped("s.initial_state.dynamics.at[0].set(s.dynamics._ic_theta)") in unwrapped(code)
 
 
 def test_distribution_on_swept_sv_is_rejected(tmp_path):

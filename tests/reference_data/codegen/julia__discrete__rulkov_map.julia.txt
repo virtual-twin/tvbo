@@ -1,15 +1,8 @@
-
-
-
-
-
 function RulkovMap!(dx, _x, p, t = 0)
 
     (;alpha, beta, sigma) = p
 
     x, y = _x
-
-
 
 
     dx[1] = y .+ alpha ./ (1 .+ x .^ 2)
@@ -37,5 +30,3 @@ prob = ODEProblem(RulkovMap!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

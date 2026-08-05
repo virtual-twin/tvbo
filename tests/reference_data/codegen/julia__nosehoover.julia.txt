@@ -1,15 +1,8 @@
-
-
-
-
-
 function NoseHoover!(dx, _x, p, t = 0)
 
     (;) = p
 
     x, y, z = _x
-
-
 
 
     dx[1] = y
@@ -39,5 +32,3 @@ prob = ODEProblem(NoseHoover!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

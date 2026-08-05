@@ -75,7 +75,6 @@ class Halvorsen(Model):
         z = state_variables[2, :]
 
         a = self.a
-        b = self.b
         c = self.c
 
         # Coupling Terms (from coupling array)

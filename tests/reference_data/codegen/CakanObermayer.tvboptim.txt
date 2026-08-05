@@ -51,7 +51,6 @@ class CakanObermayer(AbstractDynamics):
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         C = params.C
         E_A = params.E_A
-        E_L = params.E_L
         I_A = params.I_A
         J_EE = params.J_EE
         J_EI = params.J_EI
@@ -62,10 +61,6 @@ class CakanObermayer(AbstractDynamics):
         mu_I = params.mu_I
         mu_th = params.mu_th
         r_max = params.r_max
-        s_EE = params.s_EE
-        s_EI = params.s_EI
-        s_IE = params.s_IE
-        s_II = params.s_II
         tau_A = params.tau_A
         tau_se = params.tau_se
         tau_si = params.tau_si

@@ -201,7 +201,6 @@ class Epileptor5D(Model):
         d = self.d
         modification = self.modification
         r = self.r
-        s = self.s
         slope = self.slope
         tau = self.tau
         tt = self.tt

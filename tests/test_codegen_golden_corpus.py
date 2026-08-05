@@ -24,10 +24,10 @@ NeuroML source needs no Julia, no TVB and no jNeuroML, only the templates in thi
 repository, and those emitters are among the ones under active change. Only ``mtk`` is
 absent, because it raises for models it cannot express.
 
-Two model/format pairs do not render at all and are listed in ``UNRENDERABLE`` rather than
-quietly dropped — a pair missing from the corpus with no explanation is indistinguishable
-from one nobody noticed. Each is asserted to still fail, so fixing the emitter reports as a
-test failure asking for its reference.
+A pair with no output to freeze is named rather than quietly dropped, because one missing
+from the corpus with no explanation cannot be told from one nobody noticed: ``UNRENDERABLE``
+where the emitter is broken, ``UNSUPPORTED`` where a backend declines by design. Both are
+asserted to still raise, so a repair reports as a test failure asking for its reference.
 
 See ``tests/golden.py`` for the regeneration and reconciliation semantics.
 """
@@ -55,10 +55,41 @@ UNRENDERABLE = {
 """Pairs whose emitter raises, mapped to the exception it raises.
 
 Excluded from the corpus because there is no output to freeze, and named here because a
-silent exclusion cannot be told from an oversight. `test_unrenderable_pairs_still_raise`
+silent exclusion cannot be told from an oversight. `test_excluded_pairs_still_raise`
 holds them to it: repair the emitter and that test fails, which is the prompt to move the
 pair into the corpus.
 """
+
+UNSUPPORTED = {
+    f"{name}.tvb": ValueError
+    for name in (
+        "julia__duffing",
+        "julia__forced_pendulum",
+        "julia__riddled_basins",
+        "julia__ueda",
+        "julia__vanderpol",
+        "neuroml__HH_Tissue_Q10",
+        "neuroml__HodgkinHuxley_Q10",
+        "neuroml__IaFCell",
+        "neuroml__Izhikevich2007Cell",
+        "neuroml__IzhikevichBurst",
+        "neuroml__IzhikevichCell",
+    )
+}
+"""Pairs a backend declines by design, mapped to the exception it raises.
+
+Every one is a non-autonomous system meeting TVB, whose ``Model.dfun`` takes no time
+argument: the five Julia models force an oscillator with `cos(omega*t)`, and the six
+NeuroML cells carry a `pulseGen` written inline as a `Piecewise` in `t`. There is nowhere
+to put `t`, so the emitter says so instead of emitting an unbound name.
+
+Kept apart from `UNRENDERABLE` because the two ask for opposite things. A pair leaves that
+list when someone fixes the emitter; a pair leaves this one only when the *model* changes —
+by moving its time dependence into a stimulus, which TVB applies outside `dfun`.
+"""
+
+EXCLUDED = {**UNRENDERABLE, **UNSUPPORTED}
+"""Every pair with no reference to freeze, whatever the reason."""
 
 
 def _model_paths() -> list[Path]:
@@ -116,7 +147,7 @@ CASES = [
     (path, fmt)
     for path in _model_paths()
     for fmt in FORMATS
-    if _case_id(path, fmt) not in UNRENDERABLE
+    if _case_id(path, fmt) not in EXCLUDED
 ]
 
 
@@ -168,7 +199,7 @@ def test_rendering_does_not_modify_the_model(fmt: str):
     while reading can mutate.
     """
     for path in _model_paths():
-        if _case_id(path, fmt) in UNRENDERABLE:
+        if _case_id(path, fmt) in EXCLUDED:
             continue
         model = Dynamics.from_file(str(path))
         before = _equations_of(model)
@@ -199,8 +230,8 @@ def test_every_model_reports_without_modifying_itself():
 
 
 @pytest.mark.backend_core
-@pytest.mark.parametrize("case_id", sorted(UNRENDERABLE))
-def test_unrenderable_pairs_still_raise(case_id: str):
+@pytest.mark.parametrize("case_id", sorted(EXCLUDED))
+def test_excluded_pairs_still_raise(case_id: str):
     """The excluded pairs still fail, and for the reason recorded against them.
 
     Turns the exclusion list into a claim the suite checks rather than a comment that can
@@ -211,7 +242,7 @@ def test_unrenderable_pairs_still_raise(case_id: str):
     path = MODEL_ROOT / (name.replace("__", "/"))
     model = Dynamics.from_file(str(next(iter(path.parent.glob(path.name + ".y*ml")))))
 
-    with pytest.raises(UNRENDERABLE[case_id]):
+    with pytest.raises(EXCLUDED[case_id]):
         _render(model, fmt)
 
 

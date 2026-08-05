@@ -32,7 +32,6 @@ class MagneticPendulum(AbstractDynamics):
         coupling: Bunch,
         external: Bunch,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        N = params.N
         alpha = params.alpha
         d = params.d
         gamma = params.gamma

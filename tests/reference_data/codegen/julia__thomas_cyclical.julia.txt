@@ -1,15 +1,8 @@
-
-
-
-
-
 function ThomasCyclical!(dx, _x, p, t = 0)
 
     (;b,) = p
 
     x, y, z = _x
-
-
 
 
     dx[1] = -b .* x .+ sin(y)
@@ -39,5 +32,3 @@ prob = ODEProblem(ThomasCyclical!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

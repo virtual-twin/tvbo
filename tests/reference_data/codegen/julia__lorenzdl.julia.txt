@@ -1,15 +1,8 @@
-
-
-
-
-
 function LorenzDiffusionless!(dx, _x, p, t = 0)
 
     (;R,) = p
 
     x, y, z = _x
-
-
 
 
     dx[1] = y .- x
@@ -39,5 +32,3 @@ prob = ODEProblem(LorenzDiffusionless!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

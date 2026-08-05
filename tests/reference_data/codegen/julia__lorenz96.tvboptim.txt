@@ -30,7 +30,6 @@ class Lorenz96(AbstractDynamics):
         external: Bunch,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         F = params.F
-        N = params.N
 
         x0 = state[0]
         x1 = state[1]

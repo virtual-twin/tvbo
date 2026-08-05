@@ -71,8 +71,6 @@ class IntegrateAndFire(Model):
 
         leakReversal = self.leakReversal
         tau = self.tau
-        thresh = self.thresh
-        reset = self.reset
 
         # Coupling Terms (from coupling array)
 

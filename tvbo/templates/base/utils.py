@@ -26,6 +26,228 @@ def get_coupling_terms(model):
     return all_terms, global_terms, has_local
 
 
+def gathered_states(model, coupling=None):
+    """Names of the state variables transmitted to connected nodes, in gather order.
+
+    The coupling's ``incoming_states`` is the authority: the schema defines
+    ``coupling_variable`` as the model's default, "used when omitted", and says the
+    coupling "may override this via its incoming_states attribute". JansenRit1995 is
+    the case that needs the override — it marks only ``y4`` a coupling variable, yet
+    the inter-column coupling transmits the PSP difference ``y1 - y2``.
+
+    The delay history, the ``x_j`` gather and the history write-back must all agree on
+    this one order, so all three read it from here. Disagreeing would not raise: a
+    delayed source would silently be read from another state's row.
+
+    Args:
+        model: The :class:`~tvbo.classes.dynamics.Dynamics` declaring the states.
+        coupling: The coupling whose ``incoming_states`` overrides the default, or
+            ``None`` to use the model's ``coupling_variable`` states.
+
+    Returns:
+        list[str]: State-variable names, ordered as the gathered rows are.
+    """
+    names = list(model.state_variables.keys())
+    declared = getattr(coupling, "incoming_states", None) or [] if coupling is not None else []
+    if isinstance(declared, str):
+        declared = [declared]
+    declared = [s if isinstance(s, str) else getattr(s, "name", str(s)) for s in declared]
+    declared = [s for s in dict.fromkeys(declared) if s in names]
+    if declared:
+        return declared
+    return [n for n, sv in model.state_variables.items() if sv.coupling_variable]
+
+
+def gathered_state_indices(model, coupling=None):
+    """Positions in ``model.state_variables`` of :func:`gathered_states`, same order."""
+    order = list(model.state_variables.keys())
+    return [order.index(name) for name in gathered_states(model, coupling)]
+
+
+def referenced(names, *expressions):
+    """The subset of *names* that any of *expressions* refers to, order preserved.
+
+    Used to unpack only what a generated function body reads. A coupling's ``post()``
+    and ``pre()`` share one parameter list but each uses part of it, so unpacking the
+    whole list leaves the rest dead — ``post()`` returning ``G * gx`` was still binding
+    ``cmax``, ``cmin``, ``midpoint`` and ``r``.
+
+    Matching is on word boundaries, so ``r`` is not found inside ``r_max``.
+
+    Args:
+        names: Candidate names, in the order they should be emitted.
+        *expressions: Expression sources to search; ``None`` entries are skipped.
+    """
+    import re
+
+    text = "\n".join(str(e) for e in expressions if e is not None)
+    return [n for n in names if re.search(rf"\b{re.escape(str(n))}\b", text)]
+
+
+def time_series_inputs(candidates, body):
+    """Which of *candidates* the function *body* reads as its incoming samples.
+
+    A pipeline function names the samples either ``X`` (the generator's own convention)
+    or by an argument the spec declared without a default — ``data`` in a body written
+    as ``jnp.mean(data[...])``. Both must resolve to ``ts.data``; binding only ``X``
+    left the spec's name pointing at an unfilled positional parameter, so calling the
+    function raised :class:`TypeError`.
+    """
+    return referenced(list(dict.fromkeys(candidates)), body)
+
+
+def retime(body, inputs):
+    """Rewrite *body* to read the time axis, substituting ``t_<name>`` for each input.
+
+    ``apply_on_dimension: time`` applies the same expression to the time vector, so the
+    sample symbols swap for their time counterparts.
+
+    An attribute of the same name is left alone. ``\\b`` matches immediately after a
+    dot, so a plain word-boundary substitution rewrote ``ts.data`` into ``ts.t_data``
+    and the generated function raised ``AttributeError`` on the TimeSeries. The
+    lookbehind requires the name to start a reference, not continue one.
+    """
+    import re
+
+    out = body
+    for name in inputs:
+        out = re.sub(rf"(?<![\w.]){re.escape(name)}\b", f"t_{name}", out)
+    return out
+
+
+def get_source_code(func):
+    """Backend-ready source text a function supplies directly, or ``None``.
+
+    A ``Function`` states its body either as an ``equation`` (symbolic, printed per
+    backend) or as ``source_code`` (already written in the target language). A generator
+    that reads only the first emits nothing for the second — which is how the JAX
+    observation for ``kuramoto_order`` came out as ``data = 0.0``.
+    """
+    if getattr(func, "source_code", None):
+        return func.source_code
+    equation = getattr(func, "equation", None)
+    if equation is not None and getattr(equation, "pycode", None):
+        return equation.pycode
+    return None
+
+
+def model_reads(model):
+    """Every symbol a generated dfun body will read, by name.
+
+    Taken from the free symbols of the model's symbolic form, which is what makes it an
+    answer rather than a guess: whether an expression refers to a quantity is a property
+    of the expression, and only the expression can be asked. Searching printed source for
+    the name instead finds it in a substring, in a comment, in a function's name — the
+    compare-by-spelling mistake the symbolic layer exists to remove.
+
+    All four groups come in one pass, which the caller needs: a parameter can reach the
+    derivatives through a derived parameter (``C1 = C``), a derived variable, or a function
+    body — ``Sigm`` reads ``e0``, ``r`` and ``v0`` and nothing else does — and a conditional
+    equation holds its branches in ``conditionals`` with an empty ``rhs``, so a scan of the
+    stored right-hand sides sees nothing at all.
+    """
+    return {
+        str(symbol)
+        for equation in model.get_equations().values()
+        for symbol in equation.rhs.free_symbols
+    }
+
+
+def referenced_parameters(model, names=None):
+    """Which of *names* the model's equations read, in the order given.
+
+    Emitting an unpack for the rest leaves dead bindings; emitting one for too few leaves
+    the body naming something nothing binds. `tent_map` reads `mu` twice from inside a
+    conditional branch, so it is exactly the case a scan of the stored ``rhs`` gets wrong.
+
+    *names* defaults to the model's own parameters. A caller that has already put them in
+    the order it emits — the tvboptim dfun sorts trained parameters ahead of the rest —
+    passes that order in and gets the same order back, minus what nothing reads.
+    """
+    reading = model_reads(model)
+    return [name for name in (model.parameters if names is None else names) if str(name) in reading]
+
+
+def coupling_bindings(model, coupling, incoming=(), local=()):
+    """Resolve which names a coupling's ``pre``/``post`` bodies must bind, and to what.
+
+    A coupling expression may name a source state three ways, and they are distinct
+    references, not spellings of one:
+
+    ``u``
+        the bare name — the gathered source row, ``x_j[k]``;
+    ``u_j``
+        the same row written explicitly, used when the target's value also appears;
+    ``u_i``
+        the *target* node's own current value, ``current_state[i]``.
+
+    A difference coupling (``u_j - u_i``) needs the last two together, which is why the
+    bare name cannot stand in for either. Word-boundary matching keeps the three apart:
+    ``\\bu\\b`` does not match the ``u`` inside ``u_j``, so a pre-expression written only
+    in subscripts binds no unread bare name. This mirrors ``state_aliases_j`` /
+    ``state_aliases_i`` in :func:`tvbo.templates.tvboptim.utils.resolve_coupling_spec`.
+
+    Args:
+        model: The dynamics declaring the state variables.
+        coupling: The coupling whose expressions are being emitted.
+        incoming: Declared source-state names.
+        local: Declared target-local state names.
+
+    Returns:
+        dict: ``cvar_names`` (gather order), ``cvar_index``, ``sv_index``, ``bare``
+        (states read by bare name), ``pre_j``/``pre_i``/``post_i`` (alias, index) pairs.
+
+    Raises:
+        ValueError: a local state the model does not declare, or a source state that is
+            read but never transmitted — both of which would emit an unbound name.
+    """
+    import re
+
+    states = list(model.state_variables.keys())
+    sv_index = {name: i for i, name in enumerate(states)}
+    cvar_names = gathered_states(model, coupling)
+    cvar_index = {name: i for i, name in enumerate(cvar_names)}
+    vec_states = list(dict.fromkeys(list(incoming) + list(local)))
+
+    unknown = [s for s in local if s not in sv_index]
+    if unknown:
+        raise ValueError(
+            f"coupling `local_states` names {unknown}, which the model does not declare as "
+            f"state variables ({states}); a local state is the target node's own state, so "
+            "it must be one of them."
+        )
+
+    pre_rhs = str(coupling.pre_expression.rhs) if coupling.pre_expression else ""
+    post_rhs = str(coupling.post_expression.rhs) if coupling.post_expression else ""
+    bare = lambda name, text: re.search(rf"\b{re.escape(name)}\b", text) is not None
+
+    ungathered = [
+        s for s in vec_states
+        if s not in cvar_index and s not in local and bare(s, pre_rhs)
+    ]
+    if ungathered:
+        raise ValueError(
+            f"coupling `pre_expression` reads {ungathered} as a source state, but only "
+            f"{cvar_names} are transmitted, so there is no gathered row for them. List them "
+            "in the coupling's `incoming_states` (or mark them `coupling_variable: true` on "
+            f"the model), or read the target's own value as {[s + '_i' for s in ungathered]}."
+        )
+
+    return {
+        "cvar_names": cvar_names,
+        "cvar_index": cvar_index,
+        "sv_index": sv_index,
+        "vec_states": vec_states,
+        "bare": [s for s in vec_states if s in cvar_index and bare(s, pre_rhs)],
+        "pre_j": [(f"{s}_j", cvar_index[s]) for s in vec_states
+                  if f"{s}_j" in pre_rhs and s in cvar_index],
+        "pre_i": [(f"{s}_i", sv_index[s]) for s in vec_states
+                  if f"{s}_i" in pre_rhs and s in sv_index],
+        "post_i": [(f"{s}_i", sv_index[s]) for s in vec_states
+                   if f"{s}_i" in post_rhs and s in sv_index],
+    }
+
+
 def get_func_name(model, override=None):
     """Get function name from model, with optional override."""
     if override:
@@ -56,26 +278,22 @@ SCIPY_SPECIAL_FUNCTIONS = {"erfc", "erf", "gamma", "gammaln", "bessel", "beta"}
 
 
 def needs_scipy_special(model, fmt):
-    """Check if model equations use scipy.special functions.
+    """Whether the emitted body will contain a ``scipy.special`` / ``jsp.special`` call.
 
-    Renders derived variables and state equations to detect scipy.special usage.
-    Returns True if any equation contains scipy.special (for numpy) or jsp.special (for jax).
+    Unlike :func:`model_reads`, this is a question about the *printer's* output rather
+    than about the expression: which sympy function lands on ``scipy.special.erfc`` is the
+    printer's dispatch to decide, so the only honest answer comes from rendering.
+
+    Every group the body will contain is searched. Checking the state and derived
+    equations alone missed `ZerlautAdaptationSecondOrder`, which calls `erfc` only from
+    inside a model function, and emitted a module that used `scipy` without importing it.
     """
-    search_str = "scipy.special" if fmt in ("numpy", "scipy") else "jsp.special"
-
-    # Check derived variables
-    for dv in (model.derived_variables or {}).values():
-        code = model.render_equation(dv, format=fmt)
-        if search_str in code:
-            return True
-
-    # Check state variable equations
-    for sv in model.state_variables.values():
-        code = model.render_equation(sv, format=fmt)
-        if search_str in code:
-            return True
-
-    return False
+    token = "scipy.special" if fmt in ("numpy", "scipy") else "jsp.special"
+    return any(
+        token in model.render_equation(element, format=fmt)
+        for group in ("state_variables", "derived_variables", "derived_parameters", "functions")
+        for element in (getattr(model, group, None) or {}).values()
+    )
 
 
 # ── Distribution utilities ───────────────────────────────────────────────────

@@ -1,14 +1,8 @@
-
-
-
-
-
 function MagneticPendulum!(dx, _x, p, t = 0)
 
     (;gamma, d, alpha, omega, N) = p
 
     x, y, vx, vy = _x
-
 
 
     sum_gamma_terms_x = gamma .* ((-1 .+ x) ./ (d .^ 2 .+ y .^ 2 .+ (-1 .+ x) .^ 2) .^ (3 // 2) .+ (1 // 2 .+ x) ./ (d .^ 2 .+ (1 // 2 .+ x) .^ 2 .+ (y .+ sqrt(3) / 2) .^ 2) .^ (3 // 2) .+ (1 // 2 .+ x) ./ (d .^ 2 .+ (1 // 2 .+ x) .^ 2 .+ (y .- sqrt(3) / 2) .^ 2) .^ (3 // 2))
@@ -43,5 +37,3 @@ prob = ODEProblem(MagneticPendulum!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

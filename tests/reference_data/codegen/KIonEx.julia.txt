@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function KIonEx!(dx, _x, p, t = 0)
 
     (;Cm, Delta, E, J, K_bath, R_minus, R_plus, Vstar, c_minus, c_plus, epsilon, eta, gamma, tau_n, Chn, Ckp, Cl_i0, Cl_o0, Cmna, Cnap, Cnk, DChn, DCkp, DCmna, DCnap, DCnk, K_i0, K_o0, Na_i0, Na_o0, g_Cl, g_K, g_Kl, g_Na, g_Nal, rho, w_i, w_o, c_glob) = p
 
     DKi, Kg, V, n, x = _x
-
 
 
     DNa_i = -DKi
@@ -63,5 +57,3 @@ prob = ODEProblem(KIonEx!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

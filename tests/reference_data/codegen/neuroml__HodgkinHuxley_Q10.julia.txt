@@ -1,15 +1,9 @@
-
-
-
-
-
 import NaNMath
 function HodgkinHuxley_Q10!(dx, x, p, t = 0)
 
     (;C, g_Na, g_K, g_L, E_Na, E_K, E_L, I_amp, pulse_delay, pulse_duration, Q10) = p
 
     v, m, h, n = x
-
 
 
     I_ext = ifelse(pulse_delay <= t && t < pulse_delay .+ pulse_duration, I_amp, 0.0)
@@ -49,5 +43,3 @@ prob = ODEProblem(HodgkinHuxley_Q10!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

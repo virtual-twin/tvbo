@@ -1,6 +1,7 @@
 <%!
     import numpy as np
     from tvbo.codegen import render_expression
+    from tvbo.templates.base.utils import referenced
 
     # Generic pycode - pass parameters on each call. Use the 'numpy' format: TVB coupling
     # pre/post operate on ARRAYS (history states), so functions must be numpy (np.sin), not
@@ -60,7 +61,7 @@ class ${coupling.name}(${base_class}):
         """
         Pre-expression method.
         """
-        % for param in coupling.parameters:
+        % for param in referenced(coupling.parameters, pre_expr):
         ${param} = self.${param}
         % endfor
 <%
@@ -70,11 +71,11 @@ class ${coupling.name}(${base_class}):
     _inc = [_inc] if isinstance(_inc, str) else list(_inc)
 %>\
         ## Bind state-variable symbols (e.g. theta_i/theta_j) to TVB's generic x_i (local) / x_j (incoming)
-        % for st in _loc:
-        ${st}_i = x_i
+        % for st in referenced([f'{s}_i' for s in _loc], pre_expr):
+        ${st} = x_i
         % endfor
-        % for st in _inc:
-        ${st}_j = x_j
+        % for st in referenced([f'{s}_j' for s in _inc], pre_expr):
+        ${st} = x_j
         % endfor
 
         pre = ${pre_expr}
@@ -84,7 +85,7 @@ class ${coupling.name}(${base_class}):
         """
         Post-expression method.
         """
-        % for param in coupling.parameters:
+        % for param in referenced(coupling.parameters, post_expr):
         ${param} = self.${param}
         % endfor
 

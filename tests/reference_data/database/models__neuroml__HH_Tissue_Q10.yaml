@@ -147,6 +147,6 @@ state_variables:
     initial_value: 0.317677
 number_of_modes: 1
 model_type: spiking
-autonomous: true
+autonomous: false
 cse: false
 compile: false

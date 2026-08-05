@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-import jax.scipy as jsp
 
 
 def dfun(current_state, t, cX, _p):
@@ -18,14 +17,12 @@ def dfun(current_state, t, cX, _p):
     eta = _p.eta
     gamma = _p.gamma
     tau_n = _p.tau_n
-    Chn = _p.Chn
     Ckp = _p.Ckp
     Cl_i0 = _p.Cl_i0
     Cl_o0 = _p.Cl_o0
     Cmna = _p.Cmna
     Cnap = _p.Cnap
     Cnk = _p.Cnk
-    DChn = _p.DChn
     DCkp = _p.DCkp
     DCmna = _p.DCmna
     DCnap = _p.DCnap

@@ -25,11 +25,16 @@ and those that run after (they read an experiment's result), each topologically 
 from __future__ import annotations
 
 import importlib
+import logging
+import os
+import sys
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
 
 from tvbo.data import dataref as _dref
 from tvbo.utils import as_list
+
+logger = logging.getLogger("tvbo.run")
 
 __all__ = [
     "RENDERERS",
@@ -39,6 +44,7 @@ __all__ = [
     "dependencies",
     "dependents_of",
     "render_inprocess",
+    "render_tvboptim",
     "run_analyses",
     "run_analysis",
     "schedule",
@@ -308,7 +314,319 @@ def render_inprocess(analysis, kwargs):
     )
 
 
-RENDERERS = {"inprocess": render_inprocess}
+def _labelled(value):
+    """``(dims, array)`` for a labelled input, or ``((), value)`` for a scalar/bare array."""
+    dims = tuple(getattr(value, "dims", ()) or ())
+    return dims, (value.values if dims else value)
+
+
+_EXPRESSION_NAMESPACES = {
+    "jax": lambda: {"jnp": __import__("jax.numpy", fromlist=["numpy"])},
+    "numpy": lambda: {"np": __import__("numpy"), "numpy": __import__("numpy")},
+}
+"""Backend name -> the module bindings its printer's output expects at call time.
+
+A printer and the namespace its code runs in are one choice, not two: printing
+``numpy.tanh`` into a scope holding only ``jnp`` compiles fine and raises ``NameError``
+on the first call, so the pair is registered together and an unknown *fmt* is refused
+here rather than at the call site.
+"""
+
+
+def _expression_fn(analysis, names, fmt="jax"):
+    """Compile the declared ``equation:`` into a function of *names*, for backend *fmt*.
+
+    The RHS is parsed against the same vocabulary a streaming reducer uses — tvbo's
+    array functions plus one symbol per declared argument — and printed by the *fmt*
+    printer, so the one declaration lowers to whichever backend renders it. Nothing
+    about the analysis is hard-coded here; the recipe is the data.
+    """
+    import sympy as sp
+
+    from tvbo.codegen.code import get_printer
+    from tvbo.parse.expression import ARRAY_FUNCTIONS
+
+    name = analysis_name(analysis)
+    rhs = _slot(_slot(analysis, "equation"), "rhs")
+    if rhs is None:
+        raise ValueError(f"analysis {name!r}: `equation:` needs an `rhs`.")
+    if str(fmt) not in _EXPRESSION_NAMESPACES:
+        raise ValueError(
+            f"analysis {name!r}: no expression namespace registered for {fmt!r} "
+            f"(known: {sorted(_EXPRESSION_NAMESPACES)}). Register the printer's module "
+            "bindings alongside it, or render the analysis on a backend that is."
+        )
+    vocab = {**ARRAY_FUNCTIONS, "pi": sp.pi, **{n: sp.Symbol(n) for n in names}}
+    src = get_printer(fmt).doprint(sp.sympify(str(rhs), locals=vocab))
+
+    ns: dict = {}
+    exec(f"def _analysis({', '.join(names)}):\n    return {src}\n",
+         _EXPRESSION_NAMESPACES[str(fmt)](), ns)
+    return ns["_analysis"], src
+
+
+def _aligned(value, arg_dims, dims, mapped):
+    """``(array, is_mapped)`` — one argument laid out on the expression's own axis order.
+
+    An elementwise expression combines its arguments positionally once they are arrays,
+    but the containers they come from are keyed, so two inputs may carry the same axes in
+    different orders — ``(node, time)`` and ``(time, node)`` are the same data. Ordering
+    each argument by *dims* is what makes the expression mean what it reads as; without
+    it numpy pairs the axes by position and silently multiplies node against time whenever
+    the lengths happen to agree.
+
+    An axis an argument does not carry becomes a length-1 axis in the right place rather
+    than being left to numpy's right-alignment, which would land a per-node vector on the
+    time axis of a ``(node, time)`` result.
+    """
+    import numpy as np
+
+    order = tuple(d for d in dims if d in arg_dims)
+    is_mapped = bool(mapped) and mapped in arg_dims
+    arr = np.asarray(value.transpose(*order).values)
+    inner = dims[1:] if mapped else dims
+    rest = order[1:] if is_mapped else order
+    if rest != inner:
+        idx = ((slice(None),) if is_mapped else ()) + tuple(
+            slice(None) if d in rest else None for d in inner)
+        arr = arr[idx]
+    return arr, is_mapped
+
+
+def _elementwise_dims(kwargs, mapped) -> tuple:
+    """Axis names an elementwise expression over *kwargs* produces, mapped axis first.
+
+    Order is first-mention across the labelled inputs, which is what makes the derivation
+    reproducible from the recipe rather than from any one input's storage layout.
+    """
+    order: list = []
+    for value in kwargs.values():
+        for d in _labelled(value)[0]:
+            if d not in order:
+                order.append(d)
+    if mapped and mapped not in order:
+        raise ValueError(
+            f"`apply_on_dimension: {mapped}` names an axis no argument carries "
+            f"(they carry {order}). The mapped axis must exist on at least one input."
+        )
+    rest = [d for d in order if d != mapped]
+    return tuple(([mapped] if mapped else []) + rest)
+
+
+def _pin_accelerator(execution) -> None:
+    """Pin JAX to the declared ``execution.accelerator``, or say why it could not be.
+
+    Effective only before JAX initialises, which is why it is attempted here rather
+    than at import: an analyses-only run touches JAX for the first time in this
+    renderer, so the declaration still lands. Once JAX is up the platform is fixed for
+    the process and the declaration cannot be honoured retroactively — that is reported,
+    not silently dropped, because the analysis then ran somewhere it did not ask for.
+    """
+    from tvbo.templates.tvboptim.utils import jax_platform
+
+    declared = str(_slot(execution, "accelerator", "auto") or "auto").strip().lower()
+    if declared == "auto":
+        return
+    if "jax" not in sys.modules:
+        os.environ.setdefault("JAX_PLATFORMS", jax_platform(declared))
+        return
+
+    import jax
+
+    live = {str(getattr(d, "platform", "")).lower() for d in jax.devices()}
+    if declared not in live:
+        logger.warning(
+            "execution.accelerator=%r cannot be applied: JAX is already initialised on %s. "
+            "The platform is process-wide and fixed at first import — set JAX_PLATFORMS=%s "
+            "in the environment to run this analysis on %s.",
+            declared, sorted(live) or ["an unknown platform"], jax_platform(declared), declared,
+        )
+
+
+def _device_plan(analysis, n_items, per_lane_bytes):
+    """``(n_pmap, n_vmap)`` for the mapped axis — how many shards, how wide each batch.
+
+    ``n_workers`` is the shard count, exactly as it is for an experiment: the devices
+    the mapped axis spreads across. It is clamped to the devices that actually exist
+    (and to the item count), and a shortfall is logged rather than raised — a recipe
+    declaring 8 shards must still run on a one-device laptop, just not silently as if
+    it had 8. ``batch_size`` is the per-device vmap width; unset means ``auto``, which
+    resolves against the same per-cell memory budget an exploration's ``n_parallel:
+    auto`` uses. The live batch is ``n_pmap x n_vmap`` lanes in whatever RAM those
+    devices share, which is what :func:`shared_ram_device_count` accounts for on
+    host-replicated CPU devices.
+    """
+    import jax
+
+    from tvbo.templates.tvboptim.callbacks import resolve_n_vmap, shared_ram_device_count
+
+    execution = _slot(analysis, "execution")
+    workers = max(1, int(_slot(execution, "n_workers", 1) or 1))
+    n_pmap = max(1, min(workers, jax.local_device_count(), int(n_items)))
+    if workers > n_pmap:
+        logger.warning(
+            "analysis %r declares execution.n_workers=%d but only %d device(s) and %d item(s) "
+            "are available; sharding the %r axis %d ways.",
+            analysis_name(analysis), workers, jax.local_device_count(), int(n_items),
+            str(_slot(analysis, "apply_on_dimension")), n_pmap,
+        )
+    per_shard = -(-int(n_items) // n_pmap)
+    spec = _slot(execution, "batch_size") or "auto"
+    n_vmap = resolve_n_vmap(spec, per_shard, per_lane_bytes, n_pmap=shared_ram_device_count())
+    return n_pmap, max(1, min(int(n_vmap), per_shard))
+
+
+def _map_over(analysis, fn, names, args, in_axes, mapped):
+    """Evaluate *fn* over every element of the mapped axis, honouring ``execution``.
+
+    One device by default (``jax.vmap`` under ``jit``). When the analysis declares
+    ``n_workers`` or ``batch_size``, the axis instead runs through tvboptim's own
+    :class:`ParallelExecution` — the pmap-of-``lax.map`` an experiment's grid runs on —
+    so a cohort-sized analysis spreads across devices and chunks within one instead of
+    holding every lane at once. Reusing that path rather than re-deriving it is what
+    keeps the padding, shard reshape and trim identical to an experiment's.
+
+    Parallelism is declared, never inferred: an analysis with no ``execution`` block
+    takes the single-device path and produces the same array it always did.
+    """
+    import jax
+    import numpy as np
+
+    execution = _slot(analysis, "execution")
+    workers = max(1, int(_slot(execution, "n_workers", 1) or 1))
+    batch = _slot(execution, "batch_size")
+
+    if not mapped or (workers <= 1 and batch is None):
+        if not mapped and (workers > 1 or batch is not None):
+            logger.warning(
+                "analysis %r declares execution.n_workers/batch_size but no "
+                "`apply_on_dimension:` — there is no axis to shard, so the expression "
+                "is evaluated whole.", analysis_name(analysis),
+            )
+        kernel = jax.vmap(fn, in_axes=tuple(in_axes)) if mapped else fn
+        return np.asarray(jax.jit(kernel)(*args))
+
+    from tvboptim.execution import ParallelExecution
+    from tvboptim.types.spaces import DataAxis, Space
+
+    from tvbo.templates.tvboptim.callbacks import estimate_per_cell_bytes
+
+    n_items = int(args[in_axes.index(0)].shape[0])
+    lane = tuple(a[0] if ax == 0 else a for a, ax in zip(args, in_axes))
+    per_lane = estimate_per_cell_bytes(lambda one: fn(*one), lane) if batch is None else None
+    n_pmap, n_vmap = _device_plan(analysis, n_items, per_lane)
+
+    space = Space(
+        {n: (DataAxis(a) if ax == 0 else a) for n, a, ax in zip(names, args, in_axes)},
+        mode="zip",
+    )
+    logger.debug(
+        "analysis %r: %d %r lanes over n_pmap=%d x n_vmap=%d (per-lane %s B)",
+        analysis_name(analysis), n_items, mapped, n_pmap, n_vmap, per_lane,
+    )
+    result = ParallelExecution(
+        lambda lane_state: fn(**{n: lane_state[n] for n in names}),
+        space, n_vmap=n_vmap, n_pmap=n_pmap,
+    ).run()
+    sharded = np.asarray(result.results)
+    return sharded.reshape((-1,) + sharded.shape[2:])[:n_items]
+
+
+def render_tvboptim(analysis, kwargs):
+    """Renderer that lowers a declarative ``equation:`` analysis to JAX and vmaps it.
+
+    This is the metadata-native form: instead of pointing at arbitrary ``code/`` Python,
+    the analysis states an expression over its named arguments and the axis to map it
+    over, and tvbo emits the realization — so the framework, not the study, owns the
+    parallelism. ``apply_on_dimension`` becomes a ``jax.vmap`` over that axis of every
+    argument carrying it (arguments without it are broadcast, not copied per element),
+    and ``aggregate`` reduces a named axis of the result.
+
+    The expression is ELEMENTWISE over the inputs' axes; ``aggregate`` is what reduces.
+    Output axes are derived from that contract — ``apply_on_dimension`` first, then the
+    inputs' own axes minus ``aggregate.over`` — and cross-checked against the result's
+    rank, never read off its shape. An expression that reshapes or reduces on its own
+    (an outer product, a correlation) fails that check and must declare ``dims:``,
+    which is honoured as written.
+
+    How that map is spread is declared too. By default it is one ``jit``-ed vmap on one
+    device; ``execution.n_workers`` shards the mapped axis across devices and
+    ``execution.batch_size`` bounds how many lanes are live per device, both through
+    the same tvboptim machinery an experiment's grid uses (see :func:`_map_over`).
+    ``execution.accelerator`` pins the platform when JAX has not yet initialised.
+
+    Host-only work stays host-only: a sparse eigensolve, a CIFTI read or a spin-permutation
+    generator is not JAX-expressible and belongs on the ``inprocess`` renderer. This
+    renderer refuses a ``callable:``/``class_call:`` analysis rather than silently jitting
+    code that was never written to be traced.
+    """
+    import numpy as np
+    import xarray as xr
+
+    name = analysis_name(analysis)
+    if _slot(analysis, "equation") is None:
+        raise ValueError(
+            f"analysis {name!r}: `execution.backend: tvboptim` renders the declarative "
+            "`equation:` form. A `callable:` analysis is arbitrary Python, which this "
+            "renderer will not trace — declare an `equation:`, or render it `inprocess`."
+        )
+
+    names = list(kwargs)
+    _pin_accelerator(_slot(analysis, "execution"))
+    fn, src = _expression_fn(analysis, names)
+    mapped = _slot(analysis, "apply_on_dimension")
+    mapped = str(mapped).split(".")[-1] if mapped else None
+
+    agg = _slot(analysis, "aggregate")
+    over = _slot(agg, "over")
+    over = str(over).split(".")[-1] if over else None
+    dims = _elementwise_dims(kwargs, mapped)
+    if over and over not in dims:
+        raise ValueError(
+            f"analysis {name!r}: `aggregate.over: {over}` names an axis the "
+            f"expression does not produce (it produces {list(dims)})."
+        )
+
+    in_axes, args = [], []
+    for key in names:
+        arg_dims, array = _labelled(kwargs[key])
+        if not arg_dims:
+            in_axes.append(None)
+            args.append(array)
+            continue
+        arr, is_mapped = _aligned(kwargs[key], arg_dims, dims, mapped)
+        in_axes.append(0 if is_mapped else None)
+        args.append(arr)
+
+    produced = _map_over(analysis, fn, names, args, in_axes, mapped)
+
+    if over:
+        how = str(_slot(agg, "type", "mean")).split(".")[-1]
+        if how != "none":
+            produced = getattr(np, how)(produced, axis=dims.index(over))
+            dims = tuple(d for d in dims if d != over)
+
+    declared = _slot(analysis, "dims")
+    if declared:
+        dims = tuple(str(d) for d in declared)
+    if produced.ndim != len(dims):
+        raise ValueError(
+            f"analysis {name!r}: the expression returned a rank-{produced.ndim} result "
+            f"where its declaration implies {len(dims)} axes {list(dims)}. Axis names are "
+            "declared, never read off a shape — if the expression reshapes or reduces on "
+            f"its own, name the output axes with `dims:`. Lowered expression: {src}"
+        )
+
+    coords = {}
+    for key in names:
+        value = kwargs[key]
+        for d in _labelled(value)[0]:
+            if d in dims and d not in coords and d in getattr(value, "coords", {}):
+                coords[d] = value.coords[d].values
+    return xr.DataArray(produced, dims=list(dims), coords=coords)
+
+
+RENDERERS = {"inprocess": render_inprocess, "tvboptim": render_tvboptim}
 """Backend name -> renderer ``fn(analysis, kwargs) -> produced``.
 
 ``Analysis.execution.backend`` selects one, exactly as it selects an experiment's
@@ -443,6 +761,11 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
     ds.to_netcdf(path, engine="h5netcdf", encoding=encoding)
     record = _provenance(analysis, (str(v)[len("observation__"):] for v in ds.data_vars))
     (path.parent / "result.yaml").write_text(yaml.safe_dump(record, sort_keys=False))
+    # Digest of the declaration this container came from, so staleness is per analysis
+    # rather than "the spec file was touched" (see investigation._stale_or_missing_analyses).
+    from tvbo.data.investigation import _analysis_fingerprint
+
+    (path.parent / ".fingerprint").write_text(_analysis_fingerprint(analysis))
     return path
 
 

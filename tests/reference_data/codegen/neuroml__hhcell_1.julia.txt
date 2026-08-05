@@ -1,14 +1,8 @@
-
-
-
-
-
 function hhcell_1!(dx, x, p, t = 0)
 
     (;C, g_Na, g_K, g_L, E_Na, E_K, E_L, thresh, rate_am, midpoint_am, scale_am, rate_bm, midpoint_bm, scale_bm, rate_ah, midpoint_ah, scale_ah, rate_bh, midpoint_bh, scale_bh, rate_an, midpoint_an, scale_an, rate_bn, midpoint_bn, scale_bn, I_syn) = p
 
     v, m, h, n = x
-
 
 
     alpha_h = rate_ah .* exp((v .- midpoint_ah) ./ scale_ah)
@@ -47,5 +41,3 @@ prob = ODEProblem(hhcell_1!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

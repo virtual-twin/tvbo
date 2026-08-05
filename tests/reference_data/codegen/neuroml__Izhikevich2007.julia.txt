@@ -1,15 +1,8 @@
-
-
-
-
-
 function Izhikevich2007!(dx, x, p, t = 0)
 
     (;C, k, vr, vt, vpeak, a, b, c, d) = p
 
     v, u = x
-
-
 
 
     dx[1] = (-u .+ k .* (v .- vr) .* (v .- vt)) ./ C
@@ -37,5 +30,3 @@ prob = ODEProblem(Izhikevich2007!, u0, tspan, p)
 
 # Solve
 sol = solve(prob, Tsit5(); saveat=0.01)
-
-

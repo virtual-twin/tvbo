@@ -62,7 +62,6 @@ class Epileptor5D(AbstractDynamics):
         d = params.d
         modification = params.modification
         r = params.r
-        s = params.s
         slope = params.slope
         tau = params.tau
         tt = params.tt
