@@ -47,6 +47,62 @@ def unit_facts(unit):
     return facts if facts and facts.get("curated") else None
 
 
+DEFAULT_TIME_UNIT = "ms"
+
+_TIME_UNIT_ATTRIBUTES = ("time_unit", "time_scale", "unit")
+
+
+def time_unit_of(*scopes):
+    """The time unit governing *scopes*, resolved outwards, `ms` if nobody declares one.
+
+    Every time-valued number in a scope — `step_size`, `period`, `downsample_period`,
+    `simulation_period`, `sampling_period` — is in the unit this returns. Pass the
+    scopes innermost first (`time_unit_of(node.subnetwork, network, integrator,
+    experiment)`); the first that declares a unit wins, and `None` entries are skipped
+    so callers need not pre-filter.
+
+    This is the only place the `ms` fallback is stated. It used to be stated in every
+    scope at once through `ifabsent: ms`, which made an unset unit indistinguishable
+    from a written one and so could not be inherited through — and separately at each
+    call site, where the defaults had already drifted apart (`"s"` in one branch of
+    the NeuroML adapter, `"ms"` in the others, and a LEMS emitter that appended `ms`
+    unconditionally while its sibling read the declaration). A model in the database
+    declares `s`, so those disagreed on real data.
+    """
+    for scope in scopes:
+        if scope is None:
+            continue
+        for attribute in _TIME_UNIT_ATTRIBUTES:
+            declared = getattr(scope, attribute, None)
+            if declared is None:
+                continue
+            text = str(getattr(declared, "text", declared)).strip()
+            if text and text.lower() not in ("none", "null"):
+                return text
+    return DEFAULT_TIME_UNIT
+
+
+def time_unit_factor(from_scope, to_scope):
+    """The exact factor converting a time-valued number from one scope's unit to another's.
+
+    `Fraction`, not float: a subnetwork in `s` folding into a parent in `ms` is exactly
+    1000, and a factor of 1000 living only in a modeller's head is invisible in every
+    backend's output — which is the error this exists to catch.
+
+    Raises:
+        ValueError: If either unit is not time-valued, or they are dimensionally
+            incompatible — a silent conversion between them would be worse than none.
+    """
+    source, target = time_unit_of(from_scope), time_unit_of(to_scope)
+    ratios = []
+    for unit in (source, target):
+        dimensions = unit_dimensions(unit)
+        if dimensions != {"second": Fraction(1)}:
+            raise ValueError(f"{unit!r} is not a time unit, so it cannot scale a duration")
+        ratios.append(unit_multiplier(unit))
+    return ratios[0] / ratios[1]
+
+
 def unit_dimensions(unit):
     """Base-dimension exponents of *unit* as `{base unit name: Fraction}`.
 

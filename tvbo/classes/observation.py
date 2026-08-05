@@ -1007,7 +1007,7 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
 
     # Scalar fields: adopt the curated value only where the recipe left it empty.
     for field in ("label", "description", "imaging_modality", "period",
-                  "downsample_period", "time_scale"):
+                  "downsample_period", "time_unit"):
         if data.get(field) is not None and not getattr(obs, field, None):
             setattr(obs, field, data[field])
 

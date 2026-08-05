@@ -41,16 +41,20 @@ default_prefix: tvbo
 default_range: string
 
 slots:
-    time_scale:
+    time_unit:
         range: UnitEnum
-        ifabsent: "ms"
         aliases:
-            - time_unit
+            - time_scale
         description: >-
-            Time unit for the integration / simulation. Determines the
-            physical time meaning of one model time-step. `time_unit` is
-            accepted as a synonym (the spelling `Network` uses for its own
-            time unit).
+            Unit of every time-valued number in this scope — the step size, any
+            period, and the physical meaning of one model time-step. Declared at
+            whichever scope owns the clock (network, integrator, observation);
+            `tvbo.utils.units.time_unit_of` resolves a scope to its effective unit
+            by walking outwards, and states the `ms` fallback once, at the end of
+            that walk. Deliberately carries no default: a defaulted slot cannot be
+            inherited through, so `ifabsent: ms` made an unset unit indistinguishable
+            from one someone wrote, and masked an explicitly declared `s` one scope
+            out. `time_scale` is accepted as a synonym.
     environment:
         range: SoftwareEnvironment
     requirements:
@@ -1364,6 +1368,7 @@ classes:
             - description
             - parameters
             - provenance
+            - time_unit
         attributes:
             # New node/edge-based representation
             nodes:
@@ -1521,10 +1526,6 @@ classes:
                 range: UnitEnum
                 description: "Unit for distances/lengths in the network"
                 ifabsent: string(mm)
-            time_unit:
-                range: UnitEnum
-                description: "Default time unit for the network"
-                ifabsent: string(ms)
 
             edge_matrix_files:
                 range: File
@@ -1999,7 +2000,7 @@ classes:
             - equation
             - parameters
             - environment
-            - time_scale
+            - time_unit
             - record
             - unit
             - references
@@ -4329,7 +4330,7 @@ classes:
             (noise, transient time, etc.). Inherits abs_tol, rel_tol
             from Solver. Overrides method default to 'euler'.
         slots:
-            - time_scale
+            - time_unit
             - unit
             - parameters
             - duration

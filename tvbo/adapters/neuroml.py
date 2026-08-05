@@ -237,6 +237,21 @@ def _dynamics_has_physical_units(params, svs, td_param_names=None):
     return False
 
 
+def _lems_time_unit(integration):
+    """The LEMS spelling of *integration*'s time unit.
+
+    LEMS names only `s`, `ms` and `us`, so a scope declaring anything else falls back
+    to `ms` here — a backend limitation, stated once. The unit itself comes from
+    `time_unit_of`, which is the only reader of the declaration: six call sites in this
+    adapter each used to re-derive it, and their fallbacks had drifted apart, one
+    emitter defaulting to `s` where the rest defaulted to `ms`.
+    """
+    from tvbo.utils.units import time_unit_of
+
+    unit = time_unit_of(integration)
+    return unit if unit in ("s", "ms", "us") else "ms"
+
+
 def _dynamics_has_time_units(params, svs, dvs):
     """Check if dynamics equations (TimeDerivatives) use time-dimensioned params.
 
@@ -1671,8 +1686,7 @@ def _build_hier_custom_context(experiment):
     # ── Integration settings ──
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 1000.0
-    raw_ts = str(getattr(integration, "time_scale", None) or "ms")
-    time_unit = raw_ts if raw_ts in ("s", "ms", "us") else "ms"
+    time_unit = _lems_time_unit(integration)
 
     label = getattr(experiment, "label", None)
     dyn_id = safe_id(dyn.name or "dynamics")
@@ -1962,8 +1976,7 @@ def _build_std_fhn_context(experiment, cell_type):
     integration = getattr(experiment, "integration", None)
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 200.0
-    raw_ts = (getattr(integration, "time_scale", None) or "s") if integration else "s"
-    time_scale = str(raw_ts) if str(raw_ts) in ("s", "ms", "us") else "s"
+    time_scale = _lems_time_unit(integration)
 
     dyn_id = safe_id(dyn.name or "fhn")
     label = getattr(experiment, "label", None)
@@ -2017,8 +2030,7 @@ def _build_std_cell_context(experiment):
     integration = getattr(experiment, "integration", None)
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 1000.0
-    raw_ts = (getattr(integration, "time_scale", None) or "ms") if integration else "ms"
-    time_scale = str(raw_ts) if str(raw_ts) in ("s", "ms", "us") else "ms"
+    time_scale = _lems_time_unit(integration)
 
     label = getattr(experiment, "label", None)
     sim_id = "sim_" + (safe_id(label) if label else dyn_id)
@@ -2089,8 +2101,7 @@ def _build_std_network_context(experiment):
     integration = getattr(experiment, "integration", None)
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 1000.0
-    raw_ts = (getattr(integration, "time_scale", None) or "ms") if integration else "ms"
-    time_scale = str(raw_ts) if str(raw_ts) in ("s", "ms", "us") else "ms"
+    time_scale = _lems_time_unit(integration)
 
     label = getattr(experiment, "label", None)
     dyn_id = safe_id((experiment.dynamics.name if experiment.dynamics else None) or "network")
@@ -2690,7 +2701,7 @@ def _build_network_context(experiment):
             # Use the standard type as component directly (not a custom CT).
             dyn_obj = dynamics_lib.get(dyn_name)
             integration = getattr(experiment, "integration", None)
-            ts = str(getattr(integration, "time_scale", "ms") or "ms") if integration else "ms"
+            ts = _lems_time_unit(integration)
             for sub_idx, node in enumerate(group_nodes):
                 nid = getattr(node, "id", sub_idx)
                 dyn_params = normalize_params(getattr(dyn_obj, "parameters", None))
@@ -3085,9 +3096,9 @@ def build_lems_context(experiment):
     n_nodes = int(network.number_of_nodes) if network and hasattr(network, "number_of_nodes") else 1
     dt = integration.step_size if integration else 0.01
     duration = integration.duration if integration else 1000.0
-    raw_ts = (getattr(integration, "time_scale", None) or "ms") if integration else "ms"
-    from tvbo.utils.units import normalize_unit
+    from tvbo.utils.units import normalize_unit, time_unit_of
 
+    raw_ts = time_unit_of(integration)
     ts_enum = normalize_unit(str(raw_ts)) or str(raw_ts)
     # With abbreviation-based enum, ts_enum is already "s", "ms", "us" etc.
     time_scale = ts_enum if ts_enum in ("s", "ms", "us") else "ms"

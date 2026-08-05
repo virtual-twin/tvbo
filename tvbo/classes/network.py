@@ -3630,7 +3630,7 @@ class Network(tvbo_datamodel.Network):
         import sympy.physics.units as u
         from sympy import nsimplify
         from sympy.parsing.sympy_parser import parse_expr
-        from tvbo.utils.units import unit_to_symbol
+        from tvbo.utils.units import time_unit_of, unit_to_symbol
 
         unit_ns = dict(vars(u))
 
@@ -3639,9 +3639,8 @@ class Network(tvbo_datamodel.Network):
         speed_unit_str = (
             unit_to_symbol(cs_param.unit)
             if cs_param and cs_param.unit
-            else f"{distance_unit_str}/{unit_to_symbol(getattr(self, 'time_unit', None) or 'ms')}"
+            else f"{distance_unit_str}/{unit_to_symbol(time_unit_of(self))}"
         )
-        unit_to_symbol(getattr(self, "time_unit", None) or "ms")
         target_time_str = unit_to_symbol(output_unit)
 
         # Native delay unit: distance / speed  (e.g. mm / (mm/ms) = ms)

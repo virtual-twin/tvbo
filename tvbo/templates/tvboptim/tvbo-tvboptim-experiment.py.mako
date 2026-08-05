@@ -192,10 +192,8 @@ dt = float(integration.step_size)
 # `time_scale` is the canonical slot (alias `time_unit`); `unit` is the older spelling.
 # Seconds per model time unit (ms -> 0.001), used to put analytic-frequency diagnostics
 # on a physical Hz axis and to label the run.
-from tvbo.utils.units import unit_to_si_factor
-## `unit` first: `time_scale` carries `ifabsent: ms`, so it is never unset and would
-## otherwise mask an explicitly declared `unit: s` (a 1000x error in every derived rate).
-time_unit = str(getattr(integration, 'unit', None) or getattr(integration, 'time_scale', None) or 'ms')
+from tvbo.utils.units import time_unit_of, unit_to_si_factor
+time_unit = time_unit_of(integration, experiment)
 time_si_factor = unit_to_si_factor(time_unit)
 
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
