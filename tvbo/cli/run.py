@@ -137,6 +137,30 @@ def run(
              "run whose panels would be placeholders). No effect on an experiment spec or "
              "a study without figures.",
     ),
+    skip: list[str] = typer.Option(
+        [], "--skip",
+        help="When SPEC is an Investigation, skip these member studies (by label or recipe "
+             "stem), comma-separated/repeatable — their committed figures/results are reused "
+             "as-is. Members flagged `optional:` are skipped by default; pass --all-members "
+             "to include them.",
+    ),
+    all_members: bool = typer.Option(
+        False, "--all-members",
+        help="When SPEC is an Investigation, also run members flagged `optional:` (the heavy "
+             "studies skipped by default).",
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run",
+        help="When SPEC is an Investigation, list the members, analyses and result keys that "
+             "WOULD run (honouring --skip / --all-members) and emit nothing.",
+    ),
+    manifest_only: bool = typer.Option(
+        False, "--manifest-only",
+        help="When SPEC is an Investigation, emit the results manifest from existing containers "
+             "and authored values only — run no members or experiments. The fast refresh for the "
+             "two-tier build (the heavy `tvbo run` produces the containers; this restamps the "
+             "manifest the manuscript reads).",
+    ),
 ) -> None:
     """Run a SPEC (experiment or study) in the selected backend.
 
@@ -161,6 +185,12 @@ def run(
         return
 
     kind, obj = _common.resolve_spec(spec)
+
+    if kind == "investigation":
+        _run_investigation(obj, spec, out_dir, backend=backend, figures=figures,
+                           skip=skip, all_members=all_members, dry_run=dry_run,
+                           manifest_only=manifest_only)
+        return
 
     if analysis is not None:
         # Every flag here selects or reshapes SIMULATION work, which --analysis runs none of.
@@ -511,6 +541,102 @@ def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
         )
 
 
+def _run_whole_study(obj, spec: str, out_dir: Path | None, *, backend: str | None = None,
+                     figures: bool = True) -> bool:
+    """Run a study's WHOLE pipeline — every experiment, its before/after analyses, its figures.
+
+    The subset of the ``kind == "study"`` branch with no per-run selectors (no --experiment /
+    --shard / --pin / --set), reused for each Investigation member and for the investigation's
+    own demo content. Returns whether the after-analysis stage held (figures are skipped if it
+    did not), mirroring the study branch.
+    """
+    _import_figure_code_modules(obj)
+    analyses_before, analyses_after = _study_analysis_stages(obj)
+    _run_study_analyses(analyses_before, spec, out_dir, stage="before")
+    exps = getattr(obj, "experiments", None)
+    if exps is None:
+        exps = getattr(obj, "simulation_experiments", None) or []
+    items = list(exps.values()) if hasattr(exps, "values") else list(exps)
+    for exp in items:
+        _common.info(f"running experiment: {getattr(exp, 'key', None) or getattr(exp, 'label', None)}")
+        if not hasattr(exp, "run") and hasattr(obj, "get_experiment"):
+            sel = (getattr(exp, "id", None) or getattr(exp, "key", None)
+                   or getattr(exp, "name", None) or getattr(exp, "label", None))
+            try:
+                exp = obj.get_experiment(sel)
+            except Exception as e:
+                _common.die(f"Could not resolve experiment {sel!r} to a runnable object: {e}")
+        _run_one(exp, _effective_backend(exp, backend), out_dir,
+                 {"compress": True, "record_only": True}, None, None, None)
+    ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after")
+    if figures and ok:
+        _render_study_figures(obj, spec, out_dir)
+    return ok
+
+
+def _run_investigation(inv, spec: str, out_dir: Path | None, *, backend: str | None = None,
+                       figures: bool = True, skip=(), all_members: bool = False,
+                       dry_run: bool = False, manifest_only: bool = False) -> None:
+    """Run an Investigation: every member study, the investigation's own demo content, then
+    emit the results manifest the manuscript reads.
+
+    Optional members are skipped unless ``all_members``; ``skip`` drops named members (by label
+    or recipe stem); ``dry_run`` lists what would run and emits nothing. The manifest lands at
+    ``<investigation-dir>/_output/extraction_results/manuscript_results.yml`` (the seam Quarto
+    reads as ``{{< meta results.* >}}``); an unresolved result key hard-fails the run.
+    """
+    from tvbo.data.analysis_io import analysis_name, study_analyses
+    from tvbo.data.investigation import MANIFEST_NAME, emit_manifest
+    from tvbo.utils import as_list
+
+    base = Path(getattr(inv, "_source_file", spec)).resolve().parent
+    skip_set = {s.strip() for part in skip for s in str(part).split(",") if s.strip()}
+    members = inv.member_recipes(base, include_optional=all_members)
+    to_run = [(label, p) for label, p in members
+              if label not in skip_set and Path(p).stem not in skip_set]
+    skipped = [label for label, p in members if (label, p) not in to_run]
+    own_analyses = [analysis_name(a) for a in study_analyses(inv)]
+    n_results = len(as_list(getattr(inv, "results", None)))
+
+    if dry_run:
+        _common.info(f"[dry-run] investigation: {getattr(inv, 'title', None) or spec}")
+        for label, p in to_run:
+            _common.info(f"  member: {label}  ({p})")
+        for label in skipped:
+            _common.info(f"  member skipped: {label}")
+        if own_analyses:
+            _common.info(f"  own analyses: {', '.join(own_analyses)}")
+        _common.info(f"  own figures: {len(as_list(getattr(inv, 'figures', None)))}")
+        _common.info(f"  would emit {MANIFEST_NAME} with {n_results} result key(s)")
+        return
+
+    inv_out = Path(out_dir) if out_dir is not None else (base / "output" / "nc")
+    results_root = _container_root(spec, inv_out)
+
+    def _emit() -> None:
+        out_path, problems = emit_manifest(inv, results_root,
+                                           base / "_output" / "extraction_results" / MANIFEST_NAME)
+        if problems:
+            _common.die("results manifest has unresolved key(s):\n  - " + "\n  - ".join(problems))
+        _common.info(f"wrote results manifest: {out_path} ({n_results} key(s))")
+
+    if manifest_only:
+        _emit()
+        return
+
+    for label, p in to_run:
+        _common.info(f"=== member: {label} ({p}) ===")
+        kind, mobj = _common.resolve_spec(str(p))
+        if kind not in ("study", "investigation"):
+            _common.warn(f"member {label!r} resolves to a {kind}, not a study; skipping.")
+            continue
+        member_out = Path(p).resolve().parent / "output" / "nc"
+        _run_whole_study(mobj, str(p), member_out, backend=backend, figures=figures)
+
+    _run_whole_study(inv, spec, inv_out, backend=backend, figures=figures)
+    _emit()
+
+
 def _effective_backend(experiment, cli_backend: str | None) -> str:
     """Resolve which backend runs *experiment*.
 
@@ -558,6 +684,12 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
     Traverses attributes and keyed collections (LinkML keyed dicts) so one recipe can
     stay the single source of truth while a run uses test settings. Mutates the loaded
     object only — the recipe file is untouched.
+
+    Anything on the path that has already MATERIALISED from its declaration is invalidated,
+    so it rebuilds from the new value. Without this an override of, say, a graph generator's
+    connectome is reported and then ignored — the network resolved at load time and keeps
+    the matrix it built — and the run completes, looks right, and is not the run that was
+    asked for.
     """
     def _step(cur, seg):
         if isinstance(cur, dict) and seg in cur:
@@ -575,9 +707,10 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
             raise typer.BadParameter(f"--set {raw!r} must be of the form path=value")
         path, _, val = s.partition("=")
         segs = [p for p in path.split(".") if p]
-        cur = experiment
+        cur, chain = experiment, [experiment]
         for seg in segs[:-1]:
             cur = _step(cur, seg)
+            chain.append(cur)
         leaf, value = segs[-1], _coerce_scalar(val)
         if isinstance(cur, dict):
             cur[leaf] = value
@@ -588,7 +721,23 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
                 cur[leaf] = value
             except Exception:
                 setattr(cur, leaf, value)
-        _common.info(f"--set {path} = {value!r}")
+        rebuilt = _invalidate_on_path(chain)
+        _common.info(f"--set {path} = {value!r}"
+                     + (f"  ({rebuilt} rebuilds from it)" if rebuilt else ""))
+
+
+def _invalidate_on_path(chain: list):
+    """Invalidate the innermost object on *chain* that materialises from its declaration.
+
+    Returns the name of what was invalidated, or ``None``. Innermost wins: an override
+    inside one network's generator must not rebuild an unrelated network beside it.
+    """
+    for obj in reversed(chain):
+        invalidate = getattr(obj, "invalidate_resolution", None)
+        if callable(invalidate):
+            invalidate()
+            return type(obj).__name__
+    return None
 
 
 def _apply_max_iterations(experiment, n: int) -> None:

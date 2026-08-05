@@ -2516,6 +2516,11 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
 
             adapter = NeuroMLAdapter(self)
             return adapter.render_dynamics(**kwargs)
+        elif format.lower() in ["pyrates", "pyrates-yaml", "pyrates_yaml"]:
+            from tvbo.codegen.pyrates import to_pyrates_model_yaml
+
+            rendered_code = to_pyrates_model_yaml(self, **kwargs)
+            return templater.format_code(rendered_code, format="pyrates")
         else:
             raise ValueError(f"Format {format} not supported.")
 

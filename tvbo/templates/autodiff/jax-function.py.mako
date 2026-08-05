@@ -13,6 +13,7 @@ For standalone mathematical functions, use base/function-def.mako directly.
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%!
 from tvbo.codegen import render_expression
+from tvbo.templates.base.utils import get_source_code, retime, time_series_inputs
 %>
 <%def name="generate_function(func, func_name)" filter="trim">
 <%
@@ -30,17 +31,17 @@ from tvbo.codegen import render_expression
                         value = f"'{value}'"
                     params[arg.name] = value
                 else:
-                    # No default: becomes a required positional parameter so the
-                    # symbol is always in scope inside the function body.
+                    # No default: this argument IS the pipeline input, bound in the body.
                     params_required.append(arg.name)
     if getattr(func, 'equation', None) and hasattr(func.equation, 'parameters') and func.equation.parameters:
         for name, param in func.equation.parameters.items():
             if hasattr(param, 'value') and param.value is not None:
                 params[name] = param.value
-    # Required args first, then keyword args with defaults
-    param_args_parts = list(params_required)
-    param_args_parts += [f"{name}={value}" for name, value in params.items()]
-    param_args = ', '.join(param_args_parts)
+    _kwargs = [f"{name}={value}" for name, value in params.items()]
+    # Only the pipeline branch binds no-default arguments in the body (they ARE its
+    # input); the callable and kernel branches still take them as positionals.
+    param_args = ', '.join(_kwargs)
+    signature_args = ', '.join(list(params_required) + _kwargs)
 
     # Store callable reference to avoid name collision
     callable_ref = f"_jax_{func.callable.name}" if func.callable else None
@@ -60,8 +61,8 @@ from tvbo.codegen import render_expression
     # Build function signature: primary input + secondary TimeSeries inputs + parameters
     sig_parts = ['signal_ts']  # First argument is always the primary signal
     sig_parts.extend(callable_ts_args)
-    if param_args:
-        sig_parts.append(param_args)
+    if signature_args:
+        sig_parts.append(signature_args)
     func_signature = ', '.join(sig_parts)
 
     # Build kwargs string for lambda
@@ -114,7 +115,7 @@ def ${func_name}(${func_signature}):
                 expected_time_unit = str(arg.unit)
                 break
 %>
-def ${func_name}(ts, ${param_args}):
+def ${func_name}(ts, ${signature_args}):
 % if hasattr(func, 'description') and func.description:
     """${func.description}"""
 % endif
@@ -130,20 +131,29 @@ def ${func_name}(ts, ${param_args}):
 <%
     _eq = getattr(func, 'equation', None)
     rhs = _eq.rhs if _eq else ''
-    jax_code = render_expression(rhs, format='jax') if rhs else '0.0'
+    # `source_code:` is already backend-ready text; only an `equation:` needs printing.
+    _src = get_source_code(func)
+    jax_code = render_expression(rhs, format='jax') if rhs else (_src or '0.0')
     # Check if transformation applies on time dimension (handle both string and enum)
     apply_on_dim = str(func.apply_on_dimension) if func.apply_on_dimension else None
     has_apply_on_time = apply_on_dim in ['time', 'DimensionType.time']
+    # `X` or the spec's own no-default argument, whichever the body actually reads.
+    inputs = time_series_inputs(['X'] + params_required, jax_code)
+    time_code = retime(jax_code, inputs)
 %>
 def ${func_name}(ts, ${param_args}):
 % if hasattr(func, 'description') and func.description:
     """${func.description}"""
 % endif
-    X = ts.data
+% for name in inputs:
+    ${name} = ts.data
+% endfor
 % if has_apply_on_time:
-    t_X = ts.time
+% for name in inputs:
+    t_${name} = ts.time
+% endfor
     data = ${jax_code}
-    time = ${jax_code.replace('X', 't_X')}
+    time = ${time_code}
     return ts.duplicate(time=time, data=data, title='${func_name}')
 % else:
     data = ${jax_code}

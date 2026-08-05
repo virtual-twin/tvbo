@@ -4,6 +4,8 @@
 <%
 import numpy as np
 from tvbo.classes.equation import _clash1
+from tvbo.codegen.templater import time_dependent_equations
+from tvbo.templates.base.utils import model_expressions, referenced
 if 'experiment' in context.keys():
     model = context['experiment'].dynamics
     standalone = False
@@ -26,6 +28,16 @@ def _is_local(name, ci):
 global_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if not _is_local(k, v)}
 local_coupling_inputs = {k: v for k, v in model.coupling_inputs.items() if k not in global_coupling_inputs}
 has_local_coupling = bool(local_coupling_inputs)
+
+# TVB's dfun takes no time argument, so a `t` term would emit an unbound name.
+_time_dependent = time_dependent_equations(model)
+if _time_dependent:
+    raise ValueError(
+        f"{model.name!r} is non-autonomous: the derivative(s) of "
+        f"{', '.join(_time_dependent)} depend on time. TVB's Model.dfun takes no time "
+        f"argument, so the TVB backend cannot express it — render to 'jax', 'tvboptim' "
+        f"or 'julia', which pass t, or move the time dependence into a stimulus."
+    )
 %>
 % if standalone:
 # Auto-generated standalone model file
@@ -201,7 +213,7 @@ sv_boundaries = tvb_state_variable_boundaries(model)
         ${sv} = state_variables[${list(model.state_variables.keys()).index(sv)}, :]
 % endfor
 
-% for p in model.parameters:
+% for p in referenced(model.parameters, model_expressions(model)):
         ${p} = self.${p}
 % endfor
 

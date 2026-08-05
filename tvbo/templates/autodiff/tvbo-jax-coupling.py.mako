@@ -27,17 +27,34 @@ if _has_coupling:
     # Convert to list if it's some other iterable
     incoming_states_names = list(incoming_states_names) if incoming_states_names else []
 
-    # Check if any incoming_states variable name is used in pre_expression
+    # `vec_states`, as resolved by tvbo.templates.tvboptim.utils.resolve_coupling_spec.
+    local_states_names = getattr(coupling, 'local_states', None) or []
+    if isinstance(local_states_names, str):
+        local_states_names = [local_states_names]
+    local_states_names = list(local_states_names)
+    # x_j gathers one row per transmitted state, in gather order — not vec_states order.
+    from tvbo.templates.base.utils import coupling_bindings
+    _b = coupling_bindings(model, coupling, incoming_states_names, local_states_names)
+    vec_states, cvar_names, _cvar_index, _sv_index = (
+        _b['vec_states'], _b['cvar_names'], _b['cvar_index'], _b['sv_index'])
+    bare_states, pre_j_aliases, pre_i_aliases, post_i_aliases = (
+        _b['bare'], _b['pre_j'], _b['pre_i'], _b['post_i'])
+
+    # Check if any gathered state name is used in pre_expression
     pre_rhs = str(coupling.pre_expression.rhs)
-    needs_x_j = 'x_j' in pre_rhs or any(str(name) in pre_rhs for name in incoming_states_names)
+    needs_x_j = 'x_j' in pre_rhs or any(str(name) in pre_rhs for name in vec_states)
     is_list_expr = pre_rhs.strip().startswith('[') and pre_rhs.strip().endswith(']')
+
+    # A multi-component pre reduces to one gx_k per component, addressed by post().
+    from tvbo.templates.tvboptim.utils import parse_list_elements
+    n_pre = len(parse_list_elements(pre_rhs.strip())) if is_list_expr else 1
+    gx_indices = list(range(n_pre)) if n_pre > 1 else []
 
     # Check if we need to return multiple coupling outputs
     num_coupling_terms = len(model.coupling_terms) if hasattr(model, 'coupling_terms') else 1
     needs_stacked_output = num_coupling_terms > 1
 
-    # Check if coupling has per-term weight parameters (e.g., wLRE, wFFI)
-    # These would be named like w_<term_name> or just listed as weight-type parameters
+    # Per-term weight parameters, named w<TERM> (e.g. wLRE, wFFI).
     coupling_term_names = list(model.coupling_terms.keys()) if hasattr(model, 'coupling_terms') else []
     has_weight_params = any(par.name.startswith('w') and par.name[1:] in ['LRE', 'FFI', '_'] or
                            par.name.lower() in ['wlre', 'wffi']
@@ -50,14 +67,15 @@ def cfun(weights, history, current_state, p, delay_indices, t):
 % else:
 def cfun(weights, history, current_state, p, delay_indices, t):
     n_node = weights.shape[0]
-    ${', '.join([par.name for par in coupling.parameters.values()])} = p.${', p.'.join([par.name for par in coupling.parameters.values()])}
+## Unconditional emission yields the bare `= p.` for a coupling with no parameters.
+% if coupling_param_names:
+    ${', '.join(coupling_param_names)} = p.${', p.'.join(coupling_param_names)}
+% endif
 
 % if 'x_i' in pre_rhs:
     x_i = jnp.array([
-% for i, sv in enumerate(model.state_variables.values()):
-    % if sv.coupling_variable:
-    current_state[${i}, :],
-    % endif
+% for name in cvar_names:
+    current_state[${_sv_index[name]}, :],
 % endfor
     ])
     x_i = x_i.transpose(1, 0)
@@ -66,38 +84,40 @@ def cfun(weights, history, current_state, p, delay_indices, t):
 
 % if needs_x_j:
     x_j = jnp.array([
-<% cvar_idx = 0 %>
-% for i, sv in enumerate(model.state_variables.values()):
-    % if sv.coupling_variable:
+% for cvar_idx, name in enumerate(cvar_names):
     % if has_delay:
-            % if small_dt:
+        % if small_dt:
     history[${cvar_idx}, delay_indices[0].T + t, delay_indices[1]],
-            % else:
-    history[${cvar_idx}, delay_indices[0].T, delay_indices[1]],
-            % endif
         % else:
-            % if not scalar_pre:
-    current_state[${i}, delay_indices[1]],
-            %else:
-    current_state[${i}],
-            % endif
+    history[${cvar_idx}, delay_indices[0].T, delay_indices[1]],
         % endif
-    <% cvar_idx += 1 %>
+    % else:
+        % if not scalar_pre:
+    current_state[${_sv_index[name]}, delay_indices[1]],
+        % else:
+    current_state[${_sv_index[name]}],
+        % endif
     % endif
 % endfor
     ])
 % if not scalar_pre:
 % endif
 
-% for idx, state_name in enumerate(incoming_states_names):
-    ${state_name} = x_j[${idx}]
+% for state_name in bare_states:
+    ${state_name} = x_j[${_cvar_index[state_name]}]
+% endfor
+% for alias, row in pre_j_aliases:
+    ${alias} = x_j[${row}]
+% endfor
+% for alias, sv_idx in pre_i_aliases:
+    ${alias} = current_state[${sv_idx}]
 % endfor
 % endif
 
 % if is_list_expr:
-    pre = jnp.stack(${jaxcode(pre_rhs, parameters=coupling_param_names + incoming_states_names)}, axis=0)
+    pre = jnp.stack(${jaxcode(pre_rhs, parameters=coupling_param_names + vec_states + [a for a, _ in pre_j_aliases] + [a for a, _ in pre_i_aliases])}, axis=0)
 % else:
-    pre = ${jaxcode(pre_rhs, parameters=coupling_param_names + incoming_states_names)}
+    pre = ${jaxcode(pre_rhs, parameters=coupling_param_names + vec_states + [a for a, _ in pre_j_aliases] + [a for a, _ in pre_i_aliases])}
 % endif
     % if not scalar_pre:
     pre = pre.reshape(-1, n_node ,n_node)
@@ -129,12 +149,19 @@ def cfun(weights, history, current_state, p, delay_indices, t):
     return ${jaxcode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)}
 % else:
     % if not scalar_pre:
-    def op(x): return jnp.sum(weights * x, axis=-1)
-    gx = jax.vmap(op, in_axes=0)(pre)
+    def op(x):
+        return jnp.sum(weights * x, axis=-1)
     % else:
-    def op(x): return weights @ x
-    gx = jax.vmap(op, in_axes=0)(pre)
+    def op(x):
+        return weights @ x
     % endif
+    gx = jax.vmap(op, in_axes=0)(pre)
+% for k in gx_indices:
+    gx_${k} = gx[${k}]
+% endfor
+% for alias, sv_idx in post_i_aliases:
+    ${alias} = current_state[${sv_idx}]
+% endfor
     return ${jaxcode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)}
 % endif
 % endif

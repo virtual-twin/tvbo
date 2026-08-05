@@ -13,6 +13,7 @@ Templates
 Templates for generating code.
 """
 
+import hashlib
 import os
 import subprocess
 import tempfile
@@ -32,6 +33,16 @@ def _mako_module_dir() -> str:
     since the package dir is writable during local dev). Default to a per-user dir
     under the system temp instead, which is writable and, under SLURM, node-local so
     concurrent jobs on different nodes don't share it. ``TVBO_MAKO_CACHE`` overrides.
+
+    The directory is keyed on the templates root as well as the user. Mako names a
+    compiled module after the template's URI, which is relative to the lookup
+    directories, so two checkouts of tvbo — a second worktree, an editable install
+    beside a container's site-packages — map their own copy of
+    ``neuroml/_lems_componenttype.xml.mako`` onto the same cached module. Whichever
+    rendered last wins, and mako's mtime freshness check compares against that
+    foreign source, so the loser silently renders the other checkout's template and
+    fails as ``'Undefined' object is not callable`` naming a helper the template it
+    thinks it rendered does not define.
     """
     override = os.environ.get("TVBO_MAKO_CACHE")
     if override:
@@ -41,10 +52,13 @@ def _mako_module_dir() -> str:
     # reads $LOGNAME/$USER first, so on a shared host another account could point tvbo
     # at a directory it controls.
     if hasattr(os, "getuid"):
-        return join(tempfile.gettempdir(), f"tvbo-mako-{os.getuid()}")
-    import getpass  # no uid to scope by (Windows); fall back to the account name
+        who = str(os.getuid())
+    else:
+        import getpass  # no uid to scope by (Windows); fall back to the account name
 
-    return join(tempfile.gettempdir(), f"tvbo-mako-{getpass.getuser()}")
+        who = getpass.getuser()
+    where = hashlib.sha256(root.encode()).hexdigest()[:12]
+    return join(tempfile.gettempdir(), f"tvbo-mako-{who}-{where}")
 
 
 lookup = TemplateLookup(

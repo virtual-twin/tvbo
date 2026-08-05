@@ -36,22 +36,25 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
-            # ruff: blocking syntax-error subset (same gate as before).
+            # ruff: blocking syntax-error subset; `version` tracks the `lint` extra.
             - name: Ruff — syntax errors (blocking)
-              uses: astral-sh/ruff-action@v4.0.0
+              uses: astral-sh/ruff-action@v4.1.0
               with:
+                  version: "0.16.1"
                   args: "check --select=E9,F63,F7,F82 --output-format=github ."
 
             # ruff: full lint summary, non-blocking until codebase is clean.
             - name: Ruff — full lint (non-blocking)
-              uses: astral-sh/ruff-action@v4.0.0
+              uses: astral-sh/ruff-action@v4.1.0
               with:
+                  version: "0.16.1"
                   args: "check --exit-zero ."
 
             # ruff format: report files needing reformatting, non-blocking.
             - name: Ruff format — check (non-blocking)
-              uses: astral-sh/ruff-action@v4.0.0
+              uses: astral-sh/ruff-action@v4.1.0
               with:
+                  version: "0.16.1"
                   args: "format --check --diff ."
               continue-on-error: true
 

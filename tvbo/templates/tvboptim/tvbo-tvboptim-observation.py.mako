@@ -637,6 +637,8 @@ ${render_convolution_reduction(red, name, s_idx, dt)}\
 ${render_stride_reduction(red, name, s_idx, dt)}\
 % elif red.get('kind') == 'comoment':
 ${render_comoment_reduction(red, name, s_idx, dt)}\
+% elif red.get('kind') == 'wave':
+${render_wave_reduction(red, name, s_idx, dt)}\
 % else:
 ${render_recurrence_reduction(red, name, s_idx, dt)}\
 % endif
@@ -810,8 +812,38 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
 ## fold evaluates its per-step sample BETWEEN them.
 <%def name="render_observer_dvs(dvs, jc, ind)">\
 % for _d in dvs:
+% if 'surrogate' in _d:
+${render_surrogate(_d['name'], _d['surrogate'], jc, ind)}\
+% else:
 ${ind}${_d['name']} = ${jc(_d['expr'])}
+% endif
 % endfor
+</%def>\
+## A permutation-significance surrogate (DerivedVariable.surrogate): re-evaluate a named
+## statistic under the fixed `(n_perm, n)` permutation table and report the per-element
+## exceedance p-value. `expr` is the statistic as a self-contained function of the permuted
+## symbol; the observed value reuses the already-computed statistic DV. `family_reduce`
+## (e.g. `nanmax`) collapses the permuted statistic over its element axes to one family-wise
+## extremum per permutation — the Westfall–Young max-T FWE null each observed element is
+## tested against; absent → the symmetric per-element test.
+<%def name="render_surrogate(sname, surr, jc, ind)">\
+<%
+    _perm = surr['permute']
+    _perms = surr['perms']
+    _cmp = surr['compare']
+    _fam = surr.get('family_reduce')
+    _obs = surr.get('statistic')
+%>\
+${ind}def _surrstat_${sname}(${_perm}):
+${ind}    return ${jc(surr['expr'])}
+${ind}_obs_${sname} = ${_obs if _obs else '_surrstat_%s(%s)' % (sname, _perm)}
+${ind}_null_${sname} = jax.vmap(_surrstat_${sname})(${_perm}[${_perms}])
+% if _fam:
+${ind}_null_${sname} = jnp.${_fam}(_null_${sname}, axis=tuple(range(1, _null_${sname}.ndim)))
+${ind}${sname} = jnp.mean((_null_${sname}.reshape((-1,) + (1,) * _obs_${sname}.ndim) ${_cmp} _obs_${sname}[None]) * 1.0, axis=0)
+% else:
+${ind}${sname} = jnp.mean((_null_${sname} ${_cmp} _obs_${sname}) * 1.0, axis=0)
+% endif
 </%def>\
 ## `states` is the subset this branch advances: all of them, or memory-only for the
 ## histogram fold (an accumulator there is the histogram itself).
@@ -983,6 +1015,104 @@ ${render_observer_states(red['states'], _jc, _ind)}\
     return (_init, _update, _finalize)
 % endif
 </%def>\
+## Grouped wave-metrics reducer (Observation whose value collapses BOTH time and the node axis
+## into per-group scalars — the cortical wave detector: proportion_waves, proportion_directed,
+## rho per hemisphere). Unlike the per-node recurrence, the output is keyed by (group, metric),
+## not node, so it cannot come from `template.shape[-1]`. The heavy per-emitted-step math
+## (gradient → angular-similarity → surrogate → HHD → correlation) is the SAME declarative DV
+## chain the other observers use — incl. the permutation surrogate (render_surrogate) — and
+## produces one (n_groups,) vector per named output (`corr`, `wave_present`, `sig_corr`). Only
+## the outer carry is bespoke: a monitor-style (n_ds, n_groups) buffer per output (n_ds is the
+## downsampled sample count — small, so buffering is cheap and duration is never materialised at
+## node resolution), reduced at finalize to the three metrics via exact masked statistics
+## (`nanmedian` over wave-present samples is Koller's rho, no binning). One block per grid cell;
+## blocks are period-aligned (streaming_post_eval_plan), matching the stride reducer.
+<%def name="render_wave_reduction(red, name, s_idx, dt)">\
+<%
+    from tvbo.codegen import render_expression
+    from tvbo.templates.tvboptim.utils import render_jax_default
+    _G = red['n_groups']
+    _period = red['period_steps']
+    _src = red['source']
+    _rpars = red.get('parameters') or {}
+    _derived = red.get('derived', [])   # per-emitted-step DV chain producing the named outputs
+    _corr, _wave, _sig = red['corr'], red['wave_present'], red['sig_corr']
+    _gv = red.get('group_vmap')   # {gather: <param>, over: [<group-indexed params>]} or None
+    _rparams = ([d['name'] for d in _derived] + list(_rpars) + [_src, 'dt'])
+    _rufuncs = {f: f for f in red.get('functions', {})}
+    _jc = lambda e: render_expression(e, format='jax', user_functions=_rufuncs, parameters=_rparams)
+%>\
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
+    # warm_history/progress are accepted-and-ignored so this reducer shares ONE call site with
+    # the recurrence, convolution, comoment and stride factories.
+% if _rpars:
+    # Observer constants (operators / permutation table) — a literal inlines, a produced/sourced
+    # operator is read once here as a captured constant (a large array never enters this source).
+% for _pname, _pdef in _rpars.items():
+% if _pdef.get('lazy'):
+    ${_pname} = _load_constant(${repr(_pdef['lazy'][0])}, ${repr(_pdef['lazy'][1])})
+% elif 'value' in _pdef:
+    ${_pname} = ${render_jax_default(_pdef['value'])}
+% else:
+<% raise ValueError("wave observer constant %r reached render unmaterialised; call resolve_reduction(obs, experiment)" % _pname) %>
+% endif
+% endfor
+% endif
+% for _fname, _fdef in red.get('functions', {}).items():
+    def ${_fname}(${", ".join(_fdef['args'])}):
+        return ${_jc(_fdef['expr'])}
+% endfor
+    _period = ${_period}
+% if _gv:
+    # Grouped detector: the per-timestep body is written ONCE for a single group (1-D, exactly
+    # detect_matmul + the 1-D surrogates) and vmapped over the partition axis. The group-indexed
+    # operators (`over`) carry a leading group axis and are sliced per call; `gather` selects each
+    # group's vertices out of the whole-brain source. General to any partition; the surrogate
+    # stays a clean per-vertex max-T inside the vmap.
+    def _detect(${", ".join([_src] + _gv['over'])}):
+${render_observer_dvs(_derived, _jc, ' ' * 8)}\
+        return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0
+    def _sample(_theta_all):
+        ${_src}_g = _theta_all[${_gv['gather']}]   # (n_groups, nv) per-group vertex gather
+        return jax.vmap(_detect, in_axes=(0,) * ${1 + len(_gv['over'])})(${_src}_g, ${", ".join(_gv['over'])})
+% else:
+    def _sample(${_src}):
+        # one downsampled sample -> (n_groups,) per named output; a body that is already
+        # group-batched (operators with a leading group axis) produces the per-group vector directly.
+${render_observer_dvs(_derived, _jc, ' ' * 8)}\
+        return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0
+% endif
+    def _init(template, n_steps):
+        _n_ds = len(range(_period - 1, n_steps, _period))
+        _z = jnp.zeros((_n_ds, ${_G}))
+        return (_z, _z, _z, jnp.array(0))
+    def _update(acc, block):
+        _corr_buf, _wave_buf, _sig_buf, _count = acc
+        if block.shape[0] % _period:
+            # A block must be a whole number of downsample periods, else its samples shift off
+            # the global grid and the write row (_count // _period) drifts — the same alignment
+            # the stride/monitor reducers require; size streaming blocks from period_in_steps.
+            raise ValueError(
+                f"wave reducer: a {block.shape[0]}-step block is not a whole number of "
+                f"{_period}-step downsample periods; size streaming blocks from period_in_steps.")
+        _theta = block[_period - 1 :: _period, s_var, :]        # downsample to (_m, n)
+        _c, _w, _s = jax.vmap(_sample)(_theta)                  # (_m, n_groups) each
+        _row = _count // _period
+        _corr_buf = jax.lax.dynamic_update_slice(_corr_buf, _c, (_row, 0))
+        _wave_buf = jax.lax.dynamic_update_slice(_wave_buf, _w, (_row, 0))
+        _sig_buf = jax.lax.dynamic_update_slice(_sig_buf, _s, (_row, 0))
+        return (_corr_buf, _wave_buf, _sig_buf, _count + block.shape[0])
+    def _finalize(acc):
+        _corr_buf, _wave_buf, _sig_buf, _count = acc
+        _keep = skip // _period                                 # drop the transient samples
+        _corr_buf, _wave_buf, _sig_buf = _corr_buf[_keep:], _wave_buf[_keep:], _sig_buf[_keep:]
+        _nw = _wave_buf.sum(0)                                   # (n_groups,) wave-present count
+        _pw = _nw / _wave_buf.shape[0]                           # proportion of waves
+        _pd = jnp.where(_nw > 0, (_sig_buf * _wave_buf).sum(0) / _nw, jnp.nan)  # proportion directed
+        _rho = jnp.nanmedian(jnp.where(_wave_buf > 0, _corr_buf, jnp.nan), axis=0)  # exact masked median
+        return jnp.stack([_pw, _pd, _rho], axis=-1)             # (n_groups, metric=3)
+    return (_init, _update, _finalize)
+</%def>\
 """Observation classes derived from AbstractMonitor for tvboptim."""
 
 import math
@@ -1000,10 +1130,21 @@ def _load_constant(path, key):
     """Load a lazily-stored observer constant (a sourced/produced operator too large to
     inline) as a jax array. Read once when the reducer is built, so it is captured as a
     concrete constant in the traced update — never re-read per step. Reuses tvbo's
-    array store, so an h5 or zarr companion is read the same way the network is."""
+    array store, so an h5 or zarr companion is read the same way the network is.
+
+    A packed kit stages these constants into its own ``constants/`` dir, so when the author's
+    absolute path is absent (a frozen kit run on another machine) the file is resolved by
+    basename under ``$TVBO_CONSTANTS_DIR`` or the run dir's ``constants/``."""
+    import os
     from pathlib import Path
     from tvbo.data.matrix_io import LazyArrayStore
-    return jnp.asarray(LazyArrayStore(Path(path), {}).read_dataset(key))
+    p = Path(path)
+    if not p.exists():
+        for _base in (os.environ.get("TVBO_CONSTANTS_DIR"), "constants"):
+            if _base and (Path(_base) / p.name).is_file():
+                p = Path(_base) / p.name
+                break
+    return jnp.asarray(LazyArrayStore(p, {}).read_dataset(key))
 
 
 % if network_obs_keys and bids_dir:

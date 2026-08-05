@@ -14,6 +14,7 @@ Output:
 </%doc>
 <%
 from tvbo.codegen import render_expression
+from tvbo.templates.base.utils import referenced
 from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout, resolve_coupling_spec, parse_list_elements
 
 # Two modes: experiment (full pipeline) or standalone (single coupling)
@@ -176,29 +177,35 @@ class ${class_name}(${base_class}):
     % elif vectorized:
 ## Source-only pre: stack f(stateⱼ) per node into [n_pre, n_source]; base class W-reduces.
     def pre(self, incoming_states, local_states, params):
-        % for name in param_names:
+<% _pre_ref = ' '.join(str(t) for t in pre_terms) %>\
+        % for name in referenced(param_names, _pre_ref):
         ${name} = params.${name}
         % endfor
         % for k, s in enumerate(vec_states):
+        % if referenced([s], _pre_ref):
         ${s} = incoming_states[${k}]
+        % endif
+        % if referenced([s + '_j'], _pre_ref):
         ${s}_j = incoming_states[${k}]
+        % endif
         % endfor
         return jnp.stack([${', '.join(jaxcode(t) for t in pre_terms)}], axis=0)
     % elif pre_expr:
     def pre(self, incoming_states, local_states, params):
-        % for name in param_names:
+<% _pre_ref = str(pre_expr.rhs) %>\
+        % for name in referenced(param_names, _pre_ref):
         ${name} = params.${name}
         % endfor
 ## Assign incoming state variables (skip when name collides with local)
         % for i, state_name in enumerate(incoming_states):
-        % if state_name not in local_states:
+        % if state_name not in local_states and referenced([state_name], _pre_ref):
         ${state_name} = incoming_states[${i}]
         % endif
         % endfor
 ## Local states: the base class aligns them to the message axes (dense [N_target, 1]),
 ## so index straight in — pre() stays elementwise, no reshape.
         % for i, state_name in enumerate(local_states):
-        % if state_name not in incoming_states:
+        % if state_name not in incoming_states and referenced([state_name], _pre_ref):
         ${state_name} = local_states[${i}]
         % endif
         % endfor
@@ -271,13 +278,16 @@ class ${class_name}(${base_class}):
     % endif
 
     def post(self, summed_inputs, local_states, params):
-        % for name in param_names:
+<% _post_ref = str(post_expr.rhs) if post_expr else 'G * gx' %>\
+        % for name in referenced(param_names, _post_ref):
         ${name} = params.${name}
         % endfor
-        % if 'G' not in param_names:
+        % if 'G' not in param_names and referenced(['G'], _post_ref):
         G = params.G if hasattr(params, 'G') else 1.0
         % endif
+        % if referenced(['gx'], _post_ref):
         gx = summed_inputs
+        % endif
 ## Recombination case: n_pre source reductions collapse into a SINGLE coupling
 ## output (n_output == 1), e.g. the Kuramoto angle-addition identity. Expose the
 ## named components gx_0, gx_1, … so post_expression can recombine them. When

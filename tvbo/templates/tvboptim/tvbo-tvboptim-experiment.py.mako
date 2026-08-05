@@ -274,9 +274,9 @@ n_workers = int(exec_config.n_workers) if exec_config and exec_config.n_workers 
 n_threads = int(exec_config.n_threads) if exec_config and exec_config.n_threads else -1
 precision = str(exec_config.precision) if exec_config and exec_config.precision else 'float64'
 accelerator = str(exec_config.accelerator) if exec_config and exec_config.accelerator else 'auto'
-# accelerator -> JAX_PLATFORMS: 'auto' delegates to JAX's own device detection (None here);
-# an explicit tier pins the platform. gpu -> 'cuda' (the JAX platform name); cpu/tpu pass through.
-jax_platform = {'cpu': 'cpu', 'gpu': 'cuda', 'tpu': 'tpu'}.get(accelerator.lower(), accelerator.lower()) if accelerator.lower() != 'auto' else None
+# accelerator -> JAX_PLATFORMS: 'auto' delegates to JAX's own device detection (None here).
+from tvbo.templates.tvboptim.utils import jax_platform as _jax_platform_of
+jax_platform = _jax_platform_of(accelerator)
 enable_x64 = precision == 'float64'
 random_seed = int(exec_config.random_seed) if exec_config and exec_config.random_seed else 0
 
@@ -1146,7 +1146,7 @@ for expl in exploration_list:
             })
         exp_info['nsga2_axes'] = _nsga_axes
         # GA hyperparameters, keyed by name in Exploration.parameters.
-        _default_pop = n_workers if 'n_workers' in dir() else 8
+        _default_pop = context.get('n_workers', 8)
         _ga = {'population_size': _default_pop, 'num_generations': 40, 'seed': 42,
                'reference_point': [1.0e6] * len(exp_info['objectives'])}
         for _gpn, _gpv in iter_parameter_values(expl.parameters):
@@ -1159,7 +1159,7 @@ for expl in exploration_list:
         exp_info['ga'] = _ga
         # Parallelism for the per-generation candidate evaluation (pmap devices),
         # baked as a literal like the refine stage's n_workers.
-        exp_info['n_workers'] = n_workers if 'n_workers' in dir() else 1
+        exp_info['n_workers'] = context.get('n_workers', 1)
     elif exp_info['strategy'] == 'adiabatic_scan':
         # Adiabatic bifurcation scan: one swept axis (from `space`) plus an observed-signal
         # expression and envelope settings carried on Exploration.parameters (Parameter.value
@@ -3733,9 +3733,12 @@ def run_experiment(
         observations = None
 % endif
 
-    # Save initial state from simulation (before any algorithms/optimization modify it)
-    # This is the starting point for optimization unless depends_on is specified
+## Consumed by every algorithm, and by optimization unless it refines or integrates its own.
+<% _needs_initial_state = bool(algorithms_list) or (has_optimization and not has_refine and (opt_depends_on or not opt_has_custom_integration)) %>\
+% if _needs_initial_state:
+    # Starting point for the algorithms and optimization below, before either modifies `state`.
     initial_state = copy.deepcopy(state)
+% endif
 
 <%
     # Result labels + record=True output channels are resolved in Python (the
@@ -4113,6 +4116,13 @@ def run_experiment(
             _sd[_hp_name] = _over.get(_hp_name, _hp_val)
         stage_defs.append(_sd)
 
+    # Max-window ring: when the schedule's window_size VARIES, size the tuning buffer at
+    # the largest stage window so the scan compiles once across stages (masked ring in
+    # run_<algo>). Constant window => None => contiguous per-stage path (recompiles, cheap).
+    _stage_ws = [int(sd['window_size']) for sd in stage_defs if sd.get('window_size') is not None]
+    _has_varying_window = len(set(_stage_ws)) > 1
+    _max_window = max(_stage_ws) if (_has_varying_window and _stage_ws) else None
+
     # On-device cohort: split this algorithm's network-obs inputs into the per-subject
     # dataset target(s) — the (B, ...) vmap axis — and the cohort-shared inputs.
     cohort_batched_inputs = [i for i in network_obs_inputs if i in _dataset_target_names]
@@ -4194,6 +4204,9 @@ def run_experiment(
                         ${src_obs}_buffer=_stage_${src_obs}_buffer,
 % endfor
                         resync_every=kwargs.get('${algo_name}_resync_every', kwargs.get('resync_every', None)),
+% if _has_varying_window:
+                        max_window_size=${_max_window},  # fixed ring size -> tuning scan compiles once across stage window sizes
+% endif
 % endif
                         monitors=_stage_monitors,
                         run_post_tuning=True,   # validate after EACH stage (r-trajectory)
@@ -4330,8 +4343,10 @@ def run_experiment(
                 # mode='all' - skip optimization if missing inputs
                 _log(f"  Skipping optimization (missing: {_missing_inputs})")
         else:
+% if has_refine or len(optimization_stages) > 1:
             # Stage results storage (use Bunch for dot-notation access)
             stage_results = Bunch()
+% endif
 
 % if has_refine:
             # Refine reuses the shared base warm-up (model_fn/state/transient) — the same
@@ -4638,16 +4653,18 @@ if __name__ == "__main__":
         region_labels = None
     logger.info("  Loaded network with %d nodes", weights.shape[0])
 % else:
-    # No BIDS directory configured - check if weights available
-    if 'weights' not in dir() or weights is None:
+    # No BIDS directory configured, so nothing above defines these — they are the
+    # caller's to inject before running this module.
+    weights = globals().get("weights")
+    if weights is None:
         logger.error(
             "Network weights not defined. Either configure network.bids_dir in "
             "YAML or call run_experiment() with weights."
         )
         import sys
         sys.exit(1)
-    distances = distances if 'distances' in dir() else None
-    region_labels = region_labels if 'region_labels' in dir() else None
+    distances = globals().get("distances")
+    region_labels = globals().get("region_labels")
 % endif
 
     # Run the experiment
@@ -4656,11 +4673,15 @@ if __name__ == "__main__":
     # Network observations (empirical targets) keyed by observation name,
     # resolved from the loaded network via the obs->measure mapping.
     _net_obs = {}
-    if '_network' in dir() and _network is not None:
+## `_network` is bound by the bids_dir branch above and by nothing else, so whether the
+## lookup can run at all is decided here rather than probed at runtime.
+% if bids_dir:
+    if _network is not None:
         _net_obs_data = _network.observations
         _net_obs = {name: _net_obs_data[measure]
                     for name, measure in _NETWORK_OBS_MEASURES.items()
                     if measure in _net_obs_data}
+% endif
 % endif
     raw_results = run_experiment(
         weights,

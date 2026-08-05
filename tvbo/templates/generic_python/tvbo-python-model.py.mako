@@ -17,6 +17,6 @@ else:
 # scipy always uses numpy
 _fmt = 'numpy'
 %>
-${dfun.imports(fmt=_fmt)}
+${dfun.imports(model=model, fmt=_fmt)}
 
 ${dfun.full_dfun(_model, fmt=_fmt, signature='scipy')}

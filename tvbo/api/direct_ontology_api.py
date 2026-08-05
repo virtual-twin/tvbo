@@ -66,6 +66,22 @@ def _get_symbol(entity) -> str:
     return _get_label(entity)
 
 
+def _requirements(entity):
+    """Split ``requires`` into (entity references, bare names).
+
+    Two different properties share the Python attribute name: ``tvbo:requires``
+    is an ObjectProperty holding entities, while the NeuroML ingest adds
+    ``tvbo/neuroml:requires``, an AnnotationProperty holding the *name* of a
+    quantity a ComponentType needs from its context (``'surfaceArea'``,
+    ``'iCa'``). owlready2 merges both into one slot, so it yields entities and
+    plain strings together. Only the entities have a ``storid`` or a node.
+    """
+    refs, names = [], []
+    for req in getattr(entity, "requires", None) or []:
+        (names if isinstance(req, str) else refs).append(req)
+    return refs, names
+
+
 def _get_type(entity) -> str:
     """Primary type/class label. Entity-local so it is world-agnostic.
 
@@ -95,7 +111,9 @@ def _serialize_entity(entity) -> Dict[str, Any]:
         description = definition.split(".")[0]
 
     is_a = [p.name for p in entity.is_a if isinstance(p, owl.ThingClass) and p.name != "Thing"]
-    requires = [r.storid for r in entity.requires] if hasattr(entity, "requires") and entity.requires else []
+    refs, names = _requirements(entity)
+    # names, like `is_a` above: a bare LEMS requirement has no storid to report
+    requires = [_get_label(r) for r in refs] + names
 
     return {
         "id": f"onto_{entity.storid}",
@@ -183,12 +201,11 @@ class DirectOntologyAPI:
                 nodes.append(_serialize_entity(child))
                 links.append({"source": child.storid, "target": storid, "type": predicate.replace("rdfs:subClassOf", "is_a")})
 
-        if hasattr(entity, "requires"):
-            for req in entity.requires:
-                if req.storid not in seen:
-                    seen.add(req.storid)
-                    nodes.append(_serialize_entity(req))
-                    links.append({"source": storid, "target": req.storid, "type": "requires"})
+        for req in _requirements(entity)[0]:
+            if req.storid not in seen:
+                seen.add(req.storid)
+                nodes.append(_serialize_entity(req))
+                links.append({"source": storid, "target": req.storid, "type": "requires"})
 
         return {"nodes": nodes, "links": links}
 
