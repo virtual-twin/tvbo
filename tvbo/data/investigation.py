@@ -43,23 +43,58 @@ def _format(value: Any, fmt: Optional[str]) -> str:
     return fmt.format(value) if fmt else str(value)
 
 
-def resolve_binding(binding: Any, results_root: Optional[Path]) -> tuple[str, dict]:
+def _count_target(inv: Any, member_label: Optional[str]) -> Any:
+    """The object a ``count:`` binding tallies: the investigation itself, or a loaded member."""
+    if member_label is None:
+        if inv is None:
+            raise ValueError("a bare `count:` collection needs an investigation context")
+        return inv
+    if inv is None:
+        raise ValueError(f"count references member {member_label!r} but no investigation context was given")
+    from tvbo.classes.study import SimulationStudy
+
+    for label, path in inv.member_recipes():
+        if label == member_label:
+            if "://" in str(path):
+                raise ValueError(f"cannot count a collection on IRI member {member_label!r}")
+            return SimulationStudy.from_file(str(path))
+    raise ValueError(f"count references unknown member {member_label!r}")
+
+
+def _count(spec: str, inv: Any) -> int:
+    """Length of the collection a ``count:`` binding names.
+
+    ``<member>.<collection>`` counts the collection on that member study (loaded from its
+    recipe); a bare ``<collection>`` counts one on the investigation itself. An unknown
+    collection slot raises, so a typo fails the build rather than tallying to zero.
+    """
+    member_label, _, coll = str(spec).rpartition(".")
+    target = _count_target(inv, member_label or None)
+    if not hasattr(target, coll):
+        where = member_label or "the investigation"
+        raise ValueError(f"count collection {coll!r} is not a slot on {where}")
+    return len(as_list(getattr(target, coll)))
+
+
+def resolve_binding(binding: Any, results_root: Optional[Path], *, inv: Any = None) -> tuple[str, dict]:
     """Resolve one ``ResultBinding`` to ``(rendered_string, provenance)``.
 
-    A computed binding (``used:``) reads a scalar out of a result container and formats it;
-    an authored binding (``value:`` + ``source:``) passes its literal through untouched (a
-    numeric ``format`` is for computed values, not a quoted constant). Raises ``ValueError``
-    for a malformed binding (both or neither of ``used``/``value``), and lets a resolution
-    failure (missing container, dead reference, non-scalar) propagate to the caller, which
-    turns it into a build-failing problem keyed by ``binding.key``.
+    Three mutually exclusive forms: ``used:`` reads a scalar out of a result container and
+    formats it; ``count:`` tallies a collection on a member or the investigation (no run);
+    ``value:`` (+ ``source:``) passes an authored literal through untouched. Raises
+    ``ValueError`` for a malformed binding (zero or more than one form set), and lets a
+    resolution failure (missing container, dead reference, non-scalar, unknown member)
+    propagate to the caller, which turns it into a build-failing problem keyed by ``binding.key``.
     """
     used = getattr(binding, "used", None)
     value = getattr(binding, "value", None)
+    count = getattr(binding, "count", None)
     fmt = getattr(binding, "format", None)
-    if used is not None and value is not None:
-        raise ValueError("both `used:` and `value:` are set (they are mutually exclusive)")
-    if used is None and value is None:
-        raise ValueError("neither `used:` nor `value:` is set")
+    n_set = sum(x is not None for x in (used, value, count))
+    if n_set == 0:
+        raise ValueError("none of `used:`, `count:`, or `value:` is set")
+    if n_set > 1:
+        raise ValueError("`used:`, `count:`, and `value:` are mutually exclusive")
 
     if value is not None:
         prov = {"computed": False, "value": str(value)}
@@ -70,6 +105,14 @@ def resolve_binding(binding: Any, results_root: Optional[Path]) -> tuple[str, di
         if desc:
             prov["description"] = str(desc)
         return str(value), prov
+
+    if count is not None:
+        rendered = _format(_count(count, inv), fmt)
+        prov = {"computed": True, "count": str(count)}
+        desc = getattr(binding, "description", None)
+        if desc:
+            prov["description"] = str(desc)
+        return rendered, prov
 
     da = resolve_dataref(used, results_root=str(results_root) if results_root else None)
     rendered = _format(_scalar(da), fmt)
@@ -106,7 +149,7 @@ def resolve_results(
             problems.append(f"{key}: duplicate results key")
             continue
         try:
-            rendered, prov = resolve_binding(binding, results_root)
+            rendered, prov = resolve_binding(binding, results_root, inv=inv)
         except Exception as e:  # noqa: BLE001 — reported as a build problem, not raised
             problems.append(f"{key}: {type(e).__name__}: {e}")
             continue

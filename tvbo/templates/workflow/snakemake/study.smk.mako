@@ -159,9 +159,13 @@ rule ${ep["rule_name"]}:
     benchmark:
         f"{OUT_DIR}/${ep['key']}/${_cell_out(ep)[:-3]}.benchmark.tsv"
 % endif
-% if ep.get("container") and ep["container"] != (exp_plans[0].get("container") if exp_plans else None):
-    # This experiment declares its own image; a rule-level `container:` overrides the
-    # global one above (which is keyed on the first experiment).
+<% _global_container = exp_plans[0].get("container") if exp_plans else None %>\
+% if _global_container and not ep.get("container"):
+    # This run declares a venv, so it opts out of the study's global container; the image would otherwise shadow the venv under apptainer deployment.
+    container:
+        None
+% elif ep.get("container") and ep["container"] != _global_container:
+    # This experiment declares its own image; a rule-level `container:` overrides the global one above (keyed on the first experiment).
     container:
         "${ep['container']}"
 % endif
