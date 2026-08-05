@@ -1233,59 +1233,20 @@ def save_latex(conf, fpath):
 ##############
 
 
-def render_citation(citation: Any, style: str = "apa") -> str:
-    """Render an ontology citation instance as formatted text.
-
-    Args:
-        citation: An owlready2 instance with author, year, title, journal, volume, pages, label.
-        style: 'bibtex' or 'apa'.
-
-    Returns:
-        str: The formatted citation.
-    """
-    authors_list = citation.author
-    formatted_authors = []
-    for author_str in authors_list:
-        for author in author_str.split(" and "):
-            parts = author.split()
-            if len(parts) >= 2:
-                formatted_authors.append(f"{parts[-1]}, {' '.join([p[0] + '.' for p in parts[:-1]])}")
-            else:
-                formatted_authors.append(author)
-
-    year = citation.year[0] if citation.year else "Unknown Year"
-    title = citation.title[0] if citation.title else "Unknown Title"
-    journal = citation.journal[0] if citation.journal else "Unknown Journal"
-    volume = citation.volume[0] if citation.volume else "Unknown Volume"
-    pages = citation.pages[0] if citation.pages else "Unknown Pages"
-    label = citation.label[0] if citation.label else "UnknownLabel"
-
-    if style.lower() == "bibtex":
-        return (
-            f"@article{{{label},\n    author = {{{' and '.join(formatted_authors)}}},\n    title = {{{title}}},\n    "
-            f"journal = {{{journal}}},\n    year = {{{year}}},\n    volume = {{{volume}}},\n    "
-            f"pages = {{{pages}}}\n}}"
-        )
-    elif style.lower() == "apa":
-        return f"{', '.join(formatted_authors)} ({year}). {title}. *{journal}*, {volume}, {pages}."
-    else:
-        return "Unsupported citation style."
-
-
 _ET_AL_MARKERS = frozenset({"others", "et al.", "al."})
 
 
 def _format_person(person) -> str:
     """One author as `Last, F.`, using only the name parts the entry actually carries.
 
-    A particled surname lives in pybtex's `prelast_names`, not `last_names`: `van der Pol,
-    Balthasar` parses as `prelast=['van','der']`, `last=['Pol']`. Reading only the latter
-    cites him as `Pol, B.`, which is a different person's name — so both parts are joined.
-
     BibTeX truncates an author list by ending it with `and others`, which pybtex parses as
     a person whose sole name is `others` and who has no first name; the same idiom appears
     in the wild as `et al.`. Taking a first initial unconditionally raised `IndexError` on
     every entry written that way.
+
+    A surname particle is a name part in its own right: pybtex files `van der` under
+    `prelast_names` and only `Pol` under `last_names`, so reading the latter alone cites
+    a different person entirely.
     """
     last = " ".join([*person.prelast_names, *person.last_names]).strip()
     if last.strip("{}").lower() in _ET_AL_MARKERS:
@@ -1307,6 +1268,52 @@ def _format_authors(persons) -> str:
     if len(names) == 2:
         return f"{names[0]} & {names[1]}"
     return f"{', '.join(names[:-1])}, & {names[-1]}"
+
+
+def _parse_authors(author_fields: Sequence[str]) -> list:
+    """BibTeX author strings — `Wilson, Hugh R. and Cowan, Jack D.` — as pybtex `Person`s.
+
+    A BibTeX name is written either `First Last` or `Last, First`, and the ontology's
+    citations carry both. Splitting on whitespace and calling the last word the surname
+    therefore garbled every comma-ordered entry — `Wilson, Hugh R. and Cowan, Jack D.`
+    rendered as `R., W. H., D., C. J.` — besides dropping particles and treating the
+    `and others` truncation idiom as a person. Parsing is pybtex's job.
+    """
+    if db.Person is None:
+        raise ImportError(db.PYBTEX_MISSING)
+    return [db.Person(name) for field in author_fields for name in field.split(" and ")]
+
+
+def render_citation(citation: Any, style: str = "apa") -> str:
+    """Render an ontology citation instance as formatted text.
+
+    Args:
+        citation: An owlready2 instance with author, year, title, journal, volume, pages, label.
+        style: 'bibtex' or 'apa'.
+
+    Returns:
+        str: The formatted citation.
+    """
+    persons = _parse_authors(citation.author)
+
+    year = citation.year[0] if citation.year else "Unknown Year"
+    title = citation.title[0] if citation.title else "Unknown Title"
+    journal = citation.journal[0] if citation.journal else "Unknown Journal"
+    volume = citation.volume[0] if citation.volume else "Unknown Volume"
+    pages = citation.pages[0] if citation.pages else "Unknown Pages"
+    label = citation.label[0] if citation.label else "UnknownLabel"
+
+    if style.lower() == "bibtex":
+        authors = " and ".join(_format_person(person) for person in persons)
+        return (
+            f"@article{{{label},\n    author = {{{authors}}},\n    title = {{{title}}},\n    "
+            f"journal = {{{journal}}},\n    year = {{{year}}},\n    volume = {{{volume}}},\n    "
+            f"pages = {{{pages}}}\n}}"
+        )
+    elif style.lower() == "apa":
+        return f"{_format_authors(persons)} ({year}). {title}. *{journal}*, {volume}, {pages}."
+    else:
+        return "Unsupported citation style."
 
 
 def get_citation(citation_key) -> str:
