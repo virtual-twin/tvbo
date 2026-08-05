@@ -61,7 +61,7 @@ state_variables:
     initial_value: -14.0
 number_of_modes: 1
 model_type: spiking
-autonomous: true
+autonomous: false
 events:
   spike:
     name: spike
