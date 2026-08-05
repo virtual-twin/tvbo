@@ -1936,10 +1936,11 @@ def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
     streaming = {}
     for n, o in obs_by_name.items():
         r = resolve_reduction(o, experiment)
-        # Fold every reduce: streaming observation into the post-tuning carry: a convolution
-        # (BOLD) reducer or a non-windowed stat stream (mean/std/variance). A plain dynamics
-        # observer (not reduce: streaming) stays on the materialise path.
-        if r is not None and _is_streaming(o) and not r.get("windowed"):
+        # Fold in-carry reducers: a reduce: streaming observation (BOLD / stat stream) OR a
+        # `partition` grouped reduction (kind 'wave'), which writes per-group metrics into a
+        # sample-indexed carry the same way — so the base/post-eval run never materialises the
+        # trajectory to vmap every frame at once. A plain dynamics observer stays materialised.
+        if r is not None and not r.get("windowed") and (_is_streaming(o) or r.get("kind") == "wave"):
             streaming[str(n)] = r
     if not streaming:
         return {"names": [], "deliverables": [], "period_in_steps": None, "dims": {}}
@@ -1982,7 +1983,7 @@ def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
     # convolution (BOLD) reducer, ds_steps for a plain stride, period_steps for a monitor
     # observer. A scalar stat stream has none, so default the block to a plain 1000 steps.
     slotted = [r for r in streaming.values()
-               if r.get("kind") in ("convolution", "stride", "monitor")]
+               if r.get("period_steps") or r.get("ds_steps")]
     pis = 1
     for r in slotted:
         step = int(r["period_steps"] if r.get("period_steps")
