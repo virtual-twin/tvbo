@@ -37,7 +37,11 @@ from tvbo.templates.base.utils import get_source_code, retime, time_series_input
         for name, param in func.equation.parameters.items():
             if hasattr(param, 'value') and param.value is not None:
                 params[name] = param.value
-    param_args = ', '.join(f"{name}={value}" for name, value in params.items())
+    _kwargs = [f"{name}={value}" for name, value in params.items()]
+    # Only the pipeline branch binds no-default arguments in the body (they ARE its
+    # input); the callable and kernel branches still take them as positionals.
+    param_args = ', '.join(_kwargs)
+    signature_args = ', '.join(list(params_required) + _kwargs)
 
     # Store callable reference to avoid name collision
     callable_ref = f"_jax_{func.callable.name}" if func.callable else None
@@ -57,8 +61,8 @@ from tvbo.templates.base.utils import get_source_code, retime, time_series_input
     # Build function signature: primary input + secondary TimeSeries inputs + parameters
     sig_parts = ['signal_ts']  # First argument is always the primary signal
     sig_parts.extend(callable_ts_args)
-    if param_args:
-        sig_parts.append(param_args)
+    if signature_args:
+        sig_parts.append(signature_args)
     func_signature = ', '.join(sig_parts)
 
     # Build kwargs string for lambda
@@ -111,7 +115,7 @@ def ${func_name}(${func_signature}):
                 expected_time_unit = str(arg.unit)
                 break
 %>
-def ${func_name}(ts, ${param_args}):
+def ${func_name}(ts, ${signature_args}):
 % if hasattr(func, 'description') and func.description:
     """${func.description}"""
 % endif
@@ -133,8 +137,7 @@ def ${func_name}(ts, ${param_args}):
     # Check if transformation applies on time dimension (handle both string and enum)
     apply_on_dim = str(func.apply_on_dimension) if func.apply_on_dimension else None
     has_apply_on_time = apply_on_dim in ['time', 'DimensionType.time']
-    # The body may name the incoming samples `X` or by the argument the spec declared
-    # without a default; bind whichever it reads, and nothing it does not.
+    # `X` or the spec's own no-default argument, whichever the body actually reads.
     inputs = time_series_inputs(['X'] + params_required, jax_code)
     time_code = retime(jax_code, inputs)
 %>

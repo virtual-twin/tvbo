@@ -5,16 +5,13 @@ arbitrary ``code/`` Python: the expression lowers to JAX, ``apply_on_dimension``
 a vmap over that axis, ``aggregate`` reduces a named one, and the output's axis names are
 DERIVED from that declaration and cross-checked against the result — never read off its
 shape. An expression that reshapes must say so with ``dims:``.
+
+The sharding tests read the device count from ``conftest`` rather than requesting their
+own. Appending a second ``--xla_force_host_platform_device_count`` here used to override
+it, but only when this module was imported before JAX — so the suite saw 4 devices alone
+and 8 alongside other tests, and an assertion that held at 4 failed at 8.
 """
 from __future__ import annotations
-
-import os
-import sys
-
-if "jax" not in sys.modules:  # host-replicated devices exist only if requested pre-init
-    os.environ["XLA_FLAGS"] = (
-        os.environ.get("XLA_FLAGS", "") + " --xla_force_host_platform_device_count=4"
-    ).strip()
 
 import numpy as np
 import pytest
@@ -293,8 +290,23 @@ def _device_count():
     return jax.local_device_count()
 
 
-def _cohort(n=7, m=3, seed=0):
-    """A ragged cohort — 7 into 4 shards — so padding and trimming are always exercised."""
+COHORT_SIZE = 7
+"""Subjects in :func:`_cohort` — deliberately not a multiple of any device count."""
+
+
+def _shard_count(workers):
+    """Shards the renderer will use: ``min(workers, devices, items)``.
+
+    The clamp is three-way, so the shard count is NOT the device count whenever the
+    cohort is smaller than the machine — 8 devices and 7 subjects shard 7 ways. Asserting
+    against the device count instead passed only on hosts with at most 7 usable devices.
+    """
+    return min(workers, _device_count(), COHORT_SIZE)
+
+
+def _cohort(n=COHORT_SIZE, m=3, seed=0):
+    """A ragged cohort — 7 subjects, never evenly divisible — so padding and trimming
+    are always exercised."""
     rng = np.random.default_rng(seed)
     a = _da(rng.normal(size=(n, m)), ["subject", "mode"], {"subject": np.arange(n)})
     b = _da(rng.normal(size=(m,)), ["mode"])
@@ -346,11 +358,13 @@ def test_aggregate_reduces_after_the_shards_are_trimmed():
 
 
 def test_more_shards_than_devices_is_logged_not_silently_clamped(caplog):
+    """An unmeetable n_workers must be reported with the width actually used."""
     if _device_count() < 2:
         pytest.skip("multi-device sharding needs >1 local device")
     with caplog.at_level("WARNING", logger="tvbo.run"):
         _rendered(_Execution(n_workers=99))
-    assert "n_workers=99" in caplog.text and f"axis {_device_count()} ways" in caplog.text
+    assert "n_workers=99" in caplog.text
+    assert f"axis {_shard_count(99)} ways" in caplog.text
 
 
 def test_workers_without_a_mapped_axis_warns_and_still_computes(caplog):

@@ -132,32 +132,108 @@ def _visible_reads(tree: ast.AST) -> set[str]:
     binding, not the module's — Python decides this per function, so a single nested
     ``import os`` makes every ``os`` in that function local. Counting such reads against
     the module keeps a top-level ``import os`` that nothing outside the function uses.
+
+    Only a *function* body shadows, and only its own body. A class body does not form a
+    scope its methods can see, so ``pi = 3`` in a class leaves ``x * pi`` in a method
+    resolving to the module's ``pi``. Decorators, argument defaults and annotations are
+    evaluated in the enclosing scope, before the function's locals exist, so they are
+    read with the outer set too. Treating either as shadowing dropped an import the
+    generated module then failed on with ``NameError``.
     """
     found: set[str] = set()
     prose = _docstrings(tree)
 
+    def note(node: ast.AST, shadowed: frozenset[str]) -> None:
+        if isinstance(node, ast.Name):
+            if node.id not in shadowed:
+                found.add(node.id)
+        elif isinstance(node, ast.Attribute):
+            root = node
+            while isinstance(root, ast.Attribute):
+                root = root.value
+            if isinstance(root, ast.Name) and root.id not in shadowed:
+                found.add(root.id)
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if id(node) not in prose:
+                found.update(_names_in_string(node.value))
+
     def walk(node: ast.AST, shadowed: frozenset[str]) -> None:
-        if isinstance(node, _SCOPES) and node is not tree:
-            shadowed = shadowed | frozenset(_assigned_once(node))
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            outer = shadowed
+            inner = shadowed | frozenset(_assigned_once(node))
+            for child in ast.iter_child_nodes(node):
+                # The signature is evaluated where the function is defined, not inside it.
+                where = outer if child is not getattr(node, "body", None) else inner
+                if isinstance(child, ast.arguments) or child in getattr(node, "decorator_list", []):
+                    where = outer
+                elif isinstance(child, ast.stmt):
+                    where = inner
+                note(child, where)
+                walk(child, where)
+            return
         for child in ast.iter_child_nodes(node):
             if isinstance(child, (ast.Import, ast.ImportFrom)):
                 continue
-            if isinstance(child, ast.Name):
-                if child.id not in shadowed:
-                    found.add(child.id)
-            elif isinstance(child, ast.Attribute):
-                root = child
-                while isinstance(root, ast.Attribute):
-                    root = root.value
-                if isinstance(root, ast.Name) and root.id not in shadowed:
-                    found.add(root.id)
-            elif isinstance(child, ast.Constant) and isinstance(child.value, str):
-                if id(child) not in prose:
-                    found.update(_names_in_string(child.value))
+            note(child, shadowed)
             walk(child, shadowed)
 
     walk(tree, frozenset())
     return found
+
+
+_BLOCK_FIELDS = ("body", "orelse", "finalbody", "handlers")
+
+
+def _block_sizes(tree: ast.AST) -> dict[int, int]:
+    """``id(stmt)`` → how many statements share its block.
+
+    Removing the only statement of a block leaves a header with no suite, which is a
+    :class:`SyntaxError` rather than a tidier module: ``if flag:`` followed straight by
+    ``return`` does not compile, and neither does an emptied ``try:``.
+    """
+    sizes: dict[int, int] = {}
+    for node in ast.walk(tree):
+        for field in _BLOCK_FIELDS:
+            block = getattr(node, field, None)
+            if isinstance(block, list):
+                statements = [s for s in block if isinstance(s, ast.stmt)]
+                for statement in statements:
+                    sizes[id(statement)] = len(statements)
+    return sizes
+
+
+def _owns_its_lines(node: ast.stmt, lines: list[str]) -> bool:
+    """Whether *node*'s source lines hold nothing but *node*.
+
+    Rewriting by line is only safe when the lines are the statement.
+    ``n = w.shape[0]; m = g()`` puts an impure call on the same line, and deleting by
+    line would drop that call while leaving the name it bound undefined — precisely the
+    change :func:`_is_pure` exists to prevent, and it parses, so nothing downstream
+    catches it. A single-line suite (``if x: n = 1``) fails the same check, because the
+    span re-parses as the ``if``, not as the assignment.
+    """
+    import textwrap
+
+    end = node.end_lineno or node.lineno
+    span = "\n".join(lines[node.lineno - 1 : end])
+    if "noqa" in span:
+        return False
+    try:
+        parsed = ast.parse(textwrap.dedent(span))
+    except SyntaxError:
+        return False
+    return len(parsed.body) == 1 and type(parsed.body[0]) is type(node)
+
+
+def _last_in_block(node: ast.stmt, sizes: dict[int, int]) -> bool:
+    """Whether removing *node* would leave its block empty.
+
+    A header with no suite is a :class:`SyntaxError`, not a tidier module: ``if flag:``
+    followed straight by ``return`` does not compile, and neither does an emptied
+    ``try:``. Such a statement is left alone rather than replaced with ``pass``, which
+    would trade a lint warning for a line that means nothing.
+    """
+    return sizes.get(id(node), 1) < 2
 
 
 def _import_nodes(tree: ast.AST) -> list[ast.Import | ast.ImportFrom]:
@@ -206,6 +282,7 @@ def prune_unused_imports(source: str) -> str:
 
     used = _referenced(tree, source)
     visible = _visible_reads(tree)
+    sizes = _block_sizes(tree)
     lines = source.split("\n")
     replacements: dict[int, list[str]] = {}
 
@@ -214,14 +291,14 @@ def prune_unused_imports(source: str) -> str:
             continue
         if any(a.name == "*" for a in node.names):
             continue
-        end = node.end_lineno or node.lineno
-        span = "\n".join(lines[node.lineno - 1 : end])
-        if "noqa" in span:
-            continue
         # A module-level import is only kept by a read a module-level binding can reach.
         reachable = visible if node.col_offset == 0 else used
         keep = [a for a in node.names if _bound_names(a) in reachable]
         if len(keep) == len(node.names):
+            continue
+        if not _owns_its_lines(node, lines):
+            continue
+        if not keep and _last_in_block(node, sizes):
             continue
         indent = " " * node.col_offset
         if keep:
@@ -231,6 +308,7 @@ def prune_unused_imports(source: str) -> str:
             text = [indent + ast.unparse(ast.fix_missing_locations(kept))]
         else:
             text = []
+        end = node.end_lineno or node.lineno
         replacements[node.lineno - 1] = text
         for i in range(node.lineno, end):
             replacements[i] = []
@@ -359,6 +437,7 @@ def prune_dead_assignments(source: str) -> str:
         return source
 
     lines = source.split("\n")
+    sizes = _block_sizes(tree)
     drop: set[int] = set()
 
     for scope in (n for n in ast.walk(tree) if isinstance(n, _PRUNABLE_SCOPES)):
@@ -374,9 +453,9 @@ def prune_dead_assignments(source: str) -> str:
                 continue
             if not _is_pure(node.value):
                 continue
-            end = node.end_lineno or node.lineno
-            if "noqa" in "\n".join(lines[node.lineno - 1 : end]):
+            if _last_in_block(node, sizes) or not _owns_its_lines(node, lines):
                 continue
+            end = node.end_lineno or node.lineno
             drop.update(range(node.lineno - 1, end))
 
     if not drop:

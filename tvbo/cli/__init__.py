@@ -27,6 +27,7 @@ from . import (
     save as _save_cmd,
     skills as _skills_cmd,
     validate as _validate_cmd,
+    verify as _verify_cmd,
     version as _version_cmd,
     workflow as _workflow_cmd,
 )
@@ -63,6 +64,7 @@ app.command("save", help="Like export, with bundled data when supported.")(_save
 app.command("import", help="Load a foreign file (auto-dispatch by extension).")(_import_cmd.import_)
 app.command("info", help="Inspect a SPEC (tasks, outputs, declared backends).")(_info_cmd.info)
 app.command("formats", help="List all registered I/O formats.")(_formats_cmd.formats)
+app.command("verify", help="Check an Investigation is buildable (completeness / staleness / manifest coverage).")(_verify_cmd.verify)
 app.command("version", help="Print the tvbo version.")(_version_cmd.version)
 
 # Sub-trees (registered as their own Typer apps)

@@ -100,14 +100,18 @@ def retime(body, inputs):
     """Rewrite *body* to read the time axis, substituting ``t_<name>`` for each input.
 
     ``apply_on_dimension: time`` applies the same expression to the time vector, so the
-    sample symbols swap for their time counterparts. Word-boundary substitution keeps
-    ``data`` in ``data.shape`` and ``X`` in a longer identifier from being caught.
+    sample symbols swap for their time counterparts.
+
+    An attribute of the same name is left alone. ``\\b`` matches immediately after a
+    dot, so a plain word-boundary substitution rewrote ``ts.data`` into ``ts.t_data``
+    and the generated function raised ``AttributeError`` on the TimeSeries. The
+    lookbehind requires the name to start a reference, not continue one.
     """
     import re
 
     out = body
     for name in inputs:
-        out = re.sub(rf"\b{re.escape(name)}\b", f"t_{name}", out)
+        out = re.sub(rf"(?<![\w.]){re.escape(name)}\b", f"t_{name}", out)
     return out
 
 

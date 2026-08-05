@@ -3733,7 +3733,9 @@ def run_experiment(
         observations = None
 % endif
 
-% if algorithms_list or has_optimization:
+## Consumed by every algorithm, and by optimization unless it refines or integrates its own.
+<% _needs_initial_state = bool(algorithms_list) or (has_optimization and not has_refine and (opt_depends_on or not opt_has_custom_integration)) %>\
+% if _needs_initial_state:
     # Starting point for the algorithms and optimization below, before either modifies `state`.
     initial_state = copy.deepcopy(state)
 % endif
