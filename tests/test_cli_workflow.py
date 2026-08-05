@@ -274,6 +274,48 @@ def test_declared_walltime_reaches_the_snakemake_rule():
     assert "runtime=4320" in smk
 
 
+def test_retries_escalation_emits_attempt_scaled_resources():
+    """workflow.retries wires Snakemake retry + per-attempt escalation into the rule.
+
+    A GPU rule (gres) must NOT raise host mem on retry; it adds an attempt-scaled
+    `nvmap_max` RESOURCE (params callables never receive `attempt`, only resources do)
+    and exports it as TVBO_NVMAP_MAX so the re-run shrinks the on-device vmap batch. A
+    CPU rule scales host mem/time up instead. retries=0 emits none of it (opt-in).
+    """
+    from tvbo.cli.workflow import _render_template
+
+    def ep(key, block, retries):
+        return {"key": key, "rule_name": f"exp_{key}", "spec_relpath": f"spec/{key}/experiment.yaml",
+                "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
+                "container": None, "block": block, "axes": [], "depends_on": [], "retries": retries}
+
+    gpu = {"cpus_per_task": 2, "mem": "128G", "time": "04:00:00", "gres": "gpu:1", "partition": "gpu"}
+    cpu = {"cpus_per_task": 4, "mem": "16G", "time": "06:00:00"}
+    smk = _render_template("snakemake/study.smk.mako", block={}, bundled_code=False,
+                           exp_plans=[ep("41", gpu, 2), ep("50", cpu, 2), ep("1", {}, 0)])
+
+    g = smk[smk.index("rule exp_41:"):smk.index("rule exp_50:")]
+    c = smk[smk.index("rule exp_50:"):smk.index("rule exp_1:")]
+    z = smk[smk.index("rule exp_1:"):]
+
+    assert "retries: 2" in g
+    assert "mem_mb=131072," in g                                  # host mem FIXED on a GPU rule
+    assert "runtime=lambda wildcards, attempt:" in g
+    assert "nvmap_max=lambda wildcards, attempt:" in g            # a RESOURCE, not params
+    assert "params:" not in g
+    assert "export TVBO_NVMAP_MAX={resources.nvmap_max}" in g
+
+    assert "retries: 2" in c
+    assert "mem_mb=lambda wildcards, attempt:" in c               # CPU rule: host mem escalates
+    assert "nvmap_max" not in c and "TVBO_NVMAP_MAX" not in c
+
+    assert "retries:" not in z and "nvmap_max" not in z and "attempt" not in z
+
+    # The nvmap_max schedule must be valid Python and shrink the batch each attempt.
+    line = re.search(r"nvmap_max=(lambda wildcards, attempt: .+)", g).group(1)
+    assert (eval(line)(None, 1), eval(line)(None, 2), eval(line)(None, 3)) == (0, 8, 4)
+
+
 def test_fanout_snakefile_is_executable_python():
     """The emitted Snakefile must actually *run*, not merely contain the right text.
 
@@ -1507,3 +1549,85 @@ def test_benchmark_and_smoke_reach_the_snakemake_rule():
     smk_off = _render_template("snakemake/study.smk.mako", block={}, bundled_code=False, exp_plans=[ep_off])
     assert "benchmark:" not in smk_off
     assert "--max-iterations" not in smk_off
+
+
+# ------------------------------------------- selectors and constants a kit cannot fake
+
+
+def test_experiment_targets_returns_the_validated_rules(tmp_path):
+    """The mapped targets, not a recomputation of them.
+
+    The list was built, checked, then thrown away and derived a second time in the
+    ``return`` — so the validation and the value could drift apart silently.
+    """
+    from tvbo.cli.workflow import _experiment_targets
+
+    (tmp_path / "Snakefile").write_text("rule exp_41:\n    shell: 'true'\nrule exp_50:\n    shell: 'true'\n")
+    assert _experiment_targets(tmp_path, "41,50") == ["exp_41", "exp_50"]
+
+
+def test_experiment_selector_without_a_snakefile_is_an_error(tmp_path):
+    """With no rules to check against, every token reads as missing.
+
+    Reporting "its experiments are []" blames the selector for the kit's shape.
+    """
+    import typer
+
+    from tvbo.cli.workflow import _experiment_targets
+
+    with pytest.raises((SystemExit, typer.Exit, typer.BadParameter)):
+        _experiment_targets(tmp_path, "41")
+
+
+def test_experiment_on_a_slurm_kit_is_refused_before_submission(tmp_path, monkeypatch):
+    """The slurm chain submits the WHOLE array and takes no per-experiment target.
+
+    The guard lived in the branch a non-dry-run slurm kit never reaches, so the selector
+    was dropped and the study's full allocation went to the scheduler.
+    """
+    import typer
+
+    from tvbo.cli import workflow as wf
+
+    submitted: list = []
+    monkeypatch.setattr(wf, "_submit_slurm_chain", lambda *a, **k: submitted.append(a))
+    with pytest.raises((SystemExit, typer.Exit, typer.BadParameter)):
+        wf._execute_emitted("slurm", tmp_path, dry_run=False, experiment="41")
+    assert not submitted, "the array was submitted despite an unhonourable selector"
+
+
+def test_two_constants_sharing_a_basename_is_an_error(tmp_path):
+    """The kit resolves a constant by basename, so a collision fits the wrong operator.
+
+    Silently copying the second over the first produces a run that completes and reports
+    numbers derived from the wrong empirical target.
+    """
+    import typer
+
+    from tvbo.cli.workflow import _bundle_script_constants
+
+    for sub in ("fc", "other"):
+        (tmp_path / sub).mkdir()
+        (tmp_path / sub / "target.h5").write_text(sub)
+    code = (f'_load_constant("{tmp_path / "fc" / "target.h5"}")\n'
+            f'_load_constant("{tmp_path / "other" / "target.h5"}")\n')
+    with pytest.raises((SystemExit, typer.Exit, typer.BadParameter)):
+        _bundle_script_constants(code, tmp_path / "kit")
+
+
+def test_the_same_constant_referenced_twice_is_staged_once(tmp_path):
+    from tvbo.cli.workflow import _bundle_script_constants
+
+    (tmp_path / "target.h5").write_text("x")
+    code = f'_load_constant("{tmp_path / "target.h5"}")\n_load_constant("{tmp_path / "target.h5"}")\n'
+    assert _bundle_script_constants(code, tmp_path / "kit") == 1
+
+
+def test_a_constant_missing_on_this_machine_is_reported_not_dropped(tmp_path, caplog):
+    """It cannot be staged, so the kit ships without it — that must be said out loud."""
+    from tvbo.cli.workflow import _bundle_script_constants
+
+    with caplog.at_level("WARNING", logger="tvbo.cli"):
+        n = _bundle_script_constants('_load_constant("/nowhere/target.h5")\n', tmp_path / "kit")
+    assert n == 0
+    assert "target.h5" in caplog.text

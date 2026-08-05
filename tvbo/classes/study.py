@@ -233,7 +233,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         return cls(**data)
 
 
-class Investigation(SimulationStudy, tvbo_datamodel.Investigation):
+class StudyCollection(SimulationStudy, tvbo_datamodel.StudyCollection):
     """A whole manuscript as one runnable specification.
 
     Aggregates the member studies a paper reports (`members`) and owns the
@@ -246,12 +246,12 @@ class Investigation(SimulationStudy, tvbo_datamodel.Investigation):
     """
 
     def __repr__(self) -> str:
-        title = self.title or "Untitled Investigation"
+        title = self.title or "Untitled StudyCollection"
         n_members = len(getattr(self, "members", None) or [])
         n_results = len(getattr(self, "results", None) or [])
         n_figures = len(getattr(self, "figures", None) or [])
         return (
-            f"Investigation(\n"
+            f"StudyCollection(\n"
             f"  title={title!r},\n"
             f"  members={n_members}, results={n_results}, figures={n_figures}\n"
             f")"
@@ -260,7 +260,7 @@ class Investigation(SimulationStudy, tvbo_datamodel.Investigation):
     def member_recipes(self, base=None, *, include_optional: bool = True) -> list[tuple[str, "Path"]]:
         """The member study recipes as ``(label, resolved_path)`` pairs.
 
-        Each ``recipe`` is resolved relative to *base* (the investigation file's
+        Each ``recipe`` is resolved relative to *base* (the StudyCollection file's
         directory) when it is not an IRI or an absolute path. ``optional`` members
         are dropped when *include_optional* is False (a ``--skip``-style light run).
         """
