@@ -152,6 +152,7 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
     for name, matrix in arrays.items():
         m = edge_meta.get(name, {})
         fmt = m.get("format", auto_format(matrix))
+        dtype = m.get("dtype")
         grp = store.create_group(f"edges/{name}")
         grp.attrs["tvbo_class"] = "tvbo:Matrix"
         for attr in ("directed", "unit"):
@@ -163,7 +164,7 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
                     grp.attrs[attr] = val
                 else:
                     grp.attrs[attr] = str(val)
-        write_matrix(grp, matrix, fmt=str(fmt))
+        write_matrix(grp, matrix, fmt=str(fmt), dtype=dtype)
 
         # HDF5 dimension scales for labelled axes (§12.2)
         dim_labels = m.get("dimension_labels")
@@ -173,12 +174,10 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
         for pname, pmatrix in edge_params.get(name, {}).items():
             pg = grp.require_group("edge_parameters").create_group(pname)
             pg.attrs["tvbo_class"] = "tvbo:Parameter"
-            pfmt = fmt  # default to same format as parent edge
-            if "parameters" in m and isinstance(m["parameters"], dict):
-                p_meta = m["parameters"].get(pname, {})
-                if isinstance(p_meta, dict) and "format" in p_meta:
-                    pfmt = p_meta["format"]
-            write_matrix(pg, pmatrix, fmt=pfmt)
+            p_meta = (m.get("parameters") or {}).get(pname) if isinstance(m.get("parameters"), dict) else None
+            p_meta = p_meta if isinstance(p_meta, dict) else {}
+            write_matrix(pg, pmatrix, fmt=p_meta.get("format", fmt),
+                         dtype=p_meta.get("dtype", dtype))
 
 
 def _nodes_are_placeholders(nodes, number_of_nodes) -> bool:

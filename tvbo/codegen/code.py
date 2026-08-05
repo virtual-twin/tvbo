@@ -520,6 +520,12 @@ class _ArrayFunctionPrinterMixin:
     def _print_Piecewise(self, expr):
         return print_Piecewise(self, expr)
 
+    def _print_Min(self, expr):
+        return self._minmax("minimum", expr.args)
+
+    def _print_Max(self, expr):
+        return self._minmax("maximum", expr.args)
+
     def _print_Function(self, expr):
         handler = _ARRAY_FUNCTION_PRINTERS.get(expr.func.__name__)
         if handler is not None:
@@ -530,6 +536,20 @@ class _ArrayFunctionPrinterMixin:
     def _afn(self, name):
         """Module-qualify an array function, e.g. ``jnp.take``."""
         return f"{self._module}.{name}"
+
+    def _minmax(self, name, args):
+        """Fold ``Min``/``Max`` into nested elementwise calls.
+
+        SymPy's own numpy printer emits ``functools.reduce(numpy.minimum, [...])``,
+        which needs a ``functools`` import that generated modules do not carry — an
+        undefined name in code that is otherwise valid. Nesting the binary primitive
+        needs no import and stays elementwise, so it broadcasts like every other term.
+        """
+        rendered = [self._print(arg) for arg in args]
+        folded = rendered[0]
+        for nxt in rendered[1:]:
+            folded = f"{self._afn(name)}({folded}, {nxt})"
+        return folded
 
     def _where3(self, cond, a, b):
         return f"{self._afn('where')}({cond}, {a}, {b})"
@@ -1105,6 +1125,11 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
     # (numpy/jax -> ``<mod>.where``; Julia -> ``ifelse``), so no dedicated Julia Piecewise.
     def _where3(self, cond, a, b):
         return f"ifelse({cond}, {a}, {b})"
+
+    def _minmax(self, name, args):
+        """Julia takes `min`/`max` variadic, and carries no module prefix to qualify."""
+        julia_name = {"minimum": "min", "maximum": "max"}[name]
+        return f"{julia_name}({', '.join(self._print(arg) for arg in args)})"
 
     def _shape(self, base, axis):
         return f"size({base}, {axis + 1})"

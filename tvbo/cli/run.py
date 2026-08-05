@@ -558,6 +558,12 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
     Traverses attributes and keyed collections (LinkML keyed dicts) so one recipe can
     stay the single source of truth while a run uses test settings. Mutates the loaded
     object only — the recipe file is untouched.
+
+    Anything on the path that has already MATERIALISED from its declaration is invalidated,
+    so it rebuilds from the new value. Without this an override of, say, a graph generator's
+    connectome is reported and then ignored — the network resolved at load time and keeps
+    the matrix it built — and the run completes, looks right, and is not the run that was
+    asked for.
     """
     def _step(cur, seg):
         if isinstance(cur, dict) and seg in cur:
@@ -575,9 +581,10 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
             raise typer.BadParameter(f"--set {raw!r} must be of the form path=value")
         path, _, val = s.partition("=")
         segs = [p for p in path.split(".") if p]
-        cur = experiment
+        cur, chain = experiment, [experiment]
         for seg in segs[:-1]:
             cur = _step(cur, seg)
+            chain.append(cur)
         leaf, value = segs[-1], _coerce_scalar(val)
         if isinstance(cur, dict):
             cur[leaf] = value
@@ -588,7 +595,23 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
                 cur[leaf] = value
             except Exception:
                 setattr(cur, leaf, value)
-        _common.info(f"--set {path} = {value!r}")
+        rebuilt = _invalidate_on_path(chain)
+        _common.info(f"--set {path} = {value!r}"
+                     + (f"  ({rebuilt} rebuilds from it)" if rebuilt else ""))
+
+
+def _invalidate_on_path(chain: list):
+    """Invalidate the innermost object on *chain* that materialises from its declaration.
+
+    Returns the name of what was invalidated, or ``None``. Innermost wins: an override
+    inside one network's generator must not rebuild an unrelated network beside it.
+    """
+    for obj in reversed(chain):
+        invalidate = getattr(obj, "invalidate_resolution", None)
+        if callable(invalidate):
+            invalidate()
+            return type(obj).__name__
+    return None
 
 
 def _apply_max_iterations(experiment, n: int) -> None:

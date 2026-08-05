@@ -649,6 +649,21 @@ class Network(tvbo_datamodel.Network):
         self._resolve_parameter_sources(source_dir)
         self._resolved = True
 
+    def invalidate_resolution(self) -> None:
+        """Drop everything ``_resolve`` materialised, so the next access rebuilds it.
+
+        Resolution is idempotent and latches, which is what stops a network being rebuilt
+        on every access — and what makes a spec edited AFTER load silently inert. A caller
+        that changes the declaration (a ``--set`` on a graph_generator parameter, a swapped
+        parcellation) has to say so, or the run reports the new value and integrates the
+        old matrix.
+        """
+        for attr in ("_resolved", "_producers_resolved"):
+            object.__setattr__(self, attr, False)
+        for attr in ("_cached_weights", "_store", "_pytree_data"):
+            object.__setattr__(self, attr, None)
+        object.__setattr__(self, "_arrays", {})
+
     def _has_graph_generator(self) -> bool:
         """True if this Network has a resolvable GraphGenerator.
 
@@ -4412,16 +4427,63 @@ class Network(tvbo_datamodel.Network):
 
     # ── Generalized edge / matrix API ─────────────────────────────
 
+    def _fill_produced_matrices(self, arrays: dict) -> None:
+        """Resolve every Edge that declares a ``producer:`` into ``arrays``, once.
+
+        A produced matrix is what lets a discrete differential operator or a
+        rule-generated connectome be DECLARED — the recipe states the callable that
+        builds it and stays the single source of truth — where a pre-built file needs a
+        prep step run by hand before the spec can execute at all.
+
+        Filling ``_arrays`` is what makes every accessor see it: they do not agree on one
+        entry point (``matrix`` walks a resolution order, ``weights`` reads ``_arrays``
+        directly), so resolving in only one of them leaves the other silently falling
+        through to whatever it does when a connectome is missing. A stored array still
+        wins — this never overwrites an existing entry.
+
+        Resolution is the shared one (:mod:`tvbo.data.param_io`), so a matrix producer
+        caches, fingerprints and reports errors exactly as a parameter's does. One
+        consequence differs from a hand-set matrix: the array is a read-only view of the
+        resolve cache, which several Networks may share, so it is transformed by deriving
+        a new array rather than written into.
+        """
+        from tvbo.data import param_io
+
+        for edge in (self.edges or []):
+            label = str(getattr(edge, "label", "") or "")
+            if not label or label in arrays or getattr(edge, "producer", None) is None:
+                continue
+            source_dir = getattr(self, "_source_dir", None)
+            produced = param_io.resolve(
+                edge, source_dir=Path(source_dir) if source_dir else None, context=self)
+            if produced is None:
+                raise ValueError(
+                    f"network edge {label!r}: its `producer:` returned nothing. A matrix "
+                    "producer must return the (n, n) array or sparse matrix itself, or a "
+                    "dict from which `output:` names one."
+                )
+            arrays[label] = produced
+
     def _get_arrays(self) -> dict:
         """Access the internal ``_arrays`` dict, bypassing JsonObj."""
         try:
             d = object.__getattribute__(self, "_arrays")
-            if isinstance(d, dict):
-                return d
+            if not isinstance(d, dict):
+                raise AttributeError
         except AttributeError:
-            pass
-        d: dict = {}
-        object.__setattr__(self, "_arrays", d)
+            d = {}
+            object.__setattr__(self, "_arrays", d)
+        try:
+            resolved = object.__getattribute__(self, "_producers_resolved")
+        except AttributeError:
+            resolved = False
+        if not resolved:
+            object.__setattr__(self, "_producers_resolved", True)
+            try:
+                self._fill_produced_matrices(d)
+            except Exception:
+                object.__setattr__(self, "_producers_resolved", False)  # only success latches
+                raise
         return d
 
     def set_matrix(

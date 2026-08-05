@@ -18,7 +18,7 @@ extension/UI dropdown all light up automatically.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
@@ -41,6 +41,8 @@ class ExportFormat:
     description: str = ""
     importer: Importer | None = None
     extensions: tuple[str, ...] = ()  # extra accepted file suffixes (incl. leading dot)
+    # Output language for `tvbo.codegen.style`; empty means "return verbatim".
+    language: str = ""
 
     def to_public_dict(self) -> dict[str, Any]:
         """Serialisable view (without the renderer callable)."""
@@ -117,8 +119,25 @@ def keys() -> Iterable[str]:
 
 
 def render(experiment, fmt_key: str, **kwargs) -> str:
-    """Convenience: resolve *fmt_key* and invoke its renderer."""
-    return resolve(fmt_key).renderer(experiment, **kwargs)
+    """Resolve *fmt_key*, invoke its renderer, prune its dead imports, and format it.
+
+    All three happen here rather than in each renderer so that every backend —
+    including the ones that render through an adapter and never touch the template
+    helpers — is held to the same house style. Pruning precedes formatting because it
+    edits statements and black only edits layout. See :mod:`tvbo.codegen.imports` and
+    :mod:`tvbo.codegen.style`.
+    """
+    fmt = resolve(fmt_key)
+    rendered = fmt.renderer(experiment, **kwargs)
+    if not fmt.language:
+        return rendered
+    if fmt.language == "python":
+        from tvbo.codegen.imports import prune_unused_imports
+
+        rendered = prune_unused_imports(rendered)
+    from tvbo.codegen.style import format_source
+
+    return format_source(rendered, fmt.language)
 
 
 def _all_extensions(fmt: ExportFormat) -> tuple[str, ...]:

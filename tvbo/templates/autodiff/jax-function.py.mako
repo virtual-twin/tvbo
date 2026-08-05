@@ -13,6 +13,7 @@ For standalone mathematical functions, use base/function-def.mako directly.
 <%namespace name="fn" file="/base/function-def.mako"/>
 <%!
 from tvbo.codegen import render_expression
+from tvbo.templates.base.utils import get_source_code
 %>
 <%def name="generate_function(func, func_name)" filter="trim">
 <%
@@ -130,7 +131,9 @@ def ${func_name}(ts, ${param_args}):
 <%
     _eq = getattr(func, 'equation', None)
     rhs = _eq.rhs if _eq else ''
-    jax_code = render_expression(rhs, format='jax') if rhs else '0.0'
+    # `source_code:` is already backend-ready text; only an `equation:` needs printing.
+    _src = get_source_code(func)
+    jax_code = render_expression(rhs, format='jax') if rhs else (_src or '0.0')
     # Check if transformation applies on time dimension (handle both string and enum)
     apply_on_dim = str(func.apply_on_dimension) if func.apply_on_dimension else None
     has_apply_on_time = apply_on_dim in ['time', 'DimensionType.time']

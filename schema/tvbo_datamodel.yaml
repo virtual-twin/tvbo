@@ -41,6 +41,29 @@ default_prefix: tvbo
 default_range: string
 
 slots:
+    producer:
+        range: FunctionCall
+        inlined: true
+        required: false
+        # PROV-O: *prospective* provenance — the plan, not the run. Strictly the value
+        # `prov:wasGeneratedBy` an `prov:Activity` that `prov:hadPlan` this FunctionCall.
+        close_mappings:
+            - prov:wasGeneratedBy
+        description: >-
+            HOW to compute this value, when it is derived rather than obtained —
+            the callable that produces it, its arguments, and (via `output:`) which
+            entry to take from a callable returning several named arrays. The
+            callable resolves against the recipe's `code_source`. Use instead of
+            `source:` for a value that is a deterministic function of the spec's own
+            inputs (a mesh operator, a template matrix): declaring the producer keeps
+            the spec the single source of truth, where pointing at a pre-built file
+            would let the two drift apart silently — and would need a prep step run by
+            hand before the spec could execute. The result is cached and invalidated by
+            the artifact fingerprint, so it is computed once rather than per run.
+            On a `Parameter` it produces the value; on an `Edge` it produces the whole
+            template matrix, which is what lets a connectome or a discrete differential
+            operator be declared rather than pre-built. Mutually exclusive with
+            `value:`/`source:`.
     time_scale:
         range: UnitEnum
         ifabsent: "ms"
@@ -972,6 +995,22 @@ classes:
                     alternative to the explicit `weighting` array (e.g. Uniform(-1, 1)
                     per node). When set, the codegen samples one weight per target
                     region using the distribution's seed.
+            weight_parameter:
+                range: Parameter
+                inlined: true
+                description: >-
+                    Per-node stimulus weighting supplied as a Parameter, so a DERIVED
+                    weighting carries its provenance instead of being inlined as a list
+                    of numbers. Use it when the weighting is measured or computed rather
+                    than hand-listed: `source:` + `measure:` names the stored array,
+                    `producer:` names the call that builds it (an ROI mask projected
+                    through a basis, a retinotopic map, a measured stimulation field).
+                    This is the same provenance triple every other external array uses,
+                    so a spatial stimulus pattern is described by where it came from
+                    rather than by a literal a reader cannot check. Resolved at load
+                    time into the per-node `weights`, aligned with `nodes` exactly as a
+                    literal weighting is; mutually exclusive with `weight_distribution`,
+                    and a literal `weights` wins over both.
             target_variable:
                 range: string
                 description: >-
@@ -1076,8 +1115,7 @@ classes:
                 description: "Matrix dimensions [N, M]"
             dtype:
                 range: string
-                ifabsent: string(float32)
-                description: "Data type for matrix values"
+                description: "Data type the matrix values are stored as. Absent stores them as computed."
         description: "Adjacency matrix of a network."
         slots:
             - label
@@ -1296,8 +1334,7 @@ classes:
                 description: "Array dimensions."
             dtype:
                 range: string
-                ifabsent: string(float32)
-                description: "Numpy dtype string."
+                description: "Numpy dtype string, recording what the companion actually holds."
             unit:
                 range: string
                 description: "Optional unit annotation (e.g. 'nA')."
@@ -1843,11 +1880,12 @@ classes:
 
     Edge:
         class_uri: tvbo:Edge
-        description: "An edge in a network. Two modes: explicit (source+target set, scalar parameters in YAML) or template (no source/target, N×N matrix measure in HDF5). Both coexist in the same edges list."
+        description: "An edge in a network. Three modes: explicit (source+target set, scalar parameters in YAML), template (no source/target, N×N matrix measure in HDF5), or produced (a `producer:` computes the whole matrix from the spec's own inputs, so no pre-built file is needed). All coexist in the same edges list."
         slots:
             - label
             - description
             - parameters
+            - producer
         attributes:
             source:
                 range: integer
@@ -1872,6 +1910,16 @@ classes:
             format:
                 range: SparseFormat
                 description: "Storage format in HDF5 (template edges only)"
+            dtype:
+                range: string
+                required: false
+                description: >-
+                    Data type the matrix is stored as in the companion file
+                    (template edges only), e.g. 'float32'. Absent — the default —
+                    stores it as computed, so a read returns what was written.
+                    Set it only to narrow deliberately: halving a measured
+                    connectome's file is a fair trade against its own measurement
+                    error, silently halving a computed operator is not.
             weighted:
                 range: boolean
                 ifabsent: boolean(true)
@@ -2127,6 +2175,15 @@ classes:
             window_size:
                 range: integer
                 description: "Number of samples for windowed aggregation"
+            partition:
+                range: Partition
+                inlined: true
+                description: >-
+                  Marks a grouped streaming reduction over a node partition (e.g. per-hemisphere
+                  cortical wave metrics): the observer `dynamics` body is vmapped over the
+                  partition axis and folded to per-group scalar metrics. Requires `period` (the
+                  downsample) and an observer whose derived variables produce the per-group
+                  outputs named by the Partition. See Partition.
 
             # Processing pipeline (sequence of Functions with input -> output flow)
             pipeline:
@@ -2263,6 +2320,19 @@ classes:
                     accelerator / worker count — the same declaration a
                     ``SimulationExperiment`` carries, so an analysis is not tied to one
                     engine. Unset means the study's default.
+            dims:
+                range: string
+                multivalued: true
+                description: >-
+                    Axis names of this analysis's output, in order — declared, never
+                    inferred from the result's shape, which cannot tell a
+                    frequency-by-node spectrum from a node-by-node matrix. Needed only
+                    where the expression RESHAPES: for the ordinary map-then-aggregate
+                    form the axes follow from ``apply_on_dimension`` plus the inputs'
+                    own axes minus ``aggregate.over``, and a renderer derives them and
+                    cross-checks the result's rank against that derivation. Declare it
+                    when the expression builds an axis none of its inputs carried (an
+                    outer product, a correlation matrix) or the derivation raises.
             type:
                 range: string
                 description: >-
@@ -2567,6 +2637,7 @@ classes:
             - equation
             - unit
             - grounding
+            - producer
         attributes:
             comment:
                 range: string
@@ -2604,30 +2675,6 @@ classes:
                     dataset key for an HDF5/Zarr store, a recorded measure for an
                     experiment result. Omit when the source resolves to a single
                     array.
-            producer:
-                range: FunctionCall
-                inlined: true
-                required: false
-                # PROV-O: *prospective* provenance — the plan, not the run. Strictly the
-                # value `prov:wasGeneratedBy` an `prov:Activity` that `prov:hadPlan` this
-                # FunctionCall; naming the plan directly collapses that Activity node, so
-                # this is a close (not exact) mapping and carries no OWL range obligation.
-                # The complementary *retrospective* record — which software ran, when, over
-                # which input hashes — is the `Provenance` class.
-                close_mappings:
-                    - prov:wasGeneratedBy
-                description: >-
-                    HOW to compute this parameter's value, when it is derived rather
-                    than obtained — the callable that produces it, its arguments, and
-                    (via `output:`) which entry to take from a callable returning
-                    several named arrays. The callable resolves against the recipe's
-                    `code_source`. Use instead of `source:` for a value that is a
-                    deterministic function of the spec's own inputs (a mesh operator,
-                    a template matrix): declaring the producer keeps the spec the
-                    single source of truth, where pointing at a pre-built file would
-                    let the two drift apart silently. The result is cached and
-                    invalidated by the artifact fingerprint, so it is computed once
-                    rather than per run. Mutually exclusive with `value:`/`source:`.
             used:
                 range: DataRef
                 inlined: true
@@ -2888,8 +2935,15 @@ classes:
                 description: "Name for this step's output (referenced by subsequent functions)"
                 range: string
             apply_on_dimension:
-                description: "Dimension to apply function over (generates vmap in code). E.g., 'node' applies per-node."
-                range: DimensionType
+                description: >-
+                    Axis to apply the function over, one element at a time (generates a
+                    vmap in code). ``node`` applies per node, ``time`` per sample. Inside
+                    an observation pipeline the axes are the solve grid's and the
+                    ``DimensionType`` vocabulary names them; a study-level ``Analysis``
+                    maps over the axes of the CONTAINERS it reads, which are declared by
+                    whatever produced them (``subject``, ``parcel``, ``n_modes``,
+                    ``variant``), so this is a free string rather than that closed enum.
+                range: string
             aggregate:
                 description: >-
                     How to aggregate the result across dimensions.
@@ -3035,6 +3089,55 @@ classes:
                 description: >-
                   Exceedance direction: ``greater_equal`` (fraction of permutations whose
                   statistic ≥ the observed) or ``less_equal`` (one-sided negative test).
+            family_wise:
+                range: boolean
+                ifabsent: false
+                description: >-
+                  Apply a Westfall–Young family-wise (max-T) correction: collapse the permuted
+                  statistic to its extremum over the element axes, forming one family-wise null
+                  per permutation that every observed element is tested against. The extremum
+                  follows ``direction`` (``greater_equal`` → maximum, ``less_equal`` → minimum).
+                  Absent → the symmetric per-element test.
+
+    Partition:
+        class_uri: tvbo:Partition
+        description: >-
+          A grouped streaming reduction over a node partition (e.g. per-hemisphere cortical wave
+          metrics): the per-timestep observer body is evaluated ONCE for a single group and
+          vmapped over the partition axis, and the per-group outputs are folded to per-group
+          scalar metrics. General in its group-vmap (``gather`` + ``over``); the metric roles
+          (``waves`` / ``directed`` / ``correlation``) name the per-group derived variables the
+          wave finalize reduces to proportion-of-waves, proportion-directed and the median
+          flow–instrength correlation (rho).
+        attributes:
+            gather:
+                range: string
+                required: true
+                description: >-
+                  Observer parameter ``(n_groups, n)`` of node indices selecting each group's
+                  nodes out of the whole-source signal; its leading axis is the group count.
+            over:
+                range: string
+                multivalued: true
+                description: >-
+                  Operator parameters carrying a leading group axis, sliced per group under the
+                  vmap (the per-group meshes' fixed operators). Parameters not listed are shared.
+            waves:
+                range: string
+                required: true
+                description: "Per-group boolean derived variable: a wave is present this timestep."
+            directed:
+                range: string
+                required: true
+                description: >-
+                  Per-group boolean derived variable: the flow is significantly directed this
+                  timestep (proportion_directed = directed-and-wave timesteps / wave timesteps).
+            correlation:
+                range: string
+                required: true
+                description: >-
+                  Per-group float derived variable whose masked median over wave-present
+                  timesteps is the reported rho.
 
     Noise:
         class_uri: tvbo:Noise

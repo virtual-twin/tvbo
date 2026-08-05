@@ -216,6 +216,17 @@ def test_a_producer_argument_may_reference_the_network(producer_module):
     np.testing.assert_array_equal(got[:, 0], [0.0, 1.0, 2.0])
 
 
+def test_a_producer_argument_resolves_the_bare_network_positions(producer_module):
+    """`network.positions` (the observation/pipeline spelling) resolves like the legacy
+    `network.nodes.position`, so a producer and a pipeline step read the same reference."""
+    p = Parameter(name="ops", producer=_ref_producer(value="network.positions"))
+
+    got = param_io.resolve(p, context=_network(3))
+
+    assert got.shape == (3, 3)
+    np.testing.assert_array_equal(got[:, 0], [0.0, 1.0, 2.0])
+
+
 def test_a_non_reference_argument_stays_a_literal(producer_module):
     """`hemi: lh` is a plain string — only fully-qualified network.* is a reference."""
     p = Parameter(name="ops", producer=_ref_producer())
@@ -234,7 +245,7 @@ def test_a_reference_without_context_raises_asking_for_one(producer_module):
 def test_an_unsupported_reference_lists_the_supported_forms(producer_module):
     p = Parameter(name="ops", producer=_ref_producer(value="network.nonsense"))
 
-    with pytest.raises(ValueError, match="network.nodes.position"):
+    with pytest.raises(ValueError, match="network.positions.*network.instrength"):
         param_io.resolve(p, context=_network())
 
 

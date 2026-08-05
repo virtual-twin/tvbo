@@ -26,6 +26,178 @@ def get_coupling_terms(model):
     return all_terms, global_terms, has_local
 
 
+def gathered_states(model, coupling=None):
+    """Names of the state variables transmitted to connected nodes, in gather order.
+
+    The coupling's ``incoming_states`` is the authority: the schema defines
+    ``coupling_variable`` as the model's default, "used when omitted", and says the
+    coupling "may override this via its incoming_states attribute". JansenRit1995 is
+    the case that needs the override — it marks only ``y4`` a coupling variable, yet
+    the inter-column coupling transmits the PSP difference ``y1 - y2``.
+
+    The delay history, the ``x_j`` gather and the history write-back must all agree on
+    this one order, so all three read it from here. Disagreeing would not raise: a
+    delayed source would silently be read from another state's row.
+
+    Args:
+        model: The :class:`~tvbo.classes.dynamics.Dynamics` declaring the states.
+        coupling: The coupling whose ``incoming_states`` overrides the default, or
+            ``None`` to use the model's ``coupling_variable`` states.
+
+    Returns:
+        list[str]: State-variable names, ordered as the gathered rows are.
+    """
+    names = list(model.state_variables.keys())
+    declared = getattr(coupling, "incoming_states", None) or [] if coupling is not None else []
+    if isinstance(declared, str):
+        declared = [declared]
+    declared = [s if isinstance(s, str) else getattr(s, "name", str(s)) for s in declared]
+    declared = [s for s in dict.fromkeys(declared) if s in names]
+    if declared:
+        return declared
+    return [n for n, sv in model.state_variables.items() if sv.coupling_variable]
+
+
+def gathered_state_indices(model, coupling=None):
+    """Positions in ``model.state_variables`` of :func:`gathered_states`, same order."""
+    order = list(model.state_variables.keys())
+    return [order.index(name) for name in gathered_states(model, coupling)]
+
+
+def referenced(names, *expressions):
+    """The subset of *names* that any of *expressions* refers to, order preserved.
+
+    Used to unpack only what a generated function body reads. A coupling's ``post()``
+    and ``pre()`` share one parameter list but each uses part of it, so unpacking the
+    whole list leaves the rest dead — ``post()`` returning ``G * gx`` was still binding
+    ``cmax``, ``cmin``, ``midpoint`` and ``r``.
+
+    Matching is on word boundaries, so ``r`` is not found inside ``r_max``.
+
+    Args:
+        names: Candidate names, in the order they should be emitted.
+        *expressions: Expression sources to search; ``None`` entries are skipped.
+    """
+    import re
+
+    text = "\n".join(str(e) for e in expressions if e is not None)
+    return [n for n in names if re.search(rf"\b{re.escape(str(n))}\b", text)]
+
+
+def get_source_code(func):
+    """Backend-ready source text a function supplies directly, or ``None``.
+
+    A ``Function`` states its body either as an ``equation`` (symbolic, printed per
+    backend) or as ``source_code`` (already written in the target language). A generator
+    that reads only the first emits nothing for the second — which is how the JAX
+    observation for ``kuramoto_order`` came out as ``data = 0.0``.
+    """
+    if getattr(func, "source_code", None):
+        return func.source_code
+    equation = getattr(func, "equation", None)
+    if equation is not None and getattr(equation, "pycode", None):
+        return equation.pycode
+    return None
+
+
+def model_expressions(model):
+    """Every right-hand side a generated dfun body will contain, as one searchable string.
+
+    Pair with :func:`referenced` to unpack only the parameters a model actually uses. The
+    four groups must all be included: a parameter can reach the derivatives indirectly,
+    through a derived parameter (``C1 = C``), a derived variable, or a function body
+    (``Sigm`` reads ``e0``, ``r`` and ``v0`` and nothing else does), and dropping its
+    unpack on the strength of the state equations alone would emit an unbound name.
+    """
+    parts = []
+    for group in ("state_variables", "derived_variables", "derived_parameters", "functions"):
+        for obj in (getattr(model, group, None) or {}).values():
+            rhs = getattr(getattr(obj, "equation", None), "rhs", None)
+            if rhs is not None:
+                parts.append(str(rhs))
+    return "\n".join(parts)
+
+
+def coupling_bindings(model, coupling, incoming=(), local=()):
+    """Resolve which names a coupling's ``pre``/``post`` bodies must bind, and to what.
+
+    A coupling expression may name a source state three ways, and they are distinct
+    references, not spellings of one:
+
+    ``u``
+        the bare name — the gathered source row, ``x_j[k]``;
+    ``u_j``
+        the same row written explicitly, used when the target's value also appears;
+    ``u_i``
+        the *target* node's own current value, ``current_state[i]``.
+
+    A difference coupling (``u_j - u_i``) needs the last two together, which is why the
+    bare name cannot stand in for either. Word-boundary matching keeps the three apart:
+    ``\\bu\\b`` does not match the ``u`` inside ``u_j``, so a pre-expression written only
+    in subscripts binds no unread bare name. This mirrors ``state_aliases_j`` /
+    ``state_aliases_i`` in :func:`tvbo.templates.tvboptim.utils.resolve_coupling_spec`.
+
+    Args:
+        model: The dynamics declaring the state variables.
+        coupling: The coupling whose expressions are being emitted.
+        incoming: Declared source-state names.
+        local: Declared target-local state names.
+
+    Returns:
+        dict: ``cvar_names`` (gather order), ``cvar_index``, ``sv_index``, ``bare``
+        (states read by bare name), ``pre_j``/``pre_i``/``post_i`` (alias, index) pairs.
+
+    Raises:
+        ValueError: a local state the model does not declare, or a source state that is
+            read but never transmitted — both of which would emit an unbound name.
+    """
+    import re
+
+    states = list(model.state_variables.keys())
+    sv_index = {name: i for i, name in enumerate(states)}
+    cvar_names = gathered_states(model, coupling)
+    cvar_index = {name: i for i, name in enumerate(cvar_names)}
+    vec_states = list(dict.fromkeys(list(incoming) + list(local)))
+
+    unknown = [s for s in local if s not in sv_index]
+    if unknown:
+        raise ValueError(
+            f"coupling `local_states` names {unknown}, which the model does not declare as "
+            f"state variables ({states}); a local state is the target node's own state, so "
+            "it must be one of them."
+        )
+
+    pre_rhs = str(coupling.pre_expression.rhs) if coupling.pre_expression else ""
+    post_rhs = str(coupling.post_expression.rhs) if coupling.post_expression else ""
+    bare = lambda name, text: re.search(rf"\b{re.escape(name)}\b", text) is not None
+
+    ungathered = [
+        s for s in vec_states
+        if s not in cvar_index and s not in local and bare(s, pre_rhs)
+    ]
+    if ungathered:
+        raise ValueError(
+            f"coupling `pre_expression` reads {ungathered} as a source state, but only "
+            f"{cvar_names} are transmitted, so there is no gathered row for them. List them "
+            "in the coupling's `incoming_states` (or mark them `coupling_variable: true` on "
+            f"the model), or read the target's own value as {[s + '_i' for s in ungathered]}."
+        )
+
+    return {
+        "cvar_names": cvar_names,
+        "cvar_index": cvar_index,
+        "sv_index": sv_index,
+        "vec_states": vec_states,
+        "bare": [s for s in vec_states if s in cvar_index and bare(s, pre_rhs)],
+        "pre_j": [(f"{s}_j", cvar_index[s]) for s in vec_states
+                  if f"{s}_j" in pre_rhs and s in cvar_index],
+        "pre_i": [(f"{s}_i", sv_index[s]) for s in vec_states
+                  if f"{s}_i" in pre_rhs and s in sv_index],
+        "post_i": [(f"{s}_i", sv_index[s]) for s in vec_states
+                   if f"{s}_i" in post_rhs and s in sv_index],
+    }
+
+
 def get_func_name(model, override=None):
     """Get function name from model, with optional override."""
     if override:

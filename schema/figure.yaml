@@ -20,11 +20,15 @@ imports:
 enums:
 
   PanelKind:
-    description: "What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding); image (external file) and custom (registered callable) are peer escape-hatch kinds. New kinds (surface, network) are added when their bsplot leaf exists."
+    description: "What a panel draws. cartesian/heatmap are grammar-driven (mark + encoding); surface paints a layer on a mesh; grid tiles a composite of sub-panels; colorbar/legend are shared keys in their own slot; image (external file) and custom (registered callable) are peer escape-hatch kinds. New kinds (network) are added when their bsplot leaf exists."
     permissible_values:
       cartesian: {description: "Line/scatter/rule/band marks in a 2-D cartesian frame."}
       heatmap:   {description: "A 2-D array field drawn as pcolormesh/imshow."}
       line3d:    {description: "Line/scatter marks in a 3-D frame (x/y/z channels) — a phase-space orbit or trajectory. Camera via opts (elev, azim); axis via zlabel/zlim."}
+      surface:   {description: "A layer's per-vertex values painted on a mesh. Geometry comes from the network (`network:`, whose companion carries a mesh group) or a mesh file (`mesh:` — GIFTI/VTK/FreeSurfer, or an npz of vertices/faces); camera via opts (view, hemi), colour via cmap/symmetric/percentile/vmin/vmax, and `mask:` greys a medial wall out of both the map and its colour range. A layer shorter than the mesh is placed BY LABEL from its `vertex` coordinate. With `color:`/`edgecolor:` and no layer it draws the bare geometry. Needs no code_modules — the drawing is built in."}
+      grid:      {description: "A composite of sub-panels inside ONE lettered panel, labelled once per row and column. What a paper's lettered panel usually is: a row of mode surfaces under a single (a), or a Data/Reconstruction matrix whose task name is written once at the left. Declaring each cell as its own mosaic entry instead would repeat those labels in every cell and renumber panels the paper letters once. Cells come from `cells:` or, in the common case, from `layers:` — one cell per layer, all drawn by the shared `cell:` template."}
+      colorbar:  {description: "A colour scale in its own slot, for panels that share one. Attaching it to any single panel steals that panel's width and implies the scale is local to it. Limits come from opts or, with a layer bound, from the data. Built in."}
+      legend:    {description: "A key in its own slot, for a convention several panels share. Entries are parallel `labels`/`colors`/`linestyles` lists. Built in."}
       image:     {description: "An external raster/vector file placed in the grid cell."}
       custom:    {description: "A registered callable fn(container, ax, **opts)."}
 
@@ -51,6 +55,22 @@ enums:
       "upper right": {description: "Top-right (many journals; Taher Fig 5)."}
       "lower left":  {description: "Bottom-left."}
       "lower right": {description: "Bottom-right."}
+
+# ---------------------------------------------------------------------------- slots
+
+slots:
+
+  cell:
+    range: Inset
+    inlined: true
+    description: "What every cell of a `grid` is: the kind they all draw, and the opts they share. Each entry in `layers:` then fills one cell with this template, which is why a grid of twenty surfaces needs the surface declared once. Its `bounds` stay unset — the grid positions its cells."
+
+  cells:
+    range: Inset
+    multivalued: true
+    inlined: true
+    inlined_as_list: true
+    description: "A `grid`'s cells stated one at a time, for a grid whose cells differ — a first cell showing the bare mesh the rest are maps on, or a row pairing two kinds. Each is merged over `cell:`, and carries its own layers. Mutually exclusive with `layers:`, which is the compact form of the same thing."
 
 # -------------------------------------------------------------------------- classes
 
@@ -149,6 +169,8 @@ classes:
     description: "One cell of the figure. kind selects grammar (cartesian/heatmap) vs escape-hatch (image/custom); every kind shares the label, placeholder, legend and annotation machinery. Reuses label (human title)."
     slots:
       - label
+      - cell
+      - cells
     attributes:
       panel_key:
         key: true
@@ -202,15 +224,16 @@ classes:
         description: "Sub-axes drawn inside this panel after its own body — the zoom windows, corner thumbnails and small key maps papers place over a plot. Declaring them keeps a panel that needs one from becoming a custom callable, which would take its whole interior out of the grammar."
 
   Inset:
-    description: "A sub-axes inside a panel, positioned in axes fractions. It is a Panel in every respect that draws — same kinds, layers, opts, annotations — minus the things only a mosaic cell has (a panel letter, a placeholder, a position in the layout). A figure states WHERE it sits; everything else it states the same way the host panel does, so the two cannot drift apart in behaviour."
+    description: "A sub-axes that draws exactly as a panel does — same kinds, layers, opts, annotations — minus the things only a mosaic cell has (a panel letter, a placeholder, a position in the layout). One class for both an inset and a grid cell, so a cell cannot behave unlike the inset beside it; they differ only in who positions them."
     slots:
       - label
+      - cell
+      - cells
     attributes:
       bounds:
         range: float
         multivalued: true
-        required: true
-        description: "[x0, y0, width, height] in host-axes fractions, as matplotlib's inset_axes takes them. Values outside 0-1 place the inset beyond the host frame, which is how a thumbnail sits in the margin above a plot."
+        description: "[x0, y0, width, height] in host-axes fractions, as matplotlib's inset_axes takes them. Values outside 0-1 place the inset beyond the host frame, which is how a thumbnail sits in the margin above a plot. Required of an inset, and left unset by a `grid` cell, whose bounds the grid computes from the row/column it lands in."
       kind:
         range: PanelKind
         required: true

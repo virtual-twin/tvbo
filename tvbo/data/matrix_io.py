@@ -64,35 +64,44 @@ def auto_format(matrix) -> str:
 # ── Write ─────────────────────────────────────────────────────────────
 
 
-def _write_dense(grp, matrix):
+def _at_precision(matrix, dtype):
+    """The matrix as it goes to disk: its own precision unless one is declared.
+
+    A writer that picks the precision decides a numerical property of data it did
+    not compute. Narrowing a measured connectome is a fair trade for half the file;
+    narrowing a differential operator someone integrates at float64 is a different
+    operator, and nothing downstream can tell it happened. So the cast is opt-in.
+    """
+    return matrix if dtype is None else matrix.astype(dtype)
+
+
+def _write_dense(grp, matrix, dtype=None):
     from scipy import sparse
 
-    if sparse.issparse(matrix):
-        arr = matrix.toarray().astype("float32")
-    else:
-        arr = np.asarray(matrix, dtype="float32")
+    arr = matrix.toarray() if sparse.issparse(matrix) else np.asarray(matrix)
+    arr = _at_precision(arr, dtype)
     chunks = tuple(min(s, 128) for s in arr.shape)
     _create_ds(grp, "data", data=arr, chunks=chunks)
 
 
-def _write_csr(grp, matrix):
-    m = csr_matrix(matrix).astype("float32")
+def _write_csr(grp, matrix, dtype=None):
+    m = _at_precision(csr_matrix(matrix), dtype)
     _create_ds(grp, "data", data=m.data)
-    _create_ds(grp, "indices", data=m.indices.astype("int32"))
-    _create_ds(grp, "indptr", data=m.indptr.astype("int32"))
+    _create_ds(grp, "indices", data=m.indices)
+    _create_ds(grp, "indptr", data=m.indptr)
 
 
-def _write_coo(grp, matrix):
-    m = coo_matrix(matrix).astype("float32")
+def _write_coo(grp, matrix, dtype=None):
+    m = _at_precision(coo_matrix(matrix), dtype)
     _create_ds(grp, "data", data=m.data)
-    _create_ds(grp, "row", data=m.row.astype("int32"))
-    _create_ds(grp, "col", data=m.col.astype("int32"))
+    _create_ds(grp, "row", data=m.row)
+    _create_ds(grp, "col", data=m.col)
 
 
 _WRITERS = {"dense": _write_dense, "csr": _write_csr, "coo": _write_coo}
 
 
-def write_matrix(grp, matrix, fmt: str = "dense"):
+def write_matrix(grp, matrix, fmt: str = "dense", dtype=None):
     """Write a matrix to an HDF5/Zarr group in the specified format.
 
     Parameters
@@ -103,13 +112,18 @@ def write_matrix(grp, matrix, fmt: str = "dense"):
         Matrix data to write.
     fmt : str
         Storage format: "dense", "csr", or "coo".
+    dtype : str or numpy.dtype, optional
+        Store at this precision instead of the matrix's own. Index arrays of the
+        sparse formats are unaffected — they keep the width scipy chose, which is
+        int64 exactly when the matrix is too large for int32 to address.
+
+    The shape is read off ``.shape`` directly, never via ``np.asarray`` — a scipy sparse
+    matrix survives that call as a 0-d object array, which would record an empty shape.
     """
     grp.attrs["format"] = str(fmt)
-    # `.shape` directly, never via np.asarray: a scipy sparse matrix survives that
-    # call as a 0-d object array, which would record an empty shape.
     shape = matrix.shape if hasattr(matrix, "shape") else np.asarray(matrix).shape
     grp.attrs["shape"] = list(shape)
-    _WRITERS[str(fmt)](grp, matrix)
+    _WRITERS[str(fmt)](grp, matrix, dtype)
 
 
 # ── Read ──────────────────────────────────────────────────────────────

@@ -311,6 +311,27 @@ if network and network.coupling:
                     src_obs=_src_list[0], spec=_spec,
                     skip_t=_skip_t, s_var=_s_var,
                 )
+
+    # ── Max-window ring gate ────────────────────────────────────────────────────
+    # A multi-stage schedule whose per-stage window_size VARIES recompiles the tuning
+    # scan once per stage, because the sliding-window buffer shape is baked from
+    # window_size. When every streaming reducer offers a masked resync, size the buffer
+    # at the largest stage window (a codegen constant) and drive the window with a
+    # TRACED window_size + mask, so the scan compiles ONCE across all stages. Constant-
+    # window (or single-stage) algorithms keep the contiguous per-stage path verbatim.
+    _stage_windows = []
+    for _st in (getattr(algo, 'stages', None) or []):
+        _ws_over = None
+        for _arg in (getattr(_st, 'arguments', None) or []):
+            if str(_arg.name) == 'window_size':
+                _ws_over = _arg.value
+        _stage_windows.append(int(_ws_over) if _ws_over is not None else (window_size_val if has_window_size else None))
+    _stage_windows = [w for w in _stage_windows if w is not None]
+    _varying_window = len(set(_stage_windows)) > 1
+    _all_specs_maskable = bool(streaming_map) and all(
+        getattr(_si['spec'], 'resync_masked', ()) for _si in streaming_map.values())
+    use_maxwin = use_sliding_window and _varying_window and _all_specs_maskable
+    _accept_maxwin = use_sliding_window and _varying_window  # accept the kwarg whenever the varying-window caller passes it; the M-ring is only emitted when also maskable (use_maxwin), else it is ignored and the contiguous path runs
 %>
 def run_${algo_name}(
     state: Any,
@@ -332,6 +353,9 @@ def run_${algo_name}(
 % for src_obs in source_observations_needed:
     ${src_obs}_buffer: jnp.ndarray = None,  # Optional: passed from previous algorithm
 % endfor
+% endif
+% if _accept_maxwin:
+    max_window_size: int = None,  # M: fixed ring size (>= every stage's window_size). Set -> masked ring drives the sliding window with a TRACED window_size so the tuning scan compiles ONCE across stages; None (or a non-maskable reducer) -> contiguous per-stage path.
 % endif
     monitors: dict = None,
     verbose: bool = True,
@@ -479,6 +503,9 @@ def run_${algo_name}(
 
 % if use_sliding_window:
     n_nodes = state.dynamics.${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}.shape[0] if hasattr(state.dynamics, '${list(model.state_variables.keys())[0] if model.state_variables else 'S_e'}') else history.data.shape[2] if history is not None else N_NODES
+% if use_maxwin:
+    _M = int(max_window_size) if max_window_size is not None else int(window_size)  # physical ring size (== window_size on the contiguous path)
+% endif
 
 % for src_obs in source_observations_needed:
     # Warmup fill as an inner lax.scan (functional; vmap-safe; == the host for-loop).
@@ -514,6 +541,33 @@ def run_${algo_name}(
             _warmup_step_${src_obs}, (state, key, _buf, _mon), None, length=_nsteps)
         return state, key, _buf, _mon
 
+% if use_maxwin:
+    # Fill the last `window_size` slots of the M-sized ring with the same samples the
+    # contiguous path holds — carried tail (last min(passed, window_size)) plus warmup
+    # for the remainder — so the warmup sim steps (and thus the trajectory) are identical.
+    # Leading slots stay zero: they sit outside the window [_M - (window_size - skip_t):].
+    _${src_obs}_buffer = jnp.zeros((_M, 1, n_nodes))
+    if ${src_obs}_buffer is not None:
+        _passed_buffer = ${src_obs}_buffer
+        _passed_len = _passed_buffer.shape[0]
+        _take = min(int(_passed_len), int(window_size))
+        if _passed_buffer.ndim == 3:
+            _${src_obs}_buffer = _${src_obs}_buffer.at[-_take:, :, :].set(_passed_buffer[-_take:])
+        elif _passed_buffer.ndim == 2:
+            _${src_obs}_buffer = _${src_obs}_buffer.at[-_take:, 0, :].set(_passed_buffer[-_take:, :])
+        else:
+            _${src_obs}_buffer = _${src_obs}_buffer.at[-_take:, 0, :].set(_passed_buffer[-_take:])
+        _remaining = int(window_size) - _take
+        if verbose:
+            logger.info(f"  Carried last {_take} ${src_obs} samples into ring (M={_M}); warmup remaining {_remaining}...")
+        state, key, _${src_obs}_buffer, _${src_obs}_monitor = _run_warmup_${src_obs}(
+            state, key, _${src_obs}_buffer, _${src_obs}_monitor, _remaining)
+    else:
+        if verbose:
+            logger.info(f"  Warmup: filling last {int(window_size)} of ${src_obs} ring (M={_M})...")
+        state, key, _${src_obs}_buffer, _${src_obs}_monitor = _run_warmup_${src_obs}(
+            state, key, _${src_obs}_buffer, _${src_obs}_monitor, int(window_size))
+% else:
     if ${src_obs}_buffer is not None:
         _passed_buffer = ${src_obs}_buffer
         _passed_len = _passed_buffer.shape[0]
@@ -559,6 +613,7 @@ def run_${algo_name}(
         _buffer_idx = int(window_size)
         if verbose:
             logger.info(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
+% endif
 % endfor
 % endif
 
@@ -604,7 +659,23 @@ def run_${algo_name}(
             ${_lhs} = ${_rhs}
 % endfor
             return (${_acc})
+% if use_maxwin:
+        def resync_masked(buffer, ws):
+            # Rebuild the state from a fixed M-sized ring whose valid window is the last
+            # L = ws - skip_t rows, selected by mask `m`; `ws` is a TRACED scalar so the
+            # tuning scan compiles once across stage window sizes. == resync(buffer[-ws:]).
+            _MM = buffer.shape[0]
+            x = buffer[:, s_var, :] if buffer.ndim == 3 else buffer
+            L = jnp.asarray(ws, jnp.int32) - skip_t
+            m = (jnp.arange(_MM) >= (_MM - L)).astype(x.dtype).reshape((_MM, 1))
+% for _lhs, _rhs in _r['resync_masked']:
+            ${_lhs} = ${_rhs}
+% endfor
+            return (${_acc})
+        return _StreamReducer(add=add, evict=evict, emit=emit, resync=resync, resync_masked=resync_masked)
+% else:
         return _StreamReducer(add=add, evict=evict, emit=emit, resync=resync)
+% endif
 % endif
 % for dobs_name, sinfo in streaming_map.items():
     # Streaming reducer for '${dobs_name}' over the '${sinfo['src_obs']}' window:
@@ -614,7 +685,14 @@ def run_${algo_name}(
     # steps to reset float drift.
     _${dobs_name}_reducer = _make_windowed_reducer(s_var=${sinfo['s_var']}, skip_t=${sinfo['skip_t']})
     _${dobs_name}_resync_every = int(window_size) if resync_every is None else int(resync_every)
+% if use_maxwin:
+    _${dobs_name}_acc = (
+        _${dobs_name}_reducer.resync_masked(_${sinfo['src_obs']}_buffer, jnp.asarray(int(window_size), jnp.int32))
+        if max_window_size is not None
+        else _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer))
+% else:
     _${dobs_name}_acc = _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer)
+% endif
 % endfor
 
     if verbose:
@@ -661,6 +739,9 @@ def run_${algo_name}(
         _rec_${_tn}_buf = _ls['${_tn}__rec']
 % endfor
         _wptr = _ls['wptr']
+% if use_maxwin:
+        _ws = _ls['ws']  # traced window_size (masked ring path); unused when max_window_size is None
+% endif
         key, subkey = jax.random.split(key)
 % for ni in nested_includes:
         # [NESTED INNER LOOP] Re-converge '${ni['name']}' before the outer update.
@@ -700,9 +781,17 @@ def run_${algo_name}(
     _stream_for_src = [(d, si) for d, si in streaming_map.items() if si['src_obs'] == src_obs]
 %>
 % for dobs_name, sinfo in _stream_for_src:
-        # Sample leaving the effective window (ring index skip_t, read PRE-roll so
-        # it is the sample that falls out as the window slides forward).
+        # Sample leaving the effective window, read PRE-roll (falls out as the window
+        # slides). Contiguous window starts at skip_t; the masked ring's window is the
+        # last L = window_size - skip_t rows, so it leaves at _M - L (traced window_size).
+% if use_maxwin:
+        if max_window_size is not None:
+            _${dobs_name}_evict = _${src_obs}_buffer[_M - (_ws - ${sinfo['skip_t']}), ${sinfo['s_var']}, :]
+        else:
+            _${dobs_name}_evict = _${src_obs}_buffer[${sinfo['skip_t']}, ${sinfo['s_var']}, :]
+% else:
         _${dobs_name}_evict = _${src_obs}_buffer[${sinfo['skip_t']}, ${sinfo['s_var']}, :]
+% endif
 % endfor
         _${src_obs}_buffer = jnp.roll(_${src_obs}_buffer, -1, axis=0)
         if _${src_obs}_sample_data.ndim == 2:
@@ -730,7 +819,13 @@ def run_${algo_name}(
         if _${dobs_name}_resync_every > 0:
             _${dobs_name}_acc = jax.lax.cond(
                 (_i + 1) % _${dobs_name}_resync_every == 0,
+% if use_maxwin:
+                (lambda _a: _${dobs_name}_reducer.resync_masked(_${sinfo['src_obs']}_buffer, _ws))
+                if max_window_size is not None
+                else (lambda _a: _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer)),
+% else:
                 lambda _a: _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer),
+% endif
                 lambda _a: _a, _${dobs_name}_acc)
 % endfor
 
@@ -1061,6 +1156,9 @@ def run_${algo_name}(
             '${_tn}__rec': _rec_${_tn}_buf,
 % endfor
             'wptr': _wptr,
+% if use_maxwin:
+            'ws': _ws,
+% endif
         }
         return _ls_out, _ys
 
@@ -1085,11 +1183,20 @@ def run_${algo_name}(
         '${_tn}__rec': _rec_${_tn}_buf0,
 % endfor
         'wptr': jnp.asarray(0),
+% if use_maxwin:
+        'ws': jnp.asarray(int(window_size), jnp.int32),  # TRACED window_size; drives the masked ring so the scan compiles once across stages
+% endif
     }
     _ls_final, _ys_all = jax.lax.scan(_tuning_step, _ls_init, jnp.arange(n_iterations))
     state = _ls_final['state']
 % for src_obs in source_observations_needed:
+% if use_maxwin:
+    # Return the window (last window_size rows) of the M-ring, so a chained/next-stage
+    # call carries the same window-sized buffer the contiguous path does (identical warmup).
+    _${src_obs}_buffer = _ls_final['${src_obs}__buf'][-int(window_size):] if max_window_size is not None else _ls_final['${src_obs}__buf']
+% else:
     _${src_obs}_buffer = _ls_final['${src_obs}__buf']
+% endif
 % endfor
 % for obs, obs_class in pipeline_observations:
     _${obs}_monitor = _ls_final['${obs}__mon']

@@ -23,16 +23,17 @@ def resolve_streaming_reducer(spec: Any, fmt: str = "jax") -> dict:
     """Lower a declarative reducer *spec* to printed per-assignment source for *fmt*.
 
     Returns ``{"state": [...], "add": [(lhs, rhs_src), ...], "evict": ..., "resync": ...,
-    "emit": rhs_src}``. The reducer's symbolic vocabulary is the state variables plus the
-    per-step sample ``v`` and the window ``x``; each assignment's ``lhs`` joins the
-    vocabulary so later RHS may reference it (sequential data flow). State-var symbols win
-    over same-named array functions (e.g. a state ``mean`` shadows the ``mean`` reducer).
+    "resync_masked": ..., "emit": rhs_src}``. The reducer's symbolic vocabulary is the
+    state variables plus the per-step sample ``v``, the window ``x``, and the masked-resync
+    mask ``m`` / count ``L``; each assignment's ``lhs`` joins the vocabulary so later RHS
+    may reference it (sequential data flow). State-var symbols win over same-named array
+    functions (e.g. a state ``mean`` shadows the ``mean`` reducer).
     """
     printer = get_printer(fmt).doprint
     vocab = {
         **ARRAY_FUNCTIONS,
         "pi": sp.pi,
-        **{name: sp.Symbol(name) for name in (*spec.state, "v", "x")},
+        **{name: sp.Symbol(name) for name in (*spec.state, "v", "x", "m", "L")},
     }
 
     def _print(rhs: str) -> str:
@@ -50,5 +51,6 @@ def resolve_streaming_reducer(spec: Any, fmt: str = "jax") -> dict:
         "add": _block(spec.add),
         "evict": _block(spec.evict),
         "resync": _block(spec.resync),
+        "resync_masked": _block(spec.resync_masked) if spec.resync_masked else [],
         "emit": _print(spec.emit),
     }

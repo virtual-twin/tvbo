@@ -49,29 +49,14 @@ def _render_pdf(exp, **kw) -> str:
 # Code generation (delegates to existing render_code branches via templates)
 # ---------------------------------------------------------------------------
 
-def _template_renderer(template_path: str, *, use_black: bool = True,
-                       experiment_kw: str = "experiment", extra_ctx=None):
-    """Build a renderer that loads a Mako template and formats the result."""
-    def _render(exp, **kw):
-        from tvbo.classes.experiment import templates, format_code
-        ctx = {experiment_kw: exp}
-        if extra_ctx:
-            ctx.update({k: v(exp) for k, v in extra_ctx.items()})
-        ctx.update(kw)
-        template = templates.lookup.get_template(template_path)
-        rendered = template.render(**ctx)
-        return format_code(rendered, use_black=use_black) if use_black is not None else rendered
-    return _render
-
-
 def _render_tvb(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.classes.experiment import templates
     template = templates.lookup.get_template("tvbo-tvb-SimulationExperiment.py.mako")
-    return format_code(template.render(experiment=exp, **kw))
+    return template.render(experiment=exp, **kw)
 
 
 def _render_jax(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.classes.experiment import templates
     from tvbo.adapters.observation_sampling import resolve_observation_sampling
     template = templates.lookup.get_template("autodiff/tvbo-jax-sim.py.mako")
     # Resolve observation sampling step counts once, in Python, and hand the
@@ -84,11 +69,11 @@ def _render_jax(exp, **kw):
         "obs_sampling",
         {name: resolve_observation_sampling(obs, dt) for name, obs in observations.items()},
     )
-    return format_code(template.render(experiment=exp, **kw), use_black=False)
+    return template.render(experiment=exp, **kw)
 
 
 def _render_tvboptim(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.classes.experiment import templates
     template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
     # Resolve network- and dataset-sourced observation pointers once, in Python,
     # and hand the {obs_name: measure} mapping to the template (which only emits
@@ -99,13 +84,13 @@ def _render_tvboptim(exp, **kw):
     # Model-side gather (keyed by label, never positional) that aligns a simulated
     # observable to a by_label empirical target's shared nodes in the loss.
     kw.setdefault("dataset_reconcile_indices", exp.dataset_reconcile_indices())
-    return format_code(template.render(experiment=exp, **kw), use_black=False)
+    return template.render(experiment=exp, **kw)
 
 
 def _render_pde(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.classes.experiment import templates
     template = templates.lookup.get_template("tvbo-pde-fem.py.mako")
-    return format_code(template.render(experiment=exp, **kw), use_black=True)
+    return template.render(experiment=exp, **kw)
 
 
 def _render_julia(exp, **kw):
@@ -157,10 +142,9 @@ def _render_brian2(exp, **kw):
 
 
 def _render_rateml_python(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.classes.experiment import templates
     template = templates.lookup.get_template("rateml/tvbo-rateml-python.py.mako")
-    return format_code(template.render(model=exp.dynamics, experiment=exp, **kw),
-                       use_black=False)
+    return template.render(model=exp.dynamics, experiment=exp, **kw)
 
 
 def _render_rateml_cuda(exp, **kw):
@@ -170,10 +154,9 @@ def _render_rateml_cuda(exp, **kw):
 
 
 def _render_rateml_driver(exp, **kw):
-    from tvbo.classes.experiment import templates, format_code
+    from tvbo.classes.experiment import templates
     template = templates.lookup.get_template("rateml/tvbo-rateml-driver.py.mako")
-    return format_code(template.render(model=exp.dynamics, experiment=exp, **kw),
-                       use_black=False)
+    return template.render(model=exp.dynamics, experiment=exp, **kw)
 
 
 # ---------------------------------------------------------------------------
@@ -184,6 +167,7 @@ _BUILTINS = [
     # serialisation
     ExportFormat("yaml", "TVBO YAML", ".yaml", "application/x-yaml",
                  _render_yaml, aliases=("tvbo", "tvbo-yaml"), supports_with_data=True),
+    # No language: `to_yaml(filepath=...)` writes the file, so normalising would diverge.
     ExportFormat("pyrates-yaml", "PyRates YAML", ".yaml", "application/x-yaml",
                  _render_pyrates_yaml, aliases=("pyrates_yaml",)),
     ExportFormat("openminds", "openMINDS JSON-LD", ".jsonld", "application/ld+json",
@@ -195,40 +179,46 @@ _BUILTINS = [
                  _render_pdf),
     # standards
     ExportFormat("neuroml", "NeuroML (standard IRI components)", ".nml",
-                 "application/xml", _render_neuroml, aliases=("nml",)),
+                 "application/xml", _render_neuroml, aliases=("nml",), language="xml"),
     ExportFormat("lems", "LEMS (custom components)", ".xml",
-                 "application/xml", _render_lems),
+                 "application/xml", _render_lems, language="xml"),
     # code: python
-    ExportFormat("tvb", "TVB Python", ".py", "text/x-python", _render_tvb),
+    ExportFormat("tvb", "TVB Python", ".py", "text/x-python", _render_tvb,
+                 language="python"),
     ExportFormat("tvboptim", "tvboptim Python", ".py", "text/x-python",
-                 _render_tvboptim, aliases=("tvb-optim",)),
+                 _render_tvboptim, aliases=("tvb-optim",), language="python"),
     ExportFormat("jax", "JAX Python", ".py", "text/x-python",
-                 _render_jax, aliases=("autodiff",)),
+                 _render_jax, aliases=("autodiff",), language="python"),
     ExportFormat("pde", "PDE-FEM Python", ".py", "text/x-python",
-                 _render_pde, aliases=("pde-fem", "pde-python")),
+                 _render_pde, aliases=("pde-fem", "pde-python"), language="python"),
     ExportFormat("brian2", "Brian2 Python (spiking)", ".py", "text/x-python",
-                 _render_brian2, aliases=("brian",)),
+                 _render_brian2, aliases=("brian",), language="python"),
     # code: julia
     ExportFormat("julia", "Julia (DifferentialEquations.jl)", ".jl", "text/plain",
-                 _render_julia, aliases=("diffeq", "differentialequations")),
+                 _render_julia, aliases=("diffeq", "differentialequations"),
+                 language="julia"),
     ExportFormat("networkdynamics", "NetworkDynamics.jl", ".jl", "text/plain",
-                 _render_networkdynamics, aliases=("nd", "networkdynamics.jl")),
+                 _render_networkdynamics, aliases=("nd", "networkdynamics.jl"),
+                 language="julia"),
     ExportFormat("modelingtoolkit", "ModelingToolkit.jl", ".jl", "text/plain",
-                 _render_modelingtoolkit, aliases=("mtk", "modelingtoolkit.jl")),
+                 _render_modelingtoolkit, aliases=("mtk", "modelingtoolkit.jl"),
+                 language="julia"),
     ExportFormat("bifurcationkit", "BifurcationKit.jl", ".jl", "text/plain",
                  _render_bifurcationkit,
-                 aliases=("bifurcationkit.jl", "bifurcation", "bifurcation-julia")),
+                 aliases=("bifurcationkit.jl", "bifurcation", "bifurcation-julia"),
+                 language="julia"),
     ExportFormat("pyrates-bifurcation", "PyRates / AUTO-07p bifurcation", ".py",
                  "text/x-python", _render_pyrates_bifurcation,
                  aliases=("pyrates-bif", "pycobi", "bifurcation-pyrates",
-                          "auto", "auto-07p")),
+                          "auto", "auto-07p"),
+                 language="python"),
     # code: rateml
     ExportFormat("rateml", "RateML Python (Numba gufunc)", ".py", "text/x-python",
-                 _render_rateml_python, aliases=("rateml-python",)),
+                 _render_rateml_python, aliases=("rateml-python",), language="python"),
     ExportFormat("rateml-cuda", "RateML CUDA kernel", ".c", "text/x-c",
-                 _render_rateml_cuda, aliases=("cuda",)),
+                 _render_rateml_cuda, aliases=("cuda",), language="c"),
     ExportFormat("rateml-driver", "RateML PyCUDA driver", ".py", "text/x-python",
-                 _render_rateml_driver),
+                 _render_rateml_driver, language="python"),
 ]
 
 

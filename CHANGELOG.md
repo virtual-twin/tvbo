@@ -42,10 +42,19 @@
   (`save_sol_every_step`), aligned to the branch's step axis.
 - An `Edge`'s scalar `weight`/`delay`/`distance` slots are read by every backend,
   not only by pyrates.
+- `DirectOntologyAPI` no longer raises `'str' object has no attribute 'storid'` on
+  entities whose `requires` mixes entity references with bare names. `tvbo:requires`
+  (an ObjectProperty holding entities) and the NeuroML ingest's `requires` (an
+  AnnotationProperty naming a quantity a ComponentType needs from its context,
+  `surfaceArea`, `iCa`) share one owlready2 attribute, so the slot yields both kinds
+  at once. `get_children` links only the references, which are the ones that have a
+  node to link to.
 
 ### Breaking
 - A key repeated in one YAML mapping is now an error rather than a silent
   last-one-wins override.
+- A serialized entity's `requires` is a list of labels. It used to be a list of
+  storids, which are opaque per-session integers that do not survive a reload.
 
 ## 0.2.1 – 2025-11-20
 ### Changed

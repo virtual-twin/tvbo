@@ -1,8 +1,8 @@
-# conftest.py — early environment setup for tests
-#
-# Must run before any JAX import to force CPU backend (avoids jax-metal
-# XLA errors on Apple Silicon) and to set up virtual XLA devices for
-# tests that use pmap.
+"""Early environment setup for the test suite, plus helpers shared across test modules.
+
+The environment part must run before any JAX import: it forces the CPU backend (jax-metal
+raises XLA errors on Apple Silicon) and sets up the virtual XLA devices the pmap tests need.
+"""
 
 import os
 
@@ -28,3 +28,15 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "slow" in item.keywords:
                 item.add_marker(skip_slow)
+
+
+@pytest.fixture
+def unwrapped():
+    """``fn(code)`` -> *code* with all whitespace removed, for substring checks on codegen.
+
+    Generated Python is black-formatted, so a long statement is split across lines at a
+    column black chooses. Asserting on the statement's text rather than on its layout keeps
+    a codegen test about what the emitter produces, not about how it was wrapped. A fixture
+    rather than an importable helper because ``tests/`` is not a package.
+    """
+    return lambda code: "".join(code.split())
