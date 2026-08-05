@@ -602,6 +602,9 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path,
         script_path = out_dir / "scripts" / f"{plan.experiment_key}.{ext}"
         script_path.write_text(code, encoding="utf-8")
         _common.info(f"wrote {script_path.relative_to(out_dir)}")
+        _staged = _bundle_script_constants(code, out_dir)
+        if _staged:
+            _common.info(f"staged {_staged} producer constant(s) → constants/")
     except Exception as exc:
         _common.info(f"(could not render backend script for {plan.backend.name!r}: {exc})")
 
@@ -815,6 +818,27 @@ def _figure_base_dir(study, out_dir: Path) -> str:
     return str(Path(src).parent) if src else str(out_dir)
 
 
+def _bundle_script_constants(code: str, out_dir: Path) -> int:
+    """Copy every producer/sourced constant a frozen backend script loads into the kit's
+    ``constants/`` dir, so ``--rendered`` execution finds it on a node that lacks the author's
+    ``~/.tvbo/constants``. The rendered ``_load_constant`` resolves a missing absolute path by
+    basename against ``$TVBO_CONSTANTS_DIR`` or the run dir's ``constants/`` (see the observation
+    template), so a frozen kit carries its operators with it. Returns the number staged.
+    """
+    import re
+    import shutil
+
+    dest = out_dir / "constants"
+    n = 0
+    for p in sorted(set(re.findall(r'_load_constant\(\s*["\']([^"\']+)["\']', code))):
+        src = Path(p)
+        if src.is_file():
+            dest.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dest / src.name)
+            n += 1
+    return n
+
+
 def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: str) -> str | None:
     """Freeze *experiment*'s pre-rendered backend script under ``out_dir/scripts/<key>.<ext>``.
 
@@ -834,6 +858,7 @@ def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: st
         scripts_dir.mkdir(parents=True, exist_ok=True)
         path = scripts_dir / f"{key}.{ext}"
         path.write_text(code, encoding="utf-8")
+        _bundle_script_constants(code, out_dir)
         rel = str(path.relative_to(out_dir))
         _common.info(f"wrote {rel}")
         return rel
@@ -1212,9 +1237,32 @@ def _resolve_launcher(name: str) -> str | None:
     return shutil.which(name)
 
 
+def _experiment_targets(kit_dir: Path, experiment: str) -> list:
+    """Map a ``--experiment`` selector (``'41,50'``) to a study kit's Snakemake rule targets
+    (``exp_41 exp_50``), so ONE full-study pack runs any subset of its experiments at submit
+    time. Validated against the kit's Snakefile — a typo or an experiment not in the pack fails
+    here, not with an opaque Snakemake ``MissingRuleException`` mid-run."""
+    import re
+
+    snakefile = kit_dir / _ARTEFACT_NAME["snakemake"]
+    rules = (set(re.findall(r"^rule\s+(exp_[A-Za-z0-9_]+)\s*:", snakefile.read_text(), re.M))
+             if snakefile.is_file() else set())
+    targets, missing = [], []
+    for tok in (t.strip() for t in str(experiment).split(",") if t.strip()):
+        rule = "exp_" + re.sub(r"[^0-9A-Za-z]", "_", tok)
+        (targets if rule in rules else missing).append(tok)
+    if missing:
+        _common.die(
+            f"--experiment: the kit has no rule for {missing}; its experiments are "
+            f"{sorted(r[len('exp_'):] for r in rules)}."
+        )
+    return ["exp_" + re.sub(r"[^0-9A-Za-z]", "_", t.strip()) for t in str(experiment).split(",") if t.strip()]
+
+
 def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | None = None,
                              dry_run: bool = False, profile: str | None = None,
-                             cores: str | None = None, code_source: str | None = None) -> None:
+                             cores: str | None = None, code_source: str | None = None,
+                             experiment: str | None = None) -> None:
     """Submit/execute a rendered workflow artefact for *engine*.
 
     Runs from the artefact's own directory so the generated script can use the
@@ -1235,6 +1283,8 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
     # Resolve to an absolute launcher so a venv-installed console script is found
     # even when that venv's bin/ is not on PATH (see :func:`_resolve_launcher`).
     exe = _resolve_launcher(_LAUNCHER.get(engine, "")) or _LAUNCHER.get(engine, "")
+    if experiment and engine != "snakemake":
+        _common.die(f"--experiment selects experiments from a snakemake study kit; this is a {engine!r} kit.")
     if engine == "slurm":
         cmd = [exe]
         if dry_run:
@@ -1259,6 +1309,8 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
             cmd += ["--cores", cores or "all"]
         if dry_run:
             cmd.append("--dry-run")
+        if experiment:
+            cmd += _experiment_targets(artefact.parent, experiment)
     elif engine == "nextflow":
         cmd = [exe, "run", artefact.name]
         if dry_run:
@@ -1278,7 +1330,8 @@ def _execute_engine_artefact(engine: str, artefact: Path, *, slurm_array: str | 
 
 def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = None,
                      dry_run: bool = False, profile: str | None = None,
-                     cores: str | None = None, code_source: str | None = None) -> None:
+                     cores: str | None = None, code_source: str | None = None,
+                     experiment: str | None = None) -> None:
     """Execute a generated workflow artefact inside *out_dir*.
 
     For Slurm this submits the array job and then chains the gather job
@@ -1294,7 +1347,8 @@ def _execute_emitted(engine: str, out_dir: Path, *, slurm_array: str | None = No
     else:
         _execute_engine_artefact(engine, out_dir / _ARTEFACT_NAME[engine],
                                  slurm_array=slurm_array, dry_run=dry_run,
-                                 profile=profile, cores=cores, code_source=code_source)
+                                 profile=profile, cores=cores, code_source=code_source,
+                                 experiment=experiment)
 
 
 def _submit_slurm_chain(out_dir: Path, *, slurm_array: str | None = None,
@@ -1679,6 +1733,12 @@ def _resolve_kit_dir(kit: Path, force: bool = False, dest_override: Path | None 
 def submit_kit(
     kit: Path = typer.Argument(..., help="Path to an emitted kit directory OR a .tar.gz/.tgz/.tar/.zip archive of one (holds run.sbatch / Snakefile / main.nf)."),
     engine: str = typer.Option(None, "--engine", "-e", help="Engine to submit with; auto-detected from the kit when omitted."),
+    experiment: str = typer.Option(
+        None, "--experiment",
+        help="Snakemake study kit only: run only these experiments from the full pack (e.g. "
+             "'41,50' -> the exp_41 and exp_50 rules). Validated against the kit's Snakefile; "
+             "omit to run the whole study (the `all` target).",
+    ),
     array: str = typer.Option(
         None, "--array",
         help="Slurm array index or range to submit (e.g. '0' for a smoke task, '0-3' for four). Ignored for non-Slurm engines.",
@@ -1770,7 +1830,7 @@ def submit_kit(
     # is reused), so it is cheap to re-run.
     _provision_env_layer(kit, dry_run=dry_run)
     _execute_emitted(eng, kit, slurm_array=array, dry_run=dry_run, profile=profile,
-                     cores=cores, code_source=code_source)
+                     cores=cores, code_source=code_source, experiment=experiment)
 
 
 def _provision_env_layer(kit: Path, *, dry_run: bool) -> None:

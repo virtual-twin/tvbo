@@ -108,6 +108,169 @@ def _unrename_expr(expr_str: str) -> str:
     return expr_str
 
 
+def _extract_sign_arg(cond):
+    """Argument of ``sign`` for a relational, plus whether the sign must be flipped.
+
+    Returns ``(arg, negate)`` such that ``sign(arg)`` is positive exactly when *cond*
+    holds, or ``(None, False)`` when *cond* is not a form this can express.
+    """
+    import sympy
+
+    if isinstance(cond, (sympy.StrictGreaterThan, sympy.GreaterThan)):
+        return cond.lhs - cond.rhs, False
+    if isinstance(cond, (sympy.StrictLessThan, sympy.LessThan)):
+        return cond.lhs - cond.rhs, True
+    return None, False
+
+
+def _convert_piecewise(pw):
+    """Rewrite a ``Piecewise`` as sign arithmetic, which PyRates can evaluate.
+
+    ``Piecewise((a, x > c), (b, True))`` becomes
+    ``(a + b)/2 + (a - b)/2 * sign(x - c)``; a ``<`` comparison flips the sign term.
+    Extra branches nest from the last backwards. A branch whose condition is not a
+    simple relational cannot be expressed this way, and the original is returned
+    untouched so the failure surfaces in PyRates rather than as a silent misread.
+    """
+    import sympy
+
+    pieces = list(pw.args)
+    result = pieces[-1][0]
+    for val, cond in reversed(pieces[:-1]):
+        sign_arg, negate = _extract_sign_arg(cond)
+        if sign_arg is None:
+            return pw
+        s = sympy.Function("sign")(sign_arg)
+        if negate:
+            s = -s
+        result = (val + result) / 2 + (val - result) / 2 * s
+    return result
+
+
+def _pyrates_compatible(expr):
+    """Rewrite the constructs PyRates cannot evaluate: ``Piecewise``, ``Abs``, ``Mod``."""
+    import sympy
+
+    if expr.args:
+        new_args = [_pyrates_compatible(a) for a in expr.args]
+        if new_args != list(expr.args):
+            expr = expr.func(*new_args)
+    if isinstance(expr, sympy.Piecewise):
+        expr = _convert_piecewise(expr)
+    expr = expr.replace(
+        lambda e: isinstance(e, sympy.Abs),
+        lambda e: sympy.Function("sign")(e.args[0]) * e.args[0],
+    )
+    return expr.replace(
+        lambda e: isinstance(e, sympy.Mod),
+        lambda e: sympy.Function("fmod")(e.args[0], e.args[1]),
+    )
+
+
+def _renamed_scope(model) -> dict:
+    """The model's own symbols, rebuilt under their PyRates-safe names.
+
+    Equations are sympified against this so a declared name shadows SymPy's globals —
+    without it PinskyRinzelCA3's ``chi`` parses as the hyperbolic cosine integral.
+
+    The rebuild is what makes renaming survive the round trip. Binding the safe name to
+    the *original* symbol makes ``sympify("gamma_")`` return ``Symbol("gamma")``, which
+    prints back as ``gamma`` and undoes the rename — the equation then said ``gamma*x``
+    while the variable block declared ``gamma_``, and PyRates resolved the orphaned
+    ``gamma`` to SymPy's gamma function.
+    """
+    import sympy
+
+    scope = {}
+    for key, symbol in model.get_symbolic_elements().items():
+        safe = PYRATES_REPL.get(key, key)
+        if safe == key:
+            scope[key] = symbol
+        elif isinstance(symbol, sympy.Symbol):
+            scope[safe] = sympy.Symbol(safe)
+        else:
+            scope[safe] = sympy.Function(safe)
+    return scope
+
+
+def operator_template(model, op_name: str | None = None) -> dict:
+    """Resolve a Dynamics model into the fields of a PyRates ``OperatorTemplate``.
+
+    Everything the template needs to decide is decided here, so the Mako file only
+    emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined
+    (PyRates YAML has no user functions), and unsupported constructs are rewritten by
+    :func:`_pyrates_compatible`.
+
+    Equations are sympified against :func:`_renamed_scope`, keyed by the renamed
+    spelling because renaming has already been applied to the equation strings.
+
+    Args:
+        model: The :class:`~tvbo.classes.dynamics.Dynamics` to convert.
+        op_name: Operator name; defaults to ``<model name>_op``.
+
+    Returns:
+        dict: ``op_name``, ``description``, ``equations`` (list of strings) and
+        ``variables`` (name → PyRates spec).
+    """
+    from tvbo.classes.equation import sympify as tvbo_sympify
+    from tvbo.utils import initial_value, parameter_number
+
+    repl = PYRATES_REPL
+    name = model.name or "tvbo_model"
+    scope = _renamed_scope(model)
+
+    def compat(eq_str):
+        return str(_pyrates_compatible(tvbo_sympify(eq_str, locals=scope)))
+
+    # `local_coupling` is a TVB-ism; drop it unless this model actually declares it.
+    coupling = list((getattr(model, "coupling_inputs", None) or {}).keys()) + list(
+        (model.coupling_terms or {}).keys()
+    )
+    remove = [] if "local_coupling" in coupling else ["local_coupling"]
+
+    def render(obj):
+        return model.render_equation(
+            obj, format="sympy", inline_functions=True, replace=repl, remove=remove
+        )
+
+    equations: list[str] = []
+    variables: dict[str, object] = {}
+
+    for key, dv in (model.derived_variables or {}).items():
+        display = repl.get(key, key)
+        equations.append(f"{display} = {compat(render(dv))}")
+        variables[display] = "variable"
+
+    for key, sv in (model.state_variables or {}).items():
+        display = repl.get(key, key)
+        equations.append(f"{display}' = {compat(render(sv))}")
+        variables[display] = f"variable({initial_value(sv)})"
+
+    if getattr(model, "autonomous", True) is False:
+        variables["t"] = "variable"
+
+    for key, param in (model.parameters or {}).items():
+        variables[repl.get(key, key)] = parameter_number(param.value)
+
+    for key, dp in (model.derived_parameters or {}).items():
+        display = repl.get(key, key)
+        equations.append(f"{display} = {render(dp)}")
+        variables[display] = "variable"
+
+    for key in (
+        getattr(model, "coupling_inputs", None) or getattr(model, "coupling_terms", None) or {}
+    ):
+        variables[key] = "input"
+
+    description = (model.description or f"TVBO model: {name}").replace("\\", "\\\\").replace('"', "'")
+    return {
+        "op_name": op_name or f"{name}_op",
+        "description": description,
+        "equations": equations,
+        "variables": variables,
+    }
+
+
 def to_pyrates_model_yaml(dynamics: "Dynamics", filepath: str | None = None) -> str:
     """Export a Dynamics model to PyRates OperatorTemplate YAML (model only).
 

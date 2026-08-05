@@ -5280,6 +5280,148 @@ classes:
                     Subdirectory within the source to place on the import path
                     (defaults to the source root).
 
+    Investigation:
+        class_uri: tvbo:Investigation
+        is_a: SimulationStudy
+        description: >-
+            The whole manuscript as one runnable specification: a study that
+            aggregates the member studies a paper reports (``members``) and also
+            owns the paper's own demonstration experiments, analyses and figures
+            (the SimulationStudy slots it inherits). ``tvbo run`` walks the members
+            and the owned content, emits every reported number to a results manifest
+            (``results``) and every figure with its composed caption, then packages
+            the lot as a COMBINE/OMEX archive (``archive``) — so the paper becomes an
+            instance of the reproducibility it argues for. A Study-of-studies, which
+            no SimulationStudy is (``experiments`` ranges over experiments, not
+            studies); legitimized by COMBINE/OMEX, SED-ML and the ISA ``Investigation``
+            it is named for.
+        attributes:
+            members:
+                range: StudyMember
+                multivalued: true
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    The member studies this investigation aggregates, each a reference
+                    to a study recipe (``recipe``) plus whether it is ``optional``
+                    (skipped unless requested, for runs too heavy to recompute per
+                    build). ``tvbo run`` executes each member's own experiments,
+                    analyses and figures; the ``figures``/``analyses`` inherited here
+                    are instead the paper-native demos that belong to no member.
+            results:
+                range: ResultBinding
+                multivalued: true
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    The named numbers the prose cites, each keyed by the manuscript
+                    token that stands in for it (``key``) and bound either to a computed
+                    value (``used:`` a DataRef into a member's or its own analysis) or to
+                    an authored constant quoted from prior work (``value`` + ``source``).
+                    ``tvbo run`` collects these into a results manifest the document
+                    reads, so no reported figure is transcribed by hand and a stale or
+                    missing key fails the build rather than printing a wrong number.
+            archive:
+                range: ArchiveConfig
+                inlined: true
+                description: >-
+                    How to package the run into a COMBINE/OMEX archive — the single
+                    supplementary artifact from which every figure, number and caption
+                    regenerates. Unset means no archive is emitted.
+
+    StudyMember:
+        class_uri: tvbo:StudyMember
+        description: >-
+            One member of an Investigation: a reference to a study recipe on disk (or
+            by IRI) and whether it is optional. The recipe carries its own experiments,
+            analyses, figures and code_source; the member only states where it is and
+            how heavy it is to run.
+        slots:
+            - label
+        attributes:
+            recipe:
+                range: string
+                required: true
+                description: >-
+                    Path to the member's study recipe YAML, relative to this
+                    investigation file, or an IRI resolving to one.
+            optional:
+                range: boolean
+                description: >-
+                    When true the member is skipped unless explicitly requested —
+                    for runs too heavy to recompute on every build (a full-atlas or
+                    long-simulation study whose derived artifacts ship in the archive).
+                    Defaults to false. ``tvbo run --dry-run`` lists it; ``--skip``
+                    drops other members down to it.
+
+    ResultBinding:
+        class_uri: tvbo:ResultBinding
+        description: >-
+            One entry in an Investigation's results manifest: a manuscript key bound to
+            the value it stands for. Either COMPUTED — ``used:`` a DataRef reading a
+            scalar out of a member's or the investigation's own analysis/experiment,
+            formatted through ``format`` — or AUTHORED — a literal ``value`` quoted from
+            prior work and attributed by ``source``. The same used/value idiom a figure
+            Annotation uses, so a number printed in prose is computed, never transcribed,
+            and an authored constant is marked as such.
+        slots:
+            - description
+        attributes:
+            key:
+                key: true
+                range: string
+                description: >-
+                    The manuscript token this number is cited by (e.g. ``n_errors_found``),
+                    addressed in prose as ``{{< meta results.<key> >}}``. Unique within
+                    the manifest.
+            used:
+                range: DataRef
+                inlined: true
+                slot_uri: prov:used
+                description: >-
+                    Bind the key to a computed scalar in a result container (same
+                    reference form a figure Layer uses, and the same PROV edge).
+                    Mutually exclusive with ``value``.
+            format:
+                range: string
+                description: >-
+                    Python format string applied to the referenced value, e.g. '{:.2f}'
+                    or '{:d}'. Applies to a ``used:`` binding.
+            value:
+                range: string
+                description: >-
+                    A literal value, for a constant quoted from prior work rather than
+                    computed here. Mutually exclusive with ``used:``; pair with ``source``.
+            source:
+                range: string
+                description: >-
+                    Citation key attributing an authored ``value`` to its origin, so the
+                    manifest records which numbers are external constants and which the
+                    run computed.
+
+    ArchiveConfig:
+        class_uri: tvbo:ArchiveConfig
+        description: >-
+            How an Investigation packages its run into a COMBINE/OMEX archive: the output
+            location and format, plus any extra files to include beyond the recipes,
+            derived containers, figures and manifest added automatically.
+        attributes:
+            path:
+                range: string
+                description: >-
+                    Output archive path, relative to the investigation file. Defaults to
+                    ``<name>.omex``.
+            format:
+                range: string
+                ifabsent: "omex"
+                description: "Archive format; ``omex`` (COMBINE) by default."
+            include:
+                range: string
+                multivalued: true
+                description: >-
+                    Extra file globs to add beyond the recipes, derived containers,
+                    figures and manifest included automatically.
+
     TimeSeries:
         class_uri: tvbo:TimeSeries
         description: >-

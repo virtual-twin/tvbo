@@ -124,7 +124,7 @@ def render(experiment, fmt_key: str, **kwargs) -> str:
     All three happen here rather than in each renderer so that every backend —
     including the ones that render through an adapter and never touch the template
     helpers — is held to the same house style. Pruning precedes formatting because it
-    edits statements and black only edits layout. See :mod:`tvbo.codegen.imports` and
+    edits statements and black only edits layout. See :mod:`tvbo.codegen.prune` and
     :mod:`tvbo.codegen.style`.
     """
     fmt = resolve(fmt_key)
@@ -132,9 +132,9 @@ def render(experiment, fmt_key: str, **kwargs) -> str:
     if not fmt.language:
         return rendered
     if fmt.language == "python":
-        from tvbo.codegen.imports import prune_unused_imports
+        from tvbo.codegen.prune import prune
 
-        rendered = prune_unused_imports(rendered)
+        rendered = prune(rendered)
     from tvbo.codegen.style import format_source
 
     return format_source(rendered, fmt.language)

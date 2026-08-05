@@ -84,6 +84,33 @@ def referenced(names, *expressions):
     return [n for n in names if re.search(rf"\b{re.escape(str(n))}\b", text)]
 
 
+def time_series_inputs(candidates, body):
+    """Which of *candidates* the function *body* reads as its incoming samples.
+
+    A pipeline function names the samples either ``X`` (the generator's own convention)
+    or by an argument the spec declared without a default — ``data`` in a body written
+    as ``jnp.mean(data[...])``. Both must resolve to ``ts.data``; binding only ``X``
+    left the spec's name pointing at an unfilled positional parameter, so calling the
+    function raised :class:`TypeError`.
+    """
+    return referenced(list(dict.fromkeys(candidates)), body)
+
+
+def retime(body, inputs):
+    """Rewrite *body* to read the time axis, substituting ``t_<name>`` for each input.
+
+    ``apply_on_dimension: time`` applies the same expression to the time vector, so the
+    sample symbols swap for their time counterparts. Word-boundary substitution keeps
+    ``data`` in ``data.shape`` and ``X`` in a longer identifier from being caught.
+    """
+    import re
+
+    out = body
+    for name in inputs:
+        out = re.sub(rf"\b{re.escape(name)}\b", f"t_{name}", out)
+    return out
+
+
 def get_source_code(func):
     """Backend-ready source text a function supplies directly, or ``None``.
 

@@ -1130,10 +1130,21 @@ def _load_constant(path, key):
     """Load a lazily-stored observer constant (a sourced/produced operator too large to
     inline) as a jax array. Read once when the reducer is built, so it is captured as a
     concrete constant in the traced update — never re-read per step. Reuses tvbo's
-    array store, so an h5 or zarr companion is read the same way the network is."""
+    array store, so an h5 or zarr companion is read the same way the network is.
+
+    A packed kit stages these constants into its own ``constants/`` dir, so when the author's
+    absolute path is absent (a frozen kit run on another machine) the file is resolved by
+    basename under ``$TVBO_CONSTANTS_DIR`` or the run dir's ``constants/``."""
+    import os
     from pathlib import Path
     from tvbo.data.matrix_io import LazyArrayStore
-    return jnp.asarray(LazyArrayStore(Path(path), {}).read_dataset(key))
+    p = Path(path)
+    if not p.exists():
+        for _base in (os.environ.get("TVBO_CONSTANTS_DIR"), "constants"):
+            if _base and (Path(_base) / p.name).is_file():
+                p = Path(_base) / p.name
+                break
+    return jnp.asarray(LazyArrayStore(p, {}).read_dataset(key))
 
 
 % if network_obs_keys and bids_dir:

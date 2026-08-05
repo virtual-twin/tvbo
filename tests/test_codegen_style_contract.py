@@ -62,20 +62,14 @@ emission produces.
 FORMATS = ("tvb", "jax", "tvboptim", "julia", "neuroml", "lems")
 """Backends that render from a core install, so the contract is checkable anywhere."""
 
-KNOWN_VIOLATIONS: dict[str, tuple[str, ...]] = {
-    "kuramoto_factored.jax": ("F841",),
-    "kuramoto_factored.tvb": ("F841",),
-    "kuramoto_factored.tvboptim": ("F401", "F841"),
-}
+KNOWN_VIOLATIONS: dict[str, tuple[str, ...]] = {}
 """Pairs that parse and are black-clean but still trip lint, mapped to the codes.
 
-Every entry is an emitter that binds unconditionally instead of gating on what the spec
-needs. Clearing one is the definition of done for that emitter.
+Empty, and meant to stay so: every backend meets the contract in full. Emitters gate on
+what the spec needs, and :mod:`tvbo.codegen.prune` removes the imports and pure
+scaffolding bindings that a finished module turns out not to refer to.
 
-``F401`` is gone from two of the three because :mod:`tvbo.codegen.imports` now drops
-imports the assembled module does not refer to. The one that remains is a name the
-generated source mentions inside a string, which that pass deliberately treats as a use.
-
+The mapping is kept rather than deleted because it is what makes a violation temporary.
 The recorded codes are exact, in both directions:
 :func:`test_generated_python_is_lint_clean` fails on a code that is NOT recorded, and
 :func:`test_known_violations_are_reconciled` fails on a recorded code that no longer

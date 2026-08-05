@@ -72,6 +72,11 @@ slots:
     inlined_as_list: true
     description: "A `grid`'s cells stated one at a time, for a grid whose cells differ — a first cell showing the bare mesh the rest are maps on, or a row pairing two kinds. Each is merged over `cell:`, and carries its own layers. Mutually exclusive with `layers:`, which is the compact form of the same thing."
 
+  capture:
+    range: RenderSpec
+    inlined: true
+    description: "How to turn an `image` panel's HTML/URL `source` into its `path`: the headless-browser recipe (viewport, scale, wait, clip). The declarative form of code/capture-screenshots.py, so a screenshot regenerates from the spec instead of being hand-captured. Ignored when `source` is a static file or a script."
+
 # -------------------------------------------------------------------------- classes
 
 classes:
@@ -169,8 +174,16 @@ classes:
     description: "One cell of the figure. kind selects grammar (cartesian/heatmap) vs escape-hatch (image/custom); every kind shares the label, placeholder, legend and annotation machinery. Reuses label (human title)."
     slots:
       - label
+      - description
       - cell
       - cells
+      - source
+      - capture
+    slot_usage:
+      description:
+        description: "The authored interpretive clause for this panel — the one part of its caption a human writes. The caption composer merges it with the structural descriptor it derives from the panel's layers (axis quantities/units, model/experiment, transform), so the sentence a reader sees is authored intent over computed fact and cannot drift when panels move or layers change."
+      source:
+        description: "For an `image` panel, the producing artifact its committed `path` is rendered FROM: a committed HTML/SVG file, a producing script, or a URL. `path` stays the placed output; `source` is what regenerates it deterministically, so a schematic or a live-platform view is provenance-tracked rather than an opaque binary pasted into the repo. Rendered through `capture:` when it is HTML/a URL; run as a script otherwise."
     attributes:
       panel_key:
         key: true
@@ -362,3 +375,29 @@ classes:
         multivalued: true
         inlined: true
         description: "Raw backend passthrough (e.g. linewidth, linestyle); matplotlib implicit until a second backend lands."
+
+  RenderSpec:
+    description: "A headless-browser capture recipe turning an `image` panel's HTML/URL `source` into the static file placed at its `path`. Mirrors one shot of code/capture-screenshots.py so a screenshot of the live platform (or any HTML render) is reproducible from the spec, not hand-captured. Only the `source` needs committing alongside the rendered `path`."
+    attributes:
+      width:
+        range: integer
+        description: "Viewport width in CSS pixels."
+      height:
+        range: integer
+        description: "Viewport height in CSS pixels. Unset lets the page's own content height decide (full-page capture)."
+      device_scale_factor:
+        range: float
+        description: "Device pixel ratio; 2-3 renders a crisp raster at print resolution (the browser analogue of dpi)."
+      wait_selector:
+        range: string
+        description: "CSS selector to wait for before capturing, so the shot is taken only once the content that matters has rendered."
+      warmup:
+        range: float
+        description: "Extra settle time in seconds after load / wait_selector, for late layout or animation."
+      clip:
+        range: float
+        multivalued: true
+        description: "[x, y, width, height] in CSS pixels to crop the capture to a region of the page; unset captures the whole viewport."
+      format:
+        range: string
+        description: "Capture output format (png/pdf/svg); unset defers to the panel path's extension."
