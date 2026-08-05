@@ -42,6 +42,21 @@ enums:
                 exact_mappings:
                     - UO:0000029
                 description: "Microsecond"
+            ns:
+                meaning: qudt:NanoSEC
+                description: "Nanosecond"
+            min:
+                meaning: qudt:MIN
+                description: "Minute (60 s)"
+            h:
+                meaning: qudt:HR
+                description: "Hour (3600 s)"
+            day:
+                meaning: qudt:DAY
+                description: "Day (86400 s)"
+            year:
+                meaning: qudt:YR
+                description: "Julian year (365.25 d)"
             # ── Rates / inverse time ──
             per_s:
                 meaning: qudt:PER-SEC
@@ -155,6 +170,9 @@ enums:
                 exact_mappings:
                     - UO:0000015
                 description: "Centimetre"
+            km:
+                meaning: qudt:KiloM
+                description: "Kilometre"
             # ── Reciprocal area (spatial eigenvalues, curvature) ──
             per_mm2:
                 description: >-

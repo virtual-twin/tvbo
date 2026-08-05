@@ -26,6 +26,7 @@ from . import (
     run as _run_cmd,
     save as _save_cmd,
     skills as _skills_cmd,
+    units as _units_cmd,
     validate as _validate_cmd,
     version as _version_cmd,
     workflow as _workflow_cmd,
@@ -73,6 +74,7 @@ app.add_typer(_network_cmd.app, name="network", help="Build connectomes from a t
 app.add_typer(_figures_cmd.app, name="figure", help="Render declarative figures (Figure / SimulationStudy YAML) via bsplot codegen.")
 app.add_typer(_workflow_cmd.app, name="workflow", help="Plan / emit HPC + pipeline artefacts (slurm, snakemake, nextflow).")
 app.add_typer(_skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally.")
+app.add_typer(_units_cmd.app, name="units", help="Inspect the QUDT-vendored unit vocabulary, and curate a new unit into it.")
 app.add_typer(_install_cmd.app, name="install", help="Provision optional native components pip cannot place (e.g. AUTO-07p).")
 
 

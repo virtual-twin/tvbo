@@ -96,6 +96,20 @@ def test_a_scale_that_needs_no_conversion_is_exactly_one():
     assert time_unit_factor(_Scope(), _Scope()) == 1
 
 
+@pytest.mark.parametrize(
+    ("source", "target", "expected"),
+    [("min", "ms", 60_000), ("h", "s", 3600), ("day", "h", 24), ("year", "day", Fraction(1461, 4)), ("ns", "us", Fraction(1, 1000))],
+)
+def test_a_slow_network_can_state_its_own_scale(source: str, target: str, expected):
+    """`ns`, `min`, `h`, `day` and `year` are curated, so a non-brain model can declare one.
+
+    The vocabulary used to stop at `ms`/`s`/`us`, which left a slow network unable to say
+    what its clock meant. `year` is the Julian year, and converting it to days gives
+    exactly 1461/4 — a ratio no float representation states exactly.
+    """
+    assert time_unit_factor(_Scope(time_unit=source), _Scope(time_unit=target)) == expected
+
+
 def test_converting_from_something_that_is_not_a_time_is_refused():
     """`mV` is not a duration, and scaling by it would be silently meaningless."""
     with pytest.raises(ValueError, match="not a time unit"):

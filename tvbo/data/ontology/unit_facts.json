@@ -441,6 +441,34 @@
    "symbol": "cm",
    "ucum_code": "cm"
   },
+  "day": {
+   "curated": true,
+   "description": "Day (86400 s)",
+   "dimensions": {
+    "second": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "DAY": 1
+   },
+   "multiplier": [
+    86400,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "BiodegredationHalfLife",
+    "FishBiotransformationHalfLife",
+    "HalfLife",
+    "MeanLifetime",
+    "Time"
+   ],
+   "qudt": "DAY",
+   "symbol": "d",
+   "ucum_code": "d"
+  },
   "degC": {
    "curated": true,
    "description": "Degree Celsius",
@@ -626,6 +654,32 @@
    "symbol": "\u4e00",
    "ucum_code": null
   },
+  "h": {
+   "curated": true,
+   "description": "Hour (3600 s)",
+   "dimensions": {
+    "second": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "HR": 1
+   },
+   "multiplier": [
+    3600,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "HalfLife",
+    "MeanLifetime",
+    "Time"
+   ],
+   "qudt": "HR",
+   "symbol": "h",
+   "ucum_code": "h"
+  },
   "kHz": {
    "curated": true,
    "description": "Kilohertz",
@@ -731,6 +785,30 @@
    "qudt": null,
    "symbol": null,
    "ucum_code": null
+  },
+  "km": {
+   "curated": true,
+   "description": "Kilometre",
+   "dimensions": {
+    "meter": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "KiloM": 1
+   },
+   "multiplier": [
+    1000,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Length"
+   ],
+   "qudt": "KiloM",
+   "symbol": "km",
+   "ucum_code": "km"
   },
   "kohm_cm": {
    "curated": true,
@@ -997,6 +1075,33 @@
    "qudt": "M-PER-SEC2",
    "symbol": "m/s\u00b2",
    "ucum_code": "m.s-2"
+  },
+  "min": {
+   "curated": true,
+   "description": "Minute (60 s)",
+   "dimensions": {
+    "second": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "MIN": 1
+   },
+   "multiplier": [
+    60,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "Adaptation",
+    "HalfLife",
+    "MeanLifetime",
+    "Time"
+   ],
+   "qudt": "MIN",
+   "symbol": "min",
+   "ucum_code": "min"
   },
   "mm": {
    "curated": true,
@@ -1337,6 +1442,31 @@
    "qudt": null,
    "symbol": null,
    "ucum_code": null
+  },
+  "ns": {
+   "curated": true,
+   "description": "Nanosecond",
+   "dimensions": {
+    "second": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "NanoSEC": 1
+   },
+   "multiplier": [
+    1,
+    1000000000
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "CarrierLifetime",
+    "Time"
+   ],
+   "qudt": "NanoSEC",
+   "symbol": "ns",
+   "ucum_code": "ns"
   },
   "ohm": {
    "curated": true,
@@ -2000,6 +2130,32 @@
    "qudt": "MicroSEC",
    "symbol": "\u03bcs",
    "ucum_code": "us"
+  },
+  "year": {
+   "curated": true,
+   "description": "Julian year (365.25 d)",
+   "dimensions": {
+    "second": [
+     1,
+     1
+    ]
+   },
+   "factors": {
+    "YR": 1
+   },
+   "multiplier": [
+    31557600,
+    1
+   ],
+   "offset": null,
+   "quantity_kinds": [
+    "HalfLife",
+    "MeanLifetime",
+    "Time"
+   ],
+   "qudt": "YR",
+   "symbol": "a",
+   "ucum_code": "a"
   }
  }
 }
