@@ -51,6 +51,24 @@ def test_no_authors_renders_empty_rather_than_raising():
     assert _format_authors([]) == ""
 
 
+@pytest.mark.parametrize(
+    ("written", "expected"),
+    [
+        ("van der Pol, Balthasar", "van der Pol, B."),
+        ("di Volo, Matteo", "di Volo, M."),
+        ("van Wyk, Michael A", "van Wyk, M."),
+    ],
+)
+def test_a_particled_surname_keeps_its_particles(written: str, expected: str):
+    """`van der Pol` is not `Pol`.
+
+    pybtex splits a particled surname across `prelast_names` and `last_names`, so reading
+    only the latter cites a different person's name entirely. Four shipped entries carry
+    six such authors, and every report citing them was wrong.
+    """
+    assert _format_authors([Person(written)]) == expected
+
+
 def test_every_shipped_bibliography_entry_renders():
     """The whole bibliography formats, so no entry can silently break a study's report."""
     entries = db.load_bibliography().entries
