@@ -193,7 +193,7 @@ parameters:
       step: 0.0
       log_scale: false
     description: initial concentration of intracellular Cl
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Cl_o0:
     name: Cl_o0
     definition: initial concentration of extracellular Cl
@@ -205,7 +205,7 @@ parameters:
       step: 0.0
       log_scale: false
     description: initial concentration of extracellular Cl
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Cmna:
     name: Cmna
     value: -24.0
@@ -296,7 +296,7 @@ parameters:
       step: 0.0
       log_scale: false
     description: initial concentration of intracellular K
-    unit: mmol_per_m3
+    unit: mol_per_m3
   K_o0:
     name: K_o0
     definition: initial concentration of extracellular K
@@ -308,7 +308,7 @@ parameters:
       step: 0.0
       log_scale: false
     description: initial concentration of extracellular K
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Na_i0:
     name: Na_i0
     definition: initial concentration of intracellular Na
@@ -320,7 +320,7 @@ parameters:
       step: 0.0
       log_scale: false
     description: initial concentration of intracellular Na
-    unit: mmol_per_m3
+    unit: mol_per_m3
   Na_o0:
     name: Na_o0
     definition: initial concentration of extracellular Na
@@ -332,7 +332,7 @@ parameters:
       step: 0.0
       log_scale: false
     description: initial concentration of extracellular Na
-    unit: mmol_per_m3
+    unit: mol_per_m3
   g_Cl:
     name: g_Cl
     definition: chloride conductance
