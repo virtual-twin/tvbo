@@ -139,24 +139,24 @@ def run(
     ),
     skip: list[str] = typer.Option(
         [], "--skip",
-        help="When SPEC is an Investigation, skip these member studies (by label or recipe "
+        help="When SPEC is a StudyCollection, skip these member studies (by label or recipe "
              "stem), comma-separated/repeatable — their committed figures/results are reused "
              "as-is. Members flagged `optional:` are skipped by default; pass --all-members "
              "to include them.",
     ),
     all_members: bool = typer.Option(
         False, "--all-members",
-        help="When SPEC is an Investigation, also run members flagged `optional:` (the heavy "
+        help="When SPEC is a StudyCollection, also run members flagged `optional:` (the heavy "
              "studies skipped by default).",
     ),
     dry_run: bool = typer.Option(
         False, "--dry-run",
-        help="When SPEC is an Investigation, list the members, analyses and result keys that "
+        help="When SPEC is a StudyCollection, list the members, analyses and result keys that "
              "WOULD run (honouring --skip / --all-members) and emit nothing.",
     ),
     manifest_only: bool = typer.Option(
         False, "--manifest-only",
-        help="When SPEC is an Investigation, emit the results manifest from existing containers "
+        help="When SPEC is a StudyCollection, emit the results manifest from existing containers "
              "and authored values only — run no members or experiments. The fast refresh for the "
              "two-tier build (the heavy `tvbo run` produces the containers; this restamps the "
              "manifest the manuscript reads).",
@@ -194,8 +194,8 @@ def run(
                                  ("--smoke", smoke or None), ("--set", set_ or None),
                                  ("--pin", pin or None)) if v is not None]
 
-    if kind == "investigation":
-        # An investigation runs every member end to end with fixed save options, so any
+    if kind == "study_collection":
+        # A StudyCollection runs every member end to end with fixed save options, so any
         # of these is silently dropped — turning a one-container request into the whole
         # study, or reporting success for a --save-all that saved record-only.
         rejected = _sim_flags + [f for f, v in (
@@ -204,11 +204,11 @@ def run(
             ("--results-root", results_root)) if v is not None]
         if rejected:
             _common.die(
-                f"{spec} is an investigation, which runs every member study end to end; "
+                f"{spec} is a StudyCollection, which runs every member study end to end; "
                 f"{', '.join(rejected)} would be ignored. Point the flag at the member "
                 "study that declares the work."
             )
-        _run_investigation(obj, spec, out_dir, backend=backend, figures=figures,
+        _run_study_collection(obj, spec, out_dir, backend=backend, figures=figures,
                            skip=skip, all_members=all_members, dry_run=dry_run,
                            manifest_only=manifest_only)
         return
@@ -562,7 +562,7 @@ def _run_whole_study(obj, spec: str, out_dir: Path | None, *, backend: str | Non
     """Run a study's WHOLE pipeline — every experiment, its before/after analyses, its figures.
 
     The subset of the ``kind == "study"`` branch with no per-run selectors (no --experiment /
-    --shard / --pin / --set), reused for each Investigation member and for the investigation's
+    --shard / --pin / --set), reused for each StudyCollection member and for the collection's
     own demo content. Returns whether the after-analysis stage held (figures are skipped if it
     did not), mirroring the study branch.
     """
@@ -590,19 +590,20 @@ def _run_whole_study(obj, spec: str, out_dir: Path | None, *, backend: str | Non
     return ok
 
 
-def _run_investigation(inv, spec: str, out_dir: Path | None, *, backend: str | None = None,
+def _run_study_collection(inv, spec: str, out_dir: Path | None, *, backend: str | None = None,
                        figures: bool = True, skip=(), all_members: bool = False,
                        dry_run: bool = False, manifest_only: bool = False) -> None:
-    """Run an Investigation: every member study, the investigation's own demo content, then
+    """Run a StudyCollection: every member study, the collection's own demo content, then
     emit the results manifest the manuscript reads.
 
     Optional members are skipped unless ``all_members``; ``skip`` drops named members (by label
     or recipe stem); ``dry_run`` lists what would run and emits nothing. The manifest lands at
-    ``<investigation-dir>/_output/extraction_results/manuscript_results.yml`` (the seam Quarto
-    reads as ``{{< meta results.* >}}``); an unresolved result key hard-fails the run.
+    ``<collection-dir>/manuscript_results.yml`` — a committed derived artifact (the seam Quarto
+    reads as ``{{< meta results.* >}}``), so the build never needs the generated run containers;
+    an unresolved result key hard-fails the run.
     """
     from tvbo.data.analysis_io import analysis_name, study_analyses
-    from tvbo.data.investigation import MANIFEST_NAME, emit_manifest
+    from tvbo.data.study_collection import MANIFEST_NAME, emit_manifest
     from tvbo.utils import as_list
 
     base = Path(getattr(inv, "_source_file", spec)).resolve().parent
@@ -615,7 +616,7 @@ def _run_investigation(inv, spec: str, out_dir: Path | None, *, backend: str | N
     n_results = len(as_list(getattr(inv, "results", None)))
 
     if dry_run:
-        _common.info(f"[dry-run] investigation: {getattr(inv, 'title', None) or spec}")
+        _common.info(f"[dry-run] study collection: {getattr(inv, 'title', None) or spec}")
         for label, p in to_run:
             _common.info(f"  member: {label}  ({p})")
         for label in skipped:
@@ -630,8 +631,7 @@ def _run_investigation(inv, spec: str, out_dir: Path | None, *, backend: str | N
     results_root = _container_root(spec, inv_out)
 
     def _emit() -> None:
-        out_path, problems = emit_manifest(inv, results_root,
-                                           base / "_output" / "extraction_results" / MANIFEST_NAME)
+        out_path, problems = emit_manifest(inv, results_root, base / MANIFEST_NAME)
         if problems:
             _common.die("results manifest has unresolved key(s):\n  - " + "\n  - ".join(problems))
         _common.info(f"wrote results manifest: {out_path} ({n_results} key(s))")
@@ -647,7 +647,7 @@ def _run_investigation(inv, spec: str, out_dir: Path | None, *, backend: str | N
     for label, p in to_run:
         _common.info(f"=== member: {label} ({p}) ===")
         kind, mobj = _common.resolve_spec(str(p))
-        if kind not in ("study", "investigation"):
+        if kind not in ("study", "study_collection"):
             _common.warn(f"member {label!r} resolves to a {kind}, not a study; skipping.")
             continue
         member_out = Path(p).resolve().parent / "output" / "nc"

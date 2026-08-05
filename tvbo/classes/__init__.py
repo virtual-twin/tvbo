@@ -25,7 +25,7 @@ __all__ = [
     "Noise",
     "SimulationExperiment",
     "SimulationStudy",
-    "Investigation",
+    "StudyCollection",
 ]
 
 
@@ -67,11 +67,11 @@ def __getattr__(name):
 
         globals()["SimulationStudy"] = SimulationStudy
         return SimulationStudy
-    if name == "Investigation":
-        from tvbo.classes.study import Investigation
+    if name == "StudyCollection":
+        from tvbo.classes.study import StudyCollection
 
-        globals()["Investigation"] = Investigation
-        return Investigation
+        globals()["StudyCollection"] = StudyCollection
+        return StudyCollection
     if name in ("Network", "Connectome"):
         from tvbo.classes.network import Network, Connectome
 

@@ -46,7 +46,7 @@ def _load_figures(spec_path: Path) -> tuple[list, str]:
 
     import tvbo
 
-    loader = tvbo.Investigation if "members" in data else tvbo.SimulationStudy
+    loader = tvbo.StudyCollection if "members" in data else tvbo.SimulationStudy
     study = loader.from_file(str(spec_path))
     return as_list(getattr(study, "figures", None)), "study"
 
@@ -159,7 +159,7 @@ def _select(figures, name: str | None, spec_path: Path) -> list:
 @app.command("caption", help="Compose figure captions from the spec (no rendering) into .caption.qmd partials.")
 def caption(
     spec: str = typer.Argument(
-        ..., help="Path to a Figure / SimulationStudy / Investigation YAML."
+        ..., help="Path to a Figure / SimulationStudy / StudyCollection YAML."
     ),
     out: Path = typer.Option(
         None, "-o", "--out",
