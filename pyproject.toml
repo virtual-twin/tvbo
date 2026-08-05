@@ -61,9 +61,8 @@ dependencies = [
 
     # Templating
     "mako>=1.3.10",
-    # Capped: black formats the emitted code, so its annual stable-style change would
-    # rewrite every reference in tests/reference_data/codegen at once.
-    "black<26",
+    # One stable style: black formats emitted code, so a style bump rewrites every codegen reference at once.
+    "black>=25.9.0,<26",
 
     # BIDS dataset support
     "pybids>=0.16.0",
@@ -126,8 +125,6 @@ docs = [
     "pypandoc>=1.15",
     "pybtex>=0.24.0",
     "pypdf>=5.1.0",
-    "black>=25.9.0,<26",
-    "jupyter",
     "nbclient>=0.10.0",
     # Specification/Network.qmd renders the fsaverage head surface via
     # mne.datasets.fetch_fsaverage; the import is unguarded, so without this the
