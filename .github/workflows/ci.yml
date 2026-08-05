@@ -349,6 +349,7 @@ jobs:
                           tests/test_database_golden_dump.py
                           tests/test_yaml_loader.py
                           tests/test_pydantic_loader.py
+                          tests/test_pydantic_base.py
                           tests/test_linkml_compatibility.py
                           tests/test_experiment_api.py
                           tests/test_cli.py
