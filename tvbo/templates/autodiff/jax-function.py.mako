@@ -15,9 +15,10 @@ For standalone mathematical functions, use base/function-def.mako directly.
 from tvbo.codegen import render_expression
 from tvbo.templates.base.utils import get_source_code, retime, time_series_inputs
 %>
-<%def name="generate_function(func, func_name)" filter="trim">
+<%def name="generate_function(func, func_name, resolved_args=None)" filter="trim">
 <%
     # Collect parameters - split into required (no default) and optional (with default)
+    resolved_args = resolved_args or {}
     params_required = []  # argument names with no default value
     params = {}           # argument name -> default value
     if func.arguments:
@@ -26,6 +27,12 @@ from tvbo.templates.base.utils import get_source_code, retime, time_series_input
             # Skip pipeline references (in1, in2, etc.) - these are variable names not parameters
             if arg.name not in ['in1', 'in2', 'in3']:
                 value = arg.value if hasattr(arg, 'value') else None
+                if value is None and arg.name in resolved_args:
+                    # The caller derives this one (a sampling window or step count) and
+                    # passes it by keyword, so it parameterises the function rather than
+                    # carrying its incoming samples.
+                    params[arg.name] = resolved_args[arg.name]
+                    continue
                 if value is not None:
                     if isinstance(value, str) and not value.replace('.','').replace('-','').isdigit():
                         value = f"'{value}'"

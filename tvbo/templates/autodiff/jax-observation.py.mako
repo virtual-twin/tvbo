@@ -231,6 +231,19 @@ from ${jax_module} import ${name} as ${name}
     step_names = [f.output or f"_step{i}" for i, f in enumerate(resolved_pipeline)]
     # Resolve temporal-sampling step counts once, backend-independently.
     sampling_overrides_map = build_sampling_overrides(resolved_pipeline, obs_sampling)
+    # Resolve each step's keyword arguments ONCE, so the generated signature and the
+    # call that fills it cannot disagree about which names are parameters and which
+    # carry the incoming samples.
+    resolved_args_map = {
+        id(func): get_parameters(
+            func,
+            set(f.output for f in resolved_pipeline if f.output),
+            obs_period=getattr(observation, 'period', None),
+            dt=dt,
+            sampling_overrides=sampling_overrides_map.get(id(func)),
+        )
+        for func in resolved_pipeline
+    }
     # Collect imports for this observation
     obs_imports = set()
     for func in resolved_pipeline:
@@ -254,7 +267,7 @@ _jax_${func.callable.name} = ${func.callable.name}  # Store reference to avoid r
 % endfor
 
 % for func in resolved_pipeline:
-${jaxfunc.generate_function(func, get_func_name(func))}
+${jaxfunc.generate_function(func, get_func_name(func), resolved_args=resolved_args_map.get(id(func)))}
 
 % endfor
 
@@ -302,12 +315,7 @@ def ${observation.name}(ts: TimeSeries, state=${_state_default}):
     else:
         input_name = 'ts'
 
-    params_dict = get_parameters(
-        func, pipeline_outputs,
-        obs_period=getattr(observation, 'period', None),
-        dt=dt,
-        sampling_overrides=sampling_overrides_map.get(id(func)),
-    )
+    params_dict = resolved_args_map.get(id(func), {})
     # Build argument list: input + schema arguments
     args = [input_name]
     for arg_name, arg_value in params_dict.items():
