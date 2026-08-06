@@ -360,12 +360,15 @@ jobs:
                           tests/test_tvboptim_observation_codegen.py
                           tests/functional/test_plot_layouts.py
                     # The shards above name paths, so a new test file joins none of them
-                    # and is never run; this one takes the directory itself.
+                    # and is never run; this one takes the directory itself. Julia is
+                    # excluded (not unrun): it has its own `test-julia` job, and rerunning
+                    # it under this shard's `-n auto` fan-out crashes the xdist worker.
                     - shard: rest
                       paths: >-
                           tests/
                           --ignore=tests/test_docs.py
                           --ignore=tests/test_database_validation.py
+                          --ignore=tests/functional/test_simulation_backends_julia.py
                       pytest_args: -n auto
                       timeout: 60
         steps:

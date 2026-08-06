@@ -1011,6 +1011,8 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             # analysis need different walltime/memory), so each rule carries its own
             # block rather than sharing one study-wide dict.
             "block": plan.engine_block or {},
+            # workflow.retries: re-run a failed cell N times, each attempt raising host time/mem (CPU) or shrinking the on-device batch (GPU).
+            "retries": int(getattr(plan, "retries", 0) or 0),
             "axes": [{"name": ax.name, "parameter": ax.parameter, "values": list(ax.values)}
                      for ax in plan.workflow_axes],
             # on_device cohort: the subjects this single job produces one result each for.

@@ -3538,6 +3538,20 @@ classes:
                     batches). Backends translate this into their own execution
                     primitive (e.g. tvboptim's vmap chunk width) without exposing
                     any backend-specific names in the schema.
+            block_size:
+                range: integer
+                description: >-
+                    Streaming-fold granularity: how many integration steps form one
+                    block that is folded into a streaming reducer's carry in a single
+                    batched update (tvboptim's per-block fold; see the solver's
+                    block_size). Unset uses the backend default. A smaller block bounds
+                    the per-fold working memory of a heavy streaming reduction — e.g. a
+                    permutation-surrogate wave detector whose per-downsampled-frame cost
+                    is large — at the price of more blocks. It trades against n_parallel,
+                    which batches grid cells over the same device memory: the peak is
+                    ~ n_parallel × (block_size / downsample_period) × per-frame. Must be a
+                    whole number of the observation's downsample period. Backend-neutral;
+                    a backend without block streaming ignores it.
             n_trials:
                 range: integer
                 ifabsent: integer(1)
@@ -5309,8 +5323,8 @@ classes:
                     Subdirectory within the source to place on the import path
                     (defaults to the source root).
 
-    Investigation:
-        class_uri: tvbo:Investigation
+    StudyCollection:
+        class_uri: tvbo:StudyCollection
         is_a: SimulationStudy
         description: >-
             The whole manuscript as one runnable specification: a study that
@@ -5323,7 +5337,7 @@ classes:
             instance of the reproducibility it argues for. A Study-of-studies, which
             no SimulationStudy is (``experiments`` ranges over experiments, not
             studies); legitimized by COMBINE/OMEX, SED-ML and the ISA ``Investigation``
-            it is named for.
+            top-level container it parallels.
         attributes:
             members:
                 range: StudyMember
@@ -5331,7 +5345,7 @@ classes:
                 inlined: true
                 inlined_as_list: true
                 description: >-
-                    The member studies this investigation aggregates, each a reference
+                    The member studies this collection aggregates, each a reference
                     to a study recipe (``recipe``) plus whether it is ``optional``
                     (skipped unless requested, for runs too heavy to recompute per
                     build). ``tvbo run`` executes each member's own experiments,
@@ -5361,7 +5375,7 @@ classes:
     StudyMember:
         class_uri: tvbo:StudyMember
         description: >-
-            One member of an Investigation: a reference to a study recipe on disk (or
+            One member of an StudyCollection: a reference to a study recipe on disk (or
             by IRI) and whether it is optional. The recipe carries its own experiments,
             analyses, figures and code_source; the member only states where it is and
             how heavy it is to run.
@@ -5373,7 +5387,7 @@ classes:
                 required: true
                 description: >-
                     Path to the member's study recipe YAML, relative to this
-                    investigation file, or an IRI resolving to one.
+                    StudyCollection file, or an IRI resolving to one.
             optional:
                 range: boolean
                 description: >-
@@ -5386,9 +5400,9 @@ classes:
     ResultBinding:
         class_uri: tvbo:ResultBinding
         description: >-
-            One entry in an Investigation's results manifest: a manuscript key bound to
+            One entry in an StudyCollection's results manifest: a manuscript key bound to
             the value it stands for. Exactly one of three forms: COMPUTED FROM A RUN —
-            ``used:`` a DataRef reading a scalar out of a member's or the investigation's
+            ``used:`` a DataRef reading a scalar out of a member's or the collection's
             own analysis/experiment, formatted through ``format`` — COMPUTED FROM THE SPEC
             — ``count:`` a structural tally of a collection (e.g. the figures a member
             regenerates), needing no run — or AUTHORED — a literal ``value`` quoted from
@@ -5420,7 +5434,7 @@ classes:
                     A structural tally computed from the specification, not a run:
                     ``<member>.<collection>`` counts a collection on a member study
                     (e.g. ``Jansen1995.figures``), or a bare ``<collection>`` counts one
-                    on the investigation itself (e.g. ``members``). Mutually exclusive
+                    on the collection itself (e.g. ``members``). Mutually exclusive
                     with ``used`` and ``value``.
             format:
                 range: string
@@ -5442,14 +5456,14 @@ classes:
     ArchiveConfig:
         class_uri: tvbo:ArchiveConfig
         description: >-
-            How an Investigation packages its run into a COMBINE/OMEX archive: the output
+            How an StudyCollection packages its run into a COMBINE/OMEX archive: the output
             location and format, plus any extra files to include beyond the recipes,
             derived containers, figures and manifest added automatically.
         attributes:
             path:
                 range: string
                 description: >-
-                    Output archive path, relative to the investigation file. Defaults to
+                    Output archive path, relative to the StudyCollection file. Defaults to
                     ``<name>.omex``.
             format:
                 range: string

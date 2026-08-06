@@ -174,7 +174,17 @@ rule ${ep["rule_name"]}:
 ## fall back when the caller supplied no block at all, never when it resolved to {}.
 <% _b = ep.get("block", block) %>\
     threads: ${_b.get("cpus_per_task") or _b.get("cores") or 1}
-<% _res = _rule_resources(_b) %>\
+<%
+    _res = _rule_resources(_b)
+    _escalate = int(ep.get('retries') or 0) > 0
+    _is_gpu = bool(_b.get('gres'))
+    if _escalate:
+        for _k in list(_res):
+            if _k == 'runtime' or (_k == 'mem_mb' and not _is_gpu):   # GPU rules shrink the on-device batch instead of raising host mem
+                _res[_k] = "lambda wildcards, attempt: %s * attempt" % _res[_k]
+        if _is_gpu:   # a RESOURCE, not params: Snakemake injects `attempt` only into resources callables (rules.py expand_resources)
+            _res['nvmap_max'] = "lambda wildcards, attempt: 0 if attempt <= 1 else max(1, 8 // (attempt - 1))"
+%>\
 % if _res:
     # Intrinsic resources; the SLURM executor (via the shipped profile) turns these
     # into --cpus-per-task / --mem / --time on each submitted job.
@@ -182,6 +192,9 @@ rule ${ep["rule_name"]}:
 % for _k, _v in _res.items():
         ${_k}=${_v}${"" if loop.last else ","}
 % endfor
+% endif
+% if _escalate:
+    retries: ${int(ep['retries'])}
 % endif
     shell:
 % for _line in _activation(_b):
@@ -204,6 +217,10 @@ rule ${ep["rule_name"]}:
 % for _e in (_b.get("env") or []):
         "export ${_e['name']}=${_e['value']} && "
 % endfor
+% if _escalate and _is_gpu:
+        ## Retry escalation: cap this attempt's on-device vmap batch (0 = uncapped, attempt 1). {resources.nvmap_max} is a Snakemake field, substituted before the shell runs.
+        "if [ {resources.nvmap_max} -gt 0 ]; then export TVBO_NVMAP_MAX={resources.nvmap_max}; fi && "
+% endif
 % if ep.get("scripts_relpath"):
         ## Pick the code source at run time. TVBO_CODE_SOURCE (or the emit-time default
         ## below) selects `frozen` -> run the pre-rendered `scripts/<key>` as-is with no

@@ -223,7 +223,7 @@ from tvbo.datamodel.schema import (
     Parameter,
     Partition,
 )
-from tvbo.templates.tvboptim.utils import resolve_reduction
+from tvbo.templates.tvboptim.utils import resolve_reduction, streaming_post_eval_plan
 
 
 def _wave_observation(grp_verts, A, period=5.0):
@@ -263,6 +263,20 @@ def test_partition_resolves_to_wave_kind():
     assert red["period_steps"] == 5
     assert red["group_vmap"] == {"gather": "grp_verts", "over": ["A"]}
     assert (red["corr"], red["wave_present"], red["sig_corr"]) == ("val", "wave", "sig")
+
+
+def test_partition_wave_obs_streams_in_the_base_run():
+    """A `partition` (wave) observation must be classed streaming by streaming_post_eval_plan,
+    so the base/post-eval run folds it in-carry per block instead of materialising the whole
+    trajectory and vmapping every frame (which OOM'd Koller exp_41 at 286 GiB in STEP 1).
+    `wave` must also be a slotted kind so the block aligns to its downsample period, not 1000."""
+    grp_verts = np.array([[0, 1, 2, 3], [5, 6, 7, 8]])
+    A = np.linspace(0.5, 2.0, 8).reshape(2, 4)
+    exp = SimpleNamespace(integration=SimpleNamespace(step_size=1.0), _source_file=None,
+                          observations={"wave": _wave_observation(grp_verts, A, period=5.0)})
+    plan = streaming_post_eval_plan(exp)
+    assert "wave" in plan["names"]              # streamed, not materialised → no full-trajectory vmap
+    assert plan["period_in_steps"] == 5         # slotted → block aligns to the wave period, not the 1000 default
 
 
 def test_partition_without_period_is_rejected():

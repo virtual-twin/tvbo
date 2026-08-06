@@ -4,81 +4,9 @@
   <!-- Tell jLEMS/jNeuroML which component is the simulation entry point. -->
   <Target component="sim_Generic2dOscillator_LEMS_Export"/>
 
-  <!-- ════════════════════════════════════════════════════════════════
-       Dimensions & Units (inline — no external includes needed)
-       ════════════════════════════════════════════════════════════════ -->
-
-  <!-- Dimensions -->
-  <Dimension name="none"/>
-  <Dimension name="time" t="1"/>
-  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
-  <Dimension name="per_time" t="-1"/>
-  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
-  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
-  <Dimension name="current" i="1"/>
-  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
-  <Dimension name="concentration" l="-3" n="1"/>
-  <Dimension name="substance" n="1"/>
-  <Dimension name="charge" t="1" i="1"/>
-  <Dimension name="temperature" k="1"/>
-
-  <!-- Units -->
-  <Unit symbol="s" dimension="time" power="0"/>
-  <Unit symbol="ms" dimension="time" power="-3"/>
-  <Unit symbol="us" dimension="time" power="-6"/>
-  <Unit symbol="V" dimension="voltage" power="0"/>
-  <Unit symbol="mV" dimension="voltage" power="-3"/>
-  <Unit symbol="A" dimension="current" power="0"/>
-  <Unit symbol="mA" dimension="current" power="-3"/>
-  <Unit symbol="nA" dimension="current" power="-9"/>
-  <Unit symbol="pA" dimension="current" power="-12"/>
-  <Unit symbol="S" dimension="conductance" power="0"/>
-  <Unit symbol="mS" dimension="conductance" power="-3"/>
-  <Unit symbol="nS" dimension="conductance" power="-9"/>
-  <Unit symbol="F" dimension="capacitance" power="0"/>
-  <Unit symbol="uF" dimension="capacitance" power="-6"/>
-  <Unit symbol="nF" dimension="capacitance" power="-9"/>
-  <Unit symbol="ohm" dimension="resistance" power="0"/>
-  <Unit symbol="Mohm" dimension="resistance" power="6"/>
-  <Unit symbol="per_s" dimension="per_time" power="0"/>
-  <Unit symbol="per_ms" dimension="per_time" power="3"/>
-  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
-  <Unit symbol="K" dimension="temperature" power="0"/>
-
-
-  <!-- ════════════════════════════════════════════════════════════════
-       LEMS Simulation infrastructure types
-       (normally provided by Simulation.xml — defined inline to avoid
-       the jNeuroML double-read bug)
-       ════════════════════════════════════════════════════════════════ -->
-  <ComponentType name="Simulation">
-    <Parameter name="length" dimension="time"/>
-    <Parameter name="step" dimension="time"/>
-    <Children name="outputs" type="OutputFile"/>
-    <ComponentReference name="target" type="Component"/>
-    <Dynamics>
-      <StateVariable name="t" dimension="time"/>
-    </Dynamics>
-    <Simulation>
-      <Run component="target" variable="t" increment="step" total="length"/>
-    </Simulation>
-  </ComponentType>
-
-  <ComponentType name="OutputFile">
-    <Children name="outputColumn" type="OutputColumn"/>
-    <Text name="fileName"/>
-    <Text name="path"/>
-    <Simulation>
-      <DataWriter path="path" fileName="fileName"/>
-    </Simulation>
-  </ComponentType>
-
-  <ComponentType name="OutputColumn">
-    <Path name="quantity"/>
-    <Simulation>
-      <Record quantity="quantity"/>
-    </Simulation>
-  </ComponentType>
+  <Include file="Cells.xml"/>
+  <Include file="Networks.xml"/>
+  <Include file="Simulation.xml"/>
 
   <!-- ════════════════════════════════════════════════════════════════
        Dynamics ComponentType & Component instances
@@ -110,14 +38,13 @@
     <Parameter name="V_0" dimension="none"/>
     <Parameter name="W_0" dimension="none"/>
 
-    <!-- Time constant for derivatives.
-         All parameters use dimension="none" to avoid jLEMS dimensional
-         analysis failures (neural-mass models mix units freely).
-         / SEC is always applied so the TimeDerivative has per_time
-         dimension.  When the model already has time units in parameters,
-         SEC = 1s (numerically 1.0 — identity); otherwise SEC = 1<time_scale>
-         provides the actual numeric conversion.
-         needs_sec=True  time_scale=ms -->
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
     <Constant name="SEC" dimension="time" value="1ms"/>
 
     <!-- Exposures (one per state variable) -->
@@ -158,15 +85,21 @@
 
 
 
+  <!-- Wrap the single cell in a network so quantity paths use the standard
+       pop[idx]/variable form, which works across jNeuroML, NEURON, Brian2,
+       NetPyNE and EDEN backends. -->
+  <network id="net">
+    <population id="pop" component="Generic2dOscillator_inst" size="1"/>
+  </network>
+
   <!-- ════════════════════════════════════════════════════════════════
-       Simulation — target the component instance directly.
-       Output: one file with all state variables.
+       Simulation — target the network (all-backend compatible)
        ════════════════════════════════════════════════════════════════ -->
-  <Simulation id="sim_Generic2dOscillator_LEMS_Export" length="1000.0ms" step="0.01220703125ms" target="Generic2dOscillator_inst">
+  <Simulation id="sim_Generic2dOscillator_LEMS_Export" length="1000.0ms" step="0.01220703125ms" target="net">
 
     <OutputFile id="of1" fileName="results/Generic2dOscillator.dat">
-      <OutputColumn id="V" quantity="V"/>
-      <OutputColumn id="W" quantity="W"/>
+      <OutputColumn id="V" quantity="pop[0]/V"/>
+      <OutputColumn id="W" quantity="pop[0]/W"/>
     </OutputFile>
 
   </Simulation>
