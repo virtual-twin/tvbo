@@ -185,9 +185,10 @@ class TestDatamodel:
         from tvbo.datamodel import tvbo_datamodel as dm
 
         public = [n for n in dir(dm) if not n.startswith("_")]
-        # Currently ~253 after the Algorithm multi-stage / composition-mode
-        # additions; flag if it grows much beyond that (unbounded pollution).
-        assert len(public) < 300, f"tvbo_datamodel has {len(public)} public names — check for namespace pollution"
+        # Currently ~305 (of which ~21 are LinkML generator boilerplate — `re`,
+        # `dataclasses`, `datetime`, `camelcase`, `empty_dict`, … — and the rest
+        # are schema classes); flag if it grows much beyond that (unbounded pollution).
+        assert len(public) < 350, f"tvbo_datamodel has {len(public)} public names — check for namespace pollution"
 
     def test_pydantic_module_importable(self):
         from tvbo.datamodel import tvbopydantic

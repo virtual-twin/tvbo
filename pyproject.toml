@@ -35,6 +35,8 @@ dependencies = [
 
     # ML
     "jax >=0.4.28",
+    # jaxlib ships no macOS x86_64 wheel past 0.4.x; cap Intel Macs there (no-op elsewhere).
+    "jax <0.5.0 ; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     "equinox >=0.11.12",
 
     # Symbolic
