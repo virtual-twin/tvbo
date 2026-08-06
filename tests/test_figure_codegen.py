@@ -821,7 +821,11 @@ def test_annotation_binds_a_computed_number():
     ]
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
     bound, plain = ctx["panels"][0]["annotations"]
-    assert bound["layer"]["output"] == "r" and Path(bound["layer"]["container"]).is_file()
+    assert bound["layer"]["output"] == "r"
+    # The container path only resolves to a real file where the Taher2019 fixture is
+    # checked out; elsewhere it is "" (the same gate the data-backed tests skip on).
+    if _EXP3_CONTAINER:
+        assert Path(bound["layer"]["container"]).is_file()
     assert plain["layer"] is None
 
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")

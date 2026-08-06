@@ -60,6 +60,24 @@ def auto_nvmap_budget_bytes() -> int:
     return int(_env_positive("TVBO_NVMAP_MEM_BUDGET_GB", float, AUTO_NVMAP_MEM_BUDGET_GB) * (1024 ** 3))
 
 
+def nvmap_hard_cap() -> Optional[int]:
+    """Hard ceiling on the resolved vmap width, from ``TVBO_NVMAP_MAX`` (unset → no cap).
+
+    Unlike the auto-mode budget this also caps an *explicit* ``n_parallel``, so a
+    failed cell can be retried with a smaller on-device batch (the workflow escalation
+    exports a shrinking value per attempt) or an operator can pin a smaller GPU — both
+    without re-emitting the kit. Read at call time so the retry's value takes effect.
+    ``0``/negative/unset all mean "no cap" (the escalation's attempt-1 sentinel), so a
+    bare ``0`` is honoured silently rather than warned about.
+    """
+    raw = os.environ.get("TVBO_NVMAP_MAX")
+    try:
+        cap = int(raw) if raw and raw.strip() else 0
+    except ValueError:
+        cap = 0
+    return cap if cap > 0 else None
+
+
 def shared_ram_device_count() -> int:
     """Number of devices whose per-cell batches share one physical RAM pool.
 
@@ -187,15 +205,20 @@ def resolve_n_vmap(spec, grid_n, per_cell_bytes=None, n_pmap=1):
             ``n_vmap`` alone (else forced host devices multiply the footprint past it).
 
     Returns:
-        Positive integer vmap chunk width. An explicit integer is passed through
-        unchanged (memory bounds do not apply — the caller opted in).
+        Positive integer vmap chunk width. An explicit integer bypasses the auto memory
+        budget (the caller opted in), but a ``TVBO_NVMAP_MAX`` env cap, when set, still
+        applies to it — the workflow retry lowers it to shrink a failed cell's batch.
     """
+    _cap = nvmap_hard_cap()
     if not _is_auto(spec):
-        return max(1, int(spec))
+        w = max(1, int(spec))
+        return min(w, _cap) if _cap else w
     n_pmap = max(1, int(n_pmap))
     width = min(int(grid_n), auto_nvmap_cap())
     if per_cell_bytes and per_cell_bytes > 0:
         width = min(width, auto_nvmap_budget_bytes() // (int(per_cell_bytes) * n_pmap))
+    if _cap:
+        width = min(width, _cap)
     width = max(1, width)
     logger.debug(
         "n_parallel=auto -> n_vmap=%d (grid_n=%d, n_pmap=%d, per_cell_bytes=%s)",
