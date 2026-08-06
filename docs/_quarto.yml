@@ -122,16 +122,10 @@ csl: https://raw.githubusercontent.com/citation-style-language/styles/master/iee
 
 fig-align: center
 
-# Cache notebook execution results. 'auto' only re-executes when source changes.
-# Cached results stored in _freeze/ — commit this directory to share across machines.
-# Pin the Jupyter kernel project-wide. Without this, a page that omits
-# `jupyter:` in its front matter gets whichever kernel Quarto happens to pick
-# first from the user's registered kernelspecs — on a machine with unrelated
-# kernels registered that can be an entirely different virtualenv, which then
-# fails with ModuleNotFoundError for tvbo's own dependencies. Pinning makes the
-# build reproducible regardless of what a developer has installed.
+# Kernel name only; the interpreter behind it is ambient — set QUARTO_PYTHON to pin it.
 jupyter: python3
 
+# `freeze: auto` re-executes only on source change; commit _freeze/ to share the cache.
 execute:
     enabled: true
     cache: true

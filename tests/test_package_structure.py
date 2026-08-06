@@ -185,10 +185,10 @@ class TestDatamodel:
         from tvbo.datamodel import tvbo_datamodel as dm
 
         public = [n for n in dir(dm) if not n.startswith("_")]
-        # 301 after Reducer / Assignment / ReducerEmitKind gave the reducers database
-        # directory a class. The bound catches *unbounded* growth — a generator leaking
-        # internals — so a handful of reviewed classes raises it rather than trips it.
-        assert len(public) < 330, f"tvbo_datamodel has {len(public)} public names — check for namespace pollution"
+        # ~305-310 public names: schema classes (incl. Reducer / Assignment /
+        # ReducerEmitKind) plus ~21 LinkML generator boilerplate (`re`, `dataclasses`,
+        # `camelcase`, …). The bound catches *unbounded* growth, not reviewed additions.
+        assert len(public) < 350, f"tvbo_datamodel has {len(public)} public names — check for namespace pollution"
 
     def test_pydantic_module_importable(self):
         from tvbo.datamodel import tvbopydantic

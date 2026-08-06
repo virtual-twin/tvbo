@@ -1,6 +1,6 @@
-"""Investigation-level helpers: the results manifest and the ``tvbo verify`` checks.
+"""StudyCollection-level helpers: the results manifest and the ``tvbo verify`` checks.
 
-An :class:`~tvbo.classes.study.Investigation` is a study-of-studies — it aggregates the
+An :class:`~tvbo.classes.study.StudyCollection` is a study-of-studies — it aggregates the
 member studies a paper reports and owns the paper's own demonstration content — plus two
 things a plain ``SimulationStudy`` has no need for:
 
@@ -44,13 +44,13 @@ def _format(value: Any, fmt: Optional[str]) -> str:
 
 
 def _count_target(inv: Any, member_label: Optional[str]) -> Any:
-    """The object a ``count:`` binding tallies: the investigation itself, or a loaded member."""
+    """The object a ``count:`` binding tallies: the collection itself, or a loaded member."""
     if member_label is None:
         if inv is None:
-            raise ValueError("a bare `count:` collection needs an investigation context")
+            raise ValueError("a bare `count:` collection needs a StudyCollection context")
         return inv
     if inv is None:
-        raise ValueError(f"count references member {member_label!r} but no investigation context was given")
+        raise ValueError(f"count references member {member_label!r} but no StudyCollection context was given")
     from tvbo.classes.study import SimulationStudy
 
     for label, path in inv.member_recipes():
@@ -65,24 +65,24 @@ def _count(spec: str, inv: Any) -> int:
     """Length of the collection a ``count:`` binding names.
 
     ``<member>.<collection>`` counts the collection on that member study (loaded from its
-    recipe); a bare ``<collection>`` counts one on the investigation itself. An unknown
+    recipe); a bare ``<collection>`` counts one on the collection itself. An unknown
     collection slot raises, so a typo fails the build rather than tallying to zero.
     """
     member_label, _, coll = str(spec).rpartition(".")
     target = _count_target(inv, member_label or None)
     if not hasattr(target, coll):
-        where = member_label or "the investigation"
+        where = member_label or "the collection"
         raise ValueError(f"count collection {coll!r} is not a slot on {where}")
     return len(as_list(getattr(target, coll)))
 
 
 def container_roots(inv: Any, results_root: Optional[Path]) -> list[Path]:
-    """Every directory an investigation's result containers can live under, in search order.
+    """Every directory a StudyCollection's result containers can live under, in search order.
 
-    The investigation's own root first, then one per member. A member study runs in its own
+    The collection's own root first, then one per member. A member study runs in its own
     directory and writes ``<member-dir>/output/results/<name>/result.h5``, so a ``used:``
-    binding into a member — which ``Investigation.results`` explicitly documents as
-    supported — is not reachable from the investigation's root alone.
+    binding into a member — which ``StudyCollection.results`` explicitly documents as
+    supported — is not reachable from the collection's root alone.
     """
     roots: list[Path] = [Path(results_root)] if results_root else []
     try:
@@ -100,7 +100,7 @@ def _resolve_across_roots(used: Any, results_root: Optional[Path], inv: Any):
     """Resolve *used* against the first container root that holds it.
 
     The first failure is re-raised when none do, so the reported problem names the
-    investigation's own root rather than whichever member happened to be searched last.
+    collection's own root rather than whichever member happened to be searched last.
     """
     roots = container_roots(inv, results_root)
     first_error: Optional[Exception] = None
@@ -116,7 +116,7 @@ def resolve_binding(binding: Any, results_root: Optional[Path], *, inv: Any = No
     """Resolve one ``ResultBinding`` to ``(rendered_string, provenance)``.
 
     Three mutually exclusive forms: ``used:`` reads a scalar out of a result container and
-    formats it; ``count:`` tallies a collection on a member or the investigation (no run);
+    formats it; ``count:`` tallies a collection on a member or the collection itself (no run);
     ``value:`` (+ ``source:``) passes an authored literal through untouched. Raises
     ``ValueError`` for a malformed binding (zero or more than one form set), and lets a
     resolution failure (missing container, dead reference, non-scalar, unknown member)
@@ -218,7 +218,7 @@ def emit_manifest(
 
 
 def _figure_ids(inv: Any) -> list[str]:
-    """The ``@fig-*`` cross-reference ids the investigation's figures declare (by name)."""
+    """The ``@fig-*`` cross-reference ids the collection's figures declare (by name)."""
     ids: list[str] = []
     for fig in as_list(getattr(inv, "figures", None)):
         name = getattr(fig, "name", None)
@@ -289,24 +289,69 @@ def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Option
     return problems
 
 
+def _read_manifest_keys(path: Path) -> set[str]:
+    """The result keys recorded in a committed manifest (``manuscript_results.yml``)."""
+    import yaml
+
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    return set((data.get("results") or {}).keys())
+
+
+def _stale_captions(inv: Any, captions_dir: Path) -> list[str]:
+    """Committed caption partials whose text no longer matches what the spec composes.
+
+    Each figure's ``<name>.caption.qmd`` is generated by ``tvbo figure caption`` and included by
+    the manuscript; a spec edit that moves a panel or rewrites a description without recomposing
+    leaves a committed caption the document still renders. That drift is silent — Quarto has no
+    way to know the partial is stale — so this recomposes each caption from the spec and fails on
+    a mismatch. A figure with no committed partial is skipped (nothing to be stale).
+    """
+    captions_dir = Path(captions_dir)
+    if not captions_dir.is_dir():
+        return []
+    try:
+        from tvbo.adapters.bsplot import compose_caption
+    except Exception as e:
+        return [f"cannot import the caption composer to check staleness: {e}"]
+    problems: list[str] = []
+    for fig in as_list(getattr(inv, "figures", None)):
+        name = getattr(fig, "name", None)
+        if not name:
+            continue
+        path = captions_dir / f"{name}.caption.qmd"
+        if not path.exists():
+            continue
+        if path.read_text(encoding="utf-8") != compose_caption(fig) + "\n":
+            problems.append(
+                f"figure {name!r}: committed caption {path.name} is stale — the spec composes a "
+                f"different caption; regenerate with `tvbo figure caption`"
+            )
+    return problems
+
+
 def verify(
     inv: Any,
     base: Path,
     *,
     results_root: Optional[Path] = None,
     manuscript_keys: Optional[Iterable[str]] = None,
+    manifest_path: Optional[Path] = None,
+    captions_dir: Optional[Path] = None,
 ) -> list[str]:
-    """Check an investigation is buildable, returning a list of problems (empty = OK).
+    """Check a StudyCollection is buildable, returning a list of problems (empty = OK).
 
-    Three families of check, all hard failures for the pre-render build seam:
+    Structural checks run in both modes: every member recipe exists, every declared figure
+    carries a cross-reference id, and every committed ``<figure>.caption.qmd`` still matches the
+    caption its spec composes (a stale caption fails here, not silently in the rendered PDF).
+    What differs is how the numbers are checked:
 
-    * **completeness** — every member recipe exists; every declared figure carries a
-      cross-reference id.
-    * **staleness** — every declared analysis has a container that is present and no older
-      than the spec (:func:`_stale_or_missing_analyses`).
-    * **coverage** — every ``results:`` key resolves (no dead binding); and, when the prose's
-      ``{{< meta results.* >}}`` keys are supplied as *manuscript_keys*, every key the prose
-      cites exists in the manifest and no manifest key is unused.
+    * **offline** (``manifest_path`` is None) — resolve every ``results:`` binding against its
+      run container and check analysis staleness. The full gate, run where the containers live.
+    * **build** (``manifest_path`` given) — the run containers are generated artifacts that are
+      never committed, so instead of resolving them this reads the committed manifest: the
+      declared bindings and the prose's cited keys must both match its keys exactly. A binding
+      added without regenerating the manifest, or a citation with no number, fails here without
+      a single container present.
     """
     base = Path(base)
     results_root = Path(results_root) if results_root else (base / "output")
@@ -318,19 +363,42 @@ def verify(
         if not getattr(fig, "name", None):
             label = getattr(fig, "label", None) or "?"
             problems.append(f"figure {label!r} has no `name` (needed for its @fig- cross-reference)")
+    problems += _stale_captions(inv, captions_dir if captions_dir is not None else base / "figures")
 
-    problems += _stale_or_missing_analyses(inv, results_root, source_file)
+    declared = {getattr(b, "key", None) for b in as_list(getattr(inv, "results", None))}
+    declared.discard(None)
 
-    _, _, resolve_problems = resolve_results(inv, results_root)
-    problems += resolve_problems
+    if manifest_path is not None:
+        manifest_path = Path(manifest_path)
+        if not manifest_path.exists():
+            problems.append(
+                f"committed manifest not found: {manifest_path} — run `tvbo run` where the "
+                f"containers live and commit it"
+            )
+            return problems
+        available = _read_manifest_keys(manifest_path)
+        for key in sorted(declared - available):
+            problems.append(
+                f"results.{key}: declared in `results:` but absent from the committed manifest "
+                f"({manifest_path.name}) — regenerate it with `tvbo run`"
+            )
+        for key in sorted(available - declared):
+            problems.append(
+                f"results.{key}: in the committed manifest but no longer declared in `results:` "
+                f"— regenerate it with `tvbo run`"
+            )
+    else:
+        available = declared
+        problems += _stale_or_missing_analyses(inv, results_root, source_file)
+        _, _, resolve_problems = resolve_results(inv, results_root)
+        problems += resolve_problems
 
     if manuscript_keys is not None:
-        declared = {getattr(b, "key", None) for b in as_list(getattr(inv, "results", None))}
-        declared.discard(None)
+        where = "the committed manifest" if manifest_path is not None else "`results:`"
         cited = set(manuscript_keys)
-        for key in sorted(cited - declared):
-            problems.append(f"results.{key}: cited in the manuscript but not declared in `results:`")
-        for key in sorted(declared - cited):
-            problems.append(f"results.{key}: declared in `results:` but never cited in the manuscript")
+        for key in sorted(cited - available):
+            problems.append(f"results.{key}: cited in the manuscript but not in {where}")
+        for key in sorted(available - cited):
+            problems.append(f"results.{key}: in {where} but never cited in the manuscript")
 
     return problems

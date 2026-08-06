@@ -702,6 +702,7 @@ for expl in exploration_list:
         # parallel_mode: vmap | lax_map | pmap | auto. Defaults to auto (=lax_map at codegen).
         'parallel_mode': str(expl.parallel_mode) if getattr(expl, 'parallel_mode', None) else 'auto',
         'parallel_batch_size': int(expl.parallel_batch_size) if getattr(expl, 'parallel_batch_size', None) else None,
+        'block_size': int(expl.block_size) if getattr(expl, 'block_size', None) else None,   # streaming-fold block granularity → get_solver(block_size=); bounds the per-block batched update's memory
         'axes': [],
         # Observations to compute + stack per grid point (derived + `analysis` diagnostics).
         # NOTE: this block duplicates utils.parse_exploration — should be consolidated onto it.

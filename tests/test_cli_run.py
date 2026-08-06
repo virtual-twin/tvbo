@@ -338,3 +338,64 @@ def test_analysis_is_refused_when_the_spec_is_an_experiment(monkeypatch, tmp_pat
 
     with pytest.raises(SystemExit, match="needs a study"):
         run_cli.run(str(tmp_path / "exp-3.yaml"), analysis="spectrum", **_run_kwargs())
+
+
+# ------------------------------------------- flags that must not be silently ignored
+
+
+@pytest.fixture
+def collection_spec(tmp_path: Path) -> str:
+    """A minimal StudyCollection on disk, with one member and one authored result."""
+    (tmp_path / "members").mkdir()
+    (tmp_path / "members" / "toy.yaml").write_text(
+        "title: Toy\nkey: toy\nsimulation_experiments: []\n", encoding="utf-8"
+    )
+    spec = tmp_path / "collection.yaml"
+    spec.write_text(
+        "title: Demo\n"
+        "members:\n"
+        "  - {recipe: members/toy.yaml, label: toy}\n"
+        "results:\n"
+        "  - {key: parcels, value: '379', source: Glasser2016}\n",
+        encoding="utf-8",
+    )
+    return str(spec)
+
+
+@pytest.mark.parametrize("flag", [
+    "--analysis=fc_summary", "--experiment=41", "--save-all", "--no-compress",
+    "--limit=1", "--smoke", "--set=integration.duration=1",
+])
+def test_a_flag_a_collection_cannot_honour_is_refused(collection_spec, flag):
+    """A StudyCollection runs every member with fixed save options.
+
+    Accepting one of these and dropping it turns a one-container request into the whole
+    study — hours of cluster time — or reports success for a ``--save-all`` that in fact
+    wrote record-only. Each must fail fast, naming the flag.
+
+    Driven through the CLI rather than by calling ``run()``: invoked directly, every
+    typer default is an unresolved ``OptionInfo``, so the guard fires for every flag at
+    once and the test passes without testing anything.
+    """
+    from typer.testing import CliRunner
+
+    from tvbo.cli import app
+
+    res = CliRunner().invoke(app, ["run", collection_spec, "--dry-run", flag])
+    assert res.exit_code != 0
+    assert "would be ignored" in res.output
+    assert flag.split("=")[0] in res.output
+
+
+def test_a_plain_collection_run_is_not_refused(collection_spec):
+    """The other half: ``--compress`` is the default, so its presence is not a choice.
+
+    Treating a default as a passed flag would refuse every ordinary collection run.
+    """
+    from typer.testing import CliRunner
+
+    from tvbo.cli import app
+
+    res = CliRunner().invoke(app, ["run", collection_spec, "--dry-run"])
+    assert res.exit_code == 0, res.output
+    assert "would be ignored" not in res.output

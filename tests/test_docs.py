@@ -13,11 +13,48 @@ import json
 import os
 import glob
 import subprocess
+import sys
 import pytest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 DOCS_DIR = REPO_ROOT / "docs"
+KERNEL_NAME = "tvbo-docs"
+
+
+def jupyter_executable() -> str:
+    """Path to the ``jupyter`` shipped with the interpreter running the tests.
+
+    Falls back to the bare name so the failure, if any, is a plain "not found"
+    rather than a silent execution against some other environment's Jupyter.
+    """
+    candidate = Path(sys.executable).with_name("jupyter")
+    return str(candidate) if candidate.exists() else "jupyter"
+
+
+@pytest.fixture(scope="session")
+def docs_kernel(tmp_path_factory):
+    """Register a kernelspec bound to ``sys.executable`` and return its search root.
+
+    The docs declare ``jupyter: python3``, and which interpreter that name resolves
+    to is ambient: Jupyter searches the user, environment and system kernel
+    directories, and the ``python3`` spec ipykernel installs into a virtualenv
+    launches a bare ``python`` taken from ``PATH``. On a machine with several
+    project virtualenvs that lands wherever ``PATH`` happens to point -- typically
+    another project's environment holding a stale released ``tvbo`` -- so the docs
+    never exercise this checkout. Pinning the kernel to the absolute interpreter
+    running pytest makes the notebooks execute against the code under test.
+    """
+    root = tmp_path_factory.mktemp("jupyter-kernels")
+    spec_dir = root / "kernels" / KERNEL_NAME
+    spec_dir.mkdir(parents=True)
+    spec = {
+        "argv": [sys.executable, "-m", "ipykernel_launcher", "-f", "{connection_file}"],
+        "display_name": f"tvbo docs ({sys.executable})",
+        "language": "python",
+    }
+    (spec_dir / "kernel.json").write_text(json.dumps(spec, indent=1), encoding="utf-8")
+    return root
 
 
 def get_all_qmd_files():
@@ -39,22 +76,20 @@ def get_doc_name(path: str) -> str:
     return str(rel_path.with_suffix(""))
 
 
-# Discover all testable qmd files
 qmd_files = [f for f in get_all_qmd_files() if has_python_cells(f)]
 
-# Docs whose tests are slow and excluded by default (use --run-slow). Matched as a
-# substring of the doc's path relative to docs/.
-#
-# The heavy pages are the tvboptim optimization workflows. They moved from
-# Interoperability/tvboptim/ into the Fitting/ topic, so match them by their
-# `_tvboptim` filename rather than by directory: keying on "Fitting" alone would
-# also mark neighbours like Fitting/ModelFitting.qmd, which is not slow.
 SLOW_DIRS = {"Interoperability/tvboptim", "_tvboptim"}
+"""Substrings of a doc's path, relative to docs/, marking it slow (needs --run-slow).
 
-# TODO: Re-enable Koller2024 once the replication is tuned and validated.
-# Currently times out in CI; needs investigation of runtime / convergence
-# before being re-added to the doc test suite.
+The heavy pages are the tvboptim optimization workflows, which moved from
+Interoperability/tvboptim/ into the Fitting/ topic, hence the `_tvboptim` filename
+match: keying on "Fitting" would also catch neighbours like Fitting/ModelFitting.qmd,
+which is not slow.
+"""
+
 EXCLUDED_DOCS = {"Replication/Koller2024/Run_Koller2024"}
+"""Docs skipped entirely. Koller2024 exceeds the CI timeout until its replication
+converges; re-add it once the runtime is bounded."""
 
 test_params = []
 for path in qmd_files:
@@ -67,7 +102,7 @@ for path in qmd_files:
 
 @pytest.mark.docs
 @pytest.mark.parametrize("qmd_path,doc_name", test_params, ids=lambda x: x if isinstance(x, str) else Path(x).stem)
-def test_doc_executes(qmd_path, doc_name):
+def test_doc_executes(qmd_path, doc_name, docs_kernel):
     """Test that a documentation notebook executes without errors."""
     qmd_path = Path(qmd_path)
     doc_dir = qmd_path.parent  # Original doc directory for relative path resolution
@@ -84,8 +119,7 @@ def test_doc_executes(qmd_path, doc_name):
         # Ensure _output directory exists (some docs write files there)
         (doc_dir / "_output").mkdir(exist_ok=True)
 
-        # Inject a setup cell so the kernel can find local modules (e.g. Jansen1995_plot)
-        # PYTHONPATH isn't reliably inherited by Jupyter kernels.
+        # Kernels do not reliably inherit PYTHONPATH, so put the doc dir on sys.path in-band.
         with open(ipynb_path, "r", encoding="utf-8") as f:
             nb = json.load(f)
         setup_cell = {
@@ -110,9 +144,10 @@ def test_doc_executes(qmd_path, doc_name):
         env.setdefault("JAX_PLATFORMS", "cpu")
         env.setdefault("XLA_PYTHON_CLIENT_ALLOCATOR", "platform")
         env.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
+        env["JUPYTER_PATH"] = str(docs_kernel)
 
         result = subprocess.run(
-            ["jupyter", "execute", str(ipynb_path)],
+            [jupyter_executable(), "execute", "--kernel_name", KERNEL_NAME, str(ipynb_path)],
             capture_output=True,
             text=True,
             cwd=str(doc_dir),  # Run from doc's directory for correct relative paths
