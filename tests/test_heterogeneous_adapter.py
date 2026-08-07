@@ -13,6 +13,22 @@ import yaml
 pytest.importorskip("jax")
 pytest.importorskip("tvboptim")
 
+# The adapter's heterogeneous path targets a tvboptim network-dynamics API
+# (DynamicsGroup / HeterogeneousNetwork / SignalRoute) that is not present in the pinned
+# tvboptim — the feature only recently landed upstream and the names are still settling.
+# Skip until that integration lands (see tvbo.adapters.tvboptim.to_heterogeneous_network).
+try:
+    from tvboptim.experimental.network_dynamics import (  # noqa: F401
+        DynamicsGroup,
+        HeterogeneousNetwork,
+        SignalRoute,
+    )
+except Exception:
+    pytest.skip(
+        "tvboptim heterogeneous-network API not available in the installed tvboptim",
+        allow_module_level=True,
+    )
+
 from tvbo import Dynamics, Network, SimulationExperiment  # noqa: E402
 from tvbo.adapters.tvboptim import (  # noqa: E402
     is_heterogeneous,
