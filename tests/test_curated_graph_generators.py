@@ -48,17 +48,21 @@ def bound_source(monkeypatch):
     "seed, n, sparsity, radius",
     [(42, 60, 0.1, 0.95), (1, 40, 0.2, 0.8), (7, 40, 0.2, 0.8), (99, 25, 0.3, 0.5)],
 )
-def test_shipped_yaml_is_bit_identical_to_the_pre_migration_engine(seed, n, sparsity, radius):
+def test_shipped_yaml_reproduces_the_pre_migration_engine(seed, n, sparsity, radius):
     """Anyone who built a reservoir before the migration must get the same one after it.
 
     Agreeing on properties — spectral radius on target, roughly the right density — is
     not reproduction: an earlier attempt satisfied both while drawing from a different
-    stream scheme, so the sparsity pattern (the network's topology) was different.
+    stream scheme, so the sparsity pattern (the network's topology) was different. The
+    pattern is therefore pinned bit-for-bit; the weights carry a ``1/max|eigenvalue|``
+    scale that is not bit-reproducible across LAPACK builds, so they get a tolerance far
+    tighter than any real stream-scheme change but looser than a ULP.
     """
     expected = np.load(_GOLDEN)[f"{seed}_{n}_{sparsity}_{radius}"]
     got = random_reservoir(n_nodes=n, sparsity=sparsity,
                            spectral_radius=radius, seed=seed)["weights"]
-    np.testing.assert_array_equal(got, expected)
+    np.testing.assert_array_equal(got != 0, expected != 0)  # topology: exact
+    np.testing.assert_allclose(got, expected, rtol=1e-9, atol=0)  # weights: LAPACK-ULP tolerant
 
 
 def test_network_resolution_matches_the_standalone_helper():

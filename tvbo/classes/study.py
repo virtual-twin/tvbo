@@ -6,6 +6,7 @@ formatting, and access to individual `SimulationExperiment`s.
 """
 
 import os
+from pathlib import Path
 
 from tvbo.utils import yaml_loader
 
@@ -61,7 +62,6 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         Returns:
             A `SimulationStudy` parsed from the file.
         """
-        from pathlib import Path
         from tvbo.utils import register_recipe_code_paths
 
         study = yaml_loader.load(filepath, cls)
@@ -342,8 +342,6 @@ class StudyCollection(SimulationStudy, tvbo_datamodel.StudyCollection):
         directory) when it is not an IRI or an absolute path. ``optional`` members
         are dropped when *include_optional* is False (a ``--skip``-style light run).
         """
-        from pathlib import Path
-
         base = Path(base) if base is not None else Path(getattr(self, "_source_file", ".")).resolve().parent
         out: list[tuple[str, Path]] = []
         for m in (getattr(self, "members", None) or []):

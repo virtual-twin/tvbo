@@ -261,19 +261,17 @@ jobs:
             extra_args: "--run-slow"
             xla_device_count: "1"
             test_timeout: "900"
-          # Replication studies
-          # The Jansen1995 replication runs 6 experiments, each a small parameter
-          # sweep. xla_device_count=1 keeps those grids on a single (v)mapped
-          # device: on a 4-core runner, splitting a handful of grid points across
-          # 8 forced host devices is pure pmap overhead, and it pushed this doc
-          # over the 900s wall. Pure vmap is faster there and numerically
-          # identical. test_timeout=1800 matches the Julia shard's headroom for
-          # slow container cold-compiles.
+          # Replication docs run large parameter sweeps — the heaviest renders. The auto
+          # n_vmap width defaults to 64 cells/batch, so a 37.5k-cell grid runs as ~600
+          # sequential batches; nvmap_auto_cap lifts that so the 2GB memory budget (not a
+          # fixed count) sets the batch size — far fewer dispatches. xla_device_count=1
+          # keeps grids on one vmapped device; test_timeout keeps headroom under the 90-min cap.
           - shard: replication
             doc_pattern: "Replication"
             extra_args: ""
             xla_device_count: "1"
-            test_timeout: "1800"
+            nvmap_auto_cap: "4096"
+            test_timeout: "3600"
           # Core: Usage, Specification, api, examples (non-NeuroML), OpenMINDS, BIDS, root index
           # Negative catch-all: everything not covered by the specialised shards above.
         #   - shard: core
@@ -284,6 +282,7 @@ jobs:
       XLA_PYTHON_CLIENT_ALLOCATOR: platform
       XLA_PYTHON_CLIENT_PREALLOCATE: "false"
       TVBO_XLA_DEVICE_COUNT: ${{ matrix.xla_device_count }}
+      TVBO_NVMAP_AUTO_CAP: ${{ matrix.nvmap_auto_cap }}
     steps:
       - uses: actions/checkout@v6
       - name: Ensure Quarto is available
