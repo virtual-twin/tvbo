@@ -516,6 +516,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
+        # Idempotent, and fills only the ontology-derived fields still unset. It runs
+        # here rather than in a constructor because the generated Integrator owns its
+        # ``__init__``; this is the one point every construction path reaches, so a
+        # loaded integrator is populated exactly like a defaulted one.
+        self.integration._populate_from_ontology()
 
     def _load_network_from_data_file(self):
         """Load network matrices from a companion data file (h5/zarr/yaml sidecar).
@@ -633,15 +638,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         else:
             obj.__dict__.setdefault("dynamics", None)
 
-        # -- Upgrade Integrator via __class__ reassignment --
-        integ = getattr(obj, "integration", None)
-        if integ is not None and not isinstance(integ, Integrator):
-            integ.__class__ = Integrator
-            # Always trigger population (idempotent: only fills missing fields).
-            # Lookup is by ``self.method`` when ``iri`` is unset.
-            integ._populate_from_ontology()
-        if not getattr(obj, "integration", None):
-            obj.__dict__["integration"] = Integrator(method="Heun")
+        # Ontology population is idempotent and only fills missing fields; lookup is by
+        # ``method`` when ``iri`` is unset. It runs here rather than at construction
+        # because the generated classes own their ``__init__``.
+        integ = getattr(obj, "integration", None) or Integrator(method="Heun")
+        integ._populate_from_ontology()
+        obj.__dict__["integration"] = integ
 
         # -- Upgrade Stimulation via __class__ reassignment --
         stim = getattr(obj, "stimulation", None)

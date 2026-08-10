@@ -1,23 +1,21 @@
-"""Runtime `Noise` and `Integrator` wrappers around the TVBO datamodel classes.
+"""Runtime `Noise` wrapper, and the public import location for `Integrator`.
 
-These subclasses add computed properties (sigma/nsig, ontology-derived integrator
-metadata), JAX pytree registration, and code-generation/execution helpers on top of
-the plain serializable datamodel definitions, without introducing runtime caches or
-mutating stored parameters.
+`Noise` is still a subclass: it registers itself as a JAX pytree, which is a decorator on
+the class being defined and so cannot come from a mixin. `Integrator` has no wrapper —
+its behaviour lives in :mod:`tvbo.behaviour.integrator`, attached to the generated class,
+and is re-exported here so the import path is unchanged.
 """
 
 import functools
 
 import numpy as np
-import owlready2
 import sympy as sp
 from jax.tree_util import register_pytree_node_class
 
 from tvbo import templates
 from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.datamodel.schema import DerivedVariable, Equation
+from tvbo.datamodel.schema import Equation
 from tvbo.codegen import templater
-from tvbo.ontology import owl as ontology
 from tvbo.ontology.owl import onto
 
 
@@ -181,197 +179,8 @@ class Noise(tvbo_datamodel.Noise):
         return self.tvb
 
 
-class Integrator(tvbo_datamodel.Integrator):
-    """Direct datamodel Integrator with ontology-backed population.
 
-    Only schema fields are stored. All runtime conveniences are exposed as properties.
-    """
 
-    def __init__(self, **kwargs):
-        # Accept either datamodel Noise, our subclass Noise, or a raw dict
-        init_kwargs = dict(kwargs)
-        n = init_kwargs.get("noise")
-        if isinstance(n, dict):
-            init_kwargs["noise"] = tvbo_datamodel.Noise(**n)
-        # If it's already an instance of Noise or tvbo_datamodel.Noise, pass through
-        super().__init__(**init_kwargs)
-
-        self._populate_from_ontology()
-
-    @classmethod
-    def from_file(cls, filepath: str) -> "Integrator":
-        """Load an Integrator from a YAML file."""
-        from tvbo.utils import yaml_loader
-
-        return yaml_loader.load(str(filepath), target_class=cls)
-
-    @classmethod
-    def from_db(cls, name: str) -> "Integrator":
-        """Load an Integrator by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-
-        return cls.from_file(str(resolve("Integrator", name)))
-
-    @classmethod
-    def list_db(cls) -> list[str]:
-        """List available integrators in the tvbo database."""
-        from tvbo.data.registry import list_entries
-
-        return list_entries("Integrator")
-
-    # Back-compat: expose  pointing to self
-    @property
-    def metadata(self):
-        """The integrator itself, exposed for backward compatibility."""
-        return self
-
-    # Runtime properties (no stored attributes)
-    @property
-    def ontoclass(self):
-        """The ontology class for this integrator, resolved from `method`.
-
-        Resolves a string `method` via the ontology, passes through an existing ontology
-        `ThingClass`, and yields `None` otherwise.
-        """
-        return (
-            ontology.get_integrator(self.method)
-            if isinstance(getattr(self, "method", None), str)
-            else (self.method if isinstance(self.method, owlready2.entity.ThingClass) else None)
-        )
-
-    @property
-    def info(self):
-        """The code-generation metadata dict for this integrator's ontology class."""
-        return templater.get_integrator_info(self.ontoclass)
-
-    @property
-    def class_name(self):
-        """The generated integrator class name, suffixed with `Stochastic` when noisy."""
-        base = self.info.get("class_name", "Integrator")
-        return base + ("Stochastic" if self.stochastic else "")
-
-    @property
-    def stochastic(self):
-        """Whether the integrator is stochastic, i.e. has a noise component."""
-        return bool(getattr(self, "noise", None))
-
-    @property
-    def noise_wrapper(self):
-        """The noise as a runtime `Noise` wrapper, or `None` when non-stochastic.
-
-        A plain datamodel `Noise` is upgraded to the runtime `Noise` subclass so it gains
-        the computed properties and code-generation helpers.
-        """
-        if not self.stochastic:
-            return None
-        n = getattr(self, "noise", None)
-        if isinstance(n, Noise):
-            return n
-        if isinstance(n, tvbo_datamodel.Noise):
-            if hasattr(n, "_as_dict"):
-                data = n._as_dict if not callable(n._as_dict) else n._as_dict()
-                return Noise(**data)
-            return Noise(**getattr(n, "__dict__", {}))
-        return None
-
-    @property
-    def current_step(self):
-        """The current integration step, a stateless default of `0`."""
-        # Stateless default; templates can use this without mutating state
-        return 0
-
-    def _populate_from_ontology(self):
-        oc = self.ontoclass
-        if not oc:
-            return
-        info = self.info
-        # scipy_ode_base (if present in schema)
-        try:
-            if hasattr(self, "scipy_ode_base"):
-                self.scipy_ode_base = onto.SciPyODEBase in oc.is_a
-        except Exception:
-            pass
-
-        # intermediate_expressions
-        if getattr(self, "intermediate_expressions", None) in (None, {}):
-            steps = info.get("intermediate_steps", [])
-            if steps:
-                for i, eq in enumerate(steps):
-                    self.intermediate_expressions[f"X{i + 1}"] = DerivedVariable(
-                        name=f"X{i + 1}", equation=Equation(lhs=f"X{i + 1}", rhs=eq)
-                    )
-        # number_of_stages
-        if getattr(self, "number_of_stages", None) in (None, 0) and "n_dx" in info:
-            self.number_of_stages = info["n_dx"]
-        else:
-            self.number_of_stages = len(self.intermediate_expressions) + 1
-
-        # update_expression
-        if getattr(self, "update_expression", None) is None and "dX_expr" in info:
-            self.update_expression = DerivedVariable(name="dX", equation=Equation(lhs="X_{t+1}", rhs=info["dX_expr"]))
-
-    def render_code(self, format="tvb", **kwargs):
-        """Render the integrator as source code for the requested backend.
-
-        Args:
-            format:
-                Target backend; `"tvb"` selects the TVB template, while `"autodiff"` or
-                `"jax"` selects the JAX template.
-            **kwargs:
-                Extra values forwarded to the JAX template render context.
-
-        Returns:
-            The rendered source code as a string.
-
-        Raises:
-            ValueError: If `format` is not a recognized backend.
-        """
-        if format == "tvb":
-            self.template = templates.lookup.get_template("tvbo-tvb-integration.py.mako")
-            rendered_code = self.template.render(integrator=self)
-        elif format.lower() in ["autodiff", "jax"]:
-            self.template = templates.lookup.get_template("tvbo-jax-integrate.py.mako")
-            rendered_code = self.template.render(integration=self, **kwargs)
-        else:
-            raise ValueError(f"Unknown format: {format}")
-        return rendered_code
-
-    def execute(self, format="tvb"):
-        """Render, execute, and instantiate the integrator backend object.
-
-        For the `tvb` backend the integrator class is instantiated (wiring in an executed
-        noise object when stochastic) and stored on `self.tvb`; for other backends the
-        generated class is returned directly.
-
-        Args:
-            format:
-                Target backend passed through to code generation.
-
-        Returns:
-            The executed backend integrator object or class.
-        """
-        local_vars = {}
-        exec(self.render_code(format=format), templater.exec_globals, local_vars)
-
-        if format.lower() == "tvb":
-            params = {}
-            if self.stochastic and self.noise_wrapper is not None:
-                params.update({"noise": self.noise_wrapper.execute()})
-            self.tvb = local_vars[self.class_name](**params)
-            return self.tvb
-        else:
-            return local_vars[self.class_name]
-
-    def to_yaml(self, filepath: str | None = None):
-        """Serialize the integrator to YAML, optionally writing it to a file.
-
-        Args:
-            filepath:
-                Destination path to write to; when `None`, the YAML is returned instead.
-
-        Returns:
-            The YAML string, or the result of writing to `filepath`.
-        """
-        from tvbo.utils import to_yaml as _to_yaml
-
-        return _to_yaml(self, filepath)
+# `Integrator` has no wrapper: its behaviour lives in `tvbo.behaviour.integrator` and is
+# attached to the generated class, so it is present however the integrator was built.
+Integrator = tvbo_datamodel.Integrator
