@@ -1,19 +1,10 @@
-# -*- coding: utf-8 -*-
-#
-# Module: utils.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
-"""
-TVB-Optim Template Utilities
-============================
+# SPDX-License-Identifier: EUPL-1.2
 
-Reusable Python functions for tvboptim Mako templates.
-Import these in template blocks to avoid code duplication.
+"""Resolution helpers shared by the tvboptim Mako templates.
 
-Usage in templates:
+Everything a template needs resolved — parameter layouts, recorded variable names, coupling specs, streaming reducers — is worked out here in Python, so the templates stay emission-only.
+
     <%
     from tvbo.templates.tvboptim.utils import (
         safe_name, as_list, is_network_observation,
@@ -52,6 +43,8 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
 
     Works for both model.parameters and coupling.parameters.
 
+    A parameter with no literal `value` is *absent* from the defaults rather than given one: it may be free, or sourced or produced, and resolved from storage rather than inlined. Emission sites supply their own fallback with `.get(name, 1.0)`. Inventing one here would erase the difference between "undeclared" and "1.0", and let a resolved operator emit silently as a scalar.
+
     Args:
         parameters: dict-like of Parameter objects
 
@@ -77,8 +70,6 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
             param_defaults[p.name] = list(p.value)
         elif p.value is not None:
             param_defaults[p.name] = float(p.value)
-        # A parameter with no literal `value` is simply ABSENT from the defaults: it may be free, or sourced/produced (resolved from storage, never inlined).
-        # Emission sites supply their own fallback via `.get(name, 1.0)`; inventing one here instead would erase the difference between "undeclared" and "1.0" and let a resolved operator silently emit as a scalar.
         shape = getattr(p, "shape", None)
         if shape:
             param_shapes[p.name] = str(shape)
@@ -140,15 +131,12 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
         (so observations of auxiliaries work without requiring users to also list them
         in ``model.output``).
 
-    Returns ``(state_names, recorded_aux, all_var_names)`` where ``all_var_names`` is the runtime ordering on axis 1 of ``solution.ys`` / ``result.data`` and matches
-    ``solution.variable_names`` produced by tvboptim >= 0.2.7.
+    Returns ``(state_names, recorded_aux, all_var_names)`` where ``all_var_names`` is the runtime ordering on axis 1 of ``solution.ys`` / ``result.data`` and matches ``solution.variable_names`` produced by tvboptim >= 0.2.7. The state channels follow the solver's own, possibly mode-folded, layout: with `number_of_modes > 1` each variable contributes `n_modes` scalar slots.
 
     Args:
         model: Dynamics object (with state_variables and derived_variables).
         experiment: Optional SimulationExperiment; observations are scanned when present.
     """
-    # Recorded state channels follow the solver's (possibly mode-folded) layout:
-    # for number_of_modes>1 each variable contributes n_modes scalar slots.
     _, state_names, _ = get_mode_layout(model) if model and model.state_variables else (1, [], {})
     aux_names = list(model.derived_variables.keys()) if model and getattr(model, "derived_variables", None) else []
 
@@ -416,8 +404,9 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     Keeps the cfun mako template emission-only (resolution lives here, per the resolve-in-Python-not-mako convention). Covers: output dimension, incoming/local
     states (explicit, inferred from the pre-expression, or the model's coupling_variable states), the mode fold (a multi-mode cvar → its per-node mode
     slots, one output per mode), pre-expression term parsing (list decomposition + n_pre), vectorized-vs-per-edge selection, class/base names, the differentiable-
-    delay kwarg, state-subscript aliases (``{state}_j``/``_i``) and post-recombination symbols, plus the symbol list for the JAX expression printer. Expression rendering
-    (``jaxcode``) stays in the template.
+    delay kwarg, state-subscript aliases (``{state}_j``/``_i``) and post-recombination symbols, plus the symbol list for the JAX expression printer. Expression rendering (``jaxcode``) stays in the template.
+
+    Vectorised or per-edge is decided here. An identity-sentinel `pre()` — no pre-expression at all, or the bare keyword `local_states` or `incoming_states`, both meaning "sources unchanged" — is a pure linear incoming sum, `gx = W @ source`, and takes the vectorised incoming-identity path however its states are declared: local-only as in `FastLinearCoupling`, incoming-only, or both on the same cvar. A source-only phase coupling with a real pre-expression stays per-edge, which is exact for any connectome, unless the coupling opts in with `vectorized: true`.
     """
     ci_key = func_to_ci.get(coupling_key, coupling_key)
     ci_info = coupling_inputs_info.get(ci_key, {"dimension": 1, "keys": None})
@@ -469,13 +458,6 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     pre_terms = parse_list_elements(_pre_rhs0) if pre_is_list else ([_pre_rhs0] if _pre_rhs0 else [])
     n_pre = len(pre_terms)
 
-    # Vectorized (matmul) vs per-edge reduction. The identity-sentinel pre() — no
-    # pre_expr, or the bare `local_states`/`incoming_states` keyword meaning "sources
-    # unchanged" — is a pure linear incoming sum (gx = W @ source): it takes the
-    # vectorized incoming-identity path however its states are declared — local-only
-    # (FastLinearCoupling), incoming-only, or both (e.g. c_glob: incoming+local same
-    # cvar). Source-only phase couplings with a real pre-expression stay per-edge (exact
-    # for any connectome) unless the coupling opts in with `vectorized: true`.
     vectorized = getattr(coupling, "vectorized", False)
     vec_identity_sentinel = (not pre_expr) or (_pre_rhs0 in ("local_states", "incoming_states"))
     if (
@@ -966,8 +948,11 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
     ``temporal_average`` is an averaging window (even ``period_samples == 1`` shifts by one sample — it reproduces tvboptim TemporalAverage, not identity) and raises.
 
     Returns a reduction dict tagged ``kind: 'convolution'`` carrying the lifted constants (source, HRF-kernel call, decimation stride, TR stride, Volterra ``k_1``/``V_0``); the
-    convolution branch of ``render_reduction`` emits the reducer from it. Called bare (no
-    ``experiment``) only as the ``is this streaming?`` predicate — that path stays side-effect-free and returns the tag without resolving function defaults.
+    convolution branch of ``render_reduction`` emits the reducer from it. Called bare (no ``experiment``) only as the ``is this streaming?`` predicate — that path stays side-effect-free and returns the tag without resolving function defaults.
+
+    Both strides are derived from the grid, not read off the pipeline. The HRF kernel is sampled on the model's ``downsample_period`` grid, so on an integration grid with a different ``dt`` the neural signal has to be decimated onto that same grid before convolving, and the TR stride then counts downsampled samples. A pipeline's hardcoded subsample ``step`` or strided ``stride`` assumes one ``dt`` and is wrong on any other, so they are computed from ``downsample_period``, the observation's ``period`` and ``dt`` where those are available, and fall back to the declared strides only where they are not.
+
+    The Volterra scaling ``k_1 * V_0 * (x - 1)`` takes its constants from a ``volterra_transform`` step — either a referenced Function's equation parameters, or an inline ``equation`` on the step itself, which is what the fused strided pipeline uses.
     """
     name = str(get_attr(obs, "name", "observation"))
     src = as_list(get_attr(obs, "source"))
@@ -1049,8 +1034,6 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
             "`subsample: {equation: {rhs: 'subsample(data, step - 1, step)'}}` and `step: <stride>`."
         )
 
-    # Decimation stride (ds_steps, raw integration steps per downsampled sample) and TR stride (downsampled samples per BOLD repetition time) are GRID-DERIVED: the HRF kernel is sampled on the model's `downsample_period` grid, so on an integration grid with a different `dt` the neural signal must be decimated to that same grid before convolving, and the TR subsample counts downsampled samples. A pipeline's hardcoded subsample
-    # `step` / strided `stride` are grid-specific (they assume one dt) and wrong on another grid — so derive from `downsample_period`, the observation's TR (`period`) and `dt` when available, falling back to the declared strides only when they are not.
     _dt = _integration_dt(experiment)
     _dsp = get_attr(obs, "downsample_period")
     _dsp = float(to_numeric(_dsp)) if _dsp else None
@@ -1079,8 +1062,6 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
             )
         red["tr_stride"] = int(to_numeric(_tr))
 
-    # Volterra BOLD scaling k_1 * V_0 * (x - 1). The scaling constants live on a
-    # `volterra_transform` step — either a referenced Function's equation parameters, or an inline `equation` on the step itself (the fused strided pipeline uses the latter).
     _vt = _func("volterra_transform")
     _vpar = get_attr(get_attr(_vt, "equation"), "parameters") if _vt is not None else None
     if _vpar is None:
@@ -1389,9 +1370,7 @@ def _toposort_derived(derived: List[Dict[str, Any]], dv_names: set) -> List[Dict
 def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
     """Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction.
 
-    An observation may declare a co-integrated auxiliary ``Dynamics`` (the observer) that computes it online as a time recurrence, instead of a post-scan ``pipeline``.
-    An observation may instead opt a post-scan ``pipeline`` into streaming via
-    ``reduce: streaming`` (currently the HRF-Volterra BOLD pipeline), in which case the reducer is lifted by :func:`_resolve_bold_stream` (tagged ``kind: 'convolution'``).
+    An observation may declare a co-integrated auxiliary ``Dynamics`` (the observer) that computes it online as a time recurrence, instead of a post-scan ``pipeline``. It may instead opt a post-scan ``pipeline`` into streaming with ``reduce: streaming``, lifting it to a block reducer: a cumulative mean, standard deviation or variance over a source synthesizes a running-moment accumulator; a ``compute_fc`` windowed-correlation pipeline becomes an add-only Welford co-moment FC reducer; an HRF-Volterra BOLD pipeline is lifted by :func:`_resolve_bold_stream` and tagged ``kind: 'convolution'``. An observation that declares its own ``dynamics`` is already a reducer, and ``reduce: streaming`` on it opts that reducer into the post-tuning carry rather than selecting a pipeline-lifted one, so the observer path owns it.
     This resolves that Dynamics into clean context for the reduction partial: the source state variable read, and for each observer state its ``init`` value, its
     discrete update RHS (``equation.rhs`` with ``equation_type: recurrence``), and whether it is an *accumulator* — its update references its own symbol, so its
     commit is gated on the first step while its memory input is still unset (a memory state, which does not reference itself, updates every step). The readout is the
@@ -1400,10 +1379,15 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
 
     Every RHS is parsed to a **sympy** expression against the observer's symbolic vocabulary (its states, its ``parameters``, the source, and the framework scalars
     ``dt``/``count``; user functions become undefined ``Function``s). An observer parameter is a named constant exactly as a model Dynamics' parameters are, scalar
-    or array-valued (a mesh operator, a template matrix), and binds by name in the rendered update. That makes the analysis symbolic,
-    not string-based: accumulator classification is ``state_symbol in expr.free_symbols``, and an unknown symbol (a typo) is caught here rather than surfacing as a codegen
-    error. The context carries sympy ``Expr`` objects; the partial renders them per backend via ``render_expression`` (which accepts sympy directly). Returns ``None``
-    when the observation declares no ``dynamics`` (the post-scan path runs).
+    or array-valued (a mesh operator, a template matrix), and binds by name in the rendered update. That makes the analysis symbolic, not string-based: accumulator classification is ``state_symbol in expr.free_symbols``, and an unknown symbol (a typo) is caught here rather than surfacing as a codegen error. The context carries sympy ``Expr`` objects; the partial renders them per backend via ``render_expression``, which accepts sympy directly.
+
+    The vocabulary a RHS is parsed against is the observer's own states, its parameters, the source, and the framework scalars ``dt`` and ``count``, all as Symbols, with its user functions as undefined ``Function``s. Derived variables — the per-step intermediates — join it too, so a richer observer's DV can reference an earlier one in a detector chain such as ``pgn = pg / nrm``; a simple observer declares none and this is inert. ``derived_parameters`` are the observer's constants, functions of its parameters and ``dt`` and never of a state or the observed signal, so they bind once in the reducer's preamble instead of being recomputed per step — the same slot a model Dynamics uses for the same purpose, and what lets a readout built only from states and constants be evaluated per emitted sample rather than per step.
+
+    A state may also declare an ``evict_equation``: the reverse recurrence that removes the sample leaving a sliding window, the inverse of ``update``, parsed against the same vocabulary with ``source`` denoting the sample being folded in or removed. Its presence is what makes the observer a *windowed* reduction — add, evict, resync — rather than a cumulative accumulator.
+
+    The readout is the deprecated ``output`` list, or else the derived variable marked ``record: true``, which is how a Dynamics now names what it reports. Exactly one recorded variable can be the observation's value; several is ambiguous rather than a case for a default. A ``period`` on the observer makes it a *monitor*: its output is emitted every period into a time series instead of collapsing time into one value per node at the final step, which is `Observation.dynamics`'s declared contract. An ``aggregation: median`` needs explicit histogram bins spanning the reduced quantity's range — assuming a default window would clip out-of-range samples and pin the result to an edge — so the slot is required rather than guessed.
+
+    Each constant resolves to what the template emits. A literal binds inline. A sourced or produced one is materialised at codegen time into a content-addressed artifact and emitted as a lazy ``(file, key)`` the backend reads at run time, so a large operator never enters the generated source; a relative source path is grounded against the spec dir exactly as ``bids_dir`` is. Materialisation runs the producer and writes to disk, so it happens only when an experiment is supplied — that is, at genuine emission. This function is also called bare, with no experiment, as a cheap "is this a streaming reducer?" predicate, and that path must stay side-effect-free: a lazy constant is left deferred rather than materialised to answer a boolean, and no igl precompute is triggered on the way.
 
     Backend array primitives (``take``, ``sum_axis``, ``clip``, ``matmul``, …) join that vocabulary as undefined ``Function``s the printer lowers later, exactly as ``parse_eq``
     registers them — without it a name colliding with a SymPy builtin (``take`` is
@@ -1418,9 +1402,6 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     A ``partition`` lifts the observer into a GROUPED reduction (``kind: 'wave'``): the per-step chain is written once for a single group, vmapped over the partition axis, and
     folded to per-group scalar metrics.
     """
-    # Opt-in streaming of a post-scan observation: lifted to a block reducer instead of the dynamics-observer recurrence path below. A cumulative mean/std/variance over a source (no HRF/BOLD pipeline) synthesizes a running-moment accumulator; an HRF-Volterra BOLD pipeline lifts the convolution reducer.
-    # An observation that declares its own `dynamics` is already a reducer; `reduce:
-    # streaming` on it opts that reducer into the post-tuning carry (streaming_post_eval_plan) rather than selecting a pipeline-lifted one, so the observer path below owns it.
     _rm = get_attr(obs, "reduce")
     if _rm is not None and str(getattr(_rm, "value", _rm)) == "streaming" and get_attr(obs, "dynamics") is None:
         _agg = get_attr(obs, "aggregation", None)
@@ -1428,8 +1409,6 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
         _pipe = as_list(get_attr(obs, "pipeline"))
         if not _pipe and _agg in {"mean", "std", "variance"}:
             return _resolve_stat_stream(obs)
-        # A compute_fc (windowed-correlation) pipeline streams as a cumulative co-moment
-        # FC reducer (add-only Welford), NOT the HRF/BOLD convolution reducer; fall through to the BOLD path only when the pipeline is not a registered windowed reducer.
         if _pipe:
             _fc = _resolve_fc_stream(obs)
             if _fc is not None:
@@ -1451,8 +1430,6 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     sv_pairs = list(svs.items()) if hasattr(svs, "items") else []
     sv_names = [str(n) for n, _ in sv_pairs]
 
-    # Derived variables (per-step intermediates). Their names join the symbolic vocabulary so a richer observer's DV can reference an earlier DV (a detector chain, e.g.
-    # ``pgn = pg / nrm``); a simple observer has none and this is inert.
     dvs = get_attr(dyn, "derived_variables")
     dv_map = dict(dvs.items()) if hasattr(dvs, "items") else {}
     dv_names = [str(n) for n in dv_map]
@@ -1469,9 +1446,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     param_objs = dict(param_map.items()) if hasattr(param_map, "items") else {str(get_attr(p, "name")): p for p in param_map}
     param_names, param_values, param_shapes = get_param_info(param_map)
 
-    # Resolve each constant to what the template emits: a literal binds inline; a sourced/produced one is materialised (codegen-time) to a content-addressed artifact and emitted as a lazy (file, key) the backend reads at run time, so a large operator never enters the generated source. The spec dir grounds a relative source path exactly as bids_dir is grounded.
-    #
-    # Materialisation runs the producer and writes to disk, so it happens ONLY when an experiment is supplied — i.e. at genuine emission. resolve_reduction is also called bare (no experiment) as a cheap "is this a streaming reducer?" predicate; that path must stay side-effect-free, so a lazy constant is left deferred (never materialised just to answer a boolean, and never triggering an igl precompute as a side effect).
+    # Materialisation writes to disk, so it runs only at genuine emission (experiment supplied).
     src_file = get_attr(experiment, "_source_file", None) if experiment is not None else None
     src_dir = Path(src_file).parent if src_file else None
     parameters: Dict[str, Any] = {}
@@ -1495,8 +1470,6 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     own = set(sv_names) | set(param_names) | set(dv_names) | set(dp_names)
     alias = OBSERVER_INPUT if source and OBSERVER_INPUT not in own else None
 
-    # Symbolic vocabulary: observer states + parameters + source + framework scalars are
-    # Symbols; the observer's user functions are undefined Functions. Parse every RHS against it.
     allowed = own | ({source} if source else set()) | {"dt", "count"} | ({alias} if alias else set())
     loc: Dict[str, Any] = {n: sp.Symbol(n) for n in allowed}
     loc["pi"] = sp.pi
@@ -1536,8 +1509,6 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
         if rhs is None:
             continue
         expr = _parse(str(rhs), f"state {name!r}")
-        # Optional reverse recurrence: the per-step downdate removing the sample leaving a sliding window (the inverse of ``update``, which folds an arriving one in). Parsed against the same vocabulary — ``source`` denotes the sample being folded/removed.
-        # Its presence marks the observer a *windowed* reduction (add + evict + resync) rather than a cumulative accumulator; absent -> cumulative, unchanged.
         eeq = get_attr(sv, "evict_equation")
         erhs = get_attr(eeq, "rhs") if eeq is not None else None
         evict = _parse(str(erhs), f"evict of state {name!r}") if erhs is not None else None
@@ -1561,8 +1532,6 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
             continue
         derived.append({"name": str(dname), "expr": _parse(str(drhs), f"derived variable {dname!r}")})
 
-    # `derived_parameters` are constants of the observer — functions of its parameters and
-    # `dt`, never of a state or the observed signal — so they are bound ONCE in the reducer's preamble rather than recomputed per step. This is the slot every other backend already uses for exactly this (model Dynamics do the same), and it is what lets a readout built only from states and constants be evaluated per emitted sample instead of per step.
     derived_constants = []
     for pname, pobj in dp_map.items() if hasattr(dp_map, "items") else []:
         peq = get_attr(pobj, "equation")
@@ -1665,8 +1634,6 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     # Emit each derived variable AFTER the DVs its expression reads. The keyed collection does not preserve authoring order, so without this a valid DAG can emit an assignment above its input (an unbound-name crash); the stable sort leaves an already-ordered chain as is.
     derived = _toposort_derived(derived, {d["name"] for d in derived})
 
-    # The readout: the (deprecated) `output` list, else the derived variable marked
-    # `record: true` — the current way a Dynamics names what it reports. Exactly one recorded variable can be the observation's value; several is ambiguous, not a default.
     outs = as_list(get_attr(dyn, "output"))
     if not outs:
         outs = [str(n) for n, d in dv_map.items() if get_attr(d, "record")]
@@ -1694,8 +1661,6 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
             "hi": float(get_attr(hist, "hi", 55.0)),
             "bins": int(_bins) if _bins is not None else 512,
         }
-    # A streaming median needs explicit bins spanning the reduced quantity's range;
-    # silently assuming a default window would clip out-of-range samples and pin the result to an edge. Require the histogram slot rather than guess.
     if statistic == "median" and histogram is None:
         raise ValueError(
             f"Observation {get_attr(obs, 'name', None)!r} sets aggregation: median but declares no "
@@ -1703,9 +1668,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
             "reduced quantity's range."
         )
 
-    # `period` makes the observer a MONITOR: its output is emitted every period into a time series, instead of collapsing time into one value per node at the final step. That is the declared contract of Observation.dynamics ("read at the final step for a reduction
-    # ... or, when `period` is set, sub-sampled over time for a monitor"). The period is
-    # resolved against the integration grid, so it needs the experiment; the bare predicate call ("is this a reduction?") only asks whether the observer exists.
+    # Resolved against the integration grid, so it needs the experiment; the predicate call does not.
     _period = get_attr(obs, "period")
     _period = float(to_numeric(_period)) if _period is not None else None
     _dt = _integration_dt(experiment)
@@ -1724,8 +1687,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
                 f"than the integration step {_dt} ms; an observer cannot emit faster than it advances."
             )
 
-    # A readout built only from states and constants is the same value whether it is evaluated every step or once per emitted sample, so a monitor evaluates it per sample.
-    # One that reads the observed signal or a per-step derived variable cannot be deferred.
+    # Deferrable to per-sample unless it reads the observed signal or a per-step derived variable.
     _step_ctx = ({source} if source else set()) | {d["name"] for d in derived if d["name"] != output_name}
     output_per_step = bool(output is not None and {str(s) for s in output.free_symbols} & _step_ctx)
 
@@ -1822,8 +1784,7 @@ def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
     streaming = {}
     for n, o in obs_by_name.items():
         r = resolve_reduction(o, experiment)
-        # Fold in-carry reducers: a reduce: streaming observation (BOLD / stat stream) OR a
-        # `partition` grouped reduction (kind 'wave'), which writes per-group metrics into a sample-indexed carry the same way — so the base/post-eval run never materialises the trajectory to vmap every frame at once. A plain dynamics observer stays materialised.
+        # Fold the reducers that write into a sample-indexed carry, so no run materialises the trajectory.
         if r is not None and not r.get("windowed") and (_is_streaming(o) or r.get("kind") == "wave"):
             streaming[str(n)] = r
     if not streaming:
@@ -1995,8 +1956,7 @@ def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False)
     if integration is None or is_diffrax:
         return ""
     kwargs = []
-    # Coupling evaluation across integrator stages (backend-neutral -> native flag):
-    # per_stage recomputes the coupling every solver stage (accurate); per_step (the native default) holds it constant across stages. Only emit the non-default.
+    # per_stage recomputes the coupling every solver stage; per_step is the native default, so only the former is emitted.
     ce = getattr(integration, "coupling_evaluation", None)
     if ce is not None and str(ce) == "per_stage":
         kwargs.append("recompute_coupling_per_stage=True")
@@ -2170,13 +2130,13 @@ def render_analysis_observations(
     diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling- evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the
     linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose
     lines are indented for a function body (4 spaces), empty string if there are no analysis observations.
+
+    Covariance, PSD and Fisher all share one deterministic operating point, so the whole block — vector field, Jacobian, the operating point itself (a noise-off settle, or a constraint solve for a Deco-FIC-style tuned parameter) and each observable's linear algebra — comes out of a single Mako orchestrator, ``lr_analysis_block``. The template owns both the structure and its orchestration: partial choice, ordering, the per-observable loop. Python only resolves the spec, in ``_lr_analysis_spec``, and never string-emits a code body.
     """
     window = f"t0=0.0 + {transient_time}, t1={transient_time} + {t1_default}, dt={dt}"
     solver_kwargs = _analysis_solver_kwargs(solver_kwargs)
     lines: List[str] = []
 
-    # Linear-response analysis (covariance / psd / fisher): all share ONE deterministic operating point, so the whole block — vector field, Jacobian, operating point (a noise-off settle, or a constraint solve for a Deco-FIC-style tuned parameter), and each observable's linear algebra — is emitted by ONE Mako orchestrator (``lr_analysis_block``): the template owns the structure
-    # AND its orchestration (partial choice, ordering, per-observable loop). Python only RESOLVES the spec (``_lr_analysis_spec``) — no Python string-emit of code bodies.
     _LR_TYPES = {"covariance", "psd", "fisher"}
     _lr_obs = {n: a for n, a in analysis_obs.items() if str(getattr(a.analysis, "type", "") or "") in _LR_TYPES}
     if _lr_obs and model is None:
@@ -2542,8 +2502,9 @@ def get_noise_covariance(model: Any, experiment: Any = None) -> Optional[Dict[st
 def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
     """Extract state variable bounds as SymPy expressions.
 
-    Uses ``sympy.oo`` for unbounded dimensions so that code printers automatically render the correct backend literal (``jnp.inf``,
-    ``np.inf``, ``Inf``, etc.).
+    Uses ``sympy.oo`` for unbounded dimensions so code printers render the right backend literal — ``jnp.inf``, ``np.inf``, ``Inf`` — on their own.
+
+    A ``domain`` constrains integration only where its ``enforce`` attribute opts in. ``enforce: clamp`` hard-clips to ``[lo, hi]``; the default ``none`` makes the domain descriptive metadata — an expected or plot range, an optimisation hint, IC-sampling support — that never alters the dynamics, so a phase with domain ``[0, 2π]`` and no enforcement is left unclamped. The legacy ``boundaries`` slot is folded into ``domain`` with ``enforce: clamp`` by the Dynamics loader.
 
     Args:
         model: Dynamics instance with ``.state_variables``
@@ -2575,8 +2536,6 @@ def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
         except (TypeError, ValueError):
             return False
 
-    # A ``domain`` only constrains integration when its ``enforce`` attribute opts in. ``enforce: clamp`` hard-clips to [lo, hi]; ``none`` (default) treats the domain as descriptive metadata (expected/plot range, optimisation hints,
-    # IC-sampling support) and never alters the dynamics — so e.g. a phase θ with domain [0, 2π] and no enforcement is left unclamped. The legacy ``boundaries`` slot is folded into ``domain`` with ``enforce: clamp`` by the Dynamics loader.
     for _sv_name, sv in model.state_variables.items():
         lo, hi = None, None
         dom = getattr(sv, "domain", None)
@@ -3154,8 +3113,7 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
         "mode": getattr(expl, "mode", None) or "product",
         "n_parallel": normalize_n_parallel(expl),
         "axes": [],
-        # Named observations to compute + stack per grid point (e.g. `loss`, or the
-        # `analysis` diagnostics). Declarative alternative to a single scalar observable.
+        # Observations computed and stacked per grid point: the declarative alternative to one scalar observable.
         "record": [str(r) for r in (getattr(expl, "record", None) or [])],
     }
 
@@ -3315,9 +3273,7 @@ def get_all_hyperparams(algo: Any, algorithms_dict: Dict) -> Dict:
     return all_hp
 
 
-# Network edge references (network.weight(s)/length(s) → connectome matrices)
-# `weight`/`weights`/`length`/`lengths` are ergonomic shortcuts for the canonical
-# `network.edges.<label>`; both resolve to a connectome matrix via Network.matrix().
+# Ergonomic shortcuts for the canonical `network.edges.<label>`, resolved via Network.matrix().
 _NETWORK_EDGE_ALIASES = {"weight": "weight", "weights": "weight", "length": "length", "lengths": "length"}
 
 
@@ -3343,8 +3299,7 @@ def edge_const(label: str) -> str:
     return "_network_edge_" + re.sub(r"\W", "_", label)
 
 
-# ---------------------------------------------------------------------------
-# `network.`-scoped exploration axes sweep a live leaf of the backend graph, so every cell sees its own value without a Network or graph rebuild. Each entry below names the graph leaf carrying an attribute; adding a sweepable edge attribute is one entry here plus a graph leaf that holds it.
+# The live backend-graph leaf each sweepable attribute rides on, so a `network.`-scoped axis needs no graph rebuild.
 _NETWORK_EDGE_GRAPH_LEAVES = {"weight": "weights", "length": "lengths"}
 _NETWORK_SCALAR_GRAPH_LEAVES = {"conduction_speed": "speed"}
 
@@ -3456,8 +3411,7 @@ def collect_network_edge_arrays(experiment: Any) -> Dict[str, list]:
     return arrays
 
 
-# Network node references (network.positions/instrength → per-node vectors)
-# Node-level analogue of the edge-matrix refs above: a callable argument or an observer (Observation.dynamics) parameter may reference a per-node vector derived from the network — its region centroids (for mesh building) or its in-strength (weighted in-degree). Both embed once as a module constant, exactly like a connectome matrix, so any backend consumes them without a live Network object.
+# Per-node analogue of the edge matrices: centroids and in-strength, embedded once as module constants.
 _NETWORK_NODE_MEASURES = ("positions", "instrength")
 
 
