@@ -98,22 +98,6 @@ class Event(tvbo_datamodel.Event):
 for _name in ("plot", "_signal", "_default_window"):
     setattr(tvbo_datamodel.Event, _name, getattr(Event, _name))
 
-
-# Back-compatibility: the stimulus-targeting slots were renamed
-# ``regions`` -> ``nodes`` and ``weighting`` -> ``weights`` (the old names are
-# kept as LinkML aliases). LinkML aliases are metadata only and are not accepted
-# as constructor kwargs, so map the deprecated names here at construction time.
-_SLOT_ALIASES = {"regions": "nodes", "weighting": "weights"}
-_orig_event_init = tvbo_datamodel.Event.__init__
-
-
-def _event_init_with_aliases(self, *args, **kwargs):
-    for _old, _new in _SLOT_ALIASES.items():
-        if _old in kwargs:
-            _val = kwargs.pop(_old)
-            kwargs.setdefault(_new, _val)
-    _orig_event_init(self, *args, **kwargs)
-
-
-tvbo_datamodel.Event.__init__ = _event_init_with_aliases
-
+# ``regions`` -> ``nodes`` and ``weighting`` -> ``weights`` are declared aliases; the
+# generated dialect (:mod:`tvbo.datamodel.dialect`) folds them for every class, so the
+# hand-written copy that used to sit here is gone.

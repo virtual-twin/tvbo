@@ -66,3 +66,37 @@ def test_the_datamodel_still_refuses_an_unknown_slot():
 def test_as_dict_drops_unset_slots():
     assert Runtime(name="x").as_dict() == {"name": "x"}
     assert "name" not in Runtime().as_dict()
+
+
+def test_as_dict_excludes_runtime_state():
+    """A cache is not a slot: ``extra='allow'`` must not leak one into a dump.
+
+    The two settings interact — the relaxation that lets codegen hang a cache off one of
+    these objects is the same one that would carry it into anything serialized from them,
+    silently editing the specification that was authored.
+    """
+    obj = Runtime(name="x")
+    obj.a_runtime_cache = object()
+    assert obj.as_dict() == {"name": "x"}
+    assert obj.a_runtime_cache is not None
+
+
+def test_the_relaxations_survive_being_mixed_into_a_generated_class():
+    """Guards the base ORDER, which is silent when wrong.
+
+    Pydantic merges ``model_config`` across bases left to right and every generated class
+    declares its own, so ``class X(TVBOModel, generated.X)`` — the intuitive mixin-first
+    spelling — yields a class as strict as the datamodel, with no error anywhere. Only the
+    generated class FIRST gives the runtime class its relaxations.
+    """
+    from tvbo.datamodel.pydantic import Function
+
+    class RightWayRound(Function, TVBOModel):
+        pass
+
+    class WrongWayRound(TVBOModel, Function):
+        pass
+
+    for setting, expected in RELAXED.items():
+        assert RightWayRound.model_config.get(setting) == expected, setting
+    assert WrongWayRound.model_config.get("extra") == "forbid"

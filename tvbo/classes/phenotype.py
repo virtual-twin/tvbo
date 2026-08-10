@@ -29,10 +29,11 @@ import h5py
 import numpy as np
 import yaml
 
+from tvbo.classes._base import TVBOModel
 from tvbo.datamodel import pydantic as tvbo_datamodel
 
 
-class Phenotype(tvbo_datamodel.Phenotype):
+class Phenotype(tvbo_datamodel.Phenotype, TVBOModel):
     """Runtime wrapper around the auto-generated ``Phenotype`` schema.
 
     The schema class carries the YAML-side descriptor (subjects, measures
