@@ -62,6 +62,8 @@ def test_eta_call_site_passes_variable_not_literal():
 def test_multistage_tuning_core_compiles_once():
     """The fic_eib tuning core compiles ONCE across the 2 stages (Bug 2 fix)."""
     pytest.importorskip("tvboptim")
+    import functools
+
     import jax
 
     _orig = jax.jit
@@ -71,11 +73,11 @@ def test_multistage_tuning_core_compiles_once():
         def _wrap(f):
             name = getattr(f, "__name__", "anon")
 
+            @functools.wraps(f)  # keep signature so jax.jit static_argnames still binds
             def _counted(*aa, **kk):  # runs only at trace time == once per compilation
                 compiles[name] = compiles.get(name, 0) + 1
                 return f(*aa, **kk)
 
-            _counted.__name__ = name
             return _orig(_counted, *a, **k)
 
         return _wrap if fn is None else _wrap(fn)
