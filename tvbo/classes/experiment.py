@@ -1,8 +1,6 @@
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """The `SimulationExperiment` host object that ties a whole simulation together.
 
 A `SimulationExperiment` binds local [`Dynamics`](../classes/dynamics.qmd), a [`Network`](../classes/network.qmd), coupling, integration settings, monitors,
@@ -85,8 +83,7 @@ def _strip_private_yaml_keys(text: str) -> str:
     return "\n".join(kept) + "\n"
 
 
-# Maps ``BidsEntities`` attribute names to the short entity keys that
-# ``tvbo.classes.network._parse_bids_entities`` emits from a filename. ``suffix`` is deliberately absent — it is the trailing filename component, not a key-value entity, and is handled separately by its consumers.
+# `BidsEntities` names to the short keys `_parse_bids_entities` emits; `suffix` is a filename component, not an entity.
 _BIDS_ENTITY_SHORT_KEYS = {
     "template": "tpl",
     "cohort": "cohort",
@@ -298,6 +295,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         - A tvbo_datamodel.SimulationExperiment instance
         - A dict of fields
         - Keyword args matching the datamodel fields
+
+        Several slots need normalising before the datamodel constructor sees them. A pydantic `Network` becomes a dict, since the parent's `__post_init__` cannot take the object. Non-schema fields on network sub-dicts — a coupling entry's `type`, which names a coupling function or CURIE — are popped, because the datamodel rejects unknown kwargs. A coupling given as a bare string gains an `iri` so ontology population triggers. A network dict is constructed eagerly into a `Network`, so its own `__init__` runs and loads normative connectivity from the atlas and tractogram; the parent accepts the instance as-is.
+
+        Afterwards, an observation referencing a curated model by `iri` has that model's pipeline, parameters and class reference merged in non-destructively, so a locally declared `source` or `period` still wins.
         """
         global sessionid
 
@@ -306,8 +307,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             kwargs["id"] = sessionid
             sessionid += 1
 
-        # Handle pydantic Network - convert to dict before parent __init__
-        # This prevents the parent's __post_init__ from failing on pydantic objects
         if "network" in kwargs and kwargs["network"] is not None:
             net = kwargs["network"]
             # Check if it's a pydantic model (has model_dump) - convert to dict
@@ -317,21 +316,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Pydantic v1
                 kwargs["network"] = net.dict(exclude_none=True)
 
-        # Extract non-schema fields from network sub-dicts before parent init.
-        # These are popped so the datamodel __init__ doesn't reject unknown kwargs.
         _coupling_types = {}
         net_kw = kwargs.get("network")
         if isinstance(net_kw, dict):
-            # Extract `type` from network.coupling entries.
-            # `type` references a coupling function name/CURIE.
             coup_dict = net_kw.get("coupling")
             if isinstance(coup_dict, dict):
                 for key, val in coup_dict.items():
                     if isinstance(val, dict) and "type" in val:
                         _coupling_types[key] = val.pop("type")
 
-        # Allow coupling to be specified as a plain string name (e.g. "SigmoidalJansenRit")
-        # Set iri to trigger ontology population
         if "coupling" in kwargs and isinstance(kwargs["coupling"], str):
             _cname = kwargs["coupling"]
             kwargs["coupling"] = {"name": _cname, "iri": f"tvbo:{_cname}"}
@@ -370,11 +363,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     parc["atlas"] = {"name": _iri_local(parc["iri"])}
                 _backfill_name_from_iri(parc.get("atlas"))
             _backfill_name_from_iri(net_kw.get("tractogram"))
-            # Eagerly construct the wrapper Network so its __init__ runs (loads normative connectivity from atlas/tractogram). The parent
-            # __post_init__ accepts a Network instance as-is.
             kwargs["network"] = Network(**net_kw)
 
-        # Delegate to the parent dataclass initializer
         super().__init__(**kwargs)
 
         # Normalize and coerce fields while preserving original conditions
@@ -450,8 +440,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if val is not None and not isinstance(val, _EventCls):
                     val.__class__ = _EventCls
 
-        # Resolve observations that reference a curated model by `iri` (e.g.
-        # `iri: tvbo:BOLD_TVB`): merge the model's pipeline/parameters/class_reference in non-destructively so locally declared source/period overrides still win.
         obss = getattr(self, "observations", None)
         if obss and hasattr(obss, "values"):
             from tvbo.classes.observation import populate_observation_from_iri
@@ -503,8 +491,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _load_network_from_data_file(self):
         """Load network matrices from a companion data file (h5/zarr/yaml sidecar).
 
-        Resolves ``network.data_file`` as an absolute path or relative to the
-        YAML source file / cwd.  The coupling and transforms defined inline in the experiment YAML are preserved after loading.
+        Resolves `network.data_file` as an absolute path, or relative to the YAML source file or the working directory. Coupling and transforms declared inline in the experiment YAML survive the load: they are written back by indexing into the loaded network's containers rather than bulk-assigning a plain dict, since LinkML's `__setattr__` wraps a plain dict into a `JsonObj` whose `.items()` then breaks downstream.
         """
         from pathlib import Path
         from tvbo.classes.network import Network as _Network
@@ -525,8 +512,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         loaded = _Network.from_file(sidecar)
 
-        # Preserve inline experiment coupling / transforms.
-        # We must use indexing on the loaded network's containers rather than bulk-assigning a plain dict, because LinkML __setattr__ wraps plain dicts into JsonObj which breaks .items() downstream.
         inline_coupling = dict(self.network.coupling) if self.network.coupling else {}
         inline_transforms = list(self.network.transforms) if self.network.transforms else []
 
@@ -612,9 +597,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         integ = getattr(obj, "integration", None)
         if integ is not None and not isinstance(integ, Integrator):
             integ.__class__ = Integrator
-            # Always trigger population (idempotent: only fills missing fields).
-            # Lookup is by ``self.method`` when ``iri`` is unset.
-            integ._populate_from_ontology()
+            integ._populate_from_ontology()  # idempotent; looks up by `method` when `iri` is unset
         if not getattr(obj, "integration", None):
             obj.__dict__["integration"] = Integrator(method="Heun")
 
@@ -764,8 +747,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def from_file(cls, filepath: str):
         """Load a `SimulationExperiment` from a YAML file on disk.
 
-        The resolved source path is recorded on the instance (as
-        `_source_file`) so later serialization can reference its origin.
+        The resolved source path is recorded on the instance as `_source_file`, so later serialization can reference its origin. The recipe's `code/` subdirectory goes on the import path first, so a custom builder or callable resolves by bare module name without a `PYTHONPATH` prefix — it has to happen before loading, because construction resolves the network builder eagerly.
 
         Args:
             filepath: Path to a YAML file defining the experiment.
@@ -779,8 +761,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Store source file path BEFORE loading so __init__ can use it
         cls._pending_source_file = str(Path(filepath).resolve())
-        # Make the recipe's code/ subdir importable, so custom builders/callables resolve by bare module name without a PYTHONPATH prefix. Before loading:
-        # construction resolves the network builder eagerly (see __init__).
         register_recipe_code_paths(cls._pending_source_file)
         try:
             data_as_dict = yaml_loader.load_as_dict(filepath) or {}
@@ -1016,9 +996,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Get sampling from time series
             if ts_data["sample_period"] is not None:
                 sample_period = ts_data["sample_period"]
-                # Convert to step size (usually smaller)
-                # Note: step_size may not equal sample_period if subsampling was used
-                integration.step_size = sample_period
+                integration.step_size = sample_period  # not equal to sample_period under subsampling
 
             # Check sidecars for provenance info
             for sidecar in ts_data.get("sidecars", []):
@@ -1304,11 +1282,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return clone
 
     def __deepcopy__(self, memo):
+        """Deep-copy every declared field, not just those present in `__dict__`.
+
+        A dataclass field still holding its default may be absent from `__dict__`, so copying that alone would silently drop it.
+        """
         import dataclasses
 
         cls = self.__class__
-        # For dataclasses, we need to copy all fields, not just __dict__
-        # __dict__ may not include fields that are still at their default values
         data = {}
         if dataclasses.is_dataclass(self):
             for field in dataclasses.fields(self):
@@ -1418,14 +1398,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         Runs at the execution boundary and is backend-agnostic and idempotent:
         the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed
-        integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero).
+        integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero). Declarative stimulus events are lowered at the same boundary, turning `target_variable` into a name and `target_regions` into node indices — the fields codegen consumes.
         """
-        # Reconcile experiment / network / dynamics coupling declarations.
-        # Runs at the execution boundary — backend-agnostic, idempotent, and the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed.
         _resolve_coupling(self)
-
-        # Lower declarative stimulus events (target_variable -> name, target_regions
-        # -> node indices) into the fields codegen consumes — same idempotent boundary.
         self._resolve_events()
 
         # Disable delayed logic if the connectome has no path lengths or conduction speed is infinite
@@ -1618,8 +1593,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return sim
 
         elif format.lower() in ["tvboptim", "tvb-optim"]:
-            # Return namespace with all generated functions for tvboptim workflows
-            # This allows: ns = exp.execute('tvboptim') spectrum, cauchy_pdf = ns.spectrum, ns.cauchy_pdf
             namespace = {}
             code = rendered_code if rendered_code is not None else self.render_code("tvboptim")
             exec(code, namespace)
@@ -1801,6 +1774,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         Per-node **vectors and per-edge matrices** are both handled; a source array with node-label coordinates is reconciled to THIS experiment's network **by label**
         (alias-aware, on every node axis). An unlabelled source array is taken in model order. Returns ``{param_name: ndarray}``, or ``None`` when nothing sources a value.
+
+        A *local* ``used:`` — one carrying neither ``experiment`` nor ``iri`` — names one of this experiment's own outputs and is resolved by the in-run machinery instead, so it is skipped here rather than reaching ``locate_container``, which raises on a reference with no WHERE.
         """
         from tvbo.data import dataref as _dref
 
@@ -1831,8 +1806,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if not nm or nm in wanted:
                     continue
                 used = getattr(p, "used", None)
-                # A cross-experiment ``used:`` carries its own WHERE (experiment/iri). A
-                # LOCAL ``used:`` (neither) names one of this experiment's own outputs and is resolved by the in-run machinery — skip it here so it never reaches locate_container, which raises on a WHERE-less reference.
                 if used is not None and not _dref.is_local_ref(used):
                     wanted[nm] = ("used", used)
                 elif is_from_exp:
@@ -1976,10 +1949,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         Returns:
             An `ExperimentResult` holding the integrated time series and any
             observations, with `source` set to this experiment.
+
+        Everything the backend needs but the spec does not carry inline is resolved just before the call: network-sourced observations such as an empirical FC target, this subject's dataset-sourced targets reconciled to the model's node labels, parameters sourced from another experiment's operating point (injected as `seed_params`), and exploration-builder arguments sourced from another experiment (injected as `builder_data`). Each is set only when present, so an experiment declaring none is unaffected.
+
         """
-        # Make tvbo progress visible for interactive/script runs without clobbering an app's own logging — the same switch the CLI uses, so
-        # ``exp.run(...)`` and ``tvbo run`` log identically. No-op if the embedding application already configured logging.
-        ensure_configured()
+        ensure_configured()  # no-op when the embedding application already configured logging
 
         if "duration" in kwargs:
             self.integration.duration = kwargs.pop("duration")
@@ -2033,8 +2007,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if m_name == "Raw":
                     sim_result = SimulationResult(data=da)
                 else:
-                    # Key by the monitor's canonical name (its title's first token already equals the observation name) so tvb results expose the same keys as the jax/tvboptim backends, e.g.
-                    # result.observations.BOLD_TVB rather than a lower-cased key.
                     observations[m_name] = SimulationResult(data=da)
 
             if sim_result is None:
@@ -2052,8 +2024,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 da = xr.DataArray(data=data_np, dims=dims, coords=coords)
                 sim_result = SimulationResult(data=da)
 
-            # Wrap in Bunch so tvb results support dot-access (result.observations.BOLD_TVB), matching the jax/tvboptim backends;
-            # assigning after construction bypasses SimulationResult's own normalization.
+            # Assigned after construction, which bypasses SimulationResult's own normalization.
             sim_result.observations = Bunch(observations)
             return ExperimentResult(
                 integration=sim_result,
@@ -2069,8 +2040,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             )
 
             if is_heterogeneous(self):
-                # The in-process HeterogeneousNetwork engine integrates from the network's own defaults; unlike the homogeneous path below it does not yet apply the cross-experiment seeds resolved from
-                # ``results_root``. Refuse loudly when the experiment declares one rather than silently returning a default-seeded (wrong) result.
+                # This engine ignores the cross-experiment seeds, so a declared one must fail loudly.
                 _declared = [
                     label
                     for label, seed in (
@@ -2111,11 +2081,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             delay_matrix = self.network.calculate_delays() if getattr(self.coupling, "delayed", False) else None
 
-            # Resolve network-sourced observations (e.g. fc_target <- empirical
-            # FC) to matrices and pass them alongside weights/distances. Only set when present, so experiments without network observations are unaffected.
             net_obs = self.resolve_network_observations()
-            # Per-subject dataset-sourced targets (e.g. this subject's empirical
-            # FC), reconciled to the model's node labels, merge into the same network_observations injection.
             if getattr(self, "_active_subject", None):
                 for obs_name, da in self.resolve_dataset_observations(self._active_subject).items():
                     net_obs = dict(net_obs or {})
@@ -2135,8 +2101,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if _seed is not None:
                 kwargs.setdefault("seed_dynamics", _seed)
 
-            # Parameters sourced from the same operating point (Parameter.measure, e.g.
-            # a control mask g <- source's control_mask), injected as seed_params.
             _pseed = self._resolve_from_experiment_params(results_root)
             if _pseed is not None:
                 kwargs.setdefault("seed_params", _pseed)
@@ -2146,8 +2110,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if _branch is not None:
                 kwargs.setdefault("branch_seed", _branch)
 
-            # Exploration-builder arguments sourced from another experiment (Argument.used):
-            # resolve here and inject as builder_data, looked up at runtime by _bdv.
             _bdata = self._resolve_builder_datarefs(results_root)
             if _bdata is not None:
                 kwargs.setdefault("builder_data", _bdata)
@@ -2929,8 +2891,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 raise ValueError(f"Observation '{name}': measure '{measure}' is not a 2-D matrix in {path.name}.")
             tlabels = list(target_net.node_labels)
             if self._reconcile_mode(obs) == "by_label" and model_labels:
-                # Relabel the target's node axes to the model's canonical labels by
-                # NAME (alias-aware), then select the shared labels in model order.
                 tcanon = self._target_canonical_labels(target_net)
                 tcanon_set = set(tcanon)
                 model_set = set(model_labels)
