@@ -9,10 +9,16 @@
 """
 Continuation
 ============
-Runtime wrapper around the auto-generated ``Continuation`` dataclass.
+The public import location for :class:`Continuation`.
 
-Provides ``from_file`` / ``from_string`` factory methods so that a
-continuation specification can be loaded from YAML just like ``Dynamics``.
+There is no wrapper class: the factory methods live in
+:mod:`tvbo.behaviour.continuation` and are attached to the generated class itself, so a
+continuation carries them however it was built — loaded from YAML, nested inside an
+experiment, or constructed directly.
+
+``Continuation()`` now requires a ``name``, as the schema always did. The wrapper used to
+supply ``"continuation"`` as a default, which only ever applied to a bare call: the one
+construction site in the package passes a name explicitly.
 
 Usage
 -----
@@ -26,86 +32,6 @@ eq_in_I
 >>> exp.continuations[cont.name] = cont
 """
 
-from __future__ import annotations
+from tvbo.datamodel.schema import Continuation
 
-import os
-from typing import TYPE_CHECKING
-
-from tvbo.utils import yaml_loader
-
-from tvbo.datamodel import schema as tvbo_datamodel
-
-if TYPE_CHECKING:
-    pass
-
-
-class Continuation(tvbo_datamodel.Continuation):
-    """Runtime continuation specification with factory constructors.
-
-    Inherits all schema-defined fields (``free_parameters``, ``ds``,
-    ``max_steps``, ``branches``, etc.) from the generated datamodel and
-    adds convenience factory methods.
-    """
-
-    def __init__(self, name="continuation", **kwargs):
-        if name is not None:
-            kwargs["name"] = str(name)
-        super().__init__(**kwargs)
-
-    # ------------------------------------------------------------------
-    # Factory constructors
-    # ------------------------------------------------------------------
-    @classmethod
-    def from_datamodel(cls, cont_meta: tvbo_datamodel.Continuation) -> "Continuation":
-        """Create from an auto-generated datamodel instance."""
-        return cls(**cont_meta._as_dict)
-
-    @classmethod
-    def from_file(cls, path: str | os.PathLike) -> "Continuation":
-        """Load a Continuation from a YAML file.
-
-        The file can be either:
-        1. A standalone Continuation YAML (root keys are Continuation fields).
-        2. A SimulationExperiment YAML that contains a ``continuations``
-           section — in which case the *first* continuation entry is returned.
-
-        Parameters
-        ----------
-        path : str or PathLike
-            Path to the YAML file.
-
-        Returns
-        -------
-        Continuation
-            The loaded continuation specification.
-        """
-        return yaml_loader.load(str(path), cls)
-
-    @classmethod
-    def from_string(cls, yaml_string: str) -> "Continuation":
-        """Create a Continuation from a YAML string.
-
-        Parameters
-        ----------
-        yaml_string : str
-            YAML-formatted string defining the continuation.
-
-        Returns
-        -------
-        Continuation
-        """
-        return yaml_loader.loads(yaml_string, target_class=cls)
-
-    @classmethod
-    def from_db(cls, name: str) -> "Continuation":
-        """Load a Continuation by name from the tvbo database."""
-        from tvbo.data.registry import resolve
-
-        return cls.from_file(str(resolve("Continuation", name)))
-
-    @classmethod
-    def list_db(cls) -> list[str]:
-        """List available continuations in the tvbo database."""
-        from tvbo.data.registry import list_entries
-
-        return list_entries("Continuation")
+__all__ = ["Continuation"]

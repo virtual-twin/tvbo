@@ -49,7 +49,6 @@ from tvbo.codegen import templater
 from tvbo.parse.symbols import assumptions_of, symbol_in
 from tvbo.classes.coupling import Coupling
 from tvbo.classes.noise import Integrator
-from tvbo.classes.continuation import Continuation
 from tvbo.classes.dynamics import Dynamics
 from tvbo.run.graph import GraphRunner as _Network
 from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
@@ -454,14 +453,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             if not isinstance(self.stimulation, perturbation.Stimulus):
                 self.stimulation = _coerce(perturbation.Stimulus, self.stimulation)
-
-        # Auto-upgrade continuations to runtime Continuation class
-        conts = getattr(self, "continuations", None)
-        if conts and isinstance(conts, dict):
-            for key, val in conts.items():
-                if val is not None and not isinstance(val, Continuation):
-                    val.__class__ = Continuation
-                    conts[key] = val
 
         # Resolve observations that reference a curated model by `iri` (e.g.
         # `iri: tvbo:BOLD_TVB`): merge the model's pipeline/parameters/class_reference
