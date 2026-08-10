@@ -778,6 +778,77 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: Dic
     return overrides
 
 
+_WEIGHT_TRANSFORM_ENV = {
+    "W": "W = weights",
+    "M": "M = weights",
+    "W_min": "W_min = jnp.nanmin(weights)",
+    "M_min": "M_min = jnp.nanmin(weights)",
+    "W_max": "W_max = jnp.nanmax(weights)",
+    "M_max": "M_max = jnp.nanmax(weights)",
+    "W_rowsum": "W_rowsum = weights.sum(axis=1, keepdims=True)",
+    "W_colsum": "W_colsum = weights.sum(axis=0, keepdims=True)",
+    "W_rowsum_safe": "W_rowsum_safe = jnp.where(weights.sum(axis=1, keepdims=True) > 0, weights.sum(axis=1, keepdims=True), 1.0)",
+    "W_colsum_safe": "W_colsum_safe = jnp.where(weights.sum(axis=0, keepdims=True) > 0, weights.sum(axis=0, keepdims=True), 1.0)",
+    "L": "L = distances",
+}
+
+
+def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List[str]]:
+    """Render `transforms:` targeting weight to JAX for inlining in the generated script.
+
+    Mirrors ``Network._apply_transform`` (same ``parse_eq`` + JaxPrinter path), so the code
+    the kit ships applies the declared transform byte-identically to the runtime — but
+    visibly, with pure ``jnp``, on the RAW weights the generated ``create_network`` is
+    handed. Keeps a frozen/standalone kit self-contained and tvbo-independent at run time:
+    raw SC stays in the network file, the transform stays declared in the spec, and the
+    exact op is in the script rather than hidden in tvbo runtime. This helper itself runs
+    only at render time (in the tvbo environment).
+
+    Returns ``(transforms, const_env)``: ``transforms`` is a list of
+    ``(jax_expr, matrix_env)`` where ``matrix_env`` recomputes matrix-derived symbols
+    (``W``, ``W_min`` …) from the current ``weights`` so sequential transforms compose;
+    ``const_env`` defines data-derived symbols (``L``, per-node parameter vectors) once.
+    """
+    import numpy as np
+
+    from tvbo.codegen.code import render_expression
+    from tvbo.parse.expression import parse_eq
+
+    node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
+    transforms: List[Tuple[str, List[str]]] = []
+    const_env: List[str] = []
+    const_seen: Set[str] = set()
+    for t in getattr(network, "transforms", None) or []:
+        if getattr(t, "name", None) != "weight":
+            continue
+        eq = getattr(t, "equation", None)
+        if eq is None:
+            continue
+        exp = parse_eq(eq)
+        if exp is None:
+            continue
+        args = {name: getattr(a, "value", None) for name, a in (getattr(t, "arguments", {}) or {}).items()}
+        subs = {s: args[str(s)] for s in exp.free_symbols if str(s) in args}
+        if subs:
+            exp = exp.subs(subs)
+        expr = render_expression(exp, format="jax")
+        matrix_env: List[str] = []
+        for s in sorted(str(sym) for sym in exp.free_symbols):
+            if s in _WEIGHT_TRANSFORM_ENV:
+                if s == "L":
+                    if s not in const_seen:
+                        const_env.append(_WEIGHT_TRANSFORM_ENV[s])
+                        const_seen.add(s)
+                else:
+                    matrix_env.append(_WEIGHT_TRANSFORM_ENV[s])
+            elif s in node_vectors and s not in const_seen:
+                vals = ", ".join(repr(float(v)) for v in np.asarray(node_vectors[s]).ravel())
+                const_env.append(f"{s} = jnp.asarray([{vals}]).reshape(-1, 1)")
+                const_seen.add(s)
+        transforms.append((expr, matrix_env))
+    return transforms, const_env
+
+
 def to_numeric(val: Any) -> Union[int, float, Any]:
     """Convert string to numeric if possible."""
     if isinstance(val, (int, float)):

@@ -16,6 +16,10 @@ Order (mirrors a typical "Coupling" methods sub-section):
 
 Context variables:
   - coupling: tvbo.classes.coupling.Coupling instance
+  - parameters: emit the parameter table (False where the host report already
+    lists these symbols, e.g. a study's own glossary)
+  - equations: a report.Equations to number and anchor the coupling equation with,
+    or None to emit it bare (standalone rendering, which has nothing to number into)
 </%doc>
 <%
 from sympy import latex, Symbol
@@ -101,6 +105,38 @@ except Exception:
 gx_line = ", ".join(
     f"${latex(g)} = {latex(s, mul_symbol='dot', order='none')}$" for g, s in gx_defs
 )
+
+
+def _summed_inputs():
+    """The ``gx_k`` intermediates, numbered where the post-synaptic term can cite them.
+
+    ``c_post`` is written in terms of ``gx``, so once that is a numbered equation its
+    operand has to be one too — otherwise the section defines a symbol it uses in a
+    numbered equation only in a passing clause.
+    """
+    aside = "the pre-synaptic components summed over the graph, which the post-synaptic term recombines"
+    if not equations:
+        return f"with {gx_line} — {aside}."
+    blocks = "\n".join(
+        equations.block(f"{latex(g)} = {latex(s, mul_symbol='dot', order='none')}", cpl, f"gx-{i}")
+        for i, (g, s) in enumerate(gx_defs))
+    return f"with {aside}:\n\n{blocks}"
+
+
+def _decomposition(label, symbol, rhs, key):
+    """One half of the pre/post split, displayed and numbered where it can be cited.
+
+    An equation a reader cannot refer to does not need to be displayed, so without a
+    numbering registry these stay inline and compact (the standalone rendering, embedded
+    in docs). With one they become numbered display equations like every other equation
+    in the section — these define what the backend actually computes per source node and
+    at the target, and a Methods section that numbers the state equations but not the
+    coupling decomposition leaves its most-cited step uncitable.
+    """
+    body = f"{symbol} = {_safe_latex(rhs)}"
+    if equations:
+        return f"**{label}:**\n\n{equations.block(body, cpl, key)}"
+    return f"**{label}:** ${body}$"
 %>\
 **Coupling: ${_md_escape(cpl_label)}**
 
@@ -109,7 +145,7 @@ ${cpl_desc.strip()}
 
 % endif
 % if full_latex:
-$$c = ${full_latex}$$
+${equations.block("c = " + full_latex, cpl, "c") if equations else "$$c = " + full_latex + "$$"}
 
 % endif
 % if coupling_meta:
@@ -117,15 +153,15 @@ ${'; '.join(coupling_meta)}.
 
 % endif
 % if pre_rhs:
-**Pre-synaptic:** $c_{\text{pre}} = ${_safe_latex(pre_rhs)}$
+${_decomposition("Pre-synaptic", r"c_{\text{pre}}", pre_rhs, "c-pre")}
 
 % endif
 % if post_rhs:
-**Post-synaptic:** $c_{\text{post}} = ${_safe_latex(post_rhs)}$
+${_decomposition("Post-synaptic", r"c_{\text{post}}", post_rhs, "c-post")}
 
 % endif
 % if gx_line:
-with ${gx_line} — the pre-synaptic components summed over the graph, which the post-synaptic term recombines.
+${_summed_inputs()}
 
 % endif
 <%
@@ -146,7 +182,7 @@ if sym_val:
 ${" — ".join(meta_lines)}.
 
 % endif
-% if cpl_items:
+% if cpl_items and parameters:
 **Coupling parameters**
 
 ${report.parameter_table(cpl_params_obj)}

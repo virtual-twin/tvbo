@@ -63,11 +63,15 @@ ${derived(family.base.model)}\
 ${functions(family.base.model)}\
 % if report.slot(family.base.model, 'events', None):
 
-${report.event_table(report.slot(family.base.model, 'events'), derivative_notation)}
+${report.captioned(report.event_table(report.slot(family.base.model, 'events'), derivative_notation),
+                   f"Events of the {family.label} — stimuli, resets and the conditions that fire them.",
+                   f"events-{report.slot(family.base.model, 'name', family.label)}", fmt, eqs)}\
 % endif
 
-${report.captioned(report.symbol_table(family.base.model, report.study_sweeps(family.experiments)),
-                   f"Symbols of the {family.label}.", f"model-{report.slot(family.base.model, 'name', family.label)}", fmt, eqs)}\
+${report.captioned(report.symbol_table(family.base.model, report.study_sweeps(family.experiments),
+                                       report.coupling_of(family.experiments)),
+                   f"Symbols of the {family.label}, including those its coupling introduces.",
+                   f"model-{report.slot(family.base.model, 'name', family.label)}", fmt, eqs)}\
 % for variant in family.variants:
 <% changed = variant.delta.eq_svars | variant.delta.dvars %>\
 
@@ -84,7 +88,7 @@ ${report.captioned(report.variant_parameter_table(family),
                    f"variants-{report.slot(family.base.model, 'name', family.label)}", fmt, eqs)}\
 % if report.coupling_of(family.experiments):
 
-${report.coupling_prose(family.experiments)}
+${report.coupling_prose(family.experiments, eqs)}
 % endif
 
 ${report.captioned(report.experiment_table(family.experiments, family.shared_parameters, orient),
@@ -103,9 +107,15 @@ ${report.slot(exp, 'description').strip()}
 % endif
 % endfor
 <% obs = report.observation_table([e for e in experiments if in_part(e)]) %>\
-% if obs:
+% if obs.table:
 
 ${heading} Recorded output
 
-${report.captioned(obs, "What each experiment records, and how it is reduced.", "observations", fmt, eqs)}\
+${report.captioned(obs.table, "What each experiment records, and how it is reduced."
+                              + (f" Throughout, {obs.shared}." if obs.shared else ""),
+                   "observations", fmt, eqs)}\
+% if obs.notes:
+
+${obs.notes}
+% endif
 % endif

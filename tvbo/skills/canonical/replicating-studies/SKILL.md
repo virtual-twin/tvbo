@@ -679,9 +679,10 @@ strip the `{python}` spans, regex the remainder for numbers, and classify every 
 prose that had been written the same afternoon.
 
 See **writing-reports** for the report mechanics: the IMRAD structure, the metrics cell
-that computes every number from the containers (nothing hand-typed), the native
-`EXP.dynamics.generate_report(..., citeformat="quarto")` equation and parameter render, the
-three-colour status callouts, the copyright-safe internal/public split, references as Quarto's
+that computes every number from the containers (nothing hand-typed), the whole Methods
+rendered in one call by `STUDY.report("qmd", level=3)` — deduplicated across experiments that
+share a model, every table captioned, `part: supplementary` demoting an experiment's paragraph
+without hiding it — the three-colour status callouts, the copyright-safe internal/public split, references as Quarto's
 auto-appended bibliography, the LaTeX rules, and the anti-slop prose standard. The templates
 it copies ship in this skill's `assets/`: `report.qmd.tmpl`, `report_internal.qmd.tmpl`, and
 `_quarto.yml.tmpl`. Copy all three into `report/` (as `report.qmd`, `report_internal.qmd`,
@@ -784,6 +785,10 @@ Replication-specific rules on top of that mechanics:
   (Phase 1.5), and the Phase-7 verification. Results holds the scorecard and the per-figure
   `ab()` calls; Discussion holds the NASEM framing, the mechanism of any negative result, and
   the accepted limitations.
+- **One `STUDY.report()` call writes the model half of Methods**, however many experiments the
+  recipe has — never a `for exp in EXPS: exp.render(...)` loop, which reprints the same model
+  once per experiment. Each experiment's own `description:` is what the section says about it,
+  so write that field as publishable prose in the recipe rather than editing the render.
 
 ## Phase 7 — Verify against an independent reference
 

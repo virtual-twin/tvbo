@@ -9,6 +9,8 @@ generated cross-referenced document breaks silently without: unique anchors, and
 number left to drift.
 """
 
+from types import SimpleNamespace
+
 import pytest
 
 from tvbo import SimulationStudy
@@ -23,6 +25,18 @@ experiments:
     label: baseline
     description: Establishes the resting decay.
     references: ["Fig. 1"]
+    observations: &observations
+      rate:
+        label: Mean deflection
+        source: x
+        aggregation: mean
+        time_scale: s
+        description: Averaged over the post-transient window.
+      spectrum:
+        label: Power spectrum
+        source: x
+        window_size: 100
+        time_scale: s
     dynamics: &base
       name: Decay
       label: Linear decay
@@ -44,8 +58,19 @@ experiments:
     label: repeat
     description: The same model again, to be collapsed onto the first.
     references: ["Fig. 2"]
+    observations: *observations
     dynamics: *base
     integration: *integration
+    network:
+      number_of_nodes: 2
+      coupling:
+        c_net:
+          label: Linear diffusive coupling
+          delayed: false
+          incoming_states: [x]
+          local_states: [x]
+          pre_expression: {rhs: "x_j - x_i"}
+          post_expression: {rhs: "gx"}
   - id: 3
     label: driven
     description: Adds a constant drive.
@@ -66,6 +91,43 @@ experiments:
     integration:
       <<: *integration
       duration: 4.0
+  - id: 4
+    label: observed
+    description: The base model with a haemodynamic readout bolted on.
+    references: ["Fig. 4"]
+    dynamics:
+      <<: *base
+      name: DecayObserved
+      label: Linear decay with a readout
+      state_variables:
+        x:
+          equation: {rhs: "-k * x"}
+          unit: mV
+          description: membrane deflection
+        h:
+          equation: {rhs: "x - h"}
+          description: readout filter
+      parameters:
+        k: {value: 2.0, unit: 1/s, description: decay rate}
+        drive: {value: 0.0, description: constant drive}
+    integration: *integration
+  - id: 5
+    label: unrelated
+    description: A different system that happens to share the readout variable.
+    references: ["Fig. 5"]
+    dynamics:
+      name: Oscillator
+      label: Harmonic oscillator with the same readout
+      state_variables:
+        theta:
+          equation: {rhs: "omega"}
+          description: phase
+        h:
+          equation: {rhs: "theta - h"}
+          description: readout filter
+      parameters:
+        omega: {value: 1.0, unit: 1/s, description: angular frequency}
+    integration: *integration
 """
 
 
@@ -89,6 +151,51 @@ def test_a_variant_contributes_only_its_delta(study):
     report = study.report("qmd", part="all")
     assert "use**" not in report and "uses **Linear decay with drive**" in report
     assert "drive" in report.split("uses **Linear decay with drive**")[1]
+
+
+def test_sharing_an_auxiliary_variable_does_not_merge_two_systems(study):
+    """A shared readout variable is not evidence of a shared model.
+
+    Membership is subset-or-superset of the family's first model, never bare overlap.
+    Overlap merged Pang2023's wave field with its BEI mass model because both carry the
+    four Balloon-Windkessel haemodynamic variables, and the report then presented a mass
+    model the paper never deposited as a *variant* of the wave field.
+    """
+    from tvbo.utils import report
+
+    exps = [study.get_experiment(i) for i in study.experiment_ids()]
+    families = report.model_families(exps)
+    assert len(families) == 2, [str(f.label) for f in families]
+    decay, oscillator = families
+    assert {e.id for e in decay.experiments} == {1, 2, 3, 4}
+    assert {e.id for e in oscillator.experiments} == {5}
+
+
+def test_a_superset_of_the_state_stays_in_the_family(study):
+    """Adding a state variable extends a model; it does not make a new one."""
+    from tvbo.utils import report
+
+    exps = [study.get_experiment(i) for i in study.experiment_ids()]
+    decay = report.model_families(exps)[0]
+    labels = [str(report.slot(m.model, "label", "")) for m in decay.models]
+    assert "Linear decay with a readout" in labels, labels
+
+
+def test_every_emitted_table_is_captioned(study):
+    """An uncaptioned table still steps LaTeX's table counter, so it shifts every number.
+
+    Pang2023's events table was the one left bare, and it pushed the report's first
+    captioned table to "Table 2" — the reader sees a document whose tables start at two,
+    and the float they cannot see is the one that took the number.
+    """
+    import re
+
+    report = study.report("qmd", part="all")
+    lines = report.splitlines()
+    tables = sum(1 for i, l in enumerate(lines)
+                 if l.startswith("|") and (i == 0 or not lines[i - 1].startswith("|")))
+    captions = len(re.findall(r"^: .*\{#tbl-[a-z0-9-]+\}", report, re.M))
+    assert tables == captions, f"{tables} tables but {captions} captions"
 
 
 def test_every_anchor_is_unique(study):
@@ -128,6 +235,45 @@ def test_markdown_numbers_equations_where_it_cannot_anchor(study):
     assert r"\tag{1}" in report and "{#eq-" not in report
 
 
+def test_every_display_equation_carries_a_number(study):
+    """One unnumbered equation is one the prose cannot cite, and nothing flags it.
+
+    The coupling equation was rendered by the coupling's own template, which had no
+    access to the report's numbering — so across ten studies every state equation was
+    numbered and the eleven equations joining the nodes into a network were not.
+    """
+    for fmt in ("qmd", "markdown"):
+        bare = _unnumbered(study.report(fmt, part="all"))
+        assert not bare, f"{fmt}: unnumbered {bare}"
+
+
+def test_the_coupling_equation_is_numbered_with_the_rest(study):
+    """The bug this pins: the coupling rendered through its own template, which had no
+    access to the report's numbering, so it emitted bare `$$`."""
+    from tvbo.utils import report
+
+    exps = [study.get_experiment(i) for i in study.experiment_ids()]
+    assert _unnumbered(report.coupling_prose(exps)), "fixture must exercise the coupling path"
+    assert not _unnumbered(report.coupling_prose(exps, report.Equations("semantic", "qmd")))
+
+
+def test_a_declared_state_variable_always_renders_its_equation(study):
+    """A state variable whose equation never renders leaves a hole nothing reports.
+
+    Heterogeneous networks declare their models as plain datamodel objects, which lack
+    the symbolic machinery; treating that as "no equations" gave Mongillo2008's
+    twenty-nine experiments a Methods section with no mathematics at all.
+    """
+    from tvbo.utils import report
+
+    exps = [study.get_experiment(i) for i in study.experiment_ids()]
+    for family in report.model_families(exps):
+        for entry in family.models:
+            declared = set(dict(report.name_items(report.slot(entry.model, "state_variables", {}) or {})))
+            rendered = {name for name, _ in report.model_equations(entry.model, "state")}
+            assert declared <= rendered, f"{family.label}: {declared - rendered} never rendered"
+
+
 def test_equations_none_leaves_them_bare(study):
     report = study.report("qmd", part="all", equations="none")
     assert "{#eq-" not in report and r"\tag{" not in report
@@ -149,3 +295,112 @@ def test_unknown_format_is_refused(study, bad):
 def test_unknown_part_is_refused(study):
     with pytest.raises(ValueError):
         study.report("qmd", part="appendix")
+
+
+# ── A grid too small to be a float is a sentence ────────────────────────────────────────
+
+
+@pytest.mark.parametrize("rows,expected", [
+    ([["`Q`", "stimulus"]], "Event `Q` — Type: stimulus."),
+    ([["50", "2000 ms"], ["51", "7000 ms"]], "Event 50 — Type: 2000 ms; Event 51 — Type: 7000 ms."),
+])
+def test_a_grid_too_small_to_be_a_float_is_written_as_a_sentence(rows, expected):
+    """A captioned float tells the reader to look something up; two numbers do not earn one.
+
+    Pang2023 spent a numbered table on the fact that its model declares one event, and
+    Schirner2023 spent one on two experiments differing only in duration.
+    """
+    from tvbo.utils.report import md_table
+
+    assert md_table(["Event", "Type"], rows) == expected
+
+
+def test_a_grid_large_enough_stays_a_table():
+    from tvbo.utils.report import md_table
+
+    assert md_table(["Event", "Type"], [["a", "1"], ["b", "2"], ["c", "3"]]).startswith("|")
+
+
+def test_experiment_ids_are_listed_in_numeric_order():
+    """Ordering ids as text gives 1, 2, 20, 21, 3 — Deco2014 listed ten exactly that way."""
+    from tvbo.utils.report import _id_text
+
+    assert _id_text([1, 2, 20, 21, 3, 30]) == "1, 2, 3, 20, 21, 30"
+
+
+def test_a_pipeline_step_is_named_by_what_the_recipe_calls_it():
+    """Reading `callable` first printed Deco2014's five named steps as `? → ? → fftconvolve → ? → ?`."""
+    from tvbo.utils.report import pipeline_text
+
+    steps = [SimpleNamespace(name="hemodynamic_response"),
+             SimpleNamespace(name="convolve", callable=SimpleNamespace(name="fftconvolve"))]
+    assert pipeline_text(steps) == "hemodynamic_response → convolve"
+
+
+# ── The observation table stays dense ───────────────────────────────────────────────────
+
+
+def test_a_setting_every_observation_shares_is_stated_once(study):
+    """`time_scale` defaults to `ms` in the schema, so it was printed on all 34 rows of one
+    study's table and all 29 of another — a default nobody chose, on every line."""
+    from tvbo.utils import report
+
+    exps = [study.get_experiment(i) for i in study.experiment_ids()]
+    obs = report.observation_table(exps)
+    assert "scale = s" in obs.shared
+    assert "scale=s" not in obs.table
+
+
+def test_an_observation_description_becomes_prose_not_a_column(study):
+    """Descriptions are paragraphs; as a cell they widen the table for every row to serve a few."""
+    from tvbo.utils import report
+
+    exps = [study.get_experiment(i) for i in study.experiment_ids()]
+    obs = report.observation_table(exps)
+    assert "Averaged over the post-transient window." in obs.notes
+    assert "Averaged over the post-transient window." not in obs.table
+    assert "Description" not in obs.table.splitlines()[0]
+
+
+def test_sampling_and_pipeline_are_one_column(study):
+    """Each was under half full and both answer *how the raw state becomes the quantity*."""
+    from tvbo.utils import report
+
+    exps = [study.get_experiment(i) for i in study.experiment_ids()]
+    header = report.observation_table(exps).table.splitlines()[0]
+    assert "Reduction" in header
+    assert "Pipeline" not in header and "Sampling" not in header
+
+
+# ── The coupling's symbols live in the model's glossary ─────────────────────────────────
+
+
+def _param(value, unit="", description=""):
+    return SimpleNamespace(value=value, unit=unit, description=description)
+
+
+def test_a_coupling_parameter_the_model_already_declares_is_not_listed_twice():
+    """Jansen1995's coupling restates the model's sigmoid constants at the model's values.
+
+    They were a second, uncaptioned table after the coupling block — three rows the reader
+    had just read in the glossary.
+    """
+    from tvbo.utils.report import symbol_table
+
+    model = SimpleNamespace(state_variables={}, derived_parameters={},
+                            parameters={"e0": _param(2.5), "r": _param(0.56)})
+    coupling = SimpleNamespace(parameters={"e0": _param(2.5), "K": _param(1.0, description="gain")})
+    table = symbol_table(model, couplings=[coupling])
+    assert table.count("$e_{0}$") == 1
+    assert "| $K$ | coupling |" in table
+
+
+def test_a_value_written_two_ways_is_one_setting():
+    """`6` and `6.0` compared as text are two settings, and the report then invents a
+    difference: Jansen1995's glossary listed $v_0$ twice, once as a symbol the coupling
+    supposedly introduces."""
+    from tvbo.utils.report import symbol_table
+
+    model = SimpleNamespace(state_variables={}, derived_parameters={}, parameters={"v0": _param(6)})
+    coupling = SimpleNamespace(parameters={"v0": _param(6.0)})
+    assert symbol_table(model, couplings=[coupling]).count("$v_{0}$") == 1

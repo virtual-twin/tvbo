@@ -255,12 +255,10 @@ n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network
 _cs = getattr(network, 'conduction_speed', None)
 conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
 
-# Network.transforms is applied once at resolution time by
-# Network._apply_transform, so by the time `weights` reaches the
-# generated `run_experiment` it is already the transformed matrix.
-# No runtime inlining is needed.
-has_weight_transforms = False
-weight_transform_jax = []
+# `transforms:` -> JAX, applied in create_network on the RAW weights, so the kit is self-contained.
+from tvbo.templates.tvboptim.utils import weight_transform_codegen as _weight_transform_codegen
+weight_transform_jax, weight_transform_const_env = _weight_transform_codegen(network)
+has_weight_transforms = bool(weight_transform_jax)
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
@@ -1594,18 +1592,16 @@ def create_network(
     % endif
 ) -> Network:
 % if has_weight_transforms:
-    # Weight transforms
-    W = weights
-    W_min, W_max = jnp.min(W), jnp.max(W)
-    M = W
-    M_min, M_max = W_min, W_max
-    % for expr in weight_transform_jax:
+    # Declared weight `transforms:` applied to the raw weights (kit stays self-contained).
+% for _line in weight_transform_const_env:
+    ${_line}
+% endfor
+% for expr, matrix_env in weight_transform_jax:
+% for _line in matrix_env:
+    ${_line}
+% endfor
     weights = ${expr}
-    W = weights
-    M = W
-    W_min, W_max = jnp.min(W), jnp.max(W)
-    M_min, M_max = W_min, W_max
-    % endfor
+% endfor
 % endif
 
     % if use_length_graph:
@@ -4654,8 +4650,7 @@ if __name__ == "__main__":
         region_labels = None
     logger.info("  Loaded network with %d nodes", weights.shape[0])
 % else:
-    # No BIDS directory configured, so nothing above defines these — they are the
-    # caller's to inject before running this module.
+    # No BIDS dir: the caller injects these (weights RAW — create_network applies transforms).
     weights = globals().get("weights")
     if weights is None:
         logger.error(
