@@ -1,13 +1,7 @@
-#
-# Module: ontology.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
-"""
-Plotting functions for visualizing networks
--------------------------------------------
+# SPDX-License-Identifier: EUPL-1.2
+
+"""Plots of the ontology graph and of a model's place in it.
 
 ```python
 # | fig-align: center
@@ -328,23 +322,6 @@ def plot_curve(
             color="k",
             fontsize=font_size,
         )
-
-    # # Normalize the direction (dx, dy) to ensure consistent arrow scaling
-    # norm = (dx**2 + dy**2) ** 0.5
-    # dx /= norm
-    # dy /= norm
-
-    # ax.arrow(
-    #     xsupport[end_arrow_index],
-    #     ysupport[end_arrow_index],
-    #     dx * arrow_head_length,  # Scale the arrow direction by the head length
-    #     dy * arrow_head_length,
-    #     lw=0,
-    #     length_includes_head=True,
-    #     head_width=arrow_head_width,
-    #     head_length=arrow_head_length,
-    #     color=color,
-    # )
 
 
 def get_edge_info(n1, n2, adj_matrix):
@@ -704,7 +681,6 @@ def get_actual_bounds(ax, axis="x"):
             try:
                 # Get the bounding box in display coordinates
                 bbox = artist.get_window_extent(renderer=renderer)
-                # print(f"Bbox for '{artist.get_text()}': {bbox}")
 
                 # Transform the bounding box corners to data coordinates
                 bbox_data = ax.transData.inverted().transform(
@@ -818,8 +794,6 @@ def draw_custom_nodes(
     ax.set_ylim([ymin - bbox_pad, ymax + bbox_pad])
 
     return texts, bbox_positions
-
-    # return texts
 
 
 def get_layout(
@@ -997,7 +971,6 @@ def plot_ontology_graph(
         color_list = colors
 
     color_dict = dict(zip(sorted(categories), color_list))
-    # print(color_dict)
     for node in G.nodes():
         category = get_category_from_graph(G, node)
         category = category.replace("Time Derivative", "TimeDerivative")
@@ -1118,23 +1091,7 @@ def plot_ontology_graph(
                         ),
                     )
             draw_labels = False
-        # TODO: review draw_custom_arrows(
-        #     G, pos, edge_colors="grey", edge_width=1, connectionstyle="bar"
-        # )
         nx.draw_networkx_edges(G, pos, edge_color="grey", width=edge_width, alpha=0.8)
-
-        # TODO: review
-        # nx.draw_networkx_nodes(
-        #     G,
-        #     pos,
-        #     with_labels=False,
-        #     # labels=labels,
-        #     node_color=color_map,
-        #     node_size=node_size,
-        #     # edge_color=edge_colors,
-        #     # width=edge_width,
-        #     ax=ax,
-        # )
 
         if draw_labels:
             label_pos = {
@@ -1195,7 +1152,6 @@ def plot_ontology_graph(
             if text.get_text() == "Node Types" or text.get_text() == "Edge Types":
                 text.set_weight("bold")  # You can set the subtitles to bold for better distinction
 
-    # plt.close()
     if return_fig:
         return fig
 
@@ -1725,7 +1681,6 @@ def plot_model(
     labels = {n: latex(equations.sub_equation(symbols(ontology.replace_suffix(n)), model)) for n in G.nodes()}
     if add_equations_to_labels:
         eqs = equations.symbolic_model_equations(model)
-        # print(eqs)
         for n in labels.keys():
             nlab = n.label.first().replace(ontology.get_model_suffix(model), "")
             if nlab in eqs.keys():
@@ -1803,7 +1758,6 @@ def plot_model(
         leg = ax.legend(
             all_handles,
             all_labels,
-            # ncols=2,
             **default_legend_kwargs,
         )
 
@@ -1863,7 +1817,6 @@ def plot_hierarchy(cls, hierarchy_type="ancestors", ax=None, **kwargs):
 
     # Define the position for each node in a hierarchical layout
     pos = hierarchy_pos(G, root=cls, direction=direction, **kwargs)
-    # pos = nx.shell_layout(G)
     G = G.subgraph(pos.keys())
 
     # Draw the graph
@@ -1913,7 +1866,6 @@ def plot_multidigraph(G, figsize: Tuple[int, int] = (12, 8)) -> None:
 
     draw_custom_arrows(G, pos, scatter_edges=True, ax=ax)
 
-    # nx.draw_networkx_nodes(G, pos, node_size=700, ax=ax)
     draw_custom_nodes(G, pos, ax=ax)
     ax.axis("off")
     plt.title("MultiDiGraph with Curved Edges")
@@ -2192,7 +2144,6 @@ def plot_edge(edge, pos, bbox_positions_data, ax, **kwargs):
     xstart, ystart = start
     xend, yend = end
 
-    # bbox_start = bbox_positions_data[edge[0]].bounds
     bbox_end = bbox_positions_data[edge[1]]
 
     # x_min_start, y_min_start = bbox_start[0] x_max_start, y_max_start = bbox_start[1]

@@ -1,10 +1,5 @@
-#
-# Module: localdynamics.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
 
 """Python behaviour layer for `Dynamics` models.
 
@@ -146,8 +141,9 @@ def order_by_equations(derived_variables, dependent_equations):
 def class2metadata(ontoclass: Any, metadata: Any):
     """Populate a `Dynamics` metadata object from an owlready2 ontology class.
 
-    Fills in description, state variables (with equations, boundaries, and coupling-variable flags), derived variables, and parameters by querying
-    the TVB-O ontology for the corresponding semantic annotations.
+    Fills in description, state variables (with equations, boundaries, and coupling-variable flags), derived variables, and parameters by querying the TVB-O ontology for the corresponding semantic annotations.
+
+    Every name in the model is put into a `local_dict` as a plain `Symbol` before any equation is parsed. Without it, sympy reads `e` as Euler's number and `I` as the imaginary unit, so neither turns up in `free_symbols` and the parameters behind them are dropped in silence. An ontology coupling term is added only where a state equation actually requires it.
 
     Args:
         ontoclass: The owlready2 class to read from.
@@ -170,8 +166,7 @@ def class2metadata(ontoclass: Any, metadata: Any):
         else:
             boundaries = None
 
-        # Preserve the descriptive stateVariableRange (IC-sampling support) as the sampling distribution when a clamp exists — mirrors the file/adapter paths.
-        # (Previously `range` was computed but dropped, so it was lost on round-trip.)
+        # Kept as the sampling distribution when a clamp exists, mirroring the file and adapter paths.
         sv_range = (
             tvbo_datamodel.Range(lo=float(range[0]), hi=float(range[1]))
             if range and range[0] is not None and range[1] is not None
@@ -217,8 +212,6 @@ def class2metadata(ontoclass: Any, metadata: Any):
     # Update parameters AFTER state_variables are populated so that update_parameters can parse their equations and determine which ontology parameters are actually used.
     update_parameters(metadata, ontoclass)
 
-    # Collect all free symbols from state variable equations
-    # Build a local_dict to avoid sympy interpreting 'I' as imaginary unit, etc.
     from sympy import Symbol, sympify
 
     # First pass: collect all known symbol names to build local_dict
@@ -298,8 +291,7 @@ def class2metadata(ontoclass: Any, metadata: Any):
                 }
             )
 
-    # Only add ontology coupling terms if they are required in state equations (onto_coupling_terms was fetched earlier for building local_dict)
-    # Store them in coupling_inputs (canonical) with fallback to coupling_terms for backward compat until coupling_terms is fully removed from schema.
+    # Written to the canonical `coupling_inputs`, and to `coupling_terms` until that slot goes.
     ci_dict = metadata.coupling_inputs
     ct_dict = metadata.coupling_terms
     for k, v in onto_coupling_terms.items():
@@ -312,8 +304,9 @@ def class2metadata(ontoclass: Any, metadata: Any):
 
 
 def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
-    """
-    Update parameters from ontology.
+    """Update a model's parameters from the ontology.
+
+    As in `class2metadata`, every model name is bound as a plain `Symbol` first, so `e` and `I` are not read as Euler's number and the imaginary unit and their parameters silently lost.
 
     Parameters
     ----------
@@ -334,8 +327,6 @@ def update_parameters(metadata, ontoclass, verbose=0, only_used=True, **kwargs):
     if only_used:
         from sympy.parsing.sympy_parser import parse_expr
 
-        # Build local_dict so that ALL names in the model are treated as plain
-        # Symbols.  Without this, sympy interprets 'e' as Euler's number (E) and 'I' as the imaginary unit, so they never appear as free_symbols and the corresponding parameters are silently dropped.
         all_names: set[str] = set()
         eq_dicts = [
             getattr(metadata, "parameters", {}),
@@ -424,8 +415,7 @@ def update_equations(model):
         else:
             k = symbols(k)
 
-        # Always coerce entries to sympy.Eq so downstream code can rely on .lhs/.rhs
-        # Previously we only wrapped missing keys, which left existing items as raw expressions (e.g., Mul) without lhs/rhs and caused AttributeError later.
+        # Coerced so every entry has .lhs/.rhs, not just the ones this call created.
         equations[k_orig] = eq if isinstance(eq, Eq) else Eq(k, eq)
 
         # Coupling inputs (and time ``t``) are defined by the model spec, not missing specifications — excluding them keeps a fully-specified model from reaching into the ontology (an expensive, load-triggering lookup) just to resolve a symbol that is already known. The ontology is consulted only for genuinely unresolved symbols.
@@ -448,14 +438,12 @@ def update_equations(model):
                     case_sensitive=True,
                 )
                 if len(labelsearch) > 1:
-                    # print(labelsearch)
                     labelsearch = query.label_search(
                         str(s),
                         root_class=model.ontology,
                         exact_match="all",
                         case_sensitive=True,
                     )
-                    # print(labelsearch)
 
                 if not labelsearch:
                     continue
@@ -578,8 +566,7 @@ def sort_equations(model: Any, variable_type: str):
     model[variable_type].update(sorted_variables_metadata)
 
 
-# Slot aliases: YAML keys that map to canonical slot names.
-# Keeps YAML files readable (e.g. ``components:`` instead of ``modes:``) while the datamodel uses a single canonical attribute.
+# Readable YAML keys (`components:`) over the datamodel's single canonical attribute (`modes`).
 _DYNAMICS_SLOT_ALIASES = {
     "components": "modes",
 }
@@ -1961,8 +1948,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                     )
                 )
             elif var_name_str in self.state_variables:
-                # State variable directly as output - no transformation needed
-                # Don't add identity equation Eq(S, S) as it would overwrite the real state equation in the flat dict returned by get_equations()
+                # No identity Eq(S, S): it would overwrite the real state equation in get_equations().
                 pass
             else:
                 raise ValueError(f"Output variable '{var_name_str}' not found in derived_variables or state_variables")
@@ -2027,16 +2013,14 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                 # Convert SymPy Float to Python float for YAML serialization.
                 self.derived_parameters[k].value = float(eq.evalf())
             except (TypeError, ValueError):
-                # Array-valued / unresolved derived parameter: no load-time scalar;
-                # recomputed at runtime by the generated update_derived_parameters.
+                # Array-valued or unresolved: recomputed at runtime by update_derived_parameters.
                 self.derived_parameters[k].value = None
         return {k: self.derived_parameters[k].value for k in self.derived_parameters}
 
     def get_dependency_tree(self, ontomapping=False, include_state_equations=False):
         """Build the equation dependency graph for this model.
 
-        Nodes are the model's symbols; each edge points from a dependency to the quantity whose equation uses it (dependencies → dependents). State
-        equations are excluded by default to avoid cycles in discrete systems.
+        Nodes are the model's symbols; each edge points from a dependency to the quantity whose equation uses it (dependencies → dependents). The graph exists mainly to sort derived quantities, and state equations are excluded by default because a discrete system makes them cyclic: an algebraic derived variable depends on the states, and the states depend on that derived variable at the same step.
 
         Args:
             ontomapping: If `True`, also build an ontology-class version of
@@ -2050,8 +2034,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         """
         import sympy
 
-        # Build dependency graph primarily for sorting derived quantities.
-        # Exclude state-equations by default to avoid cycles in discrete systems (e.g., algebraic dv depending on states and states depending on dv at same step).
         eqs = self.get_equations(format="dict")
         eq_list = []
         for key in ["derived-parameters", "functions", "derived-variables"]:
@@ -2381,8 +2363,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             return imported_module
 
         elif format in ["bifurcation-numcont", "bifurcation-auto7p"]:
-            # Standalone in-tree AUTO-07p backend (no external `numcont` package).
-            # Builds a one-off SimulationExperiment wrapping this Dynamics and delegates to NumContAdapter.
+            # In-tree AUTO-07p: a one-off SimulationExperiment around this Dynamics, run through NumContAdapter.
             from tvbo.adapters.numcont import NumContAdapter
             from tvbo.classes.continuation import Continuation
             from tvbo.classes.experiment import SimulationExperiment
@@ -3092,11 +3073,13 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final""")
         return clone
 
     def __deepcopy__(self, memo):
+        """Deep-copy every declared field, not just those present in `__dict__`.
+
+        A dataclass field still holding its default may be absent from `__dict__`, so copying that alone would silently drop it.
+        """
         import dataclasses
 
         cls = self.__class__
-        # For dataclasses, we need to copy all fields, not just __dict__
-        # __dict__ may not include fields that are still at their default values
         data = {}
         if dataclasses.is_dataclass(self):
             for field in dataclasses.fields(self):

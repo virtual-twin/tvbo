@@ -4,6 +4,8 @@ Each printer subclasses a SymPy code printer and layers on TVBO's array-function
 primitives from `_ArrayFunctionPrinterMixin` (slicing, reductions, broadcasting), and per-backend syntax fixes. `get_printer` selects a printer by target format
 (`numpy`, `jax`, `julia`, `mtk`, `fortran`, `python`, `lems`, `sympy`), and
 `render_expression` is the high-level entry point that parses a string or SymPy expression and prints it for the chosen backend.
+
+Array-manipulation primitives are the ones SymPy cannot represent natively. Each is a handler `(printer, expr) -> code string` in `ARRAY_FUNCTION_PRINTERS`, shared by the NumPy and JAX printers so a new primitive is one dict entry rather than one per backend. A handler stays backend-agnostic by calling the printer's own rendering primitives — `_cat`, `_render_index`, `_slice_axis`, `_transpose`, `_reduce_axis`, `_shape` — which each printer implements for its own conventions: numpy and jax use Python's 0-based slicing, Julia 1-based and `end`-relative. Adding an operation is therefore one handler, plus one primitive override wherever a backend's syntax genuinely differs, and never the same string-building duplicated across printers.
 """
 
 import logging
@@ -21,9 +23,7 @@ from tvbo.parse.expression import parse_eq
 logger = logging.getLogger(__name__)
 
 
-# Array Function Printer Mappings
-# Maps the ARRAY_FUNCTIONS (defined in tvbo.parse.expression) to their target implementations for each output format. Printers use these via known_functions.
-
+# The ARRAY_FUNCTIONS of `tvbo.parse.expression` to their per-format implementations, consumed through `known_functions`.
 ARRAY_FUNCTION_MAPPINGS = {
     "jax": {
         # reductions
@@ -211,11 +211,6 @@ def print_Piecewise(Printer, expr, verbose=False):
     return result
 
 
-# Array-manipulation primitives that SymPy cannot represent natively. Each entry maps a function name to a handler ``(printer, expr) -> code string`` that emits the right call for the printer's array module (``printer._module``: np / jnp).
-# Shared by NumPyPrinter and JaxPrinter so a new primitive is one dict entry.
-# Handlers stay backend-agnostic: they call the printer's rendering *primitives* (``_cat``, ``_render_index``, ``_slice_axis``, ``_transpose``, ``_reduce_axis``,
-# ``_shape``, …), which each printer implements for its own conventions (numpy/jax:
-# Python 0-based slicing; Julia: 1-based ``end``-relative). Adding an op is one handler plus, where a backend's syntax differs, one primitive override — never per-backend string-building duplicated across printers.
 def _afp_concatenate(p, expr):
     args = list(expr.args)
     if args and args[-1].is_integer:
@@ -550,11 +545,12 @@ class _ArrayFunctionPrinterMixin:
         # numpy/jax: `take` with an int index array returns the index array's shape (a fancy-index gather). JuliaPrinter overrides for 1-based indexing.
         return f"{self._afn('take')}({base}, {idx})"
 
-    # --- graph-construction primitives (Procedural GraphGenerator DAG) ---------
-    # Expanded from the reduction/array primitives above wherever possible, so a backend that already implements those inherits these for free and only a genuinely different syntax needs an override.
+    # --- graph-construction primitives (Procedural GraphGenerator DAG) ---
     def _pairwise_distance(self, pos):
-        # ||p_i - p_j||: broadcast [n,1,d] against [1,n,d] and reduce the coordinate axis.
-        # Built from expand_dims rather than literal `[:, None, :]` slicing so the expansion carries no Python indexing syntax — a backend that spells broadcasting differently overrides `_expand_dims` alone instead of re-deriving the formula.
+        """`||p_i - p_j||`: broadcast `[n,1,d]` against `[1,n,d]` and reduce the coordinate axis.
+
+        Built from `_expand_dims` rather than a literal `[:, None, :]` slice, so the expansion carries no Python indexing syntax and a backend that spells broadcasting differently overrides `_expand_dims` alone instead of re-deriving the formula. That is the pattern for this whole group: expressed through the reduction and array primitives above, so a backend implementing those inherits these for free.
+        """
         rows = self._expand_dims(pos, 1)
         cols = self._expand_dims(pos, 0)
         return f"{self._afn('sqrt')}({self._afn('sum')}(({rows} - {cols})**2, axis=-1))"
@@ -835,9 +831,7 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
         if len(indices) >= max_dims:
             return base_name
 
-        # Need to add broadcasting dimensions
-        # Figure out which axes this indexed expr covers
-        covered_axes = set()
+        covered_axes = set()  # broadcasting dims are added for the axes this expr does not cover
         for idx in indices:
             if idx in index_positions:
                 covered_axes.add(index_positions[idx])
@@ -929,8 +923,6 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
                 result_dims = max_indices - 1
 
                 if result_dims < ctx_max_dims:
-                    # Need to add broadcasting dimensions
-                    # Figure out which axes the remaining indices cover
                     covered_axes = set()
                     for idx in remaining_indices:
                         if idx in ctx_positions:
@@ -948,9 +940,7 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
 
             return sum_code
         else:
-            # Multiple axes but not all: reduce over multiple specific axes
-            # Sort axes in descending order to reduce from back to front
-            axes_tuple = tuple(sorted(axes))
+            axes_tuple = tuple(sorted(axes))  # back to front, so earlier axis numbers stay valid
             return f"{self._module}.sum({self._print(result)}, axis={axes_tuple})"
 
 
@@ -981,9 +971,11 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         # Set while printing Piecewise branch bodies so domain-restricted powers are routed through NaNMath (see _print_Pow / _print_Piecewise).
         self._in_piecewise = False
 
-    # Route only the ops with a clean Julia form (slice/stride family + shape) through the shared handlers — which then call the Julia-overridden primitives below. Everything else (concatenate->vcat, transpose, reductions) defers to Julia's name-mappings, so existing
-    # Julia output never regresses. NOTE: bypass the mixin's catch-all _print_Function (which would route *every* registered op) by dispatching to the SymPy base directly.
     def _print_Function(self, expr):
+        """Route only the ops with a clean Julia form through the shared handlers.
+
+        The slice and stride family plus `shape` go through the mixin, which then calls the Julia-overridden primitives below. Everything else — `concatenate` to `vcat`, transposes, reductions — defers to Julia's own name mappings, so existing Julia output cannot regress. That means bypassing the mixin's catch-all `_print_Function`, which would route every registered op, by dispatching to the SymPy base directly.
+        """
         name = expr.func.__name__
         if name in _JULIA_HANDLED_OPS:
             return _ARRAY_FUNCTION_PRINTERS[name](self, expr)
@@ -1024,14 +1016,18 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
                 return "NaNMath.pow(%s, %s)" % (self._print(expr.base), self._print(exp))
         return spj.JuliaCodePrinter._print_Pow(self, expr)
 
-    # SymPy's JuliaCodePrinter does not implement IndexedBase by default; our templates occasionally introduce placeholder IndexedBase symbols (e.g. x_i, x_j) for clarity.
-    # For code-generation these act like ordinary scalar symbols, so we just emit the name.
-    def _print_IndexedBase(self, expr):  # noqa: D401
+    def _print_IndexedBase(self, expr):
+        """Emit a placeholder `IndexedBase` (`x_i`, `x_j`) as its bare name.
+
+        SymPy's `JuliaCodePrinter` does not implement `IndexedBase`. Templates introduce these for clarity, and for code generation they behave as ordinary scalar symbols.
+        """
         return str(expr)
 
-    # If an actual indexed object (e.g. A[i]) appears, convert to Julia's 1-based indexing.
-    # We assume symbolic indices start at 0 if produced by Python-centric logic; without concrete numeric indices we cannot safely +1 them, so leave symbolic indices unchanged.
     def _print_Indexed(self, expr):
+        """Convert a real indexed object such as `A[i]` to Julia's 1-based indexing.
+
+        A symbolic index is left alone: Python-centric logic produces 0-based indices, but without a concrete numeric value there is nothing safe to add one to.
+        """
         try:
             base = self._print(expr.base)
             inds = [self._print(i) for i in expr.indices]
@@ -1039,9 +1035,9 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         except Exception:
             return str(expr)
 
-    # --- Julia primitive overrides: 1-based, ``end``-relative, column-major indexing ---
-    # ``Piecewise`` reuses the shared ``print_Piecewise`` via this ``_where3`` override (numpy/jax -> ``<mod>.where``; Julia -> ``ifelse``), so no dedicated Julia Piecewise.
+    # --- Julia primitive overrides: 1-based, `end`-relative, column-major indexing ---
     def _where3(self, cond, a, b):
+        """Julia's `ifelse`, which is what lets `print_Piecewise` be shared rather than reimplemented."""
         return f"ifelse({cond}, {a}, {b})"
 
     def _minmax(self, name, args):
@@ -1053,10 +1049,7 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         return f"size({base}, {axis + 1})"
 
     def _mat_dot(self, a, b):
-        # Multi-mode contraction ``numpy.dot(X, M)``: X is a length-n_modes vector and
-        # M a Vector{Vector} of rows, so numpy's result[j] = sum_i X[i]*M[i][j].
-        # ``reduce(hcat, M)`` stacks the rows as columns (== Mᵀ), so
-        # ``reduce(hcat, M) * X`` reproduces that contraction as a mode vector.
+        # `dot(X, M)` is `result[j] = sum_i X[i]*M[i][j]`; `reduce(hcat, M)` is Mᵀ, so this reproduces it.
         return f"(reduce(hcat, {b}) * {a})"
 
     def _outer(self, a, b):
@@ -1146,13 +1139,11 @@ class MTKPrinter(JuliaPrinter):
     """
 
     def _print_Add(self, expr, order=None):
-        # Scalar-symbolic: plain +/- (base CodePrinter behaviour, bypassing
-        # JuliaPrinter's element-wise .+/.- override).
+        # Plain +/-, bypassing JuliaPrinter's element-wise .+/.- override.
         return spj.JuliaCodePrinter._print_Add(self, expr, order=order)
 
     def _print_Pow(self, expr):
-        # MTK builds Symbolics.jl expressions, which can't trace NaNMath.* calls;
-        # keep the plain symbolic ``^`` (bypassing JuliaPrinter's NaNMath routing).
+        # Symbolics.jl cannot trace NaNMath.* calls, so the plain symbolic `^` stays.
         return spj.JuliaCodePrinter._print_Pow(self, expr)
 
     def _print_Mul(self, expr):
@@ -1248,9 +1239,11 @@ class FortranPrinter(spf.FCodePrinter):
         settings.setdefault("contract", False)
         super().__init__(settings=settings)
 
-    # SymPy's FCodePrinter inlines symbolic constants like ``pi`` and ``E`` by emitting a ``parameter (pi = ...)`` declaration, which is invalid inside an expression context (e.g. ``F(1) = parameter (pi=...) pi*r``).
-    # Render them as plain double-precision literals instead.
     def _print_NumberSymbol(self, expr):
+        """Render `pi` and `E` as plain double-precision literals.
+
+        SymPy's `FCodePrinter` inlines them by emitting a `parameter (pi = ...)` declaration, which is not valid inside an expression: `F(1) = parameter (pi=...) pi*r`.
+        """
         return self._settings.get("precision_str", "%.17g") % float(expr) + "d0"
 
     _print_Catalan = _print_NumberSymbol
@@ -1375,8 +1368,7 @@ class LEMSPrinter(StrPrinter):
     # ── Piecewise → Heaviside product ─────────────────────────────────
 
     def _print_Piecewise(self, expr):
-        # LEMS has no ternary; use H(cond)*val summation as fallback.
-        # True branch last (otherwise case).
+        # LEMS has no ternary, so this is a H(cond)*val sum with the otherwise-branch last.
         from sympy import S as sympy_S
 
         terms = []
@@ -1552,8 +1544,7 @@ def render_expression(
         so generated code matches reference code operation-for-operation.
     """
     if isinstance(expression, str):
-        # Pass user_functions AND the array-op vocabulary to parse_eq so they're recognized as functions (else implicit multiplication splits e.g.
-        # pad(x) into pad*x).
+        # Both go to parse_eq as functions, else implicit multiplication splits `pad(x)` into `pad*x`.
         func_names = list(user_functions.keys()) if user_functions else []
         func_names += list(ARRAY_FUNCTION_MAPPINGS.get(format, {}).keys())
         # preserve_order: parse unevaluated + print order='none' so SymPy keeps the authored term order (float +/* are non-associative).
@@ -1643,8 +1634,7 @@ def _prepare_expr(equation, local_dict, user_functions, replace, remove, inline_
     if inline_funcs:
         expr = inline_functions(expr, inline_funcs)
 
-    # Model-defined functions must be registered so the printer emits ``f(x)``;
-    # printers already know ARRAY_FUNCTION_MAPPINGS.
+    # Registered so the printer emits `f(x)`; it already knows ARRAY_FUNCTION_MAPPINGS.
     uf = dict(user_functions) if isinstance(user_functions, dict) else {}
     if isinstance(local_dict, dict) and local_dict:
         for name, obj in local_dict.items():

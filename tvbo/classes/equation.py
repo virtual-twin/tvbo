@@ -1,13 +1,9 @@
-#  py
-#
-# Created on Fri Jan 05 2024
-# Author: Leon K. Martin
-#
-# Copyright (c) 2024 Charité Universitätsmedizin Berlin
-#
+# Copyright © 2024 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-# Handling Equations and Expressions
+"""Parse, substitute and sort the symbolic equations of a model.
+
+Wraps sympy with the conventions TVBO's models rely on: a `local_dict` that stops names like `e` and `I` being read as constants, coupling-term substitution against the ontology, and a topological sort of derived quantities.
 """
 
 import logging
@@ -71,8 +67,7 @@ def add_spaces_around_operators(expression):
     Returns:
         The expression with spaces added around single-character operators.
     """
-    # Pattern explanation:
-    # (?<!\*) : Negative lookbehind to ensure there's no * before the current character [\+\-\*/%] : Matches any of the operators +, -, *, /, % (?!\\*) : Negative lookahead to ensure there's no * after the current character
+    # The lookarounds keep `**` intact while spacing every single-character operator.
     pattern = r"(?<!\*)[\+\-\*/%](?!\*)"
     return re.sub(pattern, r" \g<0> ", expression)
 
@@ -229,8 +224,7 @@ def sympify_value(v, acronym="", evaluate=False):
     v = v.replace("numpy.", "").replace("np.", "") if v else ""
     v = unify_coupling_terms(v)
     eq = add_spaces_around_operators(v)
-    # If x_j is indexed, remove time-dimension from the expression
-    ## TODO: fix this in the ontology or find a better solution
+    # TODO: the ontology should carry this, rather than the time dimension being stripped here.
     if "x_j" in eq and "[:" in eq:
         _clash1.update(
             {
@@ -472,7 +466,6 @@ def replace_acronyms(key, cls):
     ):
         a = c.acronym.first() if hasattr(c, "acronym") else ""
         if a:
-            # print(a)
             key = key.replace(f"_{a}", "")
     return key
 
@@ -642,9 +635,7 @@ def sub_equation(eq, model):
         ValueError: If a symbol cannot be resolved to a model variable.
     """
     acr = ontology.get_model_acronym(model)
-    # Coupling inputs are looked up by their bare name (no model-acronym suffix).
-    # Derive them from the model so any coupling naming (c_glob, c_pop, …) works;
-    # the legacy literals are kept as a defensive fallback.
+    # Derived from the model so any coupling naming works; the literals are a defensive fallback.
     coupling_keep = set(ontology.get_model_coupling_terms(model).keys()) | {
         "local_coupling",
         "c_pop0",
@@ -660,7 +651,6 @@ def sub_equation(eq, model):
     }
     for s in eq.free_symbols:
         name = s.name + "_" + acr if s.name not in coupling_keep else s.name
-        # print(name)
         c_rhs = ontology.onto[name]
         if isinstance(c_rhs, type(None)):
             search = ontology.intersection(
@@ -729,7 +719,6 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
     if func_dict == "all":
         func_dict = symbolic_model_equations(model)
     sorting = symbolic_topological_sort(func_dict)
-    # print(sorting)
 
     acr = ontology.get_model_acronym(model)
     latex_equations = list()
@@ -750,7 +739,6 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
 
     for k in sorting:
         v = func_dict[k]
-        # print(k, v)
         c_lhs = ontology.onto[k + "_" + acr]
         if isinstance(c_lhs, type(None)):
             search = ontology.intersection(
@@ -761,7 +749,6 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
                 c_lhs = search[0]
             else:
                 raise ValueError(f"Could not find {k} in {model}")
-                # print(search)
 
         lhs = c_lhs.symbol.first()
         lhs = sp.symbols(lhs)
@@ -771,7 +758,6 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
 
         for s in v.free_symbols:
             name = s.name + "_" + acr if s.name not in coupling_keep else s.name
-            # print(name)
             c_rhs = ontology.onto[name]
             if isinstance(c_rhs, type(None)):
                 search = ontology.intersection(
@@ -790,7 +776,6 @@ def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
 
             if symb != s.name and not isinstance(symb, type(None)) and not symb == "":
                 sub.update({s.name: sp.symbols(symb.replace(" ", "_"))})
-        # print(sub)
         rhs = v.subs(sub)
         rhs = rhs.subs(sub)
         latex_rhs = latex(rhs, mul_symbol=mul_symbol)
@@ -829,7 +814,6 @@ def render_latex_equations(
     """
     NMM = ontology.get_model(model, verbose=False)
     CF = ontology.get_coupling_function(model, verbose=False)
-    # print(NMM, CF)
     if NMM and NMM in ontology.onto.NeuralMassModel.descendants():
         func_dict = {
             **symbolic_model_functions(model),
@@ -982,15 +966,11 @@ def generate_global_coupling_function(pre_expr, post_expr, j_index_start=0):
 
     # x_i, x_j, N, gx, g_ij = sp.symbols("x_i x_j N gx g_ij")
 
-    # Calculate gx as the sum of the 'pre' function
-    # gx_sum = sp.Sum(g[i, j] * pre_expr.subs({"x_j": x[j], "x_i": x[i]}), (j, 1, N))
     gx_sum = sp.Sum(
         g[i, j] * pre_expr.subs({"x_j": x[j], "x_i": x[i]}),
         (j, j_index_start, N - (1 - j_index_start)),
     )
 
-    # Substitute gx in the 'post' expression
-    # Keeping the summation in its original form
     post_with_gx = post_expr.subs({gx: gx_sum})
 
     # Return the expression without additional simplification
@@ -1055,12 +1035,6 @@ def topological_sort_equations(variable_dict, dependency_tree):
     # Perform topological sort and sort ties alphabetically
     sorted_variables = list(topological_sort(dependency_tree))
 
-    # sorted(
-    #     sorted_variables,
-    #     key=lambda x: (dependency_tree.in_degree(x), str(x)),
-    # )
-
-    # Create a sorted dictionary
     sorted_equations = {str(var): variable_dict[str(var)] for var in sorted_variables if str(var) in variable_dict}
 
     return sorted_equations
