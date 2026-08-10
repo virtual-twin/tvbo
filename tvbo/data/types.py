@@ -29,20 +29,18 @@ logger = logging.getLogger(__name__)
 
 
 def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
-    """Convert raw ndarray + metadata to xr.DataArray.
+    """A raw trajectory array, labelled as an `xr.DataArray`.
 
-    Parameters
-    ----------
-    raw_data : array-like or None
-        Raw simulation data (2D, 3D, or 4D).
-    raw_time : array-like or None
-        Time coordinate values.
-    state_names : list[str] or None
-        State variable names for the 'variable' coordinate.
+    Dimensions are taken in the order `time, variable, node, mode`, as many as the array has. A trailing `node` or `mode` axis of size 1 carries no information and is dropped, so selection yields a predictable shape and no consumer has to call `squeeze()`.
 
-    Returns
-    -------
-    xr.DataArray or None
+    Args:
+        raw_data: The 2-, 3- or 4-D trajectory, or None.
+        raw_time: Values for the time coordinate.
+        state_names: Names for the `variable` coordinate.
+        nodes: Labels for the `node` coordinate.
+
+    Returns:
+        The labelled array, or None when `raw_data` is None.
     """
     if raw_data is None:
         return None
@@ -51,8 +49,6 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
     data_np = np.asarray(raw_data)
     all_dims = ["time", "variable", "node", "mode"]
     dims = all_dims[: data_np.ndim]
-    # node and mode dims only exist when they actually carry information (size > 1).
-    # Trailing singleton dims are meaningless — drop them so selection always yields a predictable shape without any downstream squeeze() calls.
     while len(dims) > 2 and dims[-1] in ("node", "mode") and data_np.shape[len(dims) - 1] == 1:
         data_np = data_np[..., 0]
         dims = dims[:-1]
@@ -138,18 +134,23 @@ def _inner_dims(post_trial_shape, ts_arr, declared=None):
 
 
 def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None):
-    """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
+    """A parameter-grid-stacked array, labelled as an `xr.DataArray`.
 
-    Outer dims correspond to exploration axes (parameter names with their explored values as coords). When ``n_trials > 1`` and the leading inner
-    axis matches, a ``trial`` dim is inserted after the grid dims. Remaining inner dims follow the simulation convention ``(time, variable, node,
-    mode)``; the leading ``time`` dim is included only when ``intrinsic_ts`` carries a multi-step time vector matching the leading remaining shape,
-    so time-aggregated observations don't get a spurious ``time`` axis.
+    Outer dims are the exploration axes, coordinated by their explored values. With `n_trials > 1` and a matching leading inner axis, a `trial` dim follows them. The rest follow the simulation convention `(time, variable, node, mode)`, and the leading `time` dim appears only when `intrinsic_ts` carries a multi-step vector matching that shape — otherwise a time-aggregated observation would gain a spurious `time` axis.
 
-    ``cell_coords`` (``{axis_name: per_cell_values}``) marks a sharded run: the leading axis is a flat subset of grid points (one HPC array task's slice),
-    not the full Cartesian product. The result then gets a single ``point`` dim with each axis's value hung on it as a coordinate, so the shard is
-    self-describing and reassembles by parameter value across tasks.
+    A sharded run cannot use that layout: its leading axis is one HPC array task's flat subset of grid points, not the full Cartesian product, so there is no reshape into one dim per parameter. It gets a single `point` dim instead, with each axis's per-cell value hung on it as a non-dimension coordinate — which makes the shard self-describing and lets tasks reassemble by parameter value rather than by position.
 
-    ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the spec knows them (see :func:`_inner_dims`).
+    Args:
+        stacked_arr: The stacked payload, or None.
+        axes_info: The exploration axes, as dicts or objects carrying `name`, `explored_values` and `n`.
+        intrinsic_ts: Time vector for the per-cell payload.
+        n_trials: Number of trials per grid point.
+        name: Name for the resulting array.
+        cell_coords: `{axis_name: per_cell_values}` — present only for a shard, and what marks it as one.
+        dims: The payload's *declared* per-cell axis names; pass them whenever the spec knows them (see `_inner_dims`).
+
+    Returns:
+        The labelled array, or None when `stacked_arr` is None.
     """
     if stacked_arr is None:
         return None
@@ -170,7 +171,6 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
         if ax_vals is not None:
             grid_coords[ax_name] = np.asarray(ax_vals)
 
-    # Sharded / non-rectangular subset: the leading axis is a flat list of grid points, not the full Cartesian product, so it cannot be reshaped into one dim per parameter. Emit a single ``point`` dim and hang each axis's per-cell value on it as a (non-dimension) coordinate.
     _full_grid = bool(grid_sizes) and all(s is not None for s in grid_sizes) and arr.shape[0] == int(np.prod(grid_sizes))
     if cell_coords is not None or (grid_dims and not _full_grid):
         n_points = arr.shape[0]
@@ -201,8 +201,6 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
         all_dims = ["point"] + trial_dims + inner_dims
         return xr.DataArray(data=arr, dims=all_dims, coords=coords, name=name)
 
-    # Multi-axis 'product'-mode explorations come back with a flat leading dim of size prod(grid_sizes). Reshape into per-axis dims so the
-    # DataArray gets one named axis per parameter.
     if (
         len(grid_dims) > 1
         and arr.ndim >= 1
@@ -311,6 +309,8 @@ def reassemble_experiment_results(
 
     Returns:
         List of written paths (``<stem>.h5`` first, then ``<stem>.yaml``).
+
+    How the flat cell dimension becomes a grid depends on how many coordinates ride on it. Two or more is a multi-parameter sweep, pivoted into one dim per parameter so the grid is addressed by value and shard order is irrelevant. Exactly one is an ordering coordinate — a one-parameter sweep, or a branch restart's `branch_point` index — which is a flat ordered sequence and not a grid at all; sorting by it and swapping it in achieves the same order-independence, and `unstack` could not be used anyway because it needs a multi-index.
     """
     import glob
     import os
@@ -324,12 +324,8 @@ def reassemble_experiment_results(
     combined = xr.concat([xr.open_dataset(p, engine="h5netcdf") for p in paths], dim=point_dim)
     coord_names = [c for c in combined.coords if point_dim in combined[c].dims and c != point_dim]
     if len(coord_names) >= 2:
-        # Multi-parameter sweep: pivot the flat point dim into one dim per parameter, addressing the full rectangular grid by value (order-independent).
         grid = combined.set_index({point_dim: coord_names}).unstack(point_dim)
     elif len(coord_names) == 1:
-        # A single ordering coordinate (a one-parameter sweep, or a branch-restart's
-        # ``branch_point`` index) is a flat, ordered sequence — not a grid to pivot.
-        # Sort by it so shard order is irrelevant, then make it the dimension. (unstack needs a multi-index, so it cannot handle the single-coordinate case at all.)
         grid = combined.sortby(coord_names[0]).swap_dims({point_dim: coord_names[0]})
     else:
         grid = combined
@@ -362,14 +358,10 @@ class SimulationResult:
     Accepts both new-style (``data=xr.DataArray``) and legacy (``result=NativeSolution, state_names=[...]``) constructor signatures
     for backward compatibility with generated template code.
 
-    Attributes
-    ----------
-    data : xr.DataArray or None
-        Simulation data with named dims and coords.
-    observations : dict
-        Computed observations from this simulation (BOLD, FC, etc.).
-    transient : SimulationResult or None
-        Warm-up simulation result that preceded this one.
+    Attributes:
+        data: Simulation data with named dims and coords, or None.
+        observations: Computed observations from this simulation (BOLD, FC, and so on), held in a `Bunch` so both JAX and tvboptim results reach them by attribute — `result.observations.BOLD_TVB` — and not only by key. Each carries the axis names its reduction declared at codegen, bound to the same node labels the trajectory just got; this is the one place holding both.
+        transient: The warm-up simulation that preceded this one, or None.
     """
 
     def __init__(
@@ -399,8 +391,6 @@ class SimulationResult:
             data = _to_dataarray(data, None, state_names, nodes)
 
         self.data = data
-        # Normalize observations to Bunch so both JAX and tvboptim results have dot-access: result.observations.BOLD_TVB  (not just dict indexing).
-        # Observations carry the axis names their reduction declared at codegen, bound to the SAME node labels the trajectory just got — the one place holding both.
         _odims = observation_dims or {}
         if observations:
             self.observations = Bunch({k: _observation_dataarray(v, _odims.get(k), nodes) for k, v in observations.items()})
@@ -897,14 +887,11 @@ class OptimizationResult:
     def _flatten_params(state, prefix=""):
         """Flatten a (possibly nested) state to ``{dotted_name: ndarray}``.
 
-        Recurses into containers (dicts, objects) and returns array-like values as leaves. A leaf is anything exposing ``ndim`` — numpy and jax alike; a jax
-        array carries an empty ``__dict__``, so it is detected as a leaf here rather than recursed into as an empty container.
+        Recurses into containers (dicts, objects) and returns array-like values as leaves. A leaf is anything exposing `ndim` — numpy and jax alike; a jax array carries an empty `__dict__`, so it is detected as a leaf here rather than recursed into as an empty container. Anything implementing the JAX array protocol is a leaf too, which is what keeps a tvboptim `Parameter` or `BoundedParameter` from being taken apart into its `.low` and `.high`.
         """
         flat = {}
         if state is None:
             return flat
-        # Treat JAX-array-protocol objects (e.g. tvboptim Parameter,
-        # BoundedParameter) as leaf nodes — don't recurse into their internal attrs like .low / .high.
         if hasattr(state, "__jax_array__"):
             try:
                 arr = np.asarray(state.__jax_array__())
@@ -1124,34 +1111,19 @@ class ExplorationResult(Bunch):
     - **Time series results**: Each grid point produces a time series (e.g., model
       output). Stored as ``(n_grid, n_time, ...)``, with ``plot()`` support.
 
-    Attributes
-    ----------
-    name : str
-        Exploration name
-    grid : Space
-        Parameter grid specification (tvboptim Space object)
-    results : xr.DataArray
-        Observable values at each grid point (flat for scalars, multi-dim for time
-        series), carrying named dims: the leading run axis (the swept parameter,
-        ``trial``, or ``point``) followed by the intrinsic dims (time, variable,
-        node, mode). The payload stays JAX-native — only the labels are
-        materialised — and the shape is unchanged from what the backend emitted, so
-        it is addressed by key rather than by position. ``as_grid()`` reshapes the
-        flat run axis into one dim per exploration axis.
-    axes : list
-        List of axis info (Bunch with name, lo, hi, n, values)
-    observable : str
-        Name of observable computed
-    optimal : Bunch
-        Best point found (parameters, value, index) — only for scalar results
-    shape : tuple
-        Grid shape derived from axes
-    is_timeseries : bool
-        True if results contain time series per grid point
-    dt : float
-        Time step for time series results (optional)
-    output_names : list[str]
-        Names of output variables (e.g., ['v_pyr']) for time series results
+    Attributes:
+        name: Exploration name.
+        grid: Parameter grid specification (a tvboptim `Space`).
+        results: Observable values at each grid point — flat for scalars, multi-dimensional for time series — carrying named dims: the leading run axis (the swept parameter, `trial`, or `point`) followed by the intrinsic dims (time, variable, node, mode). The payload stays JAX-native, only the labels are materialised, and the shape is unchanged from what the backend emitted, so it is addressed by key rather than by position. `as_grid()` reshapes the flat run axis into one dim per exploration axis.
+        axes: Axis info, each a Bunch with name, lo, hi, n, values.
+        observable: Name of the observable computed.
+        optimal: Best point found (parameters, value, index) — scalar results only.
+        shape: Grid shape derived from the axes.
+        is_timeseries: Whether the results hold a time series per grid point.
+        dt: Time step for time-series results.
+        output_names: Names of the output variables, e.g. `['v_pyr']`.
+        cell_coords: `{axis: (n_point,) array}` of per-cell parameter values, present only when this result is one HPC array task's slice. It drives the flat `point`-dim labelling in `as_grid` and lets shards reassemble by value.
+        observations: `{name: xr.DataArray}` per grid point, with the grid axes prepended to each observation's intrinsic dims. Grid codegen already hands over labelled arrays; the warm-start and adiabatic paths hand over plain ones, which are labelled here against the swept axes — so the class honours its own contract whatever produced the payload, and plotting, save and reassembly all see DataArrays.
     """
 
     def __init__(
@@ -1174,11 +1146,7 @@ class ExplorationResult(Bunch):
         self.observable = observable
         self.dt = dt
         self.output_names = output_names or []
-        # Per-cell parameter values for a sharded run ({axis: (n_point,) array}).
-        # Present only when this result is one HPC array task's slice; drives the flat 'point'-dim labelling in ``as_grid`` and reassembly by value.
         self.cell_coords = cell_coords
-        # Per-grid-point observations as {name: xr.DataArray} with grid axes prepended to each observation's intrinsic dims (time/variable/node/mode).
-        # Grid codegen already hands over labelled DataArrays; the warm-start / adiabatic path hands over plain arrays, so label those here (against the swept axes) — the class honours its own contract regardless of producer, and every consumer (plotting, save, reassembly) sees DataArrays.
         self.observations = {
             k: (
                 _stacked_to_dataarray(v, self.axes, name=k, cell_coords=self.cell_coords)
@@ -1256,9 +1224,9 @@ class ExplorationResult(Bunch):
     def _intrinsic_dims(self, tail_shape, *, trial_first: bool = False):
         """Names + coords for the intrinsic dims that follow the leading run axis.
 
-        ``tail_shape`` is the payload shape after the run axis (the swept parameter, ``point``, or ``trial``). Returns ``(dims, coords)`` following
-        the TVB convention ``time[, variable][, node][, mode]``, optionally prefixed with a per-point ``trial`` axis. Single home for the labelling
-        rule so :meth:`_label_payload` and :meth:`as_grid` never disagree.
+        `tail_shape` is the payload shape after the run axis (the swept parameter, `point`, or `trial`). Returns `(dims, coords)` following the TVB convention `time[, variable][, node][, mode]`, optionally prefixed with a per-point `trial` axis. Single home for the labelling rule, so `_label_payload` and `as_grid` never disagree.
+
+        `variable` is the one dim that may be absent: tvboptim drops it for a single model output. It is only claimed when the leading spatial extent matches the output count, and the rest map to `(node, mode)`. With the output count unknown, `variable` is assumed present.
         """
         dims: list = []
         coords: dict = {}
@@ -1272,8 +1240,6 @@ class ExplorationResult(Bunch):
         dims.append("time")
         if self.dt:
             coords["time"] = np.arange(tail[0]) * self.dt
-        # tvboptim drops the `variable` dim for a single model output, so only label the leading spatial dim `variable` when it matches the output count; the rest map to (node, mode). Unknown output count → assume
-        # `variable` is present.
         spatial = tail[1:]
         n_out = len(self.output_names) if self.output_names else None
         if spatial and (n_out is None or spatial[0] == n_out):
@@ -1317,8 +1283,6 @@ class ExplorationResult(Bunch):
 
         if self.is_timeseries and ndim > 1:
             tail = data.shape[1:]
-            # A trials-only ensemble already spent its leading axis on `trial`;
-            # only a swept run carries a separate trial axis in the tail.
             trial_first = lead != "trial" and self._has_trial_axis(tail[0])
             intrinsic, intrinsic_coords = self._intrinsic_dims(tail, trial_first=trial_first)
             dims += intrinsic
@@ -1707,8 +1671,10 @@ def _free_param_names(source) -> set:
                 names.add(p.name)
 
     def _couplings(obj):
-        # network.coupling is a name->Coupling dict; experiment.coupling is a single
-        # Coupling. Accept dict / list / single object so either shape resolves.
+        """Every coupling in *obj*, whichever shape it arrives in.
+
+        `network.coupling` is a name-to-Coupling dict and `experiment.coupling` is a single object, so a dict, a list and a bare object all have to resolve.
+        """
         if obj is None:
             return []
         if hasattr(obj, "values"):
@@ -2026,14 +1992,27 @@ class ExperimentResult:
     def save(self, out_dir, compress: bool = True, record_only: bool = True):
         """Persist the run as one keyed HDF5 result plus a YAML provenance sidecar.
 
-        Writes ``<prefix>_result.h5`` — a single xarray ``Dataset`` where every output is a data-variable and the sweep parameters are shared coordinates
-        (a full run is gridded; a sharded run keeps the flat, self-describing
-        ``point`` dim that reassembles by value) — and ``<prefix>_result.yaml``, the frozen experiment spec. ``<prefix>`` is the experiment's BIDS-style
-        key-value name (``ses-<id>_desc-<label>``). The **same** artifact is produced by a local run and by the HPC gather pass, so they are
-        interchangeable. Returns the written paths.
+        Writes `<prefix>_result.h5` — a single xarray `Dataset` where every output is a data variable and the sweep parameters are shared coordinates (a full run is gridded; a sharded run keeps the flat, self-describing `point` dim that reassembles by value) — and `<prefix>_result.yaml`, the frozen experiment spec. `<prefix>` is the experiment's BIDS-style key-value name (`ses-<id>_desc-<label>`). The *same* artifact comes out of a local run and out of the HPC gather pass, so the two are interchangeable.
 
-        An on-device cohort run fans here into one per-subject result (see
-        :meth:`_save_per_subject`), mirroring the per-subject workflow fan-out.
+        Everything the run produced goes into that one Dataset, so `tvbo run` alone reproduces it:
+
+        - **Observations** are flattened by `_numeric_leaves` rather than `_numeric_da`, because an observation may be a nested pytree — a per-hemisphere wave metric, say — that `np.asarray` cannot take, and `_numeric_da` would drop whole and silently. For a plain array the two agree.
+        - **Continuation branches** stay in this Dataset rather than being dumped per figure. Each keeps its own uniquely renamed `step` dim so several branches and the sweep grid coexist, and the continuation parameter and observables become data variables.
+        - **Periodic-orbit branches** hanging off a Hopf point are nested under `__<po>__`, carrying each orbit's amplitude envelope and period, and its phase-resampled waveform as one 3-D variable when the engine reconstructed it.
+        - **Spiking rasters** from `_extras["spikes"]` become flat 1-D spike-time and neuron-index variables per population — each its own length — plus firing rates and population sizes on a shared `population` axis, with the run window in the Dataset attrs.
+        - **A plain forward run** with no sweep, observation, continuation or fit still has its trajectory in `integration.data`, which is persisted so the run produces a container rather than nothing. Guarded on there being nothing else, so it never displaces the above.
+
+        Two explorations in one experiment can each write a `<expl>__results` variable whose sweep dims share a name at different sizes, which `xr.Dataset` rejects; the colliding dim is renamed per variable. That fires only on a real conflict.
+
+        An on-device cohort run fans out here into one per-subject result — see `_save_per_subject` — mirroring the per-subject workflow fan-out.
+
+        Args:
+            out_dir: Directory to write into; created if absent.
+            compress: Whether to compress the HDF5 payload.
+            record_only: Persist only the observations the spec marked `record`.
+
+        Returns:
+            The written paths.
         """
         import os
 
@@ -2107,9 +2086,6 @@ class ExperimentResult:
             if obs_name not in keep_obs:
                 continue
             key = f"observation__{_san(obs_name)}"
-            # Flatten via _numeric_leaves, not _numeric_da: an observation may return a nested pytree (e.g. a per-hemisphere wave metric {lh:{...}, rh:{...}}), which
-            # _numeric_da drops whole (np.asarray(dict) raises → None → silently unsaved).
-            # For an array value _numeric_leaves yields the single leaf unchanged, so this is a superset — the same flattening already used for optimization fitted params.
             for var, da in _numeric_leaves(key, _unwrap_observation(obs)):
                 if var not in data_vars:
                     data_vars[var] = da
@@ -2163,9 +2139,6 @@ class ExperimentResult:
                     if da is not None:
                         data_vars[key] = da
 
-        # Continuation branches (bifurcation results) persist through the SAME native
-        # Dataset — no per-figure array dump. Each branch keeps its own ``step`` dimension (renamed unique) so multiple branches and the sweep grid coexist;
-        # the continuation parameter and observables become data variables.
         for cont_name, bifres in (self.continuations or {}).items():
             to_ds = getattr(bifres, "to_dataset", None)
             if not callable(to_ds):
@@ -2179,8 +2152,6 @@ class ExperimentResult:
                 if da.dtype != object:  # skip special-point label strings (HDF5 object dtype)
                     data_vars[f"continuation__{_san(cont_name)}__{_san(vname)}"] = da
 
-            # Child periodic-orbit branches (from a Hopf point) hang off the equilibrium branch in ``periodic_orbits`` and were previously dropped by the save, so a
-            # PO branch's amplitude envelope (max/min per state var) and period never reached the ``.h5``. Serialize each under a nested ``__<po>__`` name so the full bifurcation diagram (Fig-2 periodic branch, Fig-3A period divergence) is reproducible from ``tvbo run`` alone.
             for i, po in enumerate(getattr(bifres, "periodic_orbits", None) or []):
                 po_to_ds = getattr(po, "to_dataset", None)
                 if not callable(po_to_ds):
@@ -2195,8 +2166,6 @@ class ExperimentResult:
                     if da.dtype != object:
                         data_vars[f"continuation__{_san(cont_name)}__{po_name}__{_san(vname)}"] = da
 
-                # Orbit waveforms: the adapter attaches ``orbit_profiles`` ([n_steps, n_phase, n_vars], phase-resampled over one period) when the engine reconstructs them. Serialize as one 3-D var so every orbit's actual
-                # E(t)/x(t)/u(t) profile (Fig-3B morphologies, Fig-3C orbit) is reproducible.
                 prof = getattr(po, "orbit_profiles", None)
                 if prof is not None:
                     prof = np.asarray(prof, dtype=float)
@@ -2217,8 +2186,6 @@ class ExperimentResult:
                             prof, dims=[pdim, _pdim, _vdim], coords={_pdim: np.linspace(0.0, 1.0, prof.shape[1]), _vdim: _vn}
                         )
 
-        # Spiking backends (Brian2) carry a raster in ``_extras["spikes"]`` — persist it so a spiking run reproduces from the container: per-population spike times + neuron indices as flat 1D variables (each population its own length), plus the population firing rates and sizes on a shared ``population`` axis, and the run window in the Dataset attrs.
-        # General to any spiking run; guarded on the presence of spikes.
         _spk = self._extras.get("spikes")
         if _spk:
             _rates = self._extras.get("rates") or {}
@@ -2258,9 +2225,6 @@ class ExperimentResult:
                         np.asarray(arr, dtype=float), dims=[dim], coords={dim: tvals}
                     )
 
-        # Fallback: a pure forward simulation (no sweep, no declared observations, no continuation, no optimization) still carries its recorded trajectory in integration.data. Persist it so `tvbo run` reproduces a raw forward run — e.g. a
-        # NeuroML EPSP-train experiment — as a native container instead of writing nothing.
-        # Guarded on an otherwise-empty data_vars, so exploration/observation runs are untouched.
         if not data_vars and self.integration is not None:
             _idata = getattr(self.integration, "data", None)
             if _idata is not None and hasattr(_idata, "dims"):
@@ -2276,9 +2240,6 @@ class ExperimentResult:
         # A sharded run's cell coordinates mark it as one slice of the sweep; its provenance sidecar is written once by the gather pass, not per task.
         is_shard = any(getattr(e, "cell_coords", None) is not None for e in (self.explorations or {}).values())
 
-        # Several explorations in one experiment each write a `<expl>__results` variable;
-        # their sweep dims can share a name (`point`, `K[0]`, …) at different sizes, which
-        # `xr.Dataset` rejects. Rename the colliding dim per-variable so they coexist. Fires only on a real conflict, so single-exploration/single-sweep experiments are untouched.
         if len(data_vars) > 1:
             from collections import defaultdict
 
@@ -2337,8 +2298,7 @@ class ExperimentResult:
         """Write a BEP034 JSON metadata sidecar + a derivatives dataset_description.json.
 
         Complements the YAML re-run recipe with BIDS-standard JSON so the result is discoverable by pybids/BIDS tooling. The gridded HDF5 itself supersedes
-        emitting one BEP034 ``ts/`` file per sweep cell (a 15,600-cell grid would be
-        15,600 files); the sidecar records the model, integrator, and swept space so the mapping back to per-cell simulations is explicit.
+        emitting one BEP034 `ts/` file per sweep cell — a 15,600-cell grid would be 15,600 files — so the sidecar instead records the model, integrator and swept space for the whole grid, which is the metadata a per-cell file would have carried and makes the mapping back to individual simulations explicit.
         """
         import datetime as _dt
         import json as _json
@@ -2358,8 +2318,6 @@ class ExperimentResult:
             GeneratedAt=now,
             Software="tvbo",
         )
-        # Swept parameter space (the grid axes) — the metadata a per-cell BEP034
-        # ``ts/`` file would carry, aggregated for the whole grid.
         space = {}
         for expl in (getattr(exp, "explorations", None) or {}).values():
             for ax in getattr(expl, "space", None) or []:
@@ -2772,9 +2730,7 @@ class ExperimentResult:
             else:
                 observations[mon_name] = ts
 
-        # Build xr.DataArray from primary monitor
-        # TVB shape: (time, state_variables, nodes, modes) — keep mode dim
-        data_np = np.asarray(primary_xv)
+        data_np = np.asarray(primary_xv)  # TVB order is (time, variable, node, mode); the mode dim is kept
         dims = ["time", "variable", "node", "mode"][: data_np.ndim]
         coords = {
             "time": np.asarray(primary_tv),
@@ -2806,11 +2762,8 @@ class TimeSeries:
     def tree_flatten(self):
         """Flatten into JAX pytree (children, aux_data).
 
-        `sample_period` is a child (not aux) because it may hold a JAX tracer such as `state.dt` inside `jit`.
+        `network` and `sample_period` are both children rather than aux data. A network would put non-hashable arrays in the metadata, and `sample_period` may hold a JAX tracer such as `state.dt` inside `jit` — a tracer in `aux_data` raises `UnexpectedTracerError` on the next call.
         """
-        # Keep network as a child (not metadata) to avoid non-hashable/array metadata.
-        # sample_period must also be a child because it can be a JAX-traced value (e.g. state.dt inside jit); putting tracers in aux_data causes
-        # UnexpectedTracerError on repeated JIT calls.
         children = (self.time, self.data, self.network, self.sample_period)
         aux_data = (
             self.title,
@@ -3266,7 +3219,6 @@ class TimeSeries:
         if uses_modes:
             logger.info("Plotting only first mode by default")
 
-        # n_regions = self.data.shape[2]
         if "labels" in kwargs.keys():
             labels = kwargs.pop("labels")
         else:
@@ -4009,9 +3961,7 @@ class TimeSeries:
 
         region_labels = [str(label) for label in self.space_labels] if len(self.space_labels) else None
 
-        # 1. Export connectivity to net/ directory
-        # Use experiment's network if TimeSeries doesn't have one attached
-        network = self.network
+        network = self.network  # falling back to the experiment's when none is attached here
         if network is None and experiment is not None:
             network = getattr(experiment, "network", None)
         if include_connectivity and network is not None:
@@ -4149,8 +4099,6 @@ class TimeSeries:
             if not H5PY_AVAILABLE:
                 raise ImportError("h5py is required for HDF5 export. Install with: pip install h5py")
 
-            # Create HDF5 sidecar with full dimension info
-            # Filter out None values from labels_dimensions (e.g., Time may be None)
             dim_labels = {k: v for k, v in self.labels_dimensions.items() if v is not None} if self.labels_dimensions else None
             h5_sidecar = TimeSeriesHDF5Sidecar(
                 Description="Simulated time series - all state variables",
@@ -4352,82 +4300,6 @@ class TimeSeries:
         return output_dir
 
 
-# class TimeSeriesRegion(TimeSeries):
-#     """A time-series associated with the regions of a network."""
-
-#     # network = Attr(field_type=network.Connectivity)
-#     # region_mapping_volume = Attr(
-#     #     field_type=region_mapping.RegionVolumeMapping, required=False
-#     # )
-#     # region_mapping = Attr(field_type=region_mapping.RegionMapping, required=False)
-#     # labels_ordering = List(of=str, default=("Time", "State Variable", "Region", "Mode"))
-
-#     def summary_info(self):
-#         """
-#         Gather scientifically interesting summary information from an instance of this datatype.
-#         """
-#         summary = super(TimeSeriesRegion, self).summary_info()
-#         summary.update(
-#             {
-#                 "Source Connectivity": self.network.title,
-#                 "Region Mapping": (
-#                     self.region_mapping.title if self.region_mapping else "None"
-#                 ),
-#                 "Region Mapping Volume": (
-#                     self.region_mapping_volume.title
-#                     if self.region_mapping_volume
-#                     else "None"
-#                 ),
-#             }
-#         )
-#         return summary
-
-
-#         Parameters:
-#         - ts: Time series object with `ts.time`, `ts.data`, and `ts.network.centres`.
-#             `ts.data` has shape (time, state, region, mode).
-#         - plane: Projection plane ('sagittal', 'horizontal', 'axial').
-#         - state: Index of the state to select or None to aggregate across states.
-#         - mode: Index of the mode to select or None to aggregate across modes.
-#         - interval: Time interval between frames in milliseconds.
-#         - aggregation: Aggregation method ('mean', 'sum') if state or mode is None.
-#         """
-#         # Map plane to coordinates
-#         if plane == "sagittal":
-#             x, y = ts.network.centres[:, 1], ts.network.centres[:, 2]
-#         elif plane == "horizontal":
-#             x, y = ts.network.centres[:, 0], ts.network.centres[:, 1]
-#         elif plane == "axial":
-#             x, y = ts.network.centres[:, 0], ts.network.centres[:, 2]
-#         else:
-#             raise ValueError(
-#                 "Invalid plane. Choose from 'sagittal', 'horizontal', 'axial'."
-#             )
-
-
-#         # Initialize figure and axes
-#         fig, (ax, ax_ts) = plt.subplots(1, 2, layout="compressed", figsize=(8, 4))
-#         sc = ax.scatter(x, y, c=data[0], cmap="viridis", s=node_size, vmin=0, vmax=1)
-
-
-#         # Create evenly spaced colors from the viridis colormap
-#         colors = colormaps[cmap](np.linspace(0, 1, n_regions))
-
-#         # Initialize the time series plot for all regions
-#         lines = []
-#         for i, color in enumerate(colors):
-#             (line,) = ax_ts.plot(
-#                 [], [], color=color, label=f"Region {i+1}", **line_kwargs
-#             )
-#             lines.append(line)
-#         (avg_line,) = ax_ts.plot([], [], color="red", linewidth=2, label="Average")
-
-
-#         # Create animation
-# ani = FuncAnimation( fig, update, frames=len(time), interval=interval, blit=False
-#         )
-
-
 @register_pytree_node_class
 class SimulationState:
     """Bundled state passed to the integration backends for one simulation.
@@ -4470,10 +4342,8 @@ class SimulationState:
     def tree_flatten(self):
         """Flatten into JAX pytree (children, aux_data).
 
-        `nt` is kept as static aux_data so it stays concrete in shape/length contexts under jit/vmap.
+        `noise` is a child so fields like `sigma_vec` can take part in vmap batching. `nt` stays static aux data so it remains concrete under jit and vmap, where it is used in shape and length contexts such as `jnp.arange(0, nt)`.
         """
-        # Make `noise` a child so fields like sigma_vec can participate in vmap batching.
-        # Keep `nt` static (aux) to ensure it remains a concrete value under jit/vmap because we use it in shape/length contexts like jnp.arange(0, nt).
         children = (
             self.initial_conditions,
             self.network,

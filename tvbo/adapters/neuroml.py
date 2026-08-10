@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """NeuroML/LEMS adapter for SimulationExperiment.
 
-Renders a self-contained LEMS XML simulation file from any TVBO
-SimulationExperiment using a Mako template.  Every Dynamics model is exported as a custom LEMS ComponentType — no hardcoded mappings
-to built-in NeuroML cell types.
+Renders a self-contained LEMS XML simulation file from any TVBO `SimulationExperiment` through a Mako template. Every Dynamics model is exported as a custom LEMS ComponentType, so there are no hardcoded mappings onto built-in NeuroML cell types. Validation goes through PyLEMS (`lems.Model`); simulation through pyNeuroML (jnml).
 
-Validation is done via PyLEMS (``lems.Model``).
-Simulation can be run via pyNeuroML (jnml).
+**How a component reaches XML.** A role slot renders as `<key_name type="iri_type" .../>`; every other component slot as `<iri_type id="key_name" .../>`. A standard NeuroML type — one with an IRI but no equations — becomes a plain XML element, while a custom type with derived variables generates a LEMS `<ComponentType>` definition and is referenced by name.
+
+**Custom types over LEMS bases.** A dynamics tree using `iri: extends:base*` defines all of its equations explicitly rather than reaching for standard NeuroML biological types, and the generated ComponentTypes extend the LEMS base types so the type system still accepts them. Emitting one needs its base type's contract — the quantities it exposes and requires, its inherited parameters, and the Child/Children/Attachments slots it carries — which `_base_type_meta` returns for any NeuroML base type out of the ingested ontology in `neuroml_contracts.json`, with no per-type entry to maintain. `_BUILTIN_BASE_META` covers only the abstract cell, channel, gate and rate bases the standard biological emitter drives: NeuroML declares their synapse-hosting, gate-children and initial-value structure on concrete descendants such as `iafCell` and `ionChannelHH`, never on the abstract base, so the structure a custom cell, channel or gate emits is fixed here instead.
+
+Identifier minting (`safe_id`, `_unique_component_id`) lives in `tvbo.adapters.smallscale.lowering`, so every small-scale backend derives ids the same way.
 """
 
 from __future__ import annotations
@@ -257,10 +258,6 @@ def inline_model_functions(expr, dynamics, all_names):
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
-# ``safe_id`` and ``_unique_component_id`` moved to
-# ``tvbo.adapters.smallscale.lowering`` (imported above) — the shared small-scale core owns identifier minting so every backend derives ids the same way.
-
-
 def _dynamics_has_physical_units(params, svs, td_param_names=None):
     """Return True if any dynamics-relevant parameter or state variable has a non-dimensionless LEMS dimension (voltage, conductance, capacitance, etc.).
 
@@ -286,11 +283,9 @@ def _dynamics_has_physical_units(params, svs, td_param_names=None):
 
 
 def _dynamics_has_time_units(params, svs, dvs):
-    """Check if dynamics equations (TimeDerivatives) use time-dimensioned params.
+    """Whether the TimeDerivative equations use time-dimensioned parameters.
 
-    Only parameters directly referenced in TD equations — or in non-Piecewise
-    DerivedVariables that feed into TDs — count.  Parameters that appear *only* in Piecewise conditions (e.g. ``pulse_delay``, ``switch_time``) are timing /
-    stimulus parameters and do NOT indicate that the model equations carry physical time normalisation.
+    Only parameters referenced directly in a TD equation count, plus those reached through a non-Piecewise DerivedVariable that feeds one: such a DV contributes its parameters to the TD's value dimension. A parameter appearing *only* in a Piecewise condition — `pulse_delay`, `switch_time` — is a timing or stimulus parameter and says nothing about whether the equations carry physical time normalisation.
     """
     from tvbo.utils.units import unit_has_time_dimension
 
@@ -312,8 +307,6 @@ def _dynamics_has_time_units(params, svs, dvs):
         if _name_in(str(pname), td_text):
             td_params.add(str(pname))
 
-    # Expand through non-Piecewise DVs that are used in TD equations:
-    # if a DV feeds into a TD and is NOT Piecewise, its referenced params effectively contribute to the TD value dimension.
     for dv_name, dv in (dvs or {}).items():
         if not _name_in(str(dv_name), td_text):
             continue
@@ -457,13 +450,7 @@ def _nml_attr(param, default=""):
     return str(default)
 
 
-# ── Generic NeuroML tree walker ──────────────────────────────────────
-#
-# Role slots use "Pattern B": <key_name type="iri_type" attrs.../>
-# All other component slots use "Pattern A": <iri_type id="key_name" attrs...>
-#
-# Standard NeuroML types (with IRI but no equations) render as plain XML elements.  Custom types (with derived_variables) generate a LEMS
-# <ComponentType> definition and are referenced by type name.
+# ── Generic NeuroML tree walker ──
 
 _NML_ROLE_SLOTS = frozenset(
     {
@@ -1259,8 +1246,7 @@ EVENT_SOURCE_TYPES = frozenset(
 
 ALL_INPUT_TYPES = CURRENT_INPUT_TYPES | EVENT_SOURCE_TYPES
 
-# The NeuroML role vocabulary handed to the shared small-scale lowering: which resolved NeuroML types are current-injection sources vs event (spike) sources.
-# Anything else lowers to a cell population. A Brian2 backend supplies its own.
+# Which resolved NeuroML types the shared lowering treats as current-injection or event sources; anything else becomes a cell population. Brian2 supplies its own.
 _NEUROML_ROLE_VOCAB = {
     "current_input": CURRENT_INPUT_TYPES,
     "event_source": EVENT_SOURCE_TYPES,
@@ -1314,14 +1300,7 @@ def _render_event_children(dyn_obj, time_scale="ms", indent=8):
     return "\n".join(children)
 
 
-# ── Hierarchical custom LEMS context builder ─────────────────────────
-#
-# When a dynamics tree uses ``iri: extends:base*`` on its components, the user defines all equations explicitly (no standard NeuroML biological types).  The adapter generates custom ComponentTypes that extend the LEMS base types for type-system compatibility.
-#
-# Emitting a custom ComponentType needs its base type's contract: the quantities it exposes and requires, its inherited parameters, and the
-# Child/Children/Attachments slots it carries. ``_base_type_meta`` returns that contract for any NeuroML base type, grounded in the ingested NeuroML ontology (``neuroml_contracts.json``) — no per-type entry needed.
-#
-# ``_BUILTIN_BASE_META`` covers only the abstract cell/channel/gate/rate bases the standard biological emitter drives. NeuroML declares their synapse- hosting, gate-children and initial-value structure on concrete descendants (``iafCell``, ``ionChannelHH``, ...), not on the abstract base, so the canonical structure a custom cell/channel/gate emits is fixed here.
+# ── Hierarchical custom LEMS context builder ──
 
 _BUILTIN_BASE_META = {
     "baseCellMembPot": {
@@ -2077,8 +2056,7 @@ def _build_std_network_context(experiment):
 
     Mirrors the logic of ``_render_network_standard_neuroml_lems()`` but returns structured data instead of a rendered XML string.
 
-    Population nodes (``Node.size`` > 1) map to a single ``<population>`` of that many cells; Edges carrying a ``connectivity`` rule (e.g. ``all_to_all``) are
-    lowered into ``<projection>`` elements whose ``<connection>`` set is generated here from the rule and the population sizes.
+    Population nodes (`Node.size` > 1) map to a single `<population>` of that many cells. An Edge carrying a `connectivity` rule such as `all_to_all` is a population-to-population projection, lowered into a `<projection>` whose `<connection>` set is expanded here from the rule and the population sizes, with the self-projection diagonal filtered out; an Edge without a rule stays a single explicit cell-to-cell connection. Rule-expanded and segment-targeted connections take the `<projection>`/`<connection>` form, while plain explicit edges keep the flat `<synapticConnection>` one.
     """
     from collections import OrderedDict
 
@@ -2412,8 +2390,6 @@ def _build_std_network_context(experiment):
         if conn_class == "continuous":
             pre_component = f"silent_{syn_id}"
 
-        # ── allToAll lowering (shared) ──
-        # An Edge with a connectivity rule is a population-to-population projection expanded into individual cell-to-cell connections, with the self-projection diagonal filtered; without a rule it is one explicit cell-to-cell connection (the original per-cell edge semantics).
         for from_idx, to_idx, from_rule in expand_edge_connections(
             edge,
             src_pop=src_pop,
@@ -2503,8 +2479,6 @@ def _build_std_network_context(experiment):
     elec_conns = [c for c in connections if c["conn_class"] == "electrical"]
     cont_conns = [c for c in connections if c["conn_class"] == "continuous"]
 
-    # Chemical projection grouping. Rule-expanded (all_to_all) connections are emitted as <projection>/<connection> — the allToAll lowering — as are segment-targeted connections. Plain explicit edges keep the flat
-    # <synapticConnection> form.
     _SEG_KEYS = {"preSegmentId", "preFractionAlong", "postSegmentId", "postFractionAlong"}
     _has_seg_targeting = any(any(conn.get(sk) is not None for sk in _SEG_KEYS) for conn in chem_conns)
     _has_rule_chem = any(conn.get("from_rule") for conn in chem_conns)
@@ -2595,12 +2569,14 @@ def _build_std_network_context(experiment):
 def _build_network_context(experiment):
     """Extract multi-population network structure for LEMS rendering.
 
-    Inspects the experiment's network for explicit nodes, edges, and coupling definitions.  When present, builds the population, synapse,
-    connection, and input metadata needed by the LEMS templates.
+    Inspects the experiment's network for explicit nodes, edges and coupling definitions, and builds the population, synapse, connection and input metadata the LEMS templates need.
 
-    Returns None if the network is a simple single-population case (no explicit nodes/edges), otherwise returns a dict with keys:
-    ``populations``, ``synapses``, ``connections``, ``inputs``,
-    ``cell_types``.
+    Each node's role — cell, current input or event source — comes from its dynamics-library IRI through the shared vocabulary, and decides how it lowers. Current-injection sources are not populations: each becomes a standalone component plus an `explicitInput`, with node parameters overriding the library's, so nodes agreeing on every value share one component and nodes that differ get their own. Event sources such as `spikeGenerator` and `spikeArray` *are* populations, and use the standard type directly as their component rather than a generated ComponentType.
+
+    Edge parameters arrive as either `{weight: {value: 1.0}}` or `[{weight: ...}]`, and are split into connection-level parameters (weight, delay) and synapse-definition parameters, which keep their units. Edge lowering follows the same rule as `_build_std_network_context`. An input's ComponentReference target — a `poissonFiringSynapse`'s synapse — hangs off no node and no edge, so it is emitted here or the reference dangles; only wired inputs are emitted, so only those are checked.
+
+    Returns:
+        `None` for a simple single-population network with no explicit nodes or edges, otherwise a dict keyed `populations`, `synapses`, `connections`, `inputs` and `cell_types`.
     """
     from tvbo.classes.dynamics import Dynamics
 
@@ -2614,8 +2590,6 @@ def _build_network_context(experiment):
     if not nodes or not edges:
         return None
 
-    # ── Resolve dynamics for each node ──
-    # Build a dict of unique dynamics models and group nodes into populations
     default_dyn = experiment.dynamics
     dynamics_lib = getattr(network, "dynamics", None) or {}
 
@@ -2633,17 +2607,12 @@ def _build_network_context(experiment):
     groups = group_nodes_by_dynamics(nodes, getattr(default_dyn, "name", None) or "dynamics")
 
     for dyn_name, group_nodes in groups.items():
-        # Resolve the node role (cell / current-input / event-source) and its
-        # NeuroML type from the dynamics-library IRI, via the shared vocabulary.
         _dyn_lib_obj = dynamics_lib.get(dyn_name)
         _role, _nml_type = classify_node_role(dyn_name, _dyn_lib_obj, _NEUROML_ROLE_VOCAB)
         is_current_input = _role == "current_input"
         is_event_source = _role == "event_source"
 
         if is_current_input:
-            # Current injection sources are NOT populations.
-            # Each becomes a standalone component + explicitInput.
-            # Node parameters override the library's. Nodes agreeing on every value share a component; differing ones need their own.
             dyn_params = normalize_params(getattr(_dyn_lib_obj, "parameters", None))
             for node in group_nodes:
                 nid = getattr(node, "id", 0)
@@ -2669,8 +2638,6 @@ def _build_network_context(experiment):
             continue
 
         if is_event_source:
-            # Event sources (spikeGenerator, spikeArray) ARE populations.
-            # Use the standard type as component directly (not a custom CT).
             dyn_obj = dynamics_lib.get(dyn_name)
             integration = getattr(experiment, "integration", None)
             ts = str(getattr(integration, "time_scale", "ms") or "ms") if integration else "ms"
@@ -2780,8 +2747,6 @@ def _build_network_context(experiment):
         edge_coupling = getattr(edge, "coupling", None)
         edge_dynamics = getattr(edge, "dynamics", None)
 
-        # ── Extract ALL edge parameters ────────────────────────────────
-        # Supports both dict {weight: {value:1.0}} and list [{weight: ...}] formats.  Separates connection-level params (weight, delay) from synapse definition params (everything else, kept with their units).
         edge_params = normalize_params(getattr(edge, "parameters", None))
         weight = None
         delay = None
@@ -2862,8 +2827,6 @@ def _build_network_context(experiment):
             )
         syn_id = synapse_set[syn_key]
 
-        # ── allToAll lowering (shared) ──
-        # An Edge with a connectivity rule is a population-to-population projection expanded into individual cell-to-cell connections, with the self-projection diagonal filtered; without a rule it is one explicit connection.
         for from_idx, to_idx, _from_rule in expand_edge_connections(
             edge,
             src_pop=src_pop,
@@ -2886,11 +2849,6 @@ def _build_network_context(experiment):
                 }
             )
 
-    # ── Extract input specifications ──
-    # Current-source inputs have already been populated from edges above.
-    # Additional inputs from experiment.stimulation could be added here.
-
-    # An input's ComponentReference target (poissonFiringSynapse's synapse) hangs off no node or edge, so emit it here or the reference dangles. Only wired inputs are emitted, so only those are checked.
     wired_inputs = OrderedDict((inp["id"], inp) for inp in inputs)
     for inp in wired_inputs.values():
         refs = _component_references(inp["type"])
@@ -2955,23 +2913,19 @@ def _build_network_context(experiment):
 def build_lems_context(experiment):
     """Build the shared rendering context passed to all LEMS Mako templates.
 
-    Extracts and pre-computes every variable that LEMS templates need — model objects, name lists for safe SymPy parsing, expression helpers, and
-    integration/network scalars.  All templates receive this dict via
-    ``template.render(**build_lems_context(experiment))``.
+    Pre-computes every variable the templates need — model objects, name lists for safe SymPy parsing, expression helpers, and integration and network scalars. Templates receive it as `template.render(**build_lems_context(experiment))`.
 
-    Parameters
-    ----------
-    experiment : SimulationExperiment
+    **Resolving the top-level dynamics.** A network-only experiment has none, and gets an empty placeholder: its cell types live in `experiment.network.dynamics` and render separately. A bare `model: ModelName` reference that names a row in the TVBO database is loaded from it. A NeuroML or otherwise external reference — an `iri` starting with `neuroml:`, or a name the database does not hold — is left alone and emitted through the network template.
 
-    Returns
-    -------
-    dict
-        Keys: ``dyn``, ``dyn_id``, ``params``, ``svs``, ``dvs``, ``events``,
-        ``coupling_inputs``, ``coupling_meta``, ``coupling_params``,
-        ``coupling_pre_rhs``, ``coupling_post_rhs``, ``coupling_global``,
-        ``sv_names_set``, ``n_nodes``, ``dt``, ``duration``,
-        ``lems_expr`` (callable), ``_parse_piecewise`` (callable),
-        ``lems_dim`` (callable), ``safe_id`` (callable).
+    **Whether the equations need `/ SEC`.** Dimensionless state variables mean the TimeDerivative right-hand side is pure numerics, so it must be divided by SEC, a time constant, for `d(x)/dt` to come out as `per_time`. When every parameter and state variable instead carries a real LEMS dimension, LEMS converts natively — `tau="30 ms"` becomes 0.03 s internally — and dividing again would double-count. Parameter units alone do not settle it: a model may annotate `A = 3.25 mV` and `a = 0.1 per_ms`, as JansenRit does, without its equations being dimensionally consistent, which is why the test looks at the state variables. Real LEMS dimensions and symbols are used throughout so jNeuroML outputs SI; a YAML value is in model units and its symbol suffix is what tells LEMS how to convert.
+
+    **Spike events.** An event carrying both a condition and an affect — spike plus reset — renders as LEMS Regimes, integrating and refractory, rather than a flat `OnCondition`, matching the reference NeuroML execution model. A single-cell model keeps the flat form unless it declares a `refract` parameter, which follows NeuroML's own convention: `izhikevichCell` is flat where `adExIaFCell` and `iafRefCell` use a Regime with an explicit refractory period. The distinction matters because a Regime adds a one-timestep delay that drifts the phase of a flat-reference model. Network mode always uses Regimes, so `EventOut` is correct.
+
+    Args:
+        experiment: The experiment to render.
+
+    Returns:
+        The context dict, keyed `dyn`, `dyn_id`, `params`, `svs`, `dvs`, `events`, `coupling_inputs`, `coupling_meta`, `coupling_params`, `coupling_pre_rhs`, `coupling_post_rhs`, `coupling_global`, `sv_names_set`, `n_nodes`, `dt`, `duration`, and the callables `lems_expr`, `_parse_piecewise`, `lems_dim` and `safe_id`.
     """
     from sympy import Piecewise, S as sympy_S, Eq as sympy_Eq
     from sympy.functions.elementary.piecewise import piecewise_fold
@@ -2980,11 +2934,6 @@ def build_lems_context(experiment):
 
     dyn = experiment.dynamics
 
-    # Resolve top-level dynamics:
-    # - If None (network-only experiments), use an empty placeholder; cell
-    #   types live in experiment.network.dynamics and are rendered separately.
-    # - If a YAML `model: ModelName` reference (name only, no SVs/params)
-    # that exists in the TVBO database, load it. NeuroML/external refs (iri starting with 'neuroml:', or names absent from the DB) are left as-is and emitted via the network template.
     from tvbo.classes.dynamics import Dynamics
 
     if dyn is None:
@@ -3048,12 +2997,6 @@ def build_lems_context(experiment):
     # With abbreviation-based enum, ts_enum is already "s", "ms", "us" etc.
     time_scale = ts_enum if ts_enum in ("s", "ms", "us") else "ms"
 
-    # ── Determine whether equations need / SEC ──
-    # SEC scaling is needed when state variables are dimensionless.  In that case the TimeDerivative RHS is treated as pure numerics and must be divided by SEC (a time constant) so that d(x)/dt has dimension per_time.
-    #
-    # SEC scaling is NOT needed when all state variables with TDs carry physical units (e.g. mV, nA).  In that regime the equations are assumed to be fully dimensioned and / SEC would double-count.
-    #
-    # NOTE:  Parameter units alone are NOT sufficient to declare the model physically dimensioned — parameters may carry units as physical annotations (e.g. A=3.25 mV, a=0.1 per_ms in JansenRit) without the equations being dimensionally consistent.
     from tvbo.utils.units import unit_to_lems_dimension, unit_to_lems_symbol
 
     def _svs_have_physical_units(svs):
@@ -3075,8 +3018,7 @@ def build_lems_context(experiment):
     )
     fn_names = list((getattr(dyn, "functions", None) or {}).keys())
 
-    # ── PyLEMS reserved function names ──
-    # These names are hard-coded in PyLEMS's ExprParser and CANNOT be used as variable names in LEMS expressions.  If a model defines a derived variable (or other symbol) with one of these names, we must rename it.
+    # Hard-coded in PyLEMS's ExprParser, so a model symbol of the same name has to be renamed.
     _PYLEMS_RESERVED = {
         "exp",
         "log",
@@ -3139,8 +3081,6 @@ def build_lems_context(experiment):
                 return None
             cases = []
             for val, cond in expr.args:
-                # Exact-equality singularity guards (Eq(v, v0)) are numerically measure-zero and can trigger parser issues in some jLEMS builds.
-                # Drop them and keep the regular branch.
                 if getattr(cond, "func", None) is sympy_Eq:
                     continue
                 cond_str = None if cond == sympy_S.true else lems_expr(cond)
@@ -3153,33 +3093,21 @@ def build_lems_context(experiment):
     label = getattr(experiment, "label", None)
     sim_id = "sim_" + (safe_id(label) if label else dyn_id)
 
-    # ── Regime detection for spike events ──
-    # When an event has both condition and affect (e.g. spike + reset), render as LEMS Regimes (integrating/refractory) instead of flat
-    # OnCondition.  This matches the reference NeuroML execution model.
     regime_data = _build_regime_data(events)
 
     # ── Multi-population network context ──
     net_ctx = _build_network_context(experiment)
 
-    # For single-cell models (no network), use flat OnCondition UNLESS the model explicitly defines a ``refract`` parameter — mirroring the
-    # NeuroML convention where izhikevichCell uses flat OnCondition while adExIaFCell/iafRefCell use Regime with an explicit refractory period.
-    # Regime adds a one-timestep delay that drifts phase for flat-reference models.  Network mode always uses Regime for correct EventOut.
     has_refract_param = "refract" in params
     if regime_data and net_ctx is None and not has_refract_param:
         regime_data = None
 
-    # ── Dimension/symbol helpers ──
-    # Use real LEMS dimensions and symbols so that jNeuroML outputs SI.
-    # Parameter values in the YAML are in model units (e.g. -50 mV); the
-    # LEMS symbol suffix (e.g. "mV") tells LEMS how to convert to SI.
     def _lems_dim(unit):
         return unit_to_lems_dimension(unit)
 
     def _lems_sym(unit):
         return unit_to_lems_symbol(unit)
 
-    # needs_sec: whether TimeDerivative needs "/ SEC" to convert from model time to SI seconds.  When all parameters and state variables carry real LEMS dimensions, LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s internally), so / SEC would double-count.
-    # When any variable is dimensionless ("none"), the equations use raw numbers in model-time units, so / SEC provides the numeric scaling.
     _all_dimensioned = all(
         unit_to_lems_dimension(getattr(p, "unit", None)) != "none"
         for p in list(params.values()) + list(svs.values()) + list(dvs.values())
@@ -3249,9 +3177,7 @@ def build_lems_context(experiment):
             def _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names):
                 def ct_lems_expr(e):
                     e_str = str(e)
-                    # LEMS comparison operators (.gt., .lt., etc.) are not SymPy parseable;
-                    # return them as-is.
-                    if _LEMS_CMP_RE.search(e_str):
+                    if _LEMS_CMP_RE.search(e_str):  # a LEMS comparison operator is not SymPy-parseable
                         return e_str
                     if not isinstance(e, _SympyBasic):
                         e = parse_eq(e_str, parameters=ct_all_names, functions=ct_fn_names)
@@ -3377,8 +3303,6 @@ def build_lems_context(experiment):
                 if "v" in syn_contract.get("requirements", {}):
                     has_v_req = False
 
-                # Use real LEMS dimensions so jNeuroML outputs SI.
-                # Same rule as cells: a synapse whose gate equations carry dimensioned time constants (tauDecay, alpha) is already dimensionally complete and must not be divided by SEC.
                 syn_needs_sec = time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs)
 
                 def syn_lems_dim(u):
@@ -3417,8 +3341,7 @@ def build_lems_context(experiment):
         # Re-store with synapse contexts included
         ctx["cell_contexts"] = cell_contexts
 
-        # `synapse=` resolves against components, so a custom synapse must name its
-        # "<id>_inst" Component. Built-in synapses already are components.
+        # `synapse=` resolves against components, so a custom one must name its `<id>_inst`.
         custom_syn_ids = {sid for sid, sctx in cell_contexts.items() if sctx.get("is_synapse")}
         for conn in net_ctx.get("connections", []):
             if conn.get("synapse") in custom_syn_ids:
@@ -3696,34 +3619,22 @@ class NeuroMLAdapter(BaseAdapter):
     }
 
     def run(self, backend="jneuroml", **kwargs) -> "ExperimentResult":
-        """Run the LEMS simulation via a downstream simulator.
+        """Run the LEMS simulation through a downstream simulator.
 
-        Exports a self-contained monolithic LEMS file and executes it using one of the pyNeuroML runner functions.
+        Exports a self-contained monolithic LEMS file and executes it with one of the pyNeuroML runners.
 
-        Parameters
-        ----------
-        backend : str
-            Which simulator to use.  One of:
+        Where the output lands depends on the backend: jNeuroML and NEURON respect the path the LEMS file asks for (`results/*.dat`), while Brian2 and EDEN write to the working directory, so both are searched. A multi-population or multi-compartment run writes one file per population, each with its own columns; those are loaded in stem order — deterministic, and matching the order the `OutputFile` elements were emitted in — and their value columns concatenated. Column names come from the rendered LEMS `OutputColumn` quantities rather than being reconstructed, since those are what actually got written.
 
-            * ``'jneuroml'`` (default) — reference LEMS engine (Java)
-            * ``'neuron'``  — NEURON via jNeuroML
-            * ``'brian2'``  — Brian2 via jNeuroML
-            * ``'netpyne'`` — NetPyNE via jNeuroML
-            * ``'eden'``    — EDEN simulator
-        **kwargs
-            Passed through to ``render_code()`` for template rendering.
+        Args:
+            backend: Which simulator to use — `jneuroml` (the reference LEMS engine, in Java), `neuron`, `brian2`, `netpyne`, or `eden`. The middle three run through jNeuroML.
+            **kwargs: Passed through to `render_code()`.
 
-        Returns
-        -------
-        ExperimentResult
-            Simulation results loaded from output files.
+        Returns:
+            The simulation results, loaded from the output files.
 
-        Raises
-        ------
-        ValueError
-            If *backend* is not one of the supported names.
-        RuntimeError
-            If the downstream simulator fails.
+        Raises:
+            ValueError: If *backend* is not a supported name.
+            RuntimeError: If the downstream simulator fails.
         """
         import tempfile
         from pathlib import Path
@@ -3806,9 +3717,6 @@ class NeuroMLAdapter(BaseAdapter):
 
             self._invoke_runner(backend, lems_file, tmpdir)
 
-            # Different backends write output to different locations:
-            # jNeuroML/NEURON respect the LEMS path ("results/*.dat"),
-            # Brian2 and EDEN write to the working directory.
             dat_files = sorted(tmpdir.glob("results/*.dat"))
             if not dat_files:
                 dat_files = sorted(tmpdir.glob("*.dat"))
@@ -3820,8 +3728,6 @@ class NeuroMLAdapter(BaseAdapter):
                 time_data = raw[:, 0]
                 values_data = raw[:, 1:]
             else:
-                # Multi-population or multi-compartment: each file has its own columns.  Load all and horizontally concatenate value columns.
-                # Sort by stem to get deterministic order matching OutputFile order.
                 dat_by_stem = {f.stem: np.loadtxt(str(f)) for f in sorted(dat_files, key=lambda f: f.stem)}
                 first = next(iter(dat_by_stem.values()))
                 time_data = first[:, 0]
@@ -3856,8 +3762,6 @@ class NeuroMLAdapter(BaseAdapter):
                 values_data = np.column_stack(value_parts)
 
         if _is_std_network and _std_net_output_pops:
-            # Build column names from the rendered LEMS OutputColumn quantities
-            # — this is the most robust approach as it matches what was written.
             col_names = []
             try:
                 import xml.etree.ElementTree as _ET
@@ -3923,7 +3827,10 @@ class NeuroMLAdapter(BaseAdapter):
 
     @staticmethod
     def _invoke_runner(backend: str, lems_file, tmpdir):
-        """Call the appropriate pyNeuroML runner for *backend*."""
+        """Call the appropriate pyNeuroML runner for *backend*.
+
+        The NEURON and NetPyNE exports both need `NEURON_HOME` set so jNeuroML can find `nrnivmodl` to compile `.mod` files. Inside a venv the binaries live in `$VIRTUAL_ENV/bin`, so it is derived from where `nrniv` actually is when unset, and that directory is put on `PATH` — jNeuroML's `ProcessManager.findNeuronHome()` searches `PATH`.
+        """
         import os
         import sys
 
@@ -3932,8 +3839,6 @@ class NeuroMLAdapter(BaseAdapter):
         runner_name = NeuroMLAdapter._BACKENDS[backend]
         runner = getattr(pynml, runner_name)
 
-        # jNeuroML's NEURON and NetPyNE exports both need NEURON_HOME to locate nrnivmodl for .mod file compilation.
-        # When running inside a venv the binaries live in $VIRTUAL_ENV/bin, so we derive NEURON_HOME from the nrniv location if unset.
         env_patch = {}
         if backend in ("neuron", "netpyne") and "NEURON_HOME" not in os.environ:
             import shutil
@@ -3947,16 +3852,12 @@ class NeuroMLAdapter(BaseAdapter):
                     nrniv = str(candidate)
             if nrniv:
                 env_patch["NEURON_HOME"] = str(Path(nrniv).parent.parent)
-                # Ensure nrniv and nrnivmodl are on PATH for jNeuroML's
-                # ProcessManager.findNeuronHome() which searches PATH.
                 nrniv_dir = str(Path(nrniv).parent)
                 cur_path = os.environ.get("PATH", "")
                 if nrniv_dir not in cur_path.split(os.pathsep):
                     env_patch["PATH"] = nrniv_dir + os.pathsep + cur_path
 
-        # On macOS the JVM grabs foreground / bounces in the Dock even when
-        # -Djava.awt.headless=true is set.  -Dapple.awt.UIElement=true
-        # suppresses the Dock icon and foreground activation entirely.
+        # `-Djava.awt.headless` alone still bounces the JVM in the macOS Dock; UIElement does not.
         if sys.platform == "darwin":
             existing = os.environ.get("JDK_JAVA_OPTIONS", "")
             extra = "-Dapple.awt.UIElement=true"
@@ -3976,8 +3877,6 @@ class NeuroMLAdapter(BaseAdapter):
             if backend == "brian2":
                 success = NeuroMLAdapter._run_brian2(pynml, lems_file, tmpdir, old_argv)
             elif backend == "netpyne":
-                # jNeuroML's NetPyNE path fails for custom LEMS ComponentTypes:
-                # libNeuroML can't look up non-standard NeuroML2 components in the generated .net.nml.  We generate the scripts ourselves, compile the .mod files, patch the Python, and exec it.
                 success = NeuroMLAdapter._run_netpyne(pynml, lems_file, tmpdir, old_argv)
             else:
                 # Build kwargs — EDEN has a simpler API than jNeuroML runners.
@@ -4158,11 +4057,7 @@ class NeuroMLAdapter(BaseAdapter):
     def _run_brian2(pynml, lems_file, tmpdir, old_argv):
         """Run via Brian2 with workarounds for jNeuroML code-gen bugs.
 
-        jNeuroML's Brian2 exporter (as of v0.14.0) produces Python scripts with two known defects:
-        1. Empty ``if show_gui:`` blocks (IndentationError).
-        2. StateMonitor variable names incorrectly prefixed with the component id (e.g. ``'fhn_V'`` instead of ``'V'``).
-
-        We work around both by generating the script via jNeuroML, patching it, and executing it ourselves.
+        jNeuroML's Brian2 exporter (as of v0.14.0) emits Python with two defects: an empty `if show_gui:` block, which is an `IndentationError`, and StateMonitor variable names prefixed with the component id — `'fhn_V'` where the equations say `V`, which breaks both the monitor call and the result-array access. The script is generated through jNeuroML, patched for both, and executed here.
         """
         import re
         import sys
@@ -4196,9 +4091,7 @@ class NeuroMLAdapter(BaseAdapter):
             code,
         )
 
-        # Fix 2: jNeuroML prefixes component-id to variable names in
-        # StateMonitor calls and result-array accesses.  Replace
-        # '<id>_<var>' with just '<var>' — the equations use bare names.
+        # Fix 2: strip the component-id prefix, since the equations use bare names.
         code = re.sub(r"'(\w+?)_(\w+)'(\s*,\s*record=)", r"'\2'\3", code)
         code = re.sub(r"\.(\w+?)_(\w+)\[", r".\2[", code)
 
@@ -4223,10 +4116,7 @@ class NeuroMLAdapter(BaseAdapter):
             sys.argv = old_argv
 
 
-# NeuroML reference helpers
-#
-# Utilities for running reference NeuroML/LEMS examples via jNeuroML, comparing traces, and plotting results.  Previously lived in a standalone ``_nml_helpers.py`` doc-local script; moved here so that
-# ``from tvbo.adapters.neuroml import run_lems_example`` works everywhere (tests, notebooks, CI) without sys.path hacking.
+# Reference-example helpers: run a NeuroML/LEMS example, compare traces, plot the result.
 
 import contextlib as _contextlib
 import os as _os
@@ -4567,9 +4457,7 @@ def _run_lems_example(lems_file: str, cwd: _Path) -> dict[str, _np.ndarray]:
 
     outputs = _collect_outputs()
 
-    # Some canonical examples only define Display lines and no OutputFile.
-    # For those, auto-inject an OutputFile and rerun to extract traces.
-    if not outputs:
+    if not outputs:  # a Display-only example needs an injected OutputFile before traces exist
         src = cwd / lems_file
         probe_name = f"__tvbo_probe__{_Path(lems_file).name}"
         probe_path = cwd / probe_name
@@ -4909,8 +4797,7 @@ def plot_lems_comparison(
     if not displays:
         return
 
-    # Build auto.dat positional map: Display lines → column indices
-    # When no explicit OutputFile exists, jNeuroML writes Display quantities to auto.dat in order of appearance.
+    # Without an explicit OutputFile, jNeuroML writes Display quantities to auto.dat in order.
     auto_position = {}
     col_counter = 1  # col 0 is time
     for d in displays:
