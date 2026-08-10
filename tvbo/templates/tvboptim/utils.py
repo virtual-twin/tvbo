@@ -778,73 +778,81 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: Dic
     return overrides
 
 
-_WEIGHT_TRANSFORM_ENV = {
-    "W": "W = weights",
-    "M": "M = weights",
-    "W_min": "W_min = jnp.nanmin(weights)",
-    "M_min": "M_min = jnp.nanmin(weights)",
-    "W_max": "W_max = jnp.nanmax(weights)",
-    "M_max": "M_max = jnp.nanmax(weights)",
-    "W_rowsum": "W_rowsum = weights.sum(axis=1, keepdims=True)",
-    "W_colsum": "W_colsum = weights.sum(axis=0, keepdims=True)",
-    "W_rowsum_safe": "W_rowsum_safe = jnp.where(weights.sum(axis=1, keepdims=True) > 0, weights.sum(axis=1, keepdims=True), 1.0)",
-    "W_colsum_safe": "W_colsum_safe = jnp.where(weights.sum(axis=0, keepdims=True) > 0, weights.sum(axis=0, keepdims=True), 1.0)",
-    "L": "L = distances",
-}
-
-
 def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List[str]]:
     """Render `transforms:` targeting weight to JAX for inlining in the generated script.
 
-    Mirrors ``Network._apply_transform`` (same ``parse_eq`` + JaxPrinter path), so the code
-    the kit ships applies the declared transform byte-identically to the runtime — but
-    visibly, with pure ``jnp``, on the RAW weights the generated ``create_network`` is
-    handed. Keeps a frozen/standalone kit self-contained and tvbo-independent at run time:
-    raw SC stays in the network file, the transform stays declared in the spec, and the
-    exact op is in the script rather than hidden in tvbo runtime. This helper itself runs
-    only at render time (in the tvbo environment).
+    A transform is a `Function`, so both of its forms are lowered: an `equation:` renders
+    through the same expression resolver and primitive table the runtime evaluates
+    (`Network.transform_expression`, `tvbo.codegen.transforms`), and a `callable:` renders
+    as an import of that callable plus a call. The kit therefore applies the declared
+    transform exactly as the runtime does, but visibly, on the RAW weights the generated
+    `create_network` is handed — raw SC stays in the network file, the transform stays
+    declared in the spec, and the operation is in the script rather than hidden in the tvbo
+    runtime. This helper runs only at render time, inside the tvbo environment.
 
-    Returns ``(transforms, const_env)``: ``transforms`` is a list of
-    ``(jax_expr, matrix_env)`` where ``matrix_env`` recomputes matrix-derived symbols
-    (``W``, ``W_min`` …) from the current ``weights`` so sequential transforms compose;
-    ``const_env`` defines data-derived symbols (``L``, per-node parameter vectors) once.
+    Args:
+        network: The `Network` whose transforms are being lowered.
+
+    Returns:
+        A `(transforms, const_env)` pair. `transforms` is a list of
+        `(jax_expr, matrix_env)`; `matrix_env` rebinds matrix-derived primitives from the
+        current `weights` so a chain of transforms composes. `const_env` binds
+        data-derived symbols — `L`, per-node parameter vectors, imported callables — once.
+
+    Raises:
+        ValueError: If a transform equation names a symbol that is neither a primitive,
+            a declared per-node parameter, nor a substituted argument. Failing here beats
+            emitting an undefined name into a kit that only dies once it reaches a cluster.
+            Symbols are checked by base identifier, so a masked expression such as
+            `mean(W[W > 0])` is validated — and bound — as `W`.
     """
     import numpy as np
 
     from tvbo.codegen.code import render_expression
-    from tvbo.parse.expression import parse_eq
+    from tvbo.codegen.transforms import PRIMITIVES, emit_env
 
     node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
     transforms: List[Tuple[str, List[str]]] = []
     const_env: List[str] = []
     const_seen: Set[str] = set()
-    for t in getattr(network, "transforms", None) or []:
-        if getattr(t, "name", None) != "weight":
+
+    def _add_const(name: str, line: str) -> None:
+        if name not in const_seen:
+            const_env.append(line)
+            const_seen.add(name)
+
+    for t in network.transforms_for("weight"):
+        c = getattr(t, "callable", None)
+        if c is not None:
+            alias = f"_tf_{c.name}"
+            _add_const(alias, f"from {c.module} import {c.name} as {alias}")
+            args = "".join(
+                f", {n}={getattr(a, 'value', None)!r}"
+                for n, a in (getattr(t, "arguments", {}) or {}).items()
+            )
+            transforms.append((f"{alias}(weights{args})", []))
             continue
-        eq = getattr(t, "equation", None)
-        if eq is None:
-            continue
-        exp = parse_eq(eq)
+
+        exp = network.transform_expression(t)
         if exp is None:
             continue
-        args = {name: getattr(a, "value", None) for name, a in (getattr(t, "arguments", {}) or {}).items()}
-        subs = {s: args[str(s)] for s in exp.free_symbols if str(s) in args}
-        if subs:
-            exp = exp.subs(subs)
         expr = render_expression(exp, format="jax")
-        matrix_env: List[str] = []
-        for s in sorted(str(sym) for sym in exp.free_symbols):
-            if s in _WEIGHT_TRANSFORM_ENV:
-                if s == "L":
-                    if s not in const_seen:
-                        const_env.append(_WEIGHT_TRANSFORM_ENV[s])
-                        const_seen.add(s)
-                else:
-                    matrix_env.append(_WEIGHT_TRANSFORM_ENV[s])
-            elif s in node_vectors and s not in const_seen:
+        if "jsp." in expr:
+            _add_const("jsp", "import jax.scipy as jsp")
+        symbols = sorted({str(sym).split("[", 1)[0] for sym in exp.free_symbols})
+        matrix_env, data_env = emit_env(symbols, "weights", "distances")
+        for line in data_env:
+            _add_const(line.split(" = ", 1)[0], line)
+        for s in symbols:
+            if s in node_vectors:
                 vals = ", ".join(repr(float(v)) for v in np.asarray(node_vectors[s]).ravel())
-                const_env.append(f"{s} = jnp.asarray([{vals}]).reshape(-1, 1)")
-                const_seen.add(s)
+                _add_const(s, f"{s} = jnp.asarray([{vals}]).reshape(-1, 1)")
+            elif s not in PRIMITIVES:
+                raise ValueError(
+                    f"weight transform {getattr(t, 'name', '?')!r} references {s!r}, which is "
+                    f"neither a transform primitive nor a declared per-node parameter of this "
+                    f"network. Declare it as a Function argument, or add it to the network."
+                )
         transforms.append((expr, matrix_env))
     return transforms, const_env
 
