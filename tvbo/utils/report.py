@@ -66,10 +66,10 @@ def _as_prose(headers: Sequence[str], rows: Sequence[Sequence[str]], keep: Seque
         return ", ".join(r[keep[0]] for r in rows if r[keep[0]] not in _EMPTY_MARKERS)
 
     def _clause(row):
-        """``Exp 50 — Duration: 2000 ms``: the first column names the subject."""
+        """``Exp 50 (Duration: 2000 ms)``: the first column names the subject."""
         subject = f"{headers[keep[0]]} {row[keep[0]]}".strip()
         rest = ", ".join(f"{headers[j]}: {row[j]}" for j in keep[1:] if row[j] not in _EMPTY_MARKERS)
-        return f"{subject} — {rest}" if rest else subject
+        return f"{subject} ({rest})" if rest else subject
 
     return "; ".join(_clause(r) for r in rows) + "."
 
@@ -1728,6 +1728,19 @@ def experiment_table(experiments, shared_parameters=(), orient="auto", caption_o
     return table_or_prose(head, [[k] + [f.get(k, "") for f in facts] for k in keys[1:]])
 
 
+def experiment_title(experiment):
+    """An experiment's heading text, without the id the heading already carries.
+
+    Recipes commonly open a label with the experiment's own number, so the heading came
+    out as "Experiment 30: Exp 30 — FIC+EIB tuning". Six of Schirner2023's ten read that
+    way. Stripping the prefix also drops the dash the recipe used to attach it.
+    """
+    label = str(slot(experiment, "label", "") or "").strip()
+    ident = re.escape(str(slot(experiment, "id", "")))
+    stripped = re.sub(rf"^(?:exp(?:eriment)?\.?\s*){ident}\b\s*[-–—:.]*\s*", "", label, flags=re.IGNORECASE)
+    return stripped or label or "simulation"
+
+
 def settings_sentence(experiment):
     """The factual half of an experiment's paragraph, composed from what it declares.
 
@@ -1892,13 +1905,13 @@ def observation_table(experiments):
     shared = {k: v for k, v in per_row[0].items() if all(r.get(k) == v for r in per_row)}
 
     def _reduction(cells):
-        return " — ".join(part for part in (", ".join(f"{k}={v}" for k, v in cells[2] if k not in shared), cells[3]) if part)
+        return "; ".join(part for part in (", ".join(f"{k}={v}" for k, v in cells[2] if k not in shared), cells[3]) if part)
 
     table = table_or_prose(
         ["Observation", "Experiments", "Source", "Reduction"],
         [[cells[0], _id_text(ids), cells[1], _reduction(cells)] for cells, ids in rows.items()],
     )
-    notes = "\n\n".join(f"**{cells[0]}** — {cells[4]}" for cells in rows if cells[4])
+    notes = "\n\n".join(f"**{cells[0]}.** {cells[4]}" for cells in rows if cells[4])
     return Observations(table, ", ".join(f"{k} = {v}" for k, v in shared.items()), notes)
 
 

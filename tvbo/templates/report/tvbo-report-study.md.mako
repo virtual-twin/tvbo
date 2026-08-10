@@ -64,7 +64,7 @@ ${functions(family.base.model)}\
 % if report.slot(family.base.model, 'events', None):
 
 ${report.captioned(report.event_table(report.slot(family.base.model, 'events'), derivative_notation),
-                   f"Events of the {family.label} — stimuli, resets and the conditions that fire them.",
+                   f"Events of the {family.label}: stimuli, resets and the conditions that fire them.",
                    f"events-{report.slot(family.base.model, 'name', family.label)}", fmt, eqs)}\
 % endif
 
@@ -96,7 +96,7 @@ ${report.captioned(report.experiment_table(family.experiments, family.shared_par
                    f"experiments-{report.slot(family.base.model, 'name', family.label)}", fmt, eqs)}\
 % for exp in members:
 
-${heading}# Experiment ${report.slot(exp, 'id', '')} — ${report.slot(exp, 'label', '') or 'simulation'} {#${eqs.unique_anchor('sec-experiment-' + report.section_slug(report.slot(exp, 'id', '')))}}
+${heading}# Experiment ${report.slot(exp, 'id', '')}: ${report.experiment_title(exp)} {#${eqs.unique_anchor('sec-experiment-' + report.section_slug(report.slot(exp, 'id', '')))}}
 
 ${report.settings_sentence(exp)}
 % if report.slot(exp, 'description', None):

@@ -80,8 +80,8 @@ $\sigma^2$ for each independent source's variance:
 
 | | linear mix (used here) | rotation $\xi_B = \rho\xi_A + \sqrt{1-\rho^2}\,\xi_I$ |
 |---|---|---|
-| differential noise $\operatorname{Var}(I^{f}_A - I^{f}_B)$ | $(1-\rho)^2\,2\sigma^2$ — falls monotonically in $\rho$ | constant |
-| per-population amplitude $\operatorname{Var}(I^{f}_A)$ | $[\rho^2 + (1-\rho)^2]\,\sigma^2$ — U-shaped, minimal at $\rho = 0.5$ | constant |
+| differential noise $\operatorname{Var}(I^{f}_A - I^{f}_B)$ | $(1-\rho)^2\,2\sigma^2$, falling monotonically in $\rho$ | constant |
+| per-population amplitude $\operatorname{Var}(I^{f}_A)$ | $[\rho^2 + (1-\rho)^2]\,\sigma^2$, U-shaped with a minimum at $\rho = 0.5$ | constant |
 | realised A–B correlation | $\rho^2/[\rho^2 + (1-\rho)^2]$ | $\rho$ |
 
 So `covariance` sets the *mixing weight*, not the resulting correlation, and raising it
