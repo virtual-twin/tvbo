@@ -6,6 +6,10 @@ else:
 
 from sympy import Symbol
 from tvbo.codegen.code import get_printer
+from tvbo.templates.base.utils import safe_name
+
+# The emitted class name has to be a Python identifier; `label` is free text.
+stimulus_ident = safe_name(getattr(stimulus, 'label', None), fallback='Stimulus')
 
 # An authored `pycode` is the escape hatch for an expression TVBO cannot print, so it is
 # consulted BEFORE parsing — parsing first would raise on exactly the equations it exists
@@ -20,7 +24,7 @@ from tvb.datatypes.equations import Equation, TemporalApplicableEquation
 from tvb.basic.neotraits.api import Attr, Final
 from numpy import where
 
-class ${stimulus.label +'Equation'}(TemporalApplicableEquation):
+class ${stimulus_ident + 'Equation'}(TemporalApplicableEquation):
     """
     This is a custom Equation class generated from a template.
     ${stimulus.description}

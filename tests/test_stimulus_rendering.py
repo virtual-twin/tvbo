@@ -130,3 +130,34 @@ def test_an_equation_may_not_state_a_branch_as_a_where_call():
 
     with pytest.raises(ValueError, match="conditionals"):
         sympify_value(_OntologyEquation())
+
+
+# ── the emitted name is a Python identifier, whatever the label says ──────────
+
+
+@pytest.mark.parametrize(
+    "label, expected",
+    [
+        ("Pulse", "PulseEquation"),
+        ("Gaussian pulse", "Gaussian_pulseEquation"),
+        ("100 Hz drive", "_100_Hz_driveEquation"),
+        ("", "StimulusEquation"),
+        (None, "StimulusEquation"),
+    ],
+)
+def test_the_emitted_class_name_is_always_importable(label, expected):
+    """A label is free prose; a class name is Python grammar.
+
+    `label` carries a human title, so nothing stops it holding a space, a leading digit,
+    or nothing at all. Concatenating it into a `class` statement emitted a module that
+    would not parse, and the failure surfaced at import of the generated file rather than
+    at the spelling that caused it.
+    """
+    stimulus = _stimulus(rhs="amplitude")
+    stimulus.label = label
+
+    rendered = stimulus.render_code(format="tvb")
+    namespace: dict = {}
+    exec(rendered, namespace)  # noqa: S102
+
+    assert expected in namespace, sorted(n for n in namespace if n.endswith("Equation"))

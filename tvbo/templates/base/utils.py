@@ -5,6 +5,36 @@ Utilities for base templates.
 Extracts Python logic from Mako templates for cleaner, testable code.
 """
 
+import keyword
+import re
+
+
+def safe_name(name: str, fallback: str = "item") -> str:
+    """A spec string as a valid Python identifier, preserving case.
+
+    Names reach code generation from authored YAML — an event key, an exploration name, a
+    stimulus label — where nothing constrains them to Python's grammar. A generator that
+    concatenates one straight into a ``class`` or ``def`` emits a module that will not
+    parse, and the failure surfaces at import of the generated file rather than at the
+    spelling that caused it.
+
+    Case is preserved because identifiers are case-sensitive and result keys must match
+    the authored keys verbatim: ``res.explorations.C_sweep_fig3`` has to work for a YAML
+    entry named ``C_sweep_fig3``. A name that is already an identifier is returned
+    unchanged, so this only ever rewrites something that could not have worked.
+
+    The constraint belongs to Python, not to the schema, so it is applied here at the
+    boundary where Python is emitted rather than by narrowing what a recipe may say.
+    """
+    cleaned = re.sub(r"\W", "_", str(name or ""))
+    if not cleaned or cleaned.strip("_") == "":
+        return fallback
+    if cleaned[0].isdigit():
+        cleaned = f"_{cleaned}"
+    if keyword.iskeyword(cleaned):
+        cleaned = f"{cleaned}_"
+    return cleaned
+
 
 def get_coupling_terms(model):
     """Extract coupling inputs from model, separating global from local.

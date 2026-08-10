@@ -26,6 +26,7 @@ Design:
 </%doc>
 <%
 from tvbo.codegen import render_expression
+from tvbo.templates.base.utils import safe_name
 
 # Extract stimulus events from experiment context
 assert 'experiment' in context.keys(), "experiment required for stimulus template"
@@ -100,7 +101,7 @@ def _time_axis_distribution(event):
 % for event in stimulus_events:
 <%
     ev_name = str(event.name)
-    class_name = ev_name + 'Input'
+    class_name = safe_name(ev_name, fallback='Event') + 'Input'
     ev_params = dict(event.parameters) if event.parameters else {}
     ev_regions = list(getattr(event, 'nodes', None) or getattr(event, 'regions', None) or [])
     ev_weighting = list(getattr(event, 'weights', None) or getattr(event, 'weighting', None) or [])

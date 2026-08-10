@@ -1,5 +1,7 @@
 <%!
 import numpy as np
+
+from tvbo.templates.base.utils import safe_name
 %>
 <%include file="/tvbo-tvb-imports.py.mako" />
 <%include file="/tvbo-tvb-model.py.mako" />
@@ -56,7 +58,7 @@ def define_simulation(connectivity, simulation_length=${experiment.integration.d
         initial_conditions=initial_conditions,
         %if experiment.stimulation:
         stimulus=StimuliRegion(
-                    temporal=${experiment.stimulation.label+'Equation'}(),
+                    temporal=${safe_name(experiment.stimulation.label, fallback='Stimulus') + 'Equation'}(),
                     connectivity=connectivity,
                     weight=weight,
                     **stimulus_kwargs

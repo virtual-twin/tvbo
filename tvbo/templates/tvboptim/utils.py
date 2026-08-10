@@ -27,6 +27,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+from tvbo.templates.base.utils import safe_name as _base_safe_name
 from tvbo.utils import as_list
 
 
@@ -35,15 +36,8 @@ from tvbo.utils import as_list
 # =============================================================================
 
 
-def safe_name(name: str) -> str:
-    """Convert name to valid Python identifier (preserves case).
-
-    Python identifiers are case-sensitive, and result keys must match the
-    user's YAML keys verbatim so that ``res.explorations.C_sweep_fig3``
-    works for a YAML entry named ``C_sweep_fig3``. Only characters that
-    are invalid in identifiers (spaces, hyphens) are replaced.
-    """
-    return str(name).replace(" ", "_").replace("-", "_")
+#: One definition, shared with every other backend that has to emit an identifier.
+safe_name = _base_safe_name
 
 
 def get_attr(obj: Any, name: str, default: Any = None) -> Any:
