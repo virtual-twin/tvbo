@@ -91,11 +91,7 @@ def md_table(
     ``default``/``domain``/``flags`` values shows only the columns that carry
     information.
 
-    Always returns a table. A caller that would rather write a small grid as a
-    sentence calls [`table_or_prose`](#tvbo.utils.report.table_or_prose) instead;
-    the decision needs the caller's subject and keying to read correctly, and
-    [`read_md_tables`](#tvbo.utils.report.read_md_tables) is the documented inverse
-    of this function only while it renders a table.
+    Once the drop leaves fewer than two columns there is no table left to render, and what survives is written as a list of its values: a one-column float spends a number and a caption restating the heading above it. Collapsing a grid that still *has* columns is a different call — it needs the caller's subject and keying to read as a sentence — and is opt-in through [`table_or_prose`](#tvbo.utils.report.table_or_prose). [`read_md_tables`](#tvbo.utils.report.read_md_tables) is this function's inverse for everything it renders as a table.
 
     Args:
         headers: Column titles.
@@ -103,11 +99,10 @@ def md_table(
         aligns: Per-column alignment, ``'l'``/``'r'``/``'c'``; defaults to left.
         empty: Placeholder rendered for an empty cell in a kept column.
         col_cap: Width above which a column stops earning more of the page.
-        col_floor: Width below which a column stops giving it up, so a short
-            column keeps enough room to typeset its own cells.
+        col_floor: Width below which a column stops giving it up, so a short column keeps enough room to typeset its own cells.
 
     Returns:
-        The markdown table as a string: header, rule, and body rows.
+        The markdown table — header, rule, and body rows — or the surviving column's values as a list when fewer than two columns carry data.
     """
     n = len(headers)
     norm = [[("" if c is None else str(c)).strip() for c in row] for row in rows]
@@ -116,6 +111,8 @@ def md_table(
         return cell in _EMPTY_MARKERS
 
     keep = [j for j in range(n) if any(not _blank(r[j]) for r in norm)] if norm else list(range(n))
+    if len(keep) < 2:
+        return _as_prose(headers, norm, keep)
 
     aligns = list(aligns) if aligns else ["l"] * n
 
@@ -150,16 +147,9 @@ def table_or_prose(
 ) -> str:
     """Render a grid as a table, or as a sentence when it is too small to earn a float.
 
-    A numbered, captioned table announces to the reader that something has to be looked
-    up, and journals cap how many a paper may carry; a table holding two numbers spends
-    that budget on nothing. The threshold is `min_cells` values outside the key column,
-    and at least two rows — so a lone `| Term |` column collapses to its values, a single
-    declared event stops being a one-row float, and two experiments differing only in
-    duration become a clause. Anything larger stays a table.
+    A numbered, captioned table announces to the reader that something has to be looked up, and journals cap how many a paper may carry; a table holding two numbers spends that budget on nothing. The threshold is `min_cells` values outside the key column, and at least two rows — so a single declared event stops being a one-row float, and two experiments differing only in duration become a clause. Anything larger stays a table.
 
-    Opt-in, because the sentence reads correctly only where the first column names a
-    subject. A parameter block, a state-variable list or a scorecard has no such subject
-    and stays a table however small it is — call `md_table` for those.
+    Opt-in, because a multi-column sentence reads correctly only where the first column names a subject. A parameter block, a state-variable list or a scorecard has no such subject and stays a table however few rows it has — call `md_table` for those, which still declines to render a grid down to a single column.
 
     Args:
         headers: Column titles; the first names the subject of each clause.
@@ -2051,15 +2041,13 @@ def captioned(table, caption, anchor, format="markdown", anchors=None):
     Pass ``anchors`` (the report's :class:`Equations`) so tables share the equations'
     anchor namespace and a repeated model name cannot mint the same ``#tbl-`` twice.
 
-    Input that is not a table — what `table_or_prose` returns for a grid too small to
-    earn a float — passes through uncaptioned, because captioning prose would announce a
-    table the reader cannot see and, in LaTeX, number one that was never typeset.
+    Input that is not a table — what `table_or_prose` and `md_table` return for a grid with no float left in it — takes the caption as a lead-in sentence instead of a numbered label below, since numbering a float the reader cannot see would announce a table LaTeX never typeset. The caption still has to be *said*: the observations one carries every sampling setting the rows agree on, lifted out of the grid, so dropping it took those settings out of the report entirely.
     """
     text = str(table).strip()
     if not text:
         return ""
     if not text.startswith("|"):
-        return f"{table}\n"
+        return f"{caption}\n\n{text}\n"
     if format != "qmd":
         return f"{table}\n\n**Table.** {caption}\n"
     label = f"tbl-{_slug(anchor)}"

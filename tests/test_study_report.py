@@ -395,18 +395,39 @@ def test_a_grid_large_enough_stays_a_table():
     assert table_or_prose(["Event", "Type"], [["a", "1"], ["b", "2"], ["c", "3"]]).startswith("|")
 
 
-def test_md_table_always_renders_a_table():
-    """The shared primitive never collapses: 13 curated models are single-state.
+def test_a_one_row_table_still_renders_as_a_table():
+    """The shared primitive does not collapse on row count: 13 curated models are single-state.
 
-    `state_variable_table`, `param_table` and the scorecard have no subject column for a
-    sentence to name, and `read_md_tables` is documented as md_table's inverse.
+    `state_variable_table`, `param_table` and the scorecard have no subject column for a sentence to name, and `read_md_tables` is documented as md_table's inverse.
     """
     from tvbo.utils.report import md_table, read_md_tables
 
     one_row = md_table(["Parameter", "Value"], [["sigma", "0.01"]])
     assert one_row.startswith("|")
     assert read_md_tables(one_row)[0].rows == [{"Parameter": "sigma", "Value": "0.01"}]
-    assert md_table(["A", "B"], [["", ""], ["", ""]]).startswith("|")
+
+
+def test_a_grid_down_to_one_column_is_a_list_not_a_table():
+    """A one-column float spends a number and a caption restating the heading above it.
+
+    Column dropping gets there on its own: a coupling whose terms carry no value, unit or description leaves `| Term |` and nothing else.
+    """
+    from tvbo.utils.report import md_table
+
+    assert md_table(["Term", "Value"], [["$c_1$", ""], ["$c_2$", ""]]) == "$c_1$, $c_2$"
+    assert md_table(["A", "B"], [["", ""], ["", ""]]) == ""
+
+
+def test_prose_keeps_its_caption_as_a_lead_in():
+    """The observations caption carries the settings lifted out of the rows.
+
+    Dropping it on the prose path took `time_scale = ms` — chosen by nobody, stated nowhere else — out of the report entirely.
+    """
+    from tvbo.utils.report import captioned
+
+    out = captioned("Observation bold (Source: S).", "What each records. Throughout, time_scale = ms.", "obs", "qmd")
+    assert out == "What each records. Throughout, time_scale = ms.\n\nObservation bold (Source: S).\n"
+    assert "tbl-" not in out
 
 
 def test_experiment_ids_are_listed_in_numeric_order():
