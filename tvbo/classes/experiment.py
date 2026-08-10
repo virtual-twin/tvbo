@@ -453,7 +453,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             if not isinstance(self.stimulation, perturbation.Stimulus):
                 self.stimulation = _coerce(perturbation.Stimulus, self.stimulation)
-            self._fold_stimulation_into_events()
 
         # Resolve observations that reference a curated model by `iri` (e.g.
         # `iri: tvbo:BOLD_TVB`): merge the model's pipeline/parameters/class_reference
@@ -522,62 +521,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # ``__init__``; this is the one point every construction path reaches, so a
         # loaded integrator is populated exactly like a defaulted one.
         self.integration._populate_from_ontology()
-
-    def _fold_stimulation_into_events(self):
-        """Mirror a deprecated ``stimulation:`` singleton into ``events``.
-
-        ``stimulation`` and a stimulus ``Event`` describe the same thing, but only one of
-        them is the general form: ``events`` is keyed, so an experiment may hold several,
-        and it is the shape every backend but TVB reads. The singleton is kept for now so
-        recipes written against it keep working, and mirrored here so those recipes also
-        reach the backends that never learned to read it.
-
-        Mirrored, not moved: TVB renders a stimulus from ``stimulation`` alone, so clearing
-        the slot would quietly remove its stimulus support. The slot goes when that
-        template reads events.
-
-        ``noise`` does not carry over. It is the one Stimulus slot with no counterpart, and
-        no backend renders it — a stochastic event is instead a parameter whose
-        ``distribution`` declares ``axis: time``. Setting it warns rather than being
-        dropped in silence.
-        """
-        import warnings
-
-        stimulation = self.stimulation
-        warnings.warn(
-            "`stimulation:` is deprecated; declare a stimulus under `events:` instead, "
-            "which may hold several and is read by every backend. The singleton is "
-            "mirrored into `events` for now.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-        if getattr(stimulation, "noise", None) is not None:
-            warnings.warn(
-                "`stimulation.noise` is not rendered by any backend and is not carried "
-                "into the mirrored event. Declare a parameter whose `distribution` sets "
-                "`axis: time` for a stochastic stimulus.",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-
-        key = str(getattr(stimulation, "label", None) or "stimulus")
-        events = getattr(self, "events", None)
-        if events is None:
-            events = self.events = {}
-        if key in events:
-            return
-
-        carried = {
-            slot: getattr(stimulation, slot, None)
-            for slot in ("label", "description", "duration", "equation", "parameters")
-        }
-        carried["nodes"] = getattr(stimulation, "regions", None)
-        carried["weights"] = getattr(stimulation, "weighting", None)
-        events[key] = tvbo_datamodel.Event(
-            name=key,
-            event_type="stimulus",
-            **{slot: value for slot, value in carried.items() if value is not None},
-        )
 
     def _load_network_from_data_file(self):
         """Load network matrices from a companion data file (h5/zarr/yaml sidecar).
