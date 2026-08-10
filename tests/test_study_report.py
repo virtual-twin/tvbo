@@ -143,8 +143,7 @@ def _unnumbered(text):
     lookahead, so it silently reports whatever makes the assertion pass. The first
     version of this check did exactly that and could not fail.
     """
-    return [" ".join(m.group(1).split())[:60] for m in _BLOCK.finditer(text)
-            if not m.group(3) and "\\tag{" not in m.group(1)]
+    return [" ".join(m.group(1).split())[:60] for m in _BLOCK.finditer(text) if not m.group(3) and "\\tag{" not in m.group(1)]
 
 
 @pytest.fixture(scope="module")
@@ -330,8 +329,7 @@ def test_a_generated_equation_is_not_reported(tmp_path):
     from tvbo.utils.report import unrendered_equations
 
     qmd = tmp_path / "report.qmd"
-    qmd.write_text('# Methods\n\n```{python}\n#| echo: false\n'
-                   'print(STUDY.report("qmd"))   # emits $$\\dot{x} = -k x$$\n```\n')
+    qmd.write_text('# Methods\n\n```{python}\n#| echo: false\nprint(STUDY.report("qmd"))   # emits $$\\dot{x} = -k x$$\n```\n')
     assert unrendered_equations(qmd) == []
 
 
@@ -340,7 +338,7 @@ def test_the_reported_line_number_survives_a_stripped_cell(tmp_path):
     from tvbo.utils.report import unrendered_equations
 
     qmd = tmp_path / "report.qmd"
-    qmd.write_text('```{python}\na = 1\nb = 2\n```\n\n$$E = mc^2$$\n')
+    qmd.write_text("```{python}\na = 1\nb = 2\n```\n\n$$E = mc^2$$\n")
     assert unrendered_equations(qmd) == [(6, "E = mc^2")]
 
 
