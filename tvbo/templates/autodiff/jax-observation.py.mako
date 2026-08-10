@@ -231,6 +231,18 @@ from ${jax_module} import ${name} as ${name}
     step_names = [f.output or f"_step{i}" for i, f in enumerate(resolved_pipeline)]
     # Resolve temporal-sampling step counts once, backend-independently.
     sampling_overrides_map = build_sampling_overrides(resolved_pipeline, obs_sampling)
+    # One resolution of each step's arguments, shared by its definition and its call:
+    # a name in here is a signature parameter, one absent is bound from the TimeSeries.
+    pipeline_outputs = set(f.output for f in resolved_pipeline if f.output)
+    params_map = {
+        id(func): get_parameters(
+            func, pipeline_outputs,
+            obs_period=getattr(observation, 'period', None),
+            dt=dt,
+            sampling_overrides=sampling_overrides_map.get(id(func)),
+        )
+        for func in resolved_pipeline
+    }
     # Collect imports for this observation
     obs_imports = set()
     for func in resolved_pipeline:
@@ -254,7 +266,7 @@ _jax_${func.callable.name} = ${func.callable.name}  # Store reference to avoid r
 % endfor
 
 % for func in resolved_pipeline:
-${jaxfunc.generate_function(func, get_func_name(func))}
+${jaxfunc.generate_function(func, get_func_name(func), supplied=params_map[id(func)])}
 
 % endfor
 
@@ -276,8 +288,6 @@ def ${observation.name}(ts: TimeSeries, state=${_state_default}):
 
 % for i_step, func in enumerate(resolved_pipeline):
 <%
-    # Check if input is from pipeline outputs or if it's another observation (needs to be called)
-    pipeline_outputs = set([f.output for f in resolved_pipeline if f.output])
     _func_input = getattr(func, 'input', None)
 
     if _func_input:
@@ -302,12 +312,7 @@ def ${observation.name}(ts: TimeSeries, state=${_state_default}):
     else:
         input_name = 'ts'
 
-    params_dict = get_parameters(
-        func, pipeline_outputs,
-        obs_period=getattr(observation, 'period', None),
-        dt=dt,
-        sampling_overrides=sampling_overrides_map.get(id(func)),
-    )
+    params_dict = params_map[id(func)]
     # Build argument list: input + schema arguments
     args = [input_name]
     for arg_name, arg_value in params_dict.items():

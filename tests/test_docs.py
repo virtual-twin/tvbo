@@ -12,6 +12,7 @@ Run single doc: pytest tests/test_docs.py -k "Network" -v
 import json
 import os
 import glob
+import re
 import subprocess
 import sys
 import pytest
@@ -70,6 +71,24 @@ def has_python_cells(qmd_path: str) -> bool:
     return "```{python}" in content
 
 
+def is_eval_false(cell: dict) -> bool:
+    """Whether a notebook cell carries Quarto's ``#| eval: false`` directive.
+
+    Quarto renders such cells without running them, so they are free to show
+    illustrative code referencing names the page never defines. ``jupyter
+    execute`` knows nothing of the directive and would run them anyway, turning
+    a deliberately non-executable snippet into a spurious NameError.
+    """
+    if cell.get("cell_type") != "code":
+        return False
+    for line in cell.get("source", []):
+        if not line.lstrip().startswith("#"):
+            break
+        if re.match(r"\s*#\s*\|\s*eval\s*:\s*false\b", line, re.IGNORECASE):
+            return True
+    return False
+
+
 def get_doc_name(path: str) -> str:
     """Extract a readable name from the qmd path."""
     rel_path = Path(path).relative_to(DOCS_DIR)
@@ -107,8 +126,8 @@ def test_doc_executes(qmd_path, doc_name, docs_kernel):
     qmd_path = Path(qmd_path)
     doc_dir = qmd_path.parent  # Original doc directory for relative path resolution
 
-    # Convert qmd to ipynb in the doc's own directory (clean up after)
-    ipynb_path = qmd_path.with_suffix(".ipynb")
+    # Beside the doc for relative paths; pid-tagged so concurrent runs don't delete each other's.
+    ipynb_path = doc_dir / f"{qmd_path.stem}.{os.getpid()}.ipynb"
     try:
         result = subprocess.run(
             ["quarto", "convert", str(qmd_path), "--output", str(ipynb_path)], capture_output=True, text=True, cwd=str(doc_dir)
@@ -133,7 +152,7 @@ def test_doc_executes(qmd_path, doc_name, docs_kernel):
                 f"os.chdir({str(doc_dir)!r})\n",
             ],
         }
-        nb["cells"].insert(0, setup_cell)
+        nb["cells"] = [setup_cell] + [c for c in nb["cells"] if not is_eval_false(c)]
         with open(ipynb_path, "w", encoding="utf-8") as f:
             json.dump(nb, f)
 
@@ -145,6 +164,8 @@ def test_doc_executes(qmd_path, doc_name, docs_kernel):
         env.setdefault("XLA_PYTHON_CLIENT_ALLOCATOR", "platform")
         env.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
         env["JUPYTER_PATH"] = str(docs_kernel)
+        # Console scripts the docs shell out to (meson, ninja, jnml) live beside the interpreter.
+        env["PATH"] = os.pathsep.join([str(Path(sys.executable).parent), env.get("PATH", "")])
 
         result = subprocess.run(
             [jupyter_executable(), "execute", "--kernel_name", KERNEL_NAME, str(ipynb_path)],

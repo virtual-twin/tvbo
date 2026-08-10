@@ -962,6 +962,7 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
             spec_relpath, select = spec, key
         else:
             edir = out_dir / "spec" / key
+            edir.mkdir(parents=True, exist_ok=True)   # non-connectome freeze doesn't create it
             _sel = _bundle_selection(exp, bundle_select)
             bundle_root = (_bundle_dataset(exp, edir / "dataset", _sel)
                            if _sel is not None else None)

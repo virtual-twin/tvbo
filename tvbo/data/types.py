@@ -4210,7 +4210,7 @@ class TimeSeries:
         # Track all created files for summary
         created_files = {"net": [], "ts": [], "eq": [], "coord": []}
 
-        region_labels = list(self.space_labels) if len(self.space_labels) else None
+        region_labels = [str(label) for label in self.space_labels] if len(self.space_labels) else None
 
         # =====================================================================
         # 1. Export connectivity to net/ directory

@@ -181,13 +181,25 @@ class TestDatamodel:
         assert hasattr(dm, cls_name), f"tvbo_datamodel should have class '{cls_name}'"
 
     def test_namespace_size_bounded(self):
-        """Datamodel namespace shouldn't leak unbounded internals."""
+        """Datamodel namespace shouldn't leak unbounded internals.
+
+        Bounded on the *non-schema* names, not the total. The generated module's classes
+        and enums are its entire purpose and grow whenever the schema does — 264 of them
+        today against the 253 total this bound was written for — so a cap on the total
+        fires on the next legitimate class and teaches the reader to raise the number
+        rather than look at what grew. What pollution would actually look like is
+        generator internals: leaked modules, typing aliases, stray constants.
+        """
+        import inspect
+
         from tvbo.datamodel import tvbo_datamodel as dm
 
         public = [n for n in dir(dm) if not n.startswith("_")]
-        # Currently ~253 after the Algorithm multi-stage / composition-mode
-        # additions; flag if it grows much beyond that (unbounded pollution).
-        assert len(public) < 300, f"tvbo_datamodel has {len(public)} public names — check for namespace pollution"
+        boilerplate = sorted(n for n in public if not inspect.isclass(getattr(dm, n)))
+        modules = [n for n in boilerplate if inspect.ismodule(getattr(dm, n))]
+        assert len(boilerplate) < 60, (
+            f"tvbo_datamodel leaks {len(boilerplate)} non-class public names: {boilerplate}")
+        assert len(modules) <= 2, f"tvbo_datamodel leaks modules: {modules}"
 
     def test_pydantic_module_importable(self):
         from tvbo.datamodel import tvbopydantic

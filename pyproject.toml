@@ -141,7 +141,8 @@ docs = [
 # and its python/ front-end linked onto the environment. pip cannot place it, so
 # the extra covers the pip-installable half only — see docs/installation.md
 # ("AUTO-07p continuation") for the AUTO_DIR + path-link steps that complete it.
-auto7p = ["pycobi>=0.8.0"]
+# meson/ninja: numpy>=1.26 dropped distutils, so the f2py call in pyrates' get_run_func needs them.
+auto7p = ["pycobi>=0.8.0", "meson>=1.4.0", "ninja>=1.11.0"]
 
 # PyRates dynamical systems modeling + continuation (continuation needs auto7p)
 # networkx<=3.5: pyrates passes backend='fortran' to its ComputeGraph(MultiDiGraph);

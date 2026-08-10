@@ -15,7 +15,7 @@ For standalone mathematical functions, use base/function-def.mako directly.
 from tvbo.codegen import render_expression
 from tvbo.templates.base.utils import get_source_code, retime, time_series_inputs
 %>
-<%def name="generate_function(func, func_name)" filter="trim">
+<%def name="generate_function(func, func_name, supplied=())" filter="trim">
 <%
     # Collect parameters - split into required (no default) and optional (with default)
     params_required = []  # argument names with no default value
@@ -31,16 +31,17 @@ from tvbo.templates.base.utils import get_source_code, retime, time_series_input
                         value = f"'{value}'"
                     params[arg.name] = value
                 else:
-                    # No default: this argument IS the pipeline input, bound in the body.
                     params_required.append(arg.name)
     if getattr(func, 'equation', None) and hasattr(func.equation, 'parameters') and func.equation.parameters:
         for name, param in func.equation.parameters.items():
             if hasattr(param, 'value') and param.value is not None:
                 params[name] = param.value
     _kwargs = [f"{name}={value}" for name, value in params.items()]
-    # Only the pipeline branch binds no-default arguments in the body (they ARE its
-    # input); the callable and kernel branches still take them as positionals.
-    param_args = ', '.join(_kwargs)
+    # A no-default argument is a parameter when the call site supplies it (`supplied`),
+    # and the pipeline input bound from the TimeSeries in the body when it does not.
+    _in_signature = [name for name in params_required if name in supplied]
+    _bound_in_body = [name for name in params_required if name not in supplied]
+    param_args = ', '.join(_in_signature + _kwargs)
     signature_args = ', '.join(list(params_required) + _kwargs)
 
     # Store callable reference to avoid name collision
@@ -137,8 +138,8 @@ def ${func_name}(ts, ${signature_args}):
     # Check if transformation applies on time dimension (handle both string and enum)
     apply_on_dim = str(func.apply_on_dimension) if func.apply_on_dimension else None
     has_apply_on_time = apply_on_dim in ['time', 'DimensionType.time']
-    # `X` or the spec's own no-default argument, whichever the body actually reads.
-    inputs = time_series_inputs(['X'] + params_required, jax_code)
+    # `X` or the spec's own unsupplied argument, whichever the body actually reads.
+    inputs = time_series_inputs(['X'] + _bound_in_body, jax_code)
     time_code = retime(jax_code, inputs)
 %>
 def ${func_name}(ts, ${param_args}):

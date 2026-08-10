@@ -88,6 +88,7 @@ classes:
       - name
       - description
       - provenance
+      - part
     attributes:
       layout:
         range: string

@@ -23,7 +23,35 @@ slots:
         identifier: true
         description: "Globally unique identifier for the entity."
 
+    part:
+        range: ReportPart
+        ifabsent: "ReportPart(main)"
+        description: >-
+            Which part of a generated report this belongs in — the main Methods or
+            the supplementary material. Placement only: every experiment runs and
+            every figure renders regardless, so demoting one never changes what is
+            computed. It answers a different question from a replication's target
+            tier (how central a claim is) and from the source paper's own Fig/EDF
+            numbering (where *they* printed it), because our document may carry a
+            headline result's parameter dump in the SI, or relegate a figure the
+            paper printed up front. Defaults to ``main``, so a recipe that says
+            nothing keeps everything in the Methods.
+
 enums:
+    ReportPart:
+        description: >-
+            Where a declared item appears in a generated report. A study with many
+            near-identical experiments marks the routine ones ``supplementary``, so
+            the Methods carries the experiments that make the argument and the rest
+            stay a table row plus a paragraph in the SI.
+        permissible_values:
+            main:
+                description: "The main Methods, in full."
+            supplementary:
+                description: >-
+                    Supplementary material. The item still appears as a row in the
+                    Methods' experiment table, so the reader sees that it exists.
+
     NodeReconciliation:
         description: >-
             Strategy for aligning a sourced array's nodes to the consuming model

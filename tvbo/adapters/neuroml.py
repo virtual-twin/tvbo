@@ -4398,6 +4398,7 @@ class NeuroMLAdapter(BaseAdapter):
 # (tests, notebooks, CI) without sys.path hacking.
 # ---------------------------------------------------------------------------
 
+import contextlib as _contextlib
 import os as _os
 import shutil as _shutil
 import subprocess as _subprocess
@@ -4483,6 +4484,31 @@ class _LazyLemsExamples:
 LEMS_EXAMPLES = _LazyLemsExamples()
 
 
+@_contextlib.contextmanager
+def _lems_directory_lock(cwd: _Path):
+    """Serialise runs sharing a LEMS example directory.
+
+    A run clears ``results/`` before invoking jNeuroML and collects from it
+    afterwards, so two runs in the same directory delete each other's outputs.
+    The whole clear-run-collect sequence therefore holds an advisory lock. Where
+    ``fcntl`` is unavailable the lock is skipped, and concurrent callers must pass
+    distinct ``cwd`` themselves.
+    """
+    try:
+        import fcntl
+    except ImportError:
+        yield
+        return
+
+    cwd.mkdir(parents=True, exist_ok=True)
+    with open(cwd / ".tvbo-lems.lock", "w") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
+
+
 def run_lems_example(lems_file: str, cwd: str | _Path | None = None) -> dict[str, _np.ndarray]:
     """Run a LEMS XML file via jNeuroML and return {filename: array} for each .dat output.
 
@@ -4497,16 +4523,18 @@ def run_lems_example(lems_file: str, cwd: str | _Path | None = None) -> dict[str
     -------
     dict mapping output filename to (n_time, n_cols) numpy arrays.
     """
+    cwd = _Path(cwd) if cwd is not None else get_lems_examples_dir()
+    with _lems_directory_lock(cwd):
+        return _run_lems_example(lems_file, cwd)
+
+
+def _run_lems_example(lems_file: str, cwd: _Path) -> dict[str, _np.ndarray]:
+    """Run one LEMS file in *cwd*, which the caller has locked for exclusive use."""
     from pyneuroml import JNEUROML_VERSION
     import pyneuroml
 
     jar_dir = _Path(pyneuroml.__file__).parent / "lib"
     jar = jar_dir / f"jNeuroML-{JNEUROML_VERSION}-jar-with-dependencies.jar"
-
-    if cwd is None:
-        cwd = get_lems_examples_dir()
-
-    cwd = _Path(cwd)
 
     # Ensure results directory exists and clear stale outputs from prior runs.
     results_dir = cwd / "results"
@@ -5073,7 +5101,11 @@ def plot_lems_comparison(
     # Build ref lookup: quantity → (filename, col_idx)
     ref_lookup: dict[str, tuple[str, int]] = {}
     if output_cols:
+        # Only files the run actually produced; a declared OutputFile the backend
+        # never wrote must degrade to "no reference trace", not a KeyError below.
         for fname, qs in output_cols.items():
+            if fname not in ref_outputs:
+                continue
             for i, q in enumerate(qs):
                 ref_lookup[q] = (fname, i + 1)
     # For auto.dat fallback, use positional mapping

@@ -13,9 +13,21 @@ It is the same structure as the manuscript recipe's experiment 7.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from tvbo.classes.experiment import SimulationExperiment
+
+
+def squashed(script: str) -> str:
+    """The script with all whitespace removed, for asserting on call structure.
+
+    Generated Python is formatted before it is returned, so a long call is wrapped
+    across lines. Assertions about which arguments a call receives must therefore
+    not depend on where the formatter chose to break it.
+    """
+    return re.sub(r"\s+", "", script)
 
 pytest.importorskip("brian2")
 
@@ -274,8 +286,8 @@ class TestBrian2SparseConnectivity:
 
     def test_random_emits_sparse_synapses(self, script):
         # Real Synapses with connect(p=...) excluding autapses — not a (summed) hub.
-        assert "Synapses(ExcitatoryCell, ExcitatoryCell" in script
-        assert "connect(p=0.12, condition='i != j')" in script
+        assert "Synapses(ExcitatoryCell,ExcitatoryCell" in squashed(script)
+        assert 'connect(p=0.12,condition="i!=j")' in squashed(script)
 
     def test_conductance_delivered_postsynaptically(self, script):
         # Decaying conductance on the post-synaptic cell, incremented event-driven by on_pre.
@@ -810,8 +822,8 @@ class TestBrian2RecordedSynapseState:
 
     def test_emits_zero_delivery_clock_driven_probe(self, script):
         pname = "probe_STP_E_from_ExcitatoryCell_to_ExcitatoryCell"
-        assert f"{pname} = Synapses(ExcitatoryCell, _probe_sink" in script
-        assert f"{pname}.connect(i=[" in script and ", j=0)" in script
+        assert f"{pname}=Synapses(ExcitatoryCell,_probe_sink" in squashed(script)
+        assert f"{pname}.connect(i=[" in squashed(script) and ",j=0" in squashed(script)
         # clock-driven (recordable continuous trace), and it delivers NOTHING to the sink.
         assert "(clock-driven)" in script
         probe_on_pre = script.split(pname + " = Synapses")[1].split(")")[0]
