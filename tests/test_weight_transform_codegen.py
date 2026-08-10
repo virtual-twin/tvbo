@@ -95,8 +95,7 @@ def test_rendered_tvboptim_source_inlines_the_transform():
 def _apply_emitted(net, weights, distances=None):
     """Run the emitted const_env + per-transform env exactly as `create_network` does."""
     transforms, const_env = weight_transform_codegen(net)
-    scope = {"jnp": jnp, "weights": jnp.asarray(weights),
-             "distances": None if distances is None else jnp.asarray(distances)}
+    scope = {"jnp": jnp, "weights": jnp.asarray(weights), "distances": None if distances is None else jnp.asarray(distances)}
     for line in const_env:
         exec(line, scope)
     for expr, matrix_env in transforms:
@@ -117,8 +116,9 @@ def test_a_callable_transform_reaches_the_kit():
 
     W = np.array([[0, 2.0, 1.0], [4.0, 0, 3.0], [1.0, 5.0, 0]])
     net = Network.from_matrix(weights=W, lengths=np.zeros_like(W))
-    net.transforms = [Function(name="weight", callable=CallableRef(
-        module="tvbo.classes.network", name="normalized_graph_laplacian"))]
+    net.transforms = [
+        Function(name="weight", callable=CallableRef(module="tvbo.classes.network", name="normalized_graph_laplacian"))
+    ]
 
     transforms, const_env = weight_transform_codegen(net)
     assert len(transforms) == 1
@@ -136,10 +136,9 @@ def test_equation_parameters_are_substituted_like_the_runtime():
 
     W = np.array([[0, 2.0], [4.0, 0]])
     net = Network.from_matrix(weights=W, lengths=np.zeros_like(W))
-    net.transforms = [Function(name="weight",
-                               equation=Equation(rhs="W / k", parameters={"k": {"value": 4.0}}))]
+    net.transforms = [Function(name="weight", equation=Equation(rhs="W / k", parameters={"k": {"value": 4.0}}))]
 
-    (expr, _), = weight_transform_codegen(net)[0]
+    ((expr, _),) = weight_transform_codegen(net)[0]
     assert "k" not in expr
     assert np.allclose(_apply_emitted(net, W), np.asarray(net.weights_matrix))
 
@@ -185,10 +184,8 @@ def test_a_masked_expression_is_validated_by_its_base_symbol():
     Delay_Speed_Synchronization declares exactly that. Checking the raw free-symbol text
     rejected it as undeclared and refused to render the recipe at all.
     """
-    net = Network.from_matrix(weights=np.array([[0, 2.0, 0], [4.0, 0, 3.0], [0, 5.0, 0]]),
-                              lengths=np.zeros((3, 3)))
+    net = Network.from_matrix(weights=np.array([[0, 2.0, 0], [4.0, 0, 3.0], [0, 5.0, 0]]), lengths=np.zeros((3, 3)))
     net.add_transform("weight", "W / mean(W[W > 0])")
-    (expr, matrix_env), = weight_transform_codegen(net)[0]
+    ((expr, matrix_env),) = weight_transform_codegen(net)[0]
     assert "W = weights" in matrix_env
-    assert np.allclose(_apply_emitted(net, np.asarray(net.raw_weights_matrix)),
-                       np.asarray(net.weights_matrix))
+    assert np.allclose(_apply_emitted(net, np.asarray(net.raw_weights_matrix)), np.asarray(net.weights_matrix))

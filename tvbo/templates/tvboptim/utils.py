@@ -824,10 +824,7 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
         if c is not None:
             alias = f"_tf_{c.name}"
             _add_const(alias, f"from {c.module} import {c.name} as {alias}")
-            args = "".join(
-                f", {n}={getattr(a, 'value', None)!r}"
-                for n, a in (getattr(t, "arguments", {}) or {}).items()
-            )
+            args = "".join(f", {n}={getattr(a, 'value', None)!r}" for n, a in (getattr(t, "arguments", {}) or {}).items())
             transforms.append((f"{alias}(weights{args})", []))
             continue
 
