@@ -10,7 +10,6 @@ The fixture is Koller2024's 2-D sheet — the construction that motivated Tier 2
 also pin that a real paper's network is expressible without per-generator Python.
 """
 
-import numpy as np
 import pytest
 import sympy as sp
 
@@ -22,6 +21,7 @@ from tvbo.graph_generators.procedural import (
     seeded_steps,
 )
 
+
 # Koller2024 2-D sheet, exactly the construction in koller2024_networks.build_2d_sheet:
 # distance kernel -> stochastic connection mask -> column-normalise -> in-strength
 # gradient from two opposing Gaussians.
@@ -31,8 +31,7 @@ def _normal_field(mean):
 
 
 KOLLER_SHEET = {
-    "parameters": {"sigma": 10.0, "alpha": 2.0, "beta": 4.0,
-                   "nx": 30, "ny": 30, "x_extent": 140.0, "y_extent": 140.0},
+    "parameters": {"sigma": 10.0, "alpha": 2.0, "beta": 4.0, "nx": 30, "ny": 30, "x_extent": 140.0, "y_extent": 140.0},
     "steps": {
         # The layout is an ordinary named intermediate, not a special generator slot:
         # positions are produced by a primitive and referenced by name like anything else.
@@ -47,13 +46,10 @@ KOLLER_SHEET = {
         },
         "a_masked": {"equation": {"rhs": "a_ij * mask_ij"}},
         "a_normalized": {"type": "normalize", "of": "a_masked", "axis": 0},
-        "sink_pdf": {"type": "distribution_pdf", "of": "layout",
-                     "distribution": _normal_field([40.0, 40.0])},
-        "source_pdf": {"type": "distribution_pdf", "of": "layout",
-                       "distribution": _normal_field([100.0, 100.0])},
+        "sink_pdf": {"type": "distribution_pdf", "of": "layout", "distribution": _normal_field([40.0, 40.0])},
+        "source_pdf": {"type": "distribution_pdf", "of": "layout", "distribution": _normal_field([100.0, 100.0])},
         "grad_raw": {"equation": {"rhs": "sink_pdf - source_pdf"}},
-        "gradient_template": {"type": "minmax_rescale", "of": "grad_raw",
-                              "target_range": {"lo": -1, "hi": 1}},
+        "gradient_template": {"type": "minmax_rescale", "of": "grad_raw", "target_range": {"lo": -1, "hi": 1}},
     },
 }
 
@@ -135,8 +131,8 @@ def test_seed_dependence_is_transitive():
     """a_masked is not itself a draw, but it references the mask, so it is seeded."""
     seeded = seeded_steps(KOLLER_SHEET)
     assert "mask_ij" in seeded
-    assert "a_masked" in seeded          # via rhs `a_ij * mask_ij`
-    assert "a_normalized" in seeded      # via `of: a_masked`
+    assert "a_masked" in seeded  # via rhs `a_ij * mask_ij`
+    assert "a_normalized" in seeded  # via `of: a_masked`
 
 
 def test_geometry_stays_deterministic():
@@ -161,9 +157,10 @@ def test_partition_preserves_dag_order():
 
 
 def test_a_dag_with_no_randomness_has_an_empty_suffix():
-    spec = {"steps": {k: v for k, v in KOLLER_SHEET["steps"].items()
-                        if k in ("layout", "d_ij", "a_ij")},
-            "parameters": KOLLER_SHEET["parameters"]}
+    spec = {
+        "steps": {k: v for k, v in KOLLER_SHEET["steps"].items() if k in ("layout", "d_ij", "a_ij")},
+        "parameters": KOLLER_SHEET["parameters"],
+    }
     deterministic, stochastic = partition(spec)
     assert stochastic == []
     assert deterministic == ["layout", "d_ij", "a_ij"]
@@ -180,11 +177,13 @@ def test_a_sampler_inside_an_equation_step_is_still_seeded():
     Detection keys off the sampler HEAD, not the PRNG symbol's name, so the step is caught
     however its key argument is spelled (here a plain `anykey`).
     """
-    spec = {"steps": {
-        "raw": {"equation": {"rhs": "sample_normal(anykey, 0, 1, n_nodes, n_nodes)"}},
-        "scaled": {"equation": {"rhs": "raw * 2"}},
-        "geom": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
-    }}
+    spec = {
+        "steps": {
+            "raw": {"equation": {"rhs": "sample_normal(anykey, 0, 1, n_nodes, n_nodes)"}},
+            "scaled": {"equation": {"rhs": "raw * 2"}},
+            "geom": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
+        }
+    }
     deterministic, stochastic = partition(spec)
     assert stochastic == ["raw", "scaled"]
     assert deterministic == ["geom"]
@@ -192,9 +191,7 @@ def test_a_sampler_inside_an_equation_step_is_still_seeded():
 
 def test_sample_step_yields_the_draw_not_a_mask():
     """`sample` is the draw itself; `stochastic_mask` is a comparison over one."""
-    spec = {"steps": {"raw": {"type": "sample",
-                                "distribution": {"name": "Normal",
-                                                 "parameters": {"mean": 0.0, "std": 1.0}}}}}
+    spec = {"steps": {"raw": {"type": "sample", "distribution": {"name": "Normal", "parameters": {"mean": 0.0, "std": 1.0}}}}}
     expr = dict(build(spec))["raw"]
     assert expr.func.__name__ == "sample_normal"
     assert not isinstance(expr, sp.Rel)
@@ -207,9 +204,7 @@ def test_sample_selects_its_distribution_by_parameter_name():
     (RandomReservoir's `weight_distribution`) while the inline `distribution` states the
     family it falls back to.
     """
-    fields = {"type": "sample", "of": "wd",
-              "distribution": {"name": "Normal",
-                               "parameters": {"mean": 0.0, "std": 1.0}}}
+    fields = {"type": "sample", "of": "wd", "distribution": {"name": "Normal", "parameters": {"mean": 0.0, "std": 1.0}}}
     supplied = {"name": "Uniform", "parameters": {"lo": -1.0, "hi": 1.0}}
     assert dict(build({"steps": {"raw": fields}}))["raw"].func.__name__ == "sample_normal"
     chosen = dict(build({"parameters": {"wd": supplied}, "steps": {"raw": fields}}))["raw"]
@@ -221,11 +216,18 @@ def test_sample_rejects_an_of_that_names_an_intermediate():
     mistake — and silently falling back to the default family would build a plausible
     network from the wrong distribution without saying so."""
     with pytest.raises(ProceduralError, match="not from an array"):
-        build({"steps": {
-            "geom": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
-            "raw": {"type": "sample", "of": "geom",
-                    "distribution": {"name": "Normal",
-                                     "parameters": {"mean": 0.0, "std": 1.0}}}}})
+        build(
+            {
+                "steps": {
+                    "geom": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
+                    "raw": {
+                        "type": "sample",
+                        "of": "geom",
+                        "distribution": {"name": "Normal", "parameters": {"mean": 0.0, "std": 1.0}},
+                    },
+                }
+            }
+        )
 
 
 def test_an_undefined_layout_is_a_dangling_reference():
@@ -245,14 +247,22 @@ def test_unknown_step_type_is_rejected():
 def test_forward_reference_is_rejected():
     """Steps are ordered; referencing a later name is a recipe error, not a silent nan."""
     with pytest.raises(ProceduralError, match="not a previously-defined"):
-        build({"steps": {"a": {"type": "normalize", "of": "b", "axis": 0},
-                           "b": {"equation": {"rhs": "1"}}}})
+        build({"steps": {"a": {"type": "normalize", "of": "b", "axis": 0}, "b": {"equation": {"rhs": "1"}}}})
 
 
 def test_unknown_distribution_is_rejected():
     with pytest.raises(ProceduralError, match="no sampler"):
-        build({"steps": {"m": {"type": "stochastic_mask", "of": "n_nodes",
-                                 "distribution": {"name": "Cauchy", "parameters": {"scale": 1.0}}}}})
+        build(
+            {
+                "steps": {
+                    "m": {
+                        "type": "stochastic_mask",
+                        "of": "n_nodes",
+                        "distribution": {"name": "Cauchy", "parameters": {"scale": 1.0}},
+                    }
+                }
+            }
+        )
 
 
 def test_an_omitted_parameter_falls_back_to_the_families_standard_form():
@@ -261,43 +271,49 @@ def test_an_omitted_parameter_falls_back_to_the_families_standard_form():
     Erroring instead would reject the ordinary way these are written, and the deleted
     engine supplied exactly these defaults through its distribution constructors.
     """
-    expr = dict(build({"steps": {"m": {"type": "sample",
-                                       "distribution": {"name": "Normal",
-                                                        "parameters": {"std": 0.5}}}}}))["m"]
-    assert expr.args[2] == sp.Float(0.0)   # mean, defaulted
-    assert expr.args[3] == sp.Float(0.5)   # std, as given
+    expr = dict(build({"steps": {"m": {"type": "sample", "distribution": {"name": "Normal", "parameters": {"std": 0.5}}}}}))[
+        "m"
+    ]
+    assert expr.args[2] == sp.Float(0.0)  # mean, defaulted
+    assert expr.args[3] == sp.Float(0.5)  # std, as given
 
 
 def test_an_unknown_distribution_parameter_is_rejected():
     """A typo must not be dropped: the parameter it meant would take its standard form,
     so the draw would silently come from a different distribution than the spec states."""
     with pytest.raises(ProceduralError, match="has no parameter"):
-        build({"steps": {"m": {"type": "sample",
-                               "distribution": {"name": "Normal",
-                                                "parameters": {"mena": 0.5, "std": 1.0}}}}})
+        build(
+            {"steps": {"m": {"type": "sample", "distribution": {"name": "Normal", "parameters": {"mena": 0.5, "std": 1.0}}}}}
+        )
 
 
 def test_gaussian_is_the_same_family_as_normal_for_sampling():
     """`distribution_pdf` already accepts `Gaussian`; one spelling must not resolve on
     one step type and fail on another."""
     for family in ("Normal", "Gaussian"):
-        expr = dict(build({"steps": {"m": {"type": "sample",
-                                           "distribution": {"name": family}}}}))["m"]
+        expr = dict(build({"steps": {"m": {"type": "sample", "distribution": {"name": family}}}}))["m"]
         assert expr.func.__name__ == "sample_normal"
 
 
 def test_distribution_pdf_rejects_a_non_normal_family():
     with pytest.raises(ProceduralError, match="defined for Normal"):
-        build({"steps": {
-            "layout": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
-            "f": {"type": "distribution_pdf", "of": "layout",
-                  "distribution": {"name": "Exponential", "parameters": {"scale": 1.0}}}}})
+        build(
+            {
+                "steps": {
+                    "layout": {"equation": {"rhs": "grid_positions(2, 2, 1.0, 1.0)"}},
+                    "f": {
+                        "type": "distribution_pdf",
+                        "of": "layout",
+                        "distribution": {"name": "Exponential", "parameters": {"scale": 1.0}},
+                    },
+                }
+            }
+        )
 
 
 def test_minmax_rescale_requires_a_target_range():
     with pytest.raises(ProceduralError, match="target_range"):
-        build({"steps": {"g": {"type": "equation", "equation": {"rhs": "1"}},
-                           "r": {"type": "minmax_rescale", "of": "g"}}})
+        build({"steps": {"g": {"type": "equation", "equation": {"rhs": "1"}}, "r": {"type": "minmax_rescale", "of": "g"}}})
 
 
 def test_reserved_prng_parameter_name_is_rejected():
@@ -309,8 +325,7 @@ def test_reserved_prng_parameter_name_is_rejected():
     disabling the deterministic-prefix hoisting.
     """
     with pytest.raises(ProceduralError, match="reserved"):
-        build({"parameters": {"_prng_key": 1.0},
-               "steps": {"a": {"equation": {"rhs": "_prng_key * 2"}}}})
+        build({"parameters": {"_prng_key": 1.0}, "steps": {"a": {"equation": {"rhs": "_prng_key * 2"}}}})
 
 
 @pytest.mark.parametrize(

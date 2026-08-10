@@ -77,8 +77,8 @@ def test_declared_accelerator_pins_the_platform_before_import(tmp_path, accelera
     """Assert the contract, not the spelling: the emitted source is formatter-wrapped."""
     code = _render(tmp_path, f"execution:\n  accelerator: {accelerator}\n")
     pin = code.index("JAX_PLATFORMS")
-    assert "os.environ.setdefault(" in code[max(0, pin - 80):pin]
-    assert f'"{platform}"' in code[pin:pin + 80]
+    assert "os.environ.setdefault(" in code[max(0, pin - 80) : pin]
+    assert f'"{platform}"' in code[pin : pin + 80]
     assert pin < code.index("import jax"), "pin must precede the import"
 
 

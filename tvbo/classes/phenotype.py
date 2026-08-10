@@ -83,9 +83,12 @@ class Phenotype(tvbo_datamodel.Phenotype):
             inst._h5_path = str(h5_path)
         return inst
 
-    def to_file(self, path: str | os.PathLike,
-                values: Mapping[str, Sequence[float]] | None = None,
-                provenance_comment: str | None = None) -> None:
+    def to_file(
+        self,
+        path: str | os.PathLike,
+        values: Mapping[str, Sequence[float]] | None = None,
+        provenance_comment: str | None = None,
+    ) -> None:
         """Write the YAML descriptor + h5 companion to ``path``.
 
         Parameters
@@ -110,10 +113,7 @@ class Phenotype(tvbo_datamodel.Phenotype):
                 raise ValueError(f"Missing values for measure {m!r}")
             arr = np.asarray(values[m])
             if arr.shape != (len(self.subjects),):
-                raise ValueError(
-                    f"Measure {m!r}: expected shape ({len(self.subjects)},), "
-                    f"got {arr.shape}"
-                )
+                raise ValueError(f"Measure {m!r}: expected shape ({len(self.subjects)},), got {arr.shape}")
 
         # h5 path
         h5_name = self.data_file or (path.stem + ".h5")
@@ -147,10 +147,7 @@ class Phenotype(tvbo_datamodel.Phenotype):
         if self._values_cache is not None:
             return self._values_cache
         if not self._h5_path:
-            raise RuntimeError(
-                "Phenotype has no h5 companion path. Did you use "
-                "from_file(), or set data_file?"
-            )
+            raise RuntimeError("Phenotype has no h5 companion path. Did you use from_file(), or set data_file?")
         cache: dict = {}
         with h5py.File(self._h5_path, "r") as f:
             for m in self.measures:
@@ -163,10 +160,7 @@ class Phenotype(tvbo_datamodel.Phenotype):
         """Return one measure's array. Raises ``KeyError`` if missing."""
         vals = self.values
         if measure not in vals:
-            raise KeyError(
-                f"Measure {measure!r} not in this sidecar. "
-                f"Available: {list(vals)}"
-            )
+            raise KeyError(f"Measure {measure!r} not in this sidecar. Available: {list(vals)}")
         return vals[measure]
 
     def subject_index(self, subject_id: str) -> int:
@@ -184,6 +178,4 @@ class Phenotype(tvbo_datamodel.Phenotype):
     def __repr__(self) -> str:
         n_sub = len(self.subjects) if self.subjects else 0
         n_mea = len(self.measures) if self.measures else 0
-        return (f"Phenotype(dataset_id={self.dataset_id!r}, "
-                f"category={self.category!r}, "
-                f"n_subjects={n_sub}, n_measures={n_mea})")
+        return f"Phenotype(dataset_id={self.dataset_id!r}, category={self.category!r}, n_subjects={n_sub}, n_measures={n_mea})"

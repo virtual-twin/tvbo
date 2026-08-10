@@ -16,6 +16,7 @@ Adding a new backend = importing this module and calling
 discovery (`/api/v1/experiments/formats`, OntologyAPI), and the
 extension/UI dropdown all light up automatically.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
@@ -31,6 +32,7 @@ Importer = Callable[..., Any]
 @dataclass(frozen=True)
 class ExportFormat:
     """Descriptor for an export backend."""
+
     key: str
     label: str
     extension: str
@@ -65,10 +67,7 @@ def register(fmt: ExportFormat, *, overwrite: bool = False) -> ExportFormat:
     if not overwrite:
         for k in keys:
             if k in _REGISTRY:
-                raise ValueError(
-                    f"Export format key '{k}' is already registered "
-                    f"(by '{_REGISTRY[k].key}')."
-                )
+                raise ValueError(f"Export format key '{k}' is already registered (by '{_REGISTRY[k].key}').")
     for k in keys:
         _REGISTRY[k.lower()] = fmt
     return fmt
@@ -160,10 +159,7 @@ def resolve_by_extension(suffix: str) -> ExportFormat:
         raise ValueError(f"No export format registered for suffix {suffix!r}.")
     if len(matches) > 1:
         keys_ = sorted({f.key for f in matches})
-        raise ValueError(
-            f"Suffix {suffix!r} is ambiguous — claimed by: {', '.join(keys_)}. "
-            f"Pass an explicit format."
-        )
+        raise ValueError(f"Suffix {suffix!r} is ambiguous — claimed by: {', '.join(keys_)}. Pass an explicit format.")
     return matches[0]
 
 

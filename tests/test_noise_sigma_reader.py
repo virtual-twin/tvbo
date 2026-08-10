@@ -26,7 +26,7 @@ def _noise(**kw):
 def test_absent_noise_is_none_not_zero():
     """``None`` distinguishes "no noise declared" from an explicit zero amplitude."""
     assert noise_sigma(None) is None
-    assert noise_sigma(_noise(additive=True)) is None      # a block declaring no amplitude
+    assert noise_sigma(_noise(additive=True)) is None  # a block declaring no amplitude
     assert noise_sigma(_noise(parameters={"sigma": {"value": 0.0}})) == 0.0
 
 

@@ -64,10 +64,7 @@ def test_a_name_mentioned_only_in_prose_is_dropped():
     matching cannot tell them apart, and treating prose as a use kept ``Additive`` and
     ``Coupling`` imported into every generated TVB model.
     """
-    src = (
-        "from tvb.simulator.noise import Additive\n"
-        '\nx = NArray(doc="Additive coefficient for the second state-variable")\n'
-    )
+    src = 'from tvb.simulator.noise import Additive\n\nx = NArray(doc="Additive coefficient for the second state-variable")\n'
     assert "import Additive" not in prune_unused_imports(src)
 
 
@@ -117,10 +114,7 @@ def test_never_drops_a_binding_whose_right_hand_side_is_a_call():
 
 def test_binding_counts_are_per_scope():
     """The same name is dead in one function and live in another; only the first goes."""
-    src = (
-        "def a(w):\n    n = w.shape[0]\n    return 1\n"
-        "\ndef b(w):\n    n = w.shape[0]\n    return n\n"
-    )
+    src = "def a(w):\n    n = w.shape[0]\n    return 1\n\ndef b(w):\n    n = w.shape[0]\n    return n\n"
     out = prune_dead_assignments(src)
     assert out.count("n = w.shape[0]") == 1
     assert "return n" in out
@@ -176,12 +170,7 @@ def test_import_order_is_preserved():
     The tvboptim module sets ``JAX_PLATFORMS`` before importing jax, so an import moved
     above that assignment would silently change the device the experiment runs on.
     """
-    src = (
-        "import os\n"
-        '\nos.environ.setdefault("JAX_PLATFORMS", "cpu")\n'
-        "import jax\n"
-        "\ny = jax.jit(lambda x: x)\n"
-    )
+    src = 'import os\n\nos.environ.setdefault("JAX_PLATFORMS", "cpu")\nimport jax\n\ny = jax.jit(lambda x: x)\n'
     out = prune_unused_imports(src)
     assert out.index("os.environ") < out.index("import jax")
 
@@ -225,6 +214,7 @@ def test_unparseable_source_is_returned_unchanged_by_the_assignment_pass():
 
 # --------------------------------------------------- rewriting by line, safely
 
+
 def test_the_only_statement_of_a_block_is_kept():
     """Emptying a suite is a SyntaxError, not a tidier module.
 
@@ -257,16 +247,19 @@ def test_a_single_line_suite_is_kept():
     assert prune_dead_assignments(src) == src
 
 
-@pytest.mark.parametrize("src", [
-    pytest.param(
-        "from numpy import pi\n\nclass M:\n    pi = 3\n\n    def dfun(self, x):\n        return x * pi\n",
-        id="class-attribute-does-not-shadow-in-methods",
-    ),
-    pytest.param(
-        "import functools\n\n\n@functools.lru_cache\ndef f():\n    functools = 1\n    return functools\n",
-        id="decorator-is-evaluated-in-the-enclosing-scope",
-    ),
-])
+@pytest.mark.parametrize(
+    "src",
+    [
+        pytest.param(
+            "from numpy import pi\n\nclass M:\n    pi = 3\n\n    def dfun(self, x):\n        return x * pi\n",
+            id="class-attribute-does-not-shadow-in-methods",
+        ),
+        pytest.param(
+            "import functools\n\n\n@functools.lru_cache\ndef f():\n    functools = 1\n    return functools\n",
+            id="decorator-is-evaluated-in-the-enclosing-scope",
+        ),
+    ],
+)
 def test_only_a_functions_own_body_shadows_a_module_import(src):
     """A class body is not a scope its methods see, and a signature runs outside the body.
 

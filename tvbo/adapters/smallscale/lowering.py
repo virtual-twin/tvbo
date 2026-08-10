@@ -23,8 +23,6 @@ import re
 import warnings
 from typing import TypedDict
 
-from tvbo.utils import normalize_params
-
 
 # ── Identifiers ───────────────────────────────────────────────────────
 
@@ -67,8 +65,6 @@ def unique_component_id(name, taken, kind="component"):
 
 
 # ── Parameter helpers ─────────────────────────────────────────────────
-
-
 
 
 def merge_params(*param_dicts):

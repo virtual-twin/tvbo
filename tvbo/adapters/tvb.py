@@ -88,11 +88,7 @@ def _extract_dynamics(sim) -> tvbo_datamodel.Dynamics:
         if voi is None:
             voi = []
 
-        sv_range = (
-            tvbo_datamodel.Range(lo=float(lo), hi=float(hi))
-            if (lo is not None or hi is not None)
-            else None
-        )
+        sv_range = tvbo_datamodel.Range(lo=float(lo), hi=float(hi)) if (lo is not None or hi is not None) else None
         # TVB's state_variable_boundaries is a hard clamp → unified domain with
         # enforce='clamp'. The descriptive state_variable_range is the distinct
         # (finite) IC-sampling support, so preserve it as the sampling

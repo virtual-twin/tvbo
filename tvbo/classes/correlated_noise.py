@@ -147,10 +147,7 @@ def _axis_position(axis: str) -> int:
             "'state' (modes within a state variable) or 'node'."
         )
     if key not in _AXIS:
-        raise ValueError(
-            f"correlated_over={key!r} is not an axis of the noise increment; expected "
-            f"one of {sorted(_AXIS)}."
-        )
+        raise ValueError(f"correlated_over={key!r} is not an axis of the noise increment; expected one of {sorted(_AXIS)}.")
     return _AXIS[key]
 
 
@@ -253,9 +250,7 @@ def CorrelatedNoiseSolver(base_solver, factor, axis: str = "node"):
             if not isinstance(self.factor, Mapping):
                 import jax
 
-                return jax.tree.map(
-                    lambda leaf: _mix_leaf(self.factor, leaf, axis_pos), noise_sample
-                )
+                return jax.tree.map(lambda leaf: _mix_leaf(self.factor, leaf, axis_pos), noise_sample)
             if not hasattr(noise_sample, "items"):
                 raise ValueError(
                     "a per-group covariance was declared but the solver received a "
@@ -269,8 +264,6 @@ def CorrelatedNoiseSolver(base_solver, factor, axis: str = "node"):
 
         def step(self, dynamics_fn, t, state, dt, params, noise_sample=0.0):
             """Integration step whose increment carries the declared covariance."""
-            return self.base_solver.step(
-                dynamics_fn, t, state, dt, params, self._mix(noise_sample)
-            )
+            return self.base_solver.step(dynamics_fn, t, state, dt, params, self._mix(noise_sample))
 
     return _CorrelatedNoiseSolver(base_solver, factor)

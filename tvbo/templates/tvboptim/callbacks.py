@@ -10,6 +10,7 @@ progress through the central ``tvbo.run`` logger (see :mod:`tvbo.log`), so one
 switch — ``TVBO_LOG_LEVEL`` / ``tvbo.set_log_level`` / the CLI ``--quiet`` —
 governs it exactly as it governs the rest of a run.
 """
+
 from __future__ import annotations
 
 import logging
@@ -57,7 +58,7 @@ def auto_nvmap_budget_bytes() -> int:
     Bounds the live batch (``shared_ram_devices × n_vmap × per-cell-bytes``) so
     auto-vectorisation cannot blow up peak memory on a large-per-cell model.
     """
-    return int(_env_positive("TVBO_NVMAP_MEM_BUDGET_GB", float, AUTO_NVMAP_MEM_BUDGET_GB) * (1024 ** 3))
+    return int(_env_positive("TVBO_NVMAP_MEM_BUDGET_GB", float, AUTO_NVMAP_MEM_BUDGET_GB) * (1024**3))
 
 
 def nvmap_hard_cap() -> Optional[int]:
@@ -167,7 +168,10 @@ def resolve_cohort_batch_size(spec, n_subjects, fit_fn=None, example_args=None):
     width = max(1, min(n, int(width)))
     logger.debug(
         "dataset.batch_size=auto -> %d/%d subjects/batch (per_lane=%s B, n_pmap=%d)",
-        width, n, per_lane, n_pmap,
+        width,
+        n,
+        per_lane,
+        n_pmap,
     )
     return width
 
@@ -222,7 +226,10 @@ def resolve_n_vmap(spec, grid_n, per_cell_bytes=None, n_pmap=1):
     width = max(1, width)
     logger.debug(
         "n_parallel=auto -> n_vmap=%d (grid_n=%d, n_pmap=%d, per_cell_bytes=%s)",
-        width, int(grid_n), n_pmap, per_cell_bytes,
+        width,
+        int(grid_n),
+        n_pmap,
+        per_cell_bytes,
     )
     return width
 

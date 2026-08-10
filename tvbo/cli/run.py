@@ -11,6 +11,7 @@ Implements the cardinal HPC contract from §5.1 of ``dev/tvbo-cli.md``:
   cell index ``j`` runs iff ``j %% N == i``. This is what the generated
   sbatch script invokes for every array index.
 """
+
 from __future__ import annotations
 
 import os
@@ -27,139 +28,157 @@ from . import _common
 def run(
     spec: str = typer.Argument(..., help="Path, CURIE, or DB name."),
     backend: str = typer.Option(
-        None, "--backend", "-b",
+        None,
+        "--backend",
+        "-b",
         help="Execution backend (tvboptim, tvb, jax, brian2, pyrates, networkdynamics, ...). "
-             "Default: each experiment's declared execution.backend, else tvboptim.",
+        "Default: each experiment's declared execution.backend, else tvboptim.",
     ),
-    out_dir: Path = typer.Option(
-        None, "--out-dir", "-o", help="Directory to write results into."
-    ),
+    out_dir: Path = typer.Option(None, "--out-dir", "-o", help="Directory to write results into."),
     results_root: Path = typer.Option(
-        None, "--results-root",
+        None,
+        "--results-root",
         help="Directory searched for a sibling run's saved result when this experiment's "
-             "initial_state.method=from_experiment (state / parameter warm-start). Defaults "
-             "to the output dir's parent; set it to point at another run's output — e.g. the "
-             "group fit's results dir for a per-subject warm-start (Run A → Run B).",
+        "initial_state.method=from_experiment (state / parameter warm-start). Defaults "
+        "to the output dir's parent; set it to point at another run's output — e.g. the "
+        "group fit's results dir for a per-subject warm-start (Run A → Run B).",
     ),
-    experiment: str = typer.Option(
-        None, "--experiment", help="When SPEC is a Study, run only this named experiment."
-    ),
+    experiment: str = typer.Option(None, "--experiment", help="When SPEC is a Study, run only this named experiment."),
     analysis: str = typer.Option(
-        None, "--analysis",
+        None,
+        "--analysis",
         help="When SPEC is a Study, run only these named `analyses:` (comma-separated) and "
-             "no experiments — for re-deriving a container after editing its callable, "
-             "which no cache invalidates on its own. An input analysis is re-run only when "
-             "it has no container yet; existing ones are read as they are. Figures are not "
-             "redrawn — follow with `tvbo figure render`. Local engine only, and not "
-             "combinable with any flag that selects or reshapes simulation work.",
+        "no experiments — for re-deriving a container after editing its callable, "
+        "which no cache invalidates on its own. An input analysis is re-run only when "
+        "it has no container yet; existing ones are read as they are. Figures are not "
+        "redrawn — follow with `tvbo figure render`. Local engine only, and not "
+        "combinable with any flag that selects or reshapes simulation work.",
     ),
-    duration: float = typer.Option(
-        None, "--duration", help="Override integration.duration (ms)."
-    ),
+    duration: float = typer.Option(None, "--duration", help="Override integration.duration (ms)."),
     engine: str = typer.Option(
-        "local", "--engine", "-e",
+        "local",
+        "--engine",
+        "-e",
         help="local | slurm | snakemake | nextflow. Non-local engines re-emit via `tvbo workflow ENGINE` and submit.",
     ),
     container: str = typer.Option(
-        None, "--container",
+        None,
+        "--container",
         help="OCI image (e.g. ghcr.io/the-virtual-brain/tvbo:0.7.0); re-execs the same `tvbo run` inside it.",
     ),
     shard: str = typer.Option(
-        None, "--shard", "--slurm-chunk",
+        None,
+        "--shard",
+        "--slurm-chunk",
         help="Run one shard of the sweep in-process: ``i/N`` runs cells where j%N==i "
-             "(no scheduler needed). ``--slurm-chunk`` is a deprecated alias.",
+        "(no scheduler needed). ``--slurm-chunk`` is a deprecated alias.",
     ),
     limit: int = typer.Option(
-        None, "--limit", min=1,
+        None,
+        "--limit",
+        min=1,
         help="Run at most N cells of the sweep (a spread sample) — a quick look "
-             "without needing to know the grid size. Ignored when --shard is given.",
+        "without needing to know the grid size. Ignored when --shard is given.",
     ),
     subject: str = typer.Option(
-        None, "--subject",
+        None,
+        "--subject",
         help="Active subject ID for a per-subject dataset experiment: resolves and "
-             "injects that subject's empirical target (e.g. their FC). Set per shard "
-             "by the workflow fan-out.",
+        "injects that subject's empirical target (e.g. their FC). Set per shard "
+        "by the workflow fan-out.",
     ),
     rendered: Path = typer.Option(
-        None, "--rendered",
+        None,
+        "--rendered",
         help="Run a PRE-RENDERED backend script instead of generating code at run time. "
-             "The spec is still loaded for orchestration (subject/dataset resolution, "
-             "seeds, network observations, output layout) — only the backend code source "
-             "changes: the frozen script is executed as-is. Lets a workflow kit run on a "
-             "stock tvbo runtime with no codegen step. The script must match the run's "
-             "backend and the (single) experiment being run.",
+        "The spec is still loaded for orchestration (subject/dataset resolution, "
+        "seeds, network observations, output layout) — only the backend code source "
+        "changes: the frozen script is executed as-is. Lets a workflow kit run on a "
+        "stock tvbo runtime with no codegen step. The script must match the run's "
+        "backend and the (single) experiment being run.",
     ),
     set_: list[str] = typer.Option(
-        [], "--set",
+        [],
+        "--set",
         help="Override an experiment metadata field for THIS run only (the recipe file is "
-             "not modified), e.g. --set integration.duration=8 --set integration.step_size=0.05. "
-             "Repeatable; dotted keys traverse attributes and keyed collections. Lets one "
-             "recipe stay the single source of truth while the CLI runs it with test settings.",
+        "not modified), e.g. --set integration.duration=8 --set integration.step_size=0.05. "
+        "Repeatable; dotted keys traverse attributes and keyed collections. Lets one "
+        "recipe stay the single source of truth while the CLI runs it with test settings.",
     ),
     pin: list[str] = typer.Option(
-        [], "--pin",
+        [],
+        "--pin",
         help="Pin an exploration axis to a single value for THIS run, e.g. "
-             "--pin Kuramoto.omega_mean_hz=20 --pin network.conduction_speed=6. The workflow "
-             "fan-out emits one --pin per fanned axis per cell: it sets the axis's parameter "
-             "AND drops the axis from the sweep, so the cell is a single run at that point (its "
-             "base run — and every declared observation — computed there). The model-scope "
-             "sibling of --subject. Repeatable.",
+        "--pin Kuramoto.omega_mean_hz=20 --pin network.conduction_speed=6. The workflow "
+        "fan-out emits one --pin per fanned axis per cell: it sets the axis's parameter "
+        "AND drops the axis from the sweep, so the cell is a single run at that point (its "
+        "base run — and every declared observation — computed there). The model-scope "
+        "sibling of --subject. Repeatable.",
     ),
     compress: bool = typer.Option(
-        True, "--compress/--no-compress",
+        True,
+        "--compress/--no-compress",
         help="gzip-deflate the result HDF5 (default on; grids compress well). "
-             "--no-compress writes uncompressed for maximum write speed.",
+        "--no-compress writes uncompressed for maximum write speed.",
     ),
     save_all: bool = typer.Option(
-        False, "--save-all",
+        False,
+        "--save-all",
         help="Persist every observation, including intermediates. By default only "
-             "recorded outputs are saved (leaves + `record: true`); this keeps the "
-             "scaffolding (e.g. a raw BOLD feeding an FC) for debugging.",
+        "recorded outputs are saved (leaves + `record: true`); this keeps the "
+        "scaffolding (e.g. a raw BOLD feeding an FC) for debugging.",
     ),
     max_iterations: int = typer.Option(
-        None, "--max-iterations", min=1,
+        None,
+        "--max-iterations",
+        min=1,
         help="Smoke cap: run at most N tuning iterations per algorithm AND per stage for "
-             "THIS run (the recipe is untouched). A fit's post-tuning evaluation — the "
-             "memory- and time-critical part of a long-horizon fit — is independent of how "
-             "many tuning iterations preceded it, so `--max-iterations 1` reaches it in "
-             "minutes to verify it runs/streams within memory.",
+        "THIS run (the recipe is untouched). A fit's post-tuning evaluation — the "
+        "memory- and time-critical part of a long-horizon fit — is independent of how "
+        "many tuning iterations preceded it, so `--max-iterations 1` reaches it in "
+        "minutes to verify it runs/streams within memory.",
     ),
     smoke: bool = typer.Option(
-        False, "--smoke",
+        False,
+        "--smoke",
         help="Shorthand for --max-iterations 1: the quickest run that still reaches the "
-             "post-tuning evaluation (verify a fit executes / streams end to end).",
+        "post-tuning evaluation (verify a fit executes / streams end to end).",
     ),
     figures: bool = typer.Option(
-        True, "--figures/--no-figures",
+        True,
+        "--figures/--no-figures",
         help="After a Study's experiments finish, render its declarative `figures:` "
-             "(emit each render script and run it), so one command produces results AND "
-             "figures. On by default; --no-figures skips rendering (e.g. a partial/smoke "
-             "run whose panels would be placeholders). No effect on an experiment spec or "
-             "a study without figures.",
+        "(emit each render script and run it), so one command produces results AND "
+        "figures. On by default; --no-figures skips rendering (e.g. a partial/smoke "
+        "run whose panels would be placeholders). No effect on an experiment spec or "
+        "a study without figures.",
     ),
     skip: list[str] = typer.Option(
-        [], "--skip",
+        [],
+        "--skip",
         help="When SPEC is a StudyCollection, skip these member studies (by label or recipe "
-             "stem), comma-separated/repeatable — their committed figures/results are reused "
-             "as-is. Members flagged `optional:` are skipped by default; pass --all-members "
-             "to include them.",
+        "stem), comma-separated/repeatable — their committed figures/results are reused "
+        "as-is. Members flagged `optional:` are skipped by default; pass --all-members "
+        "to include them.",
     ),
     all_members: bool = typer.Option(
-        False, "--all-members",
-        help="When SPEC is a StudyCollection, also run members flagged `optional:` (the heavy "
-             "studies skipped by default).",
+        False,
+        "--all-members",
+        help="When SPEC is a StudyCollection, also run members flagged `optional:` (the heavy studies skipped by default).",
     ),
     dry_run: bool = typer.Option(
-        False, "--dry-run",
+        False,
+        "--dry-run",
         help="When SPEC is a StudyCollection, list the members, analyses and result keys that "
-             "WOULD run (honouring --skip / --all-members) and emit nothing.",
+        "WOULD run (honouring --skip / --all-members) and emit nothing.",
     ),
     manifest_only: bool = typer.Option(
-        False, "--manifest-only",
+        False,
+        "--manifest-only",
         help="When SPEC is a StudyCollection, emit the results manifest from existing containers "
-             "and authored values only — run no members or experiments. The fast refresh for the "
-             "two-tier build (the heavy `tvbo run` produces the containers; this restamps the "
-             "manifest the manuscript reads).",
+        "and authored values only — run no members or experiments. The fast refresh for the "
+        "two-tier build (the heavy `tvbo run` produces the containers; this restamps the "
+        "manifest the manuscript reads).",
     ),
 ) -> None:
     """Run a SPEC (experiment or study) in the selected backend.
@@ -176,8 +195,7 @@ def run(
                 f"analyses. Re-derive them locally with `tvbo run {spec} --analysis "
                 f"{analysis}`."
             )
-        _dispatch_to_engine(engine, spec=spec, backend=backend,
-                            experiment=experiment, container=container, out_dir=out_dir)
+        _dispatch_to_engine(engine, spec=spec, backend=backend, experiment=experiment, container=container, out_dir=out_dir)
         return
 
     if container and os.environ.get("TVBO_IN_CONTAINER") != "1":
@@ -187,30 +205,54 @@ def run(
     kind, obj = _common.resolve_spec(spec)
 
     # Flags that select or reshape SIMULATION work.
-    _sim_flags = [f for f, v in (("--experiment", experiment), ("--shard", shard),
-                                 ("--rendered", rendered), ("--limit", limit),
-                                 ("--subject", subject), ("--duration", duration),
-                                 ("--max-iterations", max_iterations),
-                                 ("--smoke", smoke or None), ("--set", set_ or None),
-                                 ("--pin", pin or None)) if v is not None]
+    _sim_flags = [
+        f
+        for f, v in (
+            ("--experiment", experiment),
+            ("--shard", shard),
+            ("--rendered", rendered),
+            ("--limit", limit),
+            ("--subject", subject),
+            ("--duration", duration),
+            ("--max-iterations", max_iterations),
+            ("--smoke", smoke or None),
+            ("--set", set_ or None),
+            ("--pin", pin or None),
+        )
+        if v is not None
+    ]
 
     if kind == "study_collection":
         # A StudyCollection runs every member end to end with fixed save options, so any
         # of these is silently dropped — turning a one-container request into the whole
         # study, or reporting success for a --save-all that saved record-only.
-        rejected = _sim_flags + [f for f, v in (
-            ("--analysis", analysis), ("--save-all", save_all or None),
-            ("--no-compress", None if compress else True),
-            ("--results-root", results_root)) if v is not None]
+        rejected = _sim_flags + [
+            f
+            for f, v in (
+                ("--analysis", analysis),
+                ("--save-all", save_all or None),
+                ("--no-compress", None if compress else True),
+                ("--results-root", results_root),
+            )
+            if v is not None
+        ]
         if rejected:
             _common.die(
                 f"{spec} is a StudyCollection, which runs every member study end to end; "
                 f"{', '.join(rejected)} would be ignored. Point the flag at the member "
                 "study that declares the work."
             )
-        _run_study_collection(obj, spec, out_dir, backend=backend, figures=figures,
-                           skip=skip, all_members=all_members, dry_run=dry_run,
-                           manifest_only=manifest_only)
+        _run_study_collection(
+            obj,
+            spec,
+            out_dir,
+            backend=backend,
+            figures=figures,
+            skip=skip,
+            all_members=all_members,
+            dry_run=dry_run,
+            manifest_only=manifest_only,
+        )
         return
 
     if analysis is not None:
@@ -218,11 +260,14 @@ def run(
         # nothing — on a cluster, a "success".
         given = _sim_flags
         if given:
-            _common.die(f"--analysis runs no experiments, so {', '.join(given)} "
-                        f"would be ignored. Run them as a separate command.")
+            _common.die(
+                f"--analysis runs no experiments, so {', '.join(given)} would be ignored. Run them as a separate command."
+            )
         if kind != "study":
-            _common.die(f"--analysis needs a study: {spec} resolves to a {kind}, which "
-                        f"declares no `analyses:`. Point it at the study that does.")
+            _common.die(
+                f"--analysis needs a study: {spec} resolves to a {kind}, which "
+                f"declares no `analyses:`. Point it at the study that does."
+            )
 
     # --smoke is shorthand for --max-iterations 1; an explicit --max-iterations wins.
     eff_max_iterations = max_iterations if max_iterations is not None else (1 if smoke else None)
@@ -286,8 +331,12 @@ def run(
             _common.info(f"running experiment: {getattr(exp, 'key', None) or getattr(exp, 'label', None)}")
             # Resolve to the runtime experiment (has .run) rather than the datamodel object.
             if not hasattr(exp, "run") and hasattr(obj, "get_experiment"):
-                sel = (getattr(exp, "id", None) or getattr(exp, "key", None)
-                       or getattr(exp, "name", None) or getattr(exp, "label", None))
+                sel = (
+                    getattr(exp, "id", None)
+                    or getattr(exp, "key", None)
+                    or getattr(exp, "name", None)
+                    or getattr(exp, "label", None)
+                )
                 try:
                     exp = obj.get_experiment(sel)
                 except Exception as e:
@@ -306,8 +355,11 @@ def run(
             # Not per shard: an array task holds one slice of one sweep, so every task would
             # repeat the warning and its "refresh now" remedy would run on a half-done grid.
             _warn_stale_analyses(
-                analyses_before + analyses_after, spec, out_dir,
-                experiments={i for exp in items for i in _common.experiment_ids(exp)})
+                analyses_before + analyses_after,
+                spec,
+                out_dir,
+                experiments={i for exp in items for i in _common.experiment_ids(exp)},
+            )
         if figures and whole_study and ok:
             _render_study_figures(obj, spec, out_dir)
         return
@@ -342,8 +394,8 @@ def _import_figure_code_modules(study) -> None:
 
     figures = getattr(study, "figures", None) or []
     seen: list[str] = []
-    for fig in (figures.values() if hasattr(figures, "values") else figures):
-        for m in (getattr(fig, "code_modules", None) or []):
+    for fig in figures.values() if hasattr(figures, "values") else figures:
+        for m in getattr(fig, "code_modules", None) or []:
             if str(m) not in seen:
                 seen.append(str(m))
     for m in seen:
@@ -366,8 +418,7 @@ def _study_analysis_stages(study) -> tuple[list, list]:
     return schedule(analyses) if analyses else ([], [])
 
 
-def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experiments=(),
-                         recomputed=()) -> None:
+def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experiments=(), recomputed=()) -> None:
     """Name the containers a partial run just invalidated but did not recompute.
 
     Both partial modes need this and they need it identically. ``--experiment`` re-runs a
@@ -386,9 +437,11 @@ def _warn_stale_analyses(analyses, spec: str, out_dir: Path | None, *, experimen
         return
     root = _container_root(spec, out_dir)
     produced = set(recomputed)
-    stale = [n for n in dependents_of(analyses, experiments=experiments,
-                                      changed_analyses=produced)
-             if n not in produced and container_path(n, root).exists()]
+    stale = [
+        n
+        for n in dependents_of(analyses, experiments=experiments, changed_analyses=produced)
+        if n not in produced and container_path(n, root).exists()
+    ]
     if not stale:
         return
     _common.warn(
@@ -413,27 +466,24 @@ def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) 
 
     names = [s.strip() for s in str(wanted).split(",") if s.strip()]
     if not names:
-        _common.die("--analysis was given no names. Pass one or more declared analysis "
-                    "names, comma-separated.")
+        _common.die("--analysis was given no names. Pass one or more declared analysis names, comma-separated.")
     # Through `analysis_name`, not `getattr`: the loader may hand these over as Mappings, which
     # `analysis_closure` below already reads that way.
     by_name = {analysis_name(a): a for a in analyses}
     missing = [n for n in names if n not in by_name]
     if missing:
-        _common.die(f"No analysis named {', '.join(missing)} in {spec}. "
-                    f"Declared: {', '.join(sorted(by_name)) or '(none)'}")
+        _common.die(f"No analysis named {', '.join(missing)} in {spec}. Declared: {', '.join(sorted(by_name)) or '(none)'}")
 
     root = _container_root(spec, out_dir)
-    needed = analysis_closure(analyses, names,
-                              exists=lambda n: container_path(n, root).exists())
+    needed = analysis_closure(analyses, names, exists=lambda n: container_path(n, root).exists())
     ordered = [a for a in analyses if analysis_name(a) in needed]
     if len(ordered) > len(names):
-        _common.info(f"also producing {len(ordered) - len(names)} upstream analysis "
-                     f"container(s) that do not exist yet")
+        _common.info(f"also producing {len(ordered) - len(names)} upstream analysis container(s) that do not exist yet")
     _run_study_analyses(ordered, spec, out_dir, stage="named")
     _warn_stale_analyses(analyses, spec, out_dir, recomputed=needed)
-    _common.info("figures were NOT re-rendered; run `tvbo figure render "
-                 f"{spec}` to redraw them from the refreshed container(s).")
+    _common.info(
+        f"figures were NOT re-rendered; run `tvbo figure render {spec}` to redraw them from the refreshed container(s)."
+    )
 
 
 def _spec_base(spec: str) -> Path:
@@ -487,10 +537,10 @@ def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str
     root = _container_root(spec, out_dir)
     try:
         run_analyses(
-            analyses, root,
+            analyses,
+            root,
             on_start=lambda n: _common.info(f"running analysis: {n}"),
-            on_done=lambda n, p: _common.info(
-                f"  wrote {p.relative_to(base) if p.is_relative_to(base) else p}"),
+            on_done=lambda n, p: _common.info(f"  wrote {p.relative_to(base) if p.is_relative_to(base) else p}"),
         )
     except Exception as e:
         if stage in ("before", "named"):
@@ -531,8 +581,7 @@ def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
     if out_dir is None:
         if not (base / "output").is_dir():
             _common.info(
-                f"skipping figures: this run saved no results (pass -o to persist them, "
-                f"e.g. `tvbo run {spec} -o output`)."
+                f"skipping figures: this run saved no results (pass -o to persist them, e.g. `tvbo run {spec} -o output`)."
             )
             return
         # output/ exists but THIS run did not persist (no -o): the figures below render from
@@ -557,8 +606,7 @@ def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
         )
 
 
-def _run_whole_study(obj, spec: str, out_dir: Path | None, *, backend: str | None = None,
-                     figures: bool = True) -> bool:
+def _run_whole_study(obj, spec: str, out_dir: Path | None, *, backend: str | None = None, figures: bool = True) -> bool:
     """Run a study's WHOLE pipeline — every experiment, its before/after analyses, its figures.
 
     The subset of the ``kind == "study"`` branch with no per-run selectors (no --experiment /
@@ -576,23 +624,35 @@ def _run_whole_study(obj, spec: str, out_dir: Path | None, *, backend: str | Non
     for exp in items:
         _common.info(f"running experiment: {getattr(exp, 'key', None) or getattr(exp, 'label', None)}")
         if not hasattr(exp, "run") and hasattr(obj, "get_experiment"):
-            sel = (getattr(exp, "id", None) or getattr(exp, "key", None)
-                   or getattr(exp, "name", None) or getattr(exp, "label", None))
+            sel = (
+                getattr(exp, "id", None)
+                or getattr(exp, "key", None)
+                or getattr(exp, "name", None)
+                or getattr(exp, "label", None)
+            )
             try:
                 exp = obj.get_experiment(sel)
             except Exception as e:
                 _common.die(f"Could not resolve experiment {sel!r} to a runnable object: {e}")
-        _run_one(exp, _effective_backend(exp, backend), out_dir,
-                 {"compress": True, "record_only": True}, None, None, None)
+        _run_one(exp, _effective_backend(exp, backend), out_dir, {"compress": True, "record_only": True}, None, None, None)
     ok = _run_study_analyses(analyses_after, spec, out_dir, stage="after")
     if figures and ok:
         _render_study_figures(obj, spec, out_dir)
     return ok
 
 
-def _run_study_collection(inv, spec: str, out_dir: Path | None, *, backend: str | None = None,
-                       figures: bool = True, skip=(), all_members: bool = False,
-                       dry_run: bool = False, manifest_only: bool = False) -> None:
+def _run_study_collection(
+    inv,
+    spec: str,
+    out_dir: Path | None,
+    *,
+    backend: str | None = None,
+    figures: bool = True,
+    skip=(),
+    all_members: bool = False,
+    dry_run: bool = False,
+    manifest_only: bool = False,
+) -> None:
     """Run a StudyCollection: every member study, the collection's own demo content, then
     emit the results manifest the manuscript reads.
 
@@ -609,8 +669,7 @@ def _run_study_collection(inv, spec: str, out_dir: Path | None, *, backend: str 
     base = Path(getattr(inv, "_source_file", spec)).resolve().parent
     skip_set = {s.strip() for part in skip for s in str(part).split(",") if s.strip()}
     members = inv.member_recipes(base, include_optional=all_members)
-    to_run = [(label, p) for label, p in members
-              if label not in skip_set and Path(p).stem not in skip_set]
+    to_run = [(label, p) for label, p in members if label not in skip_set and Path(p).stem not in skip_set]
     skipped = [label for label, p in members if (label, p) not in to_run]
     own_analyses = [analysis_name(a) for a in study_analyses(inv)]
     n_results = len(as_list(getattr(inv, "results", None)))
@@ -657,9 +716,12 @@ def _run_study_collection(inv, spec: str, out_dir: Path | None, *, backend: str 
     if not _run_whole_study(inv, spec, inv_out, backend=backend, figures=figures):
         failed.append(getattr(inv, "title", None) or spec)
     if failed:
-        _common.die("analysis stage failed for: " + ", ".join(failed)
-                    + "\nThe results manifest was NOT written; it would have reported "
-                      "numbers from stale or missing containers.")
+        _common.die(
+            "analysis stage failed for: "
+            + ", ".join(failed)
+            + "\nThe results manifest was NOT written; it would have reported "
+            "numbers from stale or missing containers."
+        )
     _emit()
 
 
@@ -674,6 +736,7 @@ def _effective_backend(experiment, cli_backend: str | None) -> str:
     if cli_backend:
         return cli_backend
     return getattr(getattr(experiment, "execution", None), "backend", None) or "tvboptim"
+
 
 def _parse_chunk(s: str) -> tuple[int, int]:
     if "/" not in s:
@@ -695,8 +758,9 @@ def _coerce_scalar(v: str):
             return cast(v)
         except ValueError:
             pass
-    if v[:1] in "[{":               # JSON list/object, e.g. [0,2] or ["xi","freq"]
+    if v[:1] in "[{":  # JSON list/object, e.g. [0,2] or ["xi","freq"]
         import json
+
         try:
             return json.loads(v)
         except ValueError:
@@ -717,12 +781,13 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
     the matrix it built — and the run completes, looks right, and is not the run that was
     asked for.
     """
+
     def _step(cur, seg):
         if isinstance(cur, dict) and seg in cur:
             return cur[seg]
         if hasattr(cur, seg):
             return getattr(cur, seg)
-        try:                        # LinkML keyed collection (dict-like __getitem__)
+        try:  # LinkML keyed collection (dict-like __getitem__)
             return cur[seg]
         except Exception:
             _common.die(f"--set: cannot resolve {seg!r} on {type(cur).__name__}")
@@ -748,8 +813,7 @@ def _apply_metadata_overrides(experiment, overrides: list[str]) -> None:
             except Exception:
                 setattr(cur, leaf, value)
         rebuilt = _invalidate_on_path(chain)
-        _common.info(f"--set {path} = {value!r}"
-                     + (f"  ({rebuilt} rebuilds from it)" if rebuilt else ""))
+        _common.info(f"--set {path} = {value!r}" + (f"  ({rebuilt} rebuilds from it)" if rebuilt else ""))
 
 
 def _invalidate_on_path(chain: list):
@@ -794,13 +858,13 @@ def _apply_max_iterations(experiment, n: int) -> None:
                 _capped += 1
 
     algos = getattr(experiment, "algorithms", None) or {}
-    for algo in (algos.values() if hasattr(algos, "values") else algos):
+    for algo in algos.values() if hasattr(algos, "values") else algos:
         _cap(algo)
-        for stage in (getattr(algo, "stages", None) or []):
+        for stage in getattr(algo, "stages", None) or []:
             _cap(stage)
 
     opts = getattr(experiment, "optimizations", None) or {}
-    for opt in (opts.values() if hasattr(opts, "values") else opts):
+    for opt in opts.values() if hasattr(opts, "values") else opts:
         cur = getattr(opt, "max_iterations", None)
         if isinstance(cur, int) and cur > n:
             setattr(opt, "max_iterations", n)
@@ -840,6 +904,7 @@ def _set_axis_parameter(experiment, parameter: str, value) -> None:
     walk, which resolves those correctly. Kept in step with that classifier so a pinned run
     and the swept grid write the same target.
     """
+
     def _set_in(coll, name) -> bool:
         if coll is None:
             return False
@@ -853,7 +918,7 @@ def _set_axis_parameter(experiment, parameter: str, value) -> None:
         return True
 
     if parameter.startswith("network."):
-        leaf = parameter[len("network."):]
+        leaf = parameter[len("network.") :]
         net = getattr(experiment, "network", None)
         if net is not None and _set_in(getattr(net, "parameters", None), leaf):
             return
@@ -861,8 +926,7 @@ def _set_axis_parameter(experiment, parameter: str, value) -> None:
     if "." in parameter:
         prefix, name = parameter.rsplit(".", 1)
         cpl = getattr(experiment, "coupling", None)
-        if cpl is not None and getattr(cpl, "name", None) == prefix \
-                and _set_in(getattr(cpl, "parameters", None), name):
+        if cpl is not None and getattr(cpl, "name", None) == prefix and _set_in(getattr(cpl, "parameters", None), name):
             return
         net = getattr(experiment, "network", None)
         net_cpl = getattr(net, "coupling", None) if net is not None else None
@@ -886,20 +950,19 @@ def _drop_exploration_axis(experiment, parameter: str) -> None:
     """Remove the axis with this ``parameter`` from every exploration; drop an exploration
     left with no axes so a fully-pinned run collapses to a single point (no empty sweep)."""
     explorations = getattr(experiment, "explorations", None) or {}
-    expl_items = list(explorations.items()) if hasattr(explorations, "items") \
-        else list(enumerate(list(explorations)))
+    expl_items = list(explorations.items()) if hasattr(explorations, "items") else list(enumerate(list(explorations)))
     emptied = []
     for key, expl in expl_items:
         space = getattr(expl, "space", None)
         if not space:
             continue
-        if hasattr(space, "items"):        # keyed by parameter (LinkML keyed collection)
+        if hasattr(space, "items"):  # keyed by parameter (LinkML keyed collection)
             for axk in list(space.keys()):
                 if str(getattr(space[axk], "parameter", axk)) == parameter:
                     del space[axk]
             if len(space) == 0:
                 emptied.append(key)
-        else:                              # plain list of axes
+        else:  # plain list of axes
             expl.space = [ax for ax in space if str(getattr(ax, "parameter", None)) != parameter]
             if len(expl.space) == 0:
                 emptied.append(key)
@@ -912,26 +975,33 @@ def _drop_exploration_axis(experiment, parameter: str) -> None:
             pass
 
 
-def _run_one(experiment, backend: str, out_dir: Path | None,
-             kwargs: dict, chunk_i: int | None, chunk_n: int | None,
-             limit: int | None = None) -> None:
+def _run_one(
+    experiment,
+    backend: str,
+    out_dir: Path | None,
+    kwargs: dict,
+    chunk_i: int | None,
+    chunk_n: int | None,
+    limit: int | None = None,
+) -> None:
     # --limit N is a cell budget: turn it into a stride over this experiment's own
     # grid so ``Space[0::stride]`` yields ~N spread cells — no need to know the size.
     if limit is not None and chunk_n is None:
         import math
 
         from ._workflow import extract_axes
+
         n_cells = 1
         for ax in extract_axes(experiment):
             n_cells *= len(ax.values)
         if n_cells > limit:
             chunk_i, chunk_n = 0, math.ceil(n_cells / limit)
-            _common.info(f"--limit {limit}: running ~{-(-n_cells // chunk_n)} of "
-                         f"{n_cells} cells (Space[0::{chunk_n}])")
+            _common.info(f"--limit {limit}: running ~{-(-n_cells // chunk_n)} of {n_cells} cells (Space[0::{chunk_n}])")
 
     if chunk_n is not None:
         from ._backends import resolve_backend
         from ._workflow import extract_axes
+
         axes = extract_axes(experiment)
         if not axes:
             _common.info("no sweep axes on experiment; running once")
@@ -981,7 +1051,7 @@ def _run_one(experiment, backend: str, out_dir: Path | None,
 
 
 def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> None:
-    compress = kwargs.pop("compress", True)          # save options, not backend-run kwargs
+    compress = kwargs.pop("compress", True)  # save options, not backend-run kwargs
     record_only = kwargs.pop("record_only", True)
     # initial_state.from_experiment seeds from a sibling experiment's saved result;
     # search the output dir's parent (covers results/<key> and output/nc/exp<id> alike).
@@ -1009,9 +1079,9 @@ def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> N
         _common.info(f"(result has no .save(); skipping write to {out_dir})")
 
 
-def _dispatch_to_engine(engine: str, *, spec: str, backend: str,
-                        experiment: str | None, container: str | None,
-                        out_dir: Path | None) -> None:
+def _dispatch_to_engine(
+    engine: str, *, spec: str, backend: str, experiment: str | None, container: str | None, out_dir: Path | None
+) -> None:
     """Emit a workflow kit for *engine* and submit/execute it, all in-process.
 
     Shares the emit + execute path with ``tvbo workflow <engine>`` rather than
@@ -1030,9 +1100,9 @@ def _dispatch_to_engine(engine: str, *, spec: str, backend: str,
     if out_dir:
         overrides.append(f"--set=out_dir={out_dir}")
 
-    kit_dir = _workflow_cmd._emit(engine, spec=spec, backend=backend,
-                                  experiment=experiment, output=out_dir,
-                                  override=overrides, stdout=False)
+    kit_dir = _workflow_cmd._emit(
+        engine, spec=spec, backend=backend, experiment=experiment, output=out_dir, override=overrides, stdout=False
+    )
     if kit_dir is None:
         _common.die("failed to emit workflow kit")
     _workflow_cmd._execute_emitted(engine, kit_dir)
@@ -1045,15 +1115,12 @@ def _reexec_in_container(image: str, argv: list[str]) -> None:
     if use_singularity:
         cmd = ["singularity", "exec", "--bind", f"{cwd}:{cwd}", image, "tvbo", *argv]
     else:
-        cmd = ["docker", "run", "--rm",
-               "-e", "TVBO_IN_CONTAINER=1",
-               "-v", f"{cwd}:{cwd}",
-               "-w", cwd,
-               image, "tvbo", *argv]
+        cmd = ["docker", "run", "--rm", "-e", "TVBO_IN_CONTAINER=1", "-v", f"{cwd}:{cwd}", "-w", cwd, image, "tvbo", *argv]
     _common.info("$ " + " ".join(shlex.quote(c) for c in cmd))
     raise SystemExit(subprocess.run(cmd).returncode)
 
 
 def _which(prog: str) -> str | None:
     from shutil import which
+
     return which(prog)

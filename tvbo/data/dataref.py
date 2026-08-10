@@ -15,6 +15,7 @@ order) by injection, so both the run-time experiment resolvers and the figure co
 adapter can reuse the same primitives without dragging in each other's dependencies.
 Every selection is keyed by label, never positional.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -239,8 +240,9 @@ def select_labeled(da, sel: Optional[Mapping[str, object]]):
 # --------------------------------------------------------------------------- RECONCILE
 
 
-def reconcile_by_label(da, alias_map: Mapping[str, str], model_labels: Sequence[str],
-                       node_dims: Optional[Sequence[str]] = None):
+def reconcile_by_label(
+    da, alias_map: Mapping[str, str], model_labels: Sequence[str], node_dims: Optional[Sequence[str]] = None
+):
     """Align every labelled node axis of ``da`` to the model's node order, by label.
 
     A node axis is any dimension carrying string coordinates. Each is relabelled
@@ -290,8 +292,7 @@ def sel_dict(ref) -> dict:
     """
     sel = getattr(ref, "sel", None) or []
     items = sel.items() if hasattr(sel, "items") else [(getattr(a, "name", None), a) for a in sel]
-    return {str(name): getattr(arg, "value", arg)
-            for name, arg in items if name is not None}
+    return {str(name): getattr(arg, "value", arg) for name, arg in items if name is not None}
 
 
 def reconcile_mode(ref) -> str:

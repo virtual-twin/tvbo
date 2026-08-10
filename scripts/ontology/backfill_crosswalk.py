@@ -52,6 +52,7 @@ Usage
 The Makefile target `make crosswalk` invokes the writing form; CI may invoke
 the `--check` form once it is wired in (tracked in plan.md §2.8).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -65,10 +66,7 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SCHEMA_DIR = ROOT / "schema"
 API_DIR = ROOT / "tvbo" / "api"
-PLATFORM_ODOO = pathlib.Path(
-    "/Users/leonmartin_bih/projects/TVB-O/tvbo-platform/"
-    "odoo-addons/tvbo/models/schema_models.py"
-)
+PLATFORM_ODOO = pathlib.Path("/Users/leonmartin_bih/projects/TVB-O/tvbo-platform/odoo-addons/tvbo/models/schema_models.py")
 CROSSWALK = ROOT / "dev" / "OntologicalRestructuring" / "crosswalk.md"
 BOUNDARY = ROOT / "dev" / "OntologicalRestructuring" / "boundary-matrix.md"
 
@@ -77,9 +75,18 @@ END = "<!-- END auto-generated -->"
 
 # Frozen Appendix-A core, never auto-generated (kept by hand above the marker).
 FROZEN = {
-    "Dynamics", "Coupling", "Integrator", "Noise", "Function", "LossFunction",
-    "Stimulus", "Continuation", "SimulationExperiment", "SimulationStudy",
-    "Network", "BrainAtlas",
+    "Dynamics",
+    "Coupling",
+    "Integrator",
+    "Noise",
+    "Function",
+    "LossFunction",
+    "Stimulus",
+    "Continuation",
+    "SimulationExperiment",
+    "SimulationStudy",
+    "Network",
+    "BrainAtlas",
 }
 
 # Map LinkML class -> top-level YAML key in `tvbo/database/<sub>/` if any.
@@ -100,27 +107,73 @@ YAML_TOP = {
 # Conditional-only classes: required for a specific workflow rather than
 # every simulation. Used by the boundary matrix.
 CONDITIONAL = {
-    "LossFunction", "Optimization", "OptimizationStage", "TuningObjective",
-    "Continuation", "BranchSwitch",
+    "LossFunction",
+    "Optimization",
+    "OptimizationStage",
+    "TuningObjective",
+    "Continuation",
+    "BranchSwitch",
     "Stimulus",
-    "PDE", "PDESolver", "BoundaryCondition", "Discretization", "Mesh",
-    "SpatialDomain", "SpatialField", "FieldStateVariable", "DifferentialOperator",
-    "Exploration", "ExplorationAxis", "FreeParameter", "Sample", "Range",
+    "PDE",
+    "PDESolver",
+    "BoundaryCondition",
+    "Discretization",
+    "Mesh",
+    "SpatialDomain",
+    "SpatialField",
+    "FieldStateVariable",
+    "DifferentialOperator",
+    "Exploration",
+    "ExplorationAxis",
+    "FreeParameter",
+    "Sample",
+    "Range",
     "Distribution",
 }
 
 # Pure-data containers that hold no behaviour and never need to exist in
 # isolation (not required for run; classed `no` in boundary matrix).
 NON_RUNTIME = {
-    "Aggregation", "Algorithm", "AlgorithmInclude", "Argument", "BidsEntities",
-    "BrainRegionSeries", "Callable", "Case", "ClassReference",
-    "ConditionalBlock", "DataSource", "DerivedObservation", "DerivedParameter",
-    "DerivedVariable", "Edge", "Equation", "Event", "ExecutionConfig", "File",
-    "FunctionCall", "GraphGenerator", "InitialState", "Matrix", "NDArray",
-    "Node", "Observation", "Option", "Provenance", "RandomStream",
-    "RegionMapping", "ScalarValue", "Solver", "StateValue", "StateVariable",
-    "Parameter", "CouplingInput", "Parcellation",
-    "TimeSeries", "Tractogram", "UpdateRule",
+    "Aggregation",
+    "Algorithm",
+    "AlgorithmInclude",
+    "Argument",
+    "BidsEntities",
+    "BrainRegionSeries",
+    "Callable",
+    "Case",
+    "ClassReference",
+    "ConditionalBlock",
+    "DataSource",
+    "DerivedObservation",
+    "DerivedParameter",
+    "DerivedVariable",
+    "Edge",
+    "Equation",
+    "Event",
+    "ExecutionConfig",
+    "File",
+    "FunctionCall",
+    "GraphGenerator",
+    "InitialState",
+    "Matrix",
+    "NDArray",
+    "Node",
+    "Observation",
+    "Option",
+    "Provenance",
+    "RandomStream",
+    "RegionMapping",
+    "ScalarValue",
+    "Solver",
+    "StateValue",
+    "StateVariable",
+    "Parameter",
+    "CouplingInput",
+    "Parcellation",
+    "TimeSeries",
+    "Tractogram",
+    "UpdateRule",
 }
 
 
@@ -161,8 +214,7 @@ def load_odoo_models() -> set[str]:
     so the set always reflects what is actually deployable in Odoo.
     """
     if not PLATFORM_ODOO.exists():
-        print(f"  ! warning: {PLATFORM_ODOO} not found; Odoo column will be TODO",
-              file=sys.stderr)
+        print(f"  ! warning: {PLATFORM_ODOO} not found; Odoo column will be TODO", file=sys.stderr)
         return set()
     pat = re.compile(r"_name = 'tvbo\.([a-z0-9_]+)'")
     return {m.group(1) for m in pat.finditer(PLATFORM_ODOO.read_text())}
@@ -217,15 +269,13 @@ def external_mapping(cls: str, cdef: dict) -> str:
     return "TODO"
 
 
-def crosswalk_rows(classes: dict[str, dict], odoo: set[str],
-                   api_map: dict[str, str]) -> Iterable[str]:
+def crosswalk_rows(classes: dict[str, dict], odoo: set[str], api_map: dict[str, str]) -> Iterable[str]:
     yield "| YAML key | LinkML class | OWL class | API endpoint | Odoo model |"
     yield "|---|---|---|---|---|"
     for cls in sorted(classes):
         if cls in FROZEN:
             continue
-        yield (f"| {yaml_for(cls)} | `{cls}` | `tvbo:{cls}` | "
-               f"{api_for(cls, api_map)} | {odoo_for(cls, odoo)} |")
+        yield (f"| {yaml_for(cls)} | `{cls}` | `tvbo:{cls}` | {api_for(cls, api_map)} | {odoo_for(cls, odoo)} |")
 
 
 def boundary_rows(classes: dict[str, dict]) -> Iterable[str]:
@@ -235,8 +285,7 @@ def boundary_rows(classes: dict[str, dict]) -> Iterable[str]:
         if cls in FROZEN:
             continue
         cdef = classes[cls]
-        yield (f"| `{cls}` | LinkML+OWL | {required_for_run(cls)} | "
-               f"{external_mapping(cls, cdef)} | auto-generated |")
+        yield (f"| `{cls}` | LinkML+OWL | {required_for_run(cls)} | {external_mapping(cls, cdef)} | auto-generated |")
 
 
 def splice(text: str, body: str) -> str:
@@ -269,18 +318,15 @@ def write_section(path: pathlib.Path, rows: Iterable[str], check_only: bool) -> 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true",
-                    help="exit non-zero if either file would change")
+    ap.add_argument("--check", action="store_true", help="exit non-zero if either file would change")
     args = ap.parse_args()
 
     classes = load_classes()
     odoo = load_odoo_models()
     api_map = load_api_endpoints()
-    print(f"Loaded {len(classes)} classes; {len(odoo)} Odoo models; "
-          f"{len(api_map)} explicit API endpoints.")
+    print(f"Loaded {len(classes)} classes; {len(odoo)} Odoo models; {len(api_map)} explicit API endpoints.")
 
-    changed = write_section(CROSSWALK, crosswalk_rows(classes, odoo, api_map),
-                            args.check)
+    changed = write_section(CROSSWALK, crosswalk_rows(classes, odoo, api_map), args.check)
     changed |= write_section(BOUNDARY, boundary_rows(classes), args.check)
     if args.check and changed:
         return 1

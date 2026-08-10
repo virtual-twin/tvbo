@@ -401,8 +401,7 @@ class TestDrivenColumnBehaviour:
         # synapse's own gate is recorded here by path so the trajectory can be
         # asserted on (emitting these declaratively is a separate gap).
         gate_cols = "".join(
-            '      <OutputColumn id="%s" quantity="LIFCell_pop[1]/NMDA_inst/%s"/>\n' % (n, n)
-            for n in ("s", "x")
+            '      <OutputColumn id="%s" quantity="LIFCell_pop[1]/NMDA_inst/%s"/>\n' % (n, n) for n in ("s", "x")
         )
         xml = xml.replace("</OutputFile>", gate_cols + "    </OutputFile>", 1)
         (tmp / "driven.xml").write_text(xml)
@@ -411,9 +410,7 @@ class TestDrivenColumnBehaviour:
         exe = os.path.join(os.path.dirname(sys.executable), "pynml")
         if not os.path.exists(exe):
             pytest.skip("pynml executable not available")
-        proc = subprocess.run(
-            [exe, "driven.xml", "-nogui"], cwd=str(tmp), capture_output=True, text=True, timeout=900
-        )
+        proc = subprocess.run([exe, "driven.xml", "-nogui"], cwd=str(tmp), capture_output=True, text=True, timeout=900)
         dat = glob.glob(str(tmp / "results" / "*.dat"))
         if not dat:
             pytest.skip(f"jNeuroML produced no output (exit {proc.returncode}):\n{proc.stdout[-2000:]}")
@@ -421,7 +418,7 @@ class TestDrivenColumnBehaviour:
 
     def test_presynaptic_cell_fires(self, run_output):
         """The pulse must actually drive spiking, else the gate is never tested."""
-        t, pre = run_output[:, 0], run_output[:, 1]
+        pre = run_output[:, 1]
         crossings = int(((pre[:-1] < -0.051) & (pre[1:] >= -0.051)).sum())
         assert crossings > 10, f"presynaptic cell did not spike ({crossings} crossings)"
 

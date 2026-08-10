@@ -102,7 +102,7 @@ for every experiment — Jansen1995's seven emitted 1209 lines and ~31 tables wh
 call emits 136 and 3, with 115 lines identical between experiments 1 and 5.
 
 ```python
-print(STUDY.report("qmd", level=3))                        # whole Methods, deduplicated
+print(STUDY.report("qmd", level=3))  # whole Methods, deduplicated
 print(STUDY.report("qmd", level=3, part="supplementary"))  # the experiments demoted out of it
 print(EXP.dynamics.render("markdown", citeformat="quarto"))  # one model's equations, standalone
 ```
@@ -203,7 +203,8 @@ attribution in one function behind the permission check, so the public build nei
 file nor builds the credit string:
 
 ```python
-CLEARED = False   # True ONLY with documented clearance from publisher AND authors
+CLEARED = False  # True ONLY with documented clearance from publisher AND authors
+
 
 def original(fig):
     if not (CLEARED or INTERNAL):
@@ -343,9 +344,12 @@ greyscale scan through the default colormap. The layout lives in `tvbo.utils.rep
 ```python
 from tvbo.utils.report import report_figure, show_report_figure
 
-staged = report_figure(FIGDIR / f"{fig.name}.png",                    # ours
-                       reference_image_for(fig, ROOT) if INTERNAL else None,   # theirs
-                       STAGE, credit="Pang et al. 2023 (c)")
+staged = report_figure(
+    FIGDIR / f"{fig.name}.png",  # ours
+    reference_image_for(fig, ROOT) if INTERNAL else None,  # theirs
+    STAGE,
+    credit="Pang et al. 2023 (c)",
+)
 print(f"![**Fig {n}.** {figure_caption(fig)}](_figures/{staged.name}){{width=100%}}")
 ```
 

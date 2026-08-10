@@ -173,9 +173,7 @@ def plot_vector_field(
     from tvbo.utils import initial_value, is_array_valued
 
     param_vals = {
-        pname: float(p.value)
-        for pname, p in all_params.items()
-        if p.value is not None and not is_array_valued(p.value)
+        pname: float(p.value) for pname, p in all_params.items() if p.value is not None and not is_array_valued(p.value)
     }
 
     # Substitute fixed params and non-plotted state variables at their mean

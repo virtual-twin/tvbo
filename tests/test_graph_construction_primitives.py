@@ -39,8 +39,7 @@ def _eval_numpy(src, **env):
 
 def _eval_jax(src, **env):
     return np.asarray(
-        eval(src, {"jnp": jnp, "jax": jax}, {k: jnp.asarray(v) if isinstance(v, np.ndarray) else v
-                                             for k, v in env.items()})  # noqa: S307
+        eval(src, {"jnp": jnp, "jax": jax}, {k: jnp.asarray(v) if isinstance(v, np.ndarray) else v for k, v in env.items()})  # noqa: S307
     )
 
 

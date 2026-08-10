@@ -1,4 +1,5 @@
 """Tests for ``tvbo run`` engine dispatch helpers."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -105,9 +106,7 @@ def test_unloadable_spec_reports_every_attempt(tmp_path: Path):
 
     spec = tmp_path / "experiment.yaml"
     spec.write_text(
-        "key: broken\n"
-        "dynamics:\n"
-        "  no_such_slot_for_any_class: 1\n",
+        "key: broken\ndynamics:\n  no_such_slot_for_any_class: 1\n",
         encoding="utf-8",
     )
 
@@ -130,16 +129,25 @@ def _exp_with_sweep():
     from tvbo import SimulationExperiment
 
     return SimulationExperiment(
-        id=1, label="pin",
-        dynamics={"name": "Osc", "system_type": "continuous", "output": ["x"],
-                  "parameters": {"a": {"value": 1.0}},
-                  "state_variables": {"x": {"equation": {"rhs": "-a*x"}, "initial_value": 0.1}}},
+        id=1,
+        label="pin",
+        dynamics={
+            "name": "Osc",
+            "system_type": "continuous",
+            "output": ["x"],
+            "parameters": {"a": {"value": 1.0}},
+            "state_variables": {"x": {"equation": {"rhs": "-a*x"}, "initial_value": 0.1}},
+        },
         network={"number_of_nodes": 1},
-        integration={"method": "heun", "step_size": 0.1, "duration": 1.0,
-                     "transient_time": 0.0, "unit": "s"},
-        explorations={"sweep_a": {"name": "sweep_a", "mode": "product", "record": ["x"],
-                                  "space": [{"parameter": "Osc.a",
-                                             "domain": {"lo": 0.5, "hi": 1.5, "n": 3}}]}},
+        integration={"method": "heun", "step_size": 0.1, "duration": 1.0, "transient_time": 0.0, "unit": "s"},
+        explorations={
+            "sweep_a": {
+                "name": "sweep_a",
+                "mode": "product",
+                "record": ["x"],
+                "space": [{"parameter": "Osc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}}],
+            }
+        },
     )
 
 
@@ -148,8 +156,8 @@ def test_pin_sets_the_dynamics_param_and_drops_the_axis():
     the axis from the sweep — else the exploration re-expands it and the cell is not a point."""
     exp = _exp_with_sweep()
     run_cli._apply_axis_pins(exp, ["Osc.a=0.5"])
-    assert exp.dynamics.parameters["a"].value == 0.5          # base param set
-    assert not (exp.explorations or {})                       # emptied exploration removed
+    assert exp.dynamics.parameters["a"].value == 0.5  # base param set
+    assert not (exp.explorations or {})  # emptied exploration removed
 
 
 def test_pin_leaves_other_axes_sweeping():
@@ -157,28 +165,39 @@ def test_pin_leaves_other_axes_sweeping():
     from tvbo import SimulationExperiment
 
     exp = SimulationExperiment(
-        id=1, label="pin2",
-        dynamics={"name": "Osc", "system_type": "continuous", "output": ["x"],
-                  "parameters": {"a": {"value": 1.0}, "b": {"value": 2.0}},
-                  "state_variables": {"x": {"equation": {"rhs": "-a*x + b"}, "initial_value": 0.1}}},
+        id=1,
+        label="pin2",
+        dynamics={
+            "name": "Osc",
+            "system_type": "continuous",
+            "output": ["x"],
+            "parameters": {"a": {"value": 1.0}, "b": {"value": 2.0}},
+            "state_variables": {"x": {"equation": {"rhs": "-a*x + b"}, "initial_value": 0.1}},
+        },
         network={"number_of_nodes": 1},
-        integration={"method": "heun", "step_size": 0.1, "duration": 1.0,
-                     "transient_time": 0.0, "unit": "s"},
-        explorations={"g": {"name": "g", "mode": "product", "record": ["x"],
-                            "space": [{"parameter": "Osc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}},
-                                      {"parameter": "Osc.b", "domain": {"lo": 1.0, "hi": 3.0, "n": 3}}]}},
+        integration={"method": "heun", "step_size": 0.1, "duration": 1.0, "transient_time": 0.0, "unit": "s"},
+        explorations={
+            "g": {
+                "name": "g",
+                "mode": "product",
+                "record": ["x"],
+                "space": [
+                    {"parameter": "Osc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}},
+                    {"parameter": "Osc.b", "domain": {"lo": 1.0, "hi": 3.0, "n": 3}},
+                ],
+            }
+        },
     )
     run_cli._apply_axis_pins(exp, ["Osc.a=0.5"])
     assert exp.dynamics.parameters["a"].value == 0.5
     remaining = list((exp.explorations["g"].space or {}))
-    assert remaining and all("Osc.a" not in str(getattr(exp.explorations["g"].space[k], "parameter", k))
-                             for k in remaining)
+    assert remaining and all("Osc.a" not in str(getattr(exp.explorations["g"].space[k], "parameter", k)) for k in remaining)
 
 
 def test_pin_rejects_a_malformed_arg():
     exp = _exp_with_sweep()
     with pytest.raises(Exception, match="parameter=value"):
-        run_cli._apply_axis_pins(exp, ["Osc.a"])   # no '='
+        run_cli._apply_axis_pins(exp, ["Osc.a"])  # no '='
 
 
 # ── smoke iteration cap (`tvbo run --max-iterations` / `--smoke`) ─────────────────────────
@@ -239,7 +258,7 @@ def test_render_study_figures_renders_into_base_figures_dir(monkeypatch, tmp_pat
     run_cli._render_study_figures(study, str(spec), out_dir=tmp_path / "output" / "nc")
 
     assert seen["figures"] == list(study.figures)
-    assert seen["base"] == tmp_path                     # spec dir, not the results out-dir
+    assert seen["base"] == tmp_path  # spec dir, not the results out-dir
     assert seen["out"] == tmp_path / "figures"
 
 
@@ -262,6 +281,7 @@ def test_render_study_figures_no_figures_is_a_no_op(monkeypatch, tmp_path: Path)
 
 def test_render_study_figures_swallows_render_error(monkeypatch, tmp_path: Path):
     """A plotting failure must not fail a completed run — the results are already on disk."""
+
     def _boom(*a, **k):
         raise RuntimeError("no container")
 
@@ -270,13 +290,12 @@ def test_render_study_figures_swallows_render_error(monkeypatch, tmp_path: Path)
     spec.write_text("name: s\n", encoding="utf-8")
 
     # Must not raise.
-    run_cli._render_study_figures(
-        SimpleNamespace(figures=[SimpleNamespace(name="Fig1")]), str(spec), out_dir=None
-    )
+    run_cli._render_study_figures(SimpleNamespace(figures=[SimpleNamespace(name="Fig1")]), str(spec), out_dir=None)
 
 
 def _die_raises(monkeypatch):
     """`_common.die` as an exception, so a refusal is observable in-process."""
+
     def _die(msg):
         raise SystemExit(msg)
 
@@ -289,9 +308,21 @@ def _run_kwargs(**over):
     Calling the typer-decorated function leaves every unpassed default an `OptionInfo`,
     which `is not None` — so the flag-conflict check would see every flag as given.
     """
-    base = dict(engine="local", experiment=None, shard=None, rendered=None, limit=None,
-                subject=None, duration=None, max_iterations=None, smoke=False,
-                set_=[], pin=[], container=None, out_dir=None)
+    base = dict(
+        engine="local",
+        experiment=None,
+        shard=None,
+        rendered=None,
+        limit=None,
+        subject=None,
+        duration=None,
+        max_iterations=None,
+        smoke=False,
+        set_=[],
+        pin=[],
+        container=None,
+        out_dir=None,
+    )
     base.update(over)
     return base
 
@@ -312,20 +343,22 @@ def test_analysis_is_refused_on_a_non_local_engine(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(run_cli, "_dispatch_to_engine", _fake_dispatch)
 
     with pytest.raises(SystemExit, match="local-only"):
-        run_cli.run(str(tmp_path / "Study.yaml"), analysis="fcd",
-                    **_run_kwargs(engine="slurm"))
+        run_cli.run(str(tmp_path / "Study.yaml"), analysis="fcd", **_run_kwargs(engine="slurm"))
     assert dispatched is False
 
 
 def test_analysis_is_refused_beside_any_simulation_flag(monkeypatch, tmp_path: Path):
     """Every flag that selects or reshapes simulation work, not just the first three."""
     _die_raises(monkeypatch)
-    monkeypatch.setattr("tvbo.cli._common.resolve_spec",
-                        lambda spec: ("study", SimpleNamespace(name="s")))
+    monkeypatch.setattr("tvbo.cli._common.resolve_spec", lambda spec: ("study", SimpleNamespace(name="s")))
 
-    for flag, over in (("--limit", {"limit": 4}), ("--pin", {"pin": ["G=2.1"]}),
-                       ("--subject", {"subject": "100610"}), ("--smoke", {"smoke": True}),
-                       ("--set", {"set_": ["integration.duration=8"]})):
+    for flag, over in (
+        ("--limit", {"limit": 4}),
+        ("--pin", {"pin": ["G=2.1"]}),
+        ("--subject", {"subject": "100610"}),
+        ("--smoke", {"smoke": True}),
+        ("--set", {"set_": ["integration.duration=8"]}),
+    ):
         with pytest.raises(SystemExit, match=flag):
             run_cli.run(str(tmp_path / "Study.yaml"), analysis="fcd", **_run_kwargs(**over))
 
@@ -333,8 +366,7 @@ def test_analysis_is_refused_beside_any_simulation_flag(monkeypatch, tmp_path: P
 def test_analysis_is_refused_when_the_spec_is_an_experiment(monkeypatch, tmp_path: Path):
     """An experiment declares no `analyses:`, so the flag could only be ignored."""
     _die_raises(monkeypatch)
-    monkeypatch.setattr("tvbo.cli._common.resolve_spec",
-                        lambda spec: ("experiment", SimpleNamespace(name="e")))
+    monkeypatch.setattr("tvbo.cli._common.resolve_spec", lambda spec: ("experiment", SimpleNamespace(name="e")))
 
     with pytest.raises(SystemExit, match="needs a study"):
         run_cli.run(str(tmp_path / "exp-3.yaml"), analysis="spectrum", **_run_kwargs())
@@ -347,9 +379,7 @@ def test_analysis_is_refused_when_the_spec_is_an_experiment(monkeypatch, tmp_pat
 def collection_spec(tmp_path: Path) -> str:
     """A minimal StudyCollection on disk, with one member and one authored result."""
     (tmp_path / "members").mkdir()
-    (tmp_path / "members" / "toy.yaml").write_text(
-        "title: Toy\nkey: toy\nsimulation_experiments: []\n", encoding="utf-8"
-    )
+    (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nkey: toy\nsimulation_experiments: []\n", encoding="utf-8")
     spec = tmp_path / "collection.yaml"
     spec.write_text(
         "title: Demo\n"
@@ -362,10 +392,18 @@ def collection_spec(tmp_path: Path) -> str:
     return str(spec)
 
 
-@pytest.mark.parametrize("flag", [
-    "--analysis=fc_summary", "--experiment=41", "--save-all", "--no-compress",
-    "--limit=1", "--smoke", "--set=integration.duration=1",
-])
+@pytest.mark.parametrize(
+    "flag",
+    [
+        "--analysis=fc_summary",
+        "--experiment=41",
+        "--save-all",
+        "--no-compress",
+        "--limit=1",
+        "--smoke",
+        "--set=integration.duration=1",
+    ],
+)
 def test_a_flag_a_collection_cannot_honour_is_refused(collection_spec, flag):
     """A StudyCollection runs every member with fixed save options.
 

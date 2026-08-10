@@ -334,9 +334,7 @@ def _afp_sum_axis(p, expr):
     masked mean). ``axis`` must be an integer literal (a compile-time array axis)."""
     axis = expr.args[1]
     if not getattr(axis, "is_Integer", False):
-        raise ValueError(
-            f"sum_axis(x, axis): axis must be an integer literal, got {axis!r}."
-        )
+        raise ValueError(f"sum_axis(x, axis): axis must be an integer literal, got {axis!r}.")
     return p._reduce_axis("sum", p._print(expr.args[0]), int(axis))
 
 
@@ -357,9 +355,7 @@ def _afp_arity(expr, n, signature):
     from inside the printer, naming neither the primitive nor the step that wrote it.
     """
     if len(expr.args) != n:
-        raise ValueError(
-            f"{signature} expects {n} argument(s), got {len(expr.args)}."
-        )
+        raise ValueError(f"{signature} expects {n} argument(s), got {len(expr.args)}.")
     return expr.args
 
 
@@ -409,9 +405,7 @@ def _afp_normalize(p, expr):
     args = _afp_arity(expr, 2, "normalize(M, axis)")
     axis = args[1]
     if not getattr(axis, "is_Integer", False):
-        raise ValueError(
-            f"normalize(M, axis): axis must be an integer literal, got {axis!r}."
-        )
+        raise ValueError(f"normalize(M, axis): axis must be an integer literal, got {axis!r}.")
     return p._normalize(p._print(args[0]), int(axis))
 
 
@@ -497,8 +491,17 @@ _ARRAY_FUNCTION_PRINTERS = {
 # streaming co-moment reducers); the rest defer to Julia's name-mappings
 # (vcat/transpose/…) or graceful-degrade, so Julia output never regresses.
 _JULIA_HANDLED_OPS = {
-    "subsample", "slice_axis", "slice_from", "shape", "mode_dot", "mode_sum",
-    "outer", "diag", "zero_diagonal", "matmul", "global_mean",
+    "subsample",
+    "slice_axis",
+    "slice_from",
+    "shape",
+    "mode_dot",
+    "mode_sum",
+    "outer",
+    "diag",
+    "zero_diagonal",
+    "matmul",
+    "global_mean",
 }
 
 
@@ -1721,15 +1724,11 @@ def render_equation(
             kwargs.setdefault("evaluate", False)
         return latex(parse_eq(equation, local_dict=local_dict, **kwargs))
 
-    expr, uf = _prepare_expr(
-        equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs
-    )
+    expr, uf = _prepare_expr(equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs)
     return _printer_for(format, uf, preserve_order).doprint(expr)
 
 
-def _prepare_expr(
-    equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs
-):
+def _prepare_expr(equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs):
     """Parse ``equation`` and resolve its model-function set for printing.
 
     Shared by :func:`render_equation` and :func:`render_equation_cse` so both take
@@ -1791,9 +1790,7 @@ def render_equation_cse(
     """
     from sympy import cse, numbered_symbols
 
-    expr, uf = _prepare_expr(
-        equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs
-    )
+    expr, uf = _prepare_expr(equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs)
     printer = _printer_for(format, uf, preserve_order)
 
     replacements, reduced = cse(expr, symbols=numbered_symbols(symbol_prefix))

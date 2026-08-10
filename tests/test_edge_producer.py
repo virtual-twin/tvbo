@@ -12,6 +12,7 @@ point. `matrix()` walks a resolution order; `weights` reads `_arrays` directly. 
 the producer in only one of them leaves the other silently falling through to whatever it
 does when a connectome is missing — a full run that completes and is wrong.
 """
+
 from __future__ import annotations
 
 import sys
@@ -57,16 +58,16 @@ def producer_module(tmp_path, monkeypatch):
 def _network(producer, label="weight", n=4):
     from tvbo.datamodel.schema import Edge
 
-    return Network(number_of_nodes=n, nodes=[],
-                   edges=[Edge(label=label, weighted=True, producer=producer)])
+    return Network(number_of_nodes=n, nodes=[], edges=[Edge(label=label, weighted=True, producer=producer)])
 
 
 def _call(name, **arguments):
     from tvbo.datamodel.schema import Argument, FunctionCall
 
-    return FunctionCall(callable={"name": name, "module": "edge_producers"},
-                        arguments={k: Argument(name=k, value=v)
-                                   for k, v in arguments.items()})
+    return FunctionCall(
+        callable={"name": name, "module": "edge_producers"},
+        arguments={k: Argument(name=k, value=v) for k, v in arguments.items()},
+    )
 
 
 def test_a_produced_matrix_is_returned_by_matrix(producer_module):
@@ -78,15 +79,16 @@ def test_a_produced_matrix_is_returned_by_matrix(producer_module):
 def test_the_weights_accessor_sees_it_too(producer_module):
     """The bug this exists for: two accessors, one of them silently missing the producer."""
     net = _network(_call("ring", n=4, scale=2.0))
-    np.testing.assert_array_equal(np.asarray(net.weights),
-                                  np.asarray(net.matrix("weight")))
+    np.testing.assert_array_equal(np.asarray(net.weights), np.asarray(net.matrix("weight")))
 
 
 def test_it_is_built_once_however_many_accessors_ask(producer_module):
     import edge_producers
 
     net = _network(_call("ring", n=4))
-    net.matrix("weight"); net.weights; net.matrix("weight")
+    net.matrix("weight")
+    net.weights
+    net.matrix("weight")
     assert len(edge_producers.CALLS) == 1
 
 
@@ -102,8 +104,7 @@ def test_output_picks_one_array_out_of_a_producer_returning_several(producer_mod
 
     call = _call("pair")
     call.output = "length"
-    net = Network(number_of_nodes=3, nodes=[],
-                  edges=[Edge(label="length", weighted=True, producer=call)])
+    net = Network(number_of_nodes=3, nodes=[], edges=[Edge(label="length", weighted=True, producer=call)])
     np.testing.assert_array_equal(np.asarray(net.matrix("length")), np.full((3, 3), 2.0))
 
 

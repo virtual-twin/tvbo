@@ -208,8 +208,7 @@ def test_every_emitted_table_is_captioned(study):
 
     report = study.report("qmd", part="all")
     lines = report.splitlines()
-    tables = sum(1 for i, l in enumerate(lines)
-                 if l.startswith("|") and (i == 0 or not lines[i - 1].startswith("|")))
+    tables = sum(1 for i, line in enumerate(lines) if line.startswith("|") and (i == 0 or not lines[i - 1].startswith("|")))
     captions = len(re.findall(r"^: .*\{#tbl-[a-z0-9-]+\}", report, re.M))
     assert tables == captions, f"{tables} tables but {captions} captions"
 
@@ -348,10 +347,13 @@ def test_the_reported_line_number_survives_a_stripped_cell(tmp_path):
 # ── A grid too small to be a float is a sentence ────────────────────────────────────────
 
 
-@pytest.mark.parametrize("rows,expected", [
-    ([["`Q`", "stimulus"]], "Event `Q` — Type: stimulus."),
-    ([["50", "2000 ms"], ["51", "7000 ms"]], "Event 50 — Type: 2000 ms; Event 51 — Type: 7000 ms."),
-])
+@pytest.mark.parametrize(
+    "rows,expected",
+    [
+        ([["`Q`", "stimulus"]], "Event `Q` — Type: stimulus."),
+        ([["50", "2000 ms"], ["51", "7000 ms"]], "Event 50 — Type: 2000 ms; Event 51 — Type: 7000 ms."),
+    ],
+)
 def test_a_grid_too_small_to_be_a_float_is_written_as_a_sentence(rows, expected):
     """A captioned float tells the reader to look something up; two numbers do not earn one.
 
@@ -394,8 +396,10 @@ def test_a_pipeline_step_is_named_by_what_the_recipe_calls_it():
     """Reading `callable` first printed Deco2014's five named steps as `? → ? → fftconvolve → ? → ?`."""
     from tvbo.utils.report import pipeline_text
 
-    steps = [SimpleNamespace(name="hemodynamic_response"),
-             SimpleNamespace(name="convolve", callable=SimpleNamespace(name="fftconvolve"))]
+    steps = [
+        SimpleNamespace(name="hemodynamic_response"),
+        SimpleNamespace(name="convolve", callable=SimpleNamespace(name="fftconvolve")),
+    ]
     assert pipeline_text(steps) == "hemodynamic_response → convolve"
 
 
@@ -449,8 +453,7 @@ def test_a_coupling_parameter_the_model_already_declares_is_not_listed_twice():
     """
     from tvbo.utils.report import symbol_table
 
-    model = SimpleNamespace(state_variables={}, derived_parameters={},
-                            parameters={"e0": _param(2.5), "r": _param(0.56)})
+    model = SimpleNamespace(state_variables={}, derived_parameters={}, parameters={"e0": _param(2.5), "r": _param(0.56)})
     coupling = SimpleNamespace(parameters={"e0": _param(2.5), "K": _param(1.0, description="gain")})
     table = symbol_table(model, couplings=[coupling])
     assert table.count("$e_{0}$") == 1

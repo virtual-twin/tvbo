@@ -9,14 +9,16 @@ REPORT concern — this helper is called from the report's internal build (the `
 NOT from a plotting script; the composite embeds the © original, so it is local-only and
 git-ignored, never in the public report.
 """
+
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parent.parent           # <study>/  (code/figures/ -> <study>/)
+ROOT = HERE.parent.parent  # <study>/  (code/figures/ -> <study>/)
 FIGS = ROOT / "output" / "figures"  # generated figures live under the gitignored output/
 FIGS.mkdir(parents=True, exist_ok=True)
 ORIG = ROOT / "original_study" / "img"
@@ -37,16 +39,21 @@ def compose_ab(repro=None):
             print(f"skip fig{n} (missing {'orig' if not op.exists() else 'repro'})")
             continue
         orig, rep = plt.imread(op), plt.imread(rp)
-        ha, wa = orig.shape[:2]; hb, wb = rep.shape[:2]
+        ha, wa = orig.shape[:2]
+        hb, wb = rep.shape[:2]
         H = 1000.0
         wa2, wb2 = wa * H / ha, wb * H / hb
         fig, (a1, a2) = plt.subplots(
-            1, 2, figsize=((wa2 + wb2) / 100.0 + 1.6, H / 100.0 + 0.9),
-            gridspec_kw={"width_ratios": [wa2, wb2], "wspace": 0.34})
+            1,
+            2,
+            figsize=((wa2 + wb2) / 100.0 + 1.6, H / 100.0 + 0.9),
+            gridspec_kw={"width_ratios": [wa2, wb2], "wspace": 0.34},
+        )
         for ax, img, title in [(a1, orig, "A  Original"), (a2, rep, "B  TVBO reproduction")]:
             ax.imshow(img)
             ax.set_title(title, fontsize=13, fontweight="bold", pad=8)
-            ax.set_xticks([]); ax.set_yticks([])
+            ax.set_xticks([])
+            ax.set_yticks([])
             for sp in ax.spines.values():
                 sp.set_visible(False)
         fig.subplots_adjust(left=0.025, right=0.975, top=0.88, bottom=0.03, wspace=0.34)
@@ -54,10 +61,18 @@ def compose_ab(repro=None):
         for ax, fc in [(a1, "#ececec"), (a2, "#ffffff")]:
             bb = ax.get_position()
             px, ptop, pbot = 0.014, 0.085, 0.02
-            fig.add_artist(Rectangle(
-                (bb.x0 - px, bb.y0 - pbot), bb.width + 2 * px, bb.height + ptop + pbot,
-                transform=fig.transFigure, facecolor=fc, edgecolor="#9e9e9e",
-                linewidth=1.3, zorder=-1))
+            fig.add_artist(
+                Rectangle(
+                    (bb.x0 - px, bb.y0 - pbot),
+                    bb.width + 2 * px,
+                    bb.height + ptop + pbot,
+                    transform=fig.transFigure,
+                    facecolor=fc,
+                    edgecolor="#9e9e9e",
+                    linewidth=1.3,
+                    zorder=-1,
+                )
+            )
         fig.patch.set_facecolor("white")
         fig.savefig(FIGS / f"ab_fig{n}.png", dpi=120, facecolor="white")
         plt.close(fig)

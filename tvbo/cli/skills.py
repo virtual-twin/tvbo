@@ -12,6 +12,7 @@ Three subcommands:
 
 See :mod:`tvbo.skills._render` for the canonical schema.
 """
+
 from __future__ import annotations
 
 import re
@@ -125,12 +126,8 @@ def _existing_blocks_install(path: Path, force: bool) -> bool:
 
 @app.command("sync", help="Regenerate adapter files from canonical sources (maintainer).")
 def sync(
-    check: bool = typer.Option(
-        False, "--check", help="Exit non-zero if any adapter file would change. CI guard."
-    ),
-    repo_root: Path = typer.Option(
-        Path.cwd(), "--repo-root", help="Repo root containing skills/ and AGENTS.md."
-    ),
+    check: bool = typer.Option(False, "--check", help="Exit non-zero if any adapter file would change. CI guard."),
+    repo_root: Path = typer.Option(Path.cwd(), "--repo-root", help="Repo root containing skills/ and AGENTS.md."),
 ) -> None:
     """Regenerate ``.claude/skills/``, ``.github/instructions/`` and ``AGENTS.md``."""
     skills = load_canonical([repo_root / CANONICAL_REPO_DIR, CANONICAL_PACKAGE_DIR])
@@ -168,10 +165,7 @@ def _references(body: str, name: str) -> bool:
     ``git`` is not matched by every mention of ``gitignore``.
     """
     n = re.escape(name)
-    return any(
-        re.search(p, body)
-        for p in (rf"\*\*{n}\*\*", rf"/{n}\b", rf"`{n}`\s+skill")
-    )
+    return any(re.search(p, body) for p in (rf"\*\*{n}\*\*", rf"/{n}\b", rf"`{n}`\s+skill"))
 
 
 def _find_leaked_refs(skills: list[Skill]) -> list[str]:
@@ -216,17 +210,14 @@ def _find_bad_extras(skills: list[Skill], repo_root: Path) -> list[str]:
         data = tomllib.load(fh)
     real = set((data.get("project") or {}).get("optional-dependencies") or {})
     return [
-        f"{skill.source}: requires_extras {extra!r} is not a group in "
-        f"[project.optional-dependencies]"
+        f"{skill.source}: requires_extras {extra!r} is not a group in [project.optional-dependencies]"
         for skill in skills
         for extra in skill.requires_extras
         if extra not in real
     ]
 
 
-def _lint(
-    skills: list[Skill], claude_dir: Path, copilot_dir: Path, repo_root: Path
-) -> list[tuple[str, list[str], str]]:
+def _lint(skills: list[Skill], claude_dir: Path, copilot_dir: Path, repo_root: Path) -> list[tuple[str, list[str], str]]:
     """Content problems that re-rendering cannot fix, as (title, items, hint).
 
     Distinct from drift: these live in the canonical sources, or in what
@@ -235,34 +226,41 @@ def _lint(
     """
     findings: list[tuple[str, list[str], str]] = []
     if stray := _find_orphans(skills, claude_dir, copilot_dir):
-        findings.append((
-            "orphaned rendered skills (no canonical source):",
-            stray,
-            "Either add a canonical source under skills/ (maintainer) or "
-            "tvbo/skills/canonical/ (user), or delete the rendered file. "
-            "Personal skills belong in ~/.claude/skills/, not the project dir.",
-        ))
+        findings.append(
+            (
+                "orphaned rendered skills (no canonical source):",
+                stray,
+                "Either add a canonical source under skills/ (maintainer) or "
+                "tvbo/skills/canonical/ (user), or delete the rendered file. "
+                "Personal skills belong in ~/.claude/skills/, not the project dir.",
+            )
+        )
     if leaks := _find_leaked_refs(skills):
-        findings.append((
-            "shipped user skills referencing maintainer skills:",
-            leaks,
-            "`tvbo skills install` ships only the user root, so these pointers are "
-            "dead outside this repo. Inline the guidance, or drop the reference.",
-        ))
+        findings.append(
+            (
+                "shipped user skills referencing maintainer skills:",
+                leaks,
+                "`tvbo skills install` ships only the user root, so these pointers are "
+                "dead outside this repo. Inline the guidance, or drop the reference.",
+            )
+        )
     if dead := _find_dead_asset_refs(skills):
-        findings.append((
-            "skills referencing assets that do not exist:",
-            dead,
-            "Add the file under the skill's assets/, or drop the reference. A body that "
-            "defers detail to a missing chapter loses it silently.",
-        ))
+        findings.append(
+            (
+                "skills referencing assets that do not exist:",
+                dead,
+                "Add the file under the skill's assets/, or drop the reference. A body that "
+                "defers detail to a missing chapter loses it silently.",
+            )
+        )
     if bad := _find_bad_extras(skills, repo_root):
-        findings.append((
-            "requires_extras naming no real optional-dependency group:",
-            bad,
-            "Name a group from [project.optional-dependencies] in pyproject.toml, "
-            "or use [] if the skill needs no extra.",
-        ))
+        findings.append(
+            (
+                "requires_extras naming no real optional-dependency group:",
+                bad,
+                "Name a group from [project.optional-dependencies] in pyproject.toml, or use [] if the skill needs no extra.",
+            )
+        )
     return findings
 
 
@@ -342,6 +340,7 @@ def _sync_check(
             Byte-compiled and OS-noise files are ignored on both sides (they are
             never rendered), so a locally-run asset script cannot spoof drift.
             """
+
             def _files(root: Path) -> dict[Path, bytes]:
                 if not root.exists():
                     return {}
@@ -350,6 +349,7 @@ def _sync_check(
                     for p in root.rglob("*")
                     if p.is_file() and not is_asset_noise(rel := p.relative_to(root))
                 }
+
             af, bf = _files(a), _files(b)
             for rel in sorted(set(af) | set(bf), key=str):
                 if af.get(rel) != bf.get(rel):
@@ -394,23 +394,13 @@ def _sync_check(
 @app.command("install", help="Install user skills onto your machine.")
 def install(
     target: Target = typer.Option(Target.claude_code, "--target", "-t", help="Adapter format."),
-    audience: Audience = typer.Option(
-        Audience.user, "--audience", help="Which skills to install."
-    ),
-    scope: Scope = typer.Option(
-        Scope.user, "--scope", help="user (~/.claude/) or project (./.claude/)."
-    ),
-    skill: list[str] = typer.Option(
-        None, "--skill", "-s", help="Limit to specific skill(s). Repeatable."
-    ),
-    out: Path = typer.Option(
-        None, "--out", "-o", help="Override the install directory or output path."
-    ),
+    audience: Audience = typer.Option(Audience.user, "--audience", help="Which skills to install."),
+    scope: Scope = typer.Option(Scope.user, "--scope", help="user (~/.claude/) or project (./.claude/)."),
+    skill: list[str] = typer.Option(None, "--skill", "-s", help="Limit to specific skill(s). Repeatable."),
+    out: Path = typer.Option(None, "--out", "-o", help="Override the install directory or output path."),
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite unmanaged files."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would happen; write nothing."),
-    strict: bool = typer.Option(
-        False, "--strict", help="Exit non-zero if any skill is refused/skipped."
-    ),
+    strict: bool = typer.Option(False, "--strict", help="Exit non-zero if any skill is refused/skipped."),
 ) -> None:
     """Render user skills to ``--target`` and write them to disk (or stdout)."""
     skills = load_canonical([CANONICAL_PACKAGE_DIR])
@@ -495,13 +485,9 @@ def _target_path(target: Target, dest_dir: Path, skill: Skill) -> Path:
 
 def _render_target(target: Target, skill: Skill, dest_dir: Path, version: str) -> Path:
     if target is Target.claude_code:
-        return render_claude_code(
-            skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True
-        )
+        return render_claude_code(skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True)
     if target is Target.cursor:
-        return render_cursor(
-            skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True
-        )
+        return render_cursor(skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True)
     raise typer.BadParameter(f"cannot render to {target.value!r}")
 
 

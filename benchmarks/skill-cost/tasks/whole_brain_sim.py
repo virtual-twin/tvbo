@@ -8,6 +8,7 @@ agent greps the installed package; a skilled agent calls ``list_entries`` /
 Success is verified by *executing the agent's script ourselves* and checking it
 prints a real result shape — so a fast give-up cannot masquerade as a cheap win.
 """
+
 from __future__ import annotations
 
 import re

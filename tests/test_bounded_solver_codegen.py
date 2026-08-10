@@ -73,9 +73,7 @@ def _render(tmp_path, domain_line):
     exp = SimulationExperiment.from_file(str(p))
     exp.configure()
     experiment_code = exp.render_code("tvboptim")
-    solver_code = templates.lookup.get_template(
-        "tvboptim/tvbo-tvboptim-solver.py.mako"
-    ).render(experiment=exp)
+    solver_code = templates.lookup.get_template("tvboptim/tvbo-tvboptim-solver.py.mako").render(experiment=exp)
     return experiment_code, solver_code
 
 

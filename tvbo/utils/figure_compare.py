@@ -10,6 +10,7 @@ project the ink onto each axis, split at runs of blank, recurse. It needs no kno
 of either figure's provenance, which is the point: the reference is a bitmap from a PDF
 and ours comes from a mosaic spec, and they are compared on equal terms.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -185,22 +186,26 @@ def compare(ours: Path, theirs: Path, **kwargs) -> dict:
     rows = []
     for i, (a, b) in enumerate(pairs, start=1):
         if a is None or b is None:
-            rows.append({"panel": i, "ours": a, "theirs": b, "iou": 0.0,
-                         "dx": None, "dy": None, "dw": None, "dh": None})
+            rows.append({"panel": i, "ours": a, "theirs": b, "iou": 0.0, "dx": None, "dy": None, "dw": None, "dh": None})
             continue
-        rows.append({
-            "panel": i, "ours": a, "theirs": b, "iou": a.iou(b),
-            "dx": 100.0 * (a.x0 - b.x0), "dy": 100.0 * (a.y0 - b.y0),
-            "dw": 100.0 * (a.w - b.w), "dh": 100.0 * (a.h - b.h),
-        })
+        rows.append(
+            {
+                "panel": i,
+                "ours": a,
+                "theirs": b,
+                "iou": a.iou(b),
+                "dx": 100.0 * (a.x0 - b.x0),
+                "dy": 100.0 * (a.y0 - b.y0),
+                "dw": 100.0 * (a.w - b.w),
+                "dh": 100.0 * (a.h - b.h),
+            }
+        )
 
     matched = [r for r in rows if r["iou"] > 0]
     offsets = [max(abs(r["dx"]), abs(r["dy"])) for r in matched] or [float("nan")]
     return {
-        "ours": {"path": str(ours), "size": a_size, "aspect": a_size[0] / a_size[1],
-                 "n_panels": len(a_boxes)},
-        "theirs": {"path": str(theirs), "size": b_size, "aspect": b_size[0] / b_size[1],
-                   "n_panels": len(b_boxes)},
+        "ours": {"path": str(ours), "size": a_size, "aspect": a_size[0] / a_size[1], "n_panels": len(a_boxes)},
+        "theirs": {"path": str(theirs), "size": b_size, "aspect": b_size[0] / b_size[1], "n_panels": len(b_boxes)},
         "aspect_ratio_error": abs(a_size[0] / a_size[1] - b_size[0] / b_size[1]),
         "rows": rows,
         "n_matched": len(matched),
@@ -223,12 +228,17 @@ def report_table(result: dict) -> str:
             rows.append([r["panel"], "extra in ours", "—", "", "", "", ""])
         else:
             a = r["ours"]
-            rows.append([
-                r["panel"],
-                f"{a.x0:.3f}, {a.y0:.3f}", f"{a.w:.3f} x {a.h:.3f}",
-                f"{r['dx']:+.1f}", f"{r['dy']:+.1f}",
-                f"{r['dw']:+.1f}", f"{r['iou']:.3f}",
-            ])
+            rows.append(
+                [
+                    r["panel"],
+                    f"{a.x0:.3f}, {a.y0:.3f}",
+                    f"{a.w:.3f} x {a.h:.3f}",
+                    f"{r['dx']:+.1f}",
+                    f"{r['dy']:+.1f}",
+                    f"{r['dw']:+.1f}",
+                    f"{r['iou']:.3f}",
+                ]
+            )
     return md_table(
         ["Panel", "Our origin", "Our size", "dx %", "dy %", "dw %", "IoU"],
         rows,
@@ -267,17 +277,14 @@ def _pane_image(images) -> np.ndarray | None:
     if images is None:
         return None
     paths = [images] if isinstance(images, (str, Path)) else list(images)
-    arrays = [_as_rgb(np.asarray(mpimg.imread(str(p)), dtype=float))
-              for p in paths if Path(p).is_file()]
+    arrays = [_as_rgb(np.asarray(mpimg.imread(str(p)), dtype=float)) for p in paths if Path(p).is_file()]
     if not arrays:
         return None
     if len(arrays) == 1:
         return arrays[0]
     width = max(a.shape[1] for a in arrays)
-    fill = max(a.max() for a in arrays)          # pad with the images' own white
-    return np.concatenate(
-        [np.pad(a, ((0, 0), (0, width - a.shape[1]), (0, 0)), constant_values=fill)
-         for a in arrays])
+    fill = max(a.max() for a in arrays)  # pad with the images' own white
+    return np.concatenate([np.pad(a, ((0, 0), (0, width - a.shape[1]), (0, 0)), constant_values=fill) for a in arrays])
 
 
 def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
@@ -309,8 +316,7 @@ def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
     return fig, axes
 
 
-def side_by_side(panes: Sequence[Pane], outfile: Path, width: float = 6.7,
-                 fontsize: float = 6, dpi: int = 300) -> Path:
+def side_by_side(panes: Sequence[Pane], outfile: Path, width: float = 6.7, fontsize: float = 6, dpi: int = 300) -> Path:
     """Write *panes* as one row at a common height — the A/B composite a report embeds.
 
     A replication report sets the published figure beside its reproduction. Composing that
@@ -332,9 +338,10 @@ def overlay(result: dict, outfile: Path, titles: tuple[str, str] = ("ours", "ref
     from matplotlib.patches import Rectangle
 
     sides = ("ours", "theirs")
-    panes = [Pane(result[s]["path"],
-                  f"{t} — {result[s]['size'][0]}x{result[s]['size'][1]}px, "
-                  f"{result[s]['n_panels']} panels") for s, t in zip(sides, titles)]
+    panes = [
+        Pane(result[s]["path"], f"{t} — {result[s]['size'][0]}x{result[s]['size'][1]}px, {result[s]['n_panels']} panels")
+        for s, t in zip(sides, titles)
+    ]
     fig, axes = image_row(panes, width=14, fontsize=10)
     for ax, side, colour in zip(axes, sides, ("#d62728", "#1f77b4")):
         w, h = result[side]["size"]
@@ -342,8 +349,7 @@ def overlay(result: dict, outfile: Path, titles: tuple[str, str] = ("ours", "ref
             box = r[side]
             if box is None:
                 continue
-            ax.add_patch(Rectangle((box.x0 * w, box.y0 * h), box.w * w, box.h * h,
-                                   fill=False, lw=1.2, ec=colour))
+            ax.add_patch(Rectangle((box.x0 * w, box.y0 * h), box.w * w, box.h * h, fill=False, lw=1.2, ec=colour))
             ax.text(box.x0 * w, box.y0 * h - 4, str(r["panel"]), color=colour, fontsize=8)
     outfile = Path(outfile)
     outfile.parent.mkdir(parents=True, exist_ok=True)

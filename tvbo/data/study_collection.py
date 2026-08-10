@@ -16,6 +16,7 @@ things a plain ``SimulationStudy`` has no need for:
 The number resolution is shared: a manifest emit and a ``verify`` coverage pass resolve the
 same bindings the same way, so the two cannot disagree about whether a key is live.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -153,8 +154,12 @@ def resolve_binding(binding: Any, results_root: Optional[Path], *, inv: Any = No
     da = _resolve_across_roots(used, results_root, inv)
     rendered = _format(_scalar(da), fmt)
     ref = "/".join(
-        p for p in (getattr(used, "analysis", None) or getattr(used, "experiment", None)
-                    or getattr(used, "iri", None), getattr(used, "output", None)) if p
+        p
+        for p in (
+            getattr(used, "analysis", None) or getattr(used, "experiment", None) or getattr(used, "iri", None),
+            getattr(used, "output", None),
+        )
+        if p
     )
     prov = {"computed": True, "ref": ref}
     desc = getattr(binding, "description", None)
@@ -163,9 +168,7 @@ def resolve_binding(binding: Any, results_root: Optional[Path], *, inv: Any = No
     return rendered, prov
 
 
-def resolve_results(
-    inv: Any, results_root: Optional[Path]
-) -> tuple[dict[str, str], dict[str, dict], list[str]]:
+def resolve_results(inv: Any, results_root: Optional[Path]) -> tuple[dict[str, str], dict[str, dict], list[str]]:
     """Resolve every ``ResultBinding`` on *inv*.
 
     Returns ``(results, provenance, problems)``: ``results`` maps each key to its rendered
@@ -194,9 +197,7 @@ def resolve_results(
     return results, provenance, problems
 
 
-def emit_manifest(
-    inv: Any, results_root: Optional[Path], out_path: Path
-) -> tuple[Path, list[str]]:
+def emit_manifest(inv: Any, results_root: Optional[Path], out_path: Path) -> tuple[Path, list[str]]:
     """Write *inv*'s resolved results to ``manuscript_results.yml`` at *out_path*.
 
     The file carries a flat ``results:`` mapping the document reads as ``{{< meta results.* >}}``
@@ -252,8 +253,7 @@ def _analysis_fingerprint(analysis: Any) -> str:
         if hasattr(obj, "items"):
             return {str(k): plain(v, depth + 1) for k, v in sorted(obj.items())}
         fields = getattr(obj, "model_fields", None) or getattr(obj, "__dict__", {})
-        return {str(k): plain(getattr(obj, k, None), depth + 1)
-                for k in sorted(fields) if not str(k).startswith("_")}
+        return {str(k): plain(getattr(obj, k, None), depth + 1) for k in sorted(fields) if not str(k).startswith("_")}
 
     blob = json.dumps(plain(analysis), sort_keys=True, default=str)
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
@@ -282,10 +282,7 @@ def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Option
             continue
         stamp = path.parent / ".fingerprint"
         if stamp.exists() and stamp.read_text().strip() != _analysis_fingerprint(analysis):
-            problems.append(
-                f"{name}: analysis declaration changed since its container was written "
-                f"(edited but not re-run)"
-            )
+            problems.append(f"{name}: analysis declaration changed since its container was written (edited but not re-run)")
     return problems
 
 
@@ -372,8 +369,7 @@ def verify(
         manifest_path = Path(manifest_path)
         if not manifest_path.exists():
             problems.append(
-                f"committed manifest not found: {manifest_path} — run `tvbo run` where the "
-                f"containers live and commit it"
+                f"committed manifest not found: {manifest_path} — run `tvbo run` where the containers live and commit it"
             )
             return problems
         available = _read_manifest_keys(manifest_path)

@@ -44,7 +44,9 @@ def _plot_exploration_timeseries_overlay(exploration, panel, ax):
     axis_info = exploration.axes[0] if exploration.axes else None
     values = None
     if axis_info is not None:
-        values = axis_info.get("explored_values") if isinstance(axis_info, dict) else getattr(axis_info, "explored_values", None)
+        values = (
+            axis_info.get("explored_values") if isinstance(axis_info, dict) else getattr(axis_info, "explored_values", None)
+        )
     if values is None:
         values = np.arange(exploration.results.shape[0])
 
@@ -109,10 +111,11 @@ def _auto_experiment_panels(result):
         return chr(ord("a") + len(panels))
 
     has_integration = result.integration is not None
-    ts_explorations = {
-        name: expl for name, expl in result.explorations.items()
-        if getattr(expl, "is_timeseries", False)
-    } if result.explorations else {}
+    ts_explorations = (
+        {name: expl for name, expl in result.explorations.items() if getattr(expl, "is_timeseries", False)}
+        if result.explorations
+        else {}
+    )
     default_voi = None
     if ts_explorations:
         first_exploration = next(iter(ts_explorations.values()))

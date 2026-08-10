@@ -5,17 +5,18 @@ Generate LinkML datamodel documentation for Quarto integration.
 This script generates markdown documentation from the tvbo_datamodel.yaml schema
 and places it in the docs/datamodel directory for Quarto rendering.
 """
+
 import re
 import subprocess
 import sys
 from pathlib import Path
 
 _MKDOCS_SEARCH_FRONTMATTER = re.compile(
-    r"\A---\s*\n"           # opening fence
-    r"search:\s*\n"         # `search:` key (MkDocs Material search-boost block)
-    r"(?:\s+\S.*\n)+"       # its indented children
-    r"---\s*\n"             # closing fence
-    r"\n?",                 # optional trailing blank line
+    r"\A---\s*\n"  # opening fence
+    r"search:\s*\n"  # `search:` key (MkDocs Material search-boost block)
+    r"(?:\s+\S.*\n)+"  # its indented children
+    r"---\s*\n"  # closing fence
+    r"\n?",  # optional trailing blank line
 )
 
 
@@ -65,6 +66,7 @@ def convert_md_to_qmd(output_dir: Path):
 
     print(f"✓ Converted {len(md_files)} files and fixed internal links")
 
+
 def main():
     """Generate LinkML documentation."""
     # Paths
@@ -86,10 +88,10 @@ def main():
     if stamp_file.exists() and any(output_dir.rglob("*.qmd")):
         stamp_mtime = stamp_file.stat().st_mtime
         if input_mtime <= stamp_mtime:
-            print(f"Datamodel docs up-to-date (schema unchanged). Skipping.")
+            print("Datamodel docs up-to-date (schema unchanged). Skipping.")
             return 0
 
-    print(f"Generating LinkML documentation...")
+    print("Generating LinkML documentation...")
     print(f"  Schema: {schema_path}")
     print(f"  Output: {output_dir}")
 
@@ -97,6 +99,7 @@ def main():
     # Resolve gen-doc from the same Python interpreter's bin directory
     # to ensure it works even when Quarto doesn't inherit shell PATH.
     import shutil
+
     gen_doc = shutil.which("gen-doc")
     if gen_doc is None:
         gen_doc = str(Path(sys.executable).parent / "gen-doc")
@@ -107,15 +110,17 @@ def main():
         subprocess.run(
             [
                 gen_doc,
-                "--directory", str(output_dir),
-                "--format", "markdown",
+                "--directory",
+                str(output_dir),
+                "--format",
+                "markdown",
                 "--no-mergeimports",  # Keep imports separate
                 "--subfolder-type-separation",  # Separate classes, slots, enums into subdirectories
-                str(schema_path)
+                str(schema_path),
             ],
             check=True,
             capture_output=True,
-            text=True
+            text=True,
         )
         print("✓ LinkML documentation generated successfully")
 
@@ -141,6 +146,7 @@ def main():
             print("  Using existing datamodel docs from previous generation.", file=sys.stderr)
             return 0
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

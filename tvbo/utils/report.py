@@ -137,10 +137,7 @@ def md_table(
 
     head = "| " + " | ".join(headers[j] for j in keep) + " |"
     sep = "|" + "|".join(_sep(j) for j in keep) + "|"
-    body = "\n".join(
-        "| " + " | ".join((r[j] if not _blank(r[j]) else empty) for j in keep) + " |"
-        for r in norm
-    )
+    body = "\n".join("| " + " | ".join((r[j] if not _blank(r[j]) else empty) for j in keep) + " |" for r in norm)
     return "\n".join([head, sep] + ([body] if body else []))
 
 
@@ -297,8 +294,7 @@ def recipe_param(experiment, name, group: str = "dynamics"):
     params = getattr(holder, "parameters", None)
     if params is None:
         return None
-    items = params.items() if hasattr(params, "items") else [
-        (getattr(p, "name", None), p) for p in params]
+    items = params.items() if hasattr(params, "items") else [(getattr(p, "name", None), p) for p in params]
     return next((value_of(p) for n, p in items if n == name), None)
 
 
@@ -445,7 +441,7 @@ def figure_title(figure) -> str:
 def find_figure(name: str, *studies):
     """The declared figure of that name, across one or more loaded studies."""
     for study in studies:
-        for figure in (getattr(study, "figures", None) or []):
+        for figure in getattr(study, "figures", None) or []:
             if slot(figure, "name") == name:
                 return figure
     return None
@@ -469,8 +465,7 @@ _FIGURE_ORDER = {"Fig": 0, "EDF": 1, "New": 2}
 
 def figures_in_paper_order(figures) -> list:
     """The study's figures, ordered as the paper prints them, with ours after."""
-    return sorted(figures, key=lambda f: (_FIGURE_ORDER[figure_label(f)[0]],
-                                          figure_label(f)[1], slot(f, "name", "")))
+    return sorted(figures, key=lambda f: (_FIGURE_ORDER[figure_label(f)[0]], figure_label(f)[1], slot(f, "name", "")))
 
 
 def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list[dict]:
@@ -481,7 +476,7 @@ def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list
     """
     kind, number = figure_label(figure)
     if kind == "New":
-        return []       # a figure the paper never printed carries none of its targets
+        return []  # a figure the paper never printed carries none of its targets
     want = f"EDF{number}" if kind == "EDF" else str(number)
     hits = []
     for row in rows:
@@ -541,9 +536,17 @@ def divergence_register(source) -> dict:
     }
 
 
-def report_figure(ours, theirs=None, stage=Path("_figures"), credit: str = "the authors",
-                  label: str = "", missing: str = "", width: float = 6.7,
-                  dpi: int = 300, cleared: bool = False) -> Path | None:
+def report_figure(
+    ours,
+    theirs=None,
+    stage=Path("_figures"),
+    credit: str = "the authors",
+    label: str = "",
+    missing: str = "",
+    width: float = 6.7,
+    dpi: int = 300,
+    cleared: bool = False,
+) -> Path | None:
     """The image a report embeds for one figure, staged inside the render project.
 
     This is the A/B helper every replication report used to carry its own copy of. Pass
@@ -579,7 +582,8 @@ def report_figure(ours, theirs=None, stage=Path("_figures"), credit: str = "the 
             "the shareable artifact, so embedding the paper's figure needs one of two grounds: "
             "the INTERNAL build (resolve the reference image behind `if is_internal()`), or "
             "documented copyright clearance from the publisher and authors (`cleared=True`). "
-            "See the A/B section of the writing-reports skill.")
+            "See the A/B section of the writing-reports skill."
+        )
     if not ours.is_file():
         return None
     stage.mkdir(parents=True, exist_ok=True)
@@ -589,9 +593,14 @@ def report_figure(ours, theirs=None, stage=Path("_figures"), credit: str = "the 
     from tvbo.utils.figure_compare import Pane, side_by_side
 
     return side_by_side(
-        [Pane(theirs, f"Original — {credit}", missing or "original not available"),
-         Pane(ours, f"TVBO replication{f' ({label})' if label else ''}")],
-        stage / f"{ours.stem}_ab.png", width=width, dpi=dpi)
+        [
+            Pane(theirs, f"Original — {credit}", missing or "original not available"),
+            Pane(ours, f"TVBO replication{f' ({label})' if label else ''}"),
+        ],
+        stage / f"{ours.stem}_ab.png",
+        width=width,
+        dpi=dpi,
+    )
 
 
 VERDICTS = {
@@ -638,8 +647,7 @@ class Scorecard:
         self.verdicts = dict(verdicts or VERDICTS)
         self.tiers = list(tiers)
         self.rows = [r for t in tables if "Status" in t.headers for r in t.rows]
-        self.reasons = {r["ID"]: r[self.WHY]
-                        for t in tables if self.WHY in t.headers for r in t.rows}
+        self.reasons = {r["ID"]: r[self.WHY] for t in tables if self.WHY in t.headers for r in t.rows}
 
     WHY = "Why it falls short"
 
@@ -664,8 +672,7 @@ class Scorecard:
         return row["Target"].split(",")[0].split("(")[0].strip()
 
     def reason(self, row) -> str:
-        return self.reasons.get(
-            row["ID"], "No reason is recorded in `targets.md` — that is a gap.")
+        return self.reasons.get(row["ID"], "No reason is recorded in `targets.md` — that is a gap.")
 
     def tally_table(self, tier_column: str = "Scope") -> str:
         """Targets counted by tier against outcome — each target in exactly one cell."""
@@ -674,22 +681,21 @@ class Scorecard:
             tier, status = row[tier_column].strip(), row["Status"].strip()
             if tier in counts and status in counts[tier]:
                 counts[tier][status] += 1
-        body = [[tier, *(counts[tier][v] for v in self.verdicts), sum(counts[tier].values())]
-                for tier in self.tiers if sum(counts[tier].values())]
-        body.append(["**all**",
-                     *(sum(counts[t][v] for t in self.tiers) for v in self.verdicts),
-                     len(self.rows)])
-        return md_table(["Tier", *self.verdicts.values(), "Total"], body,
-                        aligns=["l"] + ["r"] * (len(self.verdicts) + 1))
+        body = [
+            [tier, *(counts[tier][v] for v in self.verdicts), sum(counts[tier].values())]
+            for tier in self.tiers
+            if sum(counts[tier].values())
+        ]
+        body.append(["**all**", *(sum(counts[t][v] for t in self.tiers) for v in self.verdicts), len(self.rows)])
+        return md_table(["Tier", *self.verdicts.values(), "Total"], body, aligns=["l"] + ["r"] * (len(self.verdicts) + 1))
 
-    def target_table(self, columns: Sequence[str] = ("ID", "Target", "Fig(s)", "Scope",
-                                                     "Fidelity", "Status")) -> str:
+    def target_table(self, columns: Sequence[str] = ("ID", "Target", "Fig(s)", "Scope", "Fidelity", "Status")) -> str:
         """One row per target, with its outcome spelled out."""
         headers = ["Tier" if c == "Scope" else c for c in columns]
         cell = {"Target": self.headline, "Status": self.verdict}
-        return md_table(headers,
-                        [[cell[c](r) if c in cell else r[c] for c in columns] for r in self.rows],
-                        aligns=["l"] * len(headers))
+        return md_table(
+            headers, [[cell[c](r) if c in cell else r[c] for c in columns] for r in self.rows], aligns=["l"] * len(headers)
+        )
 
     def for_figure(self, figure, column: str = "Fig(s)") -> list[dict]:
         """Every target a figure carries, joined on the targets table's own figure column."""
@@ -702,9 +708,9 @@ class Scorecard:
         not a failure of the figure, and an unobtainable input is a gap in the data — both are
         yellow, and a figure whose targets all met is green.
         """
+
         def names(rows):
-            ids = sorted((r["ID"] for r in rows), key=lambda s: int("".join(
-                c for c in s if c.isdigit()) or 0))
+            ids = sorted((r["ID"] for r in rows), key=lambda s: int("".join(c for c in s if c.isdigit()) or 0))
             return ids[0] if len(ids) == 1 else ", ".join(ids[:-1]) + f" and {ids[-1]}"
 
         by = {}
@@ -734,21 +740,37 @@ class Scorecard:
         wording states what each outcome means before naming its targets; reword it in the
         report if a study needs to, but keep the three groups apart.
         """
+
         def sentences(rows):
             return " ".join(f"**{r['ID']}**, {self.headline(r)}. {self.reason(r)}" for r in rows)
 
-        blocks, groups = [], [
-            ("short", "Attempted and {}", "These were run and did not meet the "
-             "criterion written for them, so they are the replication's own shortfall."),
-            ("out", "Declared {}", "Nothing was attempted here and nothing failed. Each "
-             "row says which of two things it is: a target judged, before anything was run, to "
-             "add no test of the paper's claims that another target does not already make, or "
-             "one that is in scope and simply not done yet. The first is a closed decision, the "
-             "second an open commitment, and the row must not blur them."),
-            ("blocked", "Blocked — {}", "These would be in scope, and the "
-             "method for them is the one already used elsewhere in this replication. What is "
-             "missing is data we cannot get."),
-        ]
+        blocks, groups = (
+            [],
+            [
+                (
+                    "short",
+                    "Attempted and {}",
+                    "These were run and did not meet the "
+                    "criterion written for them, so they are the replication's own shortfall.",
+                ),
+                (
+                    "out",
+                    "Declared {}",
+                    "Nothing was attempted here and nothing failed. Each "
+                    "row says which of two things it is: a target judged, before anything was run, to "
+                    "add no test of the paper's claims that another target does not already make, or "
+                    "one that is in scope and simply not done yet. The first is a closed decision, the "
+                    "second an open commitment, and the row must not blur them.",
+                ),
+                (
+                    "blocked",
+                    "Blocked — {}",
+                    "These would be in scope, and the "
+                    "method for them is the one already used elsewhere in this replication. What is "
+                    "missing is data we cannot get.",
+                ),
+            ],
+        )
         groups = [(s, t.format(self.verdicts.get(s, s)), lead) for s, t, lead in groups]
         for status, title, lead in groups:
             rows = self.of(status)
@@ -946,8 +968,7 @@ def flag_text(obj, flags=None):
         if attr == "source" and not isinstance(val, str):
             # `source` may be a structured object (iri / path / producer); show a
             # concise pointer, never its raw repr.
-            val = (getattr(val, "iri", None) or getattr(val, "path", None)
-                   or getattr(val, "name", None) or type(val).__name__)
+            val = getattr(val, "iri", None) or getattr(val, "path", None) or getattr(val, "name", None) or type(val).__name__
         labels.append(f"{key}={val}")
     return ", ".join(labels) or ""
 
@@ -979,8 +1000,7 @@ def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=
         order = sum(1 for v in deriv.variables if v == Symbol("t"))
         base = latex(deriv.expr, mul_symbol=mul_symbol, symbol_names=symbol_names)
         dots = {1: "dot", 2: "ddot", 3: "dddot"}.get(order)
-        lhs = (f"\\{dots}{{{base}}}" if dots
-               else f"\\frac{{d^{order}}}{{d t^{order}}} {base}")
+        lhs = f"\\{dots}{{{base}}}" if dots else f"\\frac{{d^{order}}}{{d t^{order}}} {base}"
         return f"{lhs} = {latex(eq.rhs, mul_symbol=mul_symbol, symbol_names=symbol_names)}"
     return latex(eq, mul_symbol=mul_symbol, symbol_names=symbol_names)
 
@@ -997,8 +1017,11 @@ def model_equations(model, kind="state", derivative_notation="dot", mul_symbol=N
     collection = "state_variables" if kind == "state" else "derived_variables"
     members = getattr(model, collection, None) or {}
     symbol_names = model.symbol_map() if hasattr(model, "symbol_map") else {}
-    return [(name, equation_latex(eq, derivative_notation, symbol_names, mul_symbol))
-            for name, eq in _equations_of(model).items() if name in members]
+    return [
+        (name, equation_latex(eq, derivative_notation, symbol_names, mul_symbol))
+        for name, eq in _equations_of(model).items()
+        if name in members
+    ]
 
 
 def model_equations_latex(model, kind="state", derivative_notation="dot", mul_symbol=None):
@@ -1009,8 +1032,14 @@ def model_equations_latex(model, kind="state", derivative_notation="dot", mul_sy
 def _model_vocabulary(model):
     """The symbol and function names a model's authored expressions may reference."""
     names = []
-    for collection in ("parameters", "derived_parameters", "state_variables",
-                       "derived_variables", "coupling_terms", "coupling_inputs"):
+    for collection in (
+        "parameters",
+        "derived_parameters",
+        "state_variables",
+        "derived_variables",
+        "coupling_terms",
+        "coupling_inputs",
+    ):
         names += [n for n, _ in name_items(slot(model, collection, None))]
     return names, [n for n, _ in name_items(slot(model, "functions", None))]
 
@@ -1035,8 +1064,9 @@ def model_functions(model, derivative_notation="dot", mul_symbol=None):
         args = list(args.values()) if hasattr(args, "values") else list(args or [])
         args = [str(slot(a, "name", a)) for a in args]
         try:
-            body = equation_latex(parse_eq(str(rhs), parameters=symbols + args, functions=functions),
-                                  derivative_notation, None, mul_symbol)
+            body = equation_latex(
+                parse_eq(str(rhs), parameters=symbols + args, functions=functions), derivative_notation, None, mul_symbol
+            )
         except Exception:
             body = str(rhs)
         out.append((name, f"\\operatorname{{{name}}}({', '.join(args)}) = {body}"))
@@ -1072,8 +1102,7 @@ def variant_sentence(variant, equations, baseline):
     redefined = sorted(variant.delta.eq_svars - variant.delta.new_svars)
     clauses = []
     if redefined:
-        refs = [equations.ref(baseline, key) or f"the equation for ${_symbol_latex(key)}$"
-                for key in redefined]
+        refs = [equations.ref(baseline, key) or f"the equation for ${_symbol_latex(key)}$" for key in redefined]
         clauses.append("redefines " + ", ".join(refs))
     if variant.delta.new_svars:
         clauses.append("adds " + _plural(len(variant.delta.new_svars), "state variable"))
@@ -1163,25 +1192,31 @@ def event_table(events, derivative_notation="dot"):
         if str(name).startswith("_"):
             continue
         params = slot(ev, "parameters", None)
-        rows.append([
-            f"`{name}`",
-            str(slot(ev, "event_type", "") or ""),
-            _expr(ev, "condition"),
-            _expr(ev, "equation", "effect"),
-            ", ".join(f"{p} = {format_number(slot(v, 'value', ''))}"
-                      for p, v in name_items(params)) if params else "",
-            slot(ev, "description", "") or slot(ev, "label", "") or "",
-        ])
+        rows.append(
+            [
+                f"`{name}`",
+                str(slot(ev, "event_type", "") or ""),
+                _expr(ev, "condition"),
+                _expr(ev, "equation", "effect"),
+                ", ".join(f"{p} = {format_number(slot(v, 'value', ''))}" for p, v in name_items(params)) if params else "",
+                slot(ev, "description", "") or slot(ev, "label", "") or "",
+            ]
+        )
     return table_or_prose(["Event", "Type", "Condition", "Effect", "Parameters", "Description"], rows)
 
 
 def state_variable_table(svars):
     """Markdown State-Variables table (empty columns dropped) from a name->obj map."""
     rows = [
-        [f"${display_symbol(sv, name)}$", format_number(slot(sv, "initial_value", "")), unit_text(slot(sv, "unit")),
-         f"{slot(sv, 'equation_type', 'differential')} (order {slot(sv, 'equation_order', 1)})",
-         metadata_text(sv), flag_text(sv, _STATE_VAR_FLAGS),
-         slot(sv, "description", "") or slot(sv, "definition", "") or ""]
+        [
+            f"${display_symbol(sv, name)}$",
+            format_number(slot(sv, "initial_value", "")),
+            unit_text(slot(sv, "unit")),
+            f"{slot(sv, 'equation_type', 'differential')} (order {slot(sv, 'equation_order', 1)})",
+            metadata_text(sv),
+            flag_text(sv, _STATE_VAR_FLAGS),
+            slot(sv, "description", "") or slot(sv, "definition", "") or "",
+        ]
         for name, sv in name_items(svars)
     ]
     return md_table(["Variable", "Initial Value", "Unit", "Equation", "Domain / Sampling", "Flags", "Description"], rows)
@@ -1204,17 +1239,27 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
         flags: ``(attr, label)`` pairs for :func:`flag_text`; defaults to the
             standard parameter flags.
     """
+
     def _name(name, p):
         return f"${display_symbol(p, name)}$" if symbolic else str(name)
 
     rows = [
-        [_name(name, p), format_number(slot(p, "value", "")), format_number(slot(p, "default", "")), unit_text(slot(p, "unit")),
-         metadata_text(p), flag_text(p, flags),
-         slot(p, "description", "") or slot(p, "definition", "") or ""]
+        [
+            _name(name, p),
+            format_number(slot(p, "value", "")),
+            format_number(slot(p, "default", "")),
+            unit_text(slot(p, "unit")),
+            metadata_text(p),
+            flag_text(p, flags),
+            slot(p, "description", "") or slot(p, "definition", "") or "",
+        ]
         for name, p in name_items(collection)
     ]
-    return md_table([name_header, "Value", "Default", "Unit", "Domain / Sampling", "Flags", "Description"],
-                    rows, aligns=["l", "r", "l", "l", "l", "l", "l"])
+    return md_table(
+        [name_header, "Value", "Default", "Unit", "Domain / Sampling", "Flags", "Description"],
+        rows,
+        aligns=["l", "r", "l", "l", "l", "l", "l"],
+    )
 
 
 def parameter_table(params):
@@ -1246,9 +1291,13 @@ def _param_signature(p):
     baseline in nothing else, and a value-only comparison reports the two models as
     identical — so the variant vanishes from the report rather than being described.
     """
-    return (_scalar(slot(p, "value", "")), str(slot(slot(p, "equation"), "rhs", "")),
-            str(slot(p, "distribution", "")), str(slot(p, "domain", "")),
-            bool(slot(p, "heterogeneous", False)))
+    return (
+        _scalar(slot(p, "value", "")),
+        str(slot(slot(p, "equation"), "rhs", "")),
+        str(slot(p, "distribution", "")),
+        str(slot(p, "domain", "")),
+        bool(slot(p, "heterogeneous", False)),
+    )
 
 
 def model_delta(model, baseline):
@@ -1317,7 +1366,7 @@ def experiment_models(experiment):
     net = slot(experiment, "network") or slot(experiment, "connectivity")
     catalogue = dict(name_items(slot(net, "dynamics", None)))
     out, seen = [], set()
-    for node in (slot(net, "nodes", None) or []):
+    for node in slot(net, "nodes", None) or []:
         model = slot(node, "dynamics", None)
         if isinstance(model, str):
             model = catalogue.get(model)
@@ -1356,10 +1405,11 @@ def _equations_of(model):
 def _model_signature(model):
     """What makes two models the same model, for collapsing repeats in a report."""
     eqs = _equations_of(model)
-    return (str(slot(model, "label", "") or slot(model, "name", "")),
-            tuple(sorted((k, str(getattr(v, "rhs", v))) for k, v in (eqs or {}).items())),
-            tuple(sorted((k, _param_signature(p))
-                         for k, p in name_items(slot(model, "parameters", {})))))
+    return (
+        str(slot(model, "label", "") or slot(model, "name", "")),
+        tuple(sorted((k, str(getattr(v, "rhs", v))) for k, v in (eqs or {}).items())),
+        tuple(sorted((k, _param_signature(p)) for k, p in name_items(slot(model, "parameters", {})))),
+    )
 
 
 def model_families(experiments):
@@ -1414,8 +1464,7 @@ def model_families(experiments):
                     entry.experiments.append(exp)
                 break
         else:
-            family.models.append(SimpleNamespace(model=model, signature=signature,
-                                                 experiments=[exp], delta=None))
+            family.models.append(SimpleNamespace(model=model, signature=signature, experiments=[exp], delta=None))
 
     out = []
     for family in families:
@@ -1423,8 +1472,7 @@ def model_families(experiments):
         family.variants = family.models[1:]
         for entry in family.variants:
             entry.delta = model_delta(entry.model, family.base.model)
-        family.label = (slot(family.base.model, "label", None)
-                        or slot(family.base.model, "name", None) or "Model")
+        family.label = slot(family.base.model, "label", None) or slot(family.base.model, "name", None) or "Model"
         shared = None
         for entry in family.models:
             names = set(dict(name_items(slot(entry.model, "parameters", {}) or {})))
@@ -1467,8 +1515,7 @@ def _meaning(obj, name=""):
     meaning of $y_0$ fills the cell without informing anyone, and hides from the author
     that the description is missing.
     """
-    return str(slot(obj, "description", "") or slot(obj, "definition", "")
-               or slot(obj, "label", "") or "")
+    return str(slot(obj, "description", "") or slot(obj, "definition", "") or slot(obj, "label", "") or "")
 
 
 def symbol_table(model, swept=None, couplings=()):
@@ -1499,17 +1546,38 @@ def symbol_table(model, swept=None, couplings=()):
     rows = []
     for name, sv in name_items(slot(model, "state_variables", {})):
         flags = flag_text(sv, _STATE_VAR_FLAGS)
-        rows.append([f"${display_symbol(sv, name)}$", f"state ({flags})" if flags else "state",
-                     _meaning(sv, name), _initial_text(sv), unit_text(slot(sv, "unit"))])
+        rows.append(
+            [
+                f"${display_symbol(sv, name)}$",
+                f"state ({flags})" if flags else "state",
+                _meaning(sv, name),
+                _initial_text(sv),
+                unit_text(slot(sv, "unit")),
+            ]
+        )
     for name, p in name_items(slot(model, "parameters", {})):
         flags = flag_text(p, _PARAM_FLAGS)
         kind = "parameter (swept)" if name in swept else (f"parameter ({flags})" if flags else "parameter")
-        rows.append([f"${display_symbol(p, name)}$", kind, _meaning(p, name),
-                     _value_text(p, swept.get(name)), unit_text(slot(p, "unit"))])
+        rows.append(
+            [
+                f"${display_symbol(p, name)}$",
+                kind,
+                _meaning(p, name),
+                _value_text(p, swept.get(name)),
+                unit_text(slot(p, "unit")),
+            ]
+        )
     for name, dp in name_items(slot(model, "derived_parameters", {})):
         rhs = slot(slot(dp, "equation"), "rhs", "")
-        rows.append([f"${display_symbol(dp, name)}$", "derived", _meaning(dp, name),
-                     f"${_safe_latex(rhs)}$" if rhs != "" else "", unit_text(slot(dp, "unit"))])
+        rows.append(
+            [
+                f"${display_symbol(dp, name)}$",
+                "derived",
+                _meaning(dp, name),
+                f"${_safe_latex(rhs)}$" if rhs != "" else "",
+                unit_text(slot(dp, "unit")),
+            ]
+        )
     declared = dict(name_items(slot(model, "parameters", {})))
     seen = set()
     for cpl in couplings:
@@ -1517,12 +1585,18 @@ def symbol_table(model, swept=None, couplings=()):
             if name in seen or (name in declared and _param_signature(p) == _param_signature(declared[name])):
                 continue
             seen.add(name)
-            rows.append([f"${display_symbol(p, name)}$", "coupling", _meaning(p, name),
-                         _value_text(p, swept.get(name)), unit_text(slot(p, "unit"))])
+            rows.append(
+                [
+                    f"${display_symbol(p, name)}$",
+                    "coupling",
+                    _meaning(p, name),
+                    _value_text(p, swept.get(name)),
+                    unit_text(slot(p, "unit")),
+                ]
+            )
     if not rows:
         return ""
-    return table_or_prose(["Symbol", "Kind", "Meaning", "Value", "Unit"], rows,
-                    aligns=["l", "l", "l", "r", "l"])
+    return table_or_prose(["Symbol", "Kind", "Meaning", "Value", "Unit"], rows, aligns=["l", "l", "l", "r", "l"])
 
 
 def _safe_latex(expression):
@@ -1549,9 +1623,11 @@ def sweep_axes(experiment):
     model parameter, which is what lets a swept parameter show its *range* in the symbol
     and experiment tables instead of a single value it never actually holds.
     """
-    return {slot(axis, "name", None) or str(name): _axis_range(axis)
-            for exploration in (slot(experiment, "explorations", None) or [])
-            for name, axis in name_items(slot(exploration, "parameters", None))}
+    return {
+        slot(axis, "name", None) or str(name): _axis_range(axis)
+        for exploration in (slot(experiment, "explorations", None) or [])
+        for name, axis in name_items(slot(exploration, "parameters", None))
+    }
 
 
 def time_text(value, unit=None, decimals=4):
@@ -1643,8 +1719,7 @@ def experiment_table(experiments, shared_parameters=(), orient="auto", caption_o
         return ""
     keys = list(facts[0])
     if caption_only_varying:
-        keys = [k for k in keys
-                if k in ("Exp",) or len({f.get(k, "") for f in facts}) > 1]
+        keys = [k for k in keys if k in ("Exp",) or len({f.get(k, "") for f in facts}) > 1]
     if orient == "auto":
         orient = "rows" if len(facts) >= len(keys) - 1 else "columns"
     if orient == "rows":
@@ -1679,18 +1754,24 @@ def settings_sentence(experiment):
         clauses.append(f"the first {time_text(slot(integ, 'transient_time'), unit)} discarded")
     swept = sweep_axes(experiment)
     if swept:
-        clauses.append("sweeping " + ", ".join(f"${_symbol_latex(a.split('.')[-1])}$ over {r}"
-                                               for a, r in swept.items()))
+        clauses.append("sweeping " + ", ".join(f"${_symbol_latex(a.split('.')[-1])}$ over {r}" for a, r in swept.items()))
     if not clauses:
         return ""
     sentence = ", ".join(clauses) + "."
     return sentence[:1].upper() + sentence[1:]
 
 
-_SAMPLING_SLOTS = (("period", "period"), ("downsample_period", "downsample"),
-                   ("aggregation", "aggregation"), ("imaging_modality", "modality"),
-                   ("time_scale", "scale"), ("voi", "VOI"), ("skip_t", "skip"),
-                   ("tail_samples", "tail"), ("window_size", "window"))
+_SAMPLING_SLOTS = (
+    ("period", "period"),
+    ("downsample_period", "downsample"),
+    ("aggregation", "aggregation"),
+    ("imaging_modality", "modality"),
+    ("time_scale", "scale"),
+    ("voi", "VOI"),
+    ("skip_t", "skip"),
+    ("tail_samples", "tail"),
+    ("window_size", "window"),
+)
 
 
 def pipeline_text(pipeline):
@@ -1703,9 +1784,14 @@ def pipeline_text(pipeline):
     resolved showed a scipy entry point where the reader wanted "convolve".
     """
     steps = pipeline if isinstance(pipeline, (list, tuple)) else ([pipeline] if pipeline else [])
-    names = [slot(s, "name", None) or slot(s, "label", None) or slot(s, "function", None)
-             or slot(slot(s, "callable", None), "name", None)
-             or slot(slot(s, "class_call", None), "name", None) for s in steps]
+    names = [
+        slot(s, "name", None)
+        or slot(s, "label", None)
+        or slot(s, "function", None)
+        or slot(slot(s, "callable", None), "name", None)
+        or slot(slot(s, "class_call", None), "name", None)
+        for s in steps
+    ]
     return " → ".join(str(n) if n else "?" for n in names)
 
 
@@ -1715,6 +1801,7 @@ def _id_text(ids):
     Ordering them as text gives ``1, 2, 20, 21, 3, 30`` — Deco2014 records the same
     three observables across ten experiments and listed them in exactly that order.
     """
+
     def key(i):
         s = str(i)
         return (0, int(s), "") if s.lstrip("-").isdigit() else (1, 0, s)
@@ -1732,12 +1819,14 @@ def _observation_row(name, obs, observed_names):
     sources = sources if isinstance(sources, (list, tuple)) else ([sources] if sources else [])
     names = [str(slot(s, "name", None) or s) for s in sources]
     derived = any(n in observed_names for n in names)
-    sampling = tuple((label, str(slot(obs, attr))) for attr, label in _SAMPLING_SLOTS
-                     if slot(obs, attr, None) is not None)
-    return (str(slot(obs, "label", None) or name),
-            ", ".join(names) if derived else _source_text(names),
-            sampling, pipeline_text(slot(obs, "pipeline", [])),
-            str(slot(obs, "description", "") or ""))
+    sampling = tuple((label, str(slot(obs, attr))) for attr, label in _SAMPLING_SLOTS if slot(obs, attr, None) is not None)
+    return (
+        str(slot(obs, "label", None) or name),
+        ", ".join(names) if derived else _source_text(names),
+        sampling,
+        pipeline_text(slot(obs, "pipeline", [])),
+        str(slot(obs, "description", "") or ""),
+    )
 
 
 _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
@@ -1755,8 +1844,7 @@ def _source_text(names):
     """
     if not names:
         return ""
-    return ", ".join(f"${_symbol_latex(n)}$" if _IDENTIFIER.fullmatch(n) else f"`{n}`"
-                     for n in names)
+    return ", ".join(f"${_symbol_latex(n)}$" if _IDENTIFIER.fullmatch(n) else f"`{n}`" for n in names)
 
 
 class Observations(NamedTuple):
@@ -1804,13 +1892,12 @@ def observation_table(experiments):
     shared = {k: v for k, v in per_row[0].items() if all(r.get(k) == v for r in per_row)}
 
     def _reduction(cells):
-        return " — ".join(part for part in
-                          (", ".join(f"{k}={v}" for k, v in cells[2] if k not in shared), cells[3])
-                          if part)
+        return " — ".join(part for part in (", ".join(f"{k}={v}" for k, v in cells[2] if k not in shared), cells[3]) if part)
 
-    table = table_or_prose(["Observation", "Experiments", "Source", "Reduction"],
-                     [[cells[0], _id_text(ids), cells[1], _reduction(cells)]
-                      for cells, ids in rows.items()])
+    table = table_or_prose(
+        ["Observation", "Experiments", "Source", "Reduction"],
+        [[cells[0], _id_text(ids), cells[1], _reduction(cells)] for cells, ids in rows.items()],
+    )
     notes = "\n\n".join(f"**{cells[0]}** — {cells[4]}" for cells in rows if cells[4])
     return Observations(table, ", ".join(f"{k} = {v}" for k, v in shared.items()), notes)
 
@@ -1929,8 +2016,7 @@ def unrendered_equations(source):
     """
     text = Path(source).read_text(encoding="utf-8") if _looks_like_path(source) else str(source)
     prose = _PYTHON_CELL.sub(lambda m: "\n" * m.group(0).count("\n"), text)
-    return [(prose[:m.start()].count("\n") + 1, " ".join(m.group(1).split()))
-            for m in _DISPLAY_MATH.finditer(prose)]
+    return [(prose[: m.start()].count("\n") + 1, " ".join(m.group(1).split())) for m in _DISPLAY_MATH.finditer(prose)]
 
 
 def _looks_like_path(source):
@@ -1990,12 +2076,10 @@ def variant_parameter_table(family):
         params = dict(name_items(slot(entry.model, "parameters", {})))
         for name in sorted(entry.delta.params):
             p = params.get(name)
-            rows.append([cell, f"${display_symbol(p, name)}$",
-                         _value_text(p), unit_text(slot(p, "unit")), _meaning(p, name)])
+            rows.append([cell, f"${display_symbol(p, name)}$", _value_text(p), unit_text(slot(p, "unit")), _meaning(p, name)])
     if not rows:
         return ""
-    return table_or_prose(["Variant", "Parameter", "Value", "Unit", "Description"], rows,
-                    aligns=["l", "l", "r", "l", "l"])
+    return table_or_prose(["Variant", "Parameter", "Value", "Unit", "Description"], rows, aligns=["l", "l", "r", "l", "l"])
 
 
 def parameter_report(param_setting, decimals=3, format="latex", **kwargs):

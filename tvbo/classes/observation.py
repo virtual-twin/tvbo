@@ -35,6 +35,7 @@ from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.codegen.code import render_expression
 from tvbo.ontology import owl as ontology
 from tvbo.plot.ontology import draw_custom_nodes
+
 logger = logging.getLogger(__name__)
 
 
@@ -997,8 +998,7 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
     data = _yaml.safe_load(path.read_text()) or {}
 
     # Scalar fields: adopt the curated value only where the recipe left it empty.
-    for field in ("label", "description", "imaging_modality", "period",
-                  "downsample_period", "time_scale"):
+    for field in ("label", "description", "imaging_modality", "period", "downsample_period", "time_scale"):
         if data.get(field) is not None and not getattr(obs, field, None):
             setattr(obs, field, data[field])
 
@@ -1013,8 +1013,7 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
         # inline a callable, or carry its own equation/source_code) — not a bare
         # Function. Building it as Function drops `function:`/`callable:` steps.
         obs.pipeline = [
-            step if isinstance(step, tvbo_datamodel.FunctionCall)
-            else tvbo_datamodel.FunctionCall(**step)
+            step if isinstance(step, tvbo_datamodel.FunctionCall) else tvbo_datamodel.FunctionCall(**step)
             for step in data["pipeline"]
         ]
 
@@ -1024,18 +1023,12 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
     # pass-through monitor.
     if data.get("dynamics") is not None and not getattr(obs, "dynamics", None):
         dyn = data["dynamics"]
-        obs.dynamics = (
-            dyn if isinstance(dyn, tvbo_datamodel.Dynamics)
-            else tvbo_datamodel.Dynamics(**dyn)
-        )
+        obs.dynamics = dyn if isinstance(dyn, tvbo_datamodel.Dynamics) else tvbo_datamodel.Dynamics(**dyn)
 
     # class_reference: a monitor/class handle (e.g. tvb Bold). Fill if absent.
     if data.get("class_reference") is not None and not getattr(obs, "class_reference", None):
         cr = data["class_reference"]
-        obs.class_reference = (
-            cr if isinstance(cr, tvbo_datamodel.ClassReference)
-            else tvbo_datamodel.ClassReference(**cr)
-        )
+        obs.class_reference = cr if isinstance(cr, tvbo_datamodel.ClassReference) else tvbo_datamodel.ClassReference(**cr)
 
     # parameters: keyed collection — fill each missing key, keep recipe overrides.
     if data.get("parameters"):
@@ -1152,12 +1145,12 @@ class Observation(tvbo_datamodel.Observation):
 
     # Operation-type labels and face-colors for flowchart boxes
     _OP_COLORS = {
-        "kernel":     "#dbeafe",  # generates a function over time (e.g. HRF)
-        "convolution": "#fef9c3", # folds two signals (e.g. fftconvolve)
+        "kernel": "#dbeafe",  # generates a function over time (e.g. HRF)
+        "convolution": "#fef9c3",  # folds two signals (e.g. fftconvolve)
         "projection": "#dcfce7",  # maps over node/space dimension
-        "temporal":   "#fae8ff",  # averages/subsamples along time
-        "transform":  "#f1f5f9",  # general equation without dimension tag
-        "identity":   "#f8fafc",  # passthrough / no-op
+        "temporal": "#fae8ff",  # averages/subsamples along time
+        "transform": "#f1f5f9",  # general equation without dimension tag
+        "identity": "#f8fafc",  # passthrough / no-op
     }
 
     @staticmethod
@@ -1254,8 +1247,7 @@ class Observation(tvbo_datamodel.Observation):
         )
 
         if kernel_step is None or kernel_step.equation is None:
-            ax.text(0.5, 0.5, "No kernel step found", ha="center", va="center",
-                    transform=ax.transAxes)
+            ax.text(0.5, 0.5, "No kernel step found", ha="center", va="center", transform=ax.transAxes)
             return
 
         # Collect parameter values: inline equation params + step arguments
@@ -1294,8 +1286,7 @@ class Observation(tvbo_datamodel.Observation):
             free = expr_sub.free_symbols
             y = lambdify(list(free), expr_sub, modules="numpy")(t_vals) if free else float(expr_sub) * np.ones_like(t_vals)
         except Exception:
-            ax.text(0.5, 0.5, "Kernel evaluation failed", ha="center", va="center",
-                    transform=ax.transAxes)
+            ax.text(0.5, 0.5, "Kernel evaluation failed", ha="center", va="center", transform=ax.transAxes)
             return
 
         y = np.asarray(y, dtype=float)
@@ -1326,15 +1317,17 @@ class Observation(tvbo_datamodel.Observation):
         ax.set_axis_off()
 
         if not steps:
-            label = str(
-                (self.class_reference.name if self.class_reference else None)
-                or self.name
+            label = str((self.class_reference.name if self.class_reference else None) or self.name)
+            ax.text(
+                0.5,
+                0.5,
+                f"{label}\n(identity)",
+                ha="center",
+                va="center",
+                fontsize=8,
+                transform=ax.transAxes,
+                bbox=dict(boxstyle="round,pad=0.4", facecolor=self._OP_COLORS["identity"], edgecolor="gray", linewidth=0.8),
             )
-            ax.text(0.5, 0.5, f"{label}\n(identity)", ha="center", va="center",
-                    fontsize=8, transform=ax.transAxes,
-                    bbox=dict(boxstyle="round,pad=0.4",
-                              facecolor=self._OP_COLORS["identity"],
-                              edgecolor="gray", linewidth=0.8))
             return
 
         n = len(steps)
@@ -1345,29 +1338,31 @@ class Observation(tvbo_datamodel.Observation):
         for idx, (step, yc) in enumerate(zip(steps, y_positions)):
             op = self._step_op_type(step)
             fc = self._OP_COLORS.get(op, self._OP_COLORS["transform"])
-            label = str(
-                getattr(step, "label", None)
-                or getattr(step, "name", None)
-                or getattr(step, "output", f"step {idx}")
-            )
+            label = str(getattr(step, "label", None) or getattr(step, "name", None) or getattr(step, "output", f"step {idx}"))
             rect = mpatches.FancyBboxPatch(
-                (0.5 - box_w / 2, yc - box_h / 2), box_w, box_h,
-                boxstyle="round,pad=0.02", linewidth=0.8,
-                edgecolor="#94a3b8", facecolor=fc,
-                transform=ax.transAxes, clip_on=False,
+                (0.5 - box_w / 2, yc - box_h / 2),
+                box_w,
+                box_h,
+                boxstyle="round,pad=0.02",
+                linewidth=0.8,
+                edgecolor="#94a3b8",
+                facecolor=fc,
+                transform=ax.transAxes,
+                clip_on=False,
             )
             ax.add_patch(rect)
             # step name (main line) + operation tag (smaller, below)
-            ax.text(0.5, yc + 0.012, label, ha="center", va="center",
-                    fontsize=7, transform=ax.transAxes)
-            ax.text(0.5, yc - 0.022, f"[{op}]", ha="center", va="center",
-                    fontsize=5, color="#64748b", transform=ax.transAxes)
+            ax.text(0.5, yc + 0.012, label, ha="center", va="center", fontsize=7, transform=ax.transAxes)
+            ax.text(0.5, yc - 0.022, f"[{op}]", ha="center", va="center", fontsize=5, color="#64748b", transform=ax.transAxes)
 
             if idx < n - 1:
                 gap_start = yc - box_h / 2
                 gap_end = y_positions[idx + 1] + box_h / 2
                 ax.annotate(
-                    "", xy=(0.5, gap_end), xytext=(0.5, gap_start),
-                    xycoords="axes fraction", textcoords="axes fraction",
+                    "",
+                    xy=(0.5, gap_end),
+                    xytext=(0.5, gap_start),
+                    xycoords="axes fraction",
+                    textcoords="axes fraction",
                     arrowprops=dict(arrowstyle="->", color="#64748b", lw=0.8),
                 )

@@ -48,8 +48,7 @@ class _Exp:
         self._source_file = None
 
 
-def _bold_observation(ds_step=1, tr_stride=180, k_1=5.6, V_0=0.02, reduce="streaming",
-                      decimation="subsample"):
+def _bold_observation(ds_step=1, tr_stride=180, k_1=5.6, V_0=0.02, reduce="streaming", decimation="subsample"):
     """An HRF-Volterra ``bold`` pipeline (kernel -> decimation -> volterra -> subsample-at-TR).
 
     ``decimation`` selects the pipeline's downsampling step: ``subsample`` (backend-independent
@@ -66,9 +65,7 @@ def _bold_observation(ds_step=1, tr_stride=180, k_1=5.6, V_0=0.02, reduce="strea
             name="temporal_average",
             arguments={"period_samples": Argument(name="period_samples", value=ds_step)},
         ),
-        "subsample_bold": Function(
-            name="subsample_bold", arguments={"s": Argument(name="s", value=tr_stride)}
-        ),
+        "subsample_bold": Function(name="subsample_bold", arguments={"s": Argument(name="s", value=tr_stride)}),
         "volterra_transform": Function(
             name="volterra_transform",
             equation=Equation(
@@ -156,9 +153,7 @@ def test_post_eval_plan_names_and_deliverables():
 
 def _emit_reducer(red, kernel):
     """Render the convolution reducer def and exec it with a stub ``hrf_kernel``."""
-    src = _OBS_TEMPLATE.get_def("render_convolution_reduction").render(
-        red=red, name="bold", s_idx=0, dt=1.0
-    )
+    src = _OBS_TEMPLATE.get_def("render_convolution_reduction").render(red=red, name="bold", s_idx=0, dt=1.0)
     ns = {"jnp": jnp, "jax": jax, "hrf_kernel": lambda: kernel}
     exec(compile(src, "<reducer>", "exec"), ns)
     return ns["_reduction_bold"]
@@ -174,10 +169,7 @@ def _reference_bold(data_col, warm, kernel, ds, tr, k_1, V_0):
         ring = jnp.zeros((K, n))
     else:
         wd = warm[ds - 1 :: ds]
-        ring = (
-            jnp.vstack([jnp.zeros((K - wd.shape[0], n), wd.dtype), wd]) if wd.shape[0] < K
-            else wd[-K:]
-        )
+        ring = jnp.vstack([jnp.zeros((K - wd.shape[0], n), wd.dtype), wd]) if wd.shape[0] < K else wd[-K:]
     sig = jnp.concatenate([ring, ds_data], axis=0)
     conv = jax.vmap(lambda x: jsp.signal.fftconvolve(x, kernel, "valid"), in_axes=1, out_axes=1)(sig)
     return (V_0 * k_1 * (conv - 1.0))[tr::tr]
@@ -186,8 +178,15 @@ def _reference_bold(data_col, warm, kernel, ds, tr, k_1, V_0):
 @pytest.mark.parametrize("warm_len", [0, 30, 80])  # 0 -> cold; <K and >K exercise the pad/trim
 def test_reducer_matches_subsampling_reference(warm_len):
     tr, K, T, n = 18, 50, 360, 6
-    red = {"kind": "convolution", "source": "S_e", "kernel_call": "hrf_kernel()",
-           "ds_steps": 1, "tr_stride": tr, "k_1": 5.6, "V_0": 0.02}
+    red = {
+        "kind": "convolution",
+        "source": "S_e",
+        "kernel_call": "hrf_kernel()",
+        "ds_steps": 1,
+        "tr_stride": tr,
+        "k_1": 5.6,
+        "V_0": 0.02,
+    }
     kernel = jax.random.normal(jax.random.PRNGKey(0), (K,))
     factory = _emit_reducer(red, kernel)
 
@@ -208,8 +207,15 @@ def test_reducer_matches_subsampling_reference(warm_len):
 @pytest.mark.parametrize("block_size", [18, 36, 90, 180])  # all multiples of period_in_steps (18)
 def test_reducer_is_block_decomposition_invariant(block_size):
     tr, K, T, n = 18, 50, 360, 6
-    red = {"kind": "convolution", "source": "S_e", "kernel_call": "hrf_kernel()",
-           "ds_steps": 1, "tr_stride": tr, "k_1": 5.6, "V_0": 0.02}
+    red = {
+        "kind": "convolution",
+        "source": "S_e",
+        "kernel_call": "hrf_kernel()",
+        "ds_steps": 1,
+        "tr_stride": tr,
+        "k_1": 5.6,
+        "V_0": 0.02,
+    }
     kernel = jax.random.normal(jax.random.PRNGKey(3), (K,))
     factory = _emit_reducer(red, kernel)
     data = 0.5 + 0.1 * jax.random.normal(jax.random.PRNGKey(4), (T, 4, n))

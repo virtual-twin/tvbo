@@ -10,6 +10,7 @@ the ``…_desc-SC_relmat.h5`` + YAML sidecar happens in the caller (``tvbo netwo
 build``); this module only shells out to MRtrix and reads back the CSVs, so it is
 the single place the ``tck2connectome`` invocation is defined.
 """
+
 from __future__ import annotations
 
 import shutil
@@ -75,8 +76,13 @@ def tck2connectome_commands(
     weights_cmd += common
 
     lengths_cmd = [
-        TCK2CONNECTOME, str(tractogram), str(parcellation), str(lengths_csv),
-        "-scale_length", "-stat_edge", "mean",
+        TCK2CONNECTOME,
+        str(tractogram),
+        str(parcellation),
+        str(lengths_csv),
+        "-scale_length",
+        "-stat_edge",
+        "mean",
     ] + common
 
     return [weights_cmd, lengths_cmd]
@@ -96,8 +102,14 @@ def run_tck2connectome(
 ) -> None:
     """Run ``tck2connectome`` twice: edge weights (count) then mean tract lengths."""
     for cmd in tck2connectome_commands(
-        tractogram, parcellation, weights_csv, lengths_csv, assignments_csv,
-        symmetric=symmetric, zero_diagonal=zero_diagonal, force=force,
+        tractogram,
+        parcellation,
+        weights_csv,
+        lengths_csv,
+        assignments_csv,
+        symmetric=symmetric,
+        zero_diagonal=zero_diagonal,
+        force=force,
         extra_args=extra_args,
     ):
         subprocess.run(cmd, check=True)
@@ -145,8 +157,14 @@ def connectome_from_tractogram(
         assignments_csv = tmpdir / "assignments.csv" if assignments_out else None
 
         run_tck2connectome(
-            tractogram, parcellation, weights_csv, lengths_csv, assignments_csv,
-            symmetric=symmetric, zero_diagonal=zero_diagonal, extra_args=extra_args,
+            tractogram,
+            parcellation,
+            weights_csv,
+            lengths_csv,
+            assignments_csv,
+            symmetric=symmetric,
+            zero_diagonal=zero_diagonal,
+            extra_args=extra_args,
         )
 
         weights = np.atleast_2d(np.loadtxt(weights_csv, delimiter=","))

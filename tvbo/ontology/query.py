@@ -12,6 +12,7 @@ low-level triple store to look up ontology classes and individuals by label,
 synonym, acronym or symbol, traverse relationships (parents and children) and
 normalise IRIs to their prefixed form.
 """
+
 from typing import Any, List, Tuple, Union
 from tvbo.ontology import owl as ontology
 import owlready2
@@ -150,9 +151,7 @@ def sparql_query(query_string: str, flatten_result: bool = True, world: Any = No
     # annotation properties (e.g. tvbo:synonym) that are absent from the
     # generated ontology; treat those as matching nothing rather than raising.
     world = world if world is not None else ontology.onto.world
-    res: List[Any] = list(
-        world.sparql(query_string, error_on_undefined_entities=False)
-    )
+    res: List[Any] = list(world.sparql(query_string, error_on_undefined_entities=False))
     return flatten_list(res) if flatten_result else res
 
 

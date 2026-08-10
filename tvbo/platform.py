@@ -11,6 +11,7 @@ This mirrors ``tvbo_platform`` shipped in the tvbo-platform repo
 
 Mint an API key at ``<platform>/my/api-keys``.
 """
+
 from __future__ import annotations
 
 __all__ = ["TVBOPlatform", "TVBOPlatformError"]
@@ -50,12 +51,10 @@ class TVBOPlatform:
         self._session.headers["Authorization"] = f"Bearer {api_key}"
 
     def _get(self, path: str, **params):
-        return self._checked(
-            self._session.get(self.base_url + path, params=params, timeout=self.timeout))
+        return self._checked(self._session.get(self.base_url + path, params=params, timeout=self.timeout))
 
     def _post(self, path: str, payload: dict):
-        return self._checked(
-            self._session.post(self.base_url + path, json=payload, timeout=self.timeout))
+        return self._checked(self._session.post(self.base_url + path, json=payload, timeout=self.timeout))
 
     @staticmethod
     def _checked(resp):
@@ -132,9 +131,7 @@ class TVBOPlatform:
         Returns:
             The platform's JSON response describing the created model.
         """
-        return self._post(
-            "/api/tvbo/v1/models", {"yaml": _to_yaml(spec), "visibility": visibility}
-        ).json()
+        return self._post("/api/tvbo/v1/models", {"yaml": _to_yaml(spec), "visibility": visibility}).json()
 
     # -- experiments ----------------------------------------------------
     def list_experiments(self) -> list:
@@ -165,8 +162,7 @@ class TVBOPlatform:
         Returns:
             The experiment specification decoded from the JSON `data` payload.
         """
-        return self._get(
-            f"/api/tvbo/v1/experiments/{experiment_id}", format="json").json()["data"]
+        return self._get(f"/api/tvbo/v1/experiments/{experiment_id}", format="json").json()["data"]
 
     def load_experiment(self, experiment_id: int):
         """Load an experiment from the platform into a `SimulationExperiment`.
@@ -196,9 +192,7 @@ class TVBOPlatform:
         Returns:
             The platform's JSON response describing the created experiment.
         """
-        return self._post(
-            "/api/tvbo/v1/experiments", {"yaml": _to_yaml(spec), "visibility": visibility}
-        ).json()
+        return self._post("/api/tvbo/v1/experiments", {"yaml": _to_yaml(spec), "visibility": visibility}).json()
 
 
 def _to_yaml(spec) -> str:
@@ -218,6 +212,4 @@ def _to_yaml(spec) -> str:
     for attr in ("to_string", "to_yaml"):
         if hasattr(spec, attr):
             return getattr(spec, attr)()
-    raise TypeError(
-        "Unsupported spec type for push; pass YAML text, a dict, or a tvbo object."
-    )
+    raise TypeError("Unsupported spec type for push; pass YAML text, a dict, or a tvbo object.")
