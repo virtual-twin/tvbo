@@ -585,33 +585,42 @@ def run_${algo_name}(
     _ws0 = jnp.asarray(int(window_size), jnp.int32)
     _use_ring = max_window_size is not None
 % endif
+    def _canon(_x):
+        # Strip weak_type so stage 1 (fresh inputs, weakly typed) and stage 2+ (the scan's
+        # strongly-typed outputs re-fed as inputs) share ONE jit specialization -> the tuning
+        # scan compiles once across stages. Typed PRNG keys pass through unchanged.
+        _a = _x if hasattr(_x, "dtype") else jnp.asarray(_x)
+        if jax.dtypes.issubdtype(_a.dtype, jax.dtypes.prng_key):
+            return _a
+        return jax.lax.convert_element_type(_a, _a.dtype)
+    _canon_tree = lambda _t: jax.tree_util.tree_map(_canon, _t)
     _ls_final, _ys_all = _${algo_name}_tuning_core(
-        state,
-        key,
+        _canon_tree(state),
+        _canon_tree(key),
 % for src_obs in source_observations_needed:
-        _${src_obs}_buffer,
+        _canon_tree(_${src_obs}_buffer),
 % endfor
 % for obs, obs_class in pipeline_observations:
-        _${obs}_monitor,
+        _canon_tree(_${obs}_monitor),
 % endfor
 % for src_obs, src_class in source_monitors:
 % if src_obs not in [o[0] for o in pipeline_observations]:
-        _${src_obs}_monitor,
+        _canon_tree(_${src_obs}_monitor),
 % endif
 % endfor
 % for pname in hyperparam_dict.keys():
 % if pname != 'window_size':
-        ${pname},
+        _canon_tree(${pname}),
 % endif
 % endfor
 % for inp_name in external_inputs:
-        ${inp_name},
+        _canon_tree(${inp_name}),
 % endfor
 % if streaming_map:
-        _resync_period,
+        _canon_tree(_resync_period),
 % endif
 % if use_maxwin:
-        _ws0,
+        _canon_tree(_ws0),
 % endif
         model_fn=_raw_model_fn,
         n_iterations=n_iterations,
