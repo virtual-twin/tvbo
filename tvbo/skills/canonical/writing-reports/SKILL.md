@@ -257,7 +257,9 @@ and hold to six rules.
 
 - **A small grid is a sentence.** A numbered, captioned float tells the reader something has to
   be looked up, and journals cap how many a paper may carry — spending one on two numbers is a
-  waste of a scarce slot. `md_table` writes any grid below the threshold as prose instead
+  waste of a scarce slot. `report.table_or_prose` writes any grid below the threshold as prose
+  instead; `md_table` always renders a table, so reach for it when the grid has no subject
+  column for a sentence to name (a parameter block, a state-variable list, a scorecard).
   (`Exp 50 — Duration: 2000 ms; Exp 51 — Duration: 7000 ms.`), so this is automatic; the rule
   matters when you are deciding whether to build a table at all. Pang2023 had a one-row float
   announcing that a model declares one event.

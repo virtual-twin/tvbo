@@ -810,6 +810,8 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
     from tvbo.codegen.transforms import PRIMITIVES, emit_env
 
     node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
+    raw = getattr(network, "raw_weights_matrix", None)
+    n_nodes = None if raw is None else np.asarray(raw).shape[0]
     transforms: List[Tuple[str, List[str]]] = []
     const_env: List[str] = []
     const_seen: Set[str] = set()
@@ -840,7 +842,14 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
             _add_const(line.split(" = ", 1)[0], line)
         for s in symbols:
             if s in node_vectors:
-                vals = ", ".join(repr(float(v)) for v in np.asarray(node_vectors[s]).ravel())
+                vec = np.asarray(node_vectors[s]).ravel()
+                if n_nodes is not None and vec.shape[0] != n_nodes:
+                    raise ValueError(
+                        f"weight transform {getattr(t, 'name', '?')!r} uses per-node parameter "
+                        f"{s!r} with {vec.shape[0]} values, but the network has {n_nodes} nodes. "
+                        f"The runtime skips a mismatched vector; a kit would broadcast it wrongly."
+                    )
+                vals = ", ".join(repr(float(v)) for v in vec)
                 _add_const(s, f"{s} = jnp.asarray([{vals}]).reshape(-1, 1)")
             elif s not in PRIMITIVES:
                 raise ValueError(
