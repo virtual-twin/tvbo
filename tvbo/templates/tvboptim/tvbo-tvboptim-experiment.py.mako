@@ -4212,7 +4212,7 @@ def run_experiment(
 % endif
 % endif
                         monitors=_stage_monitors,
-                        run_post_tuning=True,   # validate after EACH stage (r-trajectory)
+                        run_post_tuning=(_si == len(_stage_defs) - 1),   # post-fold only after the LAST stage (5x fewer giant post-folds; intermediate r-trajectory not computed)
 % if observation_ref:
                         observation_monitor=observations.${observation_ref},
 % endif

@@ -66,10 +66,15 @@ def _safe_latex(rhs):
 
 pre_rhs = getattr(getattr(cpl, "pre_expression", None), "rhs", None)
 post_rhs = getattr(getattr(cpl, "post_expression", None), "rhs", None)
-# `c_post = gx` says only that the summed input is used as it stands -- true of nine of the
-# eleven couplings across the replication studies. Numbering it gives an equation slot to a
-# statement with no content, so it is written as a clause instead.
-post_is_identity = str(post_rhs or "").strip() == "gx"
+# An identity half of the decomposition states nothing: `c_post = gx` says the summed input
+# is used as it stands, `c_pre = local_states` that each source contributes its own state.
+# Both are alias tokens the recipe needs and a reader does not, so they become clauses.
+# `local_states`/`incoming_states` are placeholders `symbolic()` substitutes; printed raw
+# they typeset as a variable named "local_states".
+_ALIASES = {"gx", "local_states", "incoming_states", "x_i", "x_j"}
+_states = [str(s) for s in (list(local) + list(incoming))]
+post_is_identity = str(post_rhs or "").strip() in _ALIASES
+pre_is_identity = str(pre_rhs or "").strip() in (_ALIASES | set(_states))
 coupling_meta = []
 for attr, label in (
     ("coupling_function", "function"),
@@ -121,7 +126,7 @@ def _summed_inputs():
     aside = ("the pre-synaptic components summed over the graph" if post_is_identity else
              "the pre-synaptic components summed over the graph, which the post-synaptic term recombines")
     if not equations:
-        return f"with {gx_line} — {aside}."
+        return f"with {gx_line}, {aside}."
     blocks = "\n".join(
         equations.block(f"{latex(g)} = {latex(s, mul_symbol='dot', order='none')}", cpl, f"gx-{i}")
         for i, (g, s) in enumerate(gx_defs))
@@ -157,12 +162,15 @@ ${equations.block("c = " + full_latex, cpl, "c") if equations else "$$c = " + fu
 ${'; '.join(coupling_meta)}.
 
 % endif
-% if pre_rhs:
+% if pre_is_identity:
+Each source node contributes its own state unmodified; there is no pre-synaptic transformation.
+
+% elif pre_rhs:
 ${_decomposition("Pre-synaptic", r"c_{\text{pre}}", pre_rhs, "c-pre")}
 
 % endif
 % if post_is_identity:
-The summed input enters the target unchanged — there is no post-synaptic transformation.
+The summed input enters the target unchanged; there is no post-synaptic transformation.
 
 % elif post_rhs:
 ${_decomposition("Post-synaptic", r"c_{\text{post}}", post_rhs, "c-post")}
@@ -187,7 +195,7 @@ if sym_val:
     meta_lines.append(f"Symmetry: {sym_val}")
 %>\
 % if meta_lines:
-${" — ".join(meta_lines)}.
+${"; ".join(meta_lines)}.
 
 % endif
 % if cpl_items and parameters:
