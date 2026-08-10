@@ -313,6 +313,32 @@ def test_unknown_part_is_refused(study):
         study.report("qmd", part="appendix")
 
 
+def test_a_label_does_not_repeat_the_id_the_heading_carries(study):
+    """Recipes open a label with the experiment's own number, giving "Experiment 30: Exp 30 …".
+
+    Six of Schirner2023's ten read that way, and the dash the recipe used to attach the
+    number went with it.
+    """
+    from tvbo.utils.report import experiment_title
+
+    exp = SimpleNamespace(id=30, label="Exp 30 — FIC+EIB tuning (group-avg)")
+    assert experiment_title(exp) == "FIC+EIB tuning (group-avg)"
+    assert experiment_title(SimpleNamespace(id=3, label="Experiment 3: driven")) == "driven"
+    assert experiment_title(SimpleNamespace(id=7, label="Isolated column")) == "Isolated column"
+    assert experiment_title(SimpleNamespace(id=7, label="Exp 70 revisited")) == "Exp 70 revisited"
+
+
+def test_an_identity_half_of_the_coupling_is_a_clause_not_an_equation(study):
+    """`c_pre = local_states` and `c_post = gx` state nothing, and `local_states` is an
+    alias token `symbolic()` substitutes — printed raw it typesets as a variable."""
+    from tvbo.utils import report
+
+    exps = [study.get_experiment(i) for i in study.experiment_ids()]
+    prose = report.coupling_prose(exps, report.Equations("semantic", "qmd"))
+    assert "no post-synaptic transformation" in prose
+    assert "local_states" not in prose and "c_{\\text{post}}" not in prose
+
+
 # ── An equation reaches the report by being rendered, never by being typed ──────────────
 
 
@@ -349,8 +375,9 @@ def test_the_reported_line_number_survives_a_stripped_cell(tmp_path):
 
 
 @pytest.mark.parametrize("rows,expected", [
-    ([["`Q`", "stimulus"]], "Event `Q` — Type: stimulus."),
-    ([["50", "2000 ms"], ["51", "7000 ms"]], "Event 50 — Type: 2000 ms; Event 51 — Type: 7000 ms."),
+    ([["`Q`", "stimulus"]], "Event `Q` (Type: stimulus)."),
+    ([["50", "2000 ms"], ["51", "7000 ms"]],
+     "Event 50 (Type: 2000 ms); Event 51 (Type: 7000 ms)."),
 ])
 def test_a_grid_too_small_to_be_a_float_is_written_as_a_sentence(rows, expected):
     """A captioned float tells the reader to look something up; two numbers do not earn one.
