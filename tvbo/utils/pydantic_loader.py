@@ -37,13 +37,13 @@ from __future__ import annotations
 
 import copy
 import re
-import warnings
 from functools import lru_cache
 from typing import Any, Type, Union, get_args, get_origin
 
 import yaml
 from pydantic import BaseModel
 
+from tvbo.datamodel import dialect
 from tvbo.datamodel import pydantic as _dm
 from tvbo.utils import yaml_loader
 
@@ -122,22 +122,6 @@ def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
     return None
 
 
-@lru_cache(maxsize=None)
-def _slot_alias_map(model_cls: Type[BaseModel]) -> dict[str, str]:
-    """This class's ``{alias: canonical}`` slot-alias map.
-
-    Reused verbatim from the LinkML dataclass path (``schema._SLOT_ALIASES``) so
-    this validator accepts exactly the keys that loader does. The dataclasses fold
-    these aliases in ``__init__``; the Pydantic models cannot, so :func:`_inject`
-    folds them here, class-scoped — the same context that keeps ``target_variable``
-    (an ``Edge`` alias, but the canonical slot on a stimulus ``Event``) from being
-    renamed where it must not be.
-    """
-    from tvbo.datamodel.schema import _SLOT_ALIASES
-
-    return _SLOT_ALIASES.get(model_cls.__name__, {})
-
-
 # --------------------------------------------------------------------------- #
 # Key -> identifier injection
 # --------------------------------------------------------------------------- #
@@ -150,23 +134,14 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
     for envelope_key in _ENVELOPE_KEYS:
         data.pop(envelope_key, None)
 
-    # Fold this class's slot aliases (``dt``->``step_size``, ``righthandside``->``rhs``,
-    # ...), class-scoped, exactly as the generated dataclasses fold them in ``__init__``.
-    # The Pydantic models cannot, so a raw alias key would otherwise be rejected by
-    # ``extra='forbid'``. Runs before the field walk so an aliased key is seen under its
-    # canonical name.
-    for alias, canonical in _slot_alias_map(model_cls).items():
-        if alias not in data:
-            continue
-        if canonical in data:
-            warnings.warn(
-                f"{model_cls.__name__} got both {alias!r} and its canonical slot "
-                f"{canonical!r}; ignoring {alias!r}.",
-                stacklevel=2,
-            )
-            data.pop(alias)
-        else:
-            data[canonical] = data.pop(alias)
+    # Fold the TVBO dialect — declared aliases and bare-scalar shortcuts — through the
+    # one shared implementation the dataclasses and the model validator also use. It runs
+    # before the field walk below for two reasons: an aliased collection slot has to be
+    # seen under its canonical name to be recognised as a keyed collection at all, and a
+    # member written bare (``omega: 0.0628``) has to become a mapping before there is
+    # anywhere to inject its key. Re-folding an already-folded dict is a no-op, so the
+    # model validator repeating this is harmless.
+    dialect.normalize(model_cls.__name__, data)
 
     for fname, info in model_cls.model_fields.items():
         key = fname if fname in data else (info.alias if info.alias and info.alias in data else None)

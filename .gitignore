@@ -147,6 +147,7 @@ graphify-out
 tvbo/datamodel/schema.py
 tvbo/datamodel/pydantic.py
 tvbo/datamodel/tvbo_datamodel.schema.json
+tvbo/datamodel/dialect_tables.py
 
 # Build artifacts
 dist/

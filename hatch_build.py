@@ -49,8 +49,10 @@ def generate_datamodel(root: str | Path) -> None:
         )
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
-    _write(out_dir / "schema.py", PythonGenerator(str(schema)).serialize() + _alias_support(schema))
-    _write(out_dir / "pydantic.py", PydanticGenerator(str(schema)).serialize())
+    shortcuts, aliases = _dialect_tables(schema)
+    _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases))
+    _write(out_dir / "schema.py", PythonGenerator(str(schema)).serialize() + _INSTALL_DIALECT)
+    _write(out_dir / "pydantic.py", _with_dialect(PydanticGenerator(str(schema)).serialize()))
 
     # JSON Schema — relax `additionalProperties: false → true` everywhere so
     # validation stays lenient, mirroring the previous
@@ -67,8 +69,8 @@ def generate_datamodel(root: str | Path) -> None:
 _SEMANTIC_ALIASES = ("range", "boundaries")
 
 
-def _alias_support(schema: Path) -> str:
-    """Python appended to the generated ``schema.py`` so classes accept their aliases.
+def _dialect_tables(schema: Path) -> tuple[dict, dict]:
+    """``(scalar shortcuts, slot aliases)`` — the TVBO dialect, read once off the schema.
 
     LinkML treats ``aliases:`` as documentation — its loaders key on the canonical slot
     name, so a declared alias is inert and raises ``unexpected keyword argument``. Each
@@ -83,9 +85,13 @@ def _alias_support(schema: Path) -> str:
     ``equation: "x+2"`` means ``{rhs: "x+2"}``. LinkML specifies this for keyed
     collections (``inlined_as_simple_dict``) but ``linkml_runtime``'s dataclass loader
     does not implement it, so it is applied here — and extended to single-valued
-    inlined slots, which the spec does not cover. Slots explicitly marked
-    ``inlined: false`` are references: their scalar is the target's *identifier*, not a
-    value to wrap (``FreeParameter.parameter: ReducedWongWangEIB.J_i``), so they are skipped.
+    inlined slots, which the spec does not cover. Reference slots are skipped: their
+    scalar is the target's *identifier*, not a value to wrap
+    (``FreeParameter.parameter: ReducedWongWangEIB.J_i``). Inlined-ness is asked of the
+    schema (``is_inlined``) rather than read off ``slot.inlined``, because a class-ranged
+    slot whose range has an identifier is a reference by default while leaving
+    ``inlined`` unset — six such slots were being wrapped, and since the wrapper then had
+    to fit a string-ranged slot it landed as the literal ``"JsonObj(value='x')"``.
     """
     from linkml_runtime.utils.schemaview import SchemaView
 
@@ -111,7 +117,7 @@ def _alias_support(schema: Path) -> str:
                 view.get_identifier_slot(str(slot.range), use_key=True) is not None,
             )
             for slot in view.class_induced_slots(cls_name)
-            if str(slot.range) in shortcut_of and slot.inlined is not False
+            if str(slot.range) in shortcut_of and view.is_inlined(slot)
         }
         if slot_lifts:
             lifts[cls_name] = slot_lifts
@@ -129,90 +135,78 @@ def _alias_support(schema: Path) -> str:
         amap = {a: c for a, c in amap.items() if a not in own}
         if amap:
             table[cls_name] = amap
-    return f"""
-
-# --- scalar shortcuts (generated) ---------------------------------------------------
-# {{class: {{slot: slot the scalar stands for}}}}, from `annotations.scalar_shortcut` on
-# each range class. Lets a value be written bare where the object has one obvious field.
-_SCALAR_SHORTCUTS = {lifts!r}
+    return lifts, table
 
 
-_SCALARS = (str, int, float, bool)
+def _render_dialect_tables(shortcuts: dict, aliases: dict) -> str:
+    """The two dialect tables as their own module.
 
+    Kept apart from ``schema.py`` so the Pydantic models can read them without importing
+    the dataclasses: that import is the coupling the migration exists to remove, and it
+    would be a cycle once ``schema.py`` installs the dialect from the same place.
+    """
+    return f'''"""Generated dialect tables — see :mod:`tvbo.datamodel.dialect`.
 
-def _is_literal(value):
-    \"\"\"A bare value the shortcut may lift: a scalar, or a (nested) list of scalars.
-
-    An array literal counts — a coordinate list to select, a coefficient matrix — because
-    the slot it lifts into holds arrays as well as scalars. A list of MAPPINGS does not:
-    that is the list spelling of a keyed collection, whose members lift individually.
-    \"\"\"
-    if isinstance(value, _SCALARS):
-        return True
-    if isinstance(value, (list, tuple)):
-        return bool(value) and all(_is_literal(v) for v in value)
-    return False
-
-
-def _lift_scalar(value, target, multivalued, keyed=False):
-    \"\"\"`0.0628` -> `{{'value': 0.0628}}`, leaving an already-written mapping alone.
-
-    On a multivalued slot the members are lifted, not the collection: `{{omega: 0.0628}}`
-    is a keyed collection of one Parameter, not a Parameter. A `keyed` collection's LIST
-    spelling (`arguments: [v]`) is a list of member identifiers, not values, so its bare
-    scalars are left for the loader to key on; only a non-keyed list (`additional_equations:
-    ["x = -x"]` -> `[{{rhs: "x = -x"}}]`) lifts its elements.
-    \"\"\"
-    if not multivalued:
-        return {{target: value}} if _is_literal(value) else value
-    if isinstance(value, dict):
-        return {{k: ({{target: v}} if _is_literal(v) else v) for k, v in value.items()}}
-    if isinstance(value, list):
-        if keyed:
-            return value
-        return [({{target: v}} if _is_literal(v) else v) for v in value]
-    return value
-
-
-# --- slot aliases (generated) -------------------------------------------------------
-# {{class: {{alias: canonical slot}}}} from the schema's `aliases:`. Folded in __init__,
-# where the kwargs are known to belong to this class.
-_SLOT_ALIASES = {table!r}
-
-
-def _install_slot_aliases() -> None:
-    import warnings
-
-    def _wrap(cls, amap):
-        original = cls.__init__
-
-        def __init__(self, *args, **kwargs):
-            for slot, (target, mv, keyed) in _SCALAR_SHORTCUTS.get(cls.__name__, {{}}).items():
-                if slot in kwargs and kwargs[slot] is not None:
-                    kwargs[slot] = _lift_scalar(kwargs[slot], target, mv, keyed)
-            for alias, canonical in amap.items():
-                if alias in kwargs:
-                    value = kwargs.pop(alias)
-                    if canonical in kwargs:
-                        warnings.warn(
-                            f"{{cls.__name__}} got both {{alias!r}} and its canonical "
-                            f"slot {{canonical!r}}; ignoring {{alias!r}}.",
-                            stacklevel=2,
-                        )
-                    else:
-                        kwargs[canonical] = value
-            original(self, *args, **kwargs)
-
-        cls.__init__ = __init__
-
-    for name in set(_SLOT_ALIASES) | set(_SCALAR_SHORTCUTS):
-        cls = globals().get(name)
-        if cls is not None:
-            _wrap(cls, _SLOT_ALIASES.get(name, {{}}))
-
-
-_install_slot_aliases()
+``SCALAR_SHORTCUTS`` maps ``{{class: {{slot: (slot the bare scalar stands for,
+multivalued, keyed)}}}}``, from ``annotations.simple_dict_value`` on each range class.
+``SLOT_ALIASES`` maps ``{{class: {{alias: canonical slot}}}}`` from the schema's ``aliases:``.
 """
+
+SCALAR_SHORTCUTS = {shortcuts!r}
+
+SLOT_ALIASES = {aliases!r}
+'''
+
+
+#: Appended to the generated ``schema.py``; the dataclasses fold the dialect in ``__init__``.
+_INSTALL_DIALECT = """
+
+from tvbo.datamodel.dialect import install_on_dataclasses as _install_dialect
+
+_install_dialect(globals())
+"""
+
+_PYDANTIC_BASE = "class ConfiguredBaseModel(BaseModel):"
+
+#: Prepended to the generated ``pydantic.py``, and made ``ConfiguredBaseModel``'s base so
+#: every generated model folds the dialect before validation.
+_DIALECT_BASE = '''from pydantic import model_validator as _model_validator
+
+from tvbo.datamodel.dialect import normalize as _normalize_dialect
+
+
+class _DialectBase(BaseModel):
+    """Accepts the TVBO dialect — declared aliases and bare-scalar shortcuts.
+
+    Runs before validation, once per constructed model, so Pydantic's own recursion
+    reaches every nested member; the validator only ever handles its own level.
+    """
+
+    @_model_validator(mode="before")
+    @classmethod
+    def _fold_tvbo_dialect(cls, data):
+        if isinstance(data, dict):
+            return _normalize_dialect(cls.__name__, dict(data))
+        return data
+
+
+'''
+
+
+def _with_dialect(code: str) -> str:
+    """Rebase ``ConfiguredBaseModel`` onto :class:`_DialectBase`.
+
+    An anchored substitution rather than a generator hook: LinkML emits this base from its
+    own template, and nothing in the generator's API reaches inside it. The count is
+    asserted so a template change fails the build here instead of silently generating
+    models that no longer accept the dialect.
+    """
+    if code.count(_PYDANTIC_BASE) != 1:
+        raise RuntimeError(
+            f"expected exactly one {_PYDANTIC_BASE!r} in the generated pydantic module, "
+            f"found {code.count(_PYDANTIC_BASE)} — the LinkML template changed shape."
+        )
+    return code.replace(_PYDANTIC_BASE, _DIALECT_BASE + "class ConfiguredBaseModel(_DialectBase):")
 
 
 def _relax_additional_properties(node) -> None:

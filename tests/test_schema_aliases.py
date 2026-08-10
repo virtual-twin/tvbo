@@ -10,7 +10,7 @@ no document traversal, and a free-form key can never be mistaken for a slot.
 import pytest
 
 from tvbo import Dynamics, Network, SimulationExperiment
-from tvbo.datamodel.schema import _SLOT_ALIASES
+from tvbo.datamodel.dialect import SCALAR_SHORTCUTS, SLOT_ALIASES
 
 _BASE = "id: 1\nlabel: t\ndynamics: {name: Generic2dOscillator}\n"
 
@@ -53,7 +53,7 @@ def test_every_declared_alias_is_resolvable():
     unresolved = [
         (cls, alias)
         for cls, alias, slot in _declared_aliases()
-        if alias not in _SEMANTIC and _SLOT_ALIASES.get(cls, {}).get(alias) != slot
+        if alias not in _SEMANTIC and SLOT_ALIASES.get(cls, {}).get(alias) != slot
     ]
     assert not unresolved, f"declared but never resolved: {unresolved}"
 
@@ -61,14 +61,14 @@ def test_every_declared_alias_is_resolvable():
 def test_semantic_aliases_are_never_plain_renamed():
     """``boundaries`` reaching the generic fold would strip the ``enforce: clamp``
     that its own pass adds."""
-    assert not any(set(amap) & _SEMANTIC for amap in _SLOT_ALIASES.values())
+    assert not any(set(amap) & _SEMANTIC for amap in SLOT_ALIASES.values())
 
 
 def test_an_alias_is_scoped_to_the_class_that_declares_it():
     """``target_variable`` aliases ``Edge.target_var`` but is canonical on ``Event``,
     so it must fold for one and not the other."""
-    assert _SLOT_ALIASES["Edge"]["target_variable"] == "target_var"
-    assert "target_variable" not in _SLOT_ALIASES.get("Event", {})
+    assert SLOT_ALIASES["Edge"]["target_variable"] == "target_var"
+    assert "target_variable" not in SLOT_ALIASES.get("Event", {})
 
 
 # ── scoping: a fold applies to its class, and nothing else ───────────
@@ -134,11 +134,11 @@ def test_scalar_shortcut_lifts_an_array_literal():
 
 def test_scalar_shortcut_leaves_a_collection_list_alone():
     """A list of MAPPINGS is the list spelling of a keyed collection, not a literal."""
-    from tvbo.datamodel.schema import _lift_scalar
+    from tvbo.datamodel.dialect import lift_scalar
 
     members = [{"name": "a", "value": 1}, {"name": "b", "value": 2}]
-    assert _lift_scalar(members, "value", True) == members
-    assert _lift_scalar([[1, 2], [3, 4]], "value", False) == {"value": [[1, 2], [3, 4]]}
+    assert lift_scalar(members, "value", True) == members
+    assert lift_scalar([[1, 2], [3, 4]], "value", False) == {"value": [[1, 2], [3, 4]]}
 
 
 def test_scalar_shortcut_keeps_keyed_list_scalars_as_identifiers():
@@ -147,14 +147,15 @@ def test_scalar_shortcut_keeps_keyed_list_scalars_as_identifiers():
     ``value`` and stranded the real name in ``description``, generating ``def Sigm(value)``
     with a body that still referenced ``v`` (``NameError: name 'v' is not defined``). A
     non-keyed list (``additional_equations``) still lifts each element."""
-    from tvbo.datamodel.schema import Function, _lift_scalar
+    from tvbo.datamodel.dialect import lift_scalar
+    from tvbo.datamodel.schema import Function
 
     fn = Function(name="Sigm", arguments=["v"])
     assert list(fn.arguments) == ["v"]
     assert fn.arguments["v"].name == "v" and fn.arguments["v"].value is None
 
-    assert _lift_scalar(["v"], "value", True, keyed=True) == ["v"]
-    assert _lift_scalar(["x = -x"], "rhs", True, keyed=False) == [{"rhs": "x = -x"}]
+    assert lift_scalar(["v"], "value", True, keyed=True) == ["v"]
+    assert lift_scalar(["x = -x"], "rhs", True, keyed=False) == [{"rhs": "x = -x"}]
 
 
 # ── the collisions still resolve to the right slot ───────────────────
@@ -215,12 +216,13 @@ def test_conflicting_alias_and_canonical_keeps_the_canonical():
     assert exp.integration.step_size == 0.01
 
 
-# ── the same aliases fold on the pydantic validation path ────────────
+# ── the same dialect folds on the pydantic validation path ────────────
 #
-# The dataclasses fold aliases in ``__init__``; the strict pydantic models
-# (``extra='forbid'``) can't, so ``pydantic_loader`` folds them in ``_inject`` from the
-# same ``_SLOT_ALIASES`` table. Without that the validator rejects documents the
-# dataclass loader accepts — the two must agree.
+# The dataclasses fold the dialect in ``__init__``; the strict pydantic models
+# (``extra='forbid'``) fold it in a ``mode="before"`` model validator. Both call the one
+# implementation in ``tvbo.datamodel.dialect``, so the validator cannot reject a document
+# the dataclass loader accepts. It could before: the two paths carried separate copies,
+# and the pydantic copy had the aliases but not the scalar shortcuts.
 
 
 def _pyd(yaml_text, target="SimulationExperiment"):
@@ -257,11 +259,56 @@ def test_pydantic_loader_conflict_keeps_the_canonical():
 
 
 def test_pydantic_validator_folds_every_alias_the_dataclass_loader_does():
-    """Parity guard: every ``_SLOT_ALIASES`` entry the dataclass path folds is also
+    """Parity guard: every ``SLOT_ALIASES`` entry the dataclass path folds is also
     folded on the pydantic path, so the validator never rejects a loader-valid key."""
     from tvbo.utils import pydantic_loader
 
-    for cls, amap in _SLOT_ALIASES.items():
+    for cls, amap in SLOT_ALIASES.items():
         for alias, canonical in amap.items():
             folded = pydantic_loader.normalize({alias: "x"}, cls)
             assert alias not in folded and canonical in folded, (cls, alias, canonical)
+
+
+def test_pydantic_lifts_every_scalar_shortcut_the_dataclass_loader_does():
+    """Parity guard for the other half of the dialect.
+
+    The aliases had this guard and stayed in step; the scalar shortcuts had none and
+    silently diverged — they were applied only on the dataclass path, so ``omega: 0.0628``
+    loaded through one entry point and was rejected by the other.
+    """
+    from tvbo.datamodel import pydantic as dm
+    from tvbo.utils import pydantic_loader
+
+    for cls, lifts in SCALAR_SHORTCUTS.items():
+        if getattr(dm, cls, None) is None:
+            continue
+        for slot, (target, multivalued, _keyed) in lifts.items():
+            if multivalued:
+                continue  # collections lift per member; covered by the keyed-dict tests
+            assert pydantic_loader.normalize({slot: "x"}, cls)[slot] == {target: "x"}, (
+                cls,
+                slot,
+                target,
+            )
+
+
+def test_a_bare_scalar_lifts_on_both_paths():
+    """The dialect the README leads with: ``omega: 0.0628`` is a Parameter of that value."""
+    from tvbo.datamodel import schema
+    from tvbo.utils import yaml_loader
+
+    src = "name: probe\nparameters: {omega: 0.0628}\n"
+    assert yaml_loader.loads(src, schema.Dynamics).parameters["omega"].value == 0.0628
+    assert _pyd(src, "Dynamics").parameters["omega"].value == 0.0628
+
+
+def test_the_model_validator_folds_the_dialect_without_the_loader():
+    """``model_validate`` alone folds it: the dialect rides on the models, not the loader.
+
+    This is what lets the platform hand a raw dict straight to a generated model.
+    """
+    from tvbo.datamodel.pydantic import Equation, Solver
+
+    assert Solver.model_validate({"dt": 0.01}).step_size == 0.01
+    equation = Equation.model_validate({"lefthandside": "x", "righthandside": "y"})
+    assert (equation.lhs, equation.rhs) == ("x", "y")
