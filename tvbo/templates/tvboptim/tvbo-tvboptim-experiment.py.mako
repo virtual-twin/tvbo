@@ -259,6 +259,7 @@ conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is 
 from tvbo.templates.tvboptim.utils import weight_transform_codegen as _weight_transform_codegen
 weight_transform_jax, weight_transform_const_env = _weight_transform_codegen(network)
 has_weight_transforms = bool(weight_transform_jax)
+weight_transform_needs_lengths = any(_l.startswith("L = ") for _l in weight_transform_const_env)
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
@@ -1578,9 +1579,10 @@ _TVBO_DYNAMICS_CLS = ${dynamics_class}
 
 def create_network(
     weights: jnp.ndarray,
-    % if use_length_graph:
+    % if use_length_graph or weight_transform_needs_lengths:
     distances: jnp.ndarray = None,
-    % elif use_delay_graph:
+    % endif
+    % if use_delay_graph and not use_length_graph:
     delays: jnp.ndarray = None,
     % endif
     region_labels: list = None,
@@ -1593,6 +1595,10 @@ def create_network(
 ) -> Network:
 % if has_weight_transforms:
     # Declared weight `transforms:` applied to the raw weights (kit stays self-contained).
+% if weight_transform_needs_lengths:
+    if distances is None:
+        distances = jnp.zeros_like(weights)
+% endif
 % for _line in weight_transform_const_env:
     ${_line}
 % endfor
@@ -4641,7 +4647,8 @@ if __name__ == "__main__":
         observational_measures=${observational_measures},
 % endif
     )
-    weights = _network.weights_matrix
+    # weights RAW — create_network applies the declared transforms.
+    weights = _network.raw_weights_matrix
     distances = _network.lengths_matrix
     # Get region labels safely (may not be available in all BIDS datasets)
     try:
