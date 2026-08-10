@@ -313,6 +313,38 @@ def test_unknown_part_is_refused(study):
         study.report("qmd", part="appendix")
 
 
+# ── An equation reaches the report by being rendered, never by being typed ──────────────
+
+
+def test_a_hand_written_equation_is_reported(tmp_path):
+    """Pang2023 hand-set the paper's PDE above a section explaining it is not integrated."""
+    from tvbo.utils.report import unrendered_equations
+
+    qmd = tmp_path / "report.qmd"
+    qmd.write_text("# Methods\n\nThe model is\n\n$$\\dot{x} = -k x.$$\n\nand so on.\n")
+    assert unrendered_equations(qmd) == [(5, "\\dot{x} = -k x.")]
+    assert unrendered_equations(str(qmd)) == [(5, "\\dot{x} = -k x.")]
+
+
+def test_a_generated_equation_is_not_reported(tmp_path):
+    """Equations `study.report()` emits live inside an executable cell and are the point."""
+    from tvbo.utils.report import unrendered_equations
+
+    qmd = tmp_path / "report.qmd"
+    qmd.write_text('# Methods\n\n```{python}\n#| echo: false\n'
+                   'print(STUDY.report("qmd"))   # emits $$\\dot{x} = -k x$$\n```\n')
+    assert unrendered_equations(qmd) == []
+
+
+def test_the_reported_line_number_survives_a_stripped_cell(tmp_path):
+    """The cell is replaced by its own newlines, so a later equation keeps its true line."""
+    from tvbo.utils.report import unrendered_equations
+
+    qmd = tmp_path / "report.qmd"
+    qmd.write_text('```{python}\na = 1\nb = 2\n```\n\n$$E = mc^2$$\n')
+    assert unrendered_equations(qmd) == [(6, "E = mc^2")]
+
+
 # ── A grid too small to be a float is a sentence ────────────────────────────────────────
 
 

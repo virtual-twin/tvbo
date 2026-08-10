@@ -1402,11 +1402,16 @@ def model_families(experiments):
         if family is None:
             family = SimpleNamespace(base_state=state, models=[], experiments=[])
             families.append(family)
-        family.experiments.append(exp)
+        # Once per experiment, not once per model: a heterogeneous experiment contributes
+        # several models to the same family — Deco2014's spiking columns declare a dozen —
+        # and appending per model gave its comparison table six rows for three experiments.
+        if exp not in family.experiments:
+            family.experiments.append(exp)
         signature = _model_signature(model)
         for entry in family.models:
             if entry.signature == signature:
-                entry.experiments.append(exp)
+                if exp not in entry.experiments:
+                    entry.experiments.append(exp)
                 break
         else:
             family.models.append(SimpleNamespace(model=model, signature=signature,
@@ -1730,9 +1735,28 @@ def _observation_row(name, obs, observed_names):
     sampling = tuple((label, str(slot(obs, attr))) for attr, label in _SAMPLING_SLOTS
                      if slot(obs, attr, None) is not None)
     return (str(slot(obs, "label", None) or name),
-            ", ".join(names) if derived else (f"${', '.join(names)}$" if names else ""),
+            ", ".join(names) if derived else _source_text(names),
             sampling, pipeline_text(slot(obs, "pipeline", [])),
             str(slot(obs, "description", "") or ""))
+
+
+_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+
+def _source_text(names):
+    """An observation's sources: symbols as math, anything else as literal code.
+
+    A source is usually a state variable, but it can equally be a pointer into external
+    data — ``phenotype:Schirner2023_HCPYA_phenotype#PMAT24_A_RTCR``, or a dotted path like
+    ``network.observations.BoldCorrelation``. Typesetting those as math asks the engine to
+    parse ``#`` and ``:`` as operators; pandoc rejected the first outright ("unexpected
+    '#'") and passed it through as raw TeX, and the second rendered as a product of
+    variables named after its path segments.
+    """
+    if not names:
+        return ""
+    return ", ".join(f"${_symbol_latex(n)}$" if _IDENTIFIER.fullmatch(n) else f"`{n}`"
+                     for n in names)
 
 
 class Observations(NamedTuple):
@@ -1794,6 +1818,18 @@ def observation_table(experiments):
 def _slug(text):
     """A stable cross-reference slug: lowercase, non-alphanumerics collapsed to hyphens."""
     return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", str(text).lower())).strip("-") or "x"
+
+
+def section_slug(text):
+    """An ASCII anchor for a generated heading, so no renderer has to derive one.
+
+    Left to itself Quarto builds a heading's identifier from the heading *text*, which
+    here is recipe-authored and may hold anything: Cortes2013 labels an experiment with
+    ``I₀``, and the derived Typst label ``<…-in-i₀-…>`` failed the compile outright with
+    "unclosed label". Emitting our own slug keeps the identifier alphanumeric whatever the
+    label says, and makes it stable — it no longer changes when someone edits the wording.
+    """
+    return _slug(text)
 
 
 class Equations:
@@ -1861,6 +1897,48 @@ class Equations:
         if not anchor:
             return ""
         return f"@{anchor}" if self.format == "qmd" else f"Eq. ({anchor.rsplit('-', 1)[-1]})"
+
+
+_PYTHON_CELL = re.compile(r"```+\s*\{python\}.*?```+", re.S)
+_DISPLAY_MATH = re.compile(r"\$\$(.+?)\$\$", re.S)
+
+
+def unrendered_equations(source):
+    """Display equations written by hand in a report body, as ``(line, equation)``.
+
+    An equation belongs in a report only if the code runs it, and it gets there by being
+    rendered from the recipe — never typed. A typed one can drift from what executes, and
+    the reader has no way to tell which they are looking at. Pang2023 carried the paper's
+    PDE, hand-set, above a section explaining that TVBO does not integrate that PDE.
+
+    Executable cells are stripped first, so equations that :meth:`SimulationStudy.report`
+    emits are not flagged: the check is for ``$$…$$`` typed into the prose.
+
+    Assert this is empty in the report's own harness cell, so a hand-written equation
+    fails the render rather than reaching a reader::
+
+        bad = report.unrendered_equations("report.qmd")
+        assert not bad, f"hand-written equations: {bad}"
+
+    Args:
+        source: Path to a ``.qmd``/``.md`` file, or its text.
+
+    Returns:
+        ``(line number, equation source)`` for each hand-written display equation, in
+        document order. Empty when the report renders all of its mathematics.
+    """
+    text = Path(source).read_text(encoding="utf-8") if _looks_like_path(source) else str(source)
+    prose = _PYTHON_CELL.sub(lambda m: "\n" * m.group(0).count("\n"), text)
+    return [(prose[:m.start()].count("\n") + 1, " ".join(m.group(1).split()))
+            for m in _DISPLAY_MATH.finditer(prose)]
+
+
+def _looks_like_path(source):
+    """Whether *source* names a file rather than being the document text itself."""
+    if isinstance(source, Path):
+        return True
+    text = str(source)
+    return "\n" not in text and len(text) < 4096 and Path(text).is_file()
 
 
 def captioned(table, caption, anchor, format="markdown", anchors=None):

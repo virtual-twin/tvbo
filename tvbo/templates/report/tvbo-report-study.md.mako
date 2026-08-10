@@ -52,7 +52,7 @@ ${eqs.block(ltx, model, name)}
 <% members = [e for e in family.experiments if in_part(e)] %>\
 % if members:
 
-${heading} ${family.label}
+${heading} ${family.label} {#${eqs.unique_anchor('sec-model-' + report.section_slug(report.slot(family.base.model, 'name', family.label)))}}
 
 % if report.slot(family.base.model, 'description', None):
 ${report.slot(family.base.model, 'description').strip()}
@@ -96,7 +96,7 @@ ${report.captioned(report.experiment_table(family.experiments, family.shared_par
                    f"experiments-{report.slot(family.base.model, 'name', family.label)}", fmt, eqs)}\
 % for exp in members:
 
-${heading}# Experiment ${report.slot(exp, 'id', '')} — ${report.slot(exp, 'label', '') or 'simulation'}
+${heading}# Experiment ${report.slot(exp, 'id', '')} — ${report.slot(exp, 'label', '') or 'simulation'} {#${eqs.unique_anchor('sec-experiment-' + report.section_slug(report.slot(exp, 'id', '')))}}
 
 ${report.settings_sentence(exp)}
 % if report.slot(exp, 'description', None):

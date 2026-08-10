@@ -66,6 +66,10 @@ def _safe_latex(rhs):
 
 pre_rhs = getattr(getattr(cpl, "pre_expression", None), "rhs", None)
 post_rhs = getattr(getattr(cpl, "post_expression", None), "rhs", None)
+# `c_post = gx` says only that the summed input is used as it stands -- true of nine of the
+# eleven couplings across the replication studies. Numbering it gives an equation slot to a
+# statement with no content, so it is written as a clause instead.
+post_is_identity = str(post_rhs or "").strip() == "gx"
 coupling_meta = []
 for attr, label in (
     ("coupling_function", "function"),
@@ -114,7 +118,8 @@ def _summed_inputs():
     operand has to be one too — otherwise the section defines a symbol it uses in a
     numbered equation only in a passing clause.
     """
-    aside = "the pre-synaptic components summed over the graph, which the post-synaptic term recombines"
+    aside = ("the pre-synaptic components summed over the graph" if post_is_identity else
+             "the pre-synaptic components summed over the graph, which the post-synaptic term recombines")
     if not equations:
         return f"with {gx_line} — {aside}."
     blocks = "\n".join(
@@ -156,7 +161,10 @@ ${'; '.join(coupling_meta)}.
 ${_decomposition("Pre-synaptic", r"c_{\text{pre}}", pre_rhs, "c-pre")}
 
 % endif
-% if post_rhs:
+% if post_is_identity:
+The summed input enters the target unchanged — there is no post-synaptic transformation.
+
+% elif post_rhs:
 ${_decomposition("Post-synaptic", r"c_{\text{post}}", post_rhs, "c-post")}
 
 % endif
