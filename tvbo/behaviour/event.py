@@ -1,31 +1,27 @@
-"""Runtime wrapper around the auto-generated :class:`tvbo_datamodel.Event`.
+"""User-facing helpers for :class:`Event`.
 
-Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal
-is built generically from the event's symbolic equation and its parameters,
-mirroring the pattern used by :class:`tvbo.classes.dynamics.Dynamics` and
-:class:`tvbo.classes.perturbation.Stimulus`.
+Attached to the generated classes by the ``python_mixin`` annotation on ``Event`` in the
+schema, so ``event.plot()`` works on any Event — including the nested ones a loaded
+experiment holds, which previously only gained it if some call path remembered to retype
+them.
 """
+
 from __future__ import annotations
 
 import numpy as np
-from sympy import Symbol, lambdify
-
-from tvbo.datamodel import schema as tvbo_datamodel
 
 
-class Event(tvbo_datamodel.Event):
-    """:class:`tvbo_datamodel.Event` plus user-facing helpers."""
+class EventBehaviour:
+    """Plotting helpers for a stimulus-type event."""
 
     def _signal(self):
         """Return ``callable(t)`` for the event's signal.
 
-        Generic: works for any ``event.equation.rhs`` expressed in terms of
-        ``t`` and the event's own parameters.
+        Generic: works for any ``event.equation.rhs`` expressed in terms of ``t`` and the
+        event's own parameters.
         """
-        # Imported here rather than at module top: this module is imported by
-        # ``tvbo.datamodel`` to attach the Event helpers, and parse.expression
-        # imports back from ``tvbo.datamodel.schema`` — a module-top import would
-        # form an import cycle when parse.expression is imported first.
+        from sympy import Symbol, lambdify
+
         from tvbo.parse.expression import parse_eq
 
         params = {name: Symbol(name) for name in (self.parameters or {})}
@@ -89,15 +85,3 @@ class Event(tvbo_datamodel.Event):
             plt.close(fig)
             return fig
         return ax
-
-
-# Make the helpers available on the auto-generated schema class itself, so
-# ``schema.Event(...).plot()`` works without requiring callers to import the
-# wrapper explicitly. This mirrors the ``__class__`` patching pattern used for
-# Network/Continuation in :mod:`tvbo.classes.experiment`.
-for _name in ("plot", "_signal", "_default_window"):
-    setattr(tvbo_datamodel.Event, _name, getattr(Event, _name))
-
-# ``regions`` -> ``nodes`` and ``weighting`` -> ``weights`` are declared aliases; the
-# generated dialect (:mod:`tvbo.datamodel.dialect`) folds them for every class, so the
-# hand-written copy that used to sit here is gone.

@@ -12,10 +12,19 @@ into; a mixin that stops resolving takes the whole public API (``d.symbolic``,
 ``d.plot()``) with it.
 """
 
+import pathlib
+import sys
+
 import pytest
 from pydantic import ValidationError
 
 from tvbo.datamodel.pydantic import Dynamics
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+from hatch_build import _behaviour_mixins  # noqa: E402
+
+_ROOT = pathlib.Path(__file__).resolve().parents[1]
+_SCHEMA = _ROOT / "schema" / "tvbo_datamodel.yaml"
 
 
 def test_a_cache_rides_on_a_private_attribute():
@@ -71,3 +80,43 @@ def test_a_plain_mixin_supplies_behaviour_to_a_generated_model():
     assert spec.described == "<x>"
     assert spec.model_config["extra"] == "forbid"
     assert spec.model_dump() == Dynamics(name="x").model_dump()
+
+
+def test_behaviour_reaches_both_generated_forms():
+    """A helper is on the object whichever generator produced it.
+
+    LinkML's loader still builds dataclasses while Pydantic validation builds models, so
+    a mixin attached to only one of them would leave half the object graph without its
+    helpers — which is what the retyping and ``setattr`` patching used to paper over.
+    """
+    from tvbo.datamodel import pydantic as pyd
+    from tvbo.datamodel import schema
+
+    for cls in (schema.Event, pyd.Event):
+        event = cls(name="s", event_type="stimulus")
+        assert callable(event.plot), cls
+        assert callable(event._signal), cls
+
+
+def test_a_mixin_is_discovered_by_its_own_name():
+    """``EventBehaviour`` attaches to ``Event``; there is nothing to register."""
+    assert _behaviour_mixins(_ROOT, _SCHEMA)["Event"] == "tvbo.behaviour.event.EventBehaviour"
+
+
+def test_a_mixin_naming_no_schema_class_fails_the_build(tmp_path):
+    """Otherwise it attaches to nothing and the helpers vanish with no error."""
+    package = tmp_path / "tvbo" / "behaviour"
+    package.mkdir(parents=True)
+    (package / "bogus.py").write_text("class NotAClassBehaviour:\n    pass\n")
+
+    with pytest.raises(RuntimeError, match="no class 'NotAClass'"):
+        _behaviour_mixins(tmp_path, _SCHEMA)
+
+
+def test_the_schema_states_no_python():
+    """The mapping lives in the mixin's name, never in the language-neutral schema.
+
+    The schema is also what the OWL export is generated from, so an import path here
+    would ship as a fact about the model to consumers that have no Python.
+    """
+    assert "python_mixin" not in _SCHEMA.read_text(encoding="utf-8")

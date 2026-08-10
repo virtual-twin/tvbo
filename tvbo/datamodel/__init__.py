@@ -169,8 +169,3 @@ from tvbo.datamodel import pydantic as tvbopydantic  # noqa: E402, F401
 sys.modules["tvbo.datamodel.tvbo_datamodel"] = tvbo_datamodel
 sys.modules["tvbo.datamodel.tvbopydantic"] = tvbopydantic
 
-# Attach user-facing helper methods (.plot(), alias-aware __init__) to the
-# generated ``schema.Event`` class. Done here — where the schema is first
-# imported — rather than at ``import tvbo`` so bare imports and the CLI do not
-# pay the datamodel import cost. Runs last, after schema/pydantic are bound.
-from tvbo.classes import event as _event_helpers  # noqa: E402, F401

@@ -463,14 +463,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     val.__class__ = Continuation
                     conts[key] = val
 
-        # Auto-upgrade events to runtime Event class (adds .plot() helper)
-        evts = getattr(self, "events", None)
-        if evts and hasattr(evts, "items"):
-            from tvbo.classes.event import Event as _EventCls
-            for val in evts.values():
-                if val is not None and not isinstance(val, _EventCls):
-                    val.__class__ = _EventCls
-
         # Resolve observations that reference a curated model by `iri` (e.g.
         # `iri: tvbo:BOLD_TVB`): merge the model's pipeline/parameters/class_reference
         # in non-destructively so locally declared source/period overrides still win.

@@ -18,6 +18,7 @@ it so the generated modules are byte-reproducible across builds.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 _NONDETERMINISTIC_PREFIX = "# Generation date:"
@@ -50,9 +51,16 @@ def generate_datamodel(root: str | Path) -> None:
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
     shortcuts, aliases = _dialect_tables(schema)
+    mixins = _behaviour_mixins(root, schema)
     _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases))
-    _write(out_dir / "schema.py", PythonGenerator(str(schema)).serialize() + _INSTALL_DIALECT)
-    _write(out_dir / "pydantic.py", _with_dialect(PydanticGenerator(str(schema)).serialize()))
+    _write(
+        out_dir / "schema.py",
+        _with_behaviour(PythonGenerator(str(schema)).serialize(), mixins) + _INSTALL_DIALECT,
+    )
+    _write(
+        out_dir / "pydantic.py",
+        _with_dialect_and_behaviour(PydanticGenerator(str(schema)).serialize(), mixins),
+    )
 
     # JSON Schema — relax `additionalProperties: false → true` everywhere so
     # validation stays lenient, mirroring the previous
@@ -166,7 +174,67 @@ from tvbo.datamodel.dialect import install_on_dataclasses as _install_dialect
 _install_dialect(globals())
 """
 
-_PYDANTIC_BASE = "class ConfiguredBaseModel(BaseModel):"
+def _behaviour_mixins(root: Path, schema: Path) -> dict[str, str]:
+    """``{class: dotted path of its behaviour mixin}``, discovered from ``tvbo/behaviour``.
+
+    Behaviour is attached where the class is generated rather than in a runtime subclass,
+    so it reaches every object from every construction path — loaded, nested, or built by
+    hand — instead of only the ones some call site remembered to wrap.
+
+    Which class a mixin belongs to is read from its own name: ``EventBehaviour`` attaches
+    to ``Event``. Deliberately NOT declared in the schema, which is language-neutral and
+    is also what the OWL export is generated from; a Python import path there would be one
+    language's mechanism stated as if it were a fact about the model.
+
+    Discovery parses the modules rather than importing them, so the build hook stays free
+    of the package's runtime dependencies. A mixin naming a class the schema does not
+    define is an error, since it would otherwise attach to nothing and fail silently.
+    """
+    import ast
+
+    from linkml_runtime.utils.schemaview import SchemaView
+
+    known = set(SchemaView(str(schema)).all_classes())
+    mixins: dict[str, str] = {}
+    for module in sorted((root / "tvbo" / "behaviour").glob("*.py")):
+        if module.stem.startswith("_"):
+            continue
+        for node in ast.parse(module.read_text(encoding="utf-8")).body:
+            if not isinstance(node, ast.ClassDef) or not node.name.endswith("Behaviour"):
+                continue
+            target = node.name[: -len("Behaviour")]
+            if target not in known:
+                raise RuntimeError(
+                    f"{module.name} defines {node.name}, but the schema has no class "
+                    f"{target!r} for it to attach to."
+                )
+            mixins[target] = f"tvbo.behaviour.{module.stem}.{node.name}"
+    return mixins
+
+
+def _inject_bases(code: str, additions: dict[str, list[str]]) -> str:
+    """Prepend bases to generated class statements.
+
+    LinkML emits these classes from its own template and no generator hook reaches inside
+    them, so the class statement is rewritten directly. Each anchor must match exactly
+    once: a template change then fails the build here, loudly, rather than silently
+    producing classes that have quietly lost their dialect or their behaviour.
+    """
+    for cls_name, bases in additions.items():
+        pattern = re.compile(rf"^class {re.escape(cls_name)}\((?P<bases>[^)]*)\):", re.M)
+        matches = pattern.findall(code)
+        if len(matches) != 1:
+            raise RuntimeError(
+                f"expected exactly one generated `class {cls_name}(...)`, found "
+                f"{len(matches)} — the LinkML template or the schema changed shape."
+            )
+        code = pattern.sub(
+            lambda m: f"class {cls_name}({', '.join(bases)}, {m.group('bases')}):",
+            code,
+            count=1,
+        )
+    return code
+
 
 #: Prepended to the generated ``pydantic.py``, and made ``ConfiguredBaseModel``'s base so
 #: every generated model folds the dialect before validation.
@@ -193,20 +261,45 @@ class _DialectBase(BaseModel):
 '''
 
 
-def _with_dialect(code: str) -> str:
-    """Rebase ``ConfiguredBaseModel`` onto :class:`_DialectBase`.
+def _mixin_imports(mixins: dict[str, str]) -> str:
+    """``from <module> import <Mixin>`` for each declared behaviour mixin."""
+    return "".join(
+        f"from {path.rsplit('.', 1)[0]} import {path.rsplit('.', 1)[1]}\n"
+        for path in sorted(set(mixins.values()))
+    )
 
-    An anchored substitution rather than a generator hook: LinkML emits this base from its
-    own template, and nothing in the generator's API reaches inside it. The count is
-    asserted so a template change fails the build here instead of silently generating
-    models that no longer accept the dialect.
+
+def _with_behaviour(code: str, mixins: dict[str, str]) -> str:
+    """Give each annotated dataclass its behaviour mixin.
+
+    Both generated forms take the same mixin, so behaviour reaches an object whether it
+    came from LinkML's loader (a dataclass) or from Pydantic validation. Without this the
+    dataclasses would lose every helper the moment it moved out of a runtime subclass,
+    since that is still what the loaders construct.
     """
-    if code.count(_PYDANTIC_BASE) != 1:
-        raise RuntimeError(
-            f"expected exactly one {_PYDANTIC_BASE!r} in the generated pydantic module, "
-            f"found {code.count(_PYDANTIC_BASE)} — the LinkML template changed shape."
-        )
-    return code.replace(_PYDANTIC_BASE, _DIALECT_BASE + "class ConfiguredBaseModel(_DialectBase):")
+    if not mixins:
+        return code
+    code = code.replace(
+        'metamodel_version = "', _mixin_imports(mixins) + '\nmetamodel_version = "', 1
+    )
+    return _inject_bases(code, {cls: [path.rsplit(".", 1)[1]] for cls, path in mixins.items()})
+
+
+def _with_dialect_and_behaviour(code: str, mixins: dict[str, str]) -> str:
+    """Give the generated models the dialect, and each annotated class its behaviour.
+
+    The mixins are imported beside ``_DialectBase``, above every generated class, so a
+    behaviour module must not import the datamodel at module scope — the same discipline
+    :mod:`tvbo.datamodel.dialect` follows.
+    """
+    code = code.replace(
+        "class ConfiguredBaseModel(BaseModel):",
+        _mixin_imports(mixins) + _DIALECT_BASE + "class ConfiguredBaseModel(BaseModel):",
+        1,
+    )
+    additions = {"ConfiguredBaseModel": ["_DialectBase"]}
+    additions.update({cls: [path.rsplit(".", 1)[1]] for cls, path in mixins.items()})
+    return _inject_bases(code, additions)
 
 
 def _relax_additional_properties(node) -> None:
