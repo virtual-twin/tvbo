@@ -102,10 +102,8 @@ def _plot_parameter_sweep_timeseries(dynamics, panel, ax, cache):
 def render_dynamics_panel(dynamics, panel, ax, cache):
     """Render a single dynamics panel onto an axes according to its kind.
 
-    Dispatches on `panel["kind"]` (default `"timeseries"`): standard plot
-    kinds are drawn with `plot_dynamics`, `"bifurcation"`/`"continuation"`
-    run a continuation and plot the result, and `"parameter_sweep_timeseries"`
-    (or `"timeseries_parameter_sweep"`) overlays trajectories across a
+    Dispatches on `panel["kind"]` (default `"timeseries"`): standard plot kinds are drawn with `plot_dynamics`, `"bifurcation"`/`"continuation"`
+    run a continuation and plot the result, and `"parameter_sweep_timeseries"` (or `"timeseries_parameter_sweep"`) overlays trajectories across a
     parameter range.
 
     Args:

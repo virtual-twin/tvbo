@@ -8,8 +8,7 @@
 """Plotting helpers for TVB-O figures.
 
 Provides the shared matplotlib style, the TVB brand color palette derived from the
-TVB logo SVG, colormap and color-conversion utilities, and a multi-view brain
-surface renderer.
+TVB logo SVG, colormap and color-conversion utilities, and a multi-view brain surface renderer.
 """
 
 from os.path import join, abspath, dirname
@@ -188,8 +187,7 @@ def get_continuous_cmap(hex_list, float_list=None):
 def multiview(data, cortex, suptitle="", figsize=(15, 10), **kwds):
     """Display multiple views of brain regions.
 
-    Adapted from
-    https://github.com/the-virtual-brain/tvb-root/blob/master/tvb_documentation/tutorials/utils.py
+    Adapted from https://github.com/the-virtual-brain/tvb-root/blob/master/tvb_documentation/tutorials/utils.py
 
     Parameters
     ----------

@@ -17,8 +17,7 @@ import numpy as np
 def _prepare(data):
     """Extract time, variable names, and the data array unchanged.
 
-    Per-node traces are preserved. If a single aggregate (e.g. mean) is
-    desired it must be specified explicitly in the YAML as an observation.
+    Per-node traces are preserved. If a single aggregate (e.g. mean) is desired it must be specified explicitly in the YAML as an observation.
     """
 
     time = data.coords["time"].values if "time" in data.coords else np.arange(data.shape[0])
@@ -139,8 +138,7 @@ def plot_eeg(result, VOI=None, mode=0, spacing=None, normalize=False, channel_la
         Z-score each channel before plotting.
     channel_labels : bool
         Show region labels on y-axis.
-    ax : matplotlib.axes.Axes, optional
-    linewidth : float
+    ax : matplotlib.axes.Axes, optional linewidth : float
     """
     data = result.data
     var_names = list(np.atleast_1d(data.coords["variable"].values)) if "variable" in data.coords else []
@@ -215,9 +213,7 @@ def plot_power_spectrum(result, VOI=None, ROI="mean", mode=0, bands=None, ax=Non
         Variable of interest.
     ROI : str or int
         'mean' or region index.
-    mode : int
-    bands : dict, optional
-    ax : matplotlib.axes.Axes, optional
+    mode : int bands : dict, optional ax : matplotlib.axes.Axes, optional
     """
     from scipy.fft import fft, fftfreq
     from matplotlib import colormaps

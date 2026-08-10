@@ -198,10 +198,8 @@ def get_param_config(config_key="default", model=None, return_NMM=False, use_cla
     """
     Retrieve the parameter configuration for a given configuration key.
 
-    This function searches the ontology for the provided configuration key and
-    returns a dictionary with the relevant parameter details. Additionally,
-    it checks for ancestors related to Neural Mass Model (NMM) and fetches the
-    relevant variables and instances associated with the configuration.
+    This function searches the ontology for the provided configuration key and returns a dictionary with the relevant parameter details. Additionally,
+    it checks for ancestors related to Neural Mass Model (NMM) and fetches the relevant variables and instances associated with the configuration.
 
     Parameters
     ----------
@@ -268,8 +266,7 @@ def update_default(model_name, config_key=None, config_dict=None):
 
     This function first fetches the default values for the provided model using the ontology.
     If the config_key is "default", it returns the fetched default values.
-    Otherwise, it retrieves the parameter configuration associated with the config_key
-    and updates the default values accordingly.
+    Otherwise, it retrieves the parameter configuration associated with the config_key and updates the default values accordingly.
 
     Parameters
     ----------
@@ -339,9 +336,6 @@ def configure_model(tvb_model, config_key):
     tvb_model.tvbo_config = config_dict
 
     for label, v in config_dict.items():
-        # if v["category"] == "State Variable":
-        #     tvb_model.state_variable_range[label] = v["range"]
-        # elif v["category"] == "Parameter":
         tvb_model.__dict__[label] = np.array([v])
 
     tvb_model.configure()
@@ -397,8 +391,7 @@ def getattr_case_insensitive(obj, attr_name, default=None):
     """
     Get the value of an attribute from an object, ignoring case sensitivity.
 
-    This function searches for an attribute with a case-insensitive match to the given `attr_name`
-    within the `obj` object. If a match is found, the corresponding value is returned. If no match
+    This function searches for an attribute with a case-insensitive match to the given `attr_name` within the `obj` object. If a match is found, the corresponding value is returned. If no match
     is found, the `default` value is returned.
 
     :param obj: The object to search for the attribute.

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """DifferentialEquations.jl backend adapter for SimulationExperiment.
 
-Generates a self-contained Julia script from the existing Julia templates
-and executes it via juliacall, returning a TVBO TimeSeries.
+Generates a self-contained Julia script from the existing Julia templates and executes it via juliacall, returning a TVBO TimeSeries.
 """
 
 from __future__ import annotations
@@ -16,8 +15,7 @@ if TYPE_CHECKING:
 
 
 # Julia packages required by the base Julia templates
-# Use specific sub-packages instead of monolithic DifferentialEquations
-# to avoid excessive memory usage / Bus errors during precompilation.
+# Use specific sub-packages instead of monolithic DifferentialEquations to avoid excessive memory usage / Bus errors during precompilation.
 REQUIRED_PACKAGES = [
     "OrdinaryDiffEqTsit5",
     "StochasticDiffEq",
@@ -40,8 +38,7 @@ def _strip_plot_lines(code: str) -> str:
 class DiffEqAdapter:
     """Adapter for running SimulationExperiment via DifferentialEquations.jl.
 
-    Renders the Julia DifferentialEquations template, executes it via
-    juliacall, and returns a TVBO TimeSeries.
+    Renders the Julia DifferentialEquations template, executes it via juliacall, and returns a TVBO TimeSeries.
     """
 
     def __init__(self, experiment: "SimulationExperiment"):

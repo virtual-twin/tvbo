@@ -38,8 +38,7 @@ _COUPLING_DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 def _load_coupling_from_database(name, coupling):
     """Fill coupling metadata from a database YAML file.
 
-    Looks for ``tvbo/database/coupling_functions/<name>.yaml`` and fills
-    missing ``pre_expression``, ``post_expression``, ``parameters``,
+    Looks for ``tvbo/database/coupling_functions/<name>.yaml`` and fills missing ``pre_expression``, ``post_expression``, ``parameters``,
     and ``delayed`` on the coupling instance.
 
     Parameters
@@ -124,8 +123,7 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
 
     If overwrite is False (default), only fill missing fields.
     If overwrite is True, always set name and pre/post expressions.
-    Parameters are added if missing; existing parameter value/description are
-    only filled if missing regardless of overwrite.
+    Parameters are added if missing; existing parameter value/description are only filled if missing regardless of overwrite.
     """
     # Name
     try:
@@ -164,8 +162,7 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
 class Coupling(tvbo_datamodel.Coupling):
     """Runtime Coupling that is also a direct instance of tvbo_datamodel.Coupling.
 
-    If ``iri`` is set (e.g. ``tvbo:SigmoidalJansenRit``), missing fields
-    are automatically populated from the ontology/database.
+    If ``iri`` is set (e.g. ``tvbo:SigmoidalJansenRit``), missing fields are automatically populated from the ontology/database.
     Use ``Coupling.from_ontology(name)`` for explicit ontology lookup.
     """
 
@@ -174,9 +171,7 @@ class Coupling(tvbo_datamodel.Coupling):
         kwargs.pop("use_ontology", None)
         _explicit_name = kwargs.get("name")
         super().__init__(**kwargs)
-        # Auto-populate from the registry/ontology if iri is set and expressions
-        # are missing. Resolve by the iri's CURIE local name (not the default
-        # self.name), and adopt it as the name when none was given explicitly.
+        # Auto-populate from the registry/ontology if iri is set and expressions are missing. Resolve by the iri's CURIE local name (not the default self.name), and adopt it as the name when none was given explicitly.
         if getattr(self, "iri", None) and not getattr(self, "pre_expression", None):
             from tvbo.data.registry import local_name
 
@@ -223,8 +218,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def populate_from_type(self, type_ref):
         """Fill missing pre/post expressions and parameters from a type reference.
 
-        This is used when ``network.coupling`` entries specify a ``type`` field
-        to reference a known coupling function (e.g. ``KuramotoCoupling`` or
+        This is used when ``network.coupling`` entries specify a ``type`` field to reference a known coupling function (e.g. ``KuramotoCoupling`` or
         ``tvbo:KuramotoCoupling``).
 
         Parameters
@@ -240,10 +234,8 @@ class Coupling(tvbo_datamodel.Coupling):
     def _resolve_xi_xj(self):
         """Auto-populate local_states/incoming_states from x_i/x_j in expression.
 
-        Coupling database equations use generic placeholders ``x_i`` (local
-        node state) and ``x_j`` (source node state).  When the user has
-        declared ``incoming_states`` (the actual state variable names to
-        pull from connected nodes) but not ``local_states``, and the
+        Coupling database equations use generic placeholders ``x_i`` (local node state) and ``x_j`` (source node state).  When the user has
+        declared ``incoming_states`` (the actual state variable names to pull from connected nodes) but not ``local_states``, and the
         expression references ``x_i``, we mirror ``incoming_states`` into
         ``local_states`` so the template can generate correct assignments.
         """
@@ -263,8 +255,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def from_ontology(cls, ontoclass):
         """Create a Coupling instance from an ontology Coupling class or name.
 
-        Accepts an owlready2 class, a plain name (``"SigmoidalJansenRit"``),
-        or a CURIE (``"tvbo:SigmoidalJansenRit"``).
+        Accepts an owlready2 class, a plain name (``"SigmoidalJansenRit"``), or a CURIE (``"tvbo:SigmoidalJansenRit"``).
         Tries the database YAML first, then falls back to ontology lookup.
         """
         if isinstance(ontoclass, str):
@@ -323,10 +314,6 @@ class Coupling(tvbo_datamodel.Coupling):
     #     return (
     #         self.name if self.name else f"Coupling{self.id}"
     #     )
-
-    # def __repr__(self):
-    #     # You can reuse __str__ or return a more detailed representation
-    #     return self.__str__()
 
     def to_yaml(self, filepath: str | None = None):
         """Serialize this coupling to YAML.
@@ -408,8 +395,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def report(self, format: str = "markdown", outputfile: str | None = None, parameters: bool = True, equations=None) -> str:
         """Render a human-readable markdown (or pdf) report for this coupling.
 
-        Includes pre/post expressions, the full assembled coupling equation
-        (``Coupling.equation``), and the parameter table.
+        Includes pre/post expressions, the full assembled coupling equation (``Coupling.equation``), and the parameter table.
 
         Args:
             format: ``markdown``/``md`` or ``pdf``.
@@ -447,8 +433,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def execute(self, format="tvb", alt_label=None, **kwargs):
         """Render, execute, and instantiate this coupling for a backend.
 
-        Renders the coupling code via `render_code`, executes it, and returns
-        the resulting runtime object.
+        Renders the coupling code via `render_code`, executes it, and returns the resulting runtime object.
 
         Args:
             format: Target backend. `"tvb"` returns an instantiated TVB
@@ -524,8 +509,7 @@ class Coupling(tvbo_datamodel.Coupling):
         """Full symbolic coupling equation with proper indexed state variables.
 
         Resolves all expression styles (``theta_j``/``theta_i``, ``x_j``/``x_i``,
-        ``incoming_states``/``local_states``) into proper ``IndexedBase`` notation
-        and wraps the pre-expression in a weighted summation over connected nodes.
+        ``incoming_states``/``local_states``) into proper ``IndexedBase`` notation and wraps the pre-expression in a weighted summation over connected nodes.
 
         Parameters
         ----------
@@ -613,16 +597,11 @@ class Coupling(tvbo_datamodel.Coupling):
             if not isinstance(pre_expr, (list, tuple)):
                 pre_indexed = pre_expr.subs(subs_map)
 
-        # Factored / vectorized coupling: the pre-expression is a *list* whose k-th
-        # component is summed into gx_k and the post recombines the gx_k. When the post
-        # is linear in the gx_k (the usual case) collapse to the canonical single sum
-        #     c = Sum_j w[i,j] * sum_k a_k(x_i) * pre_k(x_j)
-        # and let ``trigsimp`` fold the per-edge term (cos(x_i)sin(x_j) - sin(x_i)cos(x_j)
+        # Factored / vectorized coupling: the pre-expression is a *list* whose k-th component is summed into gx_k and the post recombines the gx_k. When the post is linear in the gx_k (the usual case) collapse to the canonical single sum c = Sum_j w[i,j] * sum_k a_k(x_i) * pre_k(x_j) and let ``trigsimp`` fold the per-edge term (cos(x_i)sin(x_j) - sin(x_i)cos(x_j)
         # -> sin(x_j - x_i)); otherwise keep the explicit gx_k = Sum(w * pre_k) form.
         # Built outside the evaluate(False) block so the sum, coeff and trigsimp evaluate.
         if isinstance(pre_expr, (list, tuple)):
-            # A bare state name in a summed pre refers to the summed (j) node, even when
-            # declared `local` (e.g. [sin(theta), cos(theta)]); explicit `_i` stays local.
+            # A bare state name in a summed pre refers to the summed (j) node, even when declared `local` (e.g. [sin(theta), cos(theta)]); explicit `_i` stays local.
             pre_subs = dict(subs_map)
             for sn in set(incoming) | set(local):
                 pre_subs[Symbol(sn)] = _incoming(sn)
@@ -633,8 +612,7 @@ class Coupling(tvbo_datamodel.Coupling):
             if sp.expand(post_indexed - sum(a * g for a, g in zip(coeffs, gxk))) == 0:
                 edge = sp.trigsimp(sum(a * p for a, p in zip(coeffs, pre_k)))
                 # Show a folded odd-trig term in the physics convention f(incoming - local):
-                # sympy canonicalises f(x_j - x_i) to -f(x_i - x_j), so rebuild f(x_j - x_i)
-                # as a positive-first, unevaluated Add (the report renders with order='none').
+                # sympy canonicalises f(x_j - x_i) to -f(x_i - x_j), so rebuild f(x_j - x_i) as a positive-first, unevaluated Add (the report renders with order='none').
                 c0, rest = edge.as_coeff_Mul()
                 odd = (sp.sin, sp.tan, sp.sinh, sp.tanh)
                 if c0 == -1 and getattr(rest, "func", None) in odd and rest.args[0].is_Add:
@@ -651,10 +629,8 @@ class Coupling(tvbo_datamodel.Coupling):
     def summed_inputs(self, delays=False):
         """Summed inputs ``gx_k`` of a factored / vectorized coupling.
 
-        A factored coupling emits a *list* pre-expression whose k-th component is summed
-        over the graph into ``gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)``, which the
-        post-expression then recombines. Returns ``[(gx_k, sum_expr), ...]`` so a report
-        can state precisely what ``gx_0``, ``gx_1``, … mean; empty for a scalar coupling.
+        A factored coupling emits a *list* pre-expression whose k-th component is summed over the graph into ``gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)``, which the
+        post-expression then recombines. Returns ``[(gx_k, sum_expr), ...]`` so a report can state precisely what ``gx_0``, ``gx_1``, … mean; empty for a scalar coupling.
         """
         import sympy as sp
         from sympy import IndexedBase, Symbol, symbols, Sum
@@ -684,8 +660,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def plot(self, weights=None, node_idx=0, xs=None, ax=None, **kwargs):
         """Plot the coupling output against a single input state component.
 
-        Lambdifies the assembled coupling `equation` and evaluates it while
-        sweeping one node's state over `xs`, holding the other components
+        Lambdifies the assembled coupling `equation` and evaluates it while sweeping one node's state over `xs`, holding the other components
         fixed.
 
         Args:
@@ -774,8 +749,5 @@ def get_global_coupling_functions():
     return list(CouplingFunctions)
 
 
-# NOTE: do NOT eagerly compute an ``available_coupling_functions`` set at import
-# time. It has no consumers, and traversing ``onto.Coupling.subclasses()`` forces
-# the (metadata-only) owlready2 ontology to fully load on every ``import tvbo`` —
-# including JAX/codegen processes that never query the ontology. Call
+# NOTE: do NOT eagerly compute an ``available_coupling_functions`` set at import time. It has no consumers, and traversing ``onto.Coupling.subclasses()`` forces the (metadata-only) owlready2 ontology to fully load on every ``import tvbo`` — including JAX/codegen processes that never query the ontology. Call
 # ``get_global_coupling_functions()`` on demand instead.

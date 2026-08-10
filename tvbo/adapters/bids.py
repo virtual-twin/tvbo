@@ -1,8 +1,7 @@
 """
 BIDS BEP034 Export Module
 
-This module provides utilities for exporting TVB simulation data to BIDS format
-following the BEP034 Computational Modeling Extension v1.0.0.
+This module provides utilities for exporting TVB simulation data to BIDS format following the BEP034 Computational Modeling Extension v1.0.0.
 
 Uses:
 - Pydantic models from tvbo.datamodel.tvbopydantic for metadata serialization
@@ -38,9 +37,7 @@ BEP034_CONFIG_PATH = Path(__file__).parent / "bep034.json"
 
 
 # BIDS pybids rule string for an experiment-result artifact (``<prefix>_result.h5``
-# + ``.yaml`` sidecar). ``suffix``/``extension`` are value-constrained so an
-# invalid combination fails fast; ``desc`` is optional. Customize the naming by
-# editing this pattern — build_path handles entity substitution and optionality.
+# + ``.yaml`` sidecar). ``suffix``/``extension`` are value-constrained so an invalid combination fails fast; ``desc`` is optional. Customize the naming by editing this pattern — build_path handles entity substitution and optionality.
 RESULT_PATTERNS = [
     "[sub-{subject}_]exp-{experiment}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml|.json>}",
 ]
@@ -49,8 +46,7 @@ RESULT_PATTERNS = [
 def result_entities(experiment, extension: str = ".h5") -> dict:
     """BIDS entities for an experiment's result, with alphanumeric values.
 
-    BIDS entity values must be alphanumeric (no spaces/hyphens/underscores), so
-    the id and dynamics name are stripped to ``[A-Za-z0-9]``. The short model
+    BIDS entity values must be alphanumeric (no spaces/hyphens/underscores), so the id and dynamics name are stripped to ``[A-Za-z0-9]``. The short model
     *name* (``Kuramoto``) is used for ``desc-`` rather than the verbose label, so
     filenames stay compact. Returns a dict ready for
     :func:`bids.layout.writing.build_path` with ``RESULT_PATTERNS``.
@@ -60,8 +56,7 @@ def result_entities(experiment, extension: str = ".h5") -> dict:
         return "".join(c for c in str(s) if c.isalnum())
 
     entities = {"suffix": "result", "extension": extension}
-    # Per-subject shards (dataset fan-out) get a sub- entity so their results do
-    # not collide when reassembled.
+    # Per-subject shards (dataset fan-out) get a sub- entity so their results do not collide when reassembled.
     active_subject = getattr(experiment, "_active_subject", None)
     if active_subject:
         entities["subject"] = _alnum(active_subject)
@@ -626,8 +621,7 @@ def create_cifti_ptseries(
         # Assume seconds if unknown
         sample_period_sec = sample_period
 
-    # Create SeriesAxis (time dimension)
-    # start=0, step=TR in seconds, size=number of timepoints
+    # Create SeriesAxis (time dimension) start=0, step=TR in seconds, size=number of timepoints
     series_axis = cifti2.SeriesAxis(
         start=0.0,
         step=sample_period_sec,
@@ -685,8 +679,7 @@ def create_cifti_ptseries(
         # Shape: (time * n_states, regions) with ScalarAxis indicating which is which
 
         # Alternative: use dscalar for each timepoint-state combo
-        # Let's use ptseries with concatenated time for all states
-        # and add metadata about which timepoints belong to which state
+        # Let's use ptseries with concatenated time for all states and add metadata about which timepoints belong to which state
 
         # For now, save first state variable only for ptseries
         # TODO: Support multi-state as separate files or different format
@@ -758,8 +751,7 @@ def create_multi_state_cifti(
     """
     Create separate CIFTI-2 ptseries files for each state variable.
 
-    This is the recommended approach for multi-state variable data,
-    creating one ptseries file per state variable.
+    This is the recommended approach for multi-state variable data, creating one ptseries file per state variable.
 
     Parameters
     ----------
@@ -825,8 +817,7 @@ def write_hdf5_timeseries(
     """
     Write time series data to HDF5 file preserving full dimensionality.
 
-    This format supports arbitrary dimensionality (e.g., parameter sweeps,
-    multiple modes, etc.) without splitting by state variable.
+    This format supports arbitrary dimensionality (e.g., parameter sweeps, multiple modes, etc.) without splitting by state variable.
 
     Parameters
     ----------

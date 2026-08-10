@@ -45,8 +45,7 @@ def _graph_from_experiment(result):
 def _extract_node_timeseries(data, max_points=200):
     """Extract a list of ``(var_name, vals[time, node], time)`` from data.
 
-    Handles data that may or may not still have a *variable* dimension
-    (e.g. after ``.sel(variable='V')``).  When the time axis has more than
+    Handles data that may or may not still have a *variable* dimension (e.g. after ``.sel(variable='V')``).  When the time axis has more than
     *max_points* samples the arrays are downsampled so that animations
     stay lightweight.
     """
@@ -91,8 +90,7 @@ def _extract_node_timeseries(data, max_points=200):
 def animate_network(result, state=None, interval=50, cmap="viridis", node_size=120, figsize=None, format=None):
     """Animate time-series on a graph layout (nodes colored by state value).
 
-    Supports the ``.sel(variable='V').animate()`` pattern: if the variable
-    dimension is already selected, animates that variable.  With no selection
+    Supports the ``.sel(variable='V').animate()`` pattern: if the variable dimension is already selected, animates that variable.  With no selection
     all variables are shown (one row per variable).
 
     Graph data is resolved in order:
@@ -257,8 +255,7 @@ def animate_timeseries(result, state=None, interval=50, cmap=None, figsize=None)
 
     Parameters
     ----------
-    result : SimulationResult
-    state : int, str or None
+    result : SimulationResult state : int, str or None
         If given, selects a single variable by index or name.
     interval : int
         Milliseconds between frames.
@@ -339,11 +336,7 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0, interval=50,
 
     Parameters
     ----------
-    result : SimulationResult
-    x_var, y_var : str, optional
-    region, mode : int
-    interval : int
-    trail : int
+    result : SimulationResult x_var, y_var : str, optional region, mode : int interval : int trail : int
         Number of trailing points.
     figsize : tuple
 
@@ -523,13 +516,11 @@ def animate_multi(result, panels, interval=50, figsize=None, max_points=200, sav
 
     Parameters
     ----------
-    result : SimulationResult
-    panels : list of str
+    result : SimulationResult panels : list of str
         Panel type names (e.g. ['pendulum_bob', 'timeseries']).
     interval : int
         Milliseconds between frames.
-    figsize : tuple, optional
-    max_points : int
+    figsize : tuple, optional max_points : int
         Maximum time points per panel (downsampled for performance).
     save : str, optional
         If given, save the animation to this path (e.g. 'anim.gif').

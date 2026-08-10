@@ -7,10 +7,8 @@
 #
 """FreeSurfer atlas utilities for mapping between region indices and labels.
 
-Loads the FreeSurfer color lookup table and provides helpers to translate
-between numeric FreeSurfer indices and region labels, exposes the FS86 and
-`aparc` label lists, and converts HCP-MMP1 region names to FreeSurfer label
-conventions.
+Loads the FreeSurfer color lookup table and provides helpers to translate between numeric FreeSurfer indices and region labels, exposes the FS86 and
+`aparc` label lists, and converts HCP-MMP1 region names to FreeSurfer label conventions.
 """
 
 from os.path import join

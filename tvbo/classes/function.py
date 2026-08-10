@@ -207,8 +207,7 @@ class LossFunction(tvbo_datamodel.LossFunction):
     - Code generation: render_code, to_jax, to_numpy
     - Execution: to_callable
 
-    LossFunction extends Function with aggregation specification for
-    per-element losses (e.g., mean over nodes).
+    LossFunction extends Function with aggregation specification for per-element losses (e.g., mean over nodes).
     """
 
     def __init__(self, name: str = "LossFunction", **kwargs):

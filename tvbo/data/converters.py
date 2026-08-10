@@ -1,7 +1,6 @@
 """Format converters: BEP017 export.
 
-Uses relmat_entities() + build_path() from §6.5 for BIDS-compliant
-filenames — no manual filename construction.
+Uses relmat_entities() + build_path() from §6.5 for BIDS-compliant filenames — no manual filename construction.
 
 TVB converters have moved to :mod:`tvbo.adapters.tvb`.
 """
@@ -16,8 +15,7 @@ from tvbo.data.network_io import _template_edges
 def relmat_entities(network) -> dict:
     """Extract pybids entities from a tvbo Network instance or dict (§6.5).
 
-    Accepts both a Network object (direct attribute access) and a raw
-    sidecar dict (for standalone usage). Returns entity dict for
+    Accepts both a Network object (direct attribute access) and a raw sidecar dict (for standalone usage). Returns entity dict for
     ``build_path()``.
 
     Parameters
@@ -90,8 +88,7 @@ def to_bep017(network, output_dir):
     """Export a tvbo Network to BEP017-compatible per-measure files.
 
     Each template edge becomes one ``meas-<name>_relmat.dense.tsv`` +
-    JSON sidecar. Filenames use pybids ``build_path`` (§6.5). Reads
-    data directly from the Network object — no YAML round-trip needed.
+    JSON sidecar. Filenames use pybids ``build_path`` (§6.5). Reads data directly from the Network object — no YAML round-trip needed.
 
     Parameters
     ----------

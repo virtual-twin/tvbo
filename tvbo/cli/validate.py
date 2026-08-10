@@ -24,10 +24,8 @@ def schema(
     """Validate *path* against the shipped JSON Schema; auto-detects the target class.
 
     Uses the lightweight ``jsonschema`` library against the pre-generated
-    ``tvbo/datamodel/tvbo_datamodel.schema.json`` (produced from the LinkML schema at
-    build time), so validation needs no runtime ``linkml``. The file is parsed with
-    TVBO's loader so ``!include``/merge-key extensions and slot aliases resolve exactly
-    as they do when the model is loaded.
+    ``tvbo/datamodel/tvbo_datamodel.schema.json`` (produced from the LinkML schema at build time), so validation needs no runtime ``linkml``. The file is parsed with
+    TVBO's loader so ``!include``/merge-key extensions and slot aliases resolve exactly as they do when the model is loaded.
     """
     import json
 

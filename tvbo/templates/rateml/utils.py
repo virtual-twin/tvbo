@@ -242,10 +242,8 @@ def _string_to_cuda(expr_str: str) -> str:
 
 
 def _enforced_clamp(sv):
-    """Return (lo, hi) when a state variable's ``domain`` opts into hard clamping
-    (``enforce == 'clamp'``), else None. The legacy ``boundaries`` slot is folded
-    into ``domain`` with ``enforce: clamp`` by the Dynamics loader; a domain with
-    the default ``enforce: none`` is descriptive metadata and is not clamped."""
+    """Return (lo, hi) when a state variable's ``domain`` opts into hard clamping (``enforce == 'clamp'``), else None. The legacy ``boundaries`` slot is folded
+    into ``domain`` with ``enforce: clamp`` by the Dynamics loader; a domain with the default ``enforce: none`` is descriptive metadata and is not clamped."""
     from tvbo.utils import domain_enforcement
 
     dom = getattr(sv, "domain", None)

@@ -1,11 +1,8 @@
 """Flatten a multi-scale reservoir SimulationExperiment to a flat one (Python).
 
-Lowering strategy for Experiment A (per-region reservoirs): a network of ``R``
-macro regions, each hosting an ``n``-unit reservoir (``Node.subnetwork`` with a
-``RandomReservoir`` generator) coupled long-range through the empirical SC, is
-compiled into a single **flat** ``R·n``-node scalar network plus a global weight
-matrix that the existing tvboptim backend runs unchanged. No vector-state
-machinery in the templates — the multi-scale structure is resolved entirely in
+Lowering strategy for Experiment A (per-region reservoirs): a network of ``R`` macro regions, each hosting an ``n``-unit reservoir (``Node.subnetwork`` with a
+``RandomReservoir`` generator) coupled long-range through the empirical SC, is compiled into a single **flat** ``R·n``-node scalar network plus a global weight
+matrix that the existing tvboptim backend runs unchanged. No vector-state machinery in the templates — the multi-scale structure is resolved entirely in
 Python (the chosen "flatten in Python" approach).
 
 The reservoir multi-scale pattern this handles
@@ -22,17 +19,14 @@ with the cross-layer edges forming a **linear** down/up coupling:
   the macro coupling;
 * (optional) upward trained readout ``W_out @ x`` — ignored for free-running.
 
-Because both the recurrence (``W_int @ x``) and the cross-region drive are
-linear in the units' states and enter the *same* activation, they fold into one
+Because both the recurrence (``W_int @ x``) and the cross-region drive are linear in the units' states and enter the *same* activation, they fold into one
 global matrix via Kronecker structure::
 
     W_global = kron(I_R, W_int)  +  (kappa / n) · kron(SC, outer(W_in, 1ₙ))
     dX/dt    = (1/tau) · (-X + act(W_global @ X))            # X ∈ ℝ^{R·n}
 
-The flat model is a scalar leaky-integrator whose coupling enters *inside* the
-activation. ``flatten_reservoir`` validates the spec matches this pattern and
-raises otherwise — it is a principled lowering of a well-defined model class,
-not a general arbitrary-coupling compiler (that would be the Stage-3 codegen
+The flat model is a scalar leaky-integrator whose coupling enters *inside* the activation. ``flatten_reservoir`` validates the spec matches this pattern and
+raises otherwise — it is a principled lowering of a well-defined model class, not a general arbitrary-coupling compiler (that would be the Stage-3 codegen
 engine emitting the procedure on-device).
 """
 
@@ -89,15 +83,12 @@ def flatten_reservoir(
 ) -> FlatReservoir:
     """Flatten a per-region-reservoir experiment dict into a flat scalar model.
 
-    ``exp`` is the parsed Experiment-A YAML (a plain dict). ``n_override``
-    optionally shrinks the reservoir size for a fast demonstration run (the full
+    ``exp`` is the parsed Experiment-A YAML (a plain dict). ``n_override`` optionally shrinks the reservoir size for a fast demonstration run (the full
     ``n`` from the spec is memory-heavy: ``W_global`` is dense ``(R·n)²``).
 
     ``max_flat_nodes`` caps the flat node count ``R·n`` before the dense
-    ``(R·n)²`` float64 ``W_global`` is allocated. Because memory grows
-    quadratically, a full-``n`` reservoir over a whole-brain SC can exhaust RAM
-    (this lowering has OOM-crashed a machine). Exceeding the cap raises with the
-    projected allocation size; pass a larger value — or ``None`` to disable —
+    ``(R·n)²`` float64 ``W_global`` is allocated. Because memory grows quadratically, a full-``n`` reservoir over a whole-brain SC can exhaust RAM
+    (this lowering has OOM-crashed a machine). Exceeding the cap raises with the projected allocation size; pass a larger value — or ``None`` to disable —
     once the memory is known to be available.
     """
     # Local imports keep this module import-light.
@@ -127,8 +118,7 @@ def flatten_reservoir(
     gg_params = {k: _param_value(gg.get("parameters", {}), k) for k in (gg.get("parameters") or {})}
     # weight_distribution carries its spec under `.distribution`
     wd = _pluck(gg, "parameters", "weight_distribution", "distribution")
-    # Size is the subnetwork's node count, as it is for every generator; `n_nodes` on the
-    # generator is the standalone form used when there is no Network to read it from.
+    # Size is the subnetwork's node count, as it is for every generator; `n_nodes` on the generator is the standalone form used when there is no Network to read it from.
     if "n" in gg_params:
         raise ValueError(
             "flatten_reservoir: the reservoir generator declares `n`, which is no longer "
@@ -152,8 +142,7 @@ def flatten_reservoir(
                 SC = SC / m
     R = SC.shape[0]
 
-    # Guard the dense Kronecker assembly below: W_global is a dense (R·n)²
-    # float64 matrix, so memory grows quadratically in the flat node count.
+    # Guard the dense Kronecker assembly below: W_global is a dense (R·n)² float64 matrix, so memory grows quadratically in the flat node count.
     flat_nodes = R * n
     if max_flat_nodes is not None and flat_nodes > max_flat_nodes:
         gib = (flat_nodes**2) * 8 / 2**30
