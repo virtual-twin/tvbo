@@ -66,10 +66,10 @@ def _as_prose(headers: Sequence[str], rows: Sequence[Sequence[str]], keep: Seque
         return ", ".join(r[keep[0]] for r in rows if r[keep[0]] not in _EMPTY_MARKERS)
 
     def _clause(row):
-        """``Exp 50 — Duration: 2000 ms``: the first column names the subject."""
+        """``Exp 50 (Duration: 2000 ms)``: the first column names the subject."""
         subject = f"{headers[keep[0]]} {row[keep[0]]}".strip()
         rest = ", ".join(f"{headers[j]}: {row[j]}" for j in keep[1:] if row[j] not in _EMPTY_MARKERS)
-        return f"{subject} — {rest}" if rest else subject
+        return f"{subject} ({rest})" if rest else subject
 
     return "; ".join(_clause(r) for r in rows) + "."
 
@@ -91,11 +91,7 @@ def md_table(
     ``default``/``domain``/``flags`` values shows only the columns that carry
     information.
 
-    Always returns a table. A caller that would rather write a small grid as a
-    sentence calls [`table_or_prose`](#tvbo.utils.report.table_or_prose) instead;
-    the decision needs the caller's subject and keying to read correctly, and
-    [`read_md_tables`](#tvbo.utils.report.read_md_tables) is the documented inverse
-    of this function only while it renders a table.
+    Once the drop leaves fewer than two columns there is no table left to render, and what survives is written as a list of its values: a one-column float spends a number and a caption restating the heading above it. Collapsing a grid that still *has* columns is a different call — it needs the caller's subject and keying to read as a sentence — and is opt-in through [`table_or_prose`](#tvbo.utils.report.table_or_prose). [`read_md_tables`](#tvbo.utils.report.read_md_tables) is this function's inverse for everything it renders as a table.
 
     Args:
         headers: Column titles.
@@ -103,11 +99,10 @@ def md_table(
         aligns: Per-column alignment, ``'l'``/``'r'``/``'c'``; defaults to left.
         empty: Placeholder rendered for an empty cell in a kept column.
         col_cap: Width above which a column stops earning more of the page.
-        col_floor: Width below which a column stops giving it up, so a short
-            column keeps enough room to typeset its own cells.
+        col_floor: Width below which a column stops giving it up, so a short column keeps enough room to typeset its own cells.
 
     Returns:
-        The markdown table as a string: header, rule, and body rows.
+        The markdown table — header, rule, and body rows — or the surviving column's values as a list when fewer than two columns carry data.
     """
     n = len(headers)
     norm = [[("" if c is None else str(c)).strip() for c in row] for row in rows]
@@ -116,6 +111,8 @@ def md_table(
         return cell in _EMPTY_MARKERS
 
     keep = [j for j in range(n) if any(not _blank(r[j]) for r in norm)] if norm else list(range(n))
+    if len(keep) < 2:
+        return _as_prose(headers, norm, keep)
 
     aligns = list(aligns) if aligns else ["l"] * n
 
@@ -150,16 +147,9 @@ def table_or_prose(
 ) -> str:
     """Render a grid as a table, or as a sentence when it is too small to earn a float.
 
-    A numbered, captioned table announces to the reader that something has to be looked
-    up, and journals cap how many a paper may carry; a table holding two numbers spends
-    that budget on nothing. The threshold is `min_cells` values outside the key column,
-    and at least two rows — so a lone `| Term |` column collapses to its values, a single
-    declared event stops being a one-row float, and two experiments differing only in
-    duration become a clause. Anything larger stays a table.
+    A numbered, captioned table announces to the reader that something has to be looked up, and journals cap how many a paper may carry; a table holding two numbers spends that budget on nothing. The threshold is `min_cells` values outside the key column, and at least two rows — so a single declared event stops being a one-row float, and two experiments differing only in duration become a clause. Anything larger stays a table.
 
-    Opt-in, because the sentence reads correctly only where the first column names a
-    subject. A parameter block, a state-variable list or a scorecard has no such subject
-    and stays a table however small it is — call `md_table` for those.
+    Opt-in, because a multi-column sentence reads correctly only where the first column names a subject. A parameter block, a state-variable list or a scorecard has no such subject and stays a table however few rows it has — call `md_table` for those, which still declines to render a grid down to a single column.
 
     Args:
         headers: Column titles; the first names the subject of each clause.
@@ -1728,6 +1718,19 @@ def experiment_table(experiments, shared_parameters=(), orient="auto", caption_o
     return table_or_prose(head, [[k] + [f.get(k, "") for f in facts] for k in keys[1:]])
 
 
+def experiment_title(experiment):
+    """An experiment's heading text, without the id the heading already carries.
+
+    Recipes commonly open a label with the experiment's own number, so the heading came
+    out as "Experiment 30: Exp 30 — FIC+EIB tuning". Six of Schirner2023's ten read that
+    way. Stripping the prefix also drops the dash the recipe used to attach it.
+    """
+    label = str(slot(experiment, "label", "") or "").strip()
+    ident = re.escape(str(slot(experiment, "id", "")))
+    stripped = re.sub(rf"^(?:exp(?:eriment)?\.?\s*){ident}\b\s*[-–—:.]*\s*", "", label, flags=re.IGNORECASE)
+    return stripped or label or "simulation"
+
+
 def settings_sentence(experiment):
     """The factual half of an experiment's paragraph, composed from what it declares.
 
@@ -1892,13 +1895,13 @@ def observation_table(experiments):
     shared = {k: v for k, v in per_row[0].items() if all(r.get(k) == v for r in per_row)}
 
     def _reduction(cells):
-        return " — ".join(part for part in (", ".join(f"{k}={v}" for k, v in cells[2] if k not in shared), cells[3]) if part)
+        return "; ".join(part for part in (", ".join(f"{k}={v}" for k, v in cells[2] if k not in shared), cells[3]) if part)
 
     table = table_or_prose(
         ["Observation", "Experiments", "Source", "Reduction"],
         [[cells[0], _id_text(ids), cells[1], _reduction(cells)] for cells, ids in rows.items()],
     )
-    notes = "\n\n".join(f"**{cells[0]}** — {cells[4]}" for cells in rows if cells[4])
+    notes = "\n\n".join(f"**{cells[0]}.** {cells[4]}" for cells in rows if cells[4])
     return Observations(table, ", ".join(f"{k} = {v}" for k, v in shared.items()), notes)
 
 
@@ -2038,15 +2041,13 @@ def captioned(table, caption, anchor, format="markdown", anchors=None):
     Pass ``anchors`` (the report's :class:`Equations`) so tables share the equations'
     anchor namespace and a repeated model name cannot mint the same ``#tbl-`` twice.
 
-    Input that is not a table — what `table_or_prose` returns for a grid too small to
-    earn a float — passes through uncaptioned, because captioning prose would announce a
-    table the reader cannot see and, in LaTeX, number one that was never typeset.
+    Input that is not a table — what `table_or_prose` and `md_table` return for a grid with no float left in it — takes the caption as a lead-in sentence instead of a numbered label below, since numbering a float the reader cannot see would announce a table LaTeX never typeset. The caption still has to be *said*: the observations one carries every sampling setting the rows agree on, lifted out of the grid, so dropping it took those settings out of the report entirely.
     """
     text = str(table).strip()
     if not text:
         return ""
     if not text.startswith("|"):
-        return f"{table}\n"
+        return f"{caption}\n\n{text}\n"
     if format != "qmd":
         return f"{table}\n\n**Table.** {caption}\n"
     label = f"tbl-{_slug(anchor)}"

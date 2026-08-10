@@ -1072,7 +1072,7 @@ def run_${algo_name}(
             ${obs},
 % endfor
 % for pname, pval in rule_params_dict.items():
-            ${pval},
+            ${pname},
 % endfor
 % if needs_warmup:
             eta_scale,
