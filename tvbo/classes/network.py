@@ -2877,8 +2877,6 @@ class Network(tvbo_datamodel.Network):
                 return np.zeros((n, n), dtype=np.float64)
             return None
 
-        # Apply transforms targeting "weight" unless the caller wants the raw matrix
-        # (the tvboptim codegen path takes raw and inlines the transform in the script).
         if apply_transforms:
             for t in self.transforms or []:
                 if t.name == "weight":

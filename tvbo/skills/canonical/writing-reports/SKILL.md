@@ -113,10 +113,14 @@ only, and it defaults to `main` — an experiment you never mark is described in
 
 What the study call gives you that a loop cannot:
 
-- **Equations numbered and referable.** `equations="semantic"` (the default) anchors on model
-  and variable (`@eq-jansenrit1995-y3`), so a reference survives an experiment being inserted
-  ahead of it; `"sequential"` numbers them `#eq-4`; `"none"` leaves them bare. Plain
-  `"markdown"` has no anchor syntax and falls back to `\tag{n}`.
+- **Every equation numbered and referable** — state equations, derived variables, functions,
+  **and the coupling**: its assembled form, its pre/post decomposition and its summed inputs.
+  `equations="semantic"` (the default) anchors on model and variable
+  (`@eq-jansenrit1995-y3`), so a reference survives an experiment being inserted ahead of it;
+  `"sequential"` numbers them `#eq-4`; `"none"` leaves them bare. Plain `"markdown"` has no
+  anchor syntax and falls back to `\tag{n}`. Audit with the anchor *captured*, never with a
+  negative lookahead — `\$\$.+?\$\$(?!\s*\{#eq-)` backtracks past the closing delimiter to
+  satisfy the lookahead and reports whatever makes the check pass.
 - **One glossary per model**, `Symbol | Kind | Meaning | Value | Unit`, dense by construction —
   state variables, parameters, derived parameters and the coupling's own symbols in one grid
   rather than four tables whose columns do not overlap. A parameter an experiment sweeps shows

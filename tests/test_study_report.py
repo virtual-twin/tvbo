@@ -9,6 +9,7 @@ generated cross-referenced document breaks silently without: unique anchors, and
 number left to drift.
 """
 
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -129,6 +130,21 @@ experiments:
         omega: {value: 1.0, unit: 1/s, description: angular frequency}
     integration: *integration
 """
+
+
+_BLOCK = re.compile(r"\$\$(.+?)\$\$(\s*\{#(eq-[a-z0-9-]+)\})?", re.S)
+
+
+def _unnumbered(text):
+    """Display equations in *text* carrying neither a Quarto anchor nor a ``\\tag``.
+
+    Matched by capturing the optional anchor, never by a negative lookahead: `$$.+?$$`
+    followed by `(?!...)` backtracks *past the closing delimiter* to satisfy the
+    lookahead, so it silently reports whatever makes the assertion pass. The first
+    version of this check did exactly that and could not fail.
+    """
+    return [" ".join(m.group(1).split())[:60] for m in _BLOCK.finditer(text)
+            if not m.group(3) and "\\tag{" not in m.group(1)]
 
 
 @pytest.fixture(scope="module")
@@ -310,15 +326,29 @@ def test_a_grid_too_small_to_be_a_float_is_written_as_a_sentence(rows, expected)
     Pang2023 spent a numbered table on the fact that its model declares one event, and
     Schirner2023 spent one on two experiments differing only in duration.
     """
-    from tvbo.utils.report import md_table
+    from tvbo.utils.report import table_or_prose
 
-    assert md_table(["Event", "Type"], rows) == expected
+    assert table_or_prose(["Event", "Type"], rows) == expected
 
 
 def test_a_grid_large_enough_stays_a_table():
-    from tvbo.utils.report import md_table
+    from tvbo.utils.report import table_or_prose
 
-    assert md_table(["Event", "Type"], [["a", "1"], ["b", "2"], ["c", "3"]]).startswith("|")
+    assert table_or_prose(["Event", "Type"], [["a", "1"], ["b", "2"], ["c", "3"]]).startswith("|")
+
+
+def test_md_table_always_renders_a_table():
+    """The shared primitive never collapses: 13 curated models are single-state.
+
+    `state_variable_table`, `param_table` and the scorecard have no subject column for a
+    sentence to name, and `read_md_tables` is documented as md_table's inverse.
+    """
+    from tvbo.utils.report import md_table, read_md_tables
+
+    one_row = md_table(["Parameter", "Value"], [["sigma", "0.01"]])
+    assert one_row.startswith("|")
+    assert read_md_tables(one_row)[0].rows == [{"Parameter": "sigma", "Value": "0.01"}]
+    assert md_table(["A", "B"], [["", ""], ["", ""]]).startswith("|")
 
 
 def test_experiment_ids_are_listed_in_numeric_order():

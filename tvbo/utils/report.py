@@ -60,6 +60,8 @@ def _as_prose(headers: Sequence[str], rows: Sequence[Sequence[str]], keep: Seque
     by commas and rows by semicolons, so the sentence carries its own column names
     and needs no caption to be understood.
     """
+    if not keep:
+        return ""
     if len(keep) == 1:
         return ", ".join(r[keep[0]] for r in rows if r[keep[0]] not in _EMPTY_MARKERS)
 
@@ -79,7 +81,6 @@ def md_table(
     empty: str = "",
     col_cap: int = 44,
     col_floor: int = 9,
-    min_cells: int = 3,
 ) -> str:
     """Render a GitHub-markdown table, omitting columns with no data.
 
@@ -90,14 +91,11 @@ def md_table(
     ``default``/``domain``/``flags`` values shows only the columns that carry
     information.
 
-    A grid that survives the drop too small to be worth a float is written as a
-    **sentence** instead. A numbered, captioned table announces to the reader that
-    something has to be looked up, and journals cap how many a paper may carry; a
-    table holding two numbers spends that budget on nothing. The threshold is
-    ``min_cells`` values outside the key column, and at least two rows — so a lone
-    ``| Term |`` / ``| c_grid |`` column collapses to ``c_grid``, Pang2023's single
-    declared event stops being a one-row float, and Schirner2023's two experiments
-    differing only in duration become a clause. Anything larger stays a table.
+    Always returns a table. A caller that would rather write a small grid as a
+    sentence calls [`table_or_prose`](#tvbo.utils.report.table_or_prose) instead;
+    the decision needs the caller's subject and keying to read correctly, and
+    [`read_md_tables`](#tvbo.utils.report.read_md_tables) is the documented inverse
+    of this function only while it renders a table.
 
     Args:
         headers: Column titles.
@@ -107,11 +105,9 @@ def md_table(
         col_cap: Width above which a column stops earning more of the page.
         col_floor: Width below which a column stops giving it up, so a short
             column keeps enough room to typeset its own cells.
-        min_cells: Values outside the first column below which the grid is prose.
 
     Returns:
-        The markdown table as a string (header, rule, and body rows), or a
-        sentence when the grid is too small to earn one.
+        The markdown table as a string: header, rule, and body rows.
     """
     n = len(headers)
     norm = [[("" if c is None else str(c)).strip() for c in row] for row in rows]
@@ -120,9 +116,6 @@ def md_table(
         return cell in _EMPTY_MARKERS
 
     keep = [j for j in range(n) if any(not _blank(r[j]) for r in norm)] if norm else list(range(n))
-
-    if norm and (len(norm) < 2 or len(norm) * (len(keep) - 1) < min_cells):
-        return _as_prose(headers, norm, keep)
 
     aligns = list(aligns) if aligns else ["l"] * n
 
@@ -149,6 +142,44 @@ def md_table(
         for r in norm
     )
     return "\n".join([head, sep] + ([body] if body else []))
+
+
+def table_or_prose(
+    headers: Sequence[str],
+    rows: Sequence[Sequence[Any]],
+    aligns: Sequence[str] | None = None,
+    min_cells: int = 3,
+    **kwargs,
+) -> str:
+    """Render a grid as a table, or as a sentence when it is too small to earn a float.
+
+    A numbered, captioned table announces to the reader that something has to be looked
+    up, and journals cap how many a paper may carry; a table holding two numbers spends
+    that budget on nothing. The threshold is `min_cells` values outside the key column,
+    and at least two rows — so a lone `| Term |` column collapses to its values, a single
+    declared event stops being a one-row float, and two experiments differing only in
+    duration become a clause. Anything larger stays a table.
+
+    Opt-in, because the sentence reads correctly only where the first column names a
+    subject. A parameter block, a state-variable list or a scorecard has no such subject
+    and stays a table however small it is — call `md_table` for those.
+
+    Args:
+        headers: Column titles; the first names the subject of each clause.
+        rows: One sequence of cell values per row.
+        aligns: Per-column alignment; ignored on the prose path.
+        min_cells: Values outside the first column below which the grid is prose.
+        **kwargs: Forwarded to `md_table` when the grid stays a table.
+
+    Returns:
+        A markdown table, or a sentence when the grid falls under the threshold.
+    """
+    n = len(headers)
+    norm = [[("" if c is None else str(c)).strip() for c in row] for row in rows]
+    keep = [j for j in range(n) if any(r[j] not in _EMPTY_MARKERS for r in norm)] if norm else list(range(n))
+    if norm and (len(norm) < 2 or len(norm) * (len(keep) - 1) < min_cells):
+        return _as_prose(headers, norm, keep)
+    return md_table(headers, rows, aligns=aligns, **kwargs)
 
 
 class MarkdownTable(NamedTuple):
@@ -1141,7 +1172,7 @@ def event_table(events, derivative_notation="dot"):
                       for p, v in name_items(params)) if params else "",
             slot(ev, "description", "") or slot(ev, "label", "") or "",
         ])
-    return md_table(["Event", "Type", "Condition", "Effect", "Parameters", "Description"], rows)
+    return table_or_prose(["Event", "Type", "Condition", "Effect", "Parameters", "Description"], rows)
 
 
 def state_variable_table(svars):
@@ -1369,9 +1400,8 @@ def model_families(experiments):
         state = frozenset(dict(name_items(slot(model, "state_variables", {}) or {})))
         family = next((f for f in families if _same_system(f.base_state, state)), None)
         if family is None:
-            family = SimpleNamespace(state=state, base_state=state, models=[], experiments=[])
+            family = SimpleNamespace(base_state=state, models=[], experiments=[])
             families.append(family)
-        family.state |= state
         family.experiments.append(exp)
         signature = _model_signature(model)
         for entry in family.models:
@@ -1486,7 +1516,7 @@ def symbol_table(model, swept=None, couplings=()):
                          _value_text(p, swept.get(name)), unit_text(slot(p, "unit"))])
     if not rows:
         return ""
-    return md_table(["Symbol", "Kind", "Meaning", "Value", "Unit"], rows,
+    return table_or_prose(["Symbol", "Kind", "Meaning", "Value", "Unit"], rows,
                     aligns=["l", "l", "l", "r", "l"])
 
 
@@ -1613,9 +1643,9 @@ def experiment_table(experiments, shared_parameters=(), orient="auto", caption_o
     if orient == "auto":
         orient = "rows" if len(facts) >= len(keys) - 1 else "columns"
     if orient == "rows":
-        return md_table(keys, [[f.get(k, "") for k in keys] for f in facts])
+        return table_or_prose(keys, [[f.get(k, "") for k in keys] for f in facts])
     head = [keys[0]] + [f.get(keys[0], "") for f in facts]
-    return md_table(head, [[k] + [f.get(k, "") for f in facts] for k in keys[1:]])
+    return table_or_prose(head, [[k] + [f.get(k, "") for f in facts] for k in keys[1:]])
 
 
 def settings_sentence(experiment):
@@ -1754,7 +1784,7 @@ def observation_table(experiments):
                           (", ".join(f"{k}={v}" for k, v in cells[2] if k not in shared), cells[3])
                           if part)
 
-    table = md_table(["Observation", "Experiments", "Source", "Reduction"],
+    table = table_or_prose(["Observation", "Experiments", "Source", "Reduction"],
                      [[cells[0], _id_text(ids), cells[1], _reduction(cells)]
                       for cells, ids in rows.items()])
     notes = "\n\n".join(f"**{cells[0]}** — {cells[4]}" for cells in rows if cells[4])
@@ -1843,13 +1873,15 @@ def captioned(table, caption, anchor, format="markdown", anchors=None):
 
     Pass ``anchors`` (the report's :class:`Equations`) so tables share the equations'
     anchor namespace and a repeated model name cannot mint the same ``#tbl-`` twice.
+
+    Input that is not a table — what `table_or_prose` returns for a grid too small to
+    earn a float — passes through uncaptioned, because captioning prose would announce a
+    table the reader cannot see and, in LaTeX, number one that was never typeset.
     """
-    if not str(table).strip():
+    text = str(table).strip()
+    if not text:
         return ""
-    if not str(table).lstrip().startswith("|"):
-        # `md_table` collapses a single surviving column to a plain comma-separated list.
-        # That is prose, not a float: captioning it would announce a table the reader
-        # cannot see and, in LaTeX, number one that was never typeset.
+    if not text.startswith("|"):
         return f"{table}\n"
     if format != "qmd":
         return f"{table}\n\n**Table.** {caption}\n"
@@ -1884,7 +1916,7 @@ def variant_parameter_table(family):
                          _value_text(p), unit_text(slot(p, "unit")), _meaning(p, name)])
     if not rows:
         return ""
-    return md_table(["Variant", "Parameter", "Value", "Unit", "Description"], rows,
+    return table_or_prose(["Variant", "Parameter", "Value", "Unit", "Description"], rows,
                     aligns=["l", "l", "r", "l", "l"])
 
 
