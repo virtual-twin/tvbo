@@ -3456,36 +3456,33 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endfor
     ]
 
-    # Sharded run: read each retained cell's actual parameter values back from
-    # the sliced grid itself, so the coordinates track the grid's own cell order
-    # regardless of how the Space orders axes internally (avoids positional
-    # mislabelling). Relabel to the exploration's axis names where unambiguous,
-    # else keep the grid keypath. The flat per-shard result is then
-    # self-describing and reassembles by value across tasks.
+    # Read each cell's actual parameter values back from the grid so coordinates track the
+    # grid's OWN cell order, never a positional reshape that assumes axes_info order: Space
+    # emits cells in pytree-leaf order, which differs from the declared axis order whenever
+    # axes live on different state sub-objects (dynamics/coupling/graph). Both the sharded
+    # subset (flat `point` dim) and the whole grid (keyed by value into the rectangular grid)
+    # consume these coords downstream.
     _cell_coords = None
 % if has_axes:
-    _shard = kwargs.get('shard')
-    if _shard is not None:
-        _df = grid.to_dataframe()
-        _bare_to_label, _network_label = {}, None
-        for _a in _axes_info:
-            _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
-            if str(_a.name).startswith('network.'):
-                _network_label = str(_a.name)   # network-scope axis (e.g. conduction_speed)
-        _cell_coords, _used = {}, set()
-        for _col in _df.columns:
-            _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], None)
-            if _label is None and _network_label is not None and str(_col).startswith('graph.'):
-                # The network.conduction_speed axis sweeps the DenseLengthGraph's `speed`
-                # leaf, which flattens to a keypath like "graph.2" whose bare name ("2")
-                # does not match the axis label — restore the friendly network name.
-                _label = _network_label
-            if _label is None:
-                _label = str(_col)
-            if _label in _used:
-                _label = str(_col)  # disambiguate a bare-name collision with the keypath
-            _used.add(_label)
-            _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
+    _df = grid.to_dataframe()
+    _bare_to_label, _network_label = {}, None
+    for _a in _axes_info:
+        _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
+        if str(_a.name).startswith('network.'):
+            _network_label = str(_a.name)   # network-scope axis (e.g. conduction_speed)
+    _cell_coords, _used = {}, set()
+    for _col in _df.columns:
+        _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], None)
+        # network.conduction_speed sweeps the DenseLengthGraph `speed` leaf, keypath "graph.2":
+        # its bare name ("2") matches no axis label, so restore the friendly network name.
+        if _label is None and _network_label is not None and str(_col).startswith('graph.'):
+            _label = _network_label
+        if _label is None:
+            _label = str(_col)
+        if _label in _used:
+            _label = str(_col)  # disambiguate a bare-name collision with the keypath
+        _used.add(_label)
+        _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
 % endif
 
 % if returns_bunch:

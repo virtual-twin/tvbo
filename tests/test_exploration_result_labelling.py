@@ -165,3 +165,47 @@ def test_a_declared_singleton_axis_is_not_squeezed_away():
 def test_an_undeclared_trailing_singleton_is_still_squeezed():
     da = _stacked((len(C_VALS), 40, 2, 1), ts=np.arange(40.0))
     assert da.dims == ("model.c", "time", "variable")
+
+
+def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
+    """A full product whose cells arrive in the Space (pytree-leaf) order — NOT the declared
+    axis order — is keyed into the grid BY VALUE, never by a positional reshape.
+
+    When swept axes live on different state sub-objects (dynamics / coupling / graph), Space
+    emits cells in pytree-leaf order, which differs from the declared ``axes_info`` order. A
+    bare ``reshape(grid_sizes)`` then scrambles the surface (each cell reads another cell's
+    value). ``cell_coords`` — the per-cell parameter values in the grid's own order — lets
+    the assembler place each cell at the index its values map to.
+    """
+    from tvbo.data.types import _stacked_to_dataarray
+
+    OM, K, V = [10.0, 20.0], [1e-6, 1e-5], [1.0, 10.0]
+    axes = [_axis("Osc.omega", OM), _axis("Cpl.a", K), _axis("network.v", V)]
+    # Space order = (K, omega, v): K slowest, v fastest — differs from the declared order.
+    space_cells = [(o, k, v) for k in K for o in OM for v in V]
+
+    def enc(o, k, v):
+        return o * 1000.0 + (6 + np.log10(k)) * 100.0 + v  # unique per (omega, K, v)
+
+    stacked = np.array([enc(o, k, v) for (o, k, v) in space_cells])
+    cell_coords = {
+        "Osc.omega": [o for (o, k, v) in space_cells],
+        "Cpl.a": [k for (o, k, v) in space_cells],
+        "network.v": [v for (o, k, v) in space_cells],
+    }
+    da = _stacked_to_dataarray(stacked, axes, name="obs", cell_coords=cell_coords)
+    assert da.dims == ("Osc.omega", "Cpl.a", "network.v")
+    for o in OM:
+        for k in K:
+            for v in V:
+                got = float(da.sel({"Osc.omega": o, "Cpl.a": k, "network.v": v}).values)
+                assert got == pytest.approx(enc(o, k, v)), (o, k, v, got)
+
+    # Without cell_coords the same Space-order data is reshaped positionally and scrambles,
+    # so at least one label reads the wrong cell — this is exactly the bug cell_coords fixes.
+    bare = _stacked_to_dataarray(stacked, axes, name="obs")
+    mism = sum(
+        float(bare.sel({"Osc.omega": o, "Cpl.a": k, "network.v": v}).values) != enc(o, k, v)
+        for o in OM for k in K for v in V
+    )
+    assert mism > 0

@@ -136,6 +136,61 @@ Because `citeformat="quarto"` emits the model's citekeys as `@key`, **every cite
 references must exist in `references.bib`** — if a curated model cites `Tsodyks1998`, that
 entry has to be present or Quarto flags an unresolved key.
 
+## An equation is in the report because the code runs it
+
+Two rules, and the second is the one that gets broken:
+
+1. **Only equations the code actually integrates belong in the report.** Pang2023 set the
+   paper's PDE above a section explaining that TVBO does not integrate that PDE — the reader
+   sees mathematics that nothing runs, with no way to tell it apart from the rest.
+2. **No equation is typed. Ever.** A typed equation drifts from what executes, and drift is
+   invisible: the two look identical on the page.
+
+Assert it in the harness so a hand-written `$$…$$` fails the render rather than reaching a
+reader. The check strips executable cells first, so what `STUDY.report()` emits never trips it:
+
+```python
+bad = report.unrendered_equations("report.qmd")
+assert not bad, f"hand-written equations: {bad}"
+```
+
+When an equation is genuinely implemented but no renderer can reach it — a solver-level
+construction such as the correlated-noise mix in `CorrelatedNoiseSolver` — it is **framework
+behaviour, not study metadata**. Write it once in tvbo's own docs beside the slot that switches
+it on, and have the study cite that page. Do not copy it into each report.
+
+**An identity states nothing, so it gets no number.** `c_post = gx` says the summed input is
+used as it stands; `c_pre = local_states` says each source contributes its own state. Nine of
+eleven couplings across the studies had the first. Both now render as a clause. The same
+judgement applies to anything you write by hand: if an equation would be true of any model,
+it is prose.
+
+**Never typeset a placeholder or a reference as a symbol.** `local_states` and
+`incoming_states` are alias tokens `Coupling.symbolic()` substitutes; printed raw they typeset
+as a variable of that name. Sources are worse, because they are not all symbols: a state
+variable is, `phenotype:…#PMAT24_A_RTCR` and `network.observations.BoldCorrelation` are not.
+Pandoc rejected the first outright ("unexpected `#`") and passed it through as raw TeX; the
+second rendered as a product of variables named after its path segments. Wrap in `$…$` only
+what is a plain identifier; everything else is code.
+
+## Keep the recipe's own text publishable
+
+`STUDY.report()` prints each experiment's `label:` and `description:` verbatim, so **recipe
+text is report text** and the anti-slop standard below applies to it. Two habits to avoid:
+
+- **Do not open a label with the experiment's own number.** "Exp 30 — FIC+EIB tuning" under a
+  heading that already says "Experiment 30" prints the id twice; six of Schirner2023's ten read
+  that way. The renderer strips the prefix, but the recipe is the place to fix it.
+- **Give every parameter a `description:`.** It is the *Meaning* column of the symbol table, and
+  the renderer will not invent one — printing "y0" as the meaning of $y_0$ fills the cell
+  without informing anyone. Schirner2023 declares 36 of 49 parameters without one, so that
+  column, the one that decodes every symbol in its 28 equations, is 4 % full.
+
+**Generated headings carry their own anchors**, built from the model name or experiment id
+rather than the heading text. Quarto otherwise derives an identifier from recipe-authored
+words, which may hold anything: Cortes2013 labels an experiment with `I₀`, and the derived
+Typst label failed the compile with "unclosed label".
+
 ## State a negative result honestly
 
 An honest replication reproduces what is real and explains what is not. If a claim does
@@ -483,6 +538,10 @@ below is distilled from the *anti-ai-slop editor* (a personal skill at
 skill stands alone — you do not need that skill installed. Before you call the report
 done, scan the prose against it and fix every hit. Target a slop score of 0–2 (0–1 clean,
 2–3 light, 4+ needs rework).
+
+Scan the **recipe** as well as the `.qmd`: labels and descriptions are printed verbatim into
+the Methods, so their prose is the report's prose. In one study every remaining em-dash after
+the generated text was cleaned came from the YAML.
 
 **Structural patterns to kill.**
 
