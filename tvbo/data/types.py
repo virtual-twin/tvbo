@@ -350,9 +350,7 @@ def reassemble_experiment_results(
     return written
 
 
-# =============================================================================
 # Result Classes for Simulation Experiments
-# =============================================================================
 
 
 class SimulationResult:
@@ -832,9 +830,7 @@ class OptimizationResult:
         loss_str = f", final_loss={self.final_loss:.4f}" if self.final_loss is not None else ""
         return f"OptimizationResult(name='{self.name}', n_steps={self.n_steps}{loss_str})"
 
-    # ------------------------------------------------------------------
     # Plotting
-    # ------------------------------------------------------------------
 
     def plot(self, type="summary", ax=None, figsize=None, **kwargs):
         """Plot optimization results.
@@ -2798,9 +2794,7 @@ class ExperimentResult:
         return cls(integration=sim_result)
 
 
-# =============================================================================
 # Time Series Classes
-# =============================================================================
 
 
 @register_pytree_node_class
@@ -4015,9 +4009,7 @@ class TimeSeries:
 
         region_labels = [str(label) for label in self.space_labels] if len(self.space_labels) else None
 
-        # =====================================================================
         # 1. Export connectivity to net/ directory
-        # =====================================================================
         # Use experiment's network if TimeSeries doesn't have one attached
         network = self.network
         if network is None and experiment is not None:
@@ -4123,9 +4115,7 @@ class TimeSeries:
                 write_sidecar(coord_sidecar, coord_json_path)
                 created_files["coord"].append(coord_rel_path)
 
-        # =====================================================================
         # 2. Export time series to ts/ directory as CIFTI-2 ptseries
-        # =====================================================================
         sample_period_val = to_float(self.sample_period)
         if sample_period_val is not None and sample_period_val > 0:
             if self.sample_period_unit in ("ms", "msec"):
@@ -4155,9 +4145,7 @@ class TimeSeries:
         use_h5 = timeseries_format.lower() in ("h5", "hdf5")
 
         if use_h5:
-            # =====================================================================
             # HDF5 format: Preserve full dimensionality, don't split by state
-            # =====================================================================
             if not H5PY_AVAILABLE:
                 raise ImportError("h5py is required for HDF5 export. Install with: pip install h5py")
 
@@ -4220,9 +4208,7 @@ class TimeSeries:
             created_files["ts"].append(ts_rel_path)
 
         else:
-            # =====================================================================
             # CIFTI/TSV format: Export each state variable as separate file
-            # =====================================================================
             for sv_idx, sv_label in enumerate(self.variables_labels):
                 # Create sidecar metadata
                 ts_sidecar = TimeSeriesSidecar(
@@ -4285,9 +4271,7 @@ class TimeSeries:
                 write_sidecar(ts_sidecar, ts_json_path)
                 created_files["ts"].append(ts_rel_path)
 
-        # =====================================================================
         # 3. Export model equations to eq/ directory
-        # =====================================================================
         if include_model and experiment is not None:
             model_name = "unknown"
             if hasattr(experiment, "dynamics"):
@@ -4333,9 +4317,7 @@ class TimeSeries:
             write_sidecar(eq_sidecar, eq_json_path)
             created_files["eq"].append(eq_rel_path)
 
-        # =====================================================================
         # 4. Create dataset_description.json at root
-        # =====================================================================
         desc_path = os.path.join(output_dir, "dataset_description.json")
         if not os.path.exists(desc_path):
             dataset_desc = DatasetDescription(
@@ -4354,9 +4336,7 @@ class TimeSeries:
             )
             write_sidecar(dataset_desc, desc_path)
 
-        # =====================================================================
         # 5. Create participants.tsv
-        # =====================================================================
         sub_label = f"sub-{subject}"
         participants_path = os.path.join(output_dir, "participants.tsv")
         if not os.path.exists(participants_path):

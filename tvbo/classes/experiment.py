@@ -969,9 +969,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Ingest all data from the BIDS session
         bids_data = ingest_bids_session(bids_dir, subject, session)
 
-        # =====================================================================
         # 1. Reconstruct Network
-        # =====================================================================
         network = None
         if bids_data["network"] is not None:
             net_data = bids_data["network"]
@@ -988,9 +986,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if coord_data["centres"] is not None:
                     network.centres = coord_data["centres"]
 
-        # =====================================================================
         # 2. Reconstruct Dynamics model
-        # =====================================================================
         dynamics = None
         if bids_data["equations"] is not None:
             eq_data = bids_data["equations"]
@@ -1011,9 +1007,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             # Default dynamics
             dynamics = Dynamics.from_ontology("Generic2dOscillator")
 
-        # =====================================================================
         # 3. Reconstruct Integration settings from sidecar provenance
-        # =====================================================================
         integration = Integrator(method="Heun")
 
         if bids_data["timeseries"] is not None:
@@ -1042,9 +1036,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                                 integration.method = method
                                 break
 
-        # =====================================================================
         # 4. Reconstruct TimeSeries
-        # =====================================================================
         timeseries = None
         if bids_data["timeseries"] is not None:
             ts_data = bids_data["timeseries"]
@@ -1075,9 +1067,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 "format": ts_data["format"],
             }
 
-        # =====================================================================
         # 5. Create SimulationExperiment
-        # =====================================================================
         experiment = cls(
             label=f"Loaded from BIDS: sub-{subject}",
             description=f"Experiment reconstructed from BIDS dataset at {bids_dir}",
@@ -1095,9 +1085,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             "loaded_at": str(np.datetime64("now")),
         }
 
-        # =====================================================================
         # 6. Verify reproducibility if requested
-        # =====================================================================
         if run_to_verify and timeseries is not None:
             logger.info("Running simulation to verify reproducibility...")
             ts_rerun = experiment.run(format="jax")

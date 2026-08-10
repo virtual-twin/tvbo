@@ -69,9 +69,7 @@ class Connection:
             self.recurrent = self.source == self.target
 
 
-# ---------------------------------------------------------------------------
 # Model-derived connection recovery (from a tvbo Dynamics)
-# ---------------------------------------------------------------------------
 def _synapse_from_symbol(name: str) -> Optional[str]:
     up = name.upper()
     for tag in ("NMDA", "AMPA", "GABA", "GLUT"):
@@ -182,9 +180,7 @@ def _derive_from_dynamics(dynamics, coupling_symbols, long_range_synapse, synaps
     return list(populations.values()), connections
 
 
-# ---------------------------------------------------------------------------
 # matplotlib drawing primitives (styling)
-# ---------------------------------------------------------------------------
 def _snap(p, center, r):
     v = np.asarray(p, float) - np.asarray(center[:2], float)
     L = np.hypot(*v) or 1.0
@@ -269,9 +265,7 @@ def _stretch_x(pos, splines, target):
     return pos, splines
 
 
-# ---------------------------------------------------------------------------
 # Schematic
-# ---------------------------------------------------------------------------
 class PopulationSchematic:
     """A renderable population circuit: populations + typed/signed connections over N areas."""
 

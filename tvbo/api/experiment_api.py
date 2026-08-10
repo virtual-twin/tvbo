@@ -86,9 +86,7 @@ def get_sidecar(experiment_id: str, format: str = Query("yaml")):
         return Response(content, media_type="application/x-yaml")
 
 
-# ---------------------------------------------------------------------------
 # Export format discovery & render endpoints
-# ---------------------------------------------------------------------------
 
 
 class RenderExperimentRequest(BaseModel):

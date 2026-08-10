@@ -29,9 +29,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 
-# ---------------------------------------------------------------------------
 # Shared helpers
-# ---------------------------------------------------------------------------
 
 
 def _safe_norm(arr) -> np.ndarray:
@@ -129,9 +127,7 @@ def _make_mappable(vals, cmap):
     return cm.ScalarMappable(norm=norm, cmap=cmap)
 
 
-# ---------------------------------------------------------------------------
 # 1.  NetworkX native
-# ---------------------------------------------------------------------------
 
 
 def plot_graph_networkx(
@@ -274,9 +270,7 @@ def plot_graph_networkx(
     return _make_mappable(edge_vals, edge_cmap)
 
 
-# ---------------------------------------------------------------------------
 # 2.  bsplot  (text-box nodes + curved edges)
-# ---------------------------------------------------------------------------
 
 
 def plot_graph_bsplot(
@@ -406,9 +400,7 @@ def plot_graph_bsplot(
     return _make_mappable(edge_vals, edge_cmap)
 
 
-# ---------------------------------------------------------------------------
 # 3.  Brain surface  (3-D spheres + tubes on cortex)
-# ---------------------------------------------------------------------------
 
 
 def plot_graph_brain(

@@ -65,9 +65,7 @@ def schema(
     typer.echo(f"OK — {path} is a valid {target_class}.")
 
 
-# ---------------------------------------------------------------------------
 # C5 stubs: bids / sedml / omex / all
-# ---------------------------------------------------------------------------
 
 
 @app.command("bids", help="Validate a BIDS dataset directory.")

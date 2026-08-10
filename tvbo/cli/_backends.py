@@ -136,10 +136,8 @@ def list_backends() -> list[BackendSpec]:
     return list(BACKENDS.values())
 
 
-# ---------------------------------------------------------------------------
 # Heuristic mapping: an ExplorationAxis.parameter dotted path → axis kind.
 # Used by the planner to bucket schema-declared axes into AXIS_KINDS so we can ask `backend.can_vectorize(kind)`.
-# ---------------------------------------------------------------------------
 
 
 def axis_kind_of(parameter_path: str) -> str:

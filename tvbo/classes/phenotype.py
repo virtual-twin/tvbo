@@ -53,9 +53,7 @@ class Phenotype(tvbo_datamodel.Phenotype):
     _yaml_path: str | os.PathLike | None = None
     _values_cache: dict | None = None
 
-    # ------------------------------------------------------------------
     # Construction
-    # ------------------------------------------------------------------
 
     @classmethod
     def from_file(cls, path: str | os.PathLike) -> "Phenotype":
@@ -133,9 +131,7 @@ class Phenotype(tvbo_datamodel.Phenotype):
         self._h5_path = str(h5_path)
         self._yaml_path = str(path)
 
-    # ------------------------------------------------------------------
     # Value access
-    # ------------------------------------------------------------------
 
     @property
     def values(self) -> dict:

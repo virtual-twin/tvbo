@@ -57,9 +57,7 @@ class Function(tvbo_datamodel.Function):
             kwargs["name"] = str(name)
         super().__init__(**kwargs)
 
-    # -------------------------------------------------------------------------
     # Factory constructors
-    # -------------------------------------------------------------------------
     @classmethod
     def from_datamodel(cls, func: tvbo_datamodel.Function) -> "Function":
         """Create Function from a tvbo_datamodel.Function instance."""
@@ -75,9 +73,7 @@ class Function(tvbo_datamodel.Function):
         """Load Function from a YAML string."""
         return yaml_loader.loads(yaml_str, cls)
 
-    # -------------------------------------------------------------------------
     # Code generation
-    # -------------------------------------------------------------------------
     def render_code(
         self,
         format: str = "jax",
@@ -130,9 +126,7 @@ class Function(tvbo_datamodel.Function):
         """Generate pure Python code for this function."""
         return self.render_code(format="python", **kwargs)
 
-    # -------------------------------------------------------------------------
     # Execution
-    # -------------------------------------------------------------------------
     def to_callable(
         self,
         format: str = "jax",
@@ -172,9 +166,7 @@ class Function(tvbo_datamodel.Function):
             namespace=namespace,
         )
 
-    # -------------------------------------------------------------------------
     # Convenience properties
-    # -------------------------------------------------------------------------
     @property
     def sympy_expression(self):
         """Return the parsed SymPy expression for this function's equation."""
@@ -215,9 +207,7 @@ class LossFunction(tvbo_datamodel.LossFunction):
             kwargs["name"] = str(name)
         super().__init__(**kwargs)
 
-    # -------------------------------------------------------------------------
     # Factory constructors
-    # -------------------------------------------------------------------------
     @classmethod
     def from_datamodel(cls, func: tvbo_datamodel.LossFunction) -> "LossFunction":
         """Create LossFunction from a tvbo_datamodel.LossFunction instance."""
@@ -233,9 +223,7 @@ class LossFunction(tvbo_datamodel.LossFunction):
         """Load LossFunction from a YAML string."""
         return yaml_loader.loads(yaml_str, cls)
 
-    # -------------------------------------------------------------------------
     # Code generation
-    # -------------------------------------------------------------------------
     def render_code(
         self,
         format: str = "jax",
@@ -287,9 +275,7 @@ class LossFunction(tvbo_datamodel.LossFunction):
         """Generate NumPy code for this loss function."""
         return self.render_code(format="numpy", **kwargs)
 
-    # -------------------------------------------------------------------------
     # Execution
-    # -------------------------------------------------------------------------
     def to_callable(
         self,
         format: str = "jax",
@@ -343,9 +329,7 @@ class LossFunction(tvbo_datamodel.LossFunction):
         exec(code, namespace)
         return namespace[str(self.name)]
 
-    # -------------------------------------------------------------------------
     # Convenience properties
-    # -------------------------------------------------------------------------
     @property
     def sympy_expression(self):
         """Return the parsed SymPy expression for this function's equation."""

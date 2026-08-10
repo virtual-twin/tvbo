@@ -1285,9 +1285,7 @@ def get_parameters_by_catalogue(NMM: owlready2.ThingClass, param_key: str) -> pd
     return params
 
 
-####################
 # Class Properties #
-####################
 def get_object_properties(ontology_class, include_restriction=True):
     """Collect the object-property relationships of an ontology class.
 
@@ -1383,9 +1381,7 @@ def get_class_data_properties(cls):
     return get_class_properties(cls)["data_properties"]
 
 
-####################
 # Model Comparison #
-####################
 def join_set(a):
     """Join the unique elements of an iterable into a comma-separated string.
 
@@ -1451,9 +1447,7 @@ def compare_models(model1, model2, by="ParameterCatalogue") -> pd.DataFrame:
     return df_comp
 
 
-########################
 # Parameter Properties #
-########################
 
 
 def get_range(variable, return_array=False) -> Union[Tuple, np.ndarray]:
@@ -1622,9 +1616,7 @@ def create_acronym(text) -> str:
     return acronym.upper()
 
 
-####################
 # Search Ontology  #
-####################
 
 
 def extract_most_common(searches) -> Optional[owlready2.ThingClass]:
@@ -1685,7 +1677,6 @@ def search_all(search_term, from_class=None, case_sensitive=False) -> Optional[o
     return extract_most_common([labelsearch, aliassearch, symbolsearch])
 
 
-####################
 def import_model(
     model_metadata: Union[str, dict, "tvbo_datamodel.Dynamics", "tvbo_datamodel.SimulationExperiment"],
     model_name: Optional[str] = None,

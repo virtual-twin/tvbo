@@ -28,9 +28,7 @@ from sympy.parsing.latex import parse_latex
 from tvbo.datamodel.schema import Equation
 
 
-# =============================================================================
 # Custom SymPy Classes for Mathematical Aggregation
-# =============================================================================
 
 
 class Mean(Function):
@@ -61,9 +59,7 @@ class Mean(Function):
         return None
 
 
-# =============================================================================
 # Symbolic Summation Support
-# =============================================================================
 # SymPy's Sum requires explicit index variables: Sum(f(i), (i, a, b))
 #
 # For proper mathematical notation, use:
@@ -73,9 +69,7 @@ class Mean(Function):
 # The code printers in tvbo.codegen.code handle the translation.
 
 
-# =============================================================================
 # Array Function Definitions (single source of truth for parsing)
-# =============================================================================
 # These are array reduction/aggregation functions that SymPy doesn't have natively.
 # We define them as undefined SymPy Functions so they parse correctly (preventing implicit multiplication like 'mean(x)' -> 'm*e*a*n*(x)').
 #

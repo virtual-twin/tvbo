@@ -14,9 +14,7 @@ import jax.tree_util
 import xarray
 
 
-# ---------------------------------------------------------------------------
 # _HashableCoords – makes coordinate dicts hashable so JAX can treat them as static auxiliary data in pytree flatten/unflatten.
-# ---------------------------------------------------------------------------
 
 
 class _HashableCoords(collections.abc.Mapping):
@@ -70,9 +68,7 @@ def _maybe_hash_coords(coords):
     return _HashableCoords(coords)
 
 
-# ---------------------------------------------------------------------------
 # xarray.Variable
-# ---------------------------------------------------------------------------
 
 
 def _flatten_variable(v: xarray.Variable):
@@ -95,9 +91,7 @@ def _unflatten_variable(aux, children):
     return var
 
 
-# ---------------------------------------------------------------------------
 # xarray.DataArray
-# ---------------------------------------------------------------------------
 
 
 def _flatten_data_array(da: xarray.DataArray):
@@ -117,9 +111,7 @@ def _unflatten_data_array(aux, children):
     return da
 
 
-# ---------------------------------------------------------------------------
 # xarray.Dataset
-# ---------------------------------------------------------------------------
 
 
 def _flatten_dataset(ds: xarray.Dataset):
@@ -148,9 +140,7 @@ def _unflatten_dataset(aux, children):
     return ds
 
 
-# ---------------------------------------------------------------------------
 # Registration (runs on import)
-# ---------------------------------------------------------------------------
 
 jax.tree_util.register_pytree_node(xarray.Variable, _flatten_variable, _unflatten_variable)
 jax.tree_util.register_static(xarray.IndexVariable)

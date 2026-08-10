@@ -41,9 +41,7 @@ __all__ = [
     "load_openminds",
 ]
 
-# =============================================================================
 # OpenMINDS Context and Type Mappings
-# =============================================================================
 
 OPENMINDS_CONTEXT = {
     "@vocab": "https://openminds.ebrains.eu/vocab/",
@@ -53,9 +51,7 @@ OPENMINDS_CONTEXT = {
     "computation": "https://openminds.ebrains.eu/computation/",
 }
 
-# =============================================================================
 # Type Mappings: Single Source of Truth
-# =============================================================================
 
 # Map LinkML/TVBO class names to existing openMINDS types (namespace:Type)
 # These will NOT generate new schemas - use the existing type directly
@@ -296,9 +292,7 @@ def _from_openminds_value(value: Any, target_type: type | None = None) -> Any:
     return value
 
 
-# =============================================================================
 # SimulationExperiment Conversion
-# =============================================================================
 
 
 def experiment_to_openminds(
@@ -380,9 +374,7 @@ def experiment_from_openminds(
     return result
 
 
-# =============================================================================
 # SimulationStudy Conversion
-# =============================================================================
 
 
 def study_to_openminds(
@@ -474,9 +466,7 @@ def study_from_openminds(
     return result
 
 
-# =============================================================================
 # File I/O Utilities
-# =============================================================================
 
 
 def save_openminds(

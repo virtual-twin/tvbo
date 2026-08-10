@@ -1317,9 +1317,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         sort_equations(self, "output")
         # sort_equations(self, "state_variables") #TODO: Test if sorting is really not necessary
 
-    # -----------------------
     # Fluent builder helpers and setters
-    # -----------------------
     @staticmethod
     def _coerce_range(domain):
         """Accept None | Range | (lo, hi[, step]) | {lo, hi[, step, enforce]} → Range."""

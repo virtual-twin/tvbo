@@ -648,9 +648,7 @@ def _write_readme(out_dir: Path, *, engine: str, plans, script_relpath: str | No
     (out_dir / "README.md").write_text(text, encoding="utf-8")
 
 
-# ---------------------------------------------------------------------------
 # Commands
-# ---------------------------------------------------------------------------
 
 
 @app.command("plan", help="Show the resolved workflow plan (no artefact emitted).")

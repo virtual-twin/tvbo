@@ -706,9 +706,7 @@ def substitute_function_in_state_equations(sv_eqs, funcs):
     return sv_eqs
 
 
-######################
 # Latex equations   #
-######################
 def get_latex_equation(model, func_dict="all", mul_symbol="dot"):
     """Render a model's equations as a list of LaTeX strings.
 
@@ -938,9 +936,7 @@ def update_class_relationships(s_cls, k_cls):
         k_cls.is_a = list(set(k_cls.is_a))
 
 
-######################
 # Coupling functions #
-######################
 
 
 def get_symbolic_coupling(coupling_function) -> dict:
@@ -1070,9 +1066,7 @@ def topological_sort_equations(variable_dict, dependency_tree):
     return sorted_equations
 
 
-#################
 # Piecewise     #
-#################
 def conditionals2piecewise(metadata_equation):
     """Convert a metadata equation's conditionals into a SymPy `Piecewise`.
 
@@ -1129,9 +1123,7 @@ def piecewise2numpy(piecewise_expr, fully_qualified_modules=False) -> str:
     return str(where_expr)
 
 
-#################
 # Julia Adapter #
-#################
 
 
 def piecewise2julia(piecewise_expr) -> str:

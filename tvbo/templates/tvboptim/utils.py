@@ -30,9 +30,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from tvbo.utils import as_list
 
 
-# =============================================================================
 # Basic Helpers
-# =============================================================================
 
 
 def safe_name(name: str) -> str:
@@ -1982,9 +1980,7 @@ def _adapt_tvb_bold_reference(class_info: Dict[str, Any], obs: Any, dt: float) -
     return adapted
 
 
-# =============================================================================
 # Solver / differentiation kwargs
-# =============================================================================
 
 
 def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False) -> str:
@@ -2448,9 +2444,7 @@ def render_inference(
     return "\n".join(f"        {ln}" for ln in (model + [""] + runner))
 
 
-# =============================================================================
 # State Variable Bounds
-# =============================================================================
 
 
 def materialise_lazy_params(parameters: Any, experiment: Any = None) -> Dict[str, tuple]:
@@ -2621,9 +2615,7 @@ def format_bounds_array(bounds: List, format: str = "jax") -> str:
     return "[" + ", ".join(parts) + "]"
 
 
-# =============================================================================
 # Observation Helpers
-# =============================================================================
 
 
 def is_network_observation(obs: Any) -> bool:
@@ -2751,9 +2743,7 @@ def toposort_observations(obs_names: List[str], derived_obs_dict: Dict[str, Any]
     return sorted_obs
 
 
-# =============================================================================
 # Loss Function Parsing
-# =============================================================================
 
 
 def parse_loss_arguments(loss_call: Any) -> Tuple[List[Dict], Set[str]]:
@@ -2883,9 +2873,7 @@ def parse_loss_function(opt: Any) -> Optional[Dict]:
     }
 
 
-# =============================================================================
 # Parameter Parsing
-# =============================================================================
 
 
 def get_domain_bounds(param_name: str, model: Any, all_couplings: Dict) -> Tuple[Optional[float], Optional[float]]:
@@ -3117,9 +3105,7 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
     return result
 
 
-# =============================================================================
 # Exploration Parsing
-# =============================================================================
 
 
 def normalize_n_parallel(expl: Any):
@@ -3243,9 +3229,7 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
     return exp_info
 
 
-# =============================================================================
 # Algorithm Helpers
-# =============================================================================
 
 
 def get_include_info(inc: Any) -> Tuple[str, Dict]:
@@ -3331,9 +3315,7 @@ def get_all_hyperparams(algo: Any, algorithms_dict: Dict) -> Dict:
     return all_hp
 
 
-# ---------------------------------------------------------------------------
 # Network edge references (network.weight(s)/length(s) → connectome matrices)
-# ---------------------------------------------------------------------------
 # `weight`/`weights`/`length`/`lengths` are ergonomic shortcuts for the canonical
 # `network.edges.<label>`; both resolve to a connectome matrix via Network.matrix().
 _NETWORK_EDGE_ALIASES = {"weight": "weight", "weights": "weight", "length": "length", "lengths": "length"}
@@ -3474,9 +3456,7 @@ def collect_network_edge_arrays(experiment: Any) -> Dict[str, list]:
     return arrays
 
 
-# ---------------------------------------------------------------------------
 # Network node references (network.positions/instrength → per-node vectors)
-# ---------------------------------------------------------------------------
 # Node-level analogue of the edge-matrix refs above: a callable argument or an observer (Observation.dynamics) parameter may reference a per-node vector derived from the network — its region centroids (for mesh building) or its in-strength (weighted in-degree). Both embed once as a module constant, exactly like a connectome matrix, so any backend consumes them without a live Network object.
 _NETWORK_NODE_MEASURES = ("positions", "instrength")
 

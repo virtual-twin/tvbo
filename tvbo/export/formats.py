@@ -12,9 +12,7 @@ from __future__ import annotations
 from .registry import ExportFormat, register
 
 
-# ---------------------------------------------------------------------------
 # Serialisation (LinkML YAML / openMINDS JSON-LD)
-# ---------------------------------------------------------------------------
 
 
 def _render_yaml(exp, **kw) -> str:
@@ -33,9 +31,7 @@ def _render_openminds(exp, **kw) -> str:
     return json.dumps(experiment_to_openminds(exp, **kw), indent=indent, default=str)
 
 
-# ---------------------------------------------------------------------------
 # Reports (markdown / pdf)
-# ---------------------------------------------------------------------------
 
 
 def _render_markdown(exp, **kw) -> str:
@@ -47,9 +43,7 @@ def _render_pdf(exp, **kw) -> str:
     return exp.report(format="pdf", **kw) or ""
 
 
-# ---------------------------------------------------------------------------
 # Code generation (delegates to existing render_code branches via templates)
-# ---------------------------------------------------------------------------
 
 
 def _render_tvb(exp, **kw):
@@ -172,9 +166,7 @@ def _render_rateml_driver(exp, **kw):
     return template.render(model=exp.dynamics, experiment=exp, **kw)
 
 
-# ---------------------------------------------------------------------------
 # Registration
-# ---------------------------------------------------------------------------
 
 _BUILTINS = [
     # serialisation

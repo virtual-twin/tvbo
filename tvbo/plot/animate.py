@@ -377,9 +377,7 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0, interval=50,
     return ani
 
 
-# =========================================================================
 # Composable Panel System
-# =========================================================================
 #
 # Each panel function has the signature:
 #     panel_fn(result, ax, max_points=200) -> (n_frames, update_fn)

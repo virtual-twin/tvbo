@@ -1,15 +1,7 @@
-# -*- coding: utf-8 -*-
-#
-# Module: utils.py
-#
-# RateML Template Utilities
-# =========================
-#
-# Minimal utilities for generating RateML-style CUDA/Python code from TVBO.
-# The TVBO LinkML datamodel already has all metadata - we just need code printers.
-#
-"""
-Usage in templates:
+"""Code printers for generating RateML-style CUDA and Python from TVBO.
+
+The LinkML datamodel already carries every piece of metadata a RateML template needs, so all this module adds is the printers that turn a sympy right-hand side into target-language source.
+
     <%
     from tvbo.templates.rateml.utils import cuda_code, python_code
     %>
@@ -24,9 +16,7 @@ from sympy.printing.pycode import PythonCodePrinter
 from tvbo.classes.equation import sympify as tvbo_sympify
 
 
-# =============================================================================
 # CUDA Code Printer
-# =============================================================================
 
 
 class CUDACodePrinter(spc.C99CodePrinter):
@@ -122,9 +112,7 @@ class CUDACodePrinter(spc.C99CodePrinter):
         return result
 
 
-# =============================================================================
 # Numba Code Printer (for TVB Python models)
-# =============================================================================
 
 
 class NumbaPrinter(PythonCodePrinter):
@@ -152,9 +140,7 @@ class NumbaPrinter(PythonCodePrinter):
         return result
 
 
-# =============================================================================
 # Convenience Functions for Templates
-# =============================================================================
 
 _cuda_printer = CUDACodePrinter()
 _numba_printer = NumbaPrinter()
@@ -236,9 +222,7 @@ def _string_to_cuda(expr_str: str) -> str:
     return result
 
 
-# =============================================================================
 # Template Helpers (direct attribute access, minimal processing)
-# =============================================================================
 
 
 def _enforced_clamp(sv):

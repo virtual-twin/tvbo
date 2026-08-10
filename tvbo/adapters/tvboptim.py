@@ -276,9 +276,7 @@ def to_tvboptim(
     )
 
 
-# ---------------------------------------------------------------------------
 # Heterogeneous networks (different dynamics per node on one shared connectome)
-# ---------------------------------------------------------------------------
 
 
 def is_heterogeneous(experiment) -> bool:

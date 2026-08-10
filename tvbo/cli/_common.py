@@ -15,9 +15,7 @@ import typer
 logger = logging.getLogger("tvbo.cli")
 
 
-# ---------------------------------------------------------------------------
 # SPEC resolution
-# ---------------------------------------------------------------------------
 # A SPEC is one of:
 #   * a path-like (`./foo.yaml`, `/abs/path`, `file://...`)
 #   * a CURIE (`dynamics:JansenRit`, `study:Schirner2023`)
@@ -191,9 +189,7 @@ def _classify(obj: Any) -> str:
     }.get(cls_name, cls_name.lower())
 
 
-# ---------------------------------------------------------------------------
 # Output helpers
-# ---------------------------------------------------------------------------
 
 
 def emit_json(payload: Any) -> None:

@@ -21,9 +21,7 @@ from tvbo.parse.expression import parse_eq
 logger = logging.getLogger(__name__)
 
 
-# =============================================================================
 # Array Function Printer Mappings
-# =============================================================================
 # Maps the ARRAY_FUNCTIONS (defined in tvbo.parse.expression) to their target implementations for each output format. Printers use these via known_functions.
 
 ARRAY_FUNCTION_MAPPINGS = {

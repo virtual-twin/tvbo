@@ -14,9 +14,7 @@ import shutil
 import tempfile
 import warnings
 
-# ---------------------------------------------------------------------------
 # Suppress harmless requests dependency warning
-# ---------------------------------------------------------------------------
 # requests 2.32.x checks chardet<6 but pyshex installs chardet 6.x.
 # requests itself uses charset-normalizer (which *is* compatible); the warning is a false positive.  Suppress it before anything imports requests so the user never sees it.
 warnings.filterwarnings(
@@ -25,7 +23,6 @@ warnings.filterwarnings(
     category=Warning,
     module=r"requests",
 )
-# ---------------------------------------------------------------------------
 
 ROOT = os.path.dirname(__file__)
 
@@ -75,9 +72,7 @@ def clean_temp():
     os.makedirs(tempdir)
 
 
-# ---------------------------------------------------------------------------
 # JAX backend configuration
-# ---------------------------------------------------------------------------
 # jax-metal (Apple GPU) plugin versions <= 0.1.1 are incompatible with
 # JAX >= 0.7 and crash with "UNIMPLEMENTED: default_memory_space is not supported".  Detect this and fall back to the CPU backend so that
 # *every* downstream JAX call works out of the box.
@@ -121,15 +116,10 @@ def _configure_jax_backend():
         pass  # JAX not installed – nothing to configure
 
 
-# ---------------------------------------------------------------------------
-
-
 # PyRates is an optional backend, imported only when its adapter runs. Its networkx-dispatch monkeypatch lives with the adapters that build a PyRates
 # ComputeGraph (``tvbo.adapters.pyrates`` and ``tvbo.adapters.pyrates_bifurcation``), each applying it before compiling — so a bare ``import tvbo`` pulls in no pyrates.
 
-# ---------------------------------------------------------------------------
 # Lazy public API — imports happen on first attribute access
-# ---------------------------------------------------------------------------
 _LAZY_IMPORTS = {
     "database_path": ".data.registry",
     "Connectome": ".classes.network",

@@ -4223,13 +4223,10 @@ class NeuroMLAdapter(BaseAdapter):
             sys.argv = old_argv
 
 
-# ---------------------------------------------------------------------------
 # NeuroML reference helpers
-# ---------------------------------------------------------------------------
 #
 # Utilities for running reference NeuroML/LEMS examples via jNeuroML, comparing traces, and plotting results.  Previously lived in a standalone ``_nml_helpers.py`` doc-local script; moved here so that
 # ``from tvbo.adapters.neuroml import run_lems_example`` works everywhere (tests, notebooks, CI) without sys.path hacking.
-# ---------------------------------------------------------------------------
 
 import contextlib as _contextlib
 import os as _os

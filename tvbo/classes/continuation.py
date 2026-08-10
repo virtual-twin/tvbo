@@ -50,9 +50,7 @@ class Continuation(tvbo_datamodel.Continuation):
             kwargs["name"] = str(name)
         super().__init__(**kwargs)
 
-    # ------------------------------------------------------------------
     # Factory constructors
-    # ------------------------------------------------------------------
     @classmethod
     def from_datamodel(cls, cont_meta: tvbo_datamodel.Continuation) -> "Continuation":
         """Create from an auto-generated datamodel instance."""

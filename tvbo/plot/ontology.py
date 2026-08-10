@@ -43,9 +43,7 @@ from tvbo.ontology import owl as ontology
 from tvbo.classes import equation as equations
 from tvbo.plot.utils import get_cmap, get_continuous_cmap, tvb_colors_simple as tvb_colors
 
-######################
 # Default Parameters #
-######################
 node_params = {
     "node_size_factor": 100,
     "node_filling": "category",
@@ -116,9 +114,7 @@ def get_default_params():
     return default_params
 
 
-##################
 # Graph Plotting #
-##################
 def reverse_edges(pos):
     """
     Reverse the coordinates of the positions in the pos dictionary.
@@ -1278,9 +1274,7 @@ def hierarchy_pos(
     return _hierarchy_pos(G, root, width, vert_gap, hor_gap, vert_loc, xcenter)
 
 
-########################
 # DEPRECATED FUNCTIONS #
-########################
 
 
 def plot_tvbo_graph(g, ax=None, **kwargs):
@@ -1639,9 +1633,7 @@ def draw_legend(g, ax, params):
     ax.legend(handles=handles, loc=params["legend_loc"], title="Node Types")
 
 
-########################
 # Graph Plotting Model #
-########################
 
 
 def plot_model(

@@ -382,9 +382,7 @@ def get_model_configurations(model):
     return list(set([inst for inst in ontology.onto.ModelConfiguration.instances() if model in inst.is_a]))
 
 
-############################################
 #              LinkML Functions            #
-############################################
 
 
 def getattr_case_insensitive(obj, attr_name, default=None):

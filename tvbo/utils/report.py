@@ -2046,9 +2046,7 @@ def save_latex(conf, fpath):
         texfile.write(conf.get_report(format="latex"))
 
 
-##############
 # References #
-##############
 
 
 def render_citation(citation: Any, style: str = "apa") -> str:

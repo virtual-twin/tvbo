@@ -33,9 +33,7 @@ from sympy import latex, symbols
 from tvbo.ontology import owl as ontology
 
 
-###################
 # networkX Graphs #
-###################
 
 
 def edge_exists(G: nx.MultiDiGraph, source, target, edge_type: str) -> bool:
@@ -374,9 +372,7 @@ def get_color_mapping(g: nx.Graph, by: str = "type") -> Dict[Any, int]:
     return color_mapping
 
 
-###################
 # Model Selection #
-###################
 
 
 def subset2graph(

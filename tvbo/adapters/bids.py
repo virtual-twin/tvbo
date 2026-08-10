@@ -87,9 +87,7 @@ def compute_id(sidecar_dict: dict) -> str:
     return hashlib.sha256(content.encode()).hexdigest()[:8]
 
 
-# =============================================================================
 # Pydantic Models for BEP034 Metadata (Sidecars)
-# =============================================================================
 
 
 class BEP034BaseModel(BaseModel):
@@ -214,9 +212,7 @@ class TimeSeriesHDF5Sidecar(BEP034BaseModel):
     Datasets: Optional[dict[str, str]] = Field(default=None, description="HDF5 dataset paths and descriptions")
 
 
-# =============================================================================
 # BEP034 Path Builder
-# =============================================================================
 
 
 class BEP034PathBuilder:
@@ -467,9 +463,7 @@ class BEP034PathBuilder:
         return self.build_path(entities) or self._manual_build_path(entities)
 
 
-# =============================================================================
 # Helper Functions
-# =============================================================================
 
 
 def to_float(val: Any) -> Optional[float]:
@@ -536,9 +530,7 @@ def write_tsv(
     df.to_csv(path, sep="\t", index=include_index)
 
 
-# =============================================================================
 # CIFTI-2 Export Functions
-# =============================================================================
 
 
 def create_cifti_ptseries(
@@ -797,9 +789,7 @@ def create_multi_state_cifti(
     return images
 
 
-# =============================================================================
 # HDF5 Export Functions
-# =============================================================================
 
 
 def write_hdf5_timeseries(
@@ -977,9 +967,7 @@ def read_hdf5_timeseries(path: str | Path) -> dict:
     return result
 
 
-# =============================================================================
 # BIDS Ingestion Functions
-# =============================================================================
 
 
 def detect_timeseries_format(ts_dir: Path) -> str:
@@ -1476,9 +1464,7 @@ def ingest_bids_session(
     return result
 
 
-# ---------------------------------------------------------------------------
 # Utility helpers (merged from tvbo.data.bids_utils)
-# ---------------------------------------------------------------------------
 
 
 def get_unique_entity_values(bids_layout, key) -> set:

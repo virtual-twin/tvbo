@@ -20,9 +20,7 @@ import sympy as sp
 from sympy.parsing.sympy_parser import parse_expr
 
 
-# ---------------------------------------------------------------------------
 # Symbolic helpers
-# ---------------------------------------------------------------------------
 
 
 def _scope(dynamics):
@@ -88,9 +86,7 @@ def _evaluator(expr, dynamics):
     return _eval
 
 
-# ---------------------------------------------------------------------------
 # Simulation helpers
-# ---------------------------------------------------------------------------
 
 
 def _initial_conditions(dynamics, n_trials, u_0):
@@ -192,9 +188,7 @@ def plot_experiment_layout(
     )
 
 
-# ---------------------------------------------------------------------------
 # Kinds
-# ---------------------------------------------------------------------------
 
 
 def _kind_timeseries(dynamics, resolved, trials, time, ax, cmap, alpha, lw):
@@ -528,9 +522,7 @@ def _kind_phaseplane(
     return fig
 
 
-# ---------------------------------------------------------------------------
 # Public API
-# ---------------------------------------------------------------------------
 
 
 _KINDS = ("auto", "timeseries", "phase", "vectorfield", "phaseplane")

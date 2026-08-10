@@ -3,7 +3,7 @@
 
 `ruff format` and `black` leave comment and docstring *prose* byte-identical, so the house rules about it cannot be delegated to the formatter. This checker is where they live. Three rules, each one a defect the tree has accumulated:
 
-- **A standalone `#` run is at most one line.** Anything longer belongs in the docstring of the thing it describes, where quartodoc renders it. Stacked blocks also accrete: the second explanation gets appended and the first is never deleted.
+- **A standalone `#` run is at most one line.** Anything longer belongs in the docstring of the thing it describes, where quartodoc renders it. Stacked blocks also accrete: the second explanation gets appended and the first is never deleted. A copyright and licence notice at the head of a file is exempt: it is metadata addressed to a licence scanner, not prose addressed to a reader, and it has nowhere else to live.
 - **Docstring prose is not hand-wrapped.** A line broken mid-sentence serves the source file's column ruler and nobody else; it reflows badly in the rendered site and makes every later edit a multi-line diff. `E501` is already off, so a paragraph may be one long line.
 - **No commented-out code.** Git holds the history.
 
@@ -30,6 +30,7 @@ WRAP_LIMIT = 100
 
 _SENTENCE_END = re.compile(r"[.!?:;]$")
 _DIRECTIVE = re.compile(r"^\s*#\s*(type:|noqa|pragma|ruff:|mypy:|fmt:|isort:|pylint:|!)")
+_LICENCE = re.compile(r"copyright|licen[cs]e|SPDX|\(c\)\s*\d{4}|©", re.IGNORECASE)
 _CODEISH = re.compile(
     r"^\s*(def |class |return\b|import |from \S+ import|if .+:|for .+ in .+:|while .+:|"
     r"try:|except\b|elif .+:|else:|with .+:|print\(|assert |raise |@\w+|"
@@ -100,6 +101,8 @@ def check(path: Path) -> list[str]:
     bad: list[str] = []
 
     for start, run in _comment_runs(lines):
+        if start == 1 and any(_LICENCE.search(body) for _, body in run):
+            continue
         for lineno, body in run:
             if _is_code(body):
                 bad.append(f"{rel}:{lineno}: commented-out code — delete it, git has the history")

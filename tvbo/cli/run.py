@@ -362,9 +362,7 @@ def run(
     _common.die(f"`tvbo run` does not yet support kind={kind!r}.")
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 
 def _import_figure_code_modules(study) -> None:

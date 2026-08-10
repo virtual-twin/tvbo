@@ -45,9 +45,7 @@ import numpy as np
 import yaml
 
 
-# ----------------------------------------------------------------------------
 # YAML hashing
-# ----------------------------------------------------------------------------
 
 
 def hash_yaml(normalized_dict: Mapping[str, Any]) -> str:
@@ -73,9 +71,7 @@ def file_fingerprint(path: str | os.PathLike) -> dict:
     return {"mtime": float(st.st_mtime), "size": int(st.st_size), "hash": h.hexdigest()}
 
 
-# ----------------------------------------------------------------------------
 # Sidecar I/O
-# ----------------------------------------------------------------------------
 
 
 def save_sidecar(
@@ -162,9 +158,7 @@ def load_sidecar(yaml_path: str | os.PathLike) -> tuple[dict, dict]:
     return parameters, descriptor
 
 
-# ----------------------------------------------------------------------------
 # Cache hit/miss check
-# ----------------------------------------------------------------------------
 
 
 class CacheStatus:

@@ -23,9 +23,7 @@ app.include_router(dynamics_router)
 app.include_router(experiment_router)
 
 
-# ============================================
 # Request/Response Models (API-specific only)
-# ============================================
 
 
 class RunExperimentRequest(BaseModel):
@@ -70,9 +68,7 @@ class SimulationMetadata(BaseModel):
     integration: Optional[dict] = None
 
 
-# ============================================
 # API Endpoints
-# ============================================
 
 
 @app.get("/")
