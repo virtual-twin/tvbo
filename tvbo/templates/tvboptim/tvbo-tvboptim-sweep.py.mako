@@ -197,6 +197,8 @@ ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_branch_p', '_branch_i
         axes=[Bunch(name='branch_point', explored_values=_branch_idx, n=int(_branch_idx.shape[0]))],
         observations={${', '.join(obs_pairs)}},
         cell_coords={'branch_point': _branch_idx},
+        # Declared, not inferred: `n` above is the sliced length, so a shard looks complete.
+        is_shard=_shard is not None,
         observable='branch', dt=${dt}, strategy='branch',
     )
 </%def>\
