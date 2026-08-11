@@ -30,8 +30,7 @@ pytestmark = pytest.mark.backend_tvb
 VAR = np.linspace(0.0, 20.0, 201)
 PARAMETERS = {"amplitude": 0.4, "onset": 10.0, "duration": 1.0}
 
-# The same pulse — amplitude on [onset, onset+duration), zero elsewhere — in each spelling
-# the schema allows. Only the second was ever emitted correctly.
+# The same pulse — amplitude on [onset, onset+duration), zero elsewhere — in each spelling.
 SPELLINGS = {
     "piecewise in rhs": dict(
         rhs="Piecewise((amplitude, (t >= onset) & (t < onset + duration)), (0.0, True))",

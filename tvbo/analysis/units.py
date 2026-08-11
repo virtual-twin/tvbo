@@ -129,17 +129,27 @@ class _Propagator:
     """
 
     def __init__(self, units: dict, time_unit):
-        # Indexed by name, not by symbol object. A unit is declared for a *quantity*, and
-        # the same quantity reaches this walk under more than one symbol: an inlined
-        # function body carries the codegen view's bare `Symbol("e0")` where the equation
-        # around it carries the analysis view's `Symbol("e0", real=True)`. Those compare
-        # unequal, so a symbol-keyed lookup reports a declared parameter as undeclared.
+        """Index the declared units by name, not by symbol object.
+
+        A unit is declared for a *quantity*, and the same quantity reaches this walk
+        under more than one symbol: an inlined function body carries the codegen view's
+        bare ``Symbol("e0")`` where the equation around it carries the analysis view's
+        ``Symbol("e0", real=True)``. Those compare unequal, so a symbol-keyed lookup
+        reports a declared parameter as undeclared.
+        """
         self.units = {str(symbol): unit for symbol, unit in units.items()}
         self.time_unit = time_unit
         self.inferred: dict = {}
         self.undeclared: set = set()
 
     def unit_of(self, expression):
+        """The unit of *expression*, propagated from the declared ones around it.
+
+        Declared quantities are recognised before the transcendental branch below: a
+        state variable bound as ``Function(name)(t)`` is a *quantity*, not a function
+        being applied, and reaching that branch would demand its argument ``t`` be
+        dimensionless.
+        """
         expression = sp.sympify(expression)
 
         if expression.is_number:
@@ -148,9 +158,6 @@ class _Propagator:
         if str(expression) == "t":
             return self.time_unit
 
-        # A state variable bound as `Function(name)(t)` is a *quantity*, not a function
-        # being applied, so it must be recognised before the transcendental branch below
-        # — which would otherwise demand that its argument `t` be dimensionless.
         if self._is_declared(expression):
             return self._declared(expression)
 

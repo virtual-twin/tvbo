@@ -1,3 +1,10 @@
+<%doc>
+    A stimulus as a TVB Equation subclass.
+
+    An authored `pycode` is the escape hatch for an expression TVBO cannot print, so it is
+    consulted BEFORE parsing — parsing first would raise on exactly the equations it exists
+    for. TVB binds the stimulus argument as `var`, whatever the metadata calls time.
+</%doc>
 <%
 if 'experiment' in context.keys():
     stimulus = context['experiment'].stimulation
@@ -10,9 +17,6 @@ from tvbo.codegen.code import get_printer
 stimulus_ident = stimulus.identifier
 stimulus_label = stimulus.label or stimulus_ident
 
-# An authored `pycode` is the escape hatch for an expression TVBO cannot print, so it is
-# consulted BEFORE parsing — parsing first would raise on exactly the equations it exists
-# for. TVB binds the stimulus argument as `var`, whatever the metadata calls time.
 default_expression = stimulus.equation.pycode
 if not default_expression:
     expression, _ = stimulus.get_expression()

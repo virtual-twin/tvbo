@@ -844,8 +844,7 @@ class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
         self._kf.update({"erfc": "scipy.special.erfc"})
         self._kf.update({"erf": "scipy.special.erf"})
         super().__init__(settings=settings)
-        # Re-qualified rather than used verbatim: the table is authored `np.`-prefixed, so
-        # a module-less printer would emit `np.sum` — the one spelling its target rejects.
+        # The table is authored `np.`-prefixed, so a module-less printer would emit `np.sum`.
         self.known_functions.update(
             _qualify(module, {name: target.removeprefix("np.") for name, target in ARRAY_FUNCTION_MAPPINGS["numpy"].items()})
         )

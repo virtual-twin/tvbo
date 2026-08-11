@@ -1163,6 +1163,13 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         compared against a frozen reference. The codegen view therefore stays plain, and
         the two are never mixed: a `Symbol` from one does not compare equal to the same name
         from the other, so nothing can substitute across them by accident.
+
+        Function heads are the exception, and carry `assumptions_of()` in both views: a head
+        is notation-independent — `Sigm` is the same function whether the variables around it
+        are Symbols or Functions of `t`. Building it per view made `Function("Sigm", real=True)`
+        and `Function("Sigm")`, which print identically, compare unequal, and make
+        `expr.has(Sigm)` False on an expression that visibly calls it, so every inliner
+        matched nothing, silently.
         """
 
         def _assume(element=None):
@@ -1202,13 +1209,6 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         for name, sv in self.state_variables.items():
             scope[str(name)] = _variable(name, sv)
 
-        # A function head is notation-independent: `Sigm` is the same function whether the
-        # variables around it are Symbols or Functions of t. Building it with the view's
-        # assumptions made it two different classes — `Function("Sigm", real=True)` here and
-        # `Function("Sigm")` there — which print identically, compare unequal, and make
-        # `expr.has(Sigm)` False on an expression that visibly contains a call to it. Every
-        # inliner then matched nothing, silently: the same hazard as
-        # `Symbol("x") != Symbol("x", real=True)`, on function heads.
         for fname in self.functions:
             scope[str(fname)] = Function(str(fname), **assumptions_of())
 
@@ -1448,8 +1448,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
             lhs = _lhs(k) if discrete else Derivative(_lhs(k), *([t] * order))
             form["state-equations"][str(k)] = Eq(lhs=lhs, rhs=_parse(sv))
 
-        # An output naming a state variable needs no transformation; an identity equation
-        # would overwrite that variable's real state equation in the flat view.
+        # An identity equation for an output that IS a state variable overwrites its real one.
         for name in self.output:
             name = str(name)
             if name in self.derived_variables:
@@ -1521,8 +1520,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         _normalize_conditionals(self)
         _migrate_coupling_terms(self)
 
-        # Reordering a collection does not change the graph's edges, so all three sorts run
-        # against one build — three cost 11 ms per load on the largest model.
+        # Reordering a collection cannot change the graph's edges, so all three sorts share one build.
         graph = self.get_dependency_tree()
         for collection in ("derived_parameters", "derived_variables", "output"):
             sort_equations(self, collection, graph=graph)
