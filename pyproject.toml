@@ -281,6 +281,10 @@ ignore = [
 # Package re-exports via `from . import x` are intentional.
 "**/__init__.py" = ["F401", "F405"]
 
+[tool.ruff.lint.pydocstyle]
+# Google style, so the NumPy-only D4xx rules do not fire when `D` is eventually selected.
+convention = "google"
+
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 

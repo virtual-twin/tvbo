@@ -54,10 +54,8 @@ jobs:
               with:
                   python-version: "3.12"
 
-            # Blocking in pre-commit (changed files only) so no NEW drift lands; reporting
-            # here until the Stage C backlog clears, then drop `|| true`.
-            - name: Prose — comments and docstrings (reporting)
-              run: python scripts/check_prose.py || true
+            - name: Prose — comments and docstrings
+              run: python scripts/check_prose.py
 
             # mypy: type-check the source tree, non-blocking.
             - uses: astral-sh/setup-uv@v8.1.0
