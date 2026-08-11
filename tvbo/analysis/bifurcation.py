@@ -14,6 +14,10 @@ hopf_steps / bp_steps : list[int]
 periodic_orbits : list[BifurcationResult | Any]
     If periodic orbits were computed in Julia (`po_results`), each periodic orbit branch is wrapped as a child
     BifurcationResult when possible; otherwise the raw Julia object is stored.
+
+Backend extractors convert a backend-native object — a PyCoBi ``ODESystem``, an AUTO-07p ``bifDiag`` — into the unified DataFrame schema this class consumes, as ``backend_object → _extract_<backend>_df(...) → BifurcationResult(df=...)``. They sit at module level rather than nested in subclasses, which makes that flow explicit and lets one set of plotting, legend and export code serve every backend without inheritance.
+
+Special-point labels are normalised to canonical short codes (``LP``, ``HB``, ``BP``). The authoritative source is the ontology's bifurcation taxonomy in ``ontology/tvb-o-bifurcation.ttl``, merged into ``tvbo.owl``, where each type carries a ``tvbo:canonicalCode`` and a ``skos:altLabel`` for every backend spelling. ``_TY_ALIASES_FALLBACK`` is a built-in fallback used verbatim only when the ontology cannot be read, on a headless or minimal install; the ontology is layered over it so it stays the single source of truth.
 """
 
 from __future__ import annotations
@@ -27,8 +31,7 @@ from sympy import parse_expr, pycode, symbols
 from tvbo.classes import equation as equations  # for VOI parsing consistency
 
 
-# ── Publication-quality color palette (tvbo viridis cycle) ──────────
-# Semantic mapping for bifurcation diagram elements
+# ── Publication-quality colour palette (tvbo viridis cycle) ──
 _C = {
     "stable": "#000000",  # black — stable equilibrium
     "unstable": "#888888",  # medium grey — unstable equilibrium
@@ -49,8 +52,7 @@ _C = {
 }
 
 
-# ── Unified style registry for bifurcation diagram elements ──────────
-# Single source of truth for branch lines (SFP/UFP/SLC/ULC) and special points (LP/HB/BP/PD/TR/CP/GH/ZH/BT/HH). Used by plot_branch, plot_special_points, plot_3d, and the BifLegend helper.
+# ── Unified style registry: branch lines and special points, for every plot helper ──
 
 _LINE_BASE = dict(marker="", lw=1.5, picker=True, pickradius=8, zorder=5)
 _MARK_BASE = dict(
@@ -83,9 +85,6 @@ BIF_STYLES = {
     "LC_EP": dict(marker="none", color=_C["po_line"], label="LC EP"),
 }
 
-# Canonical TY normalisation (backend special-point label → canonical short code, e.g. "LP"/"HB"/"BP"). The AUTHORITATIVE source is the ontology's bifurcation taxonomy (``ontology/tvb-o-bifurcation.ttl``, merged into
-# ``tvbo.owl``): each type carries a ``tvbo:canonicalCode`` plus ``skos:altLabel`` for every backend spelling (BifurcationKit ``:bp``/``:fold``, AUTO ``LP``/``HB``/
-# ``BP``, PyRates, ...). The map below is a built-in fallback, used verbatim only when the ontology cannot be read (headless / minimal installs); the ontology is layered on top of it so it stays the single source of truth.
 _TY_ALIASES_FALLBACK = {
     # equilibria
     "fold": "LP",
@@ -190,8 +189,7 @@ def get_bif_style(ty, base=None):
     return out
 
 
-# ── Coord DSL & PO orbit reductions ──────────────────────────────────
-# Reduce an orbit mesh (n_orbit, n_time) → (n_orbit,) per-step value.
+# ── Coord DSL & PO orbit reductions: (n_orbit, n_time) mesh → (n_orbit,) per step ──
 
 
 def _reduce_minmax(arr):
@@ -483,6 +481,17 @@ class BifurcationResult:
     """
 
     def __init__(self, br=None, *, df=None, **kwargs):
+        """Build from a pre-extracted DataFrame, or from a raw BifurcationKit `ContResult`.
+
+        With `df` given — the path every adapter takes — this only stores it and finalises the bookkeeping. With `br` instead, the DataFrame is extracted here the same way the BifurcationKit adapter would.
+
+        On an equilibrium branch, BifurcationKit labels both genuine branch points and saddle-node folds `:bp`. The ontology separates them by branch geometry, a fold being where the continuation parameter turns around, so those are relabelled `fold` and `canonical_ty` then resolves them to `LP`.
+
+        Args:
+            br: A raw juliacall `ContResult`, or None.
+            df: A pre-extracted branch DataFrame, or None.
+            **kwargs: Set as attributes on the instance.
+        """
         self.br = br
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -493,8 +502,6 @@ class BifurcationResult:
             if hasattr(self.model, "state_variables"):
                 self.state_var_index = {n: i for i, n in enumerate(self.model.state_variables.keys())}
 
-        # Path A — pre-extracted DataFrame (from any adapter):
-        # base class just stores it and finalises bookkeeping.
         if df is not None:
             self.df = df
             if not hasattr(self, "codim2_curves"):
@@ -504,8 +511,6 @@ class BifurcationResult:
             self._finalize()
             return
 
-        # Path B — raw juliacall BifurcationKit ``ContResult``:
-        # extract a DataFrame the same way the BK adapter would.
         sp_list = None
         kind = continuation_kind(br) if br is not None else None
         if kind in ("EquilibriumCont", "PeriodicOrbitCont", "HopfCont", "FoldCont"):
@@ -545,9 +550,6 @@ class BifurcationResult:
                     self.df.at[rix, "sp_norm"] = norm
                     self.df.at[rix, "sp_idx"] = idx_val
 
-        # Disambiguate BifurcationKit's overloaded ``:bp``. On an equilibrium branch it labels BOTH genuine branch points and saddle-node folds
-        # ``:bp``. The ontology distinguishes them by branch geometry (Fold ⇒
-        # LimitPointGeometry, BranchPoint ⇒ BranchCrossingGeometry); a fold is the one where the continuation parameter turns around. Relabel those to ``fold`` so ``canonical_ty`` resolves them to ``LP``.
         if sp_list and kind == "EquilibriumCont":
             self._reclassify_folds()
 
@@ -759,10 +761,8 @@ class BifurcationResult:
 
         codim2_curves = []
         for c2_name, c2_source_type, c2_fp1, c2_fp2, c2_bd in codim2_raw or []:
-            # The codim-2 continuation tracks (fp1, fp2). ICS=fp1 makes the
-            # 'param' column carry fp1; the 'param2' column is fp2 (already resolved by _auto_branch_to_df from PAR(.) → parnames mapping).
+            # ICS=fp1 puts fp1 in `param`; `param2` is fp2, already resolved by _auto_branch_to_df.
             c2_df = _extract_auto_df(c2_bd, sv_names, c2_fp1)
-            # Promote second-parameter column for _plot_codim2 ergonomics
             if c2_fp2 in c2_df.columns and "param2" not in c2_df.columns:
                 c2_df = c2_df.copy()
                 c2_df["param2"] = c2_df[c2_fp2]
@@ -1062,8 +1062,6 @@ class BifurcationResult:
         except Exception:
             pass
 
-        # AUTO-07p backend: ``self.br`` is a ``bifDiag`` whose call returns a
-        # ``parseS`` of ``AUTOSolution`` objects. Each holds the full orbit mesh in ``coordarray`` (shape ``(ndim, ntst*ncol+1)``), ``indepvararray`` (mesh times in [0, 1] times PERIOD) and ``PAR`` (parameter dict).
         try:
             sols = self.br()  # parseS
             n_sol = len(sols)
@@ -1634,9 +1632,7 @@ class BifurcationResult:
             if val < params.min() or val > params.max():
                 continue
 
-            # Try full orbit shape first (Julia BifurcationKit / AUTO bd()).
-            # Reuse the EXACT same Y-scaling that plot_3d applies to the
-            # PO tube so the ring sits on the tube's surface, not next to it.
+            # The same Y-scaling plot_3d gives the tube, so the ring sits on its surface.
             orbits = po_br.extract_orbit_meshes(n_samples=max(8, n_theta // 4))
             if orbits and sv2 and VOI in orbits[0] and sv2 in orbits[0]:
                 o_params = np.array([o["param"] for o in orbits])
@@ -1930,15 +1926,7 @@ class BifurcationResult:
         return anim
 
 
-# ── Backend extractors (formerly PyRates/NumCont subclass methods) ──
-#
-# These functions convert backend-native objects (PyCoBi ``ODESystem``,
-# AUTO-07p ``bifDiag``) into the unified DataFrame schema consumed by
-# :class:`BifurcationResult`. Keeping them at module level (instead of nested inside subclasses) makes the data flow explicit:
-#
-#     backend_object → _extract_<backend>_df(...) → BifurcationResult(df=...)
-#
-# and lets the same plotting/legend/export code apply to *every* backend without inheritance.
+# ── Backend extractors ──
 
 # Standard columns expected by all extractors
 _BIF_STANDARD_COLS = ["param", "stable", "step", "specialpoint", "n_unstable", "n_imag"]
@@ -2129,8 +2117,7 @@ def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
     if branch_data is None or n_steps == 0:
         return _empty_df()
 
-    # PyRates-generated branches key columns by the variable NAME (V, W, I_);
-    # hand-written fortran keys them by U(i)/PAR(i). Accept whichever is present.
+    # PyRates keys columns by variable name; hand-written fortran by U(i)/PAR(i).
     par_name = ode._var_map_inv.get(par_col)
     par_key = next((k for k in (par_name, par_col) if k and k in branch_data), None)
     sv_keys = {}
@@ -2245,8 +2232,7 @@ def _auto_branch_to_df(branch, sv_names, fp_name):
         if ucol in df.columns:
             df[sv] = df[ucol]
 
-    # Periodic-orbit branches: AUTO writes ``MAX <sv>`` / ``MIN <sv>`` (or ``MAX U(i)``) into the b-file. Map those to the canonical
-    # ``max_<sv>`` / ``min_<sv>`` columns the plot layer expects, and fall back to ``MAX`` as the SV column when no U(i) was emitted.
+    # AUTO writes `MAX <sv>`/`MIN <sv>`; these become the `max_<sv>`/`min_<sv>` the plot layer wants.
     for i, sv in enumerate(sv_names, start=1):
         for prefix, target in (("MAX", "max"), ("MIN", "min")):
             for src in (f"{prefix} {sv}", f"{prefix} U({i})"):

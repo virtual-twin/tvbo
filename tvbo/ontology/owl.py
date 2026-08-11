@@ -1,10 +1,6 @@
-#  ontology.py
-#
-# Created on Mon Aug 07 2023
-# Author: Leon K. Martin
-#
-# Copyright (c) 2023 Charité Universitätsmedizin Berlin
-#
+# Copyright © 2023 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
+
 """
 ---
 title: "Ontology Module for TVB-O" author: Leon Martin
@@ -128,14 +124,14 @@ DATA_DIR = realpath(join(ROOT_DIR, "data"))
 ONTO_DIR = join(DATA_DIR, "ontology")
 
 
-# %% Load Ontology (lazily)
-#
-# The TVB-O ontology is metadata only: it is consulted to retrieve specifications for missing fields or to build a model from the ontology, and is NOT needed to generate or run code. Parsing it eagerly at import made every ``import tvbo`` (through the class modules that import this one) load the .owl file — an expensive step that also collided with JAX's GC callback and could crash the kernel. We defer the parse to first actual use behind a lazy proxy, so importing tvbo / generating / running code never triggers it.
-# The public surface is unchanged: ``onto`` still behaves like the loaded ontology (attribute and item access, iteration, ``with onto:``), ``get_onto()`` returns it, and
-# ``iri`` / ``namespace`` remain importable module attributes (resolved lazily via PEP 562).
 @functools.cache
 def _load_ontology():
-    """Parse the TVB-O ontology once and return it (memoised for the process)."""
+    """Parse the TVB-O ontology once and return it (memoised for the process).
+
+    The parse is deferred to first real use, behind the lazy proxy below. The ontology is metadata only — consulted to fill in a missing specification or build a model, never needed to generate or run code — but parsing it at import made every `import tvbo` load the `.owl` file through the class modules that import this one. That is expensive, and it collided with JAX's GC callback badly enough to crash the kernel.
+
+    The public surface is unchanged: `onto` still behaves like the loaded ontology for attribute access, item access, iteration and `with onto:`, `get_onto()` returns it, and `iri` and `namespace` stay importable module attributes, resolved lazily through PEP 562.
+    """
     with open(join(ONTO_DIR, "tvb-o.owl"), "r", encoding="utf-8") as f:
         xml = f.read()
     # Drop the remote NIF-Ontology import so the load stays offline.
@@ -291,8 +287,7 @@ def get_sorted_dict(class_list) -> dict:
 set_render_func(render_using_label)
 
 
-# %% Functions for extracting TVB-O variables
-# NMM name must match label of model in TVBO
+# %% Functions for extracting TVB-O variables. An NMM name must match the model's label in TVBO.
 def wrap_text(text, line_length=100, line_breaks="\n") -> str:
     """
     Pretty print a string with automatic line breaks at specified intervals, while preserving existing new lines.
@@ -1142,8 +1137,7 @@ def get_default_values(NMM, tvb_name=False, class_as_key=False) -> Dict[str, Uni
     values = dict()
     parameters = get_model_parameters(NMM)
     parameters.update(get_model_constants(NMM))
-    # Coupling inputs default to zero (single-node / uncoupled evaluation).
-    # Derive their names from the model so any naming works.
+    # Default to zero for single-node evaluation; names derived from the model so any naming works.
     coupling_input_names = list(get_model_coupling_terms(NMM, return_as_dict=True).keys())
     for k, v in parameters.items():
         if tvb_name:

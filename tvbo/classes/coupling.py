@@ -1,10 +1,6 @@
-#  coupling.py
-#
-# Created on Mon Jan 22 2024
-# Author: Leon K. Martin
-#
-# Copyright (c) 2024 Charité Universitätsmedizin Berlin
-#
+# Copyright © 2024 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
+
 """
 TVB-O wrapper for Coupling functions
 ====================================
@@ -310,11 +306,6 @@ class Coupling(tvbo_datamodel.Coupling):
         """The coupling's own metadata, i.e. this object itself (back-compat accessor)."""
         return self
 
-    # def __str__(self):
-    #     return (
-    #         self.name if self.name else f"Coupling{self.id}"
-    #     )
-
     def to_yaml(self, filepath: str | None = None):
         """Serialize this coupling to YAML.
 
@@ -521,6 +512,14 @@ class Coupling(tvbo_datamodel.Coupling):
         -------
         sympy.Expr
             E.g. ``Sum(w[i, j]*sin(theta[j] - theta[i]), (j, 0, N - 1))/N``
+
+        Notes
+        -----
+        Parsing and substitution both happen under ``sp.evaluate(False)``, which keeps sympy from canonicalising the sign of an odd function and from reordering an ``Add`` alphabetically. Parsing has to be inside that block too, or ``v0 - (y1 - y2)`` is flattened to ``v0 - y1 + y2`` before the substitution ever sees it.
+
+        A *factored* coupling declares its pre-expression as a list whose k-th component is summed into ``gx_k``, with the post recombining them. Where the post is linear in the ``gx_k``, which is the usual case, that collapses to the single canonical sum ``c = Sum_j w[i,j] * sum_k a_k(x_i) * pre_k(x_j)`` and ``trigsimp`` folds the per-edge term — ``cos(x_i)sin(x_j) - sin(x_i)cos(x_j)`` becoming ``sin(x_j - x_i)``. Otherwise the explicit ``gx_k = Sum(w * pre_k)`` form is kept. This part is built outside the ``evaluate(False)`` block, so the sum, the coefficient extraction and ``trigsimp`` can actually evaluate. A bare state name inside a summed pre-expression refers to the summed node even where it was declared local; an explicit ``_i`` stays local.
+
+        A folded odd-trig term is rebuilt as a positive-first unevaluated ``Add`` so it reads in the physics convention ``f(incoming - local)``: sympy canonicalises ``f(x_j - x_i)`` to ``-f(x_i - x_j)``, and the report renders with ``order='none'``.
         """
         import sympy as sp
         from sympy import IndexedBase, Symbol, symbols, Sum
@@ -554,8 +553,6 @@ class Coupling(tvbo_datamodel.Coupling):
         def _local(sn):
             return state_bases[sn][i]
 
-        # Bare state names: y1 → y1[j] (incoming), y1 → y1[i] (local)
-        # This handles expressions like "2*e0 / (1 + exp(r*(v0 - (y1 - y2))))"
         for sn in incoming:
             subs_map[Symbol(sn)] = _incoming(sn)
         for sn in local:
@@ -586,20 +583,12 @@ class Coupling(tvbo_datamodel.Coupling):
         for pname in self.parameters or {}:
             local_dict[str(pname)] = Symbol(str(pname))
 
-        # Parse and substitute inside evaluate=False to prevent:
-        #  - sin.eval() sign canonicalization (Function.__new__, L301)
-        #  - Add.flatten() alphabetical reordering (AssocOp.__new__, L95)
-        # Parsing must also be inside the block so that e.g.
-        # v0 - (y1 - y2) isn't flattened to v0 - y1 + y2 before subs.
         with sp.evaluate(False):
             pre_expr = parse_eq(self.pre_expression, local_dict=local_dict)
             post_expr = parse_eq(self.post_expression, local_dict=local_dict)
             if not isinstance(pre_expr, (list, tuple)):
                 pre_indexed = pre_expr.subs(subs_map)
 
-        # Factored / vectorized coupling: the pre-expression is a *list* whose k-th component is summed into gx_k and the post recombines the gx_k. When the post is linear in the gx_k (the usual case) collapse to the canonical single sum c = Sum_j w[i,j] * sum_k a_k(x_i) * pre_k(x_j) and let ``trigsimp`` fold the per-edge term (cos(x_i)sin(x_j) - sin(x_i)cos(x_j)
-        # -> sin(x_j - x_i)); otherwise keep the explicit gx_k = Sum(w * pre_k) form.
-        # Built outside the evaluate(False) block so the sum, coeff and trigsimp evaluate.
         if isinstance(pre_expr, (list, tuple)):
             # A bare state name in a summed pre refers to the summed (j) node, even when declared `local` (e.g. [sin(theta), cos(theta)]); explicit `_i` stays local.
             pre_subs = dict(subs_map)
@@ -611,8 +600,6 @@ class Coupling(tvbo_datamodel.Coupling):
             coeffs = [post_indexed.coeff(g) for g in gxk]
             if sp.expand(post_indexed - sum(a * g for a, g in zip(coeffs, gxk))) == 0:
                 edge = sp.trigsimp(sum(a * p for a, p in zip(coeffs, pre_k)))
-                # Show a folded odd-trig term in the physics convention f(incoming - local):
-                # sympy canonicalises f(x_j - x_i) to -f(x_i - x_j), so rebuild f(x_j - x_i) as a positive-first, unevaluated Add (the report renders with order='none').
                 c0, rest = edge.as_coeff_Mul()
                 odd = (sp.sin, sp.tan, sp.sinh, sp.tanh)
                 if c0 == -1 and getattr(rest, "func", None) in odd and rest.args[0].is_Add:

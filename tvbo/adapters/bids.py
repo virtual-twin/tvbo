@@ -36,8 +36,7 @@ except ImportError:
 BEP034_CONFIG_PATH = Path(__file__).parent / "bep034.json"
 
 
-# BIDS pybids rule string for an experiment-result artifact (``<prefix>_result.h5``
-# + ``.yaml`` sidecar). ``suffix``/``extension`` are value-constrained so an invalid combination fails fast; ``desc`` is optional. Customize the naming by editing this pattern — build_path handles entity substitution and optionality.
+# `suffix`/`extension` are value-constrained so an invalid combination fails fast; `desc` is optional.
 RESULT_PATTERNS = [
     "[sub-{subject}_]exp-{experiment}[_desc-{description}]_{suffix<result>}{extension<.h5|.yaml|.json>}",
 ]
@@ -548,6 +547,10 @@ def create_cifti_ptseries(
     - SeriesAxis: Time dimension with sampling info
     - ScalarAxis: State variable names (if multiple)
 
+    Each parcel is modelled as a single surface vertex under the generic `OTHER` brain structure, which is the usual way to carry parcellated data that has no real surface behind it.
+
+    A ptseries is shaped `(timepoints, parcels)`, so it has nowhere to put a state-variable axis. **Given three-dimensional data, only the first state variable is written.** Multiple state variables need either one file each or a format with a scalar axis, and neither is implemented.
+
     Parameters
     ----------
     data : np.ndarray
@@ -613,7 +616,6 @@ def create_cifti_ptseries(
         # Assume seconds if unknown
         sample_period_sec = sample_period
 
-    # Create SeriesAxis (time dimension) start=0, step=TR in seconds, size=number of timepoints
     series_axis = cifti2.SeriesAxis(
         start=0.0,
         step=sample_period_sec,
@@ -621,16 +623,8 @@ def create_cifti_ptseries(
         unit="SECOND",
     )
 
-    # Create ParcelsAxis (brain regions)
-    # For parcellated data, we use ParcelsAxis with named regions
-    # Each parcel represents one brain region
-
-    # Create a simple BrainModelAxis for each region as a "surface vertex"
-    # This is a common approach for parcellated data
     parcel_brain_models = []
     for i, label in enumerate(region_labels):
-        # Create a surface-based brain model with a single vertex per parcel
-        # Using 'OTHER' as brain structure for generic parcels
         bm = cifti2.BrainModelAxis.from_surface(
             vertices=[i],
             nvertex=n_regions,
@@ -641,46 +635,14 @@ def create_cifti_ptseries(
     parcels_axis = cifti2.ParcelsAxis.from_brain_models(parcel_brain_models)
 
     if data.ndim == 2:
-        # Single state variable: (time, regions) -> CIFTI shape (time, parcels)
-        # CIFTI ptseries has shape (timepoints, parcels)
         cifti_data = data_for_cifti.astype(np.float32)
-
-        # Create header from axes: (SeriesAxis, ParcelsAxis)
-        header = cifti2.Cifti2Header.from_axes((series_axis, parcels_axis))
-        img = cifti2.Cifti2Image(dataobj=cifti_data, header=header)
-
     else:
-        # Multiple state variables: create separate series for each
-        # Or use ScalarAxis for state variables
-        # For now, we'll flatten: shape becomes (time * n_states, regions)
-        # Better approach: create ScalarAxis for state variable names
-
-        # Create ScalarAxis for state variables
         if state_variable_labels is None:
             state_variable_labels = [f"sv{i}" for i in range(n_states)]
-
-        cifti2.ScalarAxis(name=state_variable_labels)
-
-        # Reshape data: (time, states, regions) -> (time, regions) per state
-        # For ptseries with multiple maps, use (n_maps, parcels) where n_maps = time * states
-        # Actually, ptseries should be (time, parcels), so we need pscalar for scalar maps
-
-        # Best approach: Save each state variable as separate timepoints
-        # Or save as dtseries with multiple series
-        # For simplicity, concatenate all state variables along time axis
-        # Shape: (time * n_states, regions) with ScalarAxis indicating which is which
-
-        # Alternative: use dscalar for each timepoint-state combo
-        # Let's use ptseries with concatenated time for all states and add metadata about which timepoints belong to which state
-
-        # For now, save first state variable only for ptseries
-        # TODO: Support multi-state as separate files or different format
         cifti_data = data_for_cifti[:, 0, :].astype(np.float32)
 
-        header = cifti2.Cifti2Header.from_axes((series_axis, parcels_axis))
-        img = cifti2.Cifti2Image(dataobj=cifti_data, header=header)
-
-    return img
+    header = cifti2.Cifti2Header.from_axes((series_axis, parcels_axis))
+    return cifti2.Cifti2Image(dataobj=cifti_data, header=header)
 
 
 def write_cifti_ptseries(
