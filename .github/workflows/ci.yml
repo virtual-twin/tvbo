@@ -346,6 +346,8 @@ jobs:
                           tests/test_cli_workflow.py
                           tests/test_run_models.py
                           tests/test_tvboptim_observation_codegen.py
+                          tests/test_weight_transform_codegen.py
+                          tests/test_exploration_result_labelling.py
                           tests/functional/test_plot_layouts.py
                           tests/test_panel_group_axis.py
                           tests/test_exploration_result_labelling.py

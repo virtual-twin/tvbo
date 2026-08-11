@@ -778,6 +778,25 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: Dic
     return overrides
 
 
+def _callable_wants(ref, argument: str) -> bool:
+    """Whether the transform callable *ref* points at declares *argument* by name.
+
+    ``Network._apply_transform`` injects ``network`` and ``L`` into a callable transform
+    whenever its signature asks for them, so the emitted call has to ask the same question
+    of the same signature or the kit and the runtime call the function differently. An
+    unimportable or uninspectable target answers False: the render then emits the plain
+    one-argument call it always did, rather than failing over a callable the kit may well
+    resolve.
+    """
+    import importlib
+    import inspect
+
+    try:
+        return argument in inspect.signature(getattr(importlib.import_module(ref.module), ref.name)).parameters
+    except Exception:
+        return False
+
+
 def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List[str]]:
     """Render `transforms:` targeting weight to JAX for inlining in the generated script.
 
@@ -804,8 +823,11 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
             a declared per-node parameter, nor a substituted argument. Failing here beats
             emitting an undefined name into a kit that only dies once it reaches a cluster.
             Symbols are checked by base identifier, so a masked expression such as
-            `mean(W[W > 0])` is validated — and bound — as `W`.
+            `mean(W[W > 0])` is validated — and bound — as `W`. Also if a callable
+            transform takes the `network` the runtime injects, which a kit cannot supply.
     """
+    import re
+
     import numpy as np
 
     from tvbo.codegen.code import render_expression
@@ -824,12 +846,22 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
     for t in network.transforms_for("weight"):
         c = getattr(t, "callable", None)
         if c is not None:
-            alias = f"_tf_{c.name}"
+            alias = "_tf_" + re.sub(r"\W", "_", f"{c.module}.{c.name}")
             _add_const(alias, f"from {c.module} import {c.name} as {alias}")
             args = "".join(
                 f", {n}={getattr(a, 'value', None)!r}"
                 for n, a in (getattr(t, "arguments", {}) or {}).items()
             )
+            if _callable_wants(c, "network"):
+                raise ValueError(
+                    f"weight transform callable {c.module}.{c.name} takes a `network` argument, "
+                    f"which the runtime injects but a self-contained kit has no object to supply. "
+                    f"Give it a signature over the matrix (and `L`) alone."
+                )
+            if _callable_wants(c, "L"):
+                for line in emit_env(["L"], "weights", "distances")[1]:
+                    _add_const(line.split(" = ", 1)[0], line)
+                args += ", L=L"
             transforms.append((f"{alias}(weights{args})", []))
             continue
 
