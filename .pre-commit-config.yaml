@@ -1,14 +1,25 @@
-# Install once with `pre-commit install`; run manually with `pre-commit run --all-files`.
+# Install both stages once:
+#     pre-commit install --hook-type pre-commit --hook-type pre-push
+# Run manually with `pre-commit run --all-files` or `--hook-stage pre-push`.
+#
+# pre-commit holds the sub-second checks, so committing stays something you do without
+# thinking about it. Anything test-shaped is at pre-push, where seconds are affordable and
+# where it still runs before the code can reach anyone else.
+#
+# Every hook here is green on the current tree, which is the whole point of a blocking
+# hook: one that fails on debt you did not write teaches you to pass `--no-verify`, and
+# then it guards nothing. `ruff format --check` and ruff's full lint are deliberately
+# absent for that reason — both fail on the tree today, which is why CI runs them
+# non-blocking. They belong here the day they pass.
 
 repos:
   - repo: local
     hooks:
-      - id: database-validation
-        name: Validate tvbo/database/*.yaml against LinkML schema
-        entry: pytest tests/test_database_validation.py -q --no-header
+      - id: ruff-syntax
+        name: Ruff — syntax errors (the subset CI blocks on)
+        entry: ruff check --select=E9,F63,F7,F82 --force-exclude
         language: system
-        pass_filenames: false
-        files: '^(tvbo/database/.*\.ya?ml|schema/tvbo_datamodel\.yaml|tests/test_database_validation\.py)$'
+        types_or: [python, pyi]
         stages: [pre-commit]
 
       - id: no-stacked-comments
@@ -18,3 +29,18 @@ repos:
         pass_filenames: false
         files: '\.(py|mako|ya?ml|toml|jl|sh)$'
         stages: [pre-commit]
+
+      - id: database-validation
+        name: Validate tvbo/database/*.yaml against LinkML schema
+        entry: pytest tests/test_database_validation.py -q --no-header
+        language: system
+        pass_filenames: false
+        files: '^(tvbo/database/.*\.ya?ml|schema/tvbo_datamodel\.yaml|tests/test_database_validation\.py)$'
+        stages: [pre-commit]
+
+      - id: style-contracts
+        name: Style contracts — generated code, and the comment convention
+        entry: pytest tests/test_codegen_style_contract.py tests/test_comment_style.py -q --no-header -p no:randomly
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
