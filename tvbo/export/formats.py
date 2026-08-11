@@ -58,8 +58,7 @@ def _render_jax(exp, **kw):
     from tvbo.adapters.observation_sampling import resolve_observation_sampling
 
     template = templates.lookup.get_template("autodiff/tvbo-jax-sim.py.mako")
-    # Resolve observation sampling step counts once, in Python, and hand the
-    # {obs_name: ObservationSampling} mapping to the template (which only emits the resolved integers). This is the same backend-shared resolver the tvboptim runtime uses, so all Python backends emit identical sample counts.
+    # The same shared resolver the tvboptim runtime uses, so every Python backend agrees.
     observations = getattr(exp, "observations", None) or {}
     dt = exp.integration.step_size
     kw.setdefault(

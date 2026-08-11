@@ -26,13 +26,8 @@ import sympy as sp
 
 from tvbo.parse.expression import parse_eq
 
-# Sampler head per Distribution.name, and the order its parameters are passed.
-# Mirrors the backend sampler table in dev/GenericProcedureEngine.md §2.3; the vocabulary is numpyro / Distributions.jl aligned.
-# Each entry maps a family to its sampler head and its parameters IN CALL ORDER, each with the value of that family's standard form. A parameter a spec omits falls back to the standard form (Normal(0, 1), Uniform(0, 1), ...) rather than erroring, because that is what the family means without further qualification — and because omitting one is how these have always been written. Typos do NOT fall back: `_sampler` rejects any parameter name the family does not define, so `mena: 0.5` is an error rather than a silent mean of 0.
 _SAMPLERS: Dict[str, Tuple[str, Tuple[Tuple[str, float], ...]]] = {
     "normal": ("sample_normal", (("mean", 0.0), ("std", 1.0))),
-    # `Gaussian` is the same family under the name `distribution_pdf` already accepts;
-    # registering it here keeps one spelling from resolving on one step type and failing on another.
     "gaussian": ("sample_normal", (("mean", 0.0), ("std", 1.0))),
     "uniform": ("sample_uniform", (("lo", 0.0), ("hi", 1.0))),
     "lognormal": ("sample_lognormal", (("mu", 0.0), ("sigma", 1.0))),
@@ -42,11 +37,13 @@ _SAMPLERS: Dict[str, Tuple[str, Tuple[Tuple[str, float], ...]]] = {
 
 _COMPARISONS = {"le": sp.Le, "lt": sp.Lt, "ge": sp.Ge, "gt": sp.Gt}
 
-# The symbol a step's seeded draw is keyed by. A backend binds it to whatever carries
-# PRNG state there (a base seed for numpy, a jax PRNG key); the DAG only says *that* the step is seeded, never how the backend represents randomness.
-#
-# The name is underscore-prefixed and RESERVED. Seededness is detected by looking for this symbol in a step's expression, and the binding is written into the evaluation namespace, so an ordinary generator parameter sharing the name would both be silently overwritten by the seed (wrong values, no error) and make every step look seeded, disabling the deterministic-prefix hoisting. `build` rejects the collision rather than allowing either.
 KEY = sp.Symbol("_prng_key")
+"""The reserved symbol a step's seeded draw is keyed by.
+
+A backend binds it to whatever carries PRNG state there — a base seed for numpy, a key for jax. The DAG only says *that* a step is seeded, never how the backend represents randomness.
+
+The name is underscore-prefixed and reserved. Seededness is detected by looking for this symbol in a step's expression, and the binding is written into the evaluation namespace, so an ordinary generator parameter of the same name would be silently overwritten by the seed — wrong values, no error — and would make every step look seeded, disabling the deterministic-prefix hoisting. `build` rejects the collision rather than allowing either.
+"""
 
 # Number of nodes; bound by the layout so a step never hard-codes a size.
 N_NODES = sp.Symbol("n_nodes")
@@ -165,9 +162,7 @@ def _sampler(spec: Any, step: str, shape: Sequence[sp.Expr], substream: Any = 0)
     return sp.Function(head)(KEY, sp.Integer(int(substream)), *params, *shape)
 
 
-# --------------------------------------------------------------------------- #
-# Step builders — one per `type`, each (fields, env, ctx) -> SymPy expression.  #
-# --------------------------------------------------------------------------- #
+# Step builders — one per `type`, each (fields, env, ctx) -> SymPy expression.
 def _step_equation(fields, env, ctx, step):
     equation = _get(fields, "equation")
     rhs = _get(equation, "rhs") if equation is not None else None
@@ -244,8 +239,6 @@ def _step_sample(fields, env, ctx, step):
                 f"step draws from a Distribution-valued parameter, not from an array."
             )
         supplied = ctx["parameters"].get(name)
-        # An unset optional parameter is absent or None, and a *declared* one (the curated entry's `{datatype: Distribution, ...}` interface block) carries no family name.
-        # Neither is a distribution to draw from, so both fall through to the default.
         if supplied is not None and _dist_name(supplied):
             dist = supplied
         elif inline is None:
@@ -304,9 +297,7 @@ def build(spec: Mapping[str, Any]) -> List[Tuple[str, sp.Expr]]:
             f"which the resolver binds itself. Rename the parameter."
         )
     env: Dict[str, sp.Expr] = {name: sp.Symbol(name) for name in parameters}
-    # `n_nodes` comes from Network.number_of_nodes, so it is bound for every generator.
-    # Node POSITIONS are not pre-bound: a layout is an ordinary step (produced by e.g.
-    # `grid_positions`), so referencing one that was never defined must fail like any other dangling reference rather than resolve to a free symbol.
+    # Positions are NOT pre-bound: a layout is an ordinary step, so a dangling reference must fail.
     env["n_nodes"] = N_NODES
 
     resolved: List[Tuple[str, sp.Expr]] = []

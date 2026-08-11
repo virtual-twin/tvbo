@@ -73,7 +73,6 @@ def update_node_state_with_delay(G, node, t, dt, input_signal):
         current_state,
         t_span,
     )
-    # result = odeint(model, current_state, t_span, args=(input_signal,))
     new_state = result[-1]
 
     # Update state and history

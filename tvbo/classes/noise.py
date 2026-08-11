@@ -26,8 +26,7 @@ def _available_integrators():
 
 
 def __getattr__(name):  # PEP 562: keep ``available_integrators`` importable, lazily.
-    # Resolving it eagerly at module import would force the ontology to load (through
-    # ``import tvbo``); defer that to first access.
+    # Resolving eagerly at import would force the ontology to load; deferred to first access.
     if name == "available_integrators":
         return _available_integrators()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

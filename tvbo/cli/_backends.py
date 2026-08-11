@@ -55,10 +55,7 @@ class BackendSpec:
         return task in self.tasks
 
 
-# Mirror of ontology/tvb-o-axioms.ttl §4.1 backend declarations.
-# Vectorize-axis sets are derived from the same axioms (Autodiff +
-# VectorizedRNG → noise_seed; JITCompilation/GPUSupport → parameters;
-# Autodiff with autograd → initial_conditions; tvboptim's subject-batched gradient pass → subjects).
+# Mirrors the backend declarations in ontology/tvb-o-axioms.ttl §4.1, vectorize-axis sets included.
 BACKENDS: dict[str, BackendSpec] = {
     "jax": BackendSpec(
         name="jax",
@@ -134,10 +131,6 @@ def resolve_backend(name: str) -> BackendSpec:
 
 def list_backends() -> list[BackendSpec]:
     return list(BACKENDS.values())
-
-
-# Heuristic mapping: an ExplorationAxis.parameter dotted path → axis kind.
-# Used by the planner to bucket schema-declared axes into AXIS_KINDS so we can ask `backend.can_vectorize(kind)`.
 
 
 def axis_kind_of(parameter_path: str) -> str:

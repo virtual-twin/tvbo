@@ -421,8 +421,7 @@ def load_as_dict(source: Any, **kwargs: Any) -> dict:
         data = yaml.load(source, LoaderCls)
     else:
         data = source
-    # Route through the same normalisation as the string path (fold slot aliases
-    # + lift the terse `distribution: {lo, hi}` shortcut) so the dict path used by from_file/from_db cannot diverge from the LinkML string path.
+    # The same normalisation as the string path, so from_file/from_db cannot diverge from it.
     return _normalize_loaded(data)
 
 

@@ -731,10 +731,8 @@ def get_global_coupling_functions():
     onto = ontology.get_onto()
     CouplingFunctions = onto.Coupling.subclasses()
 
-    # for CF in CouplingFunctions:
     #     CF.pre = MethodType(get_pre_summation_coupling_function, CF)
     return list(CouplingFunctions)
 
 
-# NOTE: do NOT eagerly compute an ``available_coupling_functions`` set at import time. It has no consumers, and traversing ``onto.Coupling.subclasses()`` forces the (metadata-only) owlready2 ontology to fully load on every ``import tvbo`` — including JAX/codegen processes that never query the ontology. Call
-# ``get_global_coupling_functions()`` on demand instead.
+# No eager set here: traversing subclasses would load the whole ontology on every `import tvbo`.

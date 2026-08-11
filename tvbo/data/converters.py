@@ -145,6 +145,5 @@ def to_bep017(network, output_dir):
         (out / f"atlas-{atlas}_nodeindices.tsv").write_text("\n".join(lines))
 
 
-# TVB converters have been consolidated into tvbo.adapters.tvb
-# Backward-compatible re-exports:
+# Backward-compatible re-exports; the converters now live in tvbo.adapters.tvb.
 from tvbo.adapters.tvb import from_tvb_zip, from_tvb, from_tvb_surface  # noqa: F401, E402

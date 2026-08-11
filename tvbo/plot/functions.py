@@ -95,7 +95,6 @@ def plot_coupling_function(CF: Any, ax: Any = None):
             ax.get_zlim()[1]
             + 0.5 * (ax.get_zlim()[1] - ax.get_zlim()[0]),  # if CF.name == "KuramotoCouplingFunction" else ax.get_zlim()[1],
             f"${latex_eq}$",
-            # fontsize=12,
             ha="left",
             va="top",
             bbox=dict(boxstyle="round,pad=0.5", facecolor=(1, 1, 1, 0.8), edgecolor="black"),
@@ -114,7 +113,6 @@ def plot_coupling_function(CF: Any, ax: Any = None):
             ax.get_xlim()[0] + 0.05 * (ax.get_xlim()[1] - ax.get_xlim()[0]),
             ax.get_ylim()[1] - 0.05 * (ax.get_ylim()[1] - ax.get_ylim()[0]),
             f"${latex_eq}$",
-            # fontsize=12,
             ha="left",
             va="top",
             bbox=dict(boxstyle="round,pad=0.5", facecolor=(1, 1, 1, 0.8), edgecolor="black"),

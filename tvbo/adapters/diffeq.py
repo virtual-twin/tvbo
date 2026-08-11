@@ -14,8 +14,6 @@ if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
 
 
-# Julia packages required by the base Julia templates
-# Use specific sub-packages instead of monolithic DifferentialEquations to avoid excessive memory usage / Bus errors during precompilation.
 REQUIRED_PACKAGES = [
     "OrdinaryDiffEqTsit5",
     "StochasticDiffEq",

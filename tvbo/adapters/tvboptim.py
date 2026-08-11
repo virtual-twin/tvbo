@@ -60,8 +60,7 @@ def _build_graph(network: "Network", delays: bool = True, max_delay: float | Non
         lengths = jnp.asarray(np.asarray(lengths, dtype=float))
         cs = getattr(network, "conduction_speed", None)
         speed = float(getattr(cs, "value", cs)) if cs is not None else 3.0
-        # Size the bound the way DenseLengthGraph measures the largest delay: elementwise
-        # ``lengths / speed`` then max — NOT ``max(lengths) / speed``. The two are equal in exact arithmetic but differ by a float32 ULP for some speeds, landing the bound just under the graph's own ``max(delay)`` and tripping its strict ``bound >= max(delay)`` check (fails for scattered conduction speeds, e.g. a sweep cell at v=5 while v=6 passes). A hair of headroom guarantees the buffer is never an ULP short.
+        # Elementwise then max, as DenseLengthGraph measures it; the other order is a ULP short.
         if max_delay is not None:
             bound = max_delay
         elif speed > 0:
@@ -210,8 +209,7 @@ def to_tvboptim(
     else:
         dyn_obj = None
 
-    # Auto-extract coupling from network if not provided.
-    # Resolution: use CouplingInput.source to remap function keys → CI keys, then fall back to name matching, then positional order.
+    # CouplingInput.source remaps function keys to CI keys, then name matching, then position.
     if coupling is None and hasattr(network, "coupling") and network.coupling:
         coup_dict = {key: coup_obj.execute("tvboptim") for key, coup_obj in network.coupling.items()}
         if dynamics is not None and hasattr(dynamics, "COUPLING_INPUTS"):
@@ -252,8 +250,7 @@ def to_tvboptim(
     if noise is None and dyn_obj is not None:
         noise = _extract_noise(dyn_obj)
 
-    # Enable differentiable (interpolated) delays on every delayed coupling:
-    # linear history interpolation makes d(state)/d(delay) informative, so conduction speed becomes gradient-optimisable.
+    # Linear history interpolation makes d(state)/d(delay) informative, so speed is optimisable.
     if interpolate_delays:
         if isinstance(coupling, dict):
             _coups = coupling.values()
@@ -410,8 +407,7 @@ def to_heterogeneous_network(
         raise ValueError("to_heterogeneous_network: network has no nodes")
     dyn_lib = dict(dynamics_lib or getattr(network, "dynamics", None) or {})
 
-    # --- partition nodes into groups by dynamics name (graph order = node order)
-    # `Node.id` is a unique identifier, not a position, and edges address nodes by id — so map ids to graph indices rather than conflating the two.
+    # `Node.id` identifies, it does not position, so ids are mapped to graph indices.
     node_index = network.node_index_map()
     group_idx: dict[str, list[int]] = {}
     node_group: list[str] = []

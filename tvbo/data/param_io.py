@@ -31,9 +31,11 @@ from typing import Any, Optional
 
 import numpy as np
 
-# Resolved arrays, keyed by a content-addressed key (see `_source_key` /
-# `_producer_key`) rather than by object identity: two Parameter objects naming the same array share one entry, and a rebuilt spec hits the cache rather than re-reading or recomputing. Never keyed by id() — CPython reuses ids of collected objects, which would silently serve one parameter's array for another's.
 _CACHE: dict[tuple, Any] = {}
+"""Resolved arrays, keyed by content rather than object identity.
+
+Two Parameter objects naming the same array share one entry, and a rebuilt spec hits the cache instead of re-reading or recomputing. Never keyed by `id()`: CPython reuses the ids of collected objects, which would silently serve one parameter's array for another's.
+"""
 
 # module name -> digest of the source that module was LOADED from, pinned for the process
 _SOURCE_DIGESTS: dict[str, str] = {}

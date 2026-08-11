@@ -576,12 +576,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     # Network._items() hides _cached_* attrs, so yaml_dumper works directly
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
 
-    # Remap the GENERIC canonical keys ("weight"/"length", as produced by from_matrix) onto the sidecar's declared edge names. Match by MEANING, never by position:
-    # weight/length are only two of arbitrarily many edge attributes a sidecar may bundle (weight_NMF_*, fc, local_connectivity, …), and they may appear in any order, so the length matrix — the one delayed simulations require — must be routed to the length-like template edge, not to "the second edge". Guards:
-    #   * skip when the array is already correctly named (the template declares it), so
-    #     a directly-named `length` edge is never renamed away; and
-    #   * if no matching template edge is found, keep the generic key (the loader
-    #     resolves "weight"/"length" directly) rather than risk misplacing the matrix.
+    # Matched by MEANING, never position: a sidecar bundles many edge attributes in any order.
     if arrays:
         from tvbo.classes.network import _WEIGHT_MEASURES, _LENGTH_MEASURES
 

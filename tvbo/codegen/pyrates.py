@@ -1,10 +1,6 @@
-#
-# Module: pyrates.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 
 """
 PyRates Integration Module
@@ -60,20 +56,6 @@ if TYPE_CHECKING:
     from tvbo.classes.dynamics import Dynamics
     from tvbo.classes.network import Network
 
-# Single source of truth for PyRates-safe variable renaming, imported by
-# tvbo/adapters/pyrates.py and tvbo-pyrates-model.yaml.mako (the reverse map
-# below is DERIVED, never hand-maintained — so there is exactly one mapping to
-# keep correct).
-#
-# These names must be suffixed before codegen because a bare occurrence
-# resolves to something other than a free symbol when the equation renderer
-# sympifies it: SymPy functions/singletons (`gamma`->FunctionClass,
-# `I`->ImaginaryUnit, `S`->SingletonRegistry, `Q`->AssumptionKeys, …) crash
-# with "unsupported operand type(s) for *: 'FunctionClass' and 'Symbol'";
-# `lambda` is a Python keyword; `y`/`dy`/`epsilon` collide with PyRates'
-# internal slots. (Verified: dropping the SymPy entries breaks ~29 models.)
-# Capital `Gamma`/`Beta` auto-symbolize and are admitted raw by
-# _patch_pyrates_reserved_names instead, so they are intentionally absent.
 PYRATES_REPL = {
     "I": "I_",
     "gamma": "gamma_",
@@ -90,9 +72,8 @@ PYRATES_REPL = {
     "dy": "dy_",
 }
 
-# Reverse mapping (PyRates-safe name -> original TVBO name), derived from
-# PYRATES_REPL so the two can never drift.
 _PYRATES_REPL_REVERSE = {safe: original for original, safe in PYRATES_REPL.items()}
+"""PyRates-safe name back to the original TVBO name, derived so the two cannot drift."""
 
 
 def _unrename_pyrates(name: str) -> str:
@@ -638,9 +619,7 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
                 if var_spec == "output" or (isinstance(var_spec, str) and "output(" in var_spec):
                     output.append(var_name)
 
-    # Parse variables that are not state/derived/output
-    # Track which raw names were already consumed (as state vars or derived)
-    _consumed_raw = set()
+    _consumed_raw = set()  # raw names already taken as state variables or derived
     for eq in equations:
         eq = str(eq).strip()
         m = re.match(r"(\w+)'\s*=\s*", eq) or re.match(r"d/dt\s*\*\s*(\w+)\s*=\s*", eq) or re.match(r"(\w+)\s*=\s*", eq)

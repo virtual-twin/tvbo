@@ -217,8 +217,7 @@ class BifurcationKitAdapter:
         po_n = _newton_kwargs(bc)
         if po_n:
             po_cp.append(f"newton_options = NewtonPar({', '.join(po_n)})")
-        # BifurcationKit defaults `save_sol_every_step` to 0, leaving `br.sol` empty — and the orbit waveforms are reconstructed from exactly those saved solutions.
-        # Always request them, so `po_results.profiles` is populated rather than a branch-long run of `nothing` behind a buried @warn.
+        # Defaults to 0, which leaves `br.sol` empty and every orbit profile `nothing`.
         po_cp.append("save_sol_every_step = 1")
         po_cp_str = ", ".join(po_cp)
 

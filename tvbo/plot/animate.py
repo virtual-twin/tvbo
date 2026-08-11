@@ -1,10 +1,6 @@
-#
-# Module: animate.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Animation utilities for SimulationResult."""
 
 import matplotlib.pyplot as plt
@@ -227,9 +223,7 @@ def animate_network(result, state=None, interval=50, cmap="viridis", node_size=1
 
     fig.tight_layout()
 
-    # Data is already downsampled by _extract_node_timeseries;
-    # animate sequentially over all points.
-    n_frames = len(slices[0][2])
+    n_frames = len(slices[0][2])  # already downsampled by _extract_node_timeseries
 
     def update(i):
         """Recolor nodes and extend per-node traces for frame `i`."""
@@ -312,9 +306,7 @@ def animate_timeseries(result, state=None, interval=50, cmap=None, figsize=None)
 
     fig.tight_layout()
 
-    # Data is already downsampled by _extract_node_timeseries;
-    # animate sequentially over all points.
-    n_frames = len(slices[0][2])
+    n_frames = len(slices[0][2])  # already downsampled by _extract_node_timeseries
 
     def update(i):
         """Update each panel's title and traces for frame `i`."""
@@ -377,15 +369,8 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0, interval=50,
     return ani
 
 
-# Composable Panel System
-#
-# Each panel function has the signature:
-#     panel_fn(result, ax, max_points=200) -> (n_frames, update_fn)
-#
-# update_fn(i) updates artists for frame i and returns a list of artists.
-# Panels share a common frame count (the minimum across all panels).
+# A panel is `panel_fn(result, ax, max_points=200) -> (n_frames, update_fn)`; frames are the minimum.
 
-# Built-in composite types: string -> list of panel names
 _COMPOSITE_TYPES = {
     "pendulum": ["pendulum_bob", "timeseries"],
 }

@@ -10,8 +10,7 @@ from pathlib import Path
 
 DB_DIR = Path(__file__).parent
 
-# ─── Enrichment data keyed by tool name ───
-# Fields: date_created, development_status, reference_publication, author, funder, keywords, same_as, issue_tracker
+# Keyed by tool name; fields mirror the software entry slots.
 ENRICHMENT = {
     "TVB": {
         "date_created": "2013-01-01",

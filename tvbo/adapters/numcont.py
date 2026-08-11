@@ -21,8 +21,7 @@ if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
 
 
-# AUTO reserves PAR(11)=PERIOD and PAR(12)=ANGLE; user params occupy
-# 1..10 then 13..NPAR.
+# AUTO reserves PAR(11)=PERIOD and PAR(12)=ANGLE; user params take 1..10 then 13..NPAR.
 _RESERVED_LO = 11
 _RESERVED_HI = 12
 
@@ -376,8 +375,7 @@ class NumContAdapter:
 
             # Parse 'fold:1', 'fold:all', 'fold:-1', 'fold' (default: all)
             spec = src.split(":", 1)[1].strip() if ":" in src else "all"
-            # AUTO addresses special points by ORDINAL (1-based, across all branches): R_eq("LP1") = first LP found, "LP2" = second, etc.
-            # Count total LPs to size the ordinal range.
+            # AUTO addresses special points by 1-based ordinal across all branches, so size the range.
             n_total = 0
             for br in R_eq:
                 lbls = br.labels.by_label.get(label_prefix, {}) or {}

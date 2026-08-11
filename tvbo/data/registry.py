@@ -26,8 +26,7 @@ _CATEGORIES = {
     "Integrator": "integrators",
     "Network": "networks",
     "SimulationExperiment": "experiments",
-    # The studies/ directory holds bibliographic source records (Study); a
-    # SimulationStudy is_a Study, so both class names resolve to the same dir.
+    # A SimulationStudy is_a Study, so both resolve to the bibliographic studies/ directory.
     "Study": "studies",
     "SimulationStudy": "studies",
     "Observation": "observation_models",

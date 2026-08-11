@@ -205,8 +205,6 @@ def _string_to_cuda(expr_str: str) -> str:
     """Simple string-based conversion to CUDA for expressions that fail parsing."""
     result = str(expr_str)
 
-    # Power syntax: ** -> powf
-    # Match x**y patterns
     power_pattern = r"(\w+|\([^)]+\))\s*\*\*\s*(\w+|\([^)]+\))"
     while re.search(power_pattern, result):
         result = re.sub(power_pattern, r"powf(\1, \2)", result)

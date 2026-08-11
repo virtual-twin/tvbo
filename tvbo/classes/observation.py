@@ -977,8 +977,7 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
 
     # pipeline: the heart of a curated observation model. Fill only if absent so a recipe that hand-declares its own pipeline is never silently overridden.
     if data.get("pipeline") and not getattr(obs, "pipeline", None):
-        # A pipeline step is a FunctionCall (it may reference a function by name, inline a callable, or carry its own equation/source_code) — not a bare
-        # Function. Building it as Function drops `function:`/`callable:` steps.
+        # A step is a FunctionCall, never a bare Function: as Function, `function:`/`callable:` are dropped.
         obs.pipeline = [
             step if isinstance(step, tvbo_datamodel.FunctionCall) else tvbo_datamodel.FunctionCall(**step)
             for step in data["pipeline"]
@@ -1007,8 +1006,6 @@ def populate_observation_from_iri(obs, functions_sink=None) -> bool:
                 params[pname] = tvbo_datamodel.Parameter(name=pname, value=pval)
         obs.parameters = params
 
-    # functions: a curated model may ship the helper functions its pipeline calls by name (an HRF kernel, a downsample, a convolution). Observation carries no
-    # `functions` slot — codegen reads them from the experiment — so hand them to the caller's sink to merge into `experiment.functions` (non-destructively: a function the experiment already declares wins).
     if data.get("functions") and functions_sink is not None:
         for fname, fdef in data["functions"].items():
             if fname in functions_sink:
@@ -1097,11 +1094,7 @@ class Observation(tvbo_datamodel.Observation):
             return monitors[0]
         raise RuntimeError("Template produced no monitors")
 
-    # ------------------------------------------------------------------ #
-    # Structural axioms: derive observation type from pipeline structure  #
-    # ------------------------------------------------------------------ #
-
-    # Operation-type labels and face-colors for flowchart boxes
+    # Operation-type labels and face colours for flowchart boxes.
     _OP_COLORS = {
         "kernel": "#dbeafe",  # generates a function over time (e.g. HRF)
         "convolution": "#fef9c3",  # folds two signals (e.g. fftconvolve)
@@ -1150,10 +1143,6 @@ class Observation(tvbo_datamodel.Observation):
                 return dominant
         return "transform"
 
-    # ------------------------------------------------------------------ #
-    # Public plot entry-point                                              #
-    # ------------------------------------------------------------------ #
-
     def plot(self, ax=None, **kwargs):
         """Plot a visual summary of this observation model.
 
@@ -1188,10 +1177,6 @@ class Observation(tvbo_datamodel.Observation):
         if return_fig:
             plt.close(fig)
             return fig
-
-    # ------------------------------------------------------------------ #
-    # Kernel plot: evaluates any pipeline step that has a time_range      #
-    # ------------------------------------------------------------------ #
 
     def _plot_kernel(self, ax, **kwargs):
         """Evaluate and plot the first pipeline step that has a ``time_range``."""
@@ -1255,10 +1240,6 @@ class Observation(tvbo_datamodel.Observation):
         ax.set_xlabel("t (s)")
         ax.set_ylabel("kernel (norm.)")
         ax.axhline(0, color="gray", linewidth=0.5, linestyle="--")
-
-    # ------------------------------------------------------------------ #
-    # Flowchart: annotated pipeline steps                                  #
-    # ------------------------------------------------------------------ #
 
     def _plot_pipeline_flowchart(self, ax, **kwargs):
         """Draw pipeline steps as a vertical flowchart.

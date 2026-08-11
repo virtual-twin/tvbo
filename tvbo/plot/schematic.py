@@ -522,8 +522,7 @@ class PopulationSchematic:
             x0, x1, y0, y1 = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2
         ax.set_xlim(x0, x1)
         ax.set_ylim(y0, y1)
-        # "tight": box shrinks to the content (no whitespace, panels may differ in width).
-        # "width": box keeps its given width, data limits pad (mosaic panels stay equal width).
+        # "tight" shrinks the box to its content; "width" keeps the width and pads the data limits.
         adjustable = "datalim" if fit == "width" else "box"
         ax.set_aspect("equal", adjustable=adjustable)
         ax.axis("off")

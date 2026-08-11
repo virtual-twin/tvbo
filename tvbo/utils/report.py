@@ -1,21 +1,11 @@
-#  report.py
-#
-# Created on Mon Aug 07 2023
-# Author: Leon K. Martin
-#
-# Copyright (c) 2023 Charité Universitätsmedizin Berlin
-#
+# Copyright © 2023 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-Report Module
-=============
+"""The shared toolkit every TVBO report is built from.
 
-This module provides utilities for generating reports related to model parameters and configurations.
+Two groups of helpers live here. The **replication-report toolkit** does the handful of things every replication report does: format a number that may not have been computed, open a result or analysis container, read a value off the recipe, embed a figure with the published original beside it, caption it from the recipe's own metadata, and score the run against the targets written before it. The **cell formatters** build the tables the model, experiment and coupling Mako templates emit.
 
-.. moduleauthor:: Leon K. Martin
-
-Functions:
-----------
+Both live here once, so a report holds only what is specific to its study — its metrics — and ten reports cannot drift apart on the parts they share.
 """
 
 import operator
@@ -220,9 +210,7 @@ def read_md_tables(source) -> list[MarkdownTable]:
     return tables
 
 
-# ── The replication-report toolkit ──────────────────────────────────────────
-# Every replication report does the same handful of things: format a number that may not have been computed, open a result or analysis container, read a value off the recipe, embed a figure with the published original beside it, caption it from the recipe's own metadata, and score the run against the targets written before it. Those live here, once, so a report holds only what is specific to its study -- its metrics -- and ten reports cannot drift apart on the parts they share.
-
+# ── The replication-report toolkit ──
 
 _FIG_LABEL_RE = re.compile(r"(EDF|Fig)(\d+)")
 
@@ -744,8 +732,7 @@ def show_report_figure(ours, theirs=None, **kwargs) -> None:
     display(Image(str(staged)))
 
 
-# ── Report cell formatters ──────────────────────────────────────────────────
-# Shared by the model / experiment / coupling report templates so the table building lives here (the adapter) rather than being duplicated in each Mako.
+# ── Report cell formatters ──
 
 
 def slot(obj, name, default=None):
@@ -1974,7 +1961,6 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
 
     report_table = pd.DataFrame()
     report_table.index.name = "Parameter"
-    # for k, v in param_settingconfig.items():
     for k in sorted(param_setting.config, key=operator.attrgetter("name")):
         v = param_setting.config[k]
 
@@ -1994,7 +1980,6 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
             .to_latex(
                 position="h!",
                 hrules=True,
-                # float_format="%.2f",
                 caption=(long_caption, short_caption),
                 label="tab_{}_setting".format(param_setting.model.label.first(), **kwargs),
             )

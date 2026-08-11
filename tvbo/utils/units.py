@@ -684,8 +684,7 @@ def normalize_unit(raw):
 
 # ── UnitEnum → display symbol ────────────────────────────────────────
 
-# For compound underscore forms, map to the conventional notation
-# Uses SymPy-parseable symbols (no unicode) so equations render in any context
+# Compound underscore forms in conventional notation, SymPy-parseable so they render anywhere.
 _DISPLAY_SYMBOLS = {
     "per_s": "1/s",
     "per_ms": "1/ms",

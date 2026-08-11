@@ -10,8 +10,7 @@ Usage:
 
 from tvbo.datamodel.schema import Network  # noqa: E402
 
-# number_of_regions is a deprecated alias for number_of_nodes.
-# Defined here (not in the generated file) so it survives make gen-linkml.
+# Defined here rather than in the generated file, so it survives `make gen-linkml`.
 Network.number_of_regions = property(
     lambda self: self.number_of_nodes,
     lambda self, v: setattr(self, "number_of_nodes", v),
@@ -19,14 +18,7 @@ Network.number_of_regions = property(
 
 from .schema import *  # noqa: E402, F401, F403
 
-# ── UnitEnum: normalize aliases on construction ──────────────────────
-# The auto-generated __post_init__ has two coercion patterns:
-# self.unit = UnitEnum(raw_string)              — constructor self.distance_unit = getattr(UnitEnum, text)  — attribute access
-#
-# Problems: (1) constructor rejects human-readable aliases ("s^-1"), (2) getattr returns PermissibleValue, not UnitEnum, which breaks on as_dict() round-trips (JAX tree_unflatten).
-#
-# Fix: patch __init__ to coerce any input to a canonical string key.
-
+# Patched to canonicalise any input: the generated coercions reject aliases and leak PermissibleValue.
 from tvbo.datamodel.schema import UnitEnum as _UnitEnum  # noqa: E402
 from tvbo.utils.units import normalize_unit as _normalize_unit  # noqa: E402
 
@@ -80,8 +72,7 @@ def _unit_enum_init(self, code):
 
 _UnitEnum.__init__ = _unit_enum_init
 
-# Patch metaclass so getattr(UnitEnum, "mm") returns a UnitEnum instance instead of a bare PermissibleValue. The auto-generated __post_init__ uses `self.distance_unit = getattr(UnitEnum, self.distance_unit)`.
-# Without this patch, that stores a PermissibleValue which as_dict() serializes to a huge dict that becomes an unparseable JsonObj on round-trip.
+# So `getattr(UnitEnum, "mm")` yields a UnitEnum, not a PermissibleValue that as_dict() blows up.
 _UnitEnumMeta = type(_UnitEnum)
 _meta_orig_getattribute = _UnitEnumMeta.__getattribute__
 

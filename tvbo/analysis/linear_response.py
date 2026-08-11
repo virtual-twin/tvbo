@@ -1,10 +1,6 @@
-#
-# Module: linear_response.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 
 """
 Linear response
@@ -59,9 +55,7 @@ def _dfun_symbols(model):
 
     from tvbo.classes.equation import substitute_function_in_state_equations
 
-    # Parse every rhs against the model's symbol scope (the canonical parse path, as in
-    # Dynamics) so parameter names that collide with sympy builtins — e.g. `gamma`,
-    # `beta` — resolve to Symbols, not functions.
+    # Against the model's symbol scope, so a name like `gamma` resolves to a Symbol not a function.
     scope = model.get_symbolic_elements()
     dvars = {n: parse_eq(dv.equation, local_dict=scope) for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
     zero_local = {sp.Symbol(c): 0 for c in local_cpls}

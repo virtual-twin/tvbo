@@ -1,10 +1,6 @@
-#  graph.py
-#
-# Created on Mon Aug 07 2023
-# Author: Leon K. Martin
-#
-# Copyright (c) 2023 Charité Universitätsmedizin Berlin
-#
+# Copyright © 2023 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
+
 """
 # Graph-based representation of the ontology.
 
@@ -507,23 +503,15 @@ def model2graph(model) -> nx.MultiDiGraph:
 
         for isa in cls.is_a:
             if isinstance(isa, owl.ThingClass):
-                # print(cls, "is_a", isa)
                 G.add_edge(cls, isa, type="is_a")
 
             if isinstance(isa, owl.Restriction) and isa.value in model.descendants():
                 if isinstance(isa.property, owl.prop.DataPropertyClass):
                     continue
-                # print(cls, isa.property.name, isa.value)
                 G.add_edge(cls, isa.value, type=isa.property.name)
 
-        # if isinstance(isa, owl.Restriction) and isa.value in model.descendants(
-        #     include_self=False
-        # ):
-
     G = G.subgraph(include_nodes)
-    # isolated = list(nx.isolates(G))
     G = G.copy()
-    # G.remove_nodes_from(isolated)
 
     return G
 

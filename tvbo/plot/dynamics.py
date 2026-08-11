@@ -1,10 +1,6 @@
-#
-# Module: dynamics.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """General-purpose plotting for ``Dynamics`` objects.
 
 A single entry point ``plot_dynamics`` (also exposed as ``Dynamics.plot``) that selects between several ``kind`` of representations: time series,
@@ -455,8 +451,7 @@ def _kind_phaseplane(
         ax.legend(handles=proxies, loc="best", fontsize="small", frameon=False)
 
     if show_fixed_points:
-        # Detect fixed points by sign-change crossings in both U and V.
-        # Robust grid-based heuristic: cells where U and V both straddle 0.
+        # A grid heuristic: fixed points are cells where U and V both straddle 0.
         from scipy.optimize import fsolve
 
         f = dynamics.execute(format="python")

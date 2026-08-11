@@ -15,7 +15,6 @@ import numpy as np
 
 import lems.api as lems
 
-# WD = abspath(dirname(__file__))
 np.random.seed(1312)
 
 

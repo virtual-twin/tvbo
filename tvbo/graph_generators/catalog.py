@@ -45,9 +45,6 @@ def load_matrix(source: str) -> np.ndarray:
     raise RuntimeError(f"Could not extract a 2-D weights matrix from source {source!r}")
 
 
-# --------------------------------------------------------------------------- #
-# Public convenience: materialise a named curated generator directly.          #
-# --------------------------------------------------------------------------- #
 def _load_generator_entry(name: str) -> dict:
     import yaml
 

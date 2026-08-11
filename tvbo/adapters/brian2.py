@@ -145,8 +145,7 @@ def _membrane_noise_sigma(v_sv):
     sigma = noise_sigma(nz)
     if not sigma:
         return None
-    # The unit belongs to whichever spelling carried the value; defaulting to the
-    # `intensity` slot's unit would stamp mV on a `parameters: {sigma: {unit: nA}}`.
+    # The unit belongs to whichever spelling carried the value, not always `intensity`.
     source = normalize_params(getattr(nz, "parameters", None)).get("sigma") or getattr(nz, "intensity", None)
     return float(sigma), str(getattr(source, "unit", "") or "mV")
 
@@ -402,8 +401,7 @@ class Brian2Adapter(BaseAdapter):
             "probes": probes,
             "duration_ms": duration_ms,
             "dt_ms": dt_ms,
-            # Resolve the RNG seed once, here, from the recipe. The rendered script emits
-            # ``seed(...)`` from this value and ``run()`` falls back to it, so both paths build seed-identical random connectivity by default (an explicit ``run(seed=...)`` wins).
+            # Resolved once here, so the rendered script and run() build identical connectivity.
             "seed": getattr(getattr(exp, "execution", None), "random_seed", None),
         }
 
@@ -648,8 +646,7 @@ class Brian2Adapter(BaseAdapter):
         gkey = f"{prefix}_from_{src_pop}_to_{tgt_pop}"
         gvar = f"gsyn_{gkey}"
 
-        # ── connection spec as connect() kwargs (Brian2 has no allow_self_connections:
-        # exclude autapses via a condition). Kept structured so the run path and the generated script build identical connectivity. ──
+        # Brian2 has no allow_self_connections, so autapses are excluded by condition.
         if rule_norm == "one_to_one":
             connect = {"j": "i"}  # source i -> target i
         else:  # random (fixed-probability Erdos-Renyi)

@@ -240,8 +240,7 @@ def reconcile_by_label(
         if vals.dtype.kind not in ("U", "S", "O"):
             continue
         mapped = [alias_map.get(str(v), str(v)) for v in vals]
-        # Without an explicit node_dims restriction, only reconcile an axis that is actually a node axis — its labels overlap the model's node labels. A labelled
-        # NON-node axis (e.g. a 'population'/'variable' coord) is left untouched rather than forced through `.sel(model_labels)` (which would raise).
+        # Only a real node axis, identified by overlapping labels; forcing another through .sel raises.
         if node_dims is None and not (model_set & set(mapped)):
             continue
         da = da.assign_coords({d: mapped})

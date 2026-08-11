@@ -338,7 +338,6 @@ def graph_from_table(df_tvbgo=df_tvbgo):
         go_term = r["term"].lower()
         tvb_clust = r["TVB-O_function_clustered"].lower()
         param = r["TVB-Function_detailed"]
-        # tvb_clust = rename2clust(tvb_clust)
 
         add_node(go_term, g, type="GO-term", **{"go_id": r["Go_id"]})
         add_node(tvb_clust, g, type="parameter_type")
@@ -360,7 +359,6 @@ def graph_from_table(df_tvbgo=df_tvbgo):
         add_node(go_term, g, type="GO-term")
         add_node(kw, g, type="parameter_type")
         g.add_edge(go_term, kw, type="go2kw")
-        # g.add_edge(go_term, 'GO', type='go2kw')
 
     for i, r in kw2tvbo.iterrows():
         param = r.Class

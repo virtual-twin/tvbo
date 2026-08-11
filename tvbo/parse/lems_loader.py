@@ -231,7 +231,6 @@ def import_lems_model(lems_file, model_name):
     # Coupling Functions
     for cf_name, cf in data.get("coupling_functions", {}).items():
         cf_name = cf_name + model_suffix.replace("_", "_c")
-        # print(cf_name)
         with onto:
             cf_class = type(
                 cf_name,

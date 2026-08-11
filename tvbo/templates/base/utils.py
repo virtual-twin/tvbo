@@ -261,10 +261,7 @@ def needs_scipy_special(model, fmt):
     return False
 
 
-# ── Distribution utilities ───────────────────────────────────────────────────
-# Reusable across all backends (Julia/NetworkDynamics, JAX, NumPy, PyRates, …)
-
-
+# ── Distribution utilities, reusable across every backend ──
 def collect_sv_distributions(model):
     """Collect state variables that have a distribution for random ICs.
 
@@ -371,10 +368,7 @@ def _sample_numpy(name, lo, hi, dist, mod="np"):
     return f"rng.uniform({lo}, {hi}, size=n_nodes)"
 
 
-# ── Graph generator utilities ────────────────────────────────────────────────
-# Database-driven dispatch: each GraphGenerator type lives as a YAML file in tvbo/database/graph_generators/<Type>.yaml, with its per-backend bindings declared there. No hard-coded Python tables — adding a new generator is a new YAML file, possibly plus a Python materialiser in tvbo.graph_generators.
-
-
+# ── Graph generator utilities: dispatch is database-driven, one YAML per generator type ──
 def _get_gen_params(gen):
     """Extract parameter values from a GraphGenerator as a dict."""
     params = getattr(gen, "parameters", None) or {}

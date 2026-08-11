@@ -458,8 +458,7 @@ class PyRatesAdapter(BaseAdapter):
             ax = Bunch(name=ref, n=len(values), explored_values=values, key=grid_key)
             axes.append(ax)
 
-            # Resolve the target dynamics: prefer the class named by the prefix (so
-            # `A.w` and `B.w` reach their own nodes), else the first dynamics that declares the parameter, else the first dynamics.
+            # Prefer the class the prefix names, so `A.w` and `B.w` reach their own nodes.
             py_name = PYRATES_REPL.get(param_name, param_name)
             resolved = None
             if dyn_class and dyn_class in dynamics_dict and param_name in (dynamics_dict[dyn_class].parameters or {}):

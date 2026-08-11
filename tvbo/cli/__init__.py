@@ -8,8 +8,7 @@ from __future__ import annotations
 
 import typer
 
-# Shared helper sub-modules used by the verb modules below (which do
-# ``from . import _common`` / ``_workflow`` at import time). Importing them here first binds them on the package so those relative imports resolve by attribute.
+# Bound on the package first, so the verb modules' relative imports resolve by attribute.
 from . import _backends, _common, _workflow  # noqa: F401
 
 from . import (

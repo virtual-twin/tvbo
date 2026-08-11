@@ -15,13 +15,7 @@ import typer
 logger = logging.getLogger("tvbo.cli")
 
 
-# SPEC resolution
-# A SPEC is one of:
-#   * a path-like (`./foo.yaml`, `/abs/path`, `file://...`)
-#   * a CURIE (`dynamics:JansenRit`, `study:Schirner2023`)
-#   * a bare DB name (`JansenRit`)
-# C0/C1 supports the local cases only; HTTP / platform are added in C2/C3.
-
+# A SPEC is a path, a CURIE (`dynamics:JansenRit`), or a bare DB name; local cases only for now.
 _CURIE_TO_CLASS = {
     "study": "SimulationStudy",
     "experiment": "SimulationExperiment",

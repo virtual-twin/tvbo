@@ -1,8 +1,6 @@
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """
 OpenMINDS JSON-LD conversion utilities for TVBO.
 
@@ -53,8 +51,7 @@ OPENMINDS_CONTEXT = {
 
 # Type Mappings: Single Source of Truth
 
-# Map LinkML/TVBO class names to existing openMINDS types (namespace:Type)
-# These will NOT generate new schemas - use the existing type directly
+# Existing openMINDS types, used directly rather than generating a new schema.
 EXTERNAL_TYPE_MAPPINGS: dict[str, str] = {
     # SANDS types
     "BrainAtlas": "sands:BrainAtlas",
@@ -77,8 +74,7 @@ EXTERNAL_TYPE_MAPPINGS: dict[str, str] = {
     "SoftwareVersion": "core:SoftwareVersion",
     "QuantitativeValue": "core:QuantitativeValue",
     "QuantitativeValueRange": "core:QuantitativeValueRange",
-    # Computation types (simulation environment)
-    # Note: We generate our own SoftwareEnvironment with extended fields
+    # Computation types; SoftwareEnvironment is generated with extended fields instead.
 }
 
 # Map TVBO class names to openMINDS types (tvbo namespace)
@@ -283,10 +279,6 @@ def _from_openminds_value(value: Any, target_type: type | None = None) -> Any:
         # If it has @type, try to instantiate the appropriate class
         if "@type" in value:
             value["@type"]
-            # For now, just return the cleaned dict
-            # Subclasses can handle specific type instantiation
-            return {k: _from_openminds_value(v) for k, v in cleaned.items()}
-
         return {k: _from_openminds_value(v) for k, v in cleaned.items()}
 
     return value

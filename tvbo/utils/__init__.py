@@ -1,10 +1,6 @@
-#  utils.py
-#
-# Created on Mon Aug 07 2023
-# Author: Leon K. Martin
-#
-# Copyright (c) 2023 Charité Universitätsmedizin Berlin
-#
+# Copyright © 2023 Charité Universitätsmedizin Berlin.
+# SPDX-License-Identifier: EUPL-1.2
+
 """
 Utilities Module for TVB-O
 ==========================
@@ -486,7 +482,6 @@ def format_pytree_as_string(
 
     # Check if the object is a JAX array
     if isinstance(pytree, (jnp.ndarray, np.ndarray)):
-        # result.append(f"{current_prefix}{name}: Array({shape_str}, {dtype_str})")
         if show_array_values:
             result.append(f"{current_prefix}{name}: {pytree}")
         else:
@@ -564,8 +559,7 @@ def format_pytree_as_string(
             result.append(f"{current_prefix}{name}: {type(pytree).__name__} (unknown structure)")
 
     except Exception:
-        # If we can't flatten it as a pytree, treat it as a leaf
-        # For strings, display the string value if not filtering
+        # Not flattenable as a pytree, so it is a leaf.
         if isinstance(pytree, str):
             if not show_numerical_only:
                 result.append(f'{current_prefix}{name}: "{pytree}"')

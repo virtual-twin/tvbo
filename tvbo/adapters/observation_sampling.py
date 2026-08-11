@@ -41,9 +41,8 @@ def tvb_iround(value: float) -> int:
     return int(rounded) + (rounded > 0)
 
 
-# Backwards/dual name: the tvboptim runtime historically called this
-# ``_tvb_iround``. Keep an alias so imports of either name resolve here.
 _tvb_iround = tvb_iround
+"""Alias: the tvboptim runtime historically called this `_tvb_iround`."""
 
 
 def _to_numeric(value: Any) -> Any:

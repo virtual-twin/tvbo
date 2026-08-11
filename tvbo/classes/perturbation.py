@@ -140,7 +140,6 @@ class Stimulus(tvbo_datamodel.Stimulus):
 
     def __init__(self, **kwargs):
 
-        # if self.equation:
         #     eq, params = self.get_expression()
         if "label" not in kwargs:
             kwargs["label"] = kwargs.get("name", "Stimulus")
@@ -298,7 +297,6 @@ class Stimulus(tvbo_datamodel.Stimulus):
                 namespace = {}
                 exec(code, namespace)
                 stim_func = namespace[self.label]
-                # stim_func = lambdify("t", eq, modules="numpy")
             elif self.dataLocation:
                 stim_func = load_acoustic_stimulus_from_audiofile(self.dataLocation, **kwargs)
             return stim_func

@@ -23,8 +23,6 @@ ORIG = ROOT / "original_study" / "img"
 # paper figure number -> its reproduction PNG under output/figures/ (edit for your study).
 _REPRO = {
     1: FIGS / "fig01_topology.png",
-    # 5: FIGS / "tvbo_fig5.png",
-    # 8: FIGS / "tvbo_fig8.png",
 }
 
 

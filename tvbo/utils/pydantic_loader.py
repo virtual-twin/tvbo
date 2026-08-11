@@ -218,9 +218,6 @@ def normalize(data: dict, target_class: Union[str, Type[BaseModel], None] = None
     return out
 
 
-# --------------------------------------------------------------------------- #
-# Public validation / load API
-# --------------------------------------------------------------------------- #
 def _strip_unknown(model_cls: Type[BaseModel], data: Any) -> None:
     """Recursively drop keys not declared by ``model_cls`` (by field name or alias). Assumes ``data`` is already normalized (collections as keyed dicts)."""
     if not isinstance(data, dict) or not hasattr(model_cls, "model_fields"):

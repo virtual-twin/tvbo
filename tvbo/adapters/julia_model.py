@@ -183,8 +183,7 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
         else:
             derived_vars.append((dv.name, jl(dv.equation.rhs)))
 
-    # Parameters. A heterogeneous per-node parameter (value is a length-n_nodes array, e.g. the FIC-tuned J_i) is emitted as a Julia vector ``<name>_vec`` and gathered per node (``<name> = <name>_vec[i]``) at the top of the loop;
-    # scalar parameters (incl. a scalar default on a ``(n_nodes,)`` slot) stay scalar.
+    # A per-node parameter becomes a `<name>_vec` gathered at the top of the loop; scalars stay scalar.
     pval_parts, destructure_names, pernode_gather = [], [], []
     for p in model.parameters.values():
         if p.name in free_names:
@@ -206,16 +205,14 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     for s in model.state_variables.values():
         u0.extend([initial_value(s)] * n_nodes)
 
-    # Observables to record along the branch: every state variable plus any derived variable listed in the model's ``output`` (e.g. the firing rate
-    # H_e). Each is reduced across nodes to a max and a mean (see the record hook in the BifurcationKit template), so the branch plots e.g. max r_E vs G.
+    # Every state variable plus the model's `output`, each reduced across nodes to a max and a mean.
     dv_names = {name for name, _ in derived_vars}
     record_obs = list(sv)
     for o in [str(o) for o in (getattr(model, "output", None) or [])]:
         if o in dv_names and o not in record_obs:
             record_obs.append(o)
 
-    # ── Constraint-defined free-parameter blocks (FIC J_i etc.) ──
-    # Appended after the real state blocks: unpacked from the state vector, given a residual "dfun" (target_variable − target_value), seeded in u0 from the declared value, and recorded along the branch (so J_i(G) is available).
+    # Constraint-defined free parameters, appended after the state blocks with a residual dfun.
     n_sv = len(model.state_variables)
     for j, c in enumerate(constraints):
         pname, tv, tval = c["parameter"], str(c["target_variable"]), float(c["target_value"])

@@ -75,8 +75,6 @@ functional_models = [
     "DumontGutkin",
     "Epileptor2D",
     "Epileptor5D",
-    # "EpileptorCodim3",
-    # "EpileptorCodim3SlowMod",
     "EpileptorRestingState",
     "GastSchmidtKnosche_SD",
     "GastSchmidtKnosche_SF",
@@ -88,8 +86,6 @@ functional_models = [
     "Kuramoto",
     "LarterBreakspear",
     "MontbrioPazoRoxin",
-    # "ReducedSetFitzHughNagumo",
-    # "ReducedSetHindmarshRose",
     "ReducedWongWang",
     "ReducedWongWangExcInh",
     "SupHopf",
@@ -1185,12 +1181,8 @@ def add_spaces_around_math_chars(s) -> str:
         The string with a space added on each side of every `+`, `-`, `*`, `/`,
         or `=` that is not already surrounded by whitespace.
     """
-    # Define the pattern: any math character not already surrounded by spaces
-    # Math characters included here are +, -, *, /, and =
-    # You can add more characters if needed
     pattern = r"(?<!\s)([\+\-\*/=])(?!\s)"
 
-    # Replacement function: add spaces around the math character
     def repl(match):
         """Return the matched operator padded with a space on each side."""
         return f" {match.group(1)} "
@@ -1433,7 +1425,6 @@ def compare_models(model1, model2, by="ParameterCatalogue") -> pd.DataFrame:
                     df_comp.at[i, model2.label.first()] = k2.label.first().replace(model2_suffix, "")
                     df_comp.at[i, "Parameter Catalogue"] = ", ".join([i.label.first() for i in inters])
                     i += 1
-        # df_comp.sort_values(by=["Parameter Catalogue", model1.label.first()])
         df_comp = df_comp.groupby("Parameter Catalogue", as_index=False).agg(
             {model1.label.first(): join_set, model2.label.first(): join_set}
         )
@@ -1549,9 +1540,7 @@ def find_variables(var, model, type="all", include_synonyms=False, find_best_mat
     potential_variables = list(onto.search(label=f"{var}*"))
     if include_synonyms:
         potential_variables += list(onto.search(synonym=f"{var}*"))
-    # print(potential_variables)
     var_cls = intersection(scls, potential_variables)
-    # print(var_cls)
 
     if type != "all":
         var_cls = intersection(var_cls, onto.search(label=f"{type}*").subclasses())

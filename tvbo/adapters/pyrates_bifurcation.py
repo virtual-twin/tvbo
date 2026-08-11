@@ -232,9 +232,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             state_var_names = list(model.state_variables.keys())
             param_idx = self._populate_var_map(ode, eq_file, state_var_names)
 
-            # Guard: PyCoBi's _create_summary() crashes on NDIM=1 systems (KeyError: 'U(1)'). PyRates + AUTO-07p both handle 1-D scalar
-            # ODEs correctly; the bug is in PyCoBi's summary builder.
-            # See https://github.com/pyrates-neuroscience/PyCoBi
+            # PyCoBi's _create_summary() crashes on NDIM=1 (KeyError: 'U(1)'); PyRates and AUTO are fine.
             if len(state_var_names) < 2:
                 raise NotImplementedError(
                     f"The 'pyrates-bifurcation' backend cannot continue the "
@@ -249,8 +247,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
             # Numeric PAR index for the free parameter (for DataFrame extraction).
             icp = param_idx.get(pyrates_fp_name, pyrates_fp_name)
 
-            # Step 1: Time continuation to find equilibrium
-            # PAR(14) = time in model units (AUTO has no unit system)
+            # Time continuation to find the equilibrium; PAR(14) is time in model units.
             iss_duration = float(getattr(cont.initial_state, "duration", None) or 10000.0) if cont.initial_state else 10000.0
             t_sols, t_cont = ode.run(
                 c="ivp",
@@ -266,8 +263,7 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
                 STOP={"UZ1"},
             )
 
-            # Step 2: Parameter continuation from equilibrium
-            # Pass the parameter name — PyCoBi maps it via _var_map
+            # Parameter continuation from the equilibrium; PyCoBi maps the name via _var_map.
             auto_kwargs = self._cont_to_auto_kwargs(cont, pyrates_fp_name, p_min, p_max)
             p_sols, p_cont = ode.run(
                 origin=t_cont,

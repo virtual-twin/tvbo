@@ -753,9 +753,7 @@ def plan(
         if _exp is not None:
             _id = str(getattr(_exp, "id", _exp))
         else:
-            # Same WHERE-parsing rule as the runtime resolver (dataref.locate_container):
-            # only a last iri segment that *is* an experiment token (``exp-30`` / ``exp30`` /
-            # ``30``) names an in-study dependency. A curated / dataset iri that merely contains digits (``tvbo:dataset/HCP1200``, ``rec-avgMatrix_atlas-HCPMMP1``) yields None here, so it never registers a phantom edge on a non-existent experiment (which would deadlock the DAG on a rule that is never emitted).
+            # Only a final segment that IS an experiment token; a digit-bearing curated iri is not.
             from tvbo.data.dataref import experiment_id
 
             _id = experiment_id(getattr(ref, "iri", None))

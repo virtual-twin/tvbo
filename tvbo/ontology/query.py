@@ -1,10 +1,6 @@
-#
-# Module: query.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """SPARQL-based query helpers for the TVBO ontology.
 
 This module provides thin wrappers around owlready2's SPARQL engine and the low-level triple store to look up ontology classes and individuals by label,
@@ -140,8 +136,7 @@ def sparql_query(query_string: str, flatten_result: bool = True, world: Any = No
         The query results, flattened into a single list when `flatten_result`
         is `True`, otherwise the raw list of result rows.
     """
-    # ``world`` lets callers query an ontology other than the global default (e.g. the platform's generated individual-based ontology loaded in its own owlready2 World); defaults to the class-based runtime ontology.
-    # error_on_undefined_entities=False: optional clauses may reference annotation properties (e.g. tvbo:synonym) that are absent from the generated ontology; treat those as matching nothing rather than raising.
+    # An optional clause may name a property the generated ontology lacks; that matches nothing.
     world = world if world is not None else ontology.onto.world
     res: List[Any] = list(world.sparql(query_string, error_on_undefined_entities=False))
     return flatten_list(res) if flatten_result else res

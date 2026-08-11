@@ -1816,10 +1816,7 @@ def submit_kit(
         )
     if array is not None and array_throttle is not None:
         array = f"{array}%{array_throttle}"
-    # Provision the container-requirements layer BEFORE submitting, so a containerized kit runs with `tvbo workflow submit <archive>` and nothing else — no manual setup step.
-    # setup.sh is emitted whenever `requirements` are declared; it provisions them into a
-    # --system-site-packages venv (native, or on the container) and is idempotent (the venv
-    # is reused), so it is cheap to re-run.
+    # Before submitting, so a containerized kit needs no manual setup step; idempotent and cheap.
     _provision_env_layer(kit, dry_run=dry_run)
     _execute_emitted(
         eng,

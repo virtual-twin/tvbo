@@ -28,8 +28,7 @@ def _open_ds(path):
 _TEMPLATE = "bsplot/tvbo-bsplot-figure.py.mako"
 
 
-# --------------------------------------------------------------------------- registries
-# Extension points for the layer `transform` and the `custom` panel escape hatch. Core ships no built-ins: a study ships figure-specific transforms/panels in its code_source module and decorates them with these; the emitted plot.py imports that module so the registration fires before lookup (see Figure.code_modules).
+# A study registers its own transforms and custom panels from its code_source module.
 
 TRANSFORMS: dict = {}  # name -> fn(da) -> da       presentation-only layer reductions
 CUSTOM_PANELS: dict = {}  # name -> fn(fig, ax, ctx)   bespoke `custom` panel drawers
@@ -504,12 +503,12 @@ _ANNOT_LOC = {
     "center": (0.5, 0.5),
 }
 
-# How much larger than the body font a panel letter is drawn when the figure does not say.
-# Journals set panel letters well above the body size; matching the body size makes the letter read as another tick label.
 _PANEL_NUMBER_SCALE = 1.6
+"""How much larger than the body font a panel letter is drawn when the figure does not say.
 
-# Panel-number placement per corner -> kwargs for bsplot.panels.add_panel_number.
-# In its coord="axes" mode the label lands at (x_shift, 1.0 + y_shift), so ha/va anchor the text and the shifts hug it just inside the corresponding spine.
+Journals set panel letters well above the body size; at the body size the letter reads as another tick label.
+"""
+
 _PANEL_NUM_LOC = {
     "upper left": {"x_shift": 0.02, "y_shift": -0.02, "ha": "left", "va": "top"},
     "upper right": {"x_shift": 0.98, "y_shift": -0.02, "ha": "right", "va": "top"},
@@ -646,10 +645,6 @@ def _container_path(iri, base_dir: Path) -> str:
             if files:
                 return str(files[0].resolve())
     return ""
-
-
-# --------------------------------------------------------------------------- custom panels
-# The ``custom`` escape hatch: a registered ``fn(fig, ax, ctx)`` draws a bespoke sub-panel the grammar can't (yet) express. ``ctx`` carries the resolved layers (container paths, transforms, selectors already resolved by ``build_context``) plus the panel's ``opts``, so a callable opens the container(s) itself and draws exactly what the paper needs. A study registers its own the same way it registers a transform.
 
 
 def load_layer(layer: dict):

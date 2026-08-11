@@ -1,10 +1,6 @@
-#
-# Module: templater.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Generate TVBO Python classes from ontology definitions via Mako templates.
 
 Provides helpers that read model, parameter, state-variable, equation, coupling and integrator metadata from the ontology and render it into
@@ -134,8 +130,7 @@ def time_dependent_equations(model) -> list[str]:
     t = sp.Symbol("t")
     # Only integrated and derived quantities: a `functions:` entry taking an argument named `t` binds it as a parameter, so its rhs naming `t` is not time dependence.
     scoped = set(model.state_variables) | set(model.derived_variables) | set(model.derived_parameters)
-    # `t` denotes integrator time ONLY when the model does not itself declare a symbol named
-    # `t`. A model with a parameter/state literally called `t` (a time constant, threshold, …) means that symbol, not the reserved time — flagging it would block a valid, autonomous export.
+    # A model declaring its own `t` means that symbol, not the reserved integrator time.
     if "t" in scoped | set(model.parameters):
         return []
     return sorted(name for name, eq in (model.get_equations() or {}).items() if name in scoped and t in eq.rhs.free_symbols)
@@ -499,7 +494,6 @@ def model2class(
     for k, sv in state_variables.items():
         state_variables[k] = get_sv_info(sv)
     sv_dfuns = model_info["state_variable_dfuns"]
-    # if split_nonintegrated_variables:
     sv_dfuns.update(model_info["ninvar_dfuns"])
 
     if sub_ninvars:

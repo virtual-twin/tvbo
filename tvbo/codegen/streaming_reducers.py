@@ -116,10 +116,7 @@ def is_windowed_reducer(reducer_module: str | None, reducer_name: str, backend: 
     return qualified in backend_map or reducer_name in backend_map
 
 
-# ── Built-in reducer recipes (declarative YAML metadata) ────────────────────────
-# The concrete reducer recipes live as data in ``tvbo/database/reducers/*.yaml`` (state
-# + add/evict/resync assignment strings + emit); this loads and registers each for the backends and pipeline reducers it declares. No reducer realisation is hardcoded here — adding a reducer is a YAML file, not code. Backends that register nothing (tvb / pyrates
-# / julia today) fall back to the recompute path.
+# Recipes are data in `tvbo/database/reducers/*.yaml`; a backend registering none recomputes instead.
 _REDUCERS_DIR = pathlib.Path(__file__).resolve().parents[1] / "database" / "reducers"
 
 
