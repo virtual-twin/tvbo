@@ -79,6 +79,17 @@ Four jobs behave in ways that are not obvious from `.github/workflows/ci.yml`.
 
 **Skills sync guard.** Canonical skills live in `skills/` (maintainer, repo-only) and `tvbo/skills/canonical/` (user, shipped in the wheel). The rendered copies — `.claude/skills/`, `.github/instructions/`, `AGENTS.md` — are **generated** by `tvbo skills sync`. The guard fails on four things: *drift*, a rendered copy that no longer matches its source (run `tvbo skills sync` and commit the result); an *orphan*, a rendered copy with no canonical source, which is usually a personal skill committed by accident and belongs in `~/.claude/skills/`; a *leak*, a shipped user skill referencing a maintainer skill that `install` never ships, leaving external users a dead pointer; and a *bad extra*, `requires_extras` naming no real optional-dependency group. Only drift is repairable by `sync` — the other three are content problems it reports but never fixes.
 
+**A stacked PR gets no CI at all.** The `pull_request` trigger lists `main` and `dev`, so a PR based on another feature branch never fires it, and the whole stack stays unvalidated until the bottom one retargets. Run it by hand:
+
+```
+gh workflow run ci.yml --ref <your-branch>
+gh run list --branch <your-branch> --limit 1
+```
+
+A dispatched run is the full thing, native backend shards and Julia included — those are gated to `pull_request`, `push` to `main`, and `workflow_dispatch`, and nothing else.
+
+**The lint job installs nothing,** which makes it fast and makes it the one job that sees the repo exactly as a fresh clone does — no `tvbo/datamodel/`, because that is generated. That matters for import sorting: ruff resolves first-party by path, so an unbuilt tree would sort `tvbo.datamodel.*` as third-party while a built one sorts it first-party. `known-first-party = ["tvbo"]` in `pyproject.toml` declares it instead, and must stay. To check a gate the way CI sees it rather than the way your built worktree does, lint an export: `git archive HEAD | tar -x -C "$(mktemp -d)"`.
+
 **Schema validation** runs on every PR because it is fast (~20 s) and needs only `linkml` + `pyyaml`, so schema/database drift surfaces without waiting for the full install matrix.
 
 **Ontology reasoning** (ELK, and HermiT for full OWL-DL) runs ROBOT over the generated `tvb-o-struct.owl` to catch unsatisfiable classes and inverse/functional/cardinality regressions. It is `continue-on-error` while the generated ontology still has known cleanup pending.
