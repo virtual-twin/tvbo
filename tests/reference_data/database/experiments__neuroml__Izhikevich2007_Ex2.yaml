@@ -1,4 +1,5 @@
 id: 904
+part: main
 description: 'Reproduces NeuroML2 LEMS canonical example 2, izhikevichCell (2003).
   Tonic spiking variant simulated for 200ms at 0.005ms step. Uses constant I_ext=14
   (original has pulseGeneratorDL with 20ms delay).

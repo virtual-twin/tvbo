@@ -253,12 +253,10 @@ n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network
 _cs = getattr(network, 'conduction_speed', None)
 conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
 
-# Network.transforms is applied once at resolution time by
-# Network._apply_transform, so by the time `weights` reaches the
-# generated `run_experiment` it is already the transformed matrix.
-# No runtime inlining is needed.
-has_weight_transforms = False
-weight_transform_jax = []
+# `transforms:` -> JAX, applied in create_network on the RAW weights, so the kit is self-contained.
+from tvbo.templates.tvboptim.utils import weight_transform_codegen as _weight_transform_codegen
+weight_transform_jax, weight_transform_const_env = _weight_transform_codegen(network)
+has_weight_transforms = bool(weight_transform_jax)
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
@@ -1592,18 +1590,16 @@ def create_network(
     % endif
 ) -> Network:
 % if has_weight_transforms:
-    # Weight transforms
-    W = weights
-    W_min, W_max = jnp.min(W), jnp.max(W)
-    M = W
-    M_min, M_max = W_min, W_max
-    % for expr in weight_transform_jax:
+    # Declared weight `transforms:` applied to the raw weights (kit stays self-contained).
+% for _line in weight_transform_const_env:
+    ${_line}
+% endfor
+% for expr, matrix_env in weight_transform_jax:
+% for _line in matrix_env:
+    ${_line}
+% endfor
     weights = ${expr}
-    W = weights
-    M = W
-    W_min, W_max = jnp.min(W), jnp.max(W)
-    M_min, M_max = W_min, W_max
-    % endfor
+% endfor
 % endif
 
     % if use_length_graph:
@@ -3458,36 +3454,33 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endfor
     ]
 
-    # Sharded run: read each retained cell's actual parameter values back from
-    # the sliced grid itself, so the coordinates track the grid's own cell order
-    # regardless of how the Space orders axes internally (avoids positional
-    # mislabelling). Relabel to the exploration's axis names where unambiguous,
-    # else keep the grid keypath. The flat per-shard result is then
-    # self-describing and reassembles by value across tasks.
+    # Read each cell's actual parameter values back from the grid so coordinates track the
+    # grid's OWN cell order, never a positional reshape that assumes axes_info order: Space
+    # emits cells in pytree-leaf order, which differs from the declared axis order whenever
+    # axes live on different state sub-objects (dynamics/coupling/graph). Both the sharded
+    # subset (flat `point` dim) and the whole grid (keyed by value into the rectangular grid)
+    # consume these coords downstream.
     _cell_coords = None
 % if has_axes:
-    _shard = kwargs.get('shard')
-    if _shard is not None:
-        _df = grid.to_dataframe()
-        _bare_to_label, _network_label = {}, None
-        for _a in _axes_info:
-            _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
-            if str(_a.name).startswith('network.'):
-                _network_label = str(_a.name)   # network-scope axis (e.g. conduction_speed)
-        _cell_coords, _used = {}, set()
-        for _col in _df.columns:
-            _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], None)
-            if _label is None and _network_label is not None and str(_col).startswith('graph.'):
-                # The network.conduction_speed axis sweeps the DenseLengthGraph's `speed`
-                # leaf, which flattens to a keypath like "graph.2" whose bare name ("2")
-                # does not match the axis label — restore the friendly network name.
-                _label = _network_label
-            if _label is None:
-                _label = str(_col)
-            if _label in _used:
-                _label = str(_col)  # disambiguate a bare-name collision with the keypath
-            _used.add(_label)
-            _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
+    _df = grid.to_dataframe()
+    _bare_to_label, _network_label = {}, None
+    for _a in _axes_info:
+        _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
+        if str(_a.name).startswith('network.'):
+            _network_label = str(_a.name)   # network-scope axis (e.g. conduction_speed)
+    _cell_coords, _used = {}, set()
+    for _col in _df.columns:
+        _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], None)
+        # network.conduction_speed sweeps the DenseLengthGraph `speed` leaf, keypath "graph.2":
+        # its bare name ("2") matches no axis label, so restore the friendly network name.
+        if _label is None and _network_label is not None and str(_col).startswith('graph.'):
+            _label = _network_label
+        if _label is None:
+            _label = str(_col)
+        if _label in _used:
+            _label = str(_col)  # disambiguate a bare-name collision with the keypath
+        _used.add(_label)
+        _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
 % endif
 
 % if returns_bunch:
@@ -4208,7 +4201,7 @@ def run_experiment(
 % endif
 % endif
                         monitors=_stage_monitors,
-                        run_post_tuning=True,   # validate after EACH stage (r-trajectory)
+                        run_post_tuning=(_si == len(_stage_defs) - 1),   # post-fold only after the LAST stage (5x fewer giant post-folds; intermediate r-trajectory not computed)
 % if observation_ref:
                         observation_monitor=observations.${observation_ref},
 % endif
@@ -4652,8 +4645,7 @@ if __name__ == "__main__":
         region_labels = None
     logger.info("  Loaded network with %d nodes", weights.shape[0])
 % else:
-    # No BIDS directory configured, so nothing above defines these — they are the
-    # caller's to inject before running this module.
+    # No BIDS dir: the caller injects these (weights RAW — create_network applies transforms).
     weights = globals().get("weights")
     if weights is None:
         logger.error(

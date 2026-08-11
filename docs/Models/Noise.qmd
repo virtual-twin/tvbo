@@ -65,6 +65,29 @@ integration:
 
 The OU process has a time constant `ntau` controlling the autocorrelation.
 
+### Noise correlated across populations
+
+`Noise.covariance` together with `correlated_over` makes the noise driving several
+populations share a common component, integrated by `CorrelatedNoiseSolver`. The
+construction is a **linear mix** of a shared source $I_{CC}$ with an independent
+per-population source, not the variance-preserving rotation:
+
+$$I^{f}_{A} = \rho\,I_{CC} + (1-\rho)\,I_{A}, \qquad
+  I^{f}_{B} = \rho\,I_{CC} + (1-\rho)\,I_{B}$$
+
+The distinction matters, because the two differ in what they hold fixed. Writing
+$\sigma^2$ for each independent source's variance:
+
+| | linear mix (used here) | rotation $\xi_B = \rho\xi_A + \sqrt{1-\rho^2}\,\xi_I$ |
+|---|---|---|
+| differential noise $\operatorname{Var}(I^{f}_A - I^{f}_B)$ | $(1-\rho)^2\,2\sigma^2$, falling monotonically in $\rho$ | constant |
+| per-population amplitude $\operatorname{Var}(I^{f}_A)$ | $[\rho^2 + (1-\rho)^2]\,\sigma^2$, U-shaped with a minimum at $\rho = 0.5$ | constant |
+| realised A–B correlation | $\rho^2/[\rho^2 + (1-\rho)^2]$ | $\rho$ |
+
+So `covariance` sets the *mixing weight*, not the resulting correlation, and raising it
+reduces the differential drive between populations. Where a decision circuit's accuracy
+rises with $\rho$, that monotonic fall in differential noise is usually the cause.
+
 ## YAML Specification
 
 ```yaml

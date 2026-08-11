@@ -1,6 +1,7 @@
 id: 7
 references:
 - tvboptim TBPTT.qmd - truncated backprop-through-time
+part: main
 description: 'Truncated backprop-through-time for a chaotic Jansen-Rit network. Fits
   global coupling G to empirical FC; contrasts full-BPTT vs windowed (grad_horizon)
   gradients. Based on tvboptim TBPTT.qmd.

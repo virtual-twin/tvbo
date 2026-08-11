@@ -1,4 +1,5 @@
 id: 908
+part: main
 description: 'Export the Jansen-Rit model from the TVBO database as LEMS XML. 6 state
   variables with derived variables.
 

@@ -8,6 +8,7 @@ references:
 - Deco, G., Ponce-Alvarez, A., Mantini, D., Romani, G.L., Hagmann, P., & Corbetta,
   M. (2013). Resting-state functional connectivity emerges from structurally and dynamically
   shaped slow linear fluctuations. J Neurosci, 33(27):11239-11252.
+part: main
 description: 'Fitting functional connectivity using the two-population Reduced Wong-Wang
   model with explicit excitatory and inhibitory populations. Combines Feedback Inhibition
   Control (FIC) to maintain local E-I balance with EIB tuning to globally optimize

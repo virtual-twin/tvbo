@@ -5058,6 +5058,7 @@ classes:
         slots:
             - model
             - references
+            - part
         attributes:
             id:
                 identifier: true

@@ -1,4 +1,5 @@
 id: 907
+part: main
 description: 'Export the Wilson-Cowan model from the TVBO database as LEMS XML. Demonstrates
   derived variables and coupling inputs in LEMS.
 

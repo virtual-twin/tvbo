@@ -1,4 +1,5 @@
 id: 909
+part: main
 description: 'Export the 2D Epileptor model from the TVBO database as LEMS XML. Demonstrates
   ConditionalDerivedVariable for Piecewise expressions.
 

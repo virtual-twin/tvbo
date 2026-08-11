@@ -2378,7 +2378,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 # Run with detailed timing
                 t0 = time.perf_counter()
                 results = ns.run_experiment(
-                    weights=self.network.weights,
+                    weights=self.network.raw_weights_matrix,
                     distances=self.network.distances,
                     delays=delay_matrix,
                     region_labels=node_labels,
@@ -2394,7 +2394,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 return ExperimentResult(results, experiment_name=self.label, source=self)
             else:
                 raw_results = ns.run_experiment(
-                    weights=self.network.weights,
+                    weights=self.network.raw_weights_matrix,
                     distances=self.network.distances,
                     delays=delay_matrix,
                     region_labels=node_labels,

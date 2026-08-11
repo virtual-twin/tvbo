@@ -1,4 +1,5 @@
 id: 901
+part: main
 description: 'Reproduces NeuroML2 LEMS canonical example 9 (LEMS_NML2_Ex9_FN.xml).
   Single FitzHugh-Nagumo cell with external input I=0.8, simulated for 200s at 0.01s
   step size. Initial conditions V=0, W=0 match the NeuroML2 default (no OnStart block).

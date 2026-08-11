@@ -2827,6 +2827,23 @@ class Network(tvbo_datamodel.Network):
 
     @property
     def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
+        """Connection weights matrix with declared `transforms:` applied."""
+        return self._weights_matrix(apply_transforms=True)
+
+    @property
+    def raw_weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
+        """Weights BEFORE any `transforms:` are applied.
+
+        The tvboptim codegen path passes this and the generated ``create_network``
+        applies the declared transform inline, so a frozen/standalone kit is
+        self-contained: raw SC stays in the network file, the transform stays declared
+        in the spec, and the exact op is visible in the rendered script rather than
+        hidden in this runtime. Equals ``weights_matrix`` when no weight transform is
+        declared.
+        """
+        return self._weights_matrix(apply_transforms=False)
+
+    def _weights_matrix(self, apply_transforms: bool = True) -> Optional[Union[np.ndarray, JaxArray]]:
         """Connection weights matrix as numpy/JAX array.
 
         Returns cached matrix if available (from from_matrix), otherwise
@@ -2914,10 +2931,10 @@ class Network(tvbo_datamodel.Network):
                 return np.zeros((n, n), dtype=np.float64)
             return None
 
-        # Apply transforms targeting "weight"
-        for t in self.transforms or []:
-            if t.name == "weight":
-                W = self._apply_transform(W, t)
+        if apply_transforms:
+            for t in self.transforms or []:
+                if t.name == "weight":
+                    W = self._apply_transform(W, t)
         return W
 
     @property

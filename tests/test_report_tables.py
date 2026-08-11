@@ -88,19 +88,19 @@ def _rule_widths(table: str) -> list[int]:
 
 
 def test_a_long_column_earns_more_width_than_a_short_one():
-    widths = _rule_widths(md_table(["ID", "Why"], [["T1", "a" * 40]]))
+    widths = _rule_widths(md_table(["ID", "Why"], [["T1", "a" * 40], ["T2", "a" * 40], ["T3", "a" * 40]]))
     assert widths[1] > widths[0]
 
 
 def test_a_short_column_is_not_starved_beside_prose():
     """Proportional-to-content alone gives an `ID` column beside a prose column ~6 % of the
     text width — narrower than the word `T14`, so its cells collide with the next column."""
-    widths = _rule_widths(md_table(["ID", "Why"], [["T14", "b" * 44]]))
+    widths = _rule_widths(md_table(["ID", "Why"], [["T14", "b" * 44], ["T15", "b" * 44], ["T16", "b" * 44]]))
     assert widths[0] / sum(widths) >= 0.15
 
 
 def test_no_column_grows_past_the_cap():
-    assert max(_rule_widths(md_table(["A", "B"], [["x" * 200, "y"]]))) <= 44
+    assert max(_rule_widths(md_table(["A", "B"], [["x" * 200, "y"], ["x" * 200, "y"], ["x" * 200, "y"]]))) <= 44
 
 
 def test_a_path_to_a_markdown_file_is_read(tmp_path):

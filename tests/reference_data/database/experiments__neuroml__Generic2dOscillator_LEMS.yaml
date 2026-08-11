@@ -1,4 +1,5 @@
 id: 906
+part: main
 description: 'Export the full Generic2dOscillator model from the TVBO database as
   LEMS XML. This model generalises FitzHugh-Nagumo. All 13 parameters, coupling inputs,
   and 2 state variables (V, W) are exported.

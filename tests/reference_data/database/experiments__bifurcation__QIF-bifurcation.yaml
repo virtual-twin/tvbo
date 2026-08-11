@@ -1,4 +1,5 @@
 id: 104
+part: main
 description: Quadratic integrate-and-fire population model. Continuation of equilibria
   in the mean neural excitability η̄, reproducing the fold bifurcation diagram from
   Montbrió et al. (2015).

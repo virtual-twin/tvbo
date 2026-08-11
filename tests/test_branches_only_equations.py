@@ -104,10 +104,10 @@ def test_the_report_renders_the_branches(model: Dynamics):
 
 @pytest.mark.backend_core
 def test_equation_groups_carry_every_collection(model: Dynamics):
-    """`report.model_equations` resolves all three, so no template needs to parse."""
+    """`report.model_equation_groups` resolves all three, so no template needs to parse."""
     from tvbo.utils import report
 
-    groups = report.model_equations(model)
+    groups = report.model_equation_groups(model)
     assert [report.equation_name(eq) for eq in groups["state"]] == ["v"]
     assert [report.equation_name(eq) for eq in groups["derived"]] == ["gated"]
     assert [report.equation_name(eq) for eq in groups["derived_parameters"]] == ["scale"]

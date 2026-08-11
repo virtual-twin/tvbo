@@ -32,7 +32,7 @@ def format_aligned_equations(equations):
     joined = ' \\\\\n'.join(lines)
     return f"$$\n\\begin{{aligned}}\n{joined}\n\\end{{aligned}}\n$$"
 
-_equations = report.model_equations(model)
+_equations = report.model_equation_groups(model)
 state_equations = _equations['state']
 derived_variables = _equations['derived']
 derived_parameters = _equations['derived_parameters']

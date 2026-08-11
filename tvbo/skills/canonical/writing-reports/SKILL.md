@@ -94,17 +94,102 @@ the mathematics that runs. Pass **`citeformat="quarto"`** so the model's own ref
 out as inline `@key` citations (resolved by this document's `bibliography:`, merging into the
 one auto-appended list) instead of a second, redundant reference list embedded in the block:
 
+**A study renders its Methods ONCE, not once per experiment.** `STUDY.report("qmd")` writes
+the whole section: experiments sharing a model share its numbered equations and one symbol
+table, a variant contributes only its delta, and one table compares the experiments on what
+actually differs. Looping `experiment.render("markdown")` instead reprints the model verbatim
+for every experiment — Jansen1995's seven emitted 1209 lines and ~31 tables where the study
+call emits 136 and 3, with 115 lines identical between experiments 1 and 5.
+
 ```python
-print(EXP.dynamics.render("markdown", citeformat="quarto"))                    # equations only
-print(EXP.dynamics.generate_report(format="markdown", citeformat="quarto"))    # equations + parameter table
-print(CTRL.dynamics.render("markdown", baseline=EXP.dynamics, citeformat="quarto"))  # only the delta vs base
+print(STUDY.report("qmd", level=3))                        # whole Methods, deduplicated
+print(STUDY.report("qmd", level=3, part="supplementary"))  # the experiments demoted out of it
+print(EXP.dynamics.render("markdown", citeformat="quarto"))  # one model's equations, standalone
 ```
 
-Put `generate_report` in Methods so each auxiliary equation and every parameter checks
-one-to-one against the paper's equations and tables. Render a controlled variant relative
-to the base so only the changed terms appear. Because `citeformat="quarto"` emits the model's
-citekeys as `@key`, **every citekey the model references must exist in `references.bib`** — if a
-curated model cites `Tsodyks1998`, that entry has to be present or Quarto flags an unresolved key.
+Mark an experiment `part: supplementary` in the recipe to move its paragraph out of the main
+Methods; it keeps its row in the comparison table, and it still runs. `part` is placement
+only, and it defaults to `main` — an experiment you never mark is described in full.
+
+What the study call gives you that a loop cannot:
+
+- **Every equation numbered and referable** — state equations, derived variables, functions,
+  **and the coupling**: its assembled form, its pre/post decomposition and its summed inputs.
+  `equations="semantic"` (the default) anchors on model and variable
+  (`@eq-jansenrit1995-y3`), so a reference survives an experiment being inserted ahead of it;
+  `"sequential"` numbers them `#eq-4`; `"none"` leaves them bare. Plain `"markdown"` has no
+  anchor syntax and falls back to `\tag{n}`. Audit with the anchor *captured*, never with a
+  negative lookahead — `\$\$.+?\$\$(?!\s*\{#eq-)` backtracks past the closing delimiter to
+  satisfy the lookahead and reports whatever makes the check pass.
+- **One glossary per model**, `Symbol | Kind | Meaning | Value | Unit`, dense by construction —
+  state variables, parameters, derived parameters and the coupling's own symbols in one grid
+  rather than four tables whose columns do not overlap. A parameter an experiment sweeps shows
+  its range, not a value it never holds.
+- **Every table captioned and anchored**, which is what stops the LaTeX table counter drifting.
+
+The recipe's `description:` is printed verbatim, so **write it as the Methods prose you want** —
+it is the starting point of the manuscript. Do not restate in it what the report already
+derives (solver, step, duration, transient, node count, swept range): those are generated into
+the settings sentence, and a description that repeats them goes stale when the recipe changes.
+
+Because `citeformat="quarto"` emits the model's citekeys as `@key`, **every citekey the model
+references must exist in `references.bib`** — if a curated model cites `Tsodyks1998`, that
+entry has to be present or Quarto flags an unresolved key.
+
+## An equation is in the report because the code runs it
+
+Two rules, and the second is the one that gets broken:
+
+1. **Only equations the code actually integrates belong in the report.** Pang2023 set the
+   paper's PDE above a section explaining that TVBO does not integrate that PDE — the reader
+   sees mathematics that nothing runs, with no way to tell it apart from the rest.
+2. **No equation is typed. Ever.** A typed equation drifts from what executes, and drift is
+   invisible: the two look identical on the page.
+
+Assert it in the harness so a hand-written `$$…$$` fails the render rather than reaching a
+reader. The check strips executable cells first, so what `STUDY.report()` emits never trips it:
+
+```python
+bad = report.unrendered_equations("report.qmd")
+assert not bad, f"hand-written equations: {bad}"
+```
+
+When an equation is genuinely implemented but no renderer can reach it — a solver-level
+construction such as the correlated-noise mix in `CorrelatedNoiseSolver` — it is **framework
+behaviour, not study metadata**. Write it once in tvbo's own docs beside the slot that switches
+it on, and have the study cite that page. Do not copy it into each report.
+
+**An identity states nothing, so it gets no number.** `c_post = gx` says the summed input is
+used as it stands; `c_pre = local_states` says each source contributes its own state. Nine of
+eleven couplings across the studies had the first. Both now render as a clause. The same
+judgement applies to anything you write by hand: if an equation would be true of any model,
+it is prose.
+
+**Never typeset a placeholder or a reference as a symbol.** `local_states` and
+`incoming_states` are alias tokens `Coupling.symbolic()` substitutes; printed raw they typeset
+as a variable of that name. Sources are worse, because they are not all symbols: a state
+variable is, `phenotype:…#PMAT24_A_RTCR` and `network.observations.BoldCorrelation` are not.
+Pandoc rejected the first outright ("unexpected `#`") and passed it through as raw TeX; the
+second rendered as a product of variables named after its path segments. Wrap in `$…$` only
+what is a plain identifier; everything else is code.
+
+## Keep the recipe's own text publishable
+
+`STUDY.report()` prints each experiment's `label:` and `description:` verbatim, so **recipe
+text is report text** and the anti-slop standard below applies to it. Two habits to avoid:
+
+- **Do not open a label with the experiment's own number.** "Exp 30 — FIC+EIB tuning" under a
+  heading that already says "Experiment 30" prints the id twice; six of Schirner2023's ten read
+  that way. The renderer strips the prefix, but the recipe is the place to fix it.
+- **Give every parameter a `description:`.** It is the *Meaning* column of the symbol table, and
+  the renderer will not invent one — printing "y0" as the meaning of $y_0$ fills the cell
+  without informing anyone. Schirner2023 declares 36 of 49 parameters without one, so that
+  column, the one that decodes every symbol in its 28 equations, is 4 % full.
+
+**Generated headings carry their own anchors**, built from the model name or experiment id
+rather than the heading text. Quarto otherwise derives an identifier from recipe-authored
+words, which may hold anything: Cortes2013 labels an experiment with `I₀`, and the derived
+Typst label failed the compile with "unclosed label".
 
 ## State a negative result honestly
 
@@ -203,9 +288,11 @@ caption them from metadata wherever metadata exists.
 - A caption **defines its terms**. If a column says `core`/`extended` or `mech`/`dec`, the
   caption says what those mean; the reader should not have to find `targets.md`.
 
-**Uncaptioned `longtable`s still step LaTeX's table counter.** A Methods section that renders the
-recipe emits ~30 anonymous tables, so the first captioned table in Results comes out as
-"Table 34". Reset the counter where the recipe dump ends:
+**Uncaptioned `longtable`s still step LaTeX's table counter**, so a Methods section that emits
+anonymous tables pushes the first captioned table in Results out to "Table 34" — and the floats
+that took the numbers are invisible, so the document simply appears to start at 34.
+`STUDY.report()` captions and anchors every table it emits, which removes the cause. Reach for
+the counter reset only where a section genuinely emits anonymous tables you cannot caption:
 
 ````markdown
 ```{=latex}
@@ -213,16 +300,34 @@ recipe emits ~30 anonymous tables, so the first captioned table in Results comes
 ```
 ````
 
+Verify rather than assume: count `^: .*\{#tbl-` against the tables in the rendered `.tex`, and
+check the first number is 1. A single uncaptioned float is enough to shift every number after it.
+
 ## Tables a reader can actually read
 
 A replication report is mostly tables, and they are the first thing to go wrong. Build every
 one through `tvbo.utils.report.md_table` (never hand-write a pipe table with computed values),
-and hold to four rules.
+and hold to six rules.
 
+- **A small grid is a sentence.** A numbered, captioned float tells the reader something has to
+  be looked up, and journals cap how many a paper may carry — spending one on two numbers is a
+  waste of a scarce slot. `md_table` writes any grid below the threshold as prose instead
+  (`Exp 50 — Duration: 2000 ms; Exp 51 — Duration: 7000 ms.`), so this is automatic; the rule
+  matters when you are deciding whether to build a table at all. Pang2023 had a one-row float
+  announcing that a model declares one event.
 - **A table whose cells are sentences is not a table.** Four columns where two hold prose does
   not become readable by tuning widths — the prose columns starve the short ones and every row
   wraps to four lines. Write it as prose (see "Prose, not bullets" below). Reserve tables for
   short cells — IDs, numbers, verdicts, a clause — which is exactly what a scorecard is.
+- **A column filled by a tenth of the rows belongs outside the grid.** It widens the table for
+  every row to serve a few. Lift it into prose under the table, keyed by the row it describes.
+  Measure before deciding: per-column fill is one pass over the rendered rows. Two under-half
+  columns answering the *same* question merge into one that is mostly full — Schirner2023's
+  observation table had `Sampling` at 44 % and `Pipeline` at 47 %, and merging them into
+  `Reduction` took the grid from 34 % empty to 6 %.
+- **A value every row repeats says nothing.** State it once in the caption and drop the column.
+  `time_scale` defaults to `ms` in the schema, so `scale=ms` was printed on all 34 rows of one
+  observation table and all 29 of another — a default nobody chose, on every line.
 - **A verdict column needs its reason somewhere the reader reaches.** "T14 … out" beside the
   criterion it *would* have been judged against reads as a non-sequitur — the criterion explains
   a *failure*, never a *choice not to attempt* (see the three kinds of shortfall below). Keep a `Why it falls short` register in
@@ -433,6 +538,10 @@ below is distilled from the *anti-ai-slop editor* (a personal skill at
 skill stands alone — you do not need that skill installed. Before you call the report
 done, scan the prose against it and fix every hit. Target a slop score of 0–2 (0–1 clean,
 2–3 light, 4+ needs rework).
+
+Scan the **recipe** as well as the `.qmd`: labels and descriptions are printed verbatim into
+the Methods, so their prose is the report's prose. In one study every remaining em-dash after
+the generated text was cleaned came from the YAML.
 
 **Structural patterns to kill.**
 

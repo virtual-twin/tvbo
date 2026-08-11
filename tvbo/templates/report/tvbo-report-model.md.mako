@@ -82,7 +82,7 @@ symbol_names.update(model.symbol_map())
 _baseline = context.get('baseline', None)
 _delta = report.model_delta(model, _baseline) if _baseline is not None else None
 
-_equations = report.model_equations(model, delta=_delta)
+_equations = report.model_equation_groups(model, delta=_delta)
 state_equations = _equations['state']
 derived_variables = _equations['derived']
 derived_parameters = _equations['derived_parameters']

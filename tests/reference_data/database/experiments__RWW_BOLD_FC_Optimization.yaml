@@ -2,6 +2,7 @@ id: 2
 references:
 - Wong & Wang (2006) J Neurosci 26:1314-1328 - Reduced Wong-Wang model
 - Deco et al. (2014) J Neurosci 34:7886-7898 - Resting-state FC modeling
+part: main
 description: 'Fitting functional connectivity using the Reduced Wong-Wang model. Two-stage
   optimization: global parameters first, then regional heterogeneity. Based on tvboptim
   RWW.qmd tutorial.

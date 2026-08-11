@@ -1,4 +1,5 @@
 id: 9
+part: main
 description: 'Fit a delay-coupled SupHopf network to two competing targets — empirical
   FC and a spatial peak-frequency gradient — replicating tvboptim Hopf_Pareto_ParallelOpt.
   Stage 0: NSGA-II genetic pre-search over (G, a, log10 sigma). Stage 1: parallel

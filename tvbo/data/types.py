@@ -161,11 +161,16 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
     carries a multi-step time vector matching the leading remaining shape,
     so time-aggregated observations don't get a spurious ``time`` axis.
 
-    ``cell_coords`` (``{axis_name: per_cell_values}``) marks a sharded run: the
-    leading axis is a flat subset of grid points (one HPC array task's slice),
-    not the full Cartesian product. The result then gets a single ``point`` dim
-    with each axis's value hung on it as a coordinate, so the shard is
-    self-describing and reassembles by parameter value across tasks.
+    ``cell_coords`` (``{axis_name: per_cell_values}``) is each cell's actual parameter
+    values read back from the grid, in the grid's OWN emission order. It keys results by
+    value rather than by position, because a ``Space`` emits cells in pytree-leaf order,
+    which is NOT the ``axes_info`` order whenever the swept axes live on different state
+    sub-objects (dynamics/coupling/graph) — a plain positional reshape would then scramble
+    the surface. For the full Cartesian product each cell is placed into the rectangular
+    grid at the index its values map to (order-independent). For a flat subset (one HPC
+    array task's shard) the result instead gets a single ``point`` dim with each axis's
+    value hung on it as a coordinate, so the shard is self-describing and reassembles by
+    parameter value across tasks.
 
     ``dims`` are the payload's DECLARED per-cell axis names; supply them whenever the
     spec knows them (see :func:`_inner_dims`).
@@ -202,6 +207,21 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
         and all(s is not None for s in grid_sizes)
         and arr.shape[0] == int(np.prod(grid_sizes))
     )
+    # Full rectangular grid with per-cell coords: place each cell BY VALUE (see docstring).
+    if cell_coords is not None and _full_grid and grid_dims:
+        try:
+            _pos = [
+                np.abs(np.asarray(cell_coords[_n])[:, None] - np.asarray(grid_coords[_n])[None, :]).argmin(axis=1)
+                for _n in grid_dims
+            ]
+            _flat_idx = np.ravel_multi_index(tuple(_pos), tuple(grid_sizes))
+            if len(np.unique(_flat_idx)) == arr.shape[0]:
+                _rect = np.empty((int(np.prod(grid_sizes)),) + arr.shape[1:], dtype=arr.dtype)
+                _rect[_flat_idx] = arr
+                arr = _rect.reshape(tuple(grid_sizes) + arr.shape[1:])
+        except (KeyError, ValueError):
+            pass  # coords unmatchable -> fall through to the positional reshape (legacy)
+        cell_coords = None  # consumed: build the rectangular DataArray from grid_coords
     if cell_coords is not None or (grid_dims and not _full_grid):
         n_points = arr.shape[0]
         inner_shape = arr.shape[1:]
@@ -4234,7 +4254,7 @@ class TimeSeries:
         # Track all created files for summary
         created_files = {"net": [], "ts": [], "eq": [], "coord": []}
 
-        region_labels = list(self.space_labels) if len(self.space_labels) else None
+        region_labels = [str(label) for label in self.space_labels] if len(self.space_labels) else None
 
         # =====================================================================
         # 1. Export connectivity to net/ directory

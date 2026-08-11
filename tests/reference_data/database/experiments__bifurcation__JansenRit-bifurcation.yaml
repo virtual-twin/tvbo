@@ -1,4 +1,5 @@
 id: 103
+part: main
 description: Reproduce the bifurcation diagram from Jansen & Rit (1995) Figure 3.
   The external firing rate p (representing thalamic input) is the continuation parameter.
   Two fold bifurcations and a Hopf bifurcation delimit the oscillatory regime.

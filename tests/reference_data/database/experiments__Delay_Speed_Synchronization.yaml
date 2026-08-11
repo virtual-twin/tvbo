@@ -4,6 +4,7 @@ references:
   network synchronization
 - Yeung & Strogatz (1999) Phys Rev Lett 82:648 - time delay in the Kuramoto model
 - Kuramoto (1975) - coupled phase oscillators
+part: main
 description: 'Coupled Kuramoto phase oscillators on the Desikan-Killiany connectome.
   A sweep over the conduction speed varies the transmission delays (delays = tract
   length / speed) and measures the Kuramoto order parameter, reproducing the non-monotonic

@@ -1,4 +1,5 @@
 id: 903
+part: main
 description: 'Reproduces NeuroML2 LEMS canonical example 0, iafTauCell variant. Single
   leaky integrate-and-fire cell with spike/reset event. No external input — fires
   rhythmically because leakReversal > thresh. Simulated for 300ms at 0.005ms step.

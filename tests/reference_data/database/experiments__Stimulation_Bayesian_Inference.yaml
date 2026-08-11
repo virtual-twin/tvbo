@@ -1,6 +1,7 @@
 id: 8
 references:
 - tvboptim Stimulation_with_Bayesian_Inference.qmd
+part: main
 description: 'Recover stimulus amplitude and excitability I of a pulse-driven Generic2dOscillator
   from one noisy recording, via numpyro NUTS/MCMC. Three prior scenarios steer the
   posterior along the amplitude/excitability degeneracy ridge. Replicates tvboptim.

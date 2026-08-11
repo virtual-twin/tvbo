@@ -284,11 +284,24 @@ class CouplingBehaviour:
 
         return templater.format_code(rendered_code)
 
-    def report(self, format: str = "markdown", outputfile: str | None = None) -> str:
+    def report(self, format: str = "markdown", outputfile: str | None = None,
+               parameters: bool = True, equations=None) -> str:
         """Render a human-readable markdown (or pdf) report for this coupling.
 
         Includes pre/post expressions, the full assembled coupling equation
         (``Coupling.equation``), and the parameter table.
+
+        Args:
+            format: ``markdown``/``md`` or ``pdf``.
+            outputfile: Where to write the rendering, if anywhere.
+            parameters: Emit the parameter table. A host report that already
+                glossaries these symbols passes ``False`` — a study's Methods lists
+                them beside the model's, so the table here would repeat rows the
+                reader has just read, uncaptioned and unnumbered.
+            equations: A ``tvbo.utils.report.Equations`` to number and anchor the
+                coupling equation with. Without one it renders bare, and in a study
+                report that is the only unnumbered equation on the page — the reader
+                can cite every state equation and not the coupling that joins them.
         """
         from tvbo import templates
 
@@ -297,7 +310,7 @@ class CouplingBehaviour:
             raise ValueError("format must be one of: markdown, md, pdf")
 
         template = templates.lookup.get_template("report/tvbo-report-coupling.md.mako")
-        md = template.render(coupling=self)
+        md = template.render(coupling=self, parameters=parameters, equations=equations)
 
         if outputfile:
             if fmt == "pdf":

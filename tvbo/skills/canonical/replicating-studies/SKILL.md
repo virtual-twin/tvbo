@@ -78,6 +78,11 @@ subagent doing that phase alone.
    grep the prose for numeric literals and classify each as yours (compute it into `M`) or the
    paper's (quote it). A report can read as fully computed and still hide a typed peak or step
    size (see **writing-reports**).
+   The same rule governs **equations**, and here it is not asymmetric: an equation is in the
+   report because the code runs it, and it gets there by being rendered from the recipe. Never
+   typed — not even the paper's own, which is how Pang2023 came to set a PDF of a PDE above a
+   section explaining that TVBO does not integrate that PDE. Guard it in the harness with
+   `report.unrendered_equations("report.qmd")`.
 3. **A panel shows TVBO output or an honest placeholder — NEVER the paper's replotted
    source data.** Replotting the source arrays is a dev check that plotting *works*; it is
    never a deliverable panel (it passes off the paper's own numbers as your reproduction).
@@ -679,9 +684,10 @@ strip the `{python}` spans, regex the remainder for numbers, and classify every 
 prose that had been written the same afternoon.
 
 See **writing-reports** for the report mechanics: the IMRAD structure, the metrics cell
-that computes every number from the containers (nothing hand-typed), the native
-`EXP.dynamics.generate_report(..., citeformat="quarto")` equation and parameter render, the
-three-colour status callouts, the copyright-safe internal/public split, references as Quarto's
+that computes every number from the containers (nothing hand-typed), the whole Methods
+rendered in one call by `STUDY.report("qmd", level=3)` — deduplicated across experiments that
+share a model, every table captioned, `part: supplementary` demoting an experiment's paragraph
+without hiding it — the three-colour status callouts, the copyright-safe internal/public split, references as Quarto's
 auto-appended bibliography, the LaTeX rules, and the anti-slop prose standard. The templates
 it copies ship in this skill's `assets/`: `report.qmd.tmpl`, `report_internal.qmd.tmpl`, and
 `_quarto.yml.tmpl`. Copy all three into `report/` (as `report.qmd`, `report_internal.qmd`,
@@ -784,6 +790,10 @@ Replication-specific rules on top of that mechanics:
   (Phase 1.5), and the Phase-7 verification. Results holds the scorecard and the per-figure
   `ab()` calls; Discussion holds the NASEM framing, the mechanism of any negative result, and
   the accepted limitations.
+- **One `STUDY.report()` call writes the model half of Methods**, however many experiments the
+  recipe has — never a `for exp in EXPS: exp.render(...)` loop, which reprints the same model
+  once per experiment. Each experiment's own `description:` is what the section says about it,
+  so write that field as publishable prose in the recipe rather than editing the render.
 
 ## Phase 7 — Verify against an independent reference
 

@@ -1,4 +1,5 @@
 id: 905
+part: main
 description: 'Reproduces NeuroML2 LEMS canonical example 8, adExIaFCell. Bursting
   variant (adExBurst2) simulated for 300ms at 0.025ms step. Uses constant I_ext=800
   pA matching the pulse generator amplitude (0.8 nA).

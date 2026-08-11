@@ -5,10 +5,12 @@ helpers (YAML files, the tvbo database, openMINDS JSON-LD), citation
 formatting, and access to individual `SimulationExperiment`s.
 """
 
+import os
 from pathlib import Path
 
 from tvbo.utils import yaml_loader
 
+from tvbo import templates
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.classes import experiment
 from tvbo.utils import report
@@ -123,6 +125,81 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             The citation string resolved from the study's `key`.
         """
         return report.get_citation(self.key)
+
+    def experiment_ids(self) -> list:
+        """The declared experiment ids, in recipe order."""
+        return [getattr(e, "id", None) for e in (getattr(self, "experiments", None) or [])]
+
+    def report(
+        self,
+        format: str = "markdown",
+        part: str = "main",
+        level: int = 2,
+        equations: str = "semantic",
+        orient: str = "auto",
+        experiments=None,
+        outputfile: str | None = None,
+        derivative_notation: str = "dot",
+        mul_symbol: str | None = None,
+    ) -> str:
+        """Render one Methods section for the whole study.
+
+        Experiments that share a model share its equations and its symbol table; a model
+        that merely varies a sibling contributes only its delta. Everything the
+        experiments hold in common is stated once, and the comparison table carries only
+        what actually differs — so a seven-experiment study stops emitting seven copies
+        of the same six equations and three copies of the same parameter table.
+
+        Args:
+            format: ``markdown`` / ``md`` (``\\tag`` numbering), ``qmd`` (Quarto
+                ``{#eq-…}`` / ``{#tbl-…}`` anchors), or ``pdf``.
+            part: ``main``, ``supplementary`` or ``all`` — which experiments carry their
+                full paragraph, read from each experiment's declared ``part``. Every
+                experiment appears in the comparison table regardless, so a demoted one
+                is still visible; ``part`` never changes what runs.
+            level: Heading depth of the model sections, so the block nests under the
+                section that hosts it; experiments sit one level deeper.
+            equations: ``semantic`` anchors on model and variable (stable when an
+                experiment is inserted), ``sequential`` anchors on the number, ``none``
+                leaves equations unnumbered.
+            orient: ``auto`` keeps the experiment table narrow, or pin it with ``rows`` /
+                ``columns`` (where the *experiments* go) so the Methods keeps its shape.
+            experiments: Optional explicit ids to describe; defaults to all of them.
+            outputfile: Write the render here; the extension (``.md`` / ``.qmd`` /
+                ``.pdf``) overrides ``format``.
+            derivative_notation: ``dot`` for :math:`\\dot x`, anything else for ``dx/dt``.
+            mul_symbol: Passed to ``sympy.latex``.
+        """
+        ext_format = {".md": "markdown", ".markdown": "markdown", ".qmd": "qmd", ".pdf": "pdf"}
+        if outputfile:
+            ext = os.path.splitext(outputfile)[1].lower()
+            if ext not in ext_format:
+                raise ValueError("outputfile extension must be one of: .md, .qmd, .pdf")
+            format = ext_format[ext]
+        if format not in ("markdown", "md", "qmd", "pdf"):
+            raise ValueError("format must be one of: markdown, md, qmd, pdf")
+        if part not in ("main", "supplementary", "all"):
+            raise ValueError("part must be one of: main, supplementary, all")
+
+        ids = self.experiment_ids() if experiments is None else list(experiments)
+        render = templates.lookup.get_template("report/tvbo-report-study.md.mako").render(
+            experiments=[self.get_experiment(i) for i in ids],
+            part=part,
+            level=level,
+            fmt="qmd" if format == "qmd" else "markdown",
+            eqs=report.Equations(equations, "qmd" if format == "qmd" else "markdown"),
+            orient=orient,
+            derivative_notation=derivative_notation,
+            mul_symbol=mul_symbol,
+        )
+
+        if outputfile:
+            if format == "pdf":
+                report.to_pdf(render, outputfile)
+            else:
+                with open(outputfile, "w", encoding="utf-8") as fh:
+                    fh.write(render)
+        return render
 
     def get_experiment(self, experiment_id):
         """Retrieve a single experiment by its declared id."""

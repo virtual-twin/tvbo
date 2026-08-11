@@ -1,4 +1,5 @@
 id: 902
+part: main
 description: 'FitzHugh-Nagumo 1969 model matching NeuroML2 fitzHughNagumo1969Cell.
   Parameters from canonical NML2_AbstractCells.nml example. Uses TS=1ms (time_scale:
   ms) as defined in the ComponentType.
