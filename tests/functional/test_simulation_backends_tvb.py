@@ -2,13 +2,13 @@
 
 import pytest
 
-from tvbo.classes.experiment import SimulationExperiment
-from tvbo.classes.dynamics import Dynamics
 from tests.functional.simulation_backends_shared import (
+    _HAVE_TVB,
     TVB_MODEL_FILES,
     TVB_MODEL_IDS,
-    _HAVE_TVB,
 )
+from tvbo.classes.dynamics import Dynamics
+from tvbo.classes.experiment import SimulationExperiment
 
 # Models whose numba compilation on TVB is legitimately slow (huge erfc / quadrature expressions) and exceed the CI-wide per-test timeout. They are skipped on the non-TVB backends (see simulation_backends_shared._SKIP_NON_TVB) and kept here with a longer per-test budget.
 _TVB_SLOW = {"ZerlautAdaptationSecondOrder"}

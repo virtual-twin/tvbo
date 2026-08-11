@@ -79,7 +79,7 @@ def test_it_is_built_once_however_many_accessors_ask(producer_module):
 
     net = _network(_call("ring", n=4))
     net.matrix("weight")
-    net.weights
+    _ = net.weights
     net.matrix("weight")
     assert len(edge_producers.CALLS) == 1
 
@@ -119,7 +119,7 @@ def test_a_failed_producer_is_retried_rather_than_latched(producer_module):
     with pytest.raises(ValueError):
         net.matrix("weight")
     with pytest.raises(ValueError, match="returned nothing"):
-        net.weights
+        _ = net.weights
 
 
 def test_an_edge_without_a_producer_costs_nothing(producer_module):

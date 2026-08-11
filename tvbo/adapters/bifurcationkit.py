@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """BifurcationKit.jl backend adapter for SimulationExperiment.
 
 Uses juliacall to execute generated BifurcationKit Julia code and return BifurcationResult objects.
@@ -34,7 +33,7 @@ def _str(val):
 
 
 def _get(obj, path, default=None):
-    """Nested attribute access: _get(cont, 'initial_state.duration')."""
+    """Read a dotted attribute path, e.g. ``'initial_state.duration'``, returning *default* at the first missing link."""
     cur = obj
     for p in path.split("."):
         if cur is None:
@@ -104,11 +103,10 @@ def _newton_kwargs(c):
 class BifurcationKitAdapter:
     """Adapter for running bifurcation analysis via BifurcationKit.jl.
 
-    Unlike NetworkDynamics/MTK adapters, this does not inherit from
-    BaseAdapter — bifurcation analysis operates on individual (Dynamics, Continuation) pairs rather than a full network context.
+    Unlike NetworkDynamics/MTK adapters, this does not inherit from BaseAdapter — bifurcation analysis operates on individual (Dynamics, Continuation) pairs rather than a full network context.
     """
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
 
     # ── Context preparation ──────────────────────────────────────────────
@@ -379,12 +377,12 @@ class BifurcationKitAdapter:
             return str(fp[0].name)
         return None
 
-    def run(self, **kwargs) -> "BifurcationResult | dict[str, BifurcationResult]":
+    def run(self, **kwargs) -> BifurcationResult | dict[str, BifurcationResult]:
         """Run bifurcation analysis for each continuation in the experiment.
 
         Iterates over ``experiment.continuations``, resolves the dynamics model for each, renders BifurcationKit Julia code, executes it, and wraps the result in ``BifurcationResult`` objects.
 
-        Returns
+        Returns:
         -------
         BifurcationResult or dict[str, BifurcationResult]
             Single result if one continuation, dict if multiple.
@@ -442,10 +440,10 @@ class BifurcationKitAdapter:
     def _extract_periodic_orbits(self, model, **kwargs) -> list:
         """Extract periodic orbit branches from Julia Main after execution.
 
-        Also attaches each branch's orbit waveforms (``orbit_profiles``, a ``[n_steps, NPROF, n_vars]`` array phase-resampled over one period) when the
-        Julia run produced them (``po_results.profiles``); the actual periodic-orbit profile is otherwise not recorded by BifurcationKit.
+        Also attaches each branch's orbit waveforms (``orbit_profiles``, a ``[n_steps, NPROF, n_vars]`` array phase-resampled over one period) when the Julia run produced them (``po_results.profiles``); the actual periodic-orbit profile is otherwise not recorded by BifurcationKit.
         """
         import numpy as np
+
         from tvbo.adapters.julia import eval_with_auto_install
         from tvbo.analysis import BifurcationResult
 

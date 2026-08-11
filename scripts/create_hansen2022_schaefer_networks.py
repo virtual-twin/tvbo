@@ -18,22 +18,22 @@ Group-consensus binary network preserving density and edge-length distributions 
 
 FC reconstruction
 -----------------
-HCP 3T resting-state fMRI pre-processed with HCP pipeline (gradient non-linearity correction, head-motion correction, distortion correction,
-ICA-FIX denoising). Time series parcellated to Schaefer parcels.
+HCP 3T resting-state fMRI pre-processed with HCP pipeline (gradient non-linearity correction, head-motion correction, distortion correction, ICA-FIX denoising). Time series parcellated to Schaefer parcels.
 FC = Pearson correlation between pairs of regional time series, averaged across all participants and scans.
 
 Reference
 ---------
-Hansen JY, Shafiei G, Markello RD, Smart K, Cox SML, Wu Y, Diez I,
-Schirner M, Wirsich J, Bhatt DL, Misic B. (2022). Mapping neurotransmitter systems to the structural and functional organization of the human neocortex.
+Hansen JY, Shafiei G, Markello RD, Smart K, Cox SML, Wu Y, Diez I, Schirner M, Wirsich J, Bhatt DL, Misic B. (2022). Mapping neurotransmitter systems to the structural and functional organization of the human neocortex.
 Nature Neuroscience, 25, 1569–1581.
-https://doi.org/10.1038/s41593-022-01186-3"""
+https://doi.org/10.1038/s41593-022-01186-3
+"""
 
-import numpy as np
-import h5py
-import yaml
 from datetime import date
 from pathlib import Path
+
+import h5py
+import numpy as np
+import yaml
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
@@ -140,7 +140,6 @@ def build_parent_index(labels):
 
 def create_network(seg="7Networks", scale=100):
     """Build and write the SC+FC multi-graph network."""
-
     # --- load labels / atlas centers (authoritative CBIG order) ---
     labels, atlas_centers = load_atlas_entities(seg, scale)
     n = len(labels)

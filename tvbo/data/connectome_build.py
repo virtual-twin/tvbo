@@ -10,8 +10,8 @@ from __future__ import annotations
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence
 
 import numpy as np
 
@@ -41,12 +41,12 @@ def tck2connectome_commands(
     parcellation: Path,
     weights_csv: Path,
     lengths_csv: Path,
-    assignments_csv: Optional[Path] = None,
+    assignments_csv: Path | None = None,
     *,
     symmetric: bool = True,
     zero_diagonal: bool = True,
     force: bool = True,
-    extra_args: Optional[Sequence[str]] = None,
+    extra_args: Sequence[str] | None = None,
 ) -> list[list[str]]:
     """Return the two ``tck2connectome`` argv lists (edge weights, then lengths).
 
@@ -85,12 +85,12 @@ def run_tck2connectome(
     parcellation: Path,
     weights_csv: Path,
     lengths_csv: Path,
-    assignments_csv: Optional[Path] = None,
+    assignments_csv: Path | None = None,
     *,
     symmetric: bool = True,
     zero_diagonal: bool = True,
     force: bool = True,
-    extra_args: Optional[Sequence[str]] = None,
+    extra_args: Sequence[str] | None = None,
 ) -> None:
     """Run ``tck2connectome`` twice: edge weights (count) then mean tract lengths."""
     for cmd in tck2connectome_commands(
@@ -113,8 +113,8 @@ def connectome_from_tractogram(
     *,
     symmetric: bool = True,
     zero_diagonal: bool = True,
-    extra_args: Optional[Sequence[str]] = None,
-    assignments_out: Optional[Path] = None,
+    extra_args: Sequence[str] | None = None,
+    assignments_out: Path | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute the ``(weights, lengths)`` matrices for a tractogram + parcellation.
 
@@ -130,7 +130,7 @@ def connectome_from_tractogram(
     assignments_out : Path, optional
         When given, ``tck2connectome``'s ``-out_assignments`` is kept at this path.
 
-    Returns
+    Returns:
     -------
     weights, lengths : np.ndarray
         ``(N, N)`` streamline-count and mean-length matrices.

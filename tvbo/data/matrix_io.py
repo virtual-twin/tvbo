@@ -1,14 +1,14 @@
 """Low-level matrix read/write for HDF5 groups and Zarr groups.
 
-Supports dense, CSR, and COO formats. Both HDF5 (h5py.Group) and
-Zarr (zarr.Group) implement the same array-store interface, so a single pair of read/write functions handles both backends.
+Supports dense, CSR, and COO formats. Both HDF5 (h5py.Group) and Zarr (zarr.Group) implement the same array-store interface, so a single pair of read/write functions handles both backends.
 
 See §12.1 of the tvbo HDF5 format proposal v0.7.
 """
 
-import numpy as np
 from pathlib import Path
-from scipy.sparse import csr_matrix, coo_matrix
+
+import numpy as np
+from scipy.sparse import coo_matrix, csr_matrix
 
 
 def _create_ds(grp, name, *, data, **kwargs):
@@ -40,7 +40,7 @@ def auto_format(matrix) -> str:
     matrix : array-like or scipy.sparse matrix
         Matrix to analyze.
 
-    Returns
+    Returns:
     -------
     str
         "dense" or "csr"
@@ -132,7 +132,7 @@ def read_matrix(grp) -> np.ndarray:
     grp : h5py.Group or zarr.Group
         Source group containing format/shape attrs and data datasets.
 
-    Returns
+    Returns:
     -------
     np.ndarray
         Dense numpy array.

@@ -74,11 +74,11 @@ def _load_sim(name, t1, transient):
 # RWW — Reduced Wong-Wang, BOLD/FC
 def test_rww_trajectory_and_bold(eager):
     from tvboptim.experimental.network_dynamics import Network, prepare
-    from tvboptim.experimental.network_dynamics.dynamics.tvb import ReducedWongWang
     from tvboptim.experimental.network_dynamics.coupling import LinearCoupling
+    from tvboptim.experimental.network_dynamics.dynamics.tvb import ReducedWongWang
     from tvboptim.experimental.network_dynamics.graph import DenseGraph
-    from tvboptim.experimental.network_dynamics.solvers import Heun
     from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
+    from tvboptim.experimental.network_dynamics.solvers import Heun
     from tvboptim.observations.tvb_monitors.bold import HRFBold
 
     T1, TRANSIENT, DT = 2000.0, 8000.0, 4.0
@@ -116,11 +116,11 @@ def test_jr_trajectory(eager):
     The hand-written reference mirrors the YAML: it overrides a, b and mu, applies integration noise to every state, and seeds with 0 — the resolved ``execution.random_seed`` default when the YAML sets none.
     """
     from tvboptim.experimental.network_dynamics import Network, prepare
-    from tvboptim.experimental.network_dynamics.dynamics.tvb import JansenRit
     from tvboptim.experimental.network_dynamics.coupling import DelayedSigmoidalJansenRit
+    from tvboptim.experimental.network_dynamics.dynamics.tvb import JansenRit
     from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
-    from tvboptim.experimental.network_dynamics.solvers import Heun
     from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
+    from tvboptim.experimental.network_dynamics.solvers import Heun
 
     T1, TRANSIENT, DT = 300.0, 600.0, 1.0
 
@@ -388,13 +388,14 @@ def test_tbptt_differentiation(eager):
 
     The backend-neutral ``integration.differentiation`` config must lower to tvboptim's truncated solver. The forward pass is invariant to ``grad_horizon`` (tvboptim-tested), so the test asserts both that the generated code carries the truncation and that the forward trajectory is byte-identical to a hand-written ``Heun(grad_horizon=W)`` reference.
     """
-    from tvbo.datamodel.schema import Differentiation
     from tvboptim.experimental.network_dynamics import Network, prepare
-    from tvboptim.experimental.network_dynamics.dynamics.tvb import JansenRit
     from tvboptim.experimental.network_dynamics.coupling import DelayedSigmoidalJansenRit
+    from tvboptim.experimental.network_dynamics.dynamics.tvb import JansenRit
     from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
-    from tvboptim.experimental.network_dynamics.solvers import Heun
     from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
+    from tvboptim.experimental.network_dynamics.solvers import Heun
+
+    from tvbo.datamodel.schema import Differentiation
 
     T1, TRANSIENT, DT = 300.0, 600.0, 1.0
     WINDOW_MS = 100.0
@@ -434,11 +435,11 @@ def test_tbptt_differentiation(eager):
 def _tbptt_reference_network(weights, labels, transient, dt, G=8.0):
     """Warmed-up Jansen-Rit reference network matching the TBPTT YAML."""
     from tvboptim.experimental.network_dynamics import Network, prepare
-    from tvboptim.experimental.network_dynamics.dynamics.tvb import JansenRit
     from tvboptim.experimental.network_dynamics.coupling import SigmoidalJansenRit
+    from tvboptim.experimental.network_dynamics.dynamics.tvb import JansenRit
     from tvboptim.experimental.network_dynamics.graph import DenseGraph
-    from tvboptim.experimental.network_dynamics.solvers import Heun
     from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
+    from tvboptim.experimental.network_dynamics.solvers import Heun
 
     net = Network(
         dynamics=JansenRit(a=0.1, b=0.05, mu=0.08),
@@ -461,8 +462,8 @@ def _only_observation(exp, keep):
 
 def test_tbptt_lyapunov():
     from tvboptim.experimental.network_dynamics import prepare
-    from tvboptim.experimental.network_dynamics.solvers import Heun
     from tvboptim.experimental.network_dynamics.analysis.lyapunov import _lyapunov_spectrum_jvp
+    from tvboptim.experimental.network_dynamics.solvers import Heun
 
     T1, TRANSIENT, DT, SEG = 300.0, 300.0, 1.0, 200.0
 
@@ -577,15 +578,16 @@ def test_tbptt_optimization():
 
     ``G0`` is where the descent begins: it must match the YAML ``fit_G`` free-parameter ``initial_value`` (5.0), not the base or warm-up coupling G (8.0, used only to build the reference history in ``_tbptt_reference_network``).
     """
-    import optax
     import jax.numpy as jnp
-    from tvbo.datamodel.schema import Differentiation
+    import optax
     from tvboptim.experimental.network_dynamics import prepare
     from tvboptim.experimental.network_dynamics.solvers import Heun
     from tvboptim.observations.observation import compute_fc, rmse
     from tvboptim.observations.tvb_monitors.bold import HRFBold
     from tvboptim.optim.optax import OptaxOptimizer
     from tvboptim.types import Parameter
+
+    from tvbo.datamodel.schema import Differentiation
 
     T1, TRANSIENT, DT, SKIP = 7200.0, 300.0, 1.0, 2
     LR, MAX_STEPS, G0, W = 1.0, 4, 5.0, 100
@@ -666,12 +668,12 @@ def test_tbptt_motivation_sweep_records_diagnostics():
 def test_ei_trajectory(eager):
     import jax.numpy as jnp
     from tvboptim.experimental.network_dynamics import Network, prepare
-    from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
-    from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCoupling
     from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+    from tvboptim.experimental.network_dynamics.coupling.base import InstantaneousCoupling
+    from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
     from tvboptim.experimental.network_dynamics.graph import DenseGraph
-    from tvboptim.experimental.network_dynamics.solvers import Heun, BoundedSolver
     from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
+    from tvboptim.experimental.network_dynamics.solvers import BoundedSolver, Heun
     from tvboptim.observations.tvb_monitors.bold import HRFBold
 
     T1, TRANSIENT, DT = 720.0, 720.0, 4.0
@@ -769,11 +771,11 @@ def _bayesian_reference_forward():
     """tvboptim-native forward at the true (declared) params -> recorded_ts."""
     import jax.numpy as jnp
     from tvboptim.experimental.network_dynamics import Network, prepare
-    from tvboptim.experimental.network_dynamics.dynamics.tvb import Generic2dOscillator
     from tvboptim.experimental.network_dynamics.coupling import LinearCoupling
+    from tvboptim.experimental.network_dynamics.dynamics.tvb import Generic2dOscillator
+    from tvboptim.experimental.network_dynamics.external_input import PulseInput
     from tvboptim.experimental.network_dynamics.graph import DenseGraph
     from tvboptim.experimental.network_dynamics.solvers import Heun
-    from tvboptim.experimental.network_dynamics.external_input import PulseInput
 
     net = Network(
         dynamics=Generic2dOscillator(
@@ -845,13 +847,13 @@ def _load_hopf(t1, num_gen=2, pop=4, refine_iter=2):
 
 def _hopf_ref(exp, t1):
     """Hand-written tvboptim reference matching the Hopf YAML (shared warm-up)."""
-    from tvboptim.experimental.network_dynamics import Network, prepare
-    from tvboptim.experimental.network_dynamics.dynamics.tvb import SupHopf
-    from tvboptim.experimental.network_dynamics.coupling import LinearCoupling
-    from tvboptim.experimental.network_dynamics.graph import DenseGraph
-    from tvboptim.experimental.network_dynamics.solvers import Heun
-    from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
     import jax.numpy as jnp
+    from tvboptim.experimental.network_dynamics import Network, prepare
+    from tvboptim.experimental.network_dynamics.coupling import LinearCoupling
+    from tvboptim.experimental.network_dynamics.dynamics.tvb import SupHopf
+    from tvboptim.experimental.network_dynamics.graph import DenseGraph
+    from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
+    from tvboptim.experimental.network_dynamics.solvers import Heun
 
     W = np.asarray(exp.network.weights)
     omega = np.asarray(list(exp.dynamics.parameters["omega"].value))
@@ -872,7 +874,7 @@ def test_hopf_trajectory_and_frequency(eager):
     exp = _load_hopf(2000.0)
     r = exp.run("tvboptim", mode="simulation")
     sim_tvbo = np.asarray(r.integration.data)
-    psd_tvbo = np.asarray(getattr(r.observations.psd, "psd", getattr(r.observations.psd, "data")))
+    psd_tvbo = np.asarray(getattr(r.observations.psd, "psd", r.observations.psd.data))
     peaks_tvbo = np.asarray(getattr(r.observations.fitted_peaks, "data", r.observations.fitted_peaks))
 
     _net, _ri, mm, sm, _omega = _hopf_ref(exp, 2000.0)
@@ -892,8 +894,8 @@ def test_hopf_trajectory_and_frequency(eager):
 
 
 def test_hopf_bold_and_fc():
-    from tvboptim.observations.tvb_monitors.bold import HRFBold
     from tvboptim.observations.observation import compute_fc
+    from tvboptim.observations.tvb_monitors.bold import HRFBold
 
     T = 30000.0
     exp = _load_hopf(T)
@@ -915,15 +917,15 @@ def test_hopf_ga_pareto_and_refine():
     """
     import jax.numpy as jnp
     import optax
-    from tvboptim.observations.tvb_monitors.bold import HRFBold
-    from tvboptim.observations.observation import compute_fc, fc_corr
-    from tvboptim.types import DataAxis, Parameter, BoundedParameter
-    from tvboptim.types.spaces import Space
-    from tvboptim.execution import ParallelExecution
-    from tvboptim.optim.optax import OptaxOptimizer
-    from pymoo.core.problem import Problem
     from pymoo.algorithms.moo.nsga2 import NSGA2
+    from pymoo.core.problem import Problem
     from pymoo.optimize import minimize as pymoo_minimize
+    from tvboptim.execution import ParallelExecution
+    from tvboptim.observations.observation import compute_fc, fc_corr
+    from tvboptim.observations.tvb_monitors.bold import HRFBold
+    from tvboptim.optim.optax import OptaxOptimizer
+    from tvboptim.types import BoundedParameter, DataAxis, Parameter
+    from tvboptim.types.spaces import Space
 
     N, T = 4, 30000.0
     exp = _load_hopf(T, num_gen=2, pop=4, refine_iter=2)
@@ -1012,7 +1014,7 @@ def test_hopf_ga_pareto_and_refine():
     seed = _copy.deepcopy(base_state)
     _apply_axes(seed, ga_X)
     rows = list(ParallelExecution(_refine_seed, Space(seed, mode="zip"), n_pmap=N).run())
-    for tr, rr in zip(refine.seeds, rows):
+    for tr, rr in zip(refine.seeds, rows, strict=True):
         assert_identical("Hopf refine G", np.asarray(tr.G_final), np.asarray(rr["G"]), atol=1e-10)
         assert_identical("Hopf refine a", np.asarray(tr.a_final), np.asarray(rr["a"]), atol=1e-10)
         assert_identical("Hopf refine omega", np.asarray(tr.omega_final), np.asarray(rr["om"]), atol=1e-10)
@@ -1063,7 +1065,6 @@ def test_delay_speed_trajectory(eager):
     Guards the length-graph delay path. Because the connectome carries tract lengths, tvbo lowers the delayed coupling onto a ``DenseLengthGraph`` (delays = lengths / conduction_speed, so the conduction speed is a live graph leaf). The generated trajectory must be byte-identical to a hand-written native tvboptim delayed-Kuramoto run over the same length graph.
     """
     import jax.numpy as jnp
-
     from tvboptim.experimental.network_dynamics import Network, prepare
     from tvboptim.experimental.network_dynamics.coupling import DelayedKuramotoCoupling
     from tvboptim.experimental.network_dynamics.dynamics.tvb import Kuramoto
@@ -1154,9 +1155,7 @@ def test_delay_only_graph_trajectory(eager, tmp_path):
 
     Complements the length-graph tests: when the network carries only per-edge ``delay`` attributes, tvbo must select a ``DenseDelayGraph`` over those delays rather than a length graph. The generated trajectory must be byte-identical to a native tvboptim ``DenseDelayGraph`` run with the same delays.
     """
-
     import jax.numpy as jnp
-
     from tvboptim.experimental.network_dynamics import Network, prepare
     from tvboptim.experimental.network_dynamics.coupling import DelayedKuramotoCoupling
     from tvboptim.experimental.network_dynamics.dynamics.tvb import Kuramoto

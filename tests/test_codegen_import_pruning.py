@@ -258,9 +258,8 @@ def test_only_a_functions_own_body_shadows_a_module_import(src):
 @pytest.mark.parametrize("fmt", ["tvb", "jax", "tvboptim"])
 def test_backends_emit_no_unused_imports(fmt):
     """The end-to-end claim: a rendered experiment carries no import it does not use."""
-    from tvbo import SimulationExperiment
-
     from tests.test_codegen_style_contract import KURAMOTO_FACTORED
+    from tvbo import SimulationExperiment
 
     try:
         code = SimulationExperiment(**KURAMOTO_FACTORED).render_code(format=fmt)
@@ -271,7 +270,7 @@ def test_backends_emit_no_unused_imports(fmt):
 
 
 def test_retime_leaves_an_attribute_of_the_same_name_alone():
-    """``\\b`` matches right after a dot, so a plain word boundary is not enough.
+    r"""``\\b`` matches right after a dot, so a plain word boundary is not enough.
 
     A pipeline function whose input argument is named ``data`` and whose body touches ``ts.data`` had its time branch rewritten to ``ts.t_data`` — ``AttributeError`` on the TimeSeries at run time.
     """

@@ -1,14 +1,7 @@
-#
-# Module: __init__.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-Templates
-=========
+"""Templates.
 
 Templates for generating code.
 """
@@ -17,8 +10,9 @@ import hashlib
 import os
 import subprocess
 import tempfile
+from os.path import abspath, dirname, join
+
 from mako.lookup import TemplateLookup
-from os.path import join, abspath, dirname
 
 root = abspath(dirname(__file__))
 
@@ -69,8 +63,7 @@ lookup = TemplateLookup(
 
 
 def run_julia(julia_code, verbose=0):
-    """
-    Run Julia code as a string using subprocess with manual logging.
+    """Run Julia code as a string using subprocess with manual logging.
 
     Parameters:
     julia_code (str): The Julia code to execute.
@@ -96,8 +89,7 @@ def run_julia(julia_code, verbose=0):
         elif verbose == 1:
             result = subprocess.run(
                 command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
                 check=True,
             )

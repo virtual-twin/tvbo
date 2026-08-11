@@ -1,13 +1,7 @@
-#
-# Module: lems_loader.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
-"""
-This module deals with loading elements from LEMS-generated files.
-"""
+# SPDX-License-Identifier: EUPL-1.2
+
+"""This module deals with loading elements from LEMS-generated files."""
 
 from lems import api as lems
 
@@ -247,7 +241,7 @@ def import_lems_model(lems_file, model_name):
             cparam_class = create_onto_subclass(param_name, onto.Parameter, properties, cf_class)
             cf_class.has_parameter.append(cparam_class)
 
-        for param, value in cf["derived_parameters"].items():
+        for param in cf["derived_parameters"]:
             if len(ontology.onto.search(label=param)) == 1:
                 with ontology.onto:
                     ontology.onto[param].is_a.append(model_class)

@@ -11,8 +11,9 @@ from pathlib import Path
 
 import typer
 
-from . import _common
 from tvbo.utils import as_list, sanitize_name
+
+from . import _common
 
 app = typer.Typer(name="figure", no_args_is_help=True)
 

@@ -1,7 +1,6 @@
 """Exogenous stimuli for simulation experiments.
 
-Provides the [`Stimulus`](#tvbo.classes.perturbation.Stimulus) class, which turns declarative stimulus metadata (from the datamodel, the ontology, or a
-YAML file) into backend code and executable stimulus functions, plus helpers to convert ontology classes to metadata and to replay audio files as stimuli.
+Provides the [`Stimulus`](#tvbo.classes.perturbation.Stimulus) class, which turns declarative stimulus metadata (from the datamodel, the ontology, or a YAML file) into backend code and executable stimulus functions, plus helpers to convert ontology classes to metadata and to replay audio files as stimuli.
 """
 
 import logging
@@ -29,15 +28,16 @@ from scipy.interpolate import UnivariateSpline
 from sympy import Symbol, lambdify, pycode, sympify
 
 from tvbo import templates
-from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.codegen import templater
-from tvbo.ontology import owl as ontology, query
 from tvbo.classes import equation as equations
 from tvbo.classes.equation import (
     _clash1,
     conditionals2piecewise,
     convert_ifelse_to_np_where,
 )
+from tvbo.codegen import templater
+from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo.ontology import owl as ontology
+from tvbo.ontology import query
 
 
 def class2metadata(ontoclass):
@@ -53,7 +53,6 @@ def class2metadata(ontoclass):
         A datamodel `Stimulus` populated with the equation and parameters read
         from the ontology class.
     """
-
     onto_eq = ontoclass.value.first()
     if "where" in onto_eq:
         onto_eq = equations.convert_numpy_where_to_sympy(onto_eq)
@@ -300,8 +299,7 @@ class Stimulus(tvbo_datamodel.Stimulus):
             return lambdify([Symbol("t")] + list(param.keys()), eq, modules="jax")
 
     def get_expression(self) -> tuple:
-        """
-        Generate a sympy expression for the equation using metadata.
+        """Generate a sympy expression for the equation using metadata.
 
         Returns:
             tuple: ``(expression, parameters)`` — the symbolic expression of the

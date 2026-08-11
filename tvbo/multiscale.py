@@ -1,7 +1,6 @@
 """Flatten a multi-scale reservoir SimulationExperiment to a flat one (Python).
 
-Lowering strategy for Experiment A (per-region reservoirs): a network of ``R`` macro regions, each hosting an ``n``-unit reservoir (``Node.subnetwork`` with a ``RandomReservoir`` generator) coupled long-range through the empirical SC, is compiled into a single **flat** ``R·n``-node scalar network plus a global weight matrix that the existing tvboptim backend runs unchanged. No vector-state machinery in the templates — the multi-scale structure is resolved entirely in
-Python (the chosen "flatten in Python" approach).
+Lowering strategy for Experiment A (per-region reservoirs): a network of ``R`` macro regions, each hosting an ``n``-unit reservoir (``Node.subnetwork`` with a ``RandomReservoir`` generator) coupled long-range through the empirical SC, is compiled into a single **flat** ``R·n``-node scalar network plus a global weight matrix that the existing tvboptim backend runs unchanged. No vector-state machinery in the templates — the multi-scale structure is resolved entirely in Python (the chosen "flatten in Python" approach).
 
 The reservoir multi-scale pattern this handles
 ----------------------------------------------
@@ -28,7 +27,6 @@ The flat model is a scalar leaky-integrator whose coupling enters *inside* the a
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
@@ -73,8 +71,8 @@ def _activation_from_rhs(rhs: str) -> str:
 
 def flatten_reservoir(
     exp: dict,
-    n_override: Optional[int] = None,
-    max_flat_nodes: Optional[int] = 12_000,
+    n_override: int | None = None,
+    max_flat_nodes: int | None = 12_000,
 ) -> FlatReservoir:
     """Flatten a per-region-reservoir experiment dict into a flat scalar model.
 
@@ -211,7 +209,7 @@ def _project_weights(subnet: dict, n: int) -> np.ndarray:
     for edge in subnet.get("edges") or []:
         if edge.get("source_network") in ("..", "parent"):
             wparams = _pluck(edge, "coupling", "parameters") or {}
-            for pname, pspec in wparams.items():
+            for pspec in wparams.values():
                 dist = pspec.get("distribution") if isinstance(pspec, dict) else None
                 if dist:
                     seed = _pluck(pspec, "distribution", "seed")

@@ -74,7 +74,7 @@ def backfill(path: Path, dry_run: bool) -> bool:
         return False
 
     changed = False
-    for node, entity in zip(nodes, atlas_entities):
+    for node, entity in zip(nodes, atlas_entities, strict=True):
         new_label = entity["name"]
         c = entity.get("center", {})
         new_pos = {"x": float(c["x"]), "y": float(c["y"]), "z": float(c["z"])} if c else None

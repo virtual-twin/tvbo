@@ -379,8 +379,7 @@ def test_editing_the_producers_code_materialises_a_new_artifact(tmp_path, monkey
 
     Keyed on `(module, function, kwargs)` alone, an edited callable is invisible: the run reads the array from before the edit while a direct call returns the new value, and nothing raises. Pang2023 drove a whole wave model off that stale artifact.
 
-    `clear_cache` between the two is what a second `tvbo run` is — a fresh process that imports the edited module — which is the scope the invalidation is defined at, since
-    Python re-executes a module on import and never mid-process.
+    `clear_cache` between the two is what a second `tvbo run` is — a fresh process that imports the edited module — which is the scope the invalidation is defined at, since Python re-executes a module on import and never mid-process.
     """
     import h5py
 

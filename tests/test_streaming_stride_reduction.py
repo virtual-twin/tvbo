@@ -221,8 +221,7 @@ def test_reducer_handles_a_partial_tail_block(n_steps):
 def test_skip_drops_exactly_the_transient_samples(skip, ds, n_steps, kept):
     """`skip` is honoured, not silently ignored.
 
-    A sweep folds transient and main run into ONE window and asks the reducer to drop the transient; the single-run path integrates them separately. When `skip` was accepted and discarded, a swept cell came back with `skip/ds` extra leading samples — 1,338
-    BOLD frames where the same experiment run alone gives 1,200 — and nothing raised.
+    A sweep folds transient and main run into ONE window and asks the reducer to drop the transient; the single-run path integrates them separately. When `skip` was accepted and discarded, a swept cell came back with `skip/ds` extra leading samples — 1,338 BOLD frames where the same experiment run alone gives 1,200 — and nothing raised.
     """
     init, update, finalize = _emit_reducer(ds)(skip=skip)
     data = jnp.zeros((n_steps, 1, 2))

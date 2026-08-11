@@ -1,10 +1,6 @@
-#
-# Module: db.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Load bundled example `SimulationStudy` definitions from the ontology data directory.
 
 At import time this module scans the `db` data directory for YAML files, loads each into a [`SimulationStudy`](../datamodel/schema.qmd) instance, and exposes them keyed by their `key` field through the module-level `SimulationStudies` mapping.
@@ -14,9 +10,10 @@ import glob
 import os
 
 from linkml_runtime.loaders import yaml_loader
-from tvbo.utils import Bunch
-from tvbo.ontology import constants
+
 from tvbo.datamodel.schema import SimulationStudy
+from tvbo.ontology import constants
+from tvbo.utils import Bunch
 
 DATA_DIR = os.path.join(constants.DATA_DIR, "db")
 

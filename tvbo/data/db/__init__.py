@@ -1,14 +1,9 @@
-#
-# Module: __init__.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Access bundled simulation-study metadata and the literature bibliography.
 
-Every `*.yaml` file in this package is discovered at import time and exposed both as a module-level attribute and through the `study_metadata_files` namedtuple, each mapping a study key to its file path. Helpers are provided to load individual studies into [`SimulationStudy`](../classes/study.qmd) objects and to parse the accompanying
-BibTeX database.
+Every `*.yaml` file in this package is discovered at import time and exposed both as a module-level attribute and through the `study_metadata_files` namedtuple, each mapping a study key to its file path. Helpers are provided to load individual studies into [`SimulationStudy`](../classes/study.qmd) objects and to parse the accompanying BibTeX database.
 """
 
 import glob

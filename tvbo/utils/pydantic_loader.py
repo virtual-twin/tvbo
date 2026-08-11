@@ -8,8 +8,7 @@ TVBO authors write experiments in a human-friendly YAML dialect where collection
 
 The LinkML runtime loader injects that key into each member's identifier slot (``name``) automatically. The generated Pydantic datamodel (:mod:`tvbo.datamodel.pydantic`) does **not** — it expects ``name`` to be present inside every member — so validating raw TVBO YAML against the Pydantic models fails with a flood of ``name Field required`` errors that are purely an artefact of the keyed-dict convention, not real schema violations.
 
-This module performs exactly that key→identifier normalization and then validates with the strict (``extra="forbid"``) Pydantic models, giving callers a single, trustworthy "is this a valid TVBO object?" entry point. The YAML preprocessing for ``<<:`` merge keys and ``!include`` directives is delegated to
-:mod:`tvbo.utils.yaml_loader` so there is one implementation of those idioms.
+This module performs exactly that key→identifier normalization and then validates with the strict (``extra="forbid"``) Pydantic models, giving callers a single, trustworthy "is this a valid TVBO object?" entry point. The YAML preprocessing for ``<<:`` merge keys and ``!include`` directives is delegated to :mod:`tvbo.utils.yaml_loader` so there is one implementation of those idioms.
 
 Typical use::
 
@@ -28,8 +27,8 @@ from __future__ import annotations
 import copy
 import re
 import warnings
-from functools import lru_cache
-from typing import Any, Type, Union, get_args, get_origin
+from functools import cache
+from typing import Any, Union, get_args, get_origin
 
 import yaml
 from pydantic import BaseModel
@@ -46,7 +45,7 @@ _ENVELOPE_KEYS = ("tvbo_class", "schema_version")
 """File-envelope metadata keys that annotate a serialized object's class and schema version but are not datamodel slots. TVBO strips these at construction (see ``tvbo.classes.phenotype``), so we drop them before validation too."""
 
 
-def _resolve_target(target_class: Union[str, Type[BaseModel], None]) -> Type[BaseModel]:
+def _resolve_target(target_class: str | type[BaseModel] | None) -> type[BaseModel]:
     """Resolve ``target_class`` (a class, a class name, or ``None``) to a model.
 
     Strings are looked up in :mod:`tvbo.datamodel.pydantic` so the platform can pass ``"SimulationExperiment"`` / ``"Dynamics"`` / ... straight through.
@@ -73,7 +72,7 @@ def _candidates(annotation: Any):
         yield annotation
 
 
-def _first_model(annotation: Any) -> Type[BaseModel] | None:
+def _first_model(annotation: Any) -> type[BaseModel] | None:
     """Return the first Pydantic-model candidate within ``annotation``, if any."""
     for cand in _candidates(annotation):
         if isinstance(cand, type) and issubclass(cand, BaseModel):
@@ -81,8 +80,8 @@ def _first_model(annotation: Any) -> Type[BaseModel] | None:
     return None
 
 
-@lru_cache(maxsize=None)
-def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
+@cache
+def _identifier_field(model_cls: type[BaseModel]) -> str | None:
     """Name of the slot the inlined-dict key maps onto.
 
     A non-``name``/``id`` key slot marks itself with a ``collection_key`` annotation, because LinkML consumes ``identifier``/``key`` into the field's required-ness and drops them from the emitted metadata (so they can't be read back here). Otherwise falls back to the universal TVBO conventions ``name`` then ``id``. Returns ``None`` when no identifier slot can be determined (the member is then left untouched).
@@ -99,8 +98,8 @@ def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
     return None
 
 
-@lru_cache(maxsize=None)
-def _slot_alias_map(model_cls: Type[BaseModel]) -> dict[str, str]:
+@cache
+def _slot_alias_map(model_cls: type[BaseModel]) -> dict[str, str]:
     """This class's ``{alias: canonical}`` slot-alias map.
 
     Reused verbatim from the LinkML dataclass path (``schema._SLOT_ALIASES``) so this validator accepts exactly the keys that loader does. The dataclasses fold these aliases in ``__init__``; the Pydantic models cannot, so :func:`_inject` folds them here, class-scoped — the same context that keeps ``target_variable`` (an ``Edge`` alias, but the canonical slot on a stimulus ``Event``) from being renamed where it must not be.
@@ -110,7 +109,7 @@ def _slot_alias_map(model_cls: Type[BaseModel]) -> dict[str, str]:
     return _SLOT_ALIASES.get(model_cls.__name__, {})
 
 
-def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
+def _inject(model_cls: type[BaseModel], data: Any) -> Any:
     """Recursively inject keyed-dict keys into each member's identifier slot.
 
     This class's slot aliases — `dt` for `step_size`, `righthandside` for `rhs` — are folded first, class-scoped, exactly as the generated dataclasses fold them in `__init__`. The Pydantic models cannot do that themselves, so a raw alias key would otherwise be rejected by `extra='forbid'`. Folding before the field walk means an aliased key is seen under its canonical name.
@@ -199,7 +198,7 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
     return data
 
 
-def normalize(data: dict, target_class: Union[str, Type[BaseModel], None] = None) -> dict:
+def normalize(data: dict, target_class: str | type[BaseModel] | None = None) -> dict:
     """Return a copy of ``data`` with keyed-dict keys injected as identifiers.
 
     Pure data transformation — performs no validation. Useful when a caller wants the normalized dict (e.g. to merge with other state) without building a model instance.
@@ -210,7 +209,7 @@ def normalize(data: dict, target_class: Union[str, Type[BaseModel], None] = None
     return out
 
 
-def _strip_unknown(model_cls: Type[BaseModel], data: Any) -> None:
+def _strip_unknown(model_cls: type[BaseModel], data: Any) -> None:
     """Recursively drop keys not declared by ``model_cls`` (by field name or alias). Assumes ``data`` is already normalized (collections as keyed dicts)."""
     if not isinstance(data, dict) or not hasattr(model_cls, "model_fields"):
         return
@@ -246,7 +245,7 @@ def _strip_unknown(model_cls: Type[BaseModel], data: Any) -> None:
                 break
 
 
-def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False) -> BaseModel:
+def validate(data: dict, target_class: str | type[BaseModel] | None = None, *, drop_unknown: bool = False) -> BaseModel:
     """Validate an already-parsed ``dict`` and return a model instance.
 
     Raises :class:`pydantic.ValidationError` if ``data`` does not conform. With ``drop_unknown=True``, keys not declared by the schema are discarded before validation instead of being rejected — used by the TVBO platform's database export to ignore Odoo-only fields (e.g. portal ``visibility``/``owner``) while hand-authored input still rejects unknown keys.
@@ -259,7 +258,7 @@ def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None,
 
 
 def loads(
-    source: str, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False, **kwargs: Any
+    source: str, target_class: str | type[BaseModel] | None = None, *, drop_unknown: bool = False, **kwargs: Any
 ) -> BaseModel:
     """Parse a YAML string (with ``<<:`` / ``!include`` support) and validate it.
 
@@ -271,7 +270,7 @@ def loads(
 
 
 def load(
-    source: Any, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False, **kwargs: Any
+    source: Any, target_class: str | type[BaseModel] | None = None, *, drop_unknown: bool = False, **kwargs: Any
 ) -> BaseModel:
     """Load YAML from a path / stream / string and validate it.
 
@@ -282,7 +281,7 @@ def load(
     return validate(data, target, drop_unknown=drop_unknown)
 
 
-def dump(obj: Union[BaseModel, dict], *, exclude_none: bool = True, sort_keys: bool = False) -> str:
+def dump(obj: BaseModel | dict, *, exclude_none: bool = True, sort_keys: bool = False) -> str:
     """Serialise a validated model (or plain dict) to canonical TVBO YAML."""
     if isinstance(obj, BaseModel):
         data = obj.model_dump(mode="json", by_alias=True, exclude_none=exclude_none)

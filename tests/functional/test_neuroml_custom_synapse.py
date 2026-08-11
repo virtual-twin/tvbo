@@ -1,7 +1,6 @@
 """Acceptance test: custom conductance-based synapse LEMS emission.
 
-Before the ontology grounding, tvbo could only emit current-based synapses (hardcoded ``extends="baseSynapse"``, exposing ``i``). Deco (2014)'s saturating
-NMDA gate (Eqs 3-4) is conductance-based — it exposes ``g`` and extends ``baseConductanceBasedSynapse`` — so it was downgraded to the linear standard ``blockingPlasticSynapse``.
+Before the ontology grounding, tvbo could only emit current-based synapses (hardcoded ``extends="baseSynapse"``, exposing ``i``). Deco (2014)'s saturating NMDA gate (Eqs 3-4) is conductance-based — it exposes ``g`` and extends ``baseConductanceBasedSynapse`` — so it was downgraded to the linear standard ``blockingPlasticSynapse``.
 
 This test authors the *faithful* saturating NMDA as a custom tvbo Dynamics and checks that it emits, grounded in the ingested NeuroML ontology contract, as a valid conductance-based LEMS ComponentType: the base type, the ``g`` exposure, the two-ODE saturating gate with a spike-driven ``OnEvent``, and the Mg2+ block.
 """
@@ -133,7 +132,7 @@ def _norm(text: str) -> str:
 
 def _time_derivative(component: str, variable: str) -> str:
     """The TimeDerivative expression for *variable*, whitespace-normalised."""
-    m = re.search(r'<TimeDerivative variable="%s" value="([^"]+)"' % variable, component)
+    m = re.search(rf'<TimeDerivative variable="{variable}" value="([^"]+)"', component)
     assert m, f"no TimeDerivative for {variable} in:\n{component}"
     return _norm(m.group(1))
 
@@ -201,9 +200,9 @@ class TestCustomConductanceSynapseEmission:
         """The synapse resolves against the real NeuroML baseConductanceBasedSynapse."""
         pytest.importorskip("lems")
         pyneuroml = pytest.importorskip("pyneuroml")
-        from lems.model.model import Model
-
         import glob
+
+        from lems.model.model import Model
 
         libdir = os.path.join(os.path.dirname(pyneuroml.__file__), "lib")
         jars = sorted(glob.glob(os.path.join(libdir, "jNeuroML-*-jar-with-dependencies.jar")))
@@ -269,7 +268,7 @@ class TestSynapticTransmissionWiring:
             ("gbase", "0.2"),  # inherited from baseConductanceBasedSynapse
             ("erev", "0"),
         ):
-            assert re.search(r'%s="%s' % (attr, re.escape(value)), inst), f"{attr} missing from {inst}"
+            assert re.search(rf'{attr}="{re.escape(value)}', inst), f"{attr} missing from {inst}"
 
     def test_time_derivatives_are_dimensionally_consistent(self, nmda_component):
         """Gate equations with dimensioned time constants must not be / SEC.
@@ -283,8 +282,7 @@ class TestSynapticTransmissionWiring:
 class TestUnknownBaseTypeWarns:
     """A base type tvbo cannot resolve must not fail silently.
 
-    Emitting against an unknown type yields a ComponentType extending something
-    NeuroML has never heard of; without this warning the failure only surfaces much later inside jNeuroML, with nothing pointing at the bad reference.
+    Emitting against an unknown type yields a ComponentType extending something NeuroML has never heard of; without this warning the failure only surfaces much later inside jNeuroML, with nothing pointing at the bad reference.
     """
 
     @staticmethod
@@ -344,7 +342,7 @@ class TestCurrentBasedSynapseUnchanged:
         assert 'extends="baseSynapse"' in component
 
     def test_declares_own_parameters(self, component):
-        """baseSynapse inherits no parameters, so none are skipped."""
+        """BaseSynapse inherits no parameters, so none are skipped."""
         assert '<Parameter name="gbase"' in component
         assert '<Parameter name="erev"' in component
 
@@ -374,9 +372,7 @@ class TestDrivenColumnBehaviour:
         xml = SimulationExperiment.from_file(str(tmp / "column.yaml")).render("lems")
 
         # tvbo emits OutputColumns for population state variables only; the synapse's own gate is recorded here by path so the trajectory can be asserted on (emitting these declaratively is a separate gap).
-        gate_cols = "".join(
-            '      <OutputColumn id="%s" quantity="LIFCell_pop[1]/NMDA_inst/%s"/>\n' % (n, n) for n in ("s", "x")
-        )
+        gate_cols = "".join(f'      <OutputColumn id="{n}" quantity="LIFCell_pop[1]/NMDA_inst/{n}"/>\n' for n in ("s", "x"))
         xml = xml.replace("</OutputFile>", gate_cols + "    </OutputFile>", 1)
         (tmp / "driven.xml").write_text(xml)
         (tmp / "results").mkdir()
@@ -622,8 +618,7 @@ integration:
 class TestNetworkModeTimeScaling:
     """`/ SEC` must follow the equations' dimensions, in network mode too.
 
-    SEC converts a TimeDerivative written in model-time units into SI. Applying it to equations that already carry dimensioned time constants makes the derivative per-time-squared and jNeuroML rejects the model; omitting it from equations written as pure numbers integrates 1000x too fast. Network-mode
-    ComponentTypes used to apply it unconditionally, and nothing in the shipped database exercises that path — every database NeuroML experiment has a `network`, but none defines `network.dynamics` — so these are the only tests holding the rule for cells and synapses alike.
+    SEC converts a TimeDerivative written in model-time units into SI. Applying it to equations that already carry dimensioned time constants makes the derivative per-time-squared and jNeuroML rejects the model; omitting it from equations written as pure numbers integrates 1000x too fast. Network-mode ComponentTypes used to apply it unconditionally, and nothing in the shipped database exercises that path — every database NeuroML experiment has a `network`, but none defines `network.dynamics` — so these are the only tests holding the rule for cells and synapses alike.
     """
 
     @pytest.fixture(scope="class")
@@ -632,7 +627,7 @@ class TestNetworkModeTimeScaling:
 
     @staticmethod
     def _component(xml: str, name: str) -> str:
-        m = re.search(r'<ComponentType name="%s".*?</ComponentType>' % name, xml, re.S)
+        m = re.search(rf'<ComponentType name="{name}".*?</ComponentType>', xml, re.S)
         assert m, f"{name} was not emitted in:\n{xml[:2000]}"
         return m.group(0)
 

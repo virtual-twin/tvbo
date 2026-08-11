@@ -5,13 +5,12 @@
 #
 # Copyright (c) 2023 Charité Universitätsmedizin Berlin
 #
-"""
-TVB-GO Module
-=============
+"""TVB-GO Module.
 
 This module provides utilities for working with TVB and the Gene Ontology.
 
-.. moduleauthor:: Leon K. Martin"""
+.. moduleauthor:: Leon K. Martin
+"""
 
 import json
 import logging
@@ -26,8 +25,8 @@ import pandas as pd
 
 try:
     import pybel
-    from goatools import obo_parser
     import wget  # noqa: F401  # optional dep probe
+    from goatools import obo_parser
 except ImportError as e:
     raise ImportError(
         "TVB-GO module requires knowledge extras. Install with:\n"
@@ -130,10 +129,9 @@ def _download_with_progress(url: str, dest_path: str):
 
 
 def get_go():
-    """
-    Retrieve the Gene Ontology DAG (Directed Acyclic Graph) from the online repository.
+    """Retrieve the Gene Ontology DAG (Directed Acyclic Graph) from the online repository.
 
-    Returns
+    Returns:
     -------
     go : GODag object
         The Gene Ontology DAG.
@@ -172,15 +170,14 @@ go = get_go()
 
 
 def go_term2id(term):
-    """
-    Convert a Gene Ontology term to its corresponding ID.
+    """Convert a Gene Ontology term to its corresponding ID.
 
     Parameters
     ----------
     term : str
         The Gene Ontology term to convert.
 
-    Returns
+    Returns:
     -------
     str or None
         The corresponding GO ID or None if not found.
@@ -193,8 +190,8 @@ def go_term2id(term):
 
 
 def get_term(go_id):
-    """
-    This function retrieves the definition of a given Gene Ontology term, using EMBL-EBI's QuickGO browser.
+    """This function retrieves the definition of a given Gene Ontology term, using EMBL-EBI's QuickGO browser.
+
     Input: go_id - a valid Gene Ontology ID, e.g. GO:0048527.
 
     Parameters
@@ -202,12 +199,12 @@ def get_term(go_id):
     go_id : str
         A valid Gene Ontology ID, e.g., GO:0048527.
 
-    Returns
+    Returns:
     -------
     dict
         Term information.
 
-    Raises
+    Raises:
     ------
     ValueError
         If information from QuickGO is not retrievable.
@@ -224,15 +221,14 @@ def get_term(go_id):
 
 
 def retrieve_go_id(term):
-    """
-    Search for a Gene Ontology term and retrieve its ID.
+    """Search for a Gene Ontology term and retrieve its ID.
 
     Parameters
     ----------
     term : str
         The Gene Ontology term to search.
 
-    Returns
+    Returns:
     -------
     str or None
         The corresponding GO ID or None if not found.
@@ -248,15 +244,14 @@ def retrieve_go_id(term):
 
 
 def rename2clust(kw):
-    """
-    Rename a keyword based on predefined clusters.
+    """Rename a keyword based on predefined clusters.
 
     Parameters
     ----------
     kw : str
         Keyword to rename.
 
-    Returns
+    Returns:
     -------
     str
         Renamed keyword.
@@ -269,15 +264,14 @@ def rename2clust(kw):
 
 
 def rmv_extrachars(term):
-    """
-    Remove special characters from a term.
+    """Remove special characters from a term.
 
     Parameters
     ----------
     term : str
         The term from which special characters should be removed.
 
-    Returns
+    Returns:
     -------
     str
         Term without special characters.
@@ -286,8 +280,7 @@ def rmv_extrachars(term):
 
 
 def add_node(n, g, type=None, **kwargs):
-    """
-    Add a node to a given graph.
+    """Add a node to a given graph.
 
     Parameters
     ----------
@@ -305,15 +298,14 @@ def add_node(n, g, type=None, **kwargs):
 
 
 def graph_from_table(df_tvbgo=df_tvbgo):
-    """
-    Generate a graph based on a given table.
+    """Generate a graph based on a given table.
 
     Parameters
     ----------
     df_tvbgo : DataFrame, optional
         Data table used to generate the graph. Defaults to the module-level df_tvbgo.
 
-    Returns
+    Returns:
     -------
     NetworkX graph
         Generated graph.
@@ -332,7 +324,7 @@ def graph_from_table(df_tvbgo=df_tvbgo):
 
     g = nx.Graph()
 
-    for i, r in df_tvbgo.iterrows():
+    for _i, r in df_tvbgo.iterrows():
         go_term = r["term"].lower()
         tvb_clust = r["TVB-O_function_clustered"].lower()
         param = r["TVB-Function_detailed"]
@@ -347,7 +339,7 @@ def graph_from_table(df_tvbgo=df_tvbgo):
             g.add_edge(param, go_term, type="go2parameter", linetype="--")
 
     kws = list()
-    for i, r in go2kw.iterrows():
+    for _i, r in go2kw.iterrows():
         go_term = r.Class.lower()
         kw = r.Keyword.lower()
         kw = rmv_extrachars(kw)
@@ -358,7 +350,7 @@ def graph_from_table(df_tvbgo=df_tvbgo):
         add_node(kw, g, type="parameter_type")
         g.add_edge(go_term, kw, type="go2kw")
 
-    for i, r in kw2tvbo.iterrows():
+    for _i, r in kw2tvbo.iterrows():
         param = r.Class
         kw = r.Keyword.lower()
         kw = rmv_extrachars(kw)
@@ -382,10 +374,9 @@ def graph_from_table(df_tvbgo=df_tvbgo):
 
 
 def get_annotated_parameters():
-    """
-    Retrieve parameters that have been annotated.
+    """Retrieve parameters that have been annotated.
 
-    Returns
+    Returns:
     -------
     list
         List of annotated parameters.

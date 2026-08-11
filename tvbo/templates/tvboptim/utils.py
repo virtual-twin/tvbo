@@ -16,10 +16,9 @@ Everything a template needs resolved — parameter layouts, recorded variable na
 import ast
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 from tvbo.utils import as_list
-
 
 # Basic Helpers
 
@@ -37,7 +36,7 @@ def get_attr(obj: Any, name: str, default: Any = None) -> Any:
     return getattr(obj, name, default) if obj else default
 
 
-def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[str, str]]:
+def get_param_info(parameters: dict) -> tuple[list[str], dict[str, float], dict[str, str]]:
     """Extract parameter names, defaults, and shapes from a parameters collection.
 
     Works for both model.parameters and coupling.parameters.
@@ -76,11 +75,10 @@ def get_param_info(parameters: dict) -> Tuple[List[str], Dict[str, float], Dict[
     return param_names, param_defaults, param_shapes
 
 
-def get_mode_layout(model: Any) -> Tuple[int, List[str], Dict[str, List[int]]]:
+def get_mode_layout(model: Any) -> tuple[int, list[str], dict[str, list[int]]]:
     """Compute the folded scalar-state layout for a (possibly multi-mode) model.
 
-    tvboptim's solver carries a 2-D state ``(n_states, n_nodes)`` and its coupling contracts the node axis with a plain matmul, so it has no place for a third per-node mode axis. A model with ``number_of_modes > 1`` (the Stefanescu-Jirsa
-    ReducedSet models) folds that mode axis into the state axis: each state variable ``v`` occupies ``n_modes`` contiguous scalar slots ``v__mode0 .. v__mode{M-1}``. The dfun reconstructs the ``(n_nodes, n_modes)`` mode-vector for each variable from its slots, evaluates the mode-aware equations (``mode_dot``/``mode_sum``), and scatters the per-mode derivatives back into those slots; per-mode coupling falls out of the existing 2-D matmul because each ``(var, mode)`` slot couples to the same slot across nodes.
+    tvboptim's solver carries a 2-D state ``(n_states, n_nodes)`` and its coupling contracts the node axis with a plain matmul, so it has no place for a third per-node mode axis. A model with ``number_of_modes > 1`` (the Stefanescu-Jirsa ReducedSet models) folds that mode axis into the state axis: each state variable ``v`` occupies ``n_modes`` contiguous scalar slots ``v__mode0 .. v__mode{M-1}``. The dfun reconstructs the ``(n_nodes, n_modes)`` mode-vector for each variable from its slots, evaluates the mode-aware equations (``mode_dot``/``mode_sum``), and scatters the per-mode derivatives back into those slots; per-mode coupling falls out of the existing 2-D matmul because each ``(var, mode)`` slot couples to the same slot across nodes.
 
     For a single-mode model this is the identity (one slot per variable), so the generated code is byte-for-byte unchanged.
 
@@ -90,8 +88,8 @@ def get_mode_layout(model: Any) -> Tuple[int, List[str], Dict[str, List[int]]]:
     n_modes = int(getattr(model, "number_of_modes", None) or 1)
     if n_modes <= 1:
         return 1, list(var_names), {v: [i] for i, v in enumerate(var_names)}
-    slot_names: List[str] = []
-    var_slots: Dict[str, List[int]] = {}
+    slot_names: list[str] = []
+    var_slots: dict[str, list[int]] = {}
     for v in var_names:
         var_slots[v] = []
         for m in range(n_modes):
@@ -112,7 +110,7 @@ def render_jax_default(value: Any) -> str:
     return repr(value)
 
 
-def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[List[str], List[str], List[str]]:
+def get_recorded_variable_names(model: Any, experiment: Any = None) -> tuple[list[str], list[str], list[str]]:
     """Compute the variable layout recorded by tvboptim's solver.
 
     The generated dynamics class declares ``VARIABLES_OF_INTEREST = state_names + recorded_aux`` where ``recorded_aux`` is the union of:
@@ -154,7 +152,7 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> Tuple[Lis
     return state_names, requested_aux, all_var_names
 
 
-def _state_recomputable_derived(model: Any) -> Set[str]:
+def _state_recomputable_derived(model: Any) -> set[str]:
     """Names of derived variables recomputable from the recorded state alone.
 
     Each derived variable's expression is fully expanded — via sympy substitution, in declaration order (which is topological: a derived variable may only reference earlier ones, as the dfun requires) — down to its primitive symbols.
@@ -184,7 +182,7 @@ def _state_recomputable_derived(model: Any) -> Set[str]:
     safe |= set(dparams.keys())
     safe.add("t")
 
-    expanded: Dict[str, Any] = {}  # name -> fully-expanded expr, or None if unparseable
+    expanded: dict[str, Any] = {}  # name -> fully-expanded expr, or None if unparseable
     for name, dv in dvars.items():
         eq = getattr(dv, "equation", None)
         rhs = getattr(eq, "rhs", None) if eq is not None else None
@@ -201,7 +199,7 @@ def _state_recomputable_derived(model: Any) -> Set[str]:
     return {name for name, expr in expanded.items() if expr is not None and {str(s) for s in expr.free_symbols} <= safe}
 
 
-def state_only_derived_var_names(model: Any) -> List[str]:
+def state_only_derived_var_names(model: Any) -> list[str]:
     """Derived-variable names that are provably functions of the state alone.
 
     Returned in the model's declaration order (dependency order — a derived variable may only reference earlier ones, as the dfun requires). The post-solve realignment binds these as locals so a recorded auxiliary can reach the
@@ -212,7 +210,7 @@ def state_only_derived_var_names(model: Any) -> List[str]:
     return [name for name in (model.derived_variables or {}) if name in recomputable]
 
 
-def state_only_recorded_aux(model: Any, experiment: Any = None) -> List[Tuple[str, int]]:
+def state_only_recorded_aux(model: Any, experiment: Any = None) -> list[tuple[str, int]]:
     """Recorded derived variables that are provably functions of the state alone.
 
     Returns ``[(name, aux_offset), ...]`` for each recorded derived variable that is state-recomputable (see :func:`_state_recomputable_derived`); ``aux_offset`` is the variable's index within the recorded-auxiliary block (trajectory channel ``len(state_names) + aux_offset``). These can be recomputed from the recorded post-step state to undo the solver's one-step auxiliary lag; coupling-dependent ones cannot (they need the in-scan coupling) and are omitted.
@@ -225,7 +223,7 @@ def state_only_recorded_aux(model: Any, experiment: Any = None) -> List[Tuple[st
     return [(name, offset) for offset, name in enumerate(requested_aux) if name in recomputable]
 
 
-def get_output_channels(model: Any, experiment: Any = None) -> Tuple[List[int], List[str], bool]:
+def get_output_channels(model: Any, experiment: Any = None) -> tuple[list[int], list[str], bool]:
     """Resolve the ``sv.record``-honoring output channels for the presented result.
 
     tvboptim's solver records ALL states (``VARIABLES_OF_INTEREST`` = states + recorded aux) because the full trajectory is needed for observations and the algorithm warmup. The user-facing ``SimulationResult`` should instead present only ``record=True`` state channels (+ recorded auxiliaries), matching the tvb backend's ``variables_of_interest``.
@@ -235,7 +233,7 @@ def get_output_channels(model: Any, experiment: Any = None) -> Tuple[List[int], 
     """
     _, _requested_aux, all_var_names = get_recorded_variable_names(model, experiment)
     n_modes, _, _ = get_mode_layout(model)
-    record_flag: Dict[str, bool] = {}
+    record_flag: dict[str, bool] = {}
     for var_name, sv in (model.state_variables or {}).items():
         rec = bool(getattr(sv, "record", True))
         slots = [f"{var_name}__mode{m}" for m in range(n_modes)] if n_modes > 1 else [var_name]
@@ -248,7 +246,7 @@ def get_output_channels(model: Any, experiment: Any = None) -> Tuple[List[int], 
     return output_indices, output_names, is_subset
 
 
-def resolve_model_output_indices(model: Any, experiment: Any = None) -> Tuple[List[int], List[str]]:
+def resolve_model_output_indices(model: Any, experiment: Any = None) -> tuple[list[int], list[str]]:
     """Resolve ``model.output`` entries to channel indices in the recorded ordering.
 
     ``model.output`` may name state variables, auxiliary (derived) variables, or a mix of the two. The recorded ordering is the state channels followed by the auxiliaries that were actually requested (:func:`get_recorded_variable_names`), so an output's position cannot be inferred from its kind — a state output sits
@@ -276,8 +274,8 @@ def resolve_model_output_indices(model: Any, experiment: Any = None) -> Tuple[Li
     if isinstance(output_vars, str):
         output_vars = [output_vars]
 
-    indices: List[int] = []
-    names: List[str] = []
+    indices: list[int] = []
+    names: list[str] = []
     for var in output_vars:
         if n_modes > 1 and var in state_vars:
             slots = [f"{var}__mode{m}" for m in range(n_modes)]
@@ -294,7 +292,7 @@ def resolve_model_output_indices(model: Any, experiment: Any = None) -> Tuple[Li
     return indices, names
 
 
-def format_channel_index(indices: List[int], n_channels: int) -> str:
+def format_channel_index(indices: list[int], n_channels: int) -> str:
     """Render axis-1 channel indices as the narrowest correct index expression.
 
     A single channel yields a scalar index (dropping the variable dimension);
@@ -310,12 +308,12 @@ def format_channel_index(indices: List[int], n_channels: int) -> str:
     return "[" + ", ".join(str(i) for i in indices) + "]"
 
 
-def parse_list_elements(rhs_str: str) -> List[str]:
+def parse_list_elements(rhs_str: str) -> list[str]:
     """Split a ``[a, b, c]`` list-literal string into top-level element strings, respecting nested brackets/parens (so ``[f(x, y), g(z)]`` yields two elements)."""
     inner = rhs_str[1:-1]  # strip [ ]
-    elements: List[str] = []
+    elements: list[str] = []
     depth = 0
-    current: List[str] = []
+    current: list[str] = []
     for c in inner:
         if c in "([{":
             depth += 1
@@ -345,7 +343,7 @@ def _shape_ndim(shape_str) -> int:
     return len([p for p in inner.split(",") if p.strip()])
 
 
-def graph_selection(network, has_delay: bool) -> Tuple[bool, bool]:
+def graph_selection(network, has_delay: bool) -> tuple[bool, bool]:
     """Pick the tvboptim graph type for a (possibly delayed) network.
 
     Returns ``(use_length_graph, use_delay_graph)``:
@@ -375,7 +373,7 @@ def graph_selection(network, has_delay: bool) -> Tuple[bool, bool]:
     return (not use_delay_graph), use_delay_graph
 
 
-def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, func_to_ci, n_modes=1) -> Dict[str, Any]:
+def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, func_to_ci, n_modes=1) -> dict[str, Any]:
     """Resolve every derived field a tvboptim coupling class needs from a Coupling.
 
     Keeps the cfun mako template emission-only (resolution lives here, per the resolve-in-Python-not-mako convention). Covers: output dimension, incoming/local states (explicit, inferred from the pre-expression, or the model's coupling_variable states), the mode fold (a multi-mode cvar → its per-node mode slots, one output per mode), pre-expression term parsing (list decomposition + n_pre), vectorized-vs-per-edge selection, class/base names, the differentiable- delay kwarg, state-subscript aliases (``{state}_j``/``_i``) and post-recombination symbols, plus the symbol list for the JAX expression printer. Expression rendering (``jaxcode``) stays in the template.
@@ -479,7 +477,7 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     uses_local = (
         bool(state_aliases_i) or bool(re.search(r"\bx_i\b", _pre_rhs0)) or bool(re.search(r"\blocal_states\b", _pre_rhs0))
     )
-    gx_symbols = ["gx_%d" % k for k in range(n_pre)] if n_pre > 1 else []
+    gx_symbols = [f"gx_{k:d}" for k in range(n_pre)] if n_pre > 1 else []
     post_alias_symbols = [a[0] for a in post_aliases_i]
 
     all_symbols = (
@@ -530,8 +528,7 @@ def resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict):
 
     tvboptim keys coupling by coupling-input name; the schema keys by function name.
     Resolution order: (1) explicit ``CouplingInput.source``, (2) same name, (3) a single unmapped function broadcasts to all remaining inputs, (4) equal counts zip positionally. LOCAL inputs (``CouplingInput.local=True``, e.g.
-    ``local_coupling``) are then dropped from the network mapping — a local term is
-    TVB's surface/local coupling, zero for the region-based simulations tvboptim supports, so it must not be wired to the long-range connectome (the dfun binds it to 0 via its fallback).
+    ``local_coupling``) are then dropped from the network mapping — a local term is TVB's surface/local coupling, zero for the region-based simulations tvboptim supports, so it must not be wired to the long-range connectome (the dfun binds it to 0 via its fallback).
 
     Returns ``(ci_coupling_map, func_to_first_ci)`` where ``ci_coupling_map`` maps ci_name -> (func_name, coupling_obj) and ``func_to_first_ci`` maps func_name to the first ci_name using it (for state-access translation).
     """
@@ -563,7 +560,7 @@ def resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict):
                 ci_coupling_map[ci_name] = unmapped_funcs[0]
             func_to_first_ci.setdefault(unmapped_funcs[0][0], unmapped_cis[0])
         elif len(unmapped_funcs) == len(unmapped_cis):
-            for ci_name, (fn, co) in zip(unmapped_cis, unmapped_funcs):
+            for ci_name, (fn, co) in zip(unmapped_cis, unmapped_funcs, strict=True):
                 ci_coupling_map[ci_name] = (fn, co)
                 func_to_first_ci.setdefault(fn, ci_name)
 
@@ -577,8 +574,8 @@ def resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict):
 
 
 def get_node_state_overrides(
-    network: Any, n_nodes: int, state_names: List[str], default_initial_state: List[float]
-) -> Dict[str, List[float]]:
+    network: Any, n_nodes: int, state_names: list[str], default_initial_state: list[float]
+) -> dict[str, list[float]]:
     """Scan network.nodes for per-node initial state overrides.
 
     When nodes define ``state: {theta: {value: 0.8}}`` in the YAML, build per-node arrays for state variables that differ across nodes.
@@ -617,7 +614,7 @@ def get_node_state_overrides(
     return overrides
 
 
-def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: Dict[str, float]) -> Dict[str, List[float]]:
+def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: dict[str, float]) -> dict[str, list[float]]:
     """Scan network.nodes for per-node parameter overrides.
 
     When nodes define parameters that differ from the dynamics defaults, build per-node arrays. Only parameters that differ on at least one node are returned.
@@ -667,7 +664,7 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: Dic
     return overrides
 
 
-def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List[str]]:
+def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list[str]]:
     """Render `transforms:` targeting weight to JAX for inlining in the generated script.
 
     A transform is a `Function`, so both of its forms are lowered: an `equation:` renders through the same expression resolver and primitive table the runtime evaluates (`Network.transform_expression`, `tvbo.codegen.transforms`), and a `callable:` renders as an import of that callable plus a call. The kit therefore applies the declared transform exactly as the runtime does, but visibly, on the RAW weights the generated `create_network` is handed — raw SC stays in the network file, the transform stays declared in the spec, and the operation is in the script rather than hidden in the tvbo runtime. This helper runs only at render time, inside the tvbo environment.
@@ -696,9 +693,9 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
     node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
     raw = getattr(network, "raw_weights_matrix", None)
     n_nodes = None if raw is None else np.asarray(raw).shape[0]
-    transforms: List[Tuple[str, List[str]]] = []
-    const_env: List[str] = []
-    const_seen: Set[str] = set()
+    transforms: list[tuple[str, list[str]]] = []
+    const_env: list[str] = []
+    const_seen: set[str] = set()
 
     def _add_const(name: str, line: str) -> None:
         if name not in const_seen:
@@ -745,7 +742,7 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
     return transforms, const_env
 
 
-def to_numeric(val: Any) -> Union[int, float, Any]:
+def to_numeric(val: Any) -> int | float | Any:
     """Convert string to numeric if possible."""
     if isinstance(val, (int, float)):
         return val
@@ -757,7 +754,7 @@ def to_numeric(val: Any) -> Union[int, float, Any]:
     return val
 
 
-def normalize_coupling_aliases(all_couplings: Dict[str, Any], model: Any = None) -> Dict[str, Any]:
+def normalize_coupling_aliases(all_couplings: dict[str, Any], model: Any = None) -> dict[str, Any]:
     """Collapse duplicate keys that point to the same coupling object.
 
     tvbo can expose one coupling under multiple names such as the coupling function name, a coupling-input key, or an explicit CouplingInput.source.
@@ -847,7 +844,7 @@ def parameter_value(parameters: Any, name: str, default: Any = None) -> Any:
     return default
 
 
-def pipeline_equation_parameters(pipeline: Any) -> Dict[str, Any]:
+def pipeline_equation_parameters(pipeline: Any) -> dict[str, Any]:
     """Collect equation parameters from all observation pipeline steps."""
     values = {}
     for step in pipeline or []:
@@ -879,7 +876,7 @@ def time_argument_ms(argument: Any, default: float) -> float:
     return value
 
 
-def _integration_dt(experiment: Any) -> Optional[float]:
+def _integration_dt(experiment: Any) -> float | None:
     """The experiment's integration step in ms, or ``None`` when there is no grid.
 
     Every reducer that turns a declared period into a number of steps needs this, so it is read in one place rather than re-walking ``experiment.integration.step_size`` at each call site.
@@ -898,11 +895,10 @@ def _reduction_init_value(sv: Any) -> float:
     return initial_value(sv, default=0.0)
 
 
-def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
+def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
     """Lift a streaming ``(init, update, finalize)`` BOLD reducer from an HRF-Volterra pipeline observation marked ``reduce: streaming``.
 
-    The materialised ``bold`` pipeline (HRF kernel -> stride decimation -> prepend the downsampled transient -> ``'valid'`` HRF convolution -> Volterra scaling -> subsample at the TR) is recast as a block reducer: a downsampled-history ring buffer folds each integration block, ``strided_convolve`` evaluates the HRF convolution ONLY at the TR boundaries, and the Volterra-scaled samples are written into a preallocated BOLD buffer — so the full trajectory is never held. Byte-identical to the pipeline value to f64 rounding (``strided_convolve`` is ~1e-12 vs the FFT ``fftconvolve``), with no
-    FFT buffer. Streamable only when the decimation is a pure ``subsample`` stride;
+    The materialised ``bold`` pipeline (HRF kernel -> stride decimation -> prepend the downsampled transient -> ``'valid'`` HRF convolution -> Volterra scaling -> subsample at the TR) is recast as a block reducer: a downsampled-history ring buffer folds each integration block, ``strided_convolve`` evaluates the HRF convolution ONLY at the TR boundaries, and the Volterra-scaled samples are written into a preallocated BOLD buffer — so the full trajectory is never held. Byte-identical to the pipeline value to f64 rounding (``strided_convolve`` is ~1e-12 vs the FFT ``fftconvolve``), with no FFT buffer. Streamable only when the decimation is a pure ``subsample`` stride;
     ``temporal_average`` is an averaging window (even ``period_samples == 1`` shifts by one sample — it reproduces tvboptim TemporalAverage, not identity) and raises.
 
     Returns a reduction dict tagged ``kind: 'convolution'`` carrying the lifted constants (source, HRF-kernel call, decimation stride, TR stride, Volterra ``k_1``/``V_0``); the convolution branch of ``render_reduction`` emits the reducer from it. Called bare (no ``experiment``) only as the ``is this streaming?`` predicate — that path stays side-effect-free and returns the tag without resolving function defaults.
@@ -914,7 +910,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
     name = str(get_attr(obs, "name", "observation"))
     src = as_list(get_attr(obs, "source"))
     source = str(src[0]) if src else None
-    red: Dict[str, Any] = {"kind": "convolution", "source": source}
+    red: dict[str, Any] = {"kind": "convolution", "source": source}
     if experiment is None:
         # Predicate call ("is this a streaming reduction?"): stay side-effect-free and skip the function-default lookups that need the experiment. Non-None is enough.
         return red
@@ -1036,7 +1032,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
     return red
 
 
-def _resolve_stat_stream(obs: Any) -> Dict[str, Any]:
+def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
     """Synthesize a cumulative streaming mean/std/variance reducer from ``aggregation``.
 
     An observation marked ``reduce: streaming`` whose ``aggregation`` is ``mean``, ``std`` or ``variance`` — and which has no HRF/BOLD ``pipeline`` — folds into the integrator carry as a running-moment accumulator instead of materialising the source trajectory.
@@ -1104,17 +1100,15 @@ def _resolve_stat_stream(obs: Any) -> Dict[str, Any]:
     }
 
 
-def _resolve_fc_stream(obs: Any) -> Optional[Dict[str, Any]]:
+def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
     """Lift a cumulative co-moment FC reducer from a ``compute_fc`` pipeline marked ``reduce: streaming``.
 
-    A ``pipeline: [compute_fc]`` observation — a node-node Pearson-correlation FC over a recorded source (e.g. inp_corr over the excitatory input current ``x_e_pre``) — folds into the integrator carry as a Welford co-moment accumulator: the existing ``windowed_fc`` reducer recipe's ``add`` update and zero-diagonal Pearson ``emit``,
-    WITHOUT its sliding-window ``evict`` (this reduction is *cumulative* over the whole run, not a moving window). The ``compute_fc`` ``skip_t`` (default 0) drops the first samples exactly as the materialised pipeline does. Byte-identical to ``compute_fc(source, skip_t=...)`` to f64 summation order, holding no trajectory (``O(n^2)`` co-moment state vs the ``O(n_time * n)`` trajectory).
+    A ``pipeline: [compute_fc]`` observation — a node-node Pearson-correlation FC over a recorded source (e.g. inp_corr over the excitatory input current ``x_e_pre``) — folds into the integrator carry as a Welford co-moment accumulator: the existing ``windowed_fc`` reducer recipe's ``add`` update and zero-diagonal Pearson ``emit``, WITHOUT its sliding-window ``evict`` (this reduction is *cumulative* over the whole run, not a moving window). The ``compute_fc`` ``skip_t`` (default 0) drops the first samples exactly as the materialised pipeline does. Byte-identical to ``compute_fc(source, skip_t=...)`` to f64 summation order, holding no trajectory (``O(n^2)`` co-moment state vs the ``O(n_time * n)`` trajectory).
 
-    The reducer's assignments are lowered to backend source here (via the shared
-    :func:`tvbo.codegen.reducers.resolve_streaming_reducer`) so the render partial emits from clean context; the dict is tagged ``kind: 'comoment'`` for the matrix-state render branch. Returns ``None`` when the pipeline's first reducer has no registered ``window`` streaming form (so the caller falls through to the BOLD path). Takes no ``experiment`` — side-effect-free, so the bare ``resolve_reduction(obs)`` streaming predicate stays truthy.
+    The reducer's assignments are lowered to backend source here (via the shared :func:`tvbo.codegen.reducers.resolve_streaming_reducer`) so the render partial emits from clean context; the dict is tagged ``kind: 'comoment'`` for the matrix-state render branch. Returns ``None`` when the pipeline's first reducer has no registered ``window`` streaming form (so the caller falls through to the BOLD path). Takes no ``experiment`` — side-effect-free, so the bare ``resolve_reduction(obs)`` streaming predicate stays truthy.
     """
-    from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
     from tvbo.codegen.reducers import resolve_streaming_reducer
+    from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 
     name = str(get_attr(obs, "name", "observation"))
     src = as_list(get_attr(obs, "source"))
@@ -1171,7 +1165,7 @@ def _step_reducer_name(step: Any) -> str:
 _STRIDE_REDUCERS = {"subsampling", "subsample", "sub_sample"}
 
 
-def _resolve_subsample_stream(obs: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
+def _resolve_subsample_stream(obs: Any, experiment: Any = None) -> dict[str, Any] | None:
     """Lift a stride reducer from a pure-decimation pipeline marked ``reduce: streaming``.
 
     The simplest streamable pipeline is a *stride*: keep every ``k``-th sample of the source and drop the rest (``SubSampling(period=TR)``). Materialised it costs a full trajectory to produce a ``1/k`` slice of it; folded into the carry it costs only the slice. Every sample the reducer keeps is a sample the pipeline would have kept, so the streamed value is bit-identical rather than merely close.
@@ -1187,7 +1181,7 @@ def _resolve_subsample_stream(obs: Any, experiment: Any = None) -> Optional[Dict
     name = str(get_attr(obs, "name", "observation"))
     src = as_list(get_attr(obs, "source"))
     source = str(src[0]) if src else None
-    red: Dict[str, Any] = {"kind": "stride", "source": source, "windowed": False}
+    red: dict[str, Any] = {"kind": "stride", "source": source, "windowed": False}
     if experiment is None:
         return red  # predicate call ("is this streaming?"): stay side-effect-free
 
@@ -1229,7 +1223,7 @@ _REDUCTION_DIMS = {
 }
 
 
-def reduction_dims(red: Optional[Dict[str, Any]]) -> tuple:
+def reduction_dims(red: dict[str, Any] | None) -> tuple:
     """The axis names a reduction's output carries.
 
     A reduction's output shape is fixed by its kind, so its axes are named here — where the reducer is chosen — and travel with it to the result container. Naming them at the point of production is what keeps a reduced observation keyed like every other tvbo array without anyone re-deriving the axes from shape afterwards, which cannot distinguish (say) a frequency-by-node spectrum from a node-by-node matrix.
@@ -1239,9 +1233,11 @@ def reduction_dims(red: Optional[Dict[str, Any]]) -> tuple:
     return _REDUCTION_DIMS.get(str(red.get("kind")), ())
 
 
-def _partition_group_count(pdef: Dict[str, Any], gather: str) -> int:
+def _partition_group_count(pdef: dict[str, Any], gather: str) -> int:
     """Group count for a `partition` = the leading axis of its (n_groups, n) gather table.
-    Fixed at codegen: from the declared shape's literal leading dim, the literal value's outer length, or the leading dim of the materialised (produced/sourced) gather artifact."""
+
+    Fixed at codegen: from the declared shape's literal leading dim, the literal value's outer length, or the leading dim of the materialised (produced/sourced) gather artifact.
+    """
     shape = pdef.get("shape")
     if shape is not None:
         head = shape[0] if isinstance(shape, (list, tuple)) else str(shape).strip().lstrip("(").split(",")[0].strip()
@@ -1258,6 +1254,7 @@ def _partition_group_count(pdef: Dict[str, Any], gather: str) -> int:
     lazy = pdef.get("lazy")
     if lazy:
         import numpy as np
+
         from tvbo.data import param_io
 
         path, key = lazy
@@ -1268,13 +1265,10 @@ def _partition_group_count(pdef: Dict[str, Any], gather: str) -> int:
     )
 
 
-def _toposort_derived(derived: List[Dict[str, Any]], dv_names: set) -> List[Dict[str, Any]]:
-    """Order observer derived variables so each follows the DVs its expression reads — a
-    STABLE topological sort of the DV dependency DAG. The observer's derived variables form a
-    DAG (each RHS reads earlier DVs, states, parameters, or the source), but the keyed collection does not preserve authoring order, so a chain like ``U = f(pgn)`` declared before ``pgn = g(pg)`` would otherwise emit ``U`` above its input and reference an unbound name. Independent variables keep their incoming order (an already-valid or single-DV chain is unchanged, so existing observers emit byte-identically); raises on a dependency cycle.
-    """
+def _toposort_derived(derived: list[dict[str, Any]], dv_names: set) -> list[dict[str, Any]]:
+    """Order observer derived variables so each follows the DVs its expression reads — a STABLE topological sort of the DV dependency DAG. The observer's derived variables form a DAG (each RHS reads earlier DVs, states, parameters, or the source), but the keyed collection does not preserve authoring order, so a chain like ``U = f(pgn)`` declared before ``pgn = g(pg)`` would otherwise emit ``U`` above its input and reference an unbound name. Independent variables keep their incoming order (an already-valid or single-DV chain is unchanged, so existing observers emit byte-identically); raises on a dependency cycle."""
 
-    def _deps(entry: Dict[str, Any]) -> set:
+    def _deps(entry: dict[str, Any]) -> set:
         if "surrogate" in entry:
             s = entry["surrogate"]
             d = {n for n in (str(x) for x in s["expr"].free_symbols) if n in dv_names}
@@ -1285,7 +1279,7 @@ def _toposort_derived(derived: List[Dict[str, Any]], dv_names: set) -> List[Dict
     idx = {d["name"]: i for i, d in enumerate(derived)}
     deps = {d["name"]: _deps(d) for d in derived}
     placed: set = set()
-    ordered: List[Dict[str, Any]] = []
+    ordered: list[dict[str, Any]] = []
     remaining = list(derived)
     while remaining:
         ready = [d for d in remaining if deps[d["name"]] <= placed]
@@ -1300,7 +1294,7 @@ def _toposort_derived(derived: List[Dict[str, Any]], dv_names: set) -> List[Dict
     return ordered
 
 
-def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
+def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None:
     """Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction.
 
     An observation may declare a co-integrated auxiliary ``Dynamics`` (the observer) that computes it online as a time recurrence, instead of a post-scan ``pipeline``. It may instead opt a post-scan ``pipeline`` into streaming with ``reduce: streaming``, lifting it to a block reducer: a cumulative mean, standard deviation or variance over a source synthesizes a running-moment accumulator; a ``compute_fc`` windowed-correlation pipeline becomes an add-only Welford co-moment FC reducer; an HRF-Volterra BOLD pipeline is lifted by :func:`_resolve_bold_stream` and tagged ``kind: 'convolution'``. An observation that declares its own ``dynamics`` is already a reducer, and ``reduce: streaming`` on it opts that reducer into the post-tuning carry rather than selecting a pipeline-lifted one, so the observer path owns it.
@@ -1369,7 +1363,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     # Materialisation writes to disk, so it runs only at genuine emission (experiment supplied).
     src_file = get_attr(experiment, "_source_file", None) if experiment is not None else None
     src_dir = Path(src_file).parent if src_file else None
-    parameters: Dict[str, Any] = {}
+    parameters: dict[str, Any] = {}
     for n in param_names:
         if n in param_values:
             parameters[n] = {"value": param_values[n], "shape": param_shapes.get(n)}
@@ -1391,7 +1385,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     alias = OBSERVER_INPUT if source and OBSERVER_INPUT not in own else None
 
     allowed = own | ({source} if source else set()) | {"dt", "count"} | ({alias} if alias else set())
-    loc: Dict[str, Any] = {n: sp.Symbol(n) for n in allowed}
+    loc: dict[str, Any] = {n: sp.Symbol(n) for n in allowed}
     loc["pi"] = sp.pi
     # setdefault, so a declared symbol of the same name still wins over the primitive.
     from tvbo.parse.expression import ARRAY_FUNCTIONS
@@ -1399,7 +1393,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     for _afn in ARRAY_FUNCTIONS:
         loc.setdefault(str(_afn), sp.Function(str(_afn)))
     funcs = get_attr(dyn, "functions")
-    functions: Dict[str, Any] = {}
+    functions: dict[str, Any] = {}
     for fname, fn in funcs.items() if hasattr(funcs, "items") else []:
         feq = get_attr(fn, "equation")
         fargs = [str(get_attr(a, "name", a)) for a in as_list(get_attr(fn, "arguments"))]
@@ -1420,7 +1414,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
             )
         return expr.subs(sp.Symbol(alias), sp.Symbol(source)) if alias else expr
 
-    states: List[Dict[str, Any]] = []
+    states: list[dict[str, Any]] = []
     windowed = False
     for name, sv in sv_pairs:
         name = str(name)
@@ -1674,7 +1668,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
     return red
 
 
-def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
+def streaming_post_eval_plan(experiment: Any) -> dict[str, Any]:
     """Plan a streaming post-tuning evaluation for a fitting experiment.
 
     A ``reduce: streaming`` observation (currently HRF-Volterra BOLD) is folded into the integrator carry via ``prepare(reduce=...)`` in the algorithm post-tuning evaluation, so the full-length fit trajectory is never materialised (the memory bomb an FC group fit hits at the paper's real per-stage duration). This resolves, once for the whole experiment:
@@ -1716,7 +1710,7 @@ def streaming_post_eval_plan(experiment: Any) -> Dict[str, Any]:
 
     # Transitive closure of derived observations reachable from the streamed values and the static (trajectory-free) network observations: a derived obs is computable iff every observation it sources is already available.
     available = set(streaming) | {str(n) for n, o in obs_by_name.items() if _is_static_source(o)}
-    deliverables: List[str] = []
+    deliverables: list[str] = []
     changed = True
     while changed:
         changed = False
@@ -1754,16 +1748,16 @@ def _literal_code(value: Any) -> str:
     return repr(value)
 
 
-def _set_literal_arg(class_info: Dict[str, Any], name: str, value: Any) -> None:
+def _set_literal_arg(class_info: dict[str, Any], name: str, value: Any) -> None:
     class_info["constructor_args"][name] = value
     class_info["constructor_arg_codes"][name] = _literal_code(value)
 
 
-def _set_code_arg(class_info: Dict[str, Any], name: str, code: str) -> None:
+def _set_code_arg(class_info: dict[str, Any], name: str, code: str) -> None:
     class_info["constructor_arg_codes"][name] = code
 
 
-def _base_class_info(module: str, name: str, source_info: Dict[str, Any]) -> Dict[str, Any]:
+def _base_class_info(module: str, name: str, source_info: dict[str, Any]) -> dict[str, Any]:
     return {
         "name": name,
         "module": module,
@@ -1777,7 +1771,7 @@ def _base_class_info(module: str, name: str, source_info: Dict[str, Any]) -> Dic
     }
 
 
-def adapt_class_reference_for_tvboptim(class_info: Dict[str, Any], obs: Any, dt: float) -> Optional[Dict[str, Any]]:
+def adapt_class_reference_for_tvboptim(class_info: dict[str, Any], obs: Any, dt: float) -> dict[str, Any] | None:
     """Translate schema class references to native tvboptim monitor classes.
 
     Database observation metadata may point at TVB monitor classes because the same schema object is used by the TVB backend. The tvboptim backend should consume the equivalent tvboptim monitor API when one exists.
@@ -1804,7 +1798,7 @@ def adapt_class_reference_for_tvboptim(class_info: Dict[str, Any], obs: Any, dt:
     return class_info
 
 
-def _adapt_tvb_downsampling_reference(class_info: Dict[str, Any], obs: Any, tvboptim_class_name: str) -> Dict[str, Any]:
+def _adapt_tvb_downsampling_reference(class_info: dict[str, Any], obs: Any, tvboptim_class_name: str) -> dict[str, Any]:
     if tvboptim_class_name == "TemporalAverage":
         tvboptim_class_name = "TVBTemporalAverage"
         module = "tvbo.templates.tvboptim.observations"
@@ -1822,7 +1816,7 @@ def _adapt_tvb_downsampling_reference(class_info: Dict[str, Any], obs: Any, tvbo
     return adapted
 
 
-def _adapt_tvb_bold_reference(class_info: Dict[str, Any], obs: Any, dt: float) -> Optional[Dict[str, Any]]:
+def _adapt_tvb_bold_reference(class_info: dict[str, Any], obs: Any, dt: float) -> dict[str, Any] | None:
     constructor_args = class_info.get("constructor_args", {})
     hrf_kernel = constructor_args.get("hrf_kernel", "FirstOrderVolterra")
     if str(hrf_kernel) != "FirstOrderVolterra":
@@ -1861,6 +1855,7 @@ def _adapt_tvb_bold_reference(class_info: Dict[str, Any], obs: Any, dt: float) -
 
 def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False) -> str:
     """Map the backend-neutral ``integration.differentiation`` strategy onto native-solver kwargs, returned as a ready-to-emit string (e.g.
+
     ``"grad_horizon=100, block_size=50"``).
 
     ``truncation_window`` / ``checkpoint_interval`` are in ms of simulated time;
@@ -1910,7 +1905,7 @@ def resolve_optimizer_mode(integration: Any) -> str:
     return {"forward": "fwd", "reverse": "rev"}.get(str(mode), str(mode))
 
 
-def resolve_config_access(dotted: str, coupling_keys: Set[str], external_keys: Set[str] = frozenset()) -> Optional[str]:
+def resolve_config_access(dotted: str, coupling_keys: set[str], external_keys: set[str] = frozenset()) -> str | None:
     """Dotted state-config path for a `<scope>.<param>` parameter reference.
 
     One addressing grammar, shared by optimization ``free_parameters``, analysis ``wrt``, and inference ``priors`` — so "which knob" reads the same everywhere:
@@ -1931,7 +1926,7 @@ def resolve_config_access(dotted: str, coupling_keys: Set[str], external_keys: S
     return None
 
 
-def _analysis_wrt_access(wrt: List[str], coupling_keys: Set[str]) -> Optional[str]:
+def _analysis_wrt_access(wrt: list[str], coupling_keys: set[str]) -> str | None:
     """Resolve an analysis ``wrt`` reference to a config path (coupling/dynamics)."""
     return resolve_config_access(wrt[0], coupling_keys) if wrt else None
 
@@ -1949,7 +1944,7 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
 
     ctx = linear_response_context(model)
     settle_dt = min(0.1, float(dt)) if dt else 0.1
-    obs_specs: List[Dict[str, Any]] = []
+    obs_specs: list[dict[str, Any]] = []
     for name, aobs in lr_obs.items():
         an = aobs.analysis
         atype = str(an.type)
@@ -2014,8 +2009,8 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
 
 
 def render_analysis_observations(
-    analysis_obs: Dict[str, Any],
-    coupling_keys: Set[str],
+    analysis_obs: dict[str, Any],
+    coupling_keys: set[str],
     solver_class: str,
     transient_time: float,
     t1_default: float,
@@ -2023,8 +2018,8 @@ def render_analysis_observations(
     solver_kwargs: str = "",
     model: Any = None,
     time_si_factor: float = 1.0e-3,
-    events: Optional[Dict[str, Any]] = None,
-    op_constraint: Optional[Dict[str, Any]] = None,
+    events: dict[str, Any] | None = None,
+    op_constraint: dict[str, Any] | None = None,
 ) -> str:
     """Render the body of the generated ``compute_analysis_observations()`` function.
 
@@ -2035,7 +2030,7 @@ def render_analysis_observations(
     """
     window = f"t0=0.0 + {transient_time}, t1={transient_time} + {t1_default}, dt={dt}"
     solver_kwargs = _analysis_solver_kwargs(solver_kwargs)
-    lines: List[str] = []
+    lines: list[str] = []
 
     _LR_TYPES = {"covariance", "psd", "fisher"}
     _lr_obs = {n: a for n, a in analysis_obs.items() if str(getattr(a.analysis, "type", "") or "") in _LR_TYPES}
@@ -2065,7 +2060,7 @@ def render_analysis_observations(
     for aobs in analysis_obs.values():
         if str(getattr(aobs.analysis, "type", "") or "") == "finite_difference":
             fd_group.setdefault(_fd_signature(aobs), f"fdgrp{len(fd_group)}")
-    fd_emitted: Set[tuple] = set()
+    fd_emitted: set[tuple] = set()
 
     for name, aobs in analysis_obs.items():
         an = aobs.analysis
@@ -2137,7 +2132,7 @@ def render_analysis_observations(
     return "\n".join(f"    {ln}" for ln in lines)
 
 
-def render_adiabatic_signal(signal_expr: str, var_names: List[str]) -> str:
+def render_adiabatic_signal(signal_expr: str, var_names: list[str]) -> str:
     """Render an envelope-signal expression over recorded variables as an ``observe`` body.
 
     Each recorded-variable name in ``signal_expr`` (e.g. ``"y1 - y2"``) is replaced by its slice ``_r.ys[:, <index>, :]`` (a ``[n_time, n_nodes]`` view). ``<index>`` is the variable's position in the solver's recorded ordering (:func:`get_recorded_variable_names`).
@@ -2154,12 +2149,12 @@ def render_adiabatic_signal(signal_expr: str, var_names: List[str]) -> str:
 
 
 def render_recorded_observable(
-    record_names: List[str],
-    derived_names: List[str],
-    network_obs_names: List[str],
-    analysis_names: List[str],
-    only_obs: Optional[List[str]] = None,
-    recorded_var_names: Optional[List[str]] = None,
+    record_names: list[str],
+    derived_names: list[str],
+    network_obs_names: list[str],
+    analysis_names: list[str],
+    only_obs: list[str] | None = None,
+    recorded_var_names: list[str] | None = None,
 ) -> str:
     """Render the body of an exploration ``observable_fn`` that records a `record:` list.
 
@@ -2175,7 +2170,7 @@ def render_recorded_observable(
         if only_obs is not None:
             _only = [n for n in only_obs if n not in channel]
             # An empty closure must emit an empty *set* literal — "{}" is an empty dict, which would change compute_all_observations' `only=` semantics.
-            _only_lit = ("{%s}" % ", ".join(repr(n) for n in sorted(_only))) if _only else "set()"
+            _only_lit = ("{{{}}}".format(", ".join(repr(n) for n in sorted(_only)))) if _only else "set()"
             lines.append(f"_all_obs = compute_all_observations(result, s, result_transient, only={_only_lit})")
         else:
             lines.append("_all_obs = compute_all_observations(result, s, result_transient)")
@@ -2195,12 +2190,12 @@ def render_recorded_observable(
     return "\n".join(f"        {ln}" for ln in lines)
 
 
-def _dist_params(dist_obj: Any) -> Dict[str, float]:
+def _dist_params(dist_obj: Any) -> dict[str, float]:
     """Numeric parameters of a Distribution, tolerant of the value/label gotcha.
 
     A bare scalar in a keyed ``Parameter`` collection lands in ``.label`` (str), not ``.value``; accept either so YAML can write ``std: 2.0`` or ``std: {value: 2.0}``.
     """
-    out: Dict[str, float] = {}
+    out: dict[str, float] = {}
     for k, p in (getattr(dist_obj, "parameters", None) or {}).items():
         v = getattr(p, "value", None)
         if v is None:
@@ -2232,7 +2227,7 @@ def dist_expr(dist_obj: Any) -> str:
 
 
 def render_inference(
-    inf: Any, coupling_keys: Set[str], external_keys: Set[str], derived_names: Set[str], network_obs_names: Set[str]
+    inf: Any, coupling_keys: set[str], external_keys: set[str], derived_names: set[str], network_obs_names: set[str]
 ) -> str:
     """Render the body of one Bayesian inference (numpyro NUTS/MCMC), 8-space indented.
 
@@ -2258,7 +2253,7 @@ def render_inference(
     def _var(dotted: str) -> str:
         return "_p_" + "".join(c if c.isalnum() else "_" for c in dotted)
 
-    def _pred_stmts(cfg: str, target: str, indent: str) -> List[str]:
+    def _pred_stmts(cfg: str, target: str, indent: str) -> list[str]:
         """Statements computing the observed/predicted observable into ``target``, hoisting the compute_all_observations call to a single temp."""
         if source in network_obs_names:
             return [f"{indent}{target} = {source}"]
@@ -2296,7 +2291,7 @@ def render_inference(
 # State Variable Bounds
 
 
-def materialise_lazy_params(parameters: Any, experiment: Any = None) -> Dict[str, tuple]:
+def materialise_lazy_params(parameters: Any, experiment: Any = None) -> dict[str, tuple]:
     """Resolve every sourced/produced parameter to a content-addressed artifact.
 
     A `Parameter` carrying `producer:`, `source:` or `used:` has no literal `value`, so the emission sites would otherwise fall back to a scalar default and silently drop the array — a per-node operator would become ``jnp.full(shape, 1.0)`` and the model would run with the geometry erased. Materialising here writes the array once at codegen time and lets the generated module read it back, so an operator of any size costs nothing in the generated source.
@@ -2313,7 +2308,7 @@ def materialise_lazy_params(parameters: Any, experiment: Any = None) -> Dict[str
     src_dir = Path(src_file).parent if src_file else None
 
     params = list(parameters.values()) if hasattr(parameters, "values") else list(parameters)
-    out: Dict[str, tuple] = {}
+    out: dict[str, tuple] = {}
     for p in params:
         if not param_io.is_lazy(p):
             continue
@@ -2322,7 +2317,7 @@ def materialise_lazy_params(parameters: Any, experiment: Any = None) -> Dict[str
     return out
 
 
-def get_noise_covariance(model: Any, experiment: Any = None) -> Optional[Dict[str, Any]]:
+def get_noise_covariance(model: Any, experiment: Any = None) -> dict[str, Any] | None:
     """The noise covariance a model declares, ready for the solver template to emit.
 
     Mirrors the provenance rule every other array-valued quantity follows: a literal binds inline, while a sourced or produced matrix (the usual case — a projection operator, a connectome-derived structure) is materialised codegen-time to a content-addressed artifact and emitted as a lazy ``(file, key)`` the generated module reads at run time, so a large operator never enters the generated source.
@@ -2383,7 +2378,7 @@ def get_noise_covariance(model: Any, experiment: Any = None) -> Optional[Dict[st
     return found[0] if found else None
 
 
-def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
+def get_state_bounds(model: Any) -> tuple[list, list, bool]:
     """Extract state variable bounds as SymPy expressions.
 
     Uses ``sympy.oo`` for unbounded dimensions so code printers render the right backend literal — ``jnp.inf``, ``np.inf``, ``Inf`` — on their own.
@@ -2399,7 +2394,7 @@ def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
             - bounds_hi: list of sympy expressions (Float or oo)
             - has_finite_bounds: True if any bound is finite
     """
-    from sympy import oo, Float
+    from sympy import Float, oo
 
     bounds_lo: list = []
     bounds_hi: list = []
@@ -2408,6 +2403,7 @@ def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
         return bounds_lo, bounds_hi, False
 
     import math
+
     from tvbo.utils import domain_enforcement
 
     def _finite(b):
@@ -2420,13 +2416,13 @@ def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
         except (TypeError, ValueError):
             return False
 
-    for _sv_name, sv in model.state_variables.items():
+    for sv_name, sv in model.state_variables.items():
         lo, hi = None, None
         dom = getattr(sv, "domain", None)
         enforce = domain_enforcement(dom)
         if enforce == "wrap":
             raise NotImplementedError(
-                f"State variable '{_sv_name}' uses domain enforce='wrap', which the "
+                f"State variable '{sv_name}' uses domain enforce='wrap', which the "
                 f"tvboptim backend does not yet support. Use 'clamp' or 'none'."
             )
         if dom is not None and enforce == "clamp":
@@ -2439,7 +2435,7 @@ def get_state_bounds(model: Any) -> Tuple[List, List, bool]:
     return bounds_lo, bounds_hi, has_finite
 
 
-def format_bounds_array(bounds: List, format: str = "jax") -> str:
+def format_bounds_array(bounds: list, format: str = "jax") -> str:
     """Render a list of SymPy bound values as a code-level list literal.
 
     Uses the appropriate TVBO code printer so infinity is rendered correctly for any backend (``jnp.inf``, ``np.inf``, ``Inf``, …).
@@ -2520,7 +2516,7 @@ def obs_has_all_args(obs: Any) -> bool:
     return True
 
 
-def get_observation_refs(observations_dict: Dict[str, Any]) -> Tuple[Set[str], List[str]]:
+def get_observation_refs(observations_dict: dict[str, Any]) -> tuple[set[str], list[str]]:
     """Categorize observations into network vs simulation-derived.
 
     Returns:
@@ -2538,12 +2534,12 @@ def get_observation_refs(observations_dict: Dict[str, Any]) -> Tuple[Set[str], L
     return network_obs, valid_obs
 
 
-def get_observation_dependencies(obs_name: str, derived_obs_dict: Dict[str, Any], all_observations: Any) -> Set[str]:
+def get_observation_dependencies(obs_name: str, derived_obs_dict: dict[str, Any], all_observations: Any) -> set[str]:
     """Observations that ``obs_name`` derives from — its ``source`` entries that are themselves observations (edges in the observation dependency graph).
 
     ``all_observations`` is the full observation collection (its membership test filters sources down to observation references, ignoring result/state sources).
     """
-    deps: Set[str] = set()
+    deps: set[str] = set()
     dobs_def = derived_obs_dict.get(obs_name)
     if dobs_def:
         for src in dobs_def.source or []:
@@ -2553,10 +2549,10 @@ def get_observation_dependencies(obs_name: str, derived_obs_dict: Dict[str, Any]
     return deps
 
 
-def toposort_observations(obs_names: List[str], derived_obs_dict: Dict[str, Any], all_observations: Any) -> List[str]:
+def toposort_observations(obs_names: list[str], derived_obs_dict: dict[str, Any], all_observations: Any) -> list[str]:
     """Dependency-order observations so any that lists another as a ``source`` is emitted AFTER that source — the same dependency-graph principle used for derived variables/parameters (see ``tvbo.classes.equation``). Independent observations keep their input order (stable / deterministic). Lives in the tvboptim adapter so the mako templates only call it rather than redefining the sort inline."""
-    sorted_obs: List[str] = []
-    visited: Set[str] = set()
+    sorted_obs: list[str] = []
+    visited: set[str] = set()
     obs_set = set(obs_names)
 
     def visit(name):
@@ -2583,7 +2579,7 @@ def toposort_observations(obs_names: List[str], derived_obs_dict: Dict[str, Any]
 # Loss Function Parsing
 
 
-def parse_loss_arguments(loss_call: Any) -> Tuple[List[Dict], Set[str]]:
+def parse_loss_arguments(loss_call: Any) -> tuple[list[dict], set[str]]:
     """Parse loss function call arguments.
 
     Returns:
@@ -2669,7 +2665,7 @@ def parse_loss_arguments(loss_call: Any) -> Tuple[List[Dict], Set[str]]:
     return parsed_args, obs_refs
 
 
-def parse_loss_function(opt: Any) -> Optional[Dict]:
+def parse_loss_function(opt: Any) -> dict | None:
     """Parse optimization loss function specification.
 
     Returns dict with: opt_name, func_name, args, obs_refs, agg_over, agg_type or None if no loss defined.
@@ -2713,7 +2709,7 @@ def parse_loss_function(opt: Any) -> Optional[Dict]:
 # Parameter Parsing
 
 
-def get_domain_bounds(param_name: str, model: Any, all_couplings: Dict) -> Tuple[Optional[float], Optional[float]]:
+def get_domain_bounds(param_name: str, model: Any, all_couplings: dict) -> tuple[float | None, float | None]:
     """Lookup domain bounds from model.parameters or coupling.parameters.
 
     Returns (lo, hi) tuple, where None means unbounded.
@@ -2755,7 +2751,7 @@ def get_domain_bounds(param_name: str, model: Any, all_couplings: Dict) -> Tuple
     return (None, None)
 
 
-def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_couplings: Dict = None) -> Optional[Dict]:
+def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_couplings: dict = None) -> dict | None:
     """Parse a free_parameter entry.
 
     Handles: str, dotted notation, stringified dict, dict, and Parameter objects.
@@ -2948,8 +2944,7 @@ def parse_free_param(fp: Any, coupling_keys: Set[str], model: Any = None, all_co
 def normalize_n_parallel(expl: Any):
     """Normalise an ``Exploration.n_parallel`` to an int chunk size or ``"auto"``.
 
-    ``"auto"`` (the schema default) defers the vmap chunk width to runtime, where the grid size is known — the generated script resolves it via
-    :func:`tvbo.templates.tvboptim.callbacks.resolve_n_vmap`. An explicit integer is passed through unchanged (``1`` = fully sequential).
+    ``"auto"`` (the schema default) defers the vmap chunk width to runtime, where the grid size is known — the generated script resolves it via :func:`tvbo.templates.tvboptim.callbacks.resolve_n_vmap`. An explicit integer is passed through unchanged (``1`` = fully sequential).
 
     Raises:
         ValueError: if ``n_parallel`` is a non-numeric string other than ``"auto"``
@@ -2970,7 +2965,7 @@ def normalize_n_parallel(expl: Any):
     return int(v)
 
 
-def jax_platform(accelerator: Any) -> Optional[str]:
+def jax_platform(accelerator: Any) -> str | None:
     """Map an ``ExecutionConfig.accelerator`` to the JAX platform name it pins.
 
     ``'auto'`` (the schema default) means "let JAX detect the machine", which is expressed by leaving ``JAX_PLATFORMS`` unset — hence ``None`` rather than a string. ``'gpu'`` is JAX's ``'cuda'``; any other tier passes through lowercased, so a platform JAX gains needs no change here.
@@ -2979,10 +2974,11 @@ def jax_platform(accelerator: Any) -> Optional[str]:
     return None if accel == "auto" else {"gpu": "cuda"}.get(accel, accel)
 
 
-def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn=None) -> Dict:
+def parse_exploration(expl: Any, all_couplings: dict, get_pipeline_output_key_fn=None) -> dict:
     """Parse exploration specification from YAML.
 
-    Returns dict with: name, label, mode, n_parallel, axes, observable_*"""
+    Returns dict with: name, label, mode, n_parallel, axes, observable_*
+    """
     exp_info = {
         "name": getattr(expl, "name", ""),
         "label": getattr(expl, "label", "") or "",
@@ -3066,7 +3062,7 @@ def parse_exploration(expl: Any, all_couplings: Dict, get_pipeline_output_key_fn
 # Algorithm Helpers
 
 
-def get_include_info(inc: Any) -> Tuple[str, Dict]:
+def get_include_info(inc: Any) -> tuple[str, dict]:
     """Extract algorithm name and argument overrides from AlgorithmInclude.
 
     Returns (algo_name, {param_name: value}) tuple.
@@ -3091,7 +3087,7 @@ def _include_is_nested(inc: Any) -> bool:
     return str(getattr(inc, "mode", "combined") or "combined") == "nested"
 
 
-def get_all_observations_from_algo(algo: Any, algorithms_dict: Dict) -> List[str]:
+def get_all_observations_from_algo(algo: Any, algorithms_dict: dict) -> list[str]:
     """Get all observation names including from COMBINED included algorithms.
 
     Nested includes are skipped — their observations are computed inside the inner algorithm's own loop, not the outer one.
@@ -3122,7 +3118,7 @@ def get_all_observations_from_algo(algo: Any, algorithms_dict: Dict) -> List[str
     return obs
 
 
-def get_all_hyperparams(algo: Any, algorithms_dict: Dict) -> Dict:
+def get_all_hyperparams(algo: Any, algorithms_dict: dict) -> dict:
     """Get all hyperparameters including from COMBINED included algorithms.
 
     Nested includes are skipped — their hyperparameters are passed directly to the inner algorithm's run_<inner>() call, not exposed on the outer signature.
@@ -3152,7 +3148,7 @@ def get_all_hyperparams(algo: Any, algorithms_dict: Dict) -> Dict:
 _NETWORK_EDGE_ALIASES = {"weight": "weight", "weights": "weight", "length": "length", "lengths": "length"}
 
 
-def edge_label(ref: Any) -> Optional[str]:
+def edge_label(ref: Any) -> str | None:
     """Canonical ``Network.matrix()`` label for a network reference, else None.
 
     Accepts the fully-qualified form (``network.weight``, ``network.edges.length``), the explicit ``edges.<label>`` form (any label), and the bare ``weight(s)``/``length(s)`` shortcut. Returns None for anything that is not a connectome-matrix reference (state variables, ``network.observations.*``, ...), which callers route through their normal path.
@@ -3177,7 +3173,7 @@ _NETWORK_EDGE_GRAPH_LEAVES = {"weight": "weights", "length": "lengths"}
 _NETWORK_SCALAR_GRAPH_LEAVES = {"conduction_speed": "speed"}
 
 
-def network_axis_leaf(ref: Any) -> Optional[str]:
+def network_axis_leaf(ref: Any) -> str | None:
     """Graph leaf swept by a ``network.``-scoped exploration axis, else None.
 
     Accepts the canonical ``network.edges.<label>`` form and the ``network.weight(s)``/``network.length(s)`` shortcuts (both via ``edge_label``, so axes and observations resolve a matrix identically), plus the network's own scalars (``network.conduction_speed``). Returns None for a reference outside the ``network.`` scope, which callers route through the dynamics/coupling path.
@@ -3216,7 +3212,7 @@ def network_axis_leaf(ref: Any) -> Optional[str]:
 _INITIAL_CONDITIONS_SCOPE = "initial_conditions."
 
 
-def initial_conditions_axis_sv(ref: Any) -> Optional[str]:
+def initial_conditions_axis_sv(ref: Any) -> str | None:
     """State variable swept by an ``initial_conditions.``-scoped axis, else None.
 
     ``initial_conditions.<state_var>`` sweeps the *initial value* of one state variable across grid cells — a deterministic initial-condition ensemble (one trajectory per swept value), as opposed to the stochastic ``n_trials`` + ``StateVariable.distribution`` ensemble. Returns the bare ``<state_var>`` name; None for a reference outside the ``initial_conditions.`` scope, which callers route through the dynamics/coupling path. The name is validated against the model's state variables at codegen, where they are known.
@@ -3237,7 +3233,7 @@ def initial_conditions_axis_sv(ref: Any) -> Optional[str]:
     return sv
 
 
-def collect_network_edge_arrays(experiment: Any) -> Dict[str, list]:
+def collect_network_edge_arrays(experiment: Any) -> dict[str, list]:
     """Embed connectome matrices referenced by observations as ``{label: nested list}``.
 
     Scans every observation's ``source`` and every pipeline-step argument for a fully-qualified ``network.weight(s)``/``length(s)`` shortcut or explicit ``network.edges.<label>`` reference, resolving each to a dense matrix via ``Network.matrix()``. Covers derived and non-derived observations alike so the emitted constant serves both the observation-module source path and the experiment-module derived resolver. Raises if a referenced matrix is absent.
@@ -3247,7 +3243,7 @@ def collect_network_edge_arrays(experiment: Any) -> Dict[str, list]:
     net = get_attr(experiment, "network", None)
     obs_map = get_attr(experiment, "observations", None) or {}
     obs_iter = obs_map.values() if hasattr(obs_map, "values") else obs_map
-    arrays: Dict[str, list] = {}
+    arrays: dict[str, list] = {}
 
     def add(val: Any) -> None:
         name = val if isinstance(val, str) else get_attr(val, "name", None)
@@ -3279,7 +3275,7 @@ def collect_network_edge_arrays(experiment: Any) -> Dict[str, list]:
 _NETWORK_NODE_MEASURES = ("positions", "instrength")
 
 
-def node_label(ref: Any) -> Optional[str]:
+def node_label(ref: Any) -> str | None:
     """Canonical per-node vector name for a ``network.<measure>`` reference, else None.
 
     Recognises ``network.positions`` (region centroids, ``(n_nodes, 3)``) and ``network.instrength`` (weighted in-degree, ``(n_nodes,)``). Accepts BOTH the fully-qualified ``network.positions`` form (observation source / collect scan) and the bare ``positions`` key that ``parse_reference`` hands ``ref_to_code`` (it splits ``network.X`` into ``('network', 'X')``) — mirroring ``edge_label``, so the emitted constant name and the resolved reference cannot disagree.
@@ -3298,7 +3294,7 @@ def node_const(label: str) -> str:
     return "_network_node_" + re.sub(r"\W", "_", label)
 
 
-def collect_network_node_arrays(experiment: Any) -> Dict[str, list]:
+def collect_network_node_arrays(experiment: Any) -> dict[str, list]:
     """Embed per-node vectors referenced by observations as ``{measure: nested list}``.
 
     Scans every observation's ``source``, its pipeline-step arguments, AND its observer (``dynamics``) parameters for a ``network.positions`` / ``network.instrength`` reference, resolving each once against the network:
@@ -3309,7 +3305,7 @@ def collect_network_node_arrays(experiment: Any) -> Dict[str, list]:
     net = get_attr(experiment, "network", None)
     obs_map = get_attr(experiment, "observations", None) or {}
     obs_iter = obs_map.values() if hasattr(obs_map, "values") else obs_map
-    arrays: Dict[str, list] = {}
+    arrays: dict[str, list] = {}
 
     def _resolve(measure: str):
         return None if net is None else param_io.resolve_network_node(net, measure)

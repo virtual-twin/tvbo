@@ -7,7 +7,8 @@ See ``dev/GenericProcedureEngine.md`` for the full design.
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any
 
 import numpy as np
 
@@ -66,7 +67,7 @@ def declared_defaults(entry: Mapping[str, Any]) -> dict:
     return defaults
 
 
-def run_generator(name: str, params: dict, seed: Optional[int] = None) -> dict:
+def run_generator(name: str, params: dict, seed: int | None = None) -> dict:
     """Materialise a curated generator by name from its typed ``procedure:`` DAG.
 
     Convenience entry point for scripts and notebooks. ``Network._resolve`` goes through the same resolver, so a generator built here matches the one a recipe builds value for value.

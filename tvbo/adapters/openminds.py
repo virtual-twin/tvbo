@@ -1,8 +1,7 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # SPDX-License-Identifier: EUPL-1.2
 
-"""
-OpenMINDS JSON-LD conversion utilities for TVBO.
+"""OpenMINDS JSON-LD conversion utilities for TVBO.
 
 This module provides bidirectional conversion between TVBO datamodel objects and openMINDS-compatible JSON-LD format.
 
@@ -13,7 +12,7 @@ Both runtime conversion and schema generation import from here.
 from __future__ import annotations
 
 import json
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
@@ -288,7 +287,7 @@ def _from_openminds_value(value: Any, target_type: type | None = None) -> Any:
 
 
 def experiment_to_openminds(
-    experiment: "SimulationExperiment",
+    experiment: SimulationExperiment,
     base_id: str | None = None,
     include_context: bool = True,
 ) -> dict[str, Any]:
@@ -303,7 +302,7 @@ def experiment_to_openminds(
     include_context : bool
         Whether to include the @context in the output.
 
-    Returns
+    Returns:
     -------
     dict
         OpenMINDS-compatible JSON-LD dictionary.
@@ -341,7 +340,7 @@ def experiment_from_openminds(
     data : dict
         OpenMINDS JSON-LD dictionary.
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary that can be passed to SimulationExperiment(**dict).
@@ -370,7 +369,7 @@ def experiment_from_openminds(
 
 
 def study_to_openminds(
-    study: "SimulationStudy",
+    study: SimulationStudy,
     base_id: str | None = None,
     include_context: bool = True,
 ) -> dict[str, Any]:
@@ -385,7 +384,7 @@ def study_to_openminds(
     include_context : bool
         Whether to include the @context in the output.
 
-    Returns
+    Returns:
     -------
     dict
         OpenMINDS-compatible JSON-LD dictionary.
@@ -431,7 +430,7 @@ def study_from_openminds(
     data : dict
         OpenMINDS JSON-LD dictionary.
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary that can be passed to SimulationStudy(**dict).
@@ -504,12 +503,12 @@ def load_openminds(filepath: str) -> dict[str, Any]:
     filepath : str
         Path to JSON-LD file.
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary suitable for constructing TVBO objects.
     """
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         data = json.load(f)
 
     # Determine type and use appropriate converter

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
 
 import typer
 
@@ -26,30 +25,30 @@ def build(
         ...,
         help="Integer-labelled parcellation image (e.g. dseg.nii.gz), in the same space as the tractogram.",
     ),
-    output: Optional[Path] = typer.Option(
+    output: Path | None = typer.Option(
         None,
         "-o",
         "--output",
         help="Sidecar output path (.yaml); the .h5 companion is written next to it. "
         "Default: a BIDS-derived name in the current directory.",
     ),
-    atlas: Optional[str] = typer.Option(None, "--atlas", help="Parcellation/atlas name (metadata + filename entity)."),
-    space: Optional[str] = typer.Option(
+    atlas: str | None = typer.Option(None, "--atlas", help="Parcellation/atlas name (metadata + filename entity)."),
+    space: str | None = typer.Option(
         None,
         "--space",
         help="Coordinate space both inputs share (e.g. FSLMNI152). Recorded as the "
         "template entity; the build assumes the inputs are already co-registered.",
     ),
-    cohort: Optional[str] = typer.Option(None, "--cohort", help="Cohort/dataset entity (e.g. HCPYA)."),
-    reconstruction: Optional[str] = typer.Option(
+    cohort: str | None = typer.Option(None, "--cohort", help="Cohort/dataset entity (e.g. HCPYA)."),
+    reconstruction: str | None = typer.Option(
         None,
         "--reconstruction",
         "--rec",
         help="Tractography pipeline name (e.g. dTOR); recorded as the tractogram and reconstruction entity.",
     ),
-    segmentation: Optional[str] = typer.Option(None, "--seg", help="Segmentation entity (e.g. 17Networks)."),
-    scale: Optional[str] = typer.Option(None, "--scale", help="Scale entity (e.g. 1000)."),
-    labels: Optional[Path] = typer.Option(
+    segmentation: str | None = typer.Option(None, "--seg", help="Segmentation entity (e.g. 17Networks)."),
+    scale: str | None = typer.Option(None, "--scale", help="Scale entity (e.g. 1000)."),
+    labels: Path | None = typer.Option(
         None,
         "--labels",
         help="Optional node labels: a text file with one label per line, ordered by parcellation label (1..N).",
@@ -58,10 +57,10 @@ def build(
     zero_diagonal: bool = typer.Option(
         True, "--zero-diagonal/--no-zero-diagonal", help="Pass -zero_diagonal to tck2connectome."
     ),
-    keep_assignments: Optional[Path] = typer.Option(
+    keep_assignments: Path | None = typer.Option(
         None, "--keep-assignments", help="Also save tck2connectome's -out_assignments to this path."
     ),
-    mrtrix_arg: Optional[List[str]] = typer.Option(
+    mrtrix_arg: list[str] | None = typer.Option(
         None, "--mrtrix-arg", help="Extra raw argument forwarded to both tck2connectome calls (repeatable)."
     ),
     overwrite: bool = typer.Option(False, "--overwrite", help="Overwrite existing output."),
@@ -122,7 +121,7 @@ def build(
         if v
     }
 
-    def apply_metadata(net: "Network") -> "Network":
+    def apply_metadata(net: Network) -> Network:
         """Attach the flag-derived SC metadata used for naming and serialisation.
 
         The ``atlas`` filename entity is read from ``parcellation.atlas.name`` (not ``bids``), so the naming shell needs the same parcellation the saved network gets — hence one shared helper for both.

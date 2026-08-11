@@ -9,7 +9,8 @@ Typical workflow
    python scripts/export_mne_standard1005_projection_network.py
 
 2) Replot from saved files only (no forward recomputation):
-   python scripts/export_mne_standard1005_projection_network.py --skip-export"""
+   python scripts/export_mne_standard1005_projection_network.py --skip-export
+"""
 
 from __future__ import annotations
 
@@ -20,11 +21,10 @@ import matplotlib.pyplot as plt
 import mne
 import nibabel as nib
 import numpy as np
-
 from bsplot.graph import create_network, plot_network_on_surface
+
 from tvbo import Network, Observation, database_path
 from tvbo.datamodel import tvbo_datamodel
-
 
 DEFAULT_OUTPUT = database_path / "networks" / "sensors_eeg_standard1005_fsaverage_aparc_projection.yaml"
 
@@ -45,7 +45,7 @@ def _resolve_output_paths(
 def _matched_sensor_labels_and_positions() -> tuple[list[str], list[str], np.ndarray]:
     """Match tvbo EEG labels to MNE standard_1005 channel positions.
 
-    Returns
+    Returns:
     -------
     sensor_labels_tvb : list[str]
         TVBO sensor labels (used for saved node labels).
@@ -87,7 +87,7 @@ def _matched_sensor_labels_and_positions() -> tuple[list[str], list[str], np.nda
 def _compute_region_gain(sensor_labels_mne: list[str]):
     """Compute parcel-level gain from MNE fsaverage forward model.
 
-    Returns
+    Returns:
     -------
     region_labels : list[str] region_centers_mm : ndarray, shape (n_regions, 3) gain_matrix : ndarray, shape (n_sensors, n_regions) fs_dir : Path
         Path to fetched fsaverage directory.
@@ -171,7 +171,7 @@ def _build_tvbo_sensor_network(
 ) -> Network:
     """Create a tvbo sensor network with a projection gain matrix."""
     nodes = []
-    for idx, (label, pos) in enumerate(zip(sensor_labels_tvb, sensor_pos_mm)):
+    for idx, (label, pos) in enumerate(zip(sensor_labels_tvb, sensor_pos_mm, strict=True)):
         nodes.append(
             tvbo_datamodel.Node(
                 id=idx,
@@ -345,7 +345,7 @@ def plot_saved_projection_network(
     views = ["front", "top", "lateral", "posterior"]
     fig, axes = plt.subplots(1, 4, figsize=(18, 5))
 
-    for ax, view in zip(axes, views):
+    for ax, view in zip(axes, views, strict=True):
         plot_network_on_surface(
             graph,
             ax=ax,

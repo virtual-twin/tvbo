@@ -12,8 +12,8 @@ The numeric contract, asserted below:
 import numpy as np
 import pytest
 
-from tvbo.parse.expression import parse_eq
 from tvbo.codegen.code import JaxPrinter, NumPyPrinter
+from tvbo.parse.expression import parse_eq
 
 
 @pytest.fixture(scope="module")

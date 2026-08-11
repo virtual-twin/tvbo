@@ -9,12 +9,12 @@ The LinkML datamodel already carries every piece of metadata a RateML template n
 """
 
 import re
-from typing import Optional, Dict, Any
+from typing import Any
 
 import sympy.printing.c as spc
 from sympy.printing.pycode import PythonCodePrinter
-from tvbo.classes.equation import sympify as tvbo_sympify
 
+from tvbo.classes.equation import sympify as tvbo_sympify
 
 # CUDA Code Printer
 
@@ -146,7 +146,7 @@ _cuda_printer = CUDACodePrinter()
 _numba_printer = NumbaPrinter()
 
 
-def cuda_code(expr: Any, local_dict: Optional[Dict[str, Any]] = None) -> str:
+def cuda_code(expr: Any, local_dict: dict[str, Any] | None = None) -> str:
     """Convert expression to CUDA code string.
 
     Args:
@@ -174,7 +174,7 @@ def cuda_code(expr: Any, local_dict: Optional[Dict[str, Any]] = None) -> str:
     return _cuda_printer.doprint(expr)
 
 
-def python_code(expr: Any, local_dict: Optional[Dict[str, Any]] = None) -> str:
+def python_code(expr: Any, local_dict: dict[str, Any] | None = None) -> str:
     """Convert expression to Python/Numba code string.
 
     Args:

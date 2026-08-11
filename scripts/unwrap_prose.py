@@ -22,9 +22,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from check_prose import (  # noqa: E402
+    DEFAULT_ROOTS,
     _comment_runs,
     _is_code,
     continues_sentence,
+    is_block_row,
+    is_licence_run,
     iter_files,
 )
 
@@ -42,14 +45,13 @@ def _unwrap_block(lines: list[str], base_indent: int) -> list[str]:
         stripped = raw.strip()
         if stripped.startswith("```"):
             fenced = not fenced
-        indented = len(raw) - len(raw.lstrip()) >= base_indent + 4 if stripped else False
         prev = out[-1].strip() if out else ""
         if (
             out
             and not fenced
-            and not indented
+            and not is_block_row(raw, base_indent)
+            and not is_block_row(out[-1], base_indent)
             and continues_sentence(prev, stripped)
-            and len(out[-1]) - len(out[-1].lstrip()) < base_indent + 4
         ):
             out[-1] = out[-1].rstrip() + " " + stripped
         else:
@@ -90,7 +92,9 @@ def _rewrite_comments(src: str) -> str:
     lines = src.splitlines(keepends=True)
     drop: set[int] = set()
     edits: dict[int, str] = {}
-    for _, run in _comment_runs([ln.rstrip("\n") for ln in lines]):
+    for start, run in _comment_runs([ln.rstrip("\n") for ln in lines]):
+        if is_licence_run(start, run):
+            continue
         codey = [ln for ln, body in run if _is_code(body)]
         if codey and len(codey) >= max(2, int(0.6 * len(run))):
             drop.update(ln - 1 for ln, _ in run)
@@ -166,14 +170,14 @@ def process(path: Path, apply: bool) -> tuple[int, str | None]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("paths", nargs="*", default=["tvbo"])
+    ap.add_argument("paths", nargs="*", default=list(DEFAULT_ROOTS))
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true", help="report without writing (default)")
     mode.add_argument("--apply", action="store_true", help="write the rewrites")
     args = ap.parse_args()
 
     touched = removed = failed = 0
-    for f in iter_files(args.paths or ["tvbo"]):
+    for f in iter_files(args.paths or list(DEFAULT_ROOTS)):
         delta, err = process(f, apply=args.apply)
         if err:
             print(f"SKIP {f}: {err}")

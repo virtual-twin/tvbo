@@ -10,19 +10,20 @@ YAML sidecars are loaded via linkml_runtime.loaders.yaml_loader — the same loa
 See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
 
-import yaml as _yaml
-import numpy as np
 from pathlib import Path
-from linkml_runtime.loaders import yaml_loader
+
+import numpy as np
+import yaml as _yaml
 from linkml_runtime.dumpers import yaml_dumper
+from linkml_runtime.loaders import yaml_loader
 
 SCHEMA_VERSION = "tvb-datamodel/0.7.0"
 
 from tvbo.data.matrix_io import (
+    LazyArrayStore,
+    auto_format,
     read_matrix,
     write_matrix,
-    auto_format,
-    LazyArrayStore,
 )
 
 # ── BIDS filename patterns (canonical definition, used by converters) ─
@@ -54,8 +55,7 @@ SENSOR_PATTERNS = [
 def _template_edges(edges) -> list:
     """Template edges = entries without source/target (matrix measures).
 
-    Works with both dicts (from yaml_loader.load_as_dict) and
-    LinkML Edge objects (from Network.edges).
+    Works with both dicts (from yaml_loader.load_as_dict) and LinkML Edge objects (from Network.edges).
     """
     if not edges:
         return []
@@ -209,7 +209,7 @@ def _v07_postprocess(meta: dict) -> dict:
     def _strip_param_name(params):
         if not isinstance(params, dict):
             return
-        for key, body in params.items():
+        for body in params.values():
             if isinstance(body, dict):
                 body.pop("name", None)
 
@@ -425,8 +425,7 @@ def _write_mesh(store, network):
 def load_network(yaml_path):
     """Load a tvbo Network from YAML/JSON sidecar + companion reference.
 
-    Uses linkml yaml_loader or json_loader to construct a schema-validated
-    Network instance directly — same pattern as Dynamics.from_file().
+    Uses linkml yaml_loader or json_loader to construct a schema-validated Network instance directly — same pattern as Dynamics.from_file().
 
     Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.weights_matrix).
 
@@ -435,7 +434,7 @@ def load_network(yaml_path):
     yaml_path : str or Path
         Path to YAML or JSON sidecar file.
 
-    Returns
+    Returns:
     -------
     Network
         Fully constructed tvbo.Network with lazy array references.
@@ -573,7 +572,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
 
     # Matched by MEANING, never position: a sidecar bundles many edge attributes in any order.
     if arrays:
-        from tvbo.classes.network import _WEIGHT_MEASURES, _LENGTH_MEASURES
+        from tvbo.classes.network import _LENGTH_MEASURES, _WEIGHT_MEASURES
 
         names = [te.get("name") or te.get("label") for te in _template_edges(meta.get("edges", []))]
         names = [nm for nm in names if nm]

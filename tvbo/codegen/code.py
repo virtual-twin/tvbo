@@ -7,13 +7,13 @@ Array-manipulation primitives are the ones SymPy cannot represent natively. Each
 
 import logging
 
+import sympy.printing.fortran as spf
 import sympy.printing.julia as spj
 import sympy.printing.numpy as spn
-import sympy.printing.fortran as spf
-from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
-from sympy import Symbol, S, Function, preorder_traversal
-from sympy import latex
+from sympy import Function, S, Symbol, latex, preorder_traversal
 from sympy.printing import StrPrinter
+from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
+
 from tvbo.datamodel.schema import Equation
 from tvbo.parse.expression import parse_eq
 
@@ -137,8 +137,7 @@ ARRAY_FUNCTION_MAPPINGS = {
 
 
 def inline_functions(expr, func_defs):
-    """
-    Inline all function applications in an expression.
+    """Inline all function applications in an expression.
 
     Parameters
     ----------
@@ -149,12 +148,12 @@ def inline_functions(expr, func_defs):
         where arg_names is a list of argument names and body_expr is the
         sympy expression for the function body.
 
-    Returns
+    Returns:
     -------
     sympy.Expr
         Expression with all function calls replaced by their inlined bodies.
 
-    Example
+    Example:
     -------
     >>> from sympy import symbols, Function
     >>> x, y, v = symbols('x y v')
@@ -162,7 +161,8 @@ def inline_functions(expr, func_defs):
     >>> func_defs = {'Sigm': (['v'], 2*e0/(1 + exp(r*(v0 - v))))}
     >>> expr = A*Sigm(x - y)
     >>> inline_functions(expr, func_defs)
-    2*A*e0/(1 + exp(r*(v0 - x + y)))"""
+    2*A*e0/(1 + exp(r*(v0 - x + y)))
+    """
     result = expr
     for func_name, (arg_names, body) in func_defs.items():
         F = Function(func_name)
@@ -172,7 +172,7 @@ def inline_functions(expr, func_defs):
                 # Get the actual arguments
                 actual_args = sub_expr.args
                 # Create substitution dict: formal arg -> actual arg
-                subs = {Symbol(name): arg for name, arg in zip(arg_names, actual_args)}
+                subs = {Symbol(name): arg for name, arg in zip(arg_names, actual_args, strict=True)}
                 # Substitute into body
                 inlined = body.subs(subs)
                 # Replace in result
@@ -181,9 +181,7 @@ def inline_functions(expr, func_defs):
 
 
 def print_Piecewise(Printer, expr, verbose=False):
-    """
-    Print Piecewise expressions as nested np.where statements.
-    """
+    """Print Piecewise expressions as nested np.where statements."""
     args = expr.args
 
     # Start with the default case (the last piece)
@@ -223,8 +221,7 @@ def _afp_window_mean(p, expr):
 def _afp_subsample(p, expr):
     """Strided slice of the leading (time) axis.
 
-    ``subsample(x, step)``        -> ``x[::step]`` ``subsample(x, start, step)`` -> ``x[start::step]``
-    The 3-arg form lets a strided downsample (e.g. tvboptim BOLD TR sampling ``data[step::step]``) be authored as a declarative equation, not ``source_code``.
+    ``subsample(x, step)``        -> ``x[::step]`` ``subsample(x, start, step)`` -> ``x[start::step]`` The 3-arg form lets a strided downsample (e.g. tvboptim BOLD TR sampling ``data[step::step]``) be authored as a declarative equation, not ``source_code``.
     """
     a = expr.args
     if len(a) >= 3:
@@ -627,8 +624,10 @@ class _ArrayFunctionPrinterMixin:
         return f"{base}.shape[{axis}]"
 
     def _render_index(self, base, specs):
-        """Render ``base[...]`` with Python 0-based slices. ``specs`` is a per-axis list;
-        each entry is ``None`` (full ``:``) or ``(start, stop, step)`` with ``None`` parts."""
+        """Render ``base[...]`` with Python 0-based slices.
+
+        ``specs`` is a per-axis list; each entry is ``None`` (full ``:``) or ``(start, stop, step)`` with ``None`` parts.
+        """
         parts = []
         for s in specs:
             if s is None:
@@ -735,7 +734,7 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
 
         For Sum(f(a[i,j]), (j, 0, m-1)) - the result has only index i.
         """
-        from sympy import preorder_traversal, Indexed, Sum
+        from sympy import Indexed, Sum, preorder_traversal
 
         index_positions = {}  # {index_symbol: axis_position}
         max_dims = 0
@@ -781,7 +780,6 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
         - j is at axis 1, but rmse doesn't have it
         - So rmse needs [:, None] to broadcast correctly
         """
-
         base_name = str(expr.base)
         indices = expr.indices
 
@@ -947,8 +945,7 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
     def _print_Piecewise(self, expr):
         """Print a Piecewise, flagging its branch bodies as domain-unsafe.
 
-        numpy/JAX evaluate every ``where`` branch and let out-of-domain ops yield
-        NaN (harmlessly discarded by the select). Julia's ``ifelse`` is also eager, but its ``sqrt``/``^`` *throw* ``DomainError`` on a negative argument instead of returning NaN — so a dead branch (e.g. ``sqrt`` of a momentarily-negative discriminant) aborts the whole solve. Flag the bodies so ``_print_Pow`` routes domain-restricted powers through NaNMath and restores the numpy contract.
+        numpy/JAX evaluate every ``where`` branch and let out-of-domain ops yield NaN (harmlessly discarded by the select). Julia's ``ifelse`` is also eager, but its ``sqrt``/``^`` *throw* ``DomainError`` on a negative argument instead of returning NaN — so a dead branch (e.g. ``sqrt`` of a momentarily-negative discriminant) aborts the whole solve. Flag the bodies so ``_print_Pow`` routes domain-restricted powers through NaNMath and restores the numpy contract.
         """
         prev = self._in_piecewise
         self._in_piecewise = True
@@ -967,12 +964,12 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
         if self._in_piecewise:
             exp = expr.exp
             if equal_valued(exp, 0.5):
-                return "NaNMath.sqrt(%s)" % self._print(expr.base)
+                return f"NaNMath.sqrt({self._print(expr.base)})"
             if expr.is_commutative and equal_valued(exp, -0.5):
                 sym = "/" if expr.base.is_number else "./"
-                return "1 %s NaNMath.sqrt(%s)" % (sym, self._print(expr.base))
+                return f"1 {sym} NaNMath.sqrt({self._print(expr.base)})"
             if getattr(exp, "is_number", False) and not exp.is_integer:
-                return "NaNMath.pow(%s, %s)" % (self._print(expr.base), self._print(exp))
+                return f"NaNMath.pow({self._print(expr.base)}, {self._print(exp)})"
         return spj.JuliaCodePrinter._print_Pow(self, expr)
 
     def _print_IndexedBase(self, expr):
@@ -1059,8 +1056,7 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
     def _print_Add(self, expr, order=None):
         """Element-wise addition/subtraction (``.+`` / ``.-``).
 
-        Unlike ``*``/``/``/``^`` (which the base Julia printer already emits as ``.*``/``./``/``.^``), scalar+array ``+``/``-`` is NOT auto-broadcast in
-        Julia — ``[1,2] + 1`` raises ``MethodError``. Array-valued models (mode-coupling, quadrature vectors) mix scalar and vector terms, so we emit the dotted forms, which work uniformly for scalars and arrays.
+        Unlike ``*``/``/``/``^`` (which the base Julia printer already emits as ``.*``/``./``/``.^``), scalar+array ``+``/``-`` is NOT auto-broadcast in Julia — ``[1,2] + 1`` raises ``MethodError``. Array-valued models (mode-coupling, quadrature vectors) mix scalar and vector terms, so we emit the dotted forms, which work uniformly for scalars and arrays.
         Mirrors the base printer's term ordering and sign handling.
         """
         from sympy.printing.precedence import precedence
@@ -1076,7 +1072,7 @@ class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
             else:
                 sign = ".+"
             if precedence(term) < prec or term.is_Add:
-                parts.extend([sign, "(%s)" % t])
+                parts.extend([sign, f"({t})"])
             else:
                 parts.extend([sign, t])
         sign = parts.pop(0)
@@ -1102,11 +1098,11 @@ class MTKPrinter(JuliaPrinter):
         return spj.JuliaCodePrinter._print_Pow(self, expr)
 
     def _print_Mul(self, expr):
-        from sympy import S, Mul, Pow, Rational
+        from sympy import Mul, Pow, Rational, S
         from sympy.printing.precedence import precedence
 
         if expr.is_number and expr.is_imaginary and expr.as_coeff_Mul()[0].is_integer:
-            return "%sim" % self._print(-S.ImaginaryUnit * expr)
+            return f"{self._print(-S.ImaginaryUnit * expr)}im"
 
         prec = precedence(expr)
 
@@ -1147,7 +1143,7 @@ class MTKPrinter(JuliaPrinter):
 
         for item in pow_paren:
             if item.base in b:
-                b_str[b.index(item.base)] = "(%s)" % b_str[b.index(item.base)]
+                b_str[b.index(item.base)] = f"({b_str[b.index(item.base)]})"
 
         # Always scalar: use * and / (never .* or ./)
         def multjoin(a_str):
@@ -1156,9 +1152,9 @@ class MTKPrinter(JuliaPrinter):
         if not b:
             return sign + multjoin(a_str)
         elif len(b) == 1:
-            return "%s / %s" % (sign + multjoin(a_str), b_str[0])
+            return f"{sign + multjoin(a_str)} / {b_str[0]}"
         else:
-            return "%s / (%s)" % (sign + multjoin(a_str), multjoin(b_str))
+            return f"{sign + multjoin(a_str)} / ({multjoin(b_str)})"
 
     def _print_Pow(self, expr):
         from sympy.core.numbers import equal_valued
@@ -1166,14 +1162,14 @@ class MTKPrinter(JuliaPrinter):
 
         PREC = precedence(expr)
         if equal_valued(expr.exp, 0.5):
-            return "sqrt(%s)" % self._print(expr.base)
+            return f"sqrt({self._print(expr.base)})"
         if expr.is_commutative:
             if equal_valued(expr.exp, -0.5):
-                return "1 / sqrt(%s)" % self._print(expr.base)
+                return f"1 / sqrt({self._print(expr.base)})"
             if equal_valued(expr.exp, -1):
-                return "1 / %s" % self.parenthesize(expr.base, PREC)
+                return f"1 / {self.parenthesize(expr.base, PREC)}"
         # Always scalar: use ^ (never .^)
-        return "%s ^ %s" % (self.parenthesize(expr.base, PREC), self.parenthesize(expr.exp, PREC))
+        return f"{self.parenthesize(expr.base, PREC)} ^ {self.parenthesize(expr.exp, PREC)}"
 
 
 class FortranPrinter(spf.FCodePrinter):
@@ -1462,7 +1458,7 @@ def get_printer(format, parameters=None, order=None):
 def render_expression(
     expression,
     format="jax",
-    user_functions={},
+    user_functions=None,
     parameters=None,
     infer_broadcasting=False,
     preserve_order=False,
@@ -1491,6 +1487,8 @@ def render_expression(
         If True, keep the source term order (no SymPy Add/Mul canonicalization)
         so generated code matches reference code operation-for-operation.
     """
+    if user_functions is None:
+        user_functions = {}
     if isinstance(expression, str):
         # Both go to parse_eq as functions, else implicit multiplication splits `pad(x)` into `pad*x`.
         func_names = list(user_functions.keys()) if user_functions else []
@@ -1516,16 +1514,15 @@ def render_expression(
 def render_equation(
     equation: Equation,
     format="jax",
-    local_dict={},
-    user_functions={},
+    local_dict=None,
+    user_functions=None,
     replace=None,
     remove=None,
     inline_funcs=None,
     preserve_order=False,
     **kwargs,
 ):
-    """
-    Render an equation to a target format.
+    """Render an equation to a target format.
 
     Parameters
     ----------
@@ -1550,12 +1547,16 @@ def render_equation(
     **kwargs
         Additional arguments passed to parse_eq.
 
-    Returns
+    Returns:
     -------
     str
         The rendered equation string.
     """
     # latex prints the raw parsed expression (before replace/remove), so it keeps its own short path; every other format shares the route below.
+    if user_functions is None:
+        user_functions = {}
+    if local_dict is None:
+        local_dict = {}
     if format == "latex":
         if preserve_order:  # keep authored term order (see render_expression)
             kwargs.setdefault("evaluate", False)
@@ -1604,8 +1605,8 @@ def _printer_for(format, uf, preserve_order):
 def render_equation_cse(
     equation: Equation,
     format="numpy",
-    local_dict={},
-    user_functions={},
+    local_dict=None,
+    user_functions=None,
     replace=None,
     remove=None,
     inline_funcs=None,
@@ -1619,6 +1620,10 @@ def render_equation_cse(
     """
     from sympy import cse, numbered_symbols
 
+    if user_functions is None:
+        user_functions = {}
+    if local_dict is None:
+        local_dict = {}
     expr, uf = _prepare_expr(equation, local_dict, user_functions, replace, remove, inline_funcs, preserve_order, kwargs)
     printer = _printer_for(format, uf, preserve_order)
 

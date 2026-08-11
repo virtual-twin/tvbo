@@ -18,14 +18,13 @@ A parameter says where its value comes from in exactly one of three ways, and th
 
 Sourced and produced values are **never materialised into ``Parameter.value``**, so loading a spec stays cheap no matter how large the array is, and a dumper never sees bytes it would try to serialise back into YAML. Resolution happens here, on demand, and the result is cached in this module — the ``Parameter`` object is never mutated.
 
-That is deliberate: ``Parameter`` appears at 16 nesting sites in the schema, and
-LinkML always constructs the *declared range* class, so a tvbo subclass carrying lazy behaviour would need a hand-written re-wrap at every one of them (and would diverge between the dataclass and pydantic flavours). Keeping resolution outside the class means the generated datamodel is untouched and both flavours behave identically.
+That is deliberate: ``Parameter`` appears at 16 nesting sites in the schema, and LinkML always constructs the *declared range* class, so a tvbo subclass carrying lazy behaviour would need a hand-written re-wrap at every one of them (and would diverge between the dataclass and pydantic flavours). Keeping resolution outside the class means the generated datamodel is untouched and both flavours behave identically.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
@@ -57,7 +56,7 @@ def _slot(obj: Any, name: str, default: Any = None) -> Any:
     return getattr(obj, name, default) if obj is not None else default
 
 
-def _resolve_path(source: str, source_dir: Optional[Path]) -> Optional[Path]:
+def _resolve_path(source: str, source_dir: Path | None) -> Path | None:
     """A path source, resolved against the declaring spec's directory when relative.
 
     Mirrors how ``Network.bids_dir`` / ``Network.data_file`` resolve, so a spec means the same thing wherever it is loaded from and a kit that carries its companion alongside the spec keeps working after it is moved.
@@ -74,7 +73,7 @@ def _fingerprint(path: Path) -> tuple:
     return (str(path), st.st_mtime_ns, st.st_size)
 
 
-def _source_key(path: Path, measure: Optional[str]) -> tuple:
+def _source_key(path: Path, measure: str | None) -> tuple:
     return ("source", _fingerprint(path), measure)
 
 
@@ -122,9 +121,10 @@ def _mesh_array(net: Any, field: str) -> np.ndarray:
 _NODE_MEASURES = ("positions", "instrength")
 
 
-def resolve_network_node(net: Any, measure: str) -> Optional[np.ndarray]:
-    """Per-node vector for a ``network.<measure>`` reference — the single definition shared by the producer-argument path (``_resolve_ref``) and the observation-embedding path (``utils.collect_network_node_arrays``), so both resolve ``network.positions`` / ``network.instrength`` identically. ``positions`` → region centroids ``(n_nodes, 3)``;
-    ``instrength`` → weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention). Returns None when the measure is unknown or unbuildable.
+def resolve_network_node(net: Any, measure: str) -> np.ndarray | None:
+    """Per-node vector for a ``network.<measure>`` reference.
+
+    The single definition shared by the producer-argument path (``_resolve_ref``) and the observation-embedding path (``utils.collect_network_node_arrays``), so both resolve ``network.positions`` / ``network.instrength`` identically. ``positions`` → region centroids ``(n_nodes, 3)``; ``instrength`` → weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention). Returns None when the measure is unknown or unbuildable.
     """
     if measure == "positions" and hasattr(net, "node_positions"):
         return np.asarray(net.node_positions(), dtype=float)
@@ -222,7 +222,7 @@ def _module_source_digest(module: str) -> str:
 # --------------------------------------------------------------------------- sources
 
 
-def _read_source(path: Path, measure: Optional[str]) -> Any:
+def _read_source(path: Path, measure: str | None) -> Any:
     """Read ``measure`` out of a binary store, or the whole array when it holds one."""
     from tvbo.data.matrix_io import LazyArrayStore
 
@@ -235,7 +235,7 @@ def _read_source(path: Path, measure: Optional[str]) -> Any:
     raise ValueError(f"{path} holds {len(arrays)} arrays {sorted(arrays)}; the parameter must name one with `measure:`.")
 
 
-def read_artifact(path: Any, key: Optional[str] = None) -> Any:
+def read_artifact(path: Any, key: str | None = None) -> Any:
     """Load a materialised ``(path, key)`` artifact back to its array — for codegen probes that need a produced/sourced constant's shape (e.g. a partition's group count) without re-running the producer."""
     return _read_source(Path(path), key)
 
@@ -277,8 +277,8 @@ def _producer_bundle(
     producer: Any,
     param_name: str,
     context: Any,
-    spec: Optional[tuple] = None,
-    key: Optional[tuple] = None,
+    spec: tuple | None = None,
+    key: tuple | None = None,
 ) -> Any:
     """Everything the producer returns, cached on the CALL — no output selection.
 
@@ -339,7 +339,7 @@ def _declared_name(obj: Any) -> str:
     return str(_slot(obj, "name") or _slot(obj, "label") or "<unnamed>")
 
 
-def _provenance(param: Any) -> Optional[str]:
+def _provenance(param: Any) -> str | None:
     """Which of ``value``/``source``/``producer`` this parameter declares.
 
     The schema states the three are mutually exclusive; enforce it here rather than let each entry point pick its own precedence. Two that disagreed (``resolve`` preferring the producer while ``materialise`` preferred the source) would hand the host and the generated code different values for one parameter, silently.
@@ -363,7 +363,7 @@ def is_lazy(param: Any) -> bool:
     return _provenance(param) in ("source", "producer")
 
 
-def _source_file(param: Any, source_dir: Optional[Path], name: str) -> Path:
+def _source_file(param: Any, source_dir: Path | None, name: str) -> Path:
     """The existing file a ``source:`` parameter names, resolved against the spec dir."""
     source = _slot(param, "source")
     path = _resolve_path(str(source), source_dir)
@@ -376,9 +376,9 @@ def _source_file(param: Any, source_dir: Optional[Path], name: str) -> Path:
 
 def materialise(
     param: Any,
-    source_dir: Optional[Path] = None,
+    source_dir: Path | None = None,
     context: Any = None,
-    cache_dir: Optional[Path] = None,
+    cache_dir: Path | None = None,
 ) -> tuple:
     """The ``(file, key)`` a backend reads this parameter's array from.
 
@@ -422,7 +422,7 @@ def materialise(
     return path, _checked_key(path, _slot(producer, "output", None), name)
 
 
-def _checked_key(path: Path, key: Optional[str], name: str) -> str:
+def _checked_key(path: Path, key: str | None, name: str) -> str:
     """The dataset ``key`` names in ``path``, verified to exist.
 
     Checked here rather than left to run time: codegen bakes this key into the generated module, so an unverified one turns a typo into a failure inside a simulation, far from the declaration that caused it. A cache hit skips the write entirely, so this is the only place the key is ever seen against the artifact.
@@ -467,7 +467,7 @@ def _write_bundle(path: Path, produced: Any) -> None:
             tmp.unlink()
 
 
-def _declared_producers(root: Any, _seen: Optional[set] = None):
+def _declared_producers(root: Any, _seen: set | None = None):
     """Every object under *root* that declares a ``producer:``, wherever it sits.
 
     Walked generically rather than from a list of the places producers are allowed: a parameter, a noise covariance and a coupling weight all declare one, and a reclaimer that enumerated those three would silently spare — that is, treat as dead — every artifact belonging to the fourth.
@@ -488,7 +488,7 @@ def _declared_producers(root: Any, _seen: Optional[set] = None):
         yield from _declared_producers(child, _seen)
 
 
-def live_artifacts(root: Any, cache_dir: Optional[Path] = None) -> tuple[set, set]:
+def live_artifacts(root: Any, cache_dir: Path | None = None) -> tuple[set, set]:
     """``(paths, producers)`` this study still reaches in the produced-constant store.
 
     *producers* is every ``module.function`` whose liveness could be decided; a producer
@@ -510,7 +510,7 @@ def live_artifacts(root: Any, cache_dir: Optional[Path] = None) -> tuple[set, se
     return paths, producers
 
 
-def superseded_artifacts(root: Any, cache_dir: Optional[Path] = None) -> list:
+def superseded_artifacts(root: Any, cache_dir: Path | None = None) -> list:
     """Artifacts of THIS study's producers that it no longer reaches, newest first.
 
     Superseded, not merely old: the content address keys on the producing call *and* on its module's source, so an artifact of a producer this study uses, at a digest this study no longer computes, can only be a version left behind by an edit or by a changed argument. Files belonging to producers not seen here are never listed — they may well be another study's, and this reads one study.
@@ -523,7 +523,7 @@ def superseded_artifacts(root: Any, cache_dir: Optional[Path] = None) -> list:
     return sorted(dead, key=lambda p: -p.stat().st_size)
 
 
-def resolve(param: Any, source_dir: Optional[Path] = None, context: Any = None) -> Any:
+def resolve(param: Any, source_dir: Path | None = None, context: Any = None) -> Any:
     """This parameter's value, resolving ``source``/``producer`` on demand.
 
     Returns the literal ``value`` untouched when there is one, so a scalar costs nothing. Returns ``None`` for a parameter that declares no value at all (a free parameter, say) rather than raising — the caller decides whether that is an error.

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Module: observation_sampling.py
 #
@@ -6,8 +5,7 @@
 # Licensed under the EUPL-1.2-or-later
 """Backend-agnostic resolver for observation-monitor sampling step counts.
 
-Observation models (e.g. ``BOLD_TVB``) are declared once as a backend-neutral
-YAML pipeline. The *number of samples* an observation emits, however, depends on the integration time-step ``dt`` chosen at run time, not on any value that can be frozen into the YAML. Freezing a step count into the pipeline (as ``subsample_to_period.stepsize = 180``) only holds when the input already sits on a particular stock grid; a backend that applies that literal to the raw integration grid produces the wrong sample count.
+Observation models (e.g. ``BOLD_TVB``) are declared once as a backend-neutral YAML pipeline. The *number of samples* an observation emits, however, depends on the integration time-step ``dt`` chosen at run time, not on any value that can be frozen into the YAML. Freezing a step count into the pipeline (as ``subsample_to_period.stepsize = 180``) only holds when the input already sits on a particular stock grid; a backend that applies that literal to the raw integration grid produces the wrong sample count.
 
 This module is the single source of truth that every Python backend (tvboptim, jax, tvb) uses to turn ``(declarative observation, integration dt)`` into the integer step counts that drive downsampling. Backends legitimately diverge only in *how* those counts are applied (circular-buffer convolution vs. functional window-mean+subsample vs. TVB monitor step-mod loop); the counts themselves must be identical.
 
@@ -17,7 +15,7 @@ It is intentionally free of heavy dependencies (no jax/tvb/juliacall, no ``tvbo.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 __all__ = [
     "ObservationSampling",
@@ -95,7 +93,7 @@ def _time_argument_ms(argument: Any, default: float) -> float:
     return value
 
 
-def _obs_period(observation: Any) -> Optional[float]:
+def _obs_period(observation: Any) -> float | None:
     """The output sampling period in ms (``TR``): explicit ``period`` or ``TR``."""
     period = getattr(observation, "period", None)
     if period is None:
@@ -124,7 +122,7 @@ class ObservationSampling:
             (``output_istep // interim_istep``).
     """
 
-    period: Optional[float]
+    period: float | None
     downsample_period: float
     interim_istep: int
     output_istep: int
@@ -139,8 +137,7 @@ def resolve_observation_sampling(
 ) -> ObservationSampling:
     """Resolve an observation's sampling step counts from the integration ``dt``.
 
-    This is the single supervenient resolver: it computes the integer step counts from the declarative observation plus the run-time ``dt``. Every
-    Python backend routes through it so the emitted sample count is identical.
+    This is the single supervenient resolver: it computes the integer step counts from the declarative observation plus the run-time ``dt``. Every Python backend routes through it so the emitted sample count is identical.
 
     Args:
         observation: A schema observation (must expose ``pipeline`` and either

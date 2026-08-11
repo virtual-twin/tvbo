@@ -4,10 +4,10 @@ Phase 0 of the native-manuscript design. A `StudyCollection` is a study-of-studi
 """
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from types import SimpleNamespace
 import xarray as xr
 
 import tvbo

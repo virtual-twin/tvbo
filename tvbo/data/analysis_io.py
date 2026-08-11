@@ -15,8 +15,9 @@ import importlib
 import logging
 import os
 import sys
+from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 from tvbo.data import dataref as _dref
 from tvbo.utils import as_list
@@ -75,8 +76,7 @@ def _arg_items(arguments) -> list[tuple[str, Any]]:
 def container_path(name: str, results_root=None) -> Path:
     """Path an analysis named ``name`` writes, whether or not it exists yet.
 
-    The layout itself is defined once, by
-    :func:`tvbo.data.dataref.locate_analysis_container`; this is its write-side counterpart, which must not raise on a container that has not been produced.
+    The layout itself is defined once, by :func:`tvbo.data.dataref.locate_analysis_container`; this is its write-side counterpart, which must not raise on a container that has not been produced.
     """
     return _dref.analysis_container_path(results_root, name)
 
@@ -124,7 +124,7 @@ def dependents_of(analyses, *, experiments=(), changed_analyses=()) -> list[str]
     wanted = {str(e) for e in experiments}
     stale = {str(a) for a in changed_analyses}
     names = [analysis_name(a) for a in as_list(analyses)]
-    deps = {n: dependencies(a) for n, a in zip(names, as_list(analyses))}
+    deps = {n: dependencies(a) for n, a in zip(names, as_list(analyses), strict=True)}
     changed = True
     while changed:
         changed = False
@@ -416,8 +416,7 @@ def _device_plan(analysis, n_items, per_lane_bytes):
 def _map_over(analysis, fn, names, args, in_axes, mapped):
     """Evaluate *fn* over every element of the mapped axis, honouring ``execution``.
 
-    One device by default (``jax.vmap`` under ``jit``). When the analysis declares ``n_workers`` or ``batch_size``, the axis instead runs through tvboptim's own
-    :class:`ParallelExecution` — the pmap-of-``lax.map`` an experiment's grid runs on — so a cohort-sized analysis spreads across devices and chunks within one instead of holding every lane at once. Reusing that path rather than re-deriving it is what keeps the padding, shard reshape and trim identical to an experiment's.
+    One device by default (``jax.vmap`` under ``jit``). When the analysis declares ``n_workers`` or ``batch_size``, the axis instead runs through tvboptim's own :class:`ParallelExecution` — the pmap-of-``lax.map`` an experiment's grid runs on — so a cohort-sized analysis spreads across devices and chunks within one instead of holding every lane at once. Reusing that path rather than re-deriving it is what keeps the padding, shard reshape and trim identical to an experiment's.
 
     Parallelism is declared, never inferred: an analysis with no ``execution`` block takes the single-device path and produces the same array it always did.
     """
@@ -445,12 +444,12 @@ def _map_over(analysis, fn, names, args, in_axes, mapped):
     from tvbo.templates.tvboptim.callbacks import estimate_per_cell_bytes
 
     n_items = int(args[in_axes.index(0)].shape[0])
-    lane = tuple(a[0] if ax == 0 else a for a, ax in zip(args, in_axes))
+    lane = tuple(a[0] if ax == 0 else a for a, ax in zip(args, in_axes, strict=True))
     per_lane = estimate_per_cell_bytes(lambda one: fn(*one), lane) if batch is None else None
     n_pmap, n_vmap = _device_plan(analysis, n_items, per_lane)
 
     space = Space(
-        {n: (DataAxis(a) if ax == 0 else a) for n, a, ax in zip(names, args, in_axes)},
+        {n: (DataAxis(a) if ax == 0 else a) for n, a, ax in zip(names, args, in_axes, strict=True)},
         mode="zip",
     )
     logger.debug(

@@ -1,19 +1,15 @@
 """Backend capability registry for the workflow planner.
 
-This module is the **single source of truth in code** for what each
-TVB-O backend can do. The values here mirror the OWL axioms in ``ontology/tvb-o-axioms.ttl`` (§4.1). The mapping is intentionally typed as a plain Python table so the CLI does not pull in ``rdflib``/``owlready2`` at import time. A round-trip test (``tests/test_cli_backends_match_ontology.py``) keeps the two in sync when the ontology changes.
+This module is the **single source of truth in code** for what each TVB-O backend can do. The values here mirror the OWL axioms in ``ontology/tvb-o-axioms.ttl`` (§4.1). The mapping is intentionally typed as a plain Python table so the CLI does not pull in ``rdflib``/``owlready2`` at import time. A round-trip test (``tests/test_cli_backends_match_ontology.py``) keeps the two in sync when the ontology changes.
 
 Ontology vocabulary used here
 -----------------------------
 * ``tvbo:Backend``                — JAX, TVB, PyRates, tvboptim,
   NetworkDynamics, BifurcationKit, NumPy.
 * ``tvbo:SimulationTask``         — ODE/DDE/SDE/SDDE/RDEIntegration,
-  EventDrivenIntegration, NumericalContinuation, BifurcationAnalysis,
-  ParameterExploration, GradientBasedOptimization.
+  EventDrivenIntegration, NumericalContinuation, BifurcationAnalysis, ParameterExploration, GradientBasedOptimization.
 * ``tvbo:BackendCapability``      — Autodiff, JITCompilation, GPUSupport,
-  VectorizedRNG, NumPyExecution, BuiltinModelLibrary, CodeGeneration,
-  NetworkXTopology, JuliaJIT, DiffEqIntegrators, ContinuationSolver,
-  DelayHistoryBuffer, StochasticSolver, StiffSolver.
+  VectorizedRNG, NumPyExecution, BuiltinModelLibrary, CodeGeneration, NetworkXTopology, JuliaJIT, DiffEqIntegrators, ContinuationSolver, DelayHistoryBuffer, StochasticSolver, StiffSolver.
 
 The workflow planner (``tvbo.cli._workflow``) consults ``BACKENDS[name].vectorize_axes`` to decide which sweep axes can stay inside a single backend invocation (vmap / EnsembleProblem / batched solve) and which must be fanned out as workflow tasks.
 """
@@ -21,7 +17,6 @@ The workflow planner (``tvbo.cli._workflow``) consults ``BACKENDS[name].vectoriz
 from __future__ import annotations
 
 from dataclasses import dataclass
-
 
 # Sweep-axis kinds the planner understands. These are intentionally coarse: a study may declare richer axes (e.g. specific parameter names) but at the planner level we only care about *what kind* of axis it is so we can match it against backend capabilities.
 AXIS_KINDS = (
@@ -131,7 +126,7 @@ def list_backends() -> list[BackendSpec]:
 def axis_kind_of(parameter_path: str) -> str:
     """Classify an exploration axis by its dotted parameter path.
 
-    Examples
+    Examples:
     --------
     >>> axis_kind_of("ReducedWongWang.G")
     'parameters'
@@ -140,7 +135,8 @@ def axis_kind_of(parameter_path: str) -> str:
     >>> axis_kind_of("initial_conditions.x")
     'initial_conditions'
     >>> axis_kind_of("sample.subject_id")
-    'subjects'"""
+    'subjects'
+    """
     p = parameter_path.lower()
     if "noise_seed" in p or p.endswith(".seed"):
         return "noise_seed"

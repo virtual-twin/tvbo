@@ -1,7 +1,6 @@
 """Runtime wrapper around the auto-generated :class:`tvbo_datamodel.Event`.
 
-Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal is built generically from the event's symbolic equation and its parameters, mirroring the pattern used by :class:`tvbo.classes.dynamics.Dynamics` and
-:class:`tvbo.classes.perturbation.Stimulus`.
+Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal is built generically from the event's symbolic equation and its parameters, mirroring the pattern used by :class:`tvbo.classes.dynamics.Dynamics` and :class:`tvbo.classes.perturbation.Stimulus`.
 """
 
 from __future__ import annotations

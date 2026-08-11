@@ -40,7 +40,7 @@ def _git_commit_time(path):
 
 def main():
     if not os.path.exists(RUNTIME):
-        print("? %s not found; skipping freshness check" % RUNTIME)
+        print(f"? {RUNTIME} not found; skipping freshness check")
         return 0
 
     rt_commit = _git_commit_time(RUNTIME)
@@ -57,21 +57,21 @@ def main():
             newer_uncommitted.append(src)
 
     if newer_uncommitted:
-        print("~ working-tree hint: newer than %s by mtime: %s" % (RUNTIME, ", ".join(newer_uncommitted)))
+        print("~ working-tree hint: newer than {} by mtime: {}".format(RUNTIME, ", ".join(newer_uncommitted)))
 
     if stale_committed:
-        print("✗ runtime ontology is STALE — committed after %s:" % RUNTIME)
+        print(f"✗ runtime ontology is STALE — committed after {RUNTIME}:")
         for s in stale_committed:
-            print("    %s" % s)
+            print(f"    {s}")
         print("  Rebuild and re-commit the runtime owl: `make gen-merged` regenerates")
         print("  ontology/tvbo.owl from the sources and packages it to")
         print("  tvbo/data/ontology/tvbo.owl (the file the runtime loads).")
         return 1
 
     if rt_commit is None:
-        print("? %s not committed yet; mtime hints only" % RUNTIME)
+        print(f"? {RUNTIME} not committed yet; mtime hints only")
         return 0
-    print("✓ runtime ontology %s is current with its sources (by commit time)" % RUNTIME)
+    print(f"✓ runtime ontology {RUNTIME} is current with its sources (by commit time)")
     return 0
 
 

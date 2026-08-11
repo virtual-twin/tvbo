@@ -3,7 +3,6 @@ import pytest
 from tvbo.api import ontology_api
 from tvbo.ontology.owl import get_models
 
-
 MODELS = sorted(get_models().keys())
 
 

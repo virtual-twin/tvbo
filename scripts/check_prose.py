@@ -21,7 +21,7 @@ import re
 import sys
 from pathlib import Path
 
-DEFAULT_ROOTS = ("tvbo", "tests", "scripts", "benchmarks")
+DEFAULT_ROOTS = ("tvbo", "tests", "scripts", "benchmarks", "docs/scripts", "schema", "hatch_build.py")
 SKIP_PARTS = ("__pycache__", ".venv", "_archive", "site-packages")
 GENERATED = ("tvbo/datamodel/schema.py", "tvbo/datamodel/pydantic.py", "tvbo/datamodel/dialect_tables.py")
 
@@ -29,6 +29,8 @@ MAX_COMMENT_RUN = 1
 WRAP_LIMIT = 100
 
 _SENTENCE_END = re.compile(r"[.!?:;]$")
+_SECTION = re.compile(r"^[A-Z][\w /-]{0,24}:(\s|$)")
+_ORDERED = re.compile(r"^\d+[.)]\s")
 _DIRECTIVE = re.compile(r"^\s*#\s*(type:|noqa|pragma|ruff:|mypy:|fmt:|isort:|pylint:|!)")
 _LICENCE = re.compile(r"copyright|licen[cs]e|SPDX|\(c\)\s*\d{4}|©", re.IGNORECASE)
 _CODEISH = re.compile(
@@ -53,15 +55,38 @@ def _is_code(text: str) -> bool:
 def continues_sentence(a: str, b: str) -> bool:
     """Whether stripped line *b* is the continuation of a sentence begun on stripped line *a*.
 
-    The one place this judgement lives, so `check_prose` and `scripts/unwrap_prose.py` cannot disagree about what counts as hand-wrapped. A continuation is anything that cannot plausibly start a sentence: a lowercase word, an opening bracket, an inline-code backtick, a dash, a quote, or a digit. Restricting it to lowercase missed a paragraph that happened to break before a backtick — two of them survived the first Stage C sweep that way.
+    The one place this judgement lives, so `check_prose` and `scripts/unwrap_prose.py` cannot disagree about what counts as hand-wrapped. The test is on *a*: a line that ends without terminal punctuation has not finished its sentence, so whatever follows continues it. Neither side may open a new block — a bullet, a numbered item, a fence, a doctest, a table row or a `Label:` header.
+
+    Judging by *b*'s first character instead is what let two earlier sweeps pass: restricting continuations to a lowercase word missed a break before a backtick, and widening that to brackets and digits still missed every break before a deliberately capitalised word (`ALL its cells`, `TVB-O`, a proper noun).
     """
     if not a or not b:
         return False
-    if a.startswith((">>>", "...", "|", "-", "*", "#", "$$", "```")) or b.startswith((">>>", "...", "|", "-", "*", "```")):
+    block = (">>>", "...", "|", "-", "*", "=", "~", "^", "+", "```")
+    if a.startswith((*block, "#", "$$")) or b.startswith((*block, '"""', "'''")):
         return False
-    if _SENTENCE_END.search(a):
+    if _ORDERED.match(a) or _ORDERED.match(b):
         return False
-    return b[0].islower() or b[0] in "([`\u2014\u2013\"'" or b[0].isdigit()
+    if _SENTENCE_END.search(a) or _SECTION.match(b):
+        return False
+    return True
+
+
+def is_block_row(raw: str, base: int) -> bool:
+    """Whether *raw* opens a row of a laid-out block rather than a line of flowing prose.
+
+    Flowing prose starts at exactly *base*; a line indented past it was put there on purpose — an `Args:` entry, a NumPy parameter description, an endpoint listing, a table — and its line breaks carry meaning. Both sides of a candidate pair are tested: an indented first line means a laid-out row, an indented second line means a hanging description.
+
+    The one place this judgement lives, so the checker and `scripts/unwrap_prose.py` cannot disagree. When they did, the codemod flattened an endpoint listing the checker had skipped.
+    """
+    return bool(raw.strip()) and len(raw) - len(raw.lstrip()) > base
+
+
+def is_licence_run(start: int, run: list[tuple[int, str]]) -> bool:
+    """Whether a `#` run is the file's copyright and licence header.
+
+    Metadata addressed to a licence scanner, not prose addressed to a reader, and it has nowhere else to live — so it is exempt from the one-line rule, and its line breaks must survive the codemod. Shared for the same reason as `is_block_row`: when only the checker knew, the codemod folded `# Author:` into `# Copyright ©` across two dozen files.
+    """
+    return start == 1 and any(_LICENCE.search(body) for _, body in run)
 
 
 def _comment_runs(lines: list[str]):
@@ -96,7 +121,7 @@ def _wrapped(text: str) -> list[int]:
             fenced = not fenced
         if fenced or not a or not b:
             continue
-        if len(raw_a) - len(raw_a.lstrip()) >= base + 4 or len(raw_b) - len(raw_b.lstrip()) >= base + 4:
+        if is_block_row(raw_a, base) or is_block_row(raw_b, base):
             continue
         if continues_sentence(a, b):
             out.append(i)
@@ -111,7 +136,7 @@ def check(path: Path) -> list[str]:
     bad: list[str] = []
 
     for start, run in _comment_runs(lines):
-        if start == 1 and any(_LICENCE.search(body) for _, body in run):
+        if is_licence_run(start, run):
             continue
         for lineno, body in run:
             if _is_code(body):

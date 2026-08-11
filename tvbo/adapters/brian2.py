@@ -1,17 +1,14 @@
 """Native Brian2 backend for small-scale spiking networks.
 
-Consumes the shared small-scale lowering core (:mod:`tvbo.adapters.smallscale`) and emits a Brian2 point-neuron network. The maths is printed through the shared
-SymPy printer (``render_expression(..., format="brian2")``); this adapter adds only the Brian2 role vocabulary and the synapse rendering.
+Consumes the shared small-scale lowering core (:mod:`tvbo.adapters.smallscale`) and emits a Brian2 point-neuron network. The maths is printed through the shared SymPy printer (``render_expression(..., format="brian2")``); this adapter adds only the Brian2 role vocabulary and the synapse rendering.
 
 Two connectivity lowerings, chosen per edge by the ``connectivity`` rule:
 
 **all_to_all → O(N) population sums.** Every post-synaptic neuron sees the same sum
-over pre-synaptic gating, so the gate lives on the *pre-synaptic* neuron and a size-1 "hub" `NeuronGroup` accumulates the population sum once (via a ``(summed)`` `Synapses`), read by every post-synaptic neuron through a ``linked_var``. This is the hand-written
-Deco 2014 `deco_column.py` structure — it runs the 160E+40I column in seconds where the enumerated LEMS network needs ~190 s per 100 ms in jLEMS.
+over pre-synaptic gating, so the gate lives on the *pre-synaptic* neuron and a size-1 "hub" `NeuronGroup` accumulates the population sum once (via a ``(summed)`` `Synapses`), read by every post-synaptic neuron through a ``linked_var``. This is the hand-written Deco 2014 `deco_column.py` structure — it runs the 160E+40I column in seconds where the enumerated LEMS network needs ~190 s per 100 ms in jLEMS.
 
 **random / one_to_one → real sparse `Synapses`.** A genuinely sparse projection cannot
-be a single population sum (each target sees a different subset), so it is emitted as a
-Brian2 `Synapses` with ``connect(p=…)`` / ``connect(j='i')``. Following the canonical
+be a single population sum (each target sees a different subset), so it is emitted as a Brian2 `Synapses` with ``connect(p=…)`` / ``connect(j='i')``. Following the canonical
 Brian2 idioms: the delivered conductance decays on the *post-synaptic* `NeuronGroup` (``dg/dt=-g/tau``) and is incremented event-driven by ``on_pre`` (spike-gated, not summed every step); short-term-plasticity state (u, x) lives *on the synapse* as ``(event-driven)`` variables, mutated in ``on_pre`` in the recipe's declared order, so any facilitation/depression convention is honoured per connection.
 
 Supported synapse forms:
@@ -133,8 +130,7 @@ def _params(dyn):
 def _membrane_noise_sigma(v_sv):
     """The Gaussian white-noise amplitude on a membrane variable, as ``(value, unit)``.
 
-    The standard-deviation scale σ of an additive Gaussian white-noise current (the
-    Mongillo ``σ_ext·η(t)`` external drive), with the unit its declaration carries.
+    The standard-deviation scale σ of an additive Gaussian white-noise current (the Mongillo ``σ_ext·η(t)`` external drive), with the unit its declaration carries.
     Returns None when the variable declares no noise.
     """
     nz = getattr(v_sv, "noise", None)
@@ -178,6 +174,7 @@ class Brian2Adapter(BaseAdapter):
     """Render/run a small-scale spiking network natively in Brian2."""
 
     def render_code(self, **kwargs) -> str:
+        """Render the experiment as a runnable Brian2 script; *kwargs* override entries of the built template context."""
         from tvbo import templates
 
         ctx = self._build_context()
@@ -193,8 +190,8 @@ class Brian2Adapter(BaseAdapter):
         ``codegen_target`` defaults to ``"numpy"`` (no C compilation, portable);
         pass ``"cython"`` for the faster compiled path where the toolchain allows.
         """
-        import numpy as np
         import brian2
+        import numpy as np
         from brian2 import ms
 
         from tvbo.data.types import ExperimentResult, SimulationResult
@@ -303,7 +300,7 @@ class Brian2Adapter(BaseAdapter):
                 raise NotImplementedError(
                     f"Cell dynamics {dyn_name!r} declares no membrane variable 'v'; cannot build a NeuronGroup."
                 )
-            v_rhs = render_expression(str(getattr(v_sv, "equation").rhs), format="brian2")
+            v_rhs = render_expression(str(v_sv.equation.rhs), format="brian2")
             noise_sigma = _membrane_noise_sigma(v_sv)  # (value, unit) or None
             base = safe_id(dyn_name)
             for node in gnodes:
@@ -550,7 +547,7 @@ class Brian2Adapter(BaseAdapter):
             return render_expression(str(renamed), format="brian2")
 
         for n, sv in svs.items():
-            gate_odes[f"{n}_{gate_prefix}"] = _record(parse(getattr(sv, "equation").rhs))
+            gate_odes[f"{n}_{gate_prefix}"] = _record(parse(sv.equation.rhs))
         for ev in events.values():
             affect = getattr(getattr(ev, "affect", None), "rhs", None)
             if not affect:
@@ -561,7 +558,7 @@ class Brian2Adapter(BaseAdapter):
                     increments[f"{lhs.strip()}_{gate_prefix}"] = _record(parse(rhs))
 
         # Inline the derived variables into `i` (fixed point).
-        dv_exprs = {n: parse(getattr(dv, "equation").rhs) for n, dv in dvs.items()}
+        dv_exprs = {n: parse(dv.equation.rhs) for n, dv in dvs.items()}
         i_expr = dv_exprs["i"]
         for _ in range(len(dv_exprs) + 1):
             sub = {syms[n]: e for n, e in dv_exprs.items() if n != "i" and syms[n] in i_expr.free_symbols}
@@ -751,7 +748,7 @@ class Brian2Adapter(BaseAdapter):
         # Short-term-plasticity vars (all state vars — a delta synapse has no conductance gate) become per-synapse (event-driven) equations.
         model_lines, init, syn_ref = [], {}, set()
         for n, sv in svs.items():
-            rhs = parse(getattr(sv, "equation").rhs)
+            rhs = parse(sv.equation.rhs)
             syn_ref |= {s.name for s in rhs.free_symbols}
             model_lines.append(
                 f"{n} = {render_expression(str(rhs), format='brian2')} : 1 (event-driven)".replace(f"{n} =", f"d{n}/dt =", 1)
@@ -819,7 +816,7 @@ class Brian2Adapter(BaseAdapter):
             return sp.sympify(str(rhs), locals=syms)
 
         # Inline derived variables into i; the single state var in i is the gate g (linear).
-        dv_exprs = {n: parse(getattr(dv, "equation").rhs) for n, dv in dvs.items()}
+        dv_exprs = {n: parse(dv.equation.rhs) for n, dv in dvs.items()}
         i_expr = dv_exprs["i"]
         for _ in range(len(dv_exprs) + 1):
             sub = {syms[n]: e for n, e in dv_exprs.items() if n != "i" and syms[n] in i_expr.free_symbols}
@@ -837,7 +834,7 @@ class Brian2Adapter(BaseAdapter):
             raise NotImplementedError(f"Sparse synapse (edge {edge_idx}): current is not linear in the gate {g!r}.")
 
         # The gate ODE must be a pure decay -g/tau (params only) — sparse delivery accumulates onto a decaying post-synaptic conductance; a saturating gate (e.g. NMDA) cannot.
-        g_ode = parse(getattr(svs[g], "equation").rhs)
+        g_ode = parse(svs[g].equation.rhs)
         param_syms = {syms[p] for p in sparams}
         if (
             sp.simplify(g_ode.subs(gsym, 0)) != 0
@@ -845,7 +842,7 @@ class Brian2Adapter(BaseAdapter):
             or not (g_ode.free_symbols - {gsym}) <= param_syms
         ):
             raise NotImplementedError(
-                f"Sparse synapse (edge {edge_idx}): gate {g!r} ODE {str(getattr(svs[g], 'equation').rhs)!r} "
+                f"Sparse synapse (edge {edge_idx}): gate {g!r} ODE {str(svs[g].equation.rhs)!r} "
                 f"is not a pure decay -{g}/tau; the sparse path needs a decaying post-synaptic conductance "
                 f"(use all_to_all for a saturating summed gate)."
             )
@@ -862,7 +859,7 @@ class Brian2Adapter(BaseAdapter):
         stp_vars = [n for n in svs if n != g]
         model_lines, init, syn_ref = [], {}, set()
         for n in stp_vars:
-            rhs = parse(getattr(svs[n], "equation").rhs)
+            rhs = parse(svs[n].equation.rhs)
             syn_ref |= {s.name for s in rhs.free_symbols}
             model_lines.append(
                 f"{n} = {render_expression(str(rhs), format='brian2')} : 1 (event-driven)".replace(f"{n} =", f"d{n}/dt =", 1)
@@ -955,8 +952,8 @@ def _instantiate(model, seed=None, record_v=False):
         Synapses,
         defaultclock,
         linked_var,
-        mV,
         ms,
+        mV,
         start_scope,
     )
 

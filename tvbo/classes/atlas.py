@@ -14,9 +14,9 @@ except ImportError:
 import numpy as np
 from bids.layout import BIDSLayout
 from linkml_runtime.dumpers import yaml_dumper
-from tvbo.utils import yaml_loader
-
 from scipy.ndimage import center_of_mass
+
+from tvbo.utils import yaml_loader
 
 try:
     from tqdm import tqdm
@@ -27,8 +27,8 @@ except ImportError:
         return x  # No-op if tqdm not available
 
 
-from tvbo.data.tvbo_data import ATLAS_DIR
 from tvbo.adapters import bids as bids_utils
+from tvbo.data.tvbo_data import ATLAS_DIR
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.ontology.atlas import freesurfer
 
@@ -162,7 +162,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
                     centers = np.loadtxt(centers_file)
                     ent_list = list(ents.values())
                     if len(centers) == len(ent_list):
-                        for ent, xyz in zip(ent_list, centers):
+                        for ent, xyz in zip(ent_list, centers, strict=True):
                             ent.center = tvbo_datamodel.Coordinate(
                                 x=float(xyz[0]),
                                 y=float(xyz[1]),
@@ -258,7 +258,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
                     "Setting to empty. Install nilearn or provide atlas metadata."
                 )
 
-            for center, lookup_label in zip(centers, lookup_labels):
+            for center, lookup_label in zip(centers, lookup_labels, strict=True):
                 key = str(int(lookup_label))
                 if key in ents:
                     ents[key].center = tvbo_datamodel.Coordinate(

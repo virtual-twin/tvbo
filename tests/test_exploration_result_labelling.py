@@ -10,7 +10,6 @@ import xarray as xr
 from tvbo.data.types import ExplorationResult
 from tvbo.utils import Bunch
 
-
 C_VALS = np.array([0.1, 0.2, 0.3])
 W_VALS = np.array([1.0, 2.0])
 

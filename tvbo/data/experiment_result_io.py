@@ -35,13 +35,13 @@ from __future__ import annotations
 
 import hashlib
 import os
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import h5py
 import numpy as np
 import yaml
-
 
 # YAML hashing
 
@@ -138,7 +138,7 @@ def save_sidecar(
 def load_sidecar(yaml_path: str | os.PathLike) -> tuple[dict, dict]:
     """Load an ExperimentResult sidecar.
 
-    Returns
+    Returns:
     -------
     parameters
         ``{name: ndarray}`` — eagerly loaded numeric arrays.
@@ -190,7 +190,7 @@ def check_cache(
         identifier to its current on-disk path. For each fingerprint in
         the sidecar, the matching ``path`` is fingerprinted and compared.
 
-    Returns
+    Returns:
     -------
     status
         One of :class:`CacheStatus` constants.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create lobar brain-network datasets from dTOR tractogram and avgMatrix.
+r"""Create lobar brain-network datasets from dTOR tractogram and avgMatrix.
 
 This script creates two brain-lobe–level networks:
 
@@ -238,7 +238,7 @@ def compute_lobar_avgmatrix(dk_network_dir: Path) -> dict[str, np.ndarray]:
     dk_network_dir : Path
         Directory containing the DK avgMatrix network HDF5 and YAML files.
 
-    Returns
+    Returns:
     -------
     matrices : dict
         Keys ``weight``, ``length``, ``fc`` — each a float32 (17, 17) array.
@@ -322,7 +322,7 @@ def build_lobar_atlas(output_path: Path) -> tuple[Path, dict]:
 
     Loads the DKT31 atlas from TemplateFlow (MNI152NLin2009cAsym, 1mm), remaps each voxel label to its lobe index (1-based, matching ``LOBE_ORDER``), and saves the result as a NIfTI file.
 
-    Returns
+    Returns:
     -------
     output_path : Path
         Path to the newly created lobar atlas NIfTI.
@@ -460,7 +460,7 @@ def build_network(
     lengths: np.ndarray,
     centroids: dict[str, tuple[float, float, float]],
     fc: np.ndarray | None = None,
-) -> "Network":
+) -> Network:
     """Build a tvbo Network from lobar connectivity matrices.
 
     Each node also gets a subgroup index that strips the hemisphere prefix, so the groups are Frontal, Parietal, Temporal, Occipital, Cingulate, Insular, Subcortical, Cerebellum and BrainStem.
@@ -532,11 +532,10 @@ def build_network(
 def build_lobar8_network(
     lobar_matrices: dict[str, np.ndarray],
     centroids: dict[str, tuple[float, float, float]],
-) -> "Network":
+) -> Network:
     """Build a 16-node (8 per hemisphere) SC+FC network from avgMatrix.
 
-    Both SC (weight, length) and FC come from the same source — the
-    DesikanKilliany 84-node avgMatrix, aggregated to lobar level.
+    Both SC (weight, length) and FC come from the same source — the DesikanKilliany 84-node avgMatrix, aggregated to lobar level.
     BrainStem is excluded (no DK parcellation for it).
 
     Parameters
@@ -733,9 +732,9 @@ def compute_surface_centroids(
 
 def build_surface_network(
     lobar_atlas_path: Path,
-    parent_network: "Network",
+    parent_network: Network,
     _precomputed: tuple | None = None,
-) -> "Network":
+) -> Network:
     """Build a surface Network with vertex→lobe mapping.
 
     Creates a mesh-bearing Network from fsLR 32k surfaces where each vertex is mapped to its parent lobe in the lobar SC network.

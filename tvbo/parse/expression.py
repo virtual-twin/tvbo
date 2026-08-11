@@ -13,14 +13,14 @@ A sampler takes its PRNG state as the **first** argument, because JAX is functio
 Symbolic summation uses SymPy's own `Sum`, which needs explicit index variables: `Sum(x[i]*y[i], (i, 0, n-1))`. Index variables are detected from the `Sum` and `Product` limits, and the code printers handle the translation.
 """
 
-from sympy import parse_expr, Symbol, Function, IndexedBase, Sum, Product, sqrt
+from sympy import Function, IndexedBase, Product, Sum, Symbol, parse_expr, sqrt
 from sympy.parsing.sympy_parser import (
-    standard_transformations,
     convert_xor,
-    split_symbols_custom,
-    implicit_multiplication,
-    implicit_application,
     function_exponentiation,
+    implicit_application,
+    implicit_multiplication,
+    split_symbols_custom,
+    standard_transformations,
 )
 
 # Implicit multiplication WITHOUT split_symbols: multi-letter identifiers (e.g. "perturbation") stay as a single Symbol instead of being expanded into the product of their letters. Digit-prefix splitting like "2x" -> "2*x" is unaffected because that lives in `implicit_multiplication`.
@@ -34,7 +34,6 @@ _implicit_mul_app_no_split = (
 from sympy.parsing.latex import parse_latex
 
 from tvbo.datamodel.schema import Equation
-
 
 # Custom SymPy Classes for Mathematical Aggregation
 
@@ -174,12 +173,11 @@ def parse_eq(
     transformations : Iterable[callable]
         Full control over the transformation pipeline (overrides defaults if provided).
 
-    Returns
+    Returns:
     -------
     sympy.Expr
         Parsed SymPy expression.
     """
-
     # Start with user-provided locals (sympy's parse_expr handles pi, E, etc. by default)
     local_dict = dict(kwargs.pop("local_dict", {}))
 

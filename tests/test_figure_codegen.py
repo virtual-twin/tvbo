@@ -157,7 +157,9 @@ def test_container_path_digit_bearing_non_experiment_iri_does_not_misbind(tmp_pa
 
 def test_used_ref_prefers_in_study_experiment_id(tmp_path):
     """A figure layer's ``used`` may bind an in-study experiment by id (``experiment: 2``) rather than a raw ``iri`` — it resolves to that experiment's container with no hardcoded study key.
-    An explicit ``iri`` still wins when both are given."""
+
+    An explicit ``iri`` still wins when both are given.
+    """
     bsplot._container_path.cache_clear()
     nc = tmp_path / "output" / "nc"
     nc.mkdir(parents=True)
@@ -393,6 +395,7 @@ def test_unregistered_name_error_points_at_code_modules():
 
 def test_render_code_emits_study_code_module_imports():
     """A figure declaring code_modules emits an import for each, so a study's code_source panels/transforms register when plot.py runs (the study load puts code/ on the path; importing the module fires the @register_* decorators).
+
     A figure with none emits no such import.
     """
     fig = P.Figure(
@@ -410,8 +413,9 @@ def test_render_code_emits_study_code_module_imports():
 
 
 def test_study_code_module_roundtrip(tmp_path, monkeypatch):
-    """End-to-end proof of the register API + code_modules + emit-wiring together:
-    a study module registers a panel core tvbo never knew about; the emitted plot.py imports the module (firing the decorator), so the panel dispatches and the figure draws.
+    """End-to-end proof of the register API + code_modules + emit-wiring together.
+
+    A study module registers a panel core tvbo never knew about; the emitted plot.py imports the module (firing the decorator), so the panel dispatches and the figure draws.
     """
     import sys
     import textwrap
@@ -480,7 +484,8 @@ def test_render_code_font_size_wins_over_mplstyle():
 def test_render_code_bar_mark():
     """``mark: bar`` emits ``ax.bar``, not the line fallback.
 
-    A spectrum read as a line implies interpolation between mode numbers that do not exist, so the distinction is part of what the panel claims, not styling."""
+    A spectrum read as a line implies interpolation between mode numbers that do not exist, so the distinction is part of what the panel claims, not styling.
+    """
     fig = _cartesian_figure()
     fig.panels["a"].layers[0].mark = "bar"
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
@@ -491,7 +496,8 @@ def test_render_code_bar_mark():
 def test_render_code_annotation_text_kwargs():
     """Annotation placement/rotation reach the emitted ``ax.text`` call.
 
-    A label running up the side of a reference line is 90-degree rotated text; without these the drawer has no way to say so and the label overlaps the line."""
+    A label running up the side of a reference line is 90-degree rotated text; without these the drawer has no way to say so and the label overlaps the line.
+    """
     fig = _cartesian_figure()
     fig.panels["a"].annotations = [P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0, ha="right", va="top", size=6.5)]
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
@@ -502,7 +508,8 @@ def test_render_code_annotation_text_kwargs():
 def test_render_code_cell_axes_walks_insets():
     """A composite panel's inset axes must be reachable from ``_cell_axes``.
 
-    Insets carry no subplotspec, so without the child walk a grid's deliberate per-cell ticks are invisible to the snapshot and the figure-wide format pass replaces them."""
+    Insets carry no subplotspec, so without the child walk a grid's deliberate per-cell ticks are invisible to the snapshot and the figure-wide format pass replaces them.
+    """
     import matplotlib.pyplot as plt
 
     ns: dict = {}
@@ -537,7 +544,8 @@ def _inset_figure(**inset_kw):
 def test_render_code_inset_draws_inside_its_host():
     """A declared inset emits its own drawer and is opened on the HOST panel's axes.
 
-    The paper convention this serves is a zoom or thumbnail over a plot; the point of declaring it is that the panel keeps its grammar instead of becoming a custom callable whose whole interior is opaque to the spec."""
+    The paper convention this serves is a zoom or thumbnail over a plot; the point of declaring it is that the panel keeps its grammar instead of becoming a custom callable whose whole interior is opaque to the spec.
+    """
     code = bsplot.render_code(_inset_figure(), TAHER_BASE, "out.png")
     ast.parse(code)
     assert "def _a_inset0(fig, ax):" in code
@@ -564,9 +572,10 @@ def test_render_code_no_insets_emits_no_inset_machinery():
 
 
 def test_render_code_trim_margins_toggle():
-    """Trimming re-crops to content, so the saved aspect can drift from width/height;
-    ``trim_margins: false`` is the opt-out that preserves the declared proportions.
-    Default (unset) trims."""
+    """Trimming re-crops to content, so the saved aspect can drift from width/height.
+
+    ``trim_margins: false`` is the opt-out that preserves the declared proportions. Default (unset) trims.
+    """
     assert "'bbox_inches': 'tight'" in _emit()
     assert "'bbox_inches': 'tight'" in _emit(trim_margins=True)
     assert "bbox_inches" not in _emit(trim_margins=False)
@@ -600,7 +609,8 @@ def _placeholder_figure(**panel_kw):
 def test_placeholder_only_panel_draws_the_label():
     """A panel with a placeholder and NO layers draws the label, not an empty 0-1 axes.
 
-    The guarded draw cannot catch this case: with nothing bound, the panel body raises nothing and the honest placeholder would silently never appear."""
+    The guarded draw cannot catch this case: with nothing bound, the panel body raises nothing and the honest placeholder would silently never appear.
+    """
     ctx = bsplot.build_context(_placeholder_figure(), TAHER_BASE, "out.png")
     assert ctx["panels"][0]["placeholder_only"] is True
 
@@ -634,8 +644,7 @@ def test_placeholder_fallback_does_not_redraw_the_declared_frame():
 
 
 def test_axvline_and_axhline_accept_scalar_or_list():
-    """Reference lines are declarative axis directives: the paper's dashed verticals at
-    N = 10/100/200 are one ``axvline`` list, not three hand-drawn calls."""
+    """Reference lines are declarative axis directives: the paper's dashed verticals at N = 10/100/200 are one ``axvline`` list, not three hand-drawn calls."""
     figure = _cartesian_figure()
     figure.panels["a"].opts = {
         "axvline": P.Argument(name="axvline", value=[10, 100, 200]),
@@ -773,7 +782,7 @@ def test_triangle_masks_the_other_half():
 
 
 def test_declared_ticks_survive_the_format_pass():
-    """bsplot's format pass re-derives evenly spaced ticks; a DECLARED tick set is the paper's own frame and must win, so it is re-applied afterwards."""
+    """Bsplot's format pass re-derives evenly spaced ticks; a DECLARED tick set is the paper's own frame and must win, so it is re-applied afterwards."""
     figure = _cartesian_figure()
     figure.panels["a"].opts = {
         "xticks": P.Argument(name="xticks", value=[50, 100, 150, 200]),

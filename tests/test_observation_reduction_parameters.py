@@ -164,8 +164,10 @@ def test_a_sourced_operator_emits_a_lazy_load_not_its_bytes(tmp_path):
 
 
 def test_the_existence_check_does_not_materialise(tmp_path, monkeypatch):
-    """resolve_reduction is also called bare as an 'is this a streaming reducer?' predicate;
-    that must not run the producer or write to disk as a side effect."""
+    """resolve_reduction is also called bare as an 'is this a streaming reducer?' predicate.
+
+    That must not run the producer or write to disk as a side effect.
+    """
     import tvbo.data.param_io as param_io
 
     called = []

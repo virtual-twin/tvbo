@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """NeuroML/LEMS adapter for SimulationExperiment.
 
 Renders a self-contained LEMS XML simulation file from any TVBO `SimulationExperiment` through a Mako template. Every Dynamics model is exported as a custom LEMS ComponentType, so there are no hardcoded mappings onto built-in NeuroML cell types. Validation goes through PyLEMS (`lems.Model`); simulation through pyNeuroML (jnml).
@@ -30,12 +29,17 @@ from tvbo.adapters.smallscale.lowering import (
     group_nodes_by_dynamics,
     merge_params,
     safe_id,
+)
+from tvbo.adapters.smallscale.lowering import (
     unique_component_id as _unique_component_id,
 )
-from tvbo.utils import normalize_params, initial_value
+from tvbo.utils import initial_value, normalize_params
 
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult
+
+_LEMS_CMP_RE = re.compile(r"\.(gt|lt|geq|leq|eq|neq)\.", re.IGNORECASE)
+"""LEMS spells comparisons `.gt.`, `.leq.` and so on, which SymPy cannot parse."""
 
 # ── NeuroML dimension / unit mapping ─────────────────────────────────
 
@@ -214,6 +218,7 @@ def inline_model_functions(expr, dynamics, all_names):
         is parsed with the correct local dict.
     """
     from sympy import Function, Symbol
+
     from tvbo.parse.expression import parse_eq
 
     functions = getattr(dynamics, "functions", None) or {}
@@ -245,7 +250,7 @@ def inline_model_functions(expr, dynamics, all_names):
             if expr.has(fn_cls):
                 expr = expr.replace(
                     fn_cls,
-                    lambda *actual, _body=body, _syms=arg_syms: _body.xreplace(dict(zip(_syms, actual))),
+                    lambda *actual, _body=body, _syms=arg_syms: _body.xreplace(dict(zip(_syms, actual, strict=True))),
                 )
                 replaced = True
         if not replaced:
@@ -339,7 +344,7 @@ def _build_regime_data(events):
     A variable is "clamped" (excluded from refractory TimeDerivatives) when the assignment is a pure reset (``v = reset``, LHS absent from RHS).
     A variable that receives a bump (``w = w + b``, LHS appears in RHS) still evolves via its TimeDerivative in the refractory regime.
     """
-    for _ev_name, ev in (events or {}).items():
+    for ev in (events or {}).values():
         cond = getattr(ev, "condition", None)
         affect = getattr(ev, "affect", None)
         cond_rhs = getattr(cond, "rhs", None) if cond else None
@@ -1345,8 +1350,7 @@ def _load_neuroml_contracts() -> dict:
 def _component_references(nml_type: str) -> dict:
     """ComponentReferences a standard NeuroML type declares (name -> target type).
 
-    Reads the concrete type's own contract. An input component *instantiates* a
-    NeuroML type rather than extending one, so a name missing from the ingested index is simply a type tvbo has no contract for — not the "extends a type that does not exist" error :func:`_base_type_meta` reports, which would be both alarming and untrue here.
+    Reads the concrete type's own contract. An input component *instantiates* a NeuroML type rather than extending one, so a name missing from the ingested index is simply a type tvbo has no contract for — not the "extends a type that does not exist" error :func:`_base_type_meta` reports, which would be both alarming and untrue here.
     """
     contract = _load_neuroml_contracts().get(_resolve_base_type_name(nml_type)) or {}
     return contract.get("component_references") or {}
@@ -1370,8 +1374,7 @@ def _resolve_base_type_name(ref: str) -> str:
 def _extends_base(iri: str) -> str | None:
     """Bare base-type name if *iri* references a NeuroML base type to extend.
 
-    Recognises the ``extends:`` shorthand, the tvbo-scoped IRI (``.../neuroml/<name>`` or ``tvbo:neuroml/<name>``) and the direct NeuroML
-    IRI (``...neuroml2#<name>``). Returns ``None`` otherwise — in particular for the ``neuroml:<name>`` standard-type reference, which is not an extension.
+    Recognises the ``extends:`` shorthand, the tvbo-scoped IRI (``.../neuroml/<name>`` or ``tvbo:neuroml/<name>``) and the direct NeuroML IRI (``...neuroml2#<name>``). Returns ``None`` otherwise — in particular for the ``neuroml:<name>`` standard-type reference, which is not an extension.
     """
     iri = (iri or "").strip()
     if iri.startswith("extends:"):
@@ -1383,7 +1386,7 @@ def _extends_base(iri: str) -> str | None:
     return None
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _base_type_meta(extends: str) -> dict:
     """Emission contract for a NeuroML base type.
 
@@ -1474,8 +1477,7 @@ def _hier_parse_select_label(label_str):
 def _hier_build_dynamics(dyn, extends, all_params):
     """Build the ``dynamics`` sub-dict for a custom ComponentType.
 
-    Reads state_variables, derived_variables, and events from the
-    Dynamics object and converts them to LEMS template data.
+    Reads state_variables, derived_variables, and events from the Dynamics object and converts them to LEMS template data.
     """
     meta = _base_type_meta(extends)
     exposures = meta.get("exposures", {})
@@ -1620,7 +1622,8 @@ def _hier_build_dynamics(dyn, extends, all_params):
 def _python_cond_to_lems(cond_str, all_names=None):
     """Convert a Python-style condition to LEMS syntax.
 
-    ``x != 0`` → ``x .neq. 0`` ``v > thresh`` → ``v .gt. thresh`` ``v >= thresh`` → ``v .geq. thresh``"""
+    ``x != 0`` → ``x .neq. 0`` ``v > thresh`` → ``v .gt. thresh`` ``v >= thresh`` → ``v .geq. thresh``
+    """
     s = str(cond_str)
     s = s.replace("!=", " .neq. ")
     s = s.replace(">=", " .geq. ")
@@ -1877,7 +1880,7 @@ def build_std_lems_context(experiment):
 
     Inspects the experiment to determine whether it uses standard NeuroML types (``iri: neuroml:*``).  When it does, extracts *all* data that the Mako templates need — integration parameters, pre-rendered XML fragments for cells/channels/synapses, population lists, connection lists, and simulation metadata.
 
-    Returns
+    Returns:
     -------
     dict or None
         ``None`` when the experiment cannot be rendered using standard
@@ -1887,7 +1890,6 @@ def build_std_lems_context(experiment):
         * ``'is_fhn'``      – True for FitzHugh-Nagumo cell template
         * All scalar and list variables that the templates iterate over.
     """
-
     # ── Multi-population network detection ──
     network = getattr(experiment, "network", None)
     if network:
@@ -2914,9 +2916,12 @@ def build_lems_context(experiment):
     Returns:
         The context dict, keyed `dyn`, `dyn_id`, `params`, `svs`, `dvs`, `events`, `coupling_inputs`, `coupling_meta`, `coupling_params`, `coupling_pre_rhs`, `coupling_post_rhs`, `coupling_global`, `sv_names_set`, `n_nodes`, `dt`, `duration`, and the callables `lems_expr`, `_parse_piecewise`, `lems_dim` and `safe_id`.
     """
-    from sympy import Piecewise, S as sympy_S, Eq as sympy_Eq
-    from sympy.functions.elementary.piecewise import piecewise_fold
+    from sympy import Eq as sympy_Eq
+    from sympy import Piecewise
+    from sympy import S as sympy_S
     from sympy.core.basic import Basic as _SympyBasic
+    from sympy.functions.elementary.piecewise import piecewise_fold
+
     from tvbo.parse.expression import parse_eq
 
     dyn = experiment.dynamics
@@ -3138,6 +3143,44 @@ def build_lems_context(experiment):
         has_network=net_ctx is not None,
     )
 
+    def _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names):
+        """A `lems_expr` bound to one cell type's names, for the per-population contexts below."""
+
+        def _expr(e):
+            e_str = str(e)
+            if _LEMS_CMP_RE.search(e_str):
+                return e_str
+            if not isinstance(e, _SympyBasic):
+                e = parse_eq(e_str, parameters=ct_all_names, functions=ct_fn_names)
+            e = inline_model_functions(e, ct_dyn, ct_all_names)
+            return sympy_to_lems(e, parameters=ct_all_names)
+
+        return _expr
+
+    def _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr_fn):
+        """A `_parse_piecewise` bound to one cell type's names, for the per-population contexts below."""
+
+        def _parse_pw(rhs_str):
+            try:
+                expr = parse_eq(str(rhs_str), parameters=ct_all_names, functions=ct_fn_names)
+                expr = expr.rewrite(Piecewise)
+                if not isinstance(expr, Piecewise) and expr.has(Piecewise):
+                    expr = piecewise_fold(expr)
+                if not isinstance(expr, Piecewise):
+                    return None
+                cases = []
+                for val, cond in expr.args:
+                    if getattr(cond, "func", None) is sympy_Eq:
+                        continue
+                    cond_str = None if cond == sympy_S.true else ct_lems_expr_fn(cond)
+                    val_str = ct_lems_expr_fn(val)
+                    cases.append((cond_str, val_str))
+                return cases
+            except Exception:
+                return None
+
+        return _parse_pw
+
     # When multi-population network exists, build per-cell-type contexts
     if net_ctx:
         cell_contexts = {}
@@ -3158,42 +3201,6 @@ def build_lems_context(experiment):
             ct_fn_names = list((getattr(ct_dyn, "functions", None) or {}).keys())
 
             _svs_have_physical_units(ct_svs)
-
-            _LEMS_CMP_RE = re.compile(r"\.(gt|lt|geq|leq|eq|neq)\.", re.IGNORECASE)
-
-            def _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names):
-                def ct_lems_expr(e):
-                    e_str = str(e)
-                    if _LEMS_CMP_RE.search(e_str):  # a LEMS comparison operator is not SymPy-parseable
-                        return e_str
-                    if not isinstance(e, _SympyBasic):
-                        e = parse_eq(e_str, parameters=ct_all_names, functions=ct_fn_names)
-                    e = inline_model_functions(e, ct_dyn, ct_all_names)
-                    return sympy_to_lems(e, parameters=ct_all_names)
-
-                return ct_lems_expr
-
-            def _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr_fn):
-                def ct_parse_pw(rhs_str):
-                    try:
-                        expr = parse_eq(str(rhs_str), parameters=ct_all_names, functions=ct_fn_names)
-                        expr = expr.rewrite(Piecewise)
-                        if not isinstance(expr, Piecewise) and expr.has(Piecewise):
-                            expr = piecewise_fold(expr)
-                        if not isinstance(expr, Piecewise):
-                            return None
-                        cases = []
-                        for val, cond in expr.args:
-                            if getattr(cond, "func", None) is sympy_Eq:
-                                continue
-                            cond_str = None if cond == sympy_S.true else ct_lems_expr_fn(cond)
-                            val_str = ct_lems_expr_fn(val)
-                            cases.append((cond_str, val_str))
-                        return cases
-                    except Exception:
-                        return None
-
-                return ct_parse_pw
 
             ct_lems_expr = _make_ct_lems_expr(ct_dyn, ct_all_names, ct_fn_names)
             ct_parse_pw = _make_ct_parse_pw(ct_all_names, ct_fn_names, ct_lems_expr)
@@ -3361,11 +3368,9 @@ class NeuroMLAdapter(BaseAdapter):
     * ``export(dir)``         → write file(s) to disk, optionally validate
 
     ``render('lems')`` produces a self-contained ``<Lems>`` file.
-    ``render('neuroml')`` produces a ``<neuroml>`` document with custom
-    ComponentType definitions — no mapping to native NeuroML cell types.
+    ``render('neuroml')`` produces a ``<neuroml>`` document with custom ComponentType definitions — no mapping to native NeuroML cell types.
 
-    All ``render_*`` methods pass a fully pre-computed context via
-    :func:`build_lems_context` so templates stay logic-free.
+    All ``render_*`` methods pass a fully pre-computed context via :func:`build_lems_context` so templates stay logic-free.
     """
 
     TEMPLATE = "neuroml/tvbo-neuroml-lems.xml.mako"
@@ -3440,8 +3445,7 @@ class NeuroMLAdapter(BaseAdapter):
     def render_lems_wrapper(self, neuroml_file=None, **kwargs) -> str:
         """Render a LEMS simulation wrapper for a NeuroML file.
 
-        The wrapper includes standard NeuroML type files and the given
-        NeuroML document, then defines a ``<Simulation>`` targeting the network defined in the ``.nml`` file.
+        The wrapper includes standard NeuroML type files and the given NeuroML document, then defines a ``<Simulation>`` targeting the network defined in the ``.nml`` file.
 
         Parameters
         ----------
@@ -3524,7 +3528,7 @@ class NeuroMLAdapter(BaseAdapter):
         validate : bool
             Run PyLEMS validation on every written file (default ``True``).
 
-        Returns
+        Returns:
         -------
         dict
             Mapping of role to absolute file paths.
@@ -3562,7 +3566,7 @@ class NeuroMLAdapter(BaseAdapter):
             ]
             roles = ("dynamics", "network", "simulation")
             paths = {}
-            for (fname, xml), role in zip(files, roles):
+            for (fname, xml), role in zip(files, roles, strict=True):
                 fpath = out_dir / fname
                 fpath.write_text(xml)
                 paths[role] = str(fpath)
@@ -3601,7 +3605,7 @@ class NeuroMLAdapter(BaseAdapter):
         "eden": "run_lems_with_eden",
     }
 
-    def run(self, backend="jneuroml", **kwargs) -> "ExperimentResult":
+    def run(self, backend="jneuroml", **kwargs) -> ExperimentResult:
         """Run the LEMS simulation through a downstream simulator.
 
         Exports a self-contained monolithic LEMS file and executes it with one of the pyNeuroML runners.
@@ -3718,7 +3722,7 @@ class NeuroMLAdapter(BaseAdapter):
                 if _is_std_network and _std_net_output_pops:
                     # Try to match file stems to output pops/components
                     matched_stems = set()
-                    for pop_id, pop_size, sv_var in _std_net_output_pops:
+                    for pop_id, _pop_size, _sv_var in _std_net_output_pops:
                         comp = pop_id.removesuffix("_pop")
                         # Per-cell files: comp_0.dat, comp_1.dat, ...
                         cell_files = sorted(
@@ -3914,8 +3918,8 @@ class NeuroMLAdapter(BaseAdapter):
              ``netParams`` build + ``sim.createSimulateAnalyze``.
         5. Exec the patched script.
         """
-        import re
         import os
+        import re
         import shutil
         import subprocess
         import sys
@@ -4123,7 +4127,8 @@ def _resolve_nml2_root() -> _Path:
     """Find or fetch the NeuroML2 repository.
 
     Resolution order:
-    1. ``NEUROML2_DIR`` environment variable (explicit override) 2. Auto-clone to ``~/.cache/tvbo/NeuroML2`` (works anywhere with git)"""
+    1. ``NEUROML2_DIR`` environment variable (explicit override) 2. Auto-clone to ``~/.cache/tvbo/NeuroML2`` (works anywhere with git)
+    """
     global _nml2_root_cache
     if _nml2_root_cache is not None:
         return _nml2_root_cache
@@ -4215,7 +4220,7 @@ def run_lems_example(lems_file: str, cwd: str | _Path | None = None) -> dict[str
     cwd : path, optional
         Working directory.  Defaults to the LEMSexamples directory.
 
-    Returns
+    Returns:
     -------
     dict mapping output filename to (n_time, n_cols) numpy arrays.
     """
@@ -4226,8 +4231,8 @@ def run_lems_example(lems_file: str, cwd: str | _Path | None = None) -> dict[str
 
 def _run_lems_example(lems_file: str, cwd: _Path) -> dict[str, _np.ndarray]:
     """Run one LEMS file in *cwd*, which the caller has locked for exclusive use."""
-    from pyneuroml import JNEUROML_VERSION
     import pyneuroml
+    from pyneuroml import JNEUROML_VERSION
 
     jar_dir = _Path(pyneuroml.__file__).parent / "lib"
     jar = jar_dir / f"jNeuroML-{JNEUROML_VERSION}-jar-with-dependencies.jar"
@@ -4468,7 +4473,8 @@ def compare_traces(
 
     Parameters
     ----------
-    ref_data, tvbo_data : (n_time, n_cols) arrays ref_cols, tvbo_cols : column names (index 0 is time) time_col : which column is time (default 0) rtol, atol : tolerances for _np.allclose"""
+    ref_data, tvbo_data : (n_time, n_cols) arrays ref_cols, tvbo_cols : column names (index 0 is time) time_col : which column is time (default 0) rtol, atol : tolerances for _np.allclose
+    """
     # Interpolate TVBO onto reference time grid
     from scipy.interpolate import interp1d
 
@@ -4523,7 +4529,8 @@ def plot_comparison(
 
     Parameters
     ----------
-    ref_data, tvbo_data : arrays with time in col 0 ref_cols, tvbo_cols : column names title : plot title time_scale : multiply time by this factor for display time_unit : label for x axis"""
+    ref_data, tvbo_data : arrays with time in col 0 ref_cols, tvbo_cols : column names title : plot title time_scale : multiply time by this factor for display time_unit : label for x axis
+    """
     import matplotlib.pyplot as plt
 
     sv_names = [c for c in ref_cols if c != "time" and c in tvbo_cols]
@@ -4587,7 +4594,7 @@ def parse_lems_displays(lems_file: str) -> list[_Display]:
         LEMS filename (e.g. 'LEMS_NML2_Ex9_FN.xml') resolved relative
         to the LEMSexamples directory.
 
-    Returns
+    Returns:
     -------
     list of _Display objects with their Line children.
     """
@@ -4696,9 +4703,10 @@ def _find_ref_column(quantity: str, ref_outputs: dict, output_columns: dict | No
         {filename: [quantity_strings]} parsed from OutputFile/OutputColumn
         If None, uses positional order.
 
-    Returns
+    Returns:
     -------
-    (filename, col_index) or None"""
+    (filename, col_index) or None
+    """
     if output_columns:
         for fname, cols in output_columns.items():
             if quantity in cols:
@@ -4713,7 +4721,7 @@ def _find_ref_column(quantity: str, ref_outputs: dict, output_columns: dict | No
 def parse_lems_output_columns(lems_file: str) -> dict[str, list[str]]:
     """Parse OutputFile → OutputColumn quantities from a LEMS file.
 
-    Returns
+    Returns:
     -------
     dict mapping output filename (e.g. 'ex14.dat') to list of quantity strings.
     """

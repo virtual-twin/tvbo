@@ -4,7 +4,6 @@ import math
 
 import equinox as eqx
 import numpy as np
-
 from tvboptim.experimental.network_dynamics.result import NativeSolution
 from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor, _slice_variable_names
 
@@ -22,6 +21,7 @@ class TVBTemporalAverage(AbstractMonitor):
         self.period = period
 
     def __call__(self, sol):
+        """Average *sol* over consecutive windows of ``period``, dropping the trailing partial window as TVB does."""
         dt = self._resolve_dt(sol)
         step_count = _tvb_iround(self.period / dt)
         ys = np.asarray(sol.ys)[:, self.voi, ...]
@@ -93,6 +93,7 @@ class TVBBold(AbstractMonitor):
         return kernel_values[::-1][np.newaxis, :]
 
     def __call__(self, sol):
+        """Convolve *sol* with the Balloon-Windkessel HRF after decimating to ``downsample_period``, then sample at every ``period``."""
         dt = self._resolve_dt(sol)
         interim_step_count = _tvb_iround(self.downsample_period / dt)
         output_step_count = _tvb_iround(self.period / dt)

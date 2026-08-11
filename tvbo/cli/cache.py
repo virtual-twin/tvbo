@@ -8,7 +8,6 @@ That is what this reclaims: given a study, the artifacts of ITS producers that I
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional
 
 import typer
 
@@ -21,9 +20,9 @@ def _mb(n: int) -> str:
 
 @app.command("prune")
 def prune(
-    specs: List[Path] = typer.Argument(..., help="Study / experiment YAML to read."),
+    specs: list[Path] = typer.Argument(..., help="Study / experiment YAML to read."),
     delete: bool = typer.Option(False, "--delete", help="Actually remove them (default: list only)."),
-    cache_dir: Optional[Path] = typer.Option(None, help="Store to prune (default ~/.tvbo/constants)."),
+    cache_dir: Path | None = typer.Option(None, help="Store to prune (default ~/.tvbo/constants)."),
 ) -> None:
     """List — or with --delete remove — produced constants these studies have superseded."""
     from tvbo.classes.study import SimulationStudy

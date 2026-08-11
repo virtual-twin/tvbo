@@ -17,8 +17,9 @@ from mako.template import Template
 from sympy import pycode
 
 from tvbo import templates
+from tvbo.classes import coupling
+from tvbo.classes import equation as equations
 from tvbo.ontology import owl as ontology
-from tvbo.classes import equation as equations, coupling
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +39,7 @@ TEMPLATES = templates.root
 def is_derived(obs: Any, experiment: Any) -> bool:
     """Return True if ``obs`` derives from other observations in ``experiment``.
 
-    An Observation is derived when any item in its multivalued ``source`` slot names ANOTHER observation in the same experiment. Source entries may be bare strings, objects with a ``name`` attribute, or inlined
-    Observation/StateVariable instances.
+    An Observation is derived when any item in its multivalued ``source`` slot names ANOTHER observation in the same experiment. Source entries may be bare strings, objects with a ``name`` attribute, or inlined Observation/StateVariable instances.
 
     A SELF-reference (an observation whose ``source`` names itself — e.g. an observation ``r_A`` with ``source: [r_A]`` that simply observes the model variable ``r_A``) is NOT derived: an observation cannot derive from itself.
     Without this exclusion such observations are mis-routed to the derived path, where they have no pipeline and are never computed, so the generated ``observations.r_A = _all_obs.r_A`` extraction raises AttributeError.
@@ -100,8 +100,7 @@ def source_language(format: str) -> str:
 def format_code(code: str, format: str = "python", use_black: bool = True) -> str:
     """Format generated *code* for the backend named by *format*.
 
-    Component-level renders (a Dynamics, a Coupling, an Observation) come through here; whole-experiment renders are formatted by
-    :func:`tvbo.export.registry.render`. Both resolve the language the same way and both route to :mod:`tvbo.codegen.style`, so they cannot drift apart.
+    Component-level renders (a Dynamics, a Coupling, an Observation) come through here; whole-experiment renders are formatted by :func:`tvbo.export.registry.render`. Both resolve the language the same way and both route to :mod:`tvbo.codegen.style`, so they cannot drift apart.
 
     Args:
         code: Source code string to format

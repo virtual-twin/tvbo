@@ -250,7 +250,9 @@ def test_partition_resolves_to_wave_kind():
 
 def test_partition_wave_obs_streams_in_the_base_run():
     """A `partition` (wave) observation must be classed streaming by streaming_post_eval_plan, so the base/post-eval run folds it in-carry per block instead of materialising the whole trajectory and vmapping every frame (which OOM'd Koller exp_41 at 286 GiB in STEP 1).
-    `wave` must also be a slotted kind so the block aligns to its downsample period, not 1000."""
+
+    `wave` must also be a slotted kind so the block aligns to its downsample period, not 1000.
+    """
     grp_verts = np.array([[0, 1, 2, 3], [5, 6, 7, 8]])
     A = np.linspace(0.5, 2.0, 8).reshape(2, 4)
     exp = SimpleNamespace(

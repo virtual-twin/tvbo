@@ -8,7 +8,7 @@ import os
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import typer
 from mako.template import Template
@@ -16,7 +16,6 @@ from mako.template import Template
 from . import _common
 from . import _workflow as _wf
 from ._backends import list_backends
-
 
 app = typer.Typer(name="workflow", no_args_is_help=True)
 
@@ -723,8 +722,7 @@ def _figure_code_modules(figs) -> set[str]:
 def _figure_base_dir(study, out_dir: Path) -> str:
     """Root the figures' ``used`` containers resolve against.
 
-    Prefers the study's source-file directory (where ``output/nc/`` lives at author time); falls back to the kit dir. ``bsplot`` resolves each layer's
-    IRI to ``<base>/output/nc/<exp>/*.h5``.
+    Prefers the study's source-file directory (where ``output/nc/`` lives at author time); falls back to the kit dir. ``bsplot`` resolves each layer's IRI to ``<base>/output/nc/<exp>/*.h5``.
     """
     src = getattr(study, "_source_file", None)
     return str(Path(src).parent) if src else str(out_dir)
@@ -799,12 +797,10 @@ def _emit_snakemake_study(
     bundle_select: dict | None = None,
     code_source: str = "spec",
 ):
-    """Emit one Snakefile that fans every experiment (and, per experiment, every subject / sweep cell) into its own job. In kit mode each experiment is frozen
-    BOTH as a self-contained ``spec/<key>/experiment.yaml`` (re-rendered at run time)
-    AND as a pre-rendered ``scripts/<key>.<ext>`` (run as-is, no codegen). Each rule picks between them at run time from ``$TVBO_CODE_SOURCE`` (default *code_source*, ``'spec'`` for back-compat), so ONE kit runs either way; ``--stdout`` writes nothing and its rules run ``tvbo run <source-spec> --experiment <id>``.
+    """Emit one Snakefile that fans every experiment (and, per experiment, every subject / sweep cell) into its own job. In kit mode each experiment is frozen BOTH as a self-contained ``spec/<key>/experiment.yaml`` (re-rendered at run time) AND as a pre-rendered ``scripts/<key>.<ext>`` (run as-is, no codegen). Each rule picks between them at run time from ``$TVBO_CODE_SOURCE`` (default *code_source*, ``'spec'`` for back-compat), so ONE kit runs either way; ``--stdout`` writes nothing and its rules run ``tvbo run <source-spec> --experiment <id>``.
 
-    Fan-out note: an experiment that fans a ``parameters`` axis over the workflow (one ``--pin`` per cell, e.g. a per-cell host observation) is emitted spec-mode ONLY, with
-    NO frozen script. A frozen script bakes the model/coupling/network parameters at a single point and hardcodes the whole grid, so the per-cell ``--pin`` can never reach them — pins collapse the exploration on the experiment OBJECT, which only a spec-mode re-render reads. Skipping the (invalid) frozen script also means a run forcing ``--code-source frozen`` still falls back to spec for these rules. Subject / seed / IC fans keep their frozen script: their per-cell value reaches the frozen run at call time (``--subject``, seed / initial-condition kwargs)."""
+    Fan-out note: an experiment that fans a ``parameters`` axis over the workflow (one ``--pin`` per cell, e.g. a per-cell host observation) is emitted spec-mode ONLY, with NO frozen script. A frozen script bakes the model/coupling/network parameters at a single point and hardcodes the whole grid, so the per-cell ``--pin`` can never reach them — pins collapse the exploration on the experiment OBJECT, which only a spec-mode re-render reads. Skipping the (invalid) frozen script also means a run forcing ``--code-source frozen`` still falls back to spec for these rules. Subject / seed / IC fans keep their frozen script: their per-cell value reaches the frozen run at call time (``--subject``, seed / initial-condition kwargs).
+    """
     study, experiments, study_key = _study_experiments(spec, experiment)
     out_dir = output or Path("output").joinpath(str(study_key), "snakemake")
     if not stdout:
@@ -994,8 +990,7 @@ def _emit_snakemake_study(
 def _write_snakemake_profile(out_dir: Path, block: dict, plan=None) -> None:
     """Ship a SLURM profile so the kit runs from a login node with one command.
 
-    Snakemake 8+/9 submits to the scheduler via an executor plugin: the lightweight ``snakemake`` process runs on the login node and dispatches each rule as its own
-    SLURM job (with the per-rule ``resources:`` in the Snakefile). The profile carries the compute-environment settings — ``executor: slurm``, the concurrent-jobs cap, and the cluster-identity default-resources (partition/account) that don't belong in the workflow definition. Run: ``snakemake --profile profile`` from the kit dir.
+    Snakemake 8+/9 submits to the scheduler via an executor plugin: the lightweight ``snakemake`` process runs on the login node and dispatches each rule as its own SLURM job (with the per-rule ``resources:`` in the Snakefile). The profile carries the compute-environment settings — ``executor: slurm``, the concurrent-jobs cap, and the cluster-identity default-resources (partition/account) that don't belong in the workflow definition. Run: ``snakemake --profile profile`` from the kit dir.
     """
     _container_args = getattr(plan, "container_exec_flags", "") or ""
     text = _render_template(
@@ -1115,8 +1110,7 @@ _LAUNCHER = {"slurm": "sbatch", "snakemake": "snakemake", "nextflow": "nextflow"
 def _resolve_launcher(name: str) -> str | None:
     """Find an engine launcher, preferring the environment tvbo itself runs in.
 
-    ``snakemake`` is normally installed alongside ``tvbo`` in the same venv, and a cluster user runs the CLI by absolute path (``.venv/bin/tvbo …``) rather than activating it — which leaves that venv's ``bin`` off ``PATH``, so a bare
-    :func:`shutil.which` misses a launcher sitting right next to the running interpreter. Look there first, then fall back to ``PATH``. Returns the resolved path, or ``None`` when the launcher genuinely is not installed.
+    ``snakemake`` is normally installed alongside ``tvbo`` in the same venv, and a cluster user runs the CLI by absolute path (``.venv/bin/tvbo …``) rather than activating it — which leaves that venv's ``bin`` off ``PATH``, so a bare :func:`shutil.which` misses a launcher sitting right next to the running interpreter. Look there first, then fall back to ``PATH``. Returns the resolved path, or ``None`` when the launcher genuinely is not installed.
     """
     import shutil
     import sys
@@ -1163,8 +1157,7 @@ def _execute_engine_artefact(
 
     Runs from the artefact's own directory so the generated script can use the relative ``spec/`` and ``scripts/`` paths of an emitted kit. *slurm_array* restricts a Slurm submission to an index or range (``'0'`` for a single smoke task, ``'0-3'`` for four); ignored for non-Slurm engines. *dry_run* asks the engine to resolve and report the work without running or queueing it — each engine spells that differently, so it maps to the engine's own flag.
     *profile* (Snakemake only) overrides the kit's shipped ``profile/`` with a named
-    or path profile — e.g. a site profile like ``cubi-v1`` that carries the cluster's canonical executor config; the Snakefile's per-rule ``resources:`` apply on top of whichever profile is used. *cores* (Snakemake only) forces a
-    LOCAL run on that many cores (``'all'`` for every core), overriding only the profile's executor — its container/bind/retry settings still apply — the native local-testing path; the SAME kit submits to the scheduler on HPC when *cores* is unset.
+    or path profile — e.g. a site profile like ``cubi-v1`` that carries the cluster's canonical executor config; the Snakefile's per-rule ``resources:`` apply on top of whichever profile is used. *cores* (Snakemake only) forces a LOCAL run on that many cores (``'all'`` for every core), overriding only the profile's executor — its container/bind/retry settings still apply — the native local-testing path; the SAME kit submits to the scheduler on HPC when *cores* is unset.
     """
     # Resolve to an absolute launcher so a venv-installed console script is found even when that venv's bin/ is not on PATH (see :func:`_resolve_launcher`).
     exe = _resolve_launcher(_LAUNCHER.get(engine, "")) or _LAUNCHER.get(engine, "")
@@ -1223,8 +1216,7 @@ def _execute_emitted(
     """Execute a generated workflow artefact inside *out_dir*.
 
     For Slurm this submits the array job and then chains the gather job (``finalize.sbatch``) with an ``afterok`` dependency, so the run converges to one reassembled result with no manual step. With *dry_run* nothing is queued:
-    the engine only reports the work it would do, so the Slurm chain is skipped (there is no array job id to depend on). *profile* overrides the Snakemake profile and *cores* forces a local Snakemake run (see
-    :func:`_execute_engine_artefact`).
+    the engine only reports the work it would do, so the Slurm chain is skipped (there is no array job id to depend on). *profile* overrides the Snakemake profile and *cores* forces a local Snakemake run (see :func:`_execute_engine_artefact`).
     """
     if engine == "slurm" and not dry_run:
         # The chain submits the whole array; it has no per-experiment target, so an ignored selector would burn the study's allocation on work nobody asked for.
@@ -1352,7 +1344,7 @@ def snakemake(
     pack: bool = typer.Option(
         False, "--pack", help="Emit ONLY <kit>.tar.gz (remove the loose kit dir), ready to scp + `tvbo workflow submit`."
     ),
-    benchmark: Optional[bool] = typer.Option(
+    benchmark: bool | None = typer.Option(
         None,
         "--benchmark/--no-benchmark",
         help="Attach Snakemake's native `benchmark:` directive to every rule: a per-cell TSV "
@@ -1478,8 +1470,7 @@ def finalize(
 ) -> None:
     """Gather sharded HPC outputs into one self-describing ``ExperimentResult``.
 
-    Concatenates each array task's slice by parameter value into the full grid a local run produces, and writes it as ``<stem>.h5`` (keyed groups) plus a ``<stem>.yaml`` sidecar (the frozen, fully-overridden spec) — the same
-    HDF5-plus-YAML layout as a network. No manual post-processing is needed;
+    Concatenates each array task's slice by parameter value into the full grid a local run produces, and writes it as ``<stem>.h5`` (keyed groups) plus a ``<stem>.yaml`` sidecar (the frozen, fully-overridden spec) — the same HDF5-plus-YAML layout as a network. No manual post-processing is needed;
     emitted kits submit this automatically as a dependent gather job.
     """
     from tvbo.data.types import reassemble_experiment_results

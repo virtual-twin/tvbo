@@ -1,9 +1,7 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # SPDX-License-Identifier: EUPL-1.2
 
-"""
-TVB-O wrapper for Coupling functions
-====================================
+"""TVB-O wrapper for Coupling functions.
 
 ```{seealso}
 - [Coupling](![wiki]/Coupling/index.html)
@@ -17,13 +15,12 @@ import numpy as np
 import owlready2
 
 from tvbo import templates
-from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo.classes import equation as equations
 from tvbo.codegen import templater
 from tvbo.codegen.code import parse_eq
+from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.ontology import owl as ontology
 from tvbo.ontology import query
-from tvbo.classes import equation as equations
-
 
 TEMPLATES = templates.root
 
@@ -43,7 +40,7 @@ def _load_coupling_from_database(name, coupling):
     coupling : tvbo_datamodel.Coupling
         Coupling instance to fill (modified in-place).
 
-    Returns
+    Returns:
     -------
     bool
         True if a database file was found and applied.
@@ -139,7 +136,7 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
             metadata.post_expression = tvbo_datamodel.Equation(rhs=str(eqs["post"]))
 
     # Parameters
-    for key, param in get_parameters(ontoclass).items():
+    for param in get_parameters(ontoclass).values():
         label = param["label"]
         if label not in metadata.parameters:
             metadata.parameters[label] = tvbo_datamodel.Parameter(
@@ -501,12 +498,12 @@ class Coupling(tvbo_datamodel.Coupling):
             If True, incoming states carry an explicit time-delay index:
             ``y1[j, t - tau[i, j]]`` instead of plain ``y1[j]``.
 
-        Returns
+        Returns:
         -------
         sympy.Expr
             E.g. ``Sum(w[i, j]*sin(theta[j] - theta[i]), (j, 0, N - 1))/N``
 
-        Notes
+        Notes:
         -----
         Parsing and substitution both happen under ``sp.evaluate(False)``, which keeps sympy from canonicalising the sign of an odd function and from reordering an ``Add`` alphabetically. Parsing has to be inside that block too, or ``v0 - (y1 - y2)`` is flattened to ``v0 - y1 + y2`` before the substitution ever sees it.
 
@@ -515,7 +512,8 @@ class Coupling(tvbo_datamodel.Coupling):
         A folded odd-trig term is rebuilt as a positive-first unevaluated ``Add`` so it reads in the physics convention ``f(incoming - local)``: sympy canonicalises ``f(x_j - x_i)`` to ``-f(x_i - x_j)``, and the report renders with ``order='none'``.
         """
         import sympy as sp
-        from sympy import IndexedBase, Symbol, symbols, Sum
+        from sympy import IndexedBase, Sum, Symbol, symbols
+
         from tvbo.parse.expression import parse_eq
 
         i, j, N, gx = symbols("i j N gx")
@@ -591,8 +589,8 @@ class Coupling(tvbo_datamodel.Coupling):
             gxk = [Symbol(f"gx_{k}") for k in range(len(pre_k))]
             post_indexed = post_expr.subs(subs_map)
             coeffs = [post_indexed.coeff(g) for g in gxk]
-            if sp.expand(post_indexed - sum(a * g for a, g in zip(coeffs, gxk))) == 0:
-                edge = sp.trigsimp(sum(a * p for a, p in zip(coeffs, pre_k)))
+            if sp.expand(post_indexed - sum(a * g for a, g in zip(coeffs, gxk, strict=True))) == 0:
+                edge = sp.trigsimp(sum(a * p for a, p in zip(coeffs, pre_k, strict=True)))
                 c0, rest = edge.as_coeff_Mul()
                 odd = (sp.sin, sp.tan, sp.sinh, sp.tanh)
                 if c0 == -1 and getattr(rest, "func", None) in odd and rest.args[0].is_Add:
@@ -600,7 +598,7 @@ class Coupling(tvbo_datamodel.Coupling):
                     with sp.evaluate(False):
                         edge = rest.func(sp.Add(*terms, evaluate=False))
                 return Sum(w[i, j] * edge, (j, 0, N - 1))
-            return post_indexed.subs({g: Sum(w[i, j] * p, (j, 0, N - 1)) for g, p in zip(gxk, pre_k)})
+            return post_indexed.subs({g: Sum(w[i, j] * p, (j, 0, N - 1)) for g, p in zip(gxk, pre_k, strict=True)})
 
         # Scalar pre: Sum(w[i,j] * pre, (j, 0, N-1)), substituted into post
         gx_sum = Sum(w[i, j] * pre_indexed, (j, 0, N - 1))
@@ -612,7 +610,8 @@ class Coupling(tvbo_datamodel.Coupling):
         A factored coupling emits a *list* pre-expression whose k-th component is summed over the graph into ``gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)``, which the post-expression then recombines. Returns ``[(gx_k, sum_expr), ...]`` so a report can state precisely what ``gx_0``, ``gx_1``, … mean; empty for a scalar coupling.
         """
         import sympy as sp
-        from sympy import IndexedBase, Symbol, symbols, Sum
+        from sympy import IndexedBase, Sum, Symbol, symbols
+
         from tvbo.parse.expression import parse_eq
 
         with sp.evaluate(False):

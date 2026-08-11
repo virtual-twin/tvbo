@@ -72,8 +72,8 @@ def test_experiment_round_trips():
     dumped = pl.dump(exp)
     reloaded = pl.loads(dumped, "SimulationExperiment")
     assert reloaded.id == exp.id
-    assert set((reloaded.observations or {})) == set((exp.observations or {}))
-    assert set((reloaded.functions or {})) == set((exp.functions or {}))
+    assert set(reloaded.observations or {}) == set(exp.observations or {})
+    assert set(reloaded.functions or {}) == set(exp.functions or {})
 
 
 def test_keyed_dict_keys_are_injected_as_name():

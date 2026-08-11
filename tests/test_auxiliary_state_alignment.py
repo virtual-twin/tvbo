@@ -122,7 +122,7 @@ def _run_coupled(coupling_evaluation):
     "only state-only derived variables; the coupling-dependent case is fixed in the "
     "solver on the tvboptim `feat/auxiliary-state-alignment` branch. Remove this marker "
     "once that lands and the pin is bumped.",
-    strict=False,
+    strict=True,
 )
 def test_coupling_dependent_aux_aligns_under_per_stage():
     """A coupling-dependent recorded auxiliary aligns with the recorded state's coupling only when the coupling is re-evaluated per stage (the §4.1e axiom).

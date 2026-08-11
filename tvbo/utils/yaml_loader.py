@@ -35,8 +35,7 @@ Extends :class:`linkml_runtime.utils.yamlutils.DupCheckYamlLoader` (the default 
       parameters:
         <<: [*model_params, !include _balloon_parameters.yaml]
 
-Both idioms are pure data-format machinery; they don't introduce any
-TVBO-specific semantics into user YAMLs. The wrapper is transparent — any LinkML class can still load through ``yaml_loader.load`` and get back the same datamodel instance it would have produced before.
+Both idioms are pure data-format machinery; they don't introduce any TVBO-specific semantics into user YAMLs. The wrapper is transparent — any LinkML class can still load through ``yaml_loader.load`` and get back the same datamodel instance it would have produced before.
 """
 
 from __future__ import annotations
@@ -45,12 +44,11 @@ import io
 import os
 import warnings
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 
 import yaml
 from linkml_runtime.loaders import yaml_loader as _linkml_yaml_loader
 from linkml_runtime.utils.yamlutils import DupCheckYamlLoader
-
 
 _MERGE_TAG = "tag:yaml.org,2002:merge"
 _INCLUDE_TAG = "!include"
@@ -116,7 +114,7 @@ def _compose_included(loader: yaml.Loader, node: yaml.ScalarNode) -> yaml.Node:
     """
     base_dir = getattr(loader, "_tvbo_base_dir", Path.cwd())
     path = _include_path(loader.construct_scalar(node), base_dir)
-    with open(path, "r") as fh:
+    with open(path) as fh:
         composed = yaml.compose(fh, _make_loader_class(path.parent))
     if not isinstance(composed, yaml.MappingNode):
         raise yaml.constructor.ConstructorError(
@@ -149,19 +147,17 @@ def _make_include_constructor(base_dir: Path):
             raise yaml.constructor.ConstructorError(None, None, "!include expects a scalar (a file path)", node.start_mark)
         path = _include_path(rel, base_dir)
         # Fresh loader instance for the included document so anchors are file-local (no name capture from or into the parent document).
-        with open(path, "r") as fh:
+        with open(path) as fh:
             return yaml.load(fh, _make_loader_class(path.parent))
 
     return _include
 
 
-def _make_loader_class(base_dir: Path) -> Type[DupCheckYamlLoader]:
+def _make_loader_class(base_dir: Path) -> type[DupCheckYamlLoader]:
     """Build a fresh loader subclass bound to ``base_dir``.
 
-    A new class per base directory is the simplest way to thread the directory context through PyYAML's class-level constructor registry without leaking state across concurrent loads. The constructors are installed in ``__init__`` (after ``super().__init__``) so they override the instance-level registrations that
-    :class:`DupCheckYamlLoader` performs in its own ``__init__``.
+    A new class per base directory is the simplest way to thread the directory context through PyYAML's class-level constructor registry without leaking state across concurrent loads. The constructors are installed in ``__init__`` (after ``super().__init__``) so they override the instance-level registrations that :class:`DupCheckYamlLoader` performs in its own ``__init__``.
     """
-
     include_ctor = _make_include_constructor(base_dir)
 
     class _TVBOLoader(DupCheckYamlLoader):
@@ -322,8 +318,7 @@ def _fold_state_variable_domains(obj: Any) -> Any:
 def _normalize_loaded(data: Any) -> Any:
     """Apply the dict-level TVBO conveniences shared by every load path.
 
-    Slot aliases are folded at construction by the generated datamodel (see ``hatch_build._alias_support``), so this handles only what a class cannot: the edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries), and lifts the terse ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``. Both the string path (``load``/``loads`` →
-    LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so the two cannot diverge. Order matters: the boundaries fold can create a terse ``distribution`` that the following lift then completes.
+    Slot aliases are folded at construction by the generated datamodel (see ``hatch_build._alias_support``), so this handles only what a class cannot: the edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries), and lifts the terse ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``. Both the string path (``load``/``loads`` → LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so the two cannot diverge. Order matters: the boundaries fold can create a terse ``distribution`` that the following lift then completes.
     """
     import copy
 
@@ -342,7 +337,7 @@ def _preprocess(source: Any, base_dir: Path) -> str:
     """
     LoaderCls = _make_loader_class(base_dir)
     if _looks_like_path(source):
-        with open(source, "r") as fh:
+        with open(source) as fh:
             data = yaml.load(fh, LoaderCls)
     elif isinstance(source, str):
         data = yaml.load(io.StringIO(source), LoaderCls)
@@ -356,18 +351,17 @@ def _preprocess(source: Any, base_dir: Path) -> str:
     return yaml.safe_dump(data, sort_keys=False)
 
 
-def load(source: Any, target_class: Type, **kwargs: Any) -> Any:
+def load(source: Any, target_class: type, **kwargs: Any) -> Any:
     """Drop-in replacement for ``linkml_runtime.loaders.yaml_loader.load``.
 
-    Accepts the same arguments as the LinkML loader. Expands TVBO YAML extensions (``<<:`` merge keys, ``!include``) before delegating to
-    LinkML's constructor-class machinery. Relative ``!include`` paths are resolved against the directory of ``source`` when ``source`` is a path; otherwise against the current working directory.
+    Accepts the same arguments as the LinkML loader. Expands TVBO YAML extensions (``<<:`` merge keys, ``!include``) before delegating to LinkML's constructor-class machinery. Relative ``!include`` paths are resolved against the directory of ``source`` when ``source`` is a path; otherwise against the current working directory.
     """
     base_dir = _base_dir_for(source)
     expanded = _preprocess(source, base_dir)
     return _linkml_yaml_loader.loads(expanded, target_class, **kwargs)
 
 
-def loads(source: str, target_class: Type, **kwargs: Any) -> Any:
+def loads(source: str, target_class: type, **kwargs: Any) -> Any:
     """Drop-in replacement for ``linkml_runtime.loaders.yaml_loader.loads``."""
     base_dir = Path(kwargs.pop("base_dir", Path.cwd())).resolve()
     expanded = _preprocess(source, base_dir)
@@ -382,7 +376,7 @@ def load_as_dict(source: Any, **kwargs: Any) -> dict:
     base_dir = _base_dir_for(source)
     LoaderCls = _make_loader_class(base_dir)
     if _looks_like_path(source):
-        with open(source, "r") as fh:
+        with open(source) as fh:
             data = yaml.load(fh, LoaderCls)
     elif isinstance(source, str):
         data = yaml.load(io.StringIO(source), LoaderCls)

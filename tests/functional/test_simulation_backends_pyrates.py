@@ -2,10 +2,9 @@
 
 import pytest
 
-from tvbo.classes.experiment import SimulationExperiment
+from tests.functional.simulation_backends_shared import _HAVE_PYRATES, MODEL_FILES, MODEL_IDS
 from tvbo.classes.dynamics import Dynamics
-from tests.functional.simulation_backends_shared import MODEL_FILES, MODEL_IDS, _HAVE_PYRATES
-
+from tvbo.classes.experiment import SimulationExperiment
 
 _PYRATES_UNSUPPORTED = {
     "ReducedSetHindmarshRose": "mode-axis model: PyRates has no mode axis (per-mode matrix params)",

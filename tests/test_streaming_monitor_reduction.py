@@ -254,7 +254,7 @@ def test_the_reducer_is_block_decomposition_invariant(blocks):
 
 
 def test_a_short_tail_block_advances_the_observer_without_emitting():
-    """tvboptim's blocked scan ends with one partial block; it holds no whole sample."""
+    """Tvboptim's blocked scan ends with one partial block; it holds no whole sample."""
     rng = np.random.default_rng(2)
     period_steps, n_node = 25, 3
     n_steps = period_steps * 8 + 7

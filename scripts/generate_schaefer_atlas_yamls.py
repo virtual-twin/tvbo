@@ -8,8 +8,7 @@ Creates one atlas YAML per (segmentation, scale) combination, with:
 
 The functional network hierarchy (7 or 17 networks × 2 hemispheres) is represented purely via the SANDS ``hasParent`` field — no ad-hoc fields.
 
-Also removes the non-schema ``functional_networks`` field from network
-YAMLs and ensures ``node_mapping`` stays compliant.
+Also removes the non-schema ``functional_networks`` field from network YAMLs and ensures ``node_mapping`` stays compliant.
 
 Usage:
     python scripts/generate_schaefer_atlas_yamls.py [--dry-run]
@@ -55,7 +54,7 @@ def compute_network_centroids(
     """Compute mean centroid per functional network from parcel centers."""
     sums = {n: np.zeros(3) for n in net_labels}
     counts = {n: 0 for n in net_labels}
-    for entity, net in zip(entities, net_assignments):
+    for entity, net in zip(entities, net_assignments, strict=True):
         c = entity.get("center", {})
         if c:
             sums[net] += np.array([float(c["x"]), float(c["y"]), float(c["z"])])
@@ -105,7 +104,7 @@ def build_atlas_yaml(source_path: Path) -> dict:
 
     # Build parcel entities with hasParent
     parcel_entities = {}
-    for entity, net in zip(sorted_entities, net_assignments):
+    for entity, net in zip(sorted_entities, net_assignments, strict=True):
         entry = {
             "name": entity["name"],
             "lookupLabel": int(entity["lookupLabel"]),
@@ -181,7 +180,7 @@ def remove_functional_networks_from_yamls(network_dir: Path, dry_run: bool) -> i
         if not dry_run:
             with open(yaml_path, "w") as f:
                 yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
-        print("  [fix ] removed functional_networks from %s" % yaml_path.name)
+        print(f"  [fix ] removed functional_networks from {yaml_path.name}")
     return count
 
 
@@ -192,7 +191,7 @@ def main() -> None:
     # 1. Generate atlas YAMLs
     source_files = sorted(args.source_dir.glob("tpl-FSLMNI152_atlas-Schaefer2018_seg-*_scale-*_res-*_desc-ordered_dseg.yaml"))
     if not source_files:
-        print("No source atlas files found in %s" % args.source_dir)
+        print(f"No source atlas files found in {args.source_dir}")
         return
 
     created = 0
@@ -202,16 +201,16 @@ def main() -> None:
         out_path = args.target_dir / out_name
         if out_path.exists() and not args.overwrite:
             skipped += 1
-            print("[skip] %s" % out_name)
+            print(f"[skip] {out_name}")
             continue
 
         atlas = build_atlas_yaml(src_path)
         if args.dry_run:
-            print("[dry ] would create %s" % out_name)
+            print(f"[dry ] would create {out_name}")
         else:
             with open(out_path, "w") as f:
                 yaml.safe_dump(atlas, f, sort_keys=False, allow_unicode=True)
-            print("[ok  ] %s" % out_name)
+            print(f"[ok  ] {out_name}")
         created += 1
 
     # 2. Remove non-schema functional_networks from network YAMLs
@@ -219,9 +218,9 @@ def main() -> None:
     fixed = remove_functional_networks_from_yamls(args.network_dir, args.dry_run)
 
     print("\nDone.")
-    print("  atlases created: %d" % created)
-    print("  atlases skipped: %d" % skipped)
-    print("  networks fixed:  %d" % fixed)
+    print(f"  atlases created: {created:d}")
+    print(f"  atlases skipped: {skipped:d}")
+    print(f"  networks fixed:  {fixed:d}")
     if args.dry_run:
         print("  (dry run — no files written)")
 

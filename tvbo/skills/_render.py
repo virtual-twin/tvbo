@@ -2,24 +2,30 @@
 
 A canonical skill is a single ``SKILL.md`` file with YAML frontmatter:
 
-.. code-block:: yaml
+```yaml
+---
+name: linkml-schema
+description: How to edit the LinkML schema and why the generated dir is off-limits.
+audience: maintainer        # maintainer | user | both
+applies_to:                 # globs — used by Copilot/Cursor
+  - "schema/**/*.yaml"
+  - "tvbo/datamodel/**"
+tags: [schema, codegen]
+requires_extras: []         # e.g. ["jax"] — surfaced in user-target docs
+---
 
-   ---
-   name: linkml-schema description: How to edit the LinkML schema and why the generated dir is off-limits.
-   audience: maintainer        # maintainer | user | both applies_to:                 # globs — used by Copilot/Cursor
-     - "schema/**/*.yaml"
-     - "tvbo/datamodel/**"
-   tags: [schema, codegen] requires_extras: []         # e.g. ["jax"] — surfaced in user-target docs
-   ---
-
-   # body in plain markdown
+# body in plain markdown
+```
 
 Renderers translate the canonical form into the format each tool consumes:
 
-================  =================================================
-Target            Output
-================  ================================================= ``claude-code``   ``<dest>/<name>/SKILL.md``      (Claude frontmatter) ``copilot``       ``<dest>/<name>.instructions.md`` (``applyTo`` frontmatter) ``cursor``        ``<dest>/<name>.mdc``           (``globs`` + ``description``) ``agents-md``     marker region in ``AGENTS.md`` ``prompt``        concatenated markdown, returned as str
-================  =================================================
+| Target | Output |
+|---|---|
+| ``claude-code`` | ``<dest>/<name>/SKILL.md`` (Claude frontmatter) |
+| ``copilot`` | ``<dest>/<name>.instructions.md`` (``applyTo`` frontmatter) |
+| ``cursor`` | ``<dest>/<name>.mdc`` (``globs`` + ``description``) |
+| ``agents-md`` | marker region in ``AGENTS.md`` |
+| ``prompt`` | concatenated markdown, returned as str |
 
 User-target installs (``claude-code`` / ``cursor`` invoked by ``tvbo skills install``) add a ``tvbo-`` prefix to the on-disk name and stamp ``managed-by: tvbo`` + ``tvbo-version: …`` into the frontmatter so we can safely overwrite our own files on upgrade without clobbering user edits.
 
@@ -32,9 +38,9 @@ from __future__ import annotations
 import fnmatch
 import re
 import shutil
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
 
 import yaml
 

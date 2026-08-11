@@ -6,23 +6,19 @@ Provides a thin wrapper around the generated datamodel that adds loading helpers
 import os
 from pathlib import Path
 
-from tvbo.utils import yaml_loader
-
 from tvbo import templates
-from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.classes import experiment
-from tvbo.utils import report
+from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo.utils import report, yaml_loader
 
 
 class SimulationStudy(tvbo_datamodel.SimulationStudy):
     """A collection of related `SimulationExperiment`s with shared provenance.
 
-    Aggregates the experiments behind a published paper or analysis (model,
-    DOI, year, citation, dataset) into one declarative YAML/Pydantic object.
+    Aggregates the experiments behind a published paper or analysis (model, DOI, year, citation, dataset) into one declarative YAML/Pydantic object.
     Load with `from_db(name)` for curated studies, `from_file(path)` for local YAML, or `from_openminds(...)` for JSON-LD provenance graphs.
 
-    The most-used entry points are [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment) to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite) for the formatted citation, and [`to_openminds(...)`](#tvbo.classes.study.SimulationStudy.to_openminds) for
-    JSON-LD export.
+    The most-used entry points are [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment) to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite) for the formatted citation, and [`to_openminds(...)`](#tvbo.classes.study.SimulationStudy.to_openminds) for JSON-LD export.
     """
 
     def __repr__(self) -> str:
@@ -121,7 +117,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         derivative_notation: str = "dot",
         mul_symbol: str | None = None,
     ) -> str:
-        """Render one Methods section for the whole study.
+        r"""Render one Methods section for the whole study.
 
         Experiments that share a model share its equations and its symbol table; a model that merely varies a sibling contributes only its delta. Everything the experiments hold in common is stated once, and the comparison table carries only what actually differs — so a seven-experiment study stops emitting seven copies of the same six equations and three copies of the same parameter table.
 
@@ -223,18 +219,18 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         include_context : bool
             Whether to include the @context in the output. Default True.
 
-        Returns
+        Returns:
         -------
         dict
             OpenMINDS-compatible JSON-LD dictionary.
 
-        Example
+        Example:
         -------
         >>> study = SimulationStudy.from_file("study.yaml")
         >>> jsonld = study.to_openminds()
         >>> study.to_openminds("output.jsonld", base_id="https://example.org")
         """
-        from tvbo.adapters.openminds import study_to_openminds, save_openminds
+        from tvbo.adapters.openminds import save_openminds, study_to_openminds
 
         result = study_to_openminds(self, base_id=base_id, include_context=include_context)
 
@@ -253,17 +249,17 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
             Either a file path to a JSON-LD file, or a dict containing
             JSON-LD data.
 
-        Returns
+        Returns:
         -------
         SimulationStudy
             New instance constructed from the openMINDS data.
 
-        Example
+        Example:
         -------
         >>> study = SimulationStudy.from_openminds("study.jsonld")
         >>> study = SimulationStudy.from_openminds({"@type": "tvbo:SimulationStudy", ...})
         """
-        from tvbo.adapters.openminds import study_from_openminds, load_openminds
+        from tvbo.adapters.openminds import load_openminds, study_from_openminds
 
         if isinstance(source, str):
             # It's a file path

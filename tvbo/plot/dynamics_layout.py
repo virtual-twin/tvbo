@@ -1,18 +1,14 @@
-#
-# Module: dynamics_layout.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Declarative layout composition for Dynamics plotting."""
 
 from __future__ import annotations
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from tvbo.plot.layout_mosaic import prepare_mosaic, finish_panel
+from tvbo.plot.layout_mosaic import finish_panel, prepare_mosaic
 
 
 def _coerce_dims(panel):
@@ -36,7 +32,7 @@ def _parameter_values_from_result(result, n_values):
 
 
 def _plot_parameter_sweep_timeseries(dynamics, panel, ax, cache):
-    from tvbo.plot.dynamics import _resolve, _evaluator
+    from tvbo.plot.dynamics import _evaluator, _resolve
 
     parameter = panel.get("parameter") or panel.get("ICS")
     if parameter is None:
@@ -76,7 +72,7 @@ def _plot_parameter_sweep_timeseries(dynamics, panel, ax, cache):
         ts = dyn.run(format=run_format, **run_kwargs)
         traj = ts.data[:, :, 0, 0]
         time = ts.time
-        for dim_idx, ((label, _), evaluator) in enumerate(zip(resolved, evaluators)):
+        for dim_idx, ((label, _), evaluator) in enumerate(zip(resolved, evaluators, strict=True)):
             label_text = label_fmt.format(value=float(value), parameter=parameter)
             if len(resolved) > 1:
                 label_text = f"{label_text} · {label}"

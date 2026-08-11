@@ -7,22 +7,19 @@ import copy
 import logging
 from copy import deepcopy
 
+import jax
+import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
+import xarray as xr
+from jax.tree_util import register_pytree_node_class
 from matplotlib import colormaps
 from matplotlib.animation import FuncAnimation
 
-import xarray as xr
 import tvbo.jax.xarray_pytrees  # noqa: F401 – registers xr types as JAX pytrees
-
 from tvbo.classes import equation as equations
-from tvbo.utils import Bunch
 from tvbo.classes.network import Network
-from tvbo.utils import format_pytree_as_string
-
-import jax
-from jax.tree_util import register_pytree_node_class
-import jax.numpy as jnp
+from tvbo.utils import Bunch, format_pytree_as_string
 
 logger = logging.getLogger(__name__)
 
@@ -242,8 +239,7 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
 def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim="point"):
     """Concatenate sharded exploration outputs into the full sweep result.
 
-    Each HPC array task writes its slice of the sweep as a flat ``point``-dim ``DataArray`` whose per-cell parameter values are coordinates (see
-    :meth:`ExperimentResult.save`). This is the analysis-pass side of the two-stage HPC pattern: it reads every shard file, concatenates them along ``point``, and — with ``to_grid=True`` — pivots ``point`` into one dimension per swept parameter, giving the full rectangular grid addressed by value (order-independent, so it is robust to how tasks were sharded).
+    Each HPC array task writes its slice of the sweep as a flat ``point``-dim ``DataArray`` whose per-cell parameter values are coordinates (see :meth:`ExperimentResult.save`). This is the analysis-pass side of the two-stage HPC pattern: it reads every shard file, concatenates them along ``point``, and — with ``to_grid=True`` — pivots ``point`` into one dimension per swept parameter, giving the full rectangular grid addressed by value (order-independent, so it is robust to how tasks were sharded).
 
     Args:
         source: a directory to scan with *pattern*, or an explicit list of paths.
@@ -294,6 +290,7 @@ def reassemble_experiment_results(
         stem: basename of the result artifact (default ``result``).
         sidecar: path to the frozen spec YAML to copy as ``<stem>.yaml``
             (typically the kit's ``spec/<name>.yaml``). Omit to skip the sidecar.
+        compress: write the gathered arrays with HDF5 compression.
 
     Returns:
         List of written paths (``<stem>.h5`` first, then ``<stem>.yaml``).
@@ -441,7 +438,7 @@ class SimulationResult:
     def to_timeseries(self):
         """Convert to a full TimeSeries object for plotting and analysis.
 
-        Returns
+        Returns:
         -------
         TimeSeries
             4D time series (Time, State Variable, Space, Mode)
@@ -535,9 +532,10 @@ class SimulationResult:
         **kwargs
             Forwarded to the animation function.
 
-        Returns
+        Returns:
         -------
-        matplotlib.animation.FuncAnimation"""
+        matplotlib.animation.FuncAnimation
+        """
         from tvbo.plot.animate import _COMPOSITE_TYPES, _PANEL_REGISTRY, animate_multi
 
         # List of panels → multi-panel animation
@@ -595,7 +593,7 @@ class SimulationResult:
         try:
             ts = self.to_timeseries()
         except (ValueError, AttributeError, RecursionError):
-            raise AttributeError(name)
+            raise AttributeError(name) from None
         if hasattr(ts, name):
             return getattr(ts, name)
         raise AttributeError(f"SimulationResult has no attribute '{name}'")
@@ -613,7 +611,7 @@ class AlgorithmResult:
 
     Provides structured access to algorithm outputs with consistent naming regardless of which algorithm was run.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Algorithm name
@@ -692,7 +690,7 @@ class AlgorithmResult:
         try:
             return self._extras[name]
         except KeyError:
-            raise AttributeError(f"AlgorithmResult has no attribute '{name}'")
+            raise AttributeError(f"AlgorithmResult has no attribute '{name}'") from None
 
     def get(self, key, default=None):
         """Dict-like get for backward compat with Bunch-based code."""
@@ -711,7 +709,7 @@ class OptimizationResult:
 
     Provides structured access to optimization outputs including loss trajectory, parameter evolution, and final simulation.
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Optimization/loss function name
@@ -799,7 +797,7 @@ class OptimizationResult:
         try:
             return self._extras[name]
         except KeyError:
-            raise AttributeError(f"OptimizationResult has no attribute '{name}'")
+            raise AttributeError(f"OptimizationResult has no attribute '{name}'") from None
 
     def __repr__(self):
         loss_str = f", final_loss={self.final_loss:.4f}" if self.final_loss is not None else ""
@@ -939,7 +937,7 @@ class OptimizationResult:
             squeeze=False,
         )
         axes = axes[:, 0]
-        for ax, (name, values) in zip(axes, trajectories.items()):
+        for ax, (name, values) in zip(axes, trajectories.items(), strict=True):
             steps = np.arange(values.shape[0])
             if values.ndim == 1 or (values.ndim == 2 and values.shape[1] == 1):
                 ax.plot(steps, values.ravel(), **kwargs)
@@ -1045,7 +1043,7 @@ class OptimizationResult:
 class InferenceResult:
     """Result of Bayesian inference (MCMC posterior over parameters).
 
-    Attributes
+    Attributes:
     ----------
     name : str
         Inference name (the ``inferences:`` key).
@@ -1382,9 +1380,9 @@ class ExplorationResult(Bunch):
                     return labelled
                 data = data.reshape(grid_shape)
                 dims = list(names)
-            sizes = dict(zip(dims, data.shape))
+            sizes = dict(zip(dims, data.shape, strict=True))
             coords = {}
-            for ax, nm in zip(self.axes, names):
+            for ax, nm in zip(self.axes, names, strict=True):
                 vals = self._axis_values(ax)
                 if vals is not None and len(vals) == sizes.get(nm):
                     coords[nm] = np.asarray(vals)  # coordinate labels, like TimeSeries' time
@@ -1579,7 +1577,8 @@ class ExplorationResult(Bunch):
     def slice(self, **fixed_params):
         """Get a slice of results with some parameters fixed.
 
-        Example: result.slice(G=0.5) returns 1D slice at G=0.5"""
+        Example: result.slice(G=0.5) returns 1D slice at G=0.5
+        """
         grid_results = self.as_grid()
         if grid_results is None:
             return None
@@ -1712,7 +1711,7 @@ class ExperimentResult:
 
     Mirrors the SimulationExperiment schema structure: integration, algorithms, optimizations, explorations, continuations. Accepts both new-style explicit fields and old-style ``results=Bunch`` constructor for backward compatibility.
 
-    Attributes
+    Attributes:
     ----------
     integration : SimulationResult or None
         Primary simulation output with its observations and transient.
@@ -1893,8 +1892,7 @@ class ExperimentResult:
     def _cohort_subject_states(self):
         """Unstack an on-device cohort into per-subject tuned states, or None.
 
-        The on-device cohort driver (``dataset.batch_mode == on_device``) returns
-        ONE batched tuned state per algorithm — a leading subject axis over the whole cohort — instead of a per-subject :class:`AlgorithmResult`, plus the cohort's ``subject_ids``. Every array leaf carries the subject axis at position 0, so slicing it apart yields one per-subject state, saved exactly like the per-subject fan-out (one result per subject). Returns ``(subject_ids, [{algo_name: per_subject_AlgorithmResult}, ...])``, or ``None`` for an ordinary run so the normal single-result save path runs.
+        The on-device cohort driver (``dataset.batch_mode == on_device``) returns ONE batched tuned state per algorithm — a leading subject axis over the whole cohort — instead of a per-subject :class:`AlgorithmResult`, plus the cohort's ``subject_ids``. Every array leaf carries the subject axis at position 0, so slicing it apart yields one per-subject state, saved exactly like the per-subject fan-out (one result per subject). Returns ``(subject_ids, [{algo_name: per_subject_AlgorithmResult}, ...])``, or ``None`` for an ordinary run so the normal single-result save path runs.
         """
         algos = self.algorithms or {}
         batched = [(n, a) for n, a in algos.items() if getattr(a, "cohort_state", None) is not None]
@@ -1935,7 +1933,7 @@ class ExperimentResult:
         _saved_active = getattr(src, "_active_subject", None)
         written = []
         try:
-            for sid, algos_i in zip(subject_ids, per_subject):
+            for sid, algos_i in zip(subject_ids, per_subject, strict=True):
                 src._active_subject = str(sid)  # drives the sub-<id>_ result stem
                 view = copy.copy(self)
                 view.algorithms = algos_i
@@ -1986,7 +1984,7 @@ class ExperimentResult:
             return "".join(c if (c.isalnum() or c in "._-") else "_" for c in str(s))
 
         # ── collect every output as a data-variable ──────────────────────────
-        by_output: dict[tuple, "xr.DataArray"] = {}
+        by_output: dict[tuple, xr.DataArray] = {}
         for expl_name, expl in (self.explorations or {}).items():
             # ExplorationResult labels every observation as a DataArray at construction (grid and warm-start alike), so this stays uniform.
             for obs_name, da in (getattr(expl, "observations", None) or {}).items():
@@ -2153,7 +2151,7 @@ class ExperimentResult:
             _pops = list(_spk)
             # Key the population axis by the same filename-safe token the per-population raster variables use (``spikes__<key>__t/i``), so a consumer can select a rate by name and map it straight to that population's raster — never a positional zip against attrs.
             _pops_key = [_san(p) for p in _pops]
-            for pop, key in zip(_pops, _pops_key):
+            for pop, key in zip(_pops, _pops_key, strict=True):
                 t = np.asarray(_spk[pop].get("t_ms"), dtype=float)
                 idx = np.asarray(_spk[pop].get("i"), dtype=float)
                 dim = f"spike__{key}"
@@ -2205,7 +2203,7 @@ class ExperimentResult:
 
             _dim_sizes: dict = defaultdict(set)
             for _da in data_vars.values():
-                for _d, _s in zip(_da.dims, _da.shape):
+                for _d, _s in zip(_da.dims, _da.shape, strict=True):
                     _dim_sizes[_d].add(int(_s))
             _conflicting = {_d for _d, _sizes in _dim_sizes.items() if len(_sizes) > 1}
             if _conflicting:
@@ -2427,13 +2425,13 @@ class ExperimentResult:
         description : str
             BIDS ``desc-`` entity (default ``"tvbsim"``).
 
-        Returns
+        Returns:
         -------
         pathlib.Path
             Path to the output directory.
         """
-        from pathlib import Path
         import json
+        from pathlib import Path
 
         output_dir = Path(output_dir)
         sub = f"sub-{subject}"
@@ -2567,8 +2565,7 @@ class ExperimentResult:
     def from_timeseries(cls, ts, source=None, name=None, **extras):
         """Create an ExperimentResult from a TVBO TimeSeries.
 
-        Converts a raw TimeSeries (as returned by JAX, PyRates,
-        NetworkDynamics, etc.) into the standard ExperimentResult wrapper.
+        Converts a raw TimeSeries (as returned by JAX, PyRates, NetworkDynamics, etc.) into the standard ExperimentResult wrapper.
 
         Parameters
         ----------
@@ -2581,9 +2578,10 @@ class ExperimentResult:
         **extras
             Additional attributes to store (e.g. ``sol``, ``graph``).
 
-        Returns
+        Returns:
         -------
-        ExperimentResult"""
+        ExperimentResult
+        """
         data_np = np.asarray(ts.data)
 
         ld = ts.labels_dimensions if isinstance(ts.labels_dimensions, dict) else {}
@@ -2650,9 +2648,10 @@ class ExperimentResult:
             Output of ``simulator.run()``. If *None*, the simulator is
             run using its ``simulation_length``.
 
-        Returns
+        Returns:
         -------
-        ExperimentResult"""
+        ExperimentResult
+        """
         if result is None:
             result = simulator.run()
 
@@ -2665,7 +2664,7 @@ class ExperimentResult:
         primary_xv = None
         observations = {}
 
-        for monitor, (tv, xv) in zip(simulator.monitors, result):
+        for monitor, (tv, xv) in zip(simulator.monitors, result, strict=True):
             mon_labels = deepcopy(base_labels)
             if hasattr(monitor, "sensors") and monitor.sensors is not None:
                 mon_labels["Region"] = list(monitor.sensors.labels)
@@ -2712,9 +2711,7 @@ class ExperimentResult:
 
 @register_pytree_node_class
 class TimeSeries:
-    """
-    Time-series dataType with JAX pytree support, domain-specific analysis, and visualization methods.
-    """
+    """Time-series dataType with JAX pytree support, domain-specific analysis, and visualization methods."""
 
     def tree_flatten(self):
         """Flatten into JAX pytree (children, aux_data).
@@ -2751,11 +2748,13 @@ class TimeSeries:
         network=None,
         title="TimeSeries",
         sample_period=None,
-        labels_dimensions={},
+        labels_dimensions=None,
         units=None,
     ):
-        """labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] } units: Dictionary mapping dimension names to their units, e.g., {'time': 'ms', 'state': 'mV', 'region': None, 'mode': None}"""
+        """labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] } units: Dictionary mapping dimension names to their units, e.g., {'time': 'ms', 'state': 'mV', 'region': None, 'mode': None}."""
         # 1. Essential Data
+        if labels_dimensions is None:
+            labels_dimensions = {}
         self.time = time
         self.data = data
         self.labels_dimensions = labels_dimensions
@@ -2864,9 +2863,7 @@ class TimeSeries:
         return np.mean(np.diff(self.time)) if self.dt is None else self.dt
 
     def summary_info(self):
-        """
-        Gather scientifically interesting summary information from an instance of this datatype.
-        """
+        """Gather scientifically interesting summary information from an instance of this datatype."""
         summary = {
             "Time-series type": self.__class__.__name__,
             "Time-series name": self.title,
@@ -2963,8 +2960,7 @@ class TimeSeries:
         return deepcopy(self)
 
     def convert_units(self, dimension, target_unit):
-        """
-        Convert units for a specific dimension and return a new TimeSeries.
+        """Convert units for a specific dimension and return a new TimeSeries.
 
         Parameters:
         -----------
@@ -3022,9 +3018,7 @@ class TimeSeries:
             return self.duplicate(data=self.data * scale_factor, units=new_units)
 
     def duplicate(self, **kwargs):
-        """
-        Fast shallow-copy-based duplication with attribute update.
-        """
+        """Fast shallow-copy-based duplication with attribute update."""
         new_time = kwargs.get("time", self.time)
         # Recalculate sample_period if time changed and not explicitly provided
         if "sample_period" in kwargs:
@@ -3202,7 +3196,7 @@ class TimeSeries:
         if legend and any(labels):
             ax.legend(loc="upper right", fontsize="smaller")
             handles, labels = ax.get_legend_handles_labels()
-            unique = list(dict(zip(labels, handles)).items())  # Keep only the last occurrence of each label
+            unique = list(dict(zip(labels, handles, strict=True)).items())  # Keep only the last occurrence of each label
             ax.legend(
                 [handle for _, handle in unique],
                 [label for label, _ in unique],
@@ -3240,13 +3234,12 @@ class TimeSeries:
         figsize : tuple
             Figure size ``(width, height)``.
 
-        Returns
+        Returns:
         -------
         matplotlib.animation.FuncAnimation
             The animation object (render with ``HTML(ani.to_jshtml())``
             in Jupyter, or ``ani.save(...)``).
         """
-
         graph = getattr(self, "graph", None)
         if graph is None:
             raise ValueError("No graph data attached.  Run with format='networkdynamics' to get graph positions.")
@@ -3360,8 +3353,7 @@ class TimeSeries:
         linewidth: float = 0.5,
         **kwargs,
     ):
-        """
-        Plot each region as a separate channel stacked vertically on a single axes (EEG-like representation).
+        """Plot each region as a separate channel stacked vertically on a single axes (EEG-like representation).
 
         Parameters
         ----------
@@ -3385,7 +3377,7 @@ class TimeSeries:
         **kwargs : dict
             Additional kwargs forwarded to matplotlib plot.
 
-        Returns
+        Returns:
         -------
         matplotlib.figure.Figure | None
             Returns a figure if it creates one; otherwise None.
@@ -3537,8 +3529,7 @@ class TimeSeries:
         return self.duplicate(data=data, labels_dimensions=labels_dimensions)
 
     def calculate_frequency(self, state_variable=None, region=0, mode=0) -> float:
-        """
-        Calculate the dominant frequency of the time series data using FFT.
+        """Calculate the dominant frequency of the time series data using FFT.
 
         Returns:
             float: Dominant frequency in Hz.
@@ -3567,15 +3558,14 @@ class TimeSeries:
         return dominant_frequency
 
     def compute_normalised_average_power(self, VOI=None):
-        """
-        Compute normalized average power spectrum using FFT.
+        """Compute normalized average power spectrum using FFT.
 
         Parameters
         ----------
         VOI : str, optional
             Variable of interest to analyze. Required if multiple state variables exist.
 
-        Returns
+        Returns:
         -------
         frequency : ndarray
             Frequency values in Hz
@@ -3635,8 +3625,7 @@ class TimeSeries:
         label="simulation",
         **kwargs,
     ):
-        """
-        Plot the power spectrum with normalized average power computed via FFT.
+        """Plot the power spectrum with normalized average power computed via FFT.
 
         Parameters:
         - VOI: Variable of Interest, typically selecting subsets of data.
@@ -3787,11 +3776,9 @@ class TimeSeries:
         include_connectivity: bool = True,
         timeseries_format: str = "cifti",
     ) -> str:
-        """
-        Export TimeSeries data to BIDS-compliant format (BEP034).
+        """Export TimeSeries data to BIDS-compliant format (BEP034).
 
-        Creates a BIDS dataset structure following the Computational Model
-        Specification (BEP034 v1.0.0) with:
+        Creates a BIDS dataset structure following the Computational Model Specification (BEP034 v1.0.0) with:
         - net/: Network connectivity files (weights, distances)
         - ts/: Time series data files (CIFTI-2 ptseries or TSV)
         - eq/: Model equations (tvbo format)
@@ -3838,12 +3825,12 @@ class TimeSeries:
               Does NOT split by state variable - keeps all dimensions intact.
               Ideal for parameter sweeps (e.g., sweep, time, state, region, mode).
 
-        Returns
+        Returns:
         -------
         str
             Path to the created BIDS dataset root directory.
 
-        Examples
+        Examples:
         --------
         >>> ts = experiment.run()
         >>> ts.to_bids("./derivatives/tvbo", subject="01")
@@ -3858,7 +3845,7 @@ class TimeSeries:
         >>> # Export as HDF5 preserving all dimensions (no state variable split)
         >>> ts.to_bids("./derivatives/tvbo", timeseries_format="h5")
 
-        Notes
+        Notes:
         -----
         Follows BIDS BEP034 Computational Modeling extension v1.0.0.
         Uses pydantic for metadata serialization and pybids for filenames.
@@ -4331,8 +4318,8 @@ class SimulationState:
         )
 
     def __repr__(self):
-        """
-        Returns a string representation of the SimulationState object.
+        """Returns a string representation of the SimulationState object.
+
         Shows all fields in the pytree structure.
         """
         return format_pytree_as_string(self, "SimulationState", "", False, False)
@@ -4353,7 +4340,6 @@ class SimulationState:
 
         Returns the `"State Variable"` labels from the initial conditions when they are present and match the number of state variables, otherwise a list of stringified indices.
         """
-
         ld = getattr(self.initial_conditions, "labels_dimensions", {}) or {}
         names = ld.get("State Variable", None)
         if names is not None and len(names) == self.n_state_variables:
@@ -4428,7 +4414,7 @@ class SimulationState:
         return self
 
     def set_sigma_many(self, mapping: dict):
-        """Set multiple sigma values using a dict: { 'V': 0.02, 'W': 0.0 }"""
+        """Set multiple sigma values using a dict: { 'V': 0.02, 'W': 0.0 }."""
         import jax.numpy as jnp
 
         noise = self._ensure_noise_holder()
@@ -4479,15 +4465,14 @@ class SimulationState:
 
     @property
     def state_variables(self):
-        """Ergonomic proxy: state.state_variables.V.noise.sigma = 0.02
+        """Ergonomic proxy: state.state_variables.V.noise.sigma = 0.02.
 
         This updates state.noise.sigma_vec appropriately. Safe to use before jit/vmap.
         """
         return SimulationState._StateVariablesProxy(self)
 
     def convert_dtype(self, target_dtype=jnp.float32):
-        """
-        Convert the dtype of the parameter pytree.
+        """Convert the dtype of the parameter pytree.
 
         Useful for converting between 32 and 64 bit types.
 
@@ -4498,12 +4483,12 @@ class SimulationState:
         target_dtype : jnp.dtype, optional
             The target dtype to convert to. Defaults to jnp.float32.
 
-        Returns
+        Returns:
         -------
         converted_pytree : pytree
             The parameter tree with converted dtype.
 
-        Notes
+        Notes:
         -----
         This method recursively traverses the pytree structure and converts all leaf nodes to the specified target dtype.
         It preserves the overall structure of the pytree while changing the dtype of its elements.

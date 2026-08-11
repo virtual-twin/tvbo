@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """tvboptim adapter for tvbo.
 
 Export (tvbo → tvboptim)
@@ -31,7 +30,7 @@ SOLVER_MAP = {
 }
 
 
-def _build_graph(network: "Network", delays: bool = True, max_delay: float | None = None):
+def _build_graph(network: Network, delays: bool = True, max_delay: float | None = None):
     """Build a tvboptim graph from a tvbo Network, by what the network measures.
 
     - tract lengths present → ``DenseLengthGraph`` (delays = lengths /
@@ -133,7 +132,7 @@ def _extract_noise(dyn_obj):
 
 
 def to_tvboptim(
-    network: "Network",
+    network: Network,
     delays: bool | None = None,
     return_type: str = "network",
     dynamics=None,
@@ -181,9 +180,10 @@ def to_tvboptim(
     **kwargs
         Extra keyword arguments forwarded to the tvboptim ``Network`` constructor.
 
-    Returns
+    Returns:
     -------
-    Network or DenseGraph or DenseDelayGraph"""
+    Network or DenseGraph or DenseDelayGraph
+    """
     # Auto-infer delays from coupling metadata if not specified
     if delays is None:
         delays = False
@@ -276,8 +276,7 @@ def to_tvboptim(
 def is_heterogeneous(experiment) -> bool:
     """True when the experiment's nodes run more than one distinct dynamics.
 
-    The trigger for the heterogeneous tvboptim path: a homogeneous experiment (one model on every node) uses :func:`to_tvboptim`, a heterogeneous one
-    :func:`to_heterogeneous_network`. Delegates to the adapter-layer predicate every codegen backend already uses, so this path agrees with them about the nodes that declare no ``dynamics`` and fall back to the experiment's.
+    The trigger for the heterogeneous tvboptim path: a homogeneous experiment (one model on every node) uses :func:`to_tvboptim`, a heterogeneous one :func:`to_heterogeneous_network`. Delegates to the adapter-layer predicate every codegen backend already uses, so this path agrees with them about the nodes that declare no ``dynamics`` and fall back to the experiment's.
     """
     from tvbo.adapters.base import BaseAdapter
 
@@ -349,7 +348,7 @@ def _route_coupling(coupling, name, delayed: bool):
         )
     params = normalize_params(getattr(coupling, "parameters", None))
     kwargs = {
-        jl: float(getattr(params[tvbo_name], "value"))
+        jl: float(params[tvbo_name].value)
         for tvbo_name, jl in (("a", "G"), ("b", "b"))
         if getattr(params.get(tvbo_name), "value", None) is not None
     }
@@ -358,7 +357,7 @@ def _route_coupling(coupling, name, delayed: bool):
 
 
 def to_heterogeneous_network(
-    network: "Network",
+    network: Network,
     *,
     dynamics_lib=None,
     default_dynamics: str | None = None,
@@ -367,8 +366,7 @@ def to_heterogeneous_network(
 ):
     """Build a tvboptim ``HeterogeneousNetwork`` from a heterogeneous tvbo Network.
 
-    Nodes are partitioned into ``DynamicsGroup``s by their referenced dynamics (graph order = node order); edges are collapsed into ``SignalRoute``s keyed by ``(coupling NAME, target_var, delayed)`` — keying on object identity would split two edges naming one coupling into two routes, applying the shared graph twice. The shared graph is built by the same
-    :func:`_build_graph` the homogeneous path uses, so the connectome weights (with signs) and delays carry over unchanged.
+    Nodes are partitioned into ``DynamicsGroup``s by their referenced dynamics (graph order = node order); edges are collapsed into ``SignalRoute``s keyed by ``(coupling NAME, target_var, delayed)`` — keying on object identity would split two edges naming one coupling into two routes, applying the shared graph twice. The shared graph is built by the same :func:`_build_graph` the homogeneous path uses, so the connectome weights (with signs) and delays carry over unchanged.
 
     Parameters
     ----------
@@ -587,14 +585,12 @@ def _seed_group_noise(config, het, seed: int) -> None:
 def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kwargs):
     """Run a heterogeneous ``SimulationExperiment`` on tvboptim, in process.
 
-    Builds a ``HeterogeneousNetwork`` from the experiment's network, integrates with a native fixed-step solver, and returns an ``ExperimentResult`` whose integration ``TimeSeries`` carries a per-group variable union (see
-    :func:`_heterogeneous_solution_to_dataarray`). This is the P1 path that lets ``exp.run("tvboptim")`` handle heterogeneous networks without the codegen experiment template (that is a later milestone). *seed* overrides the recipe's ``execution.random_seed``. Unknown ``kwargs`` (e.g. ``benchmark``, ``mode``) are accepted and ignored.
+    Builds a ``HeterogeneousNetwork`` from the experiment's network, integrates with a native fixed-step solver, and returns an ``ExperimentResult`` whose integration ``TimeSeries`` carries a per-group variable union (see :func:`_heterogeneous_solution_to_dataarray`). This is the P1 path that lets ``exp.run("tvboptim")`` handle heterogeneous networks without the codegen experiment template (that is a later milestone). *seed* overrides the recipe's ``execution.random_seed``. Unknown ``kwargs`` (e.g. ``benchmark``, ``mode``) are accepted and ignored.
     """
     from tvboptim.experimental.network_dynamics import prepare, solvers
 
-    from tvbo.data.types import ExperimentResult, SimulationResult
-
     from tvbo.adapters.base import BaseAdapter
+    from tvbo.data.types import ExperimentResult, SimulationResult
 
     network = experiment.network
     lib = dynamics_lib if dynamics_lib is not None else BaseAdapter(experiment).build_dynamics_dict()

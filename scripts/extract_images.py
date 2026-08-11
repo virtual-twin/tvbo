@@ -6,8 +6,7 @@ Handles two cases:
                               ![](data:image;base64,...)    (legacy form)
   2. Remote URL img tags:      <img src="https://..." ... />
 
-Replaces each with a local relative reference. When the matched markdown image sits on the same line between an opening and closing HTML tag (e.g. `<div ...>![](data:...)</div>`), the replacement is emitted as an
-HTML `<img>` tag instead — markdown syntax inside a block HTML element is not parsed by CommonMark/GFM and would render as literal text.
+Replaces each with a local relative reference. When the matched markdown image sits on the same line between an opening and closing HTML tag (e.g. `<div ...>![](data:...)</div>`), the replacement is emitted as an HTML `<img>` tag instead — markdown syntax inside a block HTML element is not parsed by CommonMark/GFM and would render as literal text.
 
 Usage:
     python scripts/extract_images.py path/to/file.md
@@ -20,7 +19,6 @@ import re
 import sys
 import urllib.parse
 import urllib.request
-
 
 _VALID_EXTS = {"jpg", "jpeg", "png", "gif", "webp", "svg"}
 
@@ -52,8 +50,7 @@ def _ext_from_bytes(data: bytes, fallback: str = "png") -> str:
 
 
 def _wrapped_by_html(text: str, start: int, end: int) -> bool:
-    """True if the substring [start:end) is sandwiched between an opening
-    HTML tag and a closing tag on the same line — the case where markdown-in-HTML rendering fails and we must emit an <img> tag."""
+    """True if the substring [start:end) is sandwiched between an opening HTML tag and a closing tag on the same line — the case where markdown-in-HTML rendering fails and we must emit an <img> tag."""
     line_start = text.rfind("\n", 0, start) + 1
     line_end = text.find("\n", end)
     if line_end == -1:
@@ -87,7 +84,7 @@ def extract_images(md_path: str) -> None:
     md_dir = os.path.dirname(os.path.abspath(md_path))
     img_dir = os.path.join(md_dir, "img")
 
-    with open(md_path, "r") as f:
+    with open(md_path) as f:
         content = f.read()
 
     # Single combined sweep so figures are numbered in document order regardless of source type (base64 markdown vs. remote <img>).

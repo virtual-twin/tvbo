@@ -190,7 +190,8 @@ class TestBrian2ReproducesTable2:
     def test_render_and_run_agree(self, column):
         """The generated script and the in-process run are the same computation.
 
-        Both at seed 3 with numpy codegen and the same stationary window, so the result is spike-level identical — a regression here means render() drifted from run(). (The default settle window matches the script's, so no ``settle_ms`` override is passed to run().)"""
+        Both at seed 3 with numpy codegen and the same stationary window, so the result is spike-level identical — a regression here means render() drifted from run(). (The default settle window matches the script's, so no ``settle_ms`` override is passed to run().)
+        """
         run_rates = column.run(format="brian2", seed=3)._extras["rates"]
         script = column.render("brian2", seed=3)
         ns = {}

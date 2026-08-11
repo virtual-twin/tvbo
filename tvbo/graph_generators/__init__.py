@@ -18,8 +18,8 @@ def random_reservoir(
     n_nodes: int,
     sparsity: float = 0.1,
     spectral_radius: float = 0.95,
-    weight_distribution: Optional[Any] = None,
-    seed: Optional[int] = None,
+    weight_distribution: Any | None = None,
+    seed: int | None = None,
 ) -> dict:
     """Materialise a ``RandomReservoir`` adjacency through the typed-DAG resolver."""
     params: dict = {"n_nodes": n_nodes, "sparsity": sparsity, "spectral_radius": spectral_radius}
@@ -29,7 +29,7 @@ def random_reservoir(
     return run_generator("RandomReservoir", params, seed=seed)
 
 
-def weight_shuffle(source: str, preserve: str = "binary_mask", seed: Optional[int] = None) -> dict:
+def weight_shuffle(source: str, preserve: str = "binary_mask", seed: int | None = None) -> dict:
     """Materialise a ``WeightShuffle`` null-model adjacency: permute the non-zero weights.
 
     This is the documented exception to the typed-DAG rule (see ``dev/GenericProcedureEngine.md`` §5): a masked extract, a permutation and a scatter are not expressible in the backend-independent primitive set. Boolean-mask extraction in particular cannot survive expression parsing at all — ``M[M != 0]`` evaluates its comparison to a plain Python ``True`` before an expression tree is ever built. So the algorithm lives here as ordinary Python, reached through the generator's ``bindings.python`` binding like any other library wrapper.

@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: EUPL-1.2
 
 
-"""
-PyRates Integration Module
-==========================
+"""PyRates Integration Module.
 
 Provides modular conversion between TVBO Dynamics/Network models and PyRates YAML format.
 
@@ -19,7 +17,7 @@ TVBO Templates (modular):
 - tvbo-pyrates-network.yaml.mako: NodeTemplate + CircuitTemplate (topology)
 - tvbo-pyrates-experiment.yaml.mako: Complete runnable YAML (model + network)
 
-Example
+Example:
 -------
 >>> from tvbo import Dynamics
 >>> model = Dynamics("JansenRitModel")
@@ -42,7 +40,7 @@ Example
 >>> network = Network(connectome)
 >>> network.to_yaml(format="pyrates", filepath="circuit.yaml")
 
-References
+References:
 ----------
 - PyRates documentation: https://pyrates.readthedocs.io/
 """
@@ -168,8 +166,7 @@ def _renamed_scope(model) -> dict:
 def operator_template(model, op_name: str | None = None) -> dict:
     """Resolve a Dynamics model into the fields of a PyRates ``OperatorTemplate``.
 
-    Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined (PyRates YAML has no user functions), and unsupported constructs are rewritten by
-    :func:`_pyrates_compatible`.
+    Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined (PyRates YAML has no user functions), and unsupported constructs are rewritten by :func:`_pyrates_compatible`.
 
     Equations are sympified against :func:`_renamed_scope`, keyed by the renamed spelling because renaming has already been applied to the equation strings.
 
@@ -234,7 +231,7 @@ def operator_template(model, op_name: str | None = None) -> dict:
     }
 
 
-def to_pyrates_model_yaml(dynamics: "Dynamics", filepath: str | None = None) -> str:
+def to_pyrates_model_yaml(dynamics: Dynamics, filepath: str | None = None) -> str:
     """Export a Dynamics model to PyRates OperatorTemplate YAML (model only).
 
     This generates ONLY the OperatorTemplate (dynamics/equations).
@@ -247,7 +244,7 @@ def to_pyrates_model_yaml(dynamics: "Dynamics", filepath: str | None = None) -> 
     filepath : str, optional
         Path to write the YAML file. If None, returns the YAML string.
 
-    Returns
+    Returns:
     -------
     str
         YAML string (or filepath if written to file).
@@ -266,8 +263,8 @@ def to_pyrates_model_yaml(dynamics: "Dynamics", filepath: str | None = None) -> 
 
 
 def to_pyrates_network_yaml(
-    dynamics: "Dynamics | None" = None,
-    network: "Network | None" = None,
+    dynamics: Dynamics | None = None,
+    network: Network | None = None,
     filepath: str | None = None,
 ) -> str:
     """Export to PyRates NodeTemplate + CircuitTemplate YAML (network topology only).
@@ -284,7 +281,7 @@ def to_pyrates_network_yaml(
     filepath : str, optional
         Path to write the YAML file. If None, returns the YAML string.
 
-    Returns
+    Returns:
     -------
     str
         YAML string (or filepath if written to file).
@@ -303,8 +300,8 @@ def to_pyrates_network_yaml(
 
 
 def to_pyrates_yaml_string(
-    dynamics: "Dynamics | dict[str, Dynamics] | None" = None,
-    network: "Network | None" = None,
+    dynamics: Dynamics | dict[str, Dynamics] | None = None,
+    network: Network | None = None,
     filepath: str | None = None,
 ) -> str:
     """Export to complete PyRates experiment YAML (model + network, ready to run).
@@ -321,7 +318,7 @@ def to_pyrates_yaml_string(
     filepath : str, optional
         Path to write the YAML file. If None, returns the YAML string.
 
-    Returns
+    Returns:
     -------
     str
         YAML string (or filepath if written to file).
@@ -347,7 +344,7 @@ def to_pyrates_yaml_string(
 
 
 # Alias for backward compatibility
-def network_to_pyrates_yaml_string(network: "Network", filepath: str | None = None) -> str:
+def network_to_pyrates_yaml_string(network: Network, filepath: str | None = None) -> str:
     """Export a TVBO Network to complete PyRates experiment YAML.
 
     Alias for to_pyrates_yaml_string(network=network, filepath=filepath).
@@ -375,19 +372,19 @@ def from_pyrates_yaml(filepath: str, operator_key: str | None = None) -> dict:
         Name of the specific OperatorTemplate to load (without _op suffix).
         If None, loads the first OperatorTemplate found.
 
-    Returns
+    Returns:
     -------
     dict
         Dictionary suitable for Dynamics(**dict) constructor.
 
-    Raises
+    Raises:
     ------
     ValueError
         If operator_key is specified but not found in the file.
     """
     import yaml
 
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         yaml_data = yaml.safe_load(f)
 
     # Find all OperatorTemplates
@@ -660,7 +657,7 @@ def from_pyrates_yaml_all(filepath: str) -> dict[str, dict]:
     filepath : str
         Path to PyRates YAML file.
 
-    Returns
+    Returns:
     -------
     dict[str, dict]
         Dictionary mapping operator names to Dynamics-compatible dicts.
@@ -668,7 +665,7 @@ def from_pyrates_yaml_all(filepath: str) -> dict[str, dict]:
     """
     import yaml
 
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         yaml_data = yaml.safe_load(f)
 
     dynamics_dict = {}

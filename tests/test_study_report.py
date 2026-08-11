@@ -11,7 +11,6 @@ import pytest
 
 from tvbo import SimulationStudy
 
-
 RECIPE = """
 title: A study whose experiments share one model
 label: Mini
@@ -131,7 +130,7 @@ _BLOCK = re.compile(r"\$\$(.+?)\$\$(\s*\{#(eq-[a-z0-9-]+)\})?", re.S)
 
 
 def _unnumbered(text):
-    """Display equations in *text* carrying neither a Quarto anchor nor a ``\\tag``.
+    r"""Display equations in *text* carrying neither a Quarto anchor nor a ``\\tag``.
 
     Matched by capturing the optional anchor, never by a negative lookahead: `$$.+?$$` followed by `(?!...)` backtracks *past the closing delimiter* to satisfy the lookahead, so it silently reports whatever makes the assertion pass. The first version of this check did exactly that and could not fail.
     """
@@ -232,7 +231,7 @@ def test_time_carries_the_integrator_unit(study):
 
 
 def test_markdown_numbers_equations_where_it_cannot_anchor(study):
-    """Plain markdown has no anchor syntax, so numbering falls back to \\tag."""
+    r"""Plain markdown has no anchor syntax, so numbering falls back to \\tag."""
     report = study.report("markdown", part="all")
     assert r"\tag{1}" in report and "{#eq-" not in report
 
@@ -362,8 +361,7 @@ def test_the_reported_line_number_survives_a_stripped_cell(tmp_path):
 def test_a_grid_too_small_to_be_a_float_is_written_as_a_sentence(rows, expected):
     """A captioned float tells the reader to look something up; two numbers do not earn one.
 
-    Pang2023 spent a numbered table on the fact that its model declares one event, and
-    Schirner2023 spent one on two experiments differing only in duration.
+    Pang2023 spent a numbered table on the fact that its model declares one event, and Schirner2023 spent one on two experiments differing only in duration.
     """
     from tvbo.utils.report import table_or_prose
 

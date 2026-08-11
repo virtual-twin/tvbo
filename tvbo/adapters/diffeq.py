@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """DifferentialEquations.jl backend adapter for SimulationExperiment.
 
 Generates a self-contained Julia script from the existing Julia templates and executes it via juliacall, returning a TVBO TimeSeries.
@@ -8,10 +7,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
-    from tvbo.data.types import ExperimentResult
     from tvbo.classes.experiment import SimulationExperiment
+    from tvbo.data.types import ExperimentResult
 
 
 REQUIRED_PACKAGES = [
@@ -39,7 +37,7 @@ class DiffEqAdapter:
     Renders the Julia DifferentialEquations template, executes it via juliacall, and returns a TVBO TimeSeries.
     """
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
 
     def render_code(self, **kwargs) -> str:
@@ -63,10 +61,10 @@ class DiffEqAdapter:
         template = templates.lookup.get_template("tvbo-julia-DifferentialEquations.jl.mako")
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "ExperimentResult":
+    def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using DifferentialEquations.jl.
 
-        Returns
+        Returns:
         -------
         ExperimentResult
             Simulation results with named dimensions and coordinates.

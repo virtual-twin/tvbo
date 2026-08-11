@@ -16,7 +16,7 @@ plot.ontology.plot_model('Generic2dOscillator', ax=ax)
 import pickle
 from collections import defaultdict
 from itertools import count
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import matplotlib
 import matplotlib as mpl
@@ -32,10 +32,11 @@ from matplotlib.colors import Normalize
 from matplotlib.patches import FancyArrowPatch, Patch
 from sympy import latex, symbols
 
+from tvbo.classes import equation as equations
 from tvbo.ontology import graph
 from tvbo.ontology import owl as ontology
-from tvbo.classes import equation as equations
-from tvbo.plot.utils import get_cmap, get_continuous_cmap, tvb_colors_simple as tvb_colors
+from tvbo.plot.utils import get_cmap, get_continuous_cmap
+from tvbo.plot.utils import tvb_colors_simple as tvb_colors
 
 # Default Parameters #
 node_params = {
@@ -109,8 +110,7 @@ def get_default_params():
 
 # Graph Plotting #
 def reverse_edges(pos):
-    """
-    Reverse the coordinates of the positions in the pos dictionary.
+    """Reverse the coordinates of the positions in the pos dictionary.
 
     Parameters:
     ----------
@@ -129,8 +129,7 @@ def reverse_edges(pos):
 
 
 def get_edge_color_mapping(G, colormap="viridis", color_by="type"):
-    """
-    Generate a color mapping for edges in graph G based on their specified attribute.
+    """Generate a color mapping for edges in graph G based on their specified attribute.
 
     Parameters:
     ----------
@@ -168,8 +167,7 @@ def get_edge_color_mapping(G, colormap="viridis", color_by="type"):
 
 
 def compute_bezier_midpoint(p0, p1, p2, t=0.5):
-    """
-    Compute the midpoint of a quadratic Bézier curve at a given t.
+    """Compute the midpoint of a quadratic Bézier curve at a given t.
 
     Parameters:
     - p0, p1, p2: Control points of the Bézier curve.
@@ -184,8 +182,7 @@ def compute_bezier_midpoint(p0, p1, p2, t=0.5):
 
 
 def compute_midpoint(start, end, rad):
-    """
-    Compute the midpoint of a quadratic Bézier curve.
+    """Compute the midpoint of a quadratic Bézier curve.
 
     Parameters:
     - start: tuple of (x, y) coordinates of the start point.
@@ -213,10 +210,11 @@ def compute_midpoint(start, end, rad):
 
 
 def add_arrow(line, ax, position=None, direction="right", color=None, label=""):
-    """add an arrow to a line.
+    """Add an arrow to a line.
 
     line:       Line2D object position:   x-position of the arrow. If None, mean of xdata is taken direction:  'left' or 'right' color:      if None, line color is taken.
-    label:      label for arrow"""
+    label:      label for arrow
+    """
     if color is None:
         color = line.get_color()
 
@@ -257,15 +255,15 @@ def add_arrow(line, ax, position=None, direction="right", color=None, label=""):
 
 def plot_curve(
     ax: Any,
-    start: Tuple[float, float],
-    end: Tuple[float, float],
+    start: tuple[float, float],
+    end: tuple[float, float],
     rad: float,
     color: str = "black",
     shrinkA: float = 0,
     shrinkB: float = 0.03,
     arrow_size: float = 0.1,
     arrow_style: str = "->",
-    annotate: Optional[str] = None,
+    annotate: str | None = None,
     **kwargs,
 ):
     """Draw a quadratic Bézier arrow from *start* to *end* on *ax*.
@@ -283,6 +281,7 @@ def plot_curve(
         arrow_size: Head width.
         arrow_style: Matplotlib arrow style (e.g. `"->"`, `"-|>"`).
         annotate: Optional midpoint label string.
+        **kwargs: Forwarded to `FancyArrowPatch`.
     """
     font_size = kwargs.pop("font_size") if "font_size" in kwargs else 12
 
@@ -366,7 +365,7 @@ def create_adj_matrix(G):
                 adj_matrix[(node, neighbor)] = []
 
             # Loop through the edges between node and neighbor
-            for edge_index, attrs in edge_attrs.items():
+            for attrs in edge_attrs.values():
                 # Append edge type and direction to the adjacency matrix
                 adj_matrix[(node, neighbor)].append({"type": attrs["type"], "direction": f"{node} -> {neighbor}"})
     return adj_matrix
@@ -416,7 +415,6 @@ def draw_custom_edges(
         edge_radius: Curvature used when a pair has a single edge.
         **kwargs: Additional keyword arguments forwarded to `plot_curve`.
     """
-
     if edge_colors in colormaps.keys():
         cmap = edge_colors if isinstance(edge_colors, str) and edge_colors in colormaps.keys() else "viridis"
         colmap = get_edge_color_mapping(G, colormap=cmap, color_by=color_by)
@@ -462,9 +460,8 @@ def draw_custom_edges(
             i += 1
 
 
-def count_directed_edges(G) -> Dict[Tuple[Any, Any], int]:
-    """
-    Count number of edges between each directed node pair (u, v), not treating (u, v) ≡ (v, u).
+def count_directed_edges(G) -> dict[tuple[Any, Any], int]:
+    """Count number of edges between each directed node pair (u, v), not treating (u, v) ≡ (v, u).
 
     Returns:
         Dict[Tuple[Any, Any], int]: Mapping (u, v) → count of edges from u to v.
@@ -475,9 +472,8 @@ def count_directed_edges(G) -> Dict[Tuple[Any, Any], int]:
     return counts
 
 
-def n1n2_edgecounts(G, n1, n2, edge_counts: Optional[Dict[Tuple[Any, Any], int]] = None) -> int:
-    """
-    Return the number of edges between nodes n1 and n2, treating (n1, n2) ≡ (n2, n1).
+def n1n2_edgecounts(G, n1, n2, edge_counts: dict[tuple[Any, Any], int] | None = None) -> int:
+    """Return the number of edges between nodes n1 and n2, treating (n1, n2) ≡ (n2, n1).
 
     Args:
         G (networkx.Graph or MultiGraph): Input graph.
@@ -497,17 +493,16 @@ def draw_custom_arrows(
     G,
     pos,
     edge_width: int = 1,
-    ax: Optional[Any] = None,
+    ax: Any | None = None,
     edge_colors: str = "grey",
     edge_labels: bool = False,
     scatter_edges: bool = True,
-    color_by: Optional[str] = None,
+    color_by: str | None = None,
     return_color_mapping: bool = False,
     radius: float = -0.3,
     **kwargs: Any,
-) -> Optional[Dict[Any, Any]]:
-    """
-    Draw custom arrows on a graph `G` with given positions and styles.
+) -> dict[Any, Any] | None:
+    """Draw custom arrows on a graph `G` with given positions and styles.
 
     Args:
         G (networkx.Graph): The graph on which arrows will be drawn.
@@ -521,6 +516,12 @@ def draw_custom_arrows(
             as the number of edges. Defaults to "grey".
         scatter_edges (bool, optional): If True, scatter multiple edges between nodes
             to make them distinguishable. Defaults to False.
+        edge_labels (bool, optional): Annotate each arrow with its edge type. Defaults to False.
+        color_by (str, optional): Edge attribute whose value selects the colour. Defaults to None,
+            which uses `edge_colors` for every edge.
+        return_color_mapping (bool, optional): Return the attribute-value → colour dict
+            instead of None. Defaults to False.
+        radius (float, optional): Curvature of the arrows; negative bends left. Defaults to -0.3.
         **kwargs (Any): Additional keyword arguments to customize arrow properties. This can include:
             connectionstyle (str, optional): The connection style of the arrows.
                 More info: https://matplotlib.org/stable/gallery/userdemo/connectionstyle_demo.html.
@@ -593,7 +594,7 @@ def draw_custom_arrows(
         num_edges = len(edges)
         rad_vals = np.linspace(-0.3, 0.3, num_edges) if both_directions or num_edges > 1 else [0]
 
-        for r, (n1, n2, i, d) in zip(rad_vals, edges):
+        for r, (n1, n2, i, d) in zip(rad_vals, edges, strict=True):
             if (n1, n2) in G.edges():
                 r = abs(r)
             else:
@@ -707,8 +708,7 @@ def draw_custom_nodes(
     facecolor=None,
     edgecolor=None,
 ):
-    """
-    Custom function to draw nodes as text in a network graph.
+    """Custom function to draw nodes as text in a network graph.
 
     Parameters:
     ----------
@@ -799,8 +799,7 @@ def get_layout(
     save_pos=None,
     use_precomputed_pos=None,
 ):
-    """
-    Get the layout positions for the nodes in the graph.
+    """Get the layout positions for the nodes in the graph.
 
     Parameters:
     ----------
@@ -841,8 +840,7 @@ def get_layout(
 
 
 def get_category_from_graph(G, node):
-    """
-    Retrieve the category of a given node from the graph.
+    """Retrieve the category of a given node from the graph.
 
     Parameters:
     ----------
@@ -865,8 +863,7 @@ def get_category_from_graph(G, node):
 
 
 def get_categories_from_graph(G):
-    """
-    Retrieve all unique categories from the graph's nodes.
+    """Retrieve all unique categories from the graph's nodes.
 
     Parameters:
     ----------
@@ -886,8 +883,7 @@ def get_categories_from_graph(G):
 
 
 def set_axis_limits(pos, ax):
-    """
-    Set the axis limits based on node positions.
+    """Set the axis limits based on node positions.
 
     Parameters:
     ----------
@@ -896,7 +892,7 @@ def set_axis_limits(pos, ax):
     ax : matplotlib.axes.Axes
         The matplotlib axes object to set the limits on.
     """
-    x_values, y_values = zip(*pos.values())
+    x_values, y_values = zip(*pos.values(), strict=True)
     ax.set_xlim(min(x_values) - 0.15, max(x_values) + 0.1)
     ax.set_ylim(min(y_values) - 0.15, max(y_values) + 0.1)
 
@@ -914,12 +910,11 @@ def plot_ontology_graph(
     font_size: int = 12,
     legend: bool = True,
     edge_legend: bool = True,
-    ax: Optional[Any] = None,
+    ax: Any | None = None,
     colorby: str = "category",
     **kwargs: Any,
 ):
-    """
-    Plot the ontology graph using matplotlib.
+    """Plot the ontology graph using matplotlib.
 
     Args:
         G (networkx.DiGraph): A directed graph representation of the ontology.
@@ -952,7 +947,7 @@ def plot_ontology_graph(
     else:
         return_fig = False
 
-    x_values, y_values = zip(*pos.values())
+    x_values, y_values = zip(*pos.values(), strict=True)
     ax.set_xlim(min(x_values) - 0.15, max(x_values) + 0.1)
     ax.set_ylim(min(y_values) - 0.15, max(y_values) + 0.1)
     ax.axis("off")
@@ -966,7 +961,7 @@ def plot_ontology_graph(
     else:
         color_list = colors
 
-    color_dict = dict(zip(sorted(categories), color_list))
+    color_dict = dict(zip(sorted(categories), color_list, strict=False))  # a caller-supplied palette may be longer
     for node in G.nodes():
         category = get_category_from_graph(G, node)
         category = category.replace("Time Derivative", "TimeDerivative")
@@ -986,7 +981,7 @@ def plot_ontology_graph(
         edge_colors_list = edge_colors
 
     if len(edge_types) <= len(edge_colors_list):
-        edge_color_dict = dict(zip(edge_types, edge_colors_list))
+        edge_color_dict = dict(zip(edge_types, edge_colors_list, strict=False))
         edge_colors = [edge_color_dict[data["type"]] for _, _, data in G.edges(data=True)]
 
     labels = {}
@@ -1041,7 +1036,7 @@ def plot_ontology_graph(
         node_degree = np.log1p(node_degree)
         node_degree = (np.array(node_degree) - np.min(node_degree)) / (np.max(node_degree) - np.min(node_degree))
 
-        node_degree = {n: d for n, d in zip(dict(G.degree).keys(), node_degree)}
+        node_degree = {n: d for n, d in zip(dict(G.degree).keys(), node_degree, strict=True)}
 
         for node, (x, y) in pos.items():
             category = get_category_from_graph(G, node)
@@ -1163,10 +1158,10 @@ def hierarchy_pos(
     direction="down",
     vert_scatter=0.0,
 ):
-    """
-    If the graph is a DAG this will return the positions to plot this in a hierarchical layout.
+    """If the graph is a DAG this will return the positions to plot this in a hierarchical layout.
 
-    G: the graph (must be a DAG) root: the root node of current branch width: horizontal space allocated for this branch vert_gap: gap between levels of hierarchy hor_gap: gap between nodes within the same level vert_loc: vertical location of root xcenter: horizontal location of root direction: 'down' for top-down layout, 'up' for bottom-up layout vert_scatter: vertical scatter factor for nodes on the same level"""
+    G: the graph (must be a DAG) root: the root node of current branch width: horizontal space allocated for this branch vert_gap: gap between levels of hierarchy hor_gap: gap between nodes within the same level vert_loc: vertical location of root xcenter: horizontal location of root direction: 'down' for top-down layout, 'up' for bottom-up layout vert_scatter: vertical scatter factor for nodes on the same level
+    """
     vert_scatter /= 10
     if not nx.is_directed_acyclic_graph(G):
         raise TypeError("cannot use hierarchy_pos on a graph that is not a directed acyclic graph (DAG)")
@@ -1181,8 +1176,10 @@ def hierarchy_pos(
         xcenter=0.5,
         pos=None,
         parent=None,
-        parsed=[],
+        parsed=None,
     ):
+        if parsed is None:
+            parsed = []
         if pos is None:
             pos = {root: (xcenter, vert_loc)}
         else:
@@ -1226,15 +1223,15 @@ def hierarchy_pos(
 
 
 def plot_tvbo_graph(g, ax=None, **kwargs):
-    """
-    A function to plot a TVBO graph with various customizable parameters.
+    """A function to plot a TVBO graph with various customizable parameters.
 
     Parameters:
     g (networkx.Graph): The graph to be plotted.
     kwargs: Various other optional parameters to customize the plot.
 
     Returns:
-    None"""
+    None
+    """
     params = validate_parameters(kwargs)
     relabel_graph(g, params["relabel"])
     set_plt_params()
@@ -1263,8 +1260,7 @@ def plot_tvbo_graph(g, ax=None, **kwargs):
 
 
 def validate_parameters(params=None):
-    """
-    A function to validate and set default values for various parameters.
+    """A function to validate and set default values for various parameters.
 
     Parameters:
     params (dict): The parameters passed to the function.
@@ -1283,26 +1279,26 @@ def validate_parameters(params=None):
 
 
 def relabel_graph(g, relabel):
-    """
-    A function to relabel the nodes of the graph if a relabel dictionary is provided.
+    """A function to relabel the nodes of the graph if a relabel dictionary is provided.
 
     Parameters:
     g (networkx.Graph): The graph to be relabeled.
     relabel (dict): A dictionary with the relabeling information.
 
     Returns:
-    None"""
+    None
+    """
     if isinstance(relabel, dict):
         g = nx.relabel_nodes(g, relabel)  # TODO: g is not returned, so this method will not actually modify any graph;
         # TODO: either return g or modify it in place ("nx.relabel_nodes(g, relabel, copy=False)")
 
 
 def set_plt_params(rc_params=None):
-    """
-    A function to set certain plt parameters.
+    """A function to set certain plt parameters.
 
     Returns:
-    None"""
+    None
+    """
     params = {"text.usetex": False}
     if not isinstance(rc_params, type(None)):
         params.update(rc_params)
@@ -1311,8 +1307,7 @@ def set_plt_params(rc_params=None):
 
 
 def get_labels(g, label_as_symbol):
-    """
-    Generate labels for the nodes in the graph based on the node names and ontology search results. If the label_as_symbol parameter is True, the labels are formatted as LaTeX symbols. Additionally, specific substrings ("_RWW") are removed from the labels.
+    """Generate labels for the nodes in the graph based on the node names and ontology search results. If the label_as_symbol parameter is True, the labels are formatted as LaTeX symbols. Additionally, specific substrings ("_RWW") are removed from the labels.
 
     Parameters:
     g (networkx.Graph): The graph object containing the nodes for which labels are to be generated.
@@ -1338,14 +1333,13 @@ def get_labels(g, label_as_symbol):
                 label = "_".join(label.split("_")[:-1])
 
             if label_as_symbol:
-                label = r"${}$".format(label)
+                label = rf"${label}$"
         labels[node] = label.replace("_RWW", "")
     return labels
 
 
 def get_node_color_and_cmap(g, params=None):
-    """
-    A function to get the node colors and the colormap based on node attributes such as type or degree.
+    """A function to get the node colors and the colormap based on node attributes such as type or degree.
 
     Parameters:
     g (networkx.Graph): The graph for which the node colors and colormap are to be generated.
@@ -1390,8 +1384,7 @@ def get_node_color_and_cmap(g, params=None):
 
 
 def get_node_size(g, params=None):
-    """
-    A function to get the node size for the graph, which can be determined by various parameters including the degree of the nodes, the length of the labels, or a specified factor.
+    """A function to get the node size for the graph, which can be determined by various parameters including the degree of the nodes, the length of the labels, or a specified factor.
 
     Parameters:
     g (networkx.Graph): The graph for which the node size is to be generated.
@@ -1418,8 +1411,7 @@ def get_node_size(g, params=None):
 
 
 def get_ax(ax, figsize):
-    """
-    A function to get the ax for the plot. If ax is None, a new figure and ax are created using the specified figsize.
+    """A function to get the ax for the plot. If ax is None, a new figure and ax are created using the specified figsize.
 
     Parameters:
     ax (matplotlib.axes._axes.Axes or None): The ax parameter passed to the function. If None, a new ax is created.
@@ -1436,8 +1428,8 @@ def get_ax(ax, figsize):
 
 
 def draw_nodes(g, pos, node_color, cmap, node_size, ax, params):
-    """
-    A function to draw the nodes on the graph with specified attributes such as color, size, and using a specified colormap.
+    """A function to draw the nodes on the graph with specified attributes such as color, size, and using a specified colormap.
+
     Additional parameters like linewidth and alpha are taken from the params dictionary.
 
     Parameters:
@@ -1450,7 +1442,8 @@ def draw_nodes(g, pos, node_color, cmap, node_size, ax, params):
     params (dict): A dictionary with various parameters including 'alpha' and 'node_linewidth'.
 
     Returns:
-    None"""
+    None
+    """
     groups = set(nx.get_node_attributes(g, "type").values())
     mapping = dict(zip(sorted(groups), count()))
     nodes = g.nodes()
@@ -1477,8 +1470,7 @@ def draw_nodes(g, pos, node_color, cmap, node_size, ax, params):
 
 
 def draw_edges(g, pos, ax, params):
-    """
-    A function to draw the edges on the graph. Depending on the parameters, it can draw colored edges and adjust the width of the edges.
+    """A function to draw the edges on the graph. Depending on the parameters, it can draw colored edges and adjust the width of the edges.
 
     Parameters:
     g (networkx.Graph): The graph on which the edges are to be drawn.
@@ -1487,8 +1479,8 @@ def draw_edges(g, pos, ax, params):
     params (dict): A dictionary with various parameters including 'colored_edges' and 'edge_width'.
 
     Returns:
-    None"""
-
+    None
+    """
     if params["colored_edges"]:
         edge_types = list(set(nx.get_edge_attributes(g, "type").values()))
         edge_colors = plt.cm.viridis(np.linspace(0, 1, len(edge_types)))
@@ -1520,8 +1512,7 @@ def draw_edges(g, pos, ax, params):
 
 
 def draw_edge_labels(g, pos, ax, params):
-    """
-    A function to draw the edge labels on the graph. The labels are extracted from the edge attributes and can be customized using various parameters in the params dictionary.
+    """A function to draw the edge labels on the graph. The labels are extracted from the edge attributes and can be customized using various parameters in the params dictionary.
 
     Parameters:
     g (networkx.Graph): The graph on which the edge labels are to be drawn.
@@ -1530,7 +1521,8 @@ def draw_edge_labels(g, pos, ax, params):
     params (dict): A dictionary with various parameters including 'edge_font_size'.
 
     Returns:
-    None"""
+    None
+    """
     if params.get("draw_edgelabels", False):
         nx.draw_networkx_edge_labels(
             g,
@@ -1544,8 +1536,7 @@ def draw_edge_labels(g, pos, ax, params):
 
 
 def draw_legend(g, ax, params):
-    """
-    A function to draw the legend on the graph. The legend is created based on the node types and their respective colors, which are derived from the 'tvb_colors' parameter in the params dictionary.
+    """A function to draw the legend on the graph. The legend is created based on the node types and their respective colors, which are derived from the 'tvb_colors' parameter in the params dictionary.
 
     Parameters:
     g (networkx.Graph): The graph on which the legend is to be drawn.
@@ -1553,7 +1544,8 @@ def draw_legend(g, ax, params):
     params (dict): A dictionary with various parameters including 'tvb_colors' and 'c_order'.
 
     Returns:
-    None"""
+    None
+    """
     groups = set(nx.get_node_attributes(g, "type").values())
     mapping = dict(zip(sorted(groups), count()))
     nodes = g.nodes()
@@ -1588,10 +1580,10 @@ def plot_model(
     circle_matches: bool = False,
     ax: Any = None,
     legend: bool = True,
-    figsize: Tuple[float, float] = (10, 6),
-    legend_kwargs: Dict = {},
-    edge_kwargs: Dict = {"shrinkA": 15, "shrinkB": 15},
-    node_kwargs: Dict = {},
+    figsize: tuple[float, float] = (10, 6),
+    legend_kwargs: dict = None,
+    edge_kwargs: dict = None,
+    node_kwargs: dict = None,
     **kwargs,
 ):
     """Render a `Dynamics` model as a directed graph: parameters → equations → state vars.
@@ -1617,7 +1609,14 @@ def plot_model(
         figsize: Figure size when *ax* is `None`.
         edge_kwargs: Forwarded to the edge-drawing helper.
         node_kwargs: Forwarded to the node-drawing helper.
+        **kwargs: Forwarded to the layout routine.
     """
+    if node_kwargs is None:
+        node_kwargs = {}
+    if edge_kwargs is None:
+        edge_kwargs = {"shrinkA": 15, "shrinkB": 15}
+    if legend_kwargs is None:
+        legend_kwargs = {}
     edge_width = font_size / 20
     edge_kwargs.update({"shrinkA": 15 * (font_size / 20), "shrinkB": 15 * (font_size / 20)})
     if isinstance(model, str):
@@ -1651,7 +1650,7 @@ def plot_model(
     else:
         return_fig = False
 
-    x_values, y_values = zip(*pos.values())
+    x_values, y_values = zip(*pos.values(), strict=True)
 
     if layout_type != "graphviz":
         ax.set_xlim(min(x_values) - 0.15, max(x_values) + 0.1)
@@ -1693,7 +1692,7 @@ def plot_model(
 
     edge_colors_list = colormaps[edge_cmap](np.linspace(0, 1, len(edge_types) + 1))[:-1]
 
-    edge_color_dict = dict(zip(edge_types, edge_colors_list))
+    edge_color_dict = dict(zip(edge_types, edge_colors_list, strict=True))
     edge_colors = [edge_color_dict[data["type"]] for _, _, data in G.edges(data=True)]
     draw_custom_arrows(
         G,
@@ -1706,7 +1705,9 @@ def plot_model(
     )
 
     cat_labels = [cat.label.first() if not isinstance(cat, str) else cat for cat in cat_keys]
-    legend_handles = [mpatches.Patch(color=cat_dict[cat], label=label) for cat, label in zip(cat_keys, cat_labels)]
+    legend_handles = [
+        mpatches.Patch(color=cat_dict[cat], label=label) for cat, label in zip(cat_keys, cat_labels, strict=True)
+    ]
     # Create a second legend for edge types
     legend_handles_edges = [
         mlines.Line2D([], [], color=edge_color_dict[etype], lw=edge_width, label=etype) for etype in edge_types
@@ -1833,9 +1834,8 @@ def plot_hierarchy(cls, hierarchy_type="ancestors", ax=None, **kwargs):
         return fig
 
 
-def plot_multidigraph(G, figsize: Tuple[int, int] = (12, 8)) -> None:
-    """
-    Plots a MultiDiGraph with curved edges to visualize multiple edges between two nodes.
+def plot_multidigraph(G, figsize: tuple[int, int] = (12, 8)) -> None:
+    """Plots a MultiDiGraph with curved edges to visualize multiple edges between two nodes.
 
     Args:
         G (networkx.MultiDiGraph): The MultiDiGraph to be plotted.
@@ -1862,20 +1862,21 @@ def create_colormap_legend(
     fontsize=12,
     title_fontsize=14,
     edge_cols=8,
-    node_cols=8,  # TODO: not used, remove?
+    node_cols=8,
 ):
-    """
-    Create a space-efficient legend for given edge and node colormap dictionaries.
+    """Create a space-efficient legend for given edge and node colormap dictionaries.
 
     Args:
-    edge_colmap (dict): A dictionary where keys are labels and values are RGBA tuples for edges.
-    node_colmap (dict): A dictionary where keys are labels and values are RGBA tuples for nodes.
-    ax (matplotlib.axes.Axes, optional): Matplotlib axes object to draw the legend on. If None, a new figure is created.
-    fontsize (int, optional): Font size for the legend labels.
-    title_fontsize (int, optional): Font size for the legend titles.
+        edge_colmap: Labels mapped to RGBA tuples, for edges.
+        node_colmap: Labels mapped to RGBA tuples, for nodes.
+        ax: Axes to draw the legend on. A new figure is created when None.
+        fontsize: Font size for the legend labels.
+        title_fontsize: Font size for the legend titles.
+        edge_cols: Columns the edge legend is laid out in; also sets how far the y-axis is inflated to make room.
+        node_cols: Columns the node legend is laid out in.
     """
 
-    def add_legend(ax, patches, title, loc, bbox_y):
+    def add_legend(ax, patches, title, loc, bbox_y, ncol):
         """Attach a titled, expanded legend of color patches to the axes.
 
         Args:
@@ -1884,6 +1885,7 @@ def create_colormap_legend(
             title: Legend title text.
             loc: Matplotlib legend location string.
             bbox_y: Vertical offset of the legend's bounding box, in axes coordinates.
+            ncol: Number of columns the patches are laid out in.
 
         Returns:
             The created legend artist.
@@ -1892,7 +1894,7 @@ def create_colormap_legend(
             handles=patches,
             loc=loc,
             frameon=False,
-            ncol=edge_cols,
+            ncol=ncol,
             handleheight=1,
             handlelength=1,
             mode="expand",
@@ -1918,24 +1920,11 @@ def create_colormap_legend(
 
     if edge_colmap:
         edge_patches = [Patch(color=value, label=key) for key, value in edge_colmap.items()]
-        # TODO: edge_legend not used
-        add_legend(
-            ax,
-            edge_patches,
-            "Edge Type",
-            "upper center",
-            bbox_y=-0.8,
-        )
+        add_legend(ax, edge_patches, "Edge Type", "upper center", bbox_y=-0.8, ncol=edge_cols)
 
     if node_colmap:
         node_patches = [Patch(color=value, label=key) for key, value in node_colmap.items()]
-        add_legend(
-            ax,
-            node_patches,
-            "Node Type",
-            "upper center",
-            bbox_y=-0.95 if edge_colmap else -0.8,
-        )
+        add_legend(ax, node_patches, "Node Type", "upper center", bbox_y=-0.95 if edge_colmap else -0.8, ncol=node_cols)
     y_min, y_max = ax.get_ylim()
 
     ax.set_ylim(y_min - (y_max - y_min) * inflate, y_max)
@@ -1944,8 +1933,7 @@ def create_colormap_legend(
 
 
 def get_node_color_mapping(G, node_colors="math_type", colors="tvb", return_categories=False):
-    """
-    Generate a color mapping for nodes in graph G based on their specified attribute.
+    """Generate a color mapping for nodes in graph G based on their specified attribute.
 
     Parameters:
     ----------
@@ -2049,7 +2037,7 @@ def get_node_color_mapping(G, node_colors="math_type", colors="tvb", return_cate
             for n in G.nodes
         }
         cat_keys = [node_colors, "other"]
-        cat_dict = dict(zip(cat_keys, ["#30be80", "#dcdedd"]))
+        cat_dict = dict(zip(cat_keys, ["#30be80", "#dcdedd"], strict=True))
     else:
         cat_dict = node_colors
         categories = {n: cat_dict.get(n) for n in G.nodes()}
@@ -2060,7 +2048,7 @@ def get_node_color_mapping(G, node_colors="math_type", colors="tvb", return_cate
             color_list = tvb_colors
         elif isinstance(colors, str) and colors in colormaps:
             color_list = colormaps[colors](np.linspace(0, 1, len(cat_keys)))
-        cat_dict = dict(zip(cat_keys, color_list))
+        cat_dict = dict(zip(cat_keys, color_list, strict=False))  # tvb_colors is a fixed palette, not sized to cat_keys
 
     if "other" in categories.values():
         cat_dict.update({"other": "#dcdedd"})

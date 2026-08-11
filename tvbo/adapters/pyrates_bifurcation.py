@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """PyRates/PyCoBi bifurcation analysis backend adapter for SimulationExperiment.
 
-Uses PyRates to generate Fortran code for AUTO-07p, and PyCoBi as the
-Python interface to run parameter continuations and detect bifurcations.
+Uses PyRates to generate Fortran code for AUTO-07p, and PyCoBi as the Python interface to run parameter continuations and detect bifurcations.
 
 Reuses the same ``Continuation`` schema as the BifurcationKit.jl backend, so ``exp.run("pyrates-bifurcation")`` and ``exp.run("bifurcationkit.jl")`` accept the same YAML specification.
 """
@@ -48,15 +46,15 @@ class PyRatesBifurcationAdapter:
     Like ``BifurcationKitAdapter``, this does not inherit from ``BaseAdapter`` — bifurcation analysis operates on individual (Dynamics, Continuation) pairs.
     """
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
 
     # ── Public API ───────────────────────────────────────────────────────
 
-    def run(self, **kwargs) -> "BifurcationResult | dict[str, BifurcationResult]":
+    def run(self, **kwargs) -> BifurcationResult | dict[str, BifurcationResult]:
         """Run bifurcation analysis for each continuation in the experiment.
 
-        Returns
+        Returns:
         -------
         BifurcationResult or dict[str, BifurcationResult]
             Single result if one continuation, dict if multiple.
@@ -87,7 +85,7 @@ class PyRatesBifurcationAdapter:
         continuation : Continuation, optional
             The continuation spec. Defaults to first in experiment.
 
-        Returns
+        Returns:
         -------
         str
             Executable Python code string.

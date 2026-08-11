@@ -10,12 +10,13 @@ Both live here once, so a report holds only what is specific to its study — it
 
 import operator
 import re
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, Sequence
+from typing import Any, NamedTuple
 
 import pandas as pd
-from tvbo.data import db
 
+from tvbo.data import db
 
 _EMPTY_MARKERS = {"", "—", "-", "None", "nan"}
 
@@ -29,7 +30,7 @@ _MARKUP_RE = re.compile(r"[{}\\_^$]")
 
 
 def _visual_width(cell: Any) -> int:
-    """Approximate the *rendered* character width of a markdown/LaTeX cell.
+    r"""Approximate the *rendered* character width of a markdown/LaTeX cell.
 
     A cell like ``$\\mathrm{s}$`` renders as a single ``s``, so its raw source length badly over-states how wide it is on the page. This strips the math delimiters, ``\\mathrm`` wrappers and control sequences so column sizing tracks what the reader sees, not the LaTeX source length.
     """
@@ -152,7 +153,7 @@ class MarkdownTable(NamedTuple):
 
 
 def _cells(line: str) -> list[str]:
-    """A table row's cells, honouring ``\\|`` escapes inside a cell."""
+    r"""A table row's cells, honouring ``\\|`` escapes inside a cell."""
     parts = _CELL_SPLIT_RE.split(line.strip())
     if parts and not parts[0].strip():
         parts = parts[1:]
@@ -581,6 +582,7 @@ class Scorecard:
         return sorted((r for r in self.rows if r["Status"].strip() in verdicts), key=self._key)
 
     def count(self, *verdicts) -> int:
+        """How many targets carry one of *verdicts*."""
         return len(self.of(*verdicts))
 
     def verdict(self, row) -> str:
@@ -593,6 +595,7 @@ class Scorecard:
         return row["Target"].split(",")[0].split("(")[0].strip()
 
     def reason(self, row) -> str:
+        """Why the target fell short, as `targets.md` states it."""
         return self.reasons.get(row["ID"], "No reason is recorded in `targets.md` — that is a gap.")
 
     def tally_table(self, tier_column: str = "Scope") -> str:
@@ -727,7 +730,7 @@ _SYMBOL_LATEX_FNS = None
 
 
 def _symbol_latex(text):
-    """Render ``text`` as an inline-LaTeX symbol via sympy, imported lazily once.
+    r"""Render ``text`` as an inline-LaTeX symbol via sympy, imported lazily once.
 
     sympy is a heavy import deliberately kept out of this module's import path (as are the other local imports here), so the ``(Symbol, latex)`` pair is cached on first use rather than re-imported per table row.
 
@@ -869,7 +872,7 @@ _PARAM_FLAGS = [("free", "free"), ("heterogeneous", "heterogeneous")]
 
 
 def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=None):
-    """One SymPy equation as LaTeX, with the derivative written the report's way.
+    r"""One SymPy equation as LaTeX, with the derivative written the report's way.
 
     Takes an already-parsed ``Eq`` — never a source string. Re-parsing an authored right-hand side needs a symbol vocabulary assembled by hand, and every symbol the assembler forgets (an event's name, a coupling term) turns into a silent fall-back to raw Python in the middle of the Methods section. ``Dynamics.get_equations()`` has already done that resolution against the model's own scope, so this only prints.
 
@@ -1258,11 +1261,9 @@ def model_families(experiments):
     """The experiments' models, grouped into families, each printed once.
 
     A **family** is one system: its first model is written out in full, and every later model in it contributes only its :func:`model_delta`, the way Jansen1995 §3.3 adds a flash stimulus by printing Eq. 18 alone instead of reprinting the six-equation column.
-    Two models share a family when they span the same state variables, which also settles the case a delta cannot: a model that introduces the *entire* state is not a variant but a second system — Pang2023's mass model against its wave field, Koller2024's
-    Jansen–Rit against its Kuramoto — and starts a family of its own, printed in full.
+    Two models share a family when they span the same state variables, which also settles the case a delta cannot: a model that introduces the *entire* state is not a variant but a second system — Pang2023's mass model against its wave field, Koller2024's Jansen–Rit against its Kuramoto — and starts a family of its own, printed in full.
 
-    Membership is tested by **subset-or-superset** of the family's first model, not by equality and not by mere overlap. Equality splits Jansen1995's delayed column off from the column it extends (it only adds ``z0``/``z1``); bare overlap goes wrong the other way and merges genuinely unrelated systems that happen to share auxiliary state —
-    Pang2023's wave field and its BEI mass model both carry the four Balloon–Windkessel haemodynamic variables, and overlap presented the mass model, which the paper never even deposited, as a *variant* of the wave field.
+    Membership is tested by **subset-or-superset** of the family's first model, not by equality and not by mere overlap. Equality splits Jansen1995's delayed column off from the column it extends (it only adds ``z0``/``z1``); bare overlap goes wrong the other way and merges genuinely unrelated systems that happen to share auxiliary state — Pang2023's wave field and its BEI mass model both carry the four Balloon–Windkessel haemodynamic variables, and overlap presented the mass model, which the paper never even deposited, as a *variant* of the wave field.
 
     Returns one namespace per family, in the order the experiments declare them, with ``label``, ``base`` and ``variants`` (each a namespace of ``model``, ``experiments`` and, for a variant, its ``delta`` against the base), plus the family's own ``experiments`` and ``shared_parameters`` — the parameter names every member defines, which are the only ones an experiment table can compare without leaving holes.
     """
@@ -1580,8 +1581,7 @@ _SAMPLING_SLOTS = (
 def pipeline_text(pipeline):
     """A pipeline as arrow-separated step names.
 
-    A step is named by what the recipe *calls* it, not by the library function it happens to dispatch to. Reading ``callable`` first printed Deco2014's five-step
-    BOLD pipeline as ``? → ? → fftconvolve → ? → ?`` — every step declares a ``name`` and only the convolution also names an implementation, so the one step that resolved showed a scipy entry point where the reader wanted "convolve".
+    A step is named by what the recipe *calls* it, not by the library function it happens to dispatch to. Reading ``callable`` first printed Deco2014's five-step BOLD pipeline as ``? → ? → fftconvolve → ? → ?`` — every step declares a ``name`` and only the convolution also names an implementation, so the one step that resolved showed a scipy entry point where the reader wanted "convolve".
     """
     steps = pipeline if isinstance(pipeline, (list, tuple)) else ([pipeline] if pipeline else [])
     names = [
@@ -1701,7 +1701,7 @@ def section_slug(text):
 
 
 class Equations:
-    """Numbering and cross-reference labels for one rendered report.
+    r"""Numbering and cross-reference labels for one rendered report.
 
     A report that prints ``$$...$$`` and nothing else cannot be referred to: Jansen1995 numbers 19 equations and its prose says "Eq. 3" and "Eqs. 15-17", and our render had no way to point at any of them. This assigns each equation a display number and, where the target format supports one, an anchor.
 
@@ -1765,8 +1765,7 @@ _DISPLAY_MATH = re.compile(r"\$\$(.+?)\$\$", re.S)
 def unrendered_equations(source):
     """Display equations written by hand in a report body, as ``(line, equation)``.
 
-    An equation belongs in a report only if the code runs it, and it gets there by being rendered from the recipe — never typed. A typed one can drift from what executes, and the reader has no way to tell which they are looking at. Pang2023 carried the paper's
-    PDE, hand-set, above a section explaining that TVBO does not integrate that PDE.
+    An equation belongs in a report only if the code runs it, and it gets there by being rendered from the recipe — never typed. A typed one can drift from what executes, and the reader has no way to tell which they are looking at. Pang2023 carried the paper's PDE, hand-set, above a section explaining that TVBO does not integrate that PDE.
 
     Executable cells are stripped first, so equations that :meth:`SimulationStudy.report` emits are not flagged: the check is for ``$$…$$`` typed into the prose.
 
@@ -1819,11 +1818,9 @@ def captioned(table, caption, anchor, format="markdown", anchors=None):
 def variant_parameter_table(family):
     """One table of every parameter the family's variants change, not one table each.
 
-    A study that varies a model across many experiments produces many two-row deltas —
-    Mongillo2008 emitted twenty-one of them — and a page of two-row tables is not a readable Methods section. Collapsing them keeps the same information in one grid, and the *Variant* column carries what the separate captions used to.
+    A study that varies a model across many experiments produces many two-row deltas — Mongillo2008 emitted twenty-one of them — and a page of two-row tables is not a readable Methods section. Collapsing them keeps the same information in one grid, and the *Variant* column carries what the separate captions used to.
 
-    With only one variant that column has one value, repeated down the page to say what the sentence introducing the variant said a line earlier. It is left blank so
-    :func:`md_table` drops it, which is also what stops a long model label from taking a third of the table's width.
+    With only one variant that column has one value, repeated down the page to say what the sentence introducing the variant said a line earlier. It is left blank so :func:`md_table` drops it, which is also what stops a long model label from taking a third of the table's width.
     """
     contributors = [e for e in family.variants if e.delta.params]
     rows = []
@@ -1841,8 +1838,7 @@ def variant_parameter_table(family):
 
 
 def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
-    """
-    Generate a report of parameter settings.
+    """Generate a report of parameter settings.
 
     Parameters
     ----------
@@ -1855,17 +1851,16 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
     **kwargs :
         Additional keyword arguments.
 
-    Returns
+    Returns:
     -------
     pandas.DataFrame or str
         Report table if format is 'pandas', LaTeX string if format is 'latex', or markdown string if format is 'markdown'.
 
-    Raises
+    Raises:
     ------
     ValueError
         If the provided format is not recognized.
     """
-
     short_caption = "Parameter values for the {} model*.".format(param_setting.model.label.first().replace("_", "-"))
 
     long_caption = short_caption + " " + "UID is the unique identifier of the parameter in the ontology."
@@ -1909,22 +1904,21 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
         md = report_table.style.format(decimal=".", thousands=",", precision=decimals).to_markdown()
         return md
     else:
-        raise ValueError("Unknown format: {}".format(format))
+        raise ValueError(f"Unknown format: {format}")
 
 
 def model_report():
-    """
-    Generate a report for the model.
+    """Generate a report for the model.
 
-    Returns
+    Returns:
     -------
-    None"""
+    None
+    """
     pass
 
 
 def save_latex(conf, fpath):
-    """
-    Save a LaTeX report to a file.
+    """Save a LaTeX report to a file.
 
     Parameters
     ----------
@@ -1933,9 +1927,10 @@ def save_latex(conf, fpath):
     fpath : str
         File path to save the LaTeX report.
 
-    Returns
+    Returns:
     -------
-    None"""
+    None
+    """
     with open(fpath, "w") as texfile:
         texfile.write(conf.get_report(format="latex"))
 

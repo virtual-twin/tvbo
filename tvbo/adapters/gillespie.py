@@ -1,7 +1,6 @@
 """Gillespie SSA backend — a finite-size stochastic realization of a mean-field rate model.
 
-Runs a relaxation-type rate model as a finite birth-death process (Gillespie 1977). The model must have one *activity* state variable ``X`` obeying a relaxation equation ``tau*X' = -X + F(state)`` (a leak ``-X`` toward a gain ``F``); any remaining state variables are treated as slow internal variables that evolve deterministically between events. The activity becomes a discrete count ``n ≈ Omega*X`` where ``Omega`` is the van
-Kampen system size (``execution.system_size``): the number of discrete units per unit of ``X``. The rate equation is read as
+Runs a relaxation-type rate model as a finite birth-death process (Gillespie 1977). The model must have one *activity* state variable ``X`` obeying a relaxation equation ``tau*X' = -X + F(state)`` (a leak ``-X`` toward a gain ``F``); any remaining state variables are treated as slow internal variables that evolve deterministically between events. The activity becomes a discrete count ``n ≈ Omega*X`` where ``Omega`` is the van Kampen system size (``execution.system_size``): the number of discrete units per unit of ``X``. The rate equation is read as
 
     birth propensity  a+ = Omega * F / tau        (the gain term)
     death propensity  a- = n / tau                (the leak term, since a- = Omega*X/tau)
@@ -67,6 +66,7 @@ class GillespieAdapter:
         return activity, sv_names, tau, birth_fn, slow_fns
 
     def run(self, **kwargs):
+        """Integrate the experiment with the Gillespie SSA and return the trajectory as an :class:`ExperimentResult`."""
         import xarray as xr
 
         from tvbo.data.types import ExperimentResult, SimulationResult

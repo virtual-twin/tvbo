@@ -8,7 +8,6 @@ import typer
 
 from . import _common
 
-
 app = typer.Typer(name="validate", no_args_is_help=True)
 
 
@@ -23,8 +22,7 @@ def schema(
 ) -> None:
     """Validate *path* against the shipped JSON Schema; auto-detects the target class.
 
-    Uses the lightweight ``jsonschema`` library against the pre-generated ``tvbo/datamodel/tvbo_datamodel.schema.json`` (produced from the LinkML schema at build time), so validation needs no runtime ``linkml``. The file is parsed with
-    TVBO's loader so ``!include``/merge-key extensions and slot aliases resolve exactly as they do when the model is loaded.
+    Uses the lightweight ``jsonschema`` library against the pre-generated ``tvbo/datamodel/tvbo_datamodel.schema.json`` (produced from the LinkML schema at build time), so validation needs no runtime ``linkml``. The file is parsed with TVBO's loader so ``!include``/merge-key extensions and slot aliases resolve exactly as they do when the model is loaded.
     """
     import json
 
@@ -155,7 +153,7 @@ def all_(
                 break
     if failures:
         typer.echo(f"\n{len(failures)} file(s) failed validation:", err=True)
-        for fp, msg in failures:
+        for fp, _msg in failures:
             typer.echo(f"  - {fp}", err=True)
         raise typer.Exit(code=1)
     typer.echo(f"\nOK — all {len(files)} files validated.")

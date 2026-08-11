@@ -2,15 +2,14 @@
 
 import pytest
 
-from tvbo.classes.experiment import SimulationExperiment
-from tvbo.classes.dynamics import Dynamics
 from tests.functional.simulation_backends_shared import (
+    _HAVE_JULIACALL,
     MODEL_FILES,
     MODEL_IDS,
-    _HAVE_JULIACALL,
     _assert_timeseries,
 )
-
+from tvbo.classes.dynamics import Dynamics
+from tvbo.classes.experiment import SimulationExperiment
 
 _JULIA_MODE_UNSUPPORTED = {
     "ReducedSetHindmarshRose": "mode-axis model: nd/mtk backends have no mode-axis state layout yet",

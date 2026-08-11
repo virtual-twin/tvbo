@@ -7,8 +7,7 @@ The functions here turn a TVB-O ``Network`` (nodes with ``size``, edges with a `
 * **connections** — the explicit cell-to-cell :class:`ConnectionRecord` set that a
   ``connectivity`` rule (``all_to_all``/``one_to_one``) lowers to, with self-connections filtered and per-connection ``weight``/``delay`` extracted.
 
-Everything here is independent of *how* a backend emits a synapse — that (LEMS XML,
-Brian2 ``Synapses``, …) stays in the backend adapter. The backend injects its own
+Everything here is independent of *how* a backend emits a synapse — that (LEMS XML, Brian2 ``Synapses``, …) stays in the backend adapter. The backend injects its own
 *role vocabulary* (which ``Dynamics`` are cells vs current sources vs event
 sources) so the same lowering serves NeuroML, Brian2 and the rest unchanged.
 """
@@ -18,7 +17,6 @@ from __future__ import annotations
 import re
 import warnings
 from typing import TypedDict
-
 
 # ── Identifiers ───────────────────────────────────────────────────────
 
@@ -154,8 +152,7 @@ def group_nodes_by_dynamics(nodes, default_dyn_name):
 def classify_node_role(dyn_name, dyn_lib_obj, vocab):
     """Classify a node group as a cell, current-input, or event-source.
 
-    The biological type is read from ``Dynamics.iri`` (``neuroml:<type>``); a
-    Dynamics without such an iri is a plain cell named by itself. *vocab* is the backend's role vocabulary — a mapping with ``current_input`` and ``event_source`` keys to sets of type names — so the same lowering serves any backend by swapping the sets.
+    The biological type is read from ``Dynamics.iri`` (``neuroml:<type>``); a Dynamics without such an iri is a plain cell named by itself. *vocab* is the backend's role vocabulary — a mapping with ``current_input`` and ``event_source`` keys to sets of type names — so the same lowering serves any backend by swapping the sets.
 
     Returns ``(role, nml_type)`` with role one of ``"cell"``, ``"current_input"``, ``"event_source"``.
     """

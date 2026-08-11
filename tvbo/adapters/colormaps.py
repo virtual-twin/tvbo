@@ -84,8 +84,7 @@ _CACHE: dict[str, object] = {}
 def resolve(name):
     """A declared colormap name as something the plotting backend accepts (public API).
 
-    A name the backend already knows is passed through untouched — matplotlib's and bsplot's own catalogues stay authoritative — so this only fills the gaps in
-    :data:`TABLES`. ``None`` passes through as ``None`` (the backend's default).
+    A name the backend already knows is passed through untouched — matplotlib's and bsplot's own catalogues stay authoritative — so this only fills the gaps in :data:`TABLES`. ``None`` passes through as ``None`` (the backend's default).
     """
     if name is None or str(name) not in TABLES:
         return name

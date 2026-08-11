@@ -5,8 +5,7 @@ Implements the cardinal HPC contract from §5.1 of ``dev/tvbo-cli.md``:
 * ``--engine slurm`` re-emits via :mod:`tvbo.cli.workflow` and submits
   through ``sbatch`` rather than running locally.
 * ``--container IMAGE`` re-execs the run inside the named OCI image
-  (Singularity if ``SINGULARITY_BIND`` is set in the environment, else
-  Docker).
+  (Singularity if ``SINGULARITY_BIND`` is set in the environment, else Docker).
 * ``--shard i/N`` runs one shard of the sweep in-process (no scheduler):
   cell index ``j`` runs iff ``j %% N == i``. This is what the generated sbatch script invokes for every array index.
 """
@@ -475,8 +474,7 @@ def _container_root(spec: str, out_dir: Path | None) -> Path:
 def _run_study_analyses(analyses, spec: str, out_dir: Path | None, *, stage: str) -> bool:
     """Execute one stage of a study's declarative ``analyses:``; True when the stage held.
 
-    Each writes ``<root>/results/<name>/result.h5`` — the container a figure layer or a later analysis binds with ``used: {analysis: <name>}``, at the root
-    :func:`_container_root` resolves for this run.
+    Each writes ``<root>/results/<name>/result.h5`` — the container a figure layer or a later analysis binds with ``used: {analysis: <name>}``, at the root :func:`_container_root` resolves for this run.
 
     A failure is only ever SWALLOWED when there are completed experiments to protect. The ``before`` stage raises — nothing has run yet, and an experiment may source the missing analysis. A ``named`` stage (``--analysis``) raises too: it ran no experiments, the analysis is the whole of what was asked for, and a warning there would exit zero on a job that produced nothing. Only the ``after`` stage reports and returns False, because the experiments already succeeded and must not be lost to a reduction; the figures that would read the missing container are then skipped rather than drawn from absent data.
     """
@@ -511,6 +509,7 @@ def _render_study_figures(study, spec: str, out_dir: Path | None) -> None:
     Reuses the exact ``tvbo figure render`` path (``figures.render_figures``), so the images and render scripts a one-command ``tvbo run`` produces are byte-identical to a follow-up ``tvbo figure render`` — the study run just fuses the two steps. ``base_dir`` is the study file's directory (the root each layer's ``used`` IRI resolves against, ``<base>/output/…``); figures land in ``<base>/figures`` to match the render command's default. A study with no ``figures:`` is a silent no-op. A render failure is reported but does not fail the run — the experiments already succeeded and their results are on disk.
     """
     from tvbo.utils import as_list
+
     from .figures import render_figures
 
     figs = as_list(getattr(study, "figures", None))
@@ -770,7 +769,7 @@ def _apply_max_iterations(experiment, n: int) -> None:
         else:
             cur = getattr(holder, "n_iterations", None)
             if isinstance(cur, int) and cur > n:
-                setattr(holder, "n_iterations", n)
+                holder.n_iterations = n
                 _capped += 1
 
     algos = getattr(experiment, "algorithms", None) or {}
@@ -783,7 +782,7 @@ def _apply_max_iterations(experiment, n: int) -> None:
     for opt in opts.values() if hasattr(opts, "values") else opts:
         cur = getattr(opt, "max_iterations", None)
         if isinstance(cur, int) and cur > n:
-            setattr(opt, "max_iterations", n)
+            opt.max_iterations = n
             _capped += 1
 
     _common.info(f"--max-iterations {n}: capped {_capped} iteration count(s)")
@@ -820,7 +819,7 @@ def _set_axis_parameter(experiment, parameter: str, value) -> None:
             entry = getattr(coll, name, None)
         if entry is None:
             return False
-        setattr(entry, "value", value)
+        entry.value = value
         return True
 
     if parameter.startswith("network."):

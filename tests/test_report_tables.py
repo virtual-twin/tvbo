@@ -20,7 +20,6 @@ from tvbo.utils.report import (
     report_figure,
 )
 
-
 DOC = """
 # Targets
 
@@ -54,7 +53,7 @@ def test_rows_are_keyed_by_header():
 
 
 def test_an_escaped_pipe_stays_inside_its_cell():
-    """`\\|` is how a markdown cell writes a pipe — splitting on it shifts every column."""
+    r"""`\\|` is how a markdown cell writes a pipe — splitting on it shifts every column."""
     row = read_md_tables(DOC)[0].rows[0]
     assert row["Target"] == "per-mode |r| above 0.99"
     assert row["Scope"] == "core"
@@ -231,6 +230,7 @@ def test_a_greyscale_scan_is_not_false_coloured(tmp_path):
     """A 2-D scan through `imshow` would come out viridis — a paper figure recoloured."""
     import matplotlib.image as mpimg
     import numpy as np
+
     from tvbo.utils.figure_compare import _pane_image
 
     grey = tmp_path / "scan.png"

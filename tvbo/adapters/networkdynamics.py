@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """NetworkDynamics.jl backend adapter for SimulationExperiment.
 
 Uses pyjulia (tvbo.adapters.julia) to execute generated Julia code and return full Julia objects alongside a TVBO TimeSeries.
@@ -225,7 +224,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
     def build_node_positions(
         self,
-        ts: "SimulationResult",
+        ts: SimulationResult,
         ctx: dict,
     ) -> np.ndarray:
         """Build ``(n_t, n_nodes, n_cv)`` position array from simulation data.
@@ -270,10 +269,10 @@ class NetworkDynamicsAdapter(BaseAdapter):
         template = templates.lookup.get_template("tvbo-nd-experiment.jl.mako")
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "ExperimentResult":
+    def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using NetworkDynamics.jl.
 
-        Returns
+        Returns:
         -------
         ExperimentResult
             Simulation results with named dimensions and coordinates.

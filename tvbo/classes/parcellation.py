@@ -1,20 +1,20 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # SPDX-License-Identifier: EUPL-1.2
 
+"""This module provides functions for loading and accessing parcellation data.
+
+Author: Leon Martin
 """
-This module provides functions for loading and accessing parcellation data.
 
-Author: Leon Martin"""
-
+import tempfile
 from typing import Any
+
 import requests
 from nibabel.loadsave import load as nib_load
-import tempfile
 
 
 def load_from_url(url: str) -> Any:
-    """
-    Load a NIFTI file from a given URL.
+    """Load a NIFTI file from a given URL.
 
     Args:
         url (str): The URL of the NIFTI file.

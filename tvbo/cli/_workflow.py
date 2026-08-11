@@ -6,8 +6,7 @@ Given a Study + Experiment + workflow spec + (resolved) backend, produce a :clas
 * which axes the workflow engine must fan out as wildcards / array tasks,
 * the resulting cell count, chunking, and per-cell command line.
 
-The planner is intentionally backend-aware. It consults
-:mod:`tvbo.cli._backends` (mirrored from ``ontology/tvb-o-axioms.ttl``) so the same ``study.yaml`` produces a *different* DAG when re-rendered against a different backend — exactly as §4.10.1 of ``dev/tvbo-cli.md`` requires.
+The planner is intentionally backend-aware. It consults :mod:`tvbo.cli._backends` (mirrored from ``ontology/tvb-o-axioms.ttl``) so the same ``study.yaml`` produces a *different* DAG when re-rendered against a different backend — exactly as §4.10.1 of ``dev/tvbo-cli.md`` requires.
 """
 
 from __future__ import annotations
@@ -15,13 +14,13 @@ from __future__ import annotations
 import os
 import re
 import shlex
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
 
 from ._backends import BackendSpec, axis_kind_of, resolve_backend
-
 
 # Canonical published tvbo image. CI (``.github/workflows/docker.yml``) pushes this on every ``main``/``dev`` commit, tagged ``:<branch>``, ``:<version>``, ``:<sha>`` and ``:latest`` (default branch), so a registry reference tracks the source rather than a local file that goes stale.
 DEFAULT_CONTAINER_IMAGE = "ghcr.io/virtual-twin/tvbo"
@@ -29,7 +28,9 @@ DEFAULT_CONTAINER_IMAGE = "ghcr.io/virtual-twin/tvbo"
 
 def _default_container_tag() -> str:
     """Tag matching the running CLI, so a kit pulls the image built from its source.
-    Overridable with ``TVBO_CONTAINER_TAG``."""
+
+    Overridable with ``TVBO_CONTAINER_TAG``.
+    """
     from tvbo import __version__
 
     return os.environ.get("TVBO_CONTAINER_TAG") or __version__
@@ -51,8 +52,7 @@ def default_container_ref() -> str:
 def resolve_container_ref(raw: Any) -> str | None:
     """Resolve a recipe's declared ``container`` into an engine-ready reference.
 
-    A concrete image — a local ``.sif``/``.simg`` path or a registry reference that already carries a ``:tag`` or ``@digest`` — passes through unchanged: the author pinned it. Anything that leaves the version open is filled in with
-    :func:`default_container_ref` so an unpinned reference pulls the version-matched image rather than failing to resolve:
+    A concrete image — a local ``.sif``/``.simg`` path or a registry reference that already carries a ``:tag`` or ``@digest`` — passes through unchanged: the author pinned it. Anything that leaves the version open is filled in with :func:`default_container_ref` so an unpinned reference pulls the version-matched image rather than failing to resolve:
 
     - the symbolic requests ``tvbo`` / ``default``;
     - a tvbo registry reference with no tag (``docker://…/tvbo``).
@@ -137,9 +137,7 @@ class WorkflowPlan:
     def container_exec_flags(self) -> str:
         """``container_binds``/``container_args`` as flags for an ``exec`` call.
 
-        Apptainer and Singularity share this command line, so the Slurm and
-        Nextflow emitters (which build the exec call themselves) and the
-        Snakemake emitter (which hands the same string to ``--apptainer-args``) render them identically. Empty when nothing is declared, so callers can concatenate unconditionally.
+        Apptainer and Singularity share this command line, so the Slurm and Nextflow emitters (which build the exec call themselves) and the Snakemake emitter (which hands the same string to ``--apptainer-args``) render them identically. Empty when nothing is declared, so callers can concatenate unconditionally.
 
         Each bind gets its own ``--bind`` rather than joining them with the comma separator: a comma is not escapable inside one ``--bind``, so a path containing one could not be expressed at all. Paths are shell-quoted because the Slurm emitters interpolate this straight into a command line, where an unquoted space would split one bind into two arguments.
         """
@@ -233,7 +231,7 @@ class WorkflowPlan:
 
         names = [ax.name for ax in self.workflow_axes]
         for combo in product(*(ax.values for ax in self.workflow_axes)):
-            yield dict(zip(names, combo))
+            yield dict(zip(names, combo, strict=True))
 
 
 # Sweep extraction
@@ -266,8 +264,7 @@ def _short_name(parameter: str) -> str:
 def extract_axes(experiment) -> list[SweepAxis]:
     """Collect every ExplorationAxis declared on *experiment*.
 
-    The axis kind is inferred from the parameter path (see
-    :func:`tvbo.cli._backends.axis_kind_of`); placement defaults to ``"auto"`` and is resolved by :func:`plan`.
+    The axis kind is inferred from the parameter path (see :func:`tvbo.cli._backends.axis_kind_of`); placement defaults to ``"auto"`` and is resolved by :func:`plan`.
     """
     explorations = getattr(experiment, "explorations", None) or {}
     if hasattr(explorations, "values"):
@@ -311,7 +308,7 @@ def extract_axes(experiment) -> list[SweepAxis]:
     return out
 
 
-def _dataset_subject_axis(experiment) -> "SweepAxis | None":
+def _dataset_subject_axis(experiment) -> SweepAxis | None:
     """A workflow-fanned ``subject`` axis when the experiment has a per-subject target.
 
     Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``);
@@ -507,15 +504,14 @@ def cell_out_relpath(ep: dict) -> str:
     if len(axes) == 1 and axes[0]["parameter"] == "dataset.active_subject":
         return "sub-" + _wildcard("subject") + "_" + stem + ".h5"
     if axes:
-        return "/".join("%s=%s" % (a["name"], _wildcard(a["name"])) for a in axes) + "/" + stem + ".h5"
+        return "/".join("{}={}".format(a["name"], _wildcard(a["name"])) for a in axes) + "/" + stem + ".h5"
     return stem + ".h5"
 
 
 def _cohort_result_files(experiment, subjects: list[str]) -> list[str]:
     """Canonical per-subject result filenames for an on_device cohort, one per subject.
 
-    Built through the same :func:`tvbo.adapters.bids.build_result_path` that
-    :meth:`ExperimentResult.save` writes through — the subject is injected as the ``_active_subject`` entity, exactly as the per-subject save does — so the rule's declared outputs cannot drift from the files the cohort job actually produces.
+    Built through the same :func:`tvbo.adapters.bids.build_result_path` that :meth:`ExperimentResult.save` writes through — the subject is injected as the ``_active_subject`` entity, exactly as the per-subject save does — so the rule's declared outputs cannot drift from the files the cohort job actually produces.
     """
     from tvbo.adapters.bids import build_result_path
 
@@ -544,7 +540,7 @@ def fan_expand_kwargs(ep: dict) -> str:
 
     The value lists (``EXP_<RULE>_<AXIS> = [...]``) are emitted at the top of the Snakefile, so any rule in the same Snakefile (including an ``include:``-d figure rule) can reference them to expand a fanned experiment's whole grid of cells.
     """
-    return ", ".join("%s=%s" % (a["name"], ep["rule_name"].upper() + "_" + a["name"].upper()) for a in ep["axes"])
+    return ", ".join("{}={}".format(a["name"], ep["rule_name"].upper() + "_" + a["name"].upper()) for a in ep["axes"])
 
 
 def fan_input_expr(ep: dict) -> str:
@@ -554,11 +550,11 @@ def fan_input_expr(ep: dict) -> str:
     """
     cohort = cohort_out_relpaths(ep)
     if cohort:
-        return "[" + ", ".join('f"{OUT_DIR}/%s/%s"' % (ep["key"], r) for r in cohort) + "]"
-    single = 'f"{OUT_DIR}/%s/%s"' % (ep["key"], cell_out_relpath(ep))
+        return "[" + ", ".join('f"{{OUT_DIR}}/{}/{}"'.format(ep["key"], r) for r in cohort) + "]"
+    single = 'f"{{OUT_DIR}}/{}/{}"'.format(ep["key"], cell_out_relpath(ep))
     if not ep["axes"]:
         return single
-    return "expand(%s, %s)" % (single, fan_expand_kwargs(ep))
+    return f"expand({single}, {fan_expand_kwargs(ep)})"
 
 
 def plan(
@@ -794,8 +790,7 @@ def plan(
 def workflow_config_from_spec(spec: dict) -> Any:
     """Rebuild a datamodel ``WorkflowConfig`` from the merged workflow spec dict.
 
-    Lets an emitted kit freeze the *effective* configuration (study < experiment
-    < ``--set``) into its spec, so the spec re-emits identically without the flags being re-supplied — full, self-contained provenance. Returns ``None`` when the spec carries no workflow settings.
+    Lets an emitted kit freeze the *effective* configuration (study < experiment < ``--set``) into its spec, so the spec re-emits identically without the flags being re-supplied — full, self-contained provenance. Returns ``None`` when the spec carries no workflow settings.
     """
     from tvbo import datamodel as dm
 
@@ -901,4 +896,5 @@ def _plainify(obj):
     return obj
 
 
-from tvbo.utils import deep_merge as _deep_merge, as_list as _as_list  # noqa: E402  (late-imported shared utils)
+from tvbo.utils import as_list as _as_list
+from tvbo.utils import deep_merge as _deep_merge  # noqa: E402  (late-imported shared utils)

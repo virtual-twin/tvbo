@@ -1,7 +1,8 @@
 """Test tvboptim experiment execution for all experiments in database/experiments."""
 
-import pytest
 import os
+
+import pytest
 
 pytest.importorskip("tvboptim", reason="tvboptim not installed")
 

@@ -59,7 +59,8 @@ def load_atlas_entities(atlas_dir: Path, seg: str, scale: str) -> list[dict] | N
 def extract_functional_network(region_name: str) -> str:
     """Extract ``{hemi}_{network}`` from a Schaefer region name.
 
-    ``"17Networks_LH_VisCent_1"`` → ``"LH_VisCent"``"""
+    ``"17Networks_LH_VisCent_1"`` → ``"LH_VisCent"``
+    """
     parts = region_name.split("_")
     return f"{parts[1]}_{parts[2]}"
 
@@ -126,7 +127,7 @@ def backfill_one(yaml_path: Path, atlas_dir: Path, dry_run: bool) -> dict[str, i
     # ── 1. Fix node labels and positions ──────────────────────────────
     yaml_changed = False
 
-    for node, entity in zip(nodes, atlas_entities):
+    for node, entity in zip(nodes, atlas_entities, strict=True):
         new_label = entity["name"]
         if node.get("label") != new_label:
             node["label"] = new_label

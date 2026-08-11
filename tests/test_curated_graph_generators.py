@@ -161,8 +161,7 @@ def test_overriding_the_weights_leaves_the_sparsity_pattern_untouched():
 def test_a_degenerate_draw_is_rejected_rather_than_returned_as_nan():
     """Every edge masked out => spectral radius 0 => a divide the DAG cannot survive.
 
-    The all-NaN matrix it would otherwise produce simulates happily and only surfaces as
-    NaN trajectories much later, with nothing pointing back at the connectome.
+    The all-NaN matrix it would otherwise produce simulates happily and only surfaces as NaN trajectories much later, with nothing pointing back at the connectome.
     """
     with pytest.raises(ProceduralError, match="NaN"):
         random_reservoir(n_nodes=3, sparsity=0.0, spectral_radius=0.9, seed=1)

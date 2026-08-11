@@ -15,8 +15,8 @@ Conventions match ``tests/functional/test_simulation_backends_*.py`` and ``simul
 import numpy as np
 import pytest
 
-from tvbo import Coupling, Dynamics, Network, Observation, SimulationExperiment
 from tests.functional.simulation_backends_shared import _HAVE_TVB, _HAVE_TVBOPTIM
+from tvbo import Coupling, Dynamics, Network, Observation, SimulationExperiment
 
 # ``Bold_TVB`` monitor period. Read from the DB so the expected sample count is derived from the same declarative source the backends consume, not a magic number.
 _BOLD_TR = Observation.from_db("Bold_TVB").parameters["TR"].value  # 720.0 ms

@@ -12,7 +12,6 @@ import pathlib
 import sys
 
 import yaml
-
 from _bib import DEFAULT_BIBS, load_bib_records
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]

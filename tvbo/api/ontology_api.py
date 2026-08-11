@@ -11,9 +11,8 @@ from sympy import latex, symbols
 
 import tvbo.data.db as db
 from tvbo.classes.experiment import SimulationExperiment
-from tvbo.ontology import graph
+from tvbo.ontology import graph, query
 from tvbo.ontology import owl as ontology
-from tvbo.ontology import query
 
 G = graph.onto2graph(storid=True)
 onto = ontology.onto
@@ -35,8 +34,7 @@ def uid2int(uid):
 def label2symbol(node, delimiter=""):
     """Render an ontology node's symbol as LaTeX, falling back to its label.
 
-    If the node carries a non-empty `symbol` annotation, it is parsed with
-    SymPy and rendered as LaTeX, optionally wrapped in `delimiter` on either side. Otherwise the node's suffix-stripped label is returned.
+    If the node carries a non-empty `symbol` annotation, it is parsed with SymPy and rendered as LaTeX, optionally wrapped in `delimiter` on either side. Otherwise the node's suffix-stripped label is returned.
 
     Args:
         node: Ontology class or individual to render.
@@ -198,7 +196,6 @@ class OntologyAPI:
         Args:
             node_id: Storid of the node whose parents to add.
         """
-
         for s_id in G.predecessors(node_id):
             self.nodes.update({s_id: ontoclass2dict(onto.world._get_by_storid(s_id))})
 
@@ -263,8 +260,8 @@ class OntologyAPI:
                 }
                 ```
         """
-        from tvbo.classes.dynamics import Dynamics
         from tvbo.classes.coupling import Coupling
+        from tvbo.classes.dynamics import Dynamics
 
         md = dict(metadata)  # a shallow copy, so the caller's dict is not mutated
 
@@ -323,6 +320,7 @@ class OntologyAPI:
             `{"format", "files"}` naming what was written.
         """
         from pathlib import Path
+
         from tvbo import export as _export
 
         fmt = _export.resolve(format)

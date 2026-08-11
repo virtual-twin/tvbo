@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-Comprehensive comparison between schema-driven BOLD and TVB native implementation.
+"""Comprehensive comparison between schema-driven BOLD and TVB native implementation.
+
 Tests that our corrected HRF (time-reversed) produces the same results as TVB.
 """
 
@@ -9,20 +9,21 @@ import pytest
 pytest.importorskip("tvb")
 
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from linkml_runtime.loaders import yaml_loader
-from tvbo.datamodel.schema import Observation
-from tvbo.data.types import TimeSeries
-from mako.template import Template
 from mako.lookup import TemplateLookup
-
-from tvb.simulator import simulator, models, monitors, coupling, integrators
+from mako.template import Template
 from tvb.datatypes import connectivity, equations
+from tvb.simulator import coupling, integrators, models, monitors, simulator
+
+from tvbo.data.types import TimeSeries
+from tvbo.datamodel.schema import Observation
 
 
 def setup_tvb_simulator():

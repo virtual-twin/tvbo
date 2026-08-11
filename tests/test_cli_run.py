@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -175,7 +175,7 @@ def test_pin_leaves_other_axes_sweeping():
     )
     run_cli._apply_axis_pins(exp, ["Osc.a=0.5"])
     assert exp.dynamics.parameters["a"].value == 0.5
-    remaining = list((exp.explorations["g"].space or {}))
+    remaining = list(exp.explorations["g"].space or {})
     assert remaining and all("Osc.a" not in str(getattr(exp.explorations["g"].space[k], "parameter", k)) for k in remaining)
 
 

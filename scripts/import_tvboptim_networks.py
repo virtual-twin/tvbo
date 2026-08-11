@@ -10,8 +10,9 @@ tvboptim dk_average contains average structural and functional connectivity matr
 Coordinates are sourced from the existing 87-node dTOR DK network via abbreviation → FreeSurfer label mapping.
 """
 
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 from tvbo import Network, database_path
 from tvbo.datamodel import tvbo_datamodel

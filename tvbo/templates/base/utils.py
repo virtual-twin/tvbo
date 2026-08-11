@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Utilities for base templates.
+"""Utilities for base templates.
 
 Extracts Python logic from Mako templates for cleaner, testable code.
 """
@@ -84,7 +82,7 @@ def time_series_inputs(candidates, body):
 
 
 def retime(body, inputs):
-    """Rewrite *body* to read the time axis, substituting ``t_<name>`` for each input.
+    r"""Rewrite *body* to read the time axis, substituting ``t_<name>`` for each input.
 
     ``apply_on_dimension: time`` applies the same expression to the time vector, so the sample symbols swap for their time counterparts.
 
@@ -126,7 +124,7 @@ def model_expressions(model):
 
 
 def coupling_bindings(model, coupling, incoming=(), local=()):
-    """Resolve which names a coupling's ``pre``/``post`` bodies must bind, and to what.
+    r"""Resolve which names a coupling's ``pre``/``post`` bodies must bind, and to what.
 
     A coupling expression may name a source state three ways, and they are distinct references, not spellings of one:
 
@@ -380,8 +378,7 @@ _BINDINGS_CACHE: dict[str, dict] = {}
 def _load_bindings(gtype: str) -> dict:
     """Load (and cache) the `bindings:` block of a generator's database entry.
 
-    Returns a dict mapping backend name → {callable, args, ...}. Raises
-    ValueError if the generator type is not found in the database.
+    Returns a dict mapping backend name → {callable, args, ...}. Raises ValueError if the generator type is not found in the database.
     """
     if gtype in _BINDINGS_CACHE:
         return _BINDINGS_CACHE[gtype]

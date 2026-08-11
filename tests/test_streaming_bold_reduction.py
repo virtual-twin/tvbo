@@ -149,8 +149,10 @@ def _emit_reducer(red, kernel):
 
 
 def _reference_bold(data_col, warm, kernel, ds, tr, k_1, V_0):
-    """From-scratch SubSampling BOLD (the decimation ``streaming_hrf_bold`` requires):
-    ring = downsampled transient fitted to one kernel length; 'valid' HRF convolution of concat(ring, downsampled data); Volterra scaling; sample at every TR boundary."""
+    """From-scratch SubSampling BOLD, the decimation ``streaming_hrf_bold`` requires.
+
+    Ring = downsampled transient fitted to one kernel length; 'valid' HRF convolution of concat(ring, downsampled data); Volterra scaling; sample at every TR boundary.
+    """
     K, n = kernel.shape[0], data_col.shape[-1]
     ds_data = data_col[ds - 1 :: ds]
     if warm is None:

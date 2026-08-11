@@ -66,7 +66,7 @@ def test_bundle_selects_variant_and_payload(cohort: Path):
     manifest = exp.dataset_bundle_files()
 
     assert set(manifest) == {"100206", "100307"}
-    for subj, files in manifest.items():
+    for files in manifest.values():
         names = sorted(f.name for f in files)
         # exactly the HCPMMP1 sidecar + its payload — no Schaefer decoy, no work/ noise
         assert any(n.endswith(".yaml") and "atlas-HCPMMP1" in n for n in names)

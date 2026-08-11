@@ -25,7 +25,6 @@ Flexible layout/style, all via ``plot(...)`` keywords:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
@@ -39,7 +38,7 @@ class Population:
 
     name: str
     sign: str = "excitatory"
-    label: Optional[str] = None
+    label: str | None = None
 
     def __post_init__(self):
         if self.label is None:
@@ -48,16 +47,18 @@ class Population:
 
 @dataclass
 class Connection:
-    """Directed connection ``source → target``. ``synapse`` (NMDA/AMPA/GABA) sets colour;
-    ``sign`` (``excitatory`` ▶ / ``inhibitory`` ●) sets the terminal; ``scope`` is ``"local"`` (within an area) or ``"long_range"`` (between adjacent areas). ``recurrent`` (self-loop) is inferred from ``source == target`` when omitted."""
+    """Directed connection ``source → target``.
+
+    ``synapse`` (NMDA/AMPA/GABA) sets colour; ``sign`` (``excitatory`` ▶ / ``inhibitory`` ●) sets the terminal; ``scope`` is ``"local"`` (within an area) or ``"long_range"`` (between adjacent areas). ``recurrent`` (self-loop) is inferred from ``source == target`` when omitted.
+    """
 
     source: str
     target: str
-    synapse: Optional[str] = None
+    synapse: str | None = None
     sign: str = "excitatory"
     scope: str = "local"
-    label: Optional[str] = None
-    recurrent: Optional[bool] = None
+    label: str | None = None
+    recurrent: bool | None = None
 
     def __post_init__(self):
         if self.recurrent is None:
@@ -65,7 +66,7 @@ class Connection:
 
 
 # Model-derived connection recovery (from a tvbo Dynamics)
-def _synapse_from_symbol(name: str) -> Optional[str]:
+def _synapse_from_symbol(name: str) -> str | None:
     up = name.upper()
     for tag in ("NMDA", "AMPA", "GABA", "GLUT"):
         if tag in up:
@@ -273,10 +274,14 @@ class PopulationSchematic:
         cls,
         dynamics,
         n_areas: int = 1,
-        long_range_synapse: Optional[str] = "AMPA",
-        synapse_map: Optional[dict] = None,
+        long_range_synapse: str | None = "AMPA",
+        synapse_map: dict | None = None,
         coupling_symbols=("c_glob", "coupling", "gx", "local_coupling"),
     ):
+        """Derive the schematic from a :class:`Dynamics`, reading populations off its state variables and connections off its equations.
+
+        *coupling_symbols* names the symbols that mark a long-range input, which becomes a connection carrying *long_range_synapse*; *synapse_map* overrides the synapse inferred for a given connection.
+        """
         pops, conns = _derive_from_dynamics(dynamics, coupling_symbols, long_range_synapse, synapse_map)
         return cls(pops, conns, n_areas=n_areas)
 
@@ -326,6 +331,7 @@ class PopulationSchematic:
         When ``ellipsis``, adds a left/right ``…`` placeholder to every rank as its OWN column (aligned across ranks), so the ellipsis reserves layout space instead of being painted over the edges, and the real areas pack toward the centre.
         """
         import json
+
         from graphviz import Digraph
 
         nodes, edges, meta, loops, ranks = self._nodes_edges(layout, hide)
@@ -347,7 +353,7 @@ class PopulationSchematic:
                 for n in row:
                     s.node(n)
                 # heavy invisible chain fixes the left→right order inside the rank
-                for a, b in zip(row, row[1:]):
+                for a, b in zip(row, row[1:], strict=False):
                     s.edge(a, b, style="invis", weight="50")
         for ri in range(len(ranks) - 1):  # align the … columns vertically
             g.edge(f"dotL{ri}", f"dotL{ri + 1}", style="invis")

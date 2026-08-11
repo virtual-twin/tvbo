@@ -1,14 +1,9 @@
-#
-# Module: style.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """House style for generated source, one formatter per output language.
 
-Generated code is read, reviewed and attached to papers, so it is held to the same bar as the rest of tvbo. Every backend declares the language it emits (:attr:`~tvbo.export.registry.ExportFormat.language`) and
-:func:`tvbo.export.registry.render` routes the assembled source through the matching formatter here — once, centrally, rather than each renderer remembering to do it.
+Generated code is read, reviewed and attached to papers, so it is held to the same bar as the rest of tvbo. Every backend declares the language it emits (:attr:`~tvbo.export.registry.ExportFormat.language`) and :func:`tvbo.export.registry.render` routes the assembled source through the matching formatter here — once, centrally, rather than each renderer remembering to do it.
 
 The gate is deliberately a *parse* gate, not only a cosmetic one. Source that a formatter cannot parse is source tvbo would have handed the user as a runnable program, and it fails at import with a worse message than the one raised here. So ``python`` and ``xml`` raise :class:`GeneratedSourceError` rather than passing the text through: an emitter that produces unparseable output has a bug, and silence is what let one live in the JAX templates.
 
@@ -38,7 +33,7 @@ class GeneratedSourceError(ValueError):
 
 
 def normalize(code: str) -> str:
-    """Apply the language-independent house rules to *code*.
+    r"""Apply the language-independent house rules to *code*.
 
     Converts line endings to ``\\n``, strips trailing whitespace from every line, collapses runs of blank lines to at most two, drops leading blank lines, and ends the text with exactly one newline.
     """

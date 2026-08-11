@@ -1,14 +1,7 @@
-#
-# Module: function.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
 
-"""
-Function Classes
-================
+"""Function Classes.
 
 Extended Function and LossFunction classes with code generation methods.
 Inherits from the LinkML datamodel and adds rendering/execution capabilities.
@@ -36,11 +29,10 @@ From datamodel object:
 """
 
 import os
-from typing import Callable, Dict, List, Optional
-
-from tvbo.utils import yaml_loader
+from collections.abc import Callable
 
 from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo.utils import yaml_loader
 
 
 class Function(tvbo_datamodel.Function):
@@ -77,8 +69,8 @@ class Function(tvbo_datamodel.Function):
     def render_code(
         self,
         format: str = "jax",
-        user_functions: Optional[Dict[str, str]] = None,
-        render_func: Optional[Callable] = None,
+        user_functions: dict[str, str] | None = None,
+        render_func: Callable | None = None,
     ) -> str:
         """Generate Python code for this function.
 
@@ -92,12 +84,12 @@ class Function(tvbo_datamodel.Function):
         render_func : callable, optional
             Custom render function for model context.
 
-        Returns
+        Returns:
         -------
         str
             Python code string defining the function
 
-        Examples
+        Examples:
         --------
         >>> func = Function.from_string(yaml_str)
         >>> print(func.render_code())
@@ -130,8 +122,8 @@ class Function(tvbo_datamodel.Function):
     def to_callable(
         self,
         format: str = "jax",
-        user_functions: Optional[Dict[str, str]] = None,
-        namespace: Optional[Dict] = None,
+        user_functions: dict[str, str] | None = None,
+        namespace: dict | None = None,
     ) -> Callable:
         """Generate and execute function code, returning the callable.
 
@@ -144,17 +136,18 @@ class Function(tvbo_datamodel.Function):
         namespace : dict, optional
             Namespace for exec(). If None, creates one with jnp/np imports.
 
-        Returns
+        Returns:
         -------
         callable
             The generated function as a callable
 
-        Examples
+        Examples:
         --------
         >>> func = Function.from_string(sigmoid_yaml)
         >>> sigmoid = func.to_callable()
         >>> sigmoid(0.0)
-        0.5"""
+        0.5
+        """
         # Lazy import to avoid circular dependency
         from tvbo.codegen.functions import function_to_callable
 
@@ -226,8 +219,8 @@ class LossFunction(tvbo_datamodel.LossFunction):
     def render_code(
         self,
         format: str = "jax",
-        user_functions: Optional[Dict[str, str]] = None,
-        inner_func_names: Optional[List[str]] = None,
+        user_functions: dict[str, str] | None = None,
+        inner_func_names: list[str] | None = None,
     ) -> str:
         """Generate Python code for this loss function with aggregation.
 
@@ -241,12 +234,12 @@ class LossFunction(tvbo_datamodel.LossFunction):
             Names of inner functions that should be recognized.
             Example: ['correlation'] for "1 - correlation(x, y)"
 
-        Returns
+        Returns:
         -------
         str
             Python code string defining the loss function
 
-        Examples
+        Examples:
         --------
         >>> loss = LossFunction.from_string(loss_yaml)
         >>> print(loss.render_code(inner_func_names=['correlation']))
@@ -278,9 +271,9 @@ class LossFunction(tvbo_datamodel.LossFunction):
     def to_callable(
         self,
         format: str = "jax",
-        user_functions: Optional[Dict[str, str]] = None,
-        inner_func_names: Optional[List[str]] = None,
-        namespace: Optional[Dict] = None,
+        user_functions: dict[str, str] | None = None,
+        inner_func_names: list[str] | None = None,
+        namespace: dict | None = None,
     ) -> Callable:
         """Generate and execute loss function code, returning the callable.
 
@@ -295,7 +288,7 @@ class LossFunction(tvbo_datamodel.LossFunction):
         namespace : dict, optional
             Namespace for exec(). If None, creates one with jnp/np/jax imports.
 
-        Returns
+        Returns:
         -------
         callable
             The generated loss function as a callable
@@ -357,7 +350,7 @@ class LossFunction(tvbo_datamodel.LossFunction):
         return latex(expr)
 
     @property
-    def aggregation_type(self) -> Optional[str]:
+    def aggregation_type(self) -> str | None:
         """Return the aggregation type as a string (e.g., 'mean', 'sum')."""
         if not self.aggregate or not self.aggregate.type:
             return None
@@ -365,7 +358,7 @@ class LossFunction(tvbo_datamodel.LossFunction):
         return getattr(agg_type, "text", str(agg_type))
 
     @property
-    def aggregation_dimension(self) -> Optional[str]:
+    def aggregation_dimension(self) -> str | None:
         """Return the aggregation dimension as a string (e.g., 'node')."""
         if not self.aggregate or not self.aggregate.over:
             return None

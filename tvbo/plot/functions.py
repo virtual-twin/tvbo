@@ -1,25 +1,22 @@
-#
-# Module: functions.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Plotting helpers for coupling functions and temporal equations.
 
 Renders TVBO ontology entities and SymPy expressions as matplotlib figures:
 `plot_coupling_function` draws a `CouplingFunction`'s response curve (2-D or 3-D depending on the number of free symbols), and `plot_temporal_equation` draws a temporal equation over a time vector. Both substitute the curated default parameters from the ontology before evaluating.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 import owlready2 as owl
 from sympy import lambdify, latex, symbols
 
-from tvbo.ontology import owl as ontology, config  # Assuming this module handles your equations
 from tvbo.classes import equation as equations
+from tvbo.ontology import config
+from tvbo.ontology import owl as ontology  # Assuming this module handles your equations
 
 
 def plot_coupling_function(CF: Any, ax: Any = None):
@@ -123,7 +120,7 @@ def plot_temporal_equation(
     EQ: Any,
     t_ms: Any,
     title: str = "Stimulation pulse sequence",
-    plot_kwargs: Optional[dict] = None,
+    plot_kwargs: dict | None = None,
     ax: Any = None,
     **kwargs: Any,
 ):

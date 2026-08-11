@@ -21,14 +21,12 @@ Special-point labels are normalised to canonical short codes (``LP``, ``HB``, ``
 
 from __future__ import annotations
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sympy import parse_expr, pycode, symbols
 
 from tvbo.classes import equation as equations  # for VOI parsing consistency
-
 
 # ── Publication-quality colour palette (tvbo viridis cycle) ──
 _C = {
@@ -326,7 +324,7 @@ def _format_3d_axes(ax):
     ax.tick_params(axis="both", which="major", labelsize=7, length=3, width=0.6, pad=2, colors="#333333")
 
     # Label styling
-    for setter in [ax.set_xlabel, ax.set_ylabel, ax.set_zlabel]:
+    for _setter in [ax.set_xlabel, ax.set_ylabel, ax.set_zlabel]:
         pass  # labels set by caller; just ensure consistency
 
 
@@ -427,7 +425,7 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
     state_var_index : dict, optional
         Mapping from state variable names to indices in 'x' column (legacy)
 
-    Returns
+    Returns:
     -------
     pd.Series
         Computed VOI values
@@ -458,8 +456,7 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
 class BifurcationResult:
     """Backend-agnostic bifurcation result.
 
-    A single ``BifurcationResult`` represents one continuation branch (equilibrium, periodic orbit, or codim-2 curve) regardless of the backend that produced it (BifurcationKit.jl, PyRates/PyCoBi,
-    AUTO-07p/numcont). Once the data lives in ``self.df`` and the nested ``periodic_orbits`` / ``codim2_curves`` lists, *all* plotting, legend, and export methods (``plot``, ``plot_3d``, ``bif_legend``, ``enable_picker``, ...) work uniformly across backends.
+    A single ``BifurcationResult`` represents one continuation branch (equilibrium, periodic orbit, or codim-2 curve) regardless of the backend that produced it (BifurcationKit.jl, PyRates/PyCoBi, AUTO-07p/numcont). Once the data lives in ``self.df`` and the nested ``periodic_orbits`` / ``codim2_curves`` lists, *all* plotting, legend, and export methods (``plot``, ``plot_3d``, ``bif_legend``, ``enable_picker``, ...) work uniformly across backends.
 
     There are *no* backend-specific result subclasses. Each adapter extracts a unified DataFrame and either calls the constructor directly with ``df=...`` or one of the factory shortcuts:
 
@@ -470,8 +467,7 @@ class BifurcationResult:
     * ``BifurcationResult.from_auto(bd, ...)`` — in-tree AUTO-07p
       ``bifDiag`` (numcont backend).
 
-    All visual differences between backends are encoded in the unified
-    :data:`BIF_STYLES` registry, not in subclasses.
+    All visual differences between backends are encoded in the unified :data:`BIF_STYLES` registry, not in subclasses.
     """
 
     def __init__(self, br=None, *, df=None, **kwargs):
@@ -995,7 +991,7 @@ class BifurcationResult:
         n_samples : int
             Number of orbits to sample evenly across the branch.
 
-        Returns
+        Returns:
         -------
         list[dict]
             Each dict has keys: ``param`` (float), state variable names
@@ -1230,7 +1226,7 @@ class BifurcationResult:
             )
 
             if "specialpoint" in c2.df.columns:
-                for i, r in c2.df[c2.df["specialpoint"].notna()].iterrows():
+                for _i, r in c2.df[c2.df["specialpoint"].notna()].iterrows():
                     sp_raw = str(r.specialpoint).lower()
                     for sp in sp_raw.split(","):
                         sp = sp.strip()
@@ -1439,7 +1435,7 @@ class BifurcationResult:
 
             # Contiguous stability segments
             seg_breaks = np.concatenate([[0], np.where(np.diff(stab_arr.astype(int)) != 0)[0] + 1, [n_orb]])
-            for s_start, s_end in zip(seg_breaks[:-1], seg_breaks[1:]):
+            for s_start, s_end in zip(seg_breaks[:-1], seg_breaks[1:], strict=True):
                 if s_end - s_start < 2:
                     continue
                 seg_stable = bool(stab_arr[s_start])
@@ -1740,8 +1736,7 @@ class BifurcationResult:
     ):
         """Animate ``dynamics`` alongside this 3D bifurcation diagram.
 
-        For each value of ``parameter`` a left panel re-renders a ``Dynamics`` plot (``kind`` forwarded to :func:`plot_dynamics`, defaults to ``"phaseplane"``), while a right panel shows
-        :meth:`plot_3d` once with a moving marker that tracks the current parameter value on the equilibrium backbone.
+        For each value of ``parameter`` a left panel re-renders a ``Dynamics`` plot (``kind`` forwarded to :func:`plot_dynamics`, defaults to ``"phaseplane"``), while a right panel shows :meth:`plot_3d` once with a moving marker that tracks the current parameter value on the equilibrium backbone.
 
         Parameters
         ----------
@@ -1786,11 +1781,14 @@ class BifurcationResult:
         orbit_kwargs : dict, optional
             Style overrides for the phase-plane periodic-orbit circle.
 
-        Returns
+        Returns:
         -------
-        matplotlib.animation.FuncAnimation"""
+        matplotlib.animation.FuncAnimation
+        """
         import copy
+
         from matplotlib.animation import FuncAnimation
+
         from tvbo.plot.dynamics import plot_dynamics
 
         values = list(values)

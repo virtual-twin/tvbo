@@ -106,8 +106,7 @@ def test_number_of_regions_is_accepted():
 
 
 def test_scalar_shortcut_lifts_an_array_literal():
-    """``sel: {time: [0.006, 0.016]}`` is a coordinate LIST, and the slot it lifts into holds arrays as well as scalars. Lifting only scalars left the list to be built as an
-    Argument positionally, where it landed in ``description`` and the selection silently vanished — a sourced argument then arrived unsliced."""
+    """``sel: {time: [0.006, 0.016]}`` is a coordinate LIST, and the slot it lifts into holds arrays as well as scalars. Lifting only scalars left the list to be built as an Argument positionally, where it landed in ``description`` and the selection silently vanished — a sourced argument then arrived unsliced."""
     from tvbo.datamodel.schema import DataRef
 
     ref = DataRef(experiment="1", output="integration", sel={"variable": "phi", "time": [0.006, 0.016]})

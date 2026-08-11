@@ -1,26 +1,26 @@
 """Functional tests for NeuroML/LEMS backend.
 
 Tests:
-  1. Render every TVBO database model as LEMS (Dynamics.render_code('lems')) 2. Render every TVBO database model as full experiment (SimulationExperiment.render('lems')) 3. Render NeuroML canonical example experiments from YAML 4. Split-file export (dynamics / network / simulation) 5. PyLEMS validation (where possible)"""
+  1. Render every TVBO database model as LEMS (Dynamics.render_code('lems')) 2. Render every TVBO database model as full experiment (SimulationExperiment.render('lems')) 3. Render NeuroML canonical example experiments from YAML 4. Split-file export (dynamics / network / simulation) 5. PyLEMS validation (where possible)
+"""
 
 from pathlib import Path
 
 import pytest
 
+from tests.functional.simulation_backends_shared import (
+    _HAVE_BRIAN2,
+    _HAVE_EDEN,
+    _HAVE_LEMS,
+    _HAVE_NETPYNE,
+    _HAVE_NEUROML,
+    _HAVE_NEURON,
+    MODEL_FILES,
+    MODEL_IDS,
+)
 from tvbo import database_path
 from tvbo.classes.dynamics import Dynamics
 from tvbo.classes.experiment import SimulationExperiment
-from tests.functional.simulation_backends_shared import (
-    MODEL_FILES,
-    MODEL_IDS,
-    _HAVE_LEMS,
-    _HAVE_NEUROML,
-    _HAVE_NEURON,
-    _HAVE_BRIAN2,
-    _HAVE_NETPYNE,
-    _HAVE_EDEN,
-)
-
 
 # ── NeuroML experiment YAML files ─────────────────────────────────────
 

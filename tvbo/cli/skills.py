@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 import shutil
 import tomllib
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 import typer
@@ -41,7 +41,7 @@ from tvbo.skills import (
 app = typer.Typer(name="skills", no_args_is_help=True)
 
 
-class Target(str, Enum):
+class Target(StrEnum):
     """Output format a skill is rendered to.
 
     Selects which assistant-specific artifact `install` or `sync` produces:
@@ -56,7 +56,7 @@ class Target(str, Enum):
     all = "all"
 
 
-class Audience(str, Enum):
+class Audience(StrEnum):
     """Intended reader of a skill, used to filter which skills apply.
 
     A skill declares an `audience` of `user`, `maintainer`, or `both`;
@@ -68,7 +68,7 @@ class Audience(str, Enum):
     all = "all"
 
 
-class Scope(str, Enum):
+class Scope(StrEnum):
     """Install location for rendered skill files.
 
     `user` writes to the per-user config directory (e.g. `~/.claude/skills`), while `project` writes to the current working directory (e.g.

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Self-contained AUTO-07p (numcont) backend adapter for SimulationExperiment.
 
 This adapter does NOT depend on any external `numcont` package. It uses the `auto-07p` Python bindings directly (`auto.run`, `auto.sv`, `auto.loadbd`, `auto.merge`) and the Mako template at ``tvbo/templates/numcont/tvbo-auto7p.py.mako`` to emit the model `.f90` file consumed by AUTO.
@@ -132,7 +131,7 @@ def _cont_par(cont, key, default=None):
 class NumContAdapter:
     """Adapter for bifurcation analysis via AUTO-07p (no external deps)."""
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
 
     # ── Context for the f90 template ─────────────────────────────────────
@@ -264,7 +263,7 @@ class NumContAdapter:
 
             # 4. Periodic-orbit continuation from each Hopf point
             po_results = []
-            for i, br in enumerate(R_eq):
+            for _i, br in enumerate(R_eq):
                 hbs = br.labels.by_label.get("HB", {})
                 n_hb = len(hbs) if hbs else 0
                 for k in range(n_hb):
@@ -318,8 +317,7 @@ class NumContAdapter:
     def _run_codim2_branches(self, *, auto, R_eq, cont, fp_name, kwargs_eq):
         """Run codim-2 fold/Hopf/BP continuations declared via ``cont.branches``.
 
-        Each :class:`~tvbo.classes.continuation.BranchSwitch` with ``source_point`` of the form ``'fold:N'`` / ``'fold:all'`` / ``'fold:-1'`` (or ``hopf:`` / ``bp:`` analogues) triggers a separate
-        AUTO restart from that special point with ``ISW=2`` (fold/Hopf continuation) and two free parameters drawn from the sub- continuation's ``free_parameters`` slot.
+        Each :class:`~tvbo.classes.continuation.BranchSwitch` with ``source_point`` of the form ``'fold:N'`` / ``'fold:all'`` / ``'fold:-1'`` (or ``hopf:`` / ``bp:`` analogues) triggers a separate AUTO restart from that special point with ``ISW=2`` (fold/Hopf continuation) and two free parameters drawn from the sub- continuation's ``free_parameters`` slot.
 
         Returns a list of ``(name, source_type, fp1_name, fp2_name, R_c2)`` tuples consumed by :meth:`BifurcationResult.from_auto`.
         """
@@ -424,7 +422,10 @@ class NumContAdapter:
                 except Exception as e:
                     import warnings
 
-                    warnings.warn(f"Codim-2 continuation '{bname}' from {label_prefix}{lab} failed: {type(e).__name__}: {e}")
+                    warnings.warn(
+                        f"Codim-2 continuation '{bname}' from {label_prefix}{lab} failed: {type(e).__name__}: {e}",
+                        stacklevel=2,
+                    )
         return out
 
     # ── Cleanup ──────────────────────────────────────────────────────────

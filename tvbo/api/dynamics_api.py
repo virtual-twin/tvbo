@@ -1,15 +1,12 @@
 """Dynamics model API — serves neural mass models from the tvbo database.
 
 Endpoints:
-  GET /api/v1/dynamics              — list available models (filterable)
-  GET /api/v1/dynamics/{id}/sidecar — LinkML-valid YAML or JSON"""
-
-from typing import Optional
+  GET /api/v1/dynamics              — list available models (filterable) GET /api/v1/dynamics/{id}/sidecar — LinkML-valid YAML or JSON
+"""
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
-
-from linkml_runtime.dumpers import yaml_dumper, json_dumper
+from linkml_runtime.dumpers import json_dumper, yaml_dumper
 
 from tvbo.data.registry import database_dir
 
@@ -34,7 +31,7 @@ def _index_models() -> dict:
     return models
 
 
-_MODELS: Optional[dict] = None
+_MODELS: dict | None = None
 
 
 def _get_models() -> dict:
@@ -46,8 +43,8 @@ def _get_models() -> dict:
 
 @router.get("")
 def list_dynamics(
-    system_type: Optional[str] = Query(None),
-    name: Optional[str] = Query(None),
+    system_type: str | None = Query(None),
+    name: str | None = Query(None),
 ):
     """List available dynamics models."""
     result = []

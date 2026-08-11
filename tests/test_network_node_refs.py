@@ -9,9 +9,9 @@ import numpy as np
 import pytest
 
 from tvbo.templates.tvboptim.utils import (
-    node_label,
-    node_const,
     collect_network_node_arrays,
+    node_const,
+    node_label,
 )
 
 
@@ -36,7 +36,9 @@ def test_node_const_names():
 
 def test_emitted_constant_name_matches_resolved_reference():
     """The name collect/emit uses (node_const on the full-form measure) is identical to the name ref_to_code resolves to (node_const on the parse_reference-stripped key).
-    This is the exact invariant the prefix bug broke."""
+
+    This is the exact invariant the prefix bug broke.
+    """
     for full in ("network.positions", "network.instrength"):
         emitted = node_const(node_label(full))  # collect / emit side (full form)
         stripped_key = full.split(".", 1)[1]  # parse_reference('network.X') -> ('network','X')

@@ -1,6 +1,5 @@
-"""
-TVB-O Data Model
-================
+"""TVB-O Data Model.
+
 Auto-generated from LinkML schema.
 
 Usage:
@@ -16,11 +15,11 @@ Network.number_of_regions = property(
     lambda self, v: setattr(self, "number_of_nodes", v),
 )
 
-from .schema import *  # noqa: E402, F401, F403
-
 # Patched to canonicalise any input: the generated coercions reject aliases and leak PermissibleValue.
 from tvbo.datamodel.schema import UnitEnum as _UnitEnum  # noqa: E402
 from tvbo.utils.units import normalize_unit as _normalize_unit  # noqa: E402
+
+from .schema import *  # noqa: E402, F401, F403
 
 # Register slash-notation aliases (mm/ms → mm_per_ms) so both work in YAML
 for _alias, _canon in {
@@ -99,8 +98,9 @@ _UnitEnumMeta.__getattribute__ = _unit_meta_getattribute
 
 # Backward-compat aliases for old module names
 import sys
-from tvbo.datamodel import schema as tvbo_datamodel  # noqa: E402, F401
+
 from tvbo.datamodel import pydantic as tvbopydantic  # noqa: E402, F401
+from tvbo.datamodel import schema as tvbo_datamodel  # noqa: E402, F401
 
 sys.modules["tvbo.datamodel.tvbo_datamodel"] = tvbo_datamodel
 sys.modules["tvbo.datamodel.tvbopydantic"] = tvbopydantic

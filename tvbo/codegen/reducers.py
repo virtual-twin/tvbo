@@ -1,7 +1,6 @@
 """General resolver: lower a declarative streaming-reducer spec to backend source.
 
-A :class:`~tvbo.codegen.streaming_reducers.StreamingReducerSpec` authors a windowed reducer as symbolic **assignment recurrences** (strings). This module parses each RHS to sympy against the reducer's vocabulary and prints it with the target
-:mod:`tvbo.codegen.code` printer, so the SAME spec emits jax / numpy / julia. There is
+A :class:`~tvbo.codegen.streaming_reducers.StreamingReducerSpec` authors a windowed reducer as symbolic **assignment recurrences** (strings). This module parses each RHS to sympy against the reducer's vocabulary and prints it with the target :mod:`tvbo.codegen.code` printer, so the SAME spec emits jax / numpy / julia. There is
 **no reducer-specific logic here** — the concrete recipe lives in the spec (metadata);
 the algorithm template emits the resolved assignments into a backend-shaped scaffolding.
 Verified byte-identical to ``compute_fc`` including a large DC baseline (``scratchpad/proto_general.py``).

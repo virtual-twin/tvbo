@@ -8,9 +8,10 @@ project the ink onto each axis, split at runs of blank, recurse. It needs no kno
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple, Sequence
+from typing import NamedTuple
 
 import numpy as np
 
@@ -26,17 +27,20 @@ class Box:
 
     @property
     def w(self) -> float:
+        """Width as a fraction of the page."""
         return self.x1 - self.x0
 
     @property
     def h(self) -> float:
+        """Height as a fraction of the page."""
         return self.y1 - self.y0
 
     @property
     def area(self) -> float:
+        """Fraction of the page the block covers."""
         return self.w * self.h
 
-    def iou(self, other: "Box") -> float:
+    def iou(self, other: Box) -> float:
         """Intersection over union — 1.0 when the two blocks coincide exactly."""
         ix = max(0.0, min(self.x1, other.x1) - max(self.x0, other.x0))
         iy = max(0.0, min(self.y1, other.y1) - max(self.y0, other.y0))
@@ -74,7 +78,7 @@ def _runs(profile: np.ndarray, min_gap: int) -> list[tuple[int, int]]:
     breaks = np.flatnonzero(np.diff(idx) > min_gap)
     starts = np.concatenate([[idx[0]], idx[breaks + 1]])
     ends = np.concatenate([idx[breaks], [idx[-1]]])
-    return list(zip(starts.tolist(), (ends + 1).tolist()))
+    return list(zip(starts.tolist(), (ends + 1).tolist(), strict=True))
 
 
 def content_blocks(
@@ -292,7 +296,7 @@ def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
     ratios = [a.shape[1] / a.shape[0] if a is not None else _PLACEHOLDER_ASPECT for a in arrays]
     fig = Figure(figsize=(width, width / sum(ratios)))
     axes = fig.subplots(1, len(panes), squeeze=False, gridspec_kw={"width_ratios": ratios})[0]
-    for ax, array, pane in zip(axes, arrays, panes):
+    for ax, array, pane in zip(axes, arrays, panes, strict=True):
         if array is None:
             ax.text(0.5, 0.5, pane.fallback, ha="center", va="center", fontsize=fontsize)
         else:
@@ -325,10 +329,10 @@ def overlay(result: dict, outfile: Path, titles: tuple[str, str] = ("ours", "ref
     sides = ("ours", "theirs")
     panes = [
         Pane(result[s]["path"], f"{t} — {result[s]['size'][0]}x{result[s]['size'][1]}px, {result[s]['n_panels']} panels")
-        for s, t in zip(sides, titles)
+        for s, t in zip(sides, titles, strict=True)
     ]
     fig, axes = image_row(panes, width=14, fontsize=10)
-    for ax, side, colour in zip(axes, sides, ("#d62728", "#1f77b4")):
+    for ax, side, colour in zip(axes, sides, ("#d62728", "#1f77b4"), strict=True):
         w, h = result[side]["size"]
         for r in result["rows"]:
             box = r[side]

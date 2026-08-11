@@ -19,7 +19,6 @@ from linkml_runtime.loaders import yaml_loader
 
 from tvbo.datamodel import tvbo_datamodel
 
-
 ROOT = Path(__file__).resolve().parent.parent
 # Atlases are consolidated under tvbo/database/atlases (the runtime SoT).
 ATLAS_DIR = ROOT / "tvbo" / "database" / "atlases"

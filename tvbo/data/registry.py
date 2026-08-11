@@ -129,8 +129,9 @@ def list_entries(cls_name: str) -> list[str]:
 
 
 def list_entries_with_metadata(cls_name: str) -> list[dict]:
-    """Return a list of dicts with `name`, `model_type`, `description`, `path` for every entry in the given class category.  Fast — reads only the first
-    ~30 lines of each YAML file.
+    """Every entry in the given class category, as dicts with `name`, `model_type`, `description`, `path`.
+
+    Fast — reads only the first ~30 lines of each YAML file.
     """
     if DATABASE_ROOT is None:
         return []

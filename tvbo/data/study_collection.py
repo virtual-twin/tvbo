@@ -13,8 +13,9 @@ The number resolution is shared: a manifest emit and a ``verify`` coverage pass 
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any
 
 from tvbo.data.dataref import resolve_dataref
 from tvbo.utils import as_list
@@ -33,12 +34,12 @@ def _scalar(da: Any) -> Any:
     return arr
 
 
-def _format(value: Any, fmt: Optional[str]) -> str:
+def _format(value: Any, fmt: str | None) -> str:
     """Apply a binding's ``format`` string to a computed value, else stringify it."""
     return fmt.format(value) if fmt else str(value)
 
 
-def _count_target(inv: Any, member_label: Optional[str]) -> Any:
+def _count_target(inv: Any, member_label: str | None) -> Any:
     """The object a ``count:`` binding tallies: the collection itself, or a loaded member."""
     if member_label is None:
         if inv is None:
@@ -69,7 +70,7 @@ def _count(spec: str, inv: Any) -> int:
     return len(as_list(getattr(target, coll)))
 
 
-def container_roots(inv: Any, results_root: Optional[Path]) -> list[Path]:
+def container_roots(inv: Any, results_root: Path | None) -> list[Path]:
     """Every directory a StudyCollection's result containers can live under, in search order.
 
     The collection's own root first, then one per member. A member study runs in its own directory and writes ``<member-dir>/output/results/<name>/result.h5``, so a ``used:`` binding into a member — which ``StudyCollection.results`` explicitly documents as supported — is not reachable from the collection's root alone.
@@ -86,13 +87,13 @@ def container_roots(inv: Any, results_root: Optional[Path]) -> list[Path]:
     return roots
 
 
-def _resolve_across_roots(used: Any, results_root: Optional[Path], inv: Any):
+def _resolve_across_roots(used: Any, results_root: Path | None, inv: Any):
     """Resolve *used* against the first container root that holds it.
 
     The first failure is re-raised when none do, so the reported problem names the collection's own root rather than whichever member happened to be searched last.
     """
     roots = container_roots(inv, results_root)
-    first_error: Optional[Exception] = None
+    first_error: Exception | None = None
     for root in roots or [None]:
         try:
             return resolve_dataref(used, results_root=str(root) if root else None)
@@ -101,7 +102,7 @@ def _resolve_across_roots(used: Any, results_root: Optional[Path], inv: Any):
     raise first_error  # type: ignore[misc]
 
 
-def resolve_binding(binding: Any, results_root: Optional[Path], *, inv: Any = None) -> tuple[str, dict]:
+def resolve_binding(binding: Any, results_root: Path | None, *, inv: Any = None) -> tuple[str, dict]:
     """Resolve one ``ResultBinding`` to ``(rendered_string, provenance)``.
 
     Three mutually exclusive forms: ``used:`` reads a scalar out of a result container and formats it; ``count:`` tallies a collection on a member or the collection itself (no run);
@@ -152,7 +153,7 @@ def resolve_binding(binding: Any, results_root: Optional[Path], *, inv: Any = No
     return rendered, prov
 
 
-def resolve_results(inv: Any, results_root: Optional[Path]) -> tuple[dict[str, str], dict[str, dict], list[str]]:
+def resolve_results(inv: Any, results_root: Path | None) -> tuple[dict[str, str], dict[str, dict], list[str]]:
     """Resolve every ``ResultBinding`` on *inv*.
 
     Returns ``(results, provenance, problems)``: ``results`` maps each key to its rendered string (what the prose reads), ``provenance`` records how each was obtained, and ``problems`` names the keys that could not be resolved (missing container, dead ref, duplicate key) — the caller decides whether an unresolved key fails the build.
@@ -178,7 +179,7 @@ def resolve_results(inv: Any, results_root: Optional[Path]) -> tuple[dict[str, s
     return results, provenance, problems
 
 
-def emit_manifest(inv: Any, results_root: Optional[Path], out_path: Path) -> tuple[Path, list[str]]:
+def emit_manifest(inv: Any, results_root: Path | None, out_path: Path) -> tuple[Path, list[str]]:
     """Write *inv*'s resolved results to ``manuscript_results.yml`` at *out_path*.
 
     The file carries a flat ``results:`` mapping the document reads as ``{{< meta results.* >}}`` and a ``results_provenance:`` block recording, per key, whether the number was computed (and from which container) or authored (and from which source). Returns the written path and the list of unresolved-key problems; the caller hard-fails on a non-empty list.
@@ -237,14 +238,14 @@ def _analysis_fingerprint(analysis: Any) -> str:
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
-def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Optional[Path]) -> list[str]:
+def _stale_or_missing_analyses(inv: Any, results_root: Path, source_file: Path | None) -> list[str]:
     """Analyses whose container is missing, or written from a different declaration.
 
     Staleness is per analysis, keyed on a digest of THAT analysis's own declaration, not on the spec file's mtime. Comparing against the file made every unrelated edit — a caption, a new figure, a typo in a description — mark every analysis as needing a re-run, so a one-word change failed the build and demanded hours of recomputation it could not affect.
 
     The digest is recorded beside the container when it is written. A container from before this check existed carries none, and is accepted: the alternative is failing every build once, which teaches people to bypass the gate.
     """
-    from tvbo.data.analysis_io import study_analyses, analysis_name, container_path
+    from tvbo.data.analysis_io import analysis_name, container_path, study_analyses
 
     problems: list[str] = []
     for analysis in study_analyses(inv):
@@ -299,10 +300,10 @@ def verify(
     inv: Any,
     base: Path,
     *,
-    results_root: Optional[Path] = None,
-    manuscript_keys: Optional[Iterable[str]] = None,
-    manifest_path: Optional[Path] = None,
-    captions_dir: Optional[Path] = None,
+    results_root: Path | None = None,
+    manuscript_keys: Iterable[str] | None = None,
+    manifest_path: Path | None = None,
+    captions_dir: Path | None = None,
 ) -> list[str]:
     """Check a StudyCollection is buildable, returning a list of problems (empty = OK).
 

@@ -1,8 +1,7 @@
 """``tvbo verify`` — check a StudyCollection is buildable, and hard-fail if not.
 
 The build gate, in two modes. Offline (where the run containers live) it resolves every ``results:`` binding and checks analysis staleness. In a build/CI checkout the containers are generated artifacts that are never committed, so ``--manifest manuscript_results.yml`` runs it
-CONTAINER-FREE: the declared bindings and, with ``--manuscript``, the prose's ``{{< meta results.* >}}`` keys are checked against the committed manifest instead of being resolved. Either way a citation with no number, a number no one cites, a binding added without regenerating the manifest, or a committed ``<figure>.caption.qmd`` that no longer matches the caption its spec composes is caught. A non-empty problem list exits non-zero, so a
-Quarto pre-render step fails loudly instead of rendering a stale or wrong figure.
+CONTAINER-FREE: the declared bindings and, with ``--manuscript``, the prose's ``{{< meta results.* >}}`` keys are checked against the committed manifest instead of being resolved. Either way a citation with no number, a number no one cites, a binding added without regenerating the manifest, or a committed ``<figure>.caption.qmd`` that no longer matches the caption its spec composes is caught. A non-empty problem list exits non-zero, so a Quarto pre-render step fails loudly instead of rendering a stale or wrong figure.
 """
 
 from __future__ import annotations

@@ -1,12 +1,11 @@
 """Plot bifurcation diagrams from continuation results.
 
-Provides helpers to draw equilibrium branches (coloured by stability with special bifurcation points marked) and periodic-orbit envelopes onto a
-Matplotlib axis, deriving the plotted variable of interest from continuation
-DataFrames.
+Provides helpers to draw equilibrium branches (coloured by stability with special bifurcation points marked) and periodic-orbit envelopes onto a Matplotlib axis, deriving the plotted variable of interest from continuation DataFrames.
 """
 
 import matplotlib.pyplot as plt
 from sympy import parse_expr, pycode, symbols
+
 from tvbo.classes import equation as equations
 
 
@@ -24,7 +23,7 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
     state_var_index : dict, optional
         Mapping from state variable names to indices in 'x' column
 
-    Returns
+    Returns:
     -------
     pd.Series
         Computed VOI values
@@ -104,7 +103,7 @@ def plot_equilibrium_branch(df, ax, ICS=None, VOI=None, **kwargs):
     df["segment"] = (df.stable != df.stable.shift()).cumsum()
 
     # Iterate over the unique segments and plot each with its corresponding style and label
-    for segment_id, segment_data in df.groupby("segment"):
+    for _segment_id, segment_data in df.groupby("segment"):
         # Determine the stability of the segment
         is_stable = segment_data.iloc[0].stable
         label = "Stable" if is_stable else "Unstable"

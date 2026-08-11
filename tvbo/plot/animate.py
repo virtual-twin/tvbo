@@ -106,9 +106,10 @@ def animate_network(result, state=None, interval=50, cmap="viridis", node_size=1
         Scatter point size.
     figsize : tuple, optional
 
-    Returns
+    Returns:
     -------
-    matplotlib.animation.FuncAnimation"""
+    matplotlib.animation.FuncAnimation
+    """
     from matplotlib.animation import FuncAnimation
 
     graph = getattr(result, "graph", None)
@@ -254,9 +255,10 @@ def animate_timeseries(result, state=None, interval=50, cmap=None, figsize=None)
         Matplotlib colormap.
     figsize : tuple, optional
 
-    Returns
+    Returns:
     -------
-    matplotlib.animation.FuncAnimation"""
+    matplotlib.animation.FuncAnimation
+    """
     from matplotlib.animation import FuncAnimation
 
     data = result.data
@@ -328,10 +330,12 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0, interval=50,
         Number of trailing points.
     figsize : tuple
 
-    Returns
+    Returns:
     -------
-    matplotlib.animation.FuncAnimation"""
+    matplotlib.animation.FuncAnimation
+    """
     from matplotlib.animation import FuncAnimation
+
     from tvbo.plot.phase import _extract_2d
 
     time, x, y, xlabel, ylabel = _extract_2d(result, x_var, y_var, region, mode)
@@ -396,7 +400,7 @@ def _panel_timeseries(result, ax, max_points=200):
     n_frames = len(slices[0][2]) if slices else 0
 
     def update(i):
-        for ln, (vals, time) in zip(all_lines, all_data):
+        for ln, (vals, time) in zip(all_lines, all_data, strict=True):
             ln.set_data(time[: i + 1], vals[: i + 1])
         return all_lines
 
@@ -505,9 +509,10 @@ def animate_multi(result, panels, interval=50, figsize=None, max_points=200, sav
     fps : int
         Frames per second when saving.
 
-    Returns
+    Returns:
     -------
-    matplotlib.animation.FuncAnimation"""
+    matplotlib.animation.FuncAnimation
+    """
     from matplotlib.animation import FuncAnimation
 
     n_panels = len(panels)
@@ -520,7 +525,7 @@ def animate_multi(result, panels, interval=50, figsize=None, max_points=200, sav
 
     updaters = []
     n_frames = None
-    for ax, panel_name in zip(axes, panels):
+    for ax, panel_name in zip(axes, panels, strict=True):
         panel_fn = _PANEL_REGISTRY.get(panel_name)
         if panel_fn is None:
             raise ValueError(f"Unknown panel type '{panel_name}'. Available: {list(_PANEL_REGISTRY.keys())}")

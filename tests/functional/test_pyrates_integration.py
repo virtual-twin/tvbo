@@ -6,19 +6,19 @@ Tests the full-circle export and import of TVBO models to/from PyRates format, i
 - Round-trip import from PyRates YAML back to TVBO Dynamics
 """
 
-import tempfile
 import os
+import tempfile
 
 import numpy as np
 import pytest
 
-from tvbo import Dynamics, Network, Coupling
-from tvbo.datamodel import tvbo_datamodel
+from tvbo import Coupling, Dynamics, Network
 from tvbo.codegen.pyrates import (
     to_pyrates_model_yaml,
     to_pyrates_network_yaml,
     to_pyrates_yaml_string,
 )
+from tvbo.datamodel import tvbo_datamodel
 
 
 class TestDynamicsExport:

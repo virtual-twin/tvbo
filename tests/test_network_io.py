@@ -3,11 +3,11 @@
 Focused on round-trip correctness: write → read → compare.
 """
 
-import numpy as np
-import pytest
 import tempfile
 from pathlib import Path
 
+import numpy as np
+import pytest
 
 # ── matrix_io tests ──────────────────────────────────────────────────
 
@@ -44,7 +44,8 @@ class TestMatrixRoundTrip:
 
     def test_dense_roundtrip(self, h5_file):
         import h5py
-        from tvbo.data.matrix_io import write_matrix, read_matrix
+
+        from tvbo.data.matrix_io import read_matrix, write_matrix
 
         hf, path = h5_file
         m = np.random.rand(10, 10).astype("float32")
@@ -58,7 +59,8 @@ class TestMatrixRoundTrip:
 
     def test_csr_roundtrip(self, h5_file):
         import h5py
-        from tvbo.data.matrix_io import write_matrix, read_matrix
+
+        from tvbo.data.matrix_io import read_matrix, write_matrix
 
         hf, path = h5_file
         m = np.eye(20, dtype="float32") * 5.0
@@ -72,7 +74,8 @@ class TestMatrixRoundTrip:
 
     def test_coo_roundtrip(self, h5_file):
         import h5py
-        from tvbo.data.matrix_io import write_matrix, read_matrix
+
+        from tvbo.data.matrix_io import read_matrix, write_matrix
 
         hf, path = h5_file
         m = np.zeros((15, 15), dtype="float32")
@@ -90,7 +93,8 @@ class TestMatrixRoundTrip:
         """A scipy matrix keeps its shape: np.asarray(csr) is a 0-d object array."""
         import h5py
         import scipy.sparse as sp
-        from tvbo.data.matrix_io import write_matrix, read_matrix
+
+        from tvbo.data.matrix_io import read_matrix, write_matrix
 
         hf, path = h5_file
         m = sp.random(400, 400, density=0.01, format="csr", random_state=0)
@@ -127,7 +131,8 @@ class TestTemplateEdgeOnlyNetwork:
     def test_placeholder_nodes_are_not_written_to_the_sidecar(self, tmp_path):
         import scipy.sparse as sp
         import yaml as _yaml
-        from tvbo.data.network_io import save_network, load_network
+
+        from tvbo.data.network_io import load_network, save_network
 
         net = self._network(n=600)
         net.set_matrix("weight", sp.eye(600, format="csr") * 2.0)
@@ -143,7 +148,7 @@ class TestTemplateEdgeOnlyNetwork:
 
     def test_authored_nodes_survive_the_round_trip(self, tmp_path):
         from tvbo import Network
-        from tvbo.data.network_io import save_network, load_network
+        from tvbo.data.network_io import load_network, save_network
 
         net = Network.from_matrix(np.eye(3), labels=["L_V1", "R_V1", "thal"])
         save_network(net, tmp_path / "net.yaml")
@@ -212,7 +217,7 @@ edges:
     def test_load_new_format_roundtrip(self):
         """Create a new-format sidecar+HDF5, then load it back."""
         from tvbo import Network
-        from tvbo.data.network_io import save_network, load_network
+        from tvbo.data.network_io import load_network, save_network
 
         weights = np.array([[0, 1, 2], [1, 0, 3], [2, 3, 0]], dtype="float32")
         lengths = np.array([[0, 10, 20], [10, 0, 30], [20, 30, 0]], dtype="float32")
@@ -228,7 +233,7 @@ edges:
     def test_save_load_roundtrip_h5(self):
         """Save a Network as YAML+HDF5, reload, and compare."""
         from tvbo import Network
-        from tvbo.data.network_io import save_network, load_network
+        from tvbo.data.network_io import load_network, save_network
 
         # Build a small test network
         weights = np.random.rand(5, 5).astype("float32")
@@ -296,7 +301,7 @@ class TestFromTvbZip:
     def test_from_tvb_zip_missing_file(self):
         from tvbo.data.converters import from_tvb_zip
 
-        with pytest.raises(Exception):
+        with pytest.raises(FileNotFoundError):
             from_tvb_zip("/nonexistent/path.zip")
 
 
@@ -314,6 +319,7 @@ class TestLazyArrayStore:
     def test_lazy_loads_on_access(self):
         """Build an HDF5, wrap in LazyArrayStore, verify lazy load."""
         import h5py
+
         from tvbo.data.matrix_io import LazyArrayStore, write_matrix
 
         with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as f:
@@ -341,7 +347,7 @@ class TestZarrRoundTrip:
         """Save a Network as YAML+Zarr, reload, and compare arrays."""
         pytest.importorskip("zarr")
         from tvbo import Network
-        from tvbo.data.network_io import save_network, load_network
+        from tvbo.data.network_io import load_network, save_network
 
         weights = np.random.rand(5, 5).astype("float32")
         lengths = np.random.rand(5, 5).astype("float32") * 100
@@ -361,7 +367,7 @@ class TestZarrRoundTrip:
     def test_zarr_matrix_roundtrip(self):
         """Write/read a matrix via Zarr group."""
         zarr = pytest.importorskip("zarr")
-        from tvbo.data.matrix_io import write_matrix, read_matrix
+        from tvbo.data.matrix_io import read_matrix, write_matrix
 
         with tempfile.TemporaryDirectory() as tmpdir:
             z = zarr.open(str(Path(tmpdir) / "test.zarr"), mode="w")
@@ -381,7 +387,8 @@ class TestEdgeParametersRoundTrip:
     def test_edge_params_h5_roundtrip(self):
         """Edge parameters survive HDF5 write → read."""
         import h5py
-        from tvbo.data.network_io import _write_edges, _read_edges
+
+        from tvbo.data.network_io import _read_edges, _write_edges
 
         weights = np.random.rand(4, 4).astype("float32")
         lengths = np.random.rand(4, 4).astype("float32") * 50
@@ -407,7 +414,7 @@ class TestEdgeParametersRoundTrip:
     def test_edge_params_network_roundtrip(self):
         """Edge params persist through Network save/load cycle."""
         from tvbo import Network
-        from tvbo.data.network_io import save_network, load_network
+        from tvbo.data.network_io import load_network, save_network
 
         weights = np.random.rand(3, 3).astype("float32")
         lengths = np.random.rand(3, 3).astype("float32") * 20
@@ -438,7 +445,7 @@ class TestHierarchicalNetwork:
     def test_node_mapping_roundtrip(self):
         """Parent index array survives save/load cycle."""
         from tvbo import Network
-        from tvbo.data.network_io import save_network, load_network
+        from tvbo.data.network_io import load_network, save_network
 
         weights = np.random.rand(6, 6).astype("float32")
         net = Network.from_matrix(weights)
@@ -467,9 +474,10 @@ class TestNodeCoordinates:
     def test_coordinates_written_to_h5(self):
         """Node.position coordinates are persisted to HDF5."""
         import h5py
+
         from tvbo import Network
-        from tvbo.datamodel import tvbo_datamodel
         from tvbo.data.network_io import save_network
+        from tvbo.datamodel import tvbo_datamodel
 
         nodes = [
             tvbo_datamodel.Node(
@@ -504,8 +512,8 @@ class TestBEP017Export:
     def test_to_bep017_creates_files(self):
         """BEP017 export writes TSV + JSON for each template edge."""
         from tvbo import Network
-        from tvbo.datamodel import tvbo_datamodel
         from tvbo.data.converters import to_bep017
+        from tvbo.datamodel import tvbo_datamodel
 
         weights = np.random.rand(3, 3).astype("float32")
         net = Network.from_matrix(weights)
@@ -541,8 +549,8 @@ class TestBEP017Export:
     def test_to_bep017_node_indices(self):
         """BEP017 export writes nodeindices TSV."""
         from tvbo import Network
-        from tvbo.datamodel import tvbo_datamodel
         from tvbo.data.converters import to_bep017
+        from tvbo.datamodel import tvbo_datamodel
 
         nodes = [tvbo_datamodel.Node(id=i, label=f"region_{i}") for i in range(3)]
         net = Network(nodes=nodes, edges=[], number_of_nodes=3)
@@ -566,6 +574,7 @@ class TestFromTvbZipRoundTrip:
     def test_tvb_zip_roundtrip(self):
         """Create a fake TVB ZIP, import it, verify node positions + arrays."""
         import zipfile
+
         from tvbo.data.converters import from_tvb_zip
 
         n = 4
@@ -625,8 +634,9 @@ class TestMultiEdgeFreezeRoundtrip:
         Returns:
             The edge names present in the frozen file, and the reloaded network.
         """
-        from tvbo.classes.network import Network
         import h5py
+
+        from tvbo.classes.network import Network
 
         n = next(iter(edges.values())).shape[0]
         net = Network(number_of_nodes=n)
@@ -716,7 +726,7 @@ class TestRegionAliasMap:
 
         # model lists LEFT first; the "empirical" target lists RIGHT first (opposite hemisphere order) under a divergent nomenclature carried as aliases.
         model = self._net(["L_A", "R_A", "L_B", "R_B"])
-        for node, alias in zip(model.nodes, ["A_LEFT", "A_RIGHT", "B_LEFT", "B_RIGHT"]):
+        for node, alias in zip(model.nodes, ["A_LEFT", "A_RIGHT", "B_LEFT", "B_RIGHT"], strict=True):
             node.alternateName = [alias]
         amap = model.region_alias_map()
         model_labels = model.node_labels

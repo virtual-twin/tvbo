@@ -2,13 +2,11 @@
 # SPDX-License-Identifier: EUPL-1.2
 
 
-"""
-Linear response
-================
+"""Linear response.
+
 Symbolic linear-response machinery derived entirely from a model's declarative metadata — the network Jacobian ``A`` at an operating point, and the noise input matrix ``Q`` — from which fixed-point observables follow (stationary covariance via the Lyapunov equation, power spectra, Fisher information; Deco 2014 Figs 5/6).
 
-Everything model-specific is **symbolic** and backend-independent: :func:`jacobian_terms` differentiates the dfun metadata with ``sympy`` (derived-variable chain unfolded) and returns the symbolic per-node Jacobians, which the **code generator renders to any backend** through ``render_expression``. The network assembly (block-diagonal local
-Jacobian + connectome-scattered coupling Jacobian) is likewise **emitted by codegen per backend** — a ``vmap``/scatter on JAX, a loop on Julia — exactly as the network RHS is emitted (one metadata source, every backend); ideally through the backend-abstracted ``arrayops`` structural primitives so the assembly, too, is one handler.
+Everything model-specific is **symbolic** and backend-independent: :func:`jacobian_terms` differentiates the dfun metadata with ``sympy`` (derived-variable chain unfolded) and returns the symbolic per-node Jacobians, which the **code generator renders to any backend** through ``render_expression``. The network assembly (block-diagonal local Jacobian + connectome-scattered coupling Jacobian) is likewise **emitted by codegen per backend** — a ``vmap``/scatter on JAX, a loop on Julia — exactly as the network RHS is emitted (one metadata source, every backend); ideally through the backend-abstracted ``arrayops`` structural primitives so the assembly, too, is one handler.
 
 :func:`network_jacobian` below is a **NumPy reference oracle only** — it assembles ``A`` numerically so the symbolic terms can be verified against a finite-difference Jacobian in tests. It is NOT the runtime path (the runtime path is the codegen described above); do not call it from generated code.
 
@@ -18,8 +16,7 @@ The full network Jacobian is
                    + Σ_c (∂f_k/∂c) · (∂c_i/∂x_{l,j})         (coupling block)
 
 where for an instantaneous coupling input ``c`` whose source state variable is ``s`` (``c_i = Σ_j W_ij s_j``), ``∂c_i/∂x_{l,j} = W_ij`` when ``l == s`` else 0.
-Both ``∂f_k/∂x_l`` (``Jloc``) and ``∂f_k/∂c`` (``Jcpl``) are symbolic per-node
-Jacobians of the metadata dfun.
+Both ``∂f_k/∂x_l`` (``Jloc``) and ``∂f_k/∂c`` (``Jcpl``) are symbolic per-node Jacobians of the metadata dfun.
 """
 
 from __future__ import annotations
@@ -83,9 +80,7 @@ def jacobian_terms(model):
 
 
 def constraint_expr(model, var_name):
-    """Unfolded symbolic expression of a derived variable (e.g. the FIC constraint variable ``I_E``), in state variables, network-coupling inputs and parameters — same unfolding as
-    :func:`_dfun_symbols` uses for the RHS (derived-variable chain inlined, local coupling zeroed), so it prints against the same symbol set (``ctx['syms']``). Used to emit the constraint residual of a constraint-defined operating point (Deco FIC: ``I_E = target``, with ``J_i`` the free parameter), solved deterministically alongside the fixed point.
-    """
+    """Unfolded symbolic expression of a derived variable (e.g. the FIC constraint variable ``I_E``), in state variables, network-coupling inputs and parameters — same unfolding as :func:`_dfun_symbols` uses for the RHS (derived-variable chain inlined, local coupling zeroed), so it prints against the same symbol set (``ctx['syms']``). Used to emit the constraint residual of a constraint-defined operating point (Deco FIC: ``I_E = target``, with ``J_i`` the free parameter), solved deterministically alongside the fixed point."""
     from tvbo.classes.equation import substitute_function_in_state_equations
 
     cpl_inputs = dict(getattr(model, "coupling_inputs", {}) or {})
@@ -166,22 +161,21 @@ def linear_response_context(model):
 def network_jacobian(model, weights: Any, state: Any, params: dict) -> np.ndarray:
     """NumPy **reference oracle** — assemble ``A`` numerically for verification only.
 
-    Used by tests to check the symbolic :func:`jacobian_terms` against a finite-difference Jacobian. The runtime path renders those symbolic terms to the target backend and assembles ``A`` in codegen (``vmap``/scatter on JAX, loop on
-    Julia); this function is deliberately NumPy and must not be called from generated code.
+    Used by tests to check the symbolic :func:`jacobian_terms` against a finite-difference Jacobian. The runtime path renders those symbolic terms to the target backend and assembles ``A`` in codegen (``vmap``/scatter on JAX, loop on Julia); this function is deliberately NumPy and must not be called from generated code.
 
     Parameters
     ----------
     model : Dynamics
         The model (source of the symbolic dfun).
     weights : array (n_nodes, n_nodes)
-        Connectome ``W`` (``c_i = Σ_j W_ij s_j`` for the coupling source ``s``).
+        connectome ``W`` (``c_i = Σ_j W_ij s_j`` for the coupling source ``s``).
     state : array (n_sv, n_nodes)
         The operating point (e.g. the deterministic fixed point), per state
         variable and node.
     params : dict
         Scalar parameter values by name.
 
-    Returns
+    Returns:
     -------
     A : array (n_sv·n_nodes, n_sv·n_nodes)
         The Jacobian in block layout (state-variable block ``k`` spans rows/cols

@@ -175,8 +175,10 @@ def test_factory_accepts_warm_history_and_progress_kwargs():
 )
 def test_grad_flows_through_the_reducer_and_matches_host(aggregation, host):
     """A streamed mean/std observation must be differentiable so it can be a fit target.
+
     ``jax.grad`` of a loss over the folded reducer must be finite and byte-identical (to f64) to the gradient through the materialised host ``jnp.mean``/``jnp.std(ddof=0)``.
-    Guards the autodiff hazards: the integer ``count``/``_gstep`` accumulators are constant w.r.t. the parameter, the ``jnp.where`` skip gate stays differentiable, and ``std``'s ``sqrt(var)`` has a finite gradient for var>0."""
+    Guards the autodiff hazards: the integer ``count``/``_gstep`` accumulators are constant w.r.t. the parameter, the ``jnp.where`` skip gate stays differentiable, and ``std``'s ``sqrt(var)`` has a finite gradient for var>0.
+    """
     factory = _emit_reducer(resolve_reduction(_stat_observation(aggregation)))
     init, update, finalize = factory(s_var=0, dt=1.0)
     base = _trajectory(seed=5, T=200)

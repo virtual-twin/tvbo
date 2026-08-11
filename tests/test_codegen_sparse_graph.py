@@ -163,8 +163,7 @@ def test_sparse_delayed_run_matches_dense():
 def test_sparse_instantaneous_local_pre_run_matches_dense():
     """A single-term local-in-pre coupling (sin(x_j - x_i)) must RUN on a sparse graph.
 
-    pre() reads the target-local x_i, so the emitted per-edge message is 1-D (nnz) on a
-    SparseGraph; the leading n_output axis has to be added rank-agnostically. A fixed 2-D reshape (``coupling_term[:, :, None]``) indexes a 1-D array with three axes and crashes — the failure the extended grid model hit. The delayed variant of this branch was the only one executed; this pins the INSTANTANEOUS one and checks sparse agrees with the dense emit, so a revert to the fixed-rank reshape can't pass silently.
+    pre() reads the target-local x_i, so the emitted per-edge message is 1-D (nnz) on a SparseGraph; the leading n_output axis has to be added rank-agnostically. A fixed 2-D reshape (``coupling_term[:, :, None]``) indexes a 1-D array with three axes and crashes — the failure the extended grid model hit. The delayed variant of this branch was the only one executed; this pins the INSTANTANEOUS one and checks sparse agrees with the dense emit, so a revert to the fixed-rank reshape can't pass silently.
     """
     import numpy as np
 

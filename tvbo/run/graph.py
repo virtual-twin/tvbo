@@ -8,11 +8,11 @@ import copy
 import networkx as nx
 import numpy as np
 
-from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.classes.coupling import Coupling
-from tvbo.utils import initial_value
 from tvbo.classes import dynamics as localdynamics
+from tvbo.classes.coupling import Coupling
+from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.run import compgraph
+from tvbo.utils import initial_value
 
 
 class GraphRunner:
@@ -109,7 +109,7 @@ class GraphRunner:
         filepath : str, optional
             Path to write the YAML file. If None, returns the YAML string.
 
-        Returns
+        Returns:
         -------
         str
             YAML string (or filepath if written to file).

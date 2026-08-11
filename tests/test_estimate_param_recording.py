@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from tvbo.data.types import ExperimentResult, _free_param_names, _algo_tuned_params
+from tvbo.data.types import ExperimentResult, _algo_tuned_params, _free_param_names
 
 
 def _param(name, free):

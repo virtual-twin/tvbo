@@ -128,8 +128,7 @@ def test_a_mask_of_the_wrong_length_is_refused(tmp_path, mesh_npz):
 
 
 def test_an_out_of_range_vertex_index_names_the_mismatch():
-    """A kept-index sidecar that does not match the mesh must be named, not raise a bare
-    IndexError from the scatter."""
+    """A kept-index sidecar that does not match the mesh must be named, not raise a bare IndexError from the scatter."""
     import xarray as xr
 
     from tvbo.adapters.bsplot import _vertex_values

@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: EUPL-1.2
 
 
-"""
-Data Module
-===========
+"""Data Module.
 
 Access and manage TVB-O data.
 """

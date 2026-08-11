@@ -15,7 +15,6 @@ import argparse
 import re
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parent.parent
 # Atlases are consolidated under tvbo/database/atlases (the runtime SoT).
 ATLAS_DIR = ROOT / "tvbo" / "database" / "atlases"

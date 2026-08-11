@@ -11,7 +11,6 @@ from tvbo.templates.tvboptim.utils import (
     resolve_model_output_indices,
 )
 
-
 PENDULUM = """
 name: PendulumSystem
 parameters:

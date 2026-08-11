@@ -14,9 +14,9 @@ The benchmark compares three conditions:
 from __future__ import annotations
 
 import abc
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Callable, Optional
 
 CONDITIONS = ("control", "implicit", "explicit")
 
@@ -50,8 +50,8 @@ class RunResult:
     output_tokens: int
     tool_calls: int
     wall_seconds: float
-    cost_usd: Optional[float]  # None if the harness does not report cost
-    num_turns: Optional[int] = None
+    cost_usd: float | None  # None if the harness does not report cost
+    num_turns: int | None = None
     subtype: str = ""  # harness-reported completion status
     error: str = ""  # non-empty if the invocation itself failed
 
@@ -69,8 +69,8 @@ class Metrics:
     output_tokens: int
     tool_calls: int
     wall_seconds: float
-    cost_usd: Optional[float]
-    num_turns: Optional[int] = None
+    cost_usd: float | None
+    num_turns: int | None = None
     subtype: str = ""
     detail: str = ""  # verifier detail or error message
 

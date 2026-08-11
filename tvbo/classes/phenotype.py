@@ -20,8 +20,8 @@ See ``tools/build_schirner2023_phenotype.py`` for an example writer.
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Mapping, Sequence
 
 import h5py
 import numpy as np
@@ -33,10 +33,9 @@ from tvbo.datamodel import pydantic as tvbo_datamodel
 class Phenotype(tvbo_datamodel.Phenotype):
     """Runtime wrapper around the auto-generated ``Phenotype`` schema.
 
-    The schema class carries the YAML-side descriptor (subjects, measures names, provenance, optional Cognitive Atlas IRIs via ``measure_specs``); this subclass adds lazy h5 access via
-    :attr:`values` plus ``from_file`` / ``to_file`` round-tripping.
+    The schema class carries the YAML-side descriptor (subjects, measures names, provenance, optional Cognitive Atlas IRIs via ``measure_specs``); this subclass adds lazy h5 access via :attr:`values` plus ``from_file`` / ``to_file`` round-tripping.
 
-    Example
+    Example:
     -------
     .. code-block:: python
 
@@ -54,7 +53,7 @@ class Phenotype(tvbo_datamodel.Phenotype):
     # Construction
 
     @classmethod
-    def from_file(cls, path: str | os.PathLike) -> "Phenotype":
+    def from_file(cls, path: str | os.PathLike) -> Phenotype:
         """Load a Phenotype sidecar from a YAML descriptor.
 
         Resolves ``data_file`` relative to the YAML's directory so the h5 companion can sit next to it. Numeric arrays are NOT loaded eagerly — call :meth:`get` (or read :attr:`values`) to fault one in.

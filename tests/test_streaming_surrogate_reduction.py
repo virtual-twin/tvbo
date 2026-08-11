@@ -163,8 +163,10 @@ def test_undeclared_permutation_table_is_rejected():
 
 
 def test_statistic_declared_after_surrogate_is_rejected():
-    """The surrogate reuses the statistic DV as its observed value (`_obs = <stat>`), so a statistic declared AFTER its surrogate would emit a forward reference (runtime NameError);
-    rejected at resolve time."""
+    """A statistic declared AFTER its surrogate is rejected at resolve time.
+
+    The surrogate reuses the statistic DV as its observed value (`_obs = <stat>`), so that ordering would emit a forward reference and fail at runtime with NameError.
+    """
     perms = _perm_table(0, 8, 6)
     obs = Observation(
         name="obs",

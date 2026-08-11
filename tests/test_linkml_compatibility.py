@@ -13,7 +13,6 @@ import importlib
 
 import pytest
 
-
 # Generated dataclass module -> list of class names that runtime code subclasses.
 SUBCLASSED_GENERATED = {
     "tvbo.datamodel.tvbo_datamodel": [

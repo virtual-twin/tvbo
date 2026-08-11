@@ -109,7 +109,8 @@ def _load_from_file(path: Path) -> tuple[str, Any]:
     suffix = path.suffix.lower()
     if suffix not in {".yaml", ".yml"}:
         # Try the registry's importer (e.g. *.bidsdir, *.sedml, *.omex)
-        from tvbo.export import resolve_by_extension, load as _load
+        from tvbo.export import load as _load
+        from tvbo.export import resolve_by_extension
 
         try:
             fmt = resolve_by_extension(suffix)

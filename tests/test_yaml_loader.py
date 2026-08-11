@@ -9,6 +9,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+import yaml
 
 from tvbo.utils import yaml_loader
 
@@ -98,7 +99,7 @@ def test_anchor_scope_is_file_local_across_include(tmp_path: Path) -> None:
         included: !include frag.yaml
     """,
     )
-    with pytest.raises(Exception):
+    with pytest.raises(yaml.YAMLError):
         # Anchor &defaults is defined in main; *defaults inside frag.yaml must NOT resolve. Expect a YAML composer error.
         yaml_loader.load_as_dict(main)
 

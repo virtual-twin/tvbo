@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from .registry import ExportFormat, register
 
-
 # Serialisation (LinkML YAML / openMINDS JSON-LD)
 
 
@@ -23,6 +22,7 @@ def _render_pyrates_yaml(exp, **kw) -> str:
 
 def _render_openminds(exp, **kw) -> str:
     import json
+
     from tvbo.adapters.openminds import experiment_to_openminds
 
     indent = kw.pop("indent", 2)
@@ -52,8 +52,8 @@ def _render_tvb(exp, **kw):
 
 
 def _render_jax(exp, **kw):
-    from tvbo.classes.experiment import templates
     from tvbo.adapters.observation_sampling import resolve_observation_sampling
+    from tvbo.classes.experiment import templates
 
     template = templates.lookup.get_template("autodiff/tvbo-jax-sim.py.mako")
     # The same shared resolver the tvboptim runtime uses, so every Python backend agrees.

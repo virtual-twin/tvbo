@@ -9,13 +9,13 @@ Every selection is keyed by label, never positional.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Iterable, Mapping, Optional, Sequence
 
 # --------------------------------------------------------------------------- WHERE
 
 
-def experiment_id(iri) -> Optional[str]:
+def experiment_id(iri) -> str | None:
     """Experiment id of an ``iri`` whose last segment IS an experiment token, else ``None``.
 
     ``tvbo:exp/<study>/exp-32`` / ``exp-32`` / ``exp32`` / a bare ``32`` -> ``"32"``. A curated / dataset iri whose last segment merely *contains* digits (``rec-avgMatrix_atlas-HCPMMP1``) returns ``None`` — so it is not misread as an experiment (which would silently bind to ``exp-1``); ``locate_container`` then treats it as a path / curated reference instead.
@@ -153,7 +153,7 @@ def _is_numeric(value) -> bool:
     return all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in vals)
 
 
-def select_labeled(da, sel: Optional[Mapping[str, object]]):
+def select_labeled(da, sel: Mapping[str, object] | None):
     """Apply a label-keyed ``.sel`` to ``da``, never positional.
 
     Each entry selects along a dimension by coordinate label (``method="nearest"`` for a numeric selection, e.g. the sampled K on a continuous sweep; exact for a label).
@@ -197,9 +197,7 @@ def select_labeled(da, sel: Optional[Mapping[str, object]]):
 # --------------------------------------------------------------------------- RECONCILE
 
 
-def reconcile_by_label(
-    da, alias_map: Mapping[str, str], model_labels: Sequence[str], node_dims: Optional[Sequence[str]] = None
-):
+def reconcile_by_label(da, alias_map: Mapping[str, str], model_labels: Sequence[str], node_dims: Sequence[str] | None = None):
     """Align every labelled node axis of ``da`` to the model's node order, by label.
 
     A node axis is any dimension carrying string coordinates. Each is relabelled source -> canonical through ``alias_map`` (alias-aware, so a divergent nomenclature or a hemisphere-swapped convention still matches) then restricted to ``model_labels`` in the model's order — on *both* axes of a per-edge matrix.
@@ -255,8 +253,8 @@ def resolve_dataref(
     *,
     results_root=None,
     fallback_experiment=None,
-    alias_map: Optional[Mapping[str, str]] = None,
-    model_labels: Optional[Sequence[str]] = None,
+    alias_map: Mapping[str, str] | None = None,
+    model_labels: Sequence[str] | None = None,
 ):
     """Resolve a container-backed ``DataRef`` to a labelled :class:`xarray.DataArray`.
 
@@ -281,7 +279,7 @@ def resolve_dataref(
     return da
 
 
-def apply_transform(da, name: Optional[str]):
+def apply_transform(da, name: str | None):
     """Apply a named ``fn(da) -> da`` reduction, or return ``da`` unchanged for no transform.
 
     Resolves the name against the shared ``bsplot`` transform registry — the same one a figure ``Layer.transform`` and a study's ``code_modules`` use — so a sourced array and a figure layer name the same transforms. Imported lazily to keep this module free of an adapter dependency; a miss raises the registry's actionable "not registered" error.

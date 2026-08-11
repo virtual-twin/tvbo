@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """PyRates backend adapter for SimulationExperiment.
 
 This module handles all PyRates-specific logic for running simulations, converting between TVBO and PyRates data formats, and computing outputs.
@@ -17,15 +16,16 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from tvbo.adapters.base import BaseAdapter
-from tvbo.utils import is_array_valued, as_list
 
 # Single source of truth (forward map + derived reverse) lives in tvbo/codegen/pyrates.py; re-imported here and used by the model template so the rename mapping is defined exactly once. See PYRATES_REPL there.
 from tvbo.codegen.pyrates import PYRATES_REPL  # noqa: F401
+from tvbo.utils import as_list, is_array_valued
 
 if TYPE_CHECKING:
     import pandas as pd
-    from tvbo.data.types import ExperimentResult, SimulationResult
+
     from tvbo.classes.experiment import SimulationExperiment
+    from tvbo.data.types import ExperimentResult, SimulationResult
 
 
 # PyRates supported solvers and TVBO-to-PyRates mapping
@@ -89,9 +89,7 @@ def _patch_pyrates_reserved_names():
 
     PyRates >=1.2 rejects parameter / state-variable names that collide with a SymPy constant or function — ``Gamma``, ``gamma``, ``beta``, ``exp``, ``pi`` … — because an *undeclared* name of that form would sympify to the function/constant rather than a free symbol (e.g. ``sympify('Gamma*x')`` yields the gamma function). See ``check_vname`` in ``pyrates.frontend.template.operator``.
 
-    tvbo declares *every* model parameter and state variable as an explicit
-    PyRates operator variable, so PyRates' own parser resolves the name to a symbol and the collision never occurs — exactly how tvbo's parser lets a declared parameter override the SymPy built-in (see ``tvbo.parse.expression.parse_eq``). We therefore keep only the genuinely
-    PyRates-internal slot names reserved (the state vector ``y``/``dy``, the index slots, and the buffer/history name parts) and allow the rest. This is maximally flexible: a model may use ``Gamma`` as a parameter, or use the SymPy ``Gamma`` function in an equation where it is *not* declared.
+    tvbo declares *every* model parameter and state variable as an explicit PyRates operator variable, so PyRates' own parser resolves the name to a symbol and the collision never occurs — exactly how tvbo's parser lets a declared parameter override the SymPy built-in (see ``tvbo.parse.expression.parse_eq``). We therefore keep only the genuinely PyRates-internal slot names reserved (the state vector ``y``/``dy``, the index slots, and the buffer/history name parts) and allow the rest. This is maximally flexible: a model may use ``Gamma`` as a parameter, or use the SymPy ``Gamma`` function in an equation where it is *not* declared.
     """
     import pyrates.frontend.template.operator as _pr_op
     from pyrates.ir.circuit import PyRatesException
@@ -190,7 +188,7 @@ def _inline_model_functions(expr, dyn):
         for match in expr.atoms(sp.Function(func_name)):
             if match.func == sym_func:
                 body = sp.sympify(func_eq.rhs)
-                for formal, actual in zip(arg_names, match.args):
+                for formal, actual in zip(arg_names, match.args, strict=True):
                     body = body.subs(sp.Symbol(formal), actual)
                 expr = expr.subs(match, body)
     return expr
@@ -199,7 +197,7 @@ def _inline_model_functions(expr, dyn):
 class PyRatesAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via PyRates backend."""
 
-    def __init__(self, experiment: "SimulationExperiment"):
+    def __init__(self, experiment: SimulationExperiment):
         """Initialize adapter with experiment reference.
 
         Parameters
@@ -216,7 +214,7 @@ class PyRatesAdapter(BaseAdapter):
         outputs: list[str] | None = None,
         matrix_edge_threshold: int = 100,
         **kwargs,
-    ) -> "ExperimentResult":
+    ) -> ExperimentResult:
         """Run simulation and explorations using PyRates backend.
 
         Handles both integration and grid-search explorations in a single call, sharing YAML export / circuit load across both.
@@ -235,9 +233,10 @@ class PyRatesAdapter(BaseAdapter):
         **kwargs
             Additional kwargs passed to circuit.run() / grid_search().
 
-        Returns
+        Returns:
         -------
-        ExperimentResult"""
+        ExperimentResult
+        """
         from pyrates import clear
 
         from tvbo.data.types import ExperimentResult
@@ -349,7 +348,7 @@ class PyRatesAdapter(BaseAdapter):
         **kwargs
             Additional keyword arguments forwarded to ``grid_search``.
 
-        Returns
+        Returns:
         -------
         dict
             ``{exploration_name: ExplorationResult}``
@@ -396,7 +395,7 @@ class PyRatesAdapter(BaseAdapter):
 
         Uses ``_pyrates_node_map()`` to resolve operator/node naming, so the generated paths match the YAML template exactly.
 
-        Returns
+        Returns:
         -------
         tuple
             ``(param_grid, param_map, axes)``
@@ -466,8 +465,8 @@ class PyRatesAdapter(BaseAdapter):
 
     def _df_to_exploration_result(
         self,
-        results_df: "pd.DataFrame",
-        results_map: "pd.DataFrame",
+        results_df: pd.DataFrame,
+        results_map: pd.DataFrame,
         axes: list,
         expl,
         expl_name: str,
@@ -583,7 +582,7 @@ class PyRatesAdapter(BaseAdapter):
 
         Mirrors the naming conventions of the PyRates YAML template exactly, so output paths and param_map entries resolve correctly.
 
-        Returns
+        Returns:
         -------
         dict
             ``{dyn_name: {'op': str, 'nodes': list[str]}}``
@@ -629,7 +628,7 @@ class PyRatesAdapter(BaseAdapter):
     def _load_circuit_from_yaml(self, include_edges: bool = True) -> tuple:
         """Load PyRates circuit from YAML template.
 
-        Returns
+        Returns:
         -------
         tuple
             (circuit, tmpdir, pkg_name) for cleanup
@@ -781,12 +780,11 @@ class PyRatesAdapter(BaseAdapter):
 
         return outputs
 
-    def _compute_outputs(self, result: "pd.DataFrame") -> "pd.DataFrame":
+    def _compute_outputs(self, result: pd.DataFrame) -> pd.DataFrame:
         """Compute algebraic output variables from PyRates simulation results.
 
         PyRates only records state variables. This method evaluates output equations (like 'r_eff = r_in*x') using recorded state values and parameters.
         """
-
         exp = self.experiment
         dynamics = self.build_dynamics_dict()
 
@@ -860,7 +858,7 @@ class PyRatesAdapter(BaseAdapter):
 
     def _compute_node_outputs(
         self,
-        result: "pd.DataFrame",
+        result: pd.DataFrame,
         dyn,
         prefix: str,
         safe_label: str,
@@ -905,7 +903,7 @@ class PyRatesAdapter(BaseAdapter):
                 func = sp.lambdify(list(subs.keys()), expr, "numpy")
                 result[out_col] = func(*subs.values())
 
-    def _compute_single_outputs(self, result: "pd.DataFrame", dyn) -> None:
+    def _compute_single_outputs(self, result: pd.DataFrame, dyn) -> None:
         """Compute algebraic outputs for single dynamics case."""
         import sympy as sp
 
@@ -986,7 +984,7 @@ class PyRatesAdapter(BaseAdapter):
 
         return inputs
 
-    def _df_to_simulation_result(self, result: "pd.DataFrame") -> "SimulationResult":
+    def _df_to_simulation_result(self, result: pd.DataFrame) -> SimulationResult:
         """Convert PyRates pandas DataFrame result to SimulationResult."""
         import xarray as xr
 

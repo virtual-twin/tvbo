@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """TVB (The Virtual Brain) adapter for tvbo.
 
 All TVB ↔ tvbo conversion logic lives here:
@@ -18,9 +17,10 @@ All TVB ↔ tvbo conversion logic lives here:
 
 from __future__ import annotations
 
-import numpy as np
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
+
+import numpy as np
 
 from tvbo.datamodel import schema as tvbo_datamodel
 
@@ -55,7 +55,7 @@ def _extract_dynamics(sim) -> tvbo_datamodel.Dynamics:
             model_metadata.parameters[p] = tvbo_datamodel.Parameter(name=p, value=val)
     else:
         # Fallback to summary_info for models without parameter name lists
-        for k, v in dict(getattr(sim.model, "summary_info", lambda: {})()).items():
+        for k in dict(getattr(sim.model, "summary_info", lambda: {})()):
             if k in {
                 "Type",
                 "title",
@@ -290,8 +290,8 @@ def _extract_observations(sim) -> dict:
 
     Maps each TVB monitor to a tvbo Observation with full metadata including ``class_reference`` for exact TVB class reconstruction.
     """
-    from tvb.simulator import monitors as tvb_monitors
     from tvb.datatypes import equations as tvb_equations
+    from tvb.simulator import monitors as tvb_monitors
 
     # Map TVB monitor class → (tvbo observation name, TVB class name)
     _MONITOR_MAP = {
@@ -491,13 +491,13 @@ def to_tvb_monitor(observation):
     observation : tvbo.datamodel.schema.Observation
         The tvbo observation to convert.
 
-    Returns
+    Returns:
     -------
     tvb.simulator.monitors.Monitor
         Configured TVB monitor instance.
     """
-    from tvb.simulator import monitors as tvb_monitors
     from tvb.datatypes import equations as tvb_equations
+    from tvb.simulator import monitors as tvb_monitors
 
     cr = getattr(observation, "class_reference", None)
     name = str(observation.name)
@@ -594,8 +594,8 @@ def _load_projection_monitor_sensors(observation, tvb_class_name, kwargs):
 
     Reads the sensor network referenced by ``observation.data_source`` and populates ``kwargs`` with sensor and projection objects.
     """
-    from tvb.datatypes import sensors as tvb_sensors
     from tvb.datatypes import projections as tvb_projections
+    from tvb.datatypes import sensors as tvb_sensors
 
     _SENSOR_TYPES = {
         "EEG": tvb_sensors.SensorsEEG,
@@ -618,9 +618,11 @@ def _load_projection_monitor_sensors(observation, tvb_class_name, kwargs):
         return
 
     try:
-        from tvbo import Network
-        import numpy as np
         import os
+
+        import numpy as np
+
+        from tvbo import Network
 
         # Resolve path relative to database/networks if not absolute
         if not os.path.isabs(sensor_path):
@@ -689,13 +691,14 @@ def from_tvb_zip(zip_path):
     zip_path : str or Path
         Path to TVB connectivity ZIP file.
 
-    Returns
+    Returns:
     -------
     Network
         Network instance with loaded arrays ready for ``save()``.
     """
-    import zipfile
     import io
+    import zipfile
+
     from tvbo.classes.network import Network
 
     zip_path = Path(zip_path)
@@ -741,7 +744,7 @@ def from_tvb(connectivity):
     connectivity : tvb.datatypes.connectivity.Connectivity
         A configured TVB Connectivity instance.
 
-    Returns
+    Returns:
     -------
     Network
         Network instance with arrays loaded, ready for ``save()``.
@@ -809,7 +812,8 @@ def from_tvb_surface(connectivity, surface, region_mapping):
 
     Produces two linked networks:
 
-    1. **Region-level** (parent): from TVB Connectivity 2. **Vertex-level** (child): mesh + region_mapping linking vertices to regions via hierarchical ``node_mapping``
+    1. **Region-level** (parent): from TVB Connectivity
+    2. **Vertex-level** (child): mesh + region_mapping linking vertices to regions via hierarchical ``node_mapping``
 
     Parameters
     ----------
@@ -820,7 +824,7 @@ def from_tvb_surface(connectivity, surface, region_mapping):
     region_mapping : tvb.datatypes.region_mapping.RegionMapping
         TVB RegionMapping mapping vertices to regions.
 
-    Returns
+    Returns:
     -------
     tuple[Network, Network]
         ``(region_network, surface_network)``
@@ -886,7 +890,7 @@ def to_tvb(network):
     network : Network
         tvbo Network instance with weights and lengths matrices.
 
-    Returns
+    Returns:
     -------
     tvb.datatypes.connectivity.Connectivity
         Configured TVB Connectivity ready for simulation.
@@ -922,7 +926,7 @@ def to_tvb(network):
 
 def from_tvb_simulator(
     sim: Any,
-    experiment_id: Union[int, None] = None,
+    experiment_id: int | None = None,
 ) -> tvbo_datamodel.SimulationExperiment:
     """Convert a TVB Simulator into a tvbo SimulationExperiment datamodel.
 
@@ -933,7 +937,7 @@ def from_tvb_simulator(
     experiment_id : int, optional
         Experiment identifier. Defaults to the simulator's GID.
 
-    Returns
+    Returns:
     -------
     tvbo_datamodel.SimulationExperiment
         Schema-valid datamodel instance.

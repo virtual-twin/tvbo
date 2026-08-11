@@ -1,9 +1,6 @@
-"""
-Unit and Dimension Utilities
-============================
+"""Unit and Dimension Utilities.
 
-Central mapping between TVBO's ``UnitEnum`` (QUDT-backed), LEMS dimensions,
-SymPy units, and legacy free-text unit strings found in older model YAMLs.
+Central mapping between TVBO's ``UnitEnum`` (QUDT-backed), LEMS dimensions, SymPy units, and legacy free-text unit strings found in older model YAMLs.
 
 The ``UnitEnum`` values use conventional abbreviations (ms, mV, nA, etc.) as defined in the LinkML schema (``schema/tvbo_datamodel.yaml``).
 
@@ -216,7 +213,8 @@ def unit_to_si_factor(unit):
     >>> unit_to_si_factor("ms")
     0.001
     >>> unit_to_si_factor(None)
-    1.0"""
+    1.0
+    """
     if unit is None:
         return 1.0
     key = str(unit).strip()
@@ -319,7 +317,7 @@ _UNIT_TO_LATEX = {
 
 
 def unit_to_latex(unit):
-    """Return a LaTeX string for the unit, suitable for wrapping in ``$...$``.
+    r"""Return a LaTeX string for the unit, suitable for wrapping in ``$...$``.
 
     Converts enum values like ``per_ms`` → ``\\mathrm{ms}^{-1}``, ``rad_per_ms`` → ``\\mathrm{rad}\\,\\mathrm{ms}^{-1}``.
     Returns an empty string for dimensionless / unknown units.
@@ -732,7 +730,8 @@ def unit_to_symbol(unit):
     >>> unit_to_symbol("per_ms")
     '1/ms'
     >>> unit_to_symbol(None)
-    ''"""
+    ''
+    """
     if unit is None:
         return ""
     # PermissibleValue (from getattr(UnitEnum, name)) has .text

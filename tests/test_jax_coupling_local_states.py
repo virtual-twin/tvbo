@@ -4,8 +4,7 @@
 
 What it did not do is notice when a gathered name has no row to read: a state named in ``pre`` that is not transmitted was simply never assigned, and the defect surfaced as a ``NameError`` from generated code rather than as a codegen error naming the spec.
 
-NOT pinned here, because it is an open question rather than a bug: what a BARE ``local_states`` name means inside ``pre``. The schema says the target's value; the factored
-Kuramoto form in the database uses it as the source. Until one reading wins, these tests assert only the behaviour both agree on.
+NOT pinned here, because it is an open question rather than a bug: what a BARE ``local_states`` name means inside ``pre``. The schema says the target's value; the factored Kuramoto form in the database uses it as the source. Until one reading wins, these tests assert only the behaviour both agree on.
 """
 
 from __future__ import annotations
@@ -63,7 +62,7 @@ def test_the_target_alias_reads_current_state_not_the_gathered_row():
 
 
 def test_reading_only_the_target_alias_is_not_mistaken_for_a_source_read():
-    """`\\b` does not match the `v` inside `v_i`, so the guard must not fire on it."""
+    r"""`\\b` does not match the `v` inside `v_i`, so the guard must not fire on it."""
     code = _render("sin(theta) * v_i", ["v"])
     assert _assignment(code, "v_i").startswith("current_state[")
 

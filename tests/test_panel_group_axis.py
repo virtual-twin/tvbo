@@ -78,8 +78,8 @@ def test_the_label_is_anchored_away_from_the_axis_it_annotates(axis, ha, va):
 def test_both_axes_can_carry_groups_at_once():
     from pathlib import Path
 
-    from tvbo.adapters.bsplot import _resolve_drawable
     from tests.test_panel_kind_grid import _Panel
+    from tvbo.adapters.bsplot import _resolve_drawable
 
     panel = _Panel(kind="heatmap", opts={"ygroups": {"bounds": BOUNDS}, "xgroups": {"bounds": [2, 4]}})
     got = _resolve_drawable(panel, "p", Path("."))
@@ -90,7 +90,7 @@ def test_a_panel_without_groups_carries_an_empty_list_not_none():
     """The template iterates it unconditionally."""
     from pathlib import Path
 
-    from tvbo.adapters.bsplot import _resolve_drawable
     from tests.test_panel_kind_grid import _Panel
+    from tvbo.adapters.bsplot import _resolve_drawable
 
     assert _resolve_drawable(_Panel(kind="heatmap"), "p", Path("."))["groups"] == []

@@ -5,12 +5,11 @@ Observations that do not carry the dim are left untouched. Without ``reduce`` th
 """
 
 import numpy as np
-import xarray as xr
 import pytest
+import xarray as xr
 
 from tvbo.data.types import ExplorationResult
 from tvbo.utils import Bunch
-
 
 MU_VALS = np.array([0.1, 0.2, 0.3])
 SEED_VALS = np.array([0, 1, 2, 3])

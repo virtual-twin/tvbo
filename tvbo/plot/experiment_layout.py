@@ -1,19 +1,15 @@
-#
-# Module: experiment_layout.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Declarative and auto-configured layout composition for Experiment plotting."""
 
 from __future__ import annotations
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-from tvbo.plot.layout_mosaic import prepare_mosaic, finish_panel
 from tvbo.plot.dynamics_layout import render_dynamics_panel
+from tvbo.plot.layout_mosaic import finish_panel, prepare_mosaic
 
 
 def _freeze_config(value):
@@ -160,7 +156,7 @@ def _auto_experiment_panels(result):
             }
 
     if result.explorations:
-        for name, exploration in result.explorations.items():
+        for name in result.explorations:
             if name in ts_explorations:
                 continue
             key = _next_key()

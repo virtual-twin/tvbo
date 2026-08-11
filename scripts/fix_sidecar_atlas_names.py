@@ -5,7 +5,9 @@ Updates parcellation.atlas.name to normalized form and adds segmentation/scale t
 """
 
 import re
+
 import yaml
+
 from tvbo import database_path
 
 NET_DIR = database_path / "networks"

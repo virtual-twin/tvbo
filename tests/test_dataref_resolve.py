@@ -77,7 +77,9 @@ def test_locate_container_by_experiment(sweep_h5):
 
 def test_locate_container_by_experiment_exp_dash_spelling(sweep_h5):
     """The ``exp-N`` spelling (as written in a recipe's ``used: {experiment: exp-32}``) resolves at resolve time, matching the planner — it must not raise on ``int('exp-32')``.
-    Covers both the direct ``experiment`` path and the from_experiment fallback path."""
+
+    Covers both the direct ``experiment`` path and the from_experiment fallback path.
+    """
     root, path = sweep_h5
     assert dr.locate_container(_ref(experiment="exp-32"), results_root=root) == path
     assert dr.locate_container(_ref(), results_root=root, fallback_experiment="exp-32") == path

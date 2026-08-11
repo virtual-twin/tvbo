@@ -3,8 +3,7 @@
 
 A model network labels its regions with an atlas's canonical names; empirical per-subject pipelines (e.g. the HCP-YA functional-connectome pipeline) label the SAME parcels with a different string convention. ``by_label`` node reconciliation aligns them by label, so unless the atlas records the alternate names the two conventions never meet on the string alone.
 
-This tool derives each region's empirical alias from its canonical label via a documented, per-atlas deterministic rule and records it in that region's SANDS ``alternateName`` list (appending, never clobbering existing aliases). The rule runs
-ONCE here; the atlas YAML is the source of truth thereafter and the resolver does a pure alias-aware string match — no normalization in the hot path. Each atlas is
+This tool derives each region's empirical alias from its canonical label via a documented, per-atlas deterministic rule and records it in that region's SANDS ``alternateName`` list (appending, never clobbering existing aliases). The rule runs ONCE here; the atlas YAML is the source of truth thereafter and the resolver does a pure alias-aware string match — no normalization in the hot path. Each atlas is
 **bijection- and hemisphere-parity-checked against a real subject sidecar** (when the
 data volume is reachable), so a rule error surfaces immediately as a non-bijection or a hemisphere swap rather than a silent mis-map.
 

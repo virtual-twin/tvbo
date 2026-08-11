@@ -1,10 +1,6 @@
-#
-# Module: prune.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Drop the imports and bindings a generated module does not use.
 
 A backend template cannot know which imports its output will need: whether ``BoundedSolver`` appears depends on a state variable declaring ``domain.enforce``, whether ``optax`` appears depends on the experiment carrying an optimization. Writing that out as one ``% if`` per import means every new feature has to remember to extend a condition it does not otherwise touch, and the ones already written drift — the tvb and tvboptim headers between them carried nineteen names no render referenced.
@@ -149,8 +145,7 @@ _BLOCK_FIELDS = ("body", "orelse", "finalbody", "handlers")
 def _block_sizes(tree: ast.AST) -> dict[int, int]:
     """``id(stmt)`` → how many statements share its block.
 
-    Removing the only statement of a block leaves a header with no suite, which is a
-    :class:`SyntaxError` rather than a tidier module: ``if flag:`` followed straight by ``return`` does not compile, and neither does an emptied ``try:``.
+    Removing the only statement of a block leaves a header with no suite, which is a :class:`SyntaxError` rather than a tidier module: ``if flag:`` followed straight by ``return`` does not compile, and neither does an emptied ``try:``.
     """
     sizes: dict[int, int] = {}
     for node in ast.walk(tree):
@@ -222,8 +217,7 @@ def prune_unused_imports(source: str) -> str:
 
     A statement importing several names keeps the ones that are used; a statement whose names are all unused is dropped whole. ``from __future__`` imports, star imports and lines carrying a ``noqa`` comment are always kept — the first two because dropping them changes semantics, the last because it is how a template says an import is deliberate.
 
-    Source that does not parse is returned unchanged: reporting a syntax error is
-    :func:`tvbo.codegen.style.format_source`'s job, and it gives a better message.
+    Source that does not parse is returned unchanged: reporting a syntax error is :func:`tvbo.codegen.style.format_source`'s job, and it gives a better message.
     """
     try:
         tree = ast.parse(source)

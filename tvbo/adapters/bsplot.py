@@ -15,7 +15,7 @@ from tvbo.templates import lookup
 from tvbo.utils import as_list
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _open_ds(path):
     """Open a result container once per distinct path (shared by the adapter's custom panels)."""
     import xarray as xr
@@ -52,7 +52,7 @@ def register_panel(name):
     return deco
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _read_mesh_cached(path: str, kind: str, mesh_format):
     """One parse per distinct mesh, so a grid of surfaces reads its file once."""
     import numpy as _np
@@ -95,8 +95,7 @@ def _read_mesh(path: str, kind: str, mesh_format):
 def _surface_mesh(ctx):
     """``(vertices, faces)`` for a ``surface`` panel, from whichever source it declares.
 
-    Three tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group (geometry belongs to the network, and ``network_io`` already writes it), a surface mesh
-    FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that ``Mesh.mesh_file`` has always declared — or an ``.npz`` holding ``vertices``/``faces`` (what an analysis emits when the mesh is derived rather than measured).
+    Three tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group (geometry belongs to the network, and ``network_io`` already writes it), a surface mesh FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that ``Mesh.mesh_file`` has always declared — or an ``.npz`` holding ``vertices``/``faces`` (what an analysis emits when the mesh is derived rather than measured).
     """
     opts, base = ctx.get("opts", {}), ctx.get("base_dir")
     net_path, mesh_path = opts.get("network"), opts.get("mesh")
@@ -468,8 +467,7 @@ def _panel_opts(panel) -> dict:
 def _axopts(panel) -> dict:
     """Axis-level directives for a grammar panel (labels, limits, ticks, legend).
 
-    Draws from ``Panel.opts`` (the recognised ``_AXIS_OPTS`` keys) plus the boolean ``Panel.legend`` slot. This is the minimal per-panel label/limit override: the paper's
-    LaTeX axis labels and shared ranges live here rather than defaulting to the bare variable name.
+    Draws from ``Panel.opts`` (the recognised ``_AXIS_OPTS`` keys) plus the boolean ``Panel.legend`` slot. This is the minimal per-panel label/limit override: the paper's LaTeX axis labels and shared ranges live here rather than defaulting to the bare variable name.
     """
     o = {k: v for k, v in _panel_opts(panel).items() if k in _AXIS_OPTS}
     if getattr(panel, "legend", None):
@@ -534,7 +532,9 @@ def _group_axis(opts, axis: str) -> dict | None:
         "axis": axis,
         "rules": [b + edge for b in bounds[:-1]],  # interior only: the last is the axis end
         "rule_kwargs": {"color": str(spec.get("color", "k")), "linewidth": float(spec.get("linewidth", 0.6))},
-        "labels": [{"text": t, "at": (s + e) / 2.0 + edge} for (s, e), t in zip(zip(starts, bounds), labels)],
+        "labels": [
+            {"text": t, "at": (s + e) / 2.0 + edge} for (s, e), t in zip(zip(starts, bounds, strict=True), labels, strict=True)
+        ],
         "pad": float(spec.get("pad", 0.04)),
         "kwargs": {
             "ha": "right" if axis == "y" else "center",
@@ -584,7 +584,7 @@ class _UsedOnly:
         self.used = used
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _container_path(iri, base_dir: Path) -> str:
     """Resolve an experiment IRI/key to its result container (skips ``*_network.h5``).
 
@@ -745,8 +745,7 @@ def _grid_geometry(opts, n_cells):
 
     Rows and columns are labelled ONCE, at the left and top, which is the whole reason a paper's composite panel is one lettered panel rather than n of them: declaring each cell as its own mosaic entry repeats the row name in every cell and renumbers panels the paper letters once. The label strips are reserved out of the drawable area (``left`` and ``top``), so the cells shrink to make room instead of being drawn over.
 
-    A column header sits just above the cells rather than at the panel's own top: parked at a fixed fraction it would leave a dead band whenever ``top`` is opened up for something else, and stop reading as belonging to its column. ``between`` writes text in the gap
-    BEFORE each cell, which is what turns a row of maps into a paper's decomposition equation ``y = a1 x psi_1 + a2 x psi_2 + ...``.
+    A column header sits just above the cells rather than at the panel's own top: parked at a fixed fraction it would leave a dead band whenever ``top`` is opened up for something else, and stop reading as belonging to its column. ``between`` writes text in the gap BEFORE each cell, which is what turns a row of maps into a paper's decomposition equation ``y = a1 x psi_1 + a2 x psi_2 + ...``.
 
     An unset ``nrows`` holds every cell, so declaring only ``ncols`` wraps rather than drops. An explicit ``nrows`` still caps the grid — cropping the extras deliberately.
     ``bottom`` is ``top``'s counterpart: cells that carry tick labels or a shared axis label need that strip reserved, or the labels are drawn outside the panel's own box.
@@ -840,7 +839,7 @@ def _grid_cells(panel, key, base_dir, opts) -> tuple:
     boxes, labels = _grid_geometry(opts, len(cells))
     resolved = [
         dict(_resolve_drawable(cell, f"{key}_cell{i}", base_dir), bounds=box)
-        for i, (cell, box) in enumerate(zip(cells, boxes))
+        for i, (cell, box) in enumerate(zip(cells, boxes, strict=True))
     ]
     return resolved, labels
 
@@ -1068,8 +1067,7 @@ def _used_source(used) -> str | None:
 def _panel_descriptor(panel) -> str:
     """The auto-derived structural half of a panel's caption clause, read from its spec.
 
-    From each layer's ``mark`` + ``encoding`` (which quantity is on which axis) and its ``used:``
-    DataRef (which run/analysis it came from), so the description follows the figure: move a panel or rebind a layer and the sentence changes with it. Units live in the runtime container and are folded in by the renderer, not typed here.
+    From each layer's ``mark`` + ``encoding`` (which quantity is on which axis) and its ``used:`` DataRef (which run/analysis it came from), so the description follows the figure: move a panel or rebind a layer and the sentence changes with it. Units live in the runtime container and are folded in by the renderer, not typed here.
     """
     kind = str(getattr(panel, "kind", "") or "")
     if kind == "image":

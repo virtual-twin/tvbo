@@ -43,7 +43,7 @@ import argparse
 import pathlib
 import re
 import sys
-from typing import Iterable
+from collections.abc import Iterable
 
 import yaml
 

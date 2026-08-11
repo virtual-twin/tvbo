@@ -7,17 +7,17 @@ Each primitive is therefore declared once, as a source expression over two base 
 
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Sequence, Tuple
+from collections.abc import Iterable, Sequence
 
 BASE_MATRIX = "_M"
 BASE_LENGTHS = "_L"
 
-PRELUDE: Tuple[Tuple[str, str], ...] = (
+PRELUDE: tuple[tuple[str, str], ...] = (
     ("_rs", f"{BASE_MATRIX}.sum(axis=1, keepdims=True)"),
     ("_cs", f"{BASE_MATRIX}.sum(axis=0, keepdims=True)"),
 )
 
-PRIMITIVES: Dict[str, str] = {
+PRIMITIVES: dict[str, str] = {
     "M": BASE_MATRIX,
     "W": BASE_MATRIX,
     "M_min": f"jnp.nanmin({BASE_MATRIX})",
@@ -39,14 +39,14 @@ transforms sees the preceding one's output.
 """
 
 
-def required_prelude(symbols: Iterable[str]) -> List[Tuple[str, str]]:
+def required_prelude(symbols: Iterable[str]) -> list[tuple[str, str]]:
     """The prelude bindings *symbols* transitively need, in declaration order."""
     wanted = {s for s in symbols if s in PRIMITIVES}
     exprs = " ".join(PRIMITIVES[s] for s in wanted)
     return [(name, expr) for name, expr in PRELUDE if name in exprs]
 
 
-def runtime_env(matrix, lengths, jnp, jsp=None) -> Dict[str, object]:
+def runtime_env(matrix, lengths, jnp, jsp=None) -> dict[str, object]:
     """Evaluate every primitive against live arrays.
 
     Args:
@@ -58,7 +58,7 @@ def runtime_env(matrix, lengths, jnp, jsp=None) -> Dict[str, object]:
     Returns:
         Mapping of every primitive name to its value, plus the array modules.
     """
-    scope: Dict[str, object] = {BASE_MATRIX: matrix, BASE_LENGTHS: lengths, "jnp": jnp}
+    scope: dict[str, object] = {BASE_MATRIX: matrix, BASE_LENGTHS: lengths, "jnp": jnp}
     for name, expr in PRELUDE:
         scope[name] = eval(expr, dict(scope))
     env = {name: eval(expr, dict(scope)) for name, expr in PRIMITIVES.items()}
@@ -66,7 +66,7 @@ def runtime_env(matrix, lengths, jnp, jsp=None) -> Dict[str, object]:
     return env
 
 
-def emit_env(symbols: Sequence[str], matrix: str, lengths: str) -> Tuple[List[str], List[str]]:
+def emit_env(symbols: Sequence[str], matrix: str, lengths: str) -> tuple[list[str], list[str]]:
     """Source lines binding the primitives *symbols* uses, for an emitted script.
 
     Args:
@@ -87,7 +87,7 @@ def emit_env(symbols: Sequence[str], matrix: str, lengths: str) -> Tuple[List[st
         return expr.replace(BASE_MATRIX, matrix).replace(BASE_LENGTHS, lengths)
 
     matrix_lines = [f"{name} = {_bind(expr)}" for name, expr in required_prelude(used)]
-    data_lines: List[str] = []
+    data_lines: list[str] = []
     for s in used:
         line = f"{s} = {_bind(PRIMITIVES[s])}"
         (data_lines if s in DATA_DERIVED else matrix_lines).append(line)

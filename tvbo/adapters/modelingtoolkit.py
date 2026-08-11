@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 """Standalone ModelingToolkit.jl backend adapter for SimulationExperiment.
 
 Pure MTK adapter using @component + mtkcompile + ODEProblem + solve.
 No dependency on NetworkDynamics.jl.
 
-Key capability: symbolic round-trip.  tvbo's SymPy equations are rendered to
-MTK Julia code, MTK's ``mtkcompile`` performs structural transformations (e.g. higher-order ODE lowering), and the resulting equations are extracted back into SymPy.
+Key capability: symbolic round-trip.  tvbo's SymPy equations are rendered to MTK Julia code, MTK's ``mtkcompile`` performs structural transformations (e.g. higher-order ODE lowering), and the resulting equations are extracted back into SymPy.
 """
 
 from __future__ import annotations
@@ -58,8 +56,8 @@ class ModelingToolkitAdapter(BaseAdapter):
     """
 
     def __init__(self, source=None):
-        from tvbo.classes.experiment import SimulationExperiment
         from tvbo.classes.dynamics import Dynamics
+        from tvbo.classes.experiment import SimulationExperiment
 
         if source is None:
             self.experiment = None
@@ -81,10 +79,10 @@ class ModelingToolkitAdapter(BaseAdapter):
         template = templates.lookup.get_template("tvbo-mtk-experiment.jl.mako")
         return template.render(**ctx)
 
-    def run(self, **kwargs) -> "ExperimentResult":
+    def run(self, **kwargs) -> ExperimentResult:
         """Run simulation using pure ModelingToolkit.jl.
 
-        Returns
+        Returns:
         -------
         ExperimentResult
             Simulation results with named dimensions and coordinates.
@@ -175,11 +173,12 @@ class ModelingToolkitAdapter(BaseAdapter):
               if given ``Dynamics``, ``SimulationExperiment`` if given an
               experiment, ``"sympy"`` if empty.
 
-        Returns
+        Returns:
         -------
-        dict | Dynamics | SimulationExperiment"""
-        from tvbo.classes.experiment import SimulationExperiment
+        dict | Dynamics | SimulationExperiment
+        """
         from tvbo.classes.dynamics import Dynamics
+        from tvbo.classes.experiment import SimulationExperiment
 
         # Accept source at call time — set up adapter state
         if source is not None:
@@ -326,7 +325,7 @@ def _parse_mtk_equation(lhs_str, rhs_str, unknown_strs, param_names):
     param_names : list[str]
         Parameter names from Julia.
 
-    Returns
+    Returns:
     -------
     tuple[str, sympy.Eq]
         ``(python_var_name, Eq(Derivative(var, t), rhs_expr))``.

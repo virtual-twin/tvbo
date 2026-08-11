@@ -5,14 +5,11 @@
 #
 # Copyright (c) 2023 Charité Universitätsmedizin Berlin
 #
-"""
-# LEMS-Generator
-Create LEMS model from TVB-O"""
+"""# LEMS-Generator Create LEMS model from TVB-O."""
 
 # %%
-import numpy as np
-
 import lems.api as lems
+import numpy as np
 
 np.random.seed(1312)
 

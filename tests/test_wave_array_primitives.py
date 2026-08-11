@@ -6,8 +6,8 @@
 import numpy as np
 import pytest
 
-from tvbo.parse.expression import parse_eq
 from tvbo.codegen import render_expression
+from tvbo.parse.expression import parse_eq
 
 
 def _render(rhs, fmt, params):
@@ -73,8 +73,10 @@ def test_clip_any_all_render(fmt, mod):
 
 
 def test_masked_mean_form_composes():
-    """The axis-1 masked-mean the wave detector uses composes from the primitives:
-    sum_axis(ang*nbr_mask, 1) / deg  ==  (ang*nbr_mask).sum(1)/deg."""
+    """The axis-1 masked-mean the wave detector uses composes from the primitives.
+
+    ``sum_axis(ang*nbr_mask, 1) / deg`` == ``(ang*nbr_mask).sum(1)/deg``.
+    """
     import jax.numpy as jnp
 
     code = _render("sum_axis(ang * nbr_mask, 1) / deg", "jax", ["ang", "nbr_mask", "deg"])

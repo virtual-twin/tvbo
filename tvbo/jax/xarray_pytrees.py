@@ -13,7 +13,6 @@ import jax
 import jax.tree_util
 import xarray
 
-
 # _HashableCoords – makes coordinate dicts hashable so JAX can treat them as static auxiliary data in pytree flatten/unflatten.
 
 

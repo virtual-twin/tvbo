@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Prepared codegen context for the Julia model templates.
 
 The Julia backends (DifferentialEquations.jl, NetworkDynamics.jl, ModelingToolkit.jl) share the same *metadata → Julia* translation logic: which state variables/parameters become symbols, which optional packages are needed, how conditional derived variables fold into ``ifelse``, and how multi-mode models lay their state out along a mode axis.
@@ -120,8 +119,7 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
 
     State is ``n_nodes`` blocks per state variable (block ``k`` spans indices ``k*N+1 .. (k+1)*N``). Each long-range coupling term becomes a connectivity matvec evaluated once per step (``_coup_<c> = W_NET · s_view``); the per-node scalar RHS (the same expressions the single-node emitter produces) runs inside a ``for i in 1:N`` loop. ``local`` coupling inputs are zero in a region sim.
 
-    ``constraints`` promotes constraint-defined free parameters (e.g. the FIC ``J_i``) from parameters to extra unknown STATE blocks, appended after the real state. Each block's defining equation is the ``TuningObjective`` residual (``target_variable − target_value``), not an ODE: at equilibrium the residual is zero so the constraint holds, and during the initial-state warm-up the same residual is stabilising negative feedback (``target_variable`` ↑ ⇒ free param ↑
-    ⇒ inhibition ↑ ⇒ ``target_variable`` ↓), so no separate solver is needed. This is the FIC branch of Deco 2014 Fig 2c. See ``DEV_PLAN_recipe_native.md`` (D2).
+    ``constraints`` promotes constraint-defined free parameters (e.g. the FIC ``J_i``) from parameters to extra unknown STATE blocks, appended after the real state. Each block's defining equation is the ``TuningObjective`` residual (``target_variable − target_value``), not an ODE: at equilibrium the residual is zero so the constraint holds, and during the initial-state warm-up the same residual is stabilising negative feedback (``target_variable`` ↑ ⇒ free param ↑ ⇒ inhibition ↑ ⇒ ``target_variable`` ↓), so no separate solver is needed. This is the FIC branch of Deco 2014 Fig 2c. See ``DEV_PLAN_recipe_native.md`` (D2).
     Each constraint is ``{"parameter", "target_variable", "target_value"}``.
     """
     import numpy as np

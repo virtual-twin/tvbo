@@ -1,7 +1,6 @@
 """TVB-O command-line interface.
 
-See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based, registry-driven, and transport-aware. This module assembles the top-level
-:class:`typer.Typer` ``app`` from per-verb sub-modules.
+See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based, registry-driven, and transport-aware. This module assembles the top-level :class:`typer.Typer` ``app`` from per-verb sub-modules.
 """
 
 from __future__ import annotations
@@ -10,23 +9,52 @@ import typer
 
 # Bound on the package first, so the verb modules' relative imports resolve by attribute.
 from . import _backends, _common, _workflow  # noqa: F401
-
 from . import (
     cache as _cache_cmd,
+)
+from . import (
     config as _config_cmd,
+)
+from . import (
     export as _export_cmd,
+)
+from . import (
     figures as _figures_cmd,
+)
+from . import (
     formats as _formats_cmd,
-    info as _info_cmd,
+)
+from . import (
     import_ as _import_cmd,
+)
+from . import (
+    info as _info_cmd,
+)
+from . import (
     install as _install_cmd,
+)
+from . import (
     network as _network_cmd,
+)
+from . import (
     run as _run_cmd,
+)
+from . import (
     save as _save_cmd,
+)
+from . import (
     skills as _skills_cmd,
+)
+from . import (
     validate as _validate_cmd,
+)
+from . import (
     verify as _verify_cmd,
+)
+from . import (
     version as _version_cmd,
+)
+from . import (
     workflow as _workflow_cmd,
 )
 
@@ -82,6 +110,15 @@ app.add_typer(
 app.add_typer(_install_cmd.app, name="install", help="Provision optional native components pip cannot place (e.g. AUTO-07p).")
 
 
+def _print_version(value: bool) -> None:
+    """Print the version and exit, so `--version` answers before any verb is dispatched."""
+    if value:
+        import tvbo
+
+        typer.echo(tvbo.__version__)
+        raise typer.Exit
+
+
 @app.callback()
 def _configure(
     log_level: str = typer.Option(
@@ -93,11 +130,13 @@ def _configure(
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output (DEBUG)."),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Errors only — suppress progress."),
+    version: bool = typer.Option(
+        False, "--version", "-V", help="Print the tvbo version and exit.", callback=_print_version, is_eager=True
+    ),
 ) -> None:
     """Configure tvbo logging once for every verb.
 
-    Progress and status flow through the central ``tvbo`` logger (see
-    :mod:`tvbo.log`), so ``tvbo run`` and the in-process ``.run()`` API behave identically. ``--log-level`` wins over ``--quiet``/``--verbose``; with none set the level falls back to ``TVBO_LOG_LEVEL`` and then INFO.
+    Progress and status flow through the central ``tvbo`` logger (see :mod:`tvbo.log`), so ``tvbo run`` and the in-process ``.run()`` API behave identically. ``--log-level`` wins over ``--quiet``/``--verbose``; with none set the level falls back to ``TVBO_LOG_LEVEL`` and then INFO.
     """
     from tvbo.log import configure_logging
 

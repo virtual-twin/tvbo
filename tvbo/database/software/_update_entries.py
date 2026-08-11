@@ -5,8 +5,9 @@ Adds: date_created, development_status, reference_publication, author, funder, k
 Converts ecosystem from string to list, programming_language to enum values.
 """
 
-import yaml
 from pathlib import Path
+
+import yaml
 
 DB_DIR = Path(__file__).parent
 

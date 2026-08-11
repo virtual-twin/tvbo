@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import re
 import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -17,7 +17,6 @@ from tvbo.cli._backends import (
     list_backends,
     resolve_backend,
 )
-
 
 runner = CliRunner()
 EXP = "experiment:JR_MEG_FrequencyGradient_Optimization"
@@ -317,8 +316,7 @@ def test_declared_walltime_reaches_the_snakemake_rule():
 def test_retries_escalation_emits_attempt_scaled_resources():
     """workflow.retries wires Snakemake retry + per-attempt escalation into the rule.
 
-    A GPU rule (gres) must NOT raise host mem on retry; it adds an attempt-scaled `nvmap_max` RESOURCE (params callables never receive `attempt`, only resources do) and exports it as TVBO_NVMAP_MAX so the re-run shrinks the on-device vmap batch. A
-    CPU rule scales host mem/time up instead. retries=0 emits none of it (opt-in).
+    A GPU rule (gres) must NOT raise host mem on retry; it adds an attempt-scaled `nvmap_max` RESOURCE (params callables never receive `attempt`, only resources do) and exports it as TVBO_NVMAP_MAX so the re-run shrinks the on-device vmap batch. A CPU rule scales host mem/time up instead. retries=0 emits none of it (opt-in).
     """
     from tvbo.cli.workflow import _render_template
 
@@ -620,8 +618,7 @@ def test_full_container_env_override_wins_verbatim(monkeypatch):
 
 
 def test_fan_input_expr_expands_over_every_fanned_cell():
-    """A figure (or cross-experiment dep) that reads a FANNED experiment must depend on
-    ALL its cells, so it waits for the whole sweep — the input is the `expand()` over the fan's value lists. A group run (no axes) is its single result path."""
+    """A figure (or cross-experiment dep) that reads a FANNED experiment must depend on ALL its cells, so it waits for the whole sweep — the input is the `expand()` over the fan's value lists. A group run (no axes) is its single result path."""
     from tvbo.cli._workflow import fan_input_expr
 
     fanned = {
@@ -667,8 +664,7 @@ def test_setup_sh_provisions_a_native_venv_when_no_container():
 
 
 def test_snakemake_rule_prepends_the_native_venv_to_pythonpath():
-    """A native run (no container) still prepends the requirements venv to PYTHONPATH — the
-    Snakemake prepend is a plain shell export, substrate-agnostic — so a host observation's `import igl` resolves without any manual install."""
+    """A native run (no container) still prepends the requirements venv to PYTHONPATH — the Snakemake prepend is a plain shell export, substrate-agnostic — so a host observation's `import igl` resolves without any manual install."""
     from tvbo.cli.workflow import _render_template
 
     ep = {
@@ -706,7 +702,9 @@ def test_run_sbatch_exposes_the_layer_via_pythonpath_and_guards_on_setup():
 
 def test_snakemake_rule_prepends_the_container_layer_to_pythonpath():
     """The Snakemake fan-out runs each cell's `tvbo run` INSIDE the container, so the layered deps (setup.sh's venv) must reach it via PYTHONPATH on every rule — this is the per-cell path a host (igl) observation needs, where slurm's --shard vmaps a chunk.
-    Double braces survive Snakemake's `.format()` (single braces are wildcards)."""
+
+    Double braces survive Snakemake's `.format()` (single braces are wildcards).
+    """
     from tvbo.cli.workflow import _render_template
 
     ep = {
@@ -759,7 +757,9 @@ def test_a_venv_rule_opts_out_of_the_study_global_container():
 
 def test_snakemake_fans_a_model_param_axis_via_pin_not_set():
     """A fanned exploration axis must emit `--pin`, not `--set`: `--pin` sets the base parameter AND drops the axis so the cell is a single point (its host observation lands there), whereas `--set` on a swept model param neither resolves nor collapses the sweep.
-    The dataset subject axis keeps `--subject`."""
+
+    The dataset subject axis keeps `--subject`.
+    """
     from tvbo.cli.workflow import _render_template
 
     ep = {
@@ -833,7 +833,9 @@ workflow:
 
 def test_slurm_rejects_explicit_per_cell_workflow_fanout(tmp_path: Path):
     """The slurm array shards + vectorizes a sweep — it has no per-cell `--pin` fan-out.
-    An experiment that EXPLICITLY declares `distribute.workflow` over model params asked for per-cell fan-out (e.g. a non-jittable host observation per cell); slurm would silently vectorize it, tracing the host obs inside the vmap (the exp-41 crash). The slurm emitter fails fast and points at snakemake — and the SAME recipe emits cleanly via snakemake (spec-only, one --pin per cell)."""
+
+    An experiment that EXPLICITLY declares `distribute.workflow` over model params asked for per-cell fan-out (e.g. a non-jittable host observation per cell); slurm would silently vectorize it, tracing the host obs inside the vmap (the exp-41 crash). The slurm emitter fails fast and points at snakemake — and the SAME recipe emits cleanly via snakemake (spec-only, one --pin per cell).
+    """
     recipe = tmp_path / "fanned.yaml"
     recipe.write_text(_FANNED_WORKFLOW_RECIPE)
 
@@ -959,10 +961,11 @@ def test_profile_quotes_container_args_containing_a_quote():
 
     Interpolated raw into a double-quoted YAML scalar it closes the scalar early and the whole profile fails to parse.
     """
+    import tempfile
+
     import yaml
 
     from tvbo.cli.workflow import _write_snakemake_profile
-    import tempfile
 
     with tempfile.TemporaryDirectory() as td:
         plan = _container_plan(binds=["/data"], args='--env FOO="bar"')
@@ -973,8 +976,9 @@ def test_profile_quotes_container_args_containing_a_quote():
 
 def test_profile_omits_default_resources_when_nothing_to_put_in_it():
     """A `default-resources:` key whose only content is a comment parses as null."""
-    import yaml
     import tempfile
+
+    import yaml
 
     from tvbo.cli.workflow import _write_snakemake_profile
 
@@ -1083,8 +1087,9 @@ def test_experiment_override_does_not_clear_inherited_list():
 
     LinkML gives an unfilled multivalued slot an empty list, not None — so an experiment that overrides just its walltime still carries `container_binds: []`. Merged naively that wipes the study's binds, and only that experiment's tasks run unbound: they die at import time, far from the walltime override that caused it.
     """
-    from tvbo.cli._workflow import merge_workflow_spec
     from types import SimpleNamespace as NS
+
+    from tvbo.cli._workflow import merge_workflow_spec
 
     study = NS(workflow=NS(container="img", container_binds=["/data/cephfs-1"], container_args=None, requirements=[]))
     exp = NS(workflow=NS(container=None, container_binds=[], container_args=None, requirements=[], slurm=NS(time="48:00:00")))
@@ -1270,7 +1275,7 @@ def test_workflow_nextflow_emits_kit(tmp_path: Path):
     ],
 )
 def test_env_and_options_render_across_engines(tmp_path, engine, artefact, opt_needle, env_needle):
-    """env + options are name-keyed passthroughs rendered by every engine's emitter, each in its native form (Slurm #SBATCH / Snakemake resources / Nextflow process)."""
+    """Env + options are name-keyed passthroughs rendered by every engine's emitter, each in its native form (Slurm #SBATCH / Snakemake resources / Nextflow process)."""
     opt = {"slurm": "qos=normal", "snakemake": "slurm_partition=gpu", "nextflow": "clusterOptions=--gres=gpu:1"}[engine]
     out = tmp_path / "kit"
     r = runner.invoke(
@@ -1296,9 +1301,10 @@ def test_env_and_options_render_across_engines(tmp_path, engine, artefact, opt_n
 
 
 def test_frozen_spec_captures_merged_workflow_for_reproducibility(tmp_path: Path):
-    """The emitted spec records the effective workflow config (study < experiment <
-    --set), so re-emitting from it reproduces the run with no flags — one-click
-    provenance rather than the overrides living only in run.sbatch."""
+    """The emitted spec records the effective workflow config.
+
+    Study < experiment < --set, so re-emitting from it reproduces the run with no flags — one-click provenance rather than the overrides living only in run.sbatch.
+    """
     k1 = tmp_path / "k1"
     r = runner.invoke(
         app,
@@ -1449,7 +1455,7 @@ def test_slurm_pack_emits_only_tarball(tmp_path: Path):
 
 
 def test_pack_warns_on_machine_specific_bids_root(tmp_path: Path, monkeypatch):
-    """A per-subject dataset fan-out kit bakes an absolute ``bids_root`` that will not resolve on another host — emitting/packing it must warn with the exact submit-time override, so a kit is never shipped silently wrong. (Capture ``_common.warn`` directly: caplog's root propagation is polluted by the shared tvbo logging setup.)"""
+    """A per-subject dataset fan-out kit bakes an absolute ``bids_root`` that will not resolve on another host — emitting/packing it must warn with the exact submit-time override, so a kit is never shipped silently wrong. (Capture ``_common.warn`` directly: caplog's root propagation is polluted by the shared tvbo logging setup.)."""
     from tvbo.cli import workflow as workflow_cli
 
     warned: list[str] = []
@@ -1631,6 +1637,7 @@ def test_pde_experiment_template_has_main_block():
 def test_bundler_carries_a_callables_local_helper_but_not_stdlib_or_installed(tmp_path, monkeypatch):
     """A recipe callable often imports a LOCAL helper of its own (e.g. Koller's wave_detection_methods, pulled in via a runtime sys.path insert). The kit must carry it — else `import <helper>` fails on the node and the kit is not self-contained. But stdlib and installed packages must NOT be swept in (they ship via requirements)."""
     import sys
+
     from tvbo.cli.workflow import _local_module_deps
 
     (tmp_path / "helper_b.py").write_text("VALUE = 1\n")
@@ -1650,7 +1657,9 @@ def test_bundler_carries_a_callables_local_helper_but_not_stdlib_or_installed(tm
 
 def test_benchmark_and_smoke_reach_the_snakemake_rule():
     """`--benchmark` attaches Snakemake's native `benchmark:` directive (per-cell TSV next to the output), and `--max-iterations`/`--smoke` threads `tvbo run --max-iterations`.
-    Both are run modifiers carried on the exp_plan, never in the frozen workflow block."""
+
+    Both are run modifiers carried on the exp_plan, never in the frozen workflow block.
+    """
     from tvbo.cli.workflow import _render_template
 
     ep = {

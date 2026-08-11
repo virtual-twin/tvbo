@@ -1,7 +1,6 @@
 """The coupling-evaluation scheme enrichment merged into ``tvbo.owl``.
 
-Covers ``ontology/tvb-o-coupling.ttl`` — the mergeable module that attaches backend-independent labels and per-backend parameter mappings to the ``CouplingStageEvaluation`` enum values (``per_step`` / ``per_stage``) that
-LinkML ``gen-owl`` emits into ``tvb-o-struct.owl``.
+Covers ``ontology/tvb-o-coupling.ttl`` — the mergeable module that attaches backend-independent labels and per-backend parameter mappings to the ``CouplingStageEvaluation`` enum values (``per_step`` / ``per_stage``) that LinkML ``gen-owl`` emits into ``tvb-o-struct.owl``.
 
 Two levels of assertion: the authored module carries the intended triples, and those triples survive the ROBOT merge onto the *same* struct-minted identity (not a parallel node) in the distributed ``tvbo/data/ontology/tvbo.owl``. The second guards against a future regeneration silently dropping the enrichment.
 """

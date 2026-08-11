@@ -1,19 +1,20 @@
-"""
-Test that all documentation notebooks execute without errors.
+"""Test that all documentation notebooks execute without errors.
 
 This test discovers all .qmd files with Python code cells in docs/, converts them to notebooks, and executes them to ensure documentation examples remain functional.
 
 Run with: pytest tests/test_docs.py -v
-Run single doc: pytest tests/test_docs.py -k "Network" -v"""
+Run single doc: pytest tests/test_docs.py -k "Network" -v
+"""
 
+import glob
 import json
 import os
-import glob
 import re
 import subprocess
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 REPO_ROOT = Path(__file__).parent.parent
 DOCS_DIR = REPO_ROOT / "docs"
@@ -55,7 +56,7 @@ def get_all_qmd_files():
 
 def has_python_cells(qmd_path: str) -> bool:
     """Check if a .qmd file contains Python code cells."""
-    with open(qmd_path, "r", encoding="utf-8") as f:
+    with open(qmd_path, encoding="utf-8") as f:
         content = f.read()
     return "```{python}" in content
 
@@ -125,7 +126,7 @@ def test_doc_executes(qmd_path, doc_name, docs_kernel):
         (doc_dir / "_output").mkdir(exist_ok=True)
 
         # Kernels do not reliably inherit PYTHONPATH, so put the doc dir on sys.path in-band.
-        with open(ipynb_path, "r", encoding="utf-8") as f:
+        with open(ipynb_path, encoding="utf-8") as f:
             nb = json.load(f)
         setup_cell = {
             "cell_type": "code",

@@ -20,10 +20,9 @@ import pathlib
 import sys
 
 import yaml
+from _bib import load_bib_records, sanitize_citekey
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS, SKOS
-
-from _bib import load_bib_records, sanitize_citekey
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DB = ROOT / "tvbo" / "database"

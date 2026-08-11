@@ -1,7 +1,6 @@
 """Resolve a ``Procedural`` GraphGenerator's typed DAG into backend-independent expressions.
 
-A ``Procedural`` generator describes a network construction as an ordered DAG of *typed* steps — a distance kernel, a stochastic connection mask, a Gaussian field, an axis normalisation — instead of per-generator Python. This module turns that metadata into
-SymPy expressions, which the printers in ``tvbo/codegen/code.py`` render natively for every backend.
+A ``Procedural`` generator describes a network construction as an ordered DAG of *typed* steps — a distance kernel, a stochastic connection mask, a Gaussian field, an axis normalisation — instead of per-generator Python. This module turns that metadata into SymPy expressions, which the printers in ``tvbo/codegen/code.py`` render natively for every backend.
 
 Two properties make it declarative rather than a lowering dialect:
 
@@ -15,13 +14,14 @@ which steps transitively depend on the generator's seed. A backend evaluates the
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 import sympy as sp
 
 from tvbo.parse.expression import parse_eq
 
-_SAMPLERS: Dict[str, Tuple[str, Tuple[Tuple[str, float], ...]]] = {
+_SAMPLERS: dict[str, tuple[str, tuple[tuple[str, float], ...]]] = {
     "normal": ("sample_normal", (("mean", 0.0), ("std", 1.0))),
     "gaussian": ("sample_normal", (("mean", 0.0), ("std", 1.0))),
     "uniform": ("sample_uniform", (("lo", 0.0), ("hi", 1.0))),
@@ -44,7 +44,7 @@ The name is underscore-prefixed and reserved. Seededness is detected by looking 
 N_NODES = sp.Symbol("n_nodes")
 
 
-def _host_env() -> Dict[str, Any]:
+def _host_env() -> dict[str, Any]:
     """Operations available during eager materialisation that are NOT array primitives.
 
     Deliberately tiny, and deliberately not a parallel array vocabulary. Everything that
@@ -102,7 +102,7 @@ def _get(spec: Any, field: str, default: Any = None) -> Any:
     return getattr(spec, field, default)
 
 
-def _steps(spec: Mapping[str, Any]) -> List[Tuple[str, Any]]:
+def _steps(spec: Mapping[str, Any]) -> list[tuple[str, Any]]:
     """``Procedure.steps`` as ordered ``(name, fields)`` pairs.
 
     ``steps`` is a keyed collection: the key is the step's name, and insertion order is evaluation order. A sequence is not an accepted serialisation — the schema rejects it — so it is reported here by name rather than surfacing later as an ``AttributeError`` from inside a step builder.
@@ -270,7 +270,7 @@ _STEP_BUILDERS = {
 _SEEDED_TYPES = {"stochastic_mask"}
 
 
-def build(spec: Mapping[str, Any]) -> List[Tuple[str, sp.Expr]]:
+def build(spec: Mapping[str, Any]) -> list[tuple[str, sp.Expr]]:
     """Resolve a ``Procedure``'s ``steps`` DAG to ordered ``(name, expression)`` pairs.
 
     ``spec`` is a ``Procedure`` block — ``steps`` (an ordered mapping of typed ``ProcedureStep``s, keyed by name) and ``output`` — plus the generator's ``parameters``. Node positions are not a special slot: a layout is an ordinary step.
@@ -282,11 +282,11 @@ def build(spec: Mapping[str, Any]) -> List[Tuple[str, sp.Expr]]:
             f"parameter {KEY.name!r} is reserved: it names the generator's PRNG state, "
             f"which the resolver binds itself. Rename the parameter."
         )
-    env: Dict[str, sp.Expr] = {name: sp.Symbol(name) for name in parameters}
+    env: dict[str, sp.Expr] = {name: sp.Symbol(name) for name in parameters}
     # Positions are NOT pre-bound: a layout is an ordinary step, so a dangling reference must fail.
     env["n_nodes"] = N_NODES
 
-    resolved: List[Tuple[str, sp.Expr]] = []
+    resolved: list[tuple[str, sp.Expr]] = []
     for name, fields in _steps(spec):
         step_type = str(_get(fields, "type") or "equation")
         builder = _STEP_BUILDERS.get(step_type)
@@ -316,9 +316,9 @@ def seeded_steps(spec: Mapping[str, Any], resolved=None) -> set:
 
 def materialize(
     spec: Mapping[str, Any],
-    params: Optional[Mapping[str, Any]] = None,
-    seed: Optional[int] = None,
-) -> Dict[str, Any]:
+    params: Mapping[str, Any] | None = None,
+    seed: int | None = None,
+) -> dict[str, Any]:
     """Evaluate a Procedure's DAG eagerly, in numpy, and return its ``output`` values.
 
     The evaluation goes through the SAME primitive tables the other backends emit from:
@@ -335,7 +335,7 @@ def materialize(
     spec = {**spec, "parameters": merged}
 
     host = _host_env()
-    env: Dict[str, Any] = dict(host)
+    env: dict[str, Any] = dict(host)
     env["np"] = np
     env.update(merged)
     # A generator's PRNG state. numpy's Generator is the host analogue of the pure key a traced backend threads; the DAG only ever says *that* a step is seeded.
@@ -343,7 +343,7 @@ def materialize(
     if env.get("n_nodes") is None:
         raise ProceduralError("materialize: `n_nodes` must be supplied (from Network.number_of_nodes).")
 
-    symbol_names: List[str] = [k for k in env if k not in host and k != "np"]
+    symbol_names: list[str] = [k for k in env if k not in host and k != "np"]
     for name, expr in build(spec):
         symbol_names.append(name)
         source = render_expression(expr, format="numpy")
@@ -354,7 +354,7 @@ def materialize(
                 f"step {name!r} failed to evaluate: {type(exc).__name__}: {exc}\n  rendered: {source}"
             ) from exc
 
-    outputs: Dict[str, Any] = {}
+    outputs: dict[str, Any] = {}
     for key, entry in (spec.get("output") or {}).items():
         rhs = _get(_get(entry, "equation"), "rhs") if entry is not None else None
         if rhs is None:
@@ -393,7 +393,7 @@ def _reject_nan(value: Any, key: str) -> None:
 def draw(
     distribution: Any,
     shape: Sequence[int],
-    seed: Optional[int] = None,
+    seed: int | None = None,
     substream: int = 0,
 ) -> Any:
     """Sample ``shape`` values from ``distribution``, through the same printer sampler.
@@ -412,7 +412,7 @@ def draw(
     )
 
 
-def partition(spec: Mapping[str, Any]) -> Tuple[List[str], List[str]]:
+def partition(spec: Mapping[str, Any]) -> tuple[list[str], list[str]]:
     """Split the DAG into (deterministic prefix, stochastic suffix), in DAG order.
 
     The prefix is evaluated once; the suffix is what a backend re-evaluates per network realisation. For a generator whose only randomness is a connection mask, the suffix is a handful of array ops while the geometry stays a constant.

@@ -25,7 +25,6 @@ import yaml
 from tvbo.classes.network import Network
 from tvbo.data.connectome_build import connectome_from_tractogram, ensure_mrtrix
 
-
 ROOT = Path(__file__).resolve().parent.parent
 ATLAS_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "atlas"
 OUTPUT_DIR = ROOT / "database" / "networks"
@@ -138,7 +137,7 @@ def extract_functional_network(region_name: str) -> str:
 def build_node_mapping(entities: list[dict]) -> tuple[np.ndarray, list[str]]:
     """Build a parcel → functional-network index mapping.
 
-    Returns
+    Returns:
     -------
     mapping : ndarray of int32, shape (n_parcels,)
         Index into the sorted list of unique functional networks.
@@ -167,7 +166,7 @@ def build_network(
     network.label = f"Schaefer2018_{scale}_{networks}Networks_{tractogram_name}"
     # Backfill node positions from atlas centroids
     if entities and network.nodes:
-        for node, entity in zip(network.nodes, entities):
+        for node, entity in zip(network.nodes, entities, strict=True):
             c = entity.get("center", {})
             if c:
                 node.position = {"x": float(c["x"]), "y": float(c["y"]), "z": float(c["z"])}

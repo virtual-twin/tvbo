@@ -8,8 +8,10 @@ Usage:
 """
 
 import sys
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+
 from tvbo import database_path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -35,7 +37,8 @@ def find_csv_pairs(csv_dir: Path) -> dict:
 def migrate_one(base_name: str, csv_paths: dict, out_dir: Path, dry_run: bool = False):
     """Convert one CSV pair to HDF5+YAML."""
     import h5py
-    from tvbo.data.matrix_io import write_matrix, auto_format
+
+    from tvbo.data.matrix_io import auto_format, write_matrix
 
     weights_csv = csv_paths["weights"]
     lengths_csv = csv_paths.get("lengths")

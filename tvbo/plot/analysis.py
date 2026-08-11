@@ -1,27 +1,23 @@
-#
-# Module: analysis.py
-#
-# Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
-#
+# SPDX-License-Identifier: EUPL-1.2
+
 """Plotting helpers for analysing simulation output.
 
 This module provides Matplotlib-based plotting utilities for visualising derived signal analyses, such as power spectra with shaded canonical EEG frequency bands.
 """
 
-from typing import Any, Optional
+from typing import Any
 
-from matplotlib import colormaps
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colormaps
 
 
 # TODO: bands, colors params. not used, remove?
 def plot_power_spectrum(
     frequency: np.ndarray,
     power: np.ndarray,
-    bands: Optional[dict] = None,
+    bands: dict | None = None,
     colors: Any = None,
     ax: Any = None,
     label: str = "simulation",
