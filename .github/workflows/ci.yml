@@ -38,10 +38,10 @@ jobs:
               with:
                   fetch-depth: 0
 
-            # Judged against the PR's own base, so a stacked PR answers for its commits alone.
+            # The base COMMIT: `origin/<base>` in a PR checkout is not it, and diffed the whole tree.
             - name: Comment style — no stacked '#' blocks (added lines)
-              if: github.base_ref != ''
-              run: python3 scripts/check_comment_blocks.py origin/${{ github.base_ref }}
+              if: github.event_name == 'pull_request'
+              run: python3 scripts/check_comment_blocks.py ${{ github.event.pull_request.base.sha }}
 
             # ruff: blocking syntax-error subset; `version` tracks the `lint` extra.
             - name: Ruff — syntax errors (blocking)

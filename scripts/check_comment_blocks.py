@@ -85,6 +85,9 @@ def main(argv: list[str]) -> int:
         merge_base = subprocess.run(
             ["git", "merge-base", base, "HEAD"], capture_output=True, text=True, check=True
         ).stdout.strip()
+        if not merge_base:
+            print(f"{base!r} shares no history with HEAD — the check did not run.")
+            return 2
         cmd = ["git", "diff", "-U0", merge_base]
     diff = subprocess.run([*cmd, "--", "."], capture_output=True, text=True, check=True).stdout
 

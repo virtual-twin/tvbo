@@ -26,20 +26,29 @@ SKIP = ("datamodel/schema.py", "datamodel/pydantic.py", "datamodel/tvbo_datamode
 ACCESSORS = ("getattr", "slot", "_p")
 
 EXEMPT = {
-    # `sim` is a TVB Simulator being imported FROM, not a TVBO object; its integrator
-    # really does carry `dt`.
-    ("adapters/tvb.py", "dt"),
-    # `_res` is a tvboptim solution object, which carries its own `dt`.
-    ("templates/tvboptim/tvbo-tvboptim-experiment.py.mako", "dt"),
+    ("adapters/tvb.py", "dt"): "a TVB Simulator being imported FROM; its integrator owns `dt`",
+    ("templates/tvboptim/tvbo-tvboptim-experiment.py.mako", "dt"):
+        "a tvboptim solution object, which owns `dt`",
 }
+"""``(path, alias) -> why that object is not a TVBO one``, so the alias is its real name."""
 
-# A name that is a real slot on SOME generated class cannot be judged from the text alone:
-# `target_variable` is an `Edge` alias but `Event`'s own slot.
-_REAL_SLOTS = set()
-for _name in dir(dm):
-    _cls = getattr(dm, _name)
-    if isinstance(_cls, type):
-        _REAL_SLOTS |= set(getattr(_cls, "__dataclass_fields__", {}))
+
+def _real_slot_names():
+    """Every slot name some generated class actually declares.
+
+    A name that is a real slot somewhere cannot be judged from the text alone:
+    ``target_variable`` is an ``Edge`` alias but ``Event``'s own slot, so flagging every
+    read of it would demand a rename that breaks the class owning the name.
+    """
+    names = set()
+    for name in dir(dm):
+        cls = getattr(dm, name)
+        if isinstance(cls, type):
+            names |= set(getattr(cls, "__dataclass_fields__", {}))
+    return names
+
+
+_REAL_SLOTS = _real_slot_names()
 
 CHECKED = {alias: canonical
            for mapping in SLOT_ALIASES.values()
