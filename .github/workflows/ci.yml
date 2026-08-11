@@ -38,10 +38,10 @@ jobs:
               with:
                   fetch-depth: 0
 
-            # The base COMMIT: `origin/<base>` in a PR checkout is not it, and diffed the whole tree.
+            # `HEAD^1` is the base side of the merge checkout builds — the base as it is NOW.
             - name: Comment style — no stacked '#' blocks (added lines)
               if: github.event_name == 'pull_request'
-              run: python3 scripts/check_comment_blocks.py ${{ github.event.pull_request.base.sha }}
+              run: python3 scripts/check_comment_blocks.py HEAD^1
 
             # ruff: blocking syntax-error subset; `version` tracks the `lint` extra.
             - name: Ruff — syntax errors (blocking)
