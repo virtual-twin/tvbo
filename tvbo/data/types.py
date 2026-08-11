@@ -152,13 +152,16 @@ def _inner_dims(post_trial_shape, ts_arr, declared=None):
 def _axis_size(ax) -> int:
     """An axis's declared cell count, however the producer shaped it.
 
-    Mirrors the dict-or-attribute handling every other axis reader in this module uses, and falls back to ``len(explored_values)`` for an axis that carries values but no ``n``. Returns 0 when neither is available.
+    Handles both axis shapes the module accepts (dict or attribute) and falls back to
+    ``len(explored_values)`` for an axis carrying values but no ``n``. Returns ``None``
+    when neither is available, which callers must distinguish from a real size: an
+    unknown size makes grid completeness undecidable rather than zero.
     """
     n = ax.get("n") if isinstance(ax, dict) else getattr(ax, "n", None)
-    if n:
+    if n is not None:
         return int(n)
     vals = ax.get("explored_values") if isinstance(ax, dict) else getattr(ax, "explored_values", None)
-    return 0 if vals is None else int(np.asarray(vals).size)
+    return None if vals is None else int(np.asarray(vals).size)
 
 
 def _is_partial_shard(expl) -> bool:
@@ -179,7 +182,7 @@ def _is_partial_shard(expl) -> bool:
     if not cell_coords:
         return False
     sizes = [_axis_size(ax) for ax in (getattr(expl, "axes", None) or [])]
-    if not sizes or any(s <= 0 for s in sizes):
+    if not sizes or any(s is None or s <= 0 for s in sizes):
         return False
     counts = [int(np.asarray(v).shape[0]) for v in cell_coords.values() if np.asarray(v).ndim]
     return bool(counts) and max(counts) < int(np.prod(sizes))
@@ -226,9 +229,7 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
             if isinstance(ax, dict)
             else getattr(ax, "explored_values", None)
         )
-        ax_n = ax.get("n") if isinstance(ax, dict) else getattr(ax, "n", None)
-        if ax_n is None and ax_vals is not None:
-            ax_n = len(np.asarray(ax_vals))
+        ax_n = _axis_size(ax)
         grid_dims.append(ax_name)
         grid_sizes.append(int(ax_n) if ax_n is not None else None)
         if ax_vals is not None:
@@ -1287,6 +1288,20 @@ class ExplorationResult(Bunch):
         is_shard=None,
         **kwargs,
     ):
+        """A sweep's results, labelled against the axes that produced them.
+
+        ``cell_coords`` (``{axis: (n_cell,) array}``) is each cell's actual parameter
+        values, set for EVERY keyed sweep — a whole grid as much as one array task's
+        slice. It drives placement by value in ``as_grid``: into the rectangular grid
+        for a full product, onto a flat ``point`` dim for a subset. It is NOT a shard
+        marker, and reading it as one cost every local sweep its provenance sidecar.
+
+        ``is_shard`` is that marker, declared by the producer — the generated script
+        holds ``kwargs['shard']``. ``None`` means undeclared, and ``_is_partial_shard``
+        falls back to counting cells. Nothing downstream can re-derive it reliably: a
+        branch shard's axis ``n`` is taken from the already-sliced index, so the slice
+        looks complete.
+        """
         super().__init__(**kwargs)
         self.name = name
         self.grid = grid
@@ -1294,17 +1309,7 @@ class ExplorationResult(Bunch):
         self.observable = observable
         self.dt = dt
         self.output_names = output_names or []
-        # Whether this result is one HPC array task's slice, as declared by the producer
-        # (the generated script holds `kwargs['shard']`). None means undeclared, and
-        # `_is_partial_shard` falls back to counting cells. Nothing downstream can
-        # re-derive it reliably — a branch shard's axis `n` comes from the already-sliced
-        # index, so the slice looks complete.
         self.is_shard = is_shard
-        # Per-cell parameter values ({axis: (n_cell,) array}), set for EVERY keyed
-        # sweep — a whole grid as much as one HPC array task's slice. Drives placement
-        # by value in ``as_grid`` (rectangular grid) or the flat 'point'-dim labelling
-        # and reassembly by value (subset). Use ``_is_partial_shard`` to tell the two
-        # apart; presence alone does not.
         self.cell_coords = cell_coords
         # Per-grid-point observations as {name: xr.DataArray} with grid axes
         # prepended to each observation's intrinsic dims (time/variable/node/mode).
@@ -1567,13 +1572,17 @@ class ExplorationResult(Bunch):
         after the grid dims. ``None`` when empty; otherwise always labelled — a
         payload that cannot be reshaped into the grid is returned with the dim names
         it already carries (see :meth:`_label_payload`) rather than as a bare array,
-        so no consumer is handed positional data. A result whose cells are a subset of
-        the grid rather than the full product — an HPC array task's slice, or a branch
-        restart — is labelled with a single ``point`` dim carrying each axis's value, so
-        it reassembles across shards by parameter value. That is decided here by whether
-        the cells fill the product, not by ``cell_coords`` being set: every keyed sweep
-        sets it. ``_is_partial_shard`` answers the related but distinct question of
-        whether to write provenance, and prefers the producer's declared ``is_shard``.
+        so no consumer is handed positional data. A set ``cell_coords`` selects the
+        keyed path below, which every sweep takes because every sweep sets it;
+        :func:`_stacked_to_dataarray` then decides the shape from whether the cells fill
+        the Cartesian product. A full product is placed into the rectangular grid BY
+        VALUE, so ``sel`` by parameter works as usual. A subset — an HPC array task's
+        slice, or a branch restart — gets a single ``point`` dim carrying each axis's
+        value, so it reassembles across shards by parameter value.
+
+        Do not read a set ``cell_coords`` as "this is a shard". ``_is_partial_shard``
+        answers that separate question, for provenance rather than labelling, and
+        prefers the producer's declared ``is_shard``.
         """
         if self.results is None:
             return None

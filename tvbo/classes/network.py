@@ -66,6 +66,15 @@ def _source_dir_on_path(source_dir):
                 pass
 
 
+_WEIGHT_TARGETS = ("weight", "weights")
+_LENGTH_TARGETS = ("length", "lengths")
+_TRANSFORM_TARGET_ALIASES = (_WEIGHT_TARGETS, _LENGTH_TARGETS)
+"""Edge-property spellings that name the same transform target.
+
+Kept in step with the aliases `Network.matrix` resolves when it looks the matrix up, so the lookup and the transform selection cannot disagree.
+"""
+
+
 def graph_laplacian(M):
     """Combinatorial graph Laplacian ``L = W - diag(rowsum(W))`` of a weight matrix.
 
@@ -4790,9 +4799,12 @@ class Network(tvbo_datamodel.Network):
     def transforms_for(self, target: str):
         """The declared `transforms:` that retarget *target*, in declaration order.
 
-        The one place the target name is matched, so `length` and its `lengths` spelling
-        stay equivalent everywhere and a new alias is added once. Both the runtime and the
-        emitters that inline a transform into a generated script select through this.
+        The one place the target name is matched, so the singular and plural spellings of
+        an edge property stay equivalent everywhere and a new alias is added once. The
+        aliases mirror the ones `matrix` already resolves when it looks the matrix itself
+        up, so `matrix("weights")` and `matrix("weight")` cannot disagree about whether a
+        transform applies. Both the runtime and the emitters that inline a transform into
+        a generated script select through this.
 
         Args:
             target: Edge property a transform retargets, e.g. `"weight"` or `"length"`.
@@ -4800,7 +4812,7 @@ class Network(tvbo_datamodel.Network):
         Returns:
             List of `Function` transforms declared against *target*.
         """
-        names = ("length", "lengths") if target in ("length", "lengths") else (target,)
+        names = next((a for a in _TRANSFORM_TARGET_ALIASES if target in a), (target,))
         return [t for t in (self.transforms or []) if getattr(t, "name", None) in names]
 
     def transform_expression(self, func):
@@ -4809,6 +4821,8 @@ class Network(tvbo_datamodel.Network):
         Shared by the runtime and by codegen so a spec resolves to the same expression on
         both paths. Scalar values come from `Function.arguments`, falling back to
         `Equation.parameters` for legacy specs.
+
+        An argument declared without a value substitutes nothing and its symbol survives, so the caller reports it as an undeclared name. Substituting the `None` instead raises `SympifyError: None`, which names neither the transform nor the argument.
 
         Args:
             func: The `Function` transform.
@@ -4832,7 +4846,7 @@ class Network(tvbo_datamodel.Network):
         exp = parse_eq(eq)
         if exp is None:
             return None
-        subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if str(s) in arg_values}
+        subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if arg_values.get(str(s)) is not None}
         return exp.subs(subs_map) if subs_map else exp
 
     def _apply_transform(self, M, func):
@@ -4866,7 +4880,7 @@ class Network(tvbo_datamodel.Network):
                 # the lengths, so use it directly — reading ``self.lengths_matrix``
                 # here would re-enter this same transform (infinite recursion).
                 if "L" in sig.parameters:
-                    _is_length = getattr(func, "name", None) in ("length", "lengths")
+                    _is_length = getattr(func, "name", None) in _LENGTH_TARGETS
                     kwargs.setdefault("L", M if _is_length else self.lengths_matrix)
                 return fn(M, **kwargs)
 
@@ -4877,7 +4891,7 @@ class Network(tvbo_datamodel.Network):
         from tvbo.codegen.code import render_expression
         from tvbo.codegen.transforms import runtime_env
 
-        _is_length = getattr(func, "name", None) in ("length", "lengths")
+        _is_length = getattr(func, "name", None) in _LENGTH_TARGETS
         env = runtime_env(M, M if _is_length else self.lengths_matrix, jnp, jsp)
         # Expose declared per-node parameters as (n, 1) column vectors, so a symbolic
         # weight transform can normalise per target region — e.g. ``W / roi_size`` divides

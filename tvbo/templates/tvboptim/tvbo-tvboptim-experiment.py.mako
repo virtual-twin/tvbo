@@ -257,7 +257,10 @@ conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is 
 from tvbo.templates.tvboptim.utils import weight_transform_codegen as _weight_transform_codegen
 weight_transform_jax, weight_transform_const_env = _weight_transform_codegen(network)
 has_weight_transforms = bool(weight_transform_jax)
-weight_transform_needs_lengths = any(_l.startswith("L = ") for _l in weight_transform_const_env)
+# A transform that reads L only works if the caller hands create_network the real lengths.
+from tvbo.codegen.transforms import DATA_DERIVED as _transform_data_derived
+weight_transform_needs_lengths = any(_l.split(" = ", 1)[0] in _transform_data_derived for _l in weight_transform_const_env)
+weight_transform_distances_arg = "distances=distances, " if weight_transform_needs_lengths else ""
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
@@ -1595,7 +1598,8 @@ def create_network(
     # Declared weight `transforms:` applied to the raw weights (kit stays self-contained).
 % if weight_transform_needs_lengths:
     if distances is None:
-        distances = jnp.zeros_like(weights)
+        # Zero-filling here would silently normalise by the wrong denominator.
+        raise ValueError("a declared weight transform reads the tract lengths L; pass distances= to create_network")
 % endif
 % for _line in weight_transform_const_env:
     ${_line}
@@ -3521,8 +3525,10 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         axes=_axes_info,
 % if has_axes:
         cell_coords=_cell_coords,
-% endif
+        # Inside the same guard as the slicing: an axis-less exploration is never sliced, so
+        # declaring it sharded would suppress the provenance sidecar for every task.
         is_shard=kwargs.get('shard') is not None,
+% endif
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_names) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},
@@ -3604,9 +3610,9 @@ def run_experiment(
         delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
     else:
         delays = jnp.array(delays)
-    network = create_network(weights, delays=delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, ${weight_transform_distances_arg}delays=delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
-    network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, ${weight_transform_distances_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
 
     # Determine if we need to run main simulation or just transient.
@@ -4379,9 +4385,9 @@ def run_experiment(
             % if use_length_graph:
             opt_network = create_network(weights, distances=distances, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % elif use_delay_graph:
-            opt_network = create_network(weights, delays=delays, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, ${weight_transform_distances_arg}delays=delays, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % else:
-            opt_network = create_network(weights, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, ${weight_transform_distances_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % endif
             opt_model_init, opt_state_init = prepare(opt_network, get_solver(), t1=${opt_t1}, dt=${opt_dt})
             opt_transient = opt_model_init(opt_state_init)  # Fresh BOLD history
