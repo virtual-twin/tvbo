@@ -7,8 +7,7 @@ Covers the two artifacts emitted by ``scripts/ontology/gen_neuroml.py``:
 - ``tvbo/data/ontology/neuroml_contracts.json`` — the accumulated contract index
   the adapter loads to ground its base-type emission.
 
-These assert the committed artifacts have the structure the adapter and the
-ontology merge depend on; a final determinism check (gated on pylems + the jar)
+These assert the committed artifacts have the structure the adapter and the ontology merge depend on; a final determinism check (gated on pylems + the jar)
 guards against generator drift.
 """
 
@@ -30,8 +29,7 @@ CONTRACTS_PATH = pathlib.Path(tvbo.__file__).resolve().parent / "data" / "ontolo
 NML = Namespace("https://w3id.org/tvbo/neuroml/")
 NEUROML2 = Namespace("http://www.neuroml.org/schema/neuroml2#")
 
-# The synapse branch is the first ingested vertical slice; its chain anchors the
-# structural assertions below.
+# The synapse branch is the first ingested vertical slice; its chain anchors the structural assertions below.
 SYNAPSE_CHAIN = [
     "baseConductanceBasedSynapse",
     "baseVoltageDepSynapse",

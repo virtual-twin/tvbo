@@ -1,14 +1,11 @@
 """The coupling-evaluation scheme enrichment merged into ``tvbo.owl``.
 
-Covers ``ontology/tvb-o-coupling.ttl`` — the mergeable module that attaches
-backend-independent labels and per-backend parameter mappings to the
+Covers ``ontology/tvb-o-coupling.ttl`` — the mergeable module that attaches backend-independent labels and per-backend parameter mappings to the
 ``CouplingStageEvaluation`` enum values (``per_step`` / ``per_stage``) that
 LinkML ``gen-owl`` emits into ``tvb-o-struct.owl``.
 
-Two levels of assertion: the authored module carries the intended triples, and
-those triples survive the ROBOT merge onto the *same* struct-minted identity
-(not a parallel node) in the distributed ``tvbo/data/ontology/tvbo.owl``. The
-second guards against a future regeneration silently dropping the enrichment.
+Two levels of assertion: the authored module carries the intended triples, and those triples survive the ROBOT merge onto the *same* struct-minted identity
+(not a parallel node) in the distributed ``tvbo/data/ontology/tvbo.owl``. The second guards against a future regeneration silently dropping the enrichment.
 """
 
 from __future__ import annotations
@@ -86,8 +83,7 @@ class TestSurvivesMerge:
     def test_enrichment_lands_on_the_struct_identity(self, merged, value):
         """Enrichment and the LinkML-minted enum value are the *same* node.
 
-        The value must keep its struct-provided identity (subClassOf the enum,
-        a skos:definition) AND carry the merged-in backendParameter — proof the
+        The value must keep its struct-provided identity (subClassOf the enum, a skos:definition) AND carry the merged-in backendParameter — proof the
         module enriched the existing IRI instead of minting a duplicate.
         """
         assert (value, RDFS.subClassOf, COUPLING_ENUM) in merged

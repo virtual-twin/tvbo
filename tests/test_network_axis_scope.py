@@ -1,11 +1,9 @@
 """`network.`-scoped exploration axes resolve to the graph leaf they sweep.
 
 The scope is declarative: an axis names a network attribute (`network.edges.weight`,
-`network.conduction_speed`) and codegen resolves it to the live backend-graph leaf,
-so every cell sees its own value without a Network or graph rebuild.
+`network.conduction_speed`) and codegen resolves it to the live backend-graph leaf, so every cell sees its own value without a Network or graph rebuild.
 
-The canonical form is `network.edges.<label>`; `network.weight(s)`/`network.length(s)`
-are shortcuts. Both go through `edge_label`, the same resolver observations use, so an
+The canonical form is `network.edges.<label>`; `network.weight(s)`/`network.length(s)` are shortcuts. Both go through `edge_label`, the same resolver observations use, so an
 axis and an observation can never disagree about which matrix a reference means.
 """
 
@@ -20,8 +18,7 @@ from tvbo.templates.tvboptim.utils import network_axis_leaf
         # Canonical `network.edges.<label>` form.
         ("network.edges.weight", "weights"),
         ("network.edges.length", "lengths"),
-        # Shortcuts resolve to the same leaf as the canonical form — singular and
-        # plural alike, so a recipe cannot half-work on spelling.
+        # Shortcuts resolve to the same leaf as the canonical form — singular and plural alike, so a recipe cannot half-work on spelling.
         ("network.weight", "weights"),
         ("network.weights", "weights"),
         ("network.length", "lengths"),
@@ -54,10 +51,8 @@ def test_non_network_refs_return_none(ref):
 def test_edges_weight_is_not_misparsed_as_dynamics():
     """`network.edges.weight` must not rsplit into prefix 'network.edges'.
 
-    Splitting a scoped path on the LAST dot leaves prefix='network.edges', which
-    matches neither the network scope nor a coupling key, so the axis silently
-    falls through and is emitted as a dynamics parameter — a wrong-scope write
-    that sweeps nothing and yields identical cells rather than an error.
+    Splitting a scoped path on the LAST dot leaves prefix='network.edges', which matches neither the network scope nor a coupling key, so the axis silently
+    falls through and is emitted as a dynamics parameter — a wrong-scope write that sweeps nothing and yields identical cells rather than an error.
     """
     assert network_axis_leaf("network.edges.weight") == "weights"
 
@@ -65,8 +60,7 @@ def test_edges_weight_is_not_misparsed_as_dynamics():
 def test_unsweepable_edge_attribute_raises():
     """An edge attribute with no graph leaf fails at codegen, not silently.
 
-    A matrix like `fc` is legitimately referenceable by an observation but has no
-    live leaf to sweep, so naming it as an axis is a recipe error.
+    A matrix like `fc` is legitimately referenceable by an observation but has no live leaf to sweep, so naming it as an axis is a recipe error.
     """
     with pytest.raises(ValueError, match="no graph leaf to sweep"):
         network_axis_leaf("network.edges.fc")

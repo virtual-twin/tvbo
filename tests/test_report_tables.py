@@ -1,9 +1,7 @@
 """Tests for the report table primitives — `md_table` and its inverse `read_md_tables`.
 
-A replication report computes its scorecard from a hand-maintained analysis file
-(`report/analysis/targets.md`), so the reader is the difference between a tally that is
-derived and one that is typed. It has to survive what people actually write in those
-files: escaped pipes inside a cell, LaTeX, several tables under different headings.
+A replication report computes its scorecard from a hand-maintained analysis file (`report/analysis/targets.md`), so the reader is the difference between a tally that is
+derived and one that is typed. It has to survive what people actually write in those files: escaped pipes inside a cell, LaTeX, several tables under different headings.
 """
 
 from types import SimpleNamespace
@@ -99,8 +97,7 @@ def test_a_long_column_earns_more_width_than_a_short_one():
 
 
 def test_a_short_column_is_not_starved_beside_prose():
-    """Proportional-to-content alone gives an `ID` column beside a prose column ~6 % of the
-    text width — narrower than the word `T14`, so its cells collide with the next column."""
+    """Proportional-to-content alone gives an `ID` column beside a prose column ~6 % of the text width — narrower than the word `T14`, so its cells collide with the next column."""
     widths = _rule_widths(md_table(["ID", "Why"], [["T14", "b" * 44], ["T15", "b" * 44], ["T16", "b" * 44]]))
     assert widths[0] / sum(widths) >= 0.15
 
@@ -203,8 +200,7 @@ def test_the_internal_build_composes_the_original_beside_ours(tmp_path, monkeypa
 
 
 def test_the_public_build_refuses_an_original_rather_than_embedding_it(tmp_path, monkeypatch):
-    """The last line of defence: a report that forgets its INTERNAL guard must FAIL the build,
-    not quietly ship the paper's figure in the shareable PDF."""
+    """The last line of defence: a report that forgets its INTERNAL guard must FAIL the build, not quietly ship the paper's figure in the shareable PDF."""
     monkeypatch.setenv("QUARTO_DOCUMENT_FILE", "report.qmd")
     ours, theirs = _png(tmp_path / "Fig1.png"), _png(tmp_path / "paper.png")
     with pytest.raises(RuntimeError, match="PUBLIC build"):
@@ -216,8 +212,7 @@ def test_an_unrendered_figure_reports_absence_rather_than_failing(tmp_path):
 
 
 def test_a_declared_original_that_is_absent_still_holds_its_pane(tmp_path, monkeypatch):
-    """A missing © original must be VISIBLY missing. Degrading to a lone panel would read as
-    a completed A/B, hiding that the comparison never happened."""
+    """A missing © original must be VISIBLY missing. Degrading to a lone panel would read as a completed A/B, hiding that the comparison never happened."""
     monkeypatch.setenv("QUARTO_DOCUMENT_FILE", "report_internal.qmd")
     ours = _png(tmp_path / "Fig1.png")
     staged = report_figure(ours, tmp_path / "nope.png", tmp_path / "_figures", missing="obtain per input/DATA.md")
@@ -258,8 +253,7 @@ def test_the_build_branches_on_the_entry_file_quarto_is_rendering(monkeypatch, d
 
 
 # ── Scorecard ───────────────────────────────────────────────────────────────────────────
-# The scorecard is the report's whole claim about what reproduced, so its vocabulary has to
-# hold: a tier is not an outcome, and the three ways of falling short are not one bucket.
+# The scorecard is the report's whole claim about what reproduced, so its vocabulary has to hold: a tier is not an outcome, and the three ways of falling short are not one bucket.
 
 TARGETS_MD = """
 ## A. Group
@@ -300,8 +294,7 @@ def test_a_shortfall_verdict_is_spelled_out_not_abbreviated():
 
 
 def test_each_target_is_counted_in_exactly_one_cell_of_the_tally():
-    """The tally crossed itself while `out` was both a tier and an outcome. Tier rows and
-    outcome columns must partition the targets, so the row totals sum to the target count."""
+    """The tally crossed itself while `out` was both a tier and an outcome. Tier rows and outcome columns must partition the targets, so the row totals sum to the target count."""
     sc = _scorecard()
     rows = read_md_tables(sc.tally_table())[0].rows
     tiers = [r for r in rows if r["Tier"] in ("core", "extended")]
@@ -318,8 +311,7 @@ def test_the_tier_column_never_carries_an_outcome_word():
 def test_the_three_shortfall_kinds_are_reported_separately():
     """Each non-met outcome gets its own led group, in the order failure-first.
 
-    Asserted through ``VERDICTS`` rather than against literal headings, so rewording a
-    label cannot silently turn this into a test of nothing.
+    Asserted through ``VERDICTS`` rather than against literal headings, so rewording a label cannot silently turn this into a test of nothing.
     """
     from tvbo.utils.report import VERDICTS
 

@@ -1,13 +1,10 @@
 """A Procedural GraphGenerator's typed DAG resolves to backend-independent expressions.
 
-The DAG is metadata: every option is a schema field, and the resolver builds the SymPy
-tree directly. Nothing round-trips through an expression string except an `equation`
-step's author-written `rhs`, so the parser's limits (no keyword arguments, `!=` collapsing
-to `True`, an unregistered head silently becoming multiplication) are unreachable by
+The DAG is metadata: every option is a schema field, and the resolver builds the SymPy tree directly. Nothing round-trips through an expression string except an `equation`
+step's author-written `rhs`, so the parser's limits (no keyword arguments, `!=` collapsing to `True`, an unregistered head silently becoming multiplication) are unreachable by
 construction rather than avoided by convention.
 
-The fixture is Koller2024's 2-D sheet — the construction that motivated Tier 2 — so these
-also pin that a real paper's network is expressible without per-generator Python.
+The fixture is Koller2024's 2-D sheet — the construction that motivated Tier 2 — so these also pin that a real paper's network is expressible without per-generator Python.
 """
 
 import pytest
@@ -23,8 +20,7 @@ from tvbo.graph_generators.procedural import (
 
 
 # Koller2024 2-D sheet, exactly the construction in koller2024_networks.build_2d_sheet:
-# distance kernel -> stochastic connection mask -> column-normalise -> in-strength
-# gradient from two opposing Gaussians.
+# distance kernel -> stochastic connection mask -> column-normalise -> in-strength gradient from two opposing Gaussians.
 def _normal_field(mean):
     """A Normal spatial field: vector mean + isotropic cov, as a Distribution."""
     return {"name": "Normal", "parameters": {"mean": mean, "cov": 300.0}}
@@ -90,12 +86,9 @@ def test_stochastic_mask_is_a_relational_over_a_sampler():
 def test_no_abs_wrapper_is_needed_around_an_exponential_draw():
     """Koller's source writes `abs(np.random.exponential(...))`; the DAG omits the abs.
 
-    This is a deliberate, provable simplification rather than a dropped detail: the
-    exponential distribution has support [0, inf), so `abs` is the identity on every
-    value it can return. Omitting it keeps the schema minimal — no `transform` field
-    exists solely to express a no-op — and leaves the mask numerically identical. A
-    distribution that can go negative (e.g. Normal) would need an explicit `equation`
-    step, which is what that step type is for.
+    This is a deliberate, provable simplification rather than a dropped detail: the exponential distribution has support [0, inf), so `abs` is the identity on every
+    value it can return. Omitting it keeps the schema minimal — no `transform` field exists solely to express a no-op — and leaves the mask numerically identical. A
+    distribution that can go negative (e.g. Normal) would need an explicit `equation` step, which is what that step type is for.
     """
     sampler = _named(KOLLER_SHEET)["mask_ij"].args[1]
     assert sampler.func.__name__ == "sample_exponential"
@@ -169,13 +162,10 @@ def test_a_dag_with_no_randomness_has_an_empty_suffix():
 def test_a_sampler_inside_an_equation_step_is_still_seeded():
     """Seededness comes from the resolved expression, not the declared step type.
 
-    An `equation` step may call a sampler head directly. Trusting `type` would classify it
-    as deterministic and hoist it out of the per-realisation loop, so every "independent"
-    realisation would silently share one draw — the worst failure this module can have,
-    because the ensemble still runs and still produces plausible numbers.
+    An `equation` step may call a sampler head directly. Trusting `type` would classify it as deterministic and hoist it out of the per-realisation loop, so every "independent"
+    realisation would silently share one draw — the worst failure this module can have, because the ensemble still runs and still produces plausible numbers.
 
-    Detection keys off the sampler HEAD, not the PRNG symbol's name, so the step is caught
-    however its key argument is spelled (here a plain `anykey`).
+    Detection keys off the sampler HEAD, not the PRNG symbol's name, so the step is caught however its key argument is spelled (here a plain `anykey`).
     """
     spec = {
         "steps": {
@@ -200,8 +190,7 @@ def test_sample_step_yields_the_draw_not_a_mask():
 def test_sample_selects_its_distribution_by_parameter_name():
     """`of` on a `sample` step names the Distribution-valued parameter to draw from.
 
-    That is how a curated generator exposes its randomness as a choice
-    (RandomReservoir's `weight_distribution`) while the inline `distribution` states the
+    That is how a curated generator exposes its randomness as a choice (RandomReservoir's `weight_distribution`) while the inline `distribution` states the
     family it falls back to.
     """
     fields = {"type": "sample", "of": "wd", "distribution": {"name": "Normal", "parameters": {"mean": 0.0, "std": 1.0}}}
@@ -212,8 +201,7 @@ def test_sample_selects_its_distribution_by_parameter_name():
 
 
 def test_sample_rejects_an_of_that_names_an_intermediate():
-    """On every other step type `of` is an array, so reaching for one here is the natural
-    mistake — and silently falling back to the default family would build a plausible
+    """On every other step type `of` is an array, so reaching for one here is the natural mistake — and silently falling back to the default family would build a plausible
     network from the wrong distribution without saying so."""
     with pytest.raises(ProceduralError, match="not from an array"):
         build(
@@ -268,8 +256,7 @@ def test_unknown_distribution_is_rejected():
 def test_an_omitted_parameter_falls_back_to_the_families_standard_form():
     """`Normal` without a mean means Normal(0, 1) — the family's own standard form.
 
-    Erroring instead would reject the ordinary way these are written, and the deleted
-    engine supplied exactly these defaults through its distribution constructors.
+    Erroring instead would reject the ordinary way these are written, and the deleted engine supplied exactly these defaults through its distribution constructors.
     """
     expr = dict(build({"steps": {"m": {"type": "sample", "distribution": {"name": "Normal", "parameters": {"std": 0.5}}}}}))[
         "m"
@@ -279,8 +266,7 @@ def test_an_omitted_parameter_falls_back_to_the_families_standard_form():
 
 
 def test_an_unknown_distribution_parameter_is_rejected():
-    """A typo must not be dropped: the parameter it meant would take its standard form,
-    so the draw would silently come from a different distribution than the spec states."""
+    """A typo must not be dropped: the parameter it meant would take its standard form, so the draw would silently come from a different distribution than the spec states."""
     with pytest.raises(ProceduralError, match="has no parameter"):
         build(
             {"steps": {"m": {"type": "sample", "distribution": {"name": "Normal", "parameters": {"mena": 0.5, "std": 1.0}}}}}
@@ -288,8 +274,7 @@ def test_an_unknown_distribution_parameter_is_rejected():
 
 
 def test_gaussian_is_the_same_family_as_normal_for_sampling():
-    """`distribution_pdf` already accepts `Gaussian`; one spelling must not resolve on
-    one step type and fail on another."""
+    """`distribution_pdf` already accepts `Gaussian`; one spelling must not resolve on one step type and fail on another."""
     for family in ("Normal", "Gaussian"):
         expr = dict(build({"steps": {"m": {"type": "sample", "distribution": {"name": family}}}}))["m"]
         assert expr.func.__name__ == "sample_normal"
@@ -319,10 +304,8 @@ def test_minmax_rescale_requires_a_target_range():
 def test_reserved_prng_parameter_name_is_rejected():
     """The PRNG symbol is reserved; a parameter of that name would be silently clobbered.
 
-    The resolver binds the generator's PRNG state into the evaluation namespace under this
-    name and detects seededness partly by looking for it. A parameter sharing it would be
-    overwritten by the seed (wrong values, no error) and would make every step look seeded,
-    disabling the deterministic-prefix hoisting.
+    The resolver binds the generator's PRNG state into the evaluation namespace under this name and detects seededness partly by looking for it. A parameter sharing it would be
+    overwritten by the seed (wrong values, no error) and would make every step look seeded, disabling the deterministic-prefix hoisting.
     """
     with pytest.raises(ProceduralError, match="reserved"):
         build({"parameters": {"_prng_key": 1.0}, "steps": {"a": {"equation": {"rhs": "_prng_key * 2"}}}})

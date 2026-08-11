@@ -1,14 +1,11 @@
 """Streaming stride reducer (``Observation.reduce: streaming`` over a pure decimation).
 
-The simplest streamable pipeline keeps every ``k``-th sample of its source and drops the
-rest (``SubSampling(period=TR)``). Materialised it costs a whole trajectory to produce a
-``1/k`` slice of it; folded into the integrator carry it costs only the slice. Because the
-reducer keeps exactly the samples the pipeline keeps, the streamed value is bit-identical
+The simplest streamable pipeline keeps every ``k``-th sample of its source and drops the rest (``SubSampling(period=TR)``). Materialised it costs a whole trajectory to produce a
+``1/k`` slice of it; folded into the integrator carry it costs only the slice. Because the reducer keeps exactly the samples the pipeline keeps, the streamed value is bit-identical
 rather than merely close. These tests pin:
 
 * the resolver recognises a stride pipeline whether the stride is declared as a ``period``
-  (with the integration ``step_size``) or as an explicit ``step``, is opt-in, and leaves a
-  non-stride pipeline to the BOLD path;
+  (with the integration ``step_size``) or as an explicit ``step``, is opt-in, and leaves a non-stride pipeline to the BOLD path;
 * the emitted reducer equals a from-scratch ``data[ds-1::ds]`` exactly, under ANY
   stride-aligned block decomposition (the ``prepare(reduce=...)`` path feeds blocks);
 * ``streaming_post_eval_plan`` aligns its block size to the stride, so no write slot ever
@@ -85,8 +82,7 @@ def test_predicate_call_without_experiment_is_side_effect_free_and_truthy():
 
 
 def test_non_stride_pipeline_falls_through_to_the_bold_path():
-    # An unrecognised pipeline must NOT be silently treated as a stride: it falls through,
-    # and the BOLD resolver's error names what a streaming pipeline needs.
+    # An unrecognised pipeline must NOT be silently treated as a stride: it falls through, and the BOLD resolver's error names what a streaming pipeline needs.
     obs, exp = _stride_observation(name="compute_metastability")
     with pytest.raises(ValueError, match="HRF kernel generator"):
         resolve_reduction(obs, exp)
@@ -115,8 +111,7 @@ def test_post_eval_plan_aligns_the_block_to_the_stride():
 def test_each_reduction_kind_declares_its_axes(kind, dims):
     """Axis names come from the reduction's KIND, not from the array's shape.
 
-    Shape cannot distinguish an ``(n_freq, n_node)`` spectrum from an ``(n_node, n_node)``
-    matrix, so the reducer that fixes the shape is what names the axes. This pins the map
+    Shape cannot distinguish an ``(n_freq, n_node)`` spectrum from an ``(n_node, n_node)`` matrix, so the reducer that fixes the shape is what names the axes. This pins the map
     every consumer downstream relies on.
     """
     assert reduction_dims({"kind": kind}) == dims
@@ -126,8 +121,7 @@ def test_each_reduction_kind_declares_its_axes(kind, dims):
 def test_an_undeclared_reduction_yields_no_axis_names(red):
     """No declaration means no label — never a guessed one.
 
-    The container then falls back to positional ``<name>_d<i>``, which is an honest gap; a
-    wrong label would be silently wrong everywhere it is selected by name.
+    The container then falls back to positional ``<name>_d<i>``, which is an honest gap; a wrong label would be silently wrong everywhere it is selected by name.
     """
     assert reduction_dims(red) == ()
 
@@ -139,8 +133,7 @@ def test_the_plan_carries_the_declared_dims_for_each_streamed_observation():
 
 
 def test_a_plan_with_nothing_streaming_still_carries_a_dims_mapping():
-    # The experiment template reads plan['dims'] unconditionally, so the key must always
-    # exist — a missing key would be a codegen-time AttributeError, not a quiet default.
+    # The experiment template reads plan['dims'] unconditionally, so the key must always exist — a missing key would be a codegen-time AttributeError, not a quiet default.
     _, exp = _stride_observation(reduce=None)
     exp.observations = {}
     assert streaming_post_eval_plan(exp)["dims"] == {}
@@ -195,12 +188,9 @@ def test_reducer_is_block_decomposition_invariant(block):
 def test_reducer_handles_a_partial_tail_block(n_steps):
     """A run length that is not a multiple of the block leaves a short tail.
 
-    tvboptim's ``_blocked_scan`` runs ``n_steps // block_size`` full blocks and then ONE
-    tail call of the remainder, so the reducer must neither write past its buffer nor
-    leave the last slot unwritten — a stale zero row would look like a real sample. The
-    buffer is sized ``len(range(ds-1, n_steps, ds))``, which equals the number of full
-    blocks when ``block_size == ds``; this pins that identity for tails that do and do not
-    themselves contain a sample.
+    tvboptim's ``_blocked_scan`` runs ``n_steps // block_size`` full blocks and then ONE tail call of the remainder, so the reducer must neither write past its buffer nor
+    leave the last slot unwritten — a stale zero row would look like a real sample. The buffer is sized ``len(range(ds-1, n_steps, ds))``, which equals the number of full
+    blocks when ``block_size == ds``; this pins that identity for tails that do and do not themselves contain a sample.
     """
     rng = np.random.default_rng(2)
     ds, n_node = 25, 3
@@ -236,8 +226,7 @@ def test_reducer_handles_a_partial_tail_block(n_steps):
 def test_skip_drops_exactly_the_transient_samples(skip, ds, n_steps, kept):
     """`skip` is honoured, not silently ignored.
 
-    A sweep folds transient and main run into ONE window and asks the reducer to drop the
-    transient; the single-run path integrates them separately. When `skip` was accepted
+    A sweep folds transient and main run into ONE window and asks the reducer to drop the transient; the single-run path integrates them separately. When `skip` was accepted
     and discarded, a swept cell came back with `skip/ds` extra leading samples — 1,338
     BOLD frames where the same experiment run alone gives 1,200 — and nothing raised.
     """

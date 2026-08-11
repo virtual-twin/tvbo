@@ -2,10 +2,8 @@
 
 The passes exist so backend templates can emit the imports and scaffolding a feature
 *may* need without each one growing a condition that drifts. That only works if they are
-trusted, and they are only trustworthy if the cases where removing something would
-change behaviour are pinned. Those cases are the point of this module: side-effecting
-imports and right-hand sides, names reached through a string, ``__future__``, star
-imports, closures, rebinding, and the ordering that ``JAX_PLATFORMS`` depends on.
+trusted, and they are only trustworthy if the cases where removing something would change behaviour are pinned. Those cases are the point of this module: side-effecting
+imports and right-hand sides, names reached through a string, ``__future__``, star imports, closures, rebinding, and the ordering that ``JAX_PLATFORMS`` depends on.
 """
 
 from __future__ import annotations
@@ -59,8 +57,7 @@ def test_a_name_mentioned_only_in_a_docstring_is_dropped():
 def test_a_name_mentioned_only_in_prose_is_dropped():
     """A ``doc=`` string is prose, not a reference.
 
-    ``"Additive coefficient for the second state-variable"`` does not parse as Python,
-    which is exactly what distinguishes it from ``registry["TimeSeries"]`` above. Word
+    ``"Additive coefficient for the second state-variable"`` does not parse as Python, which is exactly what distinguishes it from ``registry["TimeSeries"]`` above. Word
     matching cannot tell them apart, and treating prose as a use kept ``Additive`` and
     ``Coupling`` imported into every generated TVB model.
     """
@@ -82,8 +79,7 @@ def test_drops_a_dead_binding_with_a_pure_right_hand_side():
 def test_class_attributes_are_never_dropped():
     """A class body's assignments are its interface, read from outside the module.
 
-    ``COUPLING_INPUTS = {...}`` is unread by the module that defines it and looks exactly
-    like dead scaffolding. Removing it left the generated dynamics advertising no
+    ``COUPLING_INPUTS = {...}`` is unread by the module that defines it and looks exactly like dead scaffolding. Removing it left the generated dynamics advertising no
     coupling inputs, so building the network failed with "Unknown coupling names".
     """
     src = (
@@ -167,8 +163,7 @@ def test_noqa_marks_an_import_as_deliberate():
 def test_import_order_is_preserved():
     """Pruning never hoists.
 
-    The tvboptim module sets ``JAX_PLATFORMS`` before importing jax, so an import moved
-    above that assignment would silently change the device the experiment runs on.
+    The tvboptim module sets ``JAX_PLATFORMS`` before importing jax, so an import moved above that assignment would silently change the device the experiment runs on.
     """
     src = 'import os\n\nos.environ.setdefault("JAX_PLATFORMS", "cpu")\nimport jax\n\ny = jax.jit(lambda x: x)\n'
     out = prune_unused_imports(src)
@@ -185,8 +180,7 @@ def test_unparseable_source_is_returned_unchanged():
 def test_a_module_import_shadowed_by_a_local_one_is_dropped():
     """The read resolves to the local import, so the module-level one is dead.
 
-    Python decides this per function: one nested ``import os`` makes every ``os`` in that
-    function local. Counting those reads against the module kept a top-level ``import
+    Python decides this per function: one nested ``import os`` makes every ``os`` in that function local. Counting those reads against the module kept a top-level ``import
     os`` that only the ``JAX_PLATFORMS`` line — itself not emitted — would have used.
     """
     src = "import os\n\n\ndef f():\n    import os\n\n    return os.sep\n"
@@ -218,8 +212,7 @@ def test_unparseable_source_is_returned_unchanged_by_the_assignment_pass():
 def test_the_only_statement_of_a_block_is_kept():
     """Emptying a suite is a SyntaxError, not a tidier module.
 
-    Left alone rather than replaced with ``pass``: that would trade a lint warning for
-    a line that means nothing.
+    Left alone rather than replaced with ``pass``: that would trade a lint warning for a line that means nothing.
     """
     src = "def f(flag, w):\n    if flag:\n        n = w.shape[0]\n    return 1\n"
     assert prune_dead_assignments(src) == src
@@ -234,8 +227,7 @@ def test_the_only_import_of_a_block_is_kept():
 def test_a_statement_sharing_its_line_is_kept():
     """Deleting by line would drop the ``g()`` call and strand the name it bound.
 
-    This one parses afterwards, so nothing downstream would have caught it — the exact
-    class of silent change :func:`_is_pure` exists to prevent.
+    This one parses afterwards, so nothing downstream would have caught it — the exact class of silent change :func:`_is_pure` exists to prevent.
     """
     src = "def f(w, g):\n    n = w.shape[0]; m = g()\n    return m\n"
     assert prune_dead_assignments(src) == src
@@ -263,8 +255,7 @@ def test_a_single_line_suite_is_kept():
 def test_only_a_functions_own_body_shadows_a_module_import(src):
     """A class body is not a scope its methods see, and a signature runs outside the body.
 
-    Treating either as shadowing dropped an import the generated module still resolves
-    through — a ``NameError`` at call time for the first, at import for the second.
+    Treating either as shadowing dropped an import the generated module still resolves through — a ``NameError`` at call time for the first, at import for the second.
     """
     assert not unused_import_names(src)
 
@@ -288,8 +279,7 @@ def test_retime_leaves_an_attribute_of_the_same_name_alone():
     """``\\b`` matches right after a dot, so a plain word boundary is not enough.
 
     A pipeline function whose input argument is named ``data`` and whose body touches
-    ``ts.data`` had its time branch rewritten to ``ts.t_data`` — ``AttributeError`` on
-    the TimeSeries at run time.
+    ``ts.data`` had its time branch rewritten to ``ts.t_data`` — ``AttributeError`` on the TimeSeries at run time.
     """
     from tvbo.templates.base.utils import retime
 

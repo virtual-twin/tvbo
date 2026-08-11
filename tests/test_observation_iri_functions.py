@@ -1,10 +1,8 @@
 """A curated observation model referenced by `iri` merges its helper functions.
 
-An observation model whose pipeline calls helper functions by name (an HRF kernel,
-a downsample, a strided convolution) ships those functions in a `functions:` block.
+An observation model whose pipeline calls helper functions by name (an HRF kernel, a downsample, a strided convolution) ships those functions in a `functions:` block.
 `Observation` has no `functions` slot — codegen reads them from `experiment.functions`
-— so `populate_observation_from_iri` hands them to a `functions_sink` for the
-experiment to merge. Without that, the pipeline's `function:` refs resolve to nothing
+— so `populate_observation_from_iri` hands them to a `functions_sink` for the experiment to merge. Without that, the pipeline's `function:` refs resolve to nothing
 and the step degrades to a passthrough.
 """
 
@@ -52,11 +50,9 @@ def test_no_sink_is_safe():
 
 
 def test_experiment_with_no_functions_merges_and_renders(tmp_path):
-    """An experiment with no `functions:` block that references a curated model still
-    renders — the model's helpers merge as a plain dict, not a JsonObj.
+    """An experiment with no `functions:` block that references a curated model still renders — the model's helpers merge as a plain dict, not a JsonObj.
 
-    The merge must not go through the LinkML functions setter (which re-wraps a
-    dict assignment into a JsonObj whose values are raw dicts, breaking
+    The merge must not go through the LinkML functions setter (which re-wraps a dict assignment into a JsonObj whose values are raw dicts, breaking
     `dict(experiment.functions)` in codegen). Guards that regression end to end.
     """
     from tvbo.classes.experiment import SimulationExperiment

@@ -1,9 +1,7 @@
 """Tests for the ``tvbo skills sync`` repo-side guard.
 
-Covers the failure modes the check has to catch: rendered copies that have
-drifted from their canonical source, rendered copies with no canonical source
-behind them (a personal skill committed by accident), shipped user skills
-pointing at maintainer skills that never ship, and ``requires_extras`` naming
+Covers the failure modes the check has to catch: rendered copies that have drifted from their canonical source, rendered copies with no canonical source
+behind them (a personal skill committed by accident), shipped user skills pointing at maintainer skills that never ship, and ``requires_extras`` naming
 a group that does not exist in ``pyproject.toml``.
 """
 
@@ -86,8 +84,7 @@ def test_detects_stray_copilot_instructions(synced):
 
 
 def test_user_skill_needs_no_copilot_render(tmp_path):
-    """`sync` only renders copilot files for maintainer skills, so a user
-    skill's *absent* instructions file is not an orphan."""
+    """`sync` only renders copilot files for maintainer skills, so a user skill's *absent* instructions file is not an orphan."""
     src = tmp_path / "skills"
     _canonical(src, "user-skill", audience="user")
     skills = load_canonical([src])

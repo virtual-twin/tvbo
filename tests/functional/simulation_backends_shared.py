@@ -51,8 +51,7 @@ def _tvb_compatible(model_file):
     if meta.get("system_type") == "discrete":
         return False
     # TVB coupling array size = number of coupling variables (cvar).
-    # Models with more *global* coupling inputs than coupling variables can't
-    # run on TVB.  local_coupling / lc_* are separate dfun arguments.
+    # Models with more *global* coupling inputs than coupling variables can't run on TVB.  local_coupling / lc_* are separate dfun arguments.
     ci = meta.get("coupling_inputs", {})
     n_global = sum(1 for name in ci if name != "local_coupling" and not name.startswith("lc_"))
     n_coupling_vars = sum(
@@ -64,10 +63,8 @@ def _tvb_compatible(model_file):
 
 
 # Models skipped on the non-TVB backends but kept on TVB. The second-order
-# Zerlaut model's erfc/quadrature transfer functions produce enormous expressions
-# that compile very slowly under JAX/XLA (and the other backends), exceeding the
-# CI per-test timeout. TVB has the erfc + compilation path for it, so it stays
-# covered there.
+# Zerlaut model's erfc/quadrature transfer functions produce enormous expressions that compile very slowly under JAX/XLA (and the other backends), exceeding the
+# CI per-test timeout. TVB has the erfc + compilation path for it, so it stays covered there.
 _SKIP_NON_TVB = {"ZerlautAdaptationSecondOrder"}
 
 _ALL_MODEL_FILES = get_model_files()

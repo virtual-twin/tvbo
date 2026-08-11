@@ -5,12 +5,10 @@ Creates BIDS-named network files in tvbo/database/networks/:
   dk_average SC+FC → tpl-MNI152NLin2009cAsym_rec-avgMatrix
                       _atlas-DesikanKilliany_desc-SCFC_relmat
 
-tvboptim dk_average contains average structural and functional connectivity
-matrices across subjects, using the 84-node Desikan-Killiany parcellation
+tvboptim dk_average contains average structural and functional connectivity matrices across subjects, using the 84-node Desikan-Killiany parcellation
 (FreeSurfer aparc, excluding brain-stem and ventral-DC bilaterally).
 
-Coordinates are sourced from the existing 87-node dTOR DK network
-via abbreviation → FreeSurfer label mapping.
+Coordinates are sourced from the existing 87-node dTOR DK network via abbreviation → FreeSurfer label mapping.
 """
 
 import numpy as np
@@ -25,8 +23,7 @@ NETWORK_DIR = database_path / "networks"
 # --------------------------------------------------------------------------- #
 #  Declarative edge definitions                                                #
 # --------------------------------------------------------------------------- #
-# Each entry defines an edge property: source NPZ file, key within that file,
-# and metadata attributes written to the YAML sidecar.
+# Each entry defines an edge property: source NPZ file, key within that file, and metadata attributes written to the YAML sidecar.
 EDGE_DEFS = {
     "weight": {
         "source": "connectivity/dk_average/data.npz",

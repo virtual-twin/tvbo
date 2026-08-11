@@ -1,9 +1,7 @@
 """Tests for the ``ExplorationResult`` labelling contract.
 
-Every results payload carries named dims, whatever the producer handed over, so
-consumers select by key rather than by position. Labelling does not reshape: the
-payload keeps the shape the backend emitted, and ``as_grid()`` is what expands the
-flat run axis into one dim per exploration axis. No path returns a bare array — a
+Every results payload carries named dims, whatever the producer handed over, so consumers select by key rather than by position. Labelling does not reshape: the
+payload keeps the shape the backend emitted, and ``as_grid()`` is what expands the flat run axis into one dim per exploration axis. No path returns a bare array — a
 payload that cannot be reshaped is still labelled.
 """
 
@@ -101,8 +99,7 @@ def test_scalar_results_are_labelled():
 def test_as_grid_never_returns_a_bare_array():
     """A payload that cannot be reshaped into the grid is still labelled.
 
-    The grid shape here disagrees with the payload's leading dim, so the reshape is
-    skipped — previously that fell back to the raw array, handing consumers
+    The grid shape here disagrees with the payload's leading dim, so the reshape is skipped — previously that fell back to the raw array, handing consumers
     positional data with no indication anything had gone wrong.
     """
     data = np.zeros((7, 50, 2, 1))  # 7 does not match the 3-point axis
@@ -143,8 +140,7 @@ def _stacked(shape, dims=None, ts=None, cell_coords=None):
 def test_declared_dims_name_a_swept_observation():
     """A streamed observation's axes come from what it DECLARED, not from a template.
 
-    `(time, node)` and the positional `(node, mode)` fallback have the same rank, so
-    nothing raises when the guess is wrong — a 1,338-frame BOLD time axis simply comes
+    `(time, node)` and the positional `(node, mode)` fallback have the same rank, so nothing raises when the guess is wrong — a 1,338-frame BOLD time axis simply comes
     back named `node`, and every downstream `.sel` is then keyed on the wrong axis.
     """
     da = _stacked((len(C_VALS), 1338, 200), dims=("time", "node"))

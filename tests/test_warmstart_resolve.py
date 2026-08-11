@@ -1,5 +1,4 @@
-"""End-to-end for `Experiment._resolve_from_experiment_params` — the consumer side of
-the from_experiment parameter warm-start.
+"""End-to-end for `Experiment._resolve_from_experiment_params` — the consumer side of the from_experiment parameter warm-start.
 
 Covers, against a source result `.h5`:
   * a dynamics VECTOR sourced from a tuned estimate (``estimate__J_i``), reconciled by
@@ -108,8 +107,7 @@ def test_resolve_estimate_vector_matrix_and_legacy_observation(tmp_path):
 
 
 def test_reconcile_by_label_permuted_source(tmp_path):
-    """Source records estimates in the OPPOSITE node order; reconcile must realign by
-    label (never positional), so J_i/wLRE come back in the model's r0,r1 order."""
+    """Source records estimates in the OPPOSITE node order; reconcile must realign by label (never positional), so J_i/wLRE come back in the model's r0,r1 order."""
     _write_source_h5(tmp_path, labels=("r1", "r0"))  # swapped source order
     # the source arrays are authored in [r1, r0] order:
     #   estimate__J_i = [1,2] means r1->1, r0->2  => model order [r0,r1] -> [2,1]

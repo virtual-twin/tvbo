@@ -90,8 +90,7 @@ class TestNeuroMLExperiments:
         xml = exp.render("lems")
         assert xml is not None
         assert "<Lems>" in xml
-        # Standard NeuroML types use <Include file="Cells.xml"/> instead of
-        # custom <ComponentType> definitions.
+        # Standard NeuroML types use <Include file="Cells.xml"/> instead of custom <ComponentType> definitions.
         assert "<ComponentType" in xml or '<Include file="Cells.xml"/>' in xml
         assert "<Simulation" in xml
 
@@ -202,8 +201,7 @@ class TestNeuroMLValidation:
         exp = SimulationExperiment(dynamics=model)
         adapter = NeuroMLAdapter(exp)
         xml = adapter.render_code()
-        # PyLEMS ExprParser (v0.6.9) has known limitations with compound
-        # expressions and certain parameter names (e.g. H clashes with
+        # PyLEMS ExprParser (v0.6.9) has known limitations with compound expressions and certain parameter names (e.g. H clashes with
         # Heaviside). We still test to detect regressions.
         try:
             adapter.validate(xml)
@@ -213,8 +211,7 @@ class TestNeuroMLValidation:
 
 # ── Run tests (downstream simulator execution) ───────────────────────
 
-# Use FitzHughNagumo — simple 2-variable model that validates and runs
-# reliably across all backends.
+# Use FitzHughNagumo — simple 2-variable model that validates and runs reliably across all backends.
 _RUN_EXPERIMENT = str(NEUROML_EXPERIMENTS_DIR / "FitzHughNagumo_Ex9.yaml")
 
 

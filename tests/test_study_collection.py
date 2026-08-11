@@ -1,10 +1,8 @@
 """The StudyCollection container: manifest resolution, verify gates, and composed captions.
 
 Phase 0 of the native-manuscript design. A `StudyCollection` is a study-of-studies whose
-`results:` are the numbers the prose cites (computed from a container or authored from prior
-work), whose figures carry `Panel.description` so captions compose from the spec, and whose
-buildability `tvbo verify` checks. These pin that plumbing so a regression can't silently ship
-a wrong number, an orphan figure, or a caption that disagrees with its panels.
+`results:` are the numbers the prose cites (computed from a container or authored from prior work), whose figures carry `Panel.description` so captions compose from the spec, and whose
+buildability `tvbo verify` checks. These pin that plumbing so a regression can't silently ship a wrong number, an orphan figure, or a caption that disagrees with its panels.
 """
 
 from pathlib import Path
@@ -239,8 +237,7 @@ def test_a_member_container_resolves_from_the_members_own_root(collection, tmp_p
     """A ``used:`` binding into a MEMBER, which the schema documents as supported.
 
     A member study runs in its own directory and writes
-    ``<member-dir>/output/results/<name>/result.h5``. Searching only the collection's
-    root left every such key unresolved, so the build died right after a successful
+    ``<member-dir>/output/results/<name>/result.h5``. Searching only the collection's root left every such key unresolved, so the build died right after a successful
     multi-hour run — contradicting the slot's own description.
     """
     _write_container(tmp_path / "members" / "output", "tally", "n_errors", 7)
@@ -289,8 +286,7 @@ def test_fingerprint_tracks_the_declaration_not_the_file():
 def test_an_unrelated_spec_edit_does_not_mark_an_analysis_stale(tmp_path):
     """The defect this replaced: any touch of the spec failed every analysis.
 
-    Editing a caption, adding a figure or fixing a typo made ``verify`` demand a re-run of
-    work that edit could not affect — and the only escape was recomputing all of it.
+    Editing a caption, adding a figure or fixing a typo made ``verify`` demand a re-run of work that edit could not affect — and the only escape was recomputing all of it.
     """
     root = tmp_path / "output"
     _write_container(root, "tally", "n_errors", 3)
@@ -355,8 +351,7 @@ def test_run_analysis_records_the_fingerprint_it_will_be_checked_against(tmp_pat
 def test_a_mistyped_manuscript_path_names_the_real_problem(collection, tmp_path):
     """An unreadable path must not read as "the prose cites nothing".
 
-    Swallowing the OSError produced an empty key set, so verify reported EVERY declared
-    binding as never-cited — a wall of wrong diagnostics hiding the one real fault.
+    Swallowing the OSError produced an empty key set, so verify reported EVERY declared binding as never-cited — a wall of wrong diagnostics hiding the one real fault.
     """
     import typer
 
@@ -392,8 +387,7 @@ def test_cited_keys_are_read_from_a_file_and_a_tree(tmp_path):
 def test_a_caption_failure_does_not_abort_the_render_loop(tmp_path, monkeypatch):
     """The pre-check sat OUTSIDE the try that exists to guarantee exactly this.
 
-    An exception composing figure 1's caption stopped the loop, so every later figure
-    went unrendered even though the images written so far were fine.
+    An exception composing figure 1's caption stopped the loop, so every later figure went unrendered even though the images written so far were fine.
     """
     from tvbo.adapters import bsplot
     from tvbo.cli import figures as figures_cli
@@ -411,8 +405,7 @@ def test_a_caption_failure_does_not_abort_the_render_loop(tmp_path, monkeypatch)
 def test_a_manifest_is_not_written_when_an_analysis_stage_failed(tmp_path, monkeypatch):
     """A failed stage means the containers are stale or absent.
 
-    Emitting anyway reported numbers the run did not produce, and exited 0. The
-    boolean ``_run_whole_study`` already returned was simply discarded.
+    Emitting anyway reported numbers the run did not produce, and exited 0. The boolean ``_run_whole_study`` already returned was simply discarded.
     """
     import typer
 

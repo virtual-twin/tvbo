@@ -1,13 +1,10 @@
 """A stimulus weighting may be DERIVED, and then it must declare where it came from.
 
-`Event.weights` is a literal list and `weight_distribution` samples one, but a real spatial
-stimulus is usually neither: it is an ROI mask projected through a basis, a retinotopic map,
-a measured stimulation field. Inlining a few hundred such numbers into the spec hides their
-provenance and makes them uncheckable, which is the exact thing `source:`/`producer:` exist
+`Event.weights` is a literal list and `weight_distribution` samples one, but a real spatial stimulus is usually neither: it is an ROI mask projected through a basis, a retinotopic map,
+a measured stimulation field. Inlining a few hundred such numbers into the spec hides their provenance and makes them uncheckable, which is the exact thing `source:`/`producer:` exist
 to prevent for every other external array.
 
-`Event.weight_parameter` closes that: the weighting is a Parameter, so it carries the same
-provenance triple, and it is resolved into the per-node weighting at load time — the codegen
+`Event.weight_parameter` closes that: the weighting is a Parameter, so it carries the same provenance triple, and it is resolved into the per-node weighting at load time — the codegen
 downstream still sees the plain array it already consumed.
 """
 

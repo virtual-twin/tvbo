@@ -8,31 +8,25 @@ https://github.com/netneurolab/hansen_receptors/tree/main/data/schaefer
 Available matrices
 ------------------
 Only scale-100 (100×100) SC and FC matrices are distributed with the paper.
-Coordinate files exist for 100, 200, and 400 parcels but SC/FC connectomes
-are only provided at scale-100.
+Coordinate files exist for 100, 200, and 400 parcels but SC/FC connectomes are only provided at scale-100.
 
 SC reconstruction
 -----------------
-DWI pre-processed with MRtrix3. Fiber orientation distributions from
-multi-shell multi-tissue constrained spherical deconvolution (MSMT-CSD).
+DWI pre-processed with MRtrix3. Fiber orientation distributions from multi-shell multi-tissue constrained spherical deconvolution (MSMT-CSD).
 Probabilistic streamline tractography + SIFT2 weight optimization.
-Group-consensus binary network preserving density and edge-length
-distributions of individual connectomes. Edge weights: mean log-transformed
+Group-consensus binary network preserving density and edge-length distributions of individual connectomes. Edge weights: mean log-transformed
 streamline count of non-zero edges across participants, scaled to [0, 1].
 
 FC reconstruction
 -----------------
-HCP 3T resting-state fMRI pre-processed with HCP pipeline (gradient
-non-linearity correction, head-motion correction, distortion correction,
+HCP 3T resting-state fMRI pre-processed with HCP pipeline (gradient non-linearity correction, head-motion correction, distortion correction,
 ICA-FIX denoising). Time series parcellated to Schaefer parcels.
-FC = Pearson correlation between pairs of regional time series, averaged
-across all participants and scans.
+FC = Pearson correlation between pairs of regional time series, averaged across all participants and scans.
 
 Reference
 ---------
 Hansen JY, Shafiei G, Markello RD, Smart K, Cox SML, Wu Y, Diez I,
-Schirner M, Wirsich J, Bhatt DL, Misic B. (2022). Mapping neurotransmitter
-systems to the structural and functional organization of the human neocortex.
+Schirner M, Wirsich J, Bhatt DL, Misic B. (2022). Mapping neurotransmitter systems to the structural and functional organization of the human neocortex.
 Nature Neuroscience, 25, 1569–1581.
 https://doi.org/10.1038/s41593-022-01186-3
 """

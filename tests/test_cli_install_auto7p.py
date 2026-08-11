@@ -1,9 +1,7 @@
 """Tests for ``tvbo install auto7p`` — locating and linking the AUTO-07p engine.
 
-AUTO-07p is not a PyPI package: it is a native build whose ``python/`` front-end
-must be linked onto the environment for ``import auto`` to resolve. These tests
-cover the pure logic — detecting a valid tree, the search order, strict handling
-of an explicit path, and idempotent linking — without requiring a real build.
+AUTO-07p is not a PyPI package: it is a native build whose ``python/`` front-end must be linked onto the environment for ``import auto`` to resolve. These tests
+cover the pure logic — detecting a valid tree, the search order, strict handling of an explicit path, and idempotent linking — without requiring a real build.
 """
 
 import pytest

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Fix atlas names and bids metadata in YAML sidecars after the rename.
 
-Updates parcellation.atlas.name to normalized form and adds segmentation/scale
-to the bids: section where applicable.
+Updates parcellation.atlas.name to normalized form and adds segmentation/scale to the bids: section where applicable.
 """
 
 import re

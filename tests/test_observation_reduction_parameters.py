@@ -1,11 +1,8 @@
 """An observation reduction observer binds its ``Dynamics.parameters`` as named constants.
 
-A model ``Dynamics`` declares its constants as ``parameters`` (scalar, or array-valued for
-an operator such as a mode-coupling matrix). An observer ``Dynamics`` — the co-integrated
-auxiliary that computes an observation as a time recurrence — is the same class and so
-declares constants the same way. These tests pin that the reduction resolver honours them:
-they enter the symbolic vocabulary, survive into the rendered triple, and cannot silently
-shadow a state variable.
+A model ``Dynamics`` declares its constants as ``parameters`` (scalar, or array-valued for an operator such as a mode-coupling matrix). An observer ``Dynamics`` — the co-integrated
+auxiliary that computes an observation as a time recurrence — is the same class and so declares constants the same way. These tests pin that the reduction resolver honours them:
+they enter the symbolic vocabulary, survive into the rendered triple, and cannot silently shadow a state variable.
 """
 
 import pytest
@@ -109,8 +106,7 @@ def _render(obs):
 
 
 def test_constants_are_bound_in_the_rendered_triple():
-    """Both kinds of constant bind by name in the closure the triple shares, and an
-    array operator reaches the backend as an array rather than a Python list."""
+    """Both kinds of constant bind by name in the closure the triple shares, and an array operator reaches the backend as an array rather than a Python list."""
     obs = _observer(
         "acc + g * matmul(A, x)",
         "acc / count",
@@ -123,9 +119,7 @@ def test_constants_are_bound_in_the_rendered_triple():
 
     assert "A = jnp.array([[1.0, 2.0], [3.0, 4.0]])" in code
     assert "g = 0.5" in code
-    # The array-op handler lowers matmul through the reduction path. Operands are
-    # parenthesized so a compound operand (e.g. matmul(A, x/c)) keeps `@` binding
-    # tighter than `/` -> `A @ (x/c)`, not `(A @ x)/c`.
+    # The array-op handler lowers matmul through the reduction path. Operands are parenthesized so a compound operand (e.g. matmul(A, x/c)) keeps `@` binding tighter than `/` -> `A @ (x/c)`, not `(A @ x)/c`.
     assert "(A) @ (x)" in code
 
 
@@ -148,8 +142,7 @@ class _Experiment:
 
 
 def test_a_sourced_operator_emits_a_lazy_load_not_its_bytes(tmp_path):
-    """A large operator must never enter the generated source — the reduction reads it
-    from the companion at run time instead."""
+    """A large operator must never enter the generated source — the reduction reads it from the companion at run time instead."""
     pytest.importorskip("h5py")
     import h5py
 
@@ -192,8 +185,7 @@ def test_the_existence_check_does_not_materialise(tmp_path, monkeypatch):
 
 
 def test_the_emitted_path_is_absolute(tmp_path):
-    """Generated modules are exec'd in memory, so a relative path has nothing to anchor
-    to — codegen resolves it against the spec dir, exactly as bids_dir is emitted."""
+    """Generated modules are exec'd in memory, so a relative path has nothing to anchor to — codegen resolves it against the spec dir, exactly as bids_dir is emitted."""
     pytest.importorskip("h5py")
     import h5py
 

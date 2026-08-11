@@ -6,8 +6,7 @@ Creates one atlas YAML per (segmentation, scale) combination, with:
 - ParcellationEntity entries for each functional network (as parent)
 - hasParent references linking parcels to their functional network
 
-The functional network hierarchy (7 or 17 networks × 2 hemispheres) is
-represented purely via the SANDS ``hasParent`` field — no ad-hoc fields.
+The functional network hierarchy (7 or 17 networks × 2 hemispheres) is represented purely via the SANDS ``hasParent`` field — no ad-hoc fields.
 
 Also removes the non-schema ``functional_networks`` field from network
 YAMLs and ensures ``node_mapping`` stays compliant.

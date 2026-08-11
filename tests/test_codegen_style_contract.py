@@ -1,40 +1,29 @@
 """The house-style contract for generated source, enforced per backend.
 
-TVBO hands users generated code to read, review and attach to papers, so it is held
-to the same bar as the rest of the package. This module states that bar as an
+TVBO hands users generated code to read, review and attach to papers, so it is held to the same bar as the rest of the package. This module states that bar as an
 executable contract and checks every backend against it:
 
 * the source parses as the language its :class:`~tvbo.export.registry.ExportFormat`
-  declares — a formatter that cannot read our output means we emitted a broken
-  program, and the user would have hit it later with a worse message;
+  declares — a formatter that cannot read our output means we emitted a broken program, and the user would have hit it later with a worse message;
 * generated Python is byte-identical to its ``black`` form, so formatting is
   canonical rather than a matter of which template fragment wrote a line;
 * generated Python is clean under :data:`RUFF_RULES` — the blocking subset CI
   already applies to TVBO's own source, plus ``F401``/``F841``.
 
-``F401`` and ``F841`` are load-bearing rather than cosmetic. Statements with no
-effect reach generated code when a template emits something the spec did not ask
-for: a parameter unpack for a coupling that has no parameters, an import a partial
-carries whether or not its feature is used, a state binding the pre-expression never
+``F401`` and ``F841`` are load-bearing rather than cosmetic. Statements with no effect reach generated code when a template emits something the spec did not ask
+for: a parameter unpack for a coupling that has no parameters, an import a partial carries whether or not its feature is used, a state binding the pre-expression never
 reads. Requiring the emitted module to be free of them forces the emission to be
 *gated* on what the spec needs, and keeps it gated.
 
-``F821`` (inside ``F82``) is the strongest of the three: an undefined name in
-generated code is a ``NameError`` waiting for whoever runs it.
+``F821`` (inside ``F82``) is the strongest of the three: an undefined name in generated code is a ``NameError`` waiting for whoever runs it.
 
-This suite freezes the CONTRACT, not the bytes. The complementary corpora that
-freeze emitted code and simulation output live in ``test_codegen_golden_corpus.py``
-and ``test_numerical_golden_corpus.py``. The three fail on disjoint classes of
-regression: a spec can render byte-identically and still violate the contract only
-if the contract changed, but a repair that cleans up emitted code changes the bytes
-without touching the contract.
+This suite freezes the CONTRACT, not the bytes. The complementary corpora that freeze emitted code and simulation output live in ``test_codegen_golden_corpus.py``
+and ``test_numerical_golden_corpus.py``. The three fail on disjoint classes of regression: a spec can render byte-identically and still violate the contract only
+if the contract changed, but a repair that cleans up emitted code changes the bytes without touching the contract.
 
-:data:`KNOWN_VIOLATIONS` records the pairs that do not meet the contract yet, each
-mapped to the exact rule codes it still trips. The record is pinned from both sides —
-a code that appears without being recorded fails, and a recorded code that stops
-appearing fails too — so repairing an emitter reports as a failure asking for the
-entry to be updated, the same reconciliation the golden corpora use for their
-unrenderable pairs. A silently skipped backend cannot be told from one nobody noticed.
+:data:`KNOWN_VIOLATIONS` records the pairs that do not meet the contract yet, each mapped to the exact rule codes it still trips. The record is pinned from both sides —
+a code that appears without being recorded fails, and a recorded code that stops appearing fails too — so repairing an emitter reports as a failure asking for the
+entry to be updated, the same reconciliation the golden corpora use for their unrenderable pairs. A silently skipped backend cannot be told from one nobody noticed.
 """
 
 from __future__ import annotations
@@ -162,8 +151,7 @@ def _lint(code: str, ruff: str) -> list[str]:
 def test_generated_source_parses(name, fmt):
     """Every backend emits source its own language can parse.
 
-    ``render_code`` raises :class:`GeneratedSourceError` when it cannot, so simply
-    rendering is the assertion. This is what caught the JAX empty parameter unpack.
+    ``render_code`` raises :class:`GeneratedSourceError` when it cannot, so simply rendering is the assertion. This is what caught the JAX empty parameter unpack.
     """
     assert _render(name, fmt).strip(), f"{fmt} rendered an empty module"
 
@@ -183,8 +171,7 @@ def test_generated_python_is_black_clean(name, fmt):
 def test_generated_python_is_lint_clean(name, fmt):
     """Generated Python trips no rule in :data:`RUFF_RULES`.
 
-    Pairs listed in :data:`KNOWN_VIOLATIONS` are allowed to trip exactly the codes
-    recorded for them, and no others — a NEW violation in a known-bad pair still
+    Pairs listed in :data:`KNOWN_VIOLATIONS` are allowed to trip exactly the codes recorded for them, and no others — a NEW violation in a known-bad pair still
     fails.
     """
     known = KNOWN_VIOLATIONS.get(f"{name}.{fmt}", ())
@@ -199,8 +186,7 @@ def test_generated_python_is_lint_clean(name, fmt):
 def test_known_violations_are_reconciled(case):
     """No recorded code may outlive the defect it records.
 
-    Asserting only that SOME recorded code still trips would let a partially repaired
-    entry go stale — which is how ``F821`` stayed listed for tvboptim after the
+    Asserting only that SOME recorded code still trips would let a partially repaired entry go stale — which is how ``F821`` stayed listed for tvboptim after the
     undefined names were fixed. Every recorded code must still be observed.
     """
     name, fmt = case.rsplit(".", 1)

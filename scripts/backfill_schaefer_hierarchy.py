@@ -3,16 +3,13 @@
 
 For each Schaefer network YAML in database/networks/:
 
-1. **Fix node labels & positions** — replace ``node_0``-style labels with
-   actual region names from the corresponding atlas YAML sidecar.
+1. **Fix node labels & positions** — replace ``node_0``-style labels with actual region names from the corresponding atlas YAML sidecar.
 
-2. **Add functional-network hierarchy** — write a ``node_mapping`` array
-   to the HDF5 companion that maps each parcel index to its functional
+2. **Add functional-network hierarchy** — write a ``node_mapping`` array to the HDF5 companion that maps each parcel index to its functional
    network index (7 or 17 × 2 hemispheres).  The YAML sidecar gets
    ``node_mapping`` and ``parent_network`` fields pointing to that data.
 
-The multi-layer structure allows tvbo to treat Schaefer networks as
-hierarchical: base nodes (parcels) are mapped to a higher-order layer
+The multi-layer structure allows tvbo to treat Schaefer networks as hierarchical: base nodes (parcels) are mapped to a higher-order layer
 of functional networks (e.g. ``LH_Vis``, ``RH_Default``, …).
 
 Usage:
@@ -99,8 +96,7 @@ def parse_bids_entities(stem: str) -> dict[str, str]:
 def backfill_one(yaml_path: Path, atlas_dir: Path, dry_run: bool) -> dict[str, int]:
     """Backfill a single Schaefer network YAML.
 
-    Returns a dict of counters: labels_fixed, positions_fixed,
-    hierarchy_added.
+    Returns a dict of counters: labels_fixed, positions_fixed, hierarchy_added.
     """
     stats = {"labels_fixed": 0, "positions_fixed": 0, "hierarchy_added": 0}
 

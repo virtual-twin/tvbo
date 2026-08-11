@@ -6,11 +6,9 @@ Handles two cases:
                               ![](data:image;base64,...)    (legacy form)
   2. Remote URL img tags:      <img src="https://..." ... />
 
-Replaces each with a local relative reference. When the matched markdown
-image sits on the same line between an opening and closing HTML tag
+Replaces each with a local relative reference. When the matched markdown image sits on the same line between an opening and closing HTML tag
 (e.g. `<div ...>![](data:...)</div>`), the replacement is emitted as an
-HTML `<img>` tag instead — markdown syntax inside a block HTML element
-is not parsed by CommonMark/GFM and would render as literal text.
+HTML `<img>` tag instead — markdown syntax inside a block HTML element is not parsed by CommonMark/GFM and would render as literal text.
 
 Usage:
     python scripts/extract_images.py path/to/file.md
@@ -56,8 +54,7 @@ def _ext_from_bytes(data: bytes, fallback: str = "png") -> str:
 
 def _wrapped_by_html(text: str, start: int, end: int) -> bool:
     """True if the substring [start:end) is sandwiched between an opening
-    HTML tag and a closing tag on the same line — the case where
-    markdown-in-HTML rendering fails and we must emit an <img> tag."""
+    HTML tag and a closing tag on the same line — the case where markdown-in-HTML rendering fails and we must emit an <img> tag."""
     line_start = text.rfind("\n", 0, start) + 1
     line_end = text.find("\n", end)
     if line_end == -1:
@@ -68,8 +65,7 @@ def _wrapped_by_html(text: str, start: int, end: int) -> bool:
 
 
 def _save(img_data: bytes, img_dir: str, idx: int, ext: str) -> str:
-    """Write img_data to img_dir/fig_<idx>.<ext>; skip rewrite if identical
-    bytes already on disk (idempotent reruns)."""
+    """Write img_data to img_dir/fig_<idx>.<ext>; skip rewrite if identical bytes already on disk (idempotent reruns)."""
     os.makedirs(img_dir, exist_ok=True)
     filename = f"fig_{idx:02d}.{ext}"
     filepath = os.path.join(img_dir, filename)
@@ -95,8 +91,7 @@ def extract_images(md_path: str) -> None:
     with open(md_path, "r") as f:
         content = f.read()
 
-    # Single combined sweep so figures are numbered in document order
-    # regardless of source type (base64 markdown vs. remote <img>).
+    # Single combined sweep so figures are numbered in document order regardless of source type (base64 markdown vs. remote <img>).
     pattern = re.compile(
         r"!\[(?P<alt>[^\]]*)\]"
         r"\(data:image(?:/(?P<sub>\w+))?;base64,(?P<b64>[A-Za-z0-9+/=\s]+)\)"

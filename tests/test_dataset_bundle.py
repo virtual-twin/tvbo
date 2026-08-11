@@ -1,7 +1,5 @@
-"""``--bundle-dataset`` makes a per-subject workflow kit self-contained: it copies each
-enumerated subject's empirical target (sidecar + payload) into the kit, selecting the
-exact BIDS variant, and rewrites ``dataset.bids_root`` to a relative path that resolves
-against the frozen spec (like a network ``data_file``) — so the kit ships the data its
+"""``--bundle-dataset`` makes a per-subject workflow kit self-contained: it copies each enumerated subject's empirical target (sidecar + payload) into the kit, selecting the
+exact BIDS variant, and rewrites ``dataset.bids_root`` to a relative path that resolves against the frozen spec (like a network ``data_file``) — so the kit ships the data its
 fan-out consumes and nothing else, with no separate upload or ``$TVBO_BIDS_ROOT``.
 """
 
@@ -32,8 +30,7 @@ def _write_subject(root: Path, subject: str, atlas: str) -> Path:
 
 
 def _stub(dataset, observations, source_file=None):
-    """A duck-typed experiment binding the REAL dataset methods, so the test exercises
-    the shipping code paths without constructing a full SimulationExperiment."""
+    """A duck-typed experiment binding the REAL dataset methods, so the test exercises the shipping code paths without constructing a full SimulationExperiment."""
     stub = SimpleNamespace(dataset=dataset, observations=observations, _source_file=source_file)
     stub.dataset_observation_targets = _SE.dataset_observation_targets.fget(stub)
     for name in (
@@ -129,8 +126,7 @@ def test_no_dataset_target_bundles_nothing(tmp_path: Path, monkeypatch):
 
 
 def test_missing_payload_raises_not_silently_dropped(tmp_path: Path):
-    """A sidecar whose data_file is absent must fail loudly — bundling a sidecar without
-    its matrix would only break at load time on a compute node."""
+    """A sidecar whose data_file is absent must fail loudly — bundling a sidecar without its matrix would only break at load time on a compute node."""
     root = tmp_path / "fc"
     sidecar = _write_subject(root, "100206", "HCPMMP1")
     sidecar.with_suffix(".h5").unlink()  # payload gone; sidecar still references it
@@ -156,8 +152,7 @@ def test_directory_payload_is_copied_as_tree(tmp_path: Path):
 
 
 def test_bundle_dies_on_unresolved_selection(cohort: Path):
-    """An over-tight --bundle-select (no subject has the variant) is a hard error, not a
-    silent fallback to the machine-specific bids_root."""
+    """An over-tight --bundle-select (no subject has the variant) is a hard error, not a silent fallback to the machine-specific bids_root."""
     exp = _fc_experiment(cohort)
     with pytest.raises(typer.Exit):
         _wf._bundle_dataset(exp, cohort.parent / "kit", {"atlas": "DoesNotExist"})

@@ -1,9 +1,7 @@
 """Structural array-op codegen primitives — one declarative op, every backend.
 
-These ops let an observation pipeline that trims a transient, selects a variable of
-interest, or downsamples be authored as a **declarative equation** rather than backend
-``source_code``. Each op is a single backend-agnostic handler in ``tvbo.codegen.code``
-that renders through per-backend rendering primitives:
+These ops let an observation pipeline that trims a transient, selects a variable of interest, or downsamples be authored as a **declarative equation** rather than backend
+``source_code``. Each op is a single backend-agnostic handler in ``tvbo.codegen.code`` that renders through per-backend rendering primitives:
 
 - numpy / jax: Python 0-based slicing (``x[::step]``, ``jnp.take(x, arange, axis)``)
 - julia:       1-based, ``end``-relative indexing (``x[1:step:end]``, ``selectdim``)
@@ -11,8 +9,7 @@ that renders through per-backend rendering primitives:
 The two invariants under test:
 
 1. **Cross-backend rendering** — each op emits the idiomatic form for numpy, jax, julia.
-2. **Numeric byte-identity** — the generated numpy/jax code produces values *identical*
-   to the hand-written slicing it replaces (so migrating ``source_code`` -> declarative
+2. **Numeric byte-identity** — the generated numpy/jax code produces values *identical* to the hand-written slicing it replaces (so migrating ``source_code`` -> declarative
    equation changes nothing numerically).
 """
 
@@ -22,9 +19,7 @@ import pytest
 from tvbo.codegen import render_expression
 
 
-# ---------------------------------------------------------------------------
 # 1. Cross-backend rendering
-# ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     ("expr", "numpy", "jax", "julia"),
     [
@@ -75,9 +70,7 @@ def test_ops_compose():
     assert code == "jnp.take(data, jnp.arange(0, 1), axis=1)[::1000]"
 
 
-# ---------------------------------------------------------------------------
 # 2. Numeric byte-identity vs the hand-written slicing each op replaces
-# ---------------------------------------------------------------------------
 @pytest.mark.parametrize("fmt", ["numpy", "jax"])
 def test_new_ops_numerically_identical(fmt):
     if fmt == "jax":

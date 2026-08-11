@@ -1,12 +1,9 @@
 """Weight `transforms:` are inlined in the generated tvboptim code (self-contained kit).
 
 A declared connectome transform (e.g. ``log(W+1)/max(log(W+1))``) is applied at runtime by
-``Network.weights_matrix``. A frozen/standalone kit must not depend on that: the codegen
-renders the transform to pure ``jnp`` inside ``create_network`` and is handed the RAW weights,
-so the transform stays declared in the spec, the raw SC stays in the network file, and the
-exact op is visible in the script rather than hidden in tvbo runtime. These freeze the
-raw/transformed accessor split, byte-identity of the inlined op against ``weights_matrix``,
-and that the emitted network builder carries the transform as pure ``jnp``.
+``Network.weights_matrix``. A frozen/standalone kit must not depend on that: the codegen renders the transform to pure ``jnp`` inside ``create_network`` and is handed the RAW weights,
+so the transform stays declared in the spec, the raw SC stays in the network file, and the exact op is visible in the script rather than hidden in tvbo runtime. These freeze the
+raw/transformed accessor split, byte-identity of the inlined op against ``weights_matrix``, and that the emitted network builder carries the transform as pure ``jnp``.
 """
 
 import jax.numpy as jnp
@@ -35,8 +32,7 @@ def test_raw_accessor_is_untouched_transformed_is_normalised():
 
 
 def test_inline_transform_is_byte_identical_to_weights_matrix():
-    """The rendered jax expr applied to the RAW weights reproduces ``weights_matrix`` exactly,
-    so ``experiment.py`` passing ``raw_weights_matrix`` while ``create_network`` inlines the
+    """The rendered jax expr applied to the RAW weights reproduces ``weights_matrix`` exactly, so ``experiment.py`` passing ``raw_weights_matrix`` while ``create_network`` inlines the
     transform is a no-op for every working run."""
     net, _ = _net_with_transform()
     transforms, const_env = weight_transform_codegen(net)
@@ -62,8 +58,7 @@ def test_network_without_transform_emits_nothing():
 
 
 def test_rendered_tvboptim_source_inlines_the_transform():
-    """The generated network builder applies the declared transform as pure jnp — the kit is
-    self-contained (no reliance on tvbo runtime re-deriving the weights)."""
+    """The generated network builder applies the declared transform as pure jnp — the kit is self-contained (no reliance on tvbo runtime re-deriving the weights)."""
     from tvbo import SimulationExperiment
 
     exp = SimulationExperiment(
@@ -108,8 +103,7 @@ def _apply_emitted(net, weights, distances=None):
 def test_a_callable_transform_reaches_the_kit():
     """`Function.callable` lowers to an import and a call, matching the runtime.
 
-    Hopf_Pareto_ParallelOpt declares `normalized_graph_laplacian` this way. The codegen
-    used to skip any transform without an `equation:`, so with `experiment.py` handing over
+    Hopf_Pareto_ParallelOpt declares `normalized_graph_laplacian` this way. The codegen used to skip any transform without an `equation:`, so with `experiment.py` handing over
     raw weights the kit integrated the un-normalised SC — wrong numbers, no error.
     """
     from tvbo.datamodel.schema import Callable as CallableRef, Function
@@ -129,8 +123,7 @@ def test_a_callable_transform_reaches_the_kit():
 def test_equation_parameters_are_substituted_like_the_runtime():
     """A scalar declared under `Equation.parameters` folds in, as `_apply_transform` does.
 
-    Reading only `Function.arguments` emitted the bare name into the kit, where it is
-    undefined.
+    Reading only `Function.arguments` emitted the bare name into the kit, where it is undefined.
     """
     from tvbo.datamodel.schema import Equation, Function
 
@@ -181,8 +174,7 @@ def test_transforms_for_matches_the_length_alias():
 def test_a_masked_expression_is_validated_by_its_base_symbol():
     """`mean(W[W > 0])` is a use of `W`, not of a symbol literally named `W[W > 0]`.
 
-    Delay_Speed_Synchronization declares exactly that. Checking the raw free-symbol text
-    rejected it as undeclared and refused to render the recipe at all.
+    Delay_Speed_Synchronization declares exactly that. Checking the raw free-symbol text rejected it as undeclared and refused to render the recipe at all.
     """
     net = Network.from_matrix(weights=np.array([[0, 2.0, 0], [4.0, 0, 3.0], [0, 5.0, 0]]), lengths=np.zeros((3, 3)))
     net.add_transform("weight", "W / mean(W[W > 0])")

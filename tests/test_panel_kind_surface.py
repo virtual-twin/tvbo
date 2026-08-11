@@ -1,9 +1,7 @@
 """`kind: surface` paints a layer on a mesh, with no study code at all.
 
-A brain map is the most-drawn panel in a network-neuroscience paper, and until now every
-study registered its own `cortical_surface` callable to draw one — the same forty lines of
-mesh load, medial-wall masking and symmetric colour limits, re-derived per study, each free
-to get the limits subtly wrong. The kind is built in and its geometry comes from the network,
+A brain map is the most-drawn panel in a network-neuroscience paper, and until now every study registered its own `cortical_surface` callable to draw one — the same forty lines of
+mesh load, medial-wall masking and symmetric colour limits, re-derived per study, each free to get the limits subtly wrong. The kind is built in and its geometry comes from the network,
 which is where a mesh belongs.
 """
 
@@ -125,8 +123,7 @@ def test_a_length_mismatch_names_the_two_counts(tmp_path, mesh_npz):
 
 
 def test_a_mask_of_the_wrong_length_is_refused(tmp_path, mesh_npz):
-    """A mask sidecar for the wrong parcellation/hemisphere must fail with the two counts,
-    not a cryptic broadcast error from `np.where`."""
+    """A mask sidecar for the wrong parcellation/hemisphere must fail with the two counts, not a cryptic broadcast error from `np.where`."""
     (tmp_path / "mask3.txt").write_text("1\n1\n0\n")  # 3 rows for a 4-vertex mesh
     with pytest.raises(ValueError, match="per-vertex 0/1 mask needs"):
         surface_panel(None, _Ax(), _ctx(tmp_path, [1.0, 2.0, 3.0, 4.0], mesh=str(mesh_npz), mask="mask3.txt"))

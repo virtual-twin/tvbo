@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 """Run the skill-cost benchmark matrix.
 
-For each (harness, model, condition, rep) it spins up a fresh, repo-free scratch
-workspace, makes the TVBO skills available (or not, for ``control``), drives the
-agent on the task, verifies the result by executing the agent's script, and
-appends one normalized row to a JSONL results file. Re-running skips cells that
+For each (harness, model, condition, rep) it spins up a fresh, repo-free scratch workspace, makes the TVBO skills available (or not, for ``control``), drives the
+agent on the task, verifies the result by executing the agent's script, and appends one normalized row to a JSONL results file. Re-running skips cells that
 already have a row (resume), so an interrupted matrix continues cleanly.
 
-Run it with the repo's virtualenv Python so the agent's ``python`` / ``tvbo``
-resolve to an environment where ``tvbo`` is importable:
+Run it with the repo's virtualenv Python so the agent's ``python`` / ``tvbo`` resolve to an environment where ``tvbo`` is importable:
 
     .venv/bin/python benchmarks/skill-cost/run_matrix.py --reps 5
 

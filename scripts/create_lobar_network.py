@@ -13,10 +13,8 @@ This script creates two brain-lobe–level networks:
     giving 8 lobes × 2 hemispheres = 16 nodes.
 
 Pipeline:
-1. Building a lobar atlas NIfTI from the DesikanKilliany (DKT31) segmentation
-   in MNI152NLin2009cAsym space (from TemplateFlow)
-2. Running MRtrix ``tck2connectome`` to compute streamline counts (weights)
-   and mean tract lengths between lobes → Lobar SC
+1. Building a lobar atlas NIfTI from the DesikanKilliany (DKT31) segmentation in MNI152NLin2009cAsym space (from TemplateFlow)
+2. Running MRtrix ``tck2connectome`` to compute streamline counts (weights) and mean tract lengths between lobes → Lobar SC
 3. Aggregating the DK 84-node avgMatrix SC+FC to lobar level → Lobar8 SCFC
 4. Writing tvbo-compliant HDF5+YAML networks into ``tvbo/database/networks/``
 
@@ -68,8 +66,7 @@ import yaml
 
 # DesikanKilliany / DKT31 region names → anatomical lobe.
 # This is the canonical FreeSurfer region-to-lobe assignment.
-# Each cortical region appears once; the hemisphere is encoded in
-# the FreeSurfer label numbering (1000+x = LH, 2000+x = RH).
+# Each cortical region appears once; the hemisphere is encoded in the FreeSurfer label numbering (1000+x = LH, 2000+x = RH).
 
 DK_REGION_TO_LOBE = {
     # Frontal lobe
@@ -115,8 +112,7 @@ DK_REGION_TO_LOBE = {
 }
 
 # FreeSurfer subcortical label → lobe group.
-# The DKT31 atlas in templateflow uses FreeSurfer aseg labels for
-# subcortical structures (labels < 100).
+# The DKT31 atlas in templateflow uses FreeSurfer aseg labels for subcortical structures (labels < 100).
 SUBCORTICAL_LABEL_TO_GROUP = {
     # Left subcortical
     10: ("LH", "Subcortical"),  # Left-Thalamus
@@ -235,8 +231,7 @@ DK_ABBREV_TO_LOBE = {
 def compute_lobar_avgmatrix(dk_network_dir: Path) -> dict[str, np.ndarray]:
     """Aggregate the DK 84-node avgMatrix SC+FC to lobar level.
 
-    Loads the DesikanKilliany avgMatrix weight, length, and FC matrices
-    and aggregates them to 17×17 lobar matrices.  BrainStem has no DK
+    Loads the DesikanKilliany avgMatrix weight, length, and FC matrices and aggregates them to 17×17 lobar matrices.  BrainStem has no DK
     regions, so its row/column will be zero.
 
     Aggregation:
@@ -305,8 +300,7 @@ def compute_lobar_avgmatrix(dk_network_dir: Path) -> dict[str, np.ndarray]:
             counts[li, lj] += 1
 
     # Mean weight, FC, and weight-averaged length per lobe pair.
-    # All three use mean (not sum) so that lobe size doesn't dominate —
-    # sum(W) scales with n_regions², destroying the SC-FC relationship.
+    # All three use mean (not sum) so that lobe size doesn't dominate — sum(W) scales with n_regions², destroying the SC-FC relationship.
     mask = counts > 0
     lobar_fc[mask] /= counts[mask]
     lobar_w[mask] /= counts[mask]
@@ -334,8 +328,7 @@ def compute_lobar_avgmatrix(dk_network_dir: Path) -> dict[str, np.ndarray]:
 def build_lobar_atlas(output_path: Path) -> tuple[Path, dict]:
     """Create a lobar atlas NIfTI from the DKT31 segmentation.
 
-    Loads the DKT31 atlas from TemplateFlow (MNI152NLin2009cAsym, 1mm),
-    remaps each voxel label to its lobe index (1-based, matching
+    Loads the DKT31 atlas from TemplateFlow (MNI152NLin2009cAsym, 1mm), remaps each voxel label to its lobe index (1-based, matching
     ``LOBE_ORDER``), and saves the result as a NIfTI file.
 
     Returns
@@ -632,10 +625,8 @@ def build_lobar8_network(
 def load_fslr32k_mesh() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Load fsLR 32k midthickness + inflated surfaces from TemplateFlow.
 
-    Returns combined midthickness vertices (N,3), triangles (M,3),
-    hemisphere index per vertex (0=LH, 1=RH), and inflated vertices (N,3).
-    The inflated surface is used for computing representative lobe
-    positions (avoids folding artifacts).
+    Returns combined midthickness vertices (N,3), triangles (M,3), hemisphere index per vertex (0=LH, 1=RH), and inflated vertices (N,3).
+    The inflated surface is used for computing representative lobe positions (avoids folding artifacts).
     """
     from templateflow.conf import TF_HOME
 
@@ -672,8 +663,7 @@ def map_vertices_to_lobes(
 ) -> np.ndarray:
     """Map each surface vertex to a lobe index by sampling the atlas.
 
-    Uses nearest-neighbor interpolation in voxel space.  Vertices that
-    fall outside the atlas or land on unlabeled voxels get index -1.
+    Uses nearest-neighbor interpolation in voxel space.  Vertices that fall outside the atlas or land on unlabeled voxels get index -1.
     """
     img = nib.load(lobar_atlas_path)
     data = np.asarray(img.dataobj, dtype=np.int32)
@@ -707,13 +697,10 @@ def compute_surface_centroids(
 ) -> dict[str, tuple[float, float, float]]:
     """Compute lobe centroids from cortical surface vertices.
 
-    For cortical lobes, selects a representative vertex that is both
-    directionally central to the lobe AND on the outer cortical surface.
-    This avoids centroids that fall deep inside the brain due to
-    cortical folding.
+    For cortical lobes, selects a representative vertex that is both directionally central to the lobe AND on the outer cortical surface.
+    This avoids centroids that fall deep inside the brain due to cortical folding.
 
-    Algorithm: among the most peripheral vertices (top 20% by distance
-    from brain center), pick the one closest to the centroid direction.
+    Algorithm: among the most peripheral vertices (top 20% by distance from brain center), pick the one closest to the centroid direction.
 
     For subcortical, cerebellum, and brainstem, uses volumetric centroids.
 
@@ -746,10 +733,7 @@ def compute_surface_centroids(
                 threshold = np.percentile(radii, 50)
                 outer_mask = radii >= threshold
                 outer_verts = lobe_verts[outer_mask]
-                # Among outer vertices, find the one whose direction
-                # is most aligned with the centroid direction (minimum
-                # angular distance). Normalize to unit vectors first
-                # so distance from center does not bias the selection.
+                # Among outer vertices, find the one whose direction is most aligned with the centroid direction (minimum angular distance). Normalize to unit vectors first so distance from center does not bias the selection.
                 norms = np.linalg.norm(outer_verts, axis=1, keepdims=True)
                 norms[norms == 0] = 1.0
                 unit_verts = outer_verts / norms
@@ -769,8 +753,7 @@ def build_surface_network(
 ) -> "Network":
     """Build a surface Network with vertex→lobe mapping.
 
-    Creates a mesh-bearing Network from fsLR 32k surfaces where each
-    vertex is mapped to its parent lobe in the lobar SC network.
+    Creates a mesh-bearing Network from fsLR 32k surfaces where each vertex is mapped to its parent lobe in the lobar SC network.
 
     Parameters
     ----------
@@ -916,8 +899,7 @@ def main() -> None:
 
         # Step 1b: Compute cortical-surface centroids from fsLR 32k
         #   Selects peripheral representative vertices: among the outermost
-        #   20% of each lobe's surface vertices, picks the one most aligned
-        #   with the lobe's centroid direction.
+        # 20% of each lobe's surface vertices, picks the one most aligned with the lobe's centroid direction.
         vertices, triangles, hemi_index, _infl = load_fslr32k_mesh()
         region_mapping = map_vertices_to_lobes(vertices, hemi_index, atlas_nii)
         centroids = compute_surface_centroids(
@@ -945,15 +927,12 @@ def main() -> None:
                 assignments_csv,
             )
 
-        # Parse matrices — tck2connectome outputs N_labels × N_labels CSV
-        # where N_labels = max(atlas_label). Our lobar atlas has labels 1..17
-        # so the matrix is 17×17, but tck2connectome may pad to max_label.
+        # Parse matrices — tck2connectome outputs N_labels × N_labels CSV where N_labels = max(atlas_label). Our lobar atlas has labels 1..17 so the matrix is 17×17, but tck2connectome may pad to max_label.
         raw_weights = np.loadtxt(weights_csv, delimiter=",")
         raw_lengths = np.loadtxt(lengths_csv, delimiter=",")
 
         n_lobes = len(LOBE_ORDER)
-        # tck2connectome uses label value as row/col index (0-indexed from label 1)
-        # so row 0 = label 1, row 16 = label 17
+        # tck2connectome uses label value as row/col index (0-indexed from label 1) so row 0 = label 1, row 16 = label 17
         weights = raw_weights[:n_lobes, :n_lobes]
         lengths = raw_lengths[:n_lobes, :n_lobes]
 

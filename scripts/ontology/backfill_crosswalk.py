@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Backfill `crosswalk.md` and `boundary-matrix.md` from authoritative sources.
 
-Closes plan.md row 15 (`dev_ontology-l0-crosswalk-backfill`, §2.8). Both tables
-must list one row per LinkML class so contributors can trace a concept across
-the five surfaces (YAML / LinkML / OWL / API / Odoo). Until now the structural
-section of each table was a placeholder full of `TODO`s; this script regenerates
+Closes plan.md row 15 (`dev_ontology-l0-crosswalk-backfill`, §2.8). Both tables must list one row per LinkML class so contributors can trace a concept across
+the five surfaces (YAML / LinkML / OWL / API / Odoo). Until now the structural section of each table was a placeholder full of `TODO`s; this script regenerates
 the structural rows from the same inputs that the runtime already trusts.
 
 Inputs
@@ -13,19 +11,14 @@ Inputs
   authoritative class list (the same files `gen-linkml`, `gen-owl`,
   `gen-shacl`, and `tests/test_database_validation.py` consume).
 - FastAPI routers under `tvbo/api/` are scanned for `@router`/`@app` decorators
-  to discover which classes are exposed over HTTP. The script captures the
-  router prefix from the `APIRouter(prefix=...)` constructor or the Makefile-
-  installed `app.include_router(..., prefix=...)` call so the resulting paths
-  match the running service.
+  to discover which classes are exposed over HTTP. The script captures the router prefix from the `APIRouter(prefix=...)` constructor or the Makefile-
+  installed `app.include_router(..., prefix=...)` call so the resulting paths match the running service.
 - The Odoo model registry lives in
-  `tvbo-platform/odoo-addons/tvbo/models/schema_models.py`, which is generated
-  upstream by `tvbo-platform/scripts/generate_odoo_models.py`. We read its
-  `_name = 'tvbo.<snake_case>'` declarations directly so the crosswalk tracks
-  whatever the Odoo generator emits without a parallel mapping table.
+  `tvbo-platform/odoo-addons/tvbo/models/schema_models.py`, which is generated upstream by `tvbo-platform/scripts/generate_odoo_models.py`. We read its
+  `_name = 'tvbo.<snake_case>'` declarations directly so the crosswalk tracks whatever the Odoo generator emits without a parallel mapping table.
 - The frozen Appendix A core (Dynamics, Coupling, Integrator, Noise, Function,
   LossFunction, Stimulus, Continuation, SimulationExperiment, SimulationStudy,
-  Network, BrainAtlas) is preserved verbatim above the structural section in
-  both files; this script touches only the structural section delimited by the
+  Network, BrainAtlas) is preserved verbatim above the structural section in both files; this script touches only the structural section delimited by the
   `<!-- BEGIN auto-generated -->` / `<!-- END auto-generated -->` markers.
 
 Outputs
@@ -36,10 +29,8 @@ Outputs
 Boundary-matrix classification rules (mirroring the file's own §"Decision rules")
 - `LinkML+OWL` is the default surface for every schema class.
 - `Required for run` is `yes` if removing the class from the schema would break
-  parsing or rendering of an existing `tvbo/database/` record (i.e. it appears
-  as a top-level YAML key, or as the range of a required slot on Dynamics /
-  SimulationExperiment / SimulationStudy / Network / BrainAtlas), `conditional`
-  if it is required only for a particular workflow (optimisation, continuation,
+  parsing or rendering of an existing `tvbo/database/` record (i.e. it appears as a top-level YAML key, or as the range of a required slot on Dynamics /
+  SimulationExperiment / SimulationStudy / Network / BrainAtlas), `conditional` if it is required only for a particular workflow (optimisation, continuation,
   PDE, stimulation), and `no` for purely structural data containers.
 - External mappings are seeded from `class_uri:` declarations in the schema
   where the LinkML author already chose a CURIE; otherwise `TODO`.
@@ -49,8 +40,7 @@ Usage
     python scripts/ontology/backfill_crosswalk.py             # write both files
     python scripts/ontology/backfill_crosswalk.py --check     # diff only
 
-The Makefile target `make crosswalk` invokes the writing form; CI may invoke
-the `--check` form once it is wired in (tracked in plan.md §2.8).
+The Makefile target `make crosswalk` invokes the writing form; CI may invoke the `--check` form once it is wired in (tracked in plan.md §2.8).
 """
 
 from __future__ import annotations
@@ -104,8 +94,7 @@ YAML_TOP = {
     "Continuation": "`continuations/`",
 }
 
-# Conditional-only classes: required for a specific workflow rather than
-# every simulation. Used by the boundary matrix.
+# Conditional-only classes: required for a specific workflow rather than every simulation. Used by the boundary matrix.
 CONDITIONAL = {
     "LossFunction",
     "Optimization",
@@ -131,8 +120,7 @@ CONDITIONAL = {
     "Distribution",
 }
 
-# Pure-data containers that hold no behaviour and never need to exist in
-# isolation (not required for run; classed `no` in boundary matrix).
+# Pure-data containers that hold no behaviour and never need to exist in isolation (not required for run; classed `no` in boundary matrix).
 NON_RUNTIME = {
     "Aggregation",
     "Algorithm",
@@ -180,8 +168,7 @@ NON_RUNTIME = {
 def camel_to_snake(name: str) -> str:
     """Mirror `tvbo-platform/scripts/generate_odoo_models.py::camel_to_snake`.
 
-    The Odoo generator uses this exact transformation when minting `_name`
-    values; we re-implement it here (rather than importing) so this script
+    The Odoo generator uses this exact transformation when minting `_name` values; we re-implement it here (rather than importing) so this script
     has no runtime dependency on the platform repo.
     """
     s = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
@@ -191,8 +178,7 @@ def camel_to_snake(name: str) -> str:
 def load_classes() -> dict[str, dict]:
     """Walk every schema file and return `{ClassName: class_def}`.
 
-    The merge follows LinkML import order: later definitions override earlier
-    ones, matching what `gen-linkml` produces.
+    The merge follows LinkML import order: later definitions override earlier ones, matching what `gen-linkml` produces.
     """
     classes: dict[str, dict] = {}
     paths: list[pathlib.Path] = []
@@ -210,8 +196,7 @@ def load_classes() -> dict[str, dict]:
 def load_odoo_models() -> set[str]:
     """Extract every `_name = 'tvbo.<snake>'` from the platform's Odoo file.
 
-    The platform repo regenerates this file via its own `generate_odoo_models.py`,
-    so the set always reflects what is actually deployable in Odoo.
+    The platform repo regenerates this file via its own `generate_odoo_models.py`, so the set always reflects what is actually deployable in Odoo.
     """
     if not PLATFORM_ODOO.exists():
         print(f"  ! warning: {PLATFORM_ODOO} not found; Odoo column will be TODO", file=sys.stderr)
@@ -223,10 +208,8 @@ def load_odoo_models() -> set[str]:
 def load_api_endpoints() -> dict[str, str]:
     """Map LinkML class -> canonical API path (best-effort).
 
-    We scan FastAPI route files for `APIRouter(prefix="/api/<resource>")` plus
-    the explicit class -> path overrides below. Only top-level resources are
-    cross-referenced; per-record sub-paths (`/{id}/sidecar` etc.) are not
-    enumerated here because the crosswalk lists collection endpoints only.
+    We scan FastAPI route files for `APIRouter(prefix="/api/<resource>")` plus the explicit class -> path overrides below. Only top-level resources are
+    cross-referenced; per-record sub-paths (`/{id}/sidecar` etc.) are not enumerated here because the crosswalk lists collection endpoints only.
     """
     explicit = {
         "Dynamics": "`/api/dynamics`",
@@ -291,8 +274,7 @@ def boundary_rows(classes: dict[str, dict]) -> Iterable[str]:
 def splice(text: str, body: str) -> str:
     """Replace everything between BEGIN/END markers with `body`.
 
-    If the markers are missing, append them at the end of the file. This is
-    the one-shot bootstrap path; subsequent runs are pure splice operations.
+    If the markers are missing, append them at the end of the file. This is the one-shot bootstrap path; subsequent runs are pure splice operations.
     """
     if BEGIN in text and END in text:
         before, _, rest = text.partition(BEGIN)

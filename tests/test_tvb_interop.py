@@ -1,8 +1,7 @@
 """TVB interoperability tests — lossless round-trip via Network.from_tvb.
 
 Verifies that tvbo can:
-1. Import TVB default connectivity → save YAML+HDF5 → reload → export back to TVB
-   with zero information loss (weights, tract_lengths, centres, labels, speed).
+1. Import TVB default connectivity → save YAML+HDF5 → reload → export back to TVB with zero information loss (weights, tract_lengths, centres, labels, speed).
 2. Import TVB surface simulation data (connectivity + surface + region_mapping)
    → save multi-level YAML+HDF5 → verify mesh + node_mapping persist.
 """

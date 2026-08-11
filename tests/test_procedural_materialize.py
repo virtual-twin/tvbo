@@ -1,18 +1,13 @@
 """Eager materialisation goes through the printer tables, not a second numpy evaluator.
 
 This is what makes one primitive definition per backend real rather than aspirational:
-`materialize` renders each step with the numpy printer and evaluates it, so eager
-load-time construction and emitted JAX are the same expressions rendered two ways. A
-parallel numpy implementation could drift from the printer silently — the two would only
-disagree on some untested edge, and the generated network would differ between a local
+`materialize` renders each step with the numpy printer and evaluates it, so eager load-time construction and emitted JAX are the same expressions rendered two ways. A
+parallel numpy implementation could drift from the printer silently — the two would only disagree on some untested edge, and the generated network would differ between a local
 run and a swept one.
 
-The fixture mirrors RandomReservoir's construction, so the properties asserted are the
-ones the generator actually promises: the post-hoc spectral-radius rescale, the sparsity,
-and within-backend reproducibility. It is declared inline rather than loaded from the
-database, which keeps these resolver-level: they stay meaningful if the curated entry
-changes. That the SHIPPED entry still produces these values is a separate question, asked
-by tests/test_curated_graph_generators.py.
+The fixture mirrors RandomReservoir's construction, so the properties asserted are the ones the generator actually promises: the post-hoc spectral-radius rescale, the sparsity,
+and within-backend reproducibility. It is declared inline rather than loaded from the database, which keeps these resolver-level: they stay meaningful if the curated entry
+changes. That the SHIPPED entry still produces these values is a separate question, asked by tests/test_curated_graph_generators.py.
 """
 
 from pathlib import Path
@@ -29,16 +24,13 @@ from tvbo.graph_generators.procedural import (
 RESERVOIR = {
     "parameters": {"sparsity": 0.1, "spectral_radius": 0.95, "n_nodes": 60},
     "steps": {
-        # `seed_offset` selects the sub-stream. It must be stated: two seeded steps
-        # sharing an offset would be perfectly correlated, and drawing them sequentially
-        # from one stream (rather than from offset-derived ones) changes every value.
+        # `seed_offset` selects the sub-stream. It must be stated: two seeded steps sharing an offset would be perfectly correlated, and drawing them sequentially from one stream (rather than from offset-derived ones) changes every value.
         "raw": {
             "type": "sample",
             "seed_offset": 0,
             "distribution": {"name": "Normal", "parameters": {"mean": 0.0, "std": 1.0}},
         },
-        # The original writes `sample(Uniform(0,1)) < sparsity`; expressed with the draw on
-        # the right as `sparsity > draw`, which is the same relation.
+        # The original writes `sample(Uniform(0,1)) < sparsity`; expressed with the draw on the right as `sparsity > draw`, which is the same relation.
         "mask": {
             "type": "stochastic_mask",
             "of": "sparsity",
@@ -48,12 +40,8 @@ RESERVOIR = {
         },
         "masked": {"equation": {"rhs": "raw * mask"}},
         "rho": {"equation": {"rhs": "max(abs(eigvals(masked)))"}},
-        # `scale` is a step of its own rather than a parenthesised sub-expression, and that
-        # is load-bearing: SymPy canonicalises `masked * (spectral_radius / rho)` into
-        # `masked*spectral_radius/rho`, and float multiplication is not associative, so a
-        # minority of entries would round differently. Expression syntax cannot carry
-        # association through a canonicalising CAS — the DAG can, because each step is
-        # evaluated separately. This is what makes the migration bit-identical.
+        # `scale` is a step of its own rather than a parenthesised sub-expression, and that is load-bearing: SymPy canonicalises `masked * (spectral_radius / rho)` into
+        # `masked*spectral_radius/rho`, and float multiplication is not associative, so a minority of entries would round differently. Expression syntax cannot carry association through a canonicalising CAS — the DAG can, because each step is evaluated separately. This is what makes the migration bit-identical.
         "scale": {"equation": {"rhs": "spectral_radius / rho"}},
     },
     "output": {"weights": {"equation": {"rhs": "masked * scale"}}},
@@ -65,10 +53,7 @@ def _weights(seed=42, **overrides):
     return materialize(spec, seed=seed)["weights"]
 
 
-# Matrices captured from the PRE-MIGRATION engine (the numpy-primitive-table evaluator),
-# stored rather than recomputed on the fly. Comparing against the live old engine would
-# stop meaning anything the moment that engine is deleted — the test would quietly be
-# comparing the new path to itself and would pass no matter what it produced.
+# Matrices captured from the PRE-MIGRATION engine (the numpy-primitive-table evaluator), stored rather than recomputed on the fly. Comparing against the live old engine would stop meaning anything the moment that engine is deleted — the test would quietly be comparing the new path to itself and would pass no matter what it produced.
 _GOLDEN = Path(__file__).parent / "data" / "random_reservoir_pre_migration.npz"
 
 
@@ -79,16 +64,13 @@ _GOLDEN = Path(__file__).parent / "data" / "random_reservoir_pre_migration.npz"
 def test_printer_path_is_bit_identical_to_the_pre_migration_engine(seed, n, sparsity, radius):
     """The migration must not change a single value of an already-shipped generator.
 
-    Properties agreeing (spectral radius on target, roughly the right density) is NOT
-    reproduction: an earlier attempt satisfied both while drawing from a different stream
-    scheme, producing a different sparsity pattern entirely. Anyone who had generated a
-    reservoir before the migration would silently have got a different network after it.
+    Properties agreeing (spectral radius on target, roughly the right density) is NOT reproduction: an earlier attempt satisfied both while drawing from a different stream
+    scheme, producing a different sparsity pattern entirely. Anyone who had generated a reservoir before the migration would silently have got a different network after it.
     """
     expected = np.load(_GOLDEN)[f"{seed}_{n}_{sparsity}_{radius}"]
     got = _weights(seed=seed, n_nodes=n, sparsity=sparsity, spectral_radius=radius)
     # Topology is pinned bit-for-bit (it comes off the seeded mask); the weights carry a
-    # 1/max|eigenvalue| scale that is not bit-reproducible across LAPACK builds, so they
-    # get a tolerance far tighter than any real stream-scheme change but looser than a ULP.
+    # 1/max|eigenvalue| scale that is not bit-reproducible across LAPACK builds, so they get a tolerance far tighter than any real stream-scheme change but looser than a ULP.
     np.testing.assert_array_equal(got != 0, expected != 0)
     np.testing.assert_allclose(got, expected, rtol=1e-9, atol=0)
 
@@ -143,8 +125,7 @@ def test_missing_n_nodes_is_rejected():
 
 
 def test_a_failing_step_reports_which_step_and_what_was_rendered():
-    """A broken procedure must name the step and show the emitted source, not raise
-    an opaque NameError from inside an eval."""
+    """A broken procedure must name the step and show the emitted source, not raise an opaque NameError from inside an eval."""
     spec = {"parameters": {"n_nodes": 4}, "steps": {"bad": {"equation": {"rhs": "normalize(nope, 0)"}}}}
     with pytest.raises(ProceduralError, match=r"step 'bad' failed to evaluate"):
         materialize(spec, seed=1)
@@ -153,8 +134,7 @@ def test_a_failing_step_reports_which_step_and_what_was_rendered():
 def test_the_fixture_still_represents_the_shipped_generator():
     """The fixture restates RandomReservoir's DAG, so it must not drift from the artefact.
 
-    Without this the two can diverge silently: every assertion above keeps passing against
-    a spec no user gets, and only the separate curated-golden test notices — which is the
+    Without this the two can diverge silently: every assertion above keeps passing against a spec no user gets, and only the separate curated-golden test notices — which is the
     wrong place to find out that this file stopped describing anything real.
     """
     from tvbo.graph_generators import random_reservoir
@@ -168,8 +148,7 @@ def test_the_fixture_still_represents_the_shipped_generator():
 def test_a_legitimate_infinity_is_not_mistaken_for_a_degenerate_divide():
     """`diagonal: inf` is how a distance kernel suppresses self-connections.
 
-    The NaN guard exists to catch a divide by a spectral radius of 0; rejecting every
-    non-finite value would also reject a declared infinity, which is a stated intent.
+    The NaN guard exists to catch a divide by a spectral radius of 0; rejecting every non-finite value would also reject a declared infinity, which is a stated intent.
     """
     spec = {
         "parameters": {"n_nodes": 4},

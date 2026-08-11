@@ -1,9 +1,7 @@
 """Tests for resolving ``model.output`` to recorded channel indices.
 
-The solver records state variables followed by the auxiliaries that were actually
-requested, so an output's channel cannot be inferred from its kind: a state output
-sits *before* the auxiliaries, not after them. Outputs are resolved against that
-recorded ordering, in declared order, so the emitted channels and the reported
+The solver records state variables followed by the auxiliaries that were actually requested, so an output's channel cannot be inferred from its kind: a state output
+sits *before* the auxiliaries, not after them. Outputs are resolved against that recorded ordering, in declared order, so the emitted channels and the reported
 ``output_names`` always agree — including when states and auxiliaries are mixed.
 """
 

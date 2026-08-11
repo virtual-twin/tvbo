@@ -1,10 +1,8 @@
 """ExperimentResult.save() records an algorithm's tuned FREE parameters as
 ``estimate__<param>`` on LABELLED node axes (``node`` for vectors, ``node_i``+
-``node_j`` for per-edge matrices), so a ``from_experiment`` warm-start reloads them as
-a prior location and reconciles by label with the existing `.sel` path.
+``node_j`` for per-edge matrices), so a ``from_experiment`` warm-start reloads them as a prior location and reconciles by label with the existing `.sel` path.
 
-Source-side, additive, container-layer only (no codegen). Filtered to free params, so it
-never shadows a ``<sv>_final`` state observation.
+Source-side, additive, container-layer only (no codegen). Filtered to free params, so it never shadows a ``<sv>_final`` state observation.
 """
 
 from __future__ import annotations
@@ -42,8 +40,7 @@ def _fake_source(labels):
 
 
 class _JaxParam:
-    """Mimics a tvboptim Parameter leaf exposing ``__jax_array__`` (the real state
-    wraps tuned params this way, not as bare ndarrays)."""
+    """Mimics a tvboptim Parameter leaf exposing ``__jax_array__`` (the real state wraps tuned params this way, not as bare ndarrays)."""
 
     def __init__(self, arr):
         self._arr = np.asarray(arr, dtype=float)
@@ -111,10 +108,8 @@ def test_save_records_labelled_estimate_for_free_params_only(tmp_path):
 
 
 def test_save_records_bare_jax_array_params(tmp_path):
-    """The real tvboptim state stores tuned params as BARE jax arrays (``ArrayImpl``),
-    not wrapped in a ``__jax_array__`` object. A jax array carries an empty ``__dict__``,
-    so a container-vs-leaf guard that only excludes numpy arrays mis-recurses into it and
-    silently drops every per-node array param (J_i / wLRE / wFFI). Guard the leaf path
+    """The real tvboptim state stores tuned params as BARE jax arrays (``ArrayImpl``), not wrapped in a ``__jax_array__`` object. A jax array carries an empty ``__dict__``,
+    so a container-vs-leaf guard that only excludes numpy arrays mis-recurses into it and silently drops every per-node array param (J_i / wLRE / wFFI). Guard the leaf path
     for the real representation, not just the ``_JaxParam`` mock."""
     xr = pytest.importorskip("xarray")
     jnp = pytest.importorskip("jax.numpy")
@@ -138,8 +133,7 @@ def test_save_records_bare_jax_array_params(tmp_path):
 
 
 def test_estimate_uses_resolved_not_placeholder_labels(tmp_path):
-    """A bids: source can carry placeholder node_labels (region_<i>) until hydrated; the
-    estimate must be recorded with the RESOLVED labels (what the consumer reconciles
+    """A bids: source can carry placeholder node_labels (region_<i>) until hydrated; the estimate must be recorded with the RESOLVED labels (what the consumer reconciles
     against), else the warm-start `.sel` can't align."""
     xr = pytest.importorskip("xarray")
 
@@ -200,8 +194,7 @@ def test_algo_tuned_params_maps_rules_and_includes():
 
 
 def test_estimate_prefers_fitting_algorithm_not_pre_pass(tmp_path):
-    """A FIC pre-pass carries wLRE/wFFI at their init 1.0; the EIB pass fits them. The
-    saved estimate must come from the pass that FITS each param (EIB), not the earlier
+    """A FIC pre-pass carries wLRE/wFFI at their init 1.0; the EIB pass fits them. The saved estimate must come from the pass that FITS each param (EIB), not the earlier
     pass that merely holds it fixed — otherwise the tuned coupling is silently lost."""
     xr = pytest.importorskip("xarray")
     n = 4
@@ -225,8 +218,7 @@ def test_estimate_prefers_fitting_algorithm_not_pre_pass(tmp_path):
 
 
 def test_save_persists_algorithm_post_tuning_fc_corr(tmp_path):
-    """The achieved fit quality (fc_corr / fc_rmse vs the empirical target) must land in the
-    saved result — the tuned params alone don't record how well they fit."""
+    """The achieved fit quality (fc_corr / fc_rmse vs the empirical target) must land in the saved result — the tuned params alone don't record how well they fit."""
     xr = pytest.importorskip("xarray")
     n = 3
     labels = [f"R{i}" for i in range(n)]

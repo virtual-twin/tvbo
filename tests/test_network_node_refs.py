@@ -1,13 +1,9 @@
 """Node-vector network references (``network.positions`` / ``network.instrength``).
 
-The node-level analogue of the connectome-matrix refs: an observation source, a
-pipeline-callable argument, or an observer (``dynamics``) parameter may reference a
-per-node vector derived from the network, which is embedded once as a module
-constant. The subtle correctness point is that ``parse_reference`` splits
-``network.positions`` into ``('network', 'positions')`` — so ``ref_to_code`` resolves
-the BARE key ``'positions'``, while ``collect_network_node_arrays`` scans the FULL
-``'network.positions'`` string. ``node_label`` must accept both forms or the emitted
-constant name and the resolved reference silently disagree (the callable then gets a
+The node-level analogue of the connectome-matrix refs: an observation source, a pipeline-callable argument, or an observer (``dynamics``) parameter may reference a
+per-node vector derived from the network, which is embedded once as a module constant. The subtle correctness point is that ``parse_reference`` splits
+``network.positions`` into ``('network', 'positions')`` — so ``ref_to_code`` resolves the BARE key ``'positions'``, while ``collect_network_node_arrays`` scans the FULL
+``'network.positions'`` string. ``node_label`` must accept both forms or the emitted constant name and the resolved reference silently disagree (the callable then gets a
 ``kwargs.get('positions')`` -> ``None`` instead of the embedded vector).
 """
 
@@ -25,8 +21,7 @@ from tvbo.templates.tvboptim.utils import (
 
 @pytest.mark.parametrize("ref", ["network.positions", "positions", "network.instrength", "instrength"])
 def test_node_label_accepts_both_qualified_and_bare(ref):
-    """Both the full `network.X` form (collect) and the bare `X` key that
-    parse_reference hands ref_to_code resolve to the same measure."""
+    """Both the full `network.X` form (collect) and the bare `X` key that parse_reference hands ref_to_code resolve to the same measure."""
     assert node_label(ref) == ref.split(".")[-1]
 
 
@@ -44,8 +39,7 @@ def test_node_const_names():
 
 
 def test_emitted_constant_name_matches_resolved_reference():
-    """The name collect/emit uses (node_const on the full-form measure) is identical to
-    the name ref_to_code resolves to (node_const on the parse_reference-stripped key).
+    """The name collect/emit uses (node_const on the full-form measure) is identical to the name ref_to_code resolves to (node_const on the parse_reference-stripped key).
     This is the exact invariant the prefix bug broke."""
     for full in ("network.positions", "network.instrength"):
         emitted = node_const(node_label(full))  # collect / emit side (full form)
@@ -64,8 +58,7 @@ class _Net:
 
 
 def test_collect_from_source_pipeline_and_observer_params():
-    """A node ref is embedded whether it appears in a source, a pipeline argument, or an
-    observer dynamics parameter; instrength is the weighted in-degree (row sum)."""
+    """A node ref is embedded whether it appears in a source, a pipeline argument, or an observer dynamics parameter; instrength is the weighted in-degree (row sum)."""
     obs_pipeline = NS(
         source=["theta"],
         pipeline=[NS(arguments={"positions": NS(value="network.positions"), "k": NS(value=2)})],
@@ -81,8 +74,7 @@ def test_collect_from_source_pipeline_and_observer_params():
 
 
 def test_collect_raises_when_vector_unbuildable():
-    """A referenced node vector that cannot be built from the network is a hard error,
-    not a silent empty constant."""
+    """A referenced node vector that cannot be built from the network is a hard error, not a silent empty constant."""
 
     class _NoWeight(_Net):
         def matrix(self, lab):
@@ -95,10 +87,8 @@ def test_collect_raises_when_vector_unbuildable():
 
 def test_host_pipeline_callable_invocation_uses_the_node_constant_not_the_literal():
     """The pipeline-monitor's callable invocation must pass the EMBEDDED node constant for a
-    `network.positions`/`instrength` argument — not the raw string. That render path
-    re-implemented argument resolution by hand with no network-ref branch, so the ref fell
-    through to a string literal and the host callable received 'network.positions' (crashing
-    on np.asarray(..., float)). `collect_network_node_arrays` embedding the constant is not
+    `network.positions`/`instrength` argument — not the raw string. That render path re-implemented argument resolution by hand with no network-ref branch, so the ref fell
+    through to a string literal and the host callable received 'network.positions' (crashing on np.asarray(..., float)). `collect_network_node_arrays` embedding the constant is not
     enough; the invocation has to reference it."""
     from tvbo import SimulationExperiment
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """Export MNE standard_1005 EEG montage and fsaverage gain into a tvbo Network.
 
-This script creates a native tvbo sidecar + companion pair (YAML + HDF5)
-with sensor nodes and a ``gain`` matrix (sensors x regions), plus a small NPZ
+This script creates a native tvbo sidecar + companion pair (YAML + HDF5) with sensor nodes and a ``gain`` matrix (sensors x regions), plus a small NPZ
 containing region labels/centers for bsplot visualization.
 
 Typical workflow
@@ -92,9 +91,7 @@ def _compute_region_gain(sensor_labels_mne: list[str]):
 
     Returns
     -------
-    region_labels : list[str]
-    region_centers_mm : ndarray, shape (n_regions, 3)
-    gain_matrix : ndarray, shape (n_sensors, n_regions)
+    region_labels : list[str] region_centers_mm : ndarray, shape (n_regions, 3) gain_matrix : ndarray, shape (n_sensors, n_regions)
     fs_dir : Path
         Path to fetched fsaverage directory.
     """

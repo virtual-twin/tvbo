@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Migrate CSV connectomes to HDF5+YAML format.
 
-Reads CSV weight/length pairs from tvbo/data/tvbo_data/connectome/,
-creates HDF5 companion + updated YAML sidecar in database/networks/.
+Reads CSV weight/length pairs from tvbo/data/tvbo_data/connectome/, creates HDF5 companion + updated YAML sidecar in database/networks/.
 
 Usage:
     python scripts/migrate_csv_to_hdf5.py [--dry-run]

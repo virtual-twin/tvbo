@@ -1,9 +1,7 @@
 """The shipped generators resolve through the typed DAG, end to end from a Network.
 
-The unit tests around ``procedural`` pin the resolver against inline fixtures. These pin
-the artefacts users actually get: the curated YAML under
-``tvbo/database/graph_generators/``, resolved the way ``Network`` resolves it. A fixture
-can agree with the resolver while the shipped YAML says something else entirely — that
+The unit tests around ``procedural`` pin the resolver against inline fixtures. These pin the artefacts users actually get: the curated YAML under
+``tvbo/database/graph_generators/``, resolved the way ``Network`` resolves it. A fixture can agree with the resolver while the shipped YAML says something else entirely — that
 gap is exactly what the migration off the engine's numpy table could have opened.
 """
 
@@ -52,12 +50,9 @@ def bound_source(monkeypatch):
 def test_shipped_yaml_reproduces_the_pre_migration_engine(seed, n, sparsity, radius):
     """Anyone who built a reservoir before the migration must get the same one after it.
 
-    Agreeing on properties — spectral radius on target, roughly the right density — is
-    not reproduction: an earlier attempt satisfied both while drawing from a different
-    stream scheme, so the sparsity pattern (the network's topology) was different. The
-    pattern is therefore pinned bit-for-bit; the weights carry a ``1/max|eigenvalue|``
-    scale that is not bit-reproducible across LAPACK builds, so they get a tolerance far
-    tighter than any real stream-scheme change but looser than a ULP.
+    Agreeing on properties — spectral radius on target, roughly the right density — is not reproduction: an earlier attempt satisfied both while drawing from a different
+    stream scheme, so the sparsity pattern (the network's topology) was different. The pattern is therefore pinned bit-for-bit; the weights carry a ``1/max|eigenvalue|``
+    scale that is not bit-reproducible across LAPACK builds, so they get a tolerance far tighter than any real stream-scheme change but looser than a ULP.
     """
     expected = np.load(_GOLDEN)[f"{seed}_{n}_{sparsity}_{radius}"]
     got = random_reservoir(n_nodes=n, sparsity=sparsity, spectral_radius=radius, seed=seed)["weights"]
@@ -111,8 +106,7 @@ def test_a_zero_node_count_is_rejected_with_the_same_clear_message():
 def test_a_builder_is_not_handed_defaults_its_signature_cannot_accept(monkeypatch):
     """Declared defaults describe the generator's interface, so they apply to both routes.
 
-    A Callable builder may implement only part of that interface, though, and passing it
-    a default it never declared is a TypeError at the call — blaming the recipe for
+    A Callable builder may implement only part of that interface, though, and passing it a default it never declared is a TypeError at the call — blaming the recipe for
     something the curated database supplied.
     """
     import sys
@@ -158,8 +152,7 @@ def test_weight_distribution_overrides_the_declared_default():
 def test_overriding_the_weights_leaves_the_sparsity_pattern_untouched():
     """`seed_offset` isolates the two draws; sharing a stream would couple them.
 
-    The mask must depend only on the seed and the sparsity, so a study that varies the
-    weight distribution compares distributions over one fixed topology rather than
+    The mask must depend only on the seed and the sparsity, so a study that varies the weight distribution compares distributions over one fixed topology rather than
     silently rewiring the network at the same time.
     """
     default = random_reservoir(n_nodes=40, sparsity=0.9, spectral_radius=1.0, seed=3)["weights"]
@@ -218,8 +211,7 @@ def test_weight_shuffle_through_a_network_preserves_the_null_model(bound_source)
 def test_the_declared_preserve_default_reaches_the_callable(bound_source):
     """`preserve` is declared only in the curated YAML, so an omitted one must resolve.
 
-    Without the entry's declared defaults the callable would be invoked with `preserve`
-    missing and fall back to its own signature default — the same answer by luck, until
+    Without the entry's declared defaults the callable would be invoked with `preserve` missing and fall back to its own signature default — the same answer by luck, until
     the two disagree.
     """
     net = Network(

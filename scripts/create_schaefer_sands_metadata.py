@@ -2,12 +2,10 @@
 """Create SANDS-compliant atlas metadata for Schaefer2018 originals.
 
 This script reads Schaefer NIfTI files downloaded to
-`tvbo/data/tvbo_data/atlas/schaefer2018_original_mni/`, fetches the
-corresponding official LUT + centroid tables from ThomasYeoLab/CBIG,
+`tvbo/data/tvbo_data/atlas/schaefer2018_original_mni/`, fetches the corresponding official LUT + centroid tables from ThomasYeoLab/CBIG,
 and writes LinkML/SANDS-compatible `BrainAtlas` YAML sidecars.
 
-Output files are written to `tvbo/data/tvbo_data/atlas/` using a BIDS-like
-naming convention with explicit segmentation and scale entities.
+Output files are written to `tvbo/data/tvbo_data/atlas/` using a BIDS-like naming convention with explicit segmentation and scale entities.
 """
 
 from __future__ import annotations

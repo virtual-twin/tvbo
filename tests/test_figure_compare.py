@@ -1,9 +1,7 @@
 """Tests for `tvbo figure compare` — layout A/B against a reference image.
 
-The verb exists so "the figure is the wrong shape" becomes a number instead of an
-impression, which only works if the decomposition is trustworthy: it must find the panels
-a reader would point at, pair them with the reference's, and not invent structure where
-there is none.
+The verb exists so "the figure is the wrong shape" becomes a number instead of an impression, which only works if the decomposition is trustworthy: it must find the panels
+a reader would point at, pair them with the reference's, and not invent structure where there is none.
 """
 
 import numpy as np

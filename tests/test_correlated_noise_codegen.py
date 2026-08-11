@@ -1,14 +1,11 @@
 """`CorrelatedNoiseSolver` is emitted exactly when a covariance is declared.
 
-`Noise.covariance` + `Noise.correlated_over` are the sole signal that the Wiener
-increment carries structure. Absent them the generated tvboptim code must neither
+`Noise.covariance` + `Noise.correlated_over` are the sole signal that the Wiener increment carries structure. Absent them the generated tvboptim code must neither
 import nor use the wrapper — noise stays independent, which is what an undecorated
 `noise:` block means.
 
-The inverse matters more, and is the reason this file exists: a feature wired into only
-one of the two codegen paths is dead code on the other, and the failure is silent —
-the run completes and reports success while integrating uncorrelated noise. Both paths
-are therefore checked, exactly as `test_bounded_solver_codegen.py` checks both.
+The inverse matters more, and is the reason this file exists: a feature wired into only one of the two codegen paths is dead code on the other, and the failure is silent —
+the run completes and reports success while integrating uncorrelated noise. Both paths are therefore checked, exactly as `test_bounded_solver_codegen.py` checks both.
 """
 
 import pytest
@@ -104,8 +101,7 @@ def test_declared_covariance_emits_the_correlated_solver(tmp_path):
 def test_generated_module_builds_a_wrapping_solver(tmp_path):
     """The emitted `get_solver()` must actually return the wrapper, not just import it.
 
-    Executes the generated solver module, which is what catches a wrapper that is
-    constructed and then dropped (`base_solver` returned instead of the wrapped one).
+    Executes the generated solver module, which is what catches a wrapper that is constructed and then dropped (`base_solver` returned instead of the wrapped one).
     """
     _, solver_code = _render(tmp_path, _COVARIANCE)
     namespace = {"__name__": "generated_solver"}
@@ -123,8 +119,7 @@ def test_generated_module_builds_a_wrapping_solver(tmp_path):
 def test_the_declared_covariance_reaches_the_integrated_trajectory(tmp_path):
     """End-to-end: run the model and measure the correlation it actually integrated.
 
-    Every check above inspects generated source, which a wrapper that is emitted but
-    never reached would still satisfy. This one runs the simulation. The model is a
+    Every check above inspects generated source, which a wrapper that is emitted but never reached would still satisfy. This one runs the simulation. The model is a
     pure random walk (zero drift, zero coupling), so the increments of `x` ARE the
     Wiener increments and the declared node-node correlation is directly measurable.
     """

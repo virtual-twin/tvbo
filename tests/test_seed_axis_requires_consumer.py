@@ -1,9 +1,7 @@
 """An `execution.random_seed` axis must have something that consumes the seed.
 
-The axis reseeds the stochastic solver's PRNG key (``config.noise.key``). On a
-deterministic experiment there is no key to reseed, so the swept leaf is read by
-nothing and every grid cell returns an identical result — a silent no-op that still
-shows up in the result container as a genuine-looking ensemble dimension. Codegen
+The axis reseeds the stochastic solver's PRNG key (``config.noise.key``). On a deterministic experiment there is no key to reseed, so the swept leaf is read by
+nothing and every grid cell returns an identical result — a silent no-op that still shows up in the result container as a genuine-looking ensemble dimension. Codegen
 rejects it instead, so a recipe cannot quietly produce a fake trial ensemble.
 """
 
@@ -106,8 +104,7 @@ def test_no_seed_axis_is_unaffected_without_noise():
 def test_seed_axis_is_rejected_under_a_strategy_that_bypasses_the_grid():
     """Noise alone is not enough: the seed must also reach the per-cell grid binding.
 
-    nsga2 / warm-start / branch-analysis bodies never execute the grid-binding block that
-    applies the swept seed, so the axis is inert there even on a stochastic experiment —
+    nsga2 / warm-start / branch-analysis bodies never execute the grid-binding block that applies the swept seed, so the axis is inert there even on a stochastic experiment —
     the same fake ensemble, just arrived at a different way.
     """
     spec = _with_noise(copy.deepcopy(MINI_EXP))

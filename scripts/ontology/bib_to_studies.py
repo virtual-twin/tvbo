@@ -1,10 +1,7 @@
-"""Emit one slim yaml-per-study under tvbo/database/studies/ from the BibTeX
-bibliographies.
+"""Emit one slim yaml-per-study under tvbo/database/studies/ from the BibTeX bibliographies.
 
-A study yaml is a pointer, not a bibliographic record: it carries the citekey
-(the join key into references.bib, from which gen_abox.py resolves the full
-bibliographic detail) and, when available, the doi (the pointer to the source on
-the web). Everything else -- title, authors, journal, volume, pages, ... -- lives
+A study yaml is a pointer, not a bibliographic record: it carries the citekey (the join key into references.bib, from which gen_abox.py resolves the full
+bibliographic detail) and, when available, the doi (the pointer to the source on the web). Everything else -- title, authors, journal, volume, pages, ... -- lives
 in references.bib and is resolved by citekey, so it is never duplicated here.
 
 Re-running is idempotent: existing study yaml files are overwritten.

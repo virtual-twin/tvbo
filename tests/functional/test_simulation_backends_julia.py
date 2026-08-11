@@ -12,12 +12,8 @@ from tests.functional.simulation_backends_shared import (
 )
 
 
-# Multi-mode models (number_of_modes > 1). The DifferentialEquations.jl backend
-# (``test_run_julia``) lays each state variable out as a length-n_modes block and
-# contracts mode_dot/mode_sum over the mode axis, matching jax/tvb (per-mode corr
-# 1.0), so those models run there. The NetworkDynamics.jl and ModelingToolkit.jl
-# backends still use scalar-per-variable templates without a mode-axis state layout,
-# so they stay xfail'd. Mirrors _PYRATES_UNSUPPORTED.
+# Multi-mode models (number_of_modes > 1). The DifferentialEquations.jl backend (``test_run_julia``) lays each state variable out as a length-n_modes block and contracts mode_dot/mode_sum over the mode axis, matching jax/tvb (per-mode corr
+# 1.0), so those models run there. The NetworkDynamics.jl and ModelingToolkit.jl backends still use scalar-per-variable templates without a mode-axis state layout, so they stay xfail'd. Mirrors _PYRATES_UNSUPPORTED.
 _JULIA_MODE_UNSUPPORTED = {
     "ReducedSetHindmarshRose": "mode-axis model: nd/mtk backends have no mode-axis state layout yet",
     "ReducedSetFitzHughNagumo": "mode-axis model: nd/mtk backends have no mode-axis state layout yet",
@@ -25,10 +21,7 @@ _JULIA_MODE_UNSUPPORTED = {
     "StefanescuJirsa3D": "mode-axis model: nd/mtk backends have no mode-axis state layout yet",
 }
 
-# NetworkDynamics-specific: the stiff KIonEx ion-exchange model diverges under the
-# nd solver, driving a concentration negative so a Nernst-potential log() hits a
-# negative argument (Julia raises DomainError where numpy returns NaN). It runs
-# correctly on the diffeq / jax / tvb backends.
+# NetworkDynamics-specific: the stiff KIonEx ion-exchange model diverges under the nd solver, driving a concentration negative so a Nernst-potential log() hits a negative argument (Julia raises DomainError where numpy returns NaN). It runs correctly on the diffeq / jax / tvb backends.
 _ND_UNSUPPORTED = {
     "KIonEx": "stiff ion-exchange model diverges under the nd solver (log of negative concentration)",
 }
@@ -45,8 +38,7 @@ class TestJuliaBackends:
     def test_run_julia(self, model_file):
         """Run single-node simulation via DifferentialEquations.jl.
 
-        Multi-mode models run here too: the DifferentialEquations.jl template lays
-        each state variable out as a length-n_modes block (see tvbo-julia-model.jl.mako)
+        Multi-mode models run here too: the DifferentialEquations.jl template lays each state variable out as a length-n_modes block (see tvbo-julia-model.jl.mako)
         and the result carries a ``mode`` axis.
         """
         model = Dynamics.from_file(model_file)

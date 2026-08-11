@@ -1,31 +1,24 @@
 """NeuroML-core ingestion generator for TVB-O.
 
-Walks the NeuroML2 core ``ComponentType`` definitions (the LEMS type system
-bundled inside the jNeuroML jar) and emits two artifacts from one pass:
+Walks the NeuroML2 core ``ComponentType`` definitions (the LEMS type system bundled inside the jNeuroML jar) and emits two artifacts from one pass:
 
 - ``ontology/tvb-o-neuroml.ttl`` — the semantic module merged into ``tvbo.owl``.
   One ``owl:Class`` per ``ComponentType`` under the tvbo-scoped namespace
   ``https://w3id.org/tvbo/neuroml/``; ``extends`` becomes ``rdfs:subClassOf``;
-  each class carries ``skos:exactMatch`` to its direct NeuroML IRI
-  (``http://www.neuroml.org/schema/neuroml2#<name>``) so both identifiers denote
-  the same type; local exposures / requirements / event ports / parameters are
-  recorded as annotations. This is the "tvbo.owl references NeuroML-core" link,
+  each class carries ``skos:exactMatch`` to its direct NeuroML IRI (``http://www.neuroml.org/schema/neuroml2#<name>``) so both identifiers denote
+  the same type; local exposures / requirements / event ports / parameters are recorded as annotations. This is the "tvbo.owl references NeuroML-core" link,
   alongside the GO bridge.
 
 - ``tvbo/data/ontology/neuroml_contracts.json`` — the compiled, ``extends``-
   accumulated contract index the NeuroML adapter loads at emit time (stdlib
-  ``json``, no owlready2/rdflib/pylems on the hot path). It is a projection of
-  the same ingested data: for each type, the full inherited set of exposures,
-  requirements, parameters, event ports, attachments, children, and on-start
-  assignments. This is what grounds the adapter's base-type contracts.
+  ``json``, no owlready2/rdflib/pylems on the hot path). It is a projection of the same ingested data: for each type, the full inherited set of exposures,
+  requirements, parameters, event ports, attachments, children, and on-start assignments. This is what grounds the adapter's base-type contracts.
 
-Both outputs are checked in and CI-guarded against drift, exactly like the other
-generated ontology artifacts. Regenerate with ``make gen-neuroml`` (or directly)
+Both outputs are checked in and CI-guarded against drift, exactly like the other generated ontology artifacts. Regenerate with ``make gen-neuroml`` (or directly)
 whenever the bundled jNeuroML version changes.
 
 The RDF/Dublin-Core/XML metadata plumbing types that the core files pull in for
-``<notes>``/``<annotation>`` handling (``rdf_*``, ``dc_*``, ``notes``, ...) are
-not neuroscience component types and are filtered out; the count of skipped
+``<notes>``/``<annotation>`` handling (``rdf_*``, ``dc_*``, ``notes``, ...) are not neuroscience component types and are filtered out; the count of skipped
 types is logged so the filtering is never silent.
 """
 
@@ -68,8 +61,7 @@ def _is_plumbing(name: str) -> bool:
 def locate_core_types(dest: str) -> str:
     """Extract ``NeuroML2CoreTypes/*.xml`` from the bundled jNeuroML jar.
 
-    Locates the jar inside the installed ``pyneuroml`` package so the version is
-    never hard-coded, and unpacks the core type XML into *dest*.
+    Locates the jar inside the installed ``pyneuroml`` package so the version is never hard-coded, and unpacks the core type XML into *dest*.
 
     Args:
         dest: Directory to extract into.
@@ -126,8 +118,7 @@ def _chain(component_types, name):
 def _accumulate(component_types, name):
     """Accumulate every inherited slot for *name* up its ``extends`` chain.
 
-    Walks root→child so a nearer type overrides a farther one, and drops the
-    metadata-plumbing children (``notes``/``annotation``/``property``).
+    Walks root→child so a nearer type overrides a farther one, and drops the metadata-plumbing children (``notes``/``annotation``/``property``).
 
     Returns:
         A contract dict: ``extends``, ``chain``, and the accumulated
@@ -191,8 +182,7 @@ _ANNOT = {
 def build_ttl(component_types, domain_names) -> Graph:
     """Build the ``tvb-o-neuroml.ttl`` graph (classes + subClassOf + cross-ref).
 
-    Records local (not accumulated) exposures/requirements/event-ports/parameters
-    as annotations; inheritance is carried by ``rdfs:subClassOf`` for a reasoner
+    Records local (not accumulated) exposures/requirements/event-ports/parameters as annotations; inheritance is carried by ``rdfs:subClassOf`` for a reasoner
     to accumulate. The compiled JSON contract carries the accumulated form.
     """
     g = Graph()
@@ -269,8 +259,7 @@ def main() -> int:
         """Domain type unless it or any ``extends`` ancestor is metadata plumbing.
 
         The BioModels-qualifier and RDF annotation types (``bqbiol_*``,
-        ``bqmodel_*``, ``rdfs_seeAlso``, ...) descend from ``baseAnnotation_*``,
-        so the check must walk the chain, not just the type's own name.
+        ``bqmodel_*``, ``rdfs_seeAlso``, ...) descend from ``baseAnnotation_*``, so the check must walk the chain, not just the type's own name.
         """
         return not any(_is_plumbing(ct.name) for ct in _chain(all_types, name))
 

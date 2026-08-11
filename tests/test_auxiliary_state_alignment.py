@@ -1,11 +1,8 @@
 """Recorded auxiliaries must describe the same instant as the recorded state.
 
-A derived (auxiliary) variable is an algebraic function of the state, so at every
-recorded row it must equal that function evaluated at the state in the *same* row.
-The native solver evaluates auxiliaries at the step-start state while recording the
-post-step state, which used to leave the auxiliary channel lagging the state by one
-integration step; the recorder re-evaluates the auxiliaries at the recorded state so
-the two align. Uses the pendulum, whose derived x = L·sin(theta) makes the alignment
+A derived (auxiliary) variable is an algebraic function of the state, so at every recorded row it must equal that function evaluated at the state in the *same* row.
+The native solver evaluates auxiliaries at the step-start state while recording the post-step state, which used to leave the auxiliary channel lagging the state by one
+integration step; the recorder re-evaluates the auxiliaries at the recorded state so the two align. Uses the pendulum, whose derived x = L·sin(theta) makes the alignment
 exact and independent of integrator order.
 """
 
@@ -58,17 +55,13 @@ def test_derived_variable_aligns_with_state(method, stages):
     lagged = np.max(np.abs(x[1:] - np.sin(theta[:-1])))
     assert same < 1e-12, f"{method}: x[t] != L*sin(theta[t]) (max {same:.2e})"
     # The trajectory must move enough that a one-step misalignment is detectable
-    # — otherwise `same < 1e-12` is satisfied vacuously by a near-static run, and a
-    # regression that reintroduced the lag would still pass. The one-step shift
-    # error is orders of magnitude above the alignment tolerance for a real motion.
+    # — otherwise `same < 1e-12` is satisfied vacuously by a near-static run, and a regression that reintroduced the lag would still pass. The one-step shift error is orders of magnitude above the alignment tolerance for a real motion.
     assert lagged > 1e-6, f"{method}: trajectory too static to detect a one-step lag (lagged={lagged:.2e})"
     assert np.max(np.abs(y + np.cos(theta))) < 1e-12
 
 
-# A 2-node network whose derived variable `recv` records the coupling input
-# c = W @ x directly, so the recorded auxiliary is *coupling-dependent*. With
-# W = [[0, 1], [1, 0]] the true coupling at any instant is W @ x at that instant,
-# which lets us check exactly which state row the recorded coupling aligns with.
+# A 2-node network whose derived variable `recv` records the coupling input c = W @ x directly, so the recorded auxiliary is *coupling-dependent*. With
+# W = [[0, 1], [1, 0]] the true coupling at any instant is W @ x at that instant, which lets us check exactly which state row the recorded coupling aligns with.
 COUPLED = {
     "label": "coupling-dependent-aux",
     "dynamics": {
@@ -134,15 +127,12 @@ def _run_coupled(coupling_evaluation):
     strict=False,
 )
 def test_coupling_dependent_aux_aligns_under_per_stage():
-    """A coupling-dependent recorded auxiliary aligns with the recorded state's
-    coupling only when the coupling is re-evaluated per stage (the §4.1e axiom).
+    """A coupling-dependent recorded auxiliary aligns with the recorded state's coupling only when the coupling is re-evaluated per stage (the §4.1e axiom).
 
     ``recv`` records c = W @ x. Under ``per_stage`` the recorded auxiliary equals
-    ``W @ x[t]`` (the coupling at the recorded state); it must *not* equal the
-    shifted ``W @ x[t-1]``, or the alignment would be indistinguishable from lag.
+    ``W @ x[t]`` (the coupling at the recorded state); it must *not* equal the shifted ``W @ x[t-1]``, or the alignment would be indistinguishable from lag.
 
-    Currently ``xfail``: the tvbo-side fix aligns only state-only derived variables
-    (a coupling-dependent aux needs the in-scan coupling). See the marker for the
+    Currently ``xfail``: the tvbo-side fix aligns only state-only derived variables (a coupling-dependent aux needs the in-scan coupling). See the marker for the
     tvboptim branch that resolves it.
     """
     W, x, recv = _run_coupled("per_stage")
@@ -155,8 +145,7 @@ def test_coupling_dependent_aux_aligns_under_per_stage():
 
 
 def test_coupling_dependent_aux_lags_under_per_step():
-    """Under the default per-step (frozen) coupling, the recorded coupling-dependent
-    auxiliary carries the step-start coupling and lags the recorded state by one
+    """Under the default per-step (frozen) coupling, the recorded coupling-dependent auxiliary carries the step-start coupling and lags the recorded state by one
     step — the documented limitation (§4.1e) that ``per_stage`` resolves.
     """
     W, x, recv = _run_coupled("per_step")

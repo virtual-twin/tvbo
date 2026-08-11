@@ -5,8 +5,7 @@ Reads YAML records under `tvbo/database/` and emits Turtle with one
 LinkML class IRI from the T-box (`ontology/tvb-o-struct.owl`).
 
 This replaces the legacy `tvbo/data/ontology/tvb-o.owl` A-box, which had
-~1300 entities wrongly typed as `owl:Class`. See PR-N audit and PR-Q
-(class->individual migration superseded by automated A-box generation).
+~1300 entities wrongly typed as `owl:Class`. See PR-N audit and PR-Q (class->individual migration superseded by automated A-box generation).
 
 Output: `ontology/tvb-o-data.ttl` (structural KG) plus
 `ontology/tvb-o-biology.ttl` (the `tvbo:surrogate_of` grounding links to
@@ -18,8 +17,7 @@ Scope (initial pilot): models. Each model emits:
   - one StateVariable individual per `state_variables[*]`
   - groundings as `tvbo:surrogate_of` object-property links on parameter/state-variable
 
-Subsequent extensions (separate PRs) will add coupling_functions,
-integrators, observation_models, networks, atlases, software, studies.
+Subsequent extensions (separate PRs) will add coupling_functions, integrators, observation_models, networks, atlases, software, studies.
 """
 
 from __future__ import annotations
@@ -42,9 +40,7 @@ DCTERMS = Namespace("http://purl.org/dc/terms/")
 OBOINOWL = Namespace("http://www.geneontology.org/formats/oboInOwl#")
 SCHEMA = Namespace("http://schema.org/")
 # SANDS classes are imported from openMINDS via schema/SANDS.yaml. The struct
-# OWL exposes their class IRIs under the InterLex `atom` namespace (see
-# default_prefix in schema/SANDS.yaml). Type atlas/coordinate-space individuals
-# directly against those existing T-box classes; do NOT mint new tvbo:* classes.
+# OWL exposes their class IRIs under the InterLex `atom` namespace (see default_prefix in schema/SANDS.yaml). Type atlas/coordinate-space individuals directly against those existing T-box classes; do NOT mint new tvbo:* classes.
 ATOM = Namespace("http://uri.interlex.org/tgbugs/uris/readable/")
 
 PREFIX_MAP = {
@@ -83,20 +79,15 @@ def _study_iri(citekey: str) -> URIRef:
     return URIRef(f"{TVBO}studies/{safe_local(citekey)}")
 
 
-# Lookup-side normalisation so `references:` strings in yaml files match the
-# sanitised study filenames. Shared with bib_to_studies via _bib.sanitize_citekey.
+# Lookup-side normalisation so `references:` strings in yaml files match the sanitised study filenames. Shared with bib_to_studies via _bib.sanitize_citekey.
 _norm_citekey = sanitize_citekey
 
 
-# Populated lazily by `build_graph` after scanning `studies/`. Used by
-# emit_model and emit_generic_record to back-link `references:` strings.
+# Populated lazily by `build_graph` after scanning `studies/`. Used by emit_model and emit_generic_record to back-link `references:` strings.
 _STUDY_CITEKEYS: set[str] = set()
-# Case-folded -> canonical map so e.g. `Fitzhugh1961` resolves to the
-# study individual built from `FitzHugh1961.yaml`.
+# Case-folded -> canonical map so e.g. `Fitzhugh1961` resolves to the study individual built from `FitzHugh1961.yaml`.
 _STUDY_CITEKEYS_CI: dict[str, str] = {}
-# citekey -> full bibliographic record resolved from references.bib. Back-fills
-# the slim study yaml pointers so the A-box stays rich without duplicating bib
-# metadata into the yaml. Populated by `build_graph`.
+# citekey -> full bibliographic record resolved from references.bib. Back-fills the slim study yaml pointers so the A-box stays rich without duplicating bib metadata into the yaml. Populated by `build_graph`.
 _STUDY_BIB: dict[str, dict] = {}
 
 
@@ -108,9 +99,7 @@ def _resolve_study(citekey: str) -> str | None:
 
 
 # --- Reusable emitters parametrised by parent IRI. --------------------------
-# Used uniformly by emit_model and emit_generic_record so that every record
-# (model, coupling, integrator, observation, ...) receives the same metadata
-# coverage including groundings.
+# Used uniformly by emit_model and emit_generic_record so that every record (model, coupling, integrator, observation, ...) receives the same metadata coverage including groundings.
 
 
 def _add_groundings(g: Graph, iri: URIRef, data: dict) -> None:
@@ -137,8 +126,7 @@ def _add_equation(g: Graph, iri: URIRef, data: dict) -> None:
 
 
 def _scoped_label(parent_iri: URIRef, symbol: str, category: str) -> str:
-    """Return `"<symbol> (<parent_local> <category>)"` to keep `rdfs:label`
-    unique across models. Avoids ROBOT `duplicate_label` ERRORs caused by
+    """Return `"<symbol> (<parent_local> <category>)"` to keep `rdfs:label` unique across models. Avoids ROBOT `duplicate_label` ERRORs caused by
     bare per-model symbols (e.g. `y1`, `x_i`) colliding across dynamics."""
     parent_local = str(parent_iri).rsplit("/", 1)[-1]
     return f"{symbol} ({parent_local} {category})"
@@ -225,8 +213,7 @@ def emit_model(g: Graph, path: pathlib.Path) -> None:
 
 # --- Generic per-folder emitter for non-model database categories. -----------
 # Mapping: folder name -> class IRI. SANDS classes (BrainAtlas,
-# CommonCoordinateSpace) reuse their existing openMINDS/InterLex IRIs from
-# schema/SANDS.yaml; do not mint tvbo:Atlas / tvbo:CoordinateSpace.
+# CommonCoordinateSpace) reuse their existing openMINDS/InterLex IRIs from schema/SANDS.yaml; do not mint tvbo:Atlas / tvbo:CoordinateSpace.
 GENERIC_FOLDER_TYPES: dict[str, URIRef] = {
     "coupling_functions": TVBO.Coupling,
     "graph_generators": TVBO.GraphGenerator,
@@ -239,10 +226,7 @@ GENERIC_FOLDER_TYPES: dict[str, URIRef] = {
     "atlases": ATOM.BrainAtlas,
     "coordinate_spaces": ATOM.CommonCoordinateSpace,
     # studies/: one yaml-per-study, generated by
-    # `dev/OntologicalRestructuring/tools/bib_to_studies.py` from the
-    # bibtex bibliographies. Typed against schema.org rather than minting
-    # a new tvbo class. Specific subtypes (Book / Thesis / etc.) are
-    # refined per-record in `_refine_study_type`.
+    # `dev/OntologicalRestructuring/tools/bib_to_studies.py` from the bibtex bibliographies. Typed against schema.org rather than minting a new tvbo class. Specific subtypes (Book / Thesis / etc.) are refined per-record in `_refine_study_type`.
     "studies": SCHEMA.ScholarlyArticle,
 }
 
@@ -264,9 +248,7 @@ def _record_label(data: dict, fallback: str) -> str:
     return str(data.get("name") or data.get("label") or fallback)
 
 
-# Folders whose YAML `name:` field is a generic family identifier
-# (e.g. all Schaefer2018 atlases share `name: Schaefer2018`). For these
-# we use the BIDS-style filename stem as the unique `rdfs:label` and keep
+# Folders whose YAML `name:` field is a generic family identifier (e.g. all Schaefer2018 atlases share `name: Schaefer2018`). For these we use the BIDS-style filename stem as the unique `rdfs:label` and keep
 # `name:` as a `skos:altLabel`. Avoids ROBOT `duplicate_label` ERRORs.
 _FILENAME_LABEL_FOLDERS = {"atlases", "networks", "coordinate_spaces"}
 
@@ -276,9 +258,7 @@ def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef, path: pathlib.Pa
     if not isinstance(data, dict):
         return None
     if folder == "studies":
-        # references.bib is the source of truth: resolve the full bibliographic
-        # record by citekey (= filename stem) and let it back-fill the slim study
-        # pointer. YAML-authored keys (e.g. doi) win on overlap.
+        # references.bib is the source of truth: resolve the full bibliographic record by citekey (= filename stem) and let it back-fill the slim study pointer. YAML-authored keys (e.g. doi) win on overlap.
         bib = _STUDY_BIB.get(path.stem)
         if bib:
             data = {**bib, **data}
@@ -324,8 +304,7 @@ def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef, path: pathlib.Pa
     for author in data.get("authors") or []:
         g.add((iri, SCHEMA.author, Literal(str(author))))
     _add_groundings(g, iri, data)
-    # Cross-link: any string in `references:` that matches a study citekey
-    # becomes a `dcterms:references` link to the corresponding study IRI.
+    # Cross-link: any string in `references:` that matches a study citekey becomes a `dcterms:references` link to the corresponding study IRI.
     for ref in data.get("references") or []:
         if isinstance(ref, str):
             nk = _resolve_study(_norm_citekey(ref))
@@ -336,8 +315,7 @@ def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef, path: pathlib.Pa
         nk = _resolve_study(_norm_citekey(rp))
         if nk:
             g.add((iri, DCTERMS.references, _study_iri(nk)))
-    # Reuse the model emitters for nested parameters / state_variables /
-    # derived_variables so coverage is identical across categories.
+    # Reuse the model emitters for nested parameters / state_variables / derived_variables so coverage is identical across categories.
     for key, p in (data.get("parameters") or {}).items():
         if isinstance(p, dict):
             emit_parameter(g, iri, key, p)
@@ -380,8 +358,7 @@ def build_graph() -> Graph:
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/struct")))
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/axioms")))
 
-    # Pre-scan studies/ so emitters can resolve `references:` strings to
-    # study individual IRIs before emission. Order-independent.
+    # Pre-scan studies/ so emitters can resolve `references:` strings to study individual IRIs before emission. Order-independent.
     _STUDY_CITEKEYS.clear()
     _STUDY_CITEKEYS_CI.clear()
     for sp in (DB / "studies").glob("*.yaml"):
@@ -413,9 +390,7 @@ def main() -> int:
 
     g = build_graph()
 
-    # Split the biological grounding (surrogate_of links) into a companion file so
-    # the structural KG (tvb-o-data.ttl) and the bio-ontology grounding
-    # (tvb-o-biology.ttl) can be maintained / reviewed / submitted separately.
+    # Split the biological grounding (surrogate_of links) into a companion file so the structural KG (tvb-o-data.ttl) and the bio-ontology grounding (tvb-o-biology.ttl) can be maintained / reviewed / submitted separately.
     # `make gen-merged` merges both back into tvbo.owl.
     bio = Graph()
     for pfx, ns in g.namespaces():

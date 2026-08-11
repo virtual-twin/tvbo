@@ -101,8 +101,7 @@ def test_anchor_scope_is_file_local_across_include(tmp_path: Path) -> None:
     """,
     )
     with pytest.raises(Exception):
-        # Anchor &defaults is defined in main; *defaults inside frag.yaml
-        # must NOT resolve. Expect a YAML composer error.
+        # Anchor &defaults is defined in main; *defaults inside frag.yaml must NOT resolve. Expect a YAML composer error.
         yaml_loader.load_as_dict(main)
 
 
@@ -127,8 +126,7 @@ def test_loads_accepts_yaml_string(tmp_path: Path) -> None:
 
 
 def test_long_yaml_string_is_not_mistaken_for_path() -> None:
-    # Some callers pass full YAML content as a string (e.g. yaml.safe_dump
-    # of an in-memory dict). Must not trigger Path.exists() / OSError.
+    # Some callers pass full YAML content as a string (e.g. yaml.safe_dump of an in-memory dict). Must not trigger Path.exists() / OSError.
     long_text = "data:\n" + "\n".join(f"  key_{i}: {i}" for i in range(500))
     result = yaml_loader.load_as_dict(long_text)
     assert result["data"]["key_0"] == 0
@@ -145,10 +143,8 @@ def test_study_from_file_materialises_an_included_experiment(tmp_path: Path) -> 
     """A modular (`!include`-split) study loads and materialises like a monolithic one.
 
     ``SimulationStudy.from_file`` keeps the raw experiment dicts (``_raw_experiments``) so
-    ``get_experiment`` can re-materialise through the iri-aware ``from_string`` path. Both
-    the datamodel load AND that raw extraction must go through ``yaml_loader`` — a plain
-    ``yaml.safe_load`` chokes on the ``!include`` tag, silently emptying ``_raw_experiments``
-    and dropping every experiment to the iri-unaware fallback. This guards that harmonisation.
+    ``get_experiment`` can re-materialise through the iri-aware ``from_string`` path. Both the datamodel load AND that raw extraction must go through ``yaml_loader`` — a plain
+    ``yaml.safe_load`` chokes on the ``!include`` tag, silently emptying ``_raw_experiments`` and dropping every experiment to the iri-unaware fallback. This guards that harmonisation.
     """
     import tvbo
 
@@ -186,10 +182,8 @@ def test_study_from_file_materialises_an_included_experiment(tmp_path: Path) -> 
 def test_include_merges_into_a_mapping(tmp_path: Path) -> None:
     """An `!include`d fragment merges alongside a mapping's own keys and other anchors.
 
-    Without this the two idioms do not compose — a fragment can only *replace* a whole
-    slot — so every consumer of a partial fragment (a haemodynamic cascade shared by two
-    models) has to copy it. Explicit keys must still win over merged ones, and an earlier
-    merge over a later one, exactly as with plain anchors.
+    Without this the two idioms do not compose — a fragment can only *replace* a whole slot — so every consumer of a partial fragment (a haemodynamic cascade shared by two
+    models) has to copy it. Explicit keys must still win over merged ones, and an earlier merge over a later one, exactly as with plain anchors.
     """
     _write(
         tmp_path / "frag.yaml",

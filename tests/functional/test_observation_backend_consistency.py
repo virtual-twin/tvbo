@@ -2,22 +2,17 @@
 
 These guard two defects:
 
-1. **Observation sample-count divergence.** ``Bold_TVB`` is a declarative YAML
-   observation model. The same YAML MUST resolve to the same sampling on every
-   Python-based backend (jax / tvboptim / tvb): a BOLD monitor with ``TR=720ms``
-   over a ``duration`` produces ``floor(duration / TR)`` samples regardless of
+1. **Observation sample-count divergence.** ``Bold_TVB`` is a declarative YAML observation model. The same YAML MUST resolve to the same sampling on every
+   Python-based backend (jax / tvboptim / tvb): a BOLD monitor with ``TR=720ms`` over a ``duration`` produces ``floor(duration / TR)`` samples regardless of
    the integration ``step_size``. The bug: the jax monitor template applied the
    *literal* pre-baked ``subsample`` stepsize (720/stock_dt = 180) to the raw
-   ``dt=0.1`` grid instead of ``TR/dt``, yielding ``n_steps / 180`` BOLD samples
-   (e.g. 112 for a 2000ms run) while tvboptim/tvb correctly yielded 2. tvboptim
+   ``dt=0.1`` grid instead of ``TR/dt``, yielding ``n_steps / 180`` BOLD samples (e.g. 112 for a 2000ms run) while tvboptim/tvb correctly yielded 2. tvboptim
    resolves the period as ``TR/dt`` and is the reference (see
    ``tvbo/templates/tvboptim/observations.py``).
 
-2. **TVB rejects a standard weights network.** ``exp.run("tvb")`` on a
-   connectivity-only ``Network`` (weights / tract_lengths / labels / centres —
+2. **TVB rejects a standard weights network.** ``exp.run("tvb")`` on a connectivity-only ``Network`` (weights / tract_lengths / labels / centres —
    e.g. ``atlas="Lobar8", rec="avgMatrix"``) raised
-   ``ValueError("Atlas ... is not available in the dataset")`` because the TVB
-   adapter tried to resolve a parcellation-volume ``.nii`` it never needs for a
+   ``ValueError("Atlas ... is not available in the dataset")`` because the TVB adapter tried to resolve a parcellation-volume ``.nii`` it never needs for a
    ``tvb.Connectivity``.
 
 Conventions match ``tests/functional/test_simulation_backends_*.py`` and
@@ -30,9 +25,7 @@ import pytest
 from tvbo import Coupling, Dynamics, Network, Observation, SimulationExperiment
 from tests.functional.simulation_backends_shared import _HAVE_TVB, _HAVE_TVBOPTIM
 
-# ``Bold_TVB`` monitor period. Read from the DB so the expected sample count is
-# derived from the same declarative source the backends consume, not a magic
-# number.
+# ``Bold_TVB`` monitor period. Read from the DB so the expected sample count is derived from the same declarative source the backends consume, not a magic number.
 _BOLD_TR = Observation.from_db("Bold_TVB").parameters["TR"].value  # 720.0 ms
 
 # Short but >= 2 BOLD samples: floor(2000 / 720) == 2.
@@ -44,8 +37,7 @@ _EXPECTED_BOLD_SAMPLES = int(_DURATION // _BOLD_TR)
 def _matrix_bold_experiment(duration=_DURATION):
     """Two-node, tvb-safe experiment (Network.from_matrix) with BOLD + TA.
 
-    ``from_matrix`` builds a pure connectivity network that every backend
-    (including TVB) already accepts, so this isolates the observation
+    ``from_matrix`` builds a pure connectivity network that every backend (including TVB) already accepts, so this isolates the observation
     sample-count bug from the TVB-network-acceptance bug.
     """
     network = Network.from_matrix(
@@ -69,8 +61,7 @@ def _find_observation(result, needle):
     """Return the observation data whose key contains *needle* (case-insensitive).
 
     All backends now expose the same canonical observation keys (e.g.
-    ``BOLD_TVB``); the case-insensitive substring match is kept as a
-    lenient safety net.
+    ``BOLD_TVB``); the case-insensitive substring match is kept as a lenient safety net.
     """
     observations = result.integration.observations
     for key, value in observations.items():
@@ -91,8 +82,7 @@ def _run(backend, duration=_DURATION):
 def _align(left, right):
     """Squeeze trailing singleton axes and drop a leading off-by-one sample.
 
-    TVB carries an extra trailing mode axis; backends may emit a boundary
-    sample the others don't. Mirrors the alignment in
+    TVB carries an extra trailing mode axis; backends may emit a boundary sample the others don't. Mirrors the alignment in
     ``tests/test_tvboptim_observation_codegen.py``.
     """
     left = np.asarray(left)
@@ -115,8 +105,7 @@ class TestObservationSampleCountConsistency:
     def test_bold_sample_count_matches_tr_formula_per_backend(self):
         """Each available backend emits floor(duration / TR) BOLD samples.
 
-        Catches the jax defect directly: jax produced ``n_steps / 180`` (=112)
-        instead of ``duration / TR`` (=2). A single backend suffices to fail,
+        Catches the jax defect directly: jax produced ``n_steps / 180`` (=112) instead of ``duration / TR`` (=2). A single backend suffices to fail,
         so this holds even when only jax is installed.
         """
         counts = {}
@@ -172,8 +161,7 @@ class TestObservationSampleCountConsistency:
     @pytest.mark.backend_tvboptim
     @pytest.mark.skipif(not _HAVE_TVBOPTIM, reason="tvboptim not installed")
     def test_bold_values_close_jax_vs_tvboptim(self):
-        """Same YAML on jax and tvboptim should be numerically close, not just
-        equal in shape. Guards against a same-count-but-wrong-values fix."""
+        """Same YAML on jax and tvboptim should be numerically close, not just equal in shape. Guards against a same-count-but-wrong-values fix."""
         jax_bold = _find_observation(_run("jax"), "bold")
         tvboptim_bold = _find_observation(_run("tvboptim"), "bold")
 
@@ -213,10 +201,8 @@ class TestTVBNetworkAcceptance:
     def test_tvb_runs_weights_network_without_atlas_volume_error(self):
         """A connectivity-only Network must run on TVB.
 
-        Regression: the TVB adapter demanded a parcellation ``.nii`` volume and
-        raised ``ValueError('Atlas Lobar8 is not available in the dataset...')``.
-        A ``tvb.Connectivity`` only needs weights / tract_lengths / labels /
-        centres, none of which require the volume.
+        Regression: the TVB adapter demanded a parcellation ``.nii`` volume and raised ``ValueError('Atlas Lobar8 is not available in the dataset...')``.
+        A ``tvb.Connectivity`` only needs weights / tract_lengths / labels / centres, none of which require the volume.
         """
         experiment = self._weights_experiment()
         try:

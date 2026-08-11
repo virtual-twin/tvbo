@@ -1,9 +1,7 @@
 """Resolving a Parameter's value from its declared provenance.
 
-A parameter is a literal (``value:``), obtained (``source:`` + ``measure:``) or derived
-(``producer:``). These pin the contract the resolver and codegen share: a literal is
-materialised, anything else resolves lazily and the Parameter object itself is never
-touched — which is what lets the generated datamodel stay untouched.
+A parameter is a literal (``value:``), obtained (``source:`` + ``measure:``) or derived (``producer:``). These pin the contract the resolver and codegen share: a literal is
+materialised, anything else resolves lazily and the Parameter object itself is never touched — which is what lets the generated datamodel stay untouched.
 """
 
 import sys
@@ -280,8 +278,7 @@ def _echo_owned(k_ring=1):
 
 
 def test_readonly_does_not_freeze_the_producers_own_array():
-    """Freezing the returned object in place would break the recipe's own later use of
-    an array it still holds — so resolve must hand back a read-only VIEW, not freeze it."""
+    """Freezing the returned object in place would break the recipe's own later use of an array it still holds — so resolve must hand back a read-only VIEW, not freeze it."""
     p = Parameter(
         name="g",
         producer=FunctionCall(callable=Callable(name="_echo_owned", module=__name__), output="grad_op"),
@@ -359,8 +356,7 @@ def test_differing_producer_arguments_materialise_to_different_artifacts(produce
 def _write_producer_module(tmp_path, fill, monkeypatch):
     """A throwaway producer module whose source can be edited between calls.
 
-    Compiled straight from the text rather than imported: two writes a fraction of a second
-    apart share an mtime at CPython's one-second resolution, so any loader path replays the
+    Compiled straight from the text rather than imported: two writes a fraction of a second apart share an mtime at CPython's one-second resolution, so any loader path replays the
     first version's cached bytecode and the test would measure nothing.
     """
     import sys
@@ -382,12 +378,10 @@ def _write_producer_module(tmp_path, fill, monkeypatch):
 def test_editing_the_producers_code_materialises_a_new_artifact(tmp_path, monkeypatch):
     """The key must see a code change, not only an argument change.
 
-    Keyed on `(module, function, kwargs)` alone, an edited callable is invisible: the run
-    reads the array from before the edit while a direct call returns the new value, and
+    Keyed on `(module, function, kwargs)` alone, an edited callable is invisible: the run reads the array from before the edit while a direct call returns the new value, and
     nothing raises. Pang2023 drove a whole wave model off that stale artifact.
 
-    `clear_cache` between the two is what a second `tvbo run` is — a fresh process that
-    imports the edited module — which is the scope the invalidation is defined at, since
+    `clear_cache` between the two is what a second `tvbo run` is — a fresh process that imports the edited module — which is the scope the invalidation is defined at, since
     Python re-executes a module on import and never mid-process.
     """
     import h5py
@@ -412,10 +406,8 @@ def test_the_artifact_path_and_the_memory_key_carry_the_same_digest(tmp_path, mo
     """Keyed apart, one of the two answers for code the other never saw.
 
     The digest lived only in the artifact path once, while the in-memory cache keyed on
-    `(module, function, kwargs)`. A process that materialised, had its producer edited
-    underneath it, and materialised again then computed the NEW path from the new source
-    while the cache still answered on the old one — writing pre-edit arrays under a digest
-    asserting they are post-edit. Every later run reads that file and trusts it.
+    `(module, function, kwargs)`. A process that materialised, had its producer edited underneath it, and materialised again then computed the NEW path from the new source
+    while the cache still answered on the old one — writing pre-edit arrays under a digest asserting they are post-edit. Every later run reads that file and trusts it.
     """
     producer = _write_producer_module(tmp_path, 1.0, monkeypatch)
     digest = param_io._module_source_digest("edited_producer")
@@ -431,8 +423,7 @@ def test_the_artifact_path_and_the_memory_key_carry_the_same_digest(tmp_path, mo
 def test_the_digest_is_pinned_to_the_loaded_source_not_the_bytes_on_disk(tmp_path, monkeypatch):
     """Re-reading the file would rename the artifact while the stale function fills it.
 
-    Python does not re-execute an imported module, so a digest taken from disk on every
-    lookup describes code that is not running. Pinning it to what was loaded keeps the key
+    Python does not re-execute an imported module, so a digest taken from disk on every lookup describes code that is not running. Pinning it to what was loaded keeps the key
     honest; the edit lands on the next process, as the edited function itself does.
     """
     _write_producer_module(tmp_path, 1.0, monkeypatch)
@@ -471,8 +462,7 @@ def test_a_literal_parameter_cannot_be_materialised():
 
 
 def test_the_returned_key_names_an_array_that_exists(producer_module, tmp_path):
-    """The pair codegen emits must be readable: a key absent from the artifact would
-    fail inside a simulation, far from the declaration that caused it."""
+    """The pair codegen emits must be readable: a key absent from the artifact would fail inside a simulation, far from the declaration that caused it."""
     import h5py
 
     p = Parameter(name="grad_op", producer=_producer("grad_op"))
@@ -519,8 +509,7 @@ def test_a_typo_measure_is_caught_at_materialise(store, tmp_path):
 
 
 def test_source_and_producer_together_are_refused(producer_module, tmp_path, store):
-    """Two claims about where the value comes from; resolve() and materialise() would
-    otherwise each pick their own and hand back different values for one parameter."""
+    """Two claims about where the value comes from; resolve() and materialise() would otherwise each pick their own and hand back different values for one parameter."""
     p = Parameter(name="x", source=store.name, measure="ops/grad_op", producer=_producer("grad_op"))
 
     with pytest.raises(ValueError, match="mutually exclusive"):
@@ -549,8 +538,7 @@ def test_rebinding_a_bundle_key_cannot_poison_the_cache(producer_module):
 
 # ------------------------------------------------------- reclaiming superseded artifacts
 # The content address keys on the producing module's source, so editing a callable writes a
-# NEW artifact and deliberately leaves the old one — nothing at write time knows whether
-# another study still reads it. These pin what may then be reclaimed, and what may not.
+# NEW artifact and deliberately leaves the old one — nothing at write time knows whether another study still reads it. These pin what may then be reclaimed, and what may not.
 
 
 class _Study:

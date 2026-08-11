@@ -3,15 +3,13 @@
 Covers the two figure adapters:
 
 * ``tvbo.adapters.bsplot`` — resolves a declarative :class:`Figure` into a
-  codegen context (``build_context``), emits a self-contained ``plot.py``
-  (``render_code``), and emits + execs it under matplotlib Agg (``render``),
+  codegen context (``build_context``), emits a self-contained ``plot.py`` (``render_code``), and emits + execs it under matplotlib Agg (``render``),
   plus the register/lookup API a study extends the engine through and the
   ``_container_path`` PROV resolver.
 * ``tvbo.adapters.figure_workflow`` — lowers a figure's PROV ``used`` edges into
   a Snakemake render rule (``emit_figure_rules``).
 
-Figure objects are constructed inline. Tests that need experiment result
-containers point at the Taher2019 replication study and skip when it (or a
+Figure objects are constructed inline. Tests that need experiment result containers point at the Taher2019 replication study and skip when it (or a
 specific container) is absent, so the suite is robust on a fresh checkout.
 """
 
@@ -66,8 +64,7 @@ def _cartesian_figure(iri=EXP3_IRI, output="delta_omega", **fig_kw):
 
 
 def test_public_surface():
-    """The documented adapter surface is importable and well-typed. Core ships no built-in
-    transforms/panels — the registries are filled by studies through the register API."""
+    """The documented adapter surface is importable and well-typed. Core ships no built-in transforms/panels — the registries are filled by studies through the register API."""
     assert isinstance(bsplot.TRANSFORMS, dict)
     assert isinstance(bsplot.CUSTOM_PANELS, dict)
     assert callable(bsplot.register_transform)
@@ -102,8 +99,7 @@ def test_container_path_unresolved_returns_empty():
 
 def test_container_path_resolves_results_dir_container(tmp_path):
     """A figure layer may bind a derived-figure container a replication study writes with
-    ``ExperimentResult.save`` under ``output/results/<name>/result.h5`` (the ``results_io``
-    convention), not only a ``tvbo run`` experiment under ``output/nc/<exp>/``. The last IRI
+    ``ExperimentResult.save`` under ``output/results/<name>/result.h5`` (the ``results_io`` convention), not only a ``tvbo run`` experiment under ``output/nc/<exp>/``. The last IRI
     segment names the results subdirectory."""
     bsplot._container_path.cache_clear()  # the resolver is lru_cached
     result = tmp_path / "output" / "results" / "fig3" / "result.h5"
@@ -115,10 +111,8 @@ def test_container_path_resolves_results_dir_container(tmp_path):
 
 
 def test_container_path_resolves_flat_nc_container(tmp_path):
-    """A whole-study ``tvbo run`` writes BIDS-style result files FLAT inside ``output/nc/``
-    (``exp-<id>_desc-<model>_result.h5``), not in a per-experiment ``output/nc/<exp>/``
-    subdirectory. The resolver must find that layout (regression: a figure's ``used`` IRI
-    silently resolved to "" for it, so custom panels fell back to placeholder/degenerate
+    """A whole-study ``tvbo run`` writes BIDS-style result files FLAT inside ``output/nc/`` (``exp-<id>_desc-<model>_result.h5``), not in a per-experiment ``output/nc/<exp>/``
+    subdirectory. The resolver must find that layout (regression: a figure's ``used`` IRI silently resolved to "" for it, so custom panels fell back to placeholder/degenerate
     data — the Cortes2013 Fig-2/3 bug)."""
     bsplot._container_path.cache_clear()  # the resolver is lru_cached
     nc = tmp_path / "output" / "nc"
@@ -132,8 +126,7 @@ def test_container_path_resolves_flat_nc_container(tmp_path):
 
 
 def test_container_path_flat_nc_no_exp_prefix_collision(tmp_path):
-    """The flat-in-nc glob is boundary-anchored (``exp-1_*``) so a request for ``exp-1`` never
-    grabs ``exp-10``'s container."""
+    """The flat-in-nc glob is boundary-anchored (``exp-1_*``) so a request for ``exp-1`` never grabs ``exp-10``'s container."""
     bsplot._container_path.cache_clear()
     nc = tmp_path / "output" / "nc"
     nc.mkdir(parents=True)
@@ -145,8 +138,7 @@ def test_container_path_flat_nc_no_exp_prefix_collision(tmp_path):
 
 
 def test_container_path_output_root_no_exp_prefix_collision(tmp_path):
-    """The flat OUTPUT-ROOT glob (output/<exp>_*result.h5) is boundary-anchored too, so exp-1
-    never binds exp-10's container there either."""
+    """The flat OUTPUT-ROOT glob (output/<exp>_*result.h5) is boundary-anchored too, so exp-1 never binds exp-10's container there either."""
     bsplot._container_path.cache_clear()
     out = tmp_path / "output"
     out.mkdir(parents=True)
@@ -158,8 +150,7 @@ def test_container_path_output_root_no_exp_prefix_collision(tmp_path):
 
 
 def test_container_path_digit_bearing_non_experiment_iri_does_not_misbind(tmp_path):
-    """A non-experiment IRI whose last segment merely CONTAINS digits (a connectome/dataset
-    ref like ``rec-avgMatrix_atlas-HCPMMP1``) must not be read as ``exp-1`` and grab exp-1's
+    """A non-experiment IRI whose last segment merely CONTAINS digits (a connectome/dataset ref like ``rec-avgMatrix_atlas-HCPMMP1``) must not be read as ``exp-1`` and grab exp-1's
     container. Only a strict ``exp-N`` / ``expN`` / bare-``N`` key yields exp candidates."""
     bsplot._container_path.cache_clear()
     nc = tmp_path / "output" / "nc"
@@ -173,8 +164,7 @@ def test_container_path_digit_bearing_non_experiment_iri_does_not_misbind(tmp_pa
 
 
 def test_used_ref_prefers_in_study_experiment_id(tmp_path):
-    """A figure layer's ``used`` may bind an in-study experiment by id (``experiment: 2``) rather
-    than a raw ``iri`` — it resolves to that experiment's container with no hardcoded study key.
+    """A figure layer's ``used`` may bind an in-study experiment by id (``experiment: 2``) rather than a raw ``iri`` — it resolves to that experiment's container with no hardcoded study key.
     An explicit ``iri`` still wins when both are given."""
     bsplot._container_path.cache_clear()
     nc = tmp_path / "output" / "nc"
@@ -305,8 +295,7 @@ def test_build_context_resolves_everything():
 
 
 def test_build_context_image_path_resolved_against_base_dir(tmp_path):
-    """An ``image`` panel's path is spec-relative, so the spec stays portable; the emitted
-    plot.py runs from an arbitrary cwd, so it must be resolved against base_dir (an
+    """An ``image`` panel's path is spec-relative, so the spec stays portable; the emitted plot.py runs from an arbitrary cwd, so it must be resolved against base_dir (an
     absolute path is passed through). Same contract as a study .mplstyle."""
     figure = P.Figure(
         name="img",
@@ -328,12 +317,9 @@ def test_build_context_default_letter_format():
 
 
 def test_build_context_dataclass_flavor_kind_mark_loc():
-    """Production loads figures as the *dataclass* datamodel — both ``tvbo figure
-    render`` (``schema.Figure``) and ``SimulationStudy`` (extends
-    ``schema.SimulationStudy``) — whose enum-valued slots are NOT ``==`` a bare
-    string. The rest of this module builds pydantic objects (where the enum is a
-    ``str``), so the adapter must normalise ``kind``/``mark``/``loc`` for the
-    dataclass flavour or custom/image/heatmap dispatch and corner placement break
+    """Production loads figures as the *dataclass* datamodel — both ``tvbo figure render`` (``schema.Figure``) and ``SimulationStudy`` (extends
+    ``schema.SimulationStudy``) — whose enum-valued slots are NOT ``==`` a bare string. The rest of this module builds pydantic objects (where the enum is a
+    ``str``), so the adapter must normalise ``kind``/``mark``/``loc`` for the dataclass flavour or custom/image/heatmap dispatch and corner placement break
     only in production.
     """
     from tvbo.datamodel import schema as D
@@ -381,8 +367,7 @@ def test_build_context_dataclass_flavor_kind_mark_loc():
 
 
 def test_register_panel_and_transform():
-    """The register_* decorators populate the shared registries, so a study's
-    code_source module adds its own custom panels/transforms; the emitted plot.py
+    """The register_* decorators populate the shared registries, so a study's code_source module adds its own custom panels/transforms; the emitted plot.py
     looks them up by name in these dicts.
     """
 
@@ -404,8 +389,7 @@ def test_register_panel_and_transform():
 
 
 def test_unregistered_name_error_points_at_code_modules():
-    """Core ships no panels/transforms, so "declared a name but never registered it" (a
-    missing or unimportable code_modules entry) is THE common failure. It must name the
+    """Core ships no panels/transforms, so "declared a name but never registered it" (a missing or unimportable code_modules entry) is THE common failure. It must name the
     culprit and the fix rather than surfacing a bare KeyError from a generated file."""
     fig = P.Figure(
         name="oops",
@@ -424,8 +408,7 @@ def test_unregistered_name_error_points_at_code_modules():
 
 
 def test_render_code_emits_study_code_module_imports():
-    """A figure declaring code_modules emits an import for each, so a study's
-    code_source panels/transforms register when plot.py runs (the study load
+    """A figure declaring code_modules emits an import for each, so a study's code_source panels/transforms register when plot.py runs (the study load
     puts code/ on the path; importing the module fires the @register_* decorators).
     A figure with none emits no such import.
     """
@@ -445,8 +428,7 @@ def test_render_code_emits_study_code_module_imports():
 
 def test_study_code_module_roundtrip(tmp_path, monkeypatch):
     """End-to-end proof of the register API + code_modules + emit-wiring together:
-    a study module registers a panel core tvbo never knew about; the emitted
-    plot.py imports the module (firing the decorator), so the panel dispatches
+    a study module registers a panel core tvbo never knew about; the emitted plot.py imports the module (firing the decorator), so the panel dispatches
     and the figure draws.
     """
     import sys
@@ -507,8 +489,7 @@ def test_render_code_font_size_emitted():
 def test_render_code_font_size_wins_over_mplstyle():
     """A declared ``font_size`` must be applied AFTER the study .mplstyle, not before.
 
-    A study style file that sets ``font.size`` would otherwise silently override the
-    per-figure declaration, making ``font_size:`` a no-op that is invisible in the spec and
+    A study style file that sets ``font.size`` would otherwise silently override the per-figure declaration, making ``font_size:`` a no-op that is invisible in the spec and
     only detectable by measuring glyphs in the rendered PNG.
     """
     code = _emit(font_size=9, style=["some/study.mplstyle"])
@@ -518,8 +499,7 @@ def test_render_code_font_size_wins_over_mplstyle():
 def test_render_code_bar_mark():
     """``mark: bar`` emits ``ax.bar``, not the line fallback.
 
-    A spectrum read as a line implies interpolation between mode numbers that do not
-    exist, so the distinction is part of what the panel claims, not styling."""
+    A spectrum read as a line implies interpolation between mode numbers that do not exist, so the distinction is part of what the panel claims, not styling."""
     fig = _cartesian_figure()
     fig.panels["a"].layers[0].mark = "bar"
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
@@ -530,8 +510,7 @@ def test_render_code_bar_mark():
 def test_render_code_annotation_text_kwargs():
     """Annotation placement/rotation reach the emitted ``ax.text`` call.
 
-    A label running up the side of a reference line is 90-degree rotated text; without
-    these the drawer has no way to say so and the label overlaps the line."""
+    A label running up the side of a reference line is 90-degree rotated text; without these the drawer has no way to say so and the label overlaps the line."""
     fig = _cartesian_figure()
     fig.panels["a"].annotations = [P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0, ha="right", va="top", size=6.5)]
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
@@ -542,8 +521,7 @@ def test_render_code_annotation_text_kwargs():
 def test_render_code_cell_axes_walks_insets():
     """A composite panel's inset axes must be reachable from ``_cell_axes``.
 
-    Insets carry no subplotspec, so without the child walk a grid's deliberate per-cell
-    ticks are invisible to the snapshot and the figure-wide format pass replaces them."""
+    Insets carry no subplotspec, so without the child walk a grid's deliberate per-cell ticks are invisible to the snapshot and the figure-wide format pass replaces them."""
     import matplotlib.pyplot as plt
 
     ns: dict = {}
@@ -578,8 +556,7 @@ def _inset_figure(**inset_kw):
 def test_render_code_inset_draws_inside_its_host():
     """A declared inset emits its own drawer and is opened on the HOST panel's axes.
 
-    The paper convention this serves is a zoom or thumbnail over a plot; the point of
-    declaring it is that the panel keeps its grammar instead of becoming a custom callable
+    The paper convention this serves is a zoom or thumbnail over a plot; the point of declaring it is that the panel keeps its grammar instead of becoming a custom callable
     whose whole interior is opaque to the spec."""
     code = bsplot.render_code(_inset_figure(), TAHER_BASE, "out.png")
     ast.parse(code)
@@ -591,8 +568,7 @@ def test_render_code_inset_draws_inside_its_host():
 
 
 def test_render_code_inset_shares_the_panel_drawing_rules():
-    """An inset resolves through the same path as a panel, so a heatmap inset gets the
-    triangle/colourbar treatment a heatmap panel gets rather than a reduced copy of it."""
+    """An inset resolves through the same path as a panel, so a heatmap inset gets the triangle/colourbar treatment a heatmap panel gets rather than a reduced copy of it."""
     fig = _inset_figure(kind="heatmap", opts={"colorbar": P.Argument(name="colorbar", value=False)})
     fig.panels["a"].insets[0].layers[0].triangle = "upper"
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
@@ -644,8 +620,7 @@ def _placeholder_figure(**panel_kw):
 def test_placeholder_only_panel_draws_the_label():
     """A panel with a placeholder and NO layers draws the label, not an empty 0-1 axes.
 
-    The guarded draw cannot catch this case: with nothing bound, the panel body raises
-    nothing and the honest placeholder would silently never appear."""
+    The guarded draw cannot catch this case: with nothing bound, the panel body raises nothing and the honest placeholder would silently never appear."""
     ctx = bsplot.build_context(_placeholder_figure(), TAHER_BASE, "out.png")
     assert ctx["panels"][0]["placeholder_only"] is True
 
@@ -656,8 +631,7 @@ def test_placeholder_only_panel_draws_the_label():
 
 
 def test_placeholder_with_data_stays_a_guarded_fallback():
-    """A placeholder panel that DOES bind data keeps the try/except fallback — the label
-    is the honest stand-in for a missing container, not the panel itself."""
+    """A placeholder panel that DOES bind data keeps the try/except fallback — the label is the honest stand-in for a missing container, not the panel itself."""
     figure = _cartesian_figure(iri=MISSING_IRI)
     figure.panels["a"].placeholder = "no data"
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
@@ -668,8 +642,7 @@ def test_placeholder_with_data_stays_a_guarded_fallback():
 
 
 def test_placeholder_fallback_does_not_redraw_the_declared_frame():
-    """A panel that declares a paper frame (xticks/xlim) AND a placeholder must stay bare when
-    its data is absent: the post-format frame re-apply is guarded on ``_PLACEHOLDER_AXES`` so it
+    """A panel that declares a paper frame (xticks/xlim) AND a placeholder must stay bare when its data is absent: the post-format frame re-apply is guarded on ``_PLACEHOLDER_AXES`` so it
     never draws real ticks over the honest bare box that ``_bare`` just stripped."""
     figure = _cartesian_figure(iri=MISSING_IRI)
     figure.panels["a"].placeholder = "no data"
@@ -698,8 +671,7 @@ def test_axvline_and_axhline_accept_scalar_or_list():
 
 
 def test_invert_x_is_restored_after_the_format_pass():
-    """``format_fig`` re-normalises every numeric axis to ascending (``min/max`` + ``set_xlim``),
-    so a declared ``invert_x`` is re-applied afterwards — guarded like ``invert_y`` so it is
+    """``format_fig`` re-normalises every numeric axis to ascending (``min/max`` + ``set_xlim``), so a declared ``invert_x`` is re-applied afterwards — guarded like ``invert_y`` so it is
     idempotent — or the declared x-direction silently flips back."""
     figure = _cartesian_figure()
     figure.panels["a"].opts = {"invert_x": P.Argument(name="invert_x", value=True)}
@@ -742,8 +714,7 @@ def _matrix_figure():
 
 
 def test_split_triangle_matrix_layers():
-    """Two layers compose ONE matrix: each masks its half, they share a single colourbar,
-    and the panel reads with the matrix convention (row 0 at top)."""
+    """Two layers compose ONE matrix: each masks its half, they share a single colourbar, and the panel reads with the matrix convention (row 0 at top)."""
     ctx = bsplot.build_context(_matrix_figure(), TAHER_BASE, "out.png")
     panel = ctx["panels"][0]
     assert [layer["triangle"] for layer in panel["layers"]] == ["lower", "upper"]
@@ -760,8 +731,7 @@ def test_split_triangle_matrix_layers():
 
 
 def test_scatter_keeps_its_declared_colour_under_a_colour_encoding():
-    """A colour-mapped LINE drops its fixed ``style.color`` (the map supplies one hue per entry),
-    but a ``scatter`` is drawn straight from ``style`` — popping its colour would silently blank
+    """A colour-mapped LINE drops its fixed ``style.color`` (the map supplies one hue per entry), but a ``scatter`` is drawn straight from ``style`` — popping its colour would silently blank
     the declared point colour."""
     scatter = P.Layer(
         mark="scatter",
@@ -780,8 +750,7 @@ def test_scatter_keeps_its_declared_colour_under_a_colour_encoding():
 
 
 def test_annotations_default_base_dir_resolves_a_used_binding():
-    """``_annotations`` defaults ``base_dir`` to a ``Path``, not the str ``'.'`` — a ``used``
-    binding routes base_dir into ``_container_path``'s Path arithmetic, which a str would break."""
+    """``_annotations`` defaults ``base_dir`` to a ``Path``, not the str ``'.'`` — a ``used`` binding routes base_dir into ``_container_path``'s Path arithmetic, which a str would break."""
     panel = P.Panel(
         panel_key="a",
         kind="cartesian",
@@ -792,8 +761,7 @@ def test_annotations_default_base_dir_resolves_a_used_binding():
 
 
 def test_triangle_gap_separates_the_two_halves():
-    """`triangle_gap` slides the halves apart along the diagonal, so the two quantities do
-    not touch — without it a data/model matrix reads as one continuous field."""
+    """`triangle_gap` slides the halves apart along the diagonal, so the two quantities do not touch — without it a data/model matrix reads as one continuous field."""
     figure = _matrix_figure()
     figure.panels["a"].opts["triangle_gap"] = P.Argument(name="triangle_gap", value=7)
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
@@ -828,8 +796,7 @@ def test_triangle_masks_the_other_half():
 
 
 def test_declared_ticks_survive_the_format_pass():
-    """bsplot's format pass re-derives evenly spaced ticks; a DECLARED tick set is the
-    paper's own frame and must win, so it is re-applied afterwards."""
+    """bsplot's format pass re-derives evenly spaced ticks; a DECLARED tick set is the paper's own frame and must win, so it is re-applied afterwards."""
     figure = _cartesian_figure()
     figure.panels["a"].opts = {
         "xticks": P.Argument(name="xticks", value=[50, 100, 150, 200]),
@@ -847,8 +814,7 @@ def test_declared_ticks_survive_the_format_pass():
 
 
 def test_annotation_binds_a_computed_number():
-    """A statistic printed on a panel is READ from the container and formatted, never typed
-    into the spec — the figure-side of "nothing hardcoded"."""
+    """A statistic printed on a panel is READ from the container and formatted, never typed into the spec — the figure-side of "nothing hardcoded"."""
     figure = _cartesian_figure()
     figure.panels["a"].annotations = [
         P.Annotation(text="r = {:.2f}", loc="lower left", used=P.DataRef(iri=EXP3_IRI, output="r")),
@@ -857,8 +823,7 @@ def test_annotation_binds_a_computed_number():
     ctx = bsplot.build_context(figure, TAHER_BASE, "out.png")
     bound, plain = ctx["panels"][0]["annotations"]
     assert bound["layer"]["output"] == "r"
-    # The container path only resolves to a real file where the Taher2019 fixture is
-    # checked out; elsewhere it is "" (the same gate the data-backed tests skip on).
+    # The container path only resolves to a real file where the Taher2019 fixture is checked out; elsewhere it is "" (the same gate the data-backed tests skip on).
     if _EXP3_CONTAINER:
         assert Path(bound["layer"]["container"]).is_file()
     assert plain["layer"] is None
@@ -870,8 +835,7 @@ def test_annotation_binds_a_computed_number():
 
 
 def test_color_encoding_draws_one_line_per_entry():
-    """`color:` on a line layer fans one line per entry of that dim — or of a NON-dim
-    coordinate, so regions are labelled by name and not by atlas number."""
+    """`color:` on a line layer fans one line per entry of that dim — or of a NON-dim coordinate, so regions are labelled by name and not by atlas number."""
     figure = _cartesian_figure()
     layer = figure.panels["a"].layers[0]
     layer.encoding = P.Encoding(x="time", color="parcel_name")
@@ -964,8 +928,7 @@ def test_emit_figure_rules_resources():
 
     assert "rule fig_taher_fig1:" in text
     assert "resources:" in text
-    # 8G -> 8192 MiB (Slurm sizes are binary), 02:00:00 -> 120 min, cpus_per_task
-    # passed through, partition surfaced.
+    # 8G -> 8192 MiB (Slurm sizes are binary), 02:00:00 -> 120 min, cpus_per_task passed through, partition surfaced.
     assert "cpus_per_task=4" in text
     assert "mem_mb=8192" in text
     assert "runtime=120" in text
@@ -994,8 +957,7 @@ def test_emit_figure_rules_no_input_when_unresolved():
 
 @requires_exp3
 def test_emit_figure_rules_input_from_annotation_used():
-    """An annotation's PROV ``used`` registers the render rule's ``input:`` just like a layer's
-    does — a panel whose only binding to a run is a computed statistic still waits for it."""
+    """An annotation's PROV ``used`` registers the render rule's ``input:`` just like a layer's does — a panel whose only binding to a run is a computed statistic still waits for it."""
     figure = P.Figure(
         name="annot_only",
         layout="a",
@@ -1022,10 +984,8 @@ def test_emit_figure_rules_input_from_annotation_used():
 def test_annotation_tail_anchors_on_a_computed_point():
     """An arrow tail declared with ``tail_x``/``tail_used`` is READ from the container.
 
-    The callout convention this serves is a paper's "this point produced that picture"
-    arrow. Its tail has to sit on a value the run computed — a curve's height at a marked
-    x — and typing that height into the spec would make the arrow drift the moment the
-    curve moved, which is the whole failure mode declarative figures exist to remove.
+    The callout convention this serves is a paper's "this point produced that picture" arrow. Its tail has to sit on a value the run computed — a curve's height at a marked
+    x — and typing that height into the spec would make the arrow drift the moment the curve moved, which is the whole failure mode declarative figures exist to remove.
     """
     fig = _cartesian_figure()
     fig.panels["a"].annotations = [

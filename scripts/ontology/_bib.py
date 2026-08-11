@@ -1,16 +1,13 @@
 """Shared BibTeX loader for the ontology generators.
 
-`tvbo/database/references.bib` is the single source of truth for bibliographic
-metadata (also loaded at runtime by `tvbo.data.db.load_bibliography`). Both
-generators consume this module so the source file, the citekey sanitiser and the
-field normalisation stay defined once:
+`tvbo/database/references.bib` is the single source of truth for bibliographic metadata (also loaded at runtime by `tvbo.data.db.load_bibliography`). Both
+generators consume this module so the source file, the citekey sanitiser and the field normalisation stay defined once:
 
 - `bib_to_studies.py` emits a slim `studies/<citekey>.yaml` pointer per entry.
 - `gen_abox.py` resolves the full bibliographic record by citekey when it emits
   the study individuals into the knowledge-graph A-box.
 
-Parsing is lenient (pybtex non-strict): a repeated citekey within a file warns
-and the first occurrence wins, matching the historical behaviour.
+Parsing is lenient (pybtex non-strict): a repeated citekey within a file warns and the first occurrence wins, matching the historical behaviour.
 """
 
 from __future__ import annotations
@@ -22,16 +19,14 @@ import sys
 from pybtex.database import parse_file
 from pybtex.errors import set_strict_mode
 
-# Duplicate/malformed entries warn instead of aborting the whole parse; the
-# first occurrence of a repeated citekey wins.
+# Duplicate/malformed entries warn instead of aborting the whole parse; the first occurrence of a repeated citekey wins.
 set_strict_mode(False)
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DB = ROOT / "tvbo" / "database"
 DEFAULT_BIBS = [DB / "references.bib"]
 
-# BibTeX entry type -> ontological/bibliographic kind label. gen_abox maps these
-# labels on to schema.org subclasses (STUDY_TYPE_MAP).
+# BibTeX entry type -> ontological/bibliographic kind label. gen_abox maps these labels on to schema.org subclasses (STUDY_TYPE_MAP).
 TYPE_MAP = {
     "article": "article",
     "inproceedings": "conference_paper",
@@ -47,16 +42,13 @@ TYPE_MAP = {
 }
 
 _BRACE_RE = re.compile(r"[{}]")
-# IRI-safe citekey: strips TeX escapes and non-ASCII so the study filename and
-# the resulting RDF IRI are both well-formed.
+# IRI-safe citekey: strips TeX escapes and non-ASCII so the study filename and the resulting RDF IRI are both well-formed.
 _CITEKEY_SAFE_RE = re.compile(r"[^A-Za-z0-9_.-]")
-# Characters that can never appear in a well-formed BibTeX citekey. Their
-# presence means the entry key is malformed (e.g. a TeX-accented key such as
+# Characters that can never appear in a well-formed BibTeX citekey. Their presence means the entry key is malformed (e.g. a TeX-accented key such as
 # `R{"o}ssler1976`), which pybtex truncates into a spurious fragment key.
 _MALFORMED_KEY_RE = re.compile(r'[{}"\\]')
 
-# Plain-field name -> record key. Bibliographic detail lives here (in the bib),
-# never duplicated into the slim study YAML.
+# Plain-field name -> record key. Bibliographic detail lives here (in the bib), never duplicated into the slim study YAML.
 _SCALAR_FIELDS = (
     "title",
     "year",
@@ -127,8 +119,7 @@ def _entry_to_record(citekey: str, entry) -> dict:
 def load_bib_records(bibs: list[pathlib.Path] | None = None) -> dict[str, dict]:
     """Load the database bibliographies into `{sanitised_citekey: record}`.
 
-    Entries are merged across files with first-occurrence-wins; each record is a
-    flat dict carrying `citekey`, `type`, `authors` and the bibliographic
+    Entries are merged across files with first-occurrence-wins; each record is a flat dict carrying `citekey`, `type`, `authors` and the bibliographic
     scalars present in the source entry.
     """
     records: dict[str, dict] = {}

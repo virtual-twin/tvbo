@@ -1,13 +1,11 @@
 """Package structure validation tests.
 
-Fast (<5s) tests that verify import paths, public API surface, backward
-compatibility shims, and class identity invariants. Run during restructuring
+Fast (<5s) tests that verify import paths, public API surface, backward compatibility shims, and class identity invariants. Run during restructuring
 to catch broken imports immediately:
 
     pytest tests/test_package_structure.py -x -n0 -v
 
-These tests document the CURRENT (pre-v1.0) import contract. During migration,
-update expected paths here FIRST, then fix the code to match.
+These tests document the CURRENT (pre-v1.0) import contract. During migration, update expected paths here FIRST, then fix the code to match.
 """
 
 import importlib
@@ -183,12 +181,9 @@ class TestDatamodel:
     def test_namespace_size_bounded(self):
         """Datamodel namespace shouldn't leak unbounded internals.
 
-        Bounded on the *non-schema* names, not the total. The generated module's classes
-        and enums are its entire purpose and grow whenever the schema does — 264 of them
-        today against the 253 total this bound was written for — so a cap on the total
-        fires on the next legitimate class and teaches the reader to raise the number
-        rather than look at what grew. What pollution would actually look like is
-        generator internals: leaked modules, typing aliases, stray constants.
+        Bounded on the *non-schema* names, not the total. The generated module's classes and enums are its entire purpose and grow whenever the schema does — 264 of them
+        today against the 253 total this bound was written for — so a cap on the total fires on the next legitimate class and teaches the reader to raise the number
+        rather than look at what grew. What pollution would actually look like is generator internals: leaked modules, typing aliases, stray constants.
         """
         import inspect
 

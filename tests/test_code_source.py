@@ -1,8 +1,7 @@
 """CodeSource resolution — a recipe's callable code as a local dir or git repo.
 
 Covers ``register_recipe_code_paths`` / ``_resolve_code_source`` (tvbo.utils):
-the ``code/`` convention, an explicit local ``path``, a ``git`` source (cloned +
-cached, with ``ref``/``subdir``), and the ``path``/``git`` mutual-exclusion guard.
+the ``code/`` convention, an explicit local ``path``, a ``git`` source (cloned + cached, with ``ref``/``subdir``), and the ``path``/``git`` mutual-exclusion guard.
 """
 
 import subprocess

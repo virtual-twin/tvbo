@@ -1,7 +1,6 @@
 """Codex harness — stub.
 
-Wiring for the OpenAI Codex CLI. Not implemented yet: Codex is not installed in
-the reference environment and needs a separate key. The interface matches
+Wiring for the OpenAI Codex CLI. Not implemented yet: Codex is not installed in the reference environment and needs a separate key. The interface matches
 :class:`~harness.base.Harness` so it drops into ``run_matrix`` once implemented.
 
 To implement:

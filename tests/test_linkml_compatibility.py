@@ -1,17 +1,14 @@
 """LinkML compatibility-contract smoke tests.
 
 Per `dev/OntologicalRestructuring/plan.md` §2.8 (Phase 0 governance baseline):
-these tests guard the 13 generated LinkML classes that are subclassed by
-runtime knowledge classes. Removing or renaming any of these (or their
-critical fields) silently breaks YAML loading and the tvbo-platform Pydantic
-contract.
+these tests guard the 13 generated LinkML classes that are subclassed by runtime knowledge classes. Removing or renaming any of these (or their
+critical fields) silently breaks YAML loading and the tvbo-platform Pydantic contract.
 
 Run:
 
     pytest tests/test_linkml_compatibility.py -x -n0 -v
 
-If any test fails, the LinkML schema change is in the FORBIDDEN category
-(per main proposal Appendix E) and must be reverted or migrated with
+If any test fails, the LinkML schema change is in the FORBIDDEN category (per main proposal Appendix E) and must be reverted or migrated with
 deprecation aliases.
 """
 

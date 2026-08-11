@@ -1,9 +1,7 @@
 """Harness abstraction for the skill-cost benchmark.
 
-A *harness* is an agent runner (Claude Code, Codex, …). Each harness knows how
-to (a) prepare a scratch workspace for a given *condition* — which controls
-whether the TVBO skills are available — and (b) drive its agent on a *task* and
-report normalized :class:`RunResult` metrics.
+A *harness* is an agent runner (Claude Code, Codex, …). Each harness knows how to (a) prepare a scratch workspace for a given *condition* — which controls
+whether the TVBO skills are available — and (b) drive its agent on a *task* and report normalized :class:`RunResult` metrics.
 
 The benchmark compares three conditions:
 

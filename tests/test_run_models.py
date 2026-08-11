@@ -29,7 +29,5 @@ def test_simulation_experiment(model):
 
     api.configure_simulation_experiment(metadata)
     # `duration` is the kwarg the default (tvboptim) run path honors; the old
-    # `simulation_length` is TVB-backend-only and was silently ignored here, so
-    # every model ran the full 1000 ms default and slow models (e.g. Epileptor)
-    # blew the CI timeout.
+    # `simulation_length` is TVB-backend-only and was silently ignored here, so every model ran the full 1000 ms default and slow models (e.g. Epileptor) blew the CI timeout.
     api.experiment.run(duration=10)

@@ -1,13 +1,9 @@
 """`compute_all_observations(network_obs=...)` overrides the module-level target.
 
-Network-observation targets (an empirical FC to fit against) are materialised into
-module-level constants and bound once at ``run_experiment`` time. That is correct
-for one process per subject, but a batched cohort fit scores many subjects in one
-traced call, each against its own target carried as a traced leaf — so the scoring
-path must honour a per-call ``network_obs`` override instead of the process-wide
-constant. Without it every subject is silently scored against whichever target was
-bound last. This renders the real FIC+EIB experiment and checks the override end to
-end, so reverting the binding to the bare module constant fails here.
+Network-observation targets (an empirical FC to fit against) are materialised into module-level constants and bound once at ``run_experiment`` time. That is correct
+for one process per subject, but a batched cohort fit scores many subjects in one traced call, each against its own target carried as a traced leaf — so the scoring
+path must honour a per-call ``network_obs`` override instead of the process-wide constant. Without it every subject is silently scored against whichever target was
+bound last. This renders the real FIC+EIB experiment and checks the override end to end, so reverting the binding to the bare module constant fails here.
 """
 
 import types
@@ -39,8 +35,7 @@ def test_network_obs_override_wins_over_module_constant(gen_module):
     override = np.full((3, 3), 9.0)
     gen_module._bind_network_observations({"fc_target": bound})
 
-    # `only=set()` skips every simulated observation, so result/state are unused and
-    # this isolates the network-observation binding.
+    # `only=set()` skips every simulated observation, so result/state are unused and this isolates the network-observation binding.
     default = gen_module.compute_all_observations(None, None, only=set())
     overridden = gen_module.compute_all_observations(None, None, only=set(), network_obs={"fc_target": override})
 

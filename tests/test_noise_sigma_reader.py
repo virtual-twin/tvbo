@@ -1,11 +1,8 @@
 """One reader for the noise amplitude (``tvbo.utils.noise_sigma``).
 
-``Noise`` admits three spellings of the same physical quantity — ``parameters.sigma``
-and the ``intensity`` slot (both σ), and ``parameters.nsig`` (dispersion D = σ²/2) —
-and they used to be read by five separate implementations that disagreed, two of them
-about what ``intensity`` even meant. These tests pin the shared reader's single
-contract and assert every backend goes through it, so one recipe cannot mean different
-amplitudes on different backends.
+``Noise`` admits three spellings of the same physical quantity — ``parameters.sigma`` and the ``intensity`` slot (both σ), and ``parameters.nsig`` (dispersion D = σ²/2) —
+and they used to be read by five separate implementations that disagreed, two of them about what ``intensity`` even meant. These tests pin the shared reader's single
+contract and assert every backend goes through it, so one recipe cannot mean different amplitudes on different backends.
 """
 
 import pytest
@@ -47,8 +44,7 @@ def test_sigma_wins_over_nsig():
 def test_intensity_is_a_sigma_everywhere():
     """One meaning, schema-wide: `intensity` is σ; a dispersion goes in `nsig`.
 
-    It used to be read as σ by the point-neuron adapters and as D (σ=sqrt(2D)) by the
-    tvboptim template — readings that differ by sqrt(2D)/D on the same recipe.
+    It used to be read as σ by the point-neuron adapters and as D (σ=sqrt(2D)) by the tvboptim template — readings that differ by sqrt(2D)/D on the same recipe.
     """
     assert noise_sigma(_noise(intensity={"name": "sigma_ext", "value": 0.5})) == pytest.approx(0.5)
     assert noise_sigma(_noise(parameters={"nsig": {"value": 0.5}})) == pytest.approx(1.0)
@@ -130,8 +126,7 @@ def test_brian2_membrane_noise_keeps_intensity_as_sigma_with_its_unit():
 
 
 def test_julia_agrees_on_the_amplitude_and_on_being_stochastic():
-    """Julia picks ODE vs SDE from the same reader, so a `parameters.sigma` recipe is
-    not silently integrated deterministically while the other backends add noise."""
+    """Julia picks ODE vs SDE from the same reader, so a `parameters.sigma` recipe is not silently integrated deterministically while the other backends add noise."""
     from tvbo import SimulationExperiment
 
     def render(noise_spec):

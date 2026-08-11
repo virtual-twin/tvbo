@@ -1,11 +1,8 @@
 """`BoundedSolver` is emitted only when a state variable is deliberately clamped.
 
-A ``domain`` with ``enforce: clamp`` and a finite bound is the sole signal that the
-integrator should hard-clip the trajectory. Absent that, the generated tvboptim code
-must neither import nor use ``BoundedSolver``: a bare descriptive ``domain``
-(``enforce: none``, the default) states bounds as metadata but never constrains
-integration, so wrapping the solver would silently change the dynamics. A stray
-import is not merely cosmetic here — it advertises clamping the code does not do.
+A ``domain`` with ``enforce: clamp`` and a finite bound is the sole signal that the integrator should hard-clip the trajectory. Absent that, the generated tvboptim code
+must neither import nor use ``BoundedSolver``: a bare descriptive ``domain`` (``enforce: none``, the default) states bounds as metadata but never constrains
+integration, so wrapping the solver would silently change the dynamics. A stray import is not merely cosmetic here — it advertises clamping the code does not do.
 
 Both codegen paths are checked: the experiment template (the production path taken by
 ``render_code('tvboptim')``) and the standalone solver template (the component/sim path).

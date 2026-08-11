@@ -2,8 +2,7 @@
 
 ``pre`` reads SOURCES: tvboptim folds a factored coupling's declared ``local_states`` into
 ``vec_states`` and registers them as *incoming*, reaching the target's own value through the
-``<state>_i`` alias in ``post`` instead. The JAX template mirrors that — ``theta`` in ``pre``
-is the delayed, weight-gathered row, ``theta_i`` in ``post`` is ``current_state``.
+``<state>_i`` alias in ``post`` instead. The JAX template mirrors that — ``theta`` in ``pre`` is the delayed, weight-gathered row, ``theta_i`` in ``post`` is ``current_state``.
 
 What it did not do is notice when a gathered name has no row to read: a state named in
 ``pre`` that is not transmitted was simply never assigned, and the defect surfaced as a
@@ -11,8 +10,7 @@ What it did not do is notice when a gathered name has no row to read: a state na
 
 NOT pinned here, because it is an open question rather than a bug: what a BARE
 ``local_states`` name means inside ``pre``. The schema says the target's value; the factored
-Kuramoto form in the database uses it as the source. Until one reading wins, these tests
-assert only the behaviour both agree on.
+Kuramoto form in the database uses it as the source. Until one reading wins, these tests assert only the behaviour both agree on.
 """
 
 from __future__ import annotations

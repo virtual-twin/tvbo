@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Generate Schaefer2018 multi-scale structural connectomes for tvbo.
 
-This script uses MRtrix `tck2connectome` to compute weights and lengths for
-selected Schaefer scales, then writes tvbo HDF5+YAML network files in
+This script uses MRtrix `tck2connectome` to compute weights and lengths for selected Schaefer scales, then writes tvbo HDF5+YAML network files in
 `database/networks/` via `Network.save()`.
 
 Prerequisites:

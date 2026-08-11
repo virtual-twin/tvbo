@@ -37,8 +37,7 @@ class TestSimulationBackendsCore:
         assert exp.dynamics is not None
         assert exp.integration is not None
         if model.coupling_inputs:
-            # Coupling resolution is deferred to configure(); the canonical
-            # location is network.coupling (mirrored to exp.coupling there).
+            # Coupling resolution is deferred to configure(); the canonical location is network.coupling (mirrored to exp.coupling there).
             exp.configure()
             assert exp.network.coupling, "network.coupling should be populated"
             assert exp.coupling is not None

@@ -1,9 +1,7 @@
 """Tests for per-skill ``assets/`` handling in the skills pipeline.
 
-Locks in the behaviour that lets a canonical user skill ship an ``assets/``
-directory: ``parse_skill`` discovers it, ``render_claude_code`` mirrors it next
-to ``SKILL.md`` (pruning stale files, skipping bytecode), the flat targets
-inline the reference chapters they cannot mirror, and the CLI ``install`` /
+Locks in the behaviour that lets a canonical user skill ship an ``assets/`` directory: ``parse_skill`` discovers it, ``render_claude_code`` mirrors it next
+to ``SKILL.md`` (pruning stale files, skipping bytecode), the flat targets inline the reference chapters they cannot mirror, and the CLI ``install`` /
 ``uninstall`` round-trip carries then removes it.
 """
 
