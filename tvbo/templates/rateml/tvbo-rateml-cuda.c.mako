@@ -86,7 +86,7 @@ __device__ float wrap_it_${sv_name}(float ${sv_name})
 % endif
 % endfor
 
-__global__ void ${model_name}(
+extern "C" __global__ void ${model_name}(
     // Config
     unsigned int i_step, unsigned int n_node, unsigned int nh, unsigned int n_step, unsigned int n_work_items,
     float dt, float * __restrict__ weights, float * __restrict__ lengths,
@@ -261,7 +261,7 @@ __global__ void ${model_name}(
 #undef tavg
 } // kernel ${model_name}
 <%
-# Check for BOLD observation and find associated dynamics in experiment.dynamics
+# Check for BOLD observation and find its hemodynamic model among the network's dynamics
 bold_obs = None
 bold_model = None
 if 'experiment' in context.keys() and experiment:
@@ -272,9 +272,9 @@ if 'experiment' in context.keys() and experiment:
             if modality and str(modality) == 'BOLD':
                 bold_obs = obs_val
                 break
-    # Look for hemodynamic model in experiment.dynamics
-    dyn_dict = getattr(experiment, 'dynamics', None)
-    if dyn_dict:
+    # `experiment.dynamics` is the ONE model this kernel integrates, not a library.
+    dyn_dict = getattr(getattr(experiment, 'network', None), 'dynamics', None) or {}
+    if hasattr(dyn_dict, 'items'):
         for dyn_name, dyn in dyn_dict.items():
             if 'balloon' in dyn_name.lower() or 'bold' in dyn_name.lower() or 'windkessel' in dyn_name.lower():
                 bold_model = dyn
@@ -309,7 +309,7 @@ def get_bold_param_val(name, default):
 #define ${dp_name} (${cuda_code(dp.equation)})
 % endfor
 
-__global__ void bold_update(int n_node, float dt,
+extern "C" __global__ void bold_update(int n_node, float dt,
             // bold_state.shape = (${len(bold_states)}, n_nodes, n_threads)
             float * __restrict__ bold_state,
             // neural_state.shape = (n_nodes, n_threads)
