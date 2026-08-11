@@ -2163,6 +2163,12 @@ class ExperimentResult:
         produced by a local run and by the HPC gather pass, so they are
         interchangeable. Returns the written paths.
 
+        The sidecar carries the frozen spec plus a connectome companion
+        (``<stem>_network.h5``), so the result reloads without its original data sources.
+        Writing it is not guarded: it is half of what this method promises, and a
+        swallowed failure returned an ``.h5`` with no ``.yaml``, which the caller met
+        much later as an unrelated error.
+
         An on-device cohort run fans here into one per-subject result (see
         :meth:`_save_per_subject`), mirroring the per-subject workflow fan-out.
         """
@@ -2484,23 +2490,40 @@ class ExperimentResult:
 
         if (not is_shard and written
                 and self.source is not None and hasattr(self.source, "freeze_yaml")):
+            written += self._write_provenance(out_dir, stem, results=written)
+        return written
+
+    def _write_provenance(self, out_dir, stem, results) -> list:
+        """Write the re-run recipe and the BIDS sidecars, reporting whatever failed.
+
+        The results are on disk by the time this runs, so one metadata step failing must
+        not skip the others — and must not pass unremarked either, which is how a result
+        set that lost its recipe came to look like a complete one. Every step is attempted
+        and the failures are raised together, naming the results that were written.
+        """
+        import os
+
+        def _recipe():
+            yaml_text = self.source.freeze_yaml(out_dir, network_stem=f"{stem}_network")
+            yaml_path = os.path.join(out_dir, f"{stem}.yaml")
+            with open(yaml_path, "w", encoding="utf-8") as fh:
+                fh.write(yaml_text)
+            return [yaml_path]
+
+        written, failures = [], []
+        for label, write in (("re-run recipe", _recipe),
+                             ("BEP034 sidecars", lambda: self._write_bep034_sidecars(out_dir, stem))):
             try:
-                # Self-contained provenance: spec + connectome companion
-                # (<stem>_network.h5), reproducible on reload without data sources.
-                yaml_text = self.source.freeze_yaml(out_dir, network_stem=f"{stem}_network")
-                yaml_path = os.path.join(out_dir, f"{stem}.yaml")
-                with open(yaml_path, "w", encoding="utf-8") as fh:
-                    fh.write(yaml_text)
-                written.append(yaml_path)
-            except Exception:
-                pass
-            # BEP034 alignment: a JSON metadata sidecar (BIDS tooling reads JSON)
-            # beside the richer YAML re-run recipe, and a dataset_description.json
-            # marking out_dir as a BIDS-derivatives dataset.
-            try:
-                written += self._write_bep034_sidecars(out_dir, stem)
-            except Exception:
-                pass
+                written += write()
+            except Exception as exc:
+                failures.append(f"  {label}: {type(exc).__name__}: {exc}")
+        if failures:
+            raise RuntimeError(
+                "the results were written but their provenance was not:\n"
+                + "\n".join(failures)
+                + "\nresults on disk:\n"
+                + "\n".join(f"  {path}" for path in results + written)
+            )
         return written
 
     def _write_bep034_sidecars(self, out_dir, stem) -> list:
