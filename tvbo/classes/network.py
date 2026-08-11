@@ -66,6 +66,15 @@ def _source_dir_on_path(source_dir):
                 pass
 
 
+_WEIGHT_TARGETS = ("weight", "weights")
+_LENGTH_TARGETS = ("length", "lengths")
+_TRANSFORM_TARGET_ALIASES = (_WEIGHT_TARGETS, _LENGTH_TARGETS)
+"""Edge-property spellings that name the same transform target.
+
+Kept in step with the aliases `Network.matrix` resolves when it looks the matrix up, so the lookup and the transform selection cannot disagree.
+"""
+
+
 def graph_laplacian(M):
     """Combinatorial graph Laplacian ``L = W - diag(rowsum(W))`` of a weight matrix.
 
@@ -2867,9 +2876,8 @@ class Network(tvbo_datamodel.Network):
             return None
 
         if apply_transforms:
-            for t in self.transforms or []:
-                if t.name == "weight":
-                    W = self._apply_transform(W, t)
+            for t in self.transforms_for("weight"):
+                W = self._apply_transform(W, t)
         return W
 
     @property
@@ -2938,9 +2946,8 @@ class Network(tvbo_datamodel.Network):
 
         # Apply transforms targeting "length" (mirrors weights_matrix; the
         # add_transform contract lists "length" as a valid edge-property target).
-        for t in self.transforms or []:
-            if t.name in ("length", "lengths"):
-                L = self._apply_transform(L.toarray() if _sp.issparse(L) else np.asarray(L), t)
+        for t in self.transforms_for("length"):
+            L = self._apply_transform(L.toarray() if _sp.issparse(L) else np.asarray(L), t)
         return L
 
     @property
@@ -4575,12 +4582,11 @@ class Network(tvbo_datamodel.Network):
             return None
 
         # Apply transforms targeting this matrix
-        for t in self.transforms or []:
-            if t.name == name:
-                mat = self._apply_transform(
-                    mat.toarray() if sparse.issparse(mat) else np.asarray(mat),
-                    t,
-                )
+        for t in self.transforms_for(name):
+            mat = self._apply_transform(
+                mat.toarray() if sparse.issparse(mat) else np.asarray(mat),
+                t,
+            )
 
         if format is None:
             return mat
@@ -4722,6 +4728,59 @@ class Network(tvbo_datamodel.Network):
                 return e
         return None
 
+    def transforms_for(self, target: str):
+        """The declared `transforms:` that retarget *target*, in declaration order.
+
+        The one place the target name is matched, so the singular and plural spellings of
+        an edge property stay equivalent everywhere and a new alias is added once. The
+        aliases mirror the ones `matrix` already resolves when it looks the matrix itself
+        up, so `matrix("weights")` and `matrix("weight")` cannot disagree about whether a
+        transform applies. Both the runtime and the emitters that inline a transform into
+        a generated script select through this.
+
+        Args:
+            target: Edge property a transform retargets, e.g. `"weight"` or `"length"`.
+
+        Returns:
+            List of `Function` transforms declared against *target*.
+        """
+        names = next((a for a in _TRANSFORM_TARGET_ALIASES if target in a), (target,))
+        return [t for t in (self.transforms or []) if getattr(t, "name", None) in names]
+
+    def transform_expression(self, func):
+        """A transform's equation as a sympy expression, with its arguments substituted.
+
+        Shared by the runtime and by codegen so a spec resolves to the same expression on
+        both paths. Scalar values come from `Function.arguments`, falling back to
+        `Equation.parameters` for legacy specs.
+
+        An argument declared without a value substitutes nothing and its symbol survives, so the caller reports it as an undeclared name. Substituting the `None` instead raises `SympifyError: None`, which names neither the transform nor the argument.
+
+        Args:
+            func: The `Function` transform.
+
+        Returns:
+            The substituted expression, or `None` when *func* declares no equation
+            (a callable-based transform) or the equation does not parse.
+        """
+        eq = getattr(func, "equation", None)
+        if eq is None:
+            return None
+        from tvbo.codegen.code import parse_eq
+
+        arg_values: dict = {}
+        for name, a in (getattr(func, "arguments", {}) or {}).items():
+            arg_values[name] = getattr(a, "value", None)
+        if getattr(eq, "parameters", None):
+            for pname, pval in eq.parameters.items():
+                arg_values.setdefault(pname, getattr(pval, "value", pval))
+
+        exp = parse_eq(eq)
+        if exp is None:
+            return None
+        subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if arg_values.get(str(s)) is not None}
+        return exp.subs(subs_map) if subs_map else exp
+
     def _apply_transform(self, M, func):
         """Apply a Function transform to matrix *M*.
 
@@ -4751,53 +4810,19 @@ class Network(tvbo_datamodel.Network):
                 # the lengths, so use it directly — reading ``self.lengths_matrix``
                 # here would re-enter this same transform (infinite recursion).
                 if "L" in sig.parameters:
-                    _is_length = getattr(func, "name", None) in ("length", "lengths")
+                    _is_length = getattr(func, "name", None) in _LENGTH_TARGETS
                     kwargs.setdefault("L", M if _is_length else self.lengths_matrix)
                 return fn(M, **kwargs)
 
         # Equation-based transform
-        eq = getattr(func, "equation", None)
-        if eq is None:
+        exp = self.transform_expression(func)
+        if exp is None:
             return M
-        from tvbo.codegen.code import parse_eq, render_expression
+        from tvbo.codegen.code import render_expression
+        from tvbo.codegen.transforms import runtime_env
 
-        # Substitute scalar argument values: prefer Function.arguments, fall
-        # back to Equation.parameters for legacy specs.
-        arg_values: dict = {}
-        for name, a in func.arguments.items():  # arguments keyed by name
-            arg_values[name] = getattr(a, "value", None)
-        if hasattr(eq, "parameters") and eq.parameters:
-            for pname, pval in eq.parameters.items():
-                arg_values.setdefault(pname, getattr(pval, "value", pval))
-
-        exp = parse_eq(eq)
-        if exp is not None:
-            subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if str(s) in arg_values}
-            if subs_map:
-                exp = exp.subs(subs_map)
-
-        # Generic primitives available to any equation transform.
-        # *_safe variants substitute 1 for zero entries so isolated nodes
-        # do not produce NaNs under row/column normalisation.
-        L = self.lengths_matrix
-        _rs = M.sum(axis=1, keepdims=True)
-        _cs = M.sum(axis=0, keepdims=True)
-        env = {
-            "M": M,
-            "W": M,
-            "L": L,
-            "M_min": jnp.nanmin(M),
-            "W_min": jnp.nanmin(M),
-            "M_max": jnp.nanmax(M),
-            "W_max": jnp.nanmax(M),
-            "W_rowsum": _rs,
-            "W_colsum": _cs,
-            "W_rowsum_safe": jnp.where(_rs > 0, _rs, 1.0),
-            "W_colsum_safe": jnp.where(_cs > 0, _cs, 1.0),
-            "jnp": jnp,
-            "np": jnp,
-            "jsp": jsp,
-        }
+        _is_length = getattr(func, "name", None) in _LENGTH_TARGETS
+        env = runtime_env(M, M if _is_length else self.lengths_matrix, jnp, jsp)
         # Expose declared per-node parameters as (n, 1) column vectors, so a symbolic
         # weight transform can normalise per target region — e.g. ``W / roi_size`` divides
         # each target row by that region's size (Deco's fibers-per-neuron SC). Column

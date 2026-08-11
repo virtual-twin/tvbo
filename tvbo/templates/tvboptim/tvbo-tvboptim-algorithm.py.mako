@@ -368,6 +368,7 @@ def run_${algo_name}(
     import copy
     import equinox as eqx
 
+    _raw_model_fn = model_fn  # un-jitted; the tuning core takes it as a STATIC arg (stable identity across stages -> jit caches the scan once)
     model_fn = jax.jit(model_fn)  # tvboptim's solve fn is un-jitted by design (its tests jit it); jit once so warmup/tuning calls fuse+cache instead of eager per-step dispatch
 
     def _smart_interval(n):
@@ -382,50 +383,6 @@ def run_${algo_name}(
         save_every = _smart_interval(n_iterations)
     state = jax.tree_util.tree_map(lambda _leaf: _leaf, state)  # fresh container; trace-safe (deepcopy of a jax typed key asserts under trace)
     _algo_t0 = time.perf_counter()
-
-    # Update rule functions
-% for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
-<%
-    rule_name = safe_name(rule.name)
-    target_name = str(rule.target_parameter.name if hasattr(rule.target_parameter, 'name') else rule.target_parameter)
-    rule_rhs = rule.equation.rhs
-    is_from_included = rule_source != str(algo.name)
-    source_algo = algorithms_dict.get(rule_source)
-    source_hyperparam_dict = get_hyperparam_dict(source_algo) if source_algo else {}
-    effective_hyperparams = {**source_hyperparam_dict, **arg_overrides}
-    rule_params_dict = {}
-    for pname, pval in effective_hyperparams.items():
-        if pname in rule_rhs:
-            rule_params_dict[pname] = pval
-    eta_param_names = [p for p in rule_params_dict.keys() if p.lower() in ['eta', 'learning_rate', 'lr']]
-    has_eta_param = len(eta_param_names) > 0
-    eta_param_name = eta_param_names[0] if has_eta_param else None
-    bounds = rule.bounds
-    has_bounds = bounds is not None
-    lo_bound = bounds.lo if has_bounds else None
-    hi_bound = bounds.hi if has_bounds else None
-    all_known_symbols = [target_name] + list(observations) + list(rule_params_dict.keys())
-    rule_has_warmup = getattr(rule, 'warmup', False)
-    needs_warmup = rule_has_warmup and has_eta_param
-    if needs_warmup:
-        all_known_symbols.append('eta_scale')
-%>
-    def ${rule_name}(${target_name}, ${', '.join(observations)}${', ' + ', '.join(rule_params_dict.keys()) if rule_params_dict else ''}${',' if needs_warmup else ''} ${'eta_scale=1.0' if needs_warmup else ''}):
-% if needs_warmup:
-        _eta = ${eta_param_name} * eta_scale
-% for pn in rule_params_dict.keys():
-% if pn == eta_param_name:
-        ${pn} = _eta
-% endif
-% endfor
-% endif
-        updated = ${jaxcode(rule_rhs, all_known_symbols)}
-% if has_bounds and (lo_bound is not None or hi_bound is not None):
-        return jnp.clip(updated, ${lo_bound if lo_bound is not None else 'None'}, ${hi_bound if hi_bound is not None else 'None'})
-% else:
-        return updated
-% endif
-% endfor
 
 <%
     algo_func_names = [get_func_name(fc) for fc in algo_functions]
@@ -617,6 +574,325 @@ def run_${algo_name}(
 % endfor
 % endif
 
+    # Compile-once tuning: route the scan through the module-level jitted core so a
+    # multi-stage schedule reuses ONE compiled scan (see _${algo_name}_tuning_core).
+    _rec_positions = [_ri for _ri in range(n_iterations) if (_ri + 1) % save_every == 0 or _ri == 0]
+    _rec_idx = jnp.asarray(_rec_positions)  # record positions for the post-scan result_history rebuild
+% if streaming_map:
+    _resync_period = jnp.asarray(int(window_size) if resync_every is None else int(resync_every), jnp.int32)
+% endif
+% if use_maxwin:
+    _ws0 = jnp.asarray(int(window_size), jnp.int32)
+    _use_ring = max_window_size is not None
+% endif
+    def _canon(_x):
+        # Strip weak_type so stage 1 (fresh inputs, weakly typed) and stage 2+ (the scan's
+        # strongly-typed outputs re-fed as inputs) share ONE jit specialization -> the tuning
+        # scan compiles once across stages. Typed PRNG keys pass through unchanged.
+        _a = _x if hasattr(_x, "dtype") else jnp.asarray(_x)
+        if jax.dtypes.issubdtype(_a.dtype, jax.dtypes.prng_key):
+            return _a
+        return jax.lax.convert_element_type(_a, _a.dtype)
+    _canon_tree = lambda _t: jax.tree_util.tree_map(_canon, _t)
+    _ls_final, _ys_all = _${algo_name}_tuning_core(
+        _canon_tree(state),
+        _canon_tree(key),
+% for src_obs in source_observations_needed:
+        _canon_tree(_${src_obs}_buffer),
+% endfor
+% for obs, obs_class in pipeline_observations:
+        _canon_tree(_${obs}_monitor),
+% endfor
+% for src_obs, src_class in source_monitors:
+% if src_obs not in [o[0] for o in pipeline_observations]:
+        _canon_tree(_${src_obs}_monitor),
+% endif
+% endfor
+% for pname in hyperparam_dict.keys():
+% if pname != 'window_size':
+        _canon_tree(${pname}),
+% endif
+% endfor
+% for inp_name in external_inputs:
+        _canon_tree(${inp_name}),
+% endfor
+% if streaming_map:
+        _canon_tree(_resync_period),
+% endif
+% if use_maxwin:
+        _canon_tree(_ws0),
+% endif
+        model_fn=_raw_model_fn,
+        n_iterations=n_iterations,
+        print_every=print_every,
+        save_every=save_every,
+        verbose=verbose,
+% if use_maxwin:
+        use_ring=_use_ring,
+% endif
+    )
+    state = _ls_final['state']
+% for src_obs in source_observations_needed:
+% if use_maxwin:
+    # Return the window (last window_size rows) of the M-ring, so a chained/next-stage
+    # call carries the same window-sized buffer the contiguous path does (identical warmup).
+    _${src_obs}_buffer = _ls_final['${src_obs}__buf'][-int(window_size):] if max_window_size is not None else _ls_final['${src_obs}__buf']
+% else:
+    _${src_obs}_buffer = _ls_final['${src_obs}__buf']
+% endif
+% endfor
+% for obs, obs_class in pipeline_observations:
+    _${obs}_monitor = _ls_final['${obs}__mon']
+% endfor
+% for src_obs, src_class in source_monitors:
+% if src_obs not in [o[0] for o in pipeline_observations]:
+    _${src_obs}_monitor = _ls_final['${src_obs}__mon']
+% endif
+% endfor
+    # Rebuild result_history: scalars subsampled at record positions; param snapshots from the carried buffers.
+    result_history = Bunch(
+% for _k, obs in enumerate(simulated_observations):
+        ${obs}=_ys_all[${_k}][_rec_idx],
+% endfor
+<% _nso = len(simulated_observations) %>
+% for _j, func_call in enumerate(algo_functions):
+        ${get_func_name(func_call)}=_ys_all[${_nso + _j}][_rec_idx],
+% endfor
+% for rule, rule_source, arg_overrides in all_update_rules_with_source:
+<% _tn = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter) %>
+        ${_tn}=_ls_final['${_tn}__rec'],
+% endfor
+    )
+
+    # Run post-tuning simulation (use full integration setup if provided).
+    # Carry over the TUNED PARAMETERS (dynamics J_i, coupling wLRE/wFFI) but
+    # keep post_state's own settled initial conditions — NOT the tuning loop's
+    # last mid-trajectory state. Seeding from the loop's last state lands a
+    # different attractor in multistable models, corrupting the post-tuning FC
+    # (it made identical-weight post sims score far below the base sim).
+    # Skipped entirely when run as a nested inner loop (only the state is needed).
+    if run_post_tuning:
+% if _pp_names:
+        # Streaming post-tuning evaluation: post_model_fn was built with prepare(reduce=...)
+        # folding ${', '.join(_pp_names)} into the integrator carry, so it returns the streamed
+        # value(s) — NOT a trajectory (the full-length fit trajectory is never materialised).
+        # The FC deliverable(s) ${', '.join(_pp_deliverables)} are computed from the streamed BOLD
+        # alone; observations that need the raw trajectory are absent (unavailable at fit scale).
+        if post_model_fn is not None and post_state is not None:
+            import copy
+            _post_state = copy.deepcopy(post_state)
+            _post_state.dynamics = state.dynamics
+            _post_state.coupling = state.coupling
+            _streamed = post_model_fn(_post_state)
+            _stream_vals = {_n: _v for _n, _v in zip(
+                ${repr(_pp_names)}, _streamed if isinstance(_streamed, (tuple, list)) else (_streamed,))}
+            post_tuning = None
+            post_tuning_observations = compute_all_observations(
+                None, state, history,
+                only=${repr(set(_pp_names) | set(_pp_deliverables))}, precomputed=_stream_vals,
+% if external_inputs:
+                network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}},
+% endif
+            )
+        else:
+            post_tuning = None
+            post_tuning_observations = None
+% else:
+        if post_model_fn is not None and post_state is not None:
+            import copy
+            _post_state = copy.deepcopy(post_state)
+            _post_state.dynamics = state.dynamics
+            _post_state.coupling = state.coupling
+            post_tuning = post_model_fn(_post_state)
+        else:
+            post_tuning = model_fn(state)
+
+        # Compute ALL observations from post-tuning simulation (in dependency order)
+        # This uses the experiment-level compute_all_observations function
+        # Pass history as result_transient for BOLD pipeline continuity
+% if external_inputs:
+        # Score against THIS call's targets, not the module-level constants:
+        # the in-loop path already reads the `${', '.join(external_inputs)}`
+        # argument(s), so post-tuning must use the same values or a per-subject
+        # run would be scored against the process-wide default target.
+        post_tuning_observations = compute_all_observations(
+            post_tuning, state, history,
+            network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}},
+        )
+% else:
+        post_tuning_observations = compute_all_observations(post_tuning, state, history)
+% endif
+% endif
+    else:
+        post_tuning = None
+        post_tuning_observations = None
+
+    # result_history is already stacked arrays (scan ys + carried buffers); no list->array rebuild here keeps run_${algo_name} vmap-traceable for subject-batching.
+
+    # Convert collected observation samples to arrays (for passing to next algorithm)
+<%
+    _nso_c = len(simulated_observations)
+    _nf_c = len(algo_functions)
+%>
+% for _ci, obs in enumerate(collectible_observations):
+    # Collectible samples were emitted as scan ys (index after obs-means + functions).
+    _${obs}_buffer_out = _ys_all[${_nso_c + _nf_c + _ci}]
+% endfor
+
+    # Collect monitors for passing to next algorithm (hemodynamic continuity)
+    _monitors_out = {}
+% for obs, obs_class in pipeline_observations:
+    _monitors_out['${obs}'] = _${obs}_monitor
+% endfor
+% for src_obs, src_class in source_monitors:
+% if src_obs not in [o[0] for o in pipeline_observations]:
+    _monitors_out['${src_obs}'] = _${src_obs}_monitor
+% endif
+% endfor
+
+    if verbose:
+        logger.info(f"${algo_name} complete! (tuning {time.perf_counter() - _algo_t0:.1f}s, {n_iterations} iters)")
+
+    if raw:
+        # vmap-safe cohort return: pure jnp arrays only; no AlgorithmResult/DataArray wrapping (host-side numpy conversion breaks under jax.vmap). Wrap per-subject host-side after the vmap.
+        return Bunch(
+            state=state,
+            history=result_history,
+            post_tuning_observations=post_tuning_observations,
+            monitors=_monitors_out,
+% for obs in collectible_observations:
+            ${obs}_buffer=_${obs}_buffer_out,
+% endfor
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+            ${src_obs}_buffer=_${src_obs}_buffer,
+% endfor
+% endif
+        )
+
+    # Build hyperparameters Bunch for AlgorithmResult
+    _hyperparams = Bunch(
+% for pname, pval in hyperparam_dict.items():
+        ${pname}=${pval},
+% endfor
+    )
+
+    return AlgorithmResult(
+        name='${algo_name}',
+        state=state,
+        history=result_history,
+        pre_tuning=pre_tuning,
+        post_tuning=post_tuning,
+        post_tuning_observations=post_tuning_observations,
+        n_iterations=n_iterations,
+        hyperparameters=_hyperparams,
+        state_names=${state_names},
+        # Additional fields for algorithm chaining
+        monitors=_monitors_out,
+% for obs in collectible_observations:
+        ${obs}_buffer=_${obs}_buffer_out,
+% endfor
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+        ${src_obs}_buffer=_${src_obs}_buffer,
+% endfor
+% endif
+    )
+
+
+<%
+    _core_statics = ["model_fn", "n_iterations", "print_every", "save_every", "verbose"]
+    if use_maxwin:
+        _core_statics.append("use_ring")
+    _core_static_tuple = ", ".join("'%s'" % _s for _s in _core_statics)
+%>
+def _${algo_name}_tuning_core_impl(
+    state,
+    key,
+% for src_obs in source_observations_needed:
+    _${src_obs}_buffer,
+% endfor
+% for obs, obs_class in pipeline_observations:
+    _${obs}_monitor,
+% endfor
+% for src_obs, src_class in source_monitors:
+% if src_obs not in [o[0] for o in pipeline_observations]:
+    _${src_obs}_monitor,
+% endif
+% endfor
+% for pname in hyperparam_dict.keys():
+% if pname != 'window_size':
+    ${pname},
+% endif
+% endfor
+% for inp_name in external_inputs:
+    ${inp_name},
+% endfor
+% if streaming_map:
+    _resync_period,
+% endif
+% if use_maxwin:
+    ws0,
+% endif
+    model_fn,
+    n_iterations,
+    print_every,
+    save_every,
+    verbose,
+% if use_maxwin:
+    use_ring,
+% endif
+):
+    """Compile-once tuning core: the tuning `lax.scan` under a STABLE module-level
+    `jax.jit` so a multi-stage schedule (varying eta / window / resync) reuses ONE
+    compiled scan across stages instead of recompiling per stage. Per-stage-varying
+    scalars enter TRACED (eta, resync period, ring window ws0); model_fn is a STATIC
+    arg with stable identity so the jit cache keys the same across stages."""
+    import equinox as eqx
+    history_accessor = lambda tree: tree._history
+    # Update rule functions
+% for rule_idx, (rule, rule_source, arg_overrides) in enumerate(all_update_rules_with_source):
+<%
+    rule_name = safe_name(rule.name)
+    target_name = str(rule.target_parameter.name if hasattr(rule.target_parameter, 'name') else rule.target_parameter)
+    rule_rhs = rule.equation.rhs
+    is_from_included = rule_source != str(algo.name)
+    source_algo = algorithms_dict.get(rule_source)
+    source_hyperparam_dict = get_hyperparam_dict(source_algo) if source_algo else {}
+    effective_hyperparams = {**source_hyperparam_dict, **arg_overrides}
+    rule_params_dict = {}
+    for pname, pval in effective_hyperparams.items():
+        if pname in rule_rhs:
+            rule_params_dict[pname] = pval
+    eta_param_names = [p for p in rule_params_dict.keys() if p.lower() in ['eta', 'learning_rate', 'lr']]
+    has_eta_param = len(eta_param_names) > 0
+    eta_param_name = eta_param_names[0] if has_eta_param else None
+    bounds = rule.bounds
+    has_bounds = bounds is not None
+    lo_bound = bounds.lo if has_bounds else None
+    hi_bound = bounds.hi if has_bounds else None
+    all_known_symbols = [target_name] + list(observations) + list(rule_params_dict.keys())
+    rule_has_warmup = getattr(rule, 'warmup', False)
+    needs_warmup = rule_has_warmup and has_eta_param
+    if needs_warmup:
+        all_known_symbols.append('eta_scale')
+%>
+    def ${rule_name}(${target_name}, ${', '.join(observations)}${', ' + ', '.join(rule_params_dict.keys()) if rule_params_dict else ''}${',' if needs_warmup else ''} ${'eta_scale=1.0' if needs_warmup else ''}):
+% if needs_warmup:
+        _eta = ${eta_param_name} * eta_scale
+% for pn in rule_params_dict.keys():
+% if pn == eta_param_name:
+        ${pn} = _eta
+% endif
+% endfor
+% endif
+        updated = ${jaxcode(rule_rhs, all_known_symbols)}
+% if has_bounds and (lo_bound is not None or hi_bound is not None):
+        return jnp.clip(updated, ${lo_bound if lo_bound is not None else 'None'}, ${hi_bound if hi_bound is not None else 'None'})
+% else:
+        return updated
+% endif
+% endfor
 % if streaming_map:
 <%
     from tvbo.codegen.reducers import resolve_streaming_reducer
@@ -684,11 +960,11 @@ def run_${algo_name}(
     # (post-warmup / post-passed-buffer) and re-synced every _${dobs_name}_resync_every
     # steps to reset float drift.
     _${dobs_name}_reducer = _make_windowed_reducer(s_var=${sinfo['s_var']}, skip_t=${sinfo['skip_t']})
-    _${dobs_name}_resync_every = int(window_size) if resync_every is None else int(resync_every)
+    _${dobs_name}_resync_every = _resync_period  # traced period -> tuning scan compiles once across stage window sizes
 % if use_maxwin:
     _${dobs_name}_acc = (
-        _${dobs_name}_reducer.resync_masked(_${sinfo['src_obs']}_buffer, jnp.asarray(int(window_size), jnp.int32))
-        if max_window_size is not None
+        _${dobs_name}_reducer.resync_masked(_${sinfo['src_obs']}_buffer, ws0)
+        if use_ring
         else _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer))
 % else:
     _${dobs_name}_acc = _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer)
@@ -740,7 +1016,7 @@ def run_${algo_name}(
 % endfor
         _wptr = _ls['wptr']
 % if use_maxwin:
-        _ws = _ls['ws']  # traced window_size (masked ring path); unused when max_window_size is None
+        _ws = _ls['ws']  # traced window length (masked ring); unused on the contiguous (use_ring=False) path
 % endif
         key, subkey = jax.random.split(key)
 % for ni in nested_includes:
@@ -785,8 +1061,8 @@ def run_${algo_name}(
         # slides). Contiguous window starts at skip_t; the masked ring's window is the
         # last L = window_size - skip_t rows, so it leaves at _M - L (traced window_size).
 % if use_maxwin:
-        if max_window_size is not None:
-            _${dobs_name}_evict = _${src_obs}_buffer[_M - (_ws - ${sinfo['skip_t']}), ${sinfo['s_var']}, :]
+        if use_ring:
+            _${dobs_name}_evict = _${src_obs}_buffer[_${src_obs}_buffer.shape[0] - (_ws - ${sinfo['skip_t']}), ${sinfo['s_var']}, :]
         else:
             _${dobs_name}_evict = _${src_obs}_buffer[${sinfo['skip_t']}, ${sinfo['s_var']}, :]
 % else:
@@ -816,17 +1092,16 @@ def run_${algo_name}(
 % endfor
 % for dobs_name, sinfo in streaming_map.items():
         # Periodic exact re-sync (float-drift reset; add/evict not exactly reversible); resync_every<=0 disables it.
-        if _${dobs_name}_resync_every > 0:
-            _${dobs_name}_acc = jax.lax.cond(
-                (_i + 1) % _${dobs_name}_resync_every == 0,
+        _${dobs_name}_acc = jax.lax.cond(
+            (_${dobs_name}_resync_every > 0) & ((_i + 1) % jnp.maximum(_${dobs_name}_resync_every, 1) == 0),
 % if use_maxwin:
-                (lambda _a: _${dobs_name}_reducer.resync_masked(_${sinfo['src_obs']}_buffer, _ws))
-                if max_window_size is not None
-                else (lambda _a: _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer)),
+            (lambda _a: _${dobs_name}_reducer.resync_masked(_${sinfo['src_obs']}_buffer, _ws))
+            if use_ring
+            else (lambda _a: _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer)),
 % else:
-                lambda _a: _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer),
+            lambda _a: _${dobs_name}_reducer.resync(_${sinfo['src_obs']}_buffer),
 % endif
-                lambda _a: _a, _${dobs_name}_acc)
+            lambda _a: _a, _${dobs_name}_acc)
 % endfor
 
 % for obs in simulated_observations:
@@ -1184,177 +1459,16 @@ def run_${algo_name}(
 % endfor
         'wptr': jnp.asarray(0),
 % if use_maxwin:
-        'ws': jnp.asarray(int(window_size), jnp.int32),  # TRACED window_size; drives the masked ring so the scan compiles once across stages
+        'ws': ws0,
 % endif
     }
     _ls_final, _ys_all = jax.lax.scan(_tuning_step, _ls_init, jnp.arange(n_iterations))
-    state = _ls_final['state']
-% for src_obs in source_observations_needed:
-% if use_maxwin:
-    # Return the window (last window_size rows) of the M-ring, so a chained/next-stage
-    # call carries the same window-sized buffer the contiguous path does (identical warmup).
-    _${src_obs}_buffer = _ls_final['${src_obs}__buf'][-int(window_size):] if max_window_size is not None else _ls_final['${src_obs}__buf']
-% else:
-    _${src_obs}_buffer = _ls_final['${src_obs}__buf']
-% endif
-% endfor
-% for obs, obs_class in pipeline_observations:
-    _${obs}_monitor = _ls_final['${obs}__mon']
-% endfor
-% for src_obs, src_class in source_monitors:
-% if src_obs not in [o[0] for o in pipeline_observations]:
-    _${src_obs}_monitor = _ls_final['${src_obs}__mon']
-% endif
-% endfor
-    # Rebuild result_history: scalars subsampled at record positions; param snapshots from the carried buffers.
-    result_history = Bunch(
-% for _k, obs in enumerate(simulated_observations):
-        ${obs}=_ys_all[${_k}][_rec_idx],
-% endfor
-<% _nso = len(simulated_observations) %>
-% for _j, func_call in enumerate(algo_functions):
-        ${get_func_name(func_call)}=_ys_all[${_nso + _j}][_rec_idx],
-% endfor
-% for rule, rule_source, arg_overrides in all_update_rules_with_source:
-<% _tn = str(rule.target_parameter.name) if hasattr(rule.target_parameter, 'name') else str(rule.target_parameter) %>
-        ${_tn}=_ls_final['${_tn}__rec'],
-% endfor
-    )
+    return _ls_final, _ys_all
 
-    # Run post-tuning simulation (use full integration setup if provided).
-    # Carry over the TUNED PARAMETERS (dynamics J_i, coupling wLRE/wFFI) but
-    # keep post_state's own settled initial conditions — NOT the tuning loop's
-    # last mid-trajectory state. Seeding from the loop's last state lands a
-    # different attractor in multistable models, corrupting the post-tuning FC
-    # (it made identical-weight post sims score far below the base sim).
-    # Skipped entirely when run as a nested inner loop (only the state is needed).
-    if run_post_tuning:
-% if _pp_names:
-        # Streaming post-tuning evaluation: post_model_fn was built with prepare(reduce=...)
-        # folding ${', '.join(_pp_names)} into the integrator carry, so it returns the streamed
-        # value(s) — NOT a trajectory (the full-length fit trajectory is never materialised).
-        # The FC deliverable(s) ${', '.join(_pp_deliverables)} are computed from the streamed BOLD
-        # alone; observations that need the raw trajectory are absent (unavailable at fit scale).
-        if post_model_fn is not None and post_state is not None:
-            import copy
-            _post_state = copy.deepcopy(post_state)
-            _post_state.dynamics = state.dynamics
-            _post_state.coupling = state.coupling
-            _streamed = post_model_fn(_post_state)
-            _stream_vals = {_n: _v for _n, _v in zip(
-                ${repr(_pp_names)}, _streamed if isinstance(_streamed, (tuple, list)) else (_streamed,))}
-            post_tuning = None
-            post_tuning_observations = compute_all_observations(
-                None, state, history,
-                only=${repr(set(_pp_names) | set(_pp_deliverables))}, precomputed=_stream_vals,
-% if external_inputs:
-                network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}},
-% endif
-            )
-        else:
-            post_tuning = None
-            post_tuning_observations = None
-% else:
-        if post_model_fn is not None and post_state is not None:
-            import copy
-            _post_state = copy.deepcopy(post_state)
-            _post_state.dynamics = state.dynamics
-            _post_state.coupling = state.coupling
-            post_tuning = post_model_fn(_post_state)
-        else:
-            post_tuning = model_fn(state)
 
-        # Compute ALL observations from post-tuning simulation (in dependency order)
-        # This uses the experiment-level compute_all_observations function
-        # Pass history as result_transient for BOLD pipeline continuity
-% if external_inputs:
-        # Score against THIS call's targets, not the module-level constants:
-        # the in-loop path already reads the `${', '.join(external_inputs)}`
-        # argument(s), so post-tuning must use the same values or a per-subject
-        # run would be scored against the process-wide default target.
-        post_tuning_observations = compute_all_observations(
-            post_tuning, state, history,
-            network_obs={${', '.join("'%s': %s" % (n, n) for n in external_inputs)}},
-        )
-% else:
-        post_tuning_observations = compute_all_observations(post_tuning, state, history)
-% endif
-% endif
-    else:
-        post_tuning = None
-        post_tuning_observations = None
+_${algo_name}_tuning_core = jax.jit(
+    _${algo_name}_tuning_core_impl, static_argnames=(${_core_static_tuple}))
 
-    # result_history is already stacked arrays (scan ys + carried buffers); no list->array rebuild here keeps run_${algo_name} vmap-traceable for subject-batching.
-
-    # Convert collected observation samples to arrays (for passing to next algorithm)
-<%
-    _nso_c = len(simulated_observations)
-    _nf_c = len(algo_functions)
-%>
-% for _ci, obs in enumerate(collectible_observations):
-    # Collectible samples were emitted as scan ys (index after obs-means + functions).
-    _${obs}_buffer_out = _ys_all[${_nso_c + _nf_c + _ci}]
-% endfor
-
-    # Collect monitors for passing to next algorithm (hemodynamic continuity)
-    _monitors_out = {}
-% for obs, obs_class in pipeline_observations:
-    _monitors_out['${obs}'] = _${obs}_monitor
-% endfor
-% for src_obs, src_class in source_monitors:
-% if src_obs not in [o[0] for o in pipeline_observations]:
-    _monitors_out['${src_obs}'] = _${src_obs}_monitor
-% endif
-% endfor
-
-    if verbose:
-        logger.info(f"${algo_name} complete! (tuning {time.perf_counter() - _algo_t0:.1f}s, {n_iterations} iters)")
-
-    if raw:
-        # vmap-safe cohort return: pure jnp arrays only; no AlgorithmResult/DataArray wrapping (host-side numpy conversion breaks under jax.vmap). Wrap per-subject host-side after the vmap.
-        return Bunch(
-            state=state,
-            history=result_history,
-            post_tuning_observations=post_tuning_observations,
-            monitors=_monitors_out,
-% for obs in collectible_observations:
-            ${obs}_buffer=_${obs}_buffer_out,
-% endfor
-% if use_sliding_window:
-% for src_obs in source_observations_needed:
-            ${src_obs}_buffer=_${src_obs}_buffer,
-% endfor
-% endif
-        )
-
-    # Build hyperparameters Bunch for AlgorithmResult
-    _hyperparams = Bunch(
-% for pname, pval in hyperparam_dict.items():
-        ${pname}=${pval},
-% endfor
-    )
-
-    return AlgorithmResult(
-        name='${algo_name}',
-        state=state,
-        history=result_history,
-        pre_tuning=pre_tuning,
-        post_tuning=post_tuning,
-        post_tuning_observations=post_tuning_observations,
-        n_iterations=n_iterations,
-        hyperparameters=_hyperparams,
-        state_names=${state_names},
-        # Additional fields for algorithm chaining
-        monitors=_monitors_out,
-% for obs in collectible_observations:
-        ${obs}_buffer=_${obs}_buffer_out,
-% endfor
-% if use_sliding_window:
-% for src_obs in source_observations_needed:
-        ${src_obs}_buffer=_${src_obs}_buffer,
-% endfor
-% endif
-    )
 
 <%
     # On-device cohort driver: emit only when this experiment's dataset runs on-device
