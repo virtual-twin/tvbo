@@ -153,8 +153,15 @@ tvbo/datamodel/dialect_tables.py
 dist/
 *.egg-info/
 
-# stray compiled bifurcation module (build artifact; the tracked copy lives in BifurcationTutorial/)
-docs/Usage/*.so
+# Compiled modules a doc builds for itself. Platform- and interpreter-specific
+# (`*.cpython-312-darwin.so`), so a committed one is wrong for everyone else.
+docs/**/*.so
+
+# Animations `PDESimulation.qmd` writes on every render (`anim.save("_output/...")`),
+# ~11 MB of binary churn per docs run. `docs/Models/_output/anim1.gif` is the same
+# shape and is still tracked; the BifurcationKit PNGs beside it are NOT — no doc
+# writes those.
+docs/Networks/_output/*.gif
 
 # Local Claude Code state, including the GENERATED `.claude/skills/` tree. The two
 # skill sources of truth are tracked: `tvbo/skills/canonical/` (ships in the wheel)
