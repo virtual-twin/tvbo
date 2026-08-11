@@ -252,6 +252,10 @@ ignore = [
 "docs/scripts/**" = ["D1"]
 "schema/**" = ["D1"]
 
+[tool.ruff.lint.isort]
+# Declared, not inferred: ruff resolves first-party by path, and `tvbo/datamodel/` is generated, so on a checkout that has not been built `tvbo.datamodel.*` sorts as third-party while the rest of tvbo does not.
+known-first-party = ["tvbo"]
+
 [tool.ruff.lint.pydocstyle]
 # Google style, so the NumPy-only D4xx rules do not fire.
 convention = "google"
