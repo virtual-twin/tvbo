@@ -46,6 +46,7 @@ from tvbo.adapters.smallscale.lowering import (
 )
 from tvbo.codegen.code import render_expression
 from tvbo.utils import edge_param, noise_sigma, normalize_params
+from tvbo.utils.units import time_unit_factor
 
 # ── Brian2 role vocabulary ────────────────────────────────────────────
 _POISSON_TYPES = frozenset({"poissonFiringSynapse", "transientPoissonFiringSynapse"})
@@ -94,8 +95,8 @@ def _sample_indices(n, k):
     return sorted({int(round(i * (n - 1) / (k - 1))) for i in range(k)})
 
 
-# TVBO time-scale → factor to convert a time value into milliseconds.
-_TIME_SCALE_TO_MS = {"s": 1000.0, "ms": 1.0, "us": 0.001}
+# A generated Brian2 script states every duration in ms, so declared times convert onto it.
+_BRIAN2_CLOCK = {"time_unit": "ms"}
 
 # TVBO unit name -> Brian2 unit name (as it appears in a generated script). A unit
 # absent here is rejected (fail loud) rather than silently dropped.
@@ -268,8 +269,7 @@ class Brian2Adapter(BaseAdapter):
         edges = getattr(network, "edges", None) or []
 
         integration = getattr(exp, "integration", None)
-        raw_ts = str(getattr(integration, "time_scale", "ms") or "ms") if integration else "ms"
-        ts_factor = _TIME_SCALE_TO_MS.get(raw_ts, 1.0)  # model time unit → ms
+        ts_factor = float(time_unit_factor((integration, exp), _BRIAN2_CLOCK))
         dt_ms = float(getattr(integration, "step_size", 0.02) or 0.02) * ts_factor
         duration_ms = float(getattr(integration, "duration", 1000.0) or 1000.0) * ts_factor
 

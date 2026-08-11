@@ -194,6 +194,22 @@ def column(tmp_path_factory) -> SimulationExperiment:
     return SimulationExperiment.from_file(str(path))
 
 
+def test_a_declared_time_unit_scales_the_emitted_clock(tmp_path):
+    """`s` in the recipe means seconds, and a generated script states ms.
+
+    The adapter read `time_scale`, which the schema folds into `time_unit` at
+    construction, so the attribute was always absent and every declared unit scaled by
+    1: this column in `s` ran for a thousandth of its duration at a thousandth of its
+    step, with nothing in the output to say so.
+    """
+    path = tmp_path / "column_seconds.yaml"
+    path.write_text(DECO_COLUMN_YAML.replace("time_scale: ms", "time_scale: s"))
+    script = SimulationExperiment.from_file(str(path)).render("brian2")
+
+    assert "defaultclock.dt = 20.0 * ms" in script
+    assert "net.run(1500000.0 * ms)" in script
+
+
 class TestBrian2Render:
     """`render("brian2")` emits a valid, self-contained, runnable Brian2 script."""
 

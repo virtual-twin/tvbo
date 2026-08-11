@@ -825,7 +825,7 @@ obs_period = _p(obs, 'period', None)
 obs_downsample = _p(obs, 'downsample_period', None)
 obs_agg = _p(obs, 'aggregation', None)
 obs_modality = _p(obs, 'imaging_modality', None)
-obs_time_scale = _p(obs, 'time_scale', None)
+obs_time_scale = _p(obs, 'time_unit', None)
 obs_voi = _p(obs, 'voi', None)
 obs_skip = _p(obs, 'skip_t', None)
 obs_tail = _p(obs, 'tail_samples', None)
@@ -880,7 +880,7 @@ for s in _dobs_sources:
         src_obs.append(n)
 d_pipeline = _p(dobs, 'pipeline', [])
 d_sampling = []
-for attr, label in (('aggregation', 'aggregation'), ('skip_t', 'skip'), ('tail_samples', 'tail'), ('window_size', 'window'), ('time_scale', 'scale')):
+for attr, label in (('aggregation', 'aggregation'), ('skip_t', 'skip'), ('tail_samples', 'tail'), ('window_size', 'window'), ('time_unit', 'scale')):
     value = _p(dobs, attr, None)
     if value is not None:
         d_sampling.append(f"{label}={value}")
