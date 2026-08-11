@@ -18,7 +18,7 @@ Physical quantities appear throughout simulations:
 | Component | Quantities with Units |
 |-----------|----------------------|
 | **Network** | distances (`distance_unit`), delays (`time_unit`), conduction speed |
-| **Integrator** | step size, duration, transient time — all in `time_scale` |
+| **Integrator** | step size, duration, transient time — all in `time_unit` |
 | **Dynamics** | time constants, frequencies (per-`Parameter` `unit`) |
 | **Monitors** | sampling period, frequencies |
 
@@ -176,38 +176,44 @@ for edge in net_explicit.edges:
 
 ## 2. Integrator Units
 
-The integrator sets its time unit with `time_scale`. One `step_size`, one
-`duration`, and one `transient_time` are all read in that unit. It defaults to
-`ms`, so you only set it when your parameters are written in another unit:
+The integrator sets its time unit with `time_unit` — the same spelling the network
+uses. One `step_size`, one `duration`, and one `transient_time` are all read in that
+unit.
+
+Leaving it unset means *undeclared*, not `ms`: the slot stays `None` so that an
+integrator can inherit the unit declared one scope out. `time_unit_of` is the single
+reader that resolves a scope's declaration, falling back to `ms` only when nothing
+anywhere declared one.
 
 ```{python}
 from tvbo.datamodel import Integrator
+from tvbo.utils.units import time_unit_of
 
-# Default: everything in milliseconds
+# Undeclared: the slot is None, and the resolver supplies the ms fallback
 integ_ms = Integrator(method="heun", step_size=0.1, duration=1000.0)
-print(f"Default time scale: {integ_ms.time_scale}")   # ms
+print(f"Declared: {integ_ms.time_unit} -> resolved: {time_unit_of(integ_ms)}")
 
 # Same run written in seconds
 integ_s = Integrator(
     method="heun",
     step_size=0.0001,   # 0.1 ms
-    time_scale="s",     # step_size / duration / transient_time now in seconds
+    time_unit="s",      # step_size / duration / transient_time now in seconds
     duration=1.0,       # 1 second
 )
-print(f"Explicit time scale: {integ_s.time_scale}")   # s
+print(f"Explicit: {time_unit_of(integ_s)}")
 
-# `time_unit` is accepted as a synonym (the network's spelling)
-integ_alias = Integrator(method="heun", step_size=0.1, time_unit="us")
-print(f"Via time_unit synonym: {integ_alias.time_scale}")   # us
+# `time_scale` is accepted as a synonym on input
+integ_alias = Integrator(method="heun", step_size=0.1, time_scale="us")
+print(f"Via time_scale synonym: {time_unit_of(integ_alias)}")
 ```
 
 Accepted values are `s`, `ms`, and `us` — the [`UnitEnum`](../datamodel/enums/UnitEnum.qmd)
-time units. `time_unit` is accepted as a synonym for `time_scale` (matching the
-network's spelling), and `dt` as a synonym for `step_size`. See
+time units. `time_scale` is accepted as a synonym for `time_unit` on input, and `dt` as
+a synonym for `step_size`; a synonym is read back under the canonical name. See
 [Integrators](Integrators.qmd) for methods, noise, and coupling-stage options.
 
-Keep the integrator's `time_scale` consistent with the network's `time_unit`
-(section 1) unless you deliberately mix scales.
+Keep the integrator's `time_unit` consistent with the network's (section 1) unless you
+deliberately mix scales.
 
 ---
 
@@ -246,6 +252,6 @@ monitor = Monitor(
 
 - Set `distance_unit` and `time_unit` on networks to define the unit system
 - `compute_delays()` automatically converts between units using SymPy
-- Set the integrator's `time_scale` (`s` / `ms` / `us`) to choose the time unit for `step_size`, `duration`, and `transient_time`
+- Set the integrator's `time_unit` (`s` / `ms` / `us`) to choose the time unit for `step_size`, `duration`, and `transient_time`
 - Edge and model parameters can include a `unit` for documentation and validation
 - Any SymPy-recognized unit string works (no hardcoded mappings)
