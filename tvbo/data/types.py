@@ -257,8 +257,11 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
                 _rect = np.empty((int(np.prod(grid_sizes)),) + arr.shape[1:], dtype=arr.dtype)
                 _rect[_flat_idx] = arr
                 arr = _rect.reshape(tuple(grid_sizes) + arr.shape[1:])
-        except (KeyError, ValueError):
-            pass  # coords unmatchable -> fall through to the positional reshape (legacy)
+        except (KeyError, ValueError, TypeError):
+            # TypeError included: placement subtracts coordinates, which a non-numeric axis
+            # (`integration.method` over "heun"/"euler") cannot do. Unmatchable either way,
+            # so fall through to the positional reshape rather than out of `as_grid`.
+            pass
         cell_coords = None  # consumed: build the rectangular DataArray from grid_coords
     if cell_coords is not None or (grid_dims and not _full_grid):
         n_points = arr.shape[0]
