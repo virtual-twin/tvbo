@@ -154,6 +154,24 @@ def _fetch_git_code_source(url, ref=None):
             raise RuntimeError(f"CodeSource git fetch failed ({url}@{ref}): {e2.stderr}") from e2
 
 
+def bind_function_arguments(func_name, formal, actual) -> dict:
+    """Pair a model function's declared arguments with one call site's actual arguments.
+
+    A mismatch names the function and both arities. `arguments:` is an optional slot, so a schema-legal recipe can declare a function whose declaration and calls disagree; the two failure modes either side of this are both unhelpful. Silently truncating (a bare `zip`) inlines a body with a formal symbol left unbound, which surfaces much later as a wrong equation. Raising `zip()`'s own message names neither the function nor the recipe, and in the NeuroML path it fires inside a sympy replace callback, so the traceback is all sympy internals.
+
+    Returns `{formal: actual}`, keyed by whatever the caller passed as *formal* — names or `Symbol`s alike.
+    """
+    formal, actual = list(formal), list(actual)
+    if len(formal) != len(actual):
+        declared = ", ".join(str(f) for f in formal) or "none"
+        raise ValueError(
+            f"model function {func_name!r} declares {len(formal)} argument(s) ({declared}) "
+            f"but is called with {len(actual)}. The `arguments:` list and the call in the "
+            "equation have to agree."
+        )
+    return dict(zip(formal, actual, strict=True))
+
+
 def as_list(obj) -> list:
     """Normalize a keyed-dict-or-list collection to a list of its members.
 

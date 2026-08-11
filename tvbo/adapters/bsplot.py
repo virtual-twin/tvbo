@@ -790,12 +790,13 @@ def _grid_geometry(opts, n_cells):
                 **({"rotation": rotation} if rotation else {}),
             )
         )
-    for n, text in enumerate(list(opts.get("between") or [])[:n_cells]):
+    n_drawn = len(boxes)  # not n_cells: `nrows` crops, and a label on a cropped cell lands outside the panel
+    for n, text in enumerate(list(opts.get("between") or [])[:n_drawn]):
         if str(text).strip():
             r, c = divmod(n, ncols)
             labels.append(_text(text, left + c * cw, 1.0 - top - (r + 0.5) * ch))
-    if opts.get("trailing"):
-        r, c = divmod(n_cells - 1, ncols)
+    if opts.get("trailing") and n_drawn:
+        r, c = divmod(n_drawn - 1, ncols)
         labels.append(_text(opts["trailing"], min(left + (c + 1) * cw + wspace / 4, 0.99), 1.0 - top - (r + 0.5) * ch))
     return boxes, labels
 
@@ -841,7 +842,8 @@ def _grid_cells(panel, key, base_dir, opts) -> tuple:
     boxes, labels = _grid_geometry(opts, len(cells))
     resolved = [
         dict(_resolve_drawable(cell, f"{key}_cell{i}", base_dir), bounds=box)
-        for i, (cell, box) in enumerate(zip(cells, boxes, strict=True))
+        # Not strict: an explicit `nrows` caps the grid, and `_grid_geometry` crops the extra cells by design.
+        for i, (cell, box) in enumerate(zip(cells, boxes, strict=False))
     ]
     return resolved, labels
 

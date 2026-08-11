@@ -19,7 +19,7 @@ from tvbo.adapters.base import BaseAdapter
 
 # Single source of truth (forward map + derived reverse) lives in tvbo/codegen/pyrates.py; re-imported here and used by the model template so the rename mapping is defined exactly once. See PYRATES_REPL there.
 from tvbo.codegen.pyrates import PYRATES_REPL  # noqa: F401
-from tvbo.utils import as_list, is_array_valued
+from tvbo.utils import as_list, bind_function_arguments, is_array_valued
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -169,6 +169,10 @@ def _inline_model_functions(expr, dyn):
     """Inline model-defined functions (e.g. H(x)) into a SymPy expression.
 
     Replaces function calls like H(x) with the function body from dyn.functions, substituting formal arguments with actual arguments.
+
+    Matches are taken in sorted order rather than the set order `atoms` returns: `expr` is reassigned inside the loop, so substituting an inner `H(x)` before the outer `H(H(x))` would leave the outer match pointing at a node the mutated expression no longer holds, and the call would survive into the generated model. sympy hashes derive from randomised string hashing, so which order occurred varied between processes and the same recipe generated different code on different runs.
+
+    Binding is one simultaneous `xreplace`, since substituting formals one at a time lets an actual argument that names a later formal be captured by that later substitution.
     """
     import sympy as sp
 
@@ -185,11 +189,11 @@ def _inline_model_functions(expr, dyn):
         arg_iter = args.values() if hasattr(args, "values") else args
         arg_names = [str(getattr(a, "name", a)) for a in arg_iter]
         sym_func = sp.Function(func_name)
-        for match in expr.atoms(sp.Function(func_name)):
+        for match in sorted(expr.atoms(sp.Function(func_name)), key=sp.default_sort_key, reverse=True):
             if match.func == sym_func:
                 body = sp.sympify(func_eq.rhs)
-                for formal, actual in zip(arg_names, match.args, strict=True):
-                    body = body.subs(sp.Symbol(formal), actual)
+                bound = bind_function_arguments(func_name, arg_names, match.args)
+                body = body.xreplace({sp.Symbol(f): a for f, a in bound.items()})
                 expr = expr.subs(match, body)
     return expr
 

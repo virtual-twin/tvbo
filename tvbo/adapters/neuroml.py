@@ -33,7 +33,7 @@ from tvbo.adapters.smallscale.lowering import (
 from tvbo.adapters.smallscale.lowering import (
     unique_component_id as _unique_component_id,
 )
-from tvbo.utils import initial_value, normalize_params
+from tvbo.utils import bind_function_arguments, initial_value, normalize_params
 
 if TYPE_CHECKING:
     from tvbo.data.types import ExperimentResult
@@ -250,7 +250,9 @@ def inline_model_functions(expr, dynamics, all_names):
             if expr.has(fn_cls):
                 expr = expr.replace(
                     fn_cls,
-                    lambda *actual, _body=body, _syms=arg_syms: _body.xreplace(dict(zip(_syms, actual, strict=True))),
+                    lambda *actual, _body=body, _syms=arg_syms, _fn=fname: _body.xreplace(
+                        bind_function_arguments(_fn, _syms, actual)
+                    ),
                 )
                 replaced = True
         if not replaced:

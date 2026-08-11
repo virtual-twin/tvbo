@@ -16,6 +16,7 @@ from sympy.printing.pycode import PythonCodePrinter as _PythonCodePrinter
 
 from tvbo.datamodel.schema import Equation
 from tvbo.parse.expression import parse_eq
+from tvbo.utils import bind_function_arguments
 
 logger = logging.getLogger(__name__)
 
@@ -139,6 +140,10 @@ ARRAY_FUNCTION_MAPPINGS = {
 def inline_functions(expr, func_defs):
     """Inline all function applications in an expression.
 
+    Each call's body is bound with a single `xreplace`, so binding is simultaneous: substituting one formal at a time lets an actual argument that names a later formal be captured by that later substitution, and `H(x, y) = x - y` called as `H(y, 2)` would inline to `0` rather than `y - 2`.
+
+    Inlining runs to a fixpoint because a body may call another model function (the call graph is a DAG, e.g. `TF_e` -> `sigmaV` -> `muV`); a single pass in dict order would leave such a call behind, and which equations came out clean would depend on the order the recipe happened to declare them.
+
     Parameters
     ----------
     expr : sympy.Expr
@@ -164,19 +169,18 @@ def inline_functions(expr, func_defs):
     2*A*e0/(1 + exp(r*(v0 - x + y)))
     """
     result = expr
-    for func_name, (arg_names, body) in func_defs.items():
-        F = Function(func_name)
-        # Find all applications of this function and replace them
-        for sub_expr in list(preorder_traversal(result)):
-            if hasattr(sub_expr, "func") and sub_expr.func == F:
-                # Get the actual arguments
-                actual_args = sub_expr.args
-                # Create substitution dict: formal arg -> actual arg
-                subs = {Symbol(name): arg for name, arg in zip(arg_names, actual_args, strict=True)}
-                # Substitute into body
-                inlined = body.subs(subs)
-                # Replace in result
-                result = result.subs(sub_expr, inlined)
+    for _ in range(len(func_defs) + 1):
+        replaced = False
+        for func_name, (arg_names, body) in func_defs.items():
+            F = Function(func_name)
+            for sub_expr in list(preorder_traversal(result)):
+                if hasattr(sub_expr, "func") and sub_expr.func == F:
+                    bound = bind_function_arguments(func_name, arg_names, sub_expr.args)
+                    inlined = body.xreplace({Symbol(name): arg for name, arg in bound.items()})
+                    result = result.subs(sub_expr, inlined)
+                    replaced = True
+        if not replaced:
+            break
     return result
 
 
