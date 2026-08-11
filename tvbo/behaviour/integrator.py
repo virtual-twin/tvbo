@@ -5,12 +5,14 @@ Only schema fields are ever stored; everything derived from the ontology is a pr
 so an integrator can be serialized at any point without carrying runtime state.
 
 Population from the ontology is NOT done at construction. It is
-:meth:`IntegratorBehaviour._populate_from_ontology`, called explicitly and idempotent,
-because a mixin cannot hook construction on the generated dataclasses — ``@dataclass``
-writes ``__init__`` and LinkML writes ``__post_init__`` on the class itself, and both win
-over a base. The wrapper this replaces called it from ``__init__``, which meant it ran for
-a directly constructed integrator and not for a loaded one; the loaded path compensated
-with its own call.
+:meth:`IntegratorBehaviour._populate_from_ontology`, called explicitly and idempotent, so
+that resolving an integrator against the ontology stays an act the caller asks for rather
+than the cost of naming one. The wrapper this replaces called it from ``__init__``, which
+meant it ran for a directly constructed integrator and not for a loaded one; the loaded
+path compensated with its own call, and that call is now the only one.
+
+A mixin *can* hook construction — see :mod:`tvbo.behaviour` on ``__post_init__``, which
+:class:`CouplingBehaviour` uses. This one deliberately does not.
 """
 
 from __future__ import annotations

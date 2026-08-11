@@ -154,19 +154,11 @@ def _upgrade_network_couplings(network, coupling_types=None):
     elif isinstance(coup_raw, list):
         items = enumerate(coup_raw)
     else:
-        # Single Coupling object assigned directly
-        if not isinstance(coup_raw, Coupling):
-            coup_raw.__class__ = Coupling
         return
 
     for key, coup in items:
-        # Upgrade __class__ to runtime Coupling (skip if already runtime)
-        if not isinstance(coup, Coupling):
-            coup.__class__ = Coupling
-            # Always trigger ontology population (idempotent).
-            if not getattr(coup, "pre_expression", None):
-                coup._populate_from_ontology()
-        # Apply type-based fill if a type reference was specified
+        if not getattr(coup, "pre_expression", None):
+            coup._populate_from_ontology()
         if key in coupling_types:
             coup.populate_from_type(coupling_types[key])
 
@@ -226,6 +218,104 @@ def _resolve_coupling(experiment):
                 if (not getattr(coup, "incoming_states", None)
                         and not getattr(coup, "local_states", None)):
                     coup.incoming_states = list(cvars)
+
+
+NAMED_COLLECTIONS = {"events": "event", "observations": "observation", "functions": "function"}
+"""Keyed slots whose key is a name — one the rest of the spec addresses and codegen emits.
+
+Distinct from a slot that merely *holds* a name. An entry here is referred to by its key
+from elsewhere in the same recipe, and every Python backend turns that key into a
+definition or a binding, so the key belongs to TVBO's grammar rather than to prose.
+"""
+
+DYNAMICS_NAMED_COLLECTIONS = {"functions": "function", "events": "event"}
+"""The same, for the slots a `Dynamics` carries. See `_reject_unnamed_members`."""
+
+
+def _reject_unnamed(kind: str, entries) -> None:
+    """Fail on an entry whose name is not a name, pointing at the key that says so.
+
+    These keys are addressed and emitted, not displayed. An event is the part before the
+    dot in ``priors: {stimulus.amplitude: ...}``, the free symbol of the dfun that
+    receives it, and five separate positions in the rendered module. An observation is
+    named by ``source:`` and ``likelihood.source`` and rendered as a ``def`` under jax and
+    an attribute assignment under tvboptim. A function is named by the pipeline step that
+    calls it and rendered as a ``def``. So each is a name in TVBO's own grammar, not
+    merely in the grammar of whichever backend renders it.
+
+    Rejecting is the alternative to mangling, which cannot be made safe. Mangling would
+    have to rewrite the author's own references too — including the ones inside equations
+    — and for events it cannot: ``resolve_config_access`` answers an unrecognised dotted
+    prefix with the dynamics scope rather than an error, so a prior naming the event the
+    way the author spelled it would have moved a same-named model parameter and reported
+    nothing. Mangling only some of the five event positions is worse still: the mismatch
+    is not a syntax error but a ``hasattr`` that fails, substituting 0.0 for the stimulus.
+
+    Every spelling an entry can be emitted under is checked, not just the key it is
+    filed under. ``_resolve_events`` replaces an event's name with its
+    ``target_variable`` when one is given, so checking the key alone let a recipe keyed
+    ``drive`` reach codegen carrying the name ``flash burst``.
+
+    Both shapes the schema allows are read — the keyed mapping and the list — and a
+    third would raise rather than pass. A guard that answers "nothing wrong" for input
+    it never looked at is worse than no guard: LinkML hands these over as ``JsonObj``,
+    which has no ``.items``, so skipping the unrecognised shape meant every
+    ``from_datamodel`` load — that is, every load from a file — went unchecked.
+    """
+    from jsonasobj2 import JsonObj, items as _json_items
+
+    from tvbo.templates.base.utils import is_name
+
+    if isinstance(entries, JsonObj):
+        items = list(_json_items(entries))
+    elif hasattr(entries, "items"):
+        items = list(entries.items())
+    elif isinstance(entries, (list, tuple)):
+        items = [(getattr(entry, "name", None), entry) for entry in entries]
+    else:
+        raise TypeError(f"cannot read {kind} names from {type(entries).__name__}")
+
+    lines = []
+    for key, entry in items:
+        spellings = dict.fromkeys(
+            str(value)
+            for value in (key, getattr(entry, "name", None), getattr(entry, "target_variable", None))
+            if value is not None and not is_name(str(value))
+        )
+        if not spellings:
+            continue
+        label = getattr(entry, "label", None)
+        suffix = f" (label: {label!r})" if label else ""
+        lines += [f"  {spelling!r}{suffix}" for spelling in spellings]
+    if not lines:
+        return
+    raise ValueError(
+        "{} name is not a name:\n{}\nAn entry is addressed by its name and rendered as a "
+        "Python definition, so it has to read as one: letters, digits and underscores, "
+        "not starting with a digit. Put the prose in `label:`.".format(kind, "\n".join(lines))
+    )
+
+
+def _reject_unnamed_members(experiment) -> None:
+    """Hold every addressed key on *experiment* to being a name. See `_reject_unnamed`.
+
+    A model's own ``functions`` and ``events`` are emitted the same way and so are held
+    to the same rule. Its ``parameters`` and ``state_variables`` are not, yet: they are
+    emitted as identifiers too, but one shipped NeuroML kinetic scheme keys a parameter
+    ``from``, so enforcing there rejects existing data and is a decision of its own.
+    """
+    for slot, kind in NAMED_COLLECTIONS.items():
+        entries = getattr(experiment, slot, None)
+        if entries:
+            _reject_unnamed(kind, entries)
+
+    dynamics = getattr(experiment, "dynamics", None)
+    models = dynamics.values() if hasattr(dynamics, "values") else [dynamics]
+    for model in models:
+        for slot, kind in DYNAMICS_NAMED_COLLECTIONS.items():
+            entries = getattr(model, slot, None)
+            if entries:
+                _reject_unnamed(kind, entries)
 
 
 def _iri_local(iri: str) -> str:
@@ -311,6 +401,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         - A tvbo_datamodel.SimulationExperiment instance
         - A dict of fields
         - Keyword args matching the datamodel fields
+
+        The integrator is populated from the ontology here rather than in a constructor,
+        because the generated Integrator owns its ``__init__``. This is the one point
+        every construction path reaches, so a loaded integrator ends up populated exactly
+        like a defaulted one. The call is idempotent and fills only fields still unset.
         """
         global sessionid
 
@@ -425,6 +520,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 return cls(**obj, **extra)
             return obj
 
+        _reject_unnamed_members(self)
+
         # Prefer `model` (name string) when `dynamics` is missing
         if getattr(self, "model", None) and not getattr(self, "dynamics", None):
             self.dynamics = Dynamics(name=self.model)
@@ -448,11 +545,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "integration", None) and not isinstance(self.integration, Integrator):
             self.integration = _coerce(Integrator, self.integration)
 
-        if getattr(self, "stimulation", None):
-            from tvbo.classes import perturbation
-
-            if not isinstance(self.stimulation, perturbation.Stimulus):
-                self.stimulation = _coerce(perturbation.Stimulus, self.stimulation)
+        if getattr(self, "stimulation", None) and not isinstance(
+            self.stimulation, tvbo_datamodel.Stimulus
+        ):
+            self.stimulation = _coerce(tvbo_datamodel.Stimulus, self.stimulation)
 
         # Resolve observations that reference a curated model by `iri` (e.g.
         # `iri: tvbo:BOLD_TVB`): merge the model's pipeline/parameters/class_reference
@@ -481,6 +577,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 for k, v in _iri_funcs.items():
                     if k not in funcs:
                         funcs[k] = v
+                _reject_unnamed_members(self)  # a curated model may key a function badly too
 
         if not getattr(self, "network", None):
             self.network = Network()
@@ -516,10 +613,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
-        # Idempotent, and fills only the ontology-derived fields still unset. It runs
-        # here rather than in a constructor because the generated Integrator owns its
-        # ``__init__``; this is the one point every construction path reaches, so a
-        # loaded integrator is populated exactly like a defaulted one.
         self.integration._populate_from_ontology()
 
     def _load_network_from_data_file(self):
@@ -613,10 +706,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         for the inner class constructor).  Instead we directly copy the
         ``__dict__`` from the fully-normalised LinkML object and then set
         the convenience aliases that ``__init__`` would normally provide.
+
+        Ontology population for the integrator and the coupling runs here rather than at
+        construction, because the generated classes own their ``__init__``. Both calls are
+        idempotent and only fill what is missing; the lookup is by ``method`` / ``name``
+        when ``iri`` is unset.
         """
         obj = cls.__new__(cls)
         # Copy all already-normalized state from the datamodel instance
         obj.__dict__.update(dm.__dict__)
+
+        _reject_unnamed_members(obj)  # `__new__` runs no `__init__`, so its checks repeat here
 
         # -- Upgrade Dynamics via __class__ reassignment --
         dyn = getattr(obj, "dynamics", None)
@@ -638,33 +738,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         else:
             obj.__dict__.setdefault("dynamics", None)
 
-        # Ontology population is idempotent and only fills missing fields; lookup is by
-        # ``method`` when ``iri`` is unset. It runs here rather than at construction
-        # because the generated classes own their ``__init__``.
         integ = getattr(obj, "integration", None) or Integrator(method="Heun")
         integ._populate_from_ontology()
         obj.__dict__["integration"] = integ
 
-        # -- Upgrade Stimulation via __class__ reassignment --
         stim = getattr(obj, "stimulation", None)
-        if stim is not None:
-            from tvbo.classes import perturbation
+        if isinstance(stim, dict):
+            obj.__dict__["stimulation"] = tvbo_datamodel.Stimulus(**stim)
 
-            if not isinstance(stim, perturbation.Stimulus):
-                if isinstance(stim, tvbo_datamodel.Stimulus):
-                    stim.__class__ = perturbation.Stimulus
-                elif isinstance(stim, dict):
-                    stim = perturbation.Stimulus(**stim)
-                obj.__dict__["stimulation"] = stim
-
-        # -- Upgrade Coupling via __class__ reassignment --
         coup = getattr(obj, "coupling", None)
-        if coup is not None and not isinstance(coup, Coupling):
-            coup.__class__ = Coupling
-            # Always trigger population (idempotent). Lookup by ``self.name``
-            # when ``iri`` is unset.
-            if not getattr(coup, "pre_expression", None):
-                coup._populate_from_ontology()
+        if coup is not None and not getattr(coup, "pre_expression", None):
+            coup._populate_from_ontology()
         if not getattr(obj, "coupling", None):
             obj.__dict__["coupling"] = Coupling(name="Linear")
 
@@ -1529,12 +1613,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         import owlready2 as owl
 
-        from tvbo.classes import perturbation
-
-        if isinstance(stimulus, perturbation.Stimulus):
+        if isinstance(stimulus, tvbo_datamodel.Stimulus):
             self.stimulation = stimulus
-        elif isinstance(stimulus, str) or isinstance(stimulus, owl.ThingClass):
-            self.stimulation = perturbation.Stimulus.from_ontology(stimulus)
+        elif isinstance(stimulus, (str, owl.ThingClass)):
+            self.stimulation = tvbo_datamodel.Stimulus.from_ontology(stimulus)
 
     def collect_state(self, initial_conditions: TimeSeries | None = None):
         """Assemble a `SimulationState` pytree for the JAX-style backends.

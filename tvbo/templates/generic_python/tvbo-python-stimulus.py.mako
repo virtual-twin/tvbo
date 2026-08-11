@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 <%
 from tvbo.codegen import render_expression
-from tvbo.templates.base.utils import safe_name
 
 eq, params = stimulus.get_expression()
-# The emitted function name has to be a Python identifier; `label` is free text.
-stimulus_ident = safe_name(getattr(stimulus, 'label', None), fallback='stimulus')
+stimulus_ident = stimulus.identifier
 %>
 
 %if jax:

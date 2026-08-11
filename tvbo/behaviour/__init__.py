@@ -10,6 +10,15 @@ The mapping lives in the mixin's name rather than in the schema on purpose. The 
 language-neutral and is what the OWL export is generated from, so a Python import path
 there would state one language's mechanism as if it were a fact about the model.
 
+A mixin may hook construction, by defining ``__post_init__``. ``@dataclass`` writes
+``__init__`` on the generated class itself, so a base cannot reach that; but the generated
+``__post_init__`` ends in ``super().__post_init__(**kwargs)`` and the mixin sits directly
+before ``YAMLRoot``, so the hook runs once the generated normalization is done, on every
+construction path. It must forward to ``super()`` in turn. What it cannot do is see the
+keywords as they were passed — defaults are already applied by then, so a hook cannot tell
+an explicitly passed default from an absent one, and it cannot rewrite a keyword the class
+has no slot for.
+
 Three rules keep this working:
 
 * A mixin is a plain class, never a ``BaseModel`` subclass. Two models in the bases would

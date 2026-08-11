@@ -6,10 +6,9 @@ else:
 
 from sympy import Symbol
 from tvbo.codegen.code import get_printer
-from tvbo.templates.base.utils import safe_name
 
-# The emitted class name has to be a Python identifier; `label` is free text.
-stimulus_ident = safe_name(getattr(stimulus, 'label', None), fallback='Stimulus')
+stimulus_ident = stimulus.identifier
+stimulus_label = stimulus.label or stimulus_ident
 
 # An authored `pycode` is the escape hatch for an expression TVBO cannot print, so it is
 # consulted BEFORE parsing — parsing first would raise on exactly the equations it exists
@@ -30,12 +29,12 @@ class ${stimulus_ident + 'Equation'}(TemporalApplicableEquation):
     ${stimulus.description}
     """
     equation=Final(
-        label="${stimulus.label }",
+        label="${stimulus_label}",
         default="${default_expression}",
     )
 
     parameters=Attr(
         field_type=dict,
-        label="Parameters for ${stimulus.label }",
+        label="Parameters for ${stimulus_label}",
         default=lambda: ${{p.name: p.value for p in stimulus.parameters.values()}}
     )

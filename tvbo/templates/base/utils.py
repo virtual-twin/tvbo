@@ -6,33 +6,50 @@ Extracts Python logic from Mako templates for cleaner, testable code.
 """
 
 import keyword
-import re
+
+
+def is_name(text: str) -> bool:
+    """Whether *text* can stand as an identifier: Python's own rule, minus its keywords.
+
+    The one definition of the question, so the boundary that rewrites a string to satisfy
+    it and the boundary that refuses a string for failing it cannot drift apart.
+    """
+    return bool(text) and text.isidentifier() and not keyword.iskeyword(text)
 
 
 def safe_name(name: str, fallback: str = "item") -> str:
     """A spec string as a valid Python identifier, preserving case.
 
-    Names reach code generation from authored YAML — an event key, an exploration name, a
-    stimulus label — where nothing constrains them to Python's grammar. A generator that
-    concatenates one straight into a ``class`` or ``def`` emits a module that will not
-    parse, and the failure surfaces at import of the generated file rather than at the
-    spelling that caused it.
+    For the free-prose slots — a stimulus ``label`` above all — which carry a human title
+    and are rightly unconstrained. A generator that concatenates one straight into a
+    ``class`` or ``def`` emits a module that will not parse, and the failure surfaces at
+    import of the generated file rather than at the spelling that caused it. That
+    constraint belongs to Python, so it is applied here where Python is emitted.
 
-    Case is preserved because identifiers are case-sensitive and result keys must match
-    the authored keys verbatim: ``res.explorations.C_sweep_fig3`` has to work for a YAML
-    entry named ``C_sweep_fig3``. A name that is already an identifier is returned
-    unchanged, so this only ever rewrites something that could not have worked.
+    A slot the rest of the spec *addresses* something by is the other case and not this
+    one: it is a name in TVBO's own grammar, is held to being one where it is authored,
+    and arrives here already an identifier — see `_reject_unnamed`. Explorations,
+    algorithms and optimizations are addressed that way (``res.explorations.<name>``) but
+    are still only sanitized here, so a title with a space is silently a different key on
+    the result than in the recipe.
 
-    The constraint belongs to Python, not to the schema, so it is applied here at the
-    boundary where Python is emitted rather than by narrowing what a recipe may say.
+    Each character is tested against Python's own rule rather than against ``\\W``. The two
+    disagree — ``²`` is ``isalnum`` and so a word character, but is not valid in an
+    identifier — and a name that survived the regex only to fail the check had to be
+    discarded whole. Discarding is what collides: ``sweep²`` and ``run²`` both became the
+    fallback, and two entries then share one key. Per character, they stay distinct.
+
+    The result is still checked rather than assumed, and a name with nothing left in it
+    falls back.
     """
-    cleaned = re.sub(r"\W", "_", str(name or ""))
-    if not cleaned or cleaned.strip("_") == "":
-        return fallback
-    if cleaned[0].isdigit():
+    text = str(name or "")
+    cleaned = "".join(char if ("a" + char).isidentifier() else "_" for char in text)
+    if cleaned and cleaned[0].isdigit():
         cleaned = f"_{cleaned}"
     if keyword.iskeyword(cleaned):
         cleaned = f"{cleaned}_"
+    if not is_name(cleaned) or not cleaned.strip("_"):
+        return fallback
     return cleaned
 
 

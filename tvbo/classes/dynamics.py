@@ -3025,10 +3025,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
                     sample_period=dt,
                 )
 
-            if self.stimulus:
-                stimulus = Stimulus(self.stimulus).execute("python")
-            else:
-                stimulus = None
+            stimulus = self.stimulus.execute("python") if self.stimulus else None
 
             if stimulus and "stimulus" not in run_kwargs:
                 run_kwargs.update({"stimulus": stimulus})
