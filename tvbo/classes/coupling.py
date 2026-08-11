@@ -34,8 +34,7 @@ _COUPLING_DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 def _load_coupling_from_database(name, coupling):
     """Fill coupling metadata from a database YAML file.
 
-    Looks for ``tvbo/database/coupling_functions/<name>.yaml`` and fills missing ``pre_expression``, ``post_expression``, ``parameters``,
-    and ``delayed`` on the coupling instance.
+    Looks for ``tvbo/database/coupling_functions/<name>.yaml`` and fills missing ``pre_expression``, ``post_expression``, ``parameters``, and ``delayed`` on the coupling instance.
 
     Parameters
     ----------
@@ -214,8 +213,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def populate_from_type(self, type_ref):
         """Fill missing pre/post expressions and parameters from a type reference.
 
-        This is used when ``network.coupling`` entries specify a ``type`` field to reference a known coupling function (e.g. ``KuramotoCoupling`` or
-        ``tvbo:KuramotoCoupling``).
+        This is used when ``network.coupling`` entries specify a ``type`` field to reference a known coupling function (e.g. ``KuramotoCoupling`` or ``tvbo:KuramotoCoupling``).
 
         Parameters
         ----------
@@ -230,10 +228,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def _resolve_xi_xj(self):
         """Auto-populate local_states/incoming_states from x_i/x_j in expression.
 
-        Coupling database equations use generic placeholders ``x_i`` (local node state) and ``x_j`` (source node state).  When the user has
-        declared ``incoming_states`` (the actual state variable names to pull from connected nodes) but not ``local_states``, and the
-        expression references ``x_i``, we mirror ``incoming_states`` into
-        ``local_states`` so the template can generate correct assignments.
+        Coupling database equations use generic placeholders ``x_i`` (local node state) and ``x_j`` (source node state).  When the user has declared ``incoming_states`` (the actual state variable names to pull from connected nodes) but not ``local_states``, and the expression references ``x_i``, we mirror ``incoming_states`` into ``local_states`` so the template can generate correct assignments.
         """
         pre_rhs = str(self.pre_expression.rhs) if getattr(self, "pre_expression", None) else ""
         incoming = getattr(self, "incoming_states", None) or []
@@ -323,8 +318,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def render(self, format="yaml", **kwargs) -> str:
         """Render this coupling in the requested output format.
 
-        Dispatches to `to_yaml`, `report`, or `render_code` depending on
-        `format`.
+        Dispatches to `to_yaml`, `report`, or `render_code` depending on `format`.
 
         Args:
             format: Output format. `"yaml"` serializes to YAML; `"report"`,
@@ -499,8 +493,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def symbolic(self, delays=False):
         """Full symbolic coupling equation with proper indexed state variables.
 
-        Resolves all expression styles (``theta_j``/``theta_i``, ``x_j``/``x_i``,
-        ``incoming_states``/``local_states``) into proper ``IndexedBase`` notation and wraps the pre-expression in a weighted summation over connected nodes.
+        Resolves all expression styles (``theta_j``/``theta_i``, ``x_j``/``x_i``, ``incoming_states``/``local_states``) into proper ``IndexedBase`` notation and wraps the pre-expression in a weighted summation over connected nodes.
 
         Parameters
         ----------
@@ -616,8 +609,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def summed_inputs(self, delays=False):
         """Summed inputs ``gx_k`` of a factored / vectorized coupling.
 
-        A factored coupling emits a *list* pre-expression whose k-th component is summed over the graph into ``gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)``, which the
-        post-expression then recombines. Returns ``[(gx_k, sum_expr), ...]`` so a report can state precisely what ``gx_0``, ``gx_1``, … mean; empty for a scalar coupling.
+        A factored coupling emits a *list* pre-expression whose k-th component is summed over the graph into ``gx_k = Sum_j w[i,j] * (c_pre)_k(x_j)``, which the post-expression then recombines. Returns ``[(gx_k, sum_expr), ...]`` so a report can state precisely what ``gx_0``, ``gx_1``, … mean; empty for a scalar coupling.
         """
         import sympy as sp
         from sympy import IndexedBase, Symbol, symbols, Sum
@@ -647,8 +639,7 @@ class Coupling(tvbo_datamodel.Coupling):
     def plot(self, weights=None, node_idx=0, xs=None, ax=None, **kwargs):
         """Plot the coupling output against a single input state component.
 
-        Lambdifies the assembled coupling `equation` and evaluates it while sweeping one node's state over `xs`, holding the other components
-        fixed.
+        Lambdifies the assembled coupling `equation` and evaluates it while sweeping one node's state over `xs`, holding the other components fixed.
 
         Args:
             weights: Connectivity weight matrix. If omitted, a random 3x3
@@ -722,8 +713,7 @@ class Coupling(tvbo_datamodel.Coupling):
 def get_global_coupling_functions():
     """Return all coupling function classes defined in the ontology.
 
-    Loads the ontology on demand and collects the subclasses of its
-    `Coupling` class.
+    Loads the ontology on demand and collects the subclasses of its `Coupling` class.
 
     Returns:
         A list of the ontology's `Coupling` subclasses.

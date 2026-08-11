@@ -1,11 +1,8 @@
 """Validate the Pydantic loader (``tvbo.utils.pydantic_loader``).
 
-This is the *strict* validation path (``extra="forbid"``) used by the TVBO platform's experiment builder to guarantee every assembled experiment is a
-valid TVBO object before download/save. It complements
-``test_database_validation.py`` (lenient LinkML JSON-schema, ``closed=False``).
+This is the *strict* validation path (``extra="forbid"``) used by the TVBO platform's experiment builder to guarantee every assembled experiment is a valid TVBO object before download/save. It complements ``test_database_validation.py`` (lenient LinkML JSON-schema, ``closed=False``).
 
-The loader normalizes TVBO's human-friendly keyed-dict YAML (where a dict key is the member's ``name``) into the shape the Pydantic models expect, then
-validates. We assert that:
+The loader normalizes TVBO's human-friendly keyed-dict YAML (where a dict key is the member's ``name``) into the shape the Pydantic models expect, then validates. We assert that:
 
 * every ground-truth file in the experiment-building categories validates,
 * a full experiment round-trips (load -> dump -> load),

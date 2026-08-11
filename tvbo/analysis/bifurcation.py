@@ -1,7 +1,6 @@
 """Bifurcation analysis result objects and helpers.
 
-Contains the BifurcationResult class whose instances are returned by
-`model.run(format="bifurcation-julia", ...)`.
+Contains the BifurcationResult class whose instances are returned by `model.run(format="bifurcation-julia", ...)`.
 
 Key attributes
 --------------
@@ -122,8 +121,7 @@ _TY_ALIASES_CACHE = None
 def _derive_ty_aliases():
     """Build ``{backend-label(lower) → canonical code}`` from the ontology.
 
-    Reads ``tvbo:canonicalCode`` + ``skos:altLabel`` off the merged bifurcation taxonomy so the label map tracks the ontology automatically. Falls back to
-    (and is layered over) ``_TY_ALIASES_FALLBACK`` if the ontology is missing.
+    Reads ``tvbo:canonicalCode`` + ``skos:altLabel`` off the merged bifurcation taxonomy so the label map tracks the ontology automatically. Falls back to (and is layered over) ``_TY_ALIASES_FALLBACK`` if the ontology is missing.
     """
     aliases = dict(_TY_ALIASES_FALLBACK)
     try:
@@ -460,14 +458,10 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
 class BifurcationResult:
     """Backend-agnostic bifurcation result.
 
-    A single ``BifurcationResult`` represents one continuation branch (equilibrium, periodic orbit, or codim-2 curve) regardless of the
-    backend that produced it (BifurcationKit.jl, PyRates/PyCoBi,
-    AUTO-07p/numcont). Once the data lives in ``self.df`` and the nested ``periodic_orbits`` / ``codim2_curves`` lists, *all* plotting,
-    legend, and export methods (``plot``, ``plot_3d``, ``bif_legend``,
-    ``enable_picker``, ...) work uniformly across backends.
+    A single ``BifurcationResult`` represents one continuation branch (equilibrium, periodic orbit, or codim-2 curve) regardless of the backend that produced it (BifurcationKit.jl, PyRates/PyCoBi,
+    AUTO-07p/numcont). Once the data lives in ``self.df`` and the nested ``periodic_orbits`` / ``codim2_curves`` lists, *all* plotting, legend, and export methods (``plot``, ``plot_3d``, ``bif_legend``, ``enable_picker``, ...) work uniformly across backends.
 
-    There are *no* backend-specific result subclasses. Each adapter extracts a unified DataFrame and either calls the constructor
-    directly with ``df=...`` or one of the factory shortcuts:
+    There are *no* backend-specific result subclasses. Each adapter extracts a unified DataFrame and either calls the constructor directly with ``df=...`` or one of the factory shortcuts:
 
     * ``BifurcationResult.from_bifkit(br, ...)`` — BifurcationKit.jl
       ``ContResult`` (juliacall).
@@ -558,8 +552,7 @@ class BifurcationResult:
     def _reclassify_folds(self):
         """Relabel a ``:bp`` as a fold when it sits at a parameter turning point.
 
-        Operationalises the ontology's ``LimitPointGeometry`` discriminator (``ontology/tvb-o-bifurcation.ttl``): on an equilibrium branch, a
-        branch-point label whose continuation parameter is a local extremum is a saddle-node fold, not a transversal branch crossing.
+        Operationalises the ontology's ``LimitPointGeometry`` discriminator (``ontology/tvb-o-bifurcation.ttl``): on an equilibrium branch, a branch-point label whose continuation parameter is a local extremum is a saddle-node fold, not a transversal branch crossing.
         """
         df = self.df
         if df is None or df.empty or "specialpoint" not in df.columns or "param" not in df.columns:
@@ -612,9 +605,7 @@ class BifurcationResult:
     def to_dataset(self):
         """Return the continuation branch as a native, self-describing xarray ``Dataset``.
 
-        The branch is a labelled table indexed by continuation ``step``; the continuation parameter (``ICS``, e.g. ``G``) is a coordinate along it and
-        every recorded observable / stability flag becomes a data variable. This is the same labelled container the rest of tvbo uses (``ExperimentResult`` holds
-        it under ``continuations``), so continuation results persist through the standard result format instead of any ad-hoc per-figure array dump.
+        The branch is a labelled table indexed by continuation ``step``; the continuation parameter (``ICS``, e.g. ``G``) is a coordinate along it and every recorded observable / stability flag becomes a data variable. This is the same labelled container the rest of tvbo uses (``ExperimentResult`` holds it under ``continuations``), so continuation results persist through the standard result format instead of any ad-hoc per-figure array dump.
         """
         import xarray as xr
 
@@ -663,8 +654,7 @@ class BifurcationResult:
     ):
         """Wrap a PyRates / PyCoBi continuation by name.
 
-        All visualisation/export logic lives on this class -- the adapter just hands the extracted DataFrame straight to
-        ``__init__``.
+        All visualisation/export logic lives on this class -- the adapter just hands the extracted DataFrame straight to ``__init__``.
         """
         sv_names = list(state_var_names or [])
         df = _extract_pycobi_df(ode, cont_name, sv_names, icp)
@@ -849,9 +839,7 @@ class BifurcationResult:
     def plot_branch(self, ax, ICS=None, VOI=None, **kwargs):
         """Draw the continuation branch as stability-coded line segments.
 
-        Splits the branch into contiguous stable/unstable runs (and, when a
-        `branch_id` column is present, per branch) and plots each segment with the style from the central registry — `SFP`/`UFP` for equilibria or
-        `SLC`/`ULC` for periodic orbits. Does nothing when the branch is empty.
+        Splits the branch into contiguous stable/unstable runs (and, when a `branch_id` column is present, per branch) and plots each segment with the style from the central registry — `SFP`/`UFP` for equilibria or `SLC`/`ULC` for periodic orbits. Does nothing when the branch is empty.
 
         Args:
             ax: Matplotlib axes to draw on.
@@ -930,8 +918,7 @@ class BifurcationResult:
     def bif_legend(self, ax, tys, labels=None, **lgd_kwargs):
         """Add a curated legend listing the selected TYs.
 
-        Mirrors ``ContinuationPlot.BifLegend``: draws an off-screen artist per TY using the central style registry and feeds them to a single
-        ``ax.legend`` call so the user can pin exactly which entries appear.
+        Mirrors ``ContinuationPlot.BifLegend``: draws an off-screen artist per TY using the central style registry and feeds them to a single ``ax.legend`` call so the user can pin exactly which entries appear.
         """
         handles = []
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
@@ -956,8 +943,7 @@ class BifurcationResult:
     def plot_equilibrium_branch(self, ax, ICS=None, VOI=None, **kwargs):
         """Draw the equilibrium branch and overlay its special points.
 
-        Convenience wrapper that calls `plot_branch` and then
-        `plot_special_points` on the same axes.
+        Convenience wrapper that calls `plot_branch` and then `plot_special_points` on the same axes.
 
         Args:
             ax: Matplotlib axes to draw on.
@@ -1002,8 +988,7 @@ class BifurcationResult:
     def extract_orbit_meshes(self, n_samples=40):
         """Extract full periodic orbit solution meshes from a PO branch.
 
-        Works with BifurcationKit.jl ContResult objects that store
-        ``.sol`` (vector of orbit solutions at each continuation step).
+        Works with BifurcationKit.jl ContResult objects that store ``.sol`` (vector of orbit solutions at each continuation step).
 
         Parameters
         ----------
@@ -1101,9 +1086,7 @@ class BifurcationResult:
     def plot(self, ax=None, ICS=None, VOI=None, save=None, **kwargs):
         """Render the full bifurcation diagram for this branch.
 
-        Draws the equilibrium branch, its special points and any periodic-orbit envelopes (a filled min/max region, or a `max` line when only maxima are
-        available), labels the axes, adds a legend and applies publication styling. When nested continuation produced codim-2 curves, dispatches to
-        the codim-2 renderer instead.
+        Draws the equilibrium branch, its special points and any periodic-orbit envelopes (a filled min/max region, or a `max` line when only maxima are available), labels the axes, adds a legend and applies publication styling. When nested continuation produced codim-2 curves, dispatches to the codim-2 renderer instead.
 
         Args:
             ax: Existing axes to draw on; a new figure is created when `None`.
@@ -1616,9 +1599,7 @@ class BifurcationResult:
     def _lc_ring_at_param(self, val, VOI, sv2, y_center, n_theta=80):
         """Sample a closed periodic-orbit loop at ``param=val`` for 3D overlay.
 
-        Returns ``(X, Y, Z)`` arrays (length ``n_theta + 1``, last point repeats the first) tracing the limit cycle in the same coordinates
-        used by :meth:`plot_3d` (``x = param``, ``y = y_center + sv2_disp``,
-        ``z = VOI``), or ``None`` if no PO branch covers ``val``.
+        Returns ``(X, Y, Z)`` arrays (length ``n_theta + 1``, last point repeats the first) tracing the limit cycle in the same coordinates used by :meth:`plot_3d` (``x = param``, ``y = y_center + sv2_disp``, ``z = VOI``), or ``None`` if no PO branch covers ``val``.
         """
         po_list = getattr(self, "periodic_orbits", None) or []
         if not po_list:
@@ -1759,8 +1740,7 @@ class BifurcationResult:
     ):
         """Animate ``dynamics`` alongside this 3D bifurcation diagram.
 
-        For each value of ``parameter`` a left panel re-renders a
-        ``Dynamics`` plot (``kind`` forwarded to :func:`plot_dynamics`, defaults to ``"phaseplane"``), while a right panel shows
+        For each value of ``parameter`` a left panel re-renders a ``Dynamics`` plot (``kind`` forwarded to :func:`plot_dynamics`, defaults to ``"phaseplane"``), while a right panel shows
         :meth:`plot_3d` once with a moving marker that tracks the current parameter value on the equilibrium backbone.
 
         Parameters
@@ -1808,8 +1788,7 @@ class BifurcationResult:
 
         Returns
         -------
-        matplotlib.animation.FuncAnimation
-        """
+        matplotlib.animation.FuncAnimation"""
         import copy
         from matplotlib.animation import FuncAnimation
         from tvbo.plot.dynamics import plot_dynamics
@@ -1992,8 +1971,7 @@ def _add_pycobi_param2(ode, df, cont_name, state_var_names, icp2):
 def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
     """Convert a PyCoBi continuation result into the unified DataFrame.
 
-    Uses the full raw AUTO branch for equilibria (every continuation step) and falls back to ``get_summary`` -- which provides min/max
-    envelopes -- for periodic-orbit branches.
+    Uses the full raw AUTO branch for equilibria (every continuation step) and falls back to ``get_summary`` -- which provides min/max envelopes -- for periodic-orbit branches.
     """
     auto_to_bif = {k: v for k, v in _AUTO_LABEL_MAP.items() if k in {"LP", "HB", "BP", "PD", "TR", "BT", "CP", "GH", "ZH"}}
 
@@ -2280,8 +2258,7 @@ def _extract_auto_df(bd, sv_names, fp_name):
     """Concatenate every branch in an AUTO ``bifDiag`` into one DataFrame.
 
     Adds a ``branch_id`` column so plotting can keep sub-branches distinct.
-    For periodic-orbit branches, augments missing ``min_<sv>`` columns by scanning the orbit solutions in ``bd()`` (AUTO does not write MIN to
-    the b-file).
+    For periodic-orbit branches, augments missing ``min_<sv>`` columns by scanning the orbit solutions in ``bd()`` (AUTO does not write MIN to the b-file).
     """
     frames = []
     for bid, br in enumerate(bd):
@@ -2348,8 +2325,7 @@ class CurvePicker:
     """Click any branch line to inspect the underlying point.
 
     Activated via ``BifurcationResult.enable_picker(ax, callback=...)``.
-    Each branch line drawn by ``plot_branch`` carries ``picker=True`` so matplotlib raises a ``pick_event`` on click; the picker resolves the
-    nearest df row and forwards it to ``callback(result, row_index)``.
+    Each branch line drawn by ``plot_branch`` carries ``picker=True`` so matplotlib raises a ``pick_event`` on click; the picker resolves the nearest df row and forwards it to ``callback(result, row_index)``.
     """
 
     def __init__(self, fig, result, callback=None):

@@ -2,8 +2,7 @@
 
 The passes exist so backend templates can emit the imports and scaffolding a feature
 *may* need without each one growing a condition that drifts. That only works if they are
-trusted, and they are only trustworthy if the cases where removing something would change behaviour are pinned. Those cases are the point of this module: side-effecting
-imports and right-hand sides, names reached through a string, ``__future__``, star imports, closures, rebinding, and the ordering that ``JAX_PLATFORMS`` depends on.
+trusted, and they are only trustworthy if the cases where removing something would change behaviour are pinned. Those cases are the point of this module: side-effecting imports and right-hand sides, names reached through a string, ``__future__``, star imports, closures, rebinding, and the ordering that ``JAX_PLATFORMS`` depends on.
 """
 
 from __future__ import annotations
@@ -57,9 +56,7 @@ def test_a_name_mentioned_only_in_a_docstring_is_dropped():
 def test_a_name_mentioned_only_in_prose_is_dropped():
     """A ``doc=`` string is prose, not a reference.
 
-    ``"Additive coefficient for the second state-variable"`` does not parse as Python, which is exactly what distinguishes it from ``registry["TimeSeries"]`` above. Word
-    matching cannot tell them apart, and treating prose as a use kept ``Additive`` and
-    ``Coupling`` imported into every generated TVB model.
+    ``"Additive coefficient for the second state-variable"`` does not parse as Python, which is exactly what distinguishes it from ``registry["TimeSeries"]`` above. Word matching cannot tell them apart, and treating prose as a use kept ``Additive`` and ``Coupling`` imported into every generated TVB model.
     """
     src = 'from tvb.simulator.noise import Additive\n\nx = NArray(doc="Additive coefficient for the second state-variable")\n'
     assert "import Additive" not in prune_unused_imports(src)
@@ -79,8 +76,7 @@ def test_drops_a_dead_binding_with_a_pure_right_hand_side():
 def test_class_attributes_are_never_dropped():
     """A class body's assignments are its interface, read from outside the module.
 
-    ``COUPLING_INPUTS = {...}`` is unread by the module that defines it and looks exactly like dead scaffolding. Removing it left the generated dynamics advertising no
-    coupling inputs, so building the network failed with "Unknown coupling names".
+    ``COUPLING_INPUTS = {...}`` is unread by the module that defines it and looks exactly like dead scaffolding. Removing it left the generated dynamics advertising no coupling inputs, so building the network failed with "Unknown coupling names".
     """
     src = (
         "class Kuramoto:\n"
@@ -180,8 +176,7 @@ def test_unparseable_source_is_returned_unchanged():
 def test_a_module_import_shadowed_by_a_local_one_is_dropped():
     """The read resolves to the local import, so the module-level one is dead.
 
-    Python decides this per function: one nested ``import os`` makes every ``os`` in that function local. Counting those reads against the module kept a top-level ``import
-    os`` that only the ``JAX_PLATFORMS`` line — itself not emitted — would have used.
+    Python decides this per function: one nested ``import os`` makes every ``os`` in that function local. Counting those reads against the module kept a top-level ``import os`` that only the ``JAX_PLATFORMS`` line — itself not emitted — would have used.
     """
     src = "import os\n\n\ndef f():\n    import os\n\n    return os.sep\n"
     out = prune_unused_imports(src)
@@ -278,8 +273,7 @@ def test_backends_emit_no_unused_imports(fmt):
 def test_retime_leaves_an_attribute_of_the_same_name_alone():
     """``\\b`` matches right after a dot, so a plain word boundary is not enough.
 
-    A pipeline function whose input argument is named ``data`` and whose body touches
-    ``ts.data`` had its time branch rewritten to ``ts.t_data`` — ``AttributeError`` on the TimeSeries at run time.
+    A pipeline function whose input argument is named ``data`` and whose body touches ``ts.data`` had its time branch rewritten to ``ts.t_data`` — ``AttributeError`` on the TimeSeries at run time.
     """
     from tvbo.templates.base.utils import retime
 

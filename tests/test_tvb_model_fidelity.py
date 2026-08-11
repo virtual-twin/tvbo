@@ -1,10 +1,8 @@
 """TVB <-> tvbo state-variable range/boundary fidelity and drift round-trips.
 
-For every concrete TVB simulator model that tvbo mirrors (matched by the YAML
-``name:``), this asserts:
+For every concrete TVB simulator model that tvbo mirrors (matched by the YAML ``name:``), this asserts:
 
-* ``tvbo -> TVB`` codegen reproduces TVB's ``state_variable_range`` and
-  ``state_variable_boundaries`` exactly — the IC-sampling range stays finite (via the sampling ``distribution``) while a half-open clamp stays ``inf``;
+* ``tvbo -> TVB`` codegen reproduces TVB's ``state_variable_range`` and ``state_variable_boundaries`` exactly — the IC-sampling range stays finite (via the sampling ``distribution``) while a half-open clamp stays ``inf``;
 * ``TVB -> tvbo -> TVB`` round-trips those losslessly;
 * the tvbo-generated TVB model's drift (``dfun``) matches the original.
 """
@@ -74,10 +72,11 @@ def _ground_truth(cls):
 
 MATCHED = _matched()
 
-# Models whose drift cannot currently match TVB for reasons unrelated to this work — documented, pre-existing fidelity gaps. xfail (not skip) so a future fix that closes the gap turns the test green (xpass) and flags the stale entry.
-# Discrete/boolean regime traits (Hopfield `dynamic`, Epileptor `modification`,
-# EpileptorCodim3 `N`) are now expressed as a Piecewise on the parameter, so the default regime matches TVB and no model needs an xfail here.
 KNOWN_DFUN_GAPS = {}
+"""Models whose drift cannot match TVB, mapped to the reason — marked xfail rather than skipped, so a fix that closes a gap turns the test green (xpass) and flags the stale entry.
+
+Empty: the discrete regime traits (Hopfield ``dynamic``, Epileptor ``modification``, EpileptorCodim3 ``N``) are expressed as a Piecewise on the parameter, so every default regime matches TVB.
+"""
 
 
 @pytest.mark.skipif(not MATCHED, reason="TVB not installed / no matched models")
@@ -114,9 +113,7 @@ def test_range_boundary_roundtrip(name):
 def test_generated_dfun_matches_tvb(name):
     """The tvbo-generated TVB model's drift must equal the original TVB model's.
 
-    State variables are compared by NAME (tvbo and TVB may order them differently — an internal layout choice, not a dynamics difference), with the
-    same per-variable state fed to both models. Coupling is a uniform constant so the comparison is independent of each backend's coupling-array ordering while
-    still exercising the coupling terms.
+    State variables are compared by NAME (tvbo and TVB may order them differently — an internal layout choice, not a dynamics difference), with the same per-variable state fed to both models. Coupling is a uniform constant so the comparison is independent of each backend's coupling-array ordering while still exercising the coupling terms.
     """
     if name in KNOWN_DFUN_GAPS:
         pytest.xfail(KNOWN_DFUN_GAPS[name])
@@ -153,8 +150,7 @@ def test_generated_dfun_matches_tvb(name):
         return np.array([svals[sv] for sv in model.state_variables])
 
     def coup(model, n_default):
-        # Uniform coupling sized to each backend's own coupling array (tvbo and
-        # TVB may expose a different number of coupling terms); the constant value makes the comparison independent of coupling-array ordering.
+        """Uniform coupling sized to *model*'s own coupling array, or *n_default* terms if it declares none — the two backends may expose a different number."""
         n = len(getattr(model, "coupling_terms", []) or []) or n_default
         return np.full((n, nnodes, nmodes), 0.05)
 

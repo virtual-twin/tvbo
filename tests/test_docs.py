@@ -1,12 +1,10 @@
 """
 Test that all documentation notebooks execute without errors.
 
-This test discovers all .qmd files with Python code cells in docs/, converts them to notebooks, and executes them to ensure documentation
-examples remain functional.
+This test discovers all .qmd files with Python code cells in docs/, converts them to notebooks, and executes them to ensure documentation examples remain functional.
 
 Run with: pytest tests/test_docs.py -v
-Run single doc: pytest tests/test_docs.py -k "Network" -v
-"""
+Run single doc: pytest tests/test_docs.py -k "Network" -v"""
 
 import json
 import os
@@ -35,10 +33,7 @@ def jupyter_executable() -> str:
 def docs_kernel(tmp_path_factory):
     """Register a kernelspec bound to ``sys.executable`` and return its search root.
 
-    The docs declare ``jupyter: python3``, and which interpreter that name resolves to is ambient: Jupyter searches the user, environment and system kernel
-    directories, and the ``python3`` spec ipykernel installs into a virtualenv launches a bare ``python`` taken from ``PATH``. On a machine with several
-    project virtualenvs that lands wherever ``PATH`` happens to point -- typically another project's environment holding a stale released ``tvbo`` -- so the docs
-    never exercise this checkout. Pinning the kernel to the absolute interpreter running pytest makes the notebooks execute against the code under test.
+    The docs declare ``jupyter: python3``, and which interpreter that name resolves to is ambient: Jupyter searches the user, environment and system kernel directories, and the ``python3`` spec ipykernel installs into a virtualenv launches a bare ``python`` taken from ``PATH``. On a machine with several project virtualenvs that lands wherever ``PATH`` happens to point -- typically another project's environment holding a stale released ``tvbo`` -- so the docs never exercise this checkout. Pinning the kernel to the absolute interpreter running pytest makes the notebooks execute against the code under test.
     """
     root = tmp_path_factory.mktemp("jupyter-kernels")
     spec_dir = root / "kernels" / KERNEL_NAME
@@ -68,8 +63,7 @@ def has_python_cells(qmd_path: str) -> bool:
 def is_eval_false(cell: dict) -> bool:
     """Whether a notebook cell carries Quarto's ``#| eval: false`` directive.
 
-    Quarto renders such cells without running them, so they are free to show illustrative code referencing names the page never defines. ``jupyter
-    execute`` knows nothing of the directive and would run them anyway, turning a deliberately non-executable snippet into a spurious NameError.
+    Quarto renders such cells without running them, so they are free to show illustrative code referencing names the page never defines. ``jupyter execute`` knows nothing of the directive and would run them anyway, turning a deliberately non-executable snippet into a spurious NameError.
     """
     if cell.get("cell_type") != "code":
         return False

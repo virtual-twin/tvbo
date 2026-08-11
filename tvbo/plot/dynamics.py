@@ -3,10 +3,7 @@
 
 """General-purpose plotting for ``Dynamics`` objects.
 
-A single entry point ``plot_dynamics`` (also exposed as ``Dynamics.plot``) that selects between several ``kind`` of representations: time series,
-1D/2D/3D phase portraits, and 2D vector fields. Dimensions can be state-variable names, derived-variable names, or arbitrary
-sympy-parseable expressions over them. Labels are rendered as LaTeX via
-``sympy.latex``. Styling and colormaps come from ``bsplot``.
+A single entry point ``plot_dynamics`` (also exposed as ``Dynamics.plot``) that selects between several ``kind`` of representations: time series, 1D/2D/3D phase portraits, and 2D vector fields. Dimensions can be state-variable names, derived-variable names, or arbitrary sympy-parseable expressions over them. Labels are rendered as LaTeX via ``sympy.latex``. Styling and colormaps come from ``bsplot``.
 """
 
 import bsplot
@@ -597,8 +594,7 @@ def plot_dynamics(
 
     Returns
     -------
-    matplotlib.figure.Figure
-    """
+    matplotlib.figure.Figure"""
     if kind not in _KINDS:
         raise ValueError(f"kind must be one of {_KINDS}, got {kind!r}")
 
@@ -689,9 +685,7 @@ def animate_dynamics(
 ):
     """Animate a :class:`Dynamics` by sweeping one parameter through ``values``.
 
-    For each frame the parameter is set, the chosen ``kind`` of plot is drawn on the same axes (cleared between frames), and a title shows the current
-    value. Returns a :class:`matplotlib.animation.FuncAnimation` that you can display with ``anim.to_jshtml()`` (Quarto / notebooks) or save with
-    ``anim.save("foo.mp4")``.
+    For each frame the parameter is set, the chosen ``kind`` of plot is drawn on the same axes (cleared between frames), and a title shows the current value. Returns a :class:`matplotlib.animation.FuncAnimation` that you can display with ``anim.to_jshtml()`` (Quarto / notebooks) or save with ``anim.save("foo.mp4")``.
 
     Parameters
     ----------

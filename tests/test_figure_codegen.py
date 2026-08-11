@@ -3,14 +3,11 @@
 Covers the two figure adapters:
 
 * ``tvbo.adapters.bsplot`` — resolves a declarative :class:`Figure` into a
-  codegen context (``build_context``), emits a self-contained ``plot.py`` (``render_code``), and emits + execs it under matplotlib Agg (``render``),
-  plus the register/lookup API a study extends the engine through and the
-  ``_container_path`` PROV resolver.
+  codegen context (``build_context``), emits a self-contained ``plot.py`` (``render_code``), and emits + execs it under matplotlib Agg (``render``), plus the register/lookup API a study extends the engine through and the ``_container_path`` PROV resolver.
 * ``tvbo.adapters.figure_workflow`` — lowers a figure's PROV ``used`` edges into
   a Snakemake render rule (``emit_figure_rules``).
 
-Figure objects are constructed inline. Tests that need experiment result containers point at the Taher2019 replication study and skip when it (or a
-specific container) is absent, so the suite is robust on a fresh checkout.
+Figure objects are constructed inline. Tests that need experiment result containers point at the Taher2019 replication study and skip when it (or a specific container) is absent, so the suite is robust on a fresh checkout.
 """
 
 from __future__ import annotations
@@ -98,9 +95,7 @@ def test_container_path_unresolved_returns_empty():
 
 
 def test_container_path_resolves_results_dir_container(tmp_path):
-    """A figure layer may bind a derived-figure container a replication study writes with
-    ``ExperimentResult.save`` under ``output/results/<name>/result.h5`` (the ``results_io`` convention), not only a ``tvbo run`` experiment under ``output/nc/<exp>/``. The last IRI
-    segment names the results subdirectory."""
+    """A figure layer may bind a derived-figure container a replication study writes with ``ExperimentResult.save`` under ``output/results/<name>/result.h5`` (the ``results_io`` convention), not only a ``tvbo run`` experiment under ``output/nc/<exp>/``. The last IRI segment names the results subdirectory."""
     bsplot._container_path.cache_clear()  # the resolver is lru_cached
     result = tmp_path / "output" / "results" / "fig3" / "result.h5"
     result.parent.mkdir(parents=True)
@@ -111,9 +106,7 @@ def test_container_path_resolves_results_dir_container(tmp_path):
 
 
 def test_container_path_resolves_flat_nc_container(tmp_path):
-    """A whole-study ``tvbo run`` writes BIDS-style result files FLAT inside ``output/nc/`` (``exp-<id>_desc-<model>_result.h5``), not in a per-experiment ``output/nc/<exp>/``
-    subdirectory. The resolver must find that layout (regression: a figure's ``used`` IRI silently resolved to "" for it, so custom panels fell back to placeholder/degenerate
-    data — the Cortes2013 Fig-2/3 bug)."""
+    """A whole-study ``tvbo run`` writes BIDS-style result files FLAT inside ``output/nc/`` (``exp-<id>_desc-<model>_result.h5``), not in a per-experiment ``output/nc/<exp>/`` subdirectory. The resolver must find that layout (regression: a figure's ``used`` IRI silently resolved to "" for it, so custom panels fell back to placeholder/degenerate data — the Cortes2013 Fig-2/3 bug)."""
     bsplot._container_path.cache_clear()  # the resolver is lru_cached
     nc = tmp_path / "output" / "nc"
     nc.mkdir(parents=True)
@@ -150,8 +143,7 @@ def test_container_path_output_root_no_exp_prefix_collision(tmp_path):
 
 
 def test_container_path_digit_bearing_non_experiment_iri_does_not_misbind(tmp_path):
-    """A non-experiment IRI whose last segment merely CONTAINS digits (a connectome/dataset ref like ``rec-avgMatrix_atlas-HCPMMP1``) must not be read as ``exp-1`` and grab exp-1's
-    container. Only a strict ``exp-N`` / ``expN`` / bare-``N`` key yields exp candidates."""
+    """A non-experiment IRI whose last segment merely CONTAINS digits (a connectome/dataset ref like ``rec-avgMatrix_atlas-HCPMMP1``) must not be read as ``exp-1`` and grab exp-1's container. Only a strict ``exp-N`` / ``expN`` / bare-``N`` key yields exp candidates."""
     bsplot._container_path.cache_clear()
     nc = tmp_path / "output" / "nc"
     nc.mkdir(parents=True)
@@ -295,8 +287,7 @@ def test_build_context_resolves_everything():
 
 
 def test_build_context_image_path_resolved_against_base_dir(tmp_path):
-    """An ``image`` panel's path is spec-relative, so the spec stays portable; the emitted plot.py runs from an arbitrary cwd, so it must be resolved against base_dir (an
-    absolute path is passed through). Same contract as a study .mplstyle."""
+    """An ``image`` panel's path is spec-relative, so the spec stays portable; the emitted plot.py runs from an arbitrary cwd, so it must be resolved against base_dir (an absolute path is passed through). Same contract as a study .mplstyle."""
     figure = P.Figure(
         name="img",
         layout="ab",
@@ -317,11 +308,7 @@ def test_build_context_default_letter_format():
 
 
 def test_build_context_dataclass_flavor_kind_mark_loc():
-    """Production loads figures as the *dataclass* datamodel — both ``tvbo figure render`` (``schema.Figure``) and ``SimulationStudy`` (extends
-    ``schema.SimulationStudy``) — whose enum-valued slots are NOT ``==`` a bare string. The rest of this module builds pydantic objects (where the enum is a
-    ``str``), so the adapter must normalise ``kind``/``mark``/``loc`` for the dataclass flavour or custom/image/heatmap dispatch and corner placement break
-    only in production.
-    """
+    """Production loads figures as the *dataclass* datamodel — both ``tvbo figure render`` (``schema.Figure``) and ``SimulationStudy`` (extends ``schema.SimulationStudy``) — whose enum-valued slots are NOT ``==`` a bare string. The rest of this module builds pydantic objects (where the enum is a ``str``), so the adapter must normalise ``kind``/``mark``/``loc`` for the dataclass flavour or custom/image/heatmap dispatch and corner placement break only in production."""
     from tvbo.datamodel import schema as D
 
     fig = D.Figure(
@@ -367,9 +354,7 @@ def test_build_context_dataclass_flavor_kind_mark_loc():
 
 
 def test_register_panel_and_transform():
-    """The register_* decorators populate the shared registries, so a study's code_source module adds its own custom panels/transforms; the emitted plot.py
-    looks them up by name in these dicts.
-    """
+    """The register_* decorators populate the shared registries, so a study's code_source module adds its own custom panels/transforms; the emitted plot.py looks them up by name in these dicts."""
 
     @bsplot.register_panel("_test_panel")
     def _panel(fig, ax, ctx):
@@ -389,8 +374,7 @@ def test_register_panel_and_transform():
 
 
 def test_unregistered_name_error_points_at_code_modules():
-    """Core ships no panels/transforms, so "declared a name but never registered it" (a missing or unimportable code_modules entry) is THE common failure. It must name the
-    culprit and the fix rather than surfacing a bare KeyError from a generated file."""
+    """Core ships no panels/transforms, so "declared a name but never registered it" (a missing or unimportable code_modules entry) is THE common failure. It must name the culprit and the fix rather than surfacing a bare KeyError from a generated file."""
     fig = P.Figure(
         name="oops",
         layout="a",
@@ -408,8 +392,7 @@ def test_unregistered_name_error_points_at_code_modules():
 
 
 def test_render_code_emits_study_code_module_imports():
-    """A figure declaring code_modules emits an import for each, so a study's code_source panels/transforms register when plot.py runs (the study load
-    puts code/ on the path; importing the module fires the @register_* decorators).
+    """A figure declaring code_modules emits an import for each, so a study's code_source panels/transforms register when plot.py runs (the study load puts code/ on the path; importing the module fires the @register_* decorators).
     A figure with none emits no such import.
     """
     fig = P.Figure(
@@ -428,8 +411,7 @@ def test_render_code_emits_study_code_module_imports():
 
 def test_study_code_module_roundtrip(tmp_path, monkeypatch):
     """End-to-end proof of the register API + code_modules + emit-wiring together:
-    a study module registers a panel core tvbo never knew about; the emitted plot.py imports the module (firing the decorator), so the panel dispatches
-    and the figure draws.
+    a study module registers a panel core tvbo never knew about; the emitted plot.py imports the module (firing the decorator), so the panel dispatches and the figure draws.
     """
     import sys
     import textwrap
@@ -489,8 +471,7 @@ def test_render_code_font_size_emitted():
 def test_render_code_font_size_wins_over_mplstyle():
     """A declared ``font_size`` must be applied AFTER the study .mplstyle, not before.
 
-    A study style file that sets ``font.size`` would otherwise silently override the per-figure declaration, making ``font_size:`` a no-op that is invisible in the spec and
-    only detectable by measuring glyphs in the rendered PNG.
+    A study style file that sets ``font.size`` would otherwise silently override the per-figure declaration, making ``font_size:`` a no-op that is invisible in the spec and only detectable by measuring glyphs in the rendered PNG.
     """
     code = _emit(font_size=9, style=["some/study.mplstyle"])
     assert code.index("plt.style.use(") < code.index("plt.rcParams.update({_k: 9")
@@ -556,8 +537,7 @@ def _inset_figure(**inset_kw):
 def test_render_code_inset_draws_inside_its_host():
     """A declared inset emits its own drawer and is opened on the HOST panel's axes.
 
-    The paper convention this serves is a zoom or thumbnail over a plot; the point of declaring it is that the panel keeps its grammar instead of becoming a custom callable
-    whose whole interior is opaque to the spec."""
+    The paper convention this serves is a zoom or thumbnail over a plot; the point of declaring it is that the panel keeps its grammar instead of becoming a custom callable whose whole interior is opaque to the spec."""
     code = bsplot.render_code(_inset_figure(), TAHER_BASE, "out.png")
     ast.parse(code)
     assert "def _a_inset0(fig, ax):" in code
@@ -642,8 +622,7 @@ def test_placeholder_with_data_stays_a_guarded_fallback():
 
 
 def test_placeholder_fallback_does_not_redraw_the_declared_frame():
-    """A panel that declares a paper frame (xticks/xlim) AND a placeholder must stay bare when its data is absent: the post-format frame re-apply is guarded on ``_PLACEHOLDER_AXES`` so it
-    never draws real ticks over the honest bare box that ``_bare`` just stripped."""
+    """A panel that declares a paper frame (xticks/xlim) AND a placeholder must stay bare when its data is absent: the post-format frame re-apply is guarded on ``_PLACEHOLDER_AXES`` so it never draws real ticks over the honest bare box that ``_bare`` just stripped."""
     figure = _cartesian_figure(iri=MISSING_IRI)
     figure.panels["a"].placeholder = "no data"
     figure.panels["a"].opts = {"xticks": P.Argument(name="xticks", value=[0, 1, 2])}
@@ -671,8 +650,7 @@ def test_axvline_and_axhline_accept_scalar_or_list():
 
 
 def test_invert_x_is_restored_after_the_format_pass():
-    """``format_fig`` re-normalises every numeric axis to ascending (``min/max`` + ``set_xlim``), so a declared ``invert_x`` is re-applied afterwards — guarded like ``invert_y`` so it is
-    idempotent — or the declared x-direction silently flips back."""
+    """``format_fig`` re-normalises every numeric axis to ascending (``min/max`` + ``set_xlim``), so a declared ``invert_x`` is re-applied afterwards — guarded like ``invert_y`` so it is idempotent — or the declared x-direction silently flips back."""
     figure = _cartesian_figure()
     figure.panels["a"].opts = {"invert_x": P.Argument(name="invert_x", value=True)}
     code = bsplot.render_code(figure, TAHER_BASE, "out.png")
@@ -731,8 +709,7 @@ def test_split_triangle_matrix_layers():
 
 
 def test_scatter_keeps_its_declared_colour_under_a_colour_encoding():
-    """A colour-mapped LINE drops its fixed ``style.color`` (the map supplies one hue per entry), but a ``scatter`` is drawn straight from ``style`` — popping its colour would silently blank
-    the declared point colour."""
+    """A colour-mapped LINE drops its fixed ``style.color`` (the map supplies one hue per entry), but a ``scatter`` is drawn straight from ``style`` — popping its colour would silently blank the declared point colour."""
     scatter = P.Layer(
         mark="scatter",
         used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
@@ -984,8 +961,7 @@ def test_emit_figure_rules_input_from_annotation_used():
 def test_annotation_tail_anchors_on_a_computed_point():
     """An arrow tail declared with ``tail_x``/``tail_used`` is READ from the container.
 
-    The callout convention this serves is a paper's "this point produced that picture" arrow. Its tail has to sit on a value the run computed — a curve's height at a marked
-    x — and typing that height into the spec would make the arrow drift the moment the curve moved, which is the whole failure mode declarative figures exist to remove.
+    The callout convention this serves is a paper's "this point produced that picture" arrow. Its tail has to sit on a value the run computed — a curve's height at a marked x — and typing that height into the spec would make the arrow drift the moment the curve moved, which is the whole failure mode declarative figures exist to remove.
     """
     fig = _cartesian_figure()
     fig.panels["a"].annotations = [

@@ -5,8 +5,7 @@ Supported companion formats:
   .zarr/        — Zarr (cloud-native, S3-compatible)
   .csv          — CSV legacy (one file = one matrix = first template edge)
 
-YAML sidecars are loaded via linkml_runtime.loaders.yaml_loader — the same loader used by Dynamics, Coupling, and SimulationExperiment. This
-ensures schema validation and proper nested object construction. Never use raw yaml.safe_load → cls(**dict) for LinkML classes.
+YAML sidecars are loaded via linkml_runtime.loaders.yaml_loader — the same loader used by Dynamics, Coupling, and SimulationExperiment. This ensures schema validation and proper nested object construction. Never use raw yaml.safe_load → cls(**dict) for LinkML classes.
 
 See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
@@ -74,8 +73,7 @@ def _template_edges(edges) -> list:
 def _read_edges(store, meta: dict) -> tuple[dict, dict]:
     """Read all template-edge matrices + edge parameters from a store.
 
-    Works identically for h5py.File and zarr.Group — both support
-    ``"path" in store`` and ``store["path"]`` access.
+    Works identically for h5py.File and zarr.Group — both support ``"path" in store`` and ``store["path"]`` access.
     """
     edges = _template_edges(meta.get("edges", []))
     arrays, params = {}, {}
@@ -179,8 +177,7 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
 def _nodes_are_placeholders(nodes, number_of_nodes) -> bool:
     """True when ``nodes`` is exactly what ``Network(number_of_nodes=N)`` would synthesise.
 
-    A Network materialises `node_0 … node_{N-1}` whenever nodes are not authored, so such a list carries no information the node count does not already hold — and at
-    mesh scale (32,492 vertices) writing it out makes the sidecar larger than the matrices it describes.
+    A Network materialises `node_0 … node_{N-1}` whenever nodes are not authored, so such a list carries no information the node count does not already hold — and at mesh scale (32,492 vertices) writing it out makes the sidecar larger than the matrices it describes.
     """
     if not nodes or len(nodes) != (number_of_nodes or 0):
         return False
@@ -371,9 +368,7 @@ def _write_nodes(store, network):
 def _write_mesh(store, network):
     """Write mesh data (vertices, elements, normals) to ``/mesh/`` group.
 
-    Reads mesh arrays from ``_mesh_vertices``, ``_mesh_elements``,
-    ``_mesh_normals`` attributes on the network. These are set by
-    ``from_tvb_surface()`` or directly by user code.
+    Reads mesh arrays from ``_mesh_vertices``, ``_mesh_elements``, ``_mesh_normals`` attributes on the network. These are set by ``from_tvb_surface()`` or directly by user code.
 
     Called after ``_write_nodes`` during ``save_network``.
     """

@@ -391,8 +391,7 @@ class BEP034PathBuilder:
         >>> path_builder.build_ts_path('01', 'V', 'BOLD')     # V convolved with HRF
         'sub-01/ts/sub-01_ts-V_BOLD.ptseries.nii'
         >>> path_builder.build_ts_path('01', 'Diff', 'BOLD')  # Derived output (V-W) as BOLD
-        'sub-01/ts/sub-01_ts-Diff_BOLD.ptseries.nii'
-        """
+        'sub-01/ts/sub-01_ts-Diff_BOLD.ptseries.nii'"""
         entities = {
             "subject": subject,
             "datatype": "ts",

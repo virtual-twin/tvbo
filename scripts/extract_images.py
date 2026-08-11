@@ -6,8 +6,7 @@ Handles two cases:
                               ![](data:image;base64,...)    (legacy form)
   2. Remote URL img tags:      <img src="https://..." ... />
 
-Replaces each with a local relative reference. When the matched markdown image sits on the same line between an opening and closing HTML tag
-(e.g. `<div ...>![](data:...)</div>`), the replacement is emitted as an
+Replaces each with a local relative reference. When the matched markdown image sits on the same line between an opening and closing HTML tag (e.g. `<div ...>![](data:...)</div>`), the replacement is emitted as an
 HTML `<img>` tag instead — markdown syntax inside a block HTML element is not parsed by CommonMark/GFM and would render as literal text.
 
 Usage:

@@ -2,8 +2,7 @@
 
 Endpoints:
   GET /api/v1/dynamics              — list available models (filterable)
-  GET /api/v1/dynamics/{id}/sidecar — LinkML-valid YAML or JSON
-"""
+  GET /api/v1/dynamics/{id}/sidecar — LinkML-valid YAML or JSON"""
 
 from typing import Optional
 

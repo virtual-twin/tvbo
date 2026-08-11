@@ -1,8 +1,6 @@
 """Observation models that transform simulation output into observables.
 
-This module provides [`Function`](#tvbo.classes.observation.Function), a named symbolic transformation, and
-[`ObservationModel`](#tvbo.classes.observation.ObservationModel), a directed graph that chains such functions (e.g. BOLD HRF, filtering, functional
-connectivity) into an observation pipeline. Helper routines convert Python callables and curated ontology instances into the underlying datamodel shape.
+This module provides [`Function`](#tvbo.classes.observation.Function), a named symbolic transformation, and [`ObservationModel`](#tvbo.classes.observation.ObservationModel), a directed graph that chains such functions (e.g. BOLD HRF, filtering, functional connectivity) into an observation pipeline. Helper routines convert Python callables and curated ontology instances into the underlying datamodel shape.
 """
 
 import logging
@@ -139,8 +137,7 @@ def functioninstance2metadata(function_instance, **kwargs):
 def instance2metadata(instance, **kwargs):
     """Normalize an ontology transformation instance into datamodel kwargs.
 
-    Maps the instance's name, arguments, equation, parameters and acronym onto the keyword arguments used to construct a datamodel object, nesting the
-    argument and equation metadata under a `transformation` key.
+    Maps the instance's name, arguments, equation, parameters and acronym onto the keyword arguments used to construct a datamodel object, nesting the argument and equation metadata under a `transformation` key.
 
     Args:
         instance: Ontology instance exposing `name`, `has_argument`,
@@ -174,9 +171,7 @@ def instance2metadata(instance, **kwargs):
 class Function(tvbo_datamodel.Function):
     """A named symbolic transformation applied to simulation outputs.
 
-    `Function` wraps an `equation` (RHS string parseable by SymPy) plus parameters and metadata. Used as the building block of
-    [`ObservationModel`](#tvbo.classes.observation.ObservationModel)s (e.g. BOLD HRF, sigmoid firing-rate, band-pass filter) and as derived
-    quantities (e.g. coherence, PSD, FC).
+    `Function` wraps an `equation` (RHS string parseable by SymPy) plus parameters and metadata. Used as the building block of [`ObservationModel`](#tvbo.classes.observation.ObservationModel)s (e.g. BOLD HRF, sigmoid firing-rate, band-pass filter) and as derived quantities (e.g. coherence, PSD, FC).
 
     Construct from a callable, from the curated ontology by name, or by passing `equation=`, `parameters=`, etc. inline.
     """
@@ -348,8 +343,7 @@ class Function(tvbo_datamodel.Function):
     def get_equation(self):
         """Build the function as a SymPy equation.
 
-        Parses the stored right-hand-side string into an expression, treats the function's arguments as `IndexedBase` symbols, and returns an equality
-        whose left-hand side is the named function applied to its arguments.
+        Parses the stored right-hand-side string into an expression, treats the function's arguments as `IndexedBase` symbols, and returns an equality whose left-hand side is the named function applied to its arguments.
 
         Returns:
             A SymPy `Eq` relating the function call to its parsed expression.
@@ -374,9 +368,7 @@ class Function(tvbo_datamodel.Function):
     def execute(self, format="python", fill_in_parameters=True, parameters={}, **kwargs):
         """Compile the function into an executable callable.
 
-        Returns the recorded Python callable when one is available; otherwise lambdifies the symbolic equation for the requested backend. Supplied
-        parameters that do not appear in the equation are discarded, and the function's stored parameter values can optionally be substituted in
-        before compilation.
+        Returns the recorded Python callable when one is available; otherwise lambdifies the symbolic equation for the requested backend. Supplied parameters that do not appear in the equation are discarded, and the function's stored parameter values can optionally be substituted in before compilation.
 
         Args:
             format: Target backend for `lambdify` (e.g. `"python"`/`"numpy"`,
@@ -450,8 +442,7 @@ class Function(tvbo_datamodel.Function):
     def plot(self, format="python", plotting_kwargs={}, **kwargs):
         """Plot the function's output against its input.
 
-        For a single-argument function, the input array (supplied via `kwargs` under the argument name) is plotted against the evaluated output; for
-        multi-argument functions the output is plotted directly using the stored parameter values.
+        For a single-argument function, the input array (supplied via `kwargs` under the argument name) is plotted against the evaluated output; for multi-argument functions the output is plotted directly using the stored parameter values.
 
         Args:
             format: Backend used to compile the function for evaluation.
@@ -471,8 +462,7 @@ class Function(tvbo_datamodel.Function):
     def plot_metadata_graph(self, ax=None, node_kwargs={}, edge_kwargs={}, edge_labels=True):
         """Draw a graph of the function's metadata.
 
-        Builds a directed graph linking the function node to its equation, software requirements and arguments, then renders it with a radial
-        layout.
+        Builds a directed graph linking the function node to its equation, software requirements and arguments, then renders it with a radial layout.
 
         Args:
             ax: Matplotlib axes to draw into; a new figure is created and
@@ -555,9 +545,7 @@ class ObservationModel:
     """A directed graph of `Function`s transforming simulation output to observables.
 
     `ObservationModel` chains symbolic and numerical operations (e.g. BOLD
-    HRF → low-pass filter → downsample → FC matrix) on a per-region time series. Nodes are `Function`s; edges describe data flow from `Input` to
-    `Output`. Use `add_node(name, function, ...)`, `add_edge(src, dst)` and
-    `run()` to evaluate the pipeline.
+    HRF → low-pass filter → downsample → FC matrix) on a per-region time series. Nodes are `Function`s; edges describe data flow from `Input` to `Output`. Use `add_node(name, function, ...)`, `add_edge(src, dst)` and `run()` to evaluate the pipeline.
     """
 
     # TODO: Checkout dask for parallel execution
@@ -575,8 +563,7 @@ class ObservationModel:
     def add_data(self, node, data):
         """Attach a data array to a graph node.
 
-        Accepts a `TimeSeries` (whose values and time axis are extracted) or a raw array (for which an integer time axis is generated). Creates the
-        node when it does not yet exist, otherwise updates its stored data.
+        Accepts a `TimeSeries` (whose values and time axis are extracted) or a raw array (for which an integer time axis is generated). Creates the node when it does not yet exist, otherwise updates its stored data.
 
         Args:
             node: Name of the graph node to attach the data to.
@@ -608,8 +595,7 @@ class ObservationModel:
     ):
         """Add a `Function` node to the pipeline graph.
 
-        Registers the function as a graph node, records its execution options, overrides parameter values from `kwargs`, and wires edges from the nodes
-        named in `argument_mapping` to this node. Unless the function is a derivative, it becomes the new tail feeding the `Output` node.
+        Registers the function as a graph node, records its execution options, overrides parameter values from `kwargs`, and wires edges from the nodes named in `argument_mapping` to this node. Unless the function is a derivative, it becomes the new tail feeding the `Output` node.
 
         Args:
             function: The `Function` to add as a node.
@@ -661,8 +647,7 @@ class ObservationModel:
     def add_derivative(self, function, argument_mapping={}, **kwargs):
         """Add a derivative `Function` node to the pipeline.
 
-        Convenience wrapper around [`add_function`](#tvbo.classes.observation.ObservationModel.add_function)
-        with `function_type="derivative"`, so the node is computed as a side branch rather than chained into `Output`.
+        Convenience wrapper around [`add_function`](#tvbo.classes.observation.ObservationModel.add_function) with `function_type="derivative"`, so the node is computed as a side branch rather than chained into `Output`.
 
         Args:
             function: The `Function` to add as a derivative node.
@@ -679,8 +664,7 @@ class ObservationModel:
     def add_projection_model(self, function, argument_mapping={}, **kwargs):
         """Add a projection `Function` node to the pipeline.
 
-        Convenience wrapper around [`add_function`](#tvbo.classes.observation.ObservationModel.add_function)
-        with `function_type="projection"`.
+        Convenience wrapper around [`add_function`](#tvbo.classes.observation.ObservationModel.add_function) with `function_type="projection"`.
 
         Args:
             function: The `Function` to add as a projection node.
@@ -781,8 +765,7 @@ class ObservationModel:
     def apply(self, timeseries, mode=0):
         """Run the pipeline on a time series and return the observable.
 
-        Feeds the input into the `Input` node, evaluates every node in topological order, propagates each function's output to its successors,
-        and trims the final `Output` back to the input's shape.
+        Feeds the input into the `Input` node, evaluates every node in topological order, propagates each function's output to its successors, and trims the final `Output` back to the input's shape.
 
         Args:
             timeseries: A `TimeSeries` or array-like of simulation output; a raw
@@ -939,13 +922,9 @@ class ObservationModel:
 def populate_observation_from_iri(obs, functions_sink=None) -> bool:
     """Fill an observation's missing fields from the curated model its ``iri`` names.
 
-    When an observation declares ``iri: tvbo:BOLD_TVB`` (or any curated entry under
-    ``tvbo/database/observation_models/``), its metadata — ``pipeline``, ``parameters``,
-    ``class_reference``, ``imaging_modality``, ``label``/``description`` — is loaded from that model and merged **non-destructively**: a field the recipe set locally always
-    wins, so ``source``/``period`` overrides stay in force while the curated hemodynamic pipeline fills in. Mirrors :func:`tvbo.classes.coupling._load_coupling_from_database`.
+    When an observation declares ``iri: tvbo:BOLD_TVB`` (or any curated entry under ``tvbo/database/observation_models/``), its metadata — ``pipeline``, ``parameters``, ``class_reference``, ``imaging_modality``, ``label``/``description`` — is loaded from that model and merged **non-destructively**: a field the recipe set locally always wins, so ``source``/``period`` overrides stay in force while the curated hemodynamic pipeline fills in. Mirrors :func:`tvbo.classes.coupling._load_coupling_from_database`.
 
-    When ``functions_sink`` (a mutable name→Function mapping) is given, the model's
-    ``functions`` block is merged into it too — the helper functions a functional pipeline calls by name, which codegen reads from ``experiment.functions``.
+    When ``functions_sink`` (a mutable name→Function mapping) is given, the model's ``functions`` block is merged into it too — the helper functions a functional pipeline calls by name, which codegen reads from ``experiment.functions``.
 
     Returns True if a curated model was found and merged, False otherwise.
     """

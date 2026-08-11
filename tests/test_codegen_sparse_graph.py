@@ -1,15 +1,11 @@
 """Codegen: which graph class ``Network.graph_representation`` selects.
 
-``sparse`` stores the connectome as BCOO so each coupling reduction is an O(nnz) edge-sum (``segment_sum`` over prepared edges) rather than a dense NxN matmul. It
-covers instantaneous networks (``SparseGraph``) and networks with explicit per-edge delays (``SparseDelayGraph``), under any coupling form: tvboptim gathers per edge, so
-a per-edge ``pre`` such as ``sin(x_j - x_i)`` is native. Nothing constructs a sparse matrix, so the old "sparsify would crash on a nonlinear term" fallbacks are gone.
+``sparse`` stores the connectome as BCOO so each coupling reduction is an O(nnz) edge-sum (``segment_sum`` over prepared edges) rather than a dense NxN matmul. It covers instantaneous networks (``SparseGraph``) and networks with explicit per-edge delays (``SparseDelayGraph``), under any coupling form: tvboptim gathers per edge, so a per-edge ``pre`` such as ``sin(x_j - x_i)`` is native. Nothing constructs a sparse matrix, so the old "sparsify would crash on a nonlinear term" fallbacks are gone.
 
-Tract lengths are the one combination sparse cannot express: delays there are
-``lengths / conduction_speed`` recomputed each pass, which needs ``DenseLengthGraph``'s live ``speed`` leaf (swept by a ``network.conduction_speed`` axis, and differentiable).
+Tract lengths are the one combination sparse cannot express: delays there are ``lengths / conduction_speed`` recomputed each pass, which needs ``DenseLengthGraph``'s live ``speed`` leaf (swept by a ``network.conduction_speed`` axis, and differentiable).
 That is rejected at codegen instead of being silently downgraded.
 
-These pin the ``use_sparse`` gate in ``tvbo-tvboptim-experiment.py.mako``. ``render_code`` only needs the network metadata (the generated ``create_network`` takes ``weights`` as a
-runtime argument), so no connectivity source is required to check which class is emitted;
+These pin the ``use_sparse`` gate in ``tvbo-tvboptim-experiment.py.mako``. ``render_code`` only needs the network metadata (the generated ``create_network`` takes ``weights`` as a runtime argument), so no connectivity source is required to check which class is emitted;
 one test additionally runs the emitted module so sparse/dense agreement is checked, not just the class name.
 """
 
@@ -23,8 +19,6 @@ from tvbo import SimulationExperiment, database_path
 
 EXPERIMENTS_DIR = database_path / "experiments"
 
-# Minimal instantaneous Kuramoto with a VECTORIZED (source-only) grid coupling in the factored angle-addition form: sum_j A_ij sin(theta_j - theta_i)
-#   = cos(theta_i)*(A @ sin theta) - sin(theta_i)*(A @ cos theta).
 MINI_EXP = {
     "id": 1,
     "label": "sparse-codegen unit fixture",
@@ -52,6 +46,10 @@ MINI_EXP = {
     },
     "integration": {"method": "heun", "step_size": 0.1, "duration": 1.0, "transient_time": 0.0, "unit": "s"},
 }
+"""Minimal instantaneous Kuramoto with a VECTORIZED (source-only) grid coupling.
+
+The coupling is written in the factored angle-addition form ``sum_j A_ij sin(theta_j - theta_i) = cos(theta_i)*(A @ sin theta) - sin(theta_i)*(A @ cos theta)``, so ``pre()`` reads the source node only.
+"""
 
 
 def _graph_line(spec):
@@ -68,9 +66,7 @@ def test_sparse_vectorized_instantaneous_emits_sparsegraph():
 def test_sparse_peredge_coupling_stays_sparse():
     """A per-edge pre (sin(x_j - x_i)) is gathered per edge, so it stays sparse.
 
-    tvboptim's sparse path reads `incoming_states[:, source_e]` and passes
-    `target_messages` for a pre that also reads the target, then reduces with segment_sum — no sparse matrix is ever built, so there is no nonlinear-term
-    crash to avoid and no reason to downgrade to dense.
+    tvboptim's sparse path reads `incoming_states[:, source_e]` and passes `target_messages` for a pre that also reads the target, then reduces with segment_sum — no sparse matrix is ever built, so there is no nonlinear-term crash to avoid and no reason to downgrade to dense.
     """
     spec = copy.deepcopy(MINI_EXP)
     spec["network"]["coupling"]["c"] = {
@@ -101,9 +97,11 @@ MINI_EXP_DELAYED["network"]["edges"] = [
 MINI_EXP_DELAYED["network"]["coupling"]["c"]["delayed"] = True
 
 
-# A DIRECT (non-factored) local-in-pre coupling: sin(x_j - x_i) reads the target-local x_i inside pre(), the exact form the extended grid model uses (E_j*sin(theta_j-theta_i)).
-# Its per-edge message is 1-D (nnz) on a SparseGraph, so pre() must add the leading n_output axis rank-agnostically. Distinct initial phases are required: with all nodes at theta=0, sin(x_j - x_i)=0 makes the coupling inert and the run vacuous.
 MINI_EXP_DIRECT_PRE = copy.deepcopy(MINI_EXP)
+"""A DIRECT (non-factored) local-in-pre coupling: ``sin(x_j - x_i)`` reads the target-local ``x_i`` inside ``pre()``, the exact form the extended grid model uses (``E_j*sin(theta_j-theta_i)``).
+
+Initial phases are drawn from a Uniform rather than left at the shared ``theta=0`` default, where ``sin(x_j - x_i)`` would be identically zero and the coupling inert.
+"""
 MINI_EXP_DIRECT_PRE["network"]["edges"] = [
     {"source": 0, "target": 1, "parameters": {"weight": {"value": 0.5}}},
     {"source": 1, "target": 0, "parameters": {"weight": {"value": 0.4}}},
@@ -145,8 +143,7 @@ def test_delayed_network_without_sparse_stays_dense():
 def test_sparse_delayed_run_matches_dense():
     """The emitted sparse delayed code must RUN and agree with the dense emit.
 
-    Codegen picking the right class proves nothing on its own — this drives the generated module end to end so a sparse/dense divergence in tvbo's own emission
-    (edge ordering, delay zero-fill, max_delay_bound) cannot pass silently.
+    Codegen picking the right class proves nothing on its own — this drives the generated module end to end so a sparse/dense divergence in tvbo's own emission (edge ordering, delay zero-fill, max_delay_bound) cannot pass silently.
     """
     import numpy as np
 
@@ -167,9 +164,7 @@ def test_sparse_instantaneous_local_pre_run_matches_dense():
     """A single-term local-in-pre coupling (sin(x_j - x_i)) must RUN on a sparse graph.
 
     pre() reads the target-local x_i, so the emitted per-edge message is 1-D (nnz) on a
-    SparseGraph; the leading n_output axis has to be added rank-agnostically. A fixed 2-D reshape (``coupling_term[:, :, None]``) indexes a 1-D array with three axes and
-    crashes — the failure the extended grid model hit. The delayed variant of this branch was the only one executed; this pins the INSTANTANEOUS one and checks sparse agrees
-    with the dense emit, so a revert to the fixed-rank reshape can't pass silently.
+    SparseGraph; the leading n_output axis has to be added rank-agnostically. A fixed 2-D reshape (``coupling_term[:, :, None]``) indexes a 1-D array with three axes and crashes — the failure the extended grid model hit. The delayed variant of this branch was the only one executed; this pins the INSTANTANEOUS one and checks sparse agrees with the dense emit, so a revert to the fixed-rank reshape can't pass silently.
     """
     import numpy as np
 

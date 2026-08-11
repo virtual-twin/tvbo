@@ -1,7 +1,6 @@
 """Structural array-op codegen primitives — one declarative op, every backend.
 
-These ops let an observation pipeline that trims a transient, selects a variable of interest, or downsamples be authored as a **declarative equation** rather than backend
-``source_code``. Each op is a single backend-agnostic handler in ``tvbo.codegen.code`` that renders through per-backend rendering primitives:
+These ops let an observation pipeline that trims a transient, selects a variable of interest, or downsamples be authored as a **declarative equation** rather than backend ``source_code``. Each op is a single backend-agnostic handler in ``tvbo.codegen.code`` that renders through per-backend rendering primitives:
 
 - numpy / jax: Python 0-based slicing (``x[::step]``, ``jnp.take(x, arange, axis)``)
 - julia:       1-based, ``end``-relative indexing (``x[1:step:end]``, ``selectdim``)
@@ -9,8 +8,7 @@ These ops let an observation pipeline that trims a transient, selects a variable
 The two invariants under test:
 
 1. **Cross-backend rendering** — each op emits the idiomatic form for numpy, jax, julia.
-2. **Numeric byte-identity** — the generated numpy/jax code produces values *identical* to the hand-written slicing it replaces (so migrating ``source_code`` -> declarative
-   equation changes nothing numerically).
+2. **Numeric byte-identity** — the generated numpy/jax code produces values *identical* to the hand-written slicing it replaces (so migrating ``source_code`` -> declarative equation changes nothing numerically).
 """
 
 import numpy as np

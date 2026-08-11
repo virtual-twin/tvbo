@@ -1,7 +1,6 @@
 """User-facing `SimulationStudy` class for grouping related experiments.
 
-Provides a thin wrapper around the generated datamodel that adds loading helpers (YAML files, the tvbo database, openMINDS JSON-LD), citation
-formatting, and access to individual `SimulationExperiment`s.
+Provides a thin wrapper around the generated datamodel that adds loading helpers (YAML files, the tvbo database, openMINDS JSON-LD), citation formatting, and access to individual `SimulationExperiment`s.
 """
 
 import os
@@ -22,9 +21,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
     DOI, year, citation, dataset) into one declarative YAML/Pydantic object.
     Load with `from_db(name)` for curated studies, `from_file(path)` for local YAML, or `from_openminds(...)` for JSON-LD provenance graphs.
 
-    The most-used entry points are [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment)
-    to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite) for the formatted citation, and
-    [`to_openminds(...)`](#tvbo.classes.study.SimulationStudy.to_openminds) for
+    The most-used entry points are [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment) to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite) for the formatted citation, and [`to_openminds(...)`](#tvbo.classes.study.SimulationStudy.to_openminds) for
     JSON-LD export.
     """
 
@@ -126,9 +123,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
     ) -> str:
         """Render one Methods section for the whole study.
 
-        Experiments that share a model share its equations and its symbol table; a model that merely varies a sibling contributes only its delta. Everything the
-        experiments hold in common is stated once, and the comparison table carries only what actually differs — so a seven-experiment study stops emitting seven copies
-        of the same six equations and three copies of the same parameter table.
+        Experiments that share a model share its equations and its symbol table; a model that merely varies a sibling contributes only its delta. Everything the experiments hold in common is stated once, and the comparison table carries only what actually differs — so a seven-experiment study stops emitting seven copies of the same six equations and three copies of the same parameter table.
 
         Args:
             format: ``markdown`` / ``md`` (``\\tag`` numbering), ``qmd`` (Quarto
@@ -284,10 +279,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
 class StudyCollection(SimulationStudy, tvbo_datamodel.StudyCollection):
     """A whole manuscript as one runnable specification.
 
-    Aggregates the member studies a paper reports (`members`) and owns the paper's own demonstration experiments, analyses and figures (inherited from
-    `SimulationStudy`). `tvbo run` walks the members and the owned content, emits every reported number to a results manifest (`results`) and every figure with
-    its composed caption, then packages the run as a COMBINE/OMEX archive (`archive`) — so the paper becomes an instance of the reproducibility it
-    argues for. Load with `from_file(path)` (inherited).
+    Aggregates the member studies a paper reports (`members`) and owns the paper's own demonstration experiments, analyses and figures (inherited from `SimulationStudy`). `tvbo run` walks the members and the owned content, emits every reported number to a results manifest (`results`) and every figure with its composed caption, then packages the run as a COMBINE/OMEX archive (`archive`) — so the paper becomes an instance of the reproducibility it argues for. Load with `from_file(path)` (inherited).
     """
 
     def __repr__(self) -> str:
@@ -300,8 +292,7 @@ class StudyCollection(SimulationStudy, tvbo_datamodel.StudyCollection):
     def member_recipes(self, base=None, *, include_optional: bool = True) -> list[tuple[str, "Path"]]:
         """The member study recipes as ``(label, resolved_path)`` pairs.
 
-        Each ``recipe`` is resolved relative to *base* (the StudyCollection file's directory) when it is not an IRI or an absolute path. ``optional`` members
-        are dropped when *include_optional* is False (a ``--skip``-style light run).
+        Each ``recipe`` is resolved relative to *base* (the StudyCollection file's directory) when it is not an IRI or an absolute path. ``optional`` members are dropped when *include_optional* is False (a ``--skip``-style light run).
         """
         base = Path(base) if base is not None else Path(getattr(self, "_source_file", ".")).resolve().parent
         out: list[tuple[str, Path]] = []

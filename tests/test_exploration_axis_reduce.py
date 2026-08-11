@@ -1,7 +1,6 @@
 """Tests for the ``ExplorationAxis.reduce`` capability.
 
-An exploration axis marked ``reduce`` is collapsed by a statistic in the result container: the axis's named grid dimension is reduced across every observation
-that carries it (keyed by dim name, never positional), the reduced observations keep their names, and the collapsed axis drops out of the shape metadata.
+An exploration axis marked ``reduce`` is collapsed by a statistic in the result container: the axis's named grid dimension is reduced across every observation that carries it (keyed by dim name, never positional), the reduced observations keep their names, and the collapsed axis drops out of the shape metadata.
 Observations that do not carry the dim are left untouched. Without ``reduce`` the result container is unchanged.
 """
 

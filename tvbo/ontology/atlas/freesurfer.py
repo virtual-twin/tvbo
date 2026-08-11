@@ -7,8 +7,7 @@
 #
 """FreeSurfer atlas utilities for mapping between region indices and labels.
 
-Loads the FreeSurfer color lookup table and provides helpers to translate between numeric FreeSurfer indices and region labels, exposes the FS86 and
-`aparc` label lists, and converts HCP-MMP1 region names to FreeSurfer label conventions.
+Loads the FreeSurfer color lookup table and provides helpers to translate between numeric FreeSurfer indices and region labels, exposes the FS86 and `aparc` label lists, and converts HCP-MMP1 region names to FreeSurfer label conventions.
 """
 
 from os.path import join
@@ -97,8 +96,7 @@ fs_aparc_labels = np.genfromtxt(join(constants.DATA_DIR, "freesurfer", "FS_aparc
 def hcp2fs_labels(hcp_labels: List[str]) -> List[str]:
     """Convert HCP-MMP1 region names to FreeSurfer cortical label conventions.
 
-    Each label is lower-cased and its hemisphere prefix rewritten, mapping
-    `l_` to `ctx-lh-` and `r_` to `ctx-rh-`.
+    Each label is lower-cased and its hemisphere prefix rewritten, mapping `l_` to `ctx-lh-` and `r_` to `ctx-rh-`.
 
     Args:
         hcp_labels: HCP-MMP1 region names to convert.

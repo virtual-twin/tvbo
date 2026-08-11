@@ -12,8 +12,7 @@ Every part of TVBO logs through the ``tvbo`` logger hierarchy:
   so their progress output is controlled by the very same switch, regardless of which backend produced them or whether they run in-process or standalone.
 
 Importing tvbo as a library stays silent: the package installs only a
-:class:`~logging.NullHandler`. Entry points that are meant to surface progress —
-``tvbo run`` and :meth:`SimulationExperiment.run` — call :func:`configure_logging` (directly, or via :func:`ensure_configured`) to attach a stderr handler.
+:class:`~logging.NullHandler`. Entry points that are meant to surface progress — ``tvbo run`` and :meth:`SimulationExperiment.run` — call :func:`configure_logging` (directly, or via :func:`ensure_configured`) to attach a stderr handler.
 
 One switch controls all of it, no matter the entry point:
 
@@ -71,8 +70,7 @@ logger.addHandler(logging.NullHandler())
 def _coerce_level(level: LevelLike) -> Optional[int]:
     """Turn a user-supplied level into a numeric level (``None`` passes through).
 
-    Accepts ints, standard level names, and the aliases ``OFF``/``NONE``/
-    ``SILENT``/``QUIET`` for "no output".
+    Accepts ints, standard level names, and the aliases ``OFF``/``NONE``/ ``SILENT``/``QUIET`` for "no output".
     """
     if level is None:
         return None
@@ -154,8 +152,7 @@ def configure_logging(
     """Attach a stderr handler to the ``tvbo`` logger and set its level.
 
     Idempotent: the tvbo logger keeps at most one handler owned by this module.
-    When *level* is ``None`` the level falls back to ``TVBO_LOG_LEVEL`` and then to :data:`DEFAULT_LEVEL`. Because the tvbo logger then owns its own output,
-    its records stop propagating to the root logger (so an embedding application that also configured root logging does not print every line twice).
+    When *level* is ``None`` the level falls back to ``TVBO_LOG_LEVEL`` and then to :data:`DEFAULT_LEVEL`. Because the tvbo logger then owns its own output, its records stop propagating to the root logger (so an embedding application that also configured root logging does not print every line twice).
 
     Args:
         level: Desired level (int, name, or ``"OFF"``); ``None`` → env → default.
@@ -181,9 +178,7 @@ def ensure_configured(level: LevelLike = None) -> logging.Logger:
       notebook, or a prior :func:`configure_logging` set things up), only the level is applied and the existing handlers keep emitting;
     * otherwise a default stderr handler is installed via :func:`configure_logging`.
 
-    A level explicitly set earlier (``set_log_level`` / ``silence`` / a prior
-    ``configure_logging``) is preserved: with no explicit *level* this only installs a default level the first time (while the logger is still at
-    ``NOTSET``), so the central switch stays put across repeated ``.run()`` calls.
+    A level explicitly set earlier (``set_log_level`` / ``silence`` / a prior ``configure_logging``) is preserved: with no explicit *level* this only installs a default level the first time (while the logger is still at ``NOTSET``), so the central switch stays put across repeated ``.run()`` calls.
 
     Args:
         level: Level to apply; ``None`` keeps any level already set, else falls

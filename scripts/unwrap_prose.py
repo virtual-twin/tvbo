@@ -22,10 +22,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from check_prose import (  # noqa: E402
-    _SENTENCE_END,
-    WRAP_LIMIT,
     _comment_runs,
     _is_code,
+    continues_sentence,
     iter_files,
 )
 
@@ -33,15 +32,6 @@ from check_prose import (  # noqa: E402
 def _norm(text: str) -> str:
     """Text with every whitespace run collapsed, for comparing before against after."""
     return " ".join(text.split())
-
-
-def _joinable(a: str, b: str) -> bool:
-    """Whether stripped line *a* wraps into stripped line *b*."""
-    if not a or not b or _SENTENCE_END.search(a) or len(a) >= WRAP_LIMIT:
-        return False
-    if a.startswith((">>>", "...", "|", "-", "*", "#", "$$", "```")) or b.startswith((">>>", "...", "|", "-", "*", "```")):
-        return False
-    return b[0].islower() or b[0] in "(["
 
 
 def _unwrap_block(lines: list[str], base_indent: int) -> list[str]:
@@ -58,7 +48,7 @@ def _unwrap_block(lines: list[str], base_indent: int) -> list[str]:
             out
             and not fenced
             and not indented
-            and _joinable(prev, stripped)
+            and continues_sentence(prev, stripped)
             and len(out[-1]) - len(out[-1].lstrip()) < base_indent + 4
         ):
             out[-1] = out[-1].rstrip() + " " + stripped
@@ -111,7 +101,7 @@ def _rewrite_comments(src: str) -> str:
         for idx in range(len(keep) - 1, 0, -1):
             prev_no, prev_body = keep[idx - 1]
             cur_no, cur_body = keep[idx]
-            if _joinable(prev_body, cur_body):
+            if continues_sentence(prev_body, cur_body):
                 keep[idx - 1] = (prev_no, prev_body + " " + cur_body)
                 keep.pop(idx)
                 drop.add(cur_no - 1)

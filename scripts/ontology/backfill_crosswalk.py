@@ -1,25 +1,19 @@
 #!/usr/bin/env python3
 """Backfill `crosswalk.md` and `boundary-matrix.md` from authoritative sources.
 
-Closes plan.md row 15 (`dev_ontology-l0-crosswalk-backfill`, §2.8). Both tables must list one row per LinkML class so contributors can trace a concept across
-the five surfaces (YAML / LinkML / OWL / API / Odoo). Until now the structural section of each table was a placeholder full of `TODO`s; this script regenerates
-the structural rows from the same inputs that the runtime already trusts.
+Closes plan.md row 15 (`dev_ontology-l0-crosswalk-backfill`, §2.8). Both tables must list one row per LinkML class so contributors can trace a concept across the five surfaces (YAML / LinkML / OWL / API / Odoo). Until now the structural section of each table was a placeholder full of `TODO`s; this script regenerates the structural rows from the same inputs that the runtime already trusts.
 
 Inputs
 ------
 - LinkML schemas in `schema/*.yaml` and `schema/openMINDS_tvbo/*.yaml` give the
-  authoritative class list (the same files `gen-linkml`, `gen-owl`,
-  `gen-shacl`, and `tests/test_database_validation.py` consume).
+  authoritative class list (the same files `gen-linkml`, `gen-owl`, `gen-shacl`, and `tests/test_database_validation.py` consume).
 - FastAPI routers under `tvbo/api/` are scanned for `@router`/`@app` decorators
-  to discover which classes are exposed over HTTP. The script captures the router prefix from the `APIRouter(prefix=...)` constructor or the Makefile-
-  installed `app.include_router(..., prefix=...)` call so the resulting paths match the running service.
+  to discover which classes are exposed over HTTP. The script captures the router prefix from the `APIRouter(prefix=...)` constructor or the Makefile- installed `app.include_router(..., prefix=...)` call so the resulting paths match the running service.
 - The Odoo model registry lives in
-  `tvbo-platform/odoo-addons/tvbo/models/schema_models.py`, which is generated upstream by `tvbo-platform/scripts/generate_odoo_models.py`. We read its
-  `_name = 'tvbo.<snake_case>'` declarations directly so the crosswalk tracks whatever the Odoo generator emits without a parallel mapping table.
+  `tvbo-platform/odoo-addons/tvbo/models/schema_models.py`, which is generated upstream by `tvbo-platform/scripts/generate_odoo_models.py`. We read its `_name = 'tvbo.<snake_case>'` declarations directly so the crosswalk tracks whatever the Odoo generator emits without a parallel mapping table.
 - The frozen Appendix A core (Dynamics, Coupling, Integrator, Noise, Function,
   LossFunction, Stimulus, Continuation, SimulationExperiment, SimulationStudy,
-  Network, BrainAtlas) is preserved verbatim above the structural section in both files; this script touches only the structural section delimited by the
-  `<!-- BEGIN auto-generated -->` / `<!-- END auto-generated -->` markers.
+  Network, BrainAtlas) is preserved verbatim above the structural section in both files; this script touches only the structural section delimited by the `<!-- BEGIN auto-generated -->` / `<!-- END auto-generated -->` markers.
 
 Outputs
 -------
@@ -79,8 +73,6 @@ FROZEN = {
     "BrainAtlas",
 }
 
-# Map LinkML class -> top-level YAML key in `tvbo/database/<sub>/` if any.
-# Source: tests/test_database_validation.py TARGETS.
 YAML_TOP = {
     "Dynamics": "`models/`",
     "Coupling": "`coupling_functions/`",
@@ -93,6 +85,7 @@ YAML_TOP = {
     "SimulationTool": "`software/`",
     "Continuation": "`continuations/`",
 }
+"""LinkML class -> top-level YAML key in ``tvbo/database/<sub>/``, where one exists. Source: ``TARGETS`` in ``tests/test_database_validation.py``."""
 
 # Conditional-only classes: required for a specific workflow rather than every simulation. Used by the boundary matrix.
 CONDITIONAL = {
@@ -168,8 +161,7 @@ NON_RUNTIME = {
 def camel_to_snake(name: str) -> str:
     """Mirror `tvbo-platform/scripts/generate_odoo_models.py::camel_to_snake`.
 
-    The Odoo generator uses this exact transformation when minting `_name` values; we re-implement it here (rather than importing) so this script
-    has no runtime dependency on the platform repo.
+    The Odoo generator uses this exact transformation when minting `_name` values; we re-implement it here (rather than importing) so this script has no runtime dependency on the platform repo.
     """
     s = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s).lower()
@@ -208,8 +200,7 @@ def load_odoo_models() -> set[str]:
 def load_api_endpoints() -> dict[str, str]:
     """Map LinkML class -> canonical API path (best-effort).
 
-    We scan FastAPI route files for `APIRouter(prefix="/api/<resource>")` plus the explicit class -> path overrides below. Only top-level resources are
-    cross-referenced; per-record sub-paths (`/{id}/sidecar` etc.) are not enumerated here because the crosswalk lists collection endpoints only.
+    We scan FastAPI route files for `APIRouter(prefix="/api/<resource>")` plus the explicit class -> path overrides below. Only top-level resources are cross-referenced; per-record sub-paths (`/{id}/sidecar` etc.) are not enumerated here because the crosswalk lists collection endpoints only.
     """
     explicit = {
         "Dynamics": "`/api/dynamics`",

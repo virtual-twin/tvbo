@@ -1,9 +1,6 @@
 """Brain-network connectivity classes for TVBO.
 
-Defines [`Network`](#tvbo.classes.network.Network) and its matrix-style subclass [`Connectome`](#tvbo.classes.network.Connectome), which carry the structural
-connectivity (weights and tract lengths), parcellation, nodes/edges and declarative transforms of a virtual brain. Includes constructors that load
-networks from HDF5/YAML database files and from BIDS derivatives, JAX pytree registration so a network can flow through differentiable simulations, and
-graph-Laplacian coupling primitives.
+Defines [`Network`](#tvbo.classes.network.Network) and its matrix-style subclass [`Connectome`](#tvbo.classes.network.Connectome), which carry the structural connectivity (weights and tract lengths), parcellation, nodes/edges and declarative transforms of a virtual brain. Includes constructors that load networks from HDF5/YAML database files and from BIDS derivatives, JAX pytree registration so a network can flow through differentiable simulations, and graph-Laplacian coupling primitives.
 """
 
 import os
@@ -62,9 +59,7 @@ def _source_dir_on_path(source_dir):
 def graph_laplacian(M):
     """Combinatorial graph Laplacian ``L = W - diag(rowsum(W))`` of a weight matrix.
 
-    A standard network primitive (diffusive coupling operator): every row of ``L`` sums to zero. Referenced declaratively from a `Network.transforms` entry via
-    ``callable: {module: tvbo.classes.network, name: graph_laplacian}`` — e.g. for a delay/diffusion-coupled Hopf network whose coupling matrix is the Laplacian of the
-    (normalised) connectome. Cannot be expressed in the elementwise symbolic transform path because it needs a diagonal built from the row sums.
+    A standard network primitive (diffusive coupling operator): every row of ``L`` sums to zero. Referenced declaratively from a `Network.transforms` entry via ``callable: {module: tvbo.classes.network, name: graph_laplacian}`` — e.g. for a delay/diffusion-coupled Hopf network whose coupling matrix is the Laplacian of the (normalised) connectome. Cannot be expressed in the elementwise symbolic transform path because it needs a diagonal built from the row sums.
     """
     return M - jnp.diag(M.sum(axis=1))
 
@@ -73,8 +68,7 @@ def normalized_graph_laplacian(M):
     """Graph Laplacian of the max-normalised weight matrix: ``L(W / max(W))``.
 
     The coupling operator for a diffusion-coupled network whose global coupling strength ``G`` is expressed in the max-normalised connectome scale (so ``G`` stays
-    O(0.01–0.1) regardless of the raw streamline-count magnitude). Referenced via
-    ``callable: {module: tvbo.classes.network, name: normalized_graph_laplacian}``.
+    O(0.01–0.1) regardless of the raw streamline-count magnitude). Referenced via ``callable: {module: tvbo.classes.network, name: normalized_graph_laplacian}``.
     Equivalent to the reference two-liner ``W = W / W.max(); L = W - diag(W.sum(1))``.
     """
     return graph_laplacian(M / jnp.max(M))
@@ -132,8 +126,7 @@ def _parse_bids_entities(stem: str) -> Dict[str, str]:
     """Extract BIDS key-value entities from a filename stem.
 
     E.g. ``"tpl-MNI_atlas-DK_rec-dTOR_scale-100_desc-SC_relmat"``
-    → ``{"tpl": "MNI", "atlas": "DK", "rec": "dTOR", "scale": "100", "desc": "SC"}``
-    """
+    → ``{"tpl": "MNI", "atlas": "DK", "rec": "dTOR", "scale": "100", "desc": "SC"}``"""
     import re
 
     return dict(re.findall(r"(?:^|_)([a-zA-Z]+)-([^_]+)", stem))
@@ -164,9 +157,7 @@ _LENGTH_MEASURES = {
 def _length_like_key(keys) -> Optional[str]:
     """Find the edge key holding tract lengths among *keys*.
 
-    Prefers the canonical ``length`` / ``lengths``; otherwise accepts any length-like name in :data:`_LENGTH_MEASURES` (``tract_length``, ``tractLength``, …). Unlike
-    weights (selected by ``primary_weight`` / ``weight`` / ``weights`` / ``sc``), the length matrix has no explicit selector, so this by-meaning resolution is what makes
-    a length edge findable regardless of how a sidecar names it — and delayed simulations depend on it being found.
+    Prefers the canonical ``length`` / ``lengths``; otherwise accepts any length-like name in :data:`_LENGTH_MEASURES` (``tract_length``, ``tractLength``, …). Unlike weights (selected by ``primary_weight`` / ``weight`` / ``weights`` / ``sc``), the length matrix has no explicit selector, so this by-meaning resolution is what makes a length edge findable regardless of how a sidecar names it — and delayed simulations depend on it being found.
     """
     ks = list(keys)
     for canonical in ("length", "lengths"):
@@ -181,8 +172,7 @@ def _length_like_key(keys) -> Optional[str]:
 def _discover_bids_measures(bids_dir) -> list[str]:
     """Auto-discover structural measures from BEP017 relmat files.
 
-    Parses ``meas-<name>`` from filenames and classifies into [weight_measure, length_measure] order by matching against known
-    naming conventions.  Falls back to file order if names are unknown.
+    Parses ``meas-<name>`` from filenames and classifies into [weight_measure, length_measure] order by matching against known naming conventions.  Falls back to file order if names are unknown.
     """
     import re
 
@@ -285,11 +275,7 @@ def _network_ref_string(net: "Network") -> str:
     """Extract a serializable reference string from a Network object.
 
     Resolution order:
-    1. ``_save_path`` — filename from the most recent ``save()`` call
-    2. ``data_file`` — companion filename (strip extension, add ``.yaml``)
-    3. ``label`` — human-readable label
-    4. Raise ``ValueError`` — can't derive a reference
-    """
+    1. ``_save_path`` — filename from the most recent ``save()`` call 2. ``data_file`` — companion filename (strip extension, add ``.yaml``) 3. ``label`` — human-readable label 4. Raise ``ValueError`` — can't derive a reference"""
     # 1. Explicit save path (set by save())
     try:
         sp = object.__getattribute__(net, "_save_path")
@@ -338,8 +324,7 @@ def _backfill_name_from_iri(obj: Any, nested_key: str | None = None) -> None:
 class Network(tvbo_datamodel.Network):
     """A brain network: parcellation, connectome, per-node dynamics, and coupling.
 
-    The spatial substrate of a `SimulationExperiment`. A `Network` ties an atlas/parcellation to a tractogram (structural connectivity matrix +
-    optional path lengths) and, optionally, per-node `Dynamics` overrides and node-level coupling parameters.
+    The spatial substrate of a `SimulationExperiment`. A `Network` ties an atlas/parcellation to a tractogram (structural connectivity matrix + optional path lengths) and, optionally, per-node `Dynamics` overrides and node-level coupling parameters.
 
     Construct inline, by IRI (resolved against the curated database), or from a NumPy / pandas matrix via [`Network.from_array`](#tvbo.classes.network.Network.from_array).
 
@@ -351,8 +336,7 @@ class Network(tvbo_datamodel.Network):
         )
         ```
 
-    See the [Network specification](/Specification/Network.qmd) for the slot-by-slot reference and the [`Connectome`](#tvbo.classes.network.Connectome) subclass for matrix-style
-    networks without an explicit parcellation.
+    See the [Network specification](/Specification/Network.qmd) for the slot-by-slot reference and the [`Connectome`](#tvbo.classes.network.Connectome) subclass for matrix-style networks without an explicit parcellation.
     """
 
     @property
@@ -524,8 +508,7 @@ class Network(tvbo_datamodel.Network):
     def _is_materialized(self) -> bool:
         """Return True when this Network already carries connectivity data.
 
-        A Network is "materialized" if it has cached weight matrices, a lazy array store (h5 companion), or an explicit edges list. Used by
-        ``_resolve`` to short-circuit when no further loading is required.
+        A Network is "materialized" if it has cached weight matrices, a lazy array store (h5 companion), or an explicit edges list. Used by ``_resolve`` to short-circuit when no further loading is required.
         """
         if getattr(self, "_cached_weights", None) is not None:
             return True
@@ -543,9 +526,7 @@ class Network(tvbo_datamodel.Network):
         """Materialise this Network's connectivity from its declarative spec.
 
         Single source of truth for "given the YAML, populate the matrices".
-        Idempotent: a successful resolution sets ``self._resolved = True`` and subsequent calls are no-ops. Safe to call from
-        ``Network.__init__``, ``Network.from_file``, and from
-        ``SimulationExperiment.from_datamodel`` via a one-line hook.
+        Idempotent: a successful resolution sets ``self._resolved = True`` and subsequent calls are no-ops. Safe to call from ``Network.__init__``, ``Network.from_file``, and from ``SimulationExperiment.from_datamodel`` via a one-line hook.
 
         Resolution order (first match wins):
 
@@ -554,9 +535,7 @@ class Network(tvbo_datamodel.Network):
         2. ``data_file`` companion (.h5 / .zarr + .yaml sidecar): load lazily via ``tvbo.data.network_io.attach_lazy_store``.
         3. ``bids_dir`` BEP017 directory: route through ``from_bids`` and copy matrices onto self.
         4. ``graph_generator.builder`` Callable: invoke (added in A2).
-        5. ``parcellation`` (+ optional ``tractogram``, ``bids.segmentation``,
-           ``bids.scale``): normative DB load via
-           ``get_normative_connectome_data``.
+        5. ``parcellation`` (+ optional ``tractogram``, ``bids.segmentation``, ``bids.scale``): normative DB load via ``get_normative_connectome_data``.
         6. None of the above: no-op (Network must have been constructed via explicit ``nodes``/``edges`` or ``Network.from_matrix``).
 
         Multi-scale resolution — node template, subnetworks, sourced parameters — runs afterwards either way, so a network loaded straight from the database still gets those expanded. Each step is a no-op when its slot is unused.
@@ -589,9 +568,7 @@ class Network(tvbo_datamodel.Network):
     def invalidate_resolution(self) -> None:
         """Drop everything ``_resolve`` materialised, so the next access rebuilds it.
 
-        Resolution is idempotent and latches, which is what stops a network being rebuilt on every access — and what makes a spec edited AFTER load silently inert. A caller
-        that changes the declaration (a ``--set`` on a graph_generator parameter, a swapped parcellation) has to say so, or the run reports the new value and integrates the
-        old matrix.
+        Resolution is idempotent and latches, which is what stops a network being rebuilt on every access — and what makes a spec edited AFTER load silently inert. A caller that changes the declaration (a ``--set`` on a graph_generator parameter, a swapped parcellation) has to say so, or the run reports the new value and integrates the old matrix.
         """
         for attr in ("_resolved", "_producers_resolved"):
             object.__setattr__(self, attr, False)
@@ -622,10 +599,7 @@ class Network(tvbo_datamodel.Network):
     def _detach_inline_edge_couplings(edges: Any) -> Dict[int, dict]:
         """Pop inline (dict) coupling definitions off edge specs before construction.
 
-        Returns ``{edge_index: coupling_dict}`` for every edge spec whose
-        ``coupling`` is a mapping (an inline definition such as a per-edge readout or input projection). Mutates the edge dicts in place, removing
-        the ``coupling`` key so the base ``Edge`` constructor doesn't coerce it into a bare ``CouplingName`` (which would drop coupling_function /
-        parameters). Edge specs whose ``coupling`` is a string (a reference by name) are left untouched.
+        Returns ``{edge_index: coupling_dict}`` for every edge spec whose ``coupling`` is a mapping (an inline definition such as a per-edge readout or input projection). Mutates the edge dicts in place, removing the ``coupling`` key so the base ``Edge`` constructor doesn't coerce it into a bare ``CouplingName`` (which would drop coupling_function / parameters). Edge specs whose ``coupling`` is a string (a reference by name) are left untouched.
         """
         detached: Dict[int, dict] = {}
         if not edges:
@@ -647,8 +621,7 @@ class Network(tvbo_datamodel.Network):
     def _resolve_network_iri(iri: str) -> Optional[str]:
         """Resolve a curated-network IRI to its YAML sidecar path.
 
-        Strips an optional ``tvbo:`` (or any ``prefix:``) and resolves the local name against the network registry. Returns the absolute sidecar
-        path, or ``None`` when the IRI does not match a curated network (so the caller can fall back to treating it as a plain reference string).
+        Strips an optional ``tvbo:`` (or any ``prefix:``) and resolves the local name against the network registry. Returns the absolute sidecar path, or ``None`` when the IRI does not match a curated network (so the caller can fall back to treating it as a plain reference string).
         """
         local = _iri_local(iri)
         try:
@@ -666,8 +639,7 @@ class Network(tvbo_datamodel.Network):
     def _db_generator_entry(cls, gg) -> Optional[Dict[str, Any]]:
         """Load and memoise the curated GraphGenerator YAML entry for `gg`.
 
-        Returns the raw entry dict (carrying ``procedure``, ``parameters``,
-        ``bindings``, …), or None when the type matches no curated entry — so codegen-only / unknown generators don't trigger resolver errors at load.
+        Returns the raw entry dict (carrying ``procedure``, ``parameters``, ``bindings``, …), or None when the type matches no curated entry — so codegen-only / unknown generators don't trigger resolver errors at load.
         """
         gtype = getattr(gg, "type", None)
         if not gtype:
@@ -693,8 +665,7 @@ class Network(tvbo_datamodel.Network):
     def _db_python_binding_for(cls, gg) -> Optional[Dict[str, Any]]:
         """The `bindings.python` block of `gg`'s curated entry, if any.
 
-        The legacy / escape-hatch path: most generators are now interpreted from their symbolic ``procedure:`` block (see ``_db_procedure_for`` and the
-        generic engine), and only genuine library wrappers keep a python binding.
+        The legacy / escape-hatch path: most generators are now interpreted from their symbolic ``procedure:`` block (see ``_db_procedure_for`` and the generic engine), and only genuine library wrappers keep a python binding.
         """
         entry = cls._db_generator_entry(gg) or {}
         return ((entry.get("bindings") or {}).get("python")) or None
@@ -703,11 +674,9 @@ class Network(tvbo_datamodel.Network):
     def _callable_kwargs(fn, kwargs, defaults):
         """Drop declared defaults a builder's signature cannot accept.
 
-        A curated entry's declared defaults describe the generator's interface, so they apply to whichever route builds it. A Callable builder, though, may implement only
-        part of that interface — and passing it a default it never declared is a TypeError at the call, blaming the recipe for something the database supplied.
+        A curated entry's declared defaults describe the generator's interface, so they apply to whichever route builds it. A Callable builder, though, may implement only part of that interface — and passing it a default it never declared is a TypeError at the call, blaming the recipe for something the database supplied.
 
-        Only DEFAULT-sourced keys are filtered. A parameter the recipe states explicitly is passed through even when the signature has no place for it, so a typo or a
-        parameter the builder genuinely does not support still fails loudly instead of being dropped on the floor.
+        Only DEFAULT-sourced keys are filtered. A parameter the recipe states explicitly is passed through even when the signature has no place for it, so a typo or a parameter the builder genuinely does not support still fails loudly instead of being dropped on the floor.
         """
         import inspect
 
@@ -723,9 +692,7 @@ class Network(tvbo_datamodel.Network):
     def _db_procedure_for(cls, gg):
         """The typed ``procedure:`` DAG of `gg`'s curated entry, if any.
 
-        Read from the raw curated YAML and resolved by
-        ``tvbo/graph_generators/procedural.py``, which builds the SymPy tree and renders it through the printer tables — the same expressions every other
-        backend emits from.
+        Read from the raw curated YAML and resolved by ``tvbo/graph_generators/procedural.py``, which builds the SymPy tree and renders it through the printer tables — the same expressions every other backend emits from.
         """
         entry = cls._db_generator_entry(gg) or {}
         return entry.get("procedure") or None
@@ -932,8 +899,7 @@ class Network(tvbo_datamodel.Network):
         self._attach_node_attributes(bids_dir)
 
     def _attach_node_attributes(self, bids_dir) -> None:
-        """Attach per-node attributes from ``*_desc-regionSize.tsv`` sidecars as Node parameters, keyed by label. Every column beyond ``label`` becomes a node
-        parameter of that name — so a symbolic weight transform can reference it (e.g.
+        """Attach per-node attributes from ``*_desc-regionSize.tsv`` sidecars as Node parameters, keyed by label. Every column beyond ``label`` becomes a node parameter of that name — so a symbolic weight transform can reference it (e.g.
         ``W / roi_size`` to normalise each target region by its size). Silent when no such sidecar or no matching labels."""
         import csv
 
@@ -1027,10 +993,7 @@ class Network(tvbo_datamodel.Network):
     def _expand_node_template(self) -> None:
         """Apply ``node_template`` to every materialized node.
 
-        The template is a partial ``Node`` whose fields (``subnetwork``,
-        ``dynamics``, ``edges``, ``parameters`` …) are copied onto each node that does not already set them — explicit per-node fields always win,
-        so heterogeneous variants can override individual regions. A no-op when no template was authored. Each node receives its own deep copy of
-        the spec so per-node resolution (seeds, overrides) stays independent.
+        The template is a partial ``Node`` whose fields (``subnetwork``, ``dynamics``, ``edges``, ``parameters`` …) are copied onto each node that does not already set them — explicit per-node fields always win, so heterogeneous variants can override individual regions. A no-op when no template was authored. Each node receives its own deep copy of the spec so per-node resolution (seeds, overrides) stays independent.
         """
         import copy
 
@@ -1059,9 +1022,7 @@ class Network(tvbo_datamodel.Network):
     def _resolve_subnetworks(self, source_dir: Optional[Union[str, Path]]) -> None:
         """Materialize each node's ``subnetwork`` into a resolved ``Network``.
 
-        For every node carrying a subnetwork spec (dict or partially built object), construct a `Network` and resolve it — which runs the
-        subnetwork's own ``graph_generator`` (e.g. RandomReservoir → the recurrent matrix W_int). Idempotent: already-resolved Network
-        instances are left untouched.
+        For every node carrying a subnetwork spec (dict or partially built object), construct a `Network` and resolve it — which runs the subnetwork's own ``graph_generator`` (e.g. RandomReservoir → the recurrent matrix W_int). Idempotent: already-resolved Network instances are left untouched.
         """
         for node in self.nodes or []:
             sub = getattr(node, "subnetwork", None)
@@ -1080,9 +1041,7 @@ class Network(tvbo_datamodel.Network):
         """Populate network ``parameters`` declared via ``source`` + ``measure``.
 
         A parameter such as ``cortical_gradient`` may point at a curated
-        Network (``source``: an IRI / path) and name a per-node ``measure`` carried by that network's nodes (``measure``: e.g. ``megalpha``). This
-        loads the referenced network and gathers the per-node measure values into a 1-D array stored on ``parameter.value``. A no-op for ordinary
-        scalar parameters.
+        Network (``source``: an IRI / path) and name a per-node ``measure`` carried by that network's nodes (``measure``: e.g. ``megalpha``). This loads the referenced network and gathers the per-node measure values into a 1-D array stored on ``parameter.value``. A no-op for ordinary scalar parameters.
         """
         params = getattr(self, "parameters", None)
         if not params:
@@ -1107,8 +1066,7 @@ class Network(tvbo_datamodel.Network):
     ) -> Optional[np.ndarray]:
         """Load a per-node ``measure`` array from a referenced network ``source``.
 
-        ``source`` is resolved as (1) a curated-network IRI via the registry, (2) a path relative to ``source_dir``, or (3) an absolute path. The
-        named measure is read from each node's ``parameters[measure]`` value.
+        ``source`` is resolved as (1) a curated-network IRI via the registry, (2) a path relative to ``source_dir``, or (3) an absolute path. The named measure is read from each node's ``parameters[measure]`` value.
         Returns a 1-D ``ndarray`` (node order preserved), or ``None`` when the source cannot be resolved.
         """
         path = cls._resolve_network_iri(source)
@@ -1237,11 +1195,9 @@ class Network(tvbo_datamodel.Network):
     ) -> "Network":
         """Create a Network from named edge-property matrices.
 
-        This is a convenience constructor for creating networks from matrix representations. For performance, matrices are stored directly and
-        edges are generated lazily only when needed.
+        This is a convenience constructor for creating networks from matrix representations. For performance, matrices are stored directly and edges are generated lazily only when needed.
 
-        Any keyword argument whose value is array-like (ndarray, sparse matrix, or nested sequence) is treated as a named edge-property
-        matrix and stored via ``set_matrix``. All other keyword arguments are forwarded to the ``Network`` constructor.
+        Any keyword argument whose value is array-like (ndarray, sparse matrix, or nested sequence) is treated as a named edge-property matrix and stored via ``set_matrix``. All other keyword arguments are forwarded to the ``Network`` constructor.
 
         Parameters
         ----------
@@ -1358,8 +1314,7 @@ class Network(tvbo_datamodel.Network):
     ) -> "Network":
         """Create a Network from BEP017-compliant BIDS connectivity data.
 
-        Loads structural connectivity (weights, lengths) and optionally observational targets (FC) from a BIDS derivatives directory using
-        the BEP017 relationship matrix format.
+        Loads structural connectivity (weights, lengths) and optionally observational targets (FC) from a BIDS derivatives directory using the BEP017 relationship matrix format.
 
         Parameters
         ----------
@@ -1734,8 +1689,7 @@ class Network(tvbo_datamodel.Network):
         >>> net.number_of_nodes       # metadata: instant, no I/O
         87
         >>> net.weights_matrix.shape  # arrays: loaded on first access
-        (87, 87)
-        """
+        (87, 87)"""
         from tvbo.data.network_io import load_network
 
         return load_network(path)
@@ -1758,8 +1712,7 @@ class Network(tvbo_datamodel.Network):
         --------
         >>> net = Network.from_tvb_zip("connectivity_76.zip")
         >>> net.number_of_nodes
-        76
-        """
+        76"""
         from tvbo.adapters.tvb import from_tvb_zip
 
         return from_tvb_zip(zip_path)
@@ -1786,8 +1739,7 @@ class Network(tvbo_datamodel.Network):
         >>> conn = Connectivity.from_file()
         >>> net = Network.from_tvb(conn)
         >>> net.number_of_nodes
-        76
-        """
+        76"""
         from tvbo.adapters.tvb import from_tvb
 
         return from_tvb(connectivity)
@@ -1798,8 +1750,7 @@ class Network(tvbo_datamodel.Network):
 
         Produces two linked networks:
 
-        1. **Region-level** (parent): from TVB Connectivity
-        2. **Vertex-level** (child): mesh + region_mapping linking vertices to regions via hierarchical ``node_mapping``
+        1. **Region-level** (parent): from TVB Connectivity 2. **Vertex-level** (child): mesh + region_mapping linking vertices to regions via hierarchical ``node_mapping``
 
         Parameters
         ----------
@@ -1894,9 +1845,7 @@ class Network(tvbo_datamodel.Network):
     def bids_filename(self) -> str:
         """Generate BIDS-compliant filename using pybids build_path (§6.5).
 
-        Reads entities directly from Network attributes — no YAML serialization round-trip needed.  Sensor networks (descriptor
-        ``"sensors"``) use ``SENSOR_PATTERNS``; all others use
-        ``RELMAT_PATTERNS``.
+        Reads entities directly from Network attributes — no YAML serialization round-trip needed.  Sensor networks (descriptor ``"sensors"``) use ``SENSOR_PATTERNS``; all others use ``RELMAT_PATTERNS``.
 
         Returns
         -------
@@ -1906,8 +1855,7 @@ class Network(tvbo_datamodel.Network):
         Examples
         --------
         >>> net.bids_filename
-        'tpl-MNI152NLin2009cAsym_..._desc-SCFC_relmat.h5'
-        """
+        'tpl-MNI152NLin2009cAsym_..._desc-SCFC_relmat.h5'"""
         from bids.layout.writing import build_path
 
         if getattr(self, "descriptor", None) in ("sensors", "projection"):
@@ -2080,8 +2028,7 @@ class Network(tvbo_datamodel.Network):
 
         Supports two modes:
 
-        1. **By name** (existing): ``Network.from_db("DesikanKilliany")``
-        2. **By BIDS key-values**: ``Network.from_db(atlas="DesikanKilliany", rec="dTOR")``
+        1. **By name** (existing): ``Network.from_db("DesikanKilliany")`` 2. **By BIDS key-values**: ``Network.from_db(atlas="DesikanKilliany", rec="dTOR")``
 
         BIDS entity keys match the ``key-value`` pairs in filenames, e.g.
         ``atlas``, ``rec``, ``scale``, ``seg``, ``desc``, ``cohort``.
@@ -2325,20 +2272,15 @@ class Network(tvbo_datamodel.Network):
     def node_index_map(self) -> Dict[int, int]:
         """``{Node.id: row/column index}`` for the connectome matrices.
 
-        ``Node.id`` is a *unique identifier* (``dcterms:identifier``), not a position: a network may declare ``[{id: 0}, {id: 2}]`` and its edges then
-        address nodes by those ids, while the matrices are indexed by declaration order. Matrix-only networks (no ``nodes``) address rows directly, so the
-        map is the identity there.
+        ``Node.id`` is a *unique identifier* (``dcterms:identifier``), not a position: a network may declare ``[{id: 0}, {id: 2}]`` and its edges then address nodes by those ids, while the matrices are indexed by declaration order. Matrix-only networks (no ``nodes``) address rows directly, so the map is the identity there.
         """
         return {(i if getattr(nd, "id", None) is None else int(nd.id)): i for i, nd in enumerate(self.nodes or [])}
 
     def _edge_matrix(self, value_of, fill: float = 0.0) -> Optional[np.ndarray]:
         """Build one connectome matrix from the explicit edges.
 
-        The single place where an edge becomes matrix entries: endpoints are resolved from ``Node.id`` through :meth:`node_index_map` and bounds-checked
-        once here, so every connectome matrix reads the same connectome.
-        ``value_of(edge, i, j)`` supplies the entry (``None`` skips the edge) and receives the resolved indices; the raw ids stay on ``edge`` for callers that
-        need them. Matrices are target-by-source — an edge source -> target is stored at ``[target, source]``, the coupling convention backends expect —
-        and undirected edges are mirrored. ``None`` when the network declares no edge that actually connects two nodes.
+        The single place where an edge becomes matrix entries: endpoints are resolved from ``Node.id`` through :meth:`node_index_map` and bounds-checked once here, so every connectome matrix reads the same connectome.
+        ``value_of(edge, i, j)`` supplies the entry (``None`` skips the edge) and receives the resolved indices; the raw ids stay on ``edge`` for callers that need them. Matrices are target-by-source — an edge source -> target is stored at ``[target, source]``, the coupling convention backends expect — and undirected edges are mirrored. ``None`` when the network declares no edge that actually connects two nodes.
         """
         # Endpointless entries are TEMPLATE edges: they name a matrix carried in the companion file, they are not connections. Select before allocating, or a template-only network (any connectome loaded from `data_file:`) builds a dense N x N of `fill` and then scans it — 8.4 GB and a 1e9-element pass for a 32k-vertex mesh, to return a matrix with nothing in it.
         placed = [e for e in (self.edges or []) if e.source is not None and e.target is not None]
@@ -2368,8 +2310,7 @@ class Network(tvbo_datamodel.Network):
     def node_parameter_vectors(self) -> Dict[str, np.ndarray]:
         """Per-node parameters as ``{name: (n_nodes,) array}``, in declared node order.
 
-        Only parameters that *every* node declares are returned (a partial vector has no well-defined value for the gaps). Consumed by symbolic weight/length transforms,
-        which expose each as an ``(n, 1)`` column so an expression like ``W / roi_size`` normalises per target region.
+        Only parameters that *every* node declares are returned (a partial vector has no well-defined value for the gaps). Consumed by symbolic weight/length transforms, which expose each as an ``(n, 1)`` column so an expression like ``W / roi_size`` normalises per target region.
         """
         nodes = self.nodes or []
         if not nodes:
@@ -2385,8 +2326,7 @@ class Network(tvbo_datamodel.Network):
     def node_positions(self) -> np.ndarray:
         """Node coordinates as an ``(n_nodes, 3)`` array, in declared node order.
 
-        A missing ``z`` defaults to 0; a node with no position at all raises, since a partial coordinate matrix (a mesh, a distance calc) is silently wrong rather
-        than merely incomplete. Use ``_get_node_position`` for a tolerant per-node lookup.
+        A missing ``z`` defaults to 0; a node with no position at all raises, since a partial coordinate matrix (a mesh, a distance calc) is silently wrong rather than merely incomplete. Use ``_get_node_position`` for a tolerant per-node lookup.
         """
         out = []
         for node in self.nodes or []:
@@ -2465,8 +2405,7 @@ class Network(tvbo_datamodel.Network):
     def _atlas_terminology_entities(self) -> dict:
         """Parcellation-terminology entities for this network's atlas, or ``{}``.
 
-        Resolves ``parcellation.atlas.name`` (case-insensitively — networks may declare ``HCPMMP1`` while the packaged atlas is keyed ``hcpmmp1``) and reads
-        its SANDS ``terminology.entities``. Returns ``{}`` when the network declares no atlas or the atlas has no terminology.
+        Resolves ``parcellation.atlas.name`` (case-insensitively — networks may declare ``HCPMMP1`` while the packaged atlas is keyed ``hcpmmp1``) and reads its SANDS ``terminology.entities``. Returns ``{}`` when the network declares no atlas or the atlas has no terminology.
         """
         parc = getattr(self, "parcellation", None)
         atlas = getattr(parc, "atlas", None) if parc is not None else None
@@ -2498,14 +2437,9 @@ class Network(tvbo_datamodel.Network):
     def region_alias_map(self) -> Dict[str, str]:
         """Map each node's canonical label AND every known alias -> canonical label.
 
-        Aliases are alternative label strings that denote the SAME region under a different nomenclature. They come from two sources, unioned: each node's own
-        ``alternateName`` (inline on the network) and, when the network declares a parcellation atlas, that atlas terminology's ``alternateName`` per region
-        (joined to nodes by canonical label — never by position). The identity
-        ``label -> label`` is always included so exact matches still resolve.
+        Aliases are alternative label strings that denote the SAME region under a different nomenclature. They come from two sources, unioned: each node's own ``alternateName`` (inline on the network) and, when the network declares a parcellation atlas, that atlas terminology's ``alternateName`` per region (joined to nodes by canonical label — never by position). The identity ``label -> label`` is always included so exact matches still resolve.
 
-        Used by ``by_label`` node reconciliation so a dataset-sourced target whose nodes carry a divergent convention (e.g. ``THALAMUS_LEFT`` for
-        ``L_Thalamus``) aligns by name. Raises when one alias would map to two different canonical labels — an ambiguous crosswalk must fail loudly rather
-        than silently mis-assign a region (and, in particular, a hemisphere).
+        Used by ``by_label`` node reconciliation so a dataset-sourced target whose nodes carry a divergent convention (e.g. ``THALAMUS_LEFT`` for ``L_Thalamus``) aligns by name. Raises when one alias would map to two different canonical labels — an ambiguous crosswalk must fail loudly rather than silently mis-assign a region (and, in particular, a hemisphere).
         """
         labels = self.node_labels
         canon_set = set(labels)
@@ -2543,17 +2477,14 @@ class Network(tvbo_datamodel.Network):
     def raw_weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
         """Weights BEFORE any `transforms:` are applied.
 
-        The tvboptim codegen path passes this and the generated ``create_network`` applies the declared transform inline, so a frozen/standalone kit is
-        self-contained: raw SC stays in the network file, the transform stays declared in the spec, and the exact op is visible in the rendered script rather than
-        hidden in this runtime. Equals ``weights_matrix`` when no weight transform is declared.
+        The tvboptim codegen path passes this and the generated ``create_network`` applies the declared transform inline, so a frozen/standalone kit is self-contained: raw SC stays in the network file, the transform stays declared in the spec, and the exact op is visible in the rendered script rather than hidden in this runtime. Equals ``weights_matrix`` when no weight transform is declared.
         """
         return self._weights_matrix(apply_transforms=False)
 
     def _weights_matrix(self, apply_transforms: bool = True) -> Optional[Union[np.ndarray, JaxArray]]:
         """Connection weights matrix as numpy/JAX array.
 
-        Returns cached matrix if available (from from_matrix), otherwise computes from edges. If transforms are defined, applies them
-        sequentially.
+        Returns cached matrix if available (from from_matrix), otherwise computes from edges. If transforms are defined, applies them sequentially.
 
         Returns
         -------
@@ -2714,10 +2645,7 @@ class Network(tvbo_datamodel.Network):
     def observations(self) -> Dict[str, np.ndarray]:
         """Observational-measure matrices carried by the network.
 
-        Returns a ``{measure_name: matrix}`` dict for every entry in
-        ``self.observational_measures`` (e.g. ``BoldCorrelation`` — the empirical FC target). Source-agnostic: resolves data loaded via
-        ``from_bids`` (``_bids_observations``) or from an inline companion file (``_store``), so experiments can consume network observations
-        the same way they consume ``weights``/``distances``.
+        Returns a ``{measure_name: matrix}`` dict for every entry in ``self.observational_measures`` (e.g. ``BoldCorrelation`` — the empirical FC target). Source-agnostic: resolves data loaded via ``from_bids`` (``_bids_observations``) or from an inline companion file (``_store``), so experiments can consume network observations the same way they consume ``weights``/``distances``.
 
         Returns
         -------
@@ -2787,10 +2715,7 @@ class Network(tvbo_datamodel.Network):
         """Build NetworkX MultiDiGraph from network nodes and edges.
 
         Priority:
-        1. Use explicit nodes if available (with their properties)
-        2. Use explicit edges if available
-        3. Generate edges from weight/length matrices if no explicit edges
-        4. Fall back to matrix-only representation if no nodes defined
+        1. Use explicit nodes if available (with their properties) 2. Use explicit edges if available 3. Generate edges from weight/length matrices if no explicit edges 4. Fall back to matrix-only representation if no nodes defined
 
         Template edges — those without a source or target — are matrix measures stored in the HDF5 companion rather than graph edges, and are filtered out. When there are no explicit edges at all, edges come from the union of the stored matrices, each matrix's values attached as a named edge attribute.
 
@@ -3035,11 +2960,9 @@ class Network(tvbo_datamodel.Network):
     ) -> nx.MultiDiGraph:
         """Build a NetworkX graph, optionally bipartite for projection networks.
 
-        When the network contains a rectangular gain matrix and a *target* network is provided, a bipartite graph is built with sensor nodes
-        from ``self`` and region nodes from *target*.
+        When the network contains a rectangular gain matrix and a *target* network is provided, a bipartite graph is built with sensor nodes from ``self`` and region nodes from *target*.
 
-        If *target* is ``None``, the method looks for a ``target_network`` reference on the gain edge and loads it automatically.  Failing
-        that, it falls back to ``dimension_labels`` stored on the edge to create label-only region nodes (no positions).
+        If *target* is ``None``, the method looks for a ``target_network`` reference on the gain edge and loads it automatically.  Failing that, it falls back to ``dimension_labels`` stored on the edge to create label-only region nodes (no positions).
 
         Parameters
         ----------
@@ -3183,8 +3106,7 @@ class Network(tvbo_datamodel.Network):
 
         See Also
         --------
-        add_transform : Add a transform on any edge property
-        """
+        add_transform : Add a transform on any edge property"""
         self.add_transform("weight", equation_rhs)
 
     def plot_weights(self, ax: Axes, cmap: str = "magma", log: bool = False) -> Any:
@@ -3371,9 +3293,7 @@ class Network(tvbo_datamodel.Network):
     def _delays_from_edges(self) -> Optional[np.ndarray]:
         """Explicit per-edge delays, or ``None`` when no edge declares a positive one.
 
-        Unconnected entries stay ``NaN`` (consumers such as
-        ``adapters.tvboptim._build_graph`` zero them), which is what distinguishes
-        "no edge" from "an edge with delay 0".
+        Unconnected entries stay ``NaN`` (consumers such as ``adapters.tvboptim._build_graph`` zero them), which is what distinguishes "no edge" from "an edge with delay 0".
         """
         delays = self._edge_matrix(lambda edge, i, j: edge_param(edge, "delay"), fill=np.nan)
         if delays is None or not np.any(np.nan_to_num(delays) > 0):
@@ -3512,9 +3432,7 @@ class Network(tvbo_datamodel.Network):
         """Get 3D spatial coordinates of brain region centers.
 
         Resolution order:
-        1. ``Node.position`` on ``self.nodes`` (in-memory)
-        2. ``nodes/coordinates`` dataset in the HDF5/Zarr companion
-        3. Atlas metadata (``terminology.entities[*].center``)
+        1. ``Node.position`` on ``self.nodes`` (in-memory) 2. ``nodes/coordinates`` dataset in the HDF5/Zarr companion 3. Atlas metadata (``terminology.entities[*].center``)
 
         Returns
         -------
@@ -3698,9 +3616,7 @@ class Network(tvbo_datamodel.Network):
 
         See Also
         --------
-        plot_brain_surface : 3-D brain surface rendering with bsplot tvbo.plot.network.plot_graph_networkx : NetworkX backend
-        tvbo.plot.network.plot_graph_bsplot : bsplot backend
-        """
+        plot_brain_surface : 3-D brain surface rendering with bsplot tvbo.plot.network.plot_graph_networkx : NetworkX backend tvbo.plot.network.plot_graph_bsplot : bsplot backend"""
         from tvbo.plot.network import (
             plot_graph_bsplot,
             plot_graph_networkx,
@@ -3780,8 +3696,7 @@ class Network(tvbo_datamodel.Network):
 
         See Also
         --------
-        tvbo.plot.network.plot_graph_brain : Full parameter list
-        """
+        tvbo.plot.network.plot_graph_brain : Full parameter list"""
         from tvbo.plot.network import plot_graph_brain
 
         return plot_graph_brain(self, ax=ax, weight_matrix=weight_matrix, **kwargs)
@@ -3833,8 +3748,7 @@ class Network(tvbo_datamodel.Network):
         """Create comprehensive visualization with brain surface and matrices.
 
         Produces a multi-panel figure with one row per edge property.
-        Each row contains either a brain surface + matrix heatmap (when *plot_brain* is True) or just a matrix heatmap, both
-        coloured by the same property.
+        Each row contains either a brain surface + matrix heatmap (when *plot_brain* is True) or just a matrix heatmap, both coloured by the same property.
 
         Parameters
         ----------
@@ -3888,8 +3802,7 @@ class Network(tvbo_datamodel.Network):
 
         See Also
         --------
-        plot_graph : Network graph visualization plot_brain_surface : 3-D brain surface rendering plot_matrix : Side-by-side matrix visualization
-        """
+        plot_graph : Network graph visualization plot_brain_surface : 3-D brain surface rendering plot_matrix : Side-by-side matrix visualization"""
         from matplotlib.colors import LogNorm
 
         # Auto-discover all edge properties when not specified
@@ -4072,8 +3985,7 @@ class Network(tvbo_datamodel.Network):
 
         See Also
         --------
-        add_transform : Add a transform on any edge property normalize_weights : Set custom normalization equation
-        """
+        add_transform : Add a transform on any edge property normalize_weights : Set custom normalization equation"""
         self.add_transform("weight", "(M - M_min) / (M_max - M_min)")
 
     # ── Node mapping (hierarchical composition) ─────────────────────
@@ -4086,8 +3998,7 @@ class Network(tvbo_datamodel.Network):
     ) -> None:
         """Set the node-to-parent mapping array.
 
-        This stores the mapping data internally so that :func:`save` writes it into the HDF5 companion automatically — no manual
-        ``h5py`` code required.
+        This stores the mapping data internally so that :func:`save` writes it into the HDF5 companion automatically — no manual ``h5py`` code required.
 
         Parameters
         ----------
@@ -4154,16 +4065,11 @@ class Network(tvbo_datamodel.Network):
     def _fill_produced_matrices(self, arrays: dict) -> None:
         """Resolve every Edge that declares a ``producer:`` into ``arrays``, once.
 
-        A produced matrix is what lets a discrete differential operator or a rule-generated connectome be DECLARED — the recipe states the callable that
-        builds it and stays the single source of truth — where a pre-built file needs a prep step run by hand before the spec can execute at all.
+        A produced matrix is what lets a discrete differential operator or a rule-generated connectome be DECLARED — the recipe states the callable that builds it and stays the single source of truth — where a pre-built file needs a prep step run by hand before the spec can execute at all.
 
-        Filling ``_arrays`` is what makes every accessor see it: they do not agree on one entry point (``matrix`` walks a resolution order, ``weights`` reads ``_arrays``
-        directly), so resolving in only one of them leaves the other silently falling through to whatever it does when a connectome is missing. A stored array still
-        wins — this never overwrites an existing entry.
+        Filling ``_arrays`` is what makes every accessor see it: they do not agree on one entry point (``matrix`` walks a resolution order, ``weights`` reads ``_arrays`` directly), so resolving in only one of them leaves the other silently falling through to whatever it does when a connectome is missing. A stored array still wins — this never overwrites an existing entry.
 
-        Resolution is the shared one (:mod:`tvbo.data.param_io`), so a matrix producer caches, fingerprints and reports errors exactly as a parameter's does. One
-        consequence differs from a hand-set matrix: the array is a read-only view of the resolve cache, which several Networks may share, so it is transformed by deriving
-        a new array rather than written into.
+        Resolution is the shared one (:mod:`tvbo.data.param_io`), so a matrix producer caches, fingerprints and reports errors exactly as a parameter's does. One consequence differs from a hand-set matrix: the array is a read-only view of the resolve cache, which several Networks may share, so it is transformed by deriving a new array rather than written into.
         """
         from tvbo.data import param_io
 
@@ -4210,8 +4116,7 @@ class Network(tvbo_datamodel.Network):
     ) -> None:
         """Set a named edge matrix.
 
-        Accepts dense NumPy arrays, scipy sparse matrices (CSR, COO, etc.), or any array-like that can be converted. The matrix is stored
-        internally and a template edge is created/updated automatically so that ``save()`` writes it to the HDF5 companion.
+        Accepts dense NumPy arrays, scipy sparse matrices (CSR, COO, etc.), or any array-like that can be converted. The matrix is stored internally and a template edge is created/updated automatically so that ``save()`` writes it to the HDF5 companion.
 
         Parameters
         ----------
@@ -4265,8 +4170,7 @@ class Network(tvbo_datamodel.Network):
 
         Returns
         -------
-        np.ndarray or scipy.sparse matrix or None
-        """
+        np.ndarray or scipy.sparse matrix or None"""
         from scipy import sparse
         from scipy.sparse import csr_matrix, coo_matrix, lil_matrix
 
@@ -4358,9 +4262,7 @@ class Network(tvbo_datamodel.Network):
     ) -> None:
         """Add edges in bulk using COO-style index arrays.
 
-        Each keyword argument is a named matrix (e.g. ``weights=vals``) whose entries are being added at the given ``(source, target)``
-        positions. Internally the data is kept in COO format for fast incremental building; call :meth:`matrix` with
-        ``format="csr"`` when you need efficient row-slicing.
+        Each keyword argument is a named matrix (e.g. ``weights=vals``) whose entries are being added at the given ``(source, target)`` positions. Internally the data is kept in COO format for fast incremental building; call :meth:`matrix` with ``format="csr"`` when you need efficient row-slicing.
 
         Parameters
         ----------
@@ -4435,8 +4337,7 @@ class Network(tvbo_datamodel.Network):
     def transforms_for(self, target: str):
         """The declared `transforms:` that retarget *target*, in declaration order.
 
-        The one place the target name is matched, so `length` and its `lengths` spelling stay equivalent everywhere and a new alias is added once. Both the runtime and the
-        emitters that inline a transform into a generated script select through this.
+        The one place the target name is matched, so `length` and its `lengths` spelling stay equivalent everywhere and a new alias is added once. Both the runtime and the emitters that inline a transform into a generated script select through this.
 
         Args:
             target: Edge property a transform retargets, e.g. `"weight"` or `"length"`.
@@ -4450,8 +4351,7 @@ class Network(tvbo_datamodel.Network):
     def transform_expression(self, func):
         """A transform's equation as a sympy expression, with its arguments substituted.
 
-        Shared by the runtime and by codegen so a spec resolves to the same expression on both paths. Scalar values come from `Function.arguments`, falling back to
-        `Equation.parameters` for legacy specs.
+        Shared by the runtime and by codegen so a spec resolves to the same expression on both paths. Scalar values come from `Function.arguments`, falling back to `Equation.parameters` for legacy specs.
 
         Args:
             func: The `Function` transform.

@@ -15,8 +15,7 @@ from tvbo.data.network_io import _template_edges
 def relmat_entities(network) -> dict:
     """Extract pybids entities from a tvbo Network instance or dict (§6.5).
 
-    Accepts both a Network object (direct attribute access) and a raw sidecar dict (for standalone usage). Returns entity dict for
-    ``build_path()``.
+    Accepts both a Network object (direct attribute access) and a raw sidecar dict (for standalone usage). Returns entity dict for ``build_path()``.
 
     Parameters
     ----------
@@ -64,8 +63,7 @@ def relmat_entities(network) -> dict:
 def sensor_entities(network) -> dict:
     """Extract pybids entities from a sensor Network (§6.5).
 
-    Returns entity dict suitable for ``build_path()`` with
-    ``SENSOR_PATTERNS``.
+    Returns entity dict suitable for ``build_path()`` with ``SENSOR_PATTERNS``.
     """
     if isinstance(network, dict):
         bids = network.get("bids", {})

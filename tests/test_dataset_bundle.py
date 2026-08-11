@@ -1,7 +1,4 @@
-"""``--bundle-dataset`` makes a per-subject workflow kit self-contained: it copies each enumerated subject's empirical target (sidecar + payload) into the kit, selecting the
-exact BIDS variant, and rewrites ``dataset.bids_root`` to a relative path that resolves against the frozen spec (like a network ``data_file``) — so the kit ships the data its
-fan-out consumes and nothing else, with no separate upload or ``$TVBO_BIDS_ROOT``.
-"""
+"""``--bundle-dataset`` makes a per-subject workflow kit self-contained: it copies each enumerated subject's empirical target (sidecar + payload) into the kit, selecting the exact BIDS variant, and rewrites ``dataset.bids_root`` to a relative path that resolves against the frozen spec (like a network ``data_file``) — so the kit ships the data its fan-out consumes and nothing else, with no separate upload or ``$TVBO_BIDS_ROOT``."""
 
 from __future__ import annotations
 
@@ -105,8 +102,7 @@ def test_bundle_dataset_copies_and_returns_relative_root(cohort: Path, tmp_path:
 
 
 def test_relative_bids_root_rebases_to_spec_dir(tmp_path: Path):
-    """A bundled kit records ``bids_root: dataset`` and resolves it against the spec file
-    — so `tvbo run spec/exp.yaml` finds spec/dataset regardless of the working dir."""
+    """A bundled kit records ``bids_root: dataset`` and resolves it against the spec file — so `tvbo run spec/exp.yaml` finds spec/dataset regardless of the working dir."""
     spec_dir = tmp_path / "kit" / "spec"
     spec_dir.mkdir(parents=True)
     bundled = spec_dir / "dataset"

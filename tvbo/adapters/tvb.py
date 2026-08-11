@@ -114,8 +114,7 @@ def _extract_dynamics(sim) -> tvbo_datamodel.Dynamics:
 def _sv_ic_range(sv):
     """Range a state variable's initial conditions are drawn from (TVB ``state_variable_range``).
 
-    The export inverse of the ingestion in :func:`_extract_dynamics`: prefer the explicit sampling ``distribution`` support (set when the IC range differs
-    from a clamp), else the descriptive ``domain``.
+    The export inverse of the ingestion in :func:`_extract_dynamics`: prefer the explicit sampling ``distribution`` support (set when the IC range differs from a clamp), else the descriptive ``domain``.
     """
     dist = getattr(sv, "distribution", None)
     dom = getattr(dist, "domain", None) if dist is not None else None
@@ -133,8 +132,7 @@ def _sv_clamp(sv):
 def tvb_state_variable_ranges(model, default=(-1e9, 1e9)):
     """Build the TVB ``state_variable_range`` mapping ``{name: (lo, hi)}``.
 
-    These are TVB's initial-condition sampling support, drawn with ``rng.uniform`` and so always finite — the IC range (sampling distribution, else descriptive
-    domain) is used here, never a half-open clamp. ``default`` fills a bound only when a state variable has neither a distribution nor a domain.
+    These are TVB's initial-condition sampling support, drawn with ``rng.uniform`` and so always finite — the IC range (sampling distribution, else descriptive domain) is used here, never a half-open clamp. ``default`` fills a bound only when a state variable has neither a distribution nor a domain.
     """
     ranges = {}
     for sv in model.state_variables.values():
@@ -684,8 +682,7 @@ def _extract_environment() -> tvbo_datamodel.SoftwareEnvironment | None:
 def from_tvb_zip(zip_path):
     """Import a TVB connectivity ZIP into a tvbo Network.
 
-    TVB ZIPs contain: ``weights.txt``, ``tract_lengths.txt``,
-    ``centres.txt``.
+    TVB ZIPs contain: ``weights.txt``, ``tract_lengths.txt``, ``centres.txt``.
 
     Parameters
     ----------
@@ -812,8 +809,7 @@ def from_tvb_surface(connectivity, surface, region_mapping):
 
     Produces two linked networks:
 
-    1. **Region-level** (parent): from TVB Connectivity
-    2. **Vertex-level** (child): mesh + region_mapping linking vertices to regions via hierarchical ``node_mapping``
+    1. **Region-level** (parent): from TVB Connectivity 2. **Vertex-level** (child): mesh + region_mapping linking vertices to regions via hierarchical ``node_mapping``
 
     Parameters
     ----------

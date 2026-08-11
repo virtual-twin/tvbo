@@ -1,8 +1,6 @@
 """A study's declarative ``analyses:`` — schedule, execution, persistence, binding.
 
-An analysis is the study-scope form of ``Analysis``: a ``FunctionCall`` whose result the study keeps, so a figure can bind a quantity no simulation produced. These cover the
-contract a recipe author relies on — what runs when, what lands on disk, and what a
-``used: {analysis: …}`` resolves to — plus the errors that must be loud rather than silent (duplicate names, unknown references, cycles, an unrenderable backend).
+An analysis is the study-scope form of ``Analysis``: a ``FunctionCall`` whose result the study keeps, so a figure can bind a quantity no simulation produced. These cover the contract a recipe author relies on — what runs when, what lands on disk, and what a ``used: {analysis: …}`` resolves to — plus the errors that must be loud rather than silent (duplicate names, unknown references, cycles, an unrenderable backend).
 """
 
 import sys
@@ -287,8 +285,7 @@ def test_dependents_of_an_analysis_are_found_transitively(calls):
 def test_naming_an_analysis_pulls_in_only_the_inputs_that_are_missing(calls):
     """`--analysis` re-derives what was named; it is not a back-door whole-study run.
 
-    An input that already has a container is left alone — recomputing it is what the caller chose not to do. One that has never been produced is pulled in, transitively, because it
-    cannot be read.
+    An input that already has a container is left alone — recomputing it is what the caller chose not to do. One that has never been produced is pulled in, transitively, because it cannot be read.
     """
     from tvbo.data.analysis_io import analysis_closure
 
@@ -326,8 +323,7 @@ def test_an_iri_reference_counts_as_a_dependency(calls):
 def test_an_experiment_known_only_by_key_still_matches_a_numeric_used_edge(calls):
     """Both sides of the staleness walk must normalise, or neither side ever intersects.
 
-    `dependencies` emits the recipe spelling AND the bare id; the wanted set comes from
-    `experiment_ids`. An experiment carrying only `key: exp-1` yields nothing numeric unless that side normalises too — and an empty stale set reads exactly like a clean one.
+    `dependencies` emits the recipe spelling AND the bare id; the wanted set comes from `experiment_ids`. An experiment carrying only `key: exp-1` yields nothing numeric unless that side normalises too — and an empty stale set reads exactly like a clean one.
     """
     from types import SimpleNamespace
 

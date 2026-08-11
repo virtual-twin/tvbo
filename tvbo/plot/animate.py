@@ -86,12 +86,10 @@ def _extract_node_timeseries(data, max_points=200):
 def animate_network(result, state=None, interval=50, cmap="viridis", node_size=120, figsize=None, format=None):
     """Animate time-series on a graph layout (nodes colored by state value).
 
-    Supports the ``.sel(variable='V').animate()`` pattern: if the variable dimension is already selected, animates that variable.  With no selection
-    all variables are shown (one row per variable).
+    Supports the ``.sel(variable='V').animate()`` pattern: if the variable dimension is already selected, animates that variable.  With no selection all variables are shown (one row per variable).
 
     Graph data is resolved in order:
-    1. ``result.graph`` / ``result._extras['graph']`` (explicitly attached)
-    2. Experiment metadata via ``result._source.source.network``
+    1. ``result.graph`` / ``result._extras['graph']`` (explicitly attached) 2. Experiment metadata via ``result._source.source.network``
 
     Parameters
     ----------
@@ -110,8 +108,7 @@ def animate_network(result, state=None, interval=50, cmap="viridis", node_size=1
 
     Returns
     -------
-    matplotlib.animation.FuncAnimation
-    """
+    matplotlib.animation.FuncAnimation"""
     from matplotlib.animation import FuncAnimation
 
     graph = getattr(result, "graph", None)
@@ -259,8 +256,7 @@ def animate_timeseries(result, state=None, interval=50, cmap=None, figsize=None)
 
     Returns
     -------
-    matplotlib.animation.FuncAnimation
-    """
+    matplotlib.animation.FuncAnimation"""
     from matplotlib.animation import FuncAnimation
 
     data = result.data
@@ -334,8 +330,7 @@ def animate_phase(result, x_var=None, y_var=None, region=0, mode=0, interval=50,
 
     Returns
     -------
-    matplotlib.animation.FuncAnimation
-    """
+    matplotlib.animation.FuncAnimation"""
     from matplotlib.animation import FuncAnimation
     from tvbo.plot.phase import _extract_2d
 
@@ -512,8 +507,7 @@ def animate_multi(result, panels, interval=50, figsize=None, max_points=200, sav
 
     Returns
     -------
-    matplotlib.animation.FuncAnimation
-    """
+    matplotlib.animation.FuncAnimation"""
     from matplotlib.animation import FuncAnimation
 
     n_panels = len(panels)

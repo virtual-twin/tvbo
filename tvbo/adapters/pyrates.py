@@ -44,9 +44,7 @@ TVBO_TO_PYRATES_SOLVER = {
 def _patch_pyrates_networkx_backend():
     """Fix networkx 3.4+ backend dispatch conflict with PyRates.
 
-    PyRates' ``ComputeGraph`` extends ``networkx.MultiDiGraph``.  In networkx ≥ 3.4 the ``MultiDiGraph.__new__`` is decorated with
-    ``@nx._dispatchable`` which intercepts a ``backend`` keyword argument and tries to dispatch to a networkx graph backend.  PyRates passes
-    ``backend='default'`` (meaning *PyRates* compute backend, not a networkx backend) through ``**kwargs`` to ``ComputeGraph(**kwargs)``.
+    PyRates' ``ComputeGraph`` extends ``networkx.MultiDiGraph``.  In networkx ≥ 3.4 the ``MultiDiGraph.__new__`` is decorated with ``@nx._dispatchable`` which intercepts a ``backend`` keyword argument and tries to dispatch to a networkx graph backend.  PyRates passes ``backend='default'`` (meaning *PyRates* compute backend, not a networkx backend) through ``**kwargs`` to ``ComputeGraph(**kwargs)``.
     The decorator sees it and raises ``ImportError: 'default' backend is not installed``.
 
     Fix: replace ``ComputeGraph.__new__`` (and ``ComputeGraphBackProp``) with plain ``object.__new__`` so the decorator is removed.
@@ -76,9 +74,7 @@ def _patch_pyrates_networkx_backend():
 def _patch_pyrates_replace_in_expr():
     """Monkey-patch PyRates' replace_in_expr to use xreplace.
 
-    PyRates uses ``expr.subs(replacements, simultaneous=True)`` which corrupts compound sub-expressions: when a ``Mul`` has two or more
-    ``Add`` children sharing a symbol (e.g. ``a*v*(1-v)*(v-b)``), ``subs`` replaces the symbol *inside* the ``Add`` first, breaking the match for
-    the ``Add`` replacement key. ``xreplace`` matches top-down and avoids this bug.
+    PyRates uses ``expr.subs(replacements, simultaneous=True)`` which corrupts compound sub-expressions: when a ``Mul`` has two or more ``Add`` children sharing a symbol (e.g. ``a*v*(1-v)*(v-b)``), ``subs`` replaces the symbol *inside* the ``Add`` first, breaking the match for the ``Add`` replacement key. ``xreplace`` matches top-down and avoids this bug.
     """
     import pyrates.backend.parser as _pr_parser
 
@@ -91,17 +87,11 @@ def _patch_pyrates_replace_in_expr():
 def _patch_pyrates_reserved_names():
     """Relax PyRates' variable-name reservation for SymPy collisions.
 
-    PyRates >=1.2 rejects parameter / state-variable names that collide with a SymPy constant or function — ``Gamma``, ``gamma``, ``beta``, ``exp``,
-    ``pi`` … — because an *undeclared* name of that form would sympify to the function/constant rather than a free symbol (e.g. ``sympify('Gamma*x')``
-    yields the gamma function). See ``check_vname`` in
-    ``pyrates.frontend.template.operator``.
+    PyRates >=1.2 rejects parameter / state-variable names that collide with a SymPy constant or function — ``Gamma``, ``gamma``, ``beta``, ``exp``, ``pi`` … — because an *undeclared* name of that form would sympify to the function/constant rather than a free symbol (e.g. ``sympify('Gamma*x')`` yields the gamma function). See ``check_vname`` in ``pyrates.frontend.template.operator``.
 
     tvbo declares *every* model parameter and state variable as an explicit
-    PyRates operator variable, so PyRates' own parser resolves the name to a symbol and the collision never occurs — exactly how tvbo's parser lets a
-    declared parameter override the SymPy built-in (see
-    ``tvbo.parse.expression.parse_eq``). We therefore keep only the genuinely
-    PyRates-internal slot names reserved (the state vector ``y``/``dy``, the index slots, and the buffer/history name parts) and allow the rest. This
-    is maximally flexible: a model may use ``Gamma`` as a parameter, or use the SymPy ``Gamma`` function in an equation where it is *not* declared.
+    PyRates operator variable, so PyRates' own parser resolves the name to a symbol and the collision never occurs — exactly how tvbo's parser lets a declared parameter override the SymPy built-in (see ``tvbo.parse.expression.parse_eq``). We therefore keep only the genuinely
+    PyRates-internal slot names reserved (the state vector ``y``/``dy``, the index slots, and the buffer/history name parts) and allow the rest. This is maximally flexible: a model may use ``Gamma`` as a parameter, or use the SymPy ``Gamma`` function in an equation where it is *not* declared.
     """
     import pyrates.frontend.template.operator as _pr_op
     from pyrates.ir.circuit import PyRatesException
@@ -135,8 +125,7 @@ def _patch_pyrates_missing_funcs():
     """Register additional math functions in PyRates' base backend.
 
     PyRates' compute graph only supports functions listed in ``base_funcs``.
-    Functions like ``erfc``, ``erf``, and ``fmod`` are valid in SymPy/numpy but missing from PyRates' registry.  We inject them into the shared
-    ``base_funcs`` dict which is copied by every new backend instance.
+    Functions like ``erfc``, ``erf``, and ``fmod`` are valid in SymPy/numpy but missing from PyRates' registry.  We inject them into the shared ``base_funcs`` dict which is copied by every new backend instance.
 
     Also patches the ExpressionParser to inject functions into already- instantiated backends via their compute graph.
     """
@@ -248,8 +237,7 @@ class PyRatesAdapter(BaseAdapter):
 
         Returns
         -------
-        ExperimentResult
-        """
+        ExperimentResult"""
         from pyrates import clear
 
         from tvbo.data.types import ExperimentResult

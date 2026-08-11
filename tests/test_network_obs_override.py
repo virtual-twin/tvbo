@@ -1,9 +1,6 @@
 """`compute_all_observations(network_obs=...)` overrides the module-level target.
 
-Network-observation targets (an empirical FC to fit against) are materialised into module-level constants and bound once at ``run_experiment`` time. That is correct
-for one process per subject, but a batched cohort fit scores many subjects in one traced call, each against its own target carried as a traced leaf — so the scoring
-path must honour a per-call ``network_obs`` override instead of the process-wide constant. Without it every subject is silently scored against whichever target was
-bound last. This renders the real FIC+EIB experiment and checks the override end to end, so reverting the binding to the bare module constant fails here.
+Network-observation targets (an empirical FC to fit against) are materialised into module-level constants and bound once at ``run_experiment`` time. That is correct for one process per subject, but a batched cohort fit scores many subjects in one traced call, each against its own target carried as a traced leaf — so the scoring path must honour a per-call ``network_obs`` override instead of the process-wide constant. Without it every subject is silently scored against whichever target was bound last. This renders the real FIC+EIB experiment and checks the override end to end, so reverting the binding to the bare module constant fails here.
 """
 
 import types

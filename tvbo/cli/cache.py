@@ -1,8 +1,6 @@
 """Inspect and reclaim the produced-constant store.
 
-A parameter with a ``producer:`` is materialised once to a content-addressed artifact under
-``~/.tvbo/constants``, keyed on the producing call AND on that module's source. Editing the callable is therefore supposed to write a NEW artifact — which is what keeps a run from
-reading arrays computed by code that no longer exists — and the old one is left behind deliberately, because nothing at write time knows whether another study still reaches it.
+A parameter with a ``producer:`` is materialised once to a content-addressed artifact under ``~/.tvbo/constants``, keyed on the producing call AND on that module's source. Editing the callable is therefore supposed to write a NEW artifact — which is what keeps a run from reading arrays computed by code that no longer exists — and the old one is left behind deliberately, because nothing at write time knows whether another study still reaches it.
 
 That is what this reclaims: given a study, the artifacts of ITS producers that IT no longer reaches. Producers the study does not declare are never touched.
 """

@@ -3,12 +3,10 @@
 
 LinkML's `gen-owl` emits a usable OWL file but stops short of the publication-readiness items in §2.3 of the ontology restructuring plan:
 
-* canonical ontology IRI (`https://w3id.org/tvbo/struct`) instead of
-  the synthetic `https://w3id.org/tvbo.owl.ttl`;
+* canonical ontology IRI (`https://w3id.org/tvbo/struct`) instead of the synthetic `https://w3id.org/tvbo.owl.ttl`;
 * `owl:versionIRI` pinned to the schema `version`;
 * `owl:versionInfo` mirroring `pav:version`;
-* `dcterms:created` / `dcterms:modified` / `dcterms:creator` /
-  `dcterms:contributor` / `dcterms:description`;
+* `dcterms:created` / `dcterms:modified` / `dcterms:creator` / `dcterms:contributor` / `dcterms:description`;
 * `rdfs:isDefinedBy <ontology IRI>` on every TVB-O class.
 
 We do this as a post-process rather than fighting LinkML's emitter so that future LinkML upgrades remain drop-in.
@@ -37,11 +35,7 @@ PAV = Namespace("http://purl.org/pav/")
 def _retype_float_facets(g: Graph) -> None:
     """Retype numeric facet literals on ``xsd:float`` datatype restrictions.
 
-    LinkML's ``gen-owl`` emits a float slot's ``minimum_value`` /
-    ``maximum_value`` bounds as bare ``0e+00`` / ``1e+00`` literals, which Turtle types as ``xsd:double``. HermiT rejects an ``xsd:double`` facet value on an
-    ``owl:onDatatype xsd:float`` restriction (``the maxInclusive facet takes only floats as values when used on an xsd:float datatype``); ELK does not check
-    facets, so only HermiT surfaces it. Re-type each facet literal to
-    ``xsd:float`` so the restriction is internally consistent for both reasoners.
+    LinkML's ``gen-owl`` emits a float slot's ``minimum_value`` / ``maximum_value`` bounds as bare ``0e+00`` / ``1e+00`` literals, which Turtle types as ``xsd:double``. HermiT rejects an ``xsd:double`` facet value on an ``owl:onDatatype xsd:float`` restriction (``the maxInclusive facet takes only floats as values when used on an xsd:float datatype``); ELK does not check facets, so only HermiT surfaces it. Re-typing each facet literal to ``xsd:float`` makes the restriction internally consistent for both reasoners.
     """
     facet_predicates = (XSD.minInclusive, XSD.maxInclusive, XSD.minExclusive, XSD.maxExclusive)
     for datatype_node in set(g.subjects(OWL.onDatatype, XSD.float)):
@@ -56,8 +50,17 @@ def _retype_float_facets(g: Graph) -> None:
 
 
 def _augment(g: Graph, schema: dict) -> None:
-    # Drop the synthetic ontology declaration LinkML emits; it points at
-    # `https://w3id.org/tvbo.owl.ttl` which is not a real artefact.
+    """Write the §2.3 ontology header into *g* and repair the labels ROBOT report flags.
+
+    Two of the label passes turn on facts the code cannot show:
+
+    * **Local-name collisions.** A LinkML enum's permissible value, and a slot nested under a sub-namespace, both carry a bare local name that repeats across parents — `DimensionType#time` vs `EventType#time` vs `SamplingAxis#time`, or `tvb-o/dbs/scale` vs `tvb-o/software/scale`. The parent is the IRI fragment before `#`, or the path before the final `/`. The bare form is demoted to `skos:notation` and the human label becomes `"<value> (<parent>)"`; an unscoped sibling such as `tvb-o/scale` is the canonical one and keeps its bare label.
+    * **Slot labels against imported classes.** A top-level TVBO property (`tvbo:x`, `tvbo:license`) shares its readable label with an InterLex or SANDS class of the same name. Only the TVBO side is scoped, to `"<name> (slot)"`, again moving the bare form to `skos:notation`; the imported class label is left untouched.
+
+    Args:
+        g: The parsed T-box, mutated in place.
+        schema: The LinkML schema, read for title, version, licence and provenance.
+    """
     legacy = URIRef("https://w3id.org/tvbo.owl.ttl")
     legacy_triples = list(g.triples((legacy, None, None)))
     for t in legacy_triples:
@@ -106,10 +109,6 @@ def _augment(g: Graph, schema: dict) -> None:
         if isinstance(cls, URIRef) and str(cls).startswith(str(TVBO)):
             g.add((cls, RDFS.isDefinedBy, onto))
 
-    # Scope LinkML enum permissible-value labels to their parent enum so that
-    # ROBOT report stops flagging cross-enum collisions like
-    # `DimensionType#time` vs `EventType#time` vs `SamplingAxis#time` (each carried `rdfs:label "time"`). The enum local-name comes from the IRI fragment before `#`. Demote the bare value to `skos:notation` and synthesize `"<value> (<EnumName>)"` as the human label.
-    # Same treatment for slot/property IRIs nested under sub-namespaces (`tvb-o/dbs/scale`, `tvb-o/software/scale`) which collide on the bare local name `scale`. The unscoped sibling (`tvb-o/scale`) is treated as canonical and keeps the bare label.
     PROPERTY_TYPES = (OWL.Class, OWL.ObjectProperty, OWL.DatatypeProperty, OWL.AnnotationProperty)
     seen_subjects: set[URIRef] = set()
     for ptype in PROPERTY_TYPES:
@@ -139,8 +138,6 @@ def _augment(g: Graph, schema: dict) -> None:
         g.add((subj, SKOS.notation, bare_label))
         g.add((subj, RDFS.label, Literal(f"{value} ({scope})")))
 
-    # Top-level TVBO ObjectProperty / DatatypeProperty / AnnotationProperty labels (`tvbo:x`, `tvbo:license`, ...) collide with InterLex / SANDS imported class IRIs that share the same readable label. Scope the
-    # TVBO-side label as "<name> (slot)" while leaving the imported class label untouched. Bare value moves to `skos:notation`.
     SLOT_TYPES = (OWL.ObjectProperty, OWL.DatatypeProperty, OWL.AnnotationProperty)
     slot_subjects: set[URIRef] = set()
     for st in SLOT_TYPES:

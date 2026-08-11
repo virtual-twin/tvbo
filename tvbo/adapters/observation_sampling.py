@@ -7,17 +7,11 @@
 """Backend-agnostic resolver for observation-monitor sampling step counts.
 
 Observation models (e.g. ``BOLD_TVB``) are declared once as a backend-neutral
-YAML pipeline. The *number of samples* an observation emits, however, depends on the integration time-step ``dt`` chosen at run time, not on any value that can
-be frozen into the YAML. Freezing a step count into the pipeline (as
-``subsample_to_period.stepsize = 180``) only holds when the input already sits on a particular stock grid; a backend that applies that literal to the raw
-integration grid produces the wrong sample count.
+YAML pipeline. The *number of samples* an observation emits, however, depends on the integration time-step ``dt`` chosen at run time, not on any value that can be frozen into the YAML. Freezing a step count into the pipeline (as ``subsample_to_period.stepsize = 180``) only holds when the input already sits on a particular stock grid; a backend that applies that literal to the raw integration grid produces the wrong sample count.
 
-This module is the single source of truth that every Python backend (tvboptim, jax, tvb) uses to turn ``(declarative observation, integration dt)`` into the
-integer step counts that drive downsampling. Backends legitimately diverge only in *how* those counts are applied (circular-buffer convolution vs. functional
-window-mean+subsample vs. TVB monitor step-mod loop); the counts themselves must be identical.
+This module is the single source of truth that every Python backend (tvboptim, jax, tvb) uses to turn ``(declarative observation, integration dt)`` into the integer step counts that drive downsampling. Backends legitimately diverge only in *how* those counts are applied (circular-buffer convolution vs. functional window-mean+subsample vs. TVB monitor step-mod loop); the counts themselves must be identical.
 
-It is intentionally free of heavy dependencies (no jax/tvb/juliacall, no
-``tvbo.classes``) so both the tvboptim runtime module and the export adapters can import it cheaply and without circular-import risk.
+It is intentionally free of heavy dependencies (no jax/tvb/juliacall, no ``tvbo.classes``) so both the tvboptim runtime module and the export adapters can import it cheaply and without circular-import risk.
 """
 
 from __future__ import annotations

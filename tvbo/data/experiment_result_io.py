@@ -1,7 +1,6 @@
 """Sidecar I/O + cross-experiment cache for :class:`ExperimentResult`.
 
-Lets downstream experiments depend on an upstream experiment's fitted parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``,
-``J_i`` via an ``aux_data: Reference``) without recomputing on every notebook re-execution.
+Lets downstream experiments depend on an upstream experiment's fitted parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``, ``J_i`` via an ``aux_data: Reference``) without recomputing on every notebook re-execution.
 
 Layout
 ------
@@ -29,8 +28,7 @@ Cache invalidation
 A cache hit requires both:
 
 1. Current experiment YAML hash matches ``provenance.experiment_yaml_hash``.
-2. For each input fingerprint, the underlying file's ``(mtime, size)`` matches (fast path). On mismatch, recompute the sha256; if THAT
-   matches, still a hit (handles ``touch`` and rename-in-place).
+2. For each input fingerprint, the underlying file's ``(mtime, size)`` matches (fast path). On mismatch, recompute the sha256; if THAT matches, still a hit (handles ``touch`` and rename-in-place).
 """
 
 from __future__ import annotations

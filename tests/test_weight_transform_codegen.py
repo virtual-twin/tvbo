@@ -1,9 +1,6 @@
 """Weight `transforms:` are inlined in the generated tvboptim code (self-contained kit).
 
-A declared connectome transform (e.g. ``log(W+1)/max(log(W+1))``) is applied at runtime by
-``Network.weights_matrix``. A frozen/standalone kit must not depend on that: the codegen renders the transform to pure ``jnp`` inside ``create_network`` and is handed the RAW weights,
-so the transform stays declared in the spec, the raw SC stays in the network file, and the exact op is visible in the script rather than hidden in tvbo runtime. These freeze the
-raw/transformed accessor split, byte-identity of the inlined op against ``weights_matrix``, and that the emitted network builder carries the transform as pure ``jnp``.
+A declared connectome transform (e.g. ``log(W+1)/max(log(W+1))``) is applied at runtime by ``Network.weights_matrix``. A frozen/standalone kit must not depend on that: the codegen renders the transform to pure ``jnp`` inside ``create_network`` and is handed the RAW weights, so the transform stays declared in the spec, the raw SC stays in the network file, and the exact op is visible in the script rather than hidden in tvbo runtime. These freeze the raw/transformed accessor split, byte-identity of the inlined op against ``weights_matrix``, and that the emitted network builder carries the transform as pure ``jnp``.
 """
 
 import jax.numpy as jnp
@@ -32,8 +29,7 @@ def test_raw_accessor_is_untouched_transformed_is_normalised():
 
 
 def test_inline_transform_is_byte_identical_to_weights_matrix():
-    """The rendered jax expr applied to the RAW weights reproduces ``weights_matrix`` exactly, so ``experiment.py`` passing ``raw_weights_matrix`` while ``create_network`` inlines the
-    transform is a no-op for every working run."""
+    """The rendered jax expr applied to the RAW weights reproduces ``weights_matrix`` exactly, so ``experiment.py`` passing ``raw_weights_matrix`` while ``create_network`` inlines the transform is a no-op for every working run."""
     net, _ = _net_with_transform()
     transforms, const_env = weight_transform_codegen(net)
     assert len(transforms) == 1
@@ -103,8 +99,7 @@ def _apply_emitted(net, weights, distances=None):
 def test_a_callable_transform_reaches_the_kit():
     """`Function.callable` lowers to an import and a call, matching the runtime.
 
-    Hopf_Pareto_ParallelOpt declares `normalized_graph_laplacian` this way. The codegen used to skip any transform without an `equation:`, so with `experiment.py` handing over
-    raw weights the kit integrated the un-normalised SC — wrong numbers, no error.
+    Hopf_Pareto_ParallelOpt declares `normalized_graph_laplacian` this way. The codegen used to skip any transform without an `equation:`, so with `experiment.py` handing over raw weights the kit integrated the un-normalised SC — wrong numbers, no error.
     """
     from tvbo.datamodel.schema import Callable as CallableRef, Function
 

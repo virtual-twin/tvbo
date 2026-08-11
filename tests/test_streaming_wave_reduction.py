@@ -1,9 +1,6 @@
 """Grouped wave-metrics reducer (``kind: 'wave'``) — per-group scalar output.
 
-The cortical wave detector collapses BOTH time and the node axis into per-hemisphere scalars (``proportion_waves``, ``proportion_directed``, ``rho``), so its output is keyed by
-(group, metric) — NOT by node, and cannot come from ``template.shape[-1]``. The bespoke
-``render_wave_reduction`` emitter carries a monitor-style ``(n_ds, n_groups)`` buffer per named per-step output (``corr`` / ``wave_present`` / ``sig_corr``) and reduces them at finalize to the
-three metrics via exact masked statistics (``nanmedian`` over wave-present samples — no binning).
+The cortical wave detector collapses BOTH time and the node axis into per-hemisphere scalars (``proportion_waves``, ``proportion_directed``, ``rho``), so its output is keyed by (group, metric) — NOT by node, and cannot come from ``template.shape[-1]``. The bespoke ``render_wave_reduction`` emitter carries a monitor-style ``(n_ds, n_groups)`` buffer per named per-step output (``corr`` / ``wave_present`` / ``sig_corr``) and reduces them at finalize to the three metrics via exact masked statistics (``nanmedian`` over wave-present samples — no binning).
 The heavy per-step math is the SAME declarative DV chain the other observers use; only the outer carry is bespoke. These tests pin, with a synthetic primitive-only per-step body:
 
 * the emitted reducer's three metrics are byte-identical (to f64) to a numpy reference of
@@ -143,8 +140,7 @@ def test_transient_skip_drops_leading_samples():
 
 
 def _grouped_wave_red(grp_verts, A, period=5):
-    """A grouped `wave` reduction: the per-timestep body is written for a SINGLE group (val = sum(A * theta_g)) and vmapped over the partition axis. `grp_verts` (G, nvg) selects
-    each group's vertices from the whole-brain source; `A` (G, nvg) is a group-indexed operator."""
+    """A grouped `wave` reduction: the per-timestep body is written for a SINGLE group (val = sum(A * theta_g)) and vmapped over the partition axis. `grp_verts` (G, nvg) selects each group's vertices from the whole-brain source; `A` (G, nvg) is a group-indexed operator."""
     G, nvg = grp_verts.shape
     params = ["A", "theta", "val"]
     return {
@@ -184,8 +180,7 @@ def _grouped_reference(block, grp_verts, A, period=5):
 
 
 def test_group_vmap_matches_numpy_group_loop():
-    """The elegant form: ONE single-group body, vmapped over the partition axis, is byte-identical to looping the body over groups. This is what makes the detector general to any partition
-    (2 hemispheres, or N parcels) with the surrogate staying a clean per-vertex test inside vmap."""
+    """The elegant form: ONE single-group body, vmapped over the partition axis, is byte-identical to looping the body over groups. This is what makes the detector general to any partition (2 hemispheres, or N parcels) with the surrogate staying a clean per-vertex test inside vmap."""
     rng = np.random.default_rng(7)
     grp_verts = np.array([[0, 1, 2, 3], [5, 6, 7, 8]])  # 2 groups of 4, from 10 nodes
     A = rng.standard_normal((2, 4))
@@ -216,8 +211,7 @@ from tvbo.templates.tvboptim.utils import resolve_reduction, streaming_post_eval
 
 
 def _wave_observation(grp_verts, A, period=5.0):
-    """A declarative grouped wave Observation: observer DVs produce the per-group outputs; the
-    `partition` names the gather table, the group-indexed operator, and the metric-role DVs."""
+    """A declarative grouped wave Observation: observer DVs produce the per-group outputs; the `partition` names the gather table, the group-indexed operator, and the metric-role DVs."""
     G, nvg = grp_verts.shape
     return Observation(
         name="wave",
@@ -255,8 +249,7 @@ def test_partition_resolves_to_wave_kind():
 
 
 def test_partition_wave_obs_streams_in_the_base_run():
-    """A `partition` (wave) observation must be classed streaming by streaming_post_eval_plan, so the base/post-eval run folds it in-carry per block instead of materialising the whole
-    trajectory and vmapping every frame (which OOM'd Koller exp_41 at 286 GiB in STEP 1).
+    """A `partition` (wave) observation must be classed streaming by streaming_post_eval_plan, so the base/post-eval run folds it in-carry per block instead of materialising the whole trajectory and vmapping every frame (which OOM'd Koller exp_41 at 286 GiB in STEP 1).
     `wave` must also be a slotted kind so the block aligns to its downsample period, not 1000."""
     grp_verts = np.array([[0, 1, 2, 3], [5, 6, 7, 8]])
     A = np.linspace(0.5, 2.0, 8).reshape(2, 4)
@@ -315,8 +308,7 @@ def test_partition_gather_must_be_a_parameter():
 
 
 def test_declarative_wave_observation_end_to_end_matches_numpy():
-    """Full path: a declarative Observation with a `partition` resolves to kind:'wave' and the emitted grouped reducer is byte-identical to the numpy group-loop — closing the loop from
-    spec to the vmapped GPU reducer (review finding #6: the wave kind is now reachable)."""
+    """Full path: a declarative Observation with a `partition` resolves to kind:'wave' and the emitted grouped reducer is byte-identical to the numpy group-loop — closing the loop from spec to the vmapped GPU reducer (review finding #6: the wave kind is now reachable)."""
     rng = np.random.default_rng(11)
     grp_verts = np.array([[0, 1, 2, 3], [5, 6, 7, 8]])
     A = rng.standard_normal((2, 4))

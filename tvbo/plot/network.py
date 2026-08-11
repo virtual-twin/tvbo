@@ -10,9 +10,7 @@ Network graph plotting utilities.
 
 Three rendering backends:
 
-1. **networkx** — standard ``nx.draw_networkx_*`` rendering
-2. **bsplot**  — text-box nodes + curved edges via ``bsplot.graph``
-3. **brain**   — 3-D brain surface with sphere nodes + tube edges
+1. **networkx** — standard ``nx.draw_networkx_*`` rendering 2. **bsplot**  — text-box nodes + curved edges via ``bsplot.graph`` 3. **brain**   — 3-D brain surface with sphere nodes + tube edges
                   via ``bsplot.graph.plot_network_on_surface``
 """
 

@@ -18,23 +18,13 @@ Renderers translate the canonical form into the format each tool consumes:
 
 ================  =================================================
 Target            Output
-================  =================================================
-``claude-code``   ``<dest>/<name>/SKILL.md``      (Claude frontmatter)
-``copilot``       ``<dest>/<name>.instructions.md`` (``applyTo`` frontmatter)
-``cursor``        ``<dest>/<name>.mdc``           (``globs`` + ``description``)
-``agents-md``     marker region in ``AGENTS.md``
-``prompt``        concatenated markdown, returned as str
+================  ================================================= ``claude-code``   ``<dest>/<name>/SKILL.md``      (Claude frontmatter) ``copilot``       ``<dest>/<name>.instructions.md`` (``applyTo`` frontmatter) ``cursor``        ``<dest>/<name>.mdc``           (``globs`` + ``description``) ``agents-md``     marker region in ``AGENTS.md`` ``prompt``        concatenated markdown, returned as str
 ================  =================================================
 
-User-target installs (``claude-code`` / ``cursor`` invoked by
-``tvbo skills install``) add a ``tvbo-`` prefix to the on-disk name and stamp
-``managed-by: tvbo`` + ``tvbo-version: …`` into the frontmatter so we can safely overwrite our own files on upgrade without clobbering user edits.
+User-target installs (``claude-code`` / ``cursor`` invoked by ``tvbo skills install``) add a ``tvbo-`` prefix to the on-disk name and stamp ``managed-by: tvbo`` + ``tvbo-version: …`` into the frontmatter so we can safely overwrite our own files on upgrade without clobbering user edits.
 
 A skill directory may carry an ``assets/`` sibling of its ``SKILL.md`` (helper scripts, templates, a skeleton, reference chapters the body defers detail to).
-Only the directory-shaped ``claude-code`` target can hold it: the renderer mirrors ``assets/`` next to the rendered ``SKILL.md`` and prunes it on
-uninstall. The flat targets (``cursor``, ``copilot``, ``prompt``,
-``agents-md``) have nowhere to put a mirror, so they inline every referenced
-``assets/*.md`` into the body instead — a deferred chapter must not become an unreachable pointer just because the target is a single file.
+Only the directory-shaped ``claude-code`` target can hold it: the renderer mirrors ``assets/`` next to the rendered ``SKILL.md`` and prunes it on uninstall. The flat targets (``cursor``, ``copilot``, ``prompt``, ``agents-md``) have nowhere to put a mirror, so they inline every referenced ``assets/*.md`` into the body instead — a deferred chapter must not become an unreachable pointer just because the target is a single file.
 """
 
 from __future__ import annotations
@@ -86,8 +76,7 @@ class Skill:
     def install_name(self) -> str:
         """Name used when installing to a user-global skill directory.
 
-        User skills get a ``tvbo-`` prefix to avoid clashing with skills from other packages. Maintainer skills are rendered into the repo and need
-        no prefix (the repo is already scoped).
+        User skills get a ``tvbo-`` prefix to avoid clashing with skills from other packages. Maintainer skills are rendered into the repo and need no prefix (the repo is already scoped).
         """
         if self.audience == "maintainer":
             return self.name
@@ -115,8 +104,7 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
 def parse_skill(path: Path) -> Skill:
     """Parse a ``SKILL.md`` file into a :class:`Skill`.
 
-    Custom fields (``audience``, ``applies_to``, ``tags``, ``requires_extras``) may live either at the top level or under a ``metadata:`` key — the latter
-    satisfies VS Code's SKILL.md schema, which only allows a known set of top-level attributes plus a free-form ``metadata`` block.
+    Custom fields (``audience``, ``applies_to``, ``tags``, ``requires_extras``) may live either at the top level or under a ``metadata:`` key — the latter satisfies VS Code's SKILL.md schema, which only allows a known set of top-level attributes plus a free-form ``metadata`` block.
     """
     text = path.read_text(encoding="utf-8")
     fm, body = split_frontmatter(text)
@@ -172,8 +160,7 @@ def asset_refs(body: str) -> list[str]:
 def flat_body(skill: Skill) -> str:
     """Body with every referenced ``assets/*.md`` chapter appended.
 
-    The flat targets carry no ``assets/`` mirror, so a body that defers detail to a reference file would *lose* that detail rather than defer it. Inlining
-    keeps those consumers whole; the directory-shaped target leaves the pointer alone so the agent reads the chapter only when it reaches that phase.
+    The flat targets carry no ``assets/`` mirror, so a body that defers detail to a reference file would *lose* that detail rather than defer it. Inlining keeps those consumers whole; the directory-shaped target leaves the pointer alone so the agent reads the chapter only when it reaches that phase.
     """
     if skill.assets_dir is None:
         return skill.body
@@ -198,8 +185,7 @@ def _wrap(fm: dict, body: str) -> str:
 def _sync_assets(assets_dir: Path | None, dest_skill_dir: Path) -> None:
     """Mirror a skill's ``assets/`` dir next to its rendered ``SKILL.md``.
 
-    Idempotent: the destination ``assets/`` is rebuilt from source on every render, so files removed upstream do not linger. A skill with no ``assets/``
-    leaves the destination without one (and prunes a stale copy if present).
+    Idempotent: the destination ``assets/`` is rebuilt from source on every render, so files removed upstream do not linger. A skill with no ``assets/`` leaves the destination without one (and prunes a stale copy if present).
     """
     dest_assets = dest_skill_dir / "assets"
     if dest_assets.exists():

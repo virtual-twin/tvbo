@@ -1,8 +1,6 @@
 """``Mesh.mesh_file`` finally has a reader, and it must not invent precision.
 
-The slot has always said a mesh may live in an external GIFTI/VTK/FreeSurfer file; nothing in core read one, so every study that drew a cortical surface shipped its own parser. The
-one behaviour worth pinning beyond "it parses" is the declared scalar type: VTK's ``float`` is single precision, and a reader that helpfully keeps the full decimal width returns
-coordinates the file does not claim to carry — which is enough to move a rendered surface by a sub-pixel and put two readers of the same file permanently out of agreement.
+The slot has always said a mesh may live in an external GIFTI/VTK/FreeSurfer file; nothing in core read one, so every study that drew a cortical surface shipped its own parser. The one behaviour worth pinning beyond "it parses" is the declared scalar type: VTK's ``float`` is single precision, and a reader that helpfully keeps the full decimal width returns coordinates the file does not claim to carry — which is enough to move a rendered surface by a sub-pixel and put two readers of the same file permanently out of agreement.
 """
 
 from __future__ import annotations

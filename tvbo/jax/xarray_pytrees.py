@@ -20,8 +20,7 @@ import xarray
 class _HashableCoords(collections.abc.Mapping):
     """Hashable wrapper around a dict of xarray Variables (coordinates).
 
-    JAX requires auxiliary pytree data to be hashable.  Standard xarray coordinate dicts are not, so we wrap them here.  When coordinates
-    change between calls to a ``jax.jit``-ed function JAX will re-trace.
+    JAX requires auxiliary pytree data to be hashable.  Standard xarray coordinate dicts are not, so we wrap them here.  When coordinates change between calls to a ``jax.jit``-ed function JAX will re-trace.
     """
 
     __slots__ = ("_variables", "_hash")

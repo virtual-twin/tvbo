@@ -1,7 +1,6 @@
 """Runtime helpers for brain atlases and parcellation volumes.
 
-Provides the `Atlas` wrapper around the LinkML `BrainAtlas` datamodel, exposing lazy, computed access to the parcellation volume, SANDS terminology, region
-labels, and region centers. Also defines helpers to build atlas metadata and to produce ranked (relabelled) parcellation volumes from FreeSurfer segmentations.
+Provides the `Atlas` wrapper around the LinkML `BrainAtlas` datamodel, exposing lazy, computed access to the parcellation volume, SANDS terminology, region labels, and region centers. Also defines helpers to build atlas metadata and to produce ranked (relabelled) parcellation volumes from FreeSurfer segmentations.
 """
 
 import logging
@@ -73,8 +72,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
     - Access `metadata` to get a self-reference as a LinkML object.
     - Access properties: volume, volume_file, metadata_file, region_labels, centers.
 
-    SANDS entities are stored in ``self.terminology.entities`` — a schema-native
-    ``dict[ParcellationEntityName, ParcellationEntity]`` produced by the LinkML loader (the ``entities`` slot uses ``inlined: true`` in the SANDS schema).
+    SANDS entities are stored in ``self.terminology.entities`` — a schema-native ``dict[ParcellationEntityName, ParcellationEntity]`` produced by the LinkML loader (the ``entities`` slot uses ``inlined: true`` in the SANDS schema).
     """
 
     def __init__(self, atlas=None, **kwargs):
@@ -307,8 +305,7 @@ class Atlas(tvbo_datamodel.BrainAtlas):
 def create_atlas_metadata(fname_atlas, labels="freesurfer"):
     """Build `BrainAtlas` metadata and region centers of mass from a parcellation file.
 
-    Parses BIDS entities from the file name to seed a `BrainAtlas` with its coordinate space and terminology, then computes the center of mass of each
-    non-background label in the parcellation volume.
+    Parses BIDS entities from the file name to seed a `BrainAtlas` with its coordinate space and terminology, then computes the center of mass of each non-background label in the parcellation volume.
 
     Args:
         fname_atlas: Path to the parcellation NIfTI file to derive metadata from.
@@ -344,8 +341,7 @@ def create_atlas_metadata(fname_atlas, labels="freesurfer"):
 def rank_atlas(fname_atlas, labels="freesurfer", desc="ranked", gm_only=True):
     """Relabel a parcellation with contiguous rank IDs and write the ranked volume and metadata.
 
-    Remaps each original label to a consecutive integer (1, 2, 3, ...), records the mapping as `ParcellationEntity` metadata (keeping the original lookup
-    label), then saves the ranked NIfTI volume alongside its `.yaml` metadata using a BIDS-style path with the given `desc`.
+    Remaps each original label to a consecutive integer (1, 2, 3, ...), records the mapping as `ParcellationEntity` metadata (keeping the original lookup label), then saves the ranked NIfTI volume alongside its `.yaml` metadata using a BIDS-style path with the given `desc`.
 
     Args:
         fname_atlas: Path to the source parcellation NIfTI file.

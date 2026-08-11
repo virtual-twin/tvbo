@@ -1,10 +1,8 @@
 """Gillespie SSA backend — finite-size stochastic realization of a mean-field rate model.
 
-The backend (``tvbo/adapters/gillespie.py``) runs any relaxation rate model ``tau*X' = -X + F`` as a finite birth-death process: it derives the birth/death split (birth ``Omega*F/tau``, death
-``n/tau``) and the between-event ODEs from the model's *own* equations — nothing model-specific.
+The backend (``tvbo/adapters/gillespie.py``) runs any relaxation rate model ``tau*X' = -X + F`` as a finite birth-death process: it derives the birth/death split (birth ``Omega*F/tau``, death ``n/tau``) and the between-event ODEs from the model's *own* equations — nothing model-specific.
 These tests pin: (1) the generic decomposition is correct on a Tsodyks-Markram rate model;
-(2) the mean-field limit — large system size ``Omega`` concentrates the activity on the deterministic fixed point (which only holds if the split is right); (3) noise scales as
-``1/sqrt(Omega)``; (4) the backend requires ``execution.system_size``.
+(2) the mean-field limit — large system size ``Omega`` concentrates the activity on the deterministic fixed point (which only holds if the split is right); (3) noise scales as ``1/sqrt(Omega)``; (4) the backend requires ``execution.system_size``.
 
 The model is declared inline (no external recipe) so the test is self-contained.
 """

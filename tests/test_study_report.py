@@ -1,9 +1,7 @@
 """`SimulationStudy.report` writes each shared thing once.
 
 A per-experiment Methods section repeats the model for every experiment that uses it:
-Jansen1995's seven experiments emitted 1209 lines and about thirty tables, of which the six state equations, the symbol table and the parameter table were the same text over and
-over. These tests pin the contract that removes that — one system per family, deltas for variants, one comparison table carrying only what differs — and the two properties a
-generated cross-referenced document breaks silently without: unique anchors, and no number left to drift.
+Jansen1995's seven experiments emitted 1209 lines and about thirty tables, of which the six state equations, the symbol table and the parameter table were the same text over and over. These tests pin the contract that removes that — one system per family, deltas for variants, one comparison table carrying only what differs — and the two properties a generated cross-referenced document breaks silently without: unique anchors, and no number left to drift.
 """
 
 import re
@@ -135,8 +133,7 @@ _BLOCK = re.compile(r"\$\$(.+?)\$\$(\s*\{#(eq-[a-z0-9-]+)\})?", re.S)
 def _unnumbered(text):
     """Display equations in *text* carrying neither a Quarto anchor nor a ``\\tag``.
 
-    Matched by capturing the optional anchor, never by a negative lookahead: `$$.+?$$` followed by `(?!...)` backtracks *past the closing delimiter* to satisfy the
-    lookahead, so it silently reports whatever makes the assertion pass. The first version of this check did exactly that and could not fail.
+    Matched by capturing the optional anchor, never by a negative lookahead: `$$.+?$$` followed by `(?!...)` backtracks *past the closing delimiter* to satisfy the lookahead, so it silently reports whatever makes the assertion pass. The first version of this check did exactly that and could not fail.
     """
     return [" ".join(m.group(1).split())[:60] for m in _BLOCK.finditer(text) if not m.group(3) and "\\tag{" not in m.group(1)]
 
@@ -167,8 +164,7 @@ def test_sharing_an_auxiliary_variable_does_not_merge_two_systems(study):
     """A shared readout variable is not evidence of a shared model.
 
     Membership is subset-or-superset of the family's first model, never bare overlap.
-    Overlap merged Pang2023's wave field with its BEI mass model because both carry the four Balloon-Windkessel haemodynamic variables, and the report then presented a mass
-    model the paper never deposited as a *variant* of the wave field.
+    Overlap merged Pang2023's wave field with its BEI mass model because both carry the four Balloon-Windkessel haemodynamic variables, and the report then presented a mass model the paper never deposited as a *variant* of the wave field.
     """
     from tvbo.utils import report
 
@@ -193,8 +189,7 @@ def test_a_superset_of_the_state_stays_in_the_family(study):
 def test_every_emitted_table_is_captioned(study):
     """An uncaptioned table still steps LaTeX's table counter, so it shifts every number.
 
-    Pang2023's events table was the one left bare, and it pushed the report's first captioned table to "Table 2" — the reader sees a document whose tables start at two,
-    and the float they cannot see is the one that took the number.
+    Pang2023's events table was the one left bare, and it pushed the report's first captioned table to "Table 2" — the reader sees a document whose tables start at two, and the float they cannot see is the one that took the number.
     """
     import re
 
@@ -245,8 +240,7 @@ def test_markdown_numbers_equations_where_it_cannot_anchor(study):
 def test_every_display_equation_carries_a_number(study):
     """One unnumbered equation is one the prose cannot cite, and nothing flags it.
 
-    The coupling equation was rendered by the coupling's own template, which had no access to the report's numbering — so across ten studies every state equation was
-    numbered and the eleven equations joining the nodes into a network were not.
+    The coupling equation was rendered by the coupling's own template, which had no access to the report's numbering — so across ten studies every state equation was numbered and the eleven equations joining the nodes into a network were not.
     """
     for fmt in ("qmd", "markdown"):
         bare = _unnumbered(study.report(fmt, part="all"))
@@ -265,8 +259,7 @@ def test_the_coupling_equation_is_numbered_with_the_rest(study):
 def test_a_declared_state_variable_always_renders_its_equation(study):
     """A state variable whose equation never renders leaves a hole nothing reports.
 
-    Heterogeneous networks declare their models as plain datamodel objects, which lack the symbolic machinery; treating that as "no equations" gave Mongillo2008's
-    twenty-nine experiments a Methods section with no mathematics at all.
+    Heterogeneous networks declare their models as plain datamodel objects, which lack the symbolic machinery; treating that as "no equations" gave Mongillo2008's twenty-nine experiments a Methods section with no mathematics at all.
     """
     from tvbo.utils import report
 
@@ -492,8 +485,7 @@ def test_a_coupling_parameter_the_model_already_declares_is_not_listed_twice():
 
 
 def test_a_value_written_two_ways_is_one_setting():
-    """`6` and `6.0` compared as text are two settings, and the report then invents a difference: Jansen1995's glossary listed $v_0$ twice, once as a symbol the coupling
-    supposedly introduces."""
+    """`6` and `6.0` compared as text are two settings, and the report then invents a difference: Jansen1995's glossary listed $v_0$ twice, once as a symbol the coupling supposedly introduces."""
     from tvbo.utils.report import symbol_table
 
     model = SimpleNamespace(state_variables={}, derived_parameters={}, parameters={"v0": _param(6)})

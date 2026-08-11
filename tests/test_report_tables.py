@@ -1,7 +1,8 @@
-"""Tests for the report table primitives — `md_table` and its inverse `read_md_tables`.
+"""Tests for the report primitives every study's report shares — `md_table` and its inverse `read_md_tables`, the figure helpers, and the scorecard.
 
-A replication report computes its scorecard from a hand-maintained analysis file (`report/analysis/targets.md`), so the reader is the difference between a tally that is
-derived and one that is typed. It has to survive what people actually write in those files: escaped pipes inside a cell, LaTeX, several tables under different headings.
+A replication report computes its scorecard from a hand-maintained analysis file (`report/analysis/targets.md`), so the reader is the difference between a tally that is derived and one that is typed. It has to survive what people actually write in those files: escaped pipes inside a cell, LaTeX, several tables under different headings.
+
+One implementation serves them all, so these pin the behaviour the reports rely on — the scorecard included, since it carries the report's whole claim about what reproduced and its vocabulary has to hold: a tier is not an outcome, and the three ways of falling short are not one bucket.
 """
 
 from types import SimpleNamespace
@@ -114,7 +115,6 @@ def test_a_path_to_a_markdown_file_is_read(tmp_path):
 
 
 # ── Replication-report figures ──────────────────────────────────────────────────────────
-# One implementation serves every study's report; these pin the behaviour the reports rely on.
 
 
 def _fig(name, description="", label=""):
@@ -253,7 +253,6 @@ def test_the_build_branches_on_the_entry_file_quarto_is_rendering(monkeypatch, d
 
 
 # ── Scorecard ───────────────────────────────────────────────────────────────────────────
-# The scorecard is the report's whole claim about what reproduced, so its vocabulary has to hold: a tier is not an outcome, and the three ways of falling short are not one bucket.
 
 TARGETS_MD = """
 ## A. Group

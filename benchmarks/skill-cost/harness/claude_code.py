@@ -2,8 +2,7 @@
 
 Drives ``claude -p`` in ``stream-json`` mode and parses the event stream into normalized :class:`RunResult` metrics.
 
-Skill isolation relies on ``--setting-sources project``: only skills found under the workspace's ``.claude/skills`` load, so the user's globally installed TVBO
-skills never leak into the ``control`` condition. Auth and model selection are unaffected by ``--setting-sources``.
+Skill isolation relies on ``--setting-sources project``: only skills found under the workspace's ``.claude/skills`` load, so the user's globally installed TVBO skills never leak into the ``control`` condition. Auth and model selection are unaffected by ``--setting-sources``.
 """
 
 from __future__ import annotations
@@ -26,8 +25,7 @@ class ClaudeCodeHarness(Harness):
     def prepare_workspace(self, workdir: Path, condition: str) -> None:
         """Install the TVBO user skills into the workspace for skilled conditions.
 
-        ``control`` gets nothing. ``implicit`` / ``explicit`` get the four shipped user skills rendered into ``<workdir>/.claude/skills`` via the
-        package's own installer, so we exercise the exact files a user would get from ``tvbo skills install``.
+        ``control`` gets nothing. ``implicit`` / ``explicit`` get the four shipped user skills rendered into ``<workdir>/.claude/skills`` via the package's own installer, so we exercise the exact files a user would get from ``tvbo skills install``.
         """
         workdir.mkdir(parents=True, exist_ok=True)
         if condition == "control":
@@ -114,13 +112,9 @@ class ClaudeCodeHarness(Harness):
     def _parse_stream(stdout: str) -> RunResult:
         """Fold a stream-json transcript into token / tool-call / cost metrics.
 
-        The stream double-emits assistant events (a streaming start and a final copy), and per-event ``usage`` holds only streaming deltas — so neither
-        can be summed. Authoritative aggregates live in the terminal ``result`` event: ``modelUsage`` (per-model token totals, including a Haiku
-        sub-agent) and ``total_cost_usd``. Tool calls are counted from distinct
-        ``tool_use`` block ids, which dedupe the streaming duplicates cleanly.
+        The stream double-emits assistant events (a streaming start and a final copy), and per-event ``usage`` holds only streaming deltas — so neither can be summed. Authoritative aggregates live in the terminal ``result`` event: ``modelUsage`` (per-model token totals, including a Haiku sub-agent) and ``total_cost_usd``. Tool calls are counted from distinct ``tool_use`` block ids, which dedupe the streaming duplicates cleanly.
 
-        ``processed_tokens`` sums every input-side token (fresh input + both cache counts) across all models, so it reflects everything processed —
-        matching how a "processed tokens" figure dwarfs raw output.
+        ``processed_tokens`` sums every input-side token (fresh input + both cache counts) across all models, so it reflects everything processed — matching how a "processed tokens" figure dwarfs raw output.
         """
         tool_ids: set[str] = set()
         cost = None

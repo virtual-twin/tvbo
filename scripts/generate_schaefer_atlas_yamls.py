@@ -156,9 +156,15 @@ def build_atlas_yaml(source_path: Path) -> dict:
 
 
 def target_filename(source_name: str) -> str:
-    """Convert source filename to target naming convention."""
-    # Source: tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-100_res-1_desc-ordered_dseg.yaml
-    # Target: tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-100_dseg.yaml
+    """Convert a source filename to the target naming convention.
+
+    The ``_res-1_desc-ordered_`` segment is dropped:
+
+    ```
+    source: tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-100_res-1_desc-ordered_dseg.yaml
+    target: tpl-FSLMNI152_atlas-Schaefer2018_seg-7Networks_scale-100_dseg.yaml
+    ```
+    """
     return source_name.replace("_res-1_desc-ordered_", "_")
 
 

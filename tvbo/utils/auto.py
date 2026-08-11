@@ -1,7 +1,6 @@
 """Helpers for locating the auto-07p installation used by the NumCont backend.
 
-TVBO requires the ``AUTO_DIR`` environment variable to be set to the root of an existing auto-07p installation. There is no fallback file lookup -- the
-environment variable is the single source of truth.
+TVBO requires the ``AUTO_DIR`` environment variable to be set to the root of an existing auto-07p installation. There is no fallback file lookup -- the environment variable is the single source of truth.
 """
 
 from __future__ import annotations

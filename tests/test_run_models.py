@@ -9,6 +9,10 @@ MODELS = sorted(get_models().keys())
 
 @pytest.mark.parametrize("model", MODELS)
 def test_simulation_experiment(model):
+    """Every ontology model configures a SimulationExperiment and runs a short simulation.
+
+    The run length is passed as ``duration``, the kwarg the default (tvboptim) run path honors. ``simulation_length`` is TVB-backend-only and is ignored here, so passing it instead leaves every model running the full 1000 ms default and blows the CI timeout on the slow ones (e.g. Epileptor).
+    """
     api = ontology_api.OntologyAPI()
 
     metadata = {
@@ -28,6 +32,4 @@ def test_simulation_experiment(model):
     }
 
     api.configure_simulation_experiment(metadata)
-    # `duration` is the kwarg the default (tvboptim) run path honors; the old
-    # `simulation_length` is TVB-backend-only and was silently ignored here, so every model ran the full 1000 ms default and slow models (e.g. Epileptor) blew the CI timeout.
     api.experiment.run(duration=10)

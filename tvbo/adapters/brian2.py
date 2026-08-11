@@ -6,16 +6,13 @@ SymPy printer (``render_expression(..., format="brian2")``); this adapter adds o
 Two connectivity lowerings, chosen per edge by the ``connectivity`` rule:
 
 **all_to_all → O(N) population sums.** Every post-synaptic neuron sees the same sum
-over pre-synaptic gating, so the gate lives on the *pre-synaptic* neuron and a size-1
-"hub" `NeuronGroup` accumulates the population sum once (via a ``(summed)`` `Synapses`), read by every post-synaptic neuron through a ``linked_var``. This is the hand-written
+over pre-synaptic gating, so the gate lives on the *pre-synaptic* neuron and a size-1 "hub" `NeuronGroup` accumulates the population sum once (via a ``(summed)`` `Synapses`), read by every post-synaptic neuron through a ``linked_var``. This is the hand-written
 Deco 2014 `deco_column.py` structure — it runs the 160E+40I column in seconds where the enumerated LEMS network needs ~190 s per 100 ms in jLEMS.
 
 **random / one_to_one → real sparse `Synapses`.** A genuinely sparse projection cannot
 be a single population sum (each target sees a different subset), so it is emitted as a
 Brian2 `Synapses` with ``connect(p=…)`` / ``connect(j='i')``. Following the canonical
-Brian2 idioms: the delivered conductance decays on the *post-synaptic* `NeuronGroup` (``dg/dt=-g/tau``) and is incremented event-driven by ``on_pre`` (spike-gated, not summed
-every step); short-term-plasticity state (u, x) lives *on the synapse* as
-``(event-driven)`` variables, mutated in ``on_pre`` in the recipe's declared order, so any facilitation/depression convention is honoured per connection.
+Brian2 idioms: the delivered conductance decays on the *post-synaptic* `NeuronGroup` (``dg/dt=-g/tau``) and is incremented event-driven by ``on_pre`` (spike-gated, not summed every step); short-term-plasticity state (u, x) lives *on the synapse* as ``(event-driven)`` variables, mutated in ``on_pre`` in the recipe's declared order, so any facilitation/depression convention is honoured per connection.
 
 Supported synapse forms:
   * ``neuroml:expOneSynapse`` — single-exponential conductance (AMPA, GABA), either lowering;
@@ -25,8 +22,7 @@ Supported synapse forms:
     conductance (``dg/dt=-g/tau``), with the remaining state variables the per-synapse STP;
   * ``neuroml:poissonFiringSynapse`` — independent Poisson background → `PoissonInput`.
 
-Anything outside this set (non-Poisson spike sources, constant-current inputs, a summed-gate current nonlinear in its gate, or a sparse synapse whose gate is not a pure decay) raises a
-clear ``NotImplementedError`` rather than mis-simulating.
+Anything outside this set (non-Poisson spike sources, constant-current inputs, a summed-gate current nonlinear in its gate, or a sparse synapse whose gate is not a pure decay) raises a clear ``NotImplementedError`` rather than mis-simulating.
 """
 
 from __future__ import annotations
@@ -192,8 +188,7 @@ class Brian2Adapter(BaseAdapter):
     def run(self, seed=None, record_v=False, settle_ms=None, codegen_target="numpy", **kwargs):
         """Build and run the network in Brian2, returning an ExperimentResult.
 
-        Population firing rates (from Brian2 ``SpikeMonitor``) are the primary output — the exact quantity the Deco 2014 replication targets — and are
-        exposed both as ``result.integration.observations.firing_rate_<pop>`` and, raw, under ``result._extras``.
+        Population firing rates (from Brian2 ``SpikeMonitor``) are the primary output — the exact quantity the Deco 2014 replication targets — and are exposed both as ``result.integration.observations.firing_rate_<pop>`` and, raw, under ``result._extras``.
 
         ``codegen_target`` defaults to ``"numpy"`` (no C compilation, portable);
         pass ``"cython"`` for the faster compiled path where the toolchain allows.
@@ -258,8 +253,7 @@ class Brian2Adapter(BaseAdapter):
         """Reduce the experiment to a backend-neutral Brian2 build description.
 
         Returns a dict the template renders and ``_instantiate`` builds:
-        ``populations`` (per cell pop: eqs data, namespace, poisson, size),
-        ``hubs`` (summed-gate accumulators), ``duration_ms``, ``dt_ms``.
+        ``populations`` (per cell pop: eqs data, namespace, poisson, size), ``hubs`` (summed-gate accumulators), ``duration_ms``, ``dt_ms``.
         """
         exp = self.experiment
         network = exp.network
@@ -428,14 +422,9 @@ class Brian2Adapter(BaseAdapter):
     def _add_current_pulse(self, pop, pulse_name, pulse_obj, weight, edge, edge_idx, rule_norm):
         """Wire a deterministic timed current pulse onto a target population.
 
-        A ``pulseGenerator`` (delay, duration, amplitude) becomes a rectangular current window summed into ``iSyn``: ``w * amplitude`` for ``delay <= t < delay + duration``,
-        zero otherwise, added to every neuron of the population. This is the declarative loading / nonspecific-readout drive — deterministic, so it is identical between the
-        in-process run and the generated script. The per-edge ``weight`` scales the amplitude (a uniform nonspecific readout uses ``weight = 1``); when several pulse edges target
-        the same population their windows sum, each keeping its own weight.
+        A ``pulseGenerator`` (delay, duration, amplitude) becomes a rectangular current window summed into ``iSyn``: ``w * amplitude`` for ``delay <= t < delay + duration``, zero otherwise, added to every neuron of the population. This is the declarative loading / nonspecific-readout drive — deterministic, so it is identical between the in-process run and the generated script. The per-edge ``weight`` scales the amplitude (a uniform nonspecific readout uses ``weight = 1``); when several pulse edges target the same population their windows sum, each keeping its own weight.
 
-        A `random` edge instead drives only a random SUBSET, ``connection_probability`` of the population — the paper's nonspecific input to 15% of the excitatory neurons — as a
-        per-neuron 0/1 mask drawn once from the seeded RNG, so run and rendered script are identical. The mask is per EDGE, so two random pulse edges onto one population are two
-        independent subsets. Any other connectivity rule raises, as it does for a synapse edge.
+        A `random` edge instead drives only a random SUBSET, ``connection_probability`` of the population — the paper's nonspecific input to 15% of the excitatory neurons — as a per-neuron 0/1 mask drawn once from the seeded RNG, so run and rendered script are identical. The mask is per EDGE, so two random pulse edges onto one population are two independent subsets. Any other connectivity rule raises, as it does for a synapse edge.
         """
         fraction = self._pulse_fraction(edge, edge_idx, rule_norm)
         pp = _params(pulse_obj)
@@ -481,9 +470,7 @@ class Brian2Adapter(BaseAdapter):
     def _add_conductance_synapse(self, populations, hubs, src_pop, tgt_pop, syn, prefix, weight):
         """Reduce one all-to-all conductance synapse to gate + hub + current term.
 
-        The gate lives on the *source* population (one per source pop and synapse dynamics, shared across all of that source's projections of this dynamics —
-        e.g. an E pool's recurrent and long-range AMPA read the same pre-synaptic gate). The *target*-side terms (summed gate ``S``, weight, current) are keyed
-        additionally by the source pop, so the same dynamics arriving at one pool from two different sources (recurrent + long-range) don't overwrite each other.
+        The gate lives on the *source* population (one per source pop and synapse dynamics, shared across all of that source's projections of this dynamics — e.g. an E pool's recurrent and long-range AMPA read the same pre-synaptic gate). The *target*-side terms (summed gate ``S``, weight, current) are keyed additionally by the source pop, so the same dynamics arriving at one pool from two different sources (recurrent + long-range) don't overwrite each other.
         """
         src = populations[src_pop]
         tgt = populations[tgt_pop]
@@ -533,11 +520,7 @@ class Brian2Adapter(BaseAdapter):
     def _reduce_custom(self, syn, sparams, gate_prefix, cur_prefix):
         """Reduce a custom conductance synapse's declared dynamics to Brian2 form.
 
-        Renames the pre-synaptic gate ODEs / spike increments with *gate_prefix* (they live on the source pop, shared across its projections of this dynamics)
-        and the post-synaptic current with *cur_prefix* (keyed by source pop, so two sources of the same dynamics onto one target stay distinct). Inlines the
-        derived variables into the current ``i`` once, and — because an all-to-all conductance is delivered as a *population sum* — requires ``i`` to be linear
-        in the summed gate. Returns the source gate ODEs/increments, the target current (gate replaced by the summed ``S`` and ``weight`` applied outside),
-        the target linked-var name, and which constants belong to the gate vs current.
+        Renames the pre-synaptic gate ODEs / spike increments with *gate_prefix* (they live on the source pop, shared across its projections of this dynamics) and the post-synaptic current with *cur_prefix* (keyed by source pop, so two sources of the same dynamics onto one target stay distinct). Inlines the derived variables into the current ``i`` once, and — because an all-to-all conductance is delivered as a *population sum* — requires ``i`` to be linear in the summed gate. Returns the source gate ODEs/increments, the target current (gate replaced by the summed ``S`` and ``weight`` applied outside), the target linked-var name, and which constants belong to the gate vs current.
         """
         import sympy as sp
 
@@ -634,11 +617,9 @@ class Brian2Adapter(BaseAdapter):
         * an **instantaneous (delta) PSC** — a synapse with no continuous current ``i`` whose
           spike event jumps the post-synaptic membrane ``v`` directly (current-based, no conductance and no synaptic time constant), e.g. the Mongillo/Amit-Brunel form.
 
-        Short-term-plasticity state (u, x) lives on the synapse as ``(event-driven)`` variables, mutated in ``on_pre`` in the recipe's declared order, so any facilitation/depression
-        convention is honoured per connection. ``all_to_all`` keeps the O(N) hub path.
+        Short-term-plasticity state (u, x) lives on the synapse as ``(event-driven)`` variables, mutated in ``on_pre`` in the recipe's declared order, so any facilitation/depression convention is honoured per connection. ``all_to_all`` keeps the O(N) hub path.
 
-        Each projection's Brian2 objects are named by ``(synapse, source, target)`` so the block-structured networks (several edges sharing one synapse dynamics between different
-        sub-population pairs) never collide on a name.
+        Each projection's Brian2 objects are named by ``(synapse, source, target)`` so the block-structured networks (several edges sharing one synapse dynamics between different sub-population pairs) never collide on a name.
         """
         tgt = populations[tgt_pop]
         nml = _nml_type(syn)
@@ -721,10 +702,7 @@ class Brian2Adapter(BaseAdapter):
     def _maybe_add_probe(self, probes, populations, syn, src_pop, gkey, r):
         """Register an observation probe when the synapse declares recorded internal state.
 
-        A synapse state variable with ``record: true`` (e.g. the STP ``u``/``x``) is monitored by a clock-driven, zero-delivery copy of the projection: a representative sample of the
-        source population's neurons carry the same STP dynamics, driven by the same presynaptic spikes, so their ``u``/``x`` equal what the real (event-driven) synapses use — and, being
-        clock-driven, are recordable as the continuous trace (an event-driven StateMonitor would freeze the value between spikes). The probe delivers nothing (its ``_post +=`` line is
-        dropped), so the network's results are byte-identical; only the observation is added.
+        A synapse state variable with ``record: true`` (e.g. the STP ``u``/``x``) is monitored by a clock-driven, zero-delivery copy of the projection: a representative sample of the source population's neurons carry the same STP dynamics, driven by the same presynaptic spikes, so their ``u``/``x`` equal what the real (event-driven) synapses use — and, being clock-driven, are recordable as the continuous trace (an event-driven StateMonitor would freeze the value between spikes). The probe delivers nothing (its ``_post +=`` line is dropped), so the network's results are byte-identical; only the observation is added.
         """
         svs = getattr(syn, "state_variables", None) or {}
         recorded = [n for n, sv in svs.items() if bool(getattr(sv, "record", False))]
@@ -759,11 +737,7 @@ class Brian2Adapter(BaseAdapter):
     def _reduce_delta_sparse(self, syn, sparams, weight, edge_idx):
         """Reduce an instantaneous (delta) PSC synapse to the sparse per-synapse Brian2 form.
 
-        A delta synapse has no continuous current: an arriving spike jumps the post-synaptic membrane by an amount set in the spike event as ``v = v + <expr>`` (current-based,
-        no conductance, no synaptic time constant — the Mongillo/Amit-Brunel form). The jump is delivered as ``v_post += weight * (<expr> - v) * mV`` (so ``weight`` is the PSP jump
-        amplitude in mV, signed: negative for inhibitory projections). Any other event pieces act on the synapse's own short-term-plasticity variables (u, x), which live on the
-        synapse as ``(event-driven)`` equations and are updated in the recipe's declared order
-        — so facilitation-before-release is honoured and the delivered jump uses the updated u.
+        A delta synapse has no continuous current: an arriving spike jumps the post-synaptic membrane by an amount set in the spike event as ``v = v + <expr>`` (current-based, no conductance, no synaptic time constant — the Mongillo/Amit-Brunel form). The jump is delivered as ``v_post += weight * (<expr> - v) * mV`` (so ``weight`` is the PSP jump amplitude in mV, signed: negative for inhibitory projections). Any other event pieces act on the synapse's own short-term-plasticity variables (u, x), which live on the synapse as ``(event-driven)`` equations and are updated in the recipe's declared order — so facilitation-before-release is honoured and the delivered jump uses the updated u.
         """
         import sympy as sp
 
@@ -830,10 +804,7 @@ class Brian2Adapter(BaseAdapter):
     def _reduce_custom_sparse(self, syn, sparams, gvar, weight, edge_idx):
         """Reduce a custom conductance synapse to the sparse per-synapse Brian2 form.
 
-        The single gate in the current ``i`` must be a PURE DECAYING conductance (``dg/dt = -g/tau``): it becomes the post-synaptic decaying variable ``gvar``,
-        delivered by ``on_pre``. The remaining state variables (STP u, x) become per-synapse ``(event-driven)`` equations, mutated in ``on_pre``. The spike event's
-        conductance increment is delivered as ``gvar_post += weight*(increment)``; its u/x updates run on the synapse, all emitted in the recipe's declared order so any
-        facilitation/depression convention is honoured.
+        The single gate in the current ``i`` must be a PURE DECAYING conductance (``dg/dt = -g/tau``): it becomes the post-synaptic decaying variable ``gvar``, delivered by ``on_pre``. The remaining state variables (STP u, x) become per-synapse ``(event-driven)`` equations, mutated in ``on_pre``. The spike event's conductance increment is delivered as ``gvar_post += weight*(increment)``; its u/x updates run on the synapse, all emitted in the recipe's declared order so any facilitation/depression convention is honoured.
         """
         import sympy as sp
 
@@ -932,10 +903,8 @@ class Brian2Adapter(BaseAdapter):
 def assemble_eqs(pop):
     """The Brian2 ``Equations`` block for a cell population.
 
-    Membrane ODE + a summed drive ``iSyn`` + the pre-synaptic gate ODEs (dimensionless) + any linked summed-gate variables. Shared by the in-process ``run`` path and the generated
-    script so the two never diverge. A conductance-based cell's drive is a current (``amp``);
-    a current-based cell (one declaring a membrane time constant ``tau_m``, whose membrane is
-    ``(-v + ... + iSyn)/tau_m``) has a voltage drive (``volt``) — the Mongillo/Amit-Brunel form.
+    Membrane ODE + a summed drive ``iSyn`` + the pre-synaptic gate ODEs (dimensionless) + any linked summed-gate variables. Shared by the in-process ``run`` path and the generated script so the two never diverge. A conductance-based cell's drive is a current (``amp``);
+    a current-based cell (one declaring a membrane time constant ``tau_m``, whose membrane is ``(-v + ... + iSyn)/tau_m``) has a voltage drive (``volt``) — the Mongillo/Amit-Brunel form.
     """
     drive_unit = "volt" if "tau_m" in pop["cell_params"] else "amp"
     membrane = f"dv/dt = ({pop['v_rhs']})"

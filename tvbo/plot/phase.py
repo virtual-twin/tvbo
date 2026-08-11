@@ -48,8 +48,7 @@ def plot_phase(result, x_var=None, y_var=None, region=0, mode=0, ax=None, colorb
 
     Returns
     -------
-    matplotlib.figure.Figure or None
-    """
+    matplotlib.figure.Figure or None"""
     time, x, y, xlabel, ylabel = _extract_2d(result, x_var, y_var, region, mode)
 
     created = ax is None

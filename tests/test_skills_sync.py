@@ -1,8 +1,6 @@
 """Tests for the ``tvbo skills sync`` repo-side guard.
 
-Covers the failure modes the check has to catch: rendered copies that have drifted from their canonical source, rendered copies with no canonical source
-behind them (a personal skill committed by accident), shipped user skills pointing at maintainer skills that never ship, and ``requires_extras`` naming
-a group that does not exist in ``pyproject.toml``.
+Covers the failure modes the check has to catch: rendered copies that have drifted from their canonical source, rendered copies with no canonical source behind them (a personal skill committed by accident), shipped user skills pointing at maintainer skills that never ship, and ``requires_extras`` naming a group that does not exist in ``pyproject.toml``.
 """
 
 from __future__ import annotations

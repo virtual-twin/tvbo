@@ -1,7 +1,6 @@
 """Runtime `Noise` and `Integrator` wrappers around the TVBO datamodel classes.
 
-These subclasses add computed properties (sigma/nsig, ontology-derived integrator metadata), JAX pytree registration, and code-generation/execution helpers on top of
-the plain serializable datamodel definitions, without introducing runtime caches or mutating stored parameters.
+These subclasses add computed properties (sigma/nsig, ontology-derived integrator metadata), JAX pytree registration, and code-generation/execution helpers on top of the plain serializable datamodel definitions, without introducing runtime caches or mutating stored parameters.
 """
 
 import functools
@@ -106,8 +105,7 @@ class Noise(tvbo_datamodel.Noise):
     def nsig(self):
         """The noise dispersion `nsig`, derived from `sigma` as $0.5\\,\\sigma^2$ if needed.
 
-        Prefers an explicit `nsig` parameter; otherwise computes it from `sigma`. Returns
-        `None` when neither is available.
+        Prefers an explicit `nsig` parameter; otherwise computes it from `sigma`. Returns `None` when neither is available.
         """
         p = self.parameters_dict
         if "nsig" in p and p["nsig"] is not None:
@@ -124,8 +122,7 @@ class Noise(tvbo_datamodel.Noise):
     def sigma(self):
         """The noise standard deviation `sigma`, derived from `nsig` as $\\sqrt{2\\,nsig}$ if needed.
 
-        Prefers an explicit `sigma` parameter; otherwise computes it from `nsig`. Returns
-        `None` when neither is available.
+        Prefers an explicit `sigma` parameter; otherwise computes it from `nsig`. Returns `None` when neither is available.
         """
         p = self.parameters_dict
         if "sigma" in p and p["sigma"] is not None:
@@ -162,8 +159,7 @@ class Noise(tvbo_datamodel.Noise):
     def execute(self, format="tvb"):
         """Render, execute, and instantiate the noise backend object.
 
-        The rendered code is executed to obtain the `Noise` class, which is stored on
-        `self.tvb` and returned.
+        The rendered code is executed to obtain the `Noise` class, which is stored on `self.tvb` and returned.
 
         Args:
             format:
@@ -227,8 +223,7 @@ class Integrator(tvbo_datamodel.Integrator):
     def ontoclass(self):
         """The ontology class for this integrator, resolved from `method`.
 
-        Resolves a string `method` via the ontology, passes through an existing ontology
-        `ThingClass`, and yields `None` otherwise.
+        Resolves a string `method` via the ontology, passes through an existing ontology `ThingClass`, and yields `None` otherwise.
         """
         return (
             ontology.get_integrator(self.method)
@@ -335,8 +330,7 @@ class Integrator(tvbo_datamodel.Integrator):
     def execute(self, format="tvb"):
         """Render, execute, and instantiate the integrator backend object.
 
-        For the `tvb` backend the integrator class is instantiated (wiring in an executed noise object when stochastic) and stored on `self.tvb`; for other backends the
-        generated class is returned directly.
+        For the `tvb` backend the integrator class is instantiated (wiring in an executed noise object when stochastic) and stored on `self.tvb`; for other backends the generated class is returned directly.
 
         Args:
             format:

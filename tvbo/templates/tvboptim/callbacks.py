@@ -4,9 +4,7 @@
 
 """Runtime callbacks for generated tvboptim scripts.
 
-Imported by the generated experiment/optimization scripts (which always run with tvboptim available), so this module may depend on tvboptim. It routes optimizer
-progress through the central ``tvbo.run`` logger (see :mod:`tvbo.log`), so one switch — ``TVBO_LOG_LEVEL`` / ``tvbo.set_log_level`` / the CLI ``--quiet`` —
-governs it exactly as it governs the rest of a run.
+Imported by the generated experiment/optimization scripts (which always run with tvboptim available), so this module may depend on tvboptim. It routes optimizer progress through the central ``tvbo.run`` logger (see :mod:`tvbo.log`), so one switch — ``TVBO_LOG_LEVEL`` / ``tvbo.set_log_level`` / the CLI ``--quiet`` — governs it exactly as it governs the rest of a run.
 """
 
 from __future__ import annotations
@@ -61,8 +59,7 @@ def auto_nvmap_budget_bytes() -> int:
 def nvmap_hard_cap() -> Optional[int]:
     """Hard ceiling on the resolved vmap width, from ``TVBO_NVMAP_MAX`` (unset → no cap).
 
-    Unlike the auto-mode budget this also caps an *explicit* ``n_parallel``, so a failed cell can be retried with a smaller on-device batch (the workflow escalation
-    exports a shrinking value per attempt) or an operator can pin a smaller GPU — both without re-emitting the kit. Read at call time so the retry's value takes effect.
+    Unlike the auto-mode budget this also caps an *explicit* ``n_parallel``, so a failed cell can be retried with a smaller on-device batch (the workflow escalation exports a shrinking value per attempt) or an operator can pin a smaller GPU — both without re-emitting the kit. Read at call time so the retry's value takes effect.
     ``0``/negative/unset all mean "no cap" (the escalation's attempt-1 sentinel), so a bare ``0`` is honoured silently rather than warned about.
     """
     raw = os.environ.get("TVBO_NVMAP_MAX")
@@ -94,9 +91,7 @@ def shared_ram_device_count() -> int:
 def estimate_per_cell_bytes(observable_fn, state) -> Optional[int]:
     """Best-effort per-cell peak working-memory estimate for ``n_parallel: auto``.
 
-    Compiles the single-cell observable ahead-of-time and reads XLA's memory analysis (``temp + output + argument``), so the estimate includes the transient buffers the
-    observable allocates and then reduces away — e.g. a BOLD trajectory and its FFT convolution behind a scalar loss. Summing only the output (as ``eval_shape`` would)
-    under-counts such reduction observables, so a vmapped batch of them silently OOMs.
+    Compiles the single-cell observable ahead-of-time and reads XLA's memory analysis (``temp + output + argument``), so the estimate includes the transient buffers the observable allocates and then reduces away — e.g. a BOLD trajectory and its FFT convolution behind a scalar loss. Summing only the output (as ``eval_shape`` would) under-counts such reduction observables, so a vmapped batch of them silently OOMs.
     Falls back to an output+input shape sum, then ``None``, so the caller degrades to the count-only cap.
     """
     try:
@@ -133,10 +128,7 @@ def estimate_per_cell_bytes(observable_fn, state) -> Optional[int]:
 def resolve_cohort_batch_size(spec, n_subjects, fit_fn=None, example_args=None):
     """Resolve ``dataset.batch_size`` to a subject count per on-device batch.
 
-    An explicit integer passes straight through (clamped to ``[1, n_subjects]``) — the caller opted in, so no memory bound applies. ``None`` requests automatic
-    sizing: the whole cohort in one batch unless one lane's estimated peak memory (:func:`estimate_per_cell_bytes`, compiling *fit_fn* on *example_args*) times the
-    shared-RAM device count would exceed :func:`auto_nvmap_budget_bytes`, in which case the batch is narrowed to fit. Without an estimate it degrades to the whole
-    cohort, i.e. the un-chunked vmap. Unlike :func:`resolve_n_vmap`, no fixed count cap applies: a cohort's batch is bounded by memory, not an exploration-grid cap.
+    An explicit integer passes straight through (clamped to ``[1, n_subjects]``) — the caller opted in, so no memory bound applies. ``None`` requests automatic sizing: the whole cohort in one batch unless one lane's estimated peak memory (:func:`estimate_per_cell_bytes`, compiling *fit_fn* on *example_args*) times the shared-RAM device count would exceed :func:`auto_nvmap_budget_bytes`, in which case the batch is narrowed to fit. Without an estimate it degrades to the whole cohort, i.e. the un-chunked vmap. Unlike :func:`resolve_n_vmap`, no fixed count cap applies: a cohort's batch is bounded by memory, not an exploration-grid cap.
     """
     n = max(1, int(n_subjects))
     if spec is not None:
@@ -164,8 +156,7 @@ def resolve_cohort_batch_size(spec, n_subjects, fit_fn=None, example_args=None):
 def resolve_exploration_n_vmap(spec, grid_n, observable_fn, state):
     """Resolve ``Exploration.n_parallel`` to a vmap chunk width for a grid run.
 
-    Composition both exploration templates call: for ``"auto"`` it estimates per-cell memory (:func:`estimate_per_cell_bytes`) and counts shared-RAM devices
-    (:func:`shared_ram_device_count`) to bound the batch; an explicit integer skips the estimate (and its compile) and passes straight through :func:`resolve_n_vmap`.
+    Composition both exploration templates call: for ``"auto"`` it estimates per-cell memory (:func:`estimate_per_cell_bytes`) and counts shared-RAM devices (:func:`shared_ram_device_count`) to bound the batch; an explicit integer skips the estimate (and its compile) and passes straight through :func:`resolve_n_vmap`.
     """
     per_cell = estimate_per_cell_bytes(observable_fn, state) if _is_auto(spec) else None
     return resolve_n_vmap(spec, grid_n, per_cell, n_pmap=shared_ram_device_count())
@@ -242,10 +233,7 @@ class LoggingProgressCallback(AbstractCallback):
 def progress_ticker(total: int, *, every: Optional[int] = None, label: str = "batch"):
     """Wrap a scanned/vmapped per-item function so it streams ``label i/total`` progress.
 
-    The exploration / sweep grid runs as one JIT-compiled ``jax.lax.map``, so it prints
-    ``STEP 2 > <exploration>`` and then nothing until it returns — the cluster "empty log" problem. This fires a JAX-native ``jax.debug.callback`` (no JIT break, vmap-safe) once
-    per ``lax.map`` batch — a no-arg callback has no batched input to vectorise, so it runs once per scan step — ticking a host-side counter and logging through the central
-    ``tvbo.run`` logger. The ``jax_tqdm`` pattern, reduced to the logging we already route.
+    The exploration / sweep grid runs as one JIT-compiled ``jax.lax.map``, so it prints ``STEP 2 > <exploration>`` and then nothing until it returns — the cluster "empty log" problem. This fires a JAX-native ``jax.debug.callback`` (no JIT break, vmap-safe) once per ``lax.map`` batch — a no-arg callback has no batched input to vectorise, so it runs once per scan step — ticking a host-side counter and logging through the central ``tvbo.run`` logger. The ``jax_tqdm`` pattern, reduced to the logging we already route.
 
     Args:
         total: Number of batches (``ceil(n_cells / n_vmap)``) for the ``i/total`` line.

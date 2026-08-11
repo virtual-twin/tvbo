@@ -110,8 +110,7 @@ class TestMatrixRoundTrip:
 class TestTemplateEdgeOnlyNetwork:
     """A network whose `edges` are matrix DECLARATIONS, not connections.
 
-    Every connectome loaded from a `data_file:` companion is of this shape, and at mesh scale materialising an N x N from those declarations is the difference
-    between a run and an out-of-memory kill.
+    Every connectome loaded from a `data_file:` companion is of this shape, and at mesh scale materialising an N x N from those declarations is the difference between a run and an out-of-memory kill.
     """
 
     def _network(self, n=4000):
@@ -609,12 +608,23 @@ class TestFromTvbZipRoundTrip:
 
 
 class TestMultiEdgeFreezeRoundtrip:
-    """Freezing a multi-edge / primary_weight network must preserve every edge — especially the tract-length matrix, which delayed simulations require and which
-    has no ``primary_weight``-style selector. Regression for the freeze remap that assumed a canonical [weight, length] edge order and, for an NMF bundle declared
-    as [length, weight_NMF_*], dropped ``length`` (no delays) and overwrote the real weights with the length matrix.
+    """Freezing a multi-edge / ``primary_weight`` network preserves every edge.
+
+    The tract-length matrix is the one at risk: delayed simulations require it, and it has no ``primary_weight``-style selector. Regression for the freeze remap that assumed a canonical [weight, length] edge order and, for an NMF bundle declared as [length, weight_NMF_*], dropped ``length`` (no delays) and overwrote the real weights with the length matrix.
     """
 
     def _roundtrip(self, edges: dict, primary=None):
+        """Freeze a network carrying *edges* to HDF5 and load it back.
+
+        Both matrices are materialised inside the ``TemporaryDirectory`` block: the reloaded network is lazy, and its companion file is gone by the time a caller's assertions run.
+
+        Args:
+            edges: Edge-attribute name to matrix.
+            primary: Value for ``primary_weight``; left unset when None.
+
+        Returns:
+            The edge names present in the frozen file, and the reloaded network.
+        """
         from tvbo.classes.network import Network
         import h5py
 
@@ -630,8 +640,6 @@ class TestMultiEdgeFreezeRoundtrip:
             with h5py.File(Path(d) / "n.h5") as f:
                 frozen = set(f["edges"].keys())
             reloaded = Network.load(str(Path(d) / "n.h5"))
-            # Materialize while the lazy-store companion file still exists — the
-            # TemporaryDirectory is removed on block exit, before assertions run.
             _ = np.asarray(reloaded.lengths_matrix)
             _ = np.asarray(reloaded.weights_matrix)
         return frozen, reloaded
@@ -664,11 +672,14 @@ class TestMultiEdgeFreezeRoundtrip:
 
 
 # ── region alias reconciliation (§ node-label crosswalk) ──────────────
-#
-# by_label node reconciliation must align a dataset-sourced target to the model network by LABEL, never by row index. These tests lock the properties that make it safer than index/order-based alignment: hemisphere parity and byte-identical results under an arbitrary target reordering.
 
 
 class TestRegionAliasMap:
+    """``by_label`` reconciliation aligns a dataset-sourced target to the model network by LABEL, never by row index.
+
+    These tests lock the properties that make label alignment safer than index- or order-based alignment: hemisphere parity, and byte-identical results under an arbitrary reordering of the target.
+    """
+
     def _net(self, labels):
         from tvbo.classes.network import Network
 
@@ -697,6 +708,10 @@ class TestRegionAliasMap:
             net.region_alias_map()
 
     def test_reconcile_hemisphere_safe_and_order_independent(self):
+        """The aligned matrix is keyed to model order, whatever order the target arrives in.
+
+        Target row ``A_LEFT`` must land at model index 0 (``L_A``), and permuting the target's rows must leave the aligned matrix byte-identical.
+        """
         import xarray as xr
 
         # model lists LEFT first; the "empirical" target lists RIGHT first (opposite hemisphere order) under a divergent nomenclature carried as aliases.
@@ -724,8 +739,6 @@ class TestRegionAliasMap:
 
         assert all(hemi(t) == hemi(amap[t]) for t in tlabels)
 
-        # A must place target row "A_LEFT" at model index 0 (L_A), etc. — i.e. the aligned matrix is keyed to model order regardless of the target's order.
-        # shuffle target order -> aligned result must be byte-identical
         for perm in ([2, 0, 3, 1], [3, 2, 1, 0], [1, 3, 0, 2]):
             B = align([tlabels[k] for k in perm], M[np.ix_(perm, perm)])
             assert np.array_equal(A, B), f"order dependence under perm {perm}"

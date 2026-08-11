@@ -1,8 +1,6 @@
 """One reader for the noise amplitude (``tvbo.utils.noise_sigma``).
 
-``Noise`` admits three spellings of the same physical quantity — ``parameters.sigma`` and the ``intensity`` slot (both σ), and ``parameters.nsig`` (dispersion D = σ²/2) —
-and they used to be read by five separate implementations that disagreed, two of them about what ``intensity`` even meant. These tests pin the shared reader's single
-contract and assert every backend goes through it, so one recipe cannot mean different amplitudes on different backends.
+``Noise`` admits three spellings of the same physical quantity — ``parameters.sigma`` and the ``intensity`` slot (both σ), and ``parameters.nsig`` (dispersion D = σ²/2) — and they used to be read by five separate implementations that disagreed, two of them about what ``intensity`` even meant. These tests pin the shared reader's single contract and assert every backend goes through it, so one recipe cannot mean different amplitudes on different backends.
 """
 
 import pytest

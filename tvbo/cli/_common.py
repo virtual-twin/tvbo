@@ -78,10 +78,8 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
 def experiment_ids(exp: Any) -> set[str]:
     """The identifiers an experiment can be selected by on the CLI.
 
-    Its ``key``, ``name``, ``label``, and stringified ``id`` (dropping the empty ones), plus the bare numeric id those spell — ``exp-3``, ``exp3`` and ``3`` name one
-    experiment, and an experiment carrying only ``key: exp-3`` must still answer to ``3``.
-    Normalising HERE and in ``analysis_io.dependencies`` is what lets the two sides of the staleness walk intersect; normalising one side only makes every dotted spelling match
-    nothing, and an empty stale set reads exactly like a clean one.
+    Its ``key``, ``name``, ``label``, and stringified ``id`` (dropping the empty ones), plus the bare numeric id those spell — ``exp-3``, ``exp3`` and ``3`` name one experiment, and an experiment carrying only ``key: exp-3`` must still answer to ``3``.
+    Normalising HERE and in ``analysis_io.dependencies`` is what lets the two sides of the staleness walk intersect; normalising one side only makes every dotted spelling match nothing, and an empty stale set reads exactly like a clean one.
 
     Shared by ``tvbo run`` and ``tvbo workflow`` so ``--experiment`` matches the same way in both.
     """
@@ -99,8 +97,7 @@ def experiment_ids(exp: Any) -> set[str]:
 def experiment_key(exp: Any) -> str:
     """The canonical short key for an experiment.
 
-    An explicit ``key`` if set, else its ``id`` (the usual identifier, e.g. ``40``), else ``name``. Used for job names, result stems, and kit paths so they read
-    ``…-40`` rather than a generic fallback — one source of truth shared by every emitter (``experiment_ids`` is the wider *match* set for ``--experiment``).
+    An explicit ``key`` if set, else its ``id`` (the usual identifier, e.g. ``40``), else ``name``. Used for job names, result stems, and kit paths so they read ``…-40`` rather than a generic fallback — one source of truth shared by every emitter (``experiment_ids`` is the wider *match* set for ``--experiment``).
     """
     return str(getattr(exp, "key", None) or getattr(exp, "id", None) or getattr(exp, "name", None) or "experiment")
 
@@ -194,8 +191,7 @@ def emit_json(payload: Any) -> None:
 def info(msg: str) -> None:
     """Human-facing progress line, routed through the central ``tvbo`` logger.
 
-    Emits at INFO on ``tvbo.cli`` (stderr by default), so ``--quiet`` /
-    ``TVBO_LOG_LEVEL`` govern it exactly as they govern in-process ``.run()``.
+    Emits at INFO on ``tvbo.cli`` (stderr by default), so ``--quiet`` / ``TVBO_LOG_LEVEL`` govern it exactly as they govern in-process ``.run()``.
     """
     logger.info(msg)
 
@@ -203,8 +199,7 @@ def info(msg: str) -> None:
 def warn(msg: str) -> None:
     """Human-facing warning line, routed through the central ``tvbo`` logger.
 
-    Emits at WARNING on ``tvbo.cli`` (stderr by default), so ``--quiet`` /
-    ``TVBO_LOG_LEVEL`` govern it exactly as they govern ``info`` / ``.run()``.
+    Emits at WARNING on ``tvbo.cli`` (stderr by default), so ``--quiet`` / ``TVBO_LOG_LEVEL`` govern it exactly as they govern ``info`` / ``.run()``.
     """
     logger.warning(msg)
 
@@ -212,8 +207,7 @@ def warn(msg: str) -> None:
 def die(msg: str, code: int = 1) -> None:
     """Log *msg* at ERROR and abort the CLI with *code*.
 
-    A fatal abort must always explain itself: when the configured level would suppress ERROR (e.g. ``--log-level OFF`` / ``TVBO_LOG_LEVEL=OFF``) the reason
-    still goes to stderr, so the CLI never exits non-zero in silence.
+    A fatal abort must always explain itself: when the configured level would suppress ERROR (e.g. ``--log-level OFF`` / ``TVBO_LOG_LEVEL=OFF``) the reason still goes to stderr, so the CLI never exits non-zero in silence.
     """
     if logger.isEnabledFor(logging.ERROR):
         logger.error(msg)

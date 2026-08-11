@@ -13,9 +13,7 @@ import pytest
 from tvbo.utils import deep_merge
 
 
-# --------------------------------------------------------------------------- #
-# deep_merge (the field-level precedence engine)
-# --------------------------------------------------------------------------- #
+# deep_merge — the field-level precedence engine
 def test_deep_merge_leaf_override_keeps_siblings():
     base = {"parameters": {"a": {"value": 0, "unit": "mV"}, "b": {"value": 2}}}
     override = {"parameters": {"a": {"value": 1}}}
@@ -33,9 +31,7 @@ def test_deep_merge_does_not_mutate_inputs():
     assert override == {"x": {"z": 2}}
 
 
-# --------------------------------------------------------------------------- #
 # Dynamics
-# --------------------------------------------------------------------------- #
 def test_dynamics_iri_only_full_population():
     from tvbo import Dynamics
 
@@ -63,9 +59,7 @@ def test_dynamics_from_db_backcompat():
     assert len(d.parameters) >= 10
 
 
-# --------------------------------------------------------------------------- #
 # SimulationExperiment — top-level dynamics + keyed network.dynamics
-# --------------------------------------------------------------------------- #
 def _exp(**net):
     from tvbo import SimulationExperiment
 
@@ -99,9 +93,7 @@ def test_experiment_network_dynamics_keyed_override():
     assert len(g2d.parameters) == 12
 
 
-# --------------------------------------------------------------------------- #
-# Coupling — iri resolves by CURIE local name (regression: was defaulting)
-# --------------------------------------------------------------------------- #
+# Coupling
 @pytest.mark.parametrize(
     "curie,expected",
     [
@@ -111,6 +103,7 @@ def test_experiment_network_dynamics_keyed_override():
     ],
 )
 def test_coupling_iri_resolves_by_local_name(curie, expected):
+    """An ``iri``-only ``Coupling`` resolves to the registry entry named by the CURIE local name, never to the default coupling."""
     from tvbo.classes.coupling import Coupling
 
     c = Coupling(iri=curie)

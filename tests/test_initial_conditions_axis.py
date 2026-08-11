@@ -1,8 +1,6 @@
 """`initial_conditions.<sv>` exploration axis: a deterministic IC ensemble.
 
-The scope sweeps the initial value of one state variable across grid cells (one trajectory per swept value) — distinct from the stochastic `n_trials` +
-`StateVariable.distribution` ensemble. Resolution is a pure string parser (`initial_conditions_axis_sv`, mirroring `network_axis_leaf`); codegen lowers the
-axis to a dummy `_ic_<sv>` grid slot plus a per-cell wrapper that writes each cell's value into the state variable's row of the initial state.
+The scope sweeps the initial value of one state variable across grid cells (one trajectory per swept value) — distinct from the stochastic `n_trials` + `StateVariable.distribution` ensemble. Resolution is a pure string parser (`initial_conditions_axis_sv`, mirroring `network_axis_leaf`); codegen lowers the axis to a dummy `_ic_<sv>` grid slot plus a per-cell wrapper that writes each cell's value into the state variable's row of the initial state.
 """
 
 import pytest
@@ -53,8 +51,6 @@ pytest.importorskip("tvboptim")
 
 from tvbo import SimulationExperiment  # noqa: E402
 
-# Minimal 2-node Kuramoto with an initial-condition sweep on theta.
-# `# DIST` and the exploration `# AXIS` are substituted per test.
 _SPEC = """
 id: 7
 dynamics:
@@ -106,6 +102,7 @@ explorations:
       - parameter: initial_conditions.theta
         # AXIS
 """
+"""Minimal 2-node Kuramoto with an initial-condition sweep on theta; the `# DIST` and exploration `# AXIS` placeholders are substituted per test."""
 
 
 def _render(tmp_path, axis, dist=""):
@@ -160,8 +157,7 @@ def test_unknown_sv_message(tmp_path):
 def test_sweep_yields_distinct_per_cell_trajectories(tmp_path):
     """Each swept IC integrates from its own initial value into a distinct trajectory.
 
-    The result is a keyed xarray with a first-class `initial_conditions.theta` dimension; the first post-step sample of each cell is its swept theta(0) plus
-    one RK4 step of the omega drift, so the cells are ordered and distinct.
+    The result is a keyed xarray with a first-class `initial_conditions.theta` dimension; the first post-step sample of each cell is its swept theta(0) plus one RK4 step of the omega drift, so the cells are ordered and distinct.
     """
     import numpy as np
 

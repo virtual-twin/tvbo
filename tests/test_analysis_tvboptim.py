@@ -1,11 +1,9 @@
 """Tests for the declarative ``equation:`` analysis form and its tvboptim renderer.
 
-Locks in the contract that makes an analysis metadata-native rather than a pointer at arbitrary ``code/`` Python: the expression lowers to JAX, ``apply_on_dimension`` becomes
-a vmap over that axis, ``aggregate`` reduces a named one, and the output's axis names are
+Locks in the contract that makes an analysis metadata-native rather than a pointer at arbitrary ``code/`` Python: the expression lowers to JAX, ``apply_on_dimension`` becomes a vmap over that axis, ``aggregate`` reduces a named one, and the output's axis names are
 DERIVED from that declaration and cross-checked against the result — never read off its shape. An expression that reshapes must say so with ``dims:``.
 
-The sharding tests read the device count from ``conftest`` rather than requesting their own. Appending a second ``--xla_force_host_platform_device_count`` here used to override
-it, but only when this module was imported before JAX — so the suite saw 4 devices alone and 8 alongside other tests, and an assertion that held at 4 failed at 8.
+The sharding tests read the device count from ``conftest`` rather than requesting their own. Appending a second ``--xla_force_host_platform_device_count`` here used to override it, but only when this module was imported before JAX — so the suite saw 4 devices alone and 8 alongside other tests, and an assertion that held at 4 failed at 8.
 """
 
 from __future__ import annotations
@@ -287,8 +285,7 @@ COHORT_SIZE = 7
 def _shard_count(workers):
     """Shards the renderer will use: ``min(workers, devices, items)``.
 
-    The clamp is three-way, so the shard count is NOT the device count whenever the cohort is smaller than the machine — 8 devices and 7 subjects shard 7 ways. Asserting
-    against the device count instead passed only on hosts with at most 7 usable devices.
+    The clamp is three-way, so the shard count is NOT the device count whenever the cohort is smaller than the machine — 8 devices and 7 subjects shard 7 ways. Asserting against the device count instead passed only on hosts with at most 7 usable devices.
     """
     return min(workers, _device_count(), COHORT_SIZE)
 

@@ -1,10 +1,8 @@
 """A categorical axis whose entries fall into named groups, declared not drawn.
 
-A paper labels 47 task contrasts as seven families — one name per family, centred on its block, with a rule between blocks — not as 47 tick labels. The same shape recurs wherever a
-categorical axis has structure (ROIs by system, nodes by module, subjects by cohort), so it is an axis feature rather than something each bespoke composite panel redraws.
+A paper labels 47 task contrasts as seven families — one name per family, centred on its block, with a rule between blocks — not as 47 tick labels. The same shape recurs wherever a categorical axis has structure (ROIs by system, nodes by module, subjects by cohort), so it is an axis feature rather than something each bespoke composite panel redraws.
 
-The convention worth pinning is what a `bound` IS. They are cumulative COUNTS, so the group sizes are readable straight off the declaration; an entry is drawn centred on its index, so
-the gap after count n sits at n - 0.5. Declaring plotted coordinates instead would put the half-cell shift in every recipe and get it wrong in some of them.
+The convention worth pinning is what a `bound` IS. They are cumulative COUNTS, so the group sizes are readable straight off the declaration; an entry is drawn centred on its index, so the gap after count n sits at n - 0.5. Declaring plotted coordinates instead would put the half-cell shift in every recipe and get it wrong in some of them.
 """
 
 from __future__ import annotations

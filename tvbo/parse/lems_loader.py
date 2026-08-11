@@ -18,8 +18,7 @@ from tvbo.ontology import owl as ontology
 def lems_model_info(model):
     """Extract model metadata from a parsed LEMS model into a plain dictionary.
 
-    Reads the `derivatives` component type of a LEMS model and collects its constants (parameters), state variables, non-integrated (derived)
-    variables, time derivatives, exposures, and any coupling-function component types.
+    Reads the `derivatives` component type of a LEMS model and collects its constants (parameters), state variables, non-integrated (derived) variables, time derivatives, exposures, and any coupling-function component types.
 
     Args:
         model: A parsed LEMS `Model` whose `component_types` include a
@@ -111,9 +110,7 @@ def load_lems_model(lems_file):
 def import_lems_model(lems_file, model_name):
     """Import a LEMS model file as ontology classes and return the created classes.
 
-    Parses the LEMS file, creates a `NeuralMassModel` subclass named
-    `model_name`, and registers its state variables, parameters, non-integrated variables, time derivatives, and coupling functions as
-    ontology subclasses. Mathematical relationships are updated on the resulting model class before it is returned.
+    Parses the LEMS file, creates a `NeuralMassModel` subclass named `model_name`, and registers its state variables, parameters, non-integrated variables, time derivatives, and coupling functions as ontology subclasses. Mathematical relationships are updated on the resulting model class before it is returned.
 
     Args:
         lems_file: Path to the LEMS/XML file to import.
@@ -133,9 +130,7 @@ def import_lems_model(lems_file, model_name):
     def create_onto_subclass(name, base_class, properties, model_class):
         """Create and register an ontology subclass with the given properties.
 
-        Defines a new class named `name` deriving from both `model_class` and
-        `base_class` inside the active ontology, then applies each entry in
-        `properties`: list values are extended onto the property, scalar values are appended.
+        Defines a new class named `name` deriving from both `model_class` and `base_class` inside the active ontology, then applies each entry in `properties`: list values are extended onto the property, scalar values are appended.
 
         Args:
             name: Name of the new ontology class.

@@ -1,11 +1,8 @@
 """An `Edge` may declare a `producer:`, so a matrix is computed rather than pre-built.
 
-`producer:` already said HOW a derived value is made, but only a `Parameter` carried it — so a network whose weight matrix is a deterministic function of the spec's own inputs (a
-mesh operator, a rule-generated connectome) had no way to say so. Anything too large to inline had to be written out by a prep script and referenced by path, which means the spec
-could not execute until someone ran that script, and the file could drift from the recipe that described it without anything noticing.
+`producer:` already said HOW a derived value is made, but only a `Parameter` carried it — so a network whose weight matrix is a deterministic function of the spec's own inputs (a mesh operator, a rule-generated connectome) had no way to say so. Anything too large to inline had to be written out by a prep script and referenced by path, which means the spec could not execute until someone ran that script, and the file could drift from the recipe that described it without anything noticing.
 
-The trap this pins is the one that actually bit: the accessors do NOT agree on one entry point. `matrix()` walks a resolution order; `weights` reads `_arrays` directly. Resolving
-the producer in only one of them leaves the other silently falling through to whatever it does when a connectome is missing — a full run that completes and is wrong.
+The trap this pins is the one that actually bit: the accessors do NOT agree on one entry point. `matrix()` walks a resolution order; `weights` reads `_arrays` directly. Resolving the producer in only one of them leaves the other silently falling through to whatever it does when a connectome is missing — a full run that completes and is wrong.
 """
 
 from __future__ import annotations

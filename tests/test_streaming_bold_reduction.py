@@ -1,15 +1,11 @@
 """Streaming HRF-Volterra BOLD reducer (``Observation.reduce: streaming``).
 
-An HRF-Volterra ``bold`` pipeline marked ``reduce: streaming`` is lifted to an
-``(init, update, finalize)`` block reducer that folds the neural trajectory into a downsampled-history ring, evaluates the HRF ``'valid'`` convolution ONLY at the TR
-boundaries via ``strided_convolve`` (no FFT buffer), and writes the Volterra-scaled BOLD samples into a preallocated buffer — so the full trajectory is never held. These tests pin:
+An HRF-Volterra ``bold`` pipeline marked ``reduce: streaming`` is lifted to an ``(init, update, finalize)`` block reducer that folds the neural trajectory into a downsampled-history ring, evaluates the HRF ``'valid'`` convolution ONLY at the TR boundaries via ``strided_convolve`` (no FFT buffer), and writes the Volterra-scaled BOLD samples into a preallocated buffer — so the full trajectory is never held. These tests pin:
 
 * the resolver lifts the kernel / decimation stride / TR stride / Volterra scaling from the
-  declared pipeline, is opt-in (absent ``reduce`` keeps the post-scan path), and requires a pure ``subsample`` decimation — a ``temporal_average`` window is rejected (even
-  ``period_samples=1`` shifts by one sample, reproducing tvboptim TemporalAverage);
+  declared pipeline, is opt-in (absent ``reduce`` keeps the post-scan path), and requires a pure ``subsample`` decimation — a ``temporal_average`` window is rejected (even ``period_samples=1`` shifts by one sample, reproducing tvboptim TemporalAverage);
 * the emitted reducer is byte-identical (to f64 rounding, ``strided_convolve`` ~1e-12 vs the
-  FFT) to a from-scratch SubSampling BOLD — the decimation ``streaming_hrf_bold`` requires — both cold (zero ring) and warm-started, and identical across ANY period-aligned block
-  decomposition (the ``prepare(reduce=...)`` grid path feeds blocks, not one trajectory).
+  FFT) to a from-scratch SubSampling BOLD — the decimation ``streaming_hrf_bold`` requires — both cold (zero ring) and warm-started, and identical across ANY period-aligned block decomposition (the ``prepare(reduce=...)`` grid path feeds blocks, not one trajectory).
 
 tvbo emits the reducer as code — it never calls tvboptim's ``streaming_hrf_bold`` primitive.
 """

@@ -7,12 +7,6 @@ from tvbo.classes.dynamics import Dynamics
 from tests.functional.simulation_backends_shared import MODEL_FILES, MODEL_IDS, _HAVE_PYRATES
 
 
-# Models the PyRates backend cannot represent, xfail'd (not failed) as out-of-scope:
-#  * multi-mode models — PyRates has no mode axis, so per-mode matrix params
-#    (A_ik/B_ik/C_ik) can't be represented (they're used in the equations);
-#  * Piecewise regime traits / symbolic forms from the richer TVB model capture
-#    that PyRates' sympy parser can't handle.
-# Full support for these lives in the tvb / tvboptim / jax backends.
 _PYRATES_UNSUPPORTED = {
     "ReducedSetHindmarshRose": "mode-axis model: PyRates has no mode axis (per-mode matrix params)",
     "ReducedSetFitzHughNagumo": "mode-axis model: PyRates has no mode axis (per-mode matrix params)",
@@ -20,6 +14,10 @@ _PYRATES_UNSUPPORTED = {
     "EpileptorCodim3SlowMod": "Piecewise regime traits unsupported by the PyRates sympy parser",
     "ZerlautAdaptationSecondOrder": "symbolic form unsupported by PyRates codegen",
 }
+"""Models the PyRates backend cannot represent, xfailed (not failed) as out of scope.
+
+Two families are excluded: multi-mode models, whose per-mode matrix parameters (``A_ik``/``B_ik``/``C_ik``) appear in the equations and have no mode axis to live on in PyRates; and the Piecewise regime traits and symbolic forms from the richer TVB model capture that the PyRates sympy parser cannot handle. Full support for these lives in the tvb, tvboptim and jax backends.
+"""
 
 
 @pytest.mark.backend_pyrates

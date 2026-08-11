@@ -16,9 +16,6 @@ ROOT = Path(__file__).resolve().parent.parent
 CSV_DIR = ROOT / "tvbo" / "data" / "tvbo_data" / "connectome"
 NETWORK_DIR = database_path / "networks"
 
-# Map existing YAML sidecars to their CSV sources
-# Parse sidecar filenames to find matching CSV files
-
 
 def find_csv_pairs(csv_dir: Path) -> dict:
     """Find weight/length CSV pairs in connectome directory."""

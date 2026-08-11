@@ -14,8 +14,7 @@ SC reconstruction
 -----------------
 DWI pre-processed with MRtrix3. Fiber orientation distributions from multi-shell multi-tissue constrained spherical deconvolution (MSMT-CSD).
 Probabilistic streamline tractography + SIFT2 weight optimization.
-Group-consensus binary network preserving density and edge-length distributions of individual connectomes. Edge weights: mean log-transformed
-streamline count of non-zero edges across participants, scaled to [0, 1].
+Group-consensus binary network preserving density and edge-length distributions of individual connectomes. Edge weights: mean log-transformed streamline count of non-zero edges across participants, scaled to [0, 1].
 
 FC reconstruction
 -----------------
@@ -28,8 +27,7 @@ Reference
 Hansen JY, Shafiei G, Markello RD, Smart K, Cox SML, Wu Y, Diez I,
 Schirner M, Wirsich J, Bhatt DL, Misic B. (2022). Mapping neurotransmitter systems to the structural and functional organization of the human neocortex.
 Nature Neuroscience, 25, 1569–1581.
-https://doi.org/10.1038/s41593-022-01186-3
-"""
+https://doi.org/10.1038/s41593-022-01186-3"""
 
 import numpy as np
 import h5py

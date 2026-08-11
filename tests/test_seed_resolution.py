@@ -5,9 +5,7 @@ One rule governs every distribution-driven draw (initial conditions, parameter s
     seed = distribution.seed   if set
            else execution.random_seed   (default 0)
 
-so a distribution's own ``seed`` is a *local* override of the experiment-global
-``execution.random_seed``, and both the single-trial and the ``n_trials`` initial-condition paths resolve it identically. The ``n_trials`` sampler also keys each trial off
-``fold_in(base, i)`` so a trial's IC is independent of ``n_trials`` (adding a trial never reshuffles the existing ones).
+so a distribution's own ``seed`` is a *local* override of the experiment-global ``execution.random_seed``, and both the single-trial and the ``n_trials`` initial-condition paths resolve it identically. The ``n_trials`` sampler also keys each trial off ``fold_in(base, i)`` so a trial's IC is independent of ``n_trials`` (adding a trial never reshuffles the existing ones).
 """
 
 import copy
@@ -88,8 +86,7 @@ def test_ic_sampler_defaults_to_zero_when_no_seed_anywhere():
 
 
 def test_each_distributed_variable_uses_its_own_seed():
-    """With two distributed state variables carrying distinct seeds, BOTH seeds appear — the ensemble keys each variable off its own seed, not only the first (regression for the
-    n_trials sampler that used a single base key)."""
+    """With two distributed state variables carrying distinct seeds, BOTH seeds appear — the ensemble keys each variable off its own seed, not only the first (regression for the n_trials sampler that used a single base key)."""
     spec = copy.deepcopy(BASE)
     svs = spec["dynamics"]["state_variables"]
     svs["x"]["distribution"] = {"name": "Uniform", "seed": 3, "domain": {"lo": 0.0, "hi": 1.0}}

@@ -1,8 +1,6 @@
 """General array-op primitives for per-timestep detectors / permutation tests.
 
-``take`` (2-D gather), ``sum_axis`` (single-axis reduction), and ``pearson`` (node-collapsing correlation) are backend-abstracted printer primitives, so a
-wave / graph / significance observable can be authored as declarative equations instead of backend ``source_code``. Each parses to a SymPy Function and prints to
-the backend's array algebra; here we render for jax + numpy and execute against a numpy reference.
+``take`` (2-D gather), ``sum_axis`` (single-axis reduction), and ``pearson`` (node-collapsing correlation) are backend-abstracted printer primitives, so a wave / graph / significance observable can be authored as declarative equations instead of backend ``source_code``. Each parses to a SymPy Function and prints to the backend's array algebra; here we render for jax + numpy and execute against a numpy reference.
 """
 
 import numpy as np

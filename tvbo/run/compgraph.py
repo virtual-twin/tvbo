@@ -1,7 +1,6 @@
 """Reference simulation of network dynamics on a computational graph.
 
-Provides SciPy-based helpers that build per-node state and history buffers, propagate delayed coupling between nodes of a `networkx` graph, integrate each
-node's dynamics with `odeint`, and collect the results into a [TimeSeries](../data/types.qmd).
+Provides SciPy-based helpers that build per-node state and history buffers, propagate delayed coupling between nodes of a `networkx` graph, integrate each node's dynamics with `odeint`, and collect the results into a [TimeSeries](../data/types.qmd).
 """
 
 import numpy as np
@@ -98,8 +97,7 @@ def simulate_graph_dynamics_with_delay(G, T, dt):
 def collect_time_series(G, time_points):
     """Gather per-node simulation traces into a single `TimeSeries`.
 
-    Each node's recorded `"time-series"` is expanded to 4D and concatenated along the node axis, then wrapped in a [TimeSeries](../data/types.qmd)
-    labelled with the model's state-variable names.
+    Each node's recorded `"time-series"` is expanded to 4D and concatenated along the node axis, then wrapped in a [TimeSeries](../data/types.qmd) labelled with the model's state-variable names.
 
     Args:
         G: The graph whose nodes hold the simulated `"time-series"` arrays and

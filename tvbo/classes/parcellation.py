@@ -4,8 +4,7 @@
 """
 This module provides functions for loading and accessing parcellation data.
 
-Author: Leon Martin
-"""
+Author: Leon Martin"""
 
 from typing import Any
 import requests

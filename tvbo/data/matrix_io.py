@@ -248,8 +248,7 @@ class LazyArrayStore:
 def _read_edges_from_store(store, template_edges: list) -> tuple[dict, dict]:
     """Read all template-edge matrices + edge parameters from a store.
 
-    Works identically for h5py.File and zarr.Group — both support
-    `"path" in store` and `store["path"]` access.
+    Works identically for h5py.File and zarr.Group — both support `"path" in store` and `store["path"]` access.
     """
     arrays, params = {}, {}
 

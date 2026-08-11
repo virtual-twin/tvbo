@@ -5,8 +5,7 @@ Pure MTK adapter using @component + mtkcompile + ODEProblem + solve.
 No dependency on NetworkDynamics.jl.
 
 Key capability: symbolic round-trip.  tvbo's SymPy equations are rendered to
-MTK Julia code, MTK's ``mtkcompile`` performs structural transformations (e.g. higher-order ODE lowering), and the resulting equations are extracted
-back into SymPy.
+MTK Julia code, MTK's ``mtkcompile`` performs structural transformations (e.g. higher-order ODE lowering), and the resulting equations are extracted back into SymPy.
 """
 
 from __future__ import annotations
@@ -159,8 +158,7 @@ class ModelingToolkitAdapter(BaseAdapter):
     def lower(self, source=None, returns="auto", **kwargs):
         """Lower higher-order ODEs via MTK's ``mtkcompile``.
 
-        Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile → lowered first-order SymPy equations, optionally wrapped back into
-        a tvbo ``Dynamics`` or ``SimulationExperiment``.
+        Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile → lowered first-order SymPy equations, optionally wrapped back into a tvbo ``Dynamics`` or ``SimulationExperiment``.
 
         Parameters
         ----------
@@ -179,8 +177,7 @@ class ModelingToolkitAdapter(BaseAdapter):
 
         Returns
         -------
-        dict | Dynamics | SimulationExperiment
-        """
+        dict | Dynamics | SimulationExperiment"""
         from tvbo.classes.experiment import SimulationExperiment
         from tvbo.classes.dynamics import Dynamics
 

@@ -324,10 +324,7 @@ class BifurcationKitAdapter:
     def _derive_constraints(self, model):
         """Derive constraint-defined free parameters for the continuation.
 
-        Reuses the *existing* declarations (no new schema): a parameter marked
-        ``free: true`` on the model, together with an activity-target
-        ``TuningObjective`` on one of the experiment's algorithms, defines a constraint ``target_variable = target_value``. Each such free parameter
-        (e.g. the FIC ``J_i``) is promoted by the emitter to an unknown state block whose defining equation is that residual (see ``_build_network_context``).
+        Reuses the *existing* declarations (no new schema): a parameter marked ``free: true`` on the model, together with an activity-target ``TuningObjective`` on one of the experiment's algorithms, defines a constraint ``target_variable = target_value``. Each such free parameter (e.g. the FIC ``J_i``) is promoted by the emitter to an unknown state block whose defining equation is that residual (see ``_build_network_context``).
 
         Returns a list of ``{"parameter", "target_variable", "target_value"}``;
         empty when no parameter is free (E-E / FFI variants ⇒ plain continuation).
@@ -385,8 +382,7 @@ class BifurcationKitAdapter:
     def run(self, **kwargs) -> "BifurcationResult | dict[str, BifurcationResult]":
         """Run bifurcation analysis for each continuation in the experiment.
 
-        Iterates over ``experiment.continuations``, resolves the dynamics model for each, renders BifurcationKit Julia code, executes it,
-        and wraps the result in ``BifurcationResult`` objects.
+        Iterates over ``experiment.continuations``, resolves the dynamics model for each, renders BifurcationKit Julia code, executes it, and wraps the result in ``BifurcationResult`` objects.
 
         Returns
         -------
@@ -446,8 +442,7 @@ class BifurcationKitAdapter:
     def _extract_periodic_orbits(self, model, **kwargs) -> list:
         """Extract periodic orbit branches from Julia Main after execution.
 
-        Also attaches each branch's orbit waveforms (``orbit_profiles``, a
-        ``[n_steps, NPROF, n_vars]`` array phase-resampled over one period) when the
+        Also attaches each branch's orbit waveforms (``orbit_profiles``, a ``[n_steps, NPROF, n_vars]`` array phase-resampled over one period) when the
         Julia run produced them (``po_results.profiles``); the actual periodic-orbit profile is otherwise not recorded by BifurcationKit.
         """
         import numpy as np

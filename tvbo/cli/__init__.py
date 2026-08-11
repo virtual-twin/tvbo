@@ -97,8 +97,7 @@ def _configure(
     """Configure tvbo logging once for every verb.
 
     Progress and status flow through the central ``tvbo`` logger (see
-    :mod:`tvbo.log`), so ``tvbo run`` and the in-process ``.run()`` API behave identically. ``--log-level`` wins over ``--quiet``/``--verbose``; with none
-    set the level falls back to ``TVBO_LOG_LEVEL`` and then INFO.
+    :mod:`tvbo.log`), so ``tvbo run`` and the in-process ``.run()`` API behave identically. ``--log-level`` wins over ``--quiet``/``--verbose``; with none set the level falls back to ``TVBO_LOG_LEVEL`` and then INFO.
     """
     from tvbo.log import configure_logging
 

@@ -50,6 +50,20 @@ def _is_code(text: str) -> bool:
         return bool(re.match(r"^\s*(def |class |if |for |while |try:|except|else:|elif |with )", body))
 
 
+def continues_sentence(a: str, b: str) -> bool:
+    """Whether stripped line *b* is the continuation of a sentence begun on stripped line *a*.
+
+    The one place this judgement lives, so `check_prose` and `scripts/unwrap_prose.py` cannot disagree about what counts as hand-wrapped. A continuation is anything that cannot plausibly start a sentence: a lowercase word, an opening bracket, an inline-code backtick, a dash, a quote, or a digit. Restricting it to lowercase missed a paragraph that happened to break before a backtick — two of them survived the first Stage C sweep that way.
+    """
+    if not a or not b:
+        return False
+    if a.startswith((">>>", "...", "|", "-", "*", "#", "$$", "```")) or b.startswith((">>>", "...", "|", "-", "*", "```")):
+        return False
+    if _SENTENCE_END.search(a):
+        return False
+    return b[0].islower() or b[0] in "([`\u2014\u2013\"'" or b[0].isdigit()
+
+
 def _comment_runs(lines: list[str]):
     """Yield `(start_line, bodies)` for each run of standalone `#` lines."""
     run: list[tuple[int, str]] = []
@@ -84,11 +98,7 @@ def _wrapped(text: str) -> list[int]:
             continue
         if len(raw_a) - len(raw_a.lstrip()) >= base + 4 or len(raw_b) - len(raw_b.lstrip()) >= base + 4:
             continue
-        if a.startswith((">>>", "...", "|", "-", "*", "#", "$$")) or b.startswith((">>>", "...", "|", "-", "*")):
-            continue
-        if _SENTENCE_END.search(a) or len(a) >= WRAP_LIMIT:
-            continue
-        if b[0].islower() or b[0] in "([":
+        if continues_sentence(a, b):
             out.append(i)
     return out
 

@@ -10,8 +10,7 @@ TVB-O Model Configuration Module
 --------------------------------
 
 This module provides utility functions to configure and manage TVB neural mass models using ontology-based configurations.
-These configurations can be applied to model objects to change their default behavior or parameterize them as per
-published studies or lab-tested configurations.
+These configurations can be applied to model objects to change their default behavior or parameterize them as per published studies or lab-tested configurations.
 
 ### Functions
 
@@ -198,8 +197,7 @@ def get_param_config(config_key="default", model=None, return_NMM=False, use_cla
     """
     Retrieve the parameter configuration for a given configuration key.
 
-    This function searches the ontology for the provided configuration key and returns a dictionary with the relevant parameter details. Additionally,
-    it checks for ancestors related to Neural Mass Model (NMM) and fetches the relevant variables and instances associated with the configuration.
+    This function searches the ontology for the provided configuration key and returns a dictionary with the relevant parameter details. Additionally, it checks for ancestors related to Neural Mass Model (NMM) and fetches the relevant variables and instances associated with the configuration.
 
     Parameters
     ----------
@@ -224,8 +222,7 @@ def get_param_config(config_key="default", model=None, return_NMM=False, use_cla
     {'some_variable': {'category': 'State Variable', 'range': [0.5, 1.2]}}
 
     >>> get_param_config("some_config_key", return_NMM=True)
-    ({'some_variable': {'category': 'State Variable', 'range': [0.5, 1.2]}}, 'NMM_instance')
-    """
+    ({'some_variable': {'category': 'State Variable', 'range': [0.5, 1.2]}}, 'NMM_instance')"""
     if config_key == "default":
         return ontology.get_default_values(model)
 
@@ -308,9 +305,7 @@ def update_default(model_name, config_key=None, config_dict=None):
 
 
 def configure_model(tvb_model, config_key):
-    """Apply specific parameter configuration stored in TVB-O. All configurations have been either published in a
-    peer-reviewed journal or tested extensively in our lab. Each configuration has a specific reference with further
-    information.
+    """Apply specific parameter configuration stored in TVB-O. All configurations have been either published in a peer-reviewed journal or tested extensively in our lab. Each configuration has a specific reference with further information.
 
     Parameters
     ----------
@@ -389,8 +384,7 @@ def getattr_case_insensitive(obj, attr_name, default=None):
     """
     Get the value of an attribute from an object, ignoring case sensitivity.
 
-    This function searches for an attribute with a case-insensitive match to the given `attr_name` within the `obj` object. If a match is found, the corresponding value is returned. If no match
-    is found, the `default` value is returned.
+    This function searches for an attribute with a case-insensitive match to the given `attr_name` within the `obj` object. If a match is found, the corresponding value is returned. If no match is found, the `default` value is returned.
 
     :param obj: The object to search for the attribute.
     :param attr_name: The name of the attribute to search for.

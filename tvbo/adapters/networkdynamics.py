@@ -138,8 +138,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
     def get_initial_positions(self) -> np.ndarray:
         """Extract initial (x, y, …) positions for ALL nodes from YAML.
 
-        For free (dynamic) nodes: positions come from per-node ``state`` overrides (legacy ``initial_state`` arrays are also supported),
-        at the indices marked ``coupling_variable=True``.
+        For free (dynamic) nodes: positions come from per-node ``state`` overrides (legacy ``initial_state`` arrays are also supported), at the indices marked ``coupling_variable=True``.
         For static (fixed) nodes: positions come from node parameter values (in parameter-definition order).
 
         Returns shape ``(n_nodes, n_coupling_vars)``.

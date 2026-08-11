@@ -1,10 +1,8 @@
 """Build a structural connectome from a tractogram + parcellation via MRtrix3.
 
-A thin wrapper around MRtrix3's ``tck2connectome``. Given a streamline tractogram and an integer-labelled parcellation image that already live in the *same* space,
-it returns the edge-weight (streamline-count) and mean-tract-length matrices. The inputs are assumed to be co-registered — this module does not register them.
+A thin wrapper around MRtrix3's ``tck2connectome``. Given a streamline tractogram and an integer-labelled parcellation image that already live in the *same* space, it returns the edge-weight (streamline-count) and mean-tract-length matrices. The inputs are assumed to be co-registered — this module does not register them.
 
-Assembling the matrices into a :class:`tvbo.classes.network.Network` and writing the ``…_desc-SC_relmat.h5`` + YAML sidecar happens in the caller (``tvbo network
-build``); this module only shells out to MRtrix and reads back the CSVs, so it is the single place the ``tck2connectome`` invocation is defined.
+Assembling the matrices into a :class:`tvbo.classes.network.Network` and writing the ``…_desc-SC_relmat.h5`` + YAML sidecar happens in the caller (``tvbo network build``); this module only shells out to MRtrix and reads back the CSVs, so it is the single place the ``tck2connectome`` invocation is defined.
 """
 
 from __future__ import annotations
@@ -52,8 +50,7 @@ def tck2connectome_commands(
 ) -> list[list[str]]:
     """Return the two ``tck2connectome`` argv lists (edge weights, then lengths).
 
-    The first call counts streamlines between each node pair (edge weights); the second scales each streamline by its length and averages per edge to get mean
-    tract lengths. Returned rather than run so callers can preview them (dry-run).
+    The first call counts streamlines between each node pair (edge weights); the second scales each streamline by its length and averages per edge to get mean tract lengths. Returned rather than run so callers can preview them (dry-run).
     """
     common: list[str] = []
     if symmetric:

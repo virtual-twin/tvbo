@@ -1,11 +1,8 @@
 """A ``--set`` override that a materialised object has already consumed must take effect.
 
-Resolution latches: a Network builds its connectivity once and caches it, which is what stops it rebuilding on every access. ``--set`` mutates the loaded object AFTER that, so an
-override of anything the network resolved from — a graph generator's parameters, a parcellation — was reported on the console and then ignored. The run completed, the FC came
-out bit-identical to the un-overridden one, and nothing anywhere said so.
+Resolution latches: a Network builds its connectivity once and caches it, which is what stops it rebuilding on every access. ``--set`` mutates the loaded object AFTER that, so an override of anything the network resolved from — a graph generator's parameters, a parcellation — was reported on the console and then ignored. The run completed, the FC came out bit-identical to the un-overridden one, and nothing anywhere said so.
 
-That is the worst shape a defect can take: a flag that says it did something, a result that looks right, and no way to tell from the output that the run was not the one asked for. So
-the contract pinned here is that an override invalidates what it feeds.
+That is the worst shape a defect can take: a flag that says it did something, a result that looks right, and no way to tell from the output that the run was not the one asked for. So the contract pinned here is that an override invalidates what it feeds.
 """
 
 from __future__ import annotations

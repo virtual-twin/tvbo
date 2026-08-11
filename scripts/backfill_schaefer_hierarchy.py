@@ -5,12 +5,9 @@ For each Schaefer network YAML in database/networks/:
 
 1. **Fix node labels & positions** — replace ``node_0``-style labels with actual region names from the corresponding atlas YAML sidecar.
 
-2. **Add functional-network hierarchy** — write a ``node_mapping`` array to the HDF5 companion that maps each parcel index to its functional
-   network index (7 or 17 × 2 hemispheres).  The YAML sidecar gets
-   ``node_mapping`` and ``parent_network`` fields pointing to that data.
+2. **Add functional-network hierarchy** — write a ``node_mapping`` array to the HDF5 companion that maps each parcel index to its functional network index (7 or 17 × 2 hemispheres).  The YAML sidecar gets ``node_mapping`` and ``parent_network`` fields pointing to that data.
 
-The multi-layer structure allows tvbo to treat Schaefer networks as hierarchical: base nodes (parcels) are mapped to a higher-order layer
-of functional networks (e.g. ``LH_Vis``, ``RH_Default``, …).
+The multi-layer structure allows tvbo to treat Schaefer networks as hierarchical: base nodes (parcels) are mapped to a higher-order layer of functional networks (e.g. ``LH_Vis``, ``RH_Default``, …).
 
 Usage:
     python scripts/backfill_schaefer_hierarchy.py [--dry-run]
@@ -62,8 +59,7 @@ def load_atlas_entities(atlas_dir: Path, seg: str, scale: str) -> list[dict] | N
 def extract_functional_network(region_name: str) -> str:
     """Extract ``{hemi}_{network}`` from a Schaefer region name.
 
-    ``"17Networks_LH_VisCent_1"`` → ``"LH_VisCent"``
-    """
+    ``"17Networks_LH_VisCent_1"`` → ``"LH_VisCent"``"""
     parts = region_name.split("_")
     return f"{parts[1]}_{parts[2]}"
 

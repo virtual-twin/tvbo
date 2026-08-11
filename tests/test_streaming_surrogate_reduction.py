@@ -1,15 +1,11 @@
 """Permutation-significance surrogate in the streaming reducer (DerivedVariable.surrogate).
 
-A derived variable may declare a ``surrogate``: re-evaluate a named statistic under a fixed
-``(n_perm, n)`` permutation table and report the per-element exceedance p-value. The resolver (``resolve_reduction``) interleaves the surrogate p-value DV back into the per-step chain at
-its declaration position, and the observation emitter renders it as a ``jax.vmap`` fold over the table — the ``(vmap(lambda p: stat(field[p]))(perms) <cmp> stat(field)).mean`` form the
-``Surrogate`` schema documents. These tests pin:
+A derived variable may declare a ``surrogate``: re-evaluate a named statistic under a fixed ``(n_perm, n)`` permutation table and report the per-element exceedance p-value. The resolver (``resolve_reduction``) interleaves the surrogate p-value DV back into the per-step chain at its declaration position, and the observation emitter renders it as a ``jax.vmap`` fold over the table — the ``(vmap(lambda p: stat(field[p]))(perms) <cmp> stat(field)).mean`` form the ``Surrogate`` schema documents. These tests pin:
 
 * the resolver carries the surrogate payload (statistic / permute / perms / compare /
   family_reduce) and splices the p-value DV into ``derived`` in declaration order, so a downstream DV that consumes it is emitted after it;
 * the emitted fold is byte-identical (to f64) to a numpy reference under the SAME fixed
-  permutation table — both the symmetric per-element test and the Westfall–Young max-T FWE form (``family_reduce: nanmax``), whose permuted statistic is reduced over vertices to one
-  family-wise null each observed element is tested against (Koller Fig-6 wave detection);
+  permutation table — both the symmetric per-element test and the Westfall–Young max-T FWE form (``family_reduce: nanmax``), whose permuted statistic is reduced over vertices to one family-wise null each observed element is tested against (Koller Fig-6 wave detection);
 * the fold survives any block decomposition (the grid path feeds blocks, not one trajectory);
 * malformed surrogates (unknown permute symbol / undeclared permutation table / bad
   family_reduce) are rejected at resolve time.
@@ -40,8 +36,7 @@ _TEMPLATE = "tvbo/templates/tvboptim/tvbo-tvboptim-observation.py.mako"
 
 
 def _surrogate_observer(perms, w, *, family_wise=False, direction="greater_equal"):
-    """An observer over per-node source ``x`` whose value is the time-mean of a per-node permutation p-value. ``stat = w * x`` is the observed statistic; ``pval`` is its surrogate
-    under the fixed ``perms`` table; the accumulator folds ``pval`` over time."""
+    """An observer over per-node source ``x`` whose value is the time-mean of a per-node permutation p-value. ``stat = w * x`` is the observed statistic; ``pval`` is its surrogate under the fixed ``perms`` table; the accumulator folds ``pval`` over time."""
     return Observation(
         name="obs",
         source=["x"],
@@ -142,8 +137,7 @@ def test_less_equal_direction():
 
 
 def test_surrogate_is_interleaved_in_declaration_order():
-    """`stat` (observed) must precede `pval` (its surrogate), and both precede any consumer — the accumulator reads `pval`, so a flat 'all equations then all surrogates' emission would
-    reference it before it exists."""
+    """`stat` (observed) must precede `pval` (its surrogate), and both precede any consumer — the accumulator reads `pval`, so a flat 'all equations then all surrogates' emission would reference it before it exists."""
     red = resolve_reduction(_surrogate_observer(_perm_table(0, 8, 6), np.ones(6)))
     names = [d["name"] for d in red["derived"]]
     assert names.index("stat") < names.index("pval")
@@ -229,8 +223,7 @@ def test_symmetric_surrogate_matches_numpy(direction, cmp):
 
 
 def test_family_wise_maxT_surrogate_matches_numpy():
-    """The Westfall–Young FWE null: the permuted statistic is reduced over vertices (nanmax) to one family-wise extremum per permutation, and each observed vertex is tested against it
-    — Koller's max-over-vertices wave surrogate."""
+    """The Westfall–Young FWE null: the permuted statistic is reduced over vertices (nanmax) to one family-wise extremum per permutation, and each observed vertex is tested against it — Koller's max-over-vertices wave surrogate."""
     perms, w = _perm_table(3, 40, 6), np.linspace(0.5, 2.0, 6)
     data = _trajectory(seed=4)
     red = resolve_reduction(_surrogate_observer(perms, w, family_wise=True))

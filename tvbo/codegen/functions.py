@@ -276,8 +276,7 @@ def generate_inline_function(
     --------
     >>> func = Function(name='square', equation=Equation(rhs='x**2'), arguments=[{'name': 'x'}])
     >>> print(generate_inline_function(func))
-    lambda x: x**2
-    """
+    lambda x: x**2"""
     # Lazy import to avoid circular dependency
     from tvbo.templates import lookup
 
@@ -322,8 +321,7 @@ def function_to_callable(
     >>> func = Function(name='sigmoid', equation=Equation(rhs='1/(1+exp(-x))'), ...)
     >>> sigmoid = function_to_callable(func)
     >>> sigmoid(0.0)
-    0.5
-    """
+    0.5"""
     code = generate_function(func, format=format, user_functions=user_functions)
 
     # Start with user-provided namespace or empty dict

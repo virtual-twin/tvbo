@@ -91,8 +91,7 @@ _UNIT_TO_LEMS_DIM = {
 def unit_to_lems_dimension(unit):
     """Return the LEMS dimension name for a UnitEnum value (or string).
 
-    Returns the proper LEMS dimension (e.g. ``"voltage"``, ``"capacitance"``) when the unit has a known mapping, or ``"none"`` for dimensionless /
-    unknown units.
+    Returns the proper LEMS dimension (e.g. ``"voltage"``, ``"capacitance"``) when the unit has a known mapping, or ``"none"`` for dimensionless / unknown units.
     """
     if unit is None:
         return "none"
@@ -136,8 +135,7 @@ _UNIT_TO_LEMS_SYMBOL = {
 def unit_to_lems_symbol(unit):
     """Return the LEMS unit symbol string for appending to numeric values.
 
-    For dimensioned parameters (e.g. ``pF``, ``nS``, ``mV``), returns the matching LEMS unit symbol.  For dimensionless or unknown units, returns
-    ``""``.
+    For dimensioned parameters (e.g. ``pF``, ``nS``, ``mV``), returns the matching LEMS unit symbol.  For dimensionless or unknown units, returns ``""``.
     """
     if unit is None:
         return ""
@@ -171,8 +169,7 @@ _TIME_UNITS = {
 def unit_has_time_dimension(unit):
     """Return True if the unit carries a time component (T or T⁻¹).
 
-    This is the key signal for NeuroML LEMS export: if any parameter in the RHS equation has a time dimension, the equation already
-    carries time normalisation and ``/ SEC`` is not needed.
+    This is the key signal for NeuroML LEMS export: if any parameter in the RHS equation has a time dimension, the equation already carries time normalisation and ``/ SEC`` is not needed.
     """
     if unit is None:
         return False
@@ -219,8 +216,7 @@ def unit_to_si_factor(unit):
     >>> unit_to_si_factor("ms")
     0.001
     >>> unit_to_si_factor(None)
-    1.0
-    """
+    1.0"""
     if unit is None:
         return 1.0
     key = str(unit).strip()
@@ -325,8 +321,7 @@ _UNIT_TO_LATEX = {
 def unit_to_latex(unit):
     """Return a LaTeX string for the unit, suitable for wrapping in ``$...$``.
 
-    Converts enum values like ``per_ms`` → ``\\mathrm{ms}^{-1}``,
-    ``rad_per_ms`` → ``\\mathrm{rad}\\,\\mathrm{ms}^{-1}``.
+    Converts enum values like ``per_ms`` → ``\\mathrm{ms}^{-1}``, ``rad_per_ms`` → ``\\mathrm{rad}\\,\\mathrm{ms}^{-1}``.
     Returns an empty string for dimensionless / unknown units.
     """
     if unit is None:
@@ -737,8 +732,7 @@ def unit_to_symbol(unit):
     >>> unit_to_symbol("per_ms")
     '1/ms'
     >>> unit_to_symbol(None)
-    ''
-    """
+    ''"""
     if unit is None:
         return ""
     # PermissibleValue (from getattr(UnitEnum, name)) has .text

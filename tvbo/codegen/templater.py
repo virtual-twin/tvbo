@@ -3,8 +3,7 @@
 
 """Generate TVBO Python classes from ontology definitions via Mako templates.
 
-Provides helpers that read model, parameter, state-variable, equation, coupling and integrator metadata from the ontology and render it into
-executable TVBO/TVB source using the templates in `tvbo.templates`.
+Provides helpers that read model, parameter, state-variable, equation, coupling and integrator metadata from the ontology and render it into executable TVBO/TVB source using the templates in `tvbo.templates`.
 """
 
 import logging
@@ -39,14 +38,11 @@ TEMPLATES = templates.root
 def is_derived(obs: Any, experiment: Any) -> bool:
     """Return True if ``obs`` derives from other observations in ``experiment``.
 
-    An Observation is derived when any item in its multivalued ``source`` slot names ANOTHER observation in the same experiment. Source entries
-    may be bare strings, objects with a ``name`` attribute, or inlined
+    An Observation is derived when any item in its multivalued ``source`` slot names ANOTHER observation in the same experiment. Source entries may be bare strings, objects with a ``name`` attribute, or inlined
     Observation/StateVariable instances.
 
-    A SELF-reference (an observation whose ``source`` names itself — e.g. an observation ``r_A`` with ``source: [r_A]`` that simply observes the model
-    variable ``r_A``) is NOT derived: an observation cannot derive from itself.
-    Without this exclusion such observations are mis-routed to the derived path, where they have no pipeline and are never computed, so the generated
-    ``observations.r_A = _all_obs.r_A`` extraction raises AttributeError.
+    A SELF-reference (an observation whose ``source`` names itself — e.g. an observation ``r_A`` with ``source: [r_A]`` that simply observes the model variable ``r_A``) is NOT derived: an observation cannot derive from itself.
+    Without this exclusion such observations are mis-routed to the derived path, where they have no pipeline and are never computed, so the generated ``observations.r_A = _all_obs.r_A`` extraction raises AttributeError.
     """
     obs_names = set((getattr(experiment, "observations", {}) or {}).keys())
     if not obs_names:
@@ -89,8 +85,7 @@ COMPONENT_LANGUAGES = {
 def source_language(format: str) -> str:
     """Return the output language of *format*, or ``""`` when it emits none.
 
-    Resolves through the export registry so a backend declares its language once, on its :class:`~tvbo.export.registry.ExportFormat`. The component-level aliases
-    in :data:`COMPONENT_LANGUAGES` are not registered formats and are mapped here.
+    Resolves through the export registry so a backend declares its language once, on its :class:`~tvbo.export.registry.ExportFormat`. The component-level aliases in :data:`COMPONENT_LANGUAGES` are not registered formats and are mapped here.
     """
     if format in COMPONENT_LANGUAGES:
         return COMPONENT_LANGUAGES[format]
@@ -124,8 +119,7 @@ def format_code(code: str, format: str = "python", use_black: bool = True) -> st
 def time_dependent_equations(model) -> list[str]:
     """Names whose equation reads the time symbol ``t``, sorted.
 
-    A backend whose derivative signature carries no time — TVB's ``Model.dfun`` — cannot express these, and emitting the term anyway yields an unbound name. The
-    equations are the ground truth rather than the ``autonomous`` slot, which is author-declared and can disagree with them.
+    A backend whose derivative signature carries no time — TVB's ``Model.dfun`` — cannot express these, and emitting the term anyway yields an unbound name. The equations are the ground truth rather than the ``autonomous`` slot, which is author-declared and can disagree with them.
     """
     t = sp.Symbol("t")
     # Only integrated and derived quantities: a `functions:` entry taking an argument named `t` binds it as a parameter, so its rhs naming `t` is not time dependence.
@@ -139,8 +133,7 @@ def time_dependent_equations(model) -> list[str]:
 def derived_parameter_inputs(model) -> list[str]:
     """Base parameter names the derived-parameter expressions read, in model order.
 
-    A backend that computes derived parameters must first unpack the base parameters they depend on — ``ReducedSetHindmarshRose`` derives twelve of them from ``a``,
-    ``b``, ``sigma`` and friends, so dropping the unpack breaks the model. Unpacking
+    A backend that computes derived parameters must first unpack the base parameters they depend on — ``ReducedSetHindmarshRose`` derives twelve of them from ``a``, ``b``, ``sigma`` and friends, so dropping the unpack breaks the model. Unpacking
     *every* parameter instead leaves the unread ones as dead bindings, so this returns
     exactly the ones consumed.
 
@@ -161,8 +154,7 @@ def derived_parameter_inputs(model) -> list[str]:
 def get_statevariable_equations(model):
     """Map each state variable to its symbolic time-derivative equation.
 
-    For every state variable of `model`, look up the matching `TimeDerivative` expression among the model's symbolic differential equations, keyed by the
-    derivative's label with the model acronym suffix stripped.
+    For every state variable of `model`, look up the matching `TimeDerivative` expression among the model's symbolic differential equations, keyed by the derivative's label with the model acronym suffix stripped.
 
     Args:
         model: An ontology model class, or a model name to resolve.
@@ -191,9 +183,7 @@ def get_statevariable_equations(model):
 def get_model_info(model):
     """Collect the codegen-relevant metadata for a model into a dict.
 
-    Resolve `model` from the ontology if given as a name, then gather its parameters and constants, coupling-variable indices, coupling terms,
-    non-integrated variables (functions and conditionals) with their dependency-sorted symbolic expressions, state variables, state-variable
-    differential equations, and variables of interest.
+    Resolve `model` from the ontology if given as a name, then gather its parameters and constants, coupling-variable indices, coupling terms, non-integrated variables (functions and conditionals) with their dependency-sorted symbolic expressions, state variables, state-variable differential equations, and variables of interest.
 
     Args:
         model: An ontology model class, or a model name to resolve.
@@ -267,8 +257,7 @@ def get_param_info(param_class):
 def get_sv_info(sv_class):
     """Extract label, symbol, default, range, boundaries and definition of a state variable.
 
-    Parse the ontology `stateVariableRange` and `stateVariableBoundaries` strings, defaulting to an effectively unbounded range and open boundaries
-    when unset.
+    Parse the ontology `stateVariableRange` and `stateVariableBoundaries` strings, defaulting to an effectively unbounded range and open boundaries when unset.
 
     Args:
         sv_class: Ontology state-variable class to read metadata from.
@@ -311,8 +300,7 @@ def boolean2bitwise(code_str):
 def equation2class(EQ, fout=None, print_source=False, **kwargs):
     """Generate a TVBO equation class from an ontology equation.
 
-    Sympify the equation, render it (with its Python and LaTeX forms and default parameter values) through the `_tvbo-tvb-equation.py.mako`
-    template, then either write the source, print it, or execute it and return an instantiated equation object.
+    Sympify the equation, render it (with its Python and LaTeX forms and default parameter values) through the `_tvbo-tvb-equation.py.mako` template, then either write the source, print it, or execute it and return an instantiated equation object.
 
     Args:
         EQ: Ontology equation class to convert.
@@ -365,9 +353,7 @@ def equation2class(EQ, fout=None, print_source=False, **kwargs):
 def coupling2class(CF, fout=None, print_source=False, **kwargs):
     """Generate a TVBO coupling class from an ontology coupling function.
 
-    Resolve `CF` from the ontology if given as a name, build the pre- and post-summation expressions and parameters, and render them through the
-    `_tvbo-tvb-coupling.py.mako` template. Then either write the source, print it, or execute it and return an instantiated coupling object. Keyword
-    arguments matching coupling attributes are passed as array-coerced constructor values.
+    Resolve `CF` from the ontology if given as a name, build the pre- and post-summation expressions and parameters, and render them through the `_tvbo-tvb-coupling.py.mako` template. Then either write the source, print it, or execute it and return an instantiated coupling object. Keyword arguments matching coupling attributes are passed as array-coerced constructor values.
 
     Args:
         CF: Ontology coupling-function class, or a name to resolve.
@@ -446,9 +432,7 @@ def model2class(
 ):
     """Generate a TVBO model class from an ontology model.
 
-    Resolve `model` from the ontology if given as a name, assemble its state variables, differential equations, non-integrated variables, parameters and
-    dependency imports via `get_model_info`, and render them through the
-    `_tvbo-tvb-model_old.py.mako` template. Then either write the source, print it, or execute it and return the model class or an instance.
+    Resolve `model` from the ontology if given as a name, assemble its state variables, differential equations, non-integrated variables, parameters and dependency imports via `get_model_info`, and render them through the `_tvbo-tvb-model_old.py.mako` template. Then either write the source, print it, or execute it and return the model class or an instance.
 
     Args:
         model: An ontology model class, or a model name to resolve.
@@ -573,8 +557,7 @@ def get_integrator_info(integrator):
 def integrator2class(integrator, return_instance=True, **kwargs):
     """Resolve an ontology integrator to a TVB integrator class or instance.
 
-    Look up the matching `tvb.simulator.integrators` class, selecting the stochastic variant when a `noise` keyword is supplied and the deterministic
-    variant otherwise.
+    Look up the matching `tvb.simulator.integrators` class, selecting the stochastic variant when a `noise` keyword is supplied and the deterministic variant otherwise.
 
     Args:
         integrator: Ontology integrator class, or a name to search for.

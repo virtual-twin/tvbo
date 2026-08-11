@@ -147,10 +147,8 @@ def run_comparison():
     # Apply schema model to same raw input
     print("\nApplying schema-driven BOLD model...")
 
-    # TVB raw output shape: (time, svars, nodes, modes)
-    # Ensure it has 4 dimensions
+    # TVB raw output is (time, svars, nodes, modes); restore the mode axis when it is absent
     if tvb_raw_signal.ndim == 3:
-        # Add mode dimension
         tvb_raw_signal = tvb_raw_signal[..., np.newaxis]
 
     print(f"  Input shape: {tvb_raw_signal.shape}")

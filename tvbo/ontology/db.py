@@ -7,8 +7,7 @@
 #
 """Load bundled example `SimulationStudy` definitions from the ontology data directory.
 
-At import time this module scans the `db` data directory for YAML files, loads each into a [`SimulationStudy`](../datamodel/schema.qmd) instance, and exposes
-them keyed by their `key` field through the module-level `SimulationStudies` mapping.
+At import time this module scans the `db` data directory for YAML files, loads each into a [`SimulationStudy`](../datamodel/schema.qmd) instance, and exposes them keyed by their `key` field through the module-level `SimulationStudies` mapping.
 """
 
 import glob

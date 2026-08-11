@@ -1,7 +1,6 @@
 """An observation reduction observer binds its ``Dynamics.parameters`` as named constants.
 
-A model ``Dynamics`` declares its constants as ``parameters`` (scalar, or array-valued for an operator such as a mode-coupling matrix). An observer ``Dynamics`` — the co-integrated
-auxiliary that computes an observation as a time recurrence — is the same class and so declares constants the same way. These tests pin that the reduction resolver honours them:
+A model ``Dynamics`` declares its constants as ``parameters`` (scalar, or array-valued for an operator such as a mode-coupling matrix). An observer ``Dynamics`` — the co-integrated auxiliary that computes an observation as a time recurrence — is the same class and so declares constants the same way. These tests pin that the reduction resolver honours them:
 they enter the symbolic vocabulary, survive into the rendered triple, and cannot silently shadow a state variable.
 """
 

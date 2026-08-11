@@ -1,8 +1,6 @@
 """A Procedural GraphGenerator's typed DAG resolves to backend-independent expressions.
 
-The DAG is metadata: every option is a schema field, and the resolver builds the SymPy tree directly. Nothing round-trips through an expression string except an `equation`
-step's author-written `rhs`, so the parser's limits (no keyword arguments, `!=` collapsing to `True`, an unregistered head silently becoming multiplication) are unreachable by
-construction rather than avoided by convention.
+The DAG is metadata: every option is a schema field, and the resolver builds the SymPy tree directly. Nothing round-trips through an expression string except an `equation` step's author-written `rhs`, so the parser's limits (no keyword arguments, `!=` collapsing to `True`, an unregistered head silently becoming multiplication) are unreachable by construction rather than avoided by convention.
 
 The fixture is Koller2024's 2-D sheet — the construction that motivated Tier 2 — so these also pin that a real paper's network is expressible without per-generator Python.
 """
@@ -19,8 +17,6 @@ from tvbo.graph_generators.procedural import (
 )
 
 
-# Koller2024 2-D sheet, exactly the construction in koller2024_networks.build_2d_sheet:
-# distance kernel -> stochastic connection mask -> column-normalise -> in-strength gradient from two opposing Gaussians.
 def _normal_field(mean):
     """A Normal spatial field: vector mean + isotropic cov, as a Distribution."""
     return {"name": "Normal", "parameters": {"mean": mean, "cov": 300.0}}
@@ -29,8 +25,6 @@ def _normal_field(mean):
 KOLLER_SHEET = {
     "parameters": {"sigma": 10.0, "alpha": 2.0, "beta": 4.0, "nx": 30, "ny": 30, "x_extent": 140.0, "y_extent": 140.0},
     "steps": {
-        # The layout is an ordinary named intermediate, not a special generator slot:
-        # positions are produced by a primitive and referenced by name like anything else.
         "layout": {"equation": {"rhs": "grid_positions(nx, ny, x_extent, y_extent)"}},
         "d_ij": {"type": "pairwise_distance", "of": "layout", "diagonal": "inf"},
         "a_ij": {"equation": {"rhs": "(1 / (2*sigma)) * exp(-d_ij / sigma)"}},
@@ -48,15 +42,14 @@ KOLLER_SHEET = {
         "gradient_template": {"type": "minmax_rescale", "of": "grad_raw", "target_range": {"lo": -1, "hi": 1}},
     },
 }
+"""Exactly the construction in `koller2024_networks.build_2d_sheet`: distance kernel -> stochastic connection mask -> column-normalise -> in-strength gradient from two opposing Gaussians."""
 
 
 def _named(spec):
     return dict(build(spec))
 
 
-# --------------------------------------------------------------------------- #
-# Resolution                                                                   #
-# --------------------------------------------------------------------------- #
+# Resolution
 def test_every_step_resolves_to_a_sympy_expression():
     resolved = build(KOLLER_SHEET)
     assert [n for n, _ in resolved] == list(KOLLER_SHEET["steps"])
@@ -86,9 +79,7 @@ def test_stochastic_mask_is_a_relational_over_a_sampler():
 def test_no_abs_wrapper_is_needed_around_an_exponential_draw():
     """Koller's source writes `abs(np.random.exponential(...))`; the DAG omits the abs.
 
-    This is a deliberate, provable simplification rather than a dropped detail: the exponential distribution has support [0, inf), so `abs` is the identity on every
-    value it can return. Omitting it keeps the schema minimal — no `transform` field exists solely to express a no-op — and leaves the mask numerically identical. A
-    distribution that can go negative (e.g. Normal) would need an explicit `equation` step, which is what that step type is for.
+    This is a deliberate, provable simplification rather than a dropped detail: the exponential distribution has support [0, inf), so `abs` is the identity on every value it can return. Omitting it keeps the schema minimal — no `transform` field exists solely to express a no-op — and leaves the mask numerically identical. A distribution that can go negative (e.g. Normal) would need an explicit `equation` step, which is what that step type is for.
     """
     sampler = _named(KOLLER_SHEET)["mask_ij"].args[1]
     assert sampler.func.__name__ == "sample_exponential"
@@ -101,9 +92,7 @@ def test_distribution_parameters_are_fields_not_keywords():
     assert sp.Float(17.0) in sampler.args
 
 
-# --------------------------------------------------------------------------- #
-# Backend rendering                                                            #
-# --------------------------------------------------------------------------- #
+# Backend rendering
 @pytest.mark.parametrize("fmt", ["numpy", "jax"])
 def test_whole_dag_renders_on_every_backend(fmt):
     for name, expr in build(KOLLER_SHEET):
@@ -117,9 +106,7 @@ def test_jax_render_uses_pure_prng():
     assert "key" in src
 
 
-# --------------------------------------------------------------------------- #
-# The inferred deterministic / stochastic split                                 #
-# --------------------------------------------------------------------------- #
+# The inferred deterministic / stochastic split
 def test_seed_dependence_is_transitive():
     """a_masked is not itself a draw, but it references the mask, so it is seeded."""
     seeded = seeded_steps(KOLLER_SHEET)
@@ -162,8 +149,7 @@ def test_a_dag_with_no_randomness_has_an_empty_suffix():
 def test_a_sampler_inside_an_equation_step_is_still_seeded():
     """Seededness comes from the resolved expression, not the declared step type.
 
-    An `equation` step may call a sampler head directly. Trusting `type` would classify it as deterministic and hoist it out of the per-realisation loop, so every "independent"
-    realisation would silently share one draw — the worst failure this module can have, because the ensemble still runs and still produces plausible numbers.
+    An `equation` step may call a sampler head directly. Trusting `type` would classify it as deterministic and hoist it out of the per-realisation loop, so every "independent" realisation would silently share one draw — the worst failure this module can have, because the ensemble still runs and still produces plausible numbers.
 
     Detection keys off the sampler HEAD, not the PRNG symbol's name, so the step is caught however its key argument is spelled (here a plain `anykey`).
     """
@@ -190,8 +176,7 @@ def test_sample_step_yields_the_draw_not_a_mask():
 def test_sample_selects_its_distribution_by_parameter_name():
     """`of` on a `sample` step names the Distribution-valued parameter to draw from.
 
-    That is how a curated generator exposes its randomness as a choice (RandomReservoir's `weight_distribution`) while the inline `distribution` states the
-    family it falls back to.
+    That is how a curated generator exposes its randomness as a choice (RandomReservoir's `weight_distribution`) while the inline `distribution` states the family it falls back to.
     """
     fields = {"type": "sample", "of": "wd", "distribution": {"name": "Normal", "parameters": {"mean": 0.0, "std": 1.0}}}
     supplied = {"name": "Uniform", "parameters": {"lo": -1.0, "hi": 1.0}}
@@ -201,8 +186,7 @@ def test_sample_selects_its_distribution_by_parameter_name():
 
 
 def test_sample_rejects_an_of_that_names_an_intermediate():
-    """On every other step type `of` is an array, so reaching for one here is the natural mistake — and silently falling back to the default family would build a plausible
-    network from the wrong distribution without saying so."""
+    """On every other step type `of` is an array, so reaching for one here is the natural mistake — and silently falling back to the default family would build a plausible network from the wrong distribution without saying so."""
     with pytest.raises(ProceduralError, match="not from an array"):
         build(
             {
@@ -224,9 +208,7 @@ def test_an_undefined_layout_is_a_dangling_reference():
         build({"steps": {"d": {"type": "pairwise_distance", "of": "layout"}}})
 
 
-# --------------------------------------------------------------------------- #
-# Malformed DAGs fail loudly                                                   #
-# --------------------------------------------------------------------------- #
+# Malformed DAGs fail loudly
 def test_unknown_step_type_is_rejected():
     with pytest.raises(ProceduralError, match="unknown type"):
         build({"steps": {"x": {"type": "no_such_step"}}})
@@ -304,8 +286,7 @@ def test_minmax_rescale_requires_a_target_range():
 def test_reserved_prng_parameter_name_is_rejected():
     """The PRNG symbol is reserved; a parameter of that name would be silently clobbered.
 
-    The resolver binds the generator's PRNG state into the evaluation namespace under this name and detects seededness partly by looking for it. A parameter sharing it would be
-    overwritten by the seed (wrong values, no error) and would make every step look seeded, disabling the deterministic-prefix hoisting.
+    The resolver binds the generator's PRNG state into the evaluation namespace under this name and detects seededness partly by looking for it. A parameter sharing it would be overwritten by the seed (wrong values, no error) and would make every step look seeded, disabling the deterministic-prefix hoisting.
     """
     with pytest.raises(ProceduralError, match="reserved"):
         build({"parameters": {"_prng_key": 1.0}, "steps": {"a": {"equation": {"rhs": "_prng_key * 2"}}}})

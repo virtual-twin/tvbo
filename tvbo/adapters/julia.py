@@ -2,8 +2,7 @@
 
 Replaces the legacy pyjulia (``julia`` package) which is unmaintained and emits spurious MainInclude warnings on Julia ≥ 1.3.
 
-Julia package management is handled automatically by juliapkg via
-``tvbo/juliapkg.json``. When juliacall is first imported, juliapkg will install Julia (if needed) and all declared packages.
+Julia package management is handled automatically by juliapkg via ``tvbo/juliapkg.json``. When juliacall is first imported, juliapkg will install Julia (if needed) and all declared packages.
 """
 
 import logging

@@ -29,12 +29,9 @@ def get_coupling_terms(model):
 def gathered_states(model, coupling=None):
     """Names of the state variables transmitted to connected nodes, in gather order.
 
-    The coupling's ``incoming_states`` is the authority: the schema defines
-    ``coupling_variable`` as the model's default, "used when omitted", and says the coupling "may override this via its incoming_states attribute". JansenRit1995 is
-    the case that needs the override — it marks only ``y4`` a coupling variable, yet the inter-column coupling transmits the PSP difference ``y1 - y2``.
+    The coupling's ``incoming_states`` is the authority: the schema defines ``coupling_variable`` as the model's default, "used when omitted", and says the coupling "may override this via its incoming_states attribute". JansenRit1995 is the case that needs the override — it marks only ``y4`` a coupling variable, yet the inter-column coupling transmits the PSP difference ``y1 - y2``.
 
-    The delay history, the ``x_j`` gather and the history write-back must all agree on this one order, so all three read it from here. Disagreeing would not raise: a
-    delayed source would silently be read from another state's row.
+    The delay history, the ``x_j`` gather and the history write-back must all agree on this one order, so all three read it from here. Disagreeing would not raise: a delayed source would silently be read from another state's row.
 
     Args:
         model: The :class:`~tvbo.classes.dynamics.Dynamics` declaring the states.
@@ -64,9 +61,7 @@ def gathered_state_indices(model, coupling=None):
 def referenced(names, *expressions):
     """The subset of *names* that any of *expressions* refers to, order preserved.
 
-    Used to unpack only what a generated function body reads. A coupling's ``post()`` and ``pre()`` share one parameter list but each uses part of it, so unpacking the
-    whole list leaves the rest dead — ``post()`` returning ``G * gx`` was still binding
-    ``cmax``, ``cmin``, ``midpoint`` and ``r``.
+    Used to unpack only what a generated function body reads. A coupling's ``post()`` and ``pre()`` share one parameter list but each uses part of it, so unpacking the whole list leaves the rest dead — ``post()`` returning ``G * gx`` was still binding ``cmax``, ``cmin``, ``midpoint`` and ``r``.
 
     Matching is on word boundaries, so ``r`` is not found inside ``r_max``.
 
@@ -83,9 +78,7 @@ def referenced(names, *expressions):
 def time_series_inputs(candidates, body):
     """Which of *candidates* the function *body* reads as its incoming samples.
 
-    A pipeline function names the samples either ``X`` (the generator's own convention) or by an argument the spec declared without a default — ``data`` in a body written
-    as ``jnp.mean(data[...])``. Both must resolve to ``ts.data``; binding only ``X`` left the spec's name pointing at an unfilled positional parameter, so calling the
-    function raised :class:`TypeError`.
+    A pipeline function names the samples either ``X`` (the generator's own convention) or by an argument the spec declared without a default — ``data`` in a body written as ``jnp.mean(data[...])``. Both must resolve to ``ts.data``; binding only ``X`` left the spec's name pointing at an unfilled positional parameter, so calling the function raised :class:`TypeError`.
     """
     return referenced(list(dict.fromkeys(candidates)), body)
 
@@ -95,8 +88,7 @@ def retime(body, inputs):
 
     ``apply_on_dimension: time`` applies the same expression to the time vector, so the sample symbols swap for their time counterparts.
 
-    An attribute of the same name is left alone. ``\\b`` matches immediately after a dot, so a plain word-boundary substitution rewrote ``ts.data`` into ``ts.t_data``
-    and the generated function raised ``AttributeError`` on the TimeSeries. The lookbehind requires the name to start a reference, not continue one.
+    An attribute of the same name is left alone. ``\\b`` matches immediately after a dot, so a plain word-boundary substitution rewrote ``ts.data`` into ``ts.t_data`` and the generated function raised ``AttributeError`` on the TimeSeries. The lookbehind requires the name to start a reference, not continue one.
     """
     import re
 
@@ -109,8 +101,7 @@ def retime(body, inputs):
 def get_source_code(func):
     """Backend-ready source text a function supplies directly, or ``None``.
 
-    A ``Function`` states its body either as an ``equation`` (symbolic, printed per backend) or as ``source_code`` (already written in the target language). A generator
-    that reads only the first emits nothing for the second — which is how the JAX observation for ``kuramoto_order`` came out as ``data = 0.0``.
+    A ``Function`` states its body either as an ``equation`` (symbolic, printed per backend) or as ``source_code`` (already written in the target language). A generator that reads only the first emits nothing for the second — which is how the JAX observation for ``kuramoto_order`` came out as ``data = 0.0``.
     """
     if getattr(func, "source_code", None):
         return func.source_code
@@ -123,9 +114,7 @@ def get_source_code(func):
 def model_expressions(model):
     """Every right-hand side a generated dfun body will contain, as one searchable string.
 
-    Pair with :func:`referenced` to unpack only the parameters a model actually uses. The four groups must all be included: a parameter can reach the derivatives indirectly,
-    through a derived parameter (``C1 = C``), a derived variable, or a function body (``Sigm`` reads ``e0``, ``r`` and ``v0`` and nothing else does), and dropping its
-    unpack on the strength of the state equations alone would emit an unbound name.
+    Pair with :func:`referenced` to unpack only the parameters a model actually uses. The four groups must all be included: a parameter can reach the derivatives indirectly, through a derived parameter (``C1 = C``), a derived variable, or a function body (``Sigm`` reads ``e0``, ``r`` and ``v0`` and nothing else does), and dropping its unpack on the strength of the state equations alone would emit an unbound name.
     """
     parts = []
     for group in ("state_variables", "derived_variables", "derived_parameters", "functions"):
@@ -149,8 +138,7 @@ def coupling_bindings(model, coupling, incoming=(), local=()):
         the *target* node's own current value, ``current_state[i]``.
 
     A difference coupling (``u_j - u_i``) needs the last two together, which is why the bare name cannot stand in for either. Word-boundary matching keeps the three apart:
-    ``\\bu\\b`` does not match the ``u`` inside ``u_j``, so a pre-expression written only in subscripts binds no unread bare name. This mirrors ``state_aliases_j`` /
-    ``state_aliases_i`` in :func:`tvbo.templates.tvboptim.utils.resolve_coupling_spec`.
+    ``\\bu\\b`` does not match the ``u`` inside ``u_j``, so a pre-expression written only in subscripts binds no unread bare name. This mirrors ``state_aliases_j`` / ``state_aliases_i`` in :func:`tvbo.templates.tvboptim.utils.resolve_coupling_spec`.
 
     Args:
         model: The dynamics declaring the state variables.

@@ -63,9 +63,7 @@ def _get_symbol(entity) -> str:
 def _requirements(entity):
     """Split ``requires`` into (entity references, bare names).
 
-    Two different properties share the Python attribute name: ``tvbo:requires`` is an ObjectProperty holding entities, while the NeuroML ingest adds
-    ``tvbo/neuroml:requires``, an AnnotationProperty holding the *name* of a quantity a ComponentType needs from its context (``'surfaceArea'``,
-    ``'iCa'``). owlready2 merges both into one slot, so it yields entities and plain strings together. Only the entities have a ``storid`` or a node.
+    Two different properties share the Python attribute name: ``tvbo:requires`` is an ObjectProperty holding entities, while the NeuroML ingest adds ``tvbo/neuroml:requires``, an AnnotationProperty holding the *name* of a quantity a ComponentType needs from its context (``'surfaceArea'``, ``'iCa'``). owlready2 merges both into one slot, so it yields entities and plain strings together. Only the entities have a ``storid`` or a node.
     """
     refs, names = [], []
     for req in getattr(entity, "requires", None) or []:
@@ -76,8 +74,7 @@ def _requirements(entity):
 def _get_type(entity) -> str:
     """Primary type/class label. Entity-local so it is world-agnostic.
 
-    A domain individual's asserted class and a class's superclass both live in
-    ``is_a`` as a ThingClass, so the first non-``Thing`` entry is the natural type for both. Returns ``"Thing"`` when none is present.
+    A domain individual's asserted class and a class's superclass both live in ``is_a`` as a ThingClass, so the first non-``Thing`` entry is the natural type for both. Returns ``"Thing"`` when none is present.
     """
     for parent in getattr(entity, "is_a", []) or []:
         if isinstance(parent, owl.ThingClass) and parent.name != "Thing":
@@ -236,10 +233,7 @@ class DirectOntologyAPI:
         """Get the full ontology graph for visualization.
 
         Includes both classes (the system scaffold: Dynamics, Coupling,
-        Parameter, …) and individuals (the domain entities: JansenRit, its parameters, …), since the generated ontology models domain entities as
-        individuals. ``is_a`` links a node to its superclass (for a class) or its asserted type (for an individual) — both are ThingClasses. Deeper
-        object-property edges (hasParameter, …) are surfaced on demand via
-        ``get_children`` / ``get_parents`` rather than inlined here.
+        Parameter, …) and individuals (the domain entities: JansenRit, its parameters, …), since the generated ontology models domain entities as individuals. ``is_a`` links a node to its superclass (for a class) or its asserted type (for an individual) — both are ThingClasses. Deeper object-property edges (hasParameter, …) are surfaced on demand via ``get_children`` / ``get_parents`` rather than inlined here.
         """
         nodes, links = [], []
         seen = set()

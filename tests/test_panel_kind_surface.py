@@ -1,8 +1,6 @@
 """`kind: surface` paints a layer on a mesh, with no study code at all.
 
-A brain map is the most-drawn panel in a network-neuroscience paper, and until now every study registered its own `cortical_surface` callable to draw one — the same forty lines of
-mesh load, medial-wall masking and symmetric colour limits, re-derived per study, each free to get the limits subtly wrong. The kind is built in and its geometry comes from the network,
-which is where a mesh belongs.
+A brain map is the most-drawn panel in a network-neuroscience paper, and until now every study registered its own `cortical_surface` callable to draw one — the same forty lines of mesh load, medial-wall masking and symmetric colour limits, re-derived per study, each free to get the limits subtly wrong. The kind is built in and its geometry comes from the network, which is where a mesh belongs.
 """
 
 from __future__ import annotations

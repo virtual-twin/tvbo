@@ -69,9 +69,7 @@ def build(
 ) -> None:
     """Build a structural connectome (SC) from a tractogram + parcellation.
 
-    A thin wrapper around MRtrix3 ``tck2connectome``: it counts streamlines between parcellation nodes (edge weights) and their mean lengths, then writes a tvbo
-    network (``…_desc-SC_relmat.h5`` + YAML sidecar) you can load with
-    ``tvbo.Network(...)``. The tractogram and parcellation must already be in the same space — this command does not register them.
+    A thin wrapper around MRtrix3 ``tck2connectome``: it counts streamlines between parcellation nodes (edge weights) and their mean lengths, then writes a tvbo network (``…_desc-SC_relmat.h5`` + YAML sidecar) you can load with ``tvbo.Network(...)``. The tractogram and parcellation must already be in the same space — this command does not register them.
     """
     from tvbo.data.connectome_build import (
         connectome_from_tractogram,
@@ -127,8 +125,7 @@ def build(
     def apply_metadata(net: "Network") -> "Network":
         """Attach the flag-derived SC metadata used for naming and serialisation.
 
-        The ``atlas`` filename entity is read from ``parcellation.atlas.name`` (not ``bids``), so the naming shell needs the same parcellation the saved
-        network gets — hence one shared helper for both.
+        The ``atlas`` filename entity is read from ``parcellation.atlas.name`` (not ``bids``), so the naming shell needs the same parcellation the saved network gets — hence one shared helper for both.
         """
         net.descriptor = "SC"
         net.distance_unit = "mm"

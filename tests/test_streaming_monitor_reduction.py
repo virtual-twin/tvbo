@@ -2,8 +2,7 @@
 
 The schema has always said an observer's output is "read at the final step for a reduction
 ... or, when ``period`` is set, sub-sampled over time for a monitor". Only the first half
-was implemented: every observer collapsed time into one value per node, so a hemodynamic forward model — an ODE whose whole point is the time course it produces — could not be
-declared as one. These tests pin the second half:
+was implemented: every observer collapsed time into one value per node, so a hemodynamic forward model — an ODE whose whole point is the time course it produces — could not be declared as one. These tests pin the second half:
 
 * the resolver reads ``period`` against the integration grid and tags the reduction
   ``monitor`` (axes ``time x node``), leaving a period-less observer folding as before;
@@ -316,8 +315,7 @@ def test_the_reducer_holds_no_trajectory():
 def test_a_state_only_readout_is_evaluated_once_per_sample():
     """The readout runs per emitted sample, not per integration step.
 
-    BOLD is a function of the hemodynamic states alone, so evaluating it every step and discarding all but the boundary value is ~`period` times more work than needed. The
-    resolver decides this symbolically: a readout that reads the observed signal or a per-step derived variable cannot be deferred and stays in the scan body.
+    BOLD is a function of the hemodynamic states alone, so evaluating it every step and discarding all but the boundary value is ~`period` times more work than needed. The resolver decides this symbolically: a readout that reads the observed signal or a per-step derived variable cannot be deferred and stays in the scan body.
     """
     obs = CuratedObservation.from_db("BOLD_Balloon")
     obs.source = ["r"]
@@ -331,8 +329,7 @@ def test_a_state_only_readout_is_evaluated_once_per_sample():
 def test_derived_parameters_are_bound_once_outside_the_scan():
     """Observer constants belong in the preamble, not recomputed every step.
 
-    `derived_parameters` is the slot every other backend already uses for this; declaring them as `derived_variables` instead would put them in the per-step body AND force the
-    readout that reads them onto the per-step path.
+    `derived_parameters` is the slot every other backend already uses for this; declaring them as `derived_variables` instead would put them in the per-step body AND force the readout that reads them onto the per-step path.
     """
     obs = CuratedObservation.from_db("BOLD_Balloon")
     obs.source = ["r"]

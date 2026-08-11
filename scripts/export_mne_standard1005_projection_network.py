@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """Export MNE standard_1005 EEG montage and fsaverage gain into a tvbo Network.
 
-This script creates a native tvbo sidecar + companion pair (YAML + HDF5) with sensor nodes and a ``gain`` matrix (sensors x regions), plus a small NPZ
-containing region labels/centers for bsplot visualization.
+This script creates a native tvbo sidecar + companion pair (YAML + HDF5) with sensor nodes and a ``gain`` matrix (sensors x regions), plus a small NPZ containing region labels/centers for bsplot visualization.
 
 Typical workflow
 ----------------
@@ -10,8 +9,7 @@ Typical workflow
    python scripts/export_mne_standard1005_projection_network.py
 
 2) Replot from saved files only (no forward recomputation):
-   python scripts/export_mne_standard1005_projection_network.py --skip-export
-"""
+   python scripts/export_mne_standard1005_projection_network.py --skip-export"""
 
 from __future__ import annotations
 
@@ -91,8 +89,7 @@ def _compute_region_gain(sensor_labels_mne: list[str]):
 
     Returns
     -------
-    region_labels : list[str] region_centers_mm : ndarray, shape (n_regions, 3) gain_matrix : ndarray, shape (n_sensors, n_regions)
-    fs_dir : Path
+    region_labels : list[str] region_centers_mm : ndarray, shape (n_regions, 3) gain_matrix : ndarray, shape (n_sensors, n_regions) fs_dir : Path
         Path to fetched fsaverage directory.
     """
     fs_dir = Path(mne.datasets.fetch_fsaverage(verbose=False))

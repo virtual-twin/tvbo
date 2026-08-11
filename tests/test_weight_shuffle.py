@@ -1,11 +1,8 @@
 """``WeightShuffle`` — the documented Callable exception to the pure-YAML rule.
 
-A masked extract, a permutation and a scatter are not expressible in the backend-independent primitive set: ``M[M != 0]`` cannot survive expression parsing at all,
-because the comparison evaluates to a plain Python ``True`` before a tree is built. Rather than invent a contorted primitive that only this generator would use, the algorithm stays
-as Python — which ``dev/GenericProcedureEngine.md`` §5 explicitly preserves for exactly this case.
+A masked extract, a permutation and a scatter are not expressible in the backend-independent primitive set: ``M[M != 0]`` cannot survive expression parsing at all, because the comparison evaluates to a plain Python ``True`` before a tree is built. Rather than invent a contorted primitive that only this generator would use, the algorithm stays as Python — which ``dev/GenericProcedureEngine.md`` §5 explicitly preserves for exactly this case.
 
-These pin the null model's actual guarantees (pattern preserved, weight multiset preserved, topology rerandomised) and the semantics inherited from the procedure it
-replaces, so the swap is behaviour-preserving rather than merely plausible.
+These pin the null model's actual guarantees (pattern preserved, weight multiset preserved, topology rerandomised) and the semantics inherited from the procedure it replaces, so the swap is behaviour-preserving rather than merely plausible.
 """
 
 import numpy as np
@@ -67,8 +64,7 @@ def test_none_seed_matches_seed_zero(shuffled):
 def test_an_unimplemented_preserve_mode_is_rejected(monkeypatch):
     """Silently falling back would return a null model controlling the wrong property.
 
-    `degree` and `weight_distribution` are documented in the generator's parameters but have no implementation; a caller asking for a degree-preserving null must not be
-    handed a binary-mask one.
+    `degree` and `weight_distribution` are documented in the generator's parameters but have no implementation; a caller asking for a degree-preserving null must not be handed a binary-mask one.
     """
     monkeypatch.setattr("tvbo.graph_generators.load_matrix", lambda _s: M, raising=True)
     with pytest.raises(ValueError, match="not implemented"):

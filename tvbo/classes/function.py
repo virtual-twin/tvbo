@@ -154,8 +154,7 @@ class Function(tvbo_datamodel.Function):
         >>> func = Function.from_string(sigmoid_yaml)
         >>> sigmoid = func.to_callable()
         >>> sigmoid(0.0)
-        0.5
-        """
+        0.5"""
         # Lazy import to avoid circular dependency
         from tvbo.codegen.functions import function_to_callable
 

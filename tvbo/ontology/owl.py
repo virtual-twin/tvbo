@@ -146,8 +146,7 @@ def _load_ontology():
 class _LazyOntologyProxy:
     """Stand-in for the TVB-O ontology that loads it on first use.
 
-    Keeps the ``onto`` API intact — attribute access (``onto.JansenRit``), item access (``onto[iri]``), iteration and ``with onto:`` all forward to the real ontology and
-    trigger the parse only when first touched.
+    Keeps the ``onto`` API intact — attribute access (``onto.JansenRit``), item access (``onto[iri]``), iteration and ``with onto:`` all forward to the real ontology and trigger the parse only when first touched.
     """
 
     __slots__ = ()

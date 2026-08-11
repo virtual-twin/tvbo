@@ -1,7 +1,6 @@
 """Runtime wrapper around the auto-generated :class:`tvbo_datamodel.Event`.
 
-Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal is built generically from the event's symbolic equation and its parameters,
-mirroring the pattern used by :class:`tvbo.classes.dynamics.Dynamics` and
+Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal is built generically from the event's symbolic equation and its parameters, mirroring the pattern used by :class:`tvbo.classes.dynamics.Dynamics` and
 :class:`tvbo.classes.perturbation.Stimulus`.
 """
 
@@ -19,8 +18,7 @@ class Event(tvbo_datamodel.Event):
     def _signal(self):
         """Return ``callable(t)`` for the event's signal.
 
-        Generic: works for any ``event.equation.rhs`` expressed in terms of
-        ``t`` and the event's own parameters.
+        Generic: works for any ``event.equation.rhs`` expressed in terms of ``t`` and the event's own parameters.
         """
         from tvbo.parse.expression import parse_eq  # module-top would cycle through tvbo.datamodel
 

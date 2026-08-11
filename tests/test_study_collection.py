@@ -1,8 +1,6 @@
 """The StudyCollection container: manifest resolution, verify gates, and composed captions.
 
-Phase 0 of the native-manuscript design. A `StudyCollection` is a study-of-studies whose
-`results:` are the numbers the prose cites (computed from a container or authored from prior work), whose figures carry `Panel.description` so captions compose from the spec, and whose
-buildability `tvbo verify` checks. These pin that plumbing so a regression can't silently ship a wrong number, an orphan figure, or a caption that disagrees with its panels.
+Phase 0 of the native-manuscript design. A `StudyCollection` is a study-of-studies whose `results:` are the numbers the prose cites (computed from a container or authored from prior work), whose figures carry `Panel.description` so captions compose from the spec, and whose buildability `tvbo verify` checks. These pin that plumbing so a regression can't silently ship a wrong number, an orphan figure, or a caption that disagrees with its panels.
 """
 
 from pathlib import Path
@@ -236,9 +234,7 @@ def test_write_caption_emits_a_partial(figure, tmp_path):
 def test_a_member_container_resolves_from_the_members_own_root(collection, tmp_path):
     """A ``used:`` binding into a MEMBER, which the schema documents as supported.
 
-    A member study runs in its own directory and writes
-    ``<member-dir>/output/results/<name>/result.h5``. Searching only the collection's root left every such key unresolved, so the build died right after a successful
-    multi-hour run — contradicting the slot's own description.
+    A member study runs in its own directory and writes ``<member-dir>/output/results/<name>/result.h5``. Searching only the collection's root left every such key unresolved, so the build died right after a successful multi-hour run — contradicting the slot's own description.
     """
     _write_container(tmp_path / "members" / "output", "tally", "n_errors", 7)
     results, _prov, problems = I.resolve_results(collection, tmp_path / "output")

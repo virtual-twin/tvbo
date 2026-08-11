@@ -1,23 +1,16 @@
 """A-box generator for TVB-O.
 
-Reads YAML records under `tvbo/database/` and emits Turtle with one
-`owl:NamedIndividual` per database entry, typed by the corresponding
-LinkML class IRI from the T-box (`ontology/tvb-o-struct.owl`).
+Reads YAML records under `tvbo/database/` and emits Turtle with one `owl:NamedIndividual` per database entry, typed by the corresponding LinkML class IRI from the T-box (`ontology/tvb-o-struct.owl`). It supersedes the legacy `tvbo/data/ontology/tvb-o.owl` A-box, in which ~1300 entities were wrongly typed as `owl:Class`.
 
-This replaces the legacy `tvbo/data/ontology/tvb-o.owl` A-box, which had
-~1300 entities wrongly typed as `owl:Class`. See PR-N audit and PR-Q (class->individual migration superseded by automated A-box generation).
+Output: `ontology/tvb-o-data.ttl` (structural KG) plus `ontology/tvb-o-biology.ttl` (the `tvbo:surrogate_of` grounding links to GO/ChEBI/UBERON/CL/MeSH, split out so biology can be maintained separately).
 
-Output: `ontology/tvb-o-data.ttl` (structural KG) plus
-`ontology/tvb-o-biology.ttl` (the `tvbo:surrogate_of` grounding links to
-GO/ChEBI/UBERON/CL/MeSH, split out so biology can be maintained separately).
-
-Scope (initial pilot): models. Each model emits:
+Each model under `models/` emits:
   - the Dynamics individual itself
   - one Parameter individual per `parameters[*]`
   - one StateVariable individual per `state_variables[*]`
   - groundings as `tvbo:surrogate_of` object-property links on parameter/state-variable
 
-Subsequent extensions (separate PRs) will add coupling_functions, integrators, observation_models, networks, atlases, software, studies.
+Every other database folder is emitted by `emit_generic_record` from the folder-to-class mapping in `GENERIC_FOLDER_TYPES`, reusing the same nested emitters.
 """
 
 from __future__ import annotations
@@ -39,9 +32,8 @@ TVBO = Namespace("https://w3id.org/tvbo/")
 DCTERMS = Namespace("http://purl.org/dc/terms/")
 OBOINOWL = Namespace("http://www.geneontology.org/formats/oboInOwl#")
 SCHEMA = Namespace("http://schema.org/")
-# SANDS classes are imported from openMINDS via schema/SANDS.yaml. The struct
-# OWL exposes their class IRIs under the InterLex `atom` namespace (see default_prefix in schema/SANDS.yaml). Type atlas/coordinate-space individuals directly against those existing T-box classes; do NOT mint new tvbo:* classes.
 ATOM = Namespace("http://uri.interlex.org/tgbugs/uris/readable/")
+"""InterLex namespace under which the struct OWL exposes the SANDS class IRIs imported from openMINDS via `schema/SANDS.yaml` (its `default_prefix`). Atlas and coordinate-space individuals are typed directly against those existing T-box classes; no new `tvbo:*` class is minted for them."""
 
 PREFIX_MAP = {
     "GO": "http://purl.obolibrary.org/obo/GO_",
@@ -98,19 +90,17 @@ def _resolve_study(citekey: str) -> str | None:
     return _STUDY_CITEKEYS_CI.get(citekey.lower())
 
 
-# --- Reusable emitters parametrised by parent IRI. --------------------------
-# Used uniformly by emit_model and emit_generic_record so that every record (model, coupling, integrator, observation, ...) receives the same metadata coverage including groundings.
+# Reusable emitters parametrised by parent IRI.
 
 
 def _add_groundings(g: Graph, iri: URIRef, data: dict) -> None:
+    """Link `iri` to every CURIE in `data["grounding"]` under two complementary vocabularies.
+
+    `tvbo:surrogate_of` is the semantic, reasoner-visible relation defined in `tvb-o-axioms.ttl`, meaning "X is a surrogate of Y". `oboInOwl:hasDbXref` is the OBO cross-reference convention, kept for interoperability with GO/OBO tooling.
+    """
     for cur in data.get("grounding") or []:
         u = expand_curie(str(cur))
         if u is not None:
-            # Emit each grounding under two complementary vocabularies:
-            #  - tvbo:surrogate_of  : the semantic, reasoner-visible relation
-            #    (defined in tvb-o-axioms.ttl) meaning "X is a surrogate of Y".
-            #  - oboInOwl:hasDbXref : the OBO cross-reference convention, kept for
-            #    interoperability with GO/OBO tooling.
             g.add((iri, TVBO.surrogate_of, u))
             g.add((iri, OBOINOWL.hasDbXref, u))
 
@@ -126,8 +116,7 @@ def _add_equation(g: Graph, iri: URIRef, data: dict) -> None:
 
 
 def _scoped_label(parent_iri: URIRef, symbol: str, category: str) -> str:
-    """Return `"<symbol> (<parent_local> <category>)"` to keep `rdfs:label` unique across models. Avoids ROBOT `duplicate_label` ERRORs caused by
-    bare per-model symbols (e.g. `y1`, `x_i`) colliding across dynamics."""
+    """Return `"<symbol> (<parent_local> <category>)"` to keep `rdfs:label` unique across models. Avoids ROBOT `duplicate_label` ERRORs caused by bare per-model symbols (e.g. `y1`, `x_i`) colliding across dynamics."""
     parent_local = str(parent_iri).rsplit("/", 1)[-1]
     return f"{symbol} ({parent_local} {category})"
 
@@ -211,9 +200,6 @@ def emit_model(g: Graph, path: pathlib.Path) -> None:
                 g.add((iri, DCTERMS.references, _study_iri(nk)))
 
 
-# --- Generic per-folder emitter for non-model database categories. -----------
-# Mapping: folder name -> class IRI. SANDS classes (BrainAtlas,
-# CommonCoordinateSpace) reuse their existing openMINDS/InterLex IRIs from schema/SANDS.yaml; do not mint tvbo:Atlas / tvbo:CoordinateSpace.
 GENERIC_FOLDER_TYPES: dict[str, URIRef] = {
     "coupling_functions": TVBO.Coupling,
     "graph_generators": TVBO.GraphGenerator,
@@ -225,10 +211,12 @@ GENERIC_FOLDER_TYPES: dict[str, URIRef] = {
     "observation_models": TVBO.Observation,
     "atlases": ATOM.BrainAtlas,
     "coordinate_spaces": ATOM.CommonCoordinateSpace,
-    # studies/: one yaml-per-study, generated by
-    # `dev/OntologicalRestructuring/tools/bib_to_studies.py` from the bibtex bibliographies. Typed against schema.org rather than minting a new tvbo class. Specific subtypes (Book / Thesis / etc.) are refined per-record in `_refine_study_type`.
     "studies": SCHEMA.ScholarlyArticle,
 }
+"""Database folder name -> class IRI, covering every non-model category handled by `emit_generic_record`.
+
+`studies/` holds one yaml per study, generated from the bibtex bibliographies by `scripts/ontology/bib_to_studies.py`; those records are typed against schema.org rather than a new tvbo class, and their specific subtypes (Book / Thesis / etc.) are refined per record from `STUDY_TYPE_MAP`. `atlases/` and `coordinate_spaces/` take the SANDS classes from `ATOM`.
+"""
 
 
 # bibtex/study `type:` -> schema.org subclass for individual typing.
@@ -248,9 +236,8 @@ def _record_label(data: dict, fallback: str) -> str:
     return str(data.get("name") or data.get("label") or fallback)
 
 
-# Folders whose YAML `name:` field is a generic family identifier (e.g. all Schaefer2018 atlases share `name: Schaefer2018`). For these we use the BIDS-style filename stem as the unique `rdfs:label` and keep
-# `name:` as a `skos:altLabel`. Avoids ROBOT `duplicate_label` ERRORs.
 _FILENAME_LABEL_FOLDERS = {"atlases", "networks", "coordinate_spaces"}
+"""Folders whose YAML `name:` field is a generic family identifier (all Schaefer2018 atlases share `name: Schaefer2018`). Their records take the BIDS-style filename stem as the unique `rdfs:label` and keep `name:` as a `skos:altLabel`, which avoids ROBOT `duplicate_label` ERRORs."""
 
 
 def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef, path: pathlib.Path) -> URIRef | None:
@@ -376,6 +363,10 @@ def build_graph() -> Graph:
 
 
 def main() -> int:
+    """Build the A-box, move the grounding triples into the companion bio graph and serialize both files.
+
+    `make gen-merged` merges the two back into `tvbo.owl`.
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--output", default=str(ROOT / "ontology" / "tvb-o-data.ttl"))
     ap.add_argument(
@@ -390,8 +381,6 @@ def main() -> int:
 
     g = build_graph()
 
-    # Split the biological grounding (surrogate_of links) into a companion file so the structural KG (tvb-o-data.ttl) and the bio-ontology grounding (tvb-o-biology.ttl) can be maintained / reviewed / submitted separately.
-    # `make gen-merged` merges both back into tvbo.owl.
     bio = Graph()
     for pfx, ns in g.namespaces():
         bio.bind(pfx, ns)

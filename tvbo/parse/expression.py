@@ -1,8 +1,6 @@
 """Parse TVBO equation strings into SymPy expressions.
 
-Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a raw string) into a SymPy expression, along with the custom aggregation symbols and the
-`ARRAY_FUNCTIONS` registry of array reduction/manipulation functions (`sum`, `mean`,
-`slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to backend-specific calls.
+Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a raw string) into a SymPy expression, along with the custom aggregation symbols and the `ARRAY_FUNCTIONS` registry of array reduction/manipulation functions (`sum`, `mean`, `slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to backend-specific calls.
 
 `ARRAY_FUNCTIONS` is the single source of truth for parsing. Each entry is an undefined SymPy `Function` — that is what makes `mean(x)` parse as a call rather than being split by implicit multiplication into `m*e*a*n*(x)`. The names are lowercase to keep them distinct from SymPy's own symbolic `Sum` and `Product`, which need explicit index variables where these reduce over whole arrays, numpy-style. Printer mappings live in `tvbo.codegen.code`.
 
@@ -55,9 +53,7 @@ class Mean(Function):
     def eval(cls, *args):
         """Suppress automatic simplification so the symbol survives to codegen.
 
-        SymPy calls this classmethod when a `Mean(...)` is constructed. Returning
-        `None` signals that no closed-form evaluation should be performed, keeping the expression as an unevaluated `Mean` node that the code printers in
-        [`tvbo.codegen.code`](../codegen/code.qmd) translate into the backend's mean/reduction call.
+        SymPy calls this classmethod when a `Mean(...)` is constructed. Returning `None` signals that no closed-form evaluation should be performed, keeping the expression as an unevaluated `Mean` node that the code printers in [`tvbo.codegen.code`](../codegen/code.qmd) translate into the backend's mean/reduction call.
 
         Args:
             *args: The positional arguments the `Mean` was called with (the inner

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Prepare original Schaefer2018 files as BIDS-style atlas files for tvbo.
 
-This script maps files downloaded from ThomasYeoLab/CBIG (`schaefer2018_original_mni/`) to atlas files in `tvbo/data/tvbo_data/atlas/`
-with BIDS-style entity names.
+This script maps files downloaded from ThomasYeoLab/CBIG (`schaefer2018_original_mni/`) to atlas files in `tvbo/data/tvbo_data/atlas/` with BIDS-style entity names.
 
 Usage:
     python scripts/prepare_schaefer_atlases.py

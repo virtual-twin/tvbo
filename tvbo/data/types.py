@@ -1,7 +1,6 @@
 """Runtime data types for TVBO simulations.
 
-Provides `TimeSeries`, a JAX-pytree-aware, xarray-backed time-series container with domain-specific analysis and visualization helpers, and `SimulationState`,
-the bundled simulation state (initial conditions, network, noise, parameters, stimulus, and monitor settings) handed to the integration backends.
+Provides `TimeSeries`, a JAX-pytree-aware, xarray-backed time-series container with domain-specific analysis and visualization helpers, and `SimulationState`, the bundled simulation state (initial conditions, network, noise, parameters, stimulus, and monitor settings) handed to the integration backends.
 """
 
 import copy
@@ -73,8 +72,7 @@ def _to_dataarray(raw_data, raw_time=None, state_names=None, nodes=None):
 def _unwrap_observation(obs):
     """An observation's array, whatever wrapper it arrived in.
 
-    ``.data`` unwraps an ``ObservationResult``, but xarray spells its raw buffer the same way, so the same expression would strip the dims a labelled observation carries. Every
-    site that reaches for an observation's array goes through here.
+    ``.data`` unwraps an ``ObservationResult``, but xarray spells its raw buffer the same way, so the same expression would strip the dims a labelled observation carries. Every site that reaches for an observation's array goes through here.
     """
     return obs if isinstance(obs, xr.DataArray) else getattr(obs, "data", obs)
 
@@ -82,10 +80,7 @@ def _unwrap_observation(obs):
 def _observation_dataarray(raw_data, dims=None, nodes=None):
     """Attach an observation's DECLARED axis names to the array the backend returned.
 
-    The axes are not inferred here. An observation's output shape is fixed by the reduction that produced it, so codegen emits the names alongside the reducer
-    (``_STREAMING_DIMS``, from ``utils.reduction_dims``) and this only binds them — together with the network's node labels, which the caller already holds. Inferring
-    dims from shape instead cannot tell an ``(n_freq, n_node)`` spectrum from an
-    ``(n_node, n_node)`` matrix, so nothing here guesses: an observation with no declared dims is passed through unlabelled and the container falls back to positional names.
+    The axes are not inferred here. An observation's output shape is fixed by the reduction that produced it, so codegen emits the names alongside the reducer (``_STREAMING_DIMS``, from ``utils.reduction_dims``) and this only binds them — together with the network's node labels, which the caller already holds. Inferring dims from shape instead cannot tell an ``(n_freq, n_node)`` spectrum from an ``(n_node, n_node)`` matrix, so nothing here guesses: an observation with no declared dims is passed through unlabelled and the container falls back to positional names.
 
     Returns the input untouched when it is already labelled, is not a numeric array, or carries no dims declaration of the right rank.
     """
@@ -109,9 +104,7 @@ def _observation_dataarray(raw_data, dims=None, nodes=None):
 def _inner_dims(post_trial_shape, ts_arr, declared=None):
     """Axis names for one exploration cell's payload, and the coords they carry.
 
-    A DECLARED shape wins outright. An observation's axes come from the reduction it declares — a stride keeps ``(time, node)``, a co-moment gives ``(node, node_j)``, a
-    recurrence gives ``(node,)`` — and are known at codegen. Falling back to matching lengths against a positional ``(time, variable, node, mode)`` template is how a
-    1,338-frame time axis ends up named ``node``: silently, with every downstream selection then keyed on the wrong axis.
+    A DECLARED shape wins outright. An observation's axes come from the reduction it declares — a stride keeps ``(time, node)``, a co-moment gives ``(node, node_j)``, a recurrence gives ``(node,)`` — and are known at codegen. Falling back to matching lengths against a positional ``(time, variable, node, mode)`` template is how a 1,338-frame time axis ends up named ``node``: silently, with every downstream selection then keyed on the wrong axis.
 
     The template remains the fallback for payloads that declare nothing (a raw swept trajectory, an observable a backend returns unlabelled).
     """
@@ -249,11 +242,8 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
 def reassemble_shards(source, pattern="*__results.nc", to_grid=False, point_dim="point"):
     """Concatenate sharded exploration outputs into the full sweep result.
 
-    Each HPC array task writes its slice of the sweep as a flat ``point``-dim
-    ``DataArray`` whose per-cell parameter values are coordinates (see
-    :meth:`ExperimentResult.save`). This is the analysis-pass side of the two-stage HPC pattern: it reads every shard file, concatenates them along
-    ``point``, and — with ``to_grid=True`` — pivots ``point`` into one dimension per swept parameter, giving the full rectangular grid addressed by value
-    (order-independent, so it is robust to how tasks were sharded).
+    Each HPC array task writes its slice of the sweep as a flat ``point``-dim ``DataArray`` whose per-cell parameter values are coordinates (see
+    :meth:`ExperimentResult.save`). This is the analysis-pass side of the two-stage HPC pattern: it reads every shard file, concatenates them along ``point``, and — with ``to_grid=True`` — pivots ``point`` into one dimension per swept parameter, giving the full rectangular grid addressed by value (order-independent, so it is robust to how tasks were sharded).
 
     Args:
         source: a directory to scan with *pattern*, or an explicit list of paths.
@@ -291,12 +281,10 @@ def reassemble_experiment_results(
     """Gather an HPC run's shard outputs into one keyed ``ExperimentResult`` artifact.
 
     Follows the same on-disk shape as a :class:`~tvbo.classes.network.Network`:
-    one HDF5 file (``<stem>.h5``) holding the data, plus a YAML sidecar (``<stem>.yaml``) carrying the frozen, fully-overridden experiment spec — so
-    the result is self-describing, provenance-complete and reproducible without any extra flags, and identical to what a local run writes.
+    one HDF5 file (``<stem>.h5``) holding the data, plus a YAML sidecar (``<stem>.yaml``) carrying the frozen, fully-overridden experiment spec — so the result is self-describing, provenance-complete and reproducible without any extra flags, and identical to what a local run writes.
 
     Each array task wrote a shard as the same ``<prefix>_result.h5`` Dataset with a flat, self-describing ``point`` dimension (see :meth:`ExperimentResult.save`).
-    This concatenates them along ``point`` and pivots by parameter value into the full rectangular grid, giving one standard xarray ``Dataset`` that opens with a
-    plain ``xarray.open_dataset("<stem>.h5")`` — no TVBO-specific reader.
+    This concatenates them along ``point`` and pivots by parameter value into the full rectangular grid, giving one standard xarray ``Dataset`` that opens with a plain ``xarray.open_dataset("<stem>.h5")`` — no TVBO-specific reader.
 
     Args:
         shards_root: directory scanned recursively for the shard ``.h5`` files.
@@ -352,11 +340,9 @@ def reassemble_experiment_results(
 class SimulationResult:
     """Output from a single simulation run with its computed observations.
 
-    Stores simulation data as an ``xr.DataArray`` with named dimensions (time, variable, node[, mode][, trial]). Observations are bound to the
-    simulation that produced them.
+    Stores simulation data as an ``xr.DataArray`` with named dimensions (time, variable, node[, mode][, trial]). Observations are bound to the simulation that produced them.
 
-    Accepts both new-style (``data=xr.DataArray``) and legacy (``result=NativeSolution, state_names=[...]``) constructor signatures
-    for backward compatibility with generated template code.
+    Accepts both new-style (``data=xr.DataArray``) and legacy (``result=NativeSolution, state_names=[...]``) constructor signatures for backward compatibility with generated template code.
 
     Attributes:
         data: Simulation data with named dims and coords, or None.
@@ -551,8 +537,7 @@ class SimulationResult:
 
         Returns
         -------
-        matplotlib.animation.FuncAnimation
-        """
+        matplotlib.animation.FuncAnimation"""
         from tvbo.plot.animate import _COMPOSITE_TYPES, _PANEL_REGISTRY, animate_multi
 
         # List of panels → multi-panel animation
@@ -1215,8 +1200,7 @@ class ExplorationResult(Bunch):
     def _has_trial_axis(self, tail_first) -> bool:
         """Whether the dim after the run axis is a per-point ``trial`` ensemble.
 
-        True only for a swept exploration carried *with* trials, where the payload keeps a trial axis between the grid axis and time. A trials-only ensemble
-        already spends its leading axis on ``trial`` and is excluded by the caller.
+        True only for a swept exploration carried *with* trials, where the payload keeps a trial axis between the grid axis and time. A trials-only ensemble already spends its leading axis on ``trial`` and is excluded by the caller.
         """
         n_trials = int(getattr(self, "n_trials", 0) or 0)
         return n_trials > 1 and tail_first == n_trials
@@ -1253,9 +1237,7 @@ class ExplorationResult(Bunch):
     def _label_payload(self, data):
         """Name the dims of the results payload **without reshaping it**.
 
-        The leading dim is the flat run axis: the swept parameter when exactly one axis is explored, ``trial`` for a trials-only ensemble, otherwise ``point``
-        (the flattened grid product, which :meth:`as_grid` reshapes into one dim per axis). Intrinsic dims follow the TVB convention (time, variable, node, mode)
-        and pick up coordinates from ``dt`` and ``output_names``.
+        The leading dim is the flat run axis: the swept parameter when exactly one axis is explored, ``trial`` for a trials-only ensemble, otherwise ``point`` (the flattened grid product, which :meth:`as_grid` reshapes into one dim per axis). Intrinsic dims follow the TVB convention (time, variable, node, mode) and pick up coordinates from ``dt`` and ``output_names``.
 
         Shapes are left untouched, so positional consumers keep working while keyed access becomes possible.
         """
@@ -1332,10 +1314,8 @@ class ExplorationResult(Bunch):
     def _apply_axis_reductions(self):
         """Collapse every axis marked ``reduce`` across the observations it labels.
 
-        For each axis whose ``reduce`` statistic is set, the matching named grid dimension is reduced across every observation ``DataArray`` that carries it
-        (keyed by dim name), the reduced observations keep their names, and the axis is dropped from ``self.axes`` so the shape metadata stays consistent.
-        Observations without the dim are left untouched. A no-op when no axis sets
-        ``reduce`` (result is byte-identical to a run without the feature).
+        For each axis whose ``reduce`` statistic is set, the matching named grid dimension is reduced across every observation ``DataArray`` that carries it (keyed by dim name), the reduced observations keep their names, and the axis is dropped from ``self.axes`` so the shape metadata stays consistent.
+        Observations without the dim are left untouched. A no-op when no axis sets ``reduce`` (result is byte-identical to a run without the feature).
         """
         if not any(self._axis_reduce(ax) for ax in self.axes):
             return
@@ -1356,13 +1336,7 @@ class ExplorationResult(Bunch):
     def as_grid(self):
         """Reshape the flat results into a grid **labeled by parameter name**.
 
-        Returns an ``xr.DataArray`` with one dimension per exploration axis — named by the swept parameter, coordinates set to the swept values — so grid
-        results are addressed by name (``g.sel(**{"ReducedWongWang.w": 0.5})``) and are **independent of axis order**. The data stays a JAX array (the DataArray
-        is a registered JAX pytree); only the coordinate labels are materialised. A time-series observable keeps its intrinsic dims (time, variable, node, mode)
-        after the grid dims. ``None`` when empty; otherwise always labelled — a payload that cannot be reshaped into the grid is returned with the dim names
-        it already carries (see :meth:`_label_payload`) rather than as a bare array, so no consumer is handed positional data. A sharded result (``cell_coords``
-        set) is a subset of grid points, not a full product, so it is labelled with a single ``point`` dim carrying each axis's value — reassemble across
-        shards by parameter value.
+        Returns an ``xr.DataArray`` with one dimension per exploration axis — named by the swept parameter, coordinates set to the swept values — so grid results are addressed by name (``g.sel(**{"ReducedWongWang.w": 0.5})``) and are **independent of axis order**. The data stays a JAX array (the DataArray is a registered JAX pytree); only the coordinate labels are materialised. A time-series observable keeps its intrinsic dims (time, variable, node, mode) after the grid dims. ``None`` when empty; otherwise always labelled — a payload that cannot be reshaped into the grid is returned with the dim names it already carries (see :meth:`_label_payload`) rather than as a bare array, so no consumer is handed positional data. A sharded result (``cell_coords`` set) is a subset of grid points, not a full product, so it is labelled with a single ``point`` dim carrying each axis's value — reassemble across shards by parameter value.
         """
         if self.results is None:
             return None
@@ -1605,8 +1579,7 @@ class ExplorationResult(Bunch):
     def slice(self, **fixed_params):
         """Get a slice of results with some parameters fixed.
 
-        Example: result.slice(G=0.5) returns 1D slice at G=0.5
-        """
+        Example: result.slice(G=0.5) returns 1D slice at G=0.5"""
         grid_results = self.as_grid()
         if grid_results is None:
             return None
@@ -1652,8 +1625,7 @@ class ObservationResult(Bunch):
 def _free_param_names(source) -> set:
     """Names of the model's free (tunable) parameters — dynamics + coupling.
 
-    These are the parameters an algorithm tunes (e.g. wLRE / wFFI / J_i for EIB); their fitted values are the operating point a ``from_experiment`` warm-start reloads as a
-    prior location (persisted as ``estimate__<param>`` in :meth:`ExperimentResult.save`).
+    These are the parameters an algorithm tunes (e.g. wLRE / wFFI / J_i for EIB); their fitted values are the operating point a ``from_experiment`` warm-start reloads as a prior location (persisted as ``estimate__<param>`` in :meth:`ExperimentResult.save`).
     State variables are never parameters, so filtering to these can never collide with the settled ``<sv>_final`` state observations. Empty set when *source* is absent.
     """
     names: set = set()
@@ -1693,10 +1665,7 @@ def _free_param_names(source) -> set:
 def _algo_tuned_params(source) -> dict:
     """Map each algorithm name to the set of free parameters it FITS.
 
-    A parameter counts as fit by an algorithm when an ``update_rule`` targets it — the algorithm's own rules or, recursively, those of an algorithm it ``includes``. Lets
-    ``estimate__<param>`` be sourced from the algorithm that actually tunes a parameter rather than one that merely carries it at its initial value (e.g. a FIC pre-pass that
-    holds ``wLRE``/``wFFI`` fixed must not shadow the EIB pass that fits them). Empty dict when *source* exposes no introspectable algorithms; each present algorithm maps to a
-    (possibly empty) set.
+    A parameter counts as fit by an algorithm when an ``update_rule`` targets it — the algorithm's own rules or, recursively, those of an algorithm it ``includes``. Lets ``estimate__<param>`` be sourced from the algorithm that actually tunes a parameter rather than one that merely carries it at its initial value (e.g. a FIC pre-pass that holds ``wLRE``/``wFFI`` fixed must not shadow the EIB pass that fits them). Empty dict when *source* exposes no introspectable algorithms; each present algorithm maps to a (possibly empty) set.
     """
 
     def _as_list(coll):
@@ -1741,8 +1710,7 @@ def _algo_tuned_params(source) -> dict:
 class ExperimentResult:
     """Result from a complete experiment run.
 
-    Mirrors the SimulationExperiment schema structure: integration, algorithms, optimizations, explorations, continuations. Accepts both new-style explicit
-    fields and old-style ``results=Bunch`` constructor for backward compatibility.
+    Mirrors the SimulationExperiment schema structure: integration, algorithms, optimizations, explorations, continuations. Accepts both new-style explicit fields and old-style ``results=Bunch`` constructor for backward compatibility.
 
     Attributes
     ----------
@@ -1884,10 +1852,7 @@ class ExperimentResult:
     def _recorded_observation_names(self) -> set:
         """Observation names to persist: leaves plus anything flagged ``record``.
 
-        An observation is recorded when it is either explicitly ``record: true`` or *terminal* — not consumed as a ``source`` by another observation or by
-        an optimization loss. ``record: false`` always drops it. This keeps final results (a fitted FC, an effective-frequency map) while omitting
-        intermediates (a raw BOLD feeding an FC, an FC feeding a loss), which are recomputable from the recipe in the sidecar. Falls back to keeping every
-        observation when the experiment carries no observation definitions.
+        An observation is recorded when it is either explicitly ``record: true`` or *terminal* — not consumed as a ``source`` by another observation or by an optimization loss. ``record: false`` always drops it. This keeps final results (a fitted FC, an effective-frequency map) while omitting intermediates (a raw BOLD feeding an FC, an FC feeding a loss), which are recomputable from the recipe in the sidecar. Falls back to keeping every observation when the experiment carries no observation definitions.
         """
         exp = self.source
         obs_defs = getattr(exp, "observations", None) or {}
@@ -1929,11 +1894,7 @@ class ExperimentResult:
         """Unstack an on-device cohort into per-subject tuned states, or None.
 
         The on-device cohort driver (``dataset.batch_mode == on_device``) returns
-        ONE batched tuned state per algorithm — a leading subject axis over the whole cohort — instead of a per-subject :class:`AlgorithmResult`, plus the
-        cohort's ``subject_ids``. Every array leaf carries the subject axis at position 0, so slicing it apart yields one per-subject state, saved exactly
-        like the per-subject fan-out (one result per subject). Returns
-        ``(subject_ids, [{algo_name: per_subject_AlgorithmResult}, ...])``, or
-        ``None`` for an ordinary run so the normal single-result save path runs.
+        ONE batched tuned state per algorithm — a leading subject axis over the whole cohort — instead of a per-subject :class:`AlgorithmResult`, plus the cohort's ``subject_ids``. Every array leaf carries the subject axis at position 0, so slicing it apart yields one per-subject state, saved exactly like the per-subject fan-out (one result per subject). Returns ``(subject_ids, [{algo_name: per_subject_AlgorithmResult}, ...])``, or ``None`` for an ordinary run so the normal single-result save path runs.
         """
         algos = self.algorithms or {}
         batched = [(n, a) for n, a in algos.items() if getattr(a, "cohort_state", None) is not None]
@@ -1961,8 +1922,7 @@ class ExperimentResult:
     def _save_per_subject(self, out_dir, cohort, compress, record_only):
         """Persist an on-device cohort as one ``sub-<id>_..._result`` per subject.
 
-        Mirrors the per-subject fan-out: each subject file carries only that subject's tuned parameters (``estimate__<param>``) — on-device tuning
-        produces per-subject parameters, not a per-subject trajectory, so the shared base run's observations/integration are not duplicated per subject.
+        Mirrors the per-subject fan-out: each subject file carries only that subject's tuned parameters (``estimate__<param>``) — on-device tuning produces per-subject parameters, not a per-subject trajectory, so the shared base run's observations/integration are not duplicated per subject.
         """
         subject_ids, per_subject = cohort
         src = self.source
@@ -2297,8 +2257,7 @@ class ExperimentResult:
     def _write_bep034_sidecars(self, out_dir, stem) -> list:
         """Write a BEP034 JSON metadata sidecar + a derivatives dataset_description.json.
 
-        Complements the YAML re-run recipe with BIDS-standard JSON so the result is discoverable by pybids/BIDS tooling. The gridded HDF5 itself supersedes
-        emitting one BEP034 `ts/` file per sweep cell — a 15,600-cell grid would be 15,600 files — so the sidecar instead records the model, integrator and swept space for the whole grid, which is the metadata a per-cell file would have carried and makes the mapping back to individual simulations explicit.
+        Complements the YAML re-run recipe with BIDS-standard JSON so the result is discoverable by pybids/BIDS tooling. The gridded HDF5 itself supersedes emitting one BEP034 `ts/` file per sweep cell — a 15,600-cell grid would be 15,600 files — so the sidecar instead records the model, integrator and swept space for the whole grid, which is the metadata a per-cell file would have carried and makes the mapping back to individual simulations explicit.
         """
         import datetime as _dt
         import json as _json
@@ -2624,8 +2583,7 @@ class ExperimentResult:
 
         Returns
         -------
-        ExperimentResult
-        """
+        ExperimentResult"""
         data_np = np.asarray(ts.data)
 
         ld = ts.labels_dimensions if isinstance(ts.labels_dimensions, dict) else {}
@@ -2694,8 +2652,7 @@ class ExperimentResult:
 
         Returns
         -------
-        ExperimentResult
-        """
+        ExperimentResult"""
         if result is None:
             result = simulator.run()
 
@@ -2797,9 +2754,7 @@ class TimeSeries:
         labels_dimensions={},
         units=None,
     ):
-        """labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] }
-        units: Dictionary mapping dimension names to their units, e.g., {'time': 'ms', 'state': 'mV', 'region': None, 'mode': None}
-        """
+        """labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] } units: Dictionary mapping dimension names to their units, e.g., {'time': 'ms', 'state': 'mV', 'region': None, 'mode': None}"""
         # 1. Essential Data
         self.time = time
         self.data = data
@@ -2846,8 +2801,7 @@ class TimeSeries:
     def space_labels(self):
         """Labels for the spatial (region) axis as a NumPy array.
 
-        Reads the canonical `"Space"` entry of `labels_dimensions`, falling back to a legacy `"Region"` key, and returns an empty array when neither is
-        present. Scalar or string values are coerced to a one-element array.
+        Reads the canonical `"Space"` entry of `labels_dimensions`, falling back to a legacy `"Region"` key, and returns an empty array when neither is present. Scalar or string values are coerced to a one-element array.
         """
         # Robustly handle legacy keys and bad types
         ld = self.labels_dimensions if isinstance(self.labels_dimensions, dict) else {}
@@ -3097,8 +3051,7 @@ class TimeSeries:
     def get_state_variable(self, sv_label):
         """Evaluate a state variable or a symbolic expression of state variables.
 
-        When `sv_label` is a list/tuple/array it behaves like `get_state`. When it is a string it is parsed as a symbolic expression whose free symbols
-        are matched against existing state variables, allowing derived quantities such as `"E - I"` to be computed.
+        When `sv_label` is a list/tuple/array it behaves like `get_state`. When it is a string it is parsed as a symbolic expression whose free symbols are matched against existing state variables, allowing derived quantities such as `"E - I"` to be computed.
 
         Args:
             sv_label: A state-variable label, a collection of labels, or a
@@ -3129,9 +3082,7 @@ class TimeSeries:
     def plot(self, ax=None, axis_labels=False, legend=True, title=None, **kwargs):
         """Plot the time series, or a state-space trajectory of its variables.
 
-        By default each state variable is drawn against time. Passing
-        `type="statespace"` (or an equivalent alias such as `"phase"` or
-        `"trajectory"`) instead plots one state variable against another for a chosen region and mode.
+        By default each state variable is drawn against time. Passing `type="statespace"` (or an equivalent alias such as `"phase"` or `"trajectory"`) instead plots one state variable against another for a chosen region and mode.
 
         Args:
             ax: Existing Matplotlib axes to draw on. When omitted, a new figure
@@ -3272,8 +3223,7 @@ class TimeSeries:
     ):
         """Animate timeseries on a graph layout.
 
-        Each node is a dot positioned by the graph layout; its color reflects the timeseries value of the selected state variable
-        over time.
+        Each node is a dot positioned by the graph layout; its color reflects the timeseries value of the selected state variable over time.
 
         Parameters
         ----------
@@ -4304,8 +4254,7 @@ class TimeSeries:
 class SimulationState:
     """Bundled state passed to the integration backends for one simulation.
 
-    Groups everything a backend needs to advance a run: the initial conditions, the `Network`, the integration step, the noise configuration, model
-    parameters, stimulus, monitor settings, and the number of time steps.
+    Groups everything a backend needs to advance a run: the initial conditions, the `Network`, the integration step, the noise configuration, model parameters, stimulus, monitor settings, and the number of time steps.
     Registered as a JAX pytree so it can flow through `jit`/`vmap`; `nt` is kept static while the remaining fields are dynamic children.
 
     Args:
@@ -4402,8 +4351,7 @@ class SimulationState:
     def state_variable_names(self):
         """State-variable names, falling back to positional indices as strings.
 
-        Returns the `"State Variable"` labels from the initial conditions when they are present and match the number of state variables, otherwise a
-        list of stringified indices.
+        Returns the `"State Variable"` labels from the initial conditions when they are present and match the number of state variables, otherwise a list of stringified indices.
         """
 
         ld = getattr(self.initial_conditions, "labels_dimensions", {}) or {}

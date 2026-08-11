@@ -1,8 +1,6 @@
 """Unit tests for the shared cross-experiment DataRef resolver (``tvbo/data/dataref.py``).
 
-Light — synthetic xarray datasets written to a temp HDF5, no JAX, no big grids. Covers every resolution path the design enumerates: intra-study ``experiment`` id, ``iri``
-(trailing number and filesystem path), the ``source_experiment`` fallback, the local no-WHERE guard, ``sel`` nearest on an indexed *and* a non-index coordinate, the
-``output`` ``__``-suffix matcher, and ``by_label`` reconcile (identity + permuted).
+Light — synthetic xarray datasets written to a temp HDF5, no JAX, no big grids. Covers every resolution path the design enumerates: intra-study ``experiment`` id, ``iri`` (trailing number and filesystem path), the ``source_experiment`` fallback, the local no-WHERE guard, ``sel`` nearest on an indexed *and* a non-index coordinate, the ``output`` ``__``-suffix matcher, and ``by_label`` reconcile (identity + permuted).
 """
 
 from __future__ import annotations
@@ -233,8 +231,7 @@ def test_sel_dict_and_reconcile_mode():
 
 
 def test_sel_dict_reads_the_keyed_dict_spelling():
-    """A study writes ``sel: {variable: phi}`` — a NAME-KEYED collection, which is what the loader hands back. Reading only the list spelling silently dropped the selection, so a
-    sourced argument arrived unsliced (whole trajectory instead of one state variable)."""
+    """A study writes ``sel: {variable: phi}`` — a NAME-KEYED collection, which is what the loader hands back. Reading only the list spelling silently dropped the selection, so a sourced argument arrived unsliced (whole trajectory instead of one state variable)."""
     sel = {
         "variable": SimpleNamespace(name="variable", value="phi"),
         "time": SimpleNamespace(name="time", value=[0.006, 0.016]),

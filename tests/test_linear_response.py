@@ -133,14 +133,15 @@ def _exec_rendered(model, sigma, obs_name):
 
 
 def test_covariance_through_a_declared_observation_cascade():
-    """``H Sigma H^T`` with a per-state ``Q``, against a scipy Lyapunov solve."""
+    """``H Sigma H^T`` with a per-state ``Q``, against a scipy Lyapunov solve.
+
+    The symbolic Jacobian is checked against a finite difference elsewhere; here the NumPy oracle assembles the same ``A``, so the test isolates ``Q`` and ``H``.
+    """
     scipy_linalg = pytest.importorskip("scipy.linalg")
     model = _model()
     P, A, ctx, params = _exec_rendered(model, sigma=None, obs_name="obs")
 
     N = _weights().shape[0]
-    # The symbolic Jacobian is checked against a finite difference elsewhere; here the
-    # NumPy oracle assembles the same A so the test isolates Q and H.
     A_ref = network_jacobian(model, _weights(), np.zeros((2, N)), params)
     assert np.allclose(A, A_ref, atol=1e-12)
 
@@ -183,8 +184,7 @@ def test_uniform_sigma_still_returns_the_first_state_block():
 def test_settle_step_never_exceeds_the_recipes_own_integration_step(dt, expected):
     """A settle step is in MODEL time units, so a fixed one is right for only one time unit.
 
-    0.1 is a tenth of a millisecond for a millisecond model and a hundred milliseconds for a second-based one — past the stability boundary of a 10 ms inhibitory time constant, which
-    makes the operating point diverge rather than settle. Capping at the recipe's own step leaves every millisecond-unit recipe exactly where it was.
+    0.1 is a tenth of a millisecond for a millisecond model and a hundred milliseconds for a second-based one — past the stability boundary of a 10 ms inhibitory time constant, which makes the operating point diverge rather than settle. Capping at the recipe's own step leaves every millisecond-unit recipe exactly where it was.
     """
     from tvbo.templates.tvboptim.utils import _lr_analysis_spec
 

@@ -6,12 +6,9 @@ TVBO authors write experiments in a human-friendly YAML dialect where collection
       a: {value: 0.27}        # name == "a"
       b: {value: 0.108}       # name == "b"
 
-The LinkML runtime loader injects that key into each member's identifier slot (``name``) automatically. The generated Pydantic datamodel
-(:mod:`tvbo.datamodel.pydantic`) does **not** — it expects ``name`` to be present inside every member — so validating raw TVBO YAML against the Pydantic
-models fails with a flood of ``name Field required`` errors that are purely an artefact of the keyed-dict convention, not real schema violations.
+The LinkML runtime loader injects that key into each member's identifier slot (``name``) automatically. The generated Pydantic datamodel (:mod:`tvbo.datamodel.pydantic`) does **not** — it expects ``name`` to be present inside every member — so validating raw TVBO YAML against the Pydantic models fails with a flood of ``name Field required`` errors that are purely an artefact of the keyed-dict convention, not real schema violations.
 
-This module performs exactly that key→identifier normalization and then validates with the strict (``extra="forbid"``) Pydantic models, giving callers
-a single, trustworthy "is this a valid TVBO object?" entry point. The YAML preprocessing for ``<<:`` merge keys and ``!include`` directives is delegated to
+This module performs exactly that key→identifier normalization and then validates with the strict (``extra="forbid"``) Pydantic models, giving callers a single, trustworthy "is this a valid TVBO object?" entry point. The YAML preprocessing for ``<<:`` merge keys and ``!include`` directives is delegated to
 :mod:`tvbo.utils.yaml_loader` so there is one implementation of those idioms.
 
 Typical use::
@@ -88,9 +85,7 @@ def _first_model(annotation: Any) -> Type[BaseModel] | None:
 def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
     """Name of the slot the inlined-dict key maps onto.
 
-    A non-``name``/``id`` key slot marks itself with a ``collection_key`` annotation, because LinkML consumes ``identifier``/``key`` into the field's
-    required-ness and drops them from the emitted metadata (so they can't be read back here). Otherwise falls back to the universal TVBO conventions ``name``
-    then ``id``. Returns ``None`` when no identifier slot can be determined (the member is then left untouched).
+    A non-``name``/``id`` key slot marks itself with a ``collection_key`` annotation, because LinkML consumes ``identifier``/``key`` into the field's required-ness and drops them from the emitted metadata (so they can't be read back here). Otherwise falls back to the universal TVBO conventions ``name`` then ``id``. Returns ``None`` when no identifier slot can be determined (the member is then left untouched).
     """
     fields = model_cls.model_fields
     for fname, info in fields.items():
@@ -108,9 +103,7 @@ def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
 def _slot_alias_map(model_cls: Type[BaseModel]) -> dict[str, str]:
     """This class's ``{alias: canonical}`` slot-alias map.
 
-    Reused verbatim from the LinkML dataclass path (``schema._SLOT_ALIASES``) so this validator accepts exactly the keys that loader does. The dataclasses fold
-    these aliases in ``__init__``; the Pydantic models cannot, so :func:`_inject` folds them here, class-scoped — the same context that keeps ``target_variable``
-    (an ``Edge`` alias, but the canonical slot on a stimulus ``Event``) from being renamed where it must not be.
+    Reused verbatim from the LinkML dataclass path (``schema._SLOT_ALIASES``) so this validator accepts exactly the keys that loader does. The dataclasses fold these aliases in ``__init__``; the Pydantic models cannot, so :func:`_inject` folds them here, class-scoped — the same context that keeps ``target_variable`` (an ``Edge`` alias, but the canonical slot on a stimulus ``Event``) from being renamed where it must not be.
     """
     from tvbo.datamodel.schema import _SLOT_ALIASES
 
@@ -209,8 +202,7 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
 def normalize(data: dict, target_class: Union[str, Type[BaseModel], None] = None) -> dict:
     """Return a copy of ``data`` with keyed-dict keys injected as identifiers.
 
-    Pure data transformation — performs no validation. Useful when a caller wants the normalized dict (e.g. to merge with other state) without building
-    a model instance.
+    Pure data transformation — performs no validation. Useful when a caller wants the normalized dict (e.g. to merge with other state) without building a model instance.
     """
     target = _resolve_target(target_class)
     out = copy.deepcopy(data)
@@ -257,9 +249,7 @@ def _strip_unknown(model_cls: Type[BaseModel], data: Any) -> None:
 def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False) -> BaseModel:
     """Validate an already-parsed ``dict`` and return a model instance.
 
-    Raises :class:`pydantic.ValidationError` if ``data`` does not conform. With
-    ``drop_unknown=True``, keys not declared by the schema are discarded before validation instead of being rejected — used by the TVBO platform's database
-    export to ignore Odoo-only fields (e.g. portal ``visibility``/``owner``) while hand-authored input still rejects unknown keys.
+    Raises :class:`pydantic.ValidationError` if ``data`` does not conform. With ``drop_unknown=True``, keys not declared by the schema are discarded before validation instead of being rejected — used by the TVBO platform's database export to ignore Odoo-only fields (e.g. portal ``visibility``/``owner``) while hand-authored input still rejects unknown keys.
     """
     target = _resolve_target(target_class)
     data = normalize(data, target)
@@ -285,8 +275,7 @@ def load(
 ) -> BaseModel:
     """Load YAML from a path / stream / string and validate it.
 
-    ``!include`` paths are resolved relative to ``source``'s directory when it is a path, matching :func:`tvbo.utils.yaml_loader.load`. ``drop_unknown`` is
-    forwarded to :func:`validate`; the remaining ``kwargs`` go to the YAML loader.
+    ``!include`` paths are resolved relative to ``source``'s directory when it is a path, matching :func:`tvbo.utils.yaml_loader.load`. ``drop_unknown`` is forwarded to :func:`validate`; the remaining ``kwargs`` go to the YAML loader.
     """
     target = _resolve_target(target_class)
     data = yaml_loader.load_as_dict(source, **kwargs) or {}

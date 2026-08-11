@@ -146,8 +146,7 @@ def get_cmap(colors=None):
 
     Returns
     -------
-    ListedColormap
-    """
+    ListedColormap"""
     from matplotlib.colors import ListedColormap
 
     return ListedColormap(colors or tvb_colors_simple)
@@ -165,8 +164,7 @@ def get_continuous_cmap(hex_list, float_list=None):
 
     Returns
     -------
-    LinearSegmentedColormap
-    """
+    LinearSegmentedColormap"""
     import matplotlib as mpl
 
     def _hex_to_rgb(value):

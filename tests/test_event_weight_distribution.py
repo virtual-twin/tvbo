@@ -1,8 +1,6 @@
 """A stimulus Event's `weight_distribution` is sampled, not silently dropped.
 
-`_resolve_events` lowers a declared distribution into the per-node `weights` array the codegen reads. It used to do that through `graph_generators.builtins`, a module deleted
-when the per-generator materialisers went — behind a bare `except`, so the failure was invisible: every stimulus that declared a distribution got no weighting at all, and the
-simulation ran on happily with the wrong drive. It now goes through the same printer-backed sampler a generator's `sample` step uses.
+`_resolve_events` lowers a declared distribution into the per-node `weights` array the codegen reads. It used to do that through `graph_generators.builtins`, a module deleted when the per-generator materialisers went — behind a bare `except`, so the failure was invisible: every stimulus that declared a distribution got no weighting at all, and the simulation ran on happily with the wrong drive. It now goes through the same printer-backed sampler a generator's `sample` step uses.
 """
 
 import numpy as np

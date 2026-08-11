@@ -3,8 +3,7 @@
 
 """SPARQL-based query helpers for the TVBO ontology.
 
-This module provides thin wrappers around owlready2's SPARQL engine and the low-level triple store to look up ontology classes and individuals by label,
-synonym, acronym or symbol, traverse relationships (parents and children) and normalise IRIs to their prefixed form.
+This module provides thin wrappers around owlready2's SPARQL engine and the low-level triple store to look up ontology classes and individuals by label, synonym, acronym or symbol, traverse relationships (parents and children) and normalise IRIs to their prefixed form.
 """
 
 from typing import Any, List, Tuple, Union
@@ -122,8 +121,7 @@ def flatten_list(nested_list: List[Any]) -> List[Any]:
 def sparql_query(query_string: str, flatten_result: bool = True, world: Any = None) -> List[Any]:
     """Run a SPARQL query against an ontology world and collect the results.
 
-    Undefined entities are tolerated (`error_on_undefined_entities=False`) so that optional clauses referencing annotation properties absent from the
-    generated ontology match nothing instead of raising.
+    Undefined entities are tolerated (`error_on_undefined_entities=False`) so that optional clauses referencing annotation properties absent from the generated ontology match nothing instead of raising.
 
     Args:
         query_string: The SPARQL query to execute.
@@ -198,8 +196,7 @@ def get_class_relationships(class_iri: Union[str, Any]) -> List[Tuple[Any, Any]]
 def instance_class_relationship(subject_iri: str, predicate: str = "prov:used") -> List[Tuple[Any, Any]]:
     """Return classes linked to a subject through an OWL restriction.
 
-    Follows `owl:Restriction` nodes attached to the subject and returns the classes referenced by their `owl:someValuesFrom`, optionally constrained to
-    restrictions on a given `owl:onProperty`.
+    Follows `owl:Restriction` nodes attached to the subject and returns the classes referenced by their `owl:someValuesFrom`, optionally constrained to restrictions on a given `owl:onProperty`.
 
     Args:
         subject_iri: IRI of the subject class or individual to inspect.
@@ -262,8 +259,7 @@ def _label_search(label: str) -> List[Any]:
 def build_filter(label: str, field: str, exact: bool, case_sensitive: bool) -> str:
     """Build a single SPARQL `FILTER` clause matching a variable against a label.
 
-    The clause guards the variable with `BOUND` and compares it to `label` using either equality (exact) or `CONTAINS` (substring), optionally
-    lowercasing both sides for case-insensitive matching.
+    The clause guards the variable with `BOUND` and compares it to `label` using either equality (exact) or `CONTAINS` (substring), optionally lowercasing both sides for case-insensitive matching.
 
     Args:
         label: The search term to match against.
@@ -304,8 +300,7 @@ def label_search(
 ) -> List[owlready2.ThingClass]:
     """Search the ontology for entities matching a label across several fields.
 
-    Builds a SPARQL query that tests `rdfs:label`, `skos:altLabel` and each included annotation property (e.g. `synonym`, `acronym`, `symbol`) against
-    the search term, then returns the matching classes and/or individuals.
+    Builds a SPARQL query that tests `rdfs:label`, `skos:altLabel` and each included annotation property (e.g. `synonym`, `acronym`, `symbol`) against the search term, then returns the matching classes and/or individuals.
     Optionally restricts the results to descendants of a given root class.
 
     Args:
@@ -393,8 +388,7 @@ WHERE {{
 def get_children(cl: Any, onto: Any = None) -> List[Tuple[str, Any]]:
     """Return the incoming edges of a class, i.e. entities that point to it.
 
-    Scans the triple store for triples whose object is `cl` and returns each predicate together with the subject entity, giving the class's immediate
-    children in the relationship graph.
+    Scans the triple store for triples whose object is `cl` and returns each predicate together with the subject entity, giving the class's immediate children in the relationship graph.
 
     Args:
         cl: The target class as an owlready2 entity, a label string, or an
@@ -435,8 +429,7 @@ def get_children(cl: Any, onto: Any = None) -> List[Tuple[str, Any]]:
 def get_parents(cl: Any, onto: Any = None) -> List[Tuple[str, Any]]:
     """Return the outgoing edges of a class, i.e. entities it points to.
 
-    Scans the triple store for triples whose subject is `cl` and returns each predicate together with the resolvable object entity, giving the class's
-    immediate parents in the relationship graph.
+    Scans the triple store for triples whose subject is `cl` and returns each predicate together with the resolvable object entity, giving the class's immediate parents in the relationship graph.
 
     Args:
         cl: The source class as an owlready2 entity, a label string, or an

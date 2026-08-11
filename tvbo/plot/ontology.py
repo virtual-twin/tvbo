@@ -89,8 +89,7 @@ legend_params = {
 def get_default_params():
     """Return the merged dictionary of all default plotting parameters.
 
-    Combines the module-level `node_params`, `edge_params`, `figure_params`,
-    `color_params`, `logo_params`, `layout_params`, and `legend_params` into a single dictionary.
+    Combines the module-level `node_params`, `edge_params`, `figure_params`, `color_params`, `logo_params`, `layout_params`, and `legend_params` into a single dictionary.
 
     Returns:
         The combined default parameters, keyed by parameter name.
@@ -216,10 +215,8 @@ def compute_midpoint(start, end, rad):
 def add_arrow(line, ax, position=None, direction="right", color=None, label=""):
     """add an arrow to a line.
 
-    line:       Line2D object position:   x-position of the arrow. If None, mean of xdata is taken direction:  'left' or 'right'
-    color:      if None, line color is taken.
-    label:      label for arrow
-    """
+    line:       Line2D object position:   x-position of the arrow. If None, mean of xdata is taken direction:  'left' or 'right' color:      if None, line color is taken.
+    label:      label for arrow"""
     if color is None:
         color = line.get_color()
 
@@ -407,8 +404,7 @@ def draw_custom_edges(
 ):
     """Draw curved Bézier edges between connected node pairs on an axes.
 
-    For every unique node pair, edges in each direction are fanned out with distinct curvature so that parallel and bidirectional edges stay
-    distinguishable. Colors may be a single color or resolved from a colormap.
+    For every unique node pair, edges in each direction are fanned out with distinct curvature so that parallel and bidirectional edges stay distinguishable. Colors may be a single color or resolved from a colormap.
 
     Args:
         G: The graph whose edges are drawn.
@@ -1170,11 +1166,7 @@ def hierarchy_pos(
     """
     If the graph is a DAG this will return the positions to plot this in a hierarchical layout.
 
-    G: the graph (must be a DAG) root: the root node of current branch width: horizontal space allocated for this branch
-    vert_gap: gap between levels of hierarchy hor_gap: gap between nodes within the same level vert_loc: vertical location of root
-    xcenter: horizontal location of root direction: 'down' for top-down layout, 'up' for bottom-up layout
-    vert_scatter: vertical scatter factor for nodes on the same level
-    """
+    G: the graph (must be a DAG) root: the root node of current branch width: horizontal space allocated for this branch vert_gap: gap between levels of hierarchy hor_gap: gap between nodes within the same level vert_loc: vertical location of root xcenter: horizontal location of root direction: 'down' for top-down layout, 'up' for bottom-up layout vert_scatter: vertical scatter factor for nodes on the same level"""
     vert_scatter /= 10
     if not nx.is_directed_acyclic_graph(G):
         raise TypeError("cannot use hierarchy_pos on a graph that is not a directed acyclic graph (DAG)")
@@ -1242,8 +1234,7 @@ def plot_tvbo_graph(g, ax=None, **kwargs):
     kwargs: Various other optional parameters to customize the plot.
 
     Returns:
-    None
-    """
+    None"""
     params = validate_parameters(kwargs)
     relabel_graph(g, params["relabel"])
     set_plt_params()
@@ -1300,8 +1291,7 @@ def relabel_graph(g, relabel):
     relabel (dict): A dictionary with the relabeling information.
 
     Returns:
-    None
-    """
+    None"""
     if isinstance(relabel, dict):
         g = nx.relabel_nodes(g, relabel)  # TODO: g is not returned, so this method will not actually modify any graph;
         # TODO: either return g or modify it in place ("nx.relabel_nodes(g, relabel, copy=False)")
@@ -1312,8 +1302,7 @@ def set_plt_params(rc_params=None):
     A function to set certain plt parameters.
 
     Returns:
-    None
-    """
+    None"""
     params = {"text.usetex": False}
     if not isinstance(rc_params, type(None)):
         params.update(rc_params)
@@ -1323,8 +1312,7 @@ def set_plt_params(rc_params=None):
 
 def get_labels(g, label_as_symbol):
     """
-    Generate labels for the nodes in the graph based on the node names and ontology search results. If the label_as_symbol parameter is True,
-    the labels are formatted as LaTeX symbols. Additionally, specific substrings ("_RWW") are removed from the labels.
+    Generate labels for the nodes in the graph based on the node names and ontology search results. If the label_as_symbol parameter is True, the labels are formatted as LaTeX symbols. Additionally, specific substrings ("_RWW") are removed from the labels.
 
     Parameters:
     g (networkx.Graph): The graph object containing the nodes for which labels are to be generated.
@@ -1403,8 +1391,7 @@ def get_node_color_and_cmap(g, params=None):
 
 def get_node_size(g, params=None):
     """
-    A function to get the node size for the graph, which can be determined by various parameters including
-    the degree of the nodes, the length of the labels, or a specified factor.
+    A function to get the node size for the graph, which can be determined by various parameters including the degree of the nodes, the length of the labels, or a specified factor.
 
     Parameters:
     g (networkx.Graph): The graph for which the node size is to be generated.
@@ -1463,8 +1450,7 @@ def draw_nodes(g, pos, node_color, cmap, node_size, ax, params):
     params (dict): A dictionary with various parameters including 'alpha' and 'node_linewidth'.
 
     Returns:
-    None
-    """
+    None"""
     groups = set(nx.get_node_attributes(g, "type").values())
     mapping = dict(zip(sorted(groups), count()))
     nodes = g.nodes()
@@ -1501,8 +1487,7 @@ def draw_edges(g, pos, ax, params):
     params (dict): A dictionary with various parameters including 'colored_edges' and 'edge_width'.
 
     Returns:
-    None
-    """
+    None"""
 
     if params["colored_edges"]:
         edge_types = list(set(nx.get_edge_attributes(g, "type").values()))
@@ -1545,8 +1530,7 @@ def draw_edge_labels(g, pos, ax, params):
     params (dict): A dictionary with various parameters including 'edge_font_size'.
 
     Returns:
-    None
-    """
+    None"""
     if params.get("draw_edgelabels", False):
         nx.draw_networkx_edge_labels(
             g,
@@ -1569,8 +1553,7 @@ def draw_legend(g, ax, params):
     params (dict): A dictionary with various parameters including 'tvb_colors' and 'c_order'.
 
     Returns:
-    None
-    """
+    None"""
     groups = set(nx.get_node_attributes(g, "type").values())
     mapping = dict(zip(sorted(groups), count()))
     nodes = g.nodes()
@@ -2091,8 +2074,7 @@ def get_node_color_mapping(G, node_colors="math_type", colors="tvb", return_cate
 def adjust_arrow_end(start, end, bbox_end):
     """Clip an arrow's endpoint to the edge of the target node's bounding box.
 
-    Computes where the line from `start` to `end` crosses the top or bottom edge of `bbox_end` (chosen by arrow direction) and clamps the crossing to the box's
-    horizontal extent, so the arrow stops at the node border instead of its center.
+    Computes where the line from `start` to `end` crosses the top or bottom edge of `bbox_end` (chosen by arrow direction) and clamps the crossing to the box's horizontal extent, so the arrow stops at the node border instead of its center.
 
     Args:
         start: `(x, y)` start coordinate of the arrow.

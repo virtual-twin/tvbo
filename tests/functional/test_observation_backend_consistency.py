@@ -3,20 +3,13 @@
 These guard two defects:
 
 1. **Observation sample-count divergence.** ``Bold_TVB`` is a declarative YAML observation model. The same YAML MUST resolve to the same sampling on every
-   Python-based backend (jax / tvboptim / tvb): a BOLD monitor with ``TR=720ms`` over a ``duration`` produces ``floor(duration / TR)`` samples regardless of
-   the integration ``step_size``. The bug: the jax monitor template applied the
+   Python-based backend (jax / tvboptim / tvb): a BOLD monitor with ``TR=720ms`` over a ``duration`` produces ``floor(duration / TR)`` samples regardless of the integration ``step_size``. The bug: the jax monitor template applied the
    *literal* pre-baked ``subsample`` stepsize (720/stock_dt = 180) to the raw
-   ``dt=0.1`` grid instead of ``TR/dt``, yielding ``n_steps / 180`` BOLD samples (e.g. 112 for a 2000ms run) while tvboptim/tvb correctly yielded 2. tvboptim
-   resolves the period as ``TR/dt`` and is the reference (see
-   ``tvbo/templates/tvboptim/observations.py``).
+   ``dt=0.1`` grid instead of ``TR/dt``, yielding ``n_steps / 180`` BOLD samples (e.g. 112 for a 2000ms run) while tvboptim/tvb correctly yielded 2. tvboptim resolves the period as ``TR/dt`` and is the reference (see ``tvbo/templates/tvboptim/observations.py``).
 
-2. **TVB rejects a standard weights network.** ``exp.run("tvb")`` on a connectivity-only ``Network`` (weights / tract_lengths / labels / centres —
-   e.g. ``atlas="Lobar8", rec="avgMatrix"``) raised
-   ``ValueError("Atlas ... is not available in the dataset")`` because the TVB adapter tried to resolve a parcellation-volume ``.nii`` it never needs for a
-   ``tvb.Connectivity``.
+2. **TVB rejects a standard weights network.** ``exp.run("tvb")`` on a connectivity-only ``Network`` (weights / tract_lengths / labels / centres — e.g. ``atlas="Lobar8", rec="avgMatrix"``) raised ``ValueError("Atlas ... is not available in the dataset")`` because the TVB adapter tried to resolve a parcellation-volume ``.nii`` it never needs for a ``tvb.Connectivity``.
 
-Conventions match ``tests/functional/test_simulation_backends_*.py`` and
-``simulation_backends_shared.py``.
+Conventions match ``tests/functional/test_simulation_backends_*.py`` and ``simulation_backends_shared.py``.
 """
 
 import numpy as np
@@ -37,8 +30,7 @@ _EXPECTED_BOLD_SAMPLES = int(_DURATION // _BOLD_TR)
 def _matrix_bold_experiment(duration=_DURATION):
     """Two-node, tvb-safe experiment (Network.from_matrix) with BOLD + TA.
 
-    ``from_matrix`` builds a pure connectivity network that every backend (including TVB) already accepts, so this isolates the observation
-    sample-count bug from the TVB-network-acceptance bug.
+    ``from_matrix`` builds a pure connectivity network that every backend (including TVB) already accepts, so this isolates the observation sample-count bug from the TVB-network-acceptance bug.
     """
     network = Network.from_matrix(
         weights=np.array([[0.0, 0.2], [0.1, 0.0]]),
@@ -82,8 +74,7 @@ def _run(backend, duration=_DURATION):
 def _align(left, right):
     """Squeeze trailing singleton axes and drop a leading off-by-one sample.
 
-    TVB carries an extra trailing mode axis; backends may emit a boundary sample the others don't. Mirrors the alignment in
-    ``tests/test_tvboptim_observation_codegen.py``.
+    TVB carries an extra trailing mode axis; backends may emit a boundary sample the others don't. Mirrors the alignment in ``tests/test_tvboptim_observation_codegen.py``.
     """
     left = np.asarray(left)
     right = np.asarray(right)
@@ -105,8 +96,7 @@ class TestObservationSampleCountConsistency:
     def test_bold_sample_count_matches_tr_formula_per_backend(self):
         """Each available backend emits floor(duration / TR) BOLD samples.
 
-        Catches the jax defect directly: jax produced ``n_steps / 180`` (=112) instead of ``duration / TR`` (=2). A single backend suffices to fail,
-        so this holds even when only jax is installed.
+        Catches the jax defect directly: jax produced ``n_steps / 180`` (=112) instead of ``duration / TR`` (=2). A single backend suffices to fail, so this holds even when only jax is installed.
         """
         counts = {}
 
@@ -161,7 +151,10 @@ class TestObservationSampleCountConsistency:
     @pytest.mark.backend_tvboptim
     @pytest.mark.skipif(not _HAVE_TVBOPTIM, reason="tvboptim not installed")
     def test_bold_values_close_jax_vs_tvboptim(self):
-        """Same YAML on jax and tvboptim should be numerically close, not just equal in shape. Guards against a same-count-but-wrong-values fix."""
+        """Same YAML on jax and tvboptim should be numerically close, not just equal in shape. Guards against a same-count-but-wrong-values fix.
+
+        The tolerance is loose because two independent float64 Heun/JAX paths accumulate ULP-level drift over 20000 dt=0.1 steps; it is still tight enough to catch a wrong monitor.
+        """
         jax_bold = _find_observation(_run("jax"), "bold")
         tvboptim_bold = _find_observation(_run("tvboptim"), "bold")
 
@@ -169,8 +162,6 @@ class TestObservationSampleCountConsistency:
         assert jax_bold.shape == tvboptim_bold.shape, (
             f"BOLD shapes differ after alignment: {jax_bold.shape} vs {tvboptim_bold.shape}"
         )
-        # Two independent float64 Heun/JAX paths accumulate ULP-level drift over
-        # 20000 dt=0.1 steps; a loose tolerance still catches a wrong monitor.
         np.testing.assert_allclose(jax_bold, tvboptim_bold, rtol=5e-2, atol=1e-3)
 
 

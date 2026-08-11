@@ -126,8 +126,7 @@ class TestNetworkExport:
     def test_edge_weight_reaches_yaml(self, edge_kwargs):
         """A non-unit edge weight must reach the PyRates YAML, not the 1.0 fallback.
 
-        edge.parameters is a dict[str, Parameter]; the codegen helper previously iterated it as a list of Parameter objects, never matched, and always
-        emitted the default weight (any weight != 1.0 was silently lost). Covers both the keyed-parameters and scalar-field forms of the weight.
+        edge.parameters is a dict[str, Parameter]; the codegen helper previously iterated it as a list of Parameter objects, never matched, and always emitted the default weight (any weight != 1.0 was silently lost). Covers both the keyed-parameters and scalar-field forms of the weight.
         """
         osc = Dynamics("Dynamics")
         osc.name = "osc"
@@ -151,7 +150,10 @@ class TestNetworkExport:
         assert "weight: 1.0" not in yaml_output
 
     def test_weights_matrix_from_edges(self):
-        """Test that weights_matrix property correctly computes from edges."""
+        """Test that weights_matrix property correctly computes from edges.
+
+        Matrices follow the target-by-source convention used by the backends: an edge ``source -> target`` is stored at ``[target, source]``.
+        """
         network = Network(number_of_nodes=3)
         network.edges = [
             tvbo_datamodel.Edge(
@@ -178,8 +180,6 @@ class TestNetworkExport:
         ]
 
         W = network.weights_matrix
-        # Matrices follow the target-by-source convention used by backends:
-        # an edge source -> target is stored at [target, source].
         expected = np.array(
             [
                 [0.0, 0.0, 0.2],

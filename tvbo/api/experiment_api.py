@@ -5,8 +5,7 @@ Endpoints:
   GET /api/v1/experiments/formats      — list supported export formats
   GET /api/v1/experiments/{id}/sidecar — LinkML-valid YAML or JSON
   GET /api/v1/experiments/{id}/render  — render experiment in any supported format
-  POST /api/v1/experiments/render      — render or save an experiment from a payload
-"""
+  POST /api/v1/experiments/render      — render or save an experiment from a payload"""
 
 from typing import Optional
 
@@ -92,8 +91,7 @@ def get_sidecar(experiment_id: str, format: str = Query("yaml")):
 class RenderExperimentRequest(BaseModel):
     """Request body for rendering or saving an experiment from an inline payload.
 
-    Describes a [`SimulationExperiment`](/api/classes/experiment.qmd) to render (or persist) via the `POST /api/v1/experiments/render` endpoint. The experiment is
-    supplied inline as a mapping rather than referenced by stored id.
+    Describes a [`SimulationExperiment`](/api/classes/experiment.qmd) to render (or persist) via the `POST /api/v1/experiments/render` endpoint. The experiment is supplied inline as a mapping rather than referenced by stored id.
 
     Args:
         experiment: Mapping of `SimulationExperiment` constructor keyword arguments

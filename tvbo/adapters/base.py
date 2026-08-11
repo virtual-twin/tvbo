@@ -271,8 +271,7 @@ class BaseAdapter:
     def collect_all_distributions(dynamics_dict: OrderedDict) -> dict:
         """Collect SV and parameter distributions from all dynamics.
 
-        Returns {dyn_name: {'sv': [...], 'param': [...], 'has': bool, 'seed': int}}
-        """
+        Returns {dyn_name: {'sv': [...], 'param': [...], 'has': bool, 'seed': int}}"""
         result = {}
         for dyn_name, dyn in dynamics_dict.items():
             result[dyn_name] = {

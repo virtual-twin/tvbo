@@ -7,8 +7,7 @@
 #
 """Smoke tests for the reservoir multi-scale flattening (``tvbo.multiscale``).
 
-The graph-generator engine (reservoir recurrence, SC loading, weight sampling) is monkeypatched with tiny synthetic arrays so the lowering logic — Kronecker
-assembly of ``W_global`` and the OOM size guard — is exercised without a real network file.
+The graph-generator engine (reservoir recurrence, SC loading, weight sampling) is monkeypatched with tiny synthetic arrays so the lowering logic — Kronecker assembly of ``W_global`` and the OOM size guard — is exercised without a real network file.
 """
 
 import numpy as np

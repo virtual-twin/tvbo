@@ -141,8 +141,7 @@ _ALIASES = {
 def normalize_unit(unit_str):
     """Normalize a unit string to its canonical TVBO form.
 
-    Strips surrounding whitespace and resolves known aliases (for example
-    `"millisecond"` to `"ms"` or `"µm"` to `"um"`) via the `_ALIASES` table.
+    Strips surrounding whitespace and resolves known aliases (for example `"millisecond"` to `"ms"` or `"µm"` to `"um"`) via the `_ALIASES` table.
     Strings without an alias are returned unchanged.
 
     Args:
@@ -202,8 +201,7 @@ def sympy_to_lems(expr_str, parameters=None):
 def inline_model_functions(expr, dynamics, all_names):
     """Inline model-defined functions into a SymPy expression.
 
-    LEMS has no user-defined function mechanism, so calls like ``Sigm(y1 - y2)`` must be expanded to their body (e.g. ``2*e0/(1 + exp(r*(v0 - (y1-y2))))``)
-    before the expression is printed.
+    LEMS has no user-defined function mechanism, so calls like ``Sigm(y1 - y2)`` must be expanded to their body (e.g. ``2*e0/(1 + exp(r*(v0 - (y1-y2))))``) before the expression is printed.
 
     Parameters
     ----------
@@ -263,8 +261,7 @@ def _dynamics_has_physical_units(params, svs, td_param_names=None):
 
     When physical units are present, the equations are fully dimensioned in LEMS and do NOT need ``/ SEC`` time scaling.
 
-    Parameters that only appear in Piecewise conditions (e.g. ``pulse_delay``,
-    ``pulse_duration``) are NOT dynamics-relevant and should be excluded via
+    Parameters that only appear in Piecewise conditions (e.g. ``pulse_delay``, ``pulse_duration``) are NOT dynamics-relevant and should be excluded via
     *td_param_names*.
     """
     from tvbo.utils.units import unit_to_lems_dimension
@@ -329,8 +326,7 @@ def _dynamics_has_time_units(params, svs, dvs):
 def _build_regime_data(events):
     """Detect spike events and build Regime rendering data.
 
-    When an event has both a ``condition`` (threshold test) and an ``affect`` (state reset assignments), we render it as a pair of LEMS Regimes
-    (integrating / refractory) instead of a flat ``<OnCondition>``.
+    When an event has both a ``condition`` (threshold test) and an ``affect`` (state reset assignments), we render it as a pair of LEMS Regimes (integrating / refractory) instead of a flat ``<OnCondition>``.
 
     Returns ``None`` when no Regime rendering is needed, otherwise a dict::
 
@@ -1350,8 +1346,7 @@ def _component_references(nml_type: str) -> dict:
     """ComponentReferences a standard NeuroML type declares (name -> target type).
 
     Reads the concrete type's own contract. An input component *instantiates* a
-    NeuroML type rather than extending one, so a name missing from the ingested index is simply a type tvbo has no contract for — not the "extends a type
-    that does not exist" error :func:`_base_type_meta` reports, which would be both alarming and untrue here.
+    NeuroML type rather than extending one, so a name missing from the ingested index is simply a type tvbo has no contract for — not the "extends a type that does not exist" error :func:`_base_type_meta` reports, which would be both alarming and untrue here.
     """
     contract = _load_neuroml_contracts().get(_resolve_base_type_name(nml_type)) or {}
     return contract.get("component_references") or {}
@@ -1360,8 +1355,7 @@ def _component_references(nml_type: str) -> dict:
 def _resolve_base_type_name(ref: str) -> str:
     """Normalise a base-type reference to a bare NeuroML type name.
 
-    Accepts the ``extends:`` shorthand, the tvbo-scoped IRI (``.../neuroml/<name>``) and the direct NeuroML IRI (``...neuroml2#<name>``),
-    so a Dynamics may point at a base type by any of them interchangeably.
+    Accepts the ``extends:`` shorthand, the tvbo-scoped IRI (``.../neuroml/<name>``) and the direct NeuroML IRI (``...neuroml2#<name>``), so a Dynamics may point at a base type by any of them interchangeably.
     """
     ref = (ref or "").strip()
     if ref.startswith("extends:"):
@@ -1393,8 +1387,7 @@ def _extends_base(iri: str) -> str | None:
 def _base_type_meta(extends: str) -> dict:
     """Emission contract for a NeuroML base type.
 
-    Returns the exposures, requirements, inherited parameters and structural slots a custom ComponentType inherits from *extends*. Built-in cell/channel/
-    gate/rate bases use their fixed emission structure; every other base type is grounded in the ingested NeuroML ontology contract index.
+    Returns the exposures, requirements, inherited parameters and structural slots a custom ComponentType inherits from *extends*. Built-in cell/channel/ gate/rate bases use their fixed emission structure; every other base type is grounded in the ingested NeuroML ontology contract index.
 
     The returned mapping is cached and shared between callers — treat it as read-only.
     """
@@ -1627,10 +1620,7 @@ def _hier_build_dynamics(dyn, extends, all_params):
 def _python_cond_to_lems(cond_str, all_names=None):
     """Convert a Python-style condition to LEMS syntax.
 
-    ``x != 0`` → ``x .neq. 0``
-    ``v > thresh`` → ``v .gt. thresh``
-    ``v >= thresh`` → ``v .geq. thresh``
-    """
+    ``x != 0`` → ``x .neq. 0`` ``v > thresh`` → ``v .gt. thresh`` ``v >= thresh`` → ``v .geq. thresh``"""
     s = str(cond_str)
     s = s.replace("!=", " .neq. ")
     s = s.replace(">=", " .geq. ")
@@ -1646,8 +1636,7 @@ def _python_cond_to_lems(cond_str, all_names=None):
 def _build_hier_custom_context(experiment):
     """Build context dict for hierarchical custom LEMS ComponentTypes.
 
-    Used when the root dynamics has ``iri: extends:base*``, meaning the user defines all equations explicitly while extending LEMS base types
-    for type-system compatibility.
+    Used when the root dynamics has ``iri: extends:base*``, meaning the user defines all equations explicitly while extending LEMS base types for type-system compatibility.
 
     The context is consumed by ``tvbo-neuroml-hier-custom-lems.xml.mako``.
     """
@@ -1886,9 +1875,7 @@ def _build_hier_custom_context(experiment):
 def build_std_lems_context(experiment):
     """Build a context dict for standard NeuroML-type Mako templates.
 
-    Inspects the experiment to determine whether it uses standard NeuroML types (``iri: neuroml:*``).  When it does, extracts *all* data that
-    the Mako templates need — integration parameters, pre-rendered XML fragments for cells/channels/synapses, population lists, connection
-    lists, and simulation metadata.
+    Inspects the experiment to determine whether it uses standard NeuroML types (``iri: neuroml:*``).  When it does, extracts *all* data that the Mako templates need — integration parameters, pre-rendered XML fragments for cells/channels/synapses, population lists, connection lists, and simulation metadata.
 
     Returns
     -------
@@ -3441,8 +3428,7 @@ class NeuroMLAdapter(BaseAdapter):
     def render_neuroml(self, **kwargs) -> str:
         """Render a NeuroML v2 document (``<neuroml>`` root).
 
-        Uses custom ``<ComponentType>`` definitions for the dynamics model rather than mapping to native NeuroML cell types.  The output
-        contains ComponentType definitions, Component instances, and a ``<network>`` with populations.
+        Uses custom ``<ComponentType>`` definitions for the dynamics model rather than mapping to native NeuroML cell types.  The output contains ComponentType definitions, Component instances, and a ``<network>`` with populations.
 
         To run the output, pair it with a LEMS simulation wrapper generated by :meth:`render_lems_wrapper`.
         """
@@ -3474,9 +3460,7 @@ class NeuroMLAdapter(BaseAdapter):
     def render_dynamics(self, **kwargs) -> str:
         """Render a standalone LEMS file with only ComponentType definitions.
 
-        The output is a valid LEMS document containing dimensions, units, the dynamics ``ComponentType``, the ``Coupling`` ``ComponentType``,
-        and the default ``Component`` instances.  No ``Network`` or
-        ``Simulation`` elements are included, making it suitable for inclusion in larger LEMS documents via ``<Include file="..."/>``.
+        The output is a valid LEMS document containing dimensions, units, the dynamics ``ComponentType``, the ``Coupling`` ``ComponentType``, and the default ``Component`` instances.  No ``Network`` or ``Simulation`` elements are included, making it suitable for inclusion in larger LEMS documents via ``<Include file="..."/>``.
         """
         from tvbo import templates
 
@@ -3599,8 +3583,7 @@ class NeuroMLAdapter(BaseAdapter):
     def validate(self, xml_string=None):
         """Validate rendered LEMS XML with PyLEMS. Returns True or raises.
 
-        Standard NeuroML type outputs (``<Include file="Cells.xml"/>`` etc.) cannot be validated by PyLEMS because the type definition files are
-        bundled with jNeuroML, not PyLEMS.  For those, validation is skipped here (jNeuroML validates them at runtime).
+        Standard NeuroML type outputs (``<Include file="Cells.xml"/>`` etc.) cannot be validated by PyLEMS because the type definition files are bundled with jNeuroML, not PyLEMS.  For those, validation is skipped here (jNeuroML validates them at runtime).
         """
         if xml_string is None:
             xml_string = self.render_code()
@@ -3918,9 +3901,7 @@ class NeuroMLAdapter(BaseAdapter):
     def _run_netpyne(pynml, lems_file, tmpdir, old_argv):
         """Run via NetPyNE with workaround for custom LEMS ComponentType cells.
 
-        jNeuroML's NetPyNE export calls ``importNeuroML2SimulateAnalyze`` which tries to look up the cell component in the exported
-        ``.net.nml``.  For custom LEMS ``ComponentType`` cells (which are not standard NeuroML2 cell types), ``libNeuroML`` returns ``None``
-        and the simulation crashes with ``AttributeError``.
+        jNeuroML's NetPyNE export calls ``importNeuroML2SimulateAnalyze`` which tries to look up the cell component in the exported ``.net.nml``.  For custom LEMS ``ComponentType`` cells (which are not standard NeuroML2 cell types), ``libNeuroML`` returns ``None`` and the simulation crashes with ``AttributeError``.
 
         Work-around:
         1. Generate the NetPyNE ``.py`` + ``.mod`` files (no execution).
@@ -4142,9 +4123,7 @@ def _resolve_nml2_root() -> _Path:
     """Find or fetch the NeuroML2 repository.
 
     Resolution order:
-    1. ``NEUROML2_DIR`` environment variable (explicit override)
-    2. Auto-clone to ``~/.cache/tvbo/NeuroML2`` (works anywhere with git)
-    """
+    1. ``NEUROML2_DIR`` environment variable (explicit override) 2. Auto-clone to ``~/.cache/tvbo/NeuroML2`` (works anywhere with git)"""
     global _nml2_root_cache
     if _nml2_root_cache is not None:
         return _nml2_root_cache
@@ -4209,8 +4188,7 @@ def _lems_directory_lock(cwd: _Path):
     """Serialise runs sharing a LEMS example directory.
 
     A run clears ``results/`` before invoking jNeuroML and collects from it afterwards, so two runs in the same directory delete each other's outputs.
-    The whole clear-run-collect sequence therefore holds an advisory lock. Where
-    ``fcntl`` is unavailable the lock is skipped, and concurrent callers must pass distinct ``cwd`` themselves.
+    The whole clear-run-collect sequence therefore holds an advisory lock. Where ``fcntl`` is unavailable the lock is skipped, and concurrent callers must pass distinct ``cwd`` themselves.
     """
     try:
         import fcntl
@@ -4490,9 +4468,7 @@ def compare_traces(
 
     Parameters
     ----------
-    ref_data, tvbo_data : (n_time, n_cols) arrays ref_cols, tvbo_cols : column names (index 0 is time) time_col : which column is time (default 0)
-    rtol, atol : tolerances for _np.allclose
-    """
+    ref_data, tvbo_data : (n_time, n_cols) arrays ref_cols, tvbo_cols : column names (index 0 is time) time_col : which column is time (default 0) rtol, atol : tolerances for _np.allclose"""
     # Interpolate TVBO onto reference time grid
     from scipy.interpolate import interp1d
 
@@ -4547,9 +4523,7 @@ def plot_comparison(
 
     Parameters
     ----------
-    ref_data, tvbo_data : arrays with time in col 0 ref_cols, tvbo_cols : column names title : plot title
-    time_scale : multiply time by this factor for display time_unit : label for x axis
-    """
+    ref_data, tvbo_data : arrays with time in col 0 ref_cols, tvbo_cols : column names title : plot title time_scale : multiply time by this factor for display time_unit : label for x axis"""
     import matplotlib.pyplot as plt
 
     sv_names = [c for c in ref_cols if c != "time" and c in tvbo_cols]
@@ -4654,8 +4628,7 @@ def parse_lems_displays(lems_file: str) -> list[_Display]:
 def _match_quantity_to_col(quantity: str, tvbo_cols: list[str]) -> str | None:
     """Best-effort match a LEMS quantity path to a TVBO column name.
 
-    LEMS uses e.g. ``izpopBurst[0]/v`` while TVBO produces
-    ``izBurst_pop[0]/v``.  We try progressively looser matching.
+    LEMS uses e.g. ``izpopBurst[0]/v`` while TVBO produces ``izBurst_pop[0]/v``.  We try progressively looser matching.
     """
     # Direct match
     if quantity in tvbo_cols:
@@ -4725,8 +4698,7 @@ def _find_ref_column(quantity: str, ref_outputs: dict, output_columns: dict | No
 
     Returns
     -------
-    (filename, col_index) or None
-    """
+    (filename, col_index) or None"""
     if output_columns:
         for fname, cols in output_columns.items():
             if quantity in cols:

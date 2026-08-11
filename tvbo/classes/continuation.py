@@ -41,8 +41,7 @@ if TYPE_CHECKING:
 class Continuation(tvbo_datamodel.Continuation):
     """Runtime continuation specification with factory constructors.
 
-    Inherits all schema-defined fields (``free_parameters``, ``ds``,
-    ``max_steps``, ``branches``, etc.) from the generated datamodel and adds convenience factory methods.
+    Inherits all schema-defined fields (``free_parameters``, ``ds``, ``max_steps``, ``branches``, etc.) from the generated datamodel and adds convenience factory methods.
     """
 
     def __init__(self, name="continuation", **kwargs):
@@ -87,8 +86,7 @@ class Continuation(tvbo_datamodel.Continuation):
 
         Returns
         -------
-        Continuation
-        """
+        Continuation"""
         return yaml_loader.loads(yaml_string, target_class=cls)
 
     @classmethod

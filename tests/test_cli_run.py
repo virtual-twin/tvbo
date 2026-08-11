@@ -21,8 +21,9 @@ from tvbo.cli import run as run_cli
 def test_dispatch_to_engine_uses_kit_dir_not_file(monkeypatch, tmp_path: Path, engine: str, expected_workflow_file: str):
     """``tvbo run --engine`` emits the kit in-process into a directory.
 
-    The emit runs in-process (no re-shelling ``tvbo``), so it must not depend on
-    ``tvbo`` being on ``$PATH``; only the engine submission (sbatch/snakemake/ nextflow) shells out. The artefact must land inside the kit directory.
+    The emit runs in-process (no re-shelling ``tvbo``), so it must not depend on ``tvbo`` being on ``$PATH``; only the engine submission (sbatch/snakemake/nextflow) shells out, and it does so from the kit directory. The artefact must land inside that directory.
+
+    Submissions are recognised by launcher BASENAME: ``_resolve_launcher`` returns snakemake's absolute path when it sits next to the running interpreter (the venv-off-``PATH`` case — a cluster user runs ``.venv/bin/tvbo`` without activating), so ``cmd[0]`` may be ``/…/.venv/bin/snakemake`` rather than the bare name. Matching on the basename is also what filters out unrelated subprocess calls a library may make, such as ``uname -p``.
     """
     calls = []
 
@@ -30,7 +31,6 @@ def test_dispatch_to_engine_uses_kit_dir_not_file(monkeypatch, tmp_path: Path, e
         calls.append({"cmd": cmd, "cwd": cwd})
         return subprocess.CompletedProcess(cmd, 0, stdout="12345\n")
 
-    # Only the engine submission shells out; it lives in workflow now.
     monkeypatch.setattr("tvbo.cli.workflow.subprocess.run", _fake_run)
 
     kit_dir = tmp_path / "kit"
@@ -45,9 +45,6 @@ def test_dispatch_to_engine_uses_kit_dir_not_file(monkeypatch, tmp_path: Path, e
 
     # Kit emitted in-process into the directory (not a bare artefact file).
     assert (kit_dir / expected_workflow_file).is_file()
-    # The submission shells out from the kit dir; none re-invokes `tvbo` on PATH.
-    # Match the launcher by BASENAME: `_resolve_launcher` returns snakemake's
-    # ABSOLUTE path when it sits next to the running interpreter (the venv-off-PATH case — a cluster user runs `.venv/bin/tvbo` without activating), so cmd[0] may be `/…/.venv/bin/snakemake`, not the bare name. This is exactly why it works both locally and on HPC. (Filter out unrelated subprocess calls a library may make, e.g. `uname -p`.)
     submits = [c for c in calls if Path(c["cmd"][0]).name in {"sbatch", "snakemake", "nextflow"}]
     assert submits, calls
     assert all(Path(c["cwd"]) == kit_dir for c in submits)
@@ -89,8 +86,7 @@ def test_dispatch_to_engine_slurm_single_task_no_gather(monkeypatch, tmp_path: P
 def test_unloadable_spec_reports_every_attempt(tmp_path: Path):
     """A spec that loads as nothing must say why, not blame the last fallback.
 
-    ``_load_from_file`` tries study -> experiment -> dynamics. It used to swallow each failure, so the caller only ever saw the *dynamics* error — which, for a
-    file that is plainly an experiment (e.g. one written by a newer tvbo than the one reading it), sends the reader chasing a malformed Dynamics that never was.
+    ``_load_from_file`` tries study -> experiment -> dynamics. It used to swallow each failure, so the caller only ever saw the *dynamics* error — which, for a file that is plainly an experiment (e.g. one written by a newer tvbo than the one reading it), sends the reader chasing a malformed Dynamics that never was.
     """
     import typer
 
@@ -226,8 +222,7 @@ def test_max_iterations_none_is_a_no_op():
 
 # ── study figure rendering (`tvbo run <study>` closes the replication loop) ──────────────
 def test_render_study_figures_renders_into_base_figures_dir(monkeypatch, tmp_path: Path):
-    """A study run renders its declarative `figures:` via the same path as `tvbo figure render`: base = the spec file's dir, output = <base>/figures — so the one-command
-    result is interchangeable with a follow-up `tvbo figure render`."""
+    """A study run renders its declarative `figures:` via the same path as `tvbo figure render`: base = the spec file's dir, output = <base>/figures — so the one-command result is interchangeable with a follow-up `tvbo figure render`."""
     seen = {}
 
     def _fake_render(figures, base_dir, out_dir):
@@ -392,11 +387,9 @@ def collection_spec(tmp_path: Path) -> str:
 def test_a_flag_a_collection_cannot_honour_is_refused(collection_spec, flag):
     """A StudyCollection runs every member with fixed save options.
 
-    Accepting one of these and dropping it turns a one-container request into the whole study — hours of cluster time — or reports success for a ``--save-all`` that in fact
-    wrote record-only. Each must fail fast, naming the flag.
+    Accepting one of these and dropping it turns a one-container request into the whole study — hours of cluster time — or reports success for a ``--save-all`` that in fact wrote record-only. Each must fail fast, naming the flag.
 
-    Driven through the CLI rather than by calling ``run()``: invoked directly, every typer default is an unresolved ``OptionInfo``, so the guard fires for every flag at
-    once and the test passes without testing anything.
+    Driven through the CLI rather than by calling ``run()``: invoked directly, every typer default is an unresolved ``OptionInfo``, so the guard fires for every flag at once and the test passes without testing anything.
     """
     from typer.testing import CliRunner
 

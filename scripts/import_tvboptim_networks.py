@@ -5,8 +5,7 @@ Creates BIDS-named network files in tvbo/database/networks/:
   dk_average SC+FC → tpl-MNI152NLin2009cAsym_rec-avgMatrix
                       _atlas-DesikanKilliany_desc-SCFC_relmat
 
-tvboptim dk_average contains average structural and functional connectivity matrices across subjects, using the 84-node Desikan-Killiany parcellation
-(FreeSurfer aparc, excluding brain-stem and ventral-DC bilaterally).
+tvboptim dk_average contains average structural and functional connectivity matrices across subjects, using the 84-node Desikan-Killiany parcellation (FreeSurfer aparc, excluding brain-stem and ventral-DC bilaterally).
 
 Coordinates are sourced from the existing 87-node dTOR DK network via abbreviation → FreeSurfer label mapping.
 """
@@ -20,10 +19,6 @@ from tvbo.datamodel import tvbo_datamodel
 TVBOPTIM_DATA = Path("/Users/leonmartin_bih/work_data/toolboxes/tvboptim/src/tvboptim/data")
 NETWORK_DIR = database_path / "networks"
 
-# --------------------------------------------------------------------------- #
-#  Declarative edge definitions                                                #
-# --------------------------------------------------------------------------- #
-# Each entry defines an edge property: source NPZ file, key within that file, and metadata attributes written to the YAML sidecar.
 EDGE_DEFS = {
     "weight": {
         "source": "connectivity/dk_average/data.npz",
@@ -50,10 +45,8 @@ EDGE_DEFS = {
         "valid_diagonal": True,
     },
 }
+"""Edge properties to import, keyed by edge attribute: the source NPZ file, the key within that file, and the metadata attributes written to the YAML sidecar."""
 
-# --------------------------------------------------------------------------- #
-#  Label mapping: tvboptim abbreviations → FreeSurfer aparc names              #
-# --------------------------------------------------------------------------- #
 ABBREV_TO_FREESURFER = {
     # Left cortical
     "L.BSTS": "ctx-lh-bankssts",
@@ -144,6 +137,7 @@ ABBREV_TO_FREESURFER = {
     "R.IN": "ctx-rh-insula",
     "R.CER": "right-cerebellum-cortex",
 }
+"""Label mapping from the tvboptim abbreviations to the FreeSurfer aparc names used by the dTOR DK network."""
 
 
 def _get_dk87_coords():

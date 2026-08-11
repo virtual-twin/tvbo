@@ -58,8 +58,7 @@ def plot_timeseries(result, ax=None, **kwargs):
 
     Returns
     -------
-    matplotlib.figure.Figure or None
-    """
+    matplotlib.figure.Figure or None"""
     time, var_names, arr = _prepare(result.data)
     units = getattr(result, "_units", {})
 
@@ -138,8 +137,7 @@ def plot_eeg(result, VOI=None, mode=0, spacing=None, normalize=False, channel_la
         Z-score each channel before plotting.
     channel_labels : bool
         Show region labels on y-axis.
-    ax : matplotlib.axes.Axes, optional linewidth : float
-    """
+    ax : matplotlib.axes.Axes, optional linewidth : float"""
     data = result.data
     var_names = list(np.atleast_1d(data.coords["variable"].values)) if "variable" in data.coords else []
 
@@ -213,8 +211,7 @@ def plot_power_spectrum(result, VOI=None, ROI="mean", mode=0, bands=None, ax=Non
         Variable of interest.
     ROI : str or int
         'mean' or region index.
-    mode : int bands : dict, optional ax : matplotlib.axes.Axes, optional
-    """
+    mode : int bands : dict, optional ax : matplotlib.axes.Axes, optional"""
     from scipy.fft import fft, fftfreq
     from matplotlib import colormaps
 

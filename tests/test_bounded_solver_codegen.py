@@ -1,11 +1,8 @@
 """`BoundedSolver` is emitted only when a state variable is deliberately clamped.
 
-A ``domain`` with ``enforce: clamp`` and a finite bound is the sole signal that the integrator should hard-clip the trajectory. Absent that, the generated tvboptim code
-must neither import nor use ``BoundedSolver``: a bare descriptive ``domain`` (``enforce: none``, the default) states bounds as metadata but never constrains
-integration, so wrapping the solver would silently change the dynamics. A stray import is not merely cosmetic here — it advertises clamping the code does not do.
+A ``domain`` with ``enforce: clamp`` and a finite bound is the sole signal that the integrator should hard-clip the trajectory. Absent that, the generated tvboptim code must neither import nor use ``BoundedSolver``: a bare descriptive ``domain`` (``enforce: none``, the default) states bounds as metadata but never constrains integration, so wrapping the solver would silently change the dynamics. A stray import is not merely cosmetic here — it advertises clamping the code does not do.
 
-Both codegen paths are checked: the experiment template (the production path taken by
-``render_code('tvboptim')``) and the standalone solver template (the component/sim path).
+Both codegen paths are checked: the experiment template (the production path taken by ``render_code('tvboptim')``) and the standalone solver template (the component/sim path).
 """
 
 import pytest
@@ -15,8 +12,6 @@ pytest.importorskip("tvboptim")
 from tvbo import SimulationExperiment
 from tvbo.classes.experiment import templates
 
-# A minimal single-population network. `# DOMAIN` is replaced with a state-variable
-# `domain:` line (or nothing) to toggle whether clamping is requested.
 _SPEC = """
 id: 7
 dynamics:
@@ -60,6 +55,7 @@ integration:
   step_size: 1.0
   transient_time: 0.0
 """
+"""A minimal single-population network; the ``# DOMAIN`` placeholder is replaced with a state-variable ``domain:`` line (or with nothing) to toggle whether clamping is requested."""
 
 
 def _render(tmp_path, domain_line):

@@ -11,8 +11,7 @@ TVB-GO Module
 
 This module provides utilities for working with TVB and the Gene Ontology.
 
-.. moduleauthor:: Leon K. Martin
-"""
+.. moduleauthor:: Leon K. Martin"""
 
 import json
 import logging
@@ -64,8 +63,7 @@ def bel2label(node):
     """Build a `namespace:name` string label for a PyBEL node.
 
     Composite nodes are flattened into a single ` AND `-joined label:
-    `ComplexAbundance` and `CompositeAbundance` join their members, while a
-    `Reaction` joins its reactants followed by its products. Any other node is labelled directly from its own entity namespace and name.
+    `ComplexAbundance` and `CompositeAbundance` join their members, while a `Reaction` joins its reactants followed by its products. Any other node is labelled directly from its own entity namespace and name.
 
     Args:
         node: A PyBEL DSL node whose entity (or members/reactants/products)

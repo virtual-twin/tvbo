@@ -1,8 +1,6 @@
 """Benchmark task: set up and run a whole-brain simulation experiment.
 
-The task is deliberately one where *discovery* dominates cost: the agent must find a curated multi-node connectome and the correct ``run`` API. A control
-agent greps the installed package; a skilled agent calls ``list_entries`` /
-``run("jax")`` straight away.
+The task is deliberately one where *discovery* dominates cost: the agent must find a curated multi-node connectome and the correct ``run`` API. A control agent greps the installed package; a skilled agent calls ``list_entries`` / ``run("jax")`` straight away.
 
 Success is verified by *executing the agent's script ourselves* and checking it prints a real result shape — so a fast give-up cannot masquerade as a cheap win.
 """

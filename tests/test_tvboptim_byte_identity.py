@@ -1,8 +1,10 @@
 """Byte-identity interop: tvbo-native (YAML + exp.run) vs tvboptim-native (hand-written).
 
-Each workflow is run two ways and asserted byte-identical. The comparison runs eager (``jax.disable_jit``) so it tests codegen faithfulness — that tvbo emits the
-same operations as a hand-written tvboptim workflow — without XLA's FMA-fusion nondeterminism (which under JIT differs by ~0.5 ULP and is amplified by stiff
-transients). Durations are tiny so eager stays fast.
+Each workflow is run two ways and asserted byte-identical. The comparison runs eager (``jax.disable_jit``) so it tests codegen faithfulness — that tvbo emits the same operations as a hand-written tvboptim workflow — without XLA's FMA-fusion nondeterminism (which under JIT differs by ~0.5 ULP and is amplified by stiff transients). Durations are tiny so eager stays fast.
+
+Two families depart from that eager default. Exploration and optimization workflows are smoke-tested rather than compared point by point: the per-point observable (sim -> bold -> fc -> rmse, via ``compute_all_observations``) is already proven identical by the trajectory and observation tests, and the sweep and the optimizer are tvboptim's own Space/GridAxis/ParallelExecution/OptaxOptimizer. A whole sweep cannot be compared directly — eager pmap is pathologically slow and a JITed sweep drifts ~1e-2 at stiff grid points through XLA FMA fusion — so those tests assert only that the generated code runs and returns finite, correctly-shaped results.
+
+The TBPTT analysis diagnostics (Lyapunov, AD gradient) likewise run under JIT, because eager reverse-mode or JVP over the integration scan dispatches millions of primitives per step and is intractable. They still agree to float precision: the generated analysis code and the hand-written reference build the analysis solver with the identical plain Heun, the truncation window being an optimization knob that never touches the forward pass.
 """
 
 import pytest
@@ -20,9 +22,8 @@ from tvbo.utils import as_list
 
 EXPERIMENTS_DIR = database_path / "experiments"
 
-# Eager comparison is exact for the trajectory; observations that go through an
-# FFT/convolution accumulate at machine precision, so allow a tight float-eps band.
 ATOL = 1e-12
+"""Default comparison tolerance: eager comparison is exact for the trajectory, but observations that go through an FFT or a convolution accumulate at machine precision, so a tight float-eps band is allowed."""
 
 
 @pytest.fixture
@@ -40,12 +41,13 @@ def assert_identical(name, a, b, atol=ATOL):
 
 
 def _load_sim(name, t1, transient):
-    """Load an experiment, shrink durations, drop target-only observations."""
+    """Load an experiment, shrink durations, drop target-only observations.
+
+    Target and empirical observations are only needed for the optimization loss, so any that source network observational data are dropped and simulation mode then runs without a companion BIDS measure. Observations that depend on a dropped one are dropped transitively.
+    """
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / f"{name}.yaml"))
     exp.integration.duration = t1
     exp.integration.transient_time = transient
-    # Target/empirical observations are only needed for loss (optimization).
-    # Drop any that source network observational data so simulation mode runs without a companion BIDS measure — then transitively drop observations that depend on a dropped one.
     if exp.observations:
         state_vars = set(exp.dynamics.state_variables or {})
 
@@ -108,8 +110,11 @@ def test_rww_trajectory_and_bold(eager):
     assert_identical("RWW bold", bold_tvbo, bold_ref)
 
 
-# JR — Jansen-Rit, delayed sigmoidal coupling
 def test_jr_trajectory(eager):
+    """Jansen-Rit with delayed sigmoidal coupling: trajectory and Welch PSD.
+
+    The hand-written reference mirrors the YAML: it overrides a, b and mu, applies integration noise to every state, and seeds with 0 — the resolved ``execution.random_seed`` default when the YAML sets none.
+    """
     from tvboptim.experimental.network_dynamics import Network, prepare
     from tvboptim.experimental.network_dynamics.dynamics.tvb import JansenRit
     from tvboptim.experimental.network_dynamics.coupling import DelayedSigmoidalJansenRit
@@ -128,8 +133,7 @@ def test_jr_trajectory(eager):
     sim_tvbo = np.asarray(r.integration.data)
     psd_tvbo = np.asarray(r.observations.simulated_psd.psd)
 
-    # --- tvboptim-native (YAML overrides a, b, mu; integration noise on all states,
-    # seed 0 = the resolved execution.random_seed default when the YAML sets none) ---
+    # --- tvboptim-native ---
     states = ["y0", "y1", "y2", "y3", "y4", "y5"]
     net = Network(
         dynamics=JansenRit(a=0.065, b=0.065, mu=0.15),
@@ -156,18 +160,17 @@ def test_jr_trajectory(eager):
     assert_identical("JR psd", pt, psd_ref)
 
 
-# =============================================================================
 # Exploration / optimization — smoke tests
-#
-# The per-point observable (sim -> bold -> fc -> rmse) is proven byte-identical eager by the trajectory/observation tests above; the sweep and the optimizer are tvboptim's own Space/GridAxis/ParallelExecution/OptaxOptimizer. Full-sweep byte-identity can't be asserted directly: eager pmap (under jax.disable_jit) is pathologically slow, and JITed sweeps drift ~1e-2 for stiff grid points via XLA
-# FMA fusion. So these confirm the generated exploration/optimization code runs and produces finite, correctly-shaped results.
 def _load_landscape(t1, transient):
+    """Load the RWW landscape experiment shrunk to a 2x2 grid with a non-degenerate FC.
+
+    A short run has too few BOLD TRs for the workflow's ``skip_t=20``, so every pipeline step that takes a ``skip_t`` argument is reset to 0.
+    """
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "RWW_BOLD_FC_Optimization.yaml"))
     exp.integration.duration = t1
     exp.integration.transient_time = transient
     for axis in exp.explorations["parameter_landscape"].space.values():
         axis.domain.n = 2
-    # a short run has too few BOLD TRs for skip_t=20; keep FC non-degenerate (arguments are keyed by name).
     for step in exp.observations["fc"].pipeline:
         args = getattr(step, "arguments", None) or {}
         if "skip_t" in args:
@@ -184,8 +187,6 @@ def test_rww_exploration_runs():
     assert np.all(np.isfinite(grid)), "exploration produced non-finite values"
 
 
-# A small, self-contained experiment with a connectome and a sweep: a 2-node
-# Kuramoto network, deterministic (RK4, no noise), no empirical observations.
 _MINI_EXPERIMENT = """
 id: 7
 dynamics:
@@ -237,15 +238,13 @@ explorations:
       - parameter: conduction_speed
         explored_values: [2.0, 4.0]
 """
+"""A small, self-contained experiment with a connectome and a sweep: a 2-node Kuramoto network, deterministic (RK4, no noise), no empirical observations."""
 
 
 def test_experiment_result_roundtrips_via_sidecar(tmp_path):
     """A saved ExperimentResult is self-describing and reproducible.
 
-    Runs a full experiment (2-node connectome + sweep), saves the unified
-    ``<stem>.h5`` + ``<stem>.yaml`` sidecar, then reloads *only the sidecar spec* (connectome frozen alongside as an HDF5 companion), reruns, and re-saves. The
-    two result Datasets must be identical and the two YAML sidecars byte-identical
-    — the sidecar loses no config and replays exactly, and the HDF5 opens with a plain ``xarray.open_dataset``. The file name is BIDS-clean (``exp-<id>``).
+    Runs a full experiment (2-node connectome + sweep), saves the unified ``<stem>.h5`` + ``<stem>.yaml`` sidecar, then reloads *only the sidecar spec* (connectome frozen alongside as an HDF5 companion), reruns, and re-saves. The two result Datasets must be identical and the two YAML sidecars byte-identical — the sidecar loses no config and replays exactly, and the HDF5 opens with a plain ``xarray.open_dataset``. The file name is BIDS-clean (``exp-<id>``).
     """
     import filecmp
     from pathlib import Path
@@ -280,7 +279,6 @@ def test_experiment_result_roundtrips_via_sidecar(tmp_path):
     assert filecmp.cmp(yaml_a, yaml_b, shallow=False), "sidecar YAML not byte-identical"
 
 
-# A 2-node delayed Kuramoto network with a `network.conduction_speed` exploration axis. Unlike _MINI_EXPERIMENT (zero tract lengths -> inert), the edges carry a distance, so delay = distance / conduction_speed is non-zero and the swept speed genuinely changes the dynamics. Exercises the DenseLengthGraph + live graph.speed codegen path for a network-scope axis.
 _MINI_DELAYED_EXPERIMENT = """
 id: 8
 dynamics:
@@ -341,14 +339,13 @@ explorations:
       - parameter: network.conduction_speed
         explored_values: [2.0, 4.0]
 """
+"""A 2-node delayed Kuramoto network with a ``network.conduction_speed`` exploration axis. Unlike ``_MINI_EXPERIMENT`` (zero tract lengths, hence inert), the edges carry a distance, so delay = distance / conduction_speed is non-zero and the swept speed genuinely changes the dynamics. Exercises the DenseLengthGraph and live ``graph.speed`` codegen path for a network-scope axis."""
 
 
 def test_network_conduction_speed_axis_sweeps(tmp_path):
     """A `network.conduction_speed` axis actually varies the delays.
 
-    Guards two failure modes the delay-graph codegen must avoid: (1) the axis must be classified network-scope even when given as ``explored_values`` — otherwise
-    it is swept as a non-existent dynamics parameter and every cell comes out identical (a silently-inert sweep); (2) sweeping the ``DenseLengthGraph.speed``
-    leaf under vmap must match running each speed on its own (no cross-contamination).
+    Guards two failure modes the delay-graph codegen must avoid: (1) the axis must be classified network-scope even when given as ``explored_values`` — otherwise it is swept as a non-existent dynamics parameter and every cell comes out identical (a silently-inert sweep); (2) sweeping the ``DenseLengthGraph.speed`` leaf under vmap must match running each speed on its own (no cross-contamination).
     """
     import copy
 
@@ -386,9 +383,11 @@ def test_rww_optimization_runs():
     assert getattr(r, "optimizations", None) is not None, "no optimization results"
 
 
-# TBPTT — truncated backprop-through-time via the backend-neutral integration.differentiation config -> tvboptim Heun(grad_horizon=...).
-# The forward pass is invariant to grad_horizon (tvboptim-tested), so we assert both that the generated code carries the truncation and that the forward trajectory is byte-identical to a hand-written Heun(grad_horizon=W) reference.
 def test_tbptt_differentiation(eager):
+    """Truncated backprop-through-time lowers to a native ``Heun(grad_horizon=...)``.
+
+    The backend-neutral ``integration.differentiation`` config must lower to tvboptim's truncated solver. The forward pass is invariant to ``grad_horizon`` (tvboptim-tested), so the test asserts both that the generated code carries the truncation and that the forward trajectory is byte-identical to a hand-written ``Heun(grad_horizon=W)`` reference.
+    """
     from tvbo.datamodel.schema import Differentiation
     from tvboptim.experimental.network_dynamics import Network, prepare
     from tvboptim.experimental.network_dynamics.dynamics.tvb import JansenRit
@@ -405,7 +404,6 @@ def test_tbptt_differentiation(eager):
     exp.integration.differentiation = Differentiation(truncation_window=WINDOW_MS, mode="reverse")
     exp.configure()
 
-    # the backend-neutral config must lower to the native truncated-BPTT solver
     code = exp.render_code("tvboptim")
     assert f"grad_horizon={W}" in code, "differentiation did not lower to grad_horizon"
 
@@ -432,10 +430,7 @@ def test_tbptt_differentiation(eager):
     assert_identical("TBPTT forward (grad_horizon)", sim_tvbo[:, :n, :], sim_ref[:, :n, :])
 
 
-# =============================================================================
-# TBPTT analysis observations (Lyapunov, AD gradient) — the run_motivation diagnostics declared as tvbo `analysis` metadata.
-#
-# These run under JIT, not the `eager` fixture: pure-eager reverse-mode / JVP over the integration scan dispatches millions of primitives per step and is intractable. Under JIT the generated analysis code and the hand-written reference still agree to float precision, because both build the analysis solver with the identical plain Heun (the truncation window is an optimization knob, not part of the diagnostic — it does not touch the forward pass).
+# TBPTT analysis observations (Lyapunov, AD gradient) — the run_motivation diagnostics declared as tvbo `analysis` metadata
 def _tbptt_reference_network(weights, labels, transient, dt, G=8.0):
     """Warmed-up Jansen-Rit reference network matching the TBPTT YAML."""
     from tvboptim.experimental.network_dynamics import Network, prepare
@@ -578,8 +573,9 @@ def test_tbptt_fd_gradient():
 def test_tbptt_optimization():
     """Fit G to empirical FC, both descent legs, tvbo vs hand-written run_optim.
 
-    `integration.differentiation` drives the descent: reverse + truncation_window ->
-    `Heun(grad_horizon=W)` + optimizer mode 'rev' (TBPTT); forward + no window -> plain `Heun()` + mode 'fwd' (exact untruncated full AD). Runs under JIT.
+    `integration.differentiation` drives the descent: reverse + truncation_window -> `Heun(grad_horizon=W)` + optimizer mode 'rev' (TBPTT); forward + no window -> plain `Heun()` + mode 'fwd' (exact untruncated full AD). Runs under JIT.
+
+    ``G0`` is where the descent begins: it must match the YAML ``fit_G`` free-parameter ``initial_value`` (5.0), not the base or warm-up coupling G (8.0, used only to build the reference history in ``_tbptt_reference_network``).
     """
     import optax
     import jax.numpy as jnp
@@ -592,8 +588,6 @@ def test_tbptt_optimization():
     from tvboptim.types import Parameter
 
     T1, TRANSIENT, DT, SKIP = 7200.0, 300.0, 1.0, 2
-    # G0 is where the descent begins — it must match the YAML fit_G free-parameter
-    # `initial_value` (5.0), NOT the base/warm-up coupling G (8.0, used only to build the reference history in _tbptt_reference_network).
     LR, MAX_STEPS, G0, W = 1.0, 4, 5.0, 100
 
     def _leg(diff, ref_solver, mode):
@@ -634,8 +628,7 @@ def test_tbptt_optimization():
 
 
 def test_tbptt_gsweep_runs():
-    """G-sweep exploration smoke test. The per-point observable (FC-RMSE via compute_all_observations) is byte-identical to the diagnostics; the full-sweep
-    grid can't be asserted byte-identical (eager pmap times out, JIT drifts per stiff grid point), so this just checks the sweep runs and stays finite."""
+    """G-sweep exploration smoke test: the sweep runs and every grid point stays finite."""
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "TBPTT_JansenRit_FC_Optimization.yaml"))
     exp.integration.duration = 7200.0
     exp.integration.transient_time = 300.0
@@ -648,9 +641,10 @@ def test_tbptt_gsweep_runs():
 
 
 def test_tbptt_motivation_sweep_records_diagnostics():
-    """`record:` exploration that sweeps the diagnostics themselves (loss + AD/FD gradient + Lyapunov) per G — the declarative run_motivation probe. Smoke test:
-    each recorded diagnostic comes back as a finite length-n_G array, and the two signature phenomena hold (the exact AD gradient blows up somewhere the FD ground
-    truth stays bounded; the Lyapunov exponent crosses zero into chaos)."""
+    """`record:` exploration that sweeps the diagnostics themselves (loss + AD/FD gradient + Lyapunov) per G — the declarative run_motivation probe.
+
+    Smoke test: each recorded diagnostic comes back as a finite length-n_G array, and the two signature phenomena hold (the exact AD gradient blows up somewhere the FD ground truth stays bounded; the Lyapunov exponent crosses zero into chaos).
+    """
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "TBPTT_JansenRit_FC_Optimization.yaml"))
     exp.integration.duration = 3600.0
     exp.integration.transient_time = 300.0
@@ -736,9 +730,8 @@ def test_ei_trajectory(eager):
     class EIBcoup(InstantaneousCoupling):
         N_OUTPUT_STATES = 2
         DEFAULT_PARAMS = Bunch(wLRE=1.0, wFFI=1.0)
-        # wLRE/wFFI are per-edge (n_nodes, n_nodes) weight matrices; the tvboptim
-        # 0.4.0 contract requires graph-shaped params declared so the base class aligns them to the message axes before pre().
         EDGE_PARAMS = ("wLRE", "wFFI")
+        """wLRE and wFFI are per-edge (n_nodes, n_nodes) weight matrices; the tvboptim 0.4.0 contract requires graph-shaped params to be declared so the base class aligns them to the message axes before ``pre()``."""
 
         def __init__(self, **kwargs):
             super().__init__(incoming_states=["S_e"], **kwargs)
@@ -771,8 +764,7 @@ def test_ei_trajectory(eager):
     assert_identical("EI bold", bold_tvbo, bold_ref)
 
 
-# Bayesian inference — Stimulation_with_Bayesian_Inference (numpyro NUTS).
-# The forward model is byte-identical to a hand-built tvboptim reference; since the observed data, likelihood, priors, and NUTS setup all match, the posterior is too.
+# Bayesian inference — Stimulation_Bayesian_Inference (numpyro NUTS)
 def _bayesian_reference_forward():
     """tvboptim-native forward at the true (declared) params -> recorded_ts."""
     import jax.numpy as jnp
@@ -796,6 +788,10 @@ def _bayesian_reference_forward():
 
 
 def test_bayesian_forward_byte_identity(eager):
+    """The Bayesian workflow's forward model matches a hand-built tvboptim reference.
+
+    Byte-identity of the forward model is what makes the posterior comparable: the observed data, likelihood, priors and NUTS setup all match, so an identical forward pass implies an identical posterior and the inference test only has to smoke-check recovery and steering.
+    """
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Stimulation_Bayesian_Inference.yaml"))
     exp.configure()
     rec_tvbo = np.asarray(exp.run("tvboptim", mode="simulation").observations.recorded_ts.data).ravel()
@@ -831,9 +827,7 @@ def test_bayesian_inference_recovers_and_steers():
     assert post["scenario_C"][1].std() < post["scenario_A"][1].std(), "prior-steering (I) not observed"
 
 
-# Hopf Pareto — SupHopf, NSGA-II multi-objective (FC vs frequency gradient)
-# + per-Pareto-seed parallel gradient refinement. Replicates tvboptim
-# Hopf_Pareto_ParallelOpt. The GA/refine run under ParallelExecution (pmap), so those are asserted under JIT (eager pmap is intractable); the trajectory and frequency observations are eager like the other workflows.
+# Hopf Pareto — SupHopf, NSGA-II multi-objective (FC vs frequency gradient) plus per-Pareto-seed parallel gradient refinement; replicates tvboptim Hopf_Pareto_ParallelOpt
 import copy as _copy
 
 
@@ -915,7 +909,10 @@ def test_hopf_bold_and_fc():
 
 
 def test_hopf_ga_pareto_and_refine():
-    """Stage 0 (NSGA-II front) + Stage 1 (per-seed refine) byte-identical to the reference."""
+    """Stage 0 (NSGA-II front) + Stage 1 (per-seed refine) byte-identical to the reference.
+
+    The GA and the refinement both run under ``ParallelExecution`` (pmap), so this comparison is made under JIT — eager pmap is intractable — while the Hopf trajectory and frequency observations stay eager like the other workflows.
+    """
     import jax.numpy as jnp
     import optax
     from tvboptim.observations.tvb_monitors.bold import HRFBold
@@ -1021,12 +1018,11 @@ def test_hopf_ga_pareto_and_refine():
         assert_identical("Hopf refine omega", np.asarray(tr.omega_final), np.asarray(rr["om"]), atol=1e-10)
 
 
-# EI_Tuning — the gradient optimization must RUN (not just the trajectory).
-# Guards a wrapping crash class the byte-identity trajectory tests don't cover:
-# an aggregated observable (mean_activity — time axis collapsed to a per-node value) must reach the loss as a plain array, not a re-wrapped NativeSolution (`mean_activity + target` would raise "unsupported operand ... 'NativeSolution'").
-# Fixed two ways, complementary: the observation template returns raw for a collapsed aggregation (producer, root cause), and the loss-builder unwraps
-# `.data` (consumer). This test passes on either fix and pins the class.
 def test_ei_optimization_runs():
+    """EI_Tuning: the gradient optimization must run, not just the trajectory.
+
+    Guards a wrapping crash class the byte-identity trajectory tests do not cover: an aggregated observable (``mean_activity`` — time axis collapsed to a per-node value) must reach the loss as a plain array, not a re-wrapped ``NativeSolution``, or ``mean_activity + target`` raises "unsupported operand ... 'NativeSolution'". Two complementary places satisfy that: the observation template returns raw for a collapsed aggregation (producer, root cause) and the loss-builder unwraps ``.data`` (consumer). The test passes on either, so it pins the failure class rather than one mechanism.
+    """
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "EI_Tuning_FIC_EIB_Optimization.yaml"))
     exp.integration.duration = 2000.0
     exp.integration.transient_time = 2000.0
@@ -1064,9 +1060,7 @@ def test_ei_optimization_runs():
 def test_delay_speed_trajectory(eager):
     """Delayed Kuramoto on a DenseLengthGraph: tvbo codegen == native tvboptim.
 
-    Guards the length-graph delay path. Because the connectome carries tract lengths, tvbo lowers the delayed coupling onto a ``DenseLengthGraph`` (delays
-    = lengths / conduction_speed, so the conduction speed is a live graph leaf).
-    The generated trajectory must be byte-identical to a hand-written native tvboptim delayed-Kuramoto run over the same length graph.
+    Guards the length-graph delay path. Because the connectome carries tract lengths, tvbo lowers the delayed coupling onto a ``DenseLengthGraph`` (delays = lengths / conduction_speed, so the conduction speed is a live graph leaf). The generated trajectory must be byte-identical to a hand-written native tvboptim delayed-Kuramoto run over the same length graph.
     """
     import jax.numpy as jnp
 
@@ -1114,8 +1108,7 @@ def test_delay_speed_trajectory(eager):
 def test_delay_speed_sweep_runs():
     """The conduction_speed sweep drives the DenseLengthGraph `speed` leaf.
 
-    Not a byte-identity assertion (eager pmap under jax.disable_jit is prohibitively slow): confirms the generated exploration code runs, and that varying the
-    conduction speed varies the order parameter (the sweep is not silently inert).
+    Confirms the generated exploration code runs and that varying the conduction speed varies the order parameter, so the sweep is not silently inert.
     """
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Delay_Speed_Synchronization.yaml"))
     exp.integration.duration = 200.0
@@ -1127,7 +1120,6 @@ def test_delay_speed_sweep_runs():
     assert not np.allclose(grid.ravel(), grid.ravel()[0]), "conduction_speed sweep is inert"
 
 
-# A 2-node network whose edges carry explicit `delay` attributes and NO tract lengths. This is the DenseDelayGraph branch of graph selection: with no lengths to derive delays from a conduction speed, tvbo uses the per-edge delays directly.
 _DELAY_ONLY_EXPERIMENT = """
 id: 9
 dynamics:
@@ -1154,14 +1146,13 @@ coupling:
   local_states: [theta]
 integration: {method: Heun, duration: 100.0, step_size: 0.5, transient_time: 0.0}
 """
+"""A 2-node network whose edges carry explicit ``delay`` attributes and no tract lengths. This is the DenseDelayGraph branch of graph selection: with no lengths to derive delays from a conduction speed, tvbo uses the per-edge delays directly."""
 
 
 def test_delay_only_graph_trajectory(eager, tmp_path):
     """Delay-only network (explicit edge delays, no lengths): DenseDelayGraph path.
 
-    Complements the length-graph tests: when the network carries only per-edge
-    `delay` attributes, tvbo must select a ``DenseDelayGraph`` over those delays (not a length graph). The generated trajectory must be byte-identical to a
-    native tvboptim ``DenseDelayGraph`` run with the same delays.
+    Complements the length-graph tests: when the network carries only per-edge ``delay`` attributes, tvbo must select a ``DenseDelayGraph`` over those delays rather than a length graph. The generated trajectory must be byte-identical to a native tvboptim ``DenseDelayGraph`` run with the same delays.
     """
 
     import jax.numpy as jnp

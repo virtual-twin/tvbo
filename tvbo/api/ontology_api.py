@@ -94,8 +94,7 @@ def ontoclass2dict(ontoclass):
 class OntologyAPI:
     """Query the ontology and build graph data for the front end.
 
-    Wraps the module-level ontology graph and exposes methods to search for terms and to expand a node's children or parents, accumulating the visited
-    nodes and edges into a `{"nodes", "links"}` structure suitable for serialisation to a UI.
+    Wraps the module-level ontology graph and exposes methods to search for terms and to expand a node's children or parents, accumulating the visited nodes and edges into a `{"nodes", "links"}` structure suitable for serialisation to a UI.
 
     Attributes:
         edges: Set of `(source, target, type)` triplets between node storids.
@@ -143,8 +142,7 @@ class OntologyAPI:
     def print_triplets(self):
         """Print each accumulated edge as a subject-predicate-object triplet.
 
-        Resolves the source and target storids of every edge in `self.edges` back to their ontology entities and prints them alongside the edge
-        type. Intended for interactive debugging.
+        Resolves the source and target storids of every edge in `self.edges` back to their ontology entities and prints them alongside the edge type. Intended for interactive debugging.
         """
         for e in self.edges:
             print(
@@ -163,8 +161,7 @@ class OntologyAPI:
     def update_graph(self):
         """Rebuild the serialisable graph from the current nodes and edges.
 
-        Refreshes interrelationships via `update_interrelationships`, then assembles `self.graph` with a `"nodes"` list of node dictionaries and a
-        `"links"` list of `{"source", "target", "type"}` edge dictionaries.
+        Refreshes interrelationships via `update_interrelationships`, then assembles `self.graph` with a `"nodes"` list of node dictionaries and a `"links"` list of `{"source", "target", "type"}` edge dictionaries.
 
         Returns:
             The assembled graph dictionary.
@@ -180,9 +177,7 @@ class OntologyAPI:
     def add_children(self, node_id):
         """Add a node's children and required nodes, then refresh the graph.
 
-        Inserts every successor of `node_id` in the ontology graph into
-        `self.nodes`, and adds each entity referenced by the node's `requires` property together with a `"requires"` edge. Finally rebuilds the graph
-        via `update_graph`.
+        Inserts every successor of `node_id` in the ontology graph into `self.nodes`, and adds each entity referenced by the node's `requires` property together with a `"requires"` edge. Finally rebuilds the graph via `update_graph`.
 
         Args:
             node_id: Storid of the node whose children to add.
@@ -198,8 +193,7 @@ class OntologyAPI:
     def add_parents(self, node_id):
         """Add a node's parent nodes, then refresh the graph.
 
-        Inserts every predecessor of `node_id` in the ontology graph into
-        `self.nodes` and rebuilds the graph via `update_graph`.
+        Inserts every predecessor of `node_id` in the ontology graph into `self.nodes` and rebuilds the graph via `update_graph`.
 
         Args:
             node_id: Storid of the node whose parents to add.

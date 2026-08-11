@@ -1,11 +1,8 @@
 """``execution.accelerator`` decides the JAX platform, and it must be pinned before import.
 
-JAX fixes its platform the first time it initialises, so a generated script has exactly one chance to honour the declaration: an ``os.environ.setdefault("JAX_PLATFORMS", ...)``
-emitted above ``import jax``. That makes the line load-bearing rather than cosmetic — if it is missing, or names the wrong platform, the run silently lands on whatever
-device JAX picked and nothing downstream can move it.
+JAX fixes its platform the first time it initialises, so a generated script has exactly one chance to honour the declaration: an ``os.environ.setdefault("JAX_PLATFORMS", ...)`` emitted above ``import jax``. That makes the line load-bearing rather than cosmetic — if it is missing, or names the wrong platform, the run silently lands on whatever device JAX picked and nothing downstream can move it.
 
-The mapping itself lives in one helper (:func:`tvbo.templates.tvboptim.utils.jax_platform`) because three call sites need it — both codegen templates and the in-process analysis
-renderer — and a fourth spelling of ``gpu -> cuda`` is how they drift apart.
+The mapping itself lives in one helper (:func:`tvbo.templates.tvboptim.utils.jax_platform`) because three call sites need it — both codegen templates and the in-process analysis renderer — and a fourth spelling of ``gpu -> cuda`` is how they drift apart.
 """
 
 import pytest

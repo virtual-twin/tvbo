@@ -1,12 +1,9 @@
 """Validate every YAML in tvbo/database/ against the shipped JSON Schema.
 
-Each YAML file in a known subdirectory is loaded and validated against the corresponding target LinkML class. The test parametrizes over every file so
-that failures point directly at the offending file.
+Each YAML file in a known subdirectory is loaded and validated against the corresponding target LinkML class. The test parametrizes over every file so that failures point directly at the offending file.
 
-Validation goes through the *shipped* ``tvbo/datamodel/tvbo_datamodel.schema.json`` (generated from the LinkML source by ``hatch_build.py``) and the lightweight
-``jsonschema`` library — exactly the path the ``tvbo validate schema`` CLI takes.
-Using the shipped artifact rather than re-running LinkML's runtime validator keeps one validation source of truth (the test can no longer pass while the CLI fails, or
-vice-versa) and avoids importing ``linkml`` here, whose enums are mutated to an unhashable form once ``tvbo`` is imported elsewhere in a combined test run.
+Validation goes through the *shipped* ``tvbo/datamodel/tvbo_datamodel.schema.json`` (generated from the LinkML source by ``hatch_build.py``) and the lightweight ``jsonschema`` library — exactly the path the ``tvbo validate schema`` CLI takes.
+Using the shipped artifact rather than re-running LinkML's runtime validator keeps one validation source of truth (the test can no longer pass while the CLI fails, or vice-versa) and avoids importing ``linkml`` here, whose enums are mutated to an unhashable form once ``tvbo`` is imported elsewhere in a combined test run.
 """
 
 import json

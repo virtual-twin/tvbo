@@ -1,8 +1,8 @@
 """Schema-declared ``aliases:`` work at load time, and only where they apply.
 
-LinkML ``aliases:`` are metadata — its loaders key on the canonical slot name — so a declared alias is inert and raises ``unexpected keyword argument`` unless something
-resolves it. Resolution happens in each generated class's ``__init__`` (``hatch_build._alias_support``), where the kwargs are known to belong to that class:
-no document traversal, and a free-form key can never be mistaken for a slot.
+LinkML ``aliases:`` are metadata — its loaders key on the canonical slot name — so a declared alias is inert and raises ``unexpected keyword argument`` unless something resolves it. Resolution happens in each generated class's ``__init__`` (``hatch_build._alias_support``), where the kwargs are known to belong to that class: no document traversal, and a free-form key can never be mistaken for a slot.
+
+The strict pydantic models (``extra='forbid'``) cannot fold in ``__init__``, so ``pydantic_loader`` folds the aliases in ``_inject`` from the same ``_SLOT_ALIASES`` table. Without that the validator rejects documents the dataclass loader accepts — the two paths must agree.
 """
 
 import pytest
@@ -70,8 +70,7 @@ def test_an_alias_is_scoped_to_the_class_that_declares_it():
 def test_a_user_key_that_collides_with_an_alias_is_left_alone():
     """The reason the fold is class-scoped rather than context-free.
 
-    ``dt`` aliases ``Integrator.step_size`` and ``components`` aliases
-    ``Dynamics.modes``, but both are ordinary strings a recipe may use as a parameter name or a free-form key. A context-free rename silently rewrites those.
+    ``dt`` aliases ``Integrator.step_size`` and ``components`` aliases ``Dynamics.modes``, but both are ordinary strings a recipe may use as a parameter name or a free-form key. A context-free rename silently rewrites those.
     """
     exp = SimulationExperiment.from_string(
         _BASE + "integration: {dt: 0.05}\nnetwork: {number_of_nodes: 1, nodes: [{id: 0}]}\n"
@@ -127,9 +126,7 @@ def test_scalar_shortcut_leaves_a_collection_list_alone():
 
 
 def test_scalar_shortcut_keeps_keyed_list_scalars_as_identifiers():
-    """``arguments: [v]`` is the list spelling of a NAME-KEYED collection, so ``v`` is the argument's name — not a value to wrap. Lifting it to ``{value: v}`` mislabelled ``v`` as
-    ``value`` and stranded the real name in ``description``, generating ``def Sigm(value)`` with a body that still referenced ``v`` (``NameError: name 'v' is not defined``). A
-    non-keyed list (``additional_equations``) still lifts each element."""
+    """``arguments: [v]`` is the list spelling of a NAME-KEYED collection, so ``v`` is the argument's name — not a value to wrap. Lifting it to ``{value: v}`` mislabelled ``v`` as ``value`` and stranded the real name in ``description``, generating ``def Sigm(value)`` with a body that still referenced ``v`` (``NameError: name 'v' is not defined``). A non-keyed list (``additional_equations``) still lifts each element."""
     from tvbo.datamodel.schema import Function, _lift_scalar
 
     fn = Function(name="Sigm", arguments=["v"])
@@ -161,8 +158,7 @@ def test_edge_source_and_target_variable_fold_to_the_edge_slots():
 
 
 def test_boundaries_still_implies_clamp_and_domain_still_does_not():
-    """Clamping is never a default: only ``enforce: clamp`` and the legacy
-    ``boundaries`` spelling (a hard clamp in TVB) constrain a trajectory."""
+    """Clamping is never a default: only ``enforce: clamp`` and the legacy ``boundaries`` spelling (a hard clamp in TVB) constrain a trajectory."""
     from tvbo.utils import domain_enforcement
 
     def enforce(spec):
@@ -196,8 +192,6 @@ def test_conflicting_alias_and_canonical_keeps_the_canonical():
 
 
 # ── the same aliases fold on the pydantic validation path ────────────
-#
-# The dataclasses fold aliases in ``__init__``; the strict pydantic models (``extra='forbid'``) can't, so ``pydantic_loader`` folds them in ``_inject`` from the same ``_SLOT_ALIASES`` table. Without that the validator rejects documents the dataclass loader accepts — the two must agree.
 
 
 def _pyd(yaml_text, target="SimulationExperiment"):
@@ -213,8 +207,7 @@ def test_pydantic_loader_accepts_dt_righthandside_and_number_of_regions():
 
 
 def test_pydantic_loader_folds_are_class_scoped():
-    """Same scoping as the dataclass path: ``Edge`` folds ``source_variable`` /
-    ``target_variable``, a stimulus ``Event`` keeps ``target_variable`` canonical."""
+    """Same scoping as the dataclass path: ``Edge`` folds ``source_variable`` / ``target_variable``, a stimulus ``Event`` keeps ``target_variable`` canonical."""
     exp = _pyd(
         _BASE + "network: {number_of_nodes: 2, edges: [{source: 0, target: 1, "
         "source_variable: V, target_variable: W}]}\n"

@@ -41,8 +41,7 @@ _CATEGORIES = {
 def local_name(iri: str) -> str:
     """Strip an optional ``prefix:`` from a CURIE / IRI, returning the local name.
 
-    ``tvbo:KuramotoCoupling`` -> ``KuramotoCoupling``; a bare name is returned unchanged. Single source of truth for CURIE-prefix stripping, so the
-    class-layer ``_iri_local`` helpers don't each re-implement it.
+    ``tvbo:KuramotoCoupling`` -> ``KuramotoCoupling``; a bare name is returned unchanged. Single source of truth for CURIE-prefix stripping, so the class-layer ``_iri_local`` helpers don't each re-implement it.
     """
     return iri.split(":", 1)[-1] if ":" in iri else iri
 

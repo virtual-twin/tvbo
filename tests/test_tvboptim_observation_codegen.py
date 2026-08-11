@@ -78,6 +78,10 @@ def test_tvboptim_uses_native_monitors_for_tvb_class_references():
 
 
 def test_tvboptim_observations_match_native_tvb():
+    """The tvboptim and TVB backends return the same observations under the same experiment.
+
+    The tolerance is loose on purpose: two independent float64 Heun implementations (TVB's NumPy path and tvboptim's JAX path) sum and multiply in different orders, so identical maths diverges at the ULP level and accumulates linearly. ~1e-3 covers 10000 dt=0.1 steps; tighten it if either backend's integrator changes.
+    """
     pytest.importorskip("tvb")
     pytest.importorskip("tvboptim")
 
@@ -102,6 +106,4 @@ def test_tvboptim_observations_match_native_tvb():
     ]
     for tvboptim_data, tvb_data in comparisons:
         tvboptim_data, tvb_data = _aligned_observation_data(tvboptim_data, tvb_data)
-        # Two independent float64 Heun implementations (TVB's NumPy path and tvboptim's JAX path) sum/multiply in different orders, so identical math diverges at the ULP level and accumulates linearly. ~1e-3 covers
-        # 10000 dt=0.1 steps; tighten if either backend's integrator changes.
         np.testing.assert_allclose(tvboptim_data, tvb_data, rtol=2e-3, atol=1e-4)

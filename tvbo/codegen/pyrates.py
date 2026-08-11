@@ -106,10 +106,8 @@ def _extract_sign_arg(cond):
 def _convert_piecewise(pw):
     """Rewrite a ``Piecewise`` as sign arithmetic, which PyRates can evaluate.
 
-    ``Piecewise((a, x > c), (b, True))`` becomes
-    ``(a + b)/2 + (a - b)/2 * sign(x - c)``; a ``<`` comparison flips the sign term.
-    Extra branches nest from the last backwards. A branch whose condition is not a simple relational cannot be expressed this way, and the original is returned
-    untouched so the failure surfaces in PyRates rather than as a silent misread.
+    ``Piecewise((a, x > c), (b, True))`` becomes ``(a + b)/2 + (a - b)/2 * sign(x - c)``; a ``<`` comparison flips the sign term.
+    Extra branches nest from the last backwards. A branch whose condition is not a simple relational cannot be expressed this way, and the original is returned untouched so the failure surfaces in PyRates rather than as a silent misread.
     """
     import sympy
 
@@ -151,9 +149,7 @@ def _renamed_scope(model) -> dict:
 
     Equations are sympified against this so a declared name shadows SymPy's globals — without it PinskyRinzelCA3's ``chi`` parses as the hyperbolic cosine integral.
 
-    The rebuild is what makes renaming survive the round trip. Binding the safe name to the *original* symbol makes ``sympify("gamma_")`` return ``Symbol("gamma")``, which
-    prints back as ``gamma`` and undoes the rename — the equation then said ``gamma*x`` while the variable block declared ``gamma_``, and PyRates resolved the orphaned
-    ``gamma`` to SymPy's gamma function.
+    The rebuild is what makes renaming survive the round trip. Binding the safe name to the *original* symbol makes ``sympify("gamma_")`` return ``Symbol("gamma")``, which prints back as ``gamma`` and undoes the rename — the equation then said ``gamma*x`` while the variable block declared ``gamma_``, and PyRates resolved the orphaned ``gamma`` to SymPy's gamma function.
     """
     import sympy
 
@@ -172,8 +168,7 @@ def _renamed_scope(model) -> dict:
 def operator_template(model, op_name: str | None = None) -> dict:
     """Resolve a Dynamics model into the fields of a PyRates ``OperatorTemplate``.
 
-    Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined
-    (PyRates YAML has no user functions), and unsupported constructs are rewritten by
+    Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined (PyRates YAML has no user functions), and unsupported constructs are rewritten by
     :func:`_pyrates_compatible`.
 
     Equations are sympified against :func:`_renamed_scope`, keyed by the renamed spelling because renaming has already been applied to the equation strings.
@@ -543,8 +538,7 @@ def _pyrates_yaml_to_dynamics_dict(yaml_data: dict) -> dict:
 def _parse_single_operator(template_name: str, template_def: dict) -> dict:
     """Parse a single OperatorTemplate into a Dynamics-compatible dict.
 
-    Automatically reverses PYRATES_REPL renames (e.g. ``y_`` -> ``y``,
-    ``gamma_`` -> ``gamma``) so that round-tripped models recover the original TVBO variable names.
+    Automatically reverses PYRATES_REPL renames (e.g. ``y_`` -> ``y``, ``gamma_`` -> ``gamma``) so that round-tripped models recover the original TVBO variable names.
     """
     state_variables = {}
     parameters = {}

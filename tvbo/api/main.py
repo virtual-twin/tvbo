@@ -1,7 +1,6 @@
 """FastAPI application exposing the TVBO ontology and simulation experiment endpoints.
 
-Defines the top-level `app`, wires in the network, dynamics, and experiment sub-routers, and provides ontology search/query endpoints plus routes to
-configure and run [`SimulationExperiment`](/api/classes/experiment.qmd) instances.
+Defines the top-level `app`, wires in the network, dynamics, and experiment sub-routers, and provides ontology search/query endpoints plus routes to configure and run [`SimulationExperiment`](/api/classes/experiment.qmd) instances.
 """
 
 from typing import List, Optional
@@ -52,8 +51,7 @@ class RunExperimentResponse(BaseModel):
 class SimulationMetadata(BaseModel):
     """Legacy request payload describing a simulation configuration.
 
-    Retained for backwards compatibility with clients that submit the model, connectivity, coupling, and integration blocks separately rather than as a
-    single experiment dictionary.
+    Retained for backwards compatibility with clients that submit the model, connectivity, coupling, and integration blocks separately rather than as a single experiment dictionary.
 
     Args:
         model: Dynamics/model configuration block.

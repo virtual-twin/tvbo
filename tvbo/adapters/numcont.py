@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """Self-contained AUTO-07p (numcont) backend adapter for SimulationExperiment.
 
-This adapter does NOT depend on any external `numcont` package. It uses the `auto-07p` Python bindings directly (`auto.run`, `auto.sv`,
-`auto.loadbd`, `auto.merge`) and the Mako template at
-``tvbo/templates/numcont/tvbo-auto7p.py.mako`` to emit the model `.f90` file consumed by AUTO.
+This adapter does NOT depend on any external `numcont` package. It uses the `auto-07p` Python bindings directly (`auto.run`, `auto.sv`, `auto.loadbd`, `auto.merge`) and the Mako template at ``tvbo/templates/numcont/tvbo-auto7p.py.mako`` to emit the model `.f90` file consumed by AUTO.
 
 Requires the ``AUTO_DIR`` environment variable to point at an installed auto-07p tree (validated via :func:`tvbo.utils.auto.check_auto_dir`).
 """
@@ -48,8 +46,7 @@ def _build_unames(model) -> dict[int, str]:
 def _schema_initial_values(model) -> np.ndarray:
     """Initial state from model state-variable defaults.
 
-    Reads ``StateVariable.initial_value`` (the canonical schema field, per
-    ``schema/tvbo_datamodel.yaml:1346-1348``) with ``StateVariable.value`` as a legacy fallback for older models. Defaults to 0.0 when neither is set.
+    Reads ``StateVariable.initial_value`` (the canonical schema field, per ``schema/tvbo_datamodel.yaml:1346-1348``) with ``StateVariable.value`` as a legacy fallback for older models. Defaults to 0.0 when neither is set.
     """
     n = len(model.state_variables)
     x0 = np.zeros(n)
@@ -321,11 +318,8 @@ class NumContAdapter:
     def _run_codim2_branches(self, *, auto, R_eq, cont, fp_name, kwargs_eq):
         """Run codim-2 fold/Hopf/BP continuations declared via ``cont.branches``.
 
-        Each :class:`~tvbo.classes.continuation.BranchSwitch` with
-        ``source_point`` of the form ``'fold:N'`` / ``'fold:all'`` /
-        ``'fold:-1'`` (or ``hopf:`` / ``bp:`` analogues) triggers a separate
-        AUTO restart from that special point with ``ISW=2`` (fold/Hopf continuation) and two free parameters drawn from the sub-
-        continuation's ``free_parameters`` slot.
+        Each :class:`~tvbo.classes.continuation.BranchSwitch` with ``source_point`` of the form ``'fold:N'`` / ``'fold:all'`` / ``'fold:-1'`` (or ``hopf:`` / ``bp:`` analogues) triggers a separate
+        AUTO restart from that special point with ``ISW=2`` (fold/Hopf continuation) and two free parameters drawn from the sub- continuation's ``free_parameters`` slot.
 
         Returns a list of ``(name, source_type, fp1_name, fp2_name, R_c2)`` tuples consumed by :meth:`BifurcationResult.from_auto`.
         """

@@ -4,8 +4,7 @@ These pin the contract `Noise.covariance` + `Noise.correlated_over` promise — 
 *sampled* increments really carry the declared second-order structure — rather than
 merely that a run completes. A diagonal approximation would pass a "does it run" check while quietly changing the science.
 
-The mechanism is a solver wrapper (tvbo's concrete implementation against tvboptim's
-`NativeSolver` contract), so the tests exercise it through `step`, which is the one path every network shape shares.
+The mechanism is a solver wrapper (tvbo's concrete implementation against tvboptim's `NativeSolver` contract), so the tests exercise it through `step`, which is the one path every network shape shares.
 """
 
 import numpy as np

@@ -1,27 +1,17 @@
 """Correlated-noise lowering: a declared covariance becomes a Wiener-increment mixer.
 
-`Noise.covariance` states the second-order structure of the driving process across the axis named by `Noise.correlated_over` — mathematics, not a factorisation. Turning that
-statement into samples is a backend concern, and this module is tvbo's concrete implementation of it for the JAX/tvboptim path.
+`Noise.covariance` states the second-order structure of the driving process across the axis named by `Noise.correlated_over` — mathematics, not a factorisation. Turning that statement into samples is a backend concern, and this module is tvbo's concrete implementation of it for the JAX/tvboptim path.
 
-It is built the way tvbo extends every backend: tvboptim supplies the abstract framework (`NativeSolver`, its `step` contract), and tvbo emits a concrete implementation against
-it. :class:`CorrelatedNoiseSolver` wraps any native solver and mixes the increment before delegating, exactly as tvboptim's own `BoundedSolver` wraps one and clips after. Because
-every integration path — the codegen template, the in-process heterogeneous runner, homogeneous and grouped networks alike — funnels its increment through `solver.step`,
-one wrapper covers all of them and there is no second mechanism to keep in sync.
+It is built the way tvbo extends every backend: tvboptim supplies the abstract framework (`NativeSolver`, its `step` contract), and tvbo emits a concrete implementation against it. :class:`CorrelatedNoiseSolver` wraps any native solver and mixes the increment before delegating, exactly as tvboptim's own `BoundedSolver` wraps one and clips after. Because every integration path — the codegen template, the in-process heterogeneous runner, homogeneous and grouped networks alike — funnels its increment through `solver.step`, one wrapper covers all of them and there is no second mechanism to keep in sync.
 
-Mixing iid draws by a factor ``L`` with ``L Lᵀ = C`` yields increments with covariance
-``C`` along the chosen axis. Which factor is used is deliberately invisible to the spec:
-Cholesky when ``C`` is positive definite, a symmetric eigendecomposition when it is only positive semi-definite (a rank-deficient covariance is legitimate — it says fewer
-independent sources than elements).
+Mixing iid draws by a factor ``L`` with ``L Lᵀ = C`` yields increments with covariance ``C`` along the chosen axis. Which factor is used is deliberately invisible to the spec:
+Cholesky when ``C`` is positive definite, a symmetric eigendecomposition when it is only positive semi-definite (a rank-deficient covariance is legitimate — it says fewer independent sources than elements).
 
 The declared reading is that σ carries the amplitude and ``C`` the correlation, so the realised covariance is ``diag(σ) C diag(σ) dt`` — for a scalar σ, ``σ² dt C``.
 
-That composition is ``diag(σ) L``, NOT ``L diag(σ)``. The two agree exactly when σ is uniform along the mixed axis, which is why a per-node covariance with a scalar amplitude is
-insensitive to the difference; they diverge when σ varies along that axis, and there the wrong order is not a small error but a silent loss of the process. With a rank-deficient
-``C`` — one independent source shared by two states, say — ``L``'s surviving column is placed by the eigendecomposition, and multiplying by a σ that is zero on the states the
-column happens to land on annihilates the increment entirely.
+That composition is ``diag(σ) L``, NOT ``L diag(σ)``. The two agree exactly when σ is uniform along the mixed axis, which is why a per-node covariance with a scalar amplitude is insensitive to the difference; they diverge when σ varies along that axis, and there the wrong order is not a small error but a silent loss of the process. With a rank-deficient ``C`` — one independent source shared by two states, say — ``L``'s surviving column is placed by the eigendecomposition, and multiplying by a σ that is zero on the states the column happens to land on annihilates the increment entirely.
 
-So the amplitude is folded into the covariance (:func:`fold_amplitudes`) and the increment arrives at unit amplitude, leaving the mixer to apply ``L'`` alone. Conjugating instead —
-``diag(σ) L diag(1/σ⁺)`` — looks equivalent and is not, for the same reason: it drops the draw components at the zero-σ indices, which is where the rank-deficient source lives.
+So the amplitude is folded into the covariance (:func:`fold_amplitudes`) and the increment arrives at unit amplitude, leaving the mixer to apply ``L'`` alone. Conjugating instead — ``diag(σ) L diag(1/σ⁺)`` — looks equivalent and is not, for the same reason: it drops the draw components at the zero-σ indices, which is where the rank-deficient source lives.
 """
 
 from __future__ import annotations
@@ -44,8 +34,7 @@ _PSD_RTOL = 1e-10
 def covariance_factor(cov, *, name: str = "covariance") -> np.ndarray:
     """A factor ``L`` with ``L Lᵀ = C``, after validating that ``C`` is a covariance.
 
-    Raises rather than silently repairing: a non-symmetric or indefinite matrix is a specification error, and letting it through would surface as NaNs deep inside a
-    jitted scan, far from the declaration that caused it.
+    Raises rather than silently repairing: a non-symmetric or indefinite matrix is a specification error, and letting it through would surface as NaNs deep inside a jitted scan, far from the declaration that caused it.
 
     Args:
         cov: Square, symmetric, positive semi-definite matrix.
@@ -89,9 +78,7 @@ def covariance_factor(cov, *, name: str = "covariance") -> np.ndarray:
 def fold_amplitudes(cov, sigmas, *, name: str = "covariance") -> np.ndarray:
     """``diag(σ) C diag(σ)`` — the declared covariance carried at each element's amplitude.
 
-    Folding the amplitude in here, and driving the increment at unit amplitude, is what makes the realised covariance ``diag(σ) C diag(σ)`` rather than ``L diag(σ²) Lᵀ``. The
-    two coincide for uniform σ, so this is a no-op wherever σ does not vary along the correlated axis; where it does vary, it is the difference between the declared process
-    and (for a rank-deficient ``C``) no process at all.
+    Folding the amplitude in here, and driving the increment at unit amplitude, is what makes the realised covariance ``diag(σ) C diag(σ)`` rather than ``L diag(σ²) Lᵀ``. The two coincide for uniform σ, so this is a no-op wherever σ does not vary along the correlated axis; where it does vary, it is the difference between the declared process and (for a rank-deficient ``C``) no process at all.
 
     Args:
         cov: The declared covariance, square in the correlated axis.
@@ -116,8 +103,7 @@ def fold_amplitudes(cov, sigmas, *, name: str = "covariance") -> np.ndarray:
 def _axis_position(axis: str) -> int:
     """The increment axis a `correlated_over` name indexes.
 
-    Raises for a name that is not an axis of the increment. `mode` gets its own message because the schema's own vocabulary offers it and the failure would otherwise read
-    as a typo: a multi-mode model carries its modes inside the state axis, so a modal covariance is declared over `state`, not over a mode axis that does not exist here.
+    Raises for a name that is not an axis of the increment. `mode` gets its own message because the schema's own vocabulary offers it and the failure would otherwise read as a typo: a multi-mode model carries its modes inside the state axis, so a modal covariance is declared over `state`, not over a mode axis that does not exist here.
     """
     key = str(axis)
     if key == "mode":
@@ -176,8 +162,7 @@ def noise_mixer(factor, axis: str = "node"):
 def CorrelatedNoiseSolver(base_solver, factor, axis: str = "node"):
     """Wrap a native solver so its Wiener increment carries a declared covariance.
 
-    tvboptim owns the integration step; this is tvbo's concrete solver against that abstract contract, mirroring the backend's own `BoundedSolver` (delegate, then
-    transform — here the increment on the way in rather than the state on the way out).
+    tvboptim owns the integration step; this is tvbo's concrete solver against that abstract contract, mirroring the backend's own `BoundedSolver` (delegate, then transform — here the increment on the way in rather than the state on the way out).
     Wrapping is the one place that works for every network shape, because the grouped and ungrouped scans both hand their increment to `solver.step`.
 
     Args:

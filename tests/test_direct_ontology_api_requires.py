@@ -1,8 +1,6 @@
 """``requires`` mixes entity references with bare LEMS exposure names.
 
-The NeuroML-core classes ingested into ``tvbo.owl`` declare their requirements by name — ``concentrationModel`` requires ``'surfaceArea'``, ``'iCa'`` — so the slot
-holds plain strings where the rest of the ontology holds entities. Serialising those with ``r.storid`` raised ``AttributeError: 'str' object has no attribute
-'storid'`` and took out every caller of :meth:`DirectOntologyAPI.search`, including the platform's whole-graph endpoint.
+The NeuroML-core classes ingested into ``tvbo.owl`` declare their requirements by name — ``concentrationModel`` requires ``'surfaceArea'``, ``'iCa'`` — so the slot holds plain strings where the rest of the ontology holds entities. Serialising those with ``r.storid`` raised ``AttributeError: 'str' object has no attribute 'storid'`` and took out every caller of :meth:`DirectOntologyAPI.search`, including the platform's whole-graph endpoint.
 
 The names are real data, so they must survive serialisation; they just have no node behind them, which is why the graph walk skips them.
 """

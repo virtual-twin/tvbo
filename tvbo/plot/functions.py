@@ -8,9 +8,7 @@
 """Plotting helpers for coupling functions and temporal equations.
 
 Renders TVBO ontology entities and SymPy expressions as matplotlib figures:
-`plot_coupling_function` draws a `CouplingFunction`'s response curve (2-D or
-3-D depending on the number of free symbols), and `plot_temporal_equation` draws a temporal equation over a time vector. Both substitute the curated
-default parameters from the ontology before evaluating.
+`plot_coupling_function` draws a `CouplingFunction`'s response curve (2-D or 3-D depending on the number of free symbols), and `plot_temporal_equation` draws a temporal equation over a time vector. Both substitute the curated default parameters from the ontology before evaluating.
 """
 
 from typing import Any, Optional
@@ -27,9 +25,7 @@ from tvbo.classes import equation as equations
 def plot_coupling_function(CF: Any, ax: Any = None):
     """Plot a `CouplingFunction`'s response curve over a sensible input range.
 
-    Picks the input domain based on the function's name (`±π` for Kuramoto,
-    `±1000` for Sigmoidal, `±10` otherwise), substitutes the curated default parameters, and renders the SymPy expression as a 1-D curve with a LaTeX
-    title.
+    Picks the input domain based on the function's name (`±π` for Kuramoto, `±1000` for Sigmoidal, `±10` otherwise), substitutes the curated default parameters, and renders the SymPy expression as a 1-D curve with a LaTeX title.
 
     Args:
         CF: The coupling function (an instance of `Coupling`-derived class
@@ -133,8 +129,7 @@ def plot_temporal_equation(
 ):
     """Plot a temporal equation (SymPy expression or ontology entity) over a time vector.
 
-    Substitutes ontology-curated default parameters (overridable via
-    `**kwargs`) and evaluates the expression pointwise at each value of *t_ms*.
+    Substitutes ontology-curated default parameters (overridable via `**kwargs`) and evaluates the expression pointwise at each value of *t_ms*.
 
     Args:
         EQ: A SymPy expression or an owlready2 class representing a temporal equation.
