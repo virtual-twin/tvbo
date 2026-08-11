@@ -149,6 +149,42 @@ def _inner_dims(post_trial_shape, ts_arr, declared=None):
     return dims, coords
 
 
+def _axis_size(ax) -> int:
+    """An axis's declared cell count, however the producer shaped it.
+
+    Mirrors the dict-or-attribute handling every other axis reader in this module uses, and falls back to ``len(explored_values)`` for an axis that carries values but no ``n``. Returns 0 when neither is available.
+    """
+    n = ax.get("n") if isinstance(ax, dict) else getattr(ax, "n", None)
+    if n:
+        return int(n)
+    vals = ax.get("explored_values") if isinstance(ax, dict) else getattr(ax, "explored_values", None)
+    return 0 if vals is None else int(np.asarray(vals).size)
+
+
+def _is_partial_shard(expl) -> bool:
+    """Whether *expl* holds one HPC array task's slice rather than a whole sweep.
+
+    Prefers the producer's own answer: the generated script has ``kwargs['shard']`` in hand and records it as ``is_shard``. Nothing downstream can re-derive that as reliably, so a declared value always wins.
+
+    The count-based fallback exists for results built before that slot, and asks whether the cells present are fewer than the Cartesian product of the axes. It is genuinely partial — it cannot see a *branch* shard, whose axis ``n`` is taken from the already-sliced index so the slice looks complete — which is exactly why the declared value is preferred rather than merely consulted.
+
+    What it must never do is read ``cell_coords`` as the marker: that field is present on EVERY keyed sweep, sharded or not (see :func:`_stacked_to_dataarray`), and reading it that way silently cost every local sweep its provenance sidecar.
+
+    Undecidable cases count as *not* a shard. One redundant sidecar beside a shard is recoverable; dropping the sidecar of a full run breaks the self-describing contract ``save`` advertises, and does so without a word.
+    """
+    declared = getattr(expl, "is_shard", None)
+    if declared is not None:
+        return bool(declared)
+    cell_coords = getattr(expl, "cell_coords", None)
+    if not cell_coords:
+        return False
+    sizes = [_axis_size(ax) for ax in (getattr(expl, "axes", None) or [])]
+    if not sizes or any(s <= 0 for s in sizes):
+        return False
+    counts = [int(np.asarray(v).shape[0]) for v in cell_coords.values() if np.asarray(v).ndim]
+    return bool(counts) and max(counts) < int(np.prod(sizes))
+
+
 def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None,
                           cell_coords=None, dims=None):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
@@ -1248,6 +1284,7 @@ class ExplorationResult(Bunch):
         output_names: list = None,
         observations=None,
         cell_coords=None,
+        is_shard=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -1257,9 +1294,17 @@ class ExplorationResult(Bunch):
         self.observable = observable
         self.dt = dt
         self.output_names = output_names or []
-        # Per-cell parameter values for a sharded run ({axis: (n_point,) array}).
-        # Present only when this result is one HPC array task's slice; drives the
-        # flat 'point'-dim labelling in ``as_grid`` and reassembly by value.
+        # Whether this result is one HPC array task's slice, as declared by the producer
+        # (the generated script holds `kwargs['shard']`). None means undeclared, and
+        # `_is_partial_shard` falls back to counting cells. Nothing downstream can
+        # re-derive it reliably — a branch shard's axis `n` comes from the already-sliced
+        # index, so the slice looks complete.
+        self.is_shard = is_shard
+        # Per-cell parameter values ({axis: (n_cell,) array}), set for EVERY keyed
+        # sweep — a whole grid as much as one HPC array task's slice. Drives placement
+        # by value in ``as_grid`` (rectangular grid) or the flat 'point'-dim labelling
+        # and reassembly by value (subset). Use ``_is_partial_shard`` to tell the two
+        # apart; presence alone does not.
         self.cell_coords = cell_coords
         # Per-grid-point observations as {name: xr.DataArray} with grid axes
         # prepended to each observation's intrinsic dims (time/variable/node/mode).
@@ -1522,10 +1567,13 @@ class ExplorationResult(Bunch):
         after the grid dims. ``None`` when empty; otherwise always labelled — a
         payload that cannot be reshaped into the grid is returned with the dim names
         it already carries (see :meth:`_label_payload`) rather than as a bare array,
-        so no consumer is handed positional data. A sharded result (``cell_coords``
-        set) is a subset of grid points, not a full product, so it is labelled with a
-        single ``point`` dim carrying each axis's value — reassemble across
-        shards by parameter value.
+        so no consumer is handed positional data. A result whose cells are a subset of
+        the grid rather than the full product — an HPC array task's slice, or a branch
+        restart — is labelled with a single ``point`` dim carrying each axis's value, so
+        it reassembles across shards by parameter value. That is decided here by whether
+        the cells fill the product, not by ``cell_coords`` being set: every keyed sweep
+        sets it. ``_is_partial_shard`` answers the related but distinct question of
+        whether to write provenance, and prefers the producer's declared ``is_shard``.
         """
         if self.results is None:
             return None
@@ -2462,10 +2510,8 @@ class ExperimentResult:
             except Exception:
                 stem = "result"
 
-        # A sharded run's cell coordinates mark it as one slice of the sweep; its
-        # provenance sidecar is written once by the gather pass, not per task.
-        is_shard = any(getattr(e, "cell_coords", None) is not None
-                       for e in (self.explorations or {}).values())
+        # A shard's provenance sidecar is written once by the gather pass, not per task.
+        is_shard = any(_is_partial_shard(e) for e in (self.explorations or {}).values())
 
         # Several explorations in one experiment each write a `<expl>__results` variable;
         # their sweep dims can share a name (`point`, `K[0]`, …) at different sizes, which

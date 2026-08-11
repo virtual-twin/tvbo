@@ -365,6 +365,8 @@ jobs:
                           tests/test_run_models.py
                           tests/test_tvboptim_observation_codegen.py
                           tests/functional/test_plot_layouts.py
+                          tests/test_panel_group_axis.py
+                          tests/test_exploration_result_labelling.py
                     # Every file the shards above miss; Julia deselected — `-n auto` kills its worker.
                     - shard: rest
                       paths: >-

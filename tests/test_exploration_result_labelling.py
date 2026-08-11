@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from tvbo.data.types import ExplorationResult
+from tvbo.data.types import ExplorationResult, _is_partial_shard
 from tvbo.utils import Bunch
 
 
@@ -209,3 +209,58 @@ def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
         for o in OM for k in K for v in V
     )
     assert mism > 0
+
+
+def _expl(cell_counts, axis_sizes, **kw):
+    """An ExplorationResult carrying *cell_counts* cells over axes of *axis_sizes*."""
+    axes = [Bunch(name=f"ax{i}", explored_values=np.arange(n, dtype=float), n=n)
+            for i, n in enumerate(axis_sizes)]
+    coords = {f"ax{i}": np.zeros(cell_counts) for i in range(len(axis_sizes))}
+    return ExplorationResult(name="sweep", axes=axes, cell_coords=coords, **kw)
+
+
+def test_a_whole_sweep_is_not_mistaken_for_an_hpc_shard():
+    """`cell_coords` is set for every keyed sweep, so presence alone must not mean "shard".
+
+    Reading it as a shard marker made `save()` skip the YAML provenance sidecar for
+    every local sweep — silently, since the write is best-effort. The run then claimed
+    to be self-describing while shipping only the .h5.
+    """
+    assert _is_partial_shard(_expl(6, [2, 3])) is False
+
+
+def test_a_partial_slice_is_a_shard():
+    """Fewer cells than the Cartesian product is what actually makes a run one task's slice."""
+    assert _is_partial_shard(_expl(2, [2, 3])) is True
+
+
+def test_an_undecidable_exploration_defaults_to_writing_provenance():
+    """No axes means the cell count proves nothing; a redundant sidecar beats a missing one."""
+    assert _is_partial_shard(ExplorationResult(name="sweep", cell_coords={"ax0": np.zeros(3)})) is False
+    assert _is_partial_shard(ExplorationResult(name="sweep")) is False
+
+
+def test_the_producer_declaration_beats_the_cell_count():
+    """A branch shard's axis `n` comes from the already-sliced index, so counting says "whole run".
+
+    Only the generated script knows — it holds `kwargs['shard']` — so a declared
+    `is_shard` wins over the fallback in both directions.
+    """
+    assert _is_partial_shard(_expl(6, [2, 3], is_shard=True)) is True
+    assert _is_partial_shard(_expl(2, [2, 3], is_shard=False)) is False
+
+
+def test_scalar_cell_coords_do_not_take_the_run_down_with_them():
+    """`is_shard` is computed before anything is written, so raising here discards the results."""
+    scalar = ExplorationResult(name="sweep", axes=[Bunch(name="g", n=3)], cell_coords={"g": 0.5})
+    assert _is_partial_shard(scalar) is False
+
+
+def test_an_axis_is_read_however_the_producer_shaped_it():
+    """Dict axes and values-only axes are both legal here, as they are everywhere else in the module."""
+    as_dict = ExplorationResult(name="sweep", axes=[{"name": "g", "n": 20}], cell_coords={"g": np.zeros(5)})
+    values_only = ExplorationResult(
+        name="sweep", axes=[Bunch(name="g", explored_values=np.arange(20.0))], cell_coords={"g": np.zeros(5)}
+    )
+    assert _is_partial_shard(as_dict) is True
+    assert _is_partial_shard(values_only) is True
