@@ -252,8 +252,7 @@ def run(
         return
 
     if analysis is not None:
-        # --analysis runs no experiments; ignoring one would exit 0 having simulated
-        # nothing — on a cluster, a "success".
+        # Ignoring one would exit 0 having simulated nothing, which a cluster reads as success.
         given = _sim_flags
         if given:
             _common.die(
@@ -288,12 +287,7 @@ def run(
     if shard:
         chunk_i, chunk_n = _parse_chunk(shard)
         _common.info(f"sharding: cell j runs iff j%{chunk_n}=={chunk_i}")
-    # --limit is a cell budget; it becomes a per-experiment shard in _run_one,
-    # which knows each experiment's grid size (a study's experiments can differ).
-
     if kind == "study":
-        # Register the study's figure code_modules up front: a builder/parameter ``used:`` edge may name a transform (e.g. selecting an operating point out of a branch container) that a figure module registers, and that resolution happens during the
-        # EXPERIMENT run — before any figure renders. Import failures are non-fatal here (a genuinely broken module surfaces at figure-render time with full context).
         _import_figure_code_modules(obj)
         analyses_before, analyses_after = _study_analysis_stages(obj)
         if analysis is not None:
@@ -443,8 +437,7 @@ def _run_named_analyses(analyses, wanted: str, spec: str, out_dir: Path | None) 
     names = [s.strip() for s in str(wanted).split(",") if s.strip()]
     if not names:
         _common.die("--analysis was given no names. Pass one or more declared analysis names, comma-separated.")
-    # Through `analysis_name`, not `getattr`: the loader may hand these over as Mappings, which
-    # `analysis_closure` below already reads that way.
+    # Through `analysis_name`, not `getattr`: the loader may hand these over as Mappings.
     by_name = {analysis_name(a): a for a in analyses}
     missing = [n for n in names if n not in by_name]
     if missing:
@@ -876,8 +869,7 @@ def _set_axis_parameter(experiment, parameter: str, value) -> None:
         dyn = getattr(experiment, "dynamics", None)
         if dyn is not None and _set_in(getattr(dyn, "parameters", None), name):
             return
-        # Experiment-scoped axis (execution.random_seed, integration.<p>, initial_conditions):
-        # its parameter path IS an attribute path, so the --set walk resolves it.
+        # An experiment-scoped axis has an attribute path, so the --set walk resolves it.
         _apply_metadata_overrides(experiment, [f"{parameter}={value}"])
         return
     dyn = getattr(experiment, "dynamics", None)
@@ -922,8 +914,6 @@ def _run_one(
     chunk_n: int | None,
     limit: int | None = None,
 ) -> None:
-    # --limit N is a cell budget: turn it into a stride over this experiment's own
-    # grid so ``Space[0::stride]`` yields ~N spread cells — no need to know the size.
     if limit is not None and chunk_n is None:
         import math
 
@@ -945,9 +935,7 @@ def _run_one(
             _common.info("no sweep axes on experiment; running once")
             _exec_one(experiment, backend, out_dir, kwargs)
             return
-        # A sweep is shardable in-process only where the backend vectorises every swept axis — the same ontology capability the planner uses to decide vectorised-vs-fanned (``BackendSpec.can_vectorize``). Slicing the shard then just indexes that vectorised batch (tvboptim: ``Space[i::N]``).
-        # Axes the backend cannot vectorise have no in-process batch to slice;
-        # they are fanned into per-cell tasks at the workflow layer instead.
+        # Shardable in-process only where the backend vectorises every swept axis (BackendSpec.can_vectorize).
         try:
             spec = resolve_backend(backend)
         except KeyError:
@@ -987,16 +975,11 @@ def _run_one(
 def _exec_one(experiment, backend: str, out_dir: Path | None, kwargs: dict) -> None:
     compress = kwargs.pop("compress", True)  # save options, not backend-run kwargs
     record_only = kwargs.pop("record_only", True)
-    # initial_state.from_experiment seeds from a sibling experiment's saved result;
-    # search the output dir's parent (covers results/<key> and output/nc/exp<id> alike).
-    # Explicit --results-root (in kwargs) wins; else default to the output dir's parent.
+    # The output dir's parent covers results/<key> and output/nc/exp<id> alike; --results-root wins.
     results_root = kwargs.pop("results_root", None) or (out_dir.parent if out_dir is not None else None)
     result = experiment.run(format=backend, results_root=results_root, **kwargs)
     _common.info(f"done: {type(result).__name__}")
     if out_dir is None:
-        # A run with no --out-dir computes the result and DISCARDS it. This is a footgun: the command still prints "done", but nothing is persisted, and a subsequent
-        # `tvbo figure render` / report then silently reads STALE results from a previous run.
-        # Warn loudly and say exactly how to persist.
         _common.warn(
             f"result NOT saved: no --out-dir, so this run computed {type(result).__name__} "
             f"and discarded it. Any figures/report built afterwards will read STALE results "

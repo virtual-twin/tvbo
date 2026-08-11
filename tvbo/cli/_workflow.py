@@ -174,14 +174,15 @@ class WorkflowPlan:
 
     @property
     def n_array_tasks(self) -> int:
+        """How many SLURM array shards this plan needs.
+
+        Fanned axes give one task per `chunk` workflow cells. A fully backend-vectorised sweep instead uses `chunk` as the shard count directly — each task runs `tvbo run --slurm-chunk=$i/N` over 1/N of the cells and the backend vmaps its own share — capped at the cell count so no task is emitted with nothing to do. A runtime-sized branch-restart sweep gets exactly `chunk` shards with no cap, because its cell count is not known until the source branch is read.
+        """
         if self.workflow_axes:
             # Fanned axes → one array task per ``chunk`` workflow cells.
             return max(1, (self.n_workflow_cells + self.chunk - 1) // self.chunk)
-        # A runtime-sized (branch-restart) sweep is fanned into exactly ``chunk`` array shards: the cell count is known only when the source branch is read, so each task slices its share of the loaded branch (``_branch_p[i::N]``). No cell-count cap, because there is no static count to cap against.
         if any(getattr(ax, "runtime_sized", False) for ax in self.vectorize_axes):
             return max(1, self.chunk)
-        # Fully backend-vectorized sweep (no fanned axes): ``chunk`` is the number of SLURM array shards. Each task runs ``tvbo run --slurm-chunk=$i/N`` over
-        # 1/N of the sweep cells (the backend vmap/pmap-s its own share). Capped at the cell count so we never emit more tasks than there are cells.
         return max(1, min(self.chunk, self.n_vectorize_cells))
 
     @property
@@ -405,8 +406,8 @@ def _pairs_to_map(items) -> dict[str, Any]:
     return out
 
 
-#: Engine-block slots that are name-keyed lists in YAML but must merge by name.
 _ENGINE_MAP_SLOTS = ("env", "options")
+"""Engine-block slots that are name-keyed lists in YAML but must merge by name."""
 
 
 def _canonicalize_engine_maps(block: dict) -> dict:
@@ -459,12 +460,8 @@ def _as_lines(raw) -> list[str]:
     return [str(raw)]
 
 
-#: Slurm's ``--mem`` suffixes, as multiples of a mebibyte. Slurm sizes are
-#: binary (``--mem=8G`` reserves 8 GiB = 8192 MiB), and Snakemake's ``mem_mb``
-#: is handed back to it as a bare number in the same unit — so a decimal
-#: conversion would reserve ~2.4% less than the recipe asked for and OOM-kill a
-#: task sized to its own declared limit.
 _MEM_UNIT_MIB = {"K": 1 / 1024, "M": 1, "G": 1024, "T": 1024**2, "P": 1024**3}
+"""Slurm's ``--mem`` suffixes, as multiples of a mebibyte. Slurm sizes are binary (``--mem=8G`` reserves 8 GiB = 8192 MiB), and Snakemake's ``mem_mb`` is handed back to it as a bare number in the same unit — so a decimal conversion would reserve ~2.4% less than the recipe asked for and OOM-kill a task sized to its own declared limit."""
 
 
 def mem_mb(mem) -> int | None:
@@ -606,8 +603,11 @@ def plan(
 ) -> WorkflowPlan:
     """Compute a :class:`WorkflowPlan` from an Experiment + spec.
 
-    *workflow_spec* mirrors the Study-level ``workflow:`` block from
-    ``study.yaml`` (§4.10.1). Missing keys use sensible defaults.
+    *workflow_spec* mirrors the Study-level ``workflow:`` block from ``study.yaml`` (§4.10.1). Missing keys use sensible defaults.
+
+    Resource requirements — ``cpus_per_task``, ``mem``, ``time``, ``env``, ``setup`` — map across engines, so where an engine's own block omits them they are inherited from the ``slurm`` block, which is the de-facto resource spec; the engine block still wins wherever it sets a key. Snakemake additionally inherits the Slurm scheduler identity (``partition``, ``account``, ``gres``) because it orchestrates Slurm through its executor. Other engines such as Nextflow have their own and must not.
+
+    A post-hoc experiment reads a prior fit by sourcing ``<study>.exp<id>`` on one of its observations or parameters. That is a result dependency exactly like ``from_experiment``, so the referenced id is recorded here — otherwise a DAG engine schedules the analysis before the fit it consumes. The reference is matched as a whole dotted segment, since a bare ``…exp30`` and a sub-reference ``…exp30.observations.fc`` both depend on experiment 30, and anchoring on ``$`` alone would miss the second.
     """
     spec = dict(workflow_spec or {})
     # No explicit backend → the experiment self-selects via execution.backend (a spiking network declares 'brian2'), defaulting to tvboptim.
@@ -680,13 +680,9 @@ def plan(
 
     chunk = int(distribute.get("chunk") or spec.get("chunk") or 1)
     engine_block = dict(spec.get(engine) or {})
-    # Resource requirements (cpus_per_task, mem, time, env, setup, …) map across engines (WorkflowEngineConfig doc): a Snakemake run on a cluster orchestrates
-    # Slurm via its executor, so it needs the same partition/time/mem/cpus. When the engine's own block omits them, inherit from the Slurm block (the de-facto resource spec); the engine block still wins where it sets a key.
     if engine != "slurm":
-        # Engine-agnostic resources map across engines (WorkflowEngineConfig doc).
         _shared = ["cpus_per_task", "mem", "time", "modules", "venv", "env", "setup"]
-        # Snakemake orchestrates Slurm through its executor, so it also needs the
-        # Slurm scheduler identity; other engines (Nextflow) have their own and must not inherit these.
+        # Snakemake drives Slurm through its executor, so it needs the scheduler identity too.
         if engine == "snakemake":
             _shared += ["partition", "account", "gres"]
         _slurm = spec.get("slurm") or {}
@@ -715,9 +711,7 @@ def plan(
     from ._common import experiment_key as _experiment_key  # canonical (id-first) key
 
     experiment_key = _experiment_key(experiment)
-    # Results land in a kit-relative ``results/`` by default (the emitted scripts run from the kit dir, which already encodes study/experiment/engine — like
-    # ``logs/``). An explicit out_dir (relative or absolute) overrides it; the
-    # {study}/{experiment} placeholders still resolve for custom templates.
+    # Kit-relative by default: the emitted scripts run from the kit dir, which already encodes the keys.
     out_dir = str(spec.get("out_dir") or "results")
     out_dir = out_dir.replace("{study}", study_key).replace("{experiment}", experiment_key)
 
@@ -731,10 +725,6 @@ def plan(
             _sid = getattr(_src, "id", None)
             depends_on.append(str(_sid if _sid is not None else (getattr(_src, "name", None) or _src)))
 
-    # A post-hoc experiment (e.g. Fig 4 input-statistics) reads a prior fit's recorded parameters/observations by sourcing ``<study>.exp<id>`` on one of its observations or parameters. That is a result dependency exactly like
-    # ``from_experiment``, so record the referenced experiment id here — otherwise a
-    # DAG engine schedules the analysis before the fit it consumes.
-    # Match ``exp<id>`` as a whole dotted segment: the bare ref (``…exp30``) and a sub-reference into a prior result (``…exp30.observations.fc``) both depend on experiment 30. Anchoring on ``$`` alone would miss the dotted sub-reference.
     _exp_ref = re.compile(r"(?:^|\.)exp(\d+)(?:\.|$)")
 
     def _record_source_deps(container):

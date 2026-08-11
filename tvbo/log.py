@@ -47,15 +47,14 @@ __all__ = [
     "ENV_VAR",
 ]
 
-#: Root of the tvbo logger hierarchy; every package and generated-code logger is
-#: a child of this and inherits its level and handlers.
 LOGGER_NAME = "tvbo"
-#: Environment variable read as the central level switch when nothing is passed.
+"""Root of the tvbo logger hierarchy; every package and generated-code logger is a child of this and inherits its level and handlers."""
 ENV_VAR = "TVBO_LOG_LEVEL"
-#: Level used when neither an explicit argument nor the env var is set.
+"""Environment variable read as the central level switch when nothing is passed."""
 DEFAULT_LEVEL = logging.INFO
-#: Default stderr handler format for tvbo-managed output.
+"""Level used when neither an explicit argument nor the env var is set."""
 DEFAULT_FORMAT = "%(levelname)s [%(name)s] %(message)s"
+"""Default stderr handler format for tvbo-managed output."""
 
 # Effective "off": above CRITICAL, so no standard record is ever emitted.
 _OFF = logging.CRITICAL + 1

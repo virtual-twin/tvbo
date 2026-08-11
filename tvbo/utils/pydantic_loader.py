@@ -42,18 +42,13 @@ from tvbo.utils import yaml_loader
 
 __all__ = ["load", "loads", "validate", "normalize", "dump", "DEFAULT_TARGET"]
 
-#: Default datamodel class used when a caller does not specify ``target_class``.
 DEFAULT_TARGET = "SimulationExperiment"
+"""Default datamodel class used when a caller does not specify ``target_class``."""
 
-#: File-envelope metadata keys that annotate a serialized object's class and
-#: schema version but are not datamodel slots. TVBO strips these at construction
-#: (see ``tvbo.classes.phenotype``), so we drop them before validation too.
 _ENVELOPE_KEYS = ("tvbo_class", "schema_version")
+"""File-envelope metadata keys that annotate a serialized object's class and schema version but are not datamodel slots. TVBO strips these at construction (see ``tvbo.classes.phenotype``), so we drop them before validation too."""
 
 
-# --------------------------------------------------------------------------- #
-# Target-class resolution
-# --------------------------------------------------------------------------- #
 def _resolve_target(target_class: Union[str, Type[BaseModel], None]) -> Type[BaseModel]:
     """Resolve ``target_class`` (a class, a class name, or ``None``) to a model.
 
@@ -71,9 +66,6 @@ def _resolve_target(target_class: Union[str, Type[BaseModel], None]) -> Type[Bas
     return target_class
 
 
-# --------------------------------------------------------------------------- #
-# Annotation helpers
-# --------------------------------------------------------------------------- #
 def _candidates(annotation: Any):
     """Yield concrete type candidates, unwrapping ``Optional``/``Union`` nesting."""
     if get_origin(annotation) is Union:
@@ -125,11 +117,13 @@ def _slot_alias_map(model_cls: Type[BaseModel]) -> dict[str, str]:
     return _SLOT_ALIASES.get(model_cls.__name__, {})
 
 
-# --------------------------------------------------------------------------- #
-# Key -> identifier injection
-# --------------------------------------------------------------------------- #
 def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
-    """Recursively inject keyed-dict keys into each member's identifier slot."""
+    """Recursively inject keyed-dict keys into each member's identifier slot.
+
+    This class's slot aliases — `dt` for `step_size`, `righthandside` for `rhs` — are folded first, class-scoped, exactly as the generated dataclasses fold them in `__init__`. The Pydantic models cannot do that themselves, so a raw alias key would otherwise be rejected by `extra='forbid'`. Folding before the field walk means an aliased key is seen under its canonical name.
+
+    A scalar string slot that received an object — an Odoo many2one standing in for a by-name reference, such as `FunctionCall.function` or `Continuation.dynamics` — is collapsed to the referenced identifier.
+    """
     if not isinstance(data, dict) or not hasattr(model_cls, "model_fields"):
         return data
 
@@ -137,10 +131,6 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
     for envelope_key in _ENVELOPE_KEYS:
         data.pop(envelope_key, None)
 
-    # Fold this class's slot aliases (``dt``->``step_size``, ``righthandside``->``rhs``,
-    # ...), class-scoped, exactly as the generated dataclasses fold them in ``__init__``.
-    # The Pydantic models cannot, so a raw alias key would otherwise be rejected by
-    # ``extra='forbid'``. Runs before the field walk so an aliased key is seen under its canonical name.
     for alias, canonical in _slot_alias_map(model_cls).items():
         if alias not in data:
             continue
@@ -209,8 +199,6 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
                 _inject(cand, value)
                 break
 
-            # Scalar string slot that received an object (Odoo many2one for a by-name reference, e.g. FunctionCall.function or Continuation.dynamics)
-            # -> collapse to the referenced identifier.
             elif cand is str and isinstance(value, dict):
                 data[key] = value.get("name") or value.get("id")
                 break

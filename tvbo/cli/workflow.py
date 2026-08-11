@@ -310,8 +310,7 @@ def _freeze_spec_yaml(
         if getattr(net, "parameters", None):
             for k, v in dict(net.parameters).items():
                 ref.parameters[k] = v
-        # Carry the scalar identity + measure declarations. The measure lists in particular are not decoration: `Network.observations` (and the structural resolution) gate on them, so a companion h5 that holds `BoldCorrelation` data is invisible unless the reloaded network also declares
-        # `observational_measures: [BoldCorrelation]`. Copying every non-None scalar (rather than a hand-picked list) means the next such field survives the round-trip too, instead of silently dropping a measure the way this did.
+        # Every non-None scalar, so the next such field survives the round-trip without an edit here.
         for _f in (
             "label",
             "descriptor",
@@ -536,10 +535,8 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
     (out_dir / "scripts").mkdir(exist_ok=True)
     (out_dir / "spec").mkdir(exist_ok=True)
 
-    # 1) Frozen YAML spec snapshot (self-contained run target when it round-trips).
-    # A connectome-backed experiment cannot be frozen as inline YAML: the metadata render drops the matrices, so the reloaded network collapses to a single node. Instead the network is written as an HDF5 companion (network.h5) + YAML sidecar (network.yaml) and referenced from the spec via ``network.data_file`` — the mechanism resolve_spec loads on the node.
     spec_dir = out_dir / "spec"
-    # A requested per-subject data bundle runs BEFORE the (error-swallowing) spec freeze: if bundling fails it is a hard error the user must see, not a kit that falls back to the raw recipe / a machine-specific bids_root and fails on a node.
+    # Before the error-swallowing spec freeze, so a bundling failure is a hard error the user sees.
     _sel = _bundle_selection(experiment, bundle_select)
     bundle_root = _bundle_dataset(experiment, spec_dir / "dataset", _sel) if _sel is not None else None
     spec_relpath = None
@@ -587,8 +584,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
     artefact.write_text(text, encoding="utf-8")
     _common.info(f"wrote {artefact.relative_to(out_dir)}")
 
-    # 3a) Gather job — reassembles the array's shard outputs into one result per experiment (identical to a local run). Submitted with a dependency by
-    # `tvbo workflow run`, so no manual post-processing is needed. A single-task array (e.g. chunk=1 on one GPU) has nothing to reassemble — it writes the canonical result directly — so no gather job is emitted.
+    # A single-task array writes the canonical result directly, so it needs no gather job.
     if engine == "slurm" and plan.n_array_tasks > 1:
         # BIDS-style result stem (pybids), matching what a local ExperimentResult.save writes.
         try:
@@ -867,8 +863,7 @@ def _emit_snakemake_study(
         key = _san(_common.experiment_key(exp))
         base = _wf.merge_workflow_spec(study, exp)
         spec_dict = _deep_merge(base, parsed["merged"])
-        # Smoke cap: `--set max_iterations=N` (or `--set smoke=true` => 1) makes each rule's
-        # `tvbo run` cap tuning iterations. It is a RUN modifier, not a workflow-block field, so pop it before the plan/freeze (it must never enter the frozen spec's workflow block) and carry it to the template as a `tvbo run --max-iterations` flag.
+        # A run modifier, not a workflow-block field, so it is popped before the plan and freeze.
         _max_iter = spec_dict.pop("max_iterations", None)
         if spec_dict.pop("smoke", False) and _max_iter is None:
             _max_iter = 1
@@ -987,8 +982,7 @@ def _emit_snakemake_study(
         return None
     (out_dir / "Snakefile").write_text(text, encoding="utf-8")
     _common.info(f"wrote Snakefile ({len(exp_plans)} experiment rule(s))")
-    # Environment + the container-requirements layer (setup.sh) — the study path builds its own artefacts (it does not go through _emit_kit), so mirror steps 3b/3c here.
-    # Keyed on the kit plan (plans[0]); a study whose experiments declare divergent requirements is warned like divergent binds are.
+    # The study path builds its own artefacts rather than going through _emit_kit, so this mirrors it.
     _kit0 = plans[0] if plans else None
     if _kit0 is not None and _kit0.pip_specs:
         (out_dir / "requirements.txt").write_text(_render_template("requirements.txt.mako", plan=_kit0), encoding="utf-8")
@@ -1614,8 +1608,7 @@ def run_workflow(
     engine = engine.lower()
     if engine not in _ARTEFACT_NAME:
         _common.die(f"`tvbo workflow run` expects engine one of: {', '.join(_ARTEFACT_NAME)}")
-    # A comma-separated --experiment ("2,3,20,30") submits each as its own kit/job;
-    # on the cluster they run in parallel. Each gets its own output subdir.
+    # Each id becomes its own kit, job and output subdir, so they run in parallel on the cluster.
     _exp_ids = [e.strip() for e in str(experiment).split(",") if e.strip()] if experiment else []
     if len(_exp_ids) > 1:
         for _eid in _exp_ids:
@@ -1709,8 +1702,7 @@ def _resolve_kit_dir(kit: Path, force: bool = False, dest_override: Path | None 
                 if d.is_dir() and _detect_engine_from_kit(d):
                     _common.info(f"kit already extracted → {d} (reusing; pass --force to re-extract)")
                     return d
-        # --force overwrites the kit files with the (re-uploaded) archive; results/ and
-        # .snakemake/ aren't in the archive, so they survive and the run resumes.
+        # results/ and .snakemake/ are not in the archive, so they survive and the run resumes.
         arc.extractall(dest) if is_zip else _tar_extractall_safe(arc, dest)
     for t in tops:
         d = dest / t
