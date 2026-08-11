@@ -150,6 +150,29 @@ def _inner_dims(post_trial_shape, ts_arr, declared=None):
     return dims, coords
 
 
+def _is_partial_shard(expl) -> bool:
+    """Whether *expl* holds one HPC array task's slice rather than a whole sweep.
+
+    A shard covers fewer cells than the full Cartesian product of its axes, and that
+    is the only thing distinguishing it: ``cell_coords`` is present on EVERY keyed
+    sweep, sharded or not (see :func:`_stacked_to_dataarray`), so its mere presence
+    says nothing. Reading it as a shard marker silently cost every local sweep its
+    provenance sidecar.
+
+    Undecidable cases (no axes, no sizes) count as *not* a shard. One redundant
+    sidecar beside a shard is recoverable; dropping the sidecar of a full run breaks
+    the self-describing contract ``save`` advertises, and does so without a word.
+    """
+    cell_coords = getattr(expl, "cell_coords", None)
+    if not cell_coords:
+        return False
+    sizes = [int(getattr(ax, "n", 0) or 0) for ax in (getattr(expl, "axes", None) or [])]
+    if not sizes or any(s <= 0 for s in sizes):
+        return False
+    n_cells = max(int(np.asarray(v).shape[0]) for v in cell_coords.values() if np.asarray(v).ndim)
+    return n_cells < int(np.prod(sizes))
+
+
 def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None,
                           cell_coords=None, dims=None):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
@@ -1258,9 +1281,11 @@ class ExplorationResult(Bunch):
         self.observable = observable
         self.dt = dt
         self.output_names = output_names or []
-        # Per-cell parameter values for a sharded run ({axis: (n_point,) array}).
-        # Present only when this result is one HPC array task's slice; drives the
-        # flat 'point'-dim labelling in ``as_grid`` and reassembly by value.
+        # Per-cell parameter values ({axis: (n_cell,) array}), set for EVERY keyed
+        # sweep — a whole grid as much as one HPC array task's slice. Drives placement
+        # by value in ``as_grid`` (rectangular grid) or the flat 'point'-dim labelling
+        # and reassembly by value (subset). Use ``_is_partial_shard`` to tell the two
+        # apart; presence alone does not.
         self.cell_coords = cell_coords
         # Per-grid-point observations as {name: xr.DataArray} with grid axes
         # prepended to each observation's intrinsic dims (time/variable/node/mode).
@@ -2457,10 +2482,8 @@ class ExperimentResult:
             except Exception:
                 stem = "result"
 
-        # A sharded run's cell coordinates mark it as one slice of the sweep; its
-        # provenance sidecar is written once by the gather pass, not per task.
-        is_shard = any(getattr(e, "cell_coords", None) is not None
-                       for e in (self.explorations or {}).values())
+        # A shard's provenance sidecar is written once by the gather pass, not per task.
+        is_shard = any(_is_partial_shard(e) for e in (self.explorations or {}).values())
 
         # Several explorations in one experiment each write a `<expl>__results` variable;
         # their sweep dims can share a name (`point`, `K[0]`, …) at different sizes, which
@@ -2514,14 +2537,14 @@ class ExperimentResult:
                     fh.write(yaml_text)
                 written.append(yaml_path)
             except Exception:
-                pass
+                logger.warning("provenance sidecar %s.yaml not written", stem, exc_info=True)
             # BEP034 alignment: a JSON metadata sidecar (BIDS tooling reads JSON)
             # beside the richer YAML re-run recipe, and a dataset_description.json
             # marking out_dir as a BIDS-derivatives dataset.
             try:
                 written += self._write_bep034_sidecars(out_dir, stem)
             except Exception:
-                pass
+                logger.warning("BEP034 sidecars for %s not written", stem, exc_info=True)
         return written
 
     def _write_bep034_sidecars(self, out_dir, stem) -> list:
