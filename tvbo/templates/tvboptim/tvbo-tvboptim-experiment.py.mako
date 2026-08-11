@@ -3524,7 +3524,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % if has_axes:
         cell_coords=_cell_coords,
 % endif
-        is_shard=_shard is not None,
+        is_shard=kwargs.get('shard') is not None,
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_names) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
         dt=${dt},
