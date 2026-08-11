@@ -4794,7 +4794,28 @@ class Network(tvbo_datamodel.Network):
         if exp is None:
             return None
         subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if arg_values.get(str(s)) is not None}
-        return exp.subs(subs_map) if subs_map else exp
+        exp = exp.subs(subs_map) if subs_map else exp
+
+        from sympy import Indexed
+
+        if exp.has(Indexed):
+            raise ValueError(
+                f"transform {getattr(func, 'name', '?')!r} subscripts a matrix "
+                f"({eq.rhs if hasattr(eq, 'rhs') else eq!r}). A boolean subscript is not a mask: "
+                "its output shape depends on the data, so it cannot be jitted, and the printer "
+                "drops it — the reduction then silently runs over every entry. Declare `mask:` "
+                "beside the equation instead, e.g. `mask: \"W > 0\"` with `equation: W / mean(W)`."
+            )
+
+        mask = getattr(func, "mask", None)
+        if mask:
+            from tvbo.codegen.transforms import mask_reductions
+
+            mask_exp = parse_eq(str(mask))
+            if mask_exp is None:
+                raise ValueError(f"transform {getattr(func, 'name', '?')!r} declares a `mask:` that does not parse: {mask!r}")
+            exp = mask_reductions(exp, mask_exp.subs(subs_map) if subs_map else mask_exp)
+        return exp
 
     def _apply_transform(self, M, func):
         """Apply a Function transform to matrix *M*.
@@ -4856,6 +4877,7 @@ class Network(tvbo_datamodel.Network):
         self,
         target: str,
         equation_rhs: str = "(M - M_min) / (M_max - M_min)",
+        mask: str | None = None,
     ) -> None:
         """Append a matrix transform for a named edge property.
 
@@ -4869,12 +4891,19 @@ class Network(tvbo_datamodel.Network):
         equation_rhs : str, default="(M - M_min) / (M_max - M_min)"
             Right-hand side of the transform equation. Can reference
             M (matrix), M_min, M_max.
+        mask : str, optional
+            Boolean predicate scoping every reduction in *equation_rhs*, e.g. ``"M > 0"``
+            so ``M / mean(M)`` divides by the mean of the non-zero entries. Write it here
+            rather than subscripting inside the equation: ``mean(M[M > 0])`` is boolean
+            indexing, whose shape depends on the data, so it cannot be jitted and is
+            refused.
 
         Examples
         --------
         ```python
         sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
         sc.add_transform("weight", "M / M_max")
+        sc.add_transform("weight", "M / mean(M)", mask="M > 0")
         ```
         """
         if self.transforms is None:
@@ -4883,6 +4912,7 @@ class Network(tvbo_datamodel.Network):
             tvbo_datamodel.Function(
                 name=target,
                 equation=tvbo_datamodel.Equation(rhs=equation_rhs),
+                **({"mask": mask} if mask else {}),
             )
         )
 

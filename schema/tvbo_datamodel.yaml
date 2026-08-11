@@ -2841,6 +2841,16 @@ classes:
                 inlined: true
             source_code:
                 range: string
+            mask:
+                description: >-
+                    Boolean predicate scoping every reduction in `equation`, e.g. `W > 0`
+                    so `W / mean(W)` divides by the mean of the non-zero entries rather
+                    than of the whole matrix. Declared beside the equation rather than
+                    written into it as `mean(W[W > 0])`, because a mask is not a
+                    subscript: boolean indexing has a data-dependent output shape and is
+                    illegal under `jax.jit`, so each backend lowers the mask into the
+                    reduction itself (`sum(where(mask, W, 0)) / sum(mask)`).
+                range: string
             callable:
                 description: "Software implementation reference (if software-based)"
                 range: Callable

@@ -181,16 +181,73 @@ def test_transforms_for_matches_the_length_alias():
     assert len(net.transforms_for("weight")) == 1
 
 
-def test_a_masked_expression_is_validated_by_its_base_symbol():
-    """`mean(W[W > 0])` is a use of `W`, not of a symbol literally named `W[W > 0]`.
+def test_a_declared_mask_survives_validation_and_renders():
+    """The undeclared-symbol check must not reject a recipe for naming `mask:`.
 
-    Delay_Speed_Synchronization declares exactly that. Checking the raw free-symbol text
-    rejected it as undeclared and refused to render the recipe at all.
+    Its predecessor asserted that `W / mean(W[W > 0])` renders, and that codegen and
+    runtime agree on it. They did agree — on the wrong number, both reducing over every
+    entry, because the printer drops the subscript. The property worth holding is that a
+    *declared* mask renders, which is what this checks.
     """
     net = Network.from_matrix(weights=np.array([[0, 2.0, 0], [4.0, 0, 3.0], [0, 5.0, 0]]),
                               lengths=np.zeros((3, 3)))
-    net.add_transform("weight", "W / mean(W[W > 0])")
+    net.add_transform("weight", "W / mean(W)", mask="W > 0")
     (expr, matrix_env), = weight_transform_codegen(net)[0]
     assert "W = weights" in matrix_env
     assert np.allclose(_apply_emitted(net, np.asarray(net.raw_weights_matrix)),
                        np.asarray(net.weights_matrix))
+
+
+def test_a_declared_mask_scopes_the_reduction_at_runtime():
+    """`mask:` makes `mean(W)` the mean of the masked entries, not of every entry.
+
+    The whole point: a sparse connectome normalised by the all-entry mean is scaled by
+    roughly 1/density — ~5x on a 20%-dense matrix — and nothing reports it.
+    """
+    import numpy as np
+
+    from tvbo import Network
+
+    W = np.array([[0.0, 2, 1], [4, 0, 3], [1, 5, 0]])
+    net = Network.from_matrix(W, transforms=[{"name": "weight", "mask": "W > 0", "equation": {"rhs": "W / mean(W)"}}])
+    assert np.allclose(np.asarray(net.weights_matrix), W / W[W > 0].mean())
+
+
+def test_the_emitted_kit_masks_the_same_reduction():
+    """Codegen and runtime resolve one expression, so a kit cannot normalise differently."""
+    import numpy as np
+
+    from tvbo import Network
+    from tvbo.templates.tvboptim.utils import weight_transform_codegen
+
+    W = np.array([[0.0, 2, 1], [4, 0, 3], [1, 5, 0]])
+    net = Network.from_matrix(W, transforms=[{"name": "weight", "mask": "W > 0", "equation": {"rhs": "W / mean(W)"}}])
+    emitted = weight_transform_codegen(net)[0][0][0]
+    assert "jnp.where" in emitted, emitted
+    weights = W
+    assert np.allclose(eval(emitted, {"jnp": __import__("jax.numpy", fromlist=["x"]), "W": weights}), W / W[W > 0].mean())
+
+
+def test_a_boolean_subscript_is_refused_rather_than_silently_dropped():
+    """`mean(W[W > 0])` parsed fine and rendered as `jnp.mean(W)` — the mask vanished."""
+    import numpy as np
+    import pytest
+
+    from tvbo import Network
+
+    net = Network.from_matrix(
+        np.array([[0.0, 2], [3, 0]]), transforms=[{"name": "weight", "equation": {"rhs": "W / mean(W[W > 0])"}}]
+    )
+    with pytest.raises(ValueError, match="not a mask"):
+        _ = net.weights_matrix
+
+
+def test_a_mask_over_an_unsupported_reduction_says_so():
+    """min/max need a backend-specific infinity fill; refusing beats reducing unmasked."""
+    import pytest
+
+    from tvbo.codegen.transforms import mask_reductions
+    from tvbo.parse.expression import parse_eq
+
+    with pytest.raises(NotImplementedError, match="cannot scope"):
+        mask_reductions(parse_eq("W / max(W)"), parse_eq("W > 0"))

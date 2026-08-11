@@ -51,8 +51,9 @@ network:
       description: "Conduction speed; delays = tract length / conduction_speed."
   transforms:
     - name: weight
+      mask: "W > 0"                 # scopes the reduction; `mean(W[W > 0])` silently reduced over all entries
       equation:
-        rhs: "W / mean(W[W > 0])"   # normalize so the mean non-zero weight is 1 (keeps G O(1))
+        rhs: "W / mean(W)"          # normalize so the mean non-zero weight is 1 (keeps G O(1))
 
   # Delayed Kuramoto coupling: c_i(t) = G * sum_j w_ij sin(theta_j(t - tau_ij) - theta_i(t))
   coupling:

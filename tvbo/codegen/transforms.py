@@ -50,6 +50,56 @@ transforms sees the preceding one's output.
 """
 
 
+MASKABLE_REDUCTIONS = frozenset({"mean", "sum"})
+"""Reductions a declared `mask:` rewrites.
+
+`min`/`max` are deliberately absent: masking them needs a ±infinity fill whose spelling
+is backend-specific, and no recipe asks for it yet. A masked `min(...)` raises rather
+than silently reducing over the unmasked matrix — the failure this whole mechanism
+exists to prevent.
+"""
+
+
+def mask_reductions(expr, mask):
+    """Rewrite every reduction in *expr* to reduce over *mask* only.
+
+    `mean(W)` becomes `sum(where(mask, W, 0)) / sum(where(mask, 1, 0))` and `sum(W)`
+    becomes `sum(where(mask, W, 0))`, built as sympy `Piecewise` so every backend prints
+    it through its own `where` primitive rather than a numpy-shaped string.
+
+    The rewrite is what makes a mask expressible at all: `mean(W[W > 0])` is boolean
+    indexing, whose output shape depends on the data, so it is illegal under `jax.jit`
+    and silently loses the mask through a printer that drops the subscript.
+
+    Args:
+        expr: The transform expression.
+        mask: A sympy boolean expression over the same primitives, e.g. `W > 0`.
+
+    Returns:
+        *expr* with its reductions masked.
+
+    Raises:
+        NotImplementedError: A reduction outside `MASKABLE_REDUCTIONS` appears under a mask.
+    """
+    from sympy import Function, Integer, Piecewise, preorder_traversal
+
+    counted = Function("sum")(Piecewise((Integer(1), mask), (Integer(0), True)))
+    replacements = {}
+    for node in preorder_traversal(expr):
+        head = getattr(getattr(node, "func", None), "__name__", None)
+        if head is None or not node.args:
+            continue
+        if head in MASKABLE_REDUCTIONS:
+            kept = Function("sum")(Piecewise((node.args[0], mask), (Integer(0), True)))
+            replacements[node] = kept / counted if head == "mean" else kept
+        elif head in ("min", "max", "nanmin", "nanmax"):
+            raise NotImplementedError(
+                f"`mask:` cannot scope `{head}(...)` yet — it needs a backend-specific "
+                f"infinity fill. Drop the mask, or reduce with mean/sum."
+            )
+    return expr.subs(replacements, simultaneous=True) if replacements else expr
+
+
 def required_prelude(symbols: Iterable[str]) -> List[Tuple[str, str]]:
     """The prelude bindings *symbols* need, in declaration order.
 
