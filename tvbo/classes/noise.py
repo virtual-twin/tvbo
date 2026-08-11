@@ -181,6 +181,7 @@ class Noise(tvbo_datamodel.Noise):
 
 
 
-# `Integrator` has no wrapper: its behaviour lives in `tvbo.behaviour.integrator` and is
-# attached to the generated class, so it is present however the integrator was built.
 Integrator = tvbo_datamodel.Integrator
+"""The generated class itself. Its behaviour lives in :mod:`tvbo.behaviour.integrator` and
+is attached where the class is generated, so an integrator carries it however it was
+built — there is no wrapper to route construction through."""

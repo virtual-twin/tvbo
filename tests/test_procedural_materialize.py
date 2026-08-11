@@ -76,12 +76,14 @@ def test_printer_path_is_bit_identical_to_the_pre_migration_engine(seed, n, spar
     reproduction: an earlier attempt satisfied both while drawing from a different stream
     scheme, producing a different sparsity pattern entirely. Anyone who had generated a
     reservoir before the migration would silently have got a different network after it.
+
+    Topology is pinned bit-for-bit, since it comes off the seeded mask. The weights carry
+    a ``1/max|eigenvalue|`` scale that is not bit-reproducible across LAPACK builds, so
+    they get a tolerance far tighter than any real stream-scheme change but looser than
+    a ULP.
     """
     expected = np.load(_GOLDEN)[f"{seed}_{n}_{sparsity}_{radius}"]
     got = _weights(seed=seed, n_nodes=n, sparsity=sparsity, spectral_radius=radius)
-    # Topology is pinned bit-for-bit (it comes off the seeded mask); the weights carry a
-    # 1/max|eigenvalue| scale that is not bit-reproducible across LAPACK builds, so they
-    # get a tolerance far tighter than any real stream-scheme change but looser than a ULP.
     np.testing.assert_array_equal(got != 0, expected != 0)
     np.testing.assert_allclose(got, expected, rtol=1e-9, atol=0)
 

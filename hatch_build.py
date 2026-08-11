@@ -236,8 +236,7 @@ def _inject_bases(code: str, additions: dict[str, list[str]]) -> str:
     return code
 
 
-#: Prepended to the generated ``pydantic.py``, and made ``ConfiguredBaseModel``'s base so
-#: every generated model folds the dialect before validation.
+#: Prepended to ``pydantic.py`` as ``ConfiguredBaseModel``'s base, folding before validation.
 _DIALECT_BASE = '''from pydantic import model_validator as _model_validator
 
 from tvbo.datamodel.dialect import normalize as _normalize_dialect

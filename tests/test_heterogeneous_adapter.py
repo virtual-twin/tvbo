@@ -4,6 +4,10 @@ Covers the P1 interoperability path: a network with different dynamics per node
 is lowered to a tvboptim ``HeterogeneousNetwork`` (nodes partitioned into
 ``DynamicsGroup``s, edges collapsed into a ``SignalRoute``) and run in process
 via ``exp.run("tvboptim")``.
+
+That API is absent from the pinned tvboptim — it landed upstream recently and the names
+are still settling — so the module skips until the integration lands. See
+``tvbo.adapters.tvboptim.to_heterogeneous_network``.
 """
 
 import numpy as np
@@ -13,10 +17,6 @@ import yaml
 pytest.importorskip("jax")
 pytest.importorskip("tvboptim")
 
-# The adapter's heterogeneous path targets a tvboptim network-dynamics API
-# (DynamicsGroup / HeterogeneousNetwork / SignalRoute) that is not present in the pinned
-# tvboptim — the feature only recently landed upstream and the names are still settling.
-# Skip until that integration lands (see tvbo.adapters.tvboptim.to_heterogeneous_network).
 try:
     from tvboptim.experimental.network_dynamics import (  # noqa: F401
         DynamicsGroup,

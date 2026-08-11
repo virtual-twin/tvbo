@@ -2,6 +2,10 @@
 
 The environment part must run before any JAX import: it forces the CPU backend (jax-metal
 raises XLA errors on Apple Silicon) and sets up the virtual XLA devices the pmap tests need.
+
+It also gives each xdist worker its own ``TVB_USER_HOME``. TVB derives its storage from
+that variable — including a log folder it ``os.makedirs`` without ``exist_ok`` on import —
+so parallel workers importing tvb race on that mkdir and the loser raises FileExistsError.
 """
 
 import os
@@ -13,10 +17,6 @@ os.environ.setdefault("JAX_PLATFORMS", "cpu")
 n_devices = min(os.cpu_count() or 2, 8)
 os.environ.setdefault("XLA_FLAGS", f"--xla_force_host_platform_device_count={n_devices}")
 
-# TVB derives its storage — including the log folder it ``os.makedirs`` (without
-# ``exist_ok``) on import — from TVB_USER_HOME. Under xdist, parallel workers importing
-# tvb race on that mkdir and the loser raises FileExistsError; give each worker its own
-# home so the paths never collide.
 _tvb_worker = os.environ.get("PYTEST_XDIST_WORKER")
 if _tvb_worker:
     os.environ["TVB_USER_HOME"] = os.path.join(tempfile.gettempdir(), f"tvb-home-{_tvb_worker}")

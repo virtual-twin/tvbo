@@ -217,15 +217,17 @@ def test_conflicting_alias_and_canonical_keeps_the_canonical():
 
 
 # ── the same dialect folds on the pydantic validation path ────────────
-#
-# The dataclasses fold the dialect in ``__init__``; the strict pydantic models
-# (``extra='forbid'``) fold it in a ``mode="before"`` model validator. Both call the one
-# implementation in ``tvbo.datamodel.dialect``, so the validator cannot reject a document
-# the dataclass loader accepts. It could before: the two paths carried separate copies,
-# and the pydantic copy had the aliases but not the scalar shortcuts.
 
 
 def _pyd(yaml_text, target="SimulationExperiment"):
+    """Load *yaml_text* through the strict pydantic models.
+
+    The dataclasses fold the dialect in ``__init__``; the pydantic models
+    (``extra='forbid'``) fold it in a ``mode="before"`` validator. Both call the one
+    implementation in ``tvbo.datamodel.dialect``, so the validator cannot reject a
+    document the dataclass loader accepts. It could before: the two paths carried
+    separate copies, and the pydantic copy had the aliases but not the scalar shortcuts.
+    """
     from tvbo.utils import pydantic_loader
 
     return pydantic_loader.loads(yaml_text, target_class=target)

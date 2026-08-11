@@ -265,11 +265,7 @@ jobs:
             extra_args: "--run-slow"
             xla_device_count: "1"
             test_timeout: "900"
-          # Replication docs run large parameter sweeps — the heaviest renders. The auto
-          # n_vmap width defaults to 64 cells/batch, so a 37.5k-cell grid runs as ~600
-          # sequential batches; nvmap_auto_cap lifts that so the 2GB memory budget (not a
-          # fixed count) sets the batch size — far fewer dispatches. xla_device_count=1
-          # keeps grids on one vmapped device; test_timeout keeps headroom under the 90-min cap.
+          # nvmap_auto_cap lets the 2GB budget, not the default 64 cells/batch, size the sweep.
           - shard: replication
             doc_pattern: "Replication"
             extra_args: ""

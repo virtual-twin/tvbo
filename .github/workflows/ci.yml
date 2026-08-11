@@ -35,6 +35,13 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0
+
+            # Judged against the PR's own base, so a stacked PR answers for its commits alone.
+            - name: Comment style — no stacked '#' blocks (added lines)
+              if: github.base_ref != ''
+              run: python3 scripts/check_comment_blocks.py origin/${{ github.base_ref }}
 
             # ruff: blocking syntax-error subset; `version` tracks the `lint` extra.
             - name: Ruff — syntax errors (blocking)
@@ -358,17 +365,13 @@ jobs:
                           tests/test_run_models.py
                           tests/test_tvboptim_observation_codegen.py
                           tests/functional/test_plot_layouts.py
-                    # The shards above name paths, so a new test file joins none of them
-                    # and is never run; this one takes the directory itself. Julia is
-                    # excluded (not unrun): it has its own `test-julia` job, and rerunning
-                    # it under this shard's `-n auto` fan-out crashes the xdist worker.
+                    # Every file the shards above miss; Julia deselected — `-n auto` kills its worker.
                     - shard: rest
                       paths: >-
                           tests/
                           --ignore=tests/test_docs.py
                           --ignore=tests/test_database_validation.py
-                          --ignore=tests/functional/test_simulation_backends_julia.py
-                      pytest_args: -n auto
+                      pytest_args: -n auto -m "not julia"
                       timeout: 60
         steps:
             - uses: actions/checkout@v6
@@ -480,13 +483,15 @@ jobs:
                   # cold-compile hot path on a warm cache.
                   python -c "import juliapkg; juliapkg.resolve(force=True)"
                   python -c "import tvbo, juliacall; juliacall.Main.seval('using NetworkDynamics, OrdinaryDiffEq'); print('Julia depot ready')"
+            # Selects by the same marker the `rest` shard deselects, so neither list drifts.
             - name: Run Julia backend tests
               run: |
                   pytest -x -v --tb=short \
                       --timeout=1200 --timeout-method=thread \
                       --override-ini="addopts=" \
-                      tests/functional/test_simulation_backends_julia.py \
-                      tests/test_networkdynamics_comparison.py
+                      -m julia tests/ \
+                      --ignore=tests/test_docs.py \
+                      --ignore=tests/test_database_validation.py
             - name: Save Julia depot (Julia + precompiled packages)
               # Persist the depot only when the job succeeded (never cache a
               # half-built depot) and only when the exact key was absent (an exact

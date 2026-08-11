@@ -126,7 +126,16 @@ def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
 # Key -> identifier injection
 # --------------------------------------------------------------------------- #
 def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
-    """Recursively inject keyed-dict keys into each member's identifier slot."""
+    """Recursively inject keyed-dict keys into each member's identifier slot.
+
+    The TVBO dialect — declared aliases and bare-scalar shortcuts — is folded through the
+    one shared implementation the dataclasses and the model validator also use, and it is
+    folded before the field walk for two reasons: an aliased collection slot has to be
+    seen under its canonical name to be recognised as a keyed collection at all, and a
+    member written bare (``omega: 0.0628``) has to become a mapping before there is
+    anywhere to inject its key. Re-folding an already-folded dict is a no-op, so the model
+    validator repeating this is harmless.
+    """
     if not isinstance(data, dict) or not hasattr(model_cls, "model_fields"):
         return data
 
@@ -134,13 +143,6 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
     for envelope_key in _ENVELOPE_KEYS:
         data.pop(envelope_key, None)
 
-    # Fold the TVBO dialect — declared aliases and bare-scalar shortcuts — through the
-    # one shared implementation the dataclasses and the model validator also use. It runs
-    # before the field walk below for two reasons: an aliased collection slot has to be
-    # seen under its canonical name to be recognised as a keyed collection at all, and a
-    # member written bare (``omega: 0.0628``) has to become a mapping before there is
-    # anywhere to inject its key. Re-folding an already-folded dict is a no-op, so the
-    # model validator repeating this is harmless.
     dialect.normalize(model_cls.__name__, data)
 
     for fname, info in model_cls.model_fields.items():

@@ -1,9 +1,8 @@
 """User-facing helpers for :class:`Event`.
 
-Attached to the generated classes by the ``python_mixin`` annotation on ``Event`` in the
-schema, so ``event.plot()`` works on any Event — including the nested ones a loaded
-experiment holds, which previously only gained it if some call path remembered to retype
-them.
+Attached to the generated classes by name (``EventBehaviour`` -> ``Event``), so
+``event.plot()`` works on any Event — including the nested ones a loaded experiment
+holds, which previously only gained it if some call path remembered to retype them.
 """
 
 from __future__ import annotations

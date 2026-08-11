@@ -1,13 +1,4 @@
-# Pre-commit hooks for TVBO.
-#
-# Closes plan.md row 1 / §11.1 item 2: every commit that touches a YAML file in
-# `tvbo/database/` (or the LinkML schema) re-runs `tests/test_database_validation.py`
-# to catch schema-violating database entries before they land. Mirrors the
-# `database-validation` job in `.github/workflows/ci.yml` so local commits and
-# CI agree.
-#
-# Install once with: `pre-commit install`
-# Run manually with: `pre-commit run --all-files`
+# Install once with `pre-commit install`; run manually with `pre-commit run --all-files`.
 
 repos:
   - repo: local
@@ -18,4 +9,12 @@ repos:
         language: system
         pass_filenames: false
         files: '^(tvbo/database/.*\.ya?ml|schema/tvbo_datamodel\.yaml|tests/test_database_validation\.py)$'
+        stages: [pre-commit]
+
+      - id: no-stacked-comments
+        name: No stacked '#' comment blocks in added lines
+        entry: python3 scripts/check_comment_blocks.py
+        language: system
+        pass_filenames: false
+        files: '\.(py|mako|ya?ml|toml|jl|sh)$'
         stages: [pre-commit]
