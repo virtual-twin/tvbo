@@ -1,0 +1,15 @@
+CORRECTION: this commit's message is wrong.
+
+The message describes docstring relocation in tvbo/api/ontology_api.py and
+tvbo/data/types.py. This commit contains none of that. Its only change is
+tvbo/templates/tvboptim/tvbo-tvboptim-algorithm.py.mako (+18/-9): the _canon
+weak-type normalisation that lets the tuning scan compile once across stages.
+
+That work is not mine. It was uncommitted in the main worktree when I ran
+'git add -A && git commit' believing the shell was in my own worktree; it was
+not, so the commit swept up another author's work in progress and labelled it
+with my message. The code itself is correct and unmodified, and later commits
+build on it.
+
+The docstring relocation the message describes landed separately on
+chore/docstring-relocation (PR #88), inside commit 9f3bcaaf.
