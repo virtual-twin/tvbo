@@ -83,7 +83,7 @@ print(f"With speed in m/s:\n{np.round(delays, 2)}")
 
 ```{python}
 # Override output unit
-delays_seconds = net.calculate_delays("s")
+delays_seconds = net.calculate_delays(output_unit="s")
 print(f"Delays in seconds:\n{delays_seconds}")
 ```
 

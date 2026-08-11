@@ -533,7 +533,9 @@ def _group_axis(opts, axis: str) -> dict | None:
         "rules": [b + edge for b in bounds[:-1]],  # interior only: the last is the axis end
         "rule_kwargs": {"color": str(spec.get("color", "k")), "linewidth": float(spec.get("linewidth", 0.6))},
         "labels": [
-            {"text": t, "at": (s + e) / 2.0 + edge} for (s, e), t in zip(zip(starts, bounds, strict=True), labels, strict=True)
+            # Not strict: `labels` is optional, and the check above already rejects a partial list.
+            {"text": t, "at": (s + e) / 2.0 + edge}
+            for (s, e), t in zip(zip(starts, bounds, strict=True), labels, strict=False)
         ],
         "pad": float(spec.get("pad", 0.04)),
         "kwargs": {

@@ -123,6 +123,23 @@ def _inner_dims(post_trial_shape, ts_arr, declared=None):
     return dims, coords
 
 
+def _is_partial_shard(expl) -> bool:
+    """Whether *expl* holds one HPC array task's slice rather than a whole sweep.
+
+    A shard covers fewer cells than the full Cartesian product of its axes, which is the only thing that distinguishes it: `cell_coords` is present on **every** keyed sweep, sharded or not (see `_stacked_to_dataarray`), so its mere presence says nothing. Reading it as a shard marker silently cost every local sweep its provenance sidecar.
+
+    Undecidable cases (no axes, no sizes) count as *not* a shard. Writing one redundant sidecar beside a shard is recoverable; dropping the sidecar of a full run breaks the self-describing contract `save` advertises, and does so without a word.
+    """
+    cell_coords = getattr(expl, "cell_coords", None)
+    if not cell_coords:
+        return False
+    sizes = [int(getattr(ax, "n", 0) or 0) for ax in (getattr(expl, "axes", None) or [])]
+    if not sizes or any(s <= 0 for s in sizes):
+        return False
+    n_cells = max(int(np.asarray(v).shape[0]) for v in cell_coords.values() if np.asarray(v).ndim)
+    return n_cells < int(np.prod(sizes))
+
+
 def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None):
     """A parameter-grid-stacked array, labelled as an `xr.DataArray`.
 
@@ -2195,8 +2212,7 @@ class ExperimentResult:
             except Exception:
                 stem = "result"
 
-        # A sharded run's cell coordinates mark it as one slice of the sweep; its provenance sidecar is written once by the gather pass, not per task.
-        is_shard = any(getattr(e, "cell_coords", None) is not None for e in (self.explorations or {}).values())
+        is_shard = any(_is_partial_shard(e) for e in (self.explorations or {}).values())
 
         if len(data_vars) > 1:
             from collections import defaultdict
@@ -2244,12 +2260,12 @@ class ExperimentResult:
                     fh.write(yaml_text)
                 written.append(yaml_path)
             except Exception:
-                pass
+                logger.warning("provenance sidecar %s.yaml not written", stem, exc_info=True)
             # BEP034 alignment: a JSON metadata sidecar (BIDS tooling reads JSON) beside the richer YAML re-run recipe, and a dataset_description.json marking out_dir as a BIDS-derivatives dataset.
             try:
                 written += self._write_bep034_sidecars(out_dir, stem)
             except Exception:
-                pass
+                logger.warning("BEP034 sidecars for %s not written", stem, exc_info=True)
         return written
 
     def _write_bep034_sidecars(self, out_dir, stem) -> list:
