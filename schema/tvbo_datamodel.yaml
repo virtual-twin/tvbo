@@ -3164,9 +3164,9 @@ classes:
                     square in that axis, symmetric and positive semi-definite; its diagonal
                     carries per-element variances and need NOT be unity, so unequal
                     variances and cross-element correlation are expressed together. The
-                    realised increment is `intensity` times a draw from this covariance, so
-                    a scalar `intensity` continues to mean what it means for uncorrelated
-                    noise. Absent (the default) means the increment is independent across
+                    realised increment is the declared sigma times a draw from this
+                    covariance, so `parameters: {sigma: ...}` continues to mean what it
+                    means for uncorrelated noise. Absent (the default) means the increment is independent across
                     that axis. Being a `Parameter`, it carries the full provenance triple:
                     a literal `value:`, existing bytes via `source:`+`measure:`, or — the
                     usual case for a derived operator — `producer:`, whose FunctionCall
@@ -3210,19 +3210,6 @@ classes:
                 ifabsent: integer(42)
             random_state:
                 range: RandomStream
-                inlined: true
-            intensity:
-                description: >-
-                    Noise amplitude as a standard deviation (sigma). Superseded by the
-                    `sigma` entry of `parameters`, which states the same quantity where
-                    every other declared quantity lives; a dispersion (TVB's nsig,
-                    D = sigma^2/2) is the `nsig` entry there.
-                deprecated: >-
-                    Use `parameters: {sigma: ...}` for a standard deviation, or
-                    `parameters: {nsig: ...}` for a dispersion. `intensity` is read as a
-                    standard deviation; a recipe that meant a dispersion is off by
-                    sqrt(2 D)/D.
-                range: Parameter
                 inlined: true
             distribution:
                 range: Distribution

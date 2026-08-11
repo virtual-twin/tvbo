@@ -1,6 +1,5 @@
-# Copyright Berlin Institute of Health / Charité University Medicine Berlin
-# Department of Neurology and Experimental Neurology
-# Brain Simulation Section
+# Copyright © 2026 Charité Universitätsmedizin Berlin — Brain Simulation Section.
+# SPDX-License-Identifier: EUPL-1.2
 
 """TVB-O: understand and generate large-scale brain network models.
 
@@ -47,10 +46,10 @@ __authors__ = [
     "Petra Ritter",
 ]
 
-__version__ = "0.5.3"
+__version__ = "1.0.0"
 __maintainer__ = "Leon K. Martin (leon.martin@bih-charite.de)"
 __contact__ = "petra.ritter@charite.de"
-__status__ = "beta"
+__status__ = "stable"
 
 __copyright__ = "Copyright (c) 2026, Brain Simulation Section, Charité Universitätsmedizin Berlin"
 __license__ = "EUPL-1.2-or-later"
@@ -108,7 +107,6 @@ def _configure_jax_backend():
 # Lazy public API — imports happen on first attribute access
 _LAZY_IMPORTS = {
     "database_path": ".data.registry",
-    "Connectome": ".classes.network",
     "Network": ".classes.network",
     "Atlas": ".classes.atlas",
     "SimulationExperiment": ".classes",
@@ -131,6 +129,27 @@ _LAZY_ALIASES = {
     "Model": ("Dynamics", ".classes.dynamics"),
     "LocalDynamics": ("Dynamics", ".classes.dynamics"),
 }
+
+
+_LOGGING_EXPORTS = (
+    "configure_logging",
+    "ensure_configured",
+    "get_log_level",
+    "log_level",
+    "set_log_level",
+    "silence",
+)
+
+__all__ = sorted({*_LAZY_IMPORTS, *_LAZY_ALIASES, *_LOGGING_EXPORTS, "clean_temp", "ROOT", "tempdir"})
+"""The public surface of `tvbo`, and what SemVer covers.
+
+Names not listed here are internal, whatever their spelling — including the stdlib modules (`os`, `shutil`, `tempfile`, `warnings`, `logging`) that `import tvbo` binds as a side effect of its own setup and that used to be the bulk of what `dir(tvbo)` returned.
+"""
+
+
+def __dir__():
+    """The public API, so tab-completion and `dir(tvbo)` show it rather than this module's imports."""
+    return list(__all__)
 
 
 def __getattr__(name):

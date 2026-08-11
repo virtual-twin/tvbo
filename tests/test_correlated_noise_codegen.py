@@ -28,7 +28,7 @@ dynamics:
       variable_of_interest: true
       coupling_variable: true
       noise:
-        intensity: {name: intensity, value: 0.01}
+        parameters: {sigma: {value: 0.01}}
         # COVARIANCE
   output: [x]
   number_of_modes: 1
@@ -115,8 +115,7 @@ def test_generated_module_builds_a_wrapping_solver(tmp_path):
 def test_the_declared_covariance_reaches_the_integrated_trajectory(tmp_path):
     """End-to-end: run the model and measure the correlation it actually integrated.
 
-    Every check above inspects generated source, which a wrapper that is emitted but never reached would still satisfy. This one runs the simulation. The model is a pure random walk (zero drift, zero coupling), so the increments of `x` ARE the
-    Wiener increments and the declared node-node correlation is directly measurable.
+    Every check above inspects generated source, which a wrapper that is emitted but never reached would still satisfy. This one runs the simulation. The model is a pure random walk (zero drift, zero coupling), so the increments of `x` ARE the Wiener increments and the declared node-node correlation is directly measurable.
     """
     import numpy as np
 

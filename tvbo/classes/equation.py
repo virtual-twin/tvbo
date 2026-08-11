@@ -14,11 +14,10 @@ import sympy as sp
 from sympy import (
     IndexedBase,
     Piecewise,
-    latex,
-    sympify,
-    parse_expr,
     Symbol,
-    pycode,
+    latex,
+    parse_expr,
+    sympify,
 )
 from sympy.abc import _clash1
 from sympy.core.basic import Basic
@@ -100,12 +99,13 @@ def unify_coupling_terms(eq_string):
 
 
 def extract_parts_from_numpy_where(python_string):  # TODO: test!
-    """
-    Extracts the condition, if_true, and if_false parts from a numpy.where or where expression string.
+    """Split a ``numpy.where`` call into its condition and its two branches.
+
     Args:
-    - python_string: A string in the format "numpy.where(condition, if_true, if_false)" or "where(condition, if_true, if_false)"
+        python_string: A call spelled ``numpy.where(condition, if_true, if_false)`` or ``where(condition, if_true, if_false)``.
+
     Returns:
-    - A tuple containing the condition, if_true, and if_false parts as strings.
+        The condition, if_true and if_false parts, as strings.
     """
     # Check and remove the starting part of the string
     if python_string.startswith("numpy.where("):
@@ -143,8 +143,7 @@ def extract_parts_from_numpy_where(python_string):  # TODO: test!
 
 
 def convert_ifelse_to_np_where(code_str):
-    """
-    Convert a sympy.pycode output string from a simple if-else format to a numpy where format.
+    """Convert a sympy.pycode output string from a simple if-else format to a numpy where format.
 
     Args:
     code_str (str): A string representing a sympy.pycode output,
@@ -170,14 +169,13 @@ def convert_ifelse_to_np_where(code_str):
 
 
 def convert_numpy_where_to_sympy(python_string):
-    """
-    Converts a numpy.where expression to a sympy Piecewise expression.
+    """Convert a ``numpy.where`` expression to a SymPy ``Piecewise``.
+
     Args:
-    - condition_str: The condition string.
-    - if_true_str: The expression if the condition is True.
-    - if_false_str: The expression if the condition is False.
+        python_string: A ``numpy.where`` / ``np.where`` / ``where`` call, split by :func:`extract_parts_from_numpy_where`.
+
     Returns:
-    - A sympy Piecewise expression.
+        The equivalent SymPy ``Piecewise`` expression.
     """
     python_string = python_string.replace("numpy.", "").replace("np.", "")
     condition_str, if_true_str, if_false_str = extract_parts_from_numpy_where(python_string)
@@ -246,7 +244,7 @@ def sympify_value(v, acronym="", evaluate=False):
         )
     except Exception as e:
         logger.debug("Error parsing equation %r: %s", eq, e)
-        raise ValueError(f"Failed to parse equation: {eq}. Ensure the equation is in a valid format.")
+        raise ValueError(f"Failed to parse equation: {eq}. Ensure the equation is in a valid format.") from e
 
     return eq
 
@@ -290,7 +288,7 @@ def rename_uppercase_variables(input_equation):
         try:
             sympy_equation = sympify_value(input_equation)
         except Exception as e:
-            raise ValueError(f"Invalid input for SymPy conversion: {e}")
+            raise ValueError(f"Invalid input for SymPy conversion: {e}") from e
     else:
         sympy_equation = input_equation
 
@@ -910,8 +908,7 @@ def update_class_relationships(s_cls, k_cls):
 
 
 def get_symbolic_coupling(coupling_function) -> dict:
-    """
-    Get the symbolic coupling expressions for the given coupling function.
+    """Get the symbolic coupling expressions for the given coupling function.
 
     Parameters:
         coupling_function (str or CouplingFunction): The coupling function to retrieve symbolic expressions for.
@@ -923,7 +920,6 @@ def get_symbolic_coupling(coupling_function) -> dict:
     Raises:
         SomeException: Description of the exception raised, if any.
     """
-
     # Get the coupling function from the ontology
     if isinstance(coupling_function, str):
         coupling_function = ontology.get_coupling_function(coupling_function)
@@ -938,8 +934,7 @@ def get_symbolic_coupling(coupling_function) -> dict:
 
 
 def generate_global_coupling_function(pre_expr, post_expr, j_index_start=0):
-    """
-    Generate the global coupling function based on given pre and post expressions.
+    """Generate the global coupling function based on given pre and post expressions.
 
     :param pre_expr: The 'pre' sympy expression involving x_i and x_j.
     :param post_expr: The 'post' sympy expression involving gx.
@@ -980,11 +975,11 @@ def topological_sort_equations(variable_dict, dependency_tree):
         ValueError: If the dependency graph contains a cycle.
     """
     from networkx import (
-        topological_sort,
-        is_directed_acyclic_graph,
         draw,
         find_cycle,
+        is_directed_acyclic_graph,
         kamada_kawai_layout,
+        topological_sort,
     )
 
     """
@@ -1038,7 +1033,6 @@ def conditionals2piecewise(metadata_equation):
     Returns:
         A SymPy `Piecewise` expression representing the conditional map.
     """
-
     return Piecewise(
         *[
             (
@@ -1054,66 +1048,3 @@ def conditionals2piecewise(metadata_equation):
             )
         ]
     )
-
-
-def piecewise2numpy(piecewise_expr, fully_qualified_modules=False) -> str:
-    """
-    Convert a sympy Piecewise expression to an equivalent nested numpy.where expression.
-
-    Args:
-        piecewise_expr (Piecewise): A sympy Piecewise expression.
-
-    Returns:
-        str: A string representing the equivalent numpy.where statement.
-    """
-    if not isinstance(piecewise_expr, Piecewise):
-        raise ValueError("Input must be a sympy Piecewise expression")
-
-    where_expr = None
-    for expr, cond in reversed(piecewise_expr.args):  # Start from the last argument to build the nested structure
-        expr_code = pycode(expr, fully_qualified_modules=False)
-        cond_code = pycode(cond, fully_qualified_modules=False) if not cond else "True"
-        if where_expr is None:
-            where_expr = expr_code
-        else:
-            where_expr = f"{'np.' if fully_qualified_modules else ''}where({cond_code}, {expr_code}, {where_expr})"
-
-    return str(where_expr)
-
-
-# Julia Adapter #
-
-
-def piecewise2julia(piecewise_expr) -> str:
-    """
-    Convert a sympy Piecewise expression to a Julia ifelse expression string.
-
-    Parameters:
-    piecewise_expr (sympy.Piecewise): A sympy Piecewise object.
-
-    Returns:
-    str: A Julia-compatible string representing the Piecewise expression using nested ifelse.
-    """
-    piecewise_expr = piecewise_expr.replace("^", "**")
-    parsed_expr = parse_expr(piecewise_expr, local_dict=_clash1, evaluate=False)
-    if not isinstance(parsed_expr, Piecewise):
-        return piecewise_expr
-    else:
-        piecewise_expr = parsed_expr
-
-    def process_piecewise(args):
-        """
-        Recursively convert sympy Piecewise args to Julia's ifelse syntax.
-        """
-        if not args:
-            return "nothing"  # Julia's fallback for no conditions
-
-        expr, cond = args[0]
-        if cond:  # Sympy uses True to indicate "otherwise"
-            return f"{expr}"
-        elif str(cond) == "modification":
-            cond = f"{cond} > 0"
-        return f"ifelse({cond}, {expr}, {process_piecewise(args[1:])})"
-
-    # Process the Piecewise arguments
-    return process_piecewise(piecewise_expr.args)

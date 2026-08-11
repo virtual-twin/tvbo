@@ -12,7 +12,6 @@ import numpy as np
 import sympy as sp
 from sympy.parsing.sympy_parser import parse_expr
 
-
 # Symbolic helpers
 
 
@@ -82,16 +81,38 @@ def _evaluator(expr, dynamics):
 # Simulation helpers
 
 
+def _sv_window(sv, centre):
+    """A finite `(lo, hi)` to spread trial starts over: the variable's own bounds, else a unit window around *centre*.
+
+    A domain is often a one-sided clamp — `[0, inf)` for a firing rate — so an unguarded `uniform(0, inf)` would return `inf` and every trajectory would be NaN.
+    """
+    lo = getattr(getattr(sv, "domain", None), "lo", None)
+    hi = getattr(getattr(sv, "domain", None), "hi", None)
+    finite = [v for v in (lo, hi) if isinstance(v, (int, float)) and np.isfinite(v)]
+    if len(finite) == 2 and finite[1] > finite[0]:
+        return float(finite[0]), float(finite[1])
+    return centre - 0.5, centre + 0.5
+
+
 def _initial_conditions(dynamics, n_trials, u_0):
+    """One starting state per trial, shaped `(n_trials, n_state_variables)`.
+
+    A model that declares `distribution` on its state variables is sampled from it, which is the declarative way to ask for spread. Otherwise the starts are spread here rather than in the model: distinct trajectories are a property of *this plot*, not of the system, so the spread does not belong in `get_initial_values` — which is what the removed `random=True` flag got wrong.
+    """
     n_sv = len(dynamics.state_variables)
     if u_0 is not None:
         u_0 = np.asarray(u_0, dtype=float)
         if u_0.ndim == 1:
             u_0 = np.broadcast_to(u_0, (n_trials, n_sv)).copy()
         return u_0
+
+    init = np.asarray(dynamics.get_initial_values(N=n_trials), dtype=float)
+    if init.ndim == 2:  # the model declares distributions: one draw per trial already
+        return init.T
     if n_trials == 1:
-        return np.asarray(dynamics.get_initial_values(), dtype=float).reshape(1, n_sv)
-    return np.asarray(dynamics.get_initial_values(random=True, N=n_trials)).T
+        return init.reshape(1, n_sv)
+    windows = [_sv_window(sv, c) for sv, c in zip(dynamics.state_variables.values(), init, strict=True)]
+    return np.column_stack([np.random.uniform(lo, hi, size=n_trials) for lo, hi in windows])
 
 
 def _run_trials(dynamics, n_trials, duration, dt, u_0, transient):
@@ -327,7 +348,7 @@ def _kind_vectorfield(
         raise ValueError("vectorfield requires exactly 2 dims (state variables)")
     state_names = list(dynamics.state_variables)
     sv_idx = []
-    for label, expr in resolved:
+    for _label, expr in resolved:
         if not (isinstance(expr, sp.Symbol) and str(expr) in state_names):
             raise ValueError("vectorfield dims must be state-variable names")
         sv_idx.append(state_names.index(str(expr)))
@@ -416,7 +437,7 @@ def _kind_phaseplane(
     show_limit_cycle=True,
     trajectory_color="red",
 ):
-    """Vector field + nullclines + (optional) sample trajectories.
+    r"""Vector field + nullclines + (optional) sample trajectories.
 
     Nullclines are the zero-level contours of each component of the vector field (``\\dot x_i = 0``). Their intersections are equilibria.
     """
@@ -592,9 +613,10 @@ def plot_dynamics(
         Defaults to ``"red"`` for clear contrast against the streamline /
         nullcline overlay.
 
-    Returns
+    Returns:
     -------
-    matplotlib.figure.Figure"""
+    matplotlib.figure.Figure
+    """
     if kind not in _KINDS:
         raise ValueError(f"kind must be one of {_KINDS}, got {kind!r}")
 
@@ -701,6 +723,7 @@ def animate_dynamics(
         Format string with ``{name}`` and ``{value}`` placeholders.
     """
     import copy
+
     from matplotlib.animation import FuncAnimation
 
     if parameter not in dynamics.parameters:

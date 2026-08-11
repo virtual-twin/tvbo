@@ -11,7 +11,6 @@ import importlib
 
 import pytest
 
-
 # ── Section 1: Top-level public API ──────────────────────────────────────────
 
 
@@ -23,7 +22,6 @@ class TestTopLevelAPI:
         "SimulationExperiment",
         "SimulationStudy",
         "Network",
-        "Connectome",  # deprecated alias, should == Network
         "Atlas",
         "Coupling",
         "Noise",
@@ -76,7 +74,6 @@ class TestCurrentImportPaths:
         ("tvbo.codegen.code", "parse_eq"),
         ("tvbo.codegen.templater", None),  # module import
         ("tvbo.classes.network", "Network"),
-        ("tvbo.classes.network", "Connectome"),
         ("tvbo.classes.atlas", "Atlas"),
         ("tvbo.data.types", "TimeSeries"),
         ("tvbo.datamodel", "tvbo_datamodel"),
@@ -100,11 +97,13 @@ class TestCurrentImportPaths:
 class TestClassIdentity:
     """Ensure aliased classes point to the same object."""
 
-    def test_connectome_is_subclass_of_network(self):
-        """Connectome should be a deprecated alias/subclass of Network."""
-        from tvbo.classes.network import Connectome, Network
+    def test_connectome_alias_is_gone(self):
+        """`Connectome` was removed at 1.0; `Network` is the one class."""
+        import tvbo
 
-        assert issubclass(Connectome, Network)
+        assert "Connectome" not in tvbo.__all__
+        with pytest.raises(AttributeError):
+            _ = tvbo.Connectome
 
     def test_top_level_dynamics_is_same_class(self):
         """tvbo.Dynamics is the same class as localdynamics.Dynamics."""

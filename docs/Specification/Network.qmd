@@ -314,7 +314,7 @@ Transmission delays are computed from the lengths matrix and conduction
 speed ($v$, default 3 mm/ms):
 
 ```{python}
-delays = sc.compute_delays()
+delays = sc.calculate_delays()
 print(f"Delay range: [{delays.min():.1f}, {delays.max():.1f}] ms")
 ```
 

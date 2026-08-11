@@ -54,7 +54,7 @@ print(f"Time unit: {net.time_unit}")
 
 ### 1.1 Computing Delays
 
-The `compute_delays()` method calculates transmission delays from distances and conduction speed:
+The `calculate_delays()` method calculates transmission delays from distances and conduction speed:
 
 $$\text{delay} = \frac{\text{distance}}{\text{speed}}$$
 
@@ -65,7 +65,7 @@ Units are handled automatically via SymPy:
 net.conduction_speed = Parameter(name="v", value=3.0, unit="mm/ms")
 
 # Compute delays (uses network's time_unit by default)
-delays = net.compute_delays()
+delays = net.calculate_delays()
 print(f"Delays (ms):\n{np.round(delays, 2)}")
 ```
 
@@ -77,13 +77,13 @@ the network's distance/time units:
 ```{python}
 # Speed in m/s, distances in mm, output in ms
 net.conduction_speed = Parameter(name="v", value=3.0, unit="m/s")
-delays = net.compute_delays()
+delays = net.calculate_delays()
 print(f"With speed in m/s:\n{np.round(delays, 2)}")
 ```
 
 ```{python}
 # Override output unit
-delays_seconds = net.compute_delays("s")
+delays_seconds = net.calculate_delays("s")
 print(f"Delays in seconds:\n{delays_seconds}")
 ```
 
@@ -101,7 +101,7 @@ net_si = Network.from_matrix(
 )
 net_si.conduction_speed = Parameter(name="v", value=3.0, unit="m/s")
 
-delays_si = net_si.compute_delays()
+delays_si = net_si.calculate_delays()
 print(f"SI units - delays in seconds:\n{delays_si}")
 ```
 
@@ -125,7 +125,7 @@ net_micro = Network.from_matrix(
 )
 net_micro.conduction_speed = Parameter(name="v", value=3000.0, unit="m/s")
 
-delays_us = net_micro.compute_delays()
+delays_us = net_micro.calculate_delays()
 print(f"Delays in microseconds:\n{np.round(delays_us, 2)}")
 ```
 
@@ -245,7 +245,7 @@ monitor = Monitor(
 ## Summary
 
 - Set `distance_unit` and `time_unit` on networks to define the unit system
-- `compute_delays()` automatically converts between units using SymPy
+- `calculate_delays()` automatically converts between units using SymPy
 - Set the integrator's `time_scale` (`s` / `ms` / `us`) to choose the time unit for `step_size`, `duration`, and `transient_time`
 - Edge and model parameters can include a `unit` for documentation and validation
 - Any SymPy-recognized unit string works (no hardcoded mappings)

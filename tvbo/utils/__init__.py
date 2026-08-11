@@ -1,9 +1,7 @@
 # Copyright © 2023 Charité Universitätsmedizin Berlin.
 # SPDX-License-Identifier: EUPL-1.2
 
-"""
-Utilities Module for TVB-O
-==========================
+"""Utilities Module for TVB-O.
 
 Core utilities: ``Bunch`` container, PyTree formatting, YAML I/O, and metadata traversal helpers.
 
@@ -178,8 +176,7 @@ def as_list(obj) -> list:
 def normalize_params(params) -> dict:
     """Normalize a ``parameters`` collection to a flat ``{name: param}`` dict.
 
-    Accepts the keyed mapping ``{weight: Parameter(...)}`` (LinkML ``JsonObj`` or plain dict), the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw
-    YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node and dynamics parameter collections alike.
+    Accepts the keyed mapping ``{weight: Parameter(...)}`` (LinkML ``JsonObj`` or plain dict), the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node and dynamics parameter collections alike.
     """
     if not params:
         return {}
@@ -213,14 +210,12 @@ def edge_param(edge, name: str, default=None):
     return scalar if isinstance(scalar, (int, float)) else default
 
 
-def noise_sigma(noise, **legacy):
+def noise_sigma(noise):
     """The noise standard deviation σ off a declared ``Noise``, or ``None``.
 
     The one reader for every spelling the schema allows, so a recipe cannot mean a different amplitude on different backends. Each spelling has exactly one meaning:
 
     * ``parameters: {sigma: {value: s}}`` → ``s``. Wins whenever present.
-    * ``intensity: {value: s}`` → ``s``. Deprecated spelling of the same quantity;
-      reading one warns.
     * ``parameters: {nsig: {value: D}}`` → ``sqrt(2 D)``. The dispersion spelling
       (``D = σ²/2``) — what a TVB import writes.
 
@@ -228,35 +223,17 @@ def noise_sigma(noise, **legacy):
     """
     import math
 
-    if "intensity_means" in legacy:
-        # Emitted by scripts rendered before `intensity` was pinned to sigma; those files live in users' output/ dirs and are re-run against the installed package.
-        warnings.warn(
-            "noise_sigma(intensity_means=...) is obsolete: `intensity` is a standard "
-            "deviation, and a dispersion is declared as `parameters.nsig`.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
     if not noise:
         return None
     params = normalize_params(getattr(noise, "parameters", None))
     candidates = (
-        ("sigma", params.get("sigma"), lambda v: v),
-        ("intensity", getattr(noise, "intensity", None), lambda v: v),
-        ("nsig", params.get("nsig"), lambda v: math.sqrt(2.0 * v)),
+        (params.get("sigma"), lambda v: v),
+        (params.get("nsig"), lambda v: math.sqrt(2.0 * v)),
     )
-    for name, source, to_sigma in candidates:
+    for source, to_sigma in candidates:
         val = getattr(source, "value", source)
         if val is None:
             continue
-        if name == "intensity":
-            warnings.warn(
-                "`noise.intensity` is deprecated; declare `parameters: {sigma: ...}` for "
-                "a standard deviation or `parameters: {nsig: ...}` for a dispersion. It "
-                "is read as a standard deviation, so a recipe that meant a dispersion "
-                "is off by sqrt(2 D)/D.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         val = float(val)
         return to_sigma(val) if val > 0 else 0.0
     return None
@@ -331,7 +308,7 @@ class Bunch(dict):
         try:
             return self[key]
         except KeyError:
-            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'")
+            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'") from None
 
     def __setattr__(self, key, value):
         self[key] = value
@@ -340,7 +317,7 @@ class Bunch(dict):
         try:
             del self[key]
         except KeyError:
-            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'")
+            raise AttributeError(f"'{type(self).__name__}' has no attribute '{key}'") from None
 
     def __dir__(self):
         return list(super().__dir__()) + list(self.keys())
@@ -369,7 +346,7 @@ class Bunch(dict):
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         """Reconstruct a `Bunch` from JAX pytree aux_data and children."""
-        return cls(zip(aux_data, children))
+        return cls(zip(aux_data, children, strict=True))
 
 
 try:
@@ -404,8 +381,7 @@ def format_pytree_as_string(
     hide_none: bool = False,
     show_array_values: bool = False,
 ) -> str:
-    """
-    Recursively formats a JAX pytree structure as a string with Unicode box-drawing characters.
+    """Recursively formats a JAX pytree structure as a string with Unicode box-drawing characters.
 
     Args:
         pytree (Any): The pytree to format.
@@ -420,9 +396,9 @@ def format_pytree_as_string(
     Returns:
         str: The formatted string representation of the pytree.
     """
+    import equinox as eqx
     import jax
     import jax.numpy as jnp
-    import equinox as eqx
 
     # Unicode box-drawing characters for the tree structure
     space = "    "
@@ -555,8 +531,7 @@ def pretty_print_pytree(
     show_numerical_only: bool = False,
     hide_none: bool = False,
 ) -> None:
-    """
-    Prints a pretty formatted representation of a JAX pytree structure.
+    """Prints a pretty formatted representation of a JAX pytree structure.
 
     Args:
         pytree (Any): The pytree to print.
