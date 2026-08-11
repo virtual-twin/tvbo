@@ -10,6 +10,7 @@ Reading the alias as a *fallback* after the canonical name is fine and common
 (`number_of_nodes or number_of_regions`): the alias branch is dead, not wrong.
 """
 
+import ast
 import re
 from pathlib import Path
 
@@ -26,11 +27,15 @@ SKIP = ("datamodel/schema.py", "datamodel/pydantic.py", "datamodel/tvbo_datamode
 ACCESSORS = ("getattr", "slot", "_p")
 
 EXEMPT = {
-    ("adapters/tvb.py", "dt"): "a TVB Simulator being imported FROM; its integrator owns `dt`",
-    ("templates/tvboptim/tvbo-tvboptim-experiment.py.mako", "dt"):
+    ("adapters/tvb.py", "sim.integrator", "dt"):
+        "a TVB Simulator being imported FROM; its integrator owns `dt`",
+    ("templates/tvboptim/tvbo-tvboptim-experiment.py.mako", "_res", "dt"):
         "a tvboptim solution object, which owns `dt`",
 }
-"""``(path, alias) -> why that object is not a TVBO one``, so the alias is its real name."""
+"""``(path, object, alias) -> why THAT object is not a TVBO one``, so the alias is its name.
+
+Keyed on the object, not the file: exempting every `dt` read in `adapters/tvb.py` would
+also excuse a future one on a genuine TVBO `Integrator`, which is the bug this exists for."""
 
 
 def _real_slot_names():
@@ -39,12 +44,28 @@ def _real_slot_names():
     A name that is a real slot somewhere cannot be judged from the text alone:
     ``target_variable`` is an ``Edge`` alias but ``Event``'s own slot, so flagging every
     read of it would demand a rename that breaks the class owning the name.
+
+    Read from either generated representation. Asking only for ``__dataclass_fields__``
+    would return an empty set the day the datamodel becomes Pydantic — which is this
+    branch's own direction — and an empty set silently widens the check onto names that
+    classes legitimately own, failing the hook on correct code.
     """
+    def declared(cls, attribute):
+        """*cls*'s field names under *attribute*, or none.
+
+        Guarded because the generated enums resolve **any** attribute as an enum code and
+        raise ``ValueError`` for one that names no permissible value.
+        """
+        try:
+            return set(getattr(cls, attribute, None) or {})
+        except Exception:
+            return set()
+
     names = set()
     for name in dir(dm):
         cls = getattr(dm, name)
         if isinstance(cls, type):
-            names |= set(getattr(cls, "__dataclass_fields__", {}))
+            names |= declared(cls, "__dataclass_fields__") | declared(cls, "model_fields")
     return names
 
 
@@ -62,42 +83,88 @@ def _sources():
             yield path
 
 
-def _reads(text, name):
-    """Line numbers where *name* is read through one of the accessor helpers."""
-    pattern = re.compile(
-        r"(?:%s)\(\s*[^,()]+?\s*,\s*['\"]%s['\"]" % ("|".join(ACCESSORS), re.escape(name))
-    )
-    return {i for i, line in enumerate(text.splitlines(), 1) if pattern.search(line)}
+ACCESSOR_READ = re.compile(
+    r"(?:%s)\(\s*(?P<obj>[^,()\n]+?)\s*,\s*['\"](?P<name>\w+)['\"]" % "|".join(ACCESSORS)
+)
+"""``getattr(obj, "name"`` and friends, for templates that no parser will accept.
+
+The object group admits neither parentheses nor a newline: widening it let a call with no
+comma at all run on until some later string literal and report an alias read that was
+never written."""
+
+ATTRIBUTE_READ = re.compile(r"(?P<obj>[A-Za-z_][\w.]*)\.(?P<name>\w+)\b")
+"""``obj.name`` — how a fallback usually reaches the canonical slot once the alias missed."""
+
+WINDOW = 5
+"""Lines either side that still count as "beside": a wrapped `canonical or alias` fallback."""
 
 
-def _canonical_reads(text, canonical):
-    """Line numbers where *canonical* is read at all — by accessor or as an attribute.
+def _parsed_reads(text):
+    """``(accessor reads, attribute reads)`` from the syntax tree, or ``None`` if unparsable.
 
-    A fallback often reaches the canonical slot directly once the alias branch has taken
-    the optional path: ``getattr(dyn, "components", None) or dyn.modes``.
+    Parsing rather than matching, because the object decides whether a canonical read
+    excuses an alias read beside it, and text cannot say what the object *is*:
+    ``nodes[0]``, ``get(obj)`` and a call wrapped over three lines are all ordinary here,
+    and a regex either misreads them or refuses them.
     """
-    attribute = re.compile(r"\.%s\b" % re.escape(canonical))
-    direct = {i for i, line in enumerate(text.splitlines(), 1) if attribute.search(line)}
-    return _reads(text, canonical) | direct
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return None
+
+    accessors, attributes = {}, {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute):
+            attributes.setdefault((ast.unparse(node.value), node.attr), set()).add(node.lineno)
+        elif isinstance(node, ast.Call) and len(node.args) >= 2:
+            func = node.func
+            name = func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", None)
+            key = node.args[1]
+            if name in ACCESSORS and isinstance(key, ast.Constant) and isinstance(key.value, str):
+                accessors.setdefault((ast.unparse(node.args[0]), key.value), set()).add(node.lineno)
+    return accessors, attributes
+
+
+def _matched_reads(text, *patterns):
+    """``{(object, name): {line, …}}`` by regex, for text the parser cannot take."""
+    reads = {}
+    for pattern in patterns:
+        for match in pattern.finditer(text):
+            line = text.count("\n", 0, match.start()) + 1
+            reads.setdefault((match["obj"].strip(), match["name"]), set()).add(line)
+    return reads
+
+
+def _reads(text):
+    """``(accessor reads, reads that can excuse one)`` however *text* can be read."""
+    parsed = _parsed_reads(text)
+    if parsed is not None:
+        accessors, attributes = parsed
+        return accessors, {**attributes, **accessors}
+    accessors = _matched_reads(text, ACCESSOR_READ)
+    return accessors, _matched_reads(text, ACCESSOR_READ, ATTRIBUTE_READ)
 
 
 def _bare_alias_reads(path):
-    """Alias reads in *path* with no canonical read of the same slot nearby.
+    """Alias reads in *path* with no canonical read *of the same object* beside them.
 
-    A five-line window, because the `canonical or alias` fallback is routinely wrapped
-    across lines by the formatter.
+    Same object, not merely the same name somewhere near: canonical slots include `rhs`,
+    `nodes` and `step_size`, which appear on most lines of an adapter, so a proximity test
+    on the name alone excuses nearly every alias read there is.
     """
     text = path.read_text(errors="ignore")
     rel = str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else path.name
+    accessors, canonicals = _reads(text)
     found = []
-    for alias, canonical in CHECKED.items():
-        if (rel, alias) in EXEMPT:
+    for (obj, name), lines in accessors.items():
+        canonical = CHECKED.get(name)
+        if canonical is None or (rel, obj, name) in EXEMPT:
             continue
-        canonical_lines = _canonical_reads(text, canonical)
-        for line in _reads(text, alias):
-            if not any(abs(line - other) <= 5 for other in canonical_lines):
-                found.append((rel, line, alias, canonical))
-    return found
+        beside = canonicals.get((obj, canonical), set())
+        for line in sorted(lines):
+            if not any(abs(line - other) <= WINDOW for other in beside):
+                found.append((rel, line, name, canonical))
+    return sorted(found, key=lambda f: f[1])
 
 
 @pytest.mark.backend_core
@@ -133,6 +200,40 @@ def test_the_guard_accepts_the_canonical_first_fallback(tmp_path):
     )
 
     assert _bare_alias_reads(ok) == []
+
+
+@pytest.mark.parametrize("label,body", [
+    ("no alias read at all", 'a = slot(figure)\nb = fmt(x, "dt")\n'),
+    ("nested accessor", 'x = getattr(getattr(exp, "dt", None), "foo", None)\nstep = exp.step_size\n'),
+    ("subscripted object", 'step = nodes[0].step_size\nx = getattr(nodes[0], "dt", None)\n'),
+    ("call result", 'cfg = get(obj).step_size\nx = getattr(get(obj), "dt", None)\n'),
+])
+def test_the_guard_does_not_fire_on_these(label, body, tmp_path):
+    """Shapes that are correct code. This runs as a pre-push hook, so a false positive
+    blocks a push on work that has nothing wrong with it — which is worse than a miss."""
+    source = tmp_path / "source.py"
+    source.write_text(body)
+
+    assert _bare_alias_reads(source) == [], label
+
+
+def test_the_slot_index_is_not_empty():
+    """An empty index would widen the check onto names classes own, and fail correct code."""
+    assert len(_REAL_SLOTS) > 100
+    assert {"name", "value", "rhs"} <= _REAL_SLOTS
+
+
+def test_a_canonical_read_of_a_DIFFERENT_object_does_not_excuse_the_alias(tmp_path):
+    """The excuse is same-object, not same-name-nearby.
+
+    Canonicals like `rhs`/`nodes`/`step_size` appear on most lines of an adapter, so a
+    proximity test on the name alone excused nearly every alias read in the file.
+    """
+    alias, canonical = next(iter(CHECKED.items()))
+    offender = tmp_path / "offender.py"
+    offender.write_text(f'y = other.{canonical}\nx = getattr(obj, "{alias}", None)\n')
+
+    assert [f[2] for f in _bare_alias_reads(offender)] == [alias]
 
 
 def test_ambiguous_names_are_excluded_from_the_check():

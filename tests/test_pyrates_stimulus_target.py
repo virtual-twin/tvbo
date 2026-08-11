@@ -7,11 +7,7 @@ onto the event's `name`. So the read returned its `I_ext` default for every expe
 run, and PyRates was handed an input key for a variable the model need not declare.
 """
 
-import tempfile
-from pathlib import Path
-
 import pytest
-import yaml
 
 pytest.importorskip("pyrates")
 
@@ -48,22 +44,22 @@ integration: {method: euler, step_size: 0.1, duration: 5.0}
 """
 
 
-def _experiment(text):
-    path = Path(tempfile.mkdtemp()) / "experiment.yaml"
+def _experiment(text, tmp_path):
+    path = tmp_path / "experiment.yaml"
     path.write_text(text)
     return SimulationExperiment.from_file(str(path))
 
 
-def test_the_target_variable_comes_from_the_stimulus_event():
+def test_the_target_variable_comes_from_the_stimulus_event(tmp_path):
     """The event is named `P`, which is the variable the dynamics actually reads."""
-    adapter = PyRatesAdapter(_experiment(RECIPE))
+    adapter = PyRatesAdapter(_experiment(RECIPE, tmp_path))
 
     assert adapter._stimulus_target_variable() == "P"
 
 
-def test_the_generated_input_key_addresses_that_variable():
+def test_the_generated_input_key_addresses_that_variable(tmp_path):
     """The whole point: the key used to end in `/I_ext`, which this model never declares."""
-    inputs = PyRatesAdapter(_experiment(RECIPE))._build_inputs()
+    inputs = PyRatesAdapter(_experiment(RECIPE, tmp_path))._build_inputs()
 
     assert inputs, "the stimulus produced no PyRates input at all"
     key = next(iter(inputs))
@@ -71,15 +67,33 @@ def test_the_generated_input_key_addresses_that_variable():
     assert "I_ext" not in key
 
 
-def test_a_stimulus_with_no_event_and_no_I_ext_says_so():
+def test_a_stimulus_with_no_event_and_no_I_ext_says_so(tmp_path):
     """Guessing `I_ext` addressed a variable that need not exist; that is now an error."""
-    adapter = PyRatesAdapter(_experiment(RECIPE.replace("event_type: stimulus", "event_type: discrete")))
+    recipe = RECIPE.replace("event_type: stimulus", "event_type: discrete")
+    adapter = PyRatesAdapter(_experiment(recipe, tmp_path))
 
     with pytest.raises(ValueError, match="No stimulus event names the variable"):
         adapter._build_inputs()
 
 
-def test_the_legacy_default_is_kept_only_where_the_model_declares_it():
+def test_a_model_declaring_I_ext_keeps_the_legacy_path_through_build_inputs(tmp_path):
+    """Through `_build_inputs`, not the helper alone.
+
+    The lookup consulted `experiment.dynamics` while `dyn_name` keys the network's library,
+    so it always missed and a legacy `stimulation:`-only recipe raised instead of falling
+    back — a regression the helper-only test could not see.
+    """
+    recipe = (RECIPE
+              .replace("event_type: stimulus", "event_type: discrete")
+              .replace("{tau: {value: 10.0}}", "{tau: {value: 10.0}, I_ext: {value: 0.0}}")
+              .replace("(-v + P)/tau", "(-v + I_ext)/tau"))
+    inputs = PyRatesAdapter(_experiment(recipe, tmp_path))._build_inputs()
+
+    assert inputs, "the legacy fallback produced no PyRates input at all"
+    assert [k for k in inputs if k.endswith("/I_ext")] == list(inputs)
+
+
+def test_the_legacy_default_is_kept_only_where_the_model_declares_it(tmp_path):
     """`I_ext` stays available to models that really have it, and only to those."""
     from types import SimpleNamespace
 

@@ -1,8 +1,7 @@
 # Install both stages once:
 #     pre-commit install --hook-type pre-commit --hook-type pre-push
 # Run manually with `pre-commit run --all-files` or `--hook-stage pre-push`.
-# Sub-second checks run at pre-commit; test-shaped ones wait for pre-push.
-# `ruff format --check` and ruff's full lint are absent because both still fail on the tree.
+# Sub-second checks run at pre-commit, test-shaped ones at pre-push; ruff format and its full lint are absent because both still fail on the tree.
 
 repos:
   - repo: local

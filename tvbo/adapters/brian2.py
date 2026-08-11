@@ -269,7 +269,7 @@ class Brian2Adapter(BaseAdapter):
         edges = getattr(network, "edges", None) or []
 
         integration = getattr(exp, "integration", None)
-        ts_factor = float(time_unit_factor((integration, exp), _BRIAN2_CLOCK))
+        ts_factor = float(time_unit_factor((network, integration, exp), _BRIAN2_CLOCK))
         dt_ms = float(getattr(integration, "step_size", 0.02) or 0.02) * ts_factor
         duration_ms = float(getattr(integration, "duration", 1000.0) or 1000.0) * ts_factor
 

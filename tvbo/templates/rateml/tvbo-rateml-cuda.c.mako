@@ -98,7 +98,7 @@ extern "C" __global__ void ${model_name}(
 )
 {
     // Work id & size
-    const unsigned int id = (gridDim.x * blockDim.x * threadIdx.y) + threadIdx.x;
+    const unsigned int id = (blockIdx.x * blockDim.x) + threadIdx.x;
     const unsigned int size = n_work_items;
 
 #define params(i_par) (params_pwi[(size * (i_par)) + id])
@@ -154,12 +154,14 @@ extern "C" __global__ void ${model_name}(
     float dij = 0.0f;
     float wij = 0.0f;
 
-    // Initialize observables
+    // Seed the ring from the declared initial values — the time loop reads it back at t == i_step.
     for (unsigned int i_node = 0; i_node < n_node; i_node++)
     {
         tavg(i_node) = 0.0f;
         if (i_step == 0) {
-            state(i_step, i_node) = 0.0f;
+            % for i, (sv_name, sv) in enumerate(state_vars):
+            state(i_step, i_node + ${i} * n_node) = ${sv_name};
+            % endfor
         }
     }
 
@@ -317,7 +319,7 @@ extern "C" __global__ void bold_update(int n_node, float dt,
             // out.shape = (n_nodes, n_threads)
             float * __restrict__ out)
 {
-    const unsigned int it = (gridDim.x * blockDim.x * threadIdx.y) + threadIdx.x;
+    const unsigned int it = (blockIdx.x * blockDim.x) + threadIdx.x;
     const unsigned int nt = blockDim.x * blockDim.y * gridDim.x * gridDim.y;
 
     int var_stride = n_node * nt;

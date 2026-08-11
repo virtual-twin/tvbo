@@ -103,8 +103,12 @@ result = exp.run("cuda", n_work_items=32)   # result["tavg"]: [n_work_items, n_s
 that GPU's architecture. That last clause is not pedantry: PyCUDA compiles the kernel at
 run time and passes the detected `-arch`, so a toolkit newer than the card fails outright.
 CUDA 13 dropped Volta, so a V100 (`sm_70`) under CUDA 13.3 aborts with
-`nvcc fatal : Unsupported gpu architecture 'sm_70'`. Verified working on an NVIDIA L40
-(`sm_89`) with CUDA 13.3.
+`nvcc fatal : Unsupported gpu architecture 'sm_70'`.
+
+**How far this is verified.** The emitted kernel compiles and runs on an NVIDIA L40
+(`sm_89`, CUDA 13.3), launched through a driver that mirrors `run_cuda`'s argument
+marshalling. `exp.run("cuda")` itself has no automated test — CI has no GPU — so treat it
+as the least-exercised path here and check your first result against another backend.
 
 **Time units.** The kernel multiplies `dt` straight into the model's equations, so `dt` is
 in the model's own time unit and defaults to the experiment's `step_size`. Its delay ring,

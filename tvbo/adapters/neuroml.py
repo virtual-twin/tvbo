@@ -237,7 +237,7 @@ def _dynamics_has_physical_units(params, svs, td_param_names=None):
     return False
 
 
-def _lems_time_unit(integration):
+def _lems_time_unit(*scopes):
     """The LEMS spelling of *integration*'s time unit.
 
     LEMS names only `s`, `ms` and `us`, so a scope declaring anything else falls back
@@ -248,7 +248,7 @@ def _lems_time_unit(integration):
     """
     from tvbo.utils.units import time_unit_of
 
-    unit = time_unit_of(integration)
+    unit = time_unit_of(*scopes)
     return unit if unit in ("s", "ms", "us") else "ms"
 
 
@@ -3087,7 +3087,7 @@ def build_lems_context(experiment):
     duration = integration.duration if integration else 1000.0
     from tvbo.utils.units import normalize_unit, time_unit_of
 
-    raw_ts = time_unit_of(integration)
+    raw_ts = time_unit_of(getattr(experiment, "network", None), integration, experiment)
     ts_enum = normalize_unit(str(raw_ts)) or str(raw_ts)
     # With abbreviation-based enum, ts_enum is already "s", "ms", "us" etc.
     time_scale = ts_enum if ts_enum in ("s", "ms", "us") else "ms"
@@ -3378,8 +3378,8 @@ def build_lems_context(experiment):
                 k for k, v in ct_events.items() if getattr(getattr(v, "condition", None), "rhs", None) is not None
             ]
 
-            # Use real LEMS dimensions so jNeuroML outputs SI.
-            ct_time_scale = str(getattr(getattr(ct_dyn, "time_unit", None), "value", time_scale) or time_scale)
+            # `Dynamics` declares no clock of its own, so every ComponentType uses the scope's.
+            ct_time_scale = str(time_scale)
             # SEC supplies the time scale only for purely numeric equations; with
             # dimensioned time constants it double-counts.
             ct_needs_sec = ct_time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs)

@@ -49,9 +49,8 @@ def compile_cuda(experiment: SimulationExperiment) -> Tuple[Any, Any]:
     cuda_source = experiment.render_code("cuda")
     module = SourceModule(cuda_source, no_extern_c=True)
 
-    # Get kernel function from model name
-    dynamics = experiment.network.dynamics
-    model_name = dynamics.name.replace(" ", "").replace("-", "")
+    # The kernel is named for the model it integrates, which is what the template renders.
+    model_name = experiment.dynamics.name.replace(" ", "").replace("-", "")
     kernel = module.get_function(model_name)
 
     return module, kernel
@@ -100,18 +99,19 @@ def run_cuda(
     if dt is None:
         dt = float(experiment.integration.step_size)
     if n_steps is None:
-        duration = getattr(experiment.integration, "duration", 1000.0)
-        n_steps = int(duration / dt)
+        n_steps = int(float(experiment.integration.duration) / dt)
 
     # Network data from experiment
     weights = np.asarray(experiment.network.weights, dtype=np.float32)
     lengths = np.asarray(experiment.network.lengths, dtype=np.float32)
     n_node = weights.shape[0]
-    n_states = len(experiment.network.dynamics.state_variables)
+    n_states = len(experiment.dynamics.state_variables)
 
-    # Calculate buffer length from max delay
+    # The ring must hold the LONGEST delay any work item sees, so the slowest speed sizes it.
     if buffer_length is None:
-        max_delay = np.max(lengths) / global_speed / dt
+        swept_speed = (swept_params or {}).get("global_speed")
+        slowest = float(np.min(swept_speed)) if swept_speed is not None else float(global_speed)
+        max_delay = np.max(lengths) / slowest / dt
         buffer_length = max(int(max_delay) + 10, 100)
     nh = np.uint32(buffer_length)
 

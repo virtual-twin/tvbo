@@ -1011,9 +1011,11 @@ class PyRatesAdapter(BaseAdapter):
         weighting = getattr(stimulation, "weighting", None) or []
 
         network = getattr(exp, "network", None)
-        dynamics = exp.dynamics
-        if not isinstance(dynamics, dict):
-            dynamics = {d.name: d for d in (dynamics or [])}
+        # `node.dynamics` keys the network's library; a single-model experiment holds it itself.
+        dynamics = dict(getattr(network, "dynamics", None) or {})
+        single = getattr(exp, "dynamics", None)
+        if getattr(single, "name", None):
+            dynamics.setdefault(single.name, single)
 
         if network is not None and hasattr(network, "nodes") and network.nodes:
             nodes = list(network.nodes)
@@ -1028,10 +1030,11 @@ class PyRatesAdapter(BaseAdapter):
                 node_label = getattr(node, "label", None) or f"node_{node.id}"
                 safe_label = str(node_label).replace(" ", "_").replace("-", "_")
 
-                dyn_name = node.dynamics if isinstance(node.dynamics, str) else getattr(node.dynamics, "name", None)
+                inline = None if isinstance(node.dynamics, str) else node.dynamics
+                dyn_name = node.dynamics if inline is None else getattr(inline, "name", None)
 
                 if dyn_name:
-                    var = target_var or _legacy_input_variable(dynamics.get(dyn_name))
+                    var = target_var or _legacy_input_variable(inline or dynamics.get(dyn_name))
                     if var is None:
                         raise ValueError(
                             f"No stimulus event names the variable to drive, and {dyn_name!r} "

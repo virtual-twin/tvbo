@@ -45,29 +45,35 @@ mesh_fmt = getattr(meshinfo, 'mesh_format', None) or ''
 solver = fd.solver
 integ = experiment.integration
 
-# Dirichlet value (first matching BC); this lowering holds the boundary at a constant.
-dir_val = 0.0
-for bc in bcs:
-    if str(bc.bc_type).lower() == 'dirichlet':
-        _rhs = getattr(getattr(bc, 'equation', None), 'rhs', None)
-        try:
-            dir_val = float(_rhs)
-        except (TypeError, ValueError):
-            raise ValueError(
-                f"Dirichlet boundary condition {getattr(bc, 'label', None)!r} states "
-                f"{_rhs!r}; the FEM lowering holds a boundary at a constant only."
-            ) from None
-        break
-
-# Sum diffusion coefficients of all operators.
-# fd.parameters is a dict {name: Parameter}; op.coefficient may be a ParameterName ref.
-# Build name->value lookup from fd.parameters.values().
+# name -> value for the declared field parameters; a coefficient or boundary may name one.
 param_values = {}
 for p in (fd.parameters or {}).values() if hasattr(fd.parameters, 'values') else (fd.parameters or []):
     pname = getattr(p, 'name', None) or str(p)
     pval = getattr(p, 'value', None)
     if pval is not None:
         param_values[pname] = float(pval)
+
+# Dirichlet value (first matching BC); this lowering holds the boundary at one number.
+dir_val = 0.0
+for bc in bcs:
+    if str(bc.bc_type).lower() == 'dirichlet':
+        _eq = getattr(bc, 'equation', None)
+        if _eq is None:
+            break
+        _rhs = getattr(_eq, 'rhs', None)
+        _text = str(_rhs).strip() if _rhs is not None else ''
+        if _text in param_values:
+            dir_val = param_values[_text]
+        else:
+            try:
+                dir_val = float(_text)
+            except ValueError:
+                raise ValueError(
+                    f"Dirichlet boundary condition {getattr(bc, 'label', None)!r} states "
+                    f"{_text!r}; this lowering holds a boundary at a constant or at a "
+                    "declared parameter, not at an expression."
+                ) from None
+        break
 
 coeffs = []
 for op in (fd.operators or []):
