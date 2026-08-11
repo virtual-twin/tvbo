@@ -3379,7 +3379,7 @@ def build_lems_context(experiment):
             ]
 
             # Use real LEMS dimensions so jNeuroML outputs SI.
-            ct_time_scale = str(getattr(getattr(ct_dyn, "time_scale", None), "value", time_scale) or time_scale)
+            ct_time_scale = str(getattr(getattr(ct_dyn, "time_unit", None), "value", time_scale) or time_scale)
             # SEC supplies the time scale only for purely numeric equations; with
             # dimensioned time constants it double-counts.
             ct_needs_sec = ct_time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs)

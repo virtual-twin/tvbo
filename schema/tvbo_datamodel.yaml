@@ -5736,8 +5736,14 @@ classes:
             on_region:
                 description: "Mesh/atlas subset where BC applies."
                 range: string
-            value:
-                description: "Constant, parameter, or equation."
+            equation:
+                aliases:
+                    - value
+                description: >-
+                    What the boundary is held at — a constant, a parameter, or an
+                    expression in space and time. An `Equation` because a Dirichlet
+                    value is not always a number: `value` is the older spelling, and
+                    said `Parameter.value` (a number) about something that is not one.
                 range: Equation
             time_dependent:
                 range: boolean

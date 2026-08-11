@@ -45,14 +45,18 @@ mesh_fmt = getattr(meshinfo, 'mesh_format', None) or ''
 solver = fd.solver
 integ = experiment.integration
 
-# Dirichlet value (first matching BC), default 0.0
+# Dirichlet value (first matching BC); this lowering holds the boundary at a constant.
 dir_val = 0.0
 for bc in bcs:
     if str(bc.bc_type).lower() == 'dirichlet':
+        _rhs = getattr(getattr(bc, 'equation', None), 'rhs', None)
         try:
-            dir_val = float(getattr(bc.value, 'righthandside', bc.value))
-        except Exception:
-            dir_val = 0.0
+            dir_val = float(_rhs)
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"Dirichlet boundary condition {getattr(bc, 'label', None)!r} states "
+                f"{_rhs!r}; the FEM lowering holds a boundary at a constant only."
+            ) from None
         break
 
 # Sum diffusion coefficients of all operators.

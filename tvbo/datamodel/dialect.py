@@ -78,11 +78,12 @@ def normalize(cls_name: str, data: dict) -> dict:
     ``target_variable`` is an ``Edge`` alias for ``target_var`` but the canonical slot on
     a stimulus ``Event``, so a table keyed by slot name alone would rename it in the one
     place it must not be.
-    """
-    for slot, (target, multivalued, keyed) in SCALAR_SHORTCUTS.get(cls_name, {}).items():
-        if data.get(slot) is not None:
-            data[slot] = lift_scalar(data[slot], target, multivalued, keyed)
 
+    Aliases fold first: the shortcut table is keyed by canonical slot, so a value written
+    under an alias is not yet under a name the shortcut pass can see. Lifting first left
+    ``BoundaryCondition(value="0")`` — the older spelling of ``equation`` — a bare string
+    where the generated ``__post_init__`` wanted a mapping, and it raised.
+    """
     for alias, canonical in SLOT_ALIASES.get(cls_name, {}).items():
         if alias not in data:
             continue
@@ -95,6 +96,10 @@ def normalize(cls_name: str, data: dict) -> dict:
             )
         else:
             data[canonical] = value
+
+    for slot, (target, multivalued, keyed) in SCALAR_SHORTCUTS.get(cls_name, {}).items():
+        if data.get(slot) is not None:
+            data[slot] = lift_scalar(data[slot], target, multivalued, keyed)
     return data
 
 

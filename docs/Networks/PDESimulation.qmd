@@ -56,7 +56,7 @@ exp_dict = {
                     {
                         "label": "Zero Dirichlet",
                         "bc_type": "Dirichlet",
-                        "value": {"rhs": "0"},
+                        "equation": "0",
                     }
                 ],
                 "equation": {"lhs": "u_t", "rhs": "D * laplacian(u)"},
@@ -172,7 +172,7 @@ exp_cortex = {
         'state_variables': [{
             'name': 'u', 'label': 'u',
             'initial_value': 0.0,
-            'boundary_conditions': [{'label': 'Zero Dirichlet', 'bc_type': 'Dirichlet', 'value': {'rhs': '0'}}],
+            'boundary_conditions': [{'label': 'Zero Dirichlet', 'bc_type': 'Dirichlet', 'equation': '0'}],
             'equation': {'lhs': 'u_t', 'rhs': 'D * laplacian(u)'},
         }],
         'operators': [{'label': 'Diffusion', 'operator_type': 'laplacian', 'coefficient': 'D'}],

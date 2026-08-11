@@ -200,6 +200,21 @@ def _patch_pyrates_missing_funcs():
         _pr_parser.ExpressionParser.parse_expr = _patched_parse_expr
 
 
+def _legacy_input_variable(dynamics):
+    """``I_ext`` where *dynamics* actually declares it, else nothing.
+
+    The historic default for a stimulus with no event to name its target. Checked against
+    the model rather than assumed, so a model that calls its drive anything else fails
+    loudly instead of being handed an input key for a variable it does not have.
+    """
+    if dynamics is None:
+        return None
+    declared = set()
+    for collection in ("state_variables", "parameters", "coupling_inputs", "derived_variables"):
+        declared |= set(getattr(dynamics, collection, None) or {})
+    return "I_ext" if "I_ext" in declared else None
+
+
 class PyRatesAdapter(BaseAdapter):
     """Adapter for running SimulationExperiment via PyRates backend."""
 
@@ -991,7 +1006,7 @@ class PyRatesAdapter(BaseAdapter):
             return inputs
 
         stim_values = stim_func(time)
-        target_var = getattr(stimulation, "target_variable", None) or "I_ext"
+        target_var = self._stimulus_target_variable()
         regions = getattr(stimulation, "regions", None) or []
         weighting = getattr(stimulation, "weighting", None) or []
 
@@ -1016,12 +1031,36 @@ class PyRatesAdapter(BaseAdapter):
                 dyn_name = node.dynamics if isinstance(node.dynamics, str) else getattr(node.dynamics, "name", None)
 
                 if dyn_name:
+                    var = target_var or _legacy_input_variable(dynamics.get(dyn_name))
+                    if var is None:
+                        raise ValueError(
+                            f"No stimulus event names the variable to drive, and {dyn_name!r} "
+                            "declares no 'I_ext' to fall back on. Name the target by giving the "
+                            "stimulus an event whose name is the driven variable."
+                        )
                     op_name = f"{dyn_name}_op"
-                    key = f"{safe_label}/{op_name}/{target_var}"
+                    key = f"{safe_label}/{op_name}/{var}"
                     weight = weighting[i] if i < len(weighting) else 1.0
                     inputs[key] = stim_values * weight
 
         return inputs
+
+    def _stimulus_target_variable(self):
+        """The dfun variable a stimulus drives, named by its event.
+
+        TVBO expresses the target as the stimulus event's own *name*:
+        `SimulationExperiment._resolve_events` lowers a declarative `target_variable` onto
+        it, and that is where every other backend reads it. A `Stimulus` carries no target
+        of its own, so asking one for `target_variable` yielded the `I_ext` default for
+        every experiment ever run — addressing a variable the model need not have.
+        """
+        events = getattr(self.experiment, "events", None) or {}
+        for key, event in (events.items() if hasattr(events, "items") else []):
+            if "stimul" in str(getattr(event, "event_type", "") or "").lower():
+                name = getattr(event, "name", None) or key
+                if name:
+                    return str(name)
+        return None
 
     def _df_to_simulation_result(self, result: "pd.DataFrame") -> "SimulationResult":
         """Convert PyRates pandas DataFrame result to SimulationResult."""
