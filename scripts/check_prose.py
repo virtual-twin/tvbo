@@ -3,14 +3,23 @@
 
 `ruff format` and `black` leave comment and docstring *prose* byte-identical, so the house rules about it cannot be delegated to the formatter. This checker is where they live. Three rules, each one a defect the tree has accumulated:
 
-- **A standalone `#` run is at most one line.** Anything longer belongs in the docstring of the thing it describes, where quartodoc renders it. Stacked blocks also accrete: the second explanation gets appended and the first is never deleted.
+- **A standalone `#` run is at most one line.** Anything longer belongs in the docstring of the thing it describes, where quartodoc renders it. Stacked blocks also accrete: the second explanation gets appended and the first is never deleted. A copyright and licence header is exempt: it documents the file, not a statement, and has nowhere else to live.
 - **Docstring prose is not hand-wrapped.** A line broken mid-sentence serves the source file's column ruler and nobody else; it reflows badly in the rendered site and makes every later edit a multi-line diff. `E501` is already off, so a paragraph may be one long line.
 - **No commented-out code.** Git holds the history.
 
-Run over the paths given, or the default tree. Exit 1 on any violation.
+Two modes, because the two surfaces are at different stages. Python is clear, so it is
+checked whole-file and all three rules apply. Templates and configuration still carry a
+backlog of stacked blocks, so there the comment rule is checked against the diff only:
+new code cannot add one, and the existing ones do not have to be cleared first. The rule
+is defined once either way — the convention covers `.mako`, `.yaml` and `.toml` as much
+as `.py`, so it must not depend on which file it lands in.
 
-    python scripts/check_prose.py                 # tvbo/ tests/ scripts/ benchmarks/
-    python scripts/check_prose.py path/to/file.py # pre-commit passes changed files
+Exit 1 on any violation.
+
+    python scripts/check_prose.py                  # whole-file: tvbo/ tests/ scripts/ benchmarks/
+    python scripts/check_prose.py path/to/file.py  # pre-commit passes changed files
+    python scripts/check_prose.py --diff           # added lines only, vs the index
+    python scripts/check_prose.py --diff origin/dev  # added lines only, vs a ref (CI)
 """
 
 from __future__ import annotations
@@ -24,12 +33,20 @@ from pathlib import Path
 DEFAULT_ROOTS = ("tvbo", "tests", "scripts", "benchmarks")
 SKIP_PARTS = ("__pycache__", ".venv", "_archive", "site-packages")
 GENERATED = ("tvbo/datamodel/schema.py", "tvbo/datamodel/pydantic.py", "tvbo/datamodel/dialect_tables.py")
+GENERATED_DIRS = ("tvbo/datamodel/", "docs/datamodel/", "tests/reference_data/", "tvbo/templates/modules/", ".claude/skills/")
+"""Trees a generator writes. Their comments come from whatever they were generated from,
+so a person cannot fix them here. ``tvbo/templates/modules/`` is mako's compiled cache and
+is gitignored — present in a working tree, absent in CI, so counting it makes the two
+disagree about a clean run."""
+
+DIFF_SUFFIXES = (".py", ".mako", ".yml", ".yaml", ".toml", ".jl", ".sh")
+"""What the comment rule covers in diff mode — source, templates and configuration alike."""
 
 MAX_COMMENT_RUN = 1
 WRAP_LIMIT = 100
 
 _SENTENCE_END = re.compile(r"[.!?:;]$")
-_DIRECTIVE = re.compile(r"^\s*#\s*(type:|noqa|pragma|ruff:|mypy:|fmt:|isort:|pylint:|!)")
+_DIRECTIVE = re.compile(r"^\s*#\s*(type:|noqa|pragma|ruff:|mypy:|fmt:|isort:|pylint:|!|:)")
 _CODEISH = re.compile(
     r"^\s*(def |class |return\b|import |from \S+ import|if .+:|for .+ in .+:|while .+:|"
     r"try:|except\b|elif .+:|else:|with .+:|print\(|assert |raise |@\w+|"
@@ -134,15 +151,101 @@ def iter_files(targets: list[str]):
         for f in candidates:
             if f.suffix != ".py" or any(s in f.parts for s in SKIP_PARTS):
                 continue
-            if f.as_posix() in GENERATED:
+            rel = f.as_posix()
+            if rel in GENERATED or any(rel.startswith(d) for d in GENERATED_DIRS):
                 continue
             yield f
+
+
+def _added_comment_runs(diff: str):
+    """Yield `(path, run)` for each over-long run of comment lines the diff adds.
+
+    A run starting at line 1 is a file header — the copyright and licence block — and is
+    exempt, as it is whole-file. Only added lines are read, so an existing block is
+    untouched until someone edits it.
+    """
+    path, lineno, run = None, 0, []
+
+    def close():
+        nonlocal run
+        finished = run if len(run) > MAX_COMMENT_RUN and run[0][0] > 1 else []
+        run = []
+        return finished
+
+    for raw in diff.splitlines():
+        if raw.startswith("+++ b/"):
+            if block := close():
+                yield path, block
+            path = raw[6:]
+        elif raw.startswith("@@"):
+            if block := close():
+                yield path, block
+            lineno = int(raw.split("+", 1)[1].split(",")[0].split(" ")[0])
+        elif raw.startswith("+") and not raw.startswith("+++"):
+            body = raw[1:].strip()
+            if body.startswith("#") and not _DIRECTIVE.match(body):
+                run.append((lineno, body.lstrip("#").strip()))
+            elif block := close():
+                yield path, block
+            lineno += 1
+        elif block := close():
+            yield path, block
+    if block := close():
+        yield path, block
+
+
+def check_diff(base: str | None) -> tuple[int, list[str]]:
+    """Violations among the lines a diff adds, as `(exit_code, messages)`.
+
+    Args:
+        base: Ref to compare against, or None to compare against the index — which is
+            what pre-commit stages.
+    """
+    import subprocess
+
+    if base:
+        for probe in (["rev-parse", "--verify", "--quiet", base], ["merge-base", base, "HEAD"]):
+            done = subprocess.run(["git", *probe], capture_output=True, text=True)
+            if done.returncode != 0 or not done.stdout.strip():
+                return 2, [f"cannot compare against {base!r}: no such ref or no shared history — the check did not run."]
+        cmd = ["git", "diff", "-U0", done.stdout.strip()]
+    else:
+        cmd = ["git", "diff", "-U0", "--cached"]
+
+    diff = subprocess.run([*cmd, "--", "."], capture_output=True, text=True, check=True).stdout
+    bad = []
+    for path, run in _added_comment_runs(diff):
+        if not path or not path.endswith(DIFF_SUFFIXES):
+            continue
+        if any(path.startswith(d) for d in GENERATED_DIRS):
+            continue
+        bad.append(
+            f"{path}:{run[0][0]}: {len(run)}-line `#` block added — at most {MAX_COMMENT_RUN}; "
+            f"move the explanation into the docstring, or cut it to one line"
+        )
+    return (1 if bad else 0), bad
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("paths", nargs="*", default=list(DEFAULT_ROOTS))
+    ap.add_argument(
+        "--diff",
+        nargs="?",
+        const="",
+        metavar="REF",
+        help="check only the comment rule, only on added lines, over every covered suffix; "
+        "against REF, or the index when REF is omitted",
+    )
     args = ap.parse_args()
+
+    if args.diff is not None:
+        code, messages = check_diff(args.diff or None)
+        for m in messages:
+            print(m)
+        if code == 1:
+            print(f"\n{len(messages)} stacked comment block(s) added. See scripts/check_prose.py for the rules.")
+        return code
 
     findings = [m for f in iter_files(args.paths or list(DEFAULT_ROOTS)) for m in check(f)]
     for m in findings:
