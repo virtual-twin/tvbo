@@ -1548,10 +1548,32 @@ def sweep_axes(experiment):
     Axis names are scoped (``network.G``, ``execution.random_seed``); a bare name is a
     model parameter, which is what lets a swept parameter show its *range* in the symbol
     and experiment tables instead of a single value it never actually holds.
+
+    Reads ``space``, which is what an exploration sweeps. ``parameters`` is the
+    exploration's own hyper-parameters — tolerances, sampler settings — and reading those
+    returned nothing for every curated recipe, so no report ever showed a range; where an
+    exploration did declare one, its domain would have been printed as if it were swept.
+
+    ``explorations`` is keyed by name, so iterate the values: iterating the mapping walks
+    the keys, and a string has no slots, which is the other half of why this was empty.
     """
+    explorations = slot(experiment, "explorations", None) or {}
+    members = explorations.values() if hasattr(explorations, "values") else explorations
     return {slot(axis, "name", None) or str(name): _axis_range(axis)
-            for exploration in (slot(experiment, "explorations", None) or [])
-            for name, axis in name_items(slot(exploration, "parameters", None))}
+            for exploration in members
+            for name, axis in name_items(slot(exploration, "space", None))}
+
+
+def _integration_unit(integ):
+    """The integrator's time unit, from whichever slot the recipe declared.
+
+    `Integrator` carries both `unit` and `time_scale`, and `time_scale` is the one the
+    schema defaults (to `ms`). Reading `unit` alone left every recipe that omits it
+    falling back to seconds, so a 0.5 ms step over 800 ms was reported as 0.5 s over
+    800 s — the same 1000x error the hardcoded `ms` used to make, with the recipes
+    swapped.
+    """
+    return slot(integ, "unit", None) or slot(integ, "time_scale", None)
 
 
 def time_text(value, unit=None, decimals=4):
@@ -1601,7 +1623,7 @@ def experiment_facts(experiment, shared_parameters=()):
     describes it instead.
     """
     net, integ = (slot(experiment, "network") or slot(experiment, "connectivity")), slot(experiment, "integration")
-    unit = slot(integ, "unit", None)
+    unit = _integration_unit(integ)
     swept = sweep_axes(experiment)
     facts = {"Exp": str(slot(experiment, "id", "")), "Fig": _reference_text(experiment)}
 
@@ -1676,7 +1698,7 @@ def settings_sentence(experiment):
     description says about *why* an experiment exists is left untouched.
     """
     net, integ = (slot(experiment, "network") or slot(experiment, "connectivity")), slot(experiment, "integration")
-    unit = slot(integ, "unit", None)
+    unit = _integration_unit(integ)
     nodes = slot(net, "number_of_nodes", None) or slot(net, "number_of_regions", None)
     if nodes is None and present(slot(net, "nodes", None)):
         nodes = len(slot(net, "nodes"))

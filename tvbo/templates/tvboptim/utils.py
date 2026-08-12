@@ -778,23 +778,38 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: Dic
     return overrides
 
 
-def _callable_wants(ref, argument: str) -> bool:
+def _callable_wants(ref, argument: str, source_dir=None) -> bool:
     """Whether the transform callable *ref* points at declares *argument* by name.
 
-    ``Network._apply_transform`` injects ``network`` and ``L`` into a callable transform
-    whenever its signature asks for them, so the emitted call has to ask the same question
-    of the same signature or the kit and the runtime call the function differently. An
-    unimportable or uninspectable target answers False: the render then emits the plain
-    one-argument call it always did, rather than failing over a callable the kit may well
-    resolve.
+    Mirrors ``Network._apply_transform`` exactly, because any difference means the kit and
+    the runtime call the same callable with different arguments and quietly produce
+    different matrices. That means two things beyond a plain signature lookup: ``network``
+    counts as wanted when the target declares ``**kwargs`` (the runtime injects it then
+    too), and the import runs with the recipe's source dir on ``sys.path``, since a
+    transform callable living beside the study YAML is the documented pattern and a bare
+    import would answer False for it.
+
+    An uninspectable target answers False: the render then emits the plain one-argument
+    call it always did, rather than failing over a callable the kit may well resolve.
+
+    Args:
+        ref: The `Callable` reference declared on the transform.
+        argument: Parameter name to test, ``"network"`` or ``"L"``.
+        source_dir: The recipe's directory, put on the path for the import.
     """
     import importlib
     import inspect
 
+    from tvbo.classes.network import _source_dir_on_path
+
     try:
-        return argument in inspect.signature(getattr(importlib.import_module(ref.module), ref.name)).parameters
+        with _source_dir_on_path(source_dir):
+            sig = inspect.signature(getattr(importlib.import_module(ref.module), ref.name))
     except Exception:
         return False
+    if argument in sig.parameters:
+        return True
+    return argument == "network" and any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
 
 
 def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List[str]]:
@@ -826,13 +841,13 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
             `mean(W[W > 0])` is validated — and bound — as `W`. Also if a callable
             transform takes the `network` the runtime injects, which a kit cannot supply.
     """
-    import re
 
     import numpy as np
 
     from tvbo.codegen.code import render_expression
     from tvbo.codegen.transforms import PRIMITIVES, emit_env
 
+    _source_dir = getattr(network, "_source_dir", None)
     node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
     transforms: List[Tuple[str, List[str]]] = []
     const_env: List[str] = []
@@ -852,13 +867,13 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
                 f", {n}={getattr(a, 'value', None)!r}"
                 for n, a in (getattr(t, "arguments", {}) or {}).items()
             )
-            if _callable_wants(c, "network"):
+            if _callable_wants(c, "network", _source_dir):
                 raise ValueError(
                     f"weight transform callable {c.module}.{c.name} takes a `network` argument, "
                     f"which the runtime injects but a self-contained kit has no object to supply. "
                     f"Give it a signature over the matrix (and `L`) alone."
                 )
-            if _callable_wants(c, "L"):
+            if _callable_wants(c, "L", _source_dir):
                 for line in emit_env(["L"], "weights", "distances")[1]:
                     _add_const(line.split(" = ", 1)[0], line)
                 args += ", L=L"
