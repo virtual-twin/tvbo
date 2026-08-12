@@ -234,6 +234,89 @@ def test_write_caption_emits_a_partial(figure, tmp_path):
     assert "**(a)**" in path.read_text()
 
 
+@pytest.fixture
+def grid_figure(tmp_path):
+    """A grid whose cells draw two sources, one of them from two camera angles."""
+    spec = tmp_path / "grid.yaml"
+    spec.write_text(
+        "title: Grid test\ncitekey: gridtest\n"
+        "figures:\n"
+        "  - name: fig-g\n"
+        "    layout: a\n"
+        "    panels:\n"
+        "      a:\n"
+        "        panel_key: a\n"
+        "        kind: grid\n"
+        "        cell: {kind: surface}\n"
+        "        opts: {ncols: {name: ncols, value: 2}}\n"
+        "        layers:\n"
+        "          - {used: {analysis: lag_data, output: lag_data}}\n"
+        "          - {used: {analysis: lag_data, output: lag_data}}\n"
+        "          - {used: {analysis: lag_wave, output: lag_wave}}\n"
+        "          - {used: {analysis: lag_wave, output: lag_wave}}\n",
+        encoding="utf-8",
+    )
+    return tvbo.StudyCollection.from_file(str(spec)).figures[0]
+
+
+def test_a_grid_names_each_source_once_not_once_per_cell(grid_figure):
+    """Eight cells showing one analysis had put its name in the caption eight times.
+
+    The same map drawn laterally and medially is ONE binding seen twice, and a caption that
+    repeats it per cell buries the authored sentence behind identical phrases.
+    """
+    caption = bsplot.compose_caption(grid_figure)
+    assert caption.count("analysis lag_data") == 1
+    assert caption.count("analysis lag_wave") == 1
+    assert "surface from analysis lag_data; surface from analysis lag_wave" in caption
+
+
+def test_an_output_that_repeats_its_analysis_name_is_not_printed_twice(grid_figure):
+    """``analysis lag_data (lag_data)`` says one thing twice."""
+    assert "(lag_data)" not in bsplot.compose_caption(grid_figure)
+
+
+@pytest.fixture
+def multi_output_figure(tmp_path):
+    """One analysis drawn three ways in a panel — a density with its mean and a reference."""
+    spec = tmp_path / "multi.yaml"
+    spec.write_text(
+        "title: Multi test\ncitekey: multitest\n"
+        "figures:\n"
+        "  - name: fig-m\n"
+        "    layout: a\n"
+        "    panels:\n"
+        "      a:\n"
+        "        panel_key: a\n"
+        "        kind: cartesian\n"
+        "        layers:\n"
+        "          - {used: {analysis: dist, output: density}, mark: area,\n"
+        "             encoding: {x: value, y: density}}\n"
+        "          - {used: {analysis: dist, output: mean}, mark: rule,\n"
+        "             encoding: {x: value}}\n"
+        "          - {used: {analysis: dist, output: reference}, mark: rule,\n"
+        "             encoding: {x: value}}\n",
+        encoding="utf-8",
+    )
+    return tvbo.StudyCollection.from_file(str(spec)).figures[0]
+
+
+def test_layers_sharing_one_analysis_name_it_once(multi_output_figure):
+    """Three outputs of one container is one source, not three.
+
+    Naming it per layer pushed the authored caption behind the same phrase repeated, and a
+    reader cannot tell from it that the three lines describe a single result.
+    """
+    caption = bsplot.compose_caption(multi_output_figure)
+    assert caption.count("analysis dist") == 1
+    assert "area of density vs value, rule at mean, rule at reference from analysis dist" in caption
+
+
+def test_a_rule_is_described_by_the_value_it_stands_at(multi_output_figure):
+    """``rule of value`` names the axis; what a reader needs is WHICH value."""
+    assert "rule of value" not in bsplot.compose_caption(multi_output_figure)
+
+
 # ------------------------------------------------- gaps the code review surfaced
 
 

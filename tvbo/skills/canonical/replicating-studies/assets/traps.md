@@ -116,6 +116,20 @@ in full.
 
 ## Pitfalls we hit (so you don't)
 
+- **A fan container can hold every cell correct and still be scrambled — the cell ADDRESSES
+  are a separate thing to verify.** Symptom: two analyses that score the same quantity with
+  literally the same callable disagree at a shared operating point (our EDF10 landscape read
+  0.18 where the seed ensemble read 0.076). Diagnose with shapes-encode-configuration: a
+  physical per-cell statistic (BOLD std) must vary smoothly along a parameter axis and be
+  near-constant along a seed axis — a PERIODIC pattern along the parameter axis is the
+  signature of a flat cell order refolded positionally under the wrong axis order (period =
+  n_outer/gcd tells you which). Repair needs no re-simulation once the permutation is pinned
+  (verify cell-identity, smoothness, and a ratio against an independent single-axis container
+  at the shared point BEFORE swapping). Put that triple in the identity harness so a future
+  scramble fails the build; the root fix belongs in the framework's assembler (key cells BY
+  VALUE and RAISE when a coordinate can't be matched — a silent positional fallback is how
+  this shipped).
+
 - **A metric's *definition and the empirical modality it's compared against* are part of the
   claim — read them from the METHODS, not the figure caption.** t_c (1/e vs exponential-fit),
   ⟨Δω⟩ (std about the mean vs the median), λ₁ units; and *what* the sim is compared to

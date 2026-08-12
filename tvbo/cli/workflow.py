@@ -982,9 +982,13 @@ def _emit_snakemake_study(*, spec: str, backend: str, experiment: str | None,
                 _common.info(f"froze experiment {key} ({len(plan.workflow_axes)} fan-out axes)")
             else:
                 _common.info(f"experiment {key}: {len(plan.workflow_axes)} fanned parameter axis(es) → spec-mode per cell (no frozen script)")
+        # Study-prefixed so the snakemake plugin's hardcoded `--comment=rule_<name>` still maps a queued job to its study+experiment (the slurm engine tags jobs directly; skip when standalone).
+        _ekey = key.replace("-", "_").replace(".", "_")
+        _skey = _san(str(study_key)).replace("-", "_").replace(".", "_")
+        _rule_name = ("exp_" + _ekey) if _skey == _ekey else (_skey + "_exp_" + _ekey)
         exp_plans.append({
             "key": key,
-            "rule_name": "exp_" + key.replace("-", "_").replace(".", "_"),
+            "rule_name": _rule_name,
             "spec_relpath": spec_relpath,
             # Pre-rendered backend script (frozen alongside the spec); None in --stdout
             # mode or if the render failed, in which case the rule always uses the spec.
@@ -1198,6 +1202,40 @@ def _warn_machine_specific_bids_root(out_dir: Path) -> None:
         )
 
 
+def _warn_unsatisfiable_figure_inputs(out_dir: Path) -> None:
+    """Warn when a figure rule reads containers the kit neither produces nor ships.
+
+    A figure's PROV ``used`` edges become its rule's ``input:``, and those resolve against
+    the author's tree — right at author time, wrong the moment the kit travels. Analysis
+    containers are the common case: the kit runs experiments, so ``output/results/<a>/…``
+    has no rule to make it and is an absolute path that does not exist on the target host.
+    Snakemake then fails the DEFAULT target with a missing-input error naming a path from
+    another machine, which reads as a broken kit rather than a figure whose data stayed
+    home. Name them at emit time, with the target that does work.
+    """
+    smk = out_dir / "figures.smk"
+    if not smk.is_file():
+        return
+    import re
+
+    outside = sorted({
+        m.group(1) for m in re.finditer(r"^\s*'(/[^']+)',?\s*$", smk.read_text(encoding="utf-8"),
+                                        re.MULTILINE)
+        if not m.group(1).startswith(str(out_dir.resolve()))
+    })
+    if not outside:
+        return
+    shown = ", ".join(Path(p).name for p in outside[:3])
+    _common.warn(
+        f"{len(outside)} figure input(s) resolve OUTSIDE the kit ({shown}"
+        f"{', …' if len(outside) > 3 else ''}) — they are the author's analysis containers, "
+        f"which this kit does not produce, so the default `snakemake` target cannot be "
+        f"satisfied on another host. Run the experiments by name "
+        f"(`snakemake <rule> …`) and render the figures where those containers live, or "
+        f"stage them into the kit before submitting."
+    )
+
+
 def _finalize_kit(out_dir: Path, *, pack: bool) -> Path:
     """Warn on portability hazards, optionally pack, and return the artifact path.
 
@@ -1205,6 +1243,7 @@ def _finalize_kit(out_dir: Path, *, pack: bool) -> Path:
     kit directory — so the caller always gets a path that exists.
     """
     _warn_machine_specific_bids_root(out_dir)
+    _warn_unsatisfiable_figure_inputs(out_dir)
     return _pack_kit(out_dir) if pack else out_dir
 
 
@@ -1269,16 +1308,22 @@ def _experiment_targets(kit_dir: Path, experiment: str) -> list:
     if not snakefile.is_file():
         _common.die(f"--experiment needs the kit's {snakefile.name} to validate against, "
                     f"and {kit_dir} has none.")
-    rules = set(re.findall(r"^rule\s+(exp_[A-Za-z0-9_]+)\s*:", snakefile.read_text(), re.M))
+    # Rules emit as `exp_<key>` (standalone kit) or `<study>_exp_<key>` (study pack); match a
+    # selector to the rule whose name ends with `exp_<key>` either way.
+    rules = set(re.findall(r"^rule\s+([A-Za-z0-9_]+)\s*:", snakefile.read_text(), re.M))
+    rules.discard("all")
     targets, missing = [], []
     for tok in (t.strip() for t in str(experiment).split(",") if t.strip()):
-        rule = "exp_" + re.sub(r"[^0-9A-Za-z]", "_", tok)
-        (targets if rule in rules else missing).append(rule)
+        key = re.sub(r"[^0-9A-Za-z]", "_", tok)
+        match = [r for r in rules if r == "exp_" + key or r.endswith("_exp_" + key)]
+        if match:
+            targets.append(match[0])
+        else:
+            missing.append(key)
     if missing:
         _common.die(
-            f"--experiment: the kit has no rule for "
-            f"{[r[len('exp_'):] for r in missing]}; its experiments are "
-            f"{sorted(r[len('exp_'):] for r in rules)}."
+            f"--experiment: the kit has no rule for {missing}; its experiments are "
+            f"{sorted(re.sub(r'^.*exp_', '', r) for r in rules)}."
         )
     return targets
 

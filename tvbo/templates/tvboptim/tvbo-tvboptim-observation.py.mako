@@ -1027,6 +1027,11 @@ ${render_observer_states(red['states'], _jc, _ind)}\
 ## node resolution), reduced at finalize to the three metrics via exact masked statistics
 ## (`nanmedian` over wave-present samples is Koller's rho, no binning). One block per grid cell;
 ## blocks are period-aligned (streaming_post_eval_plan), matching the stride reducer.
+## TRAVELING-WAVE GATE (active iff the chain has pgn0/1/2 and a `real_face_mask` param): a standing
+## field passes Koller's per-frame test yet does not travel, so the carry also holds a running
+## O(faces) post-transient sum of the per-face unit gradient direction, and finalize zeroes a
+## group's proportion_waves when its direction dispersion mean_faces(1-|time-mean dir|) < 0.06. The
+## non-gated path is byte-identical; byte-consistent with the host cortical_wave_metrics gate.
 <%def name="render_wave_reduction(red, name, s_idx, dt)">\
 <%
     from tvbo.codegen import render_expression
@@ -1041,6 +1046,10 @@ ${render_observer_states(red['states'], _jc, _ind)}\
     _rparams = ([d['name'] for d in _derived] + list(_rpars) + [_src, 'dt'])
     _rufuncs = {f: f for f in red.get('functions', {})}
     _jc = lambda e: render_expression(e, format='jax', user_functions=_rufuncs, parameters=_rparams)
+    # Traveling-wave gate (see render_wave_reduction docstring): active iff the chain exposes pgn0/1/2 and a real_face_mask param.
+    _dvnames = [d['name'] for d in _derived]
+    _gate = ('real_face_mask' in _rpars) and all(('pgn%d' % _k) in _dvnames for _k in range(3))
+    _pthr = 0.06
 %>\
 def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None, progress=False):
     # warm_history/progress are accepted-and-ignored so this reducer shares ONE call site with
@@ -1071,7 +1080,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, warm_history=None
     # stays a clean per-vertex max-T inside the vmap.
     def _detect(${", ".join([_src] + _gv['over'])}):
 ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
-        return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0
+        return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0${', pgn0, pgn1, pgn2' if _gate else ''}
     def _sample(_theta_all):
         ${_src}_g = _theta_all[${_gv['gather']}]   # (n_groups, nv) per-group vertex gather
         return jax.vmap(_detect, in_axes=(0,) * ${1 + len(_gv['over'])})(${_src}_g, ${", ".join(_gv['over'])})
@@ -1080,14 +1089,22 @@ ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
         # one downsampled sample -> (n_groups,) per named output; a body that is already
         # group-batched (operators with a leading group axis) produces the per-group vector directly.
 ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
-        return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0
+        return ${_corr}, ${_wave} * 1.0, ${_sig} * 1.0${', pgn0, pgn1, pgn2' if _gate else ''}
 % endif
     def _init(template, n_steps):
         _n_ds = len(range(_period - 1, n_steps, _period))
         _z = jnp.zeros((_n_ds, ${_G}))
+% if _gate:
+        return (_z, _z, _z, jnp.array(0), jnp.zeros((${_G}, 3, real_face_mask.shape[-1])), jnp.array(0.0))
+% else:
         return (_z, _z, _z, jnp.array(0))
+% endif
     def _update(acc, block):
+% if _gate:
+        _corr_buf, _wave_buf, _sig_buf, _count, _dir, _dcnt = acc
+% else:
         _corr_buf, _wave_buf, _sig_buf, _count = acc
+% endif
         if block.shape[0] % _period:
             # A block must be a whole number of downsample periods, else its samples shift off
             # the global grid and the write row (_count // _period) drifts — the same alignment
@@ -1096,20 +1113,46 @@ ${render_observer_dvs(_derived, _jc, ' ' * 8)}\
                 f"wave reducer: a {block.shape[0]}-step block is not a whole number of "
                 f"{_period}-step downsample periods; size streaming blocks from period_in_steps.")
         _theta = block[_period - 1 :: _period, s_var, :]        # downsample to (_m, n)
+% if _gate:
+        _c, _w, _s, _p0, _p1, _p2 = jax.vmap(_sample)(_theta)   # scalars (_m, G); unit gradient dir (_m, G, nf)
+% else:
         _c, _w, _s = jax.vmap(_sample)(_theta)                  # batched update over the block's frames; block_size bounds the batch (tvboptim's native per-block fold)
+% endif
         _row = _count // _period
         _corr_buf = jax.lax.dynamic_update_slice(_corr_buf, _c, (_row, 0))
         _wave_buf = jax.lax.dynamic_update_slice(_wave_buf, _w, (_row, 0))
         _sig_buf = jax.lax.dynamic_update_slice(_sig_buf, _s, (_row, 0))
+% if _gate:
+        # running post-transient sum of the per-face unit gradient direction (O(faces), no per-frame buffer)
+        _keepm = (_row + jnp.arange(_theta.shape[0]) >= (skip // _period)).astype(_p0.dtype)
+        _dir = _dir + jnp.sum(_keepm[:, None, None, None] * jnp.stack([_p0, _p1, _p2], axis=2), axis=0)
+        _dcnt = _dcnt + jnp.sum(_keepm)
+        return (_corr_buf, _wave_buf, _sig_buf, _count + block.shape[0], _dir, _dcnt)
+% else:
         return (_corr_buf, _wave_buf, _sig_buf, _count + block.shape[0])
+% endif
     def _finalize(acc):
+% if _gate:
+        _corr_buf, _wave_buf, _sig_buf, _count, _dir, _dcnt = acc
+% else:
         _corr_buf, _wave_buf, _sig_buf, _count = acc
+% endif
         _keep = skip // _period                                 # drop the transient samples
         _corr_buf, _wave_buf, _sig_buf = _corr_buf[_keep:], _wave_buf[_keep:], _sig_buf[_keep:]
         _nw = _wave_buf.sum(0)                                   # (n_groups,) wave-present count
+% if _gate:
+        # traveling-wave gate: direction-dispersion over real faces; standing field (< _pthr) -> zero wave count
+        _Rf = jnp.linalg.norm(_dir / jnp.maximum(_dcnt, 1.0), axis=1)                       # (G, nf)
+        _dd = jnp.sum(real_face_mask * (1.0 - _Rf), axis=1) / jnp.sum(real_face_mask, axis=1)
+        _nw = jnp.where(_dd >= ${_pthr}, _nw, 0.0)              # standing -> no traveling waves
+% endif
         _pw = _nw / _wave_buf.shape[0]                           # proportion of waves
         _pd = jnp.where(_nw > 0, (_sig_buf * _wave_buf).sum(0) / _nw, jnp.nan)  # proportion directed
+% if _gate:
+        _rho = jnp.where(_nw > 0, jnp.nanmedian(jnp.where(_wave_buf > 0, _corr_buf, jnp.nan), axis=0), jnp.nan)
+% else:
         _rho = jnp.nanmedian(jnp.where(_wave_buf > 0, _corr_buf, jnp.nan), axis=0)  # exact masked median
+% endif
         return jnp.stack([_pw, _pd, _rho], axis=-1)             # (n_groups, metric=3)
     return (_init, _update, _finalize)
 </%def>\

@@ -3291,7 +3291,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         trial_results = jax.lax.map(lambda args: _run_trial(*args), (${', '.join(f'_trial_noises_{sp}' for sp in _sp_names)}), batch_size=${_pbatch_s if _pbatch_s else 1})
 % endif
     % if expl.get('average') == 'trials':
-        return jnp.mean(trial_results, axis=0)
+        return jax.tree.map(lambda _l: jnp.mean(_l, axis=0), trial_results)  # per-leaf so a Bunch of streamed observables averages over trials (jnp.mean fails on a Bunch)
     % else:
         return trial_results
     % endif
@@ -3346,7 +3346,7 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         trial_results = jax.lax.map(_run_trial, _trial_ics, batch_size=${_pbatch if _pbatch else 1})
 % endif
     % if expl.get('average') == 'trials':
-        return jnp.mean(trial_results, axis=0)
+        return jax.tree.map(lambda _l: jnp.mean(_l, axis=0), trial_results)  # per-leaf so a Bunch of streamed observables averages over trials (jnp.mean fails on a Bunch)
     % else:
         return trial_results
     % endif
@@ -3468,6 +3468,11 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     _bare_to_label, _network_label = {}, None
     for _a in _axes_info:
         _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
+        if str(_a.name) == 'execution.random_seed':
+            _bare_to_label.setdefault('_noise_seed', str(_a.name))  # the seed axis sweeps the dynamics._noise_seed leaf
+        if getattr(_a, 'element_idx', None) is not None:
+            _bare = str(_a.name).rsplit('.', 1)[-1].split('[')[0]   # axis "ref.p[i]" sweeps the leaf dynamics._p_el<i>
+            _bare_to_label.setdefault(f'_{_bare}_el{_a.element_idx}', str(_a.name))
         if str(_a.name).startswith('network.'):
             _network_label = str(_a.name)   # network-scope axis (e.g. conduction_speed)
     _cell_coords, _used = {}, set()

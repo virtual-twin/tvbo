@@ -508,27 +508,34 @@ def divergence_register(source) -> dict:
     and its counts are quoted in the report's prose. Parsing it here means the report can
     never disagree with the register it cites — the drift the register itself documents.
 
-    Rows are recognised by a leading ``| <class><n> |`` cell. ``material`` counts only rows
-    whose final cell opens with a bold "Yes", which is the convention of the classes that
-    carry a materiality column; classes without one report ``material`` as ``None`` rather
-    than zero, so a caption can say what it actually counted.
+    Rows are recognised by an id cell that STARTS with ``<class><n>``, ignoring emphasis
+    markers and any annotation after it — ``| **A4** *(cross-impl)* |`` is one row of class
+    A. ``material`` counts rows whose final cell opens with "yes" in any case or emphasis,
+    the convention of the classes that carry a materiality column; a register whose header
+    has no such column reports ``material`` as ``None`` rather than zero, so a caption can
+    say what it actually counted.
+
+    The tolerance is load-bearing. A pattern that demands a bare id matches nothing on a
+    register that bolds its ids, and the zeros it returns read as "no divergences found".
     """
-    text = Path(source).read_text() if Path(source).exists() else str(source)
+    text = Path(source).read_text() if _looks_like_path(source) else str(source)
     classes: dict[str, dict] = {}
     scores = False
     for line in text.splitlines():
         cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
-        if cells and cells[0] in ("#", "ID"):
+        if cells and cells[0].lower() in ("#", "id"):
             scores = any(c.lower().startswith("material") for c in cells)
             continue
-        m = re.match(r"^\|\s*([A-Z])(\d+)\s*\|", line)
+        m = re.match(r"^\|\s*[*_`]*([A-Z])(\d+)[*_`]*[^|]*\|", line)
         if not m:
             continue
         entry = classes.setdefault(m.group(1), {"ids": [], "material": None, "rows": []})
         entry["ids"].append(f"{m.group(1)}{m.group(2)}")
         entry["rows"].append(cells)
         if scores:
-            entry["material"] = (entry["material"] or 0) + bool(re.match(r"\*\*Yes", cells[-1]))
+            entry["material"] = (entry["material"] or 0) + bool(
+                re.match(r"[*_]*yes", cells[-1], re.IGNORECASE)
+            )
     for key, entry in classes.items():
         entry["count"] = len(entry["ids"])
         entry["title"] = DIVERGENCE_CLASSES.get(key, "")

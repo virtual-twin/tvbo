@@ -13,11 +13,15 @@ use raw yaml.safe_load → cls(**dict) for LinkML classes.
 See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
 
+import json
 import yaml as _yaml
 import numpy as np
 from pathlib import Path
+from typing import Optional
 from linkml_runtime.loaders import yaml_loader
 from linkml_runtime.dumpers import yaml_dumper
+
+from tvbo.utils import yaml_loader as tvbo_yaml_loader
 
 SCHEMA_VERSION = "tvb-datamodel/0.7.0"
 
@@ -443,19 +447,106 @@ def _write_mesh(store, network):
 # ── Load ──────────────────────────────────────────────────────────────
 
 
-def load_network(yaml_path):
-    """Load a tvbo Network from YAML/JSON sidecar + companion reference.
+EMBEDDED_METADATA_ATTR = "tvbo_metadata"
+"""Root attribute holding a self-describing companion's own sidecar, as JSON.
+
+A companion carrying this attribute needs no sidecar file: ``load_network`` reads the
+metadata out of the binary and uses the same file as its own array store. Written by
+:func:`write_embedded_metadata` and read back by :func:`read_embedded_metadata`. Namespaced
+like the module's other root attrs (``tvbo_class``, ``schema_version``) so a foreign tool's
+generic ``metadata`` key cannot be mistaken for one of ours.
+"""
+
+
+def read_embedded_metadata(path) -> Optional[dict]:
+    """The sidecar dict embedded in a self-describing companion, or ``None``.
+
+    ``None`` covers every "this is not a self-describing binary" case — a YAML/JSON
+    sidecar path, a companion written without the attribute, an unreadable or
+    non-JSON payload — so callers can treat it as a plain feature probe.
+    """
+    path = Path(path)
+    ext = path.suffix.lower()
+    raw = None
+    try:
+        if ext in (".h5", ".hdf5"):
+            import h5py
+
+            with h5py.File(path, "r") as f:
+                raw = f.attrs.get(EMBEDDED_METADATA_ATTR)
+        # Bare-suffix guard first: a sidecar path must not pay a stat() to learn it is not
+        # a zarr directory, and load_network probes every load.
+        elif ext == "" and path.is_dir() and (path / ".zgroup").exists():
+            import zarr
+
+            raw = zarr.open(str(path), "r").attrs.get(EMBEDDED_METADATA_ATTR)
+        elif ext == ".zarr":
+            import zarr
+
+            raw = zarr.open(str(path), "r").attrs.get(EMBEDDED_METADATA_ATTR)
+    except (ImportError, OSError, KeyError):
+        # Missing backend, or a corrupt/foreign file: "not self-describing", not an error.
+        return None
+    if raw is None:
+        return None
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8")
+    if isinstance(raw, dict):
+        # zarr decodes JSON attrs natively, so an externally-authored store may hand back
+        # the object rather than the string this module writes.
+        return raw
+    try:
+        meta = json.loads(raw)
+    except (TypeError, ValueError):
+        return None
+    return meta if isinstance(meta, dict) else None
+
+
+def write_embedded_metadata(companion_path, meta: dict) -> None:
+    """Embed a sidecar dict into a companion so the file needs no sidecar.
+
+    The dict is stored as JSON under the ``metadata`` root attribute; ``data_file`` is
+    dropped because a self-describing file *is* its own array store.
+    :func:`load_network` reads it back, so one path is the whole Network.
+    """
+    companion_path = Path(companion_path)
+    payload = {k: v for k, v in meta.items() if k != "data_file"}
+    blob = json.dumps(payload, sort_keys=False)
+    ext = companion_path.suffix.lower()
+    if ext in (".h5", ".hdf5"):
+        import h5py
+
+        with h5py.File(companion_path, "a") as f:
+            f.attrs[EMBEDDED_METADATA_ATTR] = blob
+    elif ext == ".zarr" or companion_path.is_dir():
+        import zarr
+
+        zarr.open(str(companion_path), "a").attrs[EMBEDDED_METADATA_ATTR] = blob
+    else:
+        raise ValueError(f"cannot embed metadata in {companion_path.suffix!r} companion")
+
+
+def load_network(path):
+    """Load a tvbo Network from a sidecar, or from a self-describing companion.
 
     Uses linkml yaml_loader or json_loader to construct a schema-validated
     Network instance directly — same pattern as Dynamics.from_file().
+
+    Two layouts are accepted:
+
+    - **sidecar + companion** — a ``.yaml``/``.json`` metadata file whose ``data_file``
+      names the binary beside it;
+    - **single self-describing file** — a ``.h5``/``.zarr`` carrying its own sidecar in
+      the ``metadata`` root attribute (see :data:`EMBEDDED_METADATA_ATTR`). The file is
+      its own array store, so one path is the whole Network.
 
     Arrays are NOT loaded into memory. A LazyArrayStore is attached
     that loads arrays on first access (e.g., net.weights_matrix).
 
     Parameters
     ----------
-    yaml_path : str or Path
-        Path to YAML or JSON sidecar file.
+    path : str or Path
+        Path to a YAML/JSON sidecar, or to a self-describing ``.h5``/``.zarr``.
 
     Returns
     -------
@@ -464,22 +555,34 @@ def load_network(yaml_path):
     """
     from tvbo.classes.network import Network
 
-    yaml_path = Path(yaml_path)
-    yaml_path.suffix.lower()
+    path = Path(path)
 
-    # Load as dict first to extract data_file (not a schema field)
-    meta_dict = yaml_loader.load_as_dict(str(yaml_path))
-    data_file = meta_dict.pop("data_file", None)
+    embedded = read_embedded_metadata(path)
+    if embedded is not None:
+        meta_dict = embedded
+        meta_dict.pop("data_file", None)
+        data_file = path.name
+    else:
+        # Load as dict first so data_file can be handled here. It IS a schema slot, but
+        # `Network._resolve_from_data_file` treats it as an indirect reference to ANOTHER
+        # network's sidecar, so leaving it on the constructor kwargs would recurse.
+        meta_dict = yaml_loader.load_as_dict(str(path))
+        data_file = meta_dict.pop("data_file", None)
     # Extract non-schema fields that are YAML-only metadata
     bids_meta = meta_dict.pop("bids", None)
     descriptor = meta_dict.pop("descriptor", None)
-    meta_dict.pop("schema_version", None)
-    meta_dict.pop("tvbo_class", None)
+    meta_dict = tvbo_yaml_loader.strip_envelope(meta_dict)
 
     # Reconstruct clean YAML without non-schema fields for LinkML loader
     import yaml as _yaml
 
-    clean_yaml = _yaml.dump(meta_dict, Dumper=_yaml.SafeDumper)
+    # This loader attaches connectivity itself, so the constructor must not resolve it:
+    # `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file`
+    # reads the companion's own sidecar, which would recurse into this very load), and a
+    # sidecar that also declares `parcellation:` would otherwise fall through to the
+    # normative-database branch and cache an atlas connectome that shadows this file's real
+    # matrices. `_resolve` runs below, once `_store` is in place.
+    clean_yaml = _yaml.dump({**meta_dict, "_defer_connectivity": True}, Dumper=_yaml.SafeDumper)
     net = yaml_loader.loads(clean_yaml, Network)
 
     # Attach non-schema metadata as attributes (used by bids_filename)
@@ -490,7 +593,7 @@ def load_network(yaml_path):
 
     # Attach lazy array store (no arrays loaded yet).
     if data_file:
-        data_path = yaml_path.parent / data_file
+        data_path = path.parent / data_file
         net._store = LazyArrayStore(data_path, meta_dict)
         net.data_file = data_file
 
@@ -498,6 +601,11 @@ def load_network(yaml_path):
         _load_mesh(net, data_path)
     else:
         net._store = None
+
+    # `_store` now makes the network materialised, so this expands node/edge templates and
+    # subnetworks without re-entering the connectivity branches; a sidecar carrying only a
+    # `parcellation:` still resolves its normative connectome here as before.
+    net._resolve(source_dir=str(path.parent))
 
     return net
 

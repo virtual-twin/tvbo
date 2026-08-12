@@ -485,6 +485,17 @@ class Network(tvbo_datamodel.Network):
         resolve_edge_var_aliases(kwargs.get("edges"))
         resolve_edge_var_aliases(kwargs.get("edge_template"))
 
+        # A loader that will attach connectivity itself sets this, then calls `_resolve`
+        # once the arrays are in place. Without it the constructor-time `_resolve` would
+        # run against a half-built object: `data_file` is an INDIRECT reference (see
+        # `_resolve_from_data_file`, which reads the companion's own sidecar and would
+        # recurse into the very load in progress), so loaders must strip it — and a
+        # sidecar that also declares `parcellation:` would then fall through to the
+        # normative-database branch and cache an atlas connectome that shadows the
+        # companion's real matrices. Deferring resolves that ordering rather than
+        # special-casing the branch.
+        _defer_connectivity = bool(kwargs.pop("_defer_connectivity", False))
+
         # `node_template` is a partial Node applied to every materialized node
         # (see _expand_node_template). The parent constructor builds it as a
         # real `Node`, which requires `id`; inject a sentinel so construction
@@ -559,7 +570,8 @@ class Network(tvbo_datamodel.Network):
         # in _apply_transform long after load) can import modules beside the YAML.
         if _source_dir:
             self._source_dir = _source_dir
-        self._resolve(source_dir=_source_dir)
+        if not _defer_connectivity:
+            self._resolve(source_dir=_source_dir)
 
         # Runtime default: a Network with no nodes, no declared count, and no
         # connectome to resolve is still usable as a single-node network. The
@@ -985,11 +997,15 @@ class Network(tvbo_datamodel.Network):
         if not data_file.is_absolute():
             base = Path(source_dir) if source_dir else Path.cwd()
             data_file = (base / data_file).resolve()
-        sidecar = data_file.with_suffix(".yaml") if data_file.suffix in (".h5", ".zarr") else data_file
-        if not sidecar.exists():
-            raise FileNotFoundError(f"No YAML sidecar found for {data_file}")
+        from tvbo.data.network_io import load_network, read_embedded_metadata
 
-        from tvbo.data.network_io import load_network
+        # A self-describing companion carries its own metadata, so it needs no sidecar.
+        if data_file.suffix in (".h5", ".zarr") and read_embedded_metadata(data_file) is None:
+            sidecar = data_file.with_suffix(".yaml")
+            if not sidecar.exists():
+                raise FileNotFoundError(f"No YAML sidecar found for {data_file}")
+        else:
+            sidecar = data_file
 
         loaded = load_network(sidecar)
         # The sidecar is the authoritative source of connectivity. Replace
@@ -2245,8 +2261,12 @@ class Network(tvbo_datamodel.Network):
         if source is not None:
             p = Path(source)
             ext = p.suffix.lower()
-            # HDF5 companion → resolve to YAML sidecar
+            # HDF5 companion → itself when self-describing, else its YAML/JSON sidecar
             if ext in (".h5", ".hdf5"):
+                from tvbo.data.network_io import read_embedded_metadata
+
+                if read_embedded_metadata(p) is not None:
+                    return cls.from_file(str(p))
                 sidecar = p.with_suffix(".yaml")
                 if not sidecar.exists():
                     sidecar = p.with_suffix(".json")
@@ -3878,6 +3898,20 @@ class Network(tvbo_datamodel.Network):
             matched = {i: by_label[str(l)] for i, l in enumerate(node_labels) if l and str(l) in by_label}
             n_labelled = sum(1 for l in node_labels if l)
             if matched and len(matched) >= max(1, n_labelled // 2):
+                if len(matched) < n_labelled:
+                    # A partial dict is indistinguishable from a complete one downstream, and
+                    # the gap is always a naming-convention mismatch the atlas could absorb as
+                    # an alternateName. Name the offenders rather than silently dropping them.
+                    import warnings
+
+                    unmatched = [str(l) for i, l in enumerate(node_labels) if l and i not in matched]
+                    warnings.warn(
+                        f"get_centers(): only {len(matched)}/{n_labelled} node labels matched "
+                        f"atlas {getattr(self.get_atlas(), 'name', '?')!r}; no centre for "
+                        f"{unmatched[:5]}{' …' if len(unmatched) > 5 else ''}. Add these "
+                        f"spellings as alternateName on the atlas entities.",
+                        stacklevel=2,
+                    )
                 return matched
 
         # (3b) Fallback: key centres by the atlas's own lookupLabel order.

@@ -71,6 +71,12 @@ from linkml_runtime.utils.yamlutils import DupCheckYamlLoader
 _MERGE_TAG = "tag:yaml.org,2002:merge"
 _INCLUDE_TAG = "!include"
 
+ENVELOPE_KEYS = ("tvbo_class", "schema_version")
+"""Keys that annotate a serialized FILE's class and schema version rather than the
+object's slots. They are dropped on every route into a class constructor — a document
+root, a plain ``!include``, and a fragment merged with ``<<: !include`` — and kept by
+:func:`load_as_dict`, whose callers dispatch on them."""
+
 
 def _flatten_map_constructor(loader: yaml.Loader, node: yaml.MappingNode, deep: bool = False) -> dict:
     """``DupCheckYamlLoader`` map constructor augmented with merge-key support.
@@ -142,7 +148,9 @@ def _compose_included(loader: yaml.Loader, node: yaml.ScalarNode) -> yaml.Node:
     """The ``!include`` target composed to a node tree rather than constructed to a dict.
 
     Same file resolution and same anchor scoping as the ``!include`` constructor — the
-    fragment is composed with its own loader class, so its anchors stay file-local.
+    fragment is composed with its own loader class, so its anchors stay file-local. The
+    file envelope (:data:`ENVELOPE_KEYS`) is dropped: it describes the fragment's file,
+    not the object it is merged into, and would reach the parent class as an unknown slot.
     """
     base_dir = getattr(loader, "_tvbo_base_dir", Path.cwd())
     path = _include_path(loader.construct_scalar(node), base_dir)
@@ -154,6 +162,10 @@ def _compose_included(loader: yaml.Loader, node: yaml.ScalarNode) -> yaml.Node:
             f"a merged !include must hold a mapping, but {path} holds {composed.id}",
             node.start_mark,
         )
+    composed.value = [
+        (k, v) for k, v in composed.value
+        if not (isinstance(k, yaml.ScalarNode) and k.value in ENVELOPE_KEYS)
+    ]
     return composed
 
 
@@ -169,7 +181,12 @@ def _include_path(rel: str, base_dir: Path) -> Path:
 
 
 def _make_include_constructor(base_dir: Path):
-    """Build a ``!include`` constructor anchored at ``base_dir``."""
+    """Build a ``!include`` constructor anchored at ``base_dir``.
+
+    The included document's own file envelope (:data:`ENVELOPE_KEYS`) is dropped, as it is
+    for a merged include: the value is spliced into a parent slot, where those keys belong
+    to no class. A file read for its own sake keeps them — see :func:`load_as_dict`.
+    """
 
     def _include(loader: yaml.Loader, node: yaml.Node) -> Any:
         if isinstance(node, yaml.ScalarNode):
@@ -182,7 +199,7 @@ def _make_include_constructor(base_dir: Path):
         # Fresh loader instance for the included document so anchors are
         # file-local (no name capture from or into the parent document).
         with open(path, "r") as fh:
-            return yaml.load(fh, _make_loader_class(path.parent))
+            return strip_envelope(yaml.load(fh, _make_loader_class(path.parent)))
 
     return _include
 
@@ -405,6 +422,20 @@ def _normalize_loaded(data: Any) -> Any:
     return data
 
 
+def strip_envelope(data: Any) -> Any:
+    """Drop :data:`ENVELOPE_KEYS` from a document root bound for a class constructor.
+
+    A file may name its own class and schema version (``tvbo_class: tvbo:SimulationStudy``)
+    so tooling can dispatch on it without being told. Those keys are slots of no class, so
+    they must not survive into the target's ``__init__``.
+    """
+    if isinstance(data, dict):
+        return {k: v for k, v in data.items() if k not in ENVELOPE_KEYS}
+    if isinstance(data, list):
+        return [strip_envelope(d) for d in data]
+    return data
+
+
 def _preprocess(source: Any, base_dir: Path) -> str:
     """Parse ``source`` with the TVBO loader and re-serialise to plain YAML.
 
@@ -425,8 +456,10 @@ def _preprocess(source: Any, base_dir: Path) -> str:
     else:
         data = source
     # Fold slot aliases + lift the terse distribution shortcut (shared with the
-    # dict path so the two cannot diverge).
+    # dict path so the two cannot diverge), then drop the file envelope, which
+    # only load_as_dict's dispatching callers need.
     data = _normalize_loaded(data)
+    data = strip_envelope(data)
     # Re-serialise using safe_dump so the LinkML loader sees pure data
     # with no remaining anchors/merge keys/!include directives.
     return yaml.safe_dump(data, sort_keys=False)

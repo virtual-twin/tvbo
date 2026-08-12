@@ -921,7 +921,7 @@ class DynamicalSystem(tvbo_datamodel.Dynamics):
         Returns:
             The instance parsed from the file.
         """
-        data = yaml_loader.load_as_dict(str(path))
+        data = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str(path)))
         _resolve_dynamics_aliases(data)
         inst = cls(**data)
         if use_ontology:

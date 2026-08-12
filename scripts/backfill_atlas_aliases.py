@@ -101,7 +101,7 @@ def desikankilliany_rule(canon: str) -> str:
 
 ATLASES = {
     "hcpmmp1": {
-        "file": "tpl-MNI152NLin2009b_atlas-hcpmmp1_desc-ordered_dseg.yaml",
+        "file": "tpl-fsLR_atlas-hcpmmp1_desc-ordered_dseg.yaml",
         "rule": hcpmmp1_rule,
         "verify_glob": "sub-*/sub-*atlas-HCPMMP1*relmat.yaml",
     },

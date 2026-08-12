@@ -32,12 +32,41 @@ REQUIRED output: a packed kit + a `report/cluster_run.md` (the run route + site 
   recipe stays the portable source of truth and the same study emits for CPU-container *and*
   GPU-venv without editing it. A **GPU run** is exactly this: drop the container and point at a
   `jax[cuda]` venv — `--set container= --set slurm.venv=/path/to/.venv --set slurm.partition=gpu
-  --set slurm.gres=gpu:1 --set slurm.mem=… --set slurm.time=…` (the SLURM executor turns
-  `gres` into `--gres` itself; on a GPU node let JAX auto-detect — do **not** force
-  `JAX_PLATFORMS=cuda`, which drops the CPU device a `jax.debug.print` progress callback needs;
-  use `cuda,cpu` if you must set it, and match the `jax-cuda12-*` plugin to `jaxlib`). Env vars
-  are `--set 'slurm.env=[{name: …, value: …}]'`. Install the venv from a **compute node**
+  --set slurm.gres=gpu:1 --set slurm.mem=… --set slurm.time=…` (a RECENT
+  `snakemake-executor-plugin-slurm` turns the rule's `gres` resource into `--gres` itself; an
+  OLDER plugin has no native `gres` and silently drops it, so **verify the GPU was actually
+  allocated** — `squeue -o '…%b'` must show `gres/gpu:N` and `scontrol show job` `ReqTRES` must
+  list it. A GPU node with no gres attached gives `cuInit … CUDA_ERROR_NO_DEVICE … Falling back
+  to cpu`: a silent CPU run that "succeeds" wrong. On a GPU node let JAX auto-detect — do **not**
+  force `JAX_PLATFORMS=cuda`, which drops the CPU device a `jax.debug.print` progress callback
+  needs; use `cuda,cpu` if you must set it, and match the `jax-cuda12-*` plugin to `jaxlib`). Env
+  vars are `--set 'slurm.env=[{name: …, value: …}]'`. Install the venv from a **compute node**
   (`srun`), never the login node.
+- **Provide a `slurm.venv` and the kit TRUSTS it — no `setup.sh`, so the venv must already carry
+  the study's deps.** When the recipe declares `requirements:`, a kit normally ships a `setup.sh`
+  that layers them into a `--system-site-packages` venv. That is correct over a *base* interpreter
+  (a conda env, a container image) but BROKEN over a provided venv: nested venvs don't chain
+  site-packages, so pip re-resolves the FULL stack and its CPU `jaxlib` shadows the venv's
+  `jax[cuda]` (silent CPU run) — and running it on the login node blows the ~20 MB `/tmp` cap
+  ("Disk quota exceeded"). So when `slurm.venv` is set the emitter skips the env layer entirely:
+  the venv IS the declared environment. Provision that venv once, from a compute node, with every
+  requirement in it. Separately, `tvbo workflow submit` shells out to `snakemake`, so run it from
+  an env that has BOTH `tvbo` AND `snakemake` + the slurm executor plugin — a `snakemake`-only
+  orchestration env cannot drive it, and neither can a `tvbo`-only one.
+- **On a GPU the compile peak is DEVICE memory, not host `mem`.** The same wide-vmap-long-scan
+  spike that sizes `slurm.mem` also sizes GPU VRAM: a whole-panel grid can compile to tens of GB
+  on-device and OOM a mid-VRAM card (`bfc_allocator … ran out of memory`, `hlo_rematerialization:
+  Can't reduce memory use below …`). Fix by shrinking the on-device batch (a smaller `n_parallel`,
+  or the kit's per-attempt nvmap retry-shrink) OR by requesting a larger-VRAM GPU (`--set
+  slurm.gres=gpu:<big-model>:1`) — the latter fits the full batch without guessing a size.
+- **Size `slurm.time` off the measured per-batch rate, not a guess — a single vmap grid can't
+  resume mid-run.** A sweep that streams and compiles fine can still blow a short default
+  walltime: a whole-panel grid runs its cells in on-device batches at a steady rate (e.g.
+  ~2 min/batch × ~200 batches ≈ 6–7 h), and a 4 h `slurm.time` TIME-LIMIT-kills it near ~60 %
+  — wasted, because a backend-vectorized grid is ONE job with no mid-grid checkpoint (unlike a
+  *fanned* sweep, where each cell is its own resumable job and Snakemake just re-runs the killed
+  ones). Read the rate off the first few batches (the log's `[+Ns] … batch k/N` line, or the
+  `--benchmark` TSV) and set `--set slurm.time=` with headroom before it hits the wall.
 - **Prove the memory/streaming fix — don't eyeball it — with engine-native benchmarking.**
   `tvbo workflow snakemake … --benchmark` (or `--set benchmark=true`) attaches Snakemake's
   native `benchmark:` directive to every rule: a per-cell TSV (wall time, `max_rss`/`vms`/

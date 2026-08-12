@@ -11,12 +11,24 @@ from . import _common
 app = typer.Typer(name="validate", no_args_is_help=True)
 
 
+def _declared_class(data: object) -> str | None:
+    """Target class named by the document's own file envelope, or None.
+
+    Reads ``tvbo_class`` (the envelope key every self-describing TVBO file carries,
+    CURIE-prefixed as ``tvbo:Network``) and strips the prefix to the bare class name.
+    """
+    if not isinstance(data, dict):
+        return None
+    declared = data.get("tvbo_class")
+    return str(declared).split(":")[-1] if declared else None
+
+
 @app.command("schema", help="Structural JSON Schema validation of a YAML file.")
 def schema(
     path: Path = typer.Argument(..., exists=True, readable=True, help="YAML file."),
     target_class: str = typer.Option(
         None, "--class",
-        help="Target class (auto-detected from `class:` key when omitted).",
+        help="Target class (auto-detected from the file's `tvbo_class:` envelope when omitted).",
     ),
 ) -> None:
     """Validate *path* against the shipped JSON Schema; auto-detects the target class.
@@ -44,7 +56,7 @@ def schema(
     data = yaml_loader.load_as_dict(str(path))
 
     if target_class is None:
-        target_class = (data.get("class") if isinstance(data, dict) else None) or "SimulationExperiment"
+        target_class = _declared_class(data) or "SimulationExperiment"
 
     defs = full.get("$defs", {})
     if target_class not in defs:
@@ -153,7 +165,7 @@ def all_(
     for fp in files:
         try:
             schema(path=fp, target_class=None)  # type: ignore[arg-type]
-        except SystemExit as exc:
+        except (typer.Exit, SystemExit) as exc:
             failures.append((fp, str(exc)))
             if fail_fast:
                 break

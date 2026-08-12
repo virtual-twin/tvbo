@@ -210,18 +210,28 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
     )
     # Full rectangular grid with per-cell coords: place each cell BY VALUE (see docstring).
     if cell_coords is not None and _full_grid and grid_dims:
-        try:
-            _pos = [
-                np.abs(np.asarray(cell_coords[_n])[:, None] - np.asarray(grid_coords[_n])[None, :]).argmin(axis=1)
-                for _n in grid_dims
-            ]
-            _flat_idx = np.ravel_multi_index(tuple(_pos), tuple(grid_sizes))
-            if len(np.unique(_flat_idx)) == arr.shape[0]:
-                _rect = np.empty((int(np.prod(grid_sizes)),) + arr.shape[1:], dtype=arr.dtype)
-                _rect[_flat_idx] = arr
-                arr = _rect.reshape(tuple(grid_sizes) + arr.shape[1:])
-        except (KeyError, ValueError):
-            pass  # coords unmatchable -> fall through to the positional reshape (legacy)
+        _missing = [n for n in grid_dims if n not in cell_coords or n not in grid_coords]
+        if _missing:
+            raise ValueError(
+                f"cell_coords cannot place observation {name!r} into its grid: no per-cell "
+                f"values for axis(es) {_missing} (have {sorted(cell_coords)}). A positional "
+                f"reshape would scramble the surface whenever the Space emission order "
+                f"differs from the declared axis order, so this is an error, not a fallback."
+            )
+        _pos = [
+            np.abs(np.asarray(cell_coords[_n])[:, None] - np.asarray(grid_coords[_n])[None, :]).argmin(axis=1)
+            for _n in grid_dims
+        ]
+        _flat_idx = np.ravel_multi_index(tuple(_pos), tuple(grid_sizes))
+        if len(np.unique(_flat_idx)) != arr.shape[0]:
+            raise ValueError(
+                f"cell_coords for observation {name!r} map {arr.shape[0]} cells onto "
+                f"{len(np.unique(_flat_idx))} distinct grid indices — the per-cell values "
+                f"do not identify every cell uniquely."
+            )
+        _rect = np.empty((int(np.prod(grid_sizes)),) + arr.shape[1:], dtype=arr.dtype)
+        _rect[_flat_idx] = arr
+        arr = _rect.reshape(tuple(grid_sizes) + arr.shape[1:])
         cell_coords = None  # consumed: build the rectangular DataArray from grid_coords
     if cell_coords is not None or (grid_dims and not _full_grid):
         n_points = arr.shape[0]

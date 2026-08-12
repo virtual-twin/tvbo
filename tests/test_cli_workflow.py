@@ -1355,6 +1355,53 @@ def test_no_bids_root_warning_without_dataset(tmp_path: Path, monkeypatch):
     assert not warned
 
 
+def test_pack_warns_when_figure_inputs_live_outside_the_kit(tmp_path: Path, monkeypatch):
+    """A figure whose PROV `used` edges are the author's ANALYSIS containers puts absolute
+    foreign paths in its rule's `input:`. The kit runs experiments, so nothing makes them,
+    and the default target dies on another host with a path from this machine. Warn at emit
+    time instead, naming the target that does work."""
+    from tvbo.cli import workflow as workflow_cli
+
+    warned: list[str] = []
+    monkeypatch.setattr("tvbo.cli._common.warn", lambda m: warned.append(m))
+
+    kit = tmp_path / "kit"
+    kit.mkdir()
+    (kit / "figures.smk").write_text(
+        "rule fig_a:\n"
+        "    input:\n"
+        "        '/elsewhere/study/output/results/fig1_curves/result.h5',\n"
+        f"        '{kit.resolve()}/results/3/exp-3_result.h5'\n"
+        "    output:\n"
+        "        'figures/a.png'\n",
+        encoding="utf-8",
+    )
+    workflow_cli._warn_unsatisfiable_figure_inputs(kit)
+    joined = "\n".join(warned)
+    assert warned, "expected a warning for the out-of-kit figure input"
+    assert "result.h5" in joined
+    assert "1 figure input" in joined, "the in-kit experiment container must not be counted"
+
+
+def test_no_figure_warning_when_every_input_is_in_the_kit(tmp_path: Path, monkeypatch):
+    """A self-contained figure kit warns about nothing."""
+    from tvbo.cli import workflow as workflow_cli
+
+    warned: list[str] = []
+    monkeypatch.setattr("tvbo.cli._common.warn", lambda m: warned.append(m))
+
+    kit = tmp_path / "kit"
+    kit.mkdir()
+    (kit / "figures.smk").write_text(
+        "rule fig_a:\n"
+        "    input:\n"
+        f"        '{kit.resolve()}/results/3/exp-3_result.h5'\n",
+        encoding="utf-8",
+    )
+    workflow_cli._warn_unsatisfiable_figure_inputs(kit)
+    assert not warned
+
+
 def test_workflow_run_rejects_unknown_engine():
     r = runner.invoke(app, ["workflow", "run", "local", EXP, "--backend", "jax"])
     assert r.exit_code != 0
@@ -1564,6 +1611,22 @@ def test_experiment_targets_returns_the_validated_rules(tmp_path):
 
     (tmp_path / "Snakefile").write_text("rule exp_41:\n    shell: 'true'\nrule exp_50:\n    shell: 'true'\n")
     assert _experiment_targets(tmp_path, "41,50") == ["exp_41", "exp_50"]
+
+
+def test_experiment_targets_matches_study_prefixed_rule_names(tmp_path):
+    """A study pack emits ``<study>_exp_<key>`` rules; a selector matches by the ``exp_<key>``
+    suffix, else ``--experiment <subset>`` on a multi-experiment pack finds no rules and aborts.
+    """
+    from tvbo.cli.workflow import _experiment_targets
+
+    (tmp_path / "Snakefile").write_text(
+        "rule all:\n    input: []\n"
+        "rule Schirner2023_exp_34:\n    shell: 'true'\n"
+        "rule Schirner2023_exp_30:\n    shell: 'true'\n"
+    )
+    assert _experiment_targets(tmp_path, "34") == ["Schirner2023_exp_34"]
+    assert sorted(_experiment_targets(tmp_path, "30,34")) == [
+        "Schirner2023_exp_30", "Schirner2023_exp_34"]
 
 
 def test_experiment_selector_without_a_snakefile_is_an_error(tmp_path):

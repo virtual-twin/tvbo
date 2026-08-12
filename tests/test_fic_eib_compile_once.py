@@ -1,9 +1,13 @@
-"""Regression guard for the compile-once tuning core (Bug 2).
+"""Regression guards for the fic_eib tuning codegen.
 
-A multi-stage `fic_eib` schedule must route its tuning ``lax.scan`` through ONE
-module-level ``_<algo>_tuning_core`` that XLA-compiles once across stages, with the
-per-stage-varying scalars (eta, resync period, ring window) threaded TRACED rather
-than baked — otherwise the scan recompiles once per stage (the 47-min compile).
+- compile-once (Bug 2): a multi-stage `fic_eib` schedule routes its tuning ``lax.scan``
+  through ONE module-level ``_<algo>_tuning_core`` that XLA-compiles once across stages,
+  with per-stage-varying scalars (eta, resync period, ring window) threaded TRACED rather
+  than baked — otherwise the scan recompiles once per stage (the 47-min compile).
+- NaN guard: the host path fails loud on a non-finite estimate (a diverged fit must never
+  be written to disk as a success).
+- update_every: a batched-update cadence knob — absent leaves the rendered code
+  byte-identical (no gate); declared gates every update-rule write TRACED through the core.
 """
 import pytest
 
@@ -56,6 +60,61 @@ def test_eta_call_site_passes_variable_not_literal():
     call = code[code.index("new_wLRE = wLRE_update("):]
     call = call[:call.index(")")]
     assert "eta," in call and "0.1" not in call and "0.05" not in call
+
+
+def test_nan_guard_emitted_default_on():
+    """A tuning algo emits a fail-loud non-finite-estimate guard on the host path."""
+    code = _multistage_experiment().render_code("tvboptim")
+    assert "_nonfinite_estimates" in code and "jnp.isfinite" in code
+    assert "tuning diverged: non-finite estimate" in code
+
+
+def test_update_every_gate_absent_when_undeclared():
+    """No update_every hyperparameter -> NO gate (rendered code stays the online path)."""
+    code = _multistage_experiment().render_code("tvboptim")
+    assert "_apply_update" not in code
+    assert "update_every" not in code
+
+
+def test_update_every_gate_emitted_and_traced_when_declared():
+    """Declaring update_every gates every update-rule write, threaded TRACED via the core."""
+    import re
+
+    exp = _multistage_experiment()
+    exp.algorithms["fic_eib"].hyperparameters.append(
+        Parameter(name="update_every", value=20))
+    code = exp.render_code("tvboptim")
+
+    assert "_apply_update" in code
+    assert "% jnp.maximum(jnp.asarray(update_every" in code, "gate must use the traced ue"
+    # every update-rule write (J_i, wLRE, wFFI) is gated by the cadence predicate
+    assert len(re.findall(r"jnp\.where\(\s*_apply_update", code)) == 3
+    # threaded TRACED into the compile-once core (not baked), like eta / resync period
+    assert "_canon_tree(update_every)" in code
+    core_sig = code[code.index("def _fic_eib_tuning_core_impl("):]
+    core_sig = core_sig[:core_sig.index("):")]
+    assert "update_every" in core_sig
+
+
+def test_nan_guard_reads_final_state_not_rec_buffer():
+    """The guard must check the RETURNED estimate (state.*), not the subsampled __rec buffer.
+
+    __rec is recorded only at ``(i+1)%save_every==0 or i==0``; when save_every does not divide
+    n_iterations the final iterate is unrecorded, so a divergence in the last steps would leave
+    __rec finite while the written estimate (state) is NaN.
+    """
+    code = _multistage_experiment().render_code("tvboptim")
+    blocks, start = [], 0
+    while (i := code.find("_nonfinite_estimates = [", start)) != -1:
+        j = code.index("]", i)
+        blocks.append(code[i:j + 1])
+        start = j + 1
+    assert blocks, "no NaN guard emitted"
+    for b in blocks:
+        assert "__rec" not in b, "guard must read the final state estimate, not __rec"
+        assert "state.dynamics" in b or "state.coupling" in b
+    # fic_eib's coupling estimates (wLRE / wFFI) must be guarded from state.coupling
+    assert any("state.coupling" in b for b in blocks)
 
 
 @pytest.mark.slow
