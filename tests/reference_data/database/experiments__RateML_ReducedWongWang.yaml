@@ -152,6 +152,22 @@ integration:
   delayed: true
   coupling_evaluation: per_step
 network:
+  coupling:
+    LinearCoupling:
+      name: LinearCoupling
+      sparse: false
+      pre_expression:
+        rhs: V_j
+        latex: false
+      post_expression:
+        rhs: '1'
+        latex: false
+      incoming_states:
+      - V
+      delayed: true
+      interpolate_delays: false
+      vectorized: false
+      symmetry: directed
   graph_representation: auto
   dynamics:
     BalloonWindkessel:
@@ -305,21 +321,6 @@ network:
       compile: false
   number_of_nodes: 4
   distance_unit: mm
-coupling:
-  name: LinearCoupling
-  sparse: false
-  pre_expression:
-    rhs: V_j
-    latex: false
-  post_expression:
-    rhs: '1'
-    latex: false
-  incoming_states:
-  - V
-  delayed: true
-  interpolate_delays: false
-  vectorized: false
-  symmetry: directed
 observations:
   bold:
     name: bold

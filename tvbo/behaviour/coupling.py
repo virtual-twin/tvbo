@@ -33,45 +33,6 @@ class CouplingBehaviour:
         coupling_class2metadata(hits[0], self, overwrite=False)
         return True
 
-    def populate_from_type(self, type_ref):
-        """Fill this coupling from the coupling function *type_ref* names.
-
-        A ``network.coupling`` entry is keyed by its role in the network, so its ``type``
-        is what says which function it is an instance of — the entity to enrich from,
-        rather than the one this record names.
-
-        Parameters
-        ----------
-        type_ref : str
-            Coupling function name or CURIE (e.g. ``"KuramotoCoupling"``
-            or ``"tvbo:KuramotoCoupling"``).
-        """
-        from tvbo.data.registry import local_name
-
-        self._coupling_type = type_ref
-        self.enrich(key=local_name(type_ref))
-        self._resolve_xi_xj()
-
-    def _resolve_xi_xj(self):
-        """Auto-populate local_states/incoming_states from x_i/x_j in expression.
-
-        Coupling database equations use generic placeholders ``x_i`` (local
-        node state) and ``x_j`` (source node state).  When the user has
-        declared ``incoming_states`` (the actual state variable names to
-        pull from connected nodes) but not ``local_states``, and the
-        expression references ``x_i``, we mirror ``incoming_states`` into
-        ``local_states`` so the template can generate correct assignments.
-        """
-        pre_rhs = str(self.pre_expression.rhs) if getattr(self, "pre_expression", None) else ""
-        incoming = getattr(self, "incoming_states", None) or []
-        local = getattr(self, "local_states", None) or []
-
-        if "x_i" in pre_rhs and not local and incoming:
-            self.local_states = list(incoming)
-
-        if "x_j" in pre_rhs and not incoming and local:
-            self.incoming_states = list(local)
-
     @classmethod
     def from_ontology(cls, ontoclass):
         """Create a Coupling instance from an ontology Coupling class or name.

@@ -73,8 +73,11 @@ def _render_jax(exp, **kw):
 
 
 def _render_tvboptim(exp, **kw):
+    from tvbo.adapters.tvboptim import TvboptimAdapter
     from tvbo.classes.experiment import templates
     template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
+    # Which couplings this experiment has is the adapter's answer, not the template's.
+    kw.setdefault("all_couplings", TvboptimAdapter(exp).resolve_couplings())
     # Resolve network- and dataset-sourced observation pointers once, in Python,
     # and hand the {obs_name: measure} mapping to the template (which only emits
     # code). Both bind at run_experiment time via _bind_network_observations.
