@@ -173,6 +173,27 @@ def _is_partial_shard(expl) -> bool:
     return bool(counts) and max(counts) < int(np.prod(sizes))
 
 
+def _axis_positions(cell_vals, grid_vals, axis, name):
+    """Index of each cell along one grid axis, matched by value.
+
+    A numeric axis matches by nearest value, because a swept float that has round-tripped through a file need not compare equal to the one the grid declares. Anything else
+    matches exactly: a string axis (``integration.method`` over "heun"/"euler") cannot be subtracted at all, and placing it by position would be the scrambling this whole path
+    exists to prevent.
+    """
+    cell = np.asarray(cell_vals)
+    grid = np.asarray(grid_vals)
+    if np.issubdtype(cell.dtype, np.number) and np.issubdtype(grid.dtype, np.number):
+        return np.abs(cell[:, None] - grid[None, :]).argmin(axis=1)
+    index = {v: i for i, v in enumerate(grid.tolist())}
+    absent = sorted({v for v in cell.tolist() if v not in index}, key=repr)
+    if absent:
+        raise ValueError(
+            f"cell_coords for observation {name!r} put value(s) {absent} on axis {axis!r}, "
+            f"which the grid does not declare (it has {grid.tolist()})."
+        )
+    return np.asarray([index[v] for v in cell.tolist()])
+
+
 def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1, name=None, cell_coords=None, dims=None):
     """Build an ``xr.DataArray`` from a parameter-grid-stacked array.
 
@@ -210,19 +231,25 @@ def _stacked_to_dataarray(stacked_arr, axes_info, intrinsic_ts=None, n_trials=1,
     _full_grid = bool(grid_sizes) and all(s is not None for s in grid_sizes) and arr.shape[0] == int(np.prod(grid_sizes))
     # Full rectangular grid with per-cell coords: place each cell BY VALUE (see docstring).
     if cell_coords is not None and _full_grid and grid_dims:
-        try:
-            _pos = [
-                np.abs(np.asarray(cell_coords[_n])[:, None] - np.asarray(grid_coords[_n])[None, :]).argmin(axis=1)
-                for _n in grid_dims
-            ]
-            _flat_idx = np.ravel_multi_index(tuple(_pos), tuple(grid_sizes))
-            if len(np.unique(_flat_idx)) == arr.shape[0]:
-                _rect = np.empty((int(np.prod(grid_sizes)),) + arr.shape[1:], dtype=arr.dtype)
-                _rect[_flat_idx] = arr
-                arr = _rect.reshape(tuple(grid_sizes) + arr.shape[1:])
-        except (KeyError, ValueError, TypeError):
-            # TypeError included: placement subtracts coordinates, which a non-numeric axis (`integration.method` over "heun"/"euler") cannot do. Unmatchable either way, so fall through to the positional reshape rather than out of `as_grid`.
-            pass
+        _missing = [n for n in grid_dims if n not in cell_coords or n not in grid_coords]
+        if _missing:
+            raise ValueError(
+                f"cell_coords cannot place observation {name!r} into its grid: no per-cell "
+                f"values for axis(es) {_missing} (have {sorted(cell_coords)}). A positional "
+                f"reshape would scramble the surface whenever the Space emission order "
+                f"differs from the declared axis order, so this is an error, not a fallback."
+            )
+        _pos = [_axis_positions(cell_coords[_n], grid_coords[_n], _n, name) for _n in grid_dims]
+        _flat_idx = np.ravel_multi_index(tuple(_pos), tuple(grid_sizes))
+        if len(np.unique(_flat_idx)) != arr.shape[0]:
+            raise ValueError(
+                f"cell_coords for observation {name!r} map {arr.shape[0]} cells onto "
+                f"{len(np.unique(_flat_idx))} distinct grid indices — the per-cell values "
+                f"do not identify every cell uniquely."
+            )
+        _rect = np.empty((int(np.prod(grid_sizes)),) + arr.shape[1:], dtype=arr.dtype)
+        _rect[_flat_idx] = arr
+        arr = _rect.reshape(tuple(grid_sizes) + arr.shape[1:])
         cell_coords = None  # consumed: build the rectangular DataArray from grid_coords
     if cell_coords is not None or (grid_dims and not _full_grid):
         n_points = arr.shape[0]

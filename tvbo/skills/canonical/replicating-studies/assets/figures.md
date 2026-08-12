@@ -64,8 +64,18 @@ the first render.** Three defaults are wrong for a replication and cost a re-ren
 - **Grammar panels need zero code.** A `cartesian` or `heatmap` panel binds data through its
   `layers`: `used: {iri: tvbo:exp/<Study>/exp-3, output: <var|observation__name>, sel: {dim: label}}`
   (label-keyed, never positional — this binding **is** the PROV `used` edge), plus `mark`
-  (`line`/`scatter`/`rule`/`band`; implied for heatmap) and `encoding: {x, y, color}` naming
-  container dims/coords. `transform:` names an optional presentation-only reduction. Bind an
+  (`line`/`scatter`/`rule`/`band`/`area`/`bar`; implied for heatmap) and `encoding: {x, y, color}`
+  naming container dims/coords. **`band` draws a spread** (`fill_between`) and its output must
+  carry a length-2 axis beside the swept one — the analysis returns `mean ± sd` as ONE
+  `(n, 2)` array with a `bound: [lo, hi]` coordinate, so a figure cannot bind a lower edge
+  from one run and an upper edge from another. Draw the band layer BEFORE its mean line, or
+  the fill covers the curve it belongs to. **`rule` draws a reference line at a value the
+  CONTAINER holds** — an ensemble mean, a published number the recipe declared as an analysis
+  argument and the analysis echoed back — with the encoded channel picking the orientation
+  (`x:` vertical). Prefer it to the `axvline`/`axhline` opts, which take a literal typed into
+  the spec and render as subdued gridlines: a marker the figure exists to make is worth a
+  styleable layer and a PROV edge. `transform:` names an optional presentation-only
+  reduction. Bind an
   **in-study** experiment by id — `used: {experiment: 3}` — rather than spelling a full `iri`:
   it needs no hardcoded study key and registers the run-order dependency (that experiment runs
   before the figure). Reserve an explicit `iri` for a curated/external container.

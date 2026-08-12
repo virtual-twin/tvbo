@@ -114,3 +114,16 @@ def test_seed_axis_is_rejected_under_a_strategy_that_bypasses_the_grid():
     spec["explorations"]["seed_sweep"]["strategy"] = "nsga2"
     with pytest.raises(ValueError, match="has no consumer"):
         SimulationExperiment(**spec).render_code("tvboptim")
+
+
+def test_two_axis_seed_sweep_maps_the_noise_seed_leaf_to_its_label():
+    """A (parameter x seed) product keys results by value, and the seed axis's grid
+    column is the ``dynamics._noise_seed`` state leaf — codegen must map that bare name
+    onto the declared ``execution.random_seed`` label, or cell placement cannot find
+    the axis and the container assembly refuses rather than scrambling.
+    """
+    spec = _with_noise(copy.deepcopy(MINI_EXP))
+    spec["explorations"]["seed_sweep"]["space"].insert(0, {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}})
+    code = SimulationExperiment(**spec).render_code("tvboptim")
+    squeezed = "".join(code.split()).replace('"', "'")
+    assert "_bare_to_label.setdefault('_noise_seed',str(_a.name))" in squeezed

@@ -207,10 +207,16 @@ class WorkflowPlan:
         ``requirements`` names what the study's code needs (e.g. a callable that imports
         ``igl``) beyond a bare tvbo. ``setup.sh`` provisions them into a
         ``--system-site-packages`` venv and each task prepends it to ``PYTHONPATH`` — pip resolves against the surrounding interpreter (installing only the delta) and
-        compiles native wheels with it, so the layer is ABI-correct. This holds whether the tasks run bare (a native venv) or inside a ``container`` (the venv is built via
-        ``singularity exec`` on the image, layering the deps without rebuilding it). So a study declares its deps ONCE and ``tvbo workflow submit`` builds the right
-        environment — no manual ``pip install`` on the target.
+        compiles native wheels with it, so the layer is ABI-correct. This holds when the surrounding environment is a base interpreter: a conda env, or a ``container``'s
+        image python (the venv is built via ``singularity exec`` on the image).
+
+        It does NOT hold when a run ``venv`` is provided (``slurm.venv``): a
+        ``--system-site-packages`` venv layered on another venv does not inherit that venv's packages (nested venvs don't chain), so pip re-resolves the FULL stack and its CPU
+        wheels shadow the run venv's — a plain ``jaxlib`` masking ``jax[cuda]`` silently forces a CPU run. A provided venv IS the declared environment, so the kit trusts it
+        and skips the layer (no ``setup.sh``, no ``PYTHONPATH`` prepend).
         """
+        if str(self.engine_block.get("venv") or "").strip():
+            return False
         return bool(self.pip_specs)
 
     @property

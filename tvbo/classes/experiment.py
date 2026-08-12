@@ -517,8 +517,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             else:
                 data_file = (Path.cwd() / data_file).resolve()
 
-        # Accept .h5/.zarr → find sidecar, or direct .yaml sidecar path
-        if data_file.suffix in (".h5", ".zarr"):
+        # Accept .h5/.zarr → itself when self-describing, else its sidecar; or a direct
+        # .yaml sidecar path.
+        from tvbo.data.network_io import read_embedded_metadata
+
+        if data_file.suffix in (".h5", ".zarr") and read_embedded_metadata(data_file) is None:
             sidecar = data_file.with_suffix(".yaml")
         else:
             sidecar = data_file

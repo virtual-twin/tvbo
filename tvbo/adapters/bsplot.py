@@ -727,8 +727,8 @@ def _resolve_layer(layer, panel_kind, base_dir):
     color = getattr(enc, "color", None)
     kwargs = _heatmap_kwargs(style) if mark == "heatmap" else _style_kwargs(style)
     label = getattr(layer, "label", None)
-    # A `color` ENCODING fans one artist per entry and labels each with its own coordinate value, so a layer-wide colour or label would collide with the per-entry ones. Only the marks the template routes through that fan-out are affected: `scatter`/`bar` keep their own colour, and so does any mark drawn before the colour branch is reached.
-    _fans_by_color = bool(color) and mark not in ("scatter", "bar", "area", "heatmap")
+    # A `color` ENCODING fans one artist per entry and labels each with its own coordinate value, so a layer-wide colour or label would collide with the per-entry ones. Every mark with its own branch ABOVE the colour fan-out (heatmap/scatter/bar/area/band/rule) draws a single artist that must keep its own colour and label; only a bare line fans by colour.
+    _fans_by_color = bool(color) and mark not in ("scatter", "bar", "area", "heatmap", "band", "rule")
     if label and mark != "heatmap" and not _fans_by_color:
         kwargs["label"] = str(label)  # matplotlib reads the legend entry off the artist
     if _fans_by_color:
@@ -1091,20 +1091,22 @@ def _panel_layout_order(figure) -> list[str]:
     return order
 
 
-def _used_source(used) -> str | None:
-    """A short human clause for a layer's ``used:`` DataRef — ``experiment X (out)`` /
-    ``analysis Y`` / the container name for an ``iri`` — or None for a local/unbound layer."""
+def _used_source(used) -> tuple:
+    """``(source, output)`` for a layer's ``used:`` DataRef — ``("analysis y", "fc")`` — or
+    ``(None, None)`` for a local/unbound layer.
+
+    Split rather than pre-joined so a panel drawing several outputs of ONE analysis (a density with its mean and a reference line on it) names that analysis once. An output
+    that merely repeats its analysis's own name is dropped: it says one thing twice.
+    """
     if used is None:
-        return None
+        return None, None
     out = getattr(used, "output", None)
     for attr, word in (("experiment", "experiment"), ("analysis", "analysis")):
         val = getattr(used, attr, None)
         if val:
-            return f"{word} {val}" + (f" ({out})" if out else "")
+            return f"{word} {val}", (str(out) if out and str(out) != str(val) else None)
     iri = getattr(used, "iri", None)
-    if iri:
-        return Path(str(iri)).name
-    return None
+    return (Path(str(iri)).name, str(out) if out else None) if iri else (None, None)
 
 
 def _panel_descriptor(panel) -> str:
@@ -1113,21 +1115,30 @@ def _panel_descriptor(panel) -> str:
     From each layer's ``mark`` + ``encoding`` (which quantity is on which axis) and its ``used:``
     DataRef (which run/analysis it came from), so the description follows the figure: move a panel or rebind a layer and the sentence changes with it. Units live in the runtime container and
     are folded in by the renderer, not typed here.
+
+    Clauses are deduplicated. A grid draws one binding per CELL — the same frames laterally and then medially, one analysis per row — so listing them undeduplicated repeated a single source
+    once per cell and buried the authored caption behind eight identical phrases.
     """
     kind = str(getattr(panel, "kind", "") or "")
     if kind == "image":
         src = getattr(panel, "source", None)
         return f"rendered from {Path(str(src)).name}" if src else ""
+    # A grid's cells all draw the same kind, which names them better than "grid" does.
+    cell_kind = str(getattr(getattr(panel, "cell", None), "kind", "") or "") if kind == "grid" else ""
 
-    parts: list[str] = []
+    by_source: dict = {}
     for layer in as_list(getattr(panel, "layers", None)):
         enc = getattr(layer, "encoding", None)
         x = getattr(enc, "x", None) if enc else None
         y = getattr(enc, "y", None) if enc else None
         z = getattr(enc, "z", None) if enc else None
         mark = str(getattr(layer, "mark", None) or "")
+        src, out = _used_source(getattr(layer, "used", None))
         if kind == "heatmap":
             body = f"{y or x or 'field'} as a matrix"
+        elif mark == "rule":
+            # A rule's subject is the VALUE it stands at, not the axis it crosses.
+            body = f"rule at {out or y or x or 'a value'}"
         elif z:
             body = f"{mark or 'trajectory'} of {y} vs {x} vs {z}"
         elif x and y:
@@ -1135,12 +1146,13 @@ def _panel_descriptor(panel) -> str:
         elif y or x:
             body = f"{mark or 'line'} of {y or x}"
         else:
-            body = mark or kind
-        src = _used_source(getattr(layer, "used", None))
-        if src:
-            body += f" from {src}"
-        parts.append(body)
-    return "; ".join(p for p in parts if p) or kind
+            body = cell_kind or mark or kind
+        if out and mark != "rule" and out not in body:
+            body += f" ({out})"
+        clauses = by_source.setdefault(src or "", [])
+        if body and body not in clauses:
+            clauses.append(body)
+    return "; ".join(", ".join(c) + (f" from {s}" if s else "") for s, c in by_source.items()) or kind
 
 
 def _sentence(text: str) -> str:

@@ -362,6 +362,38 @@ def test_a_computed_caption_becomes_a_crossreferenceable_float():
     assert out.index("| A |") < out.index("Caption with 4 items.")
 
 
+def test_the_divergence_register_reads_a_register_that_bolds_its_ids():
+    """Registers write `| **A1** |`, and some ids carry an annotation after them.
+
+    A pattern demanding a bare id matches nothing on such a file and returns zeros, which a
+    report renders as "no divergences found" — the failure is silent, so it is worth a test.
+    """
+    from tvbo.utils.report import divergence_register
+
+    reg = divergence_register(
+        "| id | class | Methods says | Code does | Established | Material? |\n"
+        "|--|--|--|--|--|--|\n"
+        "| **A1** | A | prints 1.0 | runs 2.0 | verified | **yes** — doubles the current |\n"
+        "| **A2** *(cross-impl)* | A | one value | two values | read | no |\n"
+        "| **B1** | B | an integral | a least-squares solve | verified | **Yes** |\n"
+    )
+    assert reg["total"] == 3
+    assert reg["classes"]["A"]["ids"] == ["A1", "A2"]
+    assert reg["material"] == 2  # case-insensitive, emphasis-tolerant
+    assert reg["scored"] == 3
+
+
+def test_a_register_without_a_materiality_column_reports_none_not_zero():
+    """`material=None` lets a caption say it counted nothing, rather than counting zero."""
+    from tvbo.utils.report import divergence_register
+
+    reg = divergence_register(
+        "| id | class | Methods says | Code does |\n|--|--|--|--|\n| **C1** | C | silent | picks a basis |\n"
+    )
+    assert reg["total"] == 1 and reg["scored"] == 0
+    assert reg["classes"]["C"]["material"] is None
+
+
 def test_the_integration_time_unit_comes_from_whichever_slot_declared_it():
     """`Integrator` carries `unit` AND `time_scale`, and the schema defaults `time_scale`.
 

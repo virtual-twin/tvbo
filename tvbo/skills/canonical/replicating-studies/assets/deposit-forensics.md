@@ -149,3 +149,36 @@ Watch the mechanism that produces this, because it is general: the uncorrected m
 *rougher* (a few elements displaced to noise), which **narrows** a spatially-constrained null and
 so makes the same |r| look more significant. A significance that depends on the noise in its own
 map is worth saying out loud.
+
+## "Unrecoverable" is a measurement you haven't made yet — price it against the deposit's own scatter
+
+When a deposited result and a deposited landscape disagree about the same model, or your value
+sits off a published curve whose generator was never released, the stopping sentence "the
+configuration is unrecoverable" is usually one bootstrap away from a bound. The deposit that
+ships a result often ships its *ensemble* too (per-subject rows, per-realisation FCDs), and that
+ensemble is a draw-to-draw floor you can price every gap against — including the deposit's gaps
+with itself. In Pang2023, Fig 4b's stored KS and the Extended-Data-10 curve disagreed by 0.0155
+at the same optimum; the deposit's own 125 realisations gave a single-draw sd of 0.0295, so the
+"internal inconsistency" was 0.53 draw-sd — and our own replication's 0.008 offset was 0.27.
+Three moves generalise:
+
+1. **Recover the estimator by elimination.** The stored scalar plus the stored arrays identify
+   the reduction between them: pooled-ECDF, per-subject-paired and mean-per-realisation KS gave
+   0.0753 / 0.191 / 0.090 against a stored 0.0753 — one candidate is exact, the others are
+   excluded. No code needed.
+2. **Bound the unrecorded trial count by subsampling the deposited ensemble.** Pool n of the
+   deposit's own realisations, ask for which n the published curve value is a plausible draw.
+   "Unrecorded" becomes "≤ N".
+3. **Read the run configuration out of array shapes.** An FCD stored as C(w,2) pairs encodes its
+   window count; two arms with different pair counts were not simulated at matched duration.
+
+The tell that closes the case rather than opening a new one: **curve-min < full-run pooled <
+mean single draw** is the argmin-selection signature of a sweep evaluated cheaply per grid point
+and confirmed once at the winner — the same bias your own landscape shows if each cell is one
+seed. Price it before writing "inconsistent", and price your own gap in the same units before
+accepting a tolerance the deposit does not hold itself to.
+
+Two traps while you are in there: MAT-file headers embed a creation timestamp, so **md5 cannot
+establish content identity between two deposits** — compare variable names and arrays, not
+bytes; and a per-figure "source data" bank (one `.mat` per published figure) is itself evidence —
+the figures *missing* from it are usually exactly the unreleased pipelines.

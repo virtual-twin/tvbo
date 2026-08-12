@@ -229,6 +229,37 @@ def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
     assert mism > 0
 
 
+def test_full_grid_with_incomplete_cell_coords_raises():
+    """Placement by value needs every declared axis in ``cell_coords`` — a missing one
+    means the caller's coordinate readback failed (e.g. a seed axis whose grid column
+    is the ``dynamics._noise_seed`` state leaf, not the declared label). Falling back
+    to a positional reshape here is what once wrote a seed-major (seed, r_s) fan into
+    an (r_s, seed)-labelled container, so the mismatch raises instead.
+    """
+    from tvbo.data.types import _stacked_to_dataarray
+
+    axes = [_axis("model.c", [0.1, 0.2]), _axis("execution.random_seed", [0, 1, 2])]
+    cell_coords = {
+        "model.c": [0.1, 0.1, 0.1, 0.2, 0.2, 0.2],
+        "dynamics._noise_seed": [0, 1, 2, 0, 1, 2],
+    }
+    with pytest.raises(ValueError, match="execution.random_seed"):
+        _stacked_to_dataarray(np.arange(6.0), axes, name="obs", cell_coords=cell_coords)
+
+
+def test_full_grid_with_colliding_cell_coords_raises():
+    """Per-cell values that do not identify cells uniquely cannot place the grid."""
+    from tvbo.data.types import _stacked_to_dataarray
+
+    with pytest.raises(ValueError, match="uniquely"):
+        _stacked_to_dataarray(
+            np.zeros(2),
+            [_axis("model.c", [0.1, 0.2])],
+            name="obs",
+            cell_coords={"model.c": [0.1, 0.1]},
+        )
+
+
 def _expl(cell_counts, axis_sizes, **kw):
     """An ExplorationResult carrying *cell_counts* cells over axes of *axis_sizes*."""
     axes = [Bunch(name=f"ax{i}", explored_values=np.arange(n, dtype=float), n=n) for i, n in enumerate(axis_sizes)]

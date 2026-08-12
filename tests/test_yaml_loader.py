@@ -247,3 +247,56 @@ def test_merged_include_must_hold_a_mapping(tmp_path: Path) -> None:
     main = _write(tmp_path / "main.yaml", "block:\n  <<: !include frag.yaml\n")
     with pytest.raises(Exception, match="must hold a mapping"):
         yaml_loader.load_as_dict(main)
+
+
+def test_included_file_envelope_is_dropped_on_both_include_forms(tmp_path: Path) -> None:
+    """`tvbo_class` / `schema_version` annotate the fragment's FILE, not the parent object.
+
+    Every serialized TVBO artifact carries them, so splicing one into a parent slot — a
+    Network sidecar into a study's `network:`, a Dynamics into `dynamics:` — would otherwise
+    hand the parent class two keys that are slots of nothing. Both include forms strip them.
+    Reading the file for its own sake keeps them, because that is how a caller learns which
+    class to construct.
+    """
+    frag = _write(
+        tmp_path / "frag.yaml",
+        """
+        tvbo_class: tvbo:Network
+        schema_version: tvb-datamodel/0.7.0
+        number_of_nodes: 3
+    """,
+    )
+    merged = _write(
+        tmp_path / "merged.yaml",
+        """
+        network:
+          <<: !include frag.yaml
+          descriptor: SC
+    """,
+    )
+    spliced = _write(tmp_path / "spliced.yaml", "network: !include frag.yaml\n")
+    assert yaml_loader.load_as_dict(merged)["network"] == {"number_of_nodes": 3, "descriptor": "SC"}
+    assert yaml_loader.load_as_dict(spliced)["network"] == {"number_of_nodes": 3}
+    assert "tvbo_class" in yaml_loader.load_as_dict(frag)
+
+
+def test_document_root_envelope_never_reaches_the_target_class(tmp_path: Path) -> None:
+    """A file may name its own class; that declaration is not a slot of it.
+
+    `tvbo validate schema` and friends dispatch on the root `tvbo_class`, so a study or
+    dynamics file that carries one must still construct. `load` strips the envelope;
+    `load_as_dict` keeps it for the dispatch itself.
+    """
+    from tvbo.classes.study import SimulationStudy
+
+    doc = _write(
+        tmp_path / "study.yaml",
+        """
+        tvbo_class: tvbo:SimulationStudy
+        schema_version: tvb-datamodel/0.7.0
+        key: Probe
+        title: probe study
+    """,
+    )
+    assert yaml_loader.load(doc, SimulationStudy).key == "Probe"
+    assert yaml_loader.load_as_dict(doc)["tvbo_class"] == "tvbo:SimulationStudy"

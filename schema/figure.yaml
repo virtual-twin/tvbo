@@ -37,8 +37,8 @@ enums:
     permissible_values:
       line:    {description: "Connected line (timeseries, bifurcation branch, trajectory)."}
       scatter: {description: "Points (fixed points, special points, per-node profiles)."}
-      rule:    {description: "Reference line / span (threshold, stimulus window, vline)."}
-      band:    {description: "Filled band between two series (error/CI)."}
+      rule:    {description: "Reference line at a value the layer's output HOLDS (a threshold, a published number, an ensemble mean) — one line per value. The encoded channel picks the orientation: `x:` draws vertical, `y:` horizontal. Distinct from the `axvline`/`axhline` opts, which take a literal typed into the spec and are drawn as subdued gridlines."}
+      band:    {description: "Filled band between two series (an error band, a CI). Its layer's output carries a length-2 axis beside the swept one, holding the two edges in ONE array — binding a lower edge and an upper edge as separate layers lets them come from different runs."}
       area:    {description: "Series filled down to the baseline (a density/pdf, a cumulative share). Distinct from `band`, which spans two series, and from `bar`, which asserts the x values are discrete categories."}
       bar:     {description: "Vertical bars, one per x (spectrum, per-category magnitude). Distinct from `line` because a spectrum read as a line implies interpolation between mode numbers that do not exist."}
 

@@ -48,7 +48,7 @@ DEFAULT_TARGET = "SimulationExperiment"
 #: File-envelope metadata keys that annotate a serialized object's class and
 #: schema version but are not datamodel slots. TVBO strips these at construction
 #: (see ``tvbo.classes.phenotype``), so we drop them before validation too.
-_ENVELOPE_KEYS = ("tvbo_class", "schema_version")
+_ENVELOPE_KEYS = yaml_loader.ENVELOPE_KEYS
 
 
 # --------------------------------------------------------------------------- #
