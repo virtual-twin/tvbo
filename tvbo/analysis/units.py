@@ -265,13 +265,16 @@ class DimensionalClash(Exception):
     """Two quantities that must agree dimensionally do not."""
 
 
-def declared_units(model) -> dict:
+def declared_units(model, scope: dict | None = None) -> dict:
     """The third projection of the symbolic layer: `{scope symbol: declared unit}`.
 
     Keyed by the scope's own symbols, like `Dynamics.symbolic["parameters"]` — rebuilt
-    keys look identical, compare unequal, and would silently match nothing.
+    keys look identical, compare unequal, and would silently match nothing. A caller that
+    already holds the analysis scope passes it, so the map is keyed by the very table its
+    equations were parsed against rather than by whichever one the model resolves to.
     """
-    scope = model.get_symbolic_elements(time_dependent=True)
+    if scope is None:
+        scope = model.get_symbolic_elements(time_dependent=True)
     collections = (
         getattr(model, "parameters", None) or {},
         getattr(model, "state_variables", None) or {},
