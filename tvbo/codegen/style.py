@@ -7,17 +7,13 @@
 #
 """House style for generated source, one formatter per output language.
 
-Generated code is read, reviewed and attached to papers, so it is held to the same
-bar as the rest of tvbo. Every backend declares the language it emits
+Generated code is read, reviewed and attached to papers, so it is held to the same bar as the rest of tvbo. Every backend declares the language it emits
 (:attr:`~tvbo.export.registry.ExportFormat.language`) and
-:func:`tvbo.export.registry.render` routes the assembled source through the matching
-formatter here — once, centrally, rather than each renderer remembering to do it.
+:func:`tvbo.export.registry.render` routes the assembled source through the matching formatter here — once, centrally, rather than each renderer remembering to do it.
 
-The gate is deliberately a *parse* gate, not only a cosmetic one. Source that a
-formatter cannot parse is source tvbo would have handed the user as a runnable
+The gate is deliberately a *parse* gate, not only a cosmetic one. Source that a formatter cannot parse is source tvbo would have handed the user as a runnable
 program, and it fails at import with a worse message than the one raised here. So
-``python`` and ``xml`` raise :class:`GeneratedSourceError` rather than passing the
-text through: an emitter that produces unparseable output has a bug, and silence is
+``python`` and ``xml`` raise :class:`GeneratedSourceError` rather than passing the text through: an emitter that produces unparseable output has a bug, and silence is
 what let one live in the JAX templates.
 
 Languages divide by how much a formatter can safely change:
@@ -48,8 +44,7 @@ class GeneratedSourceError(ValueError):
 def normalize(code: str) -> str:
     """Apply the language-independent house rules to *code*.
 
-    Converts line endings to ``\\n``, strips trailing whitespace from every line,
-    collapses runs of blank lines to at most two, drops leading blank lines, and
+    Converts line endings to ``\\n``, strips trailing whitespace from every line, collapses runs of blank lines to at most two, drops leading blank lines, and
     ends the text with exactly one newline.
     """
     text = code.replace("\r\n", "\n").replace("\r", "\n")
@@ -70,8 +65,7 @@ def _excerpt(code: str, lineno: int | None, context: int = 2) -> str:
 def _format_python(code: str) -> str:
     """Reformat with black, raising :class:`GeneratedSourceError` if it will not parse.
 
-    The offending line comes from :func:`ast.parse` rather than from black's message,
-    so the excerpt does not depend on how black happens to word a parse failure.
+    The offending line comes from :func:`ast.parse` rather than from black's message, so the excerpt does not depend on how black happens to word a parse failure.
     """
     import ast
 
@@ -91,10 +85,8 @@ def _format_python(code: str) -> str:
 def _validated(code: str, parse, errors, message: str, lineno_of) -> str:
     """Normalise *code*, then check the NORMALISED text parses — never the other way round.
 
-    The normalised text is what gets written, so it is what has to be valid and what a
-    reported line number has to refer to. Checking first also rejects documents that
-    normalisation is about to make valid: an XML declaration counts as one only at the very
-    start of the document, so a template's stray leading newline would fail an export that
+    The normalised text is what gets written, so it is what has to be valid and what a reported line number has to refer to. Checking first also rejects documents that
+    normalisation is about to make valid: an XML declaration counts as one only at the very start of the document, so a template's stray leading newline would fail an export that
     every reader accepts.
     """
     text = normalize(code)

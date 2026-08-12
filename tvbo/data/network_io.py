@@ -5,10 +5,8 @@ Supported companion formats:
   .zarr/        — Zarr (cloud-native, S3-compatible)
   .csv          — CSV legacy (one file = one matrix = first template edge)
 
-YAML sidecars are loaded via linkml_runtime.loaders.yaml_loader — the
-same loader used by Dynamics, Coupling, and SimulationExperiment. This
-ensures schema validation and proper nested object construction. Never
-use raw yaml.safe_load → cls(**dict) for LinkML classes.
+YAML sidecars are loaded via linkml_runtime.loaders.yaml_loader — the same loader used by Dynamics, Coupling, and SimulationExperiment. This
+ensures schema validation and proper nested object construction. Never use raw yaml.safe_load → cls(**dict) for LinkML classes.
 
 See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
@@ -161,8 +159,7 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
         grp.attrs["tvbo_class"] = "tvbo:Matrix"
         for attr in ("directed", "unit"):
             if attr in m:
-                # Cast to native Python types — LinkML extended_str
-                # and extended_bool are not directly serializable by h5py.
+                # Cast to native Python types — LinkML extended_str and extended_bool are not directly serializable by h5py.
                 val = m[attr]
                 if isinstance(val, bool):
                     grp.attrs[attr] = val
@@ -186,10 +183,8 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
 def _nodes_are_placeholders(nodes, number_of_nodes) -> bool:
     """True when ``nodes`` is exactly what ``Network(number_of_nodes=N)`` would synthesise.
 
-    A Network materialises `node_0 … node_{N-1}` whenever nodes are not authored, so
-    such a list carries no information the node count does not already hold — and at
-    mesh scale (32,492 vertices) writing it out makes the sidecar larger than the
-    matrices it describes.
+    A Network materialises `node_0 … node_{N-1}` whenever nodes are not authored, so such a list carries no information the node count does not already hold — and at
+    mesh scale (32,492 vertices) writing it out makes the sidecar larger than the matrices it describes.
     """
     if not nodes or len(nodes) != (number_of_nodes or 0):
         return False
@@ -274,8 +269,7 @@ def _v07_postprocess(meta: dict) -> dict:
 def _purify(obj):
     """Recursively convert LinkML extended types to plain Python types.
 
-    yaml_loader.load_as_dict returns extended_str, extended_int,
-    extended_bool etc. which yaml.dump serializes with Python tags.
+    yaml_loader.load_as_dict returns extended_str, extended_int, extended_bool etc. which yaml.dump serializes with Python tags.
     """
     if isinstance(obj, dict):
         return {_purify(k): _purify(v) for k, v in obj.items()}
@@ -295,19 +289,14 @@ def _purify(obj):
 def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str, data_file: str = None):
     """Write a strict v0.7-compliant YAML or JSON sidecar.
 
-    Dumps the network via LinkML, post-processes to v0.7 form,
-    and writes with controlled key ordering.
+    Dumps the network via LinkML, post-processes to v0.7 form, and writes with controlled key ordering.
     """
     if data_file:
         network.data_file = data_file
 
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
     meta = _purify(meta)
-    # A data_file-backed connectome is materialised/frozen: its arrays (weights,
-    # lengths, coordinates) live in the companion file. Drop resolution
-    # directives so a reload uses the explicit companion data instead of
-    # re-resolving — otherwise a `parcellation` would re-expand to the full atlas
-    # (e.g. 84 saved nodes → 87 atlas regions) and override the saved node set.
+    # A data_file-backed connectome is materialised/frozen: its arrays (weights, lengths, coordinates) live in the companion file. Drop resolution directives so a reload uses the explicit companion data instead of re-resolving — otherwise a `parcellation` would re-expand to the full atlas (e.g. 84 saved nodes → 87 atlas regions) and override the saved node set.
     if data_file:
         for _directive in ("parcellation", "bids_dir", "graph_generator", "tractogram"):
             meta.pop(_directive, None)
@@ -360,11 +349,7 @@ def _write_nodes(store, network):
         else:
             _create_ds(store, key, data=data, dtype="int32")
 
-    # Node coordinates: prefer explicit Node.position (only when EVERY node has
-    # one — a partial list would misalign with node order). Otherwise fall back
-    # to network.get_centers(), which resolves centres from the atlas or by
-    # region-label mapping (e.g. DesikanKilliany), so BIDS connectomes without
-    # inline positions still ship coordinates in the companion file.
+    # Node coordinates: prefer explicit Node.position (only when EVERY node has one — a partial list would misalign with node order). Otherwise fall back to network.get_centers(), which resolves centres from the atlas or by region-label mapping (e.g. DesikanKilliany), so BIDS connectomes without inline positions still ship coordinates in the companion file.
     nodes = getattr(network, "nodes", None) or []
     coords = []
     if nodes and all(getattr(node, "position", None) is not None for node in nodes):
@@ -460,8 +445,7 @@ generic ``metadata`` key cannot be mistaken for one of ours.
 def read_embedded_metadata(path) -> Optional[dict]:
     """The sidecar dict embedded in a self-describing companion, or ``None``.
 
-    ``None`` covers every "this is not a self-describing binary" case — a YAML/JSON
-    sidecar path, a companion written without the attribute, an unreadable or
+    ``None`` covers every "this is not a self-describing binary" case — a YAML/JSON sidecar path, a companion written without the attribute, an unreadable or
     non-JSON payload — so callers can treat it as a plain feature probe.
     """
     path = Path(path)
@@ -473,8 +457,7 @@ def read_embedded_metadata(path) -> Optional[dict]:
 
             with h5py.File(path, "r") as f:
                 raw = f.attrs.get(EMBEDDED_METADATA_ATTR)
-        # Bare-suffix guard first: a sidecar path must not pay a stat() to learn it is not
-        # a zarr directory, and load_network probes every load.
+        # Bare-suffix guard first: a sidecar path must not pay a stat() to learn it is not a zarr directory, and load_network probes every load.
         elif ext == "" and path.is_dir() and (path / ".zgroup").exists():
             import zarr
 
@@ -491,8 +474,7 @@ def read_embedded_metadata(path) -> Optional[dict]:
     if isinstance(raw, bytes):
         raw = raw.decode("utf-8")
     if isinstance(raw, dict):
-        # zarr decodes JSON attrs natively, so an externally-authored store may hand back
-        # the object rather than the string this module writes.
+        # zarr decodes JSON attrs natively, so an externally-authored store may hand back the object rather than the string this module writes.
         return raw
     try:
         meta = json.loads(raw)
@@ -504,8 +486,7 @@ def read_embedded_metadata(path) -> Optional[dict]:
 def write_embedded_metadata(companion_path, meta: dict) -> None:
     """Embed a sidecar dict into a companion so the file needs no sidecar.
 
-    The dict is stored as JSON under the ``metadata`` root attribute; ``data_file`` is
-    dropped because a self-describing file *is* its own array store.
+    The dict is stored as JSON under the ``metadata`` root attribute; ``data_file`` is dropped because a self-describing file *is* its own array store.
     :func:`load_network` reads it back, so one path is the whole Network.
     """
     companion_path = Path(companion_path)
@@ -536,11 +517,9 @@ def load_network(path):
     - **sidecar + companion** — a ``.yaml``/``.json`` metadata file whose ``data_file``
       names the binary beside it;
     - **single self-describing file** — a ``.h5``/``.zarr`` carrying its own sidecar in
-      the ``metadata`` root attribute (see :data:`EMBEDDED_METADATA_ATTR`). The file is
-      its own array store, so one path is the whole Network.
+      the ``metadata`` root attribute (see :data:`EMBEDDED_METADATA_ATTR`). The file is its own array store, so one path is the whole Network.
 
-    Arrays are NOT loaded into memory. A LazyArrayStore is attached
-    that loads arrays on first access (e.g., net.weights_matrix).
+    Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.weights_matrix).
 
     Parameters
     ----------
@@ -563,8 +542,7 @@ def load_network(path):
         data_file = path.name
     else:
         # Load as dict first so data_file can be handled here. It IS a schema slot, but
-        # `Network._resolve_from_data_file` treats it as an indirect reference to ANOTHER
-        # network's sidecar, so leaving it on the constructor kwargs would recurse.
+        # `Network._resolve_from_data_file` treats it as an indirect reference to ANOTHER network's sidecar, so leaving it on the constructor kwargs would recurse.
         meta_dict = yaml_loader.load_as_dict(str(path))
         data_file = meta_dict.pop("data_file", None)
     # Extract non-schema fields that are YAML-only metadata
@@ -576,11 +554,7 @@ def load_network(path):
     import yaml as _yaml
 
     # This loader attaches connectivity itself, so the constructor must not resolve it:
-    # `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file`
-    # reads the companion's own sidecar, which would recurse into this very load), and a
-    # sidecar that also declares `parcellation:` would otherwise fall through to the
-    # normative-database branch and cache an atlas connectome that shadows this file's real
-    # matrices. `_resolve` runs below, once `_store` is in place.
+    # `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file` reads the companion's own sidecar, which would recurse into this very load), and a sidecar that also declares `parcellation:` would otherwise fall through to the normative-database branch and cache an atlas connectome that shadows this file's real matrices. `_resolve` runs below, once `_store` is in place.
     clean_yaml = _yaml.dump({**meta_dict, "_defer_connectivity": True}, Dumper=_yaml.SafeDumper)
     net = yaml_loader.loads(clean_yaml, Network)
 
@@ -601,8 +575,7 @@ def load_network(path):
     else:
         net._store = None
 
-    # `_store` now makes the network materialised, so this expands node/edge templates and
-    # subnetworks without re-entering the connectivity branches; a sidecar carrying only a
+    # `_store` now makes the network materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; a sidecar carrying only a
     # `parcellation:` still resolves its normative connectome here as before.
     net._resolve(source_dir=str(path.parent))
 
@@ -648,8 +621,7 @@ def _load_mesh(network, companion_path):
 def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: str = "yaml"):
     """Save a tvbo Network as sidecar + binary companion.
 
-    Uses LinkML yaml_dumper or json_dumper for schema-valid sidecar
-    output — no manual field unpacking or yaml.dump() calls.
+    Uses LinkML yaml_dumper or json_dumper for schema-valid sidecar output — no manual field unpacking or yaml.dump() calls.
 
     Parameters
     ----------
@@ -701,12 +673,8 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     # Network._items() hides _cached_* attrs, so yaml_dumper works directly
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
 
-    # Remap the GENERIC canonical keys ("weight"/"length", as produced by from_matrix)
-    # onto the sidecar's declared edge names. Match by MEANING, never by position:
-    # weight/length are only two of arbitrarily many edge attributes a sidecar may
-    # bundle (weight_NMF_*, fc, local_connectivity, …), and they may appear in any
-    # order, so the length matrix — the one delayed simulations require — must be
-    # routed to the length-like template edge, not to "the second edge". Guards:
+    # Remap the GENERIC canonical keys ("weight"/"length", as produced by from_matrix) onto the sidecar's declared edge names. Match by MEANING, never by position:
+    # weight/length are only two of arbitrarily many edge attributes a sidecar may bundle (weight_NMF_*, fc, local_connectivity, …), and they may appear in any order, so the length matrix — the one delayed simulations require — must be routed to the length-like template edge, not to "the second edge". Guards:
     #   * skip when the array is already correctly named (the template declares it), so
     #     a directly-named `length` edge is never renamed away; and
     #   * if no matching template edge is found, keep the generic key (the loader

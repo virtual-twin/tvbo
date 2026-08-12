@@ -65,8 +65,7 @@ def bel2label(node):
 
     Composite nodes are flattened into a single ` AND `-joined label:
     `ComplexAbundance` and `CompositeAbundance` join their members, while a
-    `Reaction` joins its reactants followed by its products. Any other node is
-    labelled directly from its own entity namespace and name.
+    `Reaction` joins its reactants followed by its products. Any other node is labelled directly from its own entity namespace and name.
 
     Args:
         node: A PyBEL DSL node whose entity (or members/reactants/products)
@@ -197,8 +196,7 @@ def go_term2id(term):
 
 def get_term(go_id):
     """
-    This function retrieves the definition of a given Gene Ontology term,
-    using EMBL-EBI's QuickGO browser.
+    This function retrieves the definition of a given Gene Ontology term, using EMBL-EBI's QuickGO browser.
     Input: go_id - a valid Gene Ontology ID, e.g. GO:0048527.
 
     Parameters

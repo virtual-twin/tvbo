@@ -1,9 +1,7 @@
 """Sidecar I/O + cross-experiment cache for :class:`ExperimentResult`.
 
-Lets downstream experiments depend on an upstream experiment's fitted
-parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``,
-``J_i`` via an ``aux_data: Reference``) without recomputing on every
-notebook re-execution.
+Lets downstream experiments depend on an upstream experiment's fitted parameters (e.g. Schirner Exp 60_A reading Exp 30's ``w_LRE``, ``w_FFI``,
+``J_i`` via an ``aux_data: Reference``) without recomputing on every notebook re-execution.
 
 Layout
 ------
@@ -18,8 +16,7 @@ Layout
         ├── J_i       (n_nodes,)
         └── ...
 
-Each array is stored at the precision it was computed at, which is the precision
-the descriptor's ``parameters[].dtype`` reports.
+Each array is stored at the precision it was computed at, which is the precision the descriptor's ``parameters[].dtype`` reports.
 
 Cache invalidation
 ------------------
@@ -32,8 +29,7 @@ Cache invalidation
 A cache hit requires both:
 
 1. Current experiment YAML hash matches ``provenance.experiment_yaml_hash``.
-2. For each input fingerprint, the underlying file's ``(mtime, size)``
-   matches (fast path). On mismatch, recompute the sha256; if THAT
+2. For each input fingerprint, the underlying file's ``(mtime, size)`` matches (fast path). On mismatch, recompute the sha256; if THAT
    matches, still a hit (handles ``touch`` and rename-in-place).
 """
 
@@ -57,8 +53,7 @@ import yaml
 def hash_yaml(normalized_dict: Mapping[str, Any]) -> str:
     """Stable SHA-256 hex digest of a Python-side YAML representation.
 
-    Uses ``yaml.safe_dump(sort_keys=True)`` so the digest only depends on
-    semantic content, not key ordering.
+    Uses ``yaml.safe_dump(sort_keys=True)`` so the digest only depends on semantic content, not key ordering.
     """
     blob = yaml.safe_dump(dict(normalized_dict), sort_keys=True, default_flow_style=False).encode("utf-8")
     return hashlib.sha256(blob).hexdigest()

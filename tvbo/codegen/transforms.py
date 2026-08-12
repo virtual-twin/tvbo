@@ -1,16 +1,12 @@
 """The matrix-transform vocabulary, declared once for the runtime and for codegen.
 
-A `transforms:` entry is a `Function`, so it is either equation-based or callable-based, and
-a symbolic one is written against a small vocabulary of primitives — `W`, `W_max`,
-`W_rowsum_safe`, `L`, plus the network's per-node parameter vectors. Both the runtime
-evaluator (`Network._apply_transform`) and the emitters that inline a transform into a
-generated script need that vocabulary, and a second hand-written copy of it drifts: the
-runtime is where a transform author adds a primitive, so the emitted kit is the side that
+A `transforms:` entry is a `Function`, so it is either equation-based or callable-based, and a symbolic one is written against a small vocabulary of primitives — `W`, `W_max`,
+`W_rowsum_safe`, `L`, plus the network's per-node parameter vectors. Both the runtime evaluator (`Network._apply_transform`) and the emitters that inline a transform into a
+generated script need that vocabulary, and a second hand-written copy of it drifts: the runtime is where a transform author adds a primitive, so the emitted kit is the side that
 silently goes wrong.
 
 Each primitive is therefore declared once, as a source expression over two base names —
-`_M`, the matrix being transformed, and `_L`, the lengths. The runtime evaluates those
-strings; an emitter prints them. Neither can define a primitive the other lacks.
+`_M`, the matrix being transformed, and `_L`, the lengths. The runtime evaluates those strings; an emitter prints them. Neither can define a primitive the other lacks.
 """
 
 from __future__ import annotations
@@ -53,10 +49,8 @@ transforms sees the preceding one's output.
 def required_prelude(symbols: Iterable[str]) -> List[Tuple[str, str]]:
     """The prelude bindings *symbols* need, in declaration order.
 
-    Dependencies are matched as whole identifiers, never as substrings: a primitive
-    whose expression merely contains the text of a prelude name (``_rsq``, a name
-    inside a string) must not drag that binding in, and a binding that is genuinely
-    referenced must not be missed.
+    Dependencies are matched as whole identifiers, never as substrings: a primitive whose expression merely contains the text of a prelude name (``_rsq``, a name
+    inside a string) must not drag that binding in, and a binding that is genuinely referenced must not be missed.
     """
     wanted = {s for s in symbols if s in PRIMITIVES}
     referenced: set[str] = set()

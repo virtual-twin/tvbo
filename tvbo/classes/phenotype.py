@@ -1,7 +1,6 @@
 """Runtime :class:`Phenotype` class.
 
-Carries a cohort's per-subject phenotype scores (cognitive, clinical,
-behavioral, demographic, physiological, derived) for multi-subject
+Carries a cohort's per-subject phenotype scores (cognitive, clinical, behavioral, demographic, physiological, derived) for multi-subject
 studies that correlate simulated quantities with empirical measurements.
 BIDS-aligned (BIDS ``phenotype/`` directory standard).
 
@@ -36,8 +35,7 @@ from tvbo.utils import yaml_loader
 class Phenotype(tvbo_datamodel.Phenotype):
     """Runtime wrapper around the auto-generated ``Phenotype`` schema.
 
-    The schema class carries the YAML-side descriptor (subjects, measures
-    names, provenance, optional Cognitive Atlas IRIs via
+    The schema class carries the YAML-side descriptor (subjects, measures names, provenance, optional Cognitive Atlas IRIs via
     ``measure_specs``); this subclass adds lazy h5 access via
     :attr:`values` plus ``from_file`` / ``to_file`` round-tripping.
 
@@ -64,10 +62,8 @@ class Phenotype(tvbo_datamodel.Phenotype):
     def from_file(cls, path: str | os.PathLike) -> "Phenotype":
         """Load a Phenotype sidecar from a YAML descriptor.
 
-        Resolves ``data_file`` relative to the YAML's directory so the
-        h5 companion can sit next to it. Numeric arrays are NOT loaded
-        eagerly — call :meth:`get` (or read :attr:`values`) to fault one
-        in.
+        Resolves ``data_file`` relative to the YAML's directory so the h5 companion can sit next to it. Numeric arrays are NOT loaded
+        eagerly — call :meth:`get` (or read :attr:`values`) to fault one in.
         """
         path = Path(path).resolve()
         with open(path) as f:

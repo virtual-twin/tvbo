@@ -2,10 +2,8 @@
 
 This module is the **single source of truth in code** for what each
 TVB-O backend can do. The values here mirror the OWL axioms in
-``ontology/tvb-o-axioms.ttl`` (§4.1). The mapping is intentionally
-typed as a plain Python table so the CLI does not pull in
-``rdflib``/``owlready2`` at import time. A round-trip test
-(``tests/test_cli_backends_match_ontology.py``) keeps the two in sync
+``ontology/tvb-o-axioms.ttl`` (§4.1). The mapping is intentionally typed as a plain Python table so the CLI does not pull in
+``rdflib``/``owlready2`` at import time. A round-trip test (``tests/test_cli_backends_match_ontology.py``) keeps the two in sync
 when the ontology changes.
 
 Ontology vocabulary used here
@@ -21,8 +19,7 @@ Ontology vocabulary used here
   DelayHistoryBuffer, StochasticSolver, StiffSolver.
 
 The workflow planner (``tvbo.cli._workflow``) consults
-``BACKENDS[name].vectorize_axes`` to decide which sweep axes can stay
-inside a single backend invocation (vmap / EnsembleProblem / batched
+``BACKENDS[name].vectorize_axes`` to decide which sweep axes can stay inside a single backend invocation (vmap / EnsembleProblem / batched
 solve) and which must be fanned out as workflow tasks.
 """
 
@@ -31,10 +28,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
-# Sweep-axis kinds the planner understands. These are intentionally
-# coarse: a study may declare richer axes (e.g. specific parameter
-# names) but at the planner level we only care about *what kind* of
-# axis it is so we can match it against backend capabilities.
+# Sweep-axis kinds the planner understands. These are intentionally coarse: a study may declare richer axes (e.g. specific parameter names) but at the planner level we only care about *what kind* of axis it is so we can match it against backend capabilities.
 AXIS_KINDS = (
     "parameters",  # any model / coupling / integrator parameter
     "initial_conditions",
@@ -64,8 +58,7 @@ class BackendSpec:
 # Mirror of ontology/tvb-o-axioms.ttl §4.1 backend declarations.
 # Vectorize-axis sets are derived from the same axioms (Autodiff +
 # VectorizedRNG → noise_seed; JITCompilation/GPUSupport → parameters;
-# Autodiff with autograd → initial_conditions; tvboptim's
-# subject-batched gradient pass → subjects).
+# Autodiff with autograd → initial_conditions; tvboptim's subject-batched gradient pass → subjects).
 BACKENDS: dict[str, BackendSpec] = {
     "jax": BackendSpec(
         name="jax",
@@ -145,8 +138,7 @@ def list_backends() -> list[BackendSpec]:
 
 # ---------------------------------------------------------------------------
 # Heuristic mapping: an ExplorationAxis.parameter dotted path → axis kind.
-# Used by the planner to bucket schema-declared axes into AXIS_KINDS so
-# we can ask `backend.can_vectorize(kind)`.
+# Used by the planner to bucket schema-declared axes into AXIS_KINDS so we can ask `backend.can_vectorize(kind)`.
 # ---------------------------------------------------------------------------
 
 

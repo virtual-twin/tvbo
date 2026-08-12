@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 """Self-contained AUTO-07p (numcont) backend adapter for SimulationExperiment.
 
-This adapter does NOT depend on any external `numcont` package. It uses
-the `auto-07p` Python bindings directly (`auto.run`, `auto.sv`,
+This adapter does NOT depend on any external `numcont` package. It uses the `auto-07p` Python bindings directly (`auto.run`, `auto.sv`,
 `auto.loadbd`, `auto.merge`) and the Mako template at
-``tvbo/templates/numcont/tvbo-auto7p.py.mako`` to emit the model `.f90`
-file consumed by AUTO.
+``tvbo/templates/numcont/tvbo-auto7p.py.mako`` to emit the model `.f90` file consumed by AUTO.
 
-Requires the ``AUTO_DIR`` environment variable to point at an installed
-auto-07p tree (validated via :func:`tvbo.utils.auto.check_auto_dir`).
+Requires the ``AUTO_DIR`` environment variable to point at an installed auto-07p tree (validated via :func:`tvbo.utils.auto.check_auto_dir`).
 """
 
 from __future__ import annotations
@@ -53,8 +50,7 @@ def _schema_initial_values(model) -> np.ndarray:
     """Initial state from model state-variable defaults.
 
     Reads ``StateVariable.initial_value`` (the canonical schema field, per
-    ``schema/tvbo_datamodel.yaml:1346-1348``) with ``StateVariable.value`` as
-    a legacy fallback for older models. Defaults to 0.0 when neither is set.
+    ``schema/tvbo_datamodel.yaml:1346-1348``) with ``StateVariable.value`` as a legacy fallback for older models. Defaults to 0.0 when neither is set.
     """
     n = len(model.state_variables)
     x0 = np.zeros(n)
@@ -206,8 +202,7 @@ class NumContAdapter:
         import contextlib
         import io
 
-        # AUTO-07p prints a Tkinter import warning to stdout even when
-        # plotting is unused. Suppress it.
+        # AUTO-07p prints a Tkinter import warning to stdout even when plotting is unused. Suppress it.
         _buf = io.StringIO()
         with contextlib.redirect_stdout(_buf):
             import auto
@@ -330,12 +325,10 @@ class NumContAdapter:
         Each :class:`~tvbo.classes.continuation.BranchSwitch` with
         ``source_point`` of the form ``'fold:N'`` / ``'fold:all'`` /
         ``'fold:-1'`` (or ``hopf:`` / ``bp:`` analogues) triggers a separate
-        AUTO restart from that special point with ``ISW=2`` (fold/Hopf
-        continuation) and two free parameters drawn from the sub-
+        AUTO restart from that special point with ``ISW=2`` (fold/Hopf continuation) and two free parameters drawn from the sub-
         continuation's ``free_parameters`` slot.
 
-        Returns a list of ``(name, source_type, fp1_name, fp2_name, R_c2)``
-        tuples consumed by :meth:`BifurcationResult.from_auto`.
+        Returns a list of ``(name, source_type, fp1_name, fp2_name, R_c2)`` tuples consumed by :meth:`BifurcationResult.from_auto`.
         """
         branches = getattr(cont, "branches", None) or {}
         if not branches:
@@ -383,8 +376,7 @@ class NumContAdapter:
 
             # Parse 'fold:1', 'fold:all', 'fold:-1', 'fold' (default: all)
             spec = src.split(":", 1)[1].strip() if ":" in src else "all"
-            # AUTO addresses special points by ORDINAL (1-based, across all
-            # branches): R_eq("LP1") = first LP found, "LP2" = second, etc.
+            # AUTO addresses special points by ORDINAL (1-based, across all branches): R_eq("LP1") = first LP found, "LP2" = second, etc.
             # Count total LPs to size the ordinal range.
             n_total = 0
             for br in R_eq:

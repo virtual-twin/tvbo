@@ -9,13 +9,11 @@ Every part of TVBO logs through the ``tvbo`` logger hierarchy:
 * in-package modules use ``logger = logging.getLogger(__name__)`` — their names
   already sit under ``tvbo`` (e.g. ``tvbo.classes.experiment``);
 * generated backend scripts (tvboptim, …) use ``logging.getLogger("tvbo.run")``
-  so their progress output is controlled by the very same switch, regardless of
-  which backend produced them or whether they run in-process or standalone.
+  so their progress output is controlled by the very same switch, regardless of which backend produced them or whether they run in-process or standalone.
 
 Importing tvbo as a library stays silent: the package installs only a
 :class:`~logging.NullHandler`. Entry points that are meant to surface progress —
-``tvbo run`` and :meth:`SimulationExperiment.run` — call :func:`configure_logging`
-(directly, or via :func:`ensure_configured`) to attach a stderr handler.
+``tvbo run`` and :meth:`SimulationExperiment.run` — call :func:`configure_logging` (directly, or via :func:`ensure_configured`) to attach a stderr handler.
 
 One switch controls all of it, no matter the entry point:
 
@@ -67,9 +65,7 @@ _MANAGED = "_tvbo_managed_handler"
 LevelLike = Union[int, str, None]
 
 logger = logging.getLogger(LOGGER_NAME)
-# Library default: silent unless an entry point or the embedding app configures a
-# handler. This replaces the old package-wide ``logging.disable(CRITICAL)``,
-# which muted every logger in the process (tvbo's own included).
+# Library default: silent unless an entry point or the embedding app configures a handler. This replaces the old package-wide ``logging.disable(CRITICAL)``, which muted every logger in the process (tvbo's own included).
 logger.addHandler(logging.NullHandler())
 
 
@@ -144,8 +140,7 @@ def _install_stream_handler(stream=None, fmt=None, datefmt=None, force=False) ->
     if existing is not None:
         logger.removeHandler(existing)
     logger.addHandler(_managed_handler(stream, fmt, datefmt))
-    # We own emission: don't also bubble to the root logger (avoids duplicate
-    # lines when the embedding application has configured root logging too).
+    # We own emission: don't also bubble to the root logger (avoids duplicate lines when the embedding application has configured root logging too).
     logger.propagate = False
 
 
@@ -160,10 +155,8 @@ def configure_logging(
     """Attach a stderr handler to the ``tvbo`` logger and set its level.
 
     Idempotent: the tvbo logger keeps at most one handler owned by this module.
-    When *level* is ``None`` the level falls back to ``TVBO_LOG_LEVEL`` and then
-    to :data:`DEFAULT_LEVEL`. Because the tvbo logger then owns its own output,
-    its records stop propagating to the root logger (so an embedding application
-    that also configured root logging does not print every line twice).
+    When *level* is ``None`` the level falls back to ``TVBO_LOG_LEVEL`` and then to :data:`DEFAULT_LEVEL`. Because the tvbo logger then owns its own output,
+    its records stop propagating to the root logger (so an embedding application that also configured root logging does not print every line twice).
 
     Args:
         level: Desired level (int, name, or ``"OFF"``); ``None`` → env → default.
@@ -183,17 +176,14 @@ def configure_logging(
 def ensure_configured(level: LevelLike = None) -> logging.Logger:
     """Make tvbo logs visible for a run without clobbering an app's logging setup.
 
-    Called from the run entry points (``tvbo run``, ``SimulationExperiment.run``)
-    so that logging behaves the same however a run is launched:
+    Called from the run entry points (``tvbo run``, ``SimulationExperiment.run``) so that logging behaves the same however a run is launched:
 
     * if the tvbo logger or the root logger already has a real handler (an app,
-      notebook, or a prior :func:`configure_logging` set things up), only the
-      level is applied and the existing handlers keep emitting;
+      notebook, or a prior :func:`configure_logging` set things up), only the level is applied and the existing handlers keep emitting;
     * otherwise a default stderr handler is installed via :func:`configure_logging`.
 
     A level explicitly set earlier (``set_log_level`` / ``silence`` / a prior
-    ``configure_logging``) is preserved: with no explicit *level* this only
-    installs a default level the first time (while the logger is still at
+    ``configure_logging``) is preserved: with no explicit *level* this only installs a default level the first time (while the logger is still at
     ``NOTSET``), so the central switch stays put across repeated ``.run()`` calls.
 
     Args:
@@ -239,8 +229,7 @@ def silence() -> None:
 def log_level(level: LevelLike) -> Iterator[logging.Logger]:
     """Temporarily set the ``tvbo`` logger level within a ``with`` block.
 
-    Useful to quiet a noisy section or to force verbosity in a test without
-    leaking the change to the rest of the process.
+    Useful to quiet a noisy section or to force verbosity in a test without leaking the change to the rest of the process.
     """
     previous = logger.level
     logger.setLevel(_resolve_level(level))

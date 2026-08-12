@@ -50,9 +50,7 @@ _C = {
 
 
 # ── Unified style registry for bifurcation diagram elements ──────────
-# Single source of truth for branch lines (SFP/UFP/SLC/ULC) and special
-# points (LP/HB/BP/PD/TR/CP/GH/ZH/BT/HH). Used by plot_branch,
-# plot_special_points, plot_3d, and the BifLegend helper.
+# Single source of truth for branch lines (SFP/UFP/SLC/ULC) and special points (LP/HB/BP/PD/TR/CP/GH/ZH/BT/HH). Used by plot_branch, plot_special_points, plot_3d, and the BifLegend helper.
 
 _LINE_BASE = dict(marker="", lw=1.5, picker=True, pickradius=8, zorder=5)
 _MARK_BASE = dict(
@@ -85,14 +83,9 @@ BIF_STYLES = {
     "LC_EP": dict(marker="none", color=_C["po_line"], label="LC EP"),
 }
 
-# Canonical TY normalisation (backend special-point label → canonical short
-# code, e.g. "LP"/"HB"/"BP"). The AUTHORITATIVE source is the ontology's
-# bifurcation taxonomy (``ontology/tvb-o-bifurcation.ttl``, merged into
-# ``tvbo.owl``): each type carries a ``tvbo:canonicalCode`` plus ``skos:altLabel``
-# for every backend spelling (BifurcationKit ``:bp``/``:fold``, AUTO ``LP``/``HB``/
-# ``BP``, PyRates, ...). The map below is a built-in fallback, used verbatim only
-# when the ontology cannot be read (headless / minimal installs); the ontology is
-# layered on top of it so it stays the single source of truth.
+# Canonical TY normalisation (backend special-point label → canonical short code, e.g. "LP"/"HB"/"BP"). The AUTHORITATIVE source is the ontology's bifurcation taxonomy (``ontology/tvb-o-bifurcation.ttl``, merged into
+# ``tvbo.owl``): each type carries a ``tvbo:canonicalCode`` plus ``skos:altLabel`` for every backend spelling (BifurcationKit ``:bp``/``:fold``, AUTO ``LP``/``HB``/
+# ``BP``, PyRates, ...). The map below is a built-in fallback, used verbatim only when the ontology cannot be read (headless / minimal installs); the ontology is layered on top of it so it stays the single source of truth.
 _TY_ALIASES_FALLBACK = {
     # equilibria
     "fold": "LP",
@@ -130,8 +123,7 @@ _TY_ALIASES_CACHE = None
 def _derive_ty_aliases():
     """Build ``{backend-label(lower) → canonical code}`` from the ontology.
 
-    Reads ``tvbo:canonicalCode`` + ``skos:altLabel`` off the merged bifurcation
-    taxonomy so the label map tracks the ontology automatically. Falls back to
+    Reads ``tvbo:canonicalCode`` + ``skos:altLabel`` off the merged bifurcation taxonomy so the label map tracks the ontology automatically. Falls back to
     (and is layered over) ``_TY_ALIASES_FALLBACK`` if the ontology is missing.
     """
     aliases = dict(_TY_ALIASES_FALLBACK)
@@ -185,8 +177,7 @@ def canonical_ty(ty):
 def get_bif_style(ty, base=None):
     """Look up the merged style dict for a TY (e.g. 'LP', 'fold', 'SLC').
 
-    ``base`` defaults to the line/marker base style depending on whether
-    the entry is a branch (no marker) or a point (marker is present).
+    ``base`` defaults to the line/marker base style depending on whether the entry is a branch (no marker) or a point (marker is present).
     """
     key = canonical_ty(ty) or ty
     style = BIF_STYLES.get(key)
@@ -369,8 +360,7 @@ def continuation_kind(obj):
 def _extract_equilibrium_df(br):
     """Extract equilibrium continuation branch as a pandas DataFrame.
 
-    Converts Julia StructArrays to Python via JSON-like column extraction,
-    which is robust across juliacall versions.
+    Converts Julia StructArrays to Python via JSON-like column extraction, which is robust across juliacall versions.
     """
     from juliacall import Main
 
@@ -472,16 +462,13 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
 class BifurcationResult:
     """Backend-agnostic bifurcation result.
 
-    A single ``BifurcationResult`` represents one continuation branch
-    (equilibrium, periodic orbit, or codim-2 curve) regardless of the
+    A single ``BifurcationResult`` represents one continuation branch (equilibrium, periodic orbit, or codim-2 curve) regardless of the
     backend that produced it (BifurcationKit.jl, PyRates/PyCoBi,
-    AUTO-07p/numcont). Once the data lives in ``self.df`` and the
-    nested ``periodic_orbits`` / ``codim2_curves`` lists, *all* plotting,
+    AUTO-07p/numcont). Once the data lives in ``self.df`` and the nested ``periodic_orbits`` / ``codim2_curves`` lists, *all* plotting,
     legend, and export methods (``plot``, ``plot_3d``, ``bif_legend``,
     ``enable_picker``, ...) work uniformly across backends.
 
-    There are *no* backend-specific result subclasses. Each adapter
-    extracts a unified DataFrame and either calls the constructor
+    There are *no* backend-specific result subclasses. Each adapter extracts a unified DataFrame and either calls the constructor
     directly with ``df=...`` or one of the factory shortcuts:
 
     * ``BifurcationResult.from_bifkit(br, ...)`` — BifurcationKit.jl
@@ -531,8 +518,7 @@ class BifurcationResult:
         if not hasattr(self, "periodic_orbits"):
             self.periodic_orbits = []
 
-        # Annotate special points (BK path only — PyRates/NumCont
-        # already populate ``df['specialpoint']`` in their adapters)
+        # Annotate special points (BK path only — PyRates/NumCont already populate ``df['specialpoint']`` in their adapters)
         if sp_list:
             if "specialpoint" not in self.df.columns:
                 self.df["specialpoint"] = None
@@ -559,12 +545,9 @@ class BifurcationResult:
                     self.df.at[rix, "sp_norm"] = norm
                     self.df.at[rix, "sp_idx"] = idx_val
 
-        # Disambiguate BifurcationKit's overloaded ``:bp``. On an equilibrium
-        # branch it labels BOTH genuine branch points and saddle-node folds
+        # Disambiguate BifurcationKit's overloaded ``:bp``. On an equilibrium branch it labels BOTH genuine branch points and saddle-node folds
         # ``:bp``. The ontology distinguishes them by branch geometry (Fold ⇒
-        # LimitPointGeometry, BranchPoint ⇒ BranchCrossingGeometry); a fold is
-        # the one where the continuation parameter turns around. Relabel those
-        # to ``fold`` so ``canonical_ty`` resolves them to ``LP``.
+        # LimitPointGeometry, BranchPoint ⇒ BranchCrossingGeometry); a fold is the one where the continuation parameter turns around. Relabel those to ``fold`` so ``canonical_ty`` resolves them to ``LP``.
         if sp_list and kind == "EquilibriumCont":
             self._reclassify_folds()
 
@@ -573,10 +556,8 @@ class BifurcationResult:
     def _reclassify_folds(self):
         """Relabel a ``:bp`` as a fold when it sits at a parameter turning point.
 
-        Operationalises the ontology's ``LimitPointGeometry`` discriminator
-        (``ontology/tvb-o-bifurcation.ttl``): on an equilibrium branch, a
-        branch-point label whose continuation parameter is a local extremum is a
-        saddle-node fold, not a transversal branch crossing.
+        Operationalises the ontology's ``LimitPointGeometry`` discriminator (``ontology/tvb-o-bifurcation.ttl``): on an equilibrium branch, a
+        branch-point label whose continuation parameter is a local extremum is a saddle-node fold, not a transversal branch crossing.
         """
         df = self.df
         if df is None or df.empty or "specialpoint" not in df.columns or "param" not in df.columns:
@@ -609,8 +590,7 @@ class BifurcationResult:
     def _finalize(self):
         """Populate ``hopf_indices`` / ``bp_indices`` (+ matching steps).
 
-        Called once by ``__init__`` regardless of which adapter built
-        the DataFrame.
+        Called once by ``__init__`` regardless of which adapter built the DataFrame.
         """
         self.hopf_indices = []
         self.bp_indices = []
@@ -630,12 +610,9 @@ class BifurcationResult:
     def to_dataset(self):
         """Return the continuation branch as a native, self-describing xarray ``Dataset``.
 
-        The branch is a labelled table indexed by continuation ``step``; the
-        continuation parameter (``ICS``, e.g. ``G``) is a coordinate along it and
-        every recorded observable / stability flag becomes a data variable. This is
-        the same labelled container the rest of tvbo uses (``ExperimentResult`` holds
-        it under ``continuations``), so continuation results persist through the
-        standard result format instead of any ad-hoc per-figure array dump.
+        The branch is a labelled table indexed by continuation ``step``; the continuation parameter (``ICS``, e.g. ``G``) is a coordinate along it and
+        every recorded observable / stability flag becomes a data variable. This is the same labelled container the rest of tvbo uses (``ExperimentResult`` holds
+        it under ``continuations``), so continuation results persist through the standard result format instead of any ad-hoc per-figure array dump.
         """
         import xarray as xr
 
@@ -684,8 +661,7 @@ class BifurcationResult:
     ):
         """Wrap a PyRates / PyCoBi continuation by name.
 
-        All visualisation/export logic lives on this class -- the
-        adapter just hands the extracted DataFrame straight to
+        All visualisation/export logic lives on this class -- the adapter just hands the extracted DataFrame straight to
         ``__init__``.
         """
         sv_names = list(state_var_names or [])
@@ -705,8 +681,7 @@ class BifurcationResult:
                 )
             )
 
-        # Codim-2 curves: existing BifurcationResult instances; just
-        # augment with their second-parameter trajectory.
+        # Codim-2 curves: existing BifurcationResult instances; just augment with their second-parameter trajectory.
         codim2_curves = []
         ICS2 = None
         for c2_res in codim2_results or []:
@@ -785,8 +760,7 @@ class BifurcationResult:
         codim2_curves = []
         for c2_name, c2_source_type, c2_fp1, c2_fp2, c2_bd in codim2_raw or []:
             # The codim-2 continuation tracks (fp1, fp2). ICS=fp1 makes the
-            # 'param' column carry fp1; the 'param2' column is fp2 (already
-            # resolved by _auto_branch_to_df from PAR(.) → parnames mapping).
+            # 'param' column carry fp1; the 'param2' column is fp2 (already resolved by _auto_branch_to_df from PAR(.) → parnames mapping).
             c2_df = _extract_auto_df(c2_bd, sv_names, c2_fp1)
             # Promote second-parameter column for _plot_codim2 ergonomics
             if c2_fp2 in c2_df.columns and "param2" not in c2_df.columns:
@@ -876,8 +850,7 @@ class BifurcationResult:
         """Draw the continuation branch as stability-coded line segments.
 
         Splits the branch into contiguous stable/unstable runs (and, when a
-        `branch_id` column is present, per branch) and plots each segment with
-        the style from the central registry — `SFP`/`UFP` for equilibria or
+        `branch_id` column is present, per branch) and plots each segment with the style from the central registry — `SFP`/`UFP` for equilibria or
         `SLC`/`ULC` for periodic orbits. Does nothing when the branch is empty.
 
         Args:
@@ -957,8 +930,7 @@ class BifurcationResult:
     def bif_legend(self, ax, tys, labels=None, **lgd_kwargs):
         """Add a curated legend listing the selected TYs.
 
-        Mirrors ``ContinuationPlot.BifLegend``: draws an off-screen artist
-        per TY using the central style registry and feeds them to a single
+        Mirrors ``ContinuationPlot.BifLegend``: draws an off-screen artist per TY using the central style registry and feeds them to a single
         ``ax.legend`` call so the user can pin exactly which entries appear.
         """
         handles = []
@@ -1091,9 +1063,7 @@ class BifurcationResult:
             pass
 
         # AUTO-07p backend: ``self.br`` is a ``bifDiag`` whose call returns a
-        # ``parseS`` of ``AUTOSolution`` objects. Each holds the full orbit
-        # mesh in ``coordarray`` (shape ``(ndim, ntst*ncol+1)``), ``indepvararray``
-        # (mesh times in [0, 1] times PERIOD) and ``PAR`` (parameter dict).
+        # ``parseS`` of ``AUTOSolution`` objects. Each holds the full orbit mesh in ``coordarray`` (shape ``(ndim, ntst*ncol+1)``), ``indepvararray`` (mesh times in [0, 1] times PERIOD) and ``PAR`` (parameter dict).
         try:
             sols = self.br()  # parseS
             n_sol = len(sols)
@@ -1133,10 +1103,8 @@ class BifurcationResult:
     def plot(self, ax=None, ICS=None, VOI=None, save=None, **kwargs):
         """Render the full bifurcation diagram for this branch.
 
-        Draws the equilibrium branch, its special points and any periodic-orbit
-        envelopes (a filled min/max region, or a `max` line when only maxima are
-        available), labels the axes, adds a legend and applies publication
-        styling. When nested continuation produced codim-2 curves, dispatches to
+        Draws the equilibrium branch, its special points and any periodic-orbit envelopes (a filled min/max region, or a `max` line when only maxima are
+        available), labels the axes, adds a legend and applies publication styling. When nested continuation produced codim-2 curves, dispatches to
         the codim-2 renderer instead.
 
         Args:
@@ -1480,9 +1448,7 @@ class BifurcationResult:
             Y = c2_default + W_scaled
             Z = V_mesh
 
-            # Per-orbit stability → split surface into stable/unstable
-            # contiguous segments (stable → plot_surface, unstable →
-            # plot_wireframe), mirroring ContinuationPlot.PlotBifCurve.
+            # Per-orbit stability → split surface into stable/unstable contiguous segments (stable → plot_surface, unstable → plot_wireframe), mirroring ContinuationPlot.PlotBifCurve.
             if "stable" in po_br.df.columns and len(po_br.df) >= n_orb:
                 # Sample stability at the same indices used for orbits
                 sample_idx = np.unique(np.round(np.linspace(0, len(po_br.df) - 1, n_orb)).astype(int))
@@ -1652,8 +1618,7 @@ class BifurcationResult:
     def _lc_ring_at_param(self, val, VOI, sv2, y_center, n_theta=80):
         """Sample a closed periodic-orbit loop at ``param=val`` for 3D overlay.
 
-        Returns ``(X, Y, Z)`` arrays (length ``n_theta + 1``, last point
-        repeats the first) tracing the limit cycle in the same coordinates
+        Returns ``(X, Y, Z)`` arrays (length ``n_theta + 1``, last point repeats the first) tracing the limit cycle in the same coordinates
         used by :meth:`plot_3d` (``x = param``, ``y = y_center + sv2_disp``,
         ``z = VOI``), or ``None`` if no PO branch covers ``val``.
         """
@@ -1683,9 +1648,7 @@ class BifurcationResult:
                 z = np.interp(t_uni, t_norm, orb[VOI])
                 w = np.interp(t_uni, t_norm, orb[sv2])
 
-                # Replicate plot_3d's W-scaling: collect all sv2 samples to
-                # get the global W_range and use abs(y_center)*0.5 (or 5.0)
-                # as the y_range proxy when no codim-2 curves exist.
+                # Replicate plot_3d's W-scaling: collect all sv2 samples to get the global W_range and use abs(y_center)*0.5 (or 5.0) as the y_range proxy when no codim-2 curves exist.
                 all_w = []
                 for o in orbits:
                     if sv2 in o:
@@ -1703,8 +1666,7 @@ class BifurcationResult:
                 Z = np.append(z, z[0])
                 return X, Y, Z
 
-            # Fallback: AUTO-style envelope. Reconstruct an ellipse from
-            # max_<sv> radii in the (sv2, VOI) plane around the equilibrium.
+            # Fallback: AUTO-style envelope. Reconstruct an ellipse from max_<sv> radii in the (sv2, VOI) plane around the equilibrium.
             max_voi = f"max_{VOI}"
             if max_voi not in df.columns:
                 continue
@@ -1802,10 +1764,8 @@ class BifurcationResult:
         """Animate ``dynamics`` alongside this 3D bifurcation diagram.
 
         For each value of ``parameter`` a left panel re-renders a
-        ``Dynamics`` plot (``kind`` forwarded to :func:`plot_dynamics`,
-        defaults to ``"phaseplane"``), while a right panel shows
-        :meth:`plot_3d` once with a moving marker that tracks the
-        current parameter value on the equilibrium backbone.
+        ``Dynamics`` plot (``kind`` forwarded to :func:`plot_dynamics`, defaults to ``"phaseplane"``), while a right panel shows
+        :meth:`plot_3d` once with a moving marker that tracks the current parameter value on the equilibrium backbone.
 
         Parameters
         ----------
@@ -1824,8 +1784,7 @@ class BifurcationResult:
             State variable plotted on the z-axis of the 3D diagram.
         interval : int
             Delay between frames in ms.
-        figsize : (float, float)
-        title_fmt : str
+        figsize : (float, float) title_fmt : str
             Title format with ``{name}`` and ``{value}`` placeholders.
         marker_kwargs : dict, optional
             Style overrides for the moving marker.
@@ -1975,13 +1934,11 @@ class BifurcationResult:
 #
 # These functions convert backend-native objects (PyCoBi ``ODESystem``,
 # AUTO-07p ``bifDiag``) into the unified DataFrame schema consumed by
-# :class:`BifurcationResult`. Keeping them at module level (instead of
-# nested inside subclasses) makes the data flow explicit:
+# :class:`BifurcationResult`. Keeping them at module level (instead of nested inside subclasses) makes the data flow explicit:
 #
 #     backend_object → _extract_<backend>_df(...) → BifurcationResult(df=...)
 #
-# and lets the same plotting/legend/export code apply to *every*
-# backend without inheritance.
+# and lets the same plotting/legend/export code apply to *every* backend without inheritance.
 
 # Standard columns expected by all extractors
 _BIF_STANDARD_COLS = ["param", "stable", "step", "specialpoint", "n_unstable", "n_imag"]
@@ -2009,8 +1966,7 @@ _AUTO_LABEL_MAP = {
 def _add_pycobi_param2(ode, df, cont_name, state_var_names, icp2):
     """Append a ``param2`` column to a codim-2 DataFrame.
 
-    Pulls the second free-parameter trajectory from PyCoBi's raw AUTO
-    branch (or, on failure, its summary).
+    Pulls the second free-parameter trajectory from PyCoBi's raw AUTO branch (or, on failure, its summary).
     """
     par2_col = f"PAR({icp2})"
     try:
@@ -2048,8 +2004,7 @@ def _add_pycobi_param2(ode, df, cont_name, state_var_names, icp2):
 def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
     """Convert a PyCoBi continuation result into the unified DataFrame.
 
-    Uses the full raw AUTO branch for equilibria (every continuation
-    step) and falls back to ``get_summary`` -- which provides min/max
+    Uses the full raw AUTO branch for equilibria (every continuation step) and falls back to ``get_summary`` -- which provides min/max
     envelopes -- for periodic-orbit branches.
     """
     auto_to_bif = {k: v for k, v in _AUTO_LABEL_MAP.items() if k in {"LP", "HB", "BP", "PD", "TR", "BT", "CP", "GH", "ZH"}}
@@ -2290,10 +2245,8 @@ def _auto_branch_to_df(branch, sv_names, fp_name):
         if ucol in df.columns:
             df[sv] = df[ucol]
 
-    # Periodic-orbit branches: AUTO writes ``MAX <sv>`` / ``MIN <sv>``
-    # (or ``MAX U(i)``) into the b-file. Map those to the canonical
-    # ``max_<sv>`` / ``min_<sv>`` columns the plot layer expects, and
-    # fall back to ``MAX`` as the SV column when no U(i) was emitted.
+    # Periodic-orbit branches: AUTO writes ``MAX <sv>`` / ``MIN <sv>`` (or ``MAX U(i)``) into the b-file. Map those to the canonical
+    # ``max_<sv>`` / ``min_<sv>`` columns the plot layer expects, and fall back to ``MAX`` as the SV column when no U(i) was emitted.
     for i, sv in enumerate(sv_names, start=1):
         for prefix, target in (("MAX", "max"), ("MIN", "min")):
             for src in (f"{prefix} {sv}", f"{prefix} U({i})"):
@@ -2341,8 +2294,7 @@ def _extract_auto_df(bd, sv_names, fp_name):
     """Concatenate every branch in an AUTO ``bifDiag`` into one DataFrame.
 
     Adds a ``branch_id`` column so plotting can keep sub-branches distinct.
-    For periodic-orbit branches, augments missing ``min_<sv>`` columns by
-    scanning the orbit solutions in ``bd()`` (AUTO does not write MIN to
+    For periodic-orbit branches, augments missing ``min_<sv>`` columns by scanning the orbit solutions in ``bd()`` (AUTO does not write MIN to
     the b-file).
     """
     frames = []
@@ -2410,8 +2362,7 @@ class CurvePicker:
     """Click any branch line to inspect the underlying point.
 
     Activated via ``BifurcationResult.enable_picker(ax, callback=...)``.
-    Each branch line drawn by ``plot_branch`` carries ``picker=True`` so
-    matplotlib raises a ``pick_event`` on click; the picker resolves the
+    Each branch line drawn by ``plot_branch`` carries ``picker=True`` so matplotlib raises a ``pick_event`` on click; the picker resolves the
     nearest df row and forwards it to ``callback(result, row_index)``.
     """
 
@@ -2456,8 +2407,7 @@ class CurvePicker:
     def disconnect(self):
         """Detach the pick-event handler so clicks are no longer captured.
 
-        Safe to call more than once; the connection id is cleared after the
-        first disconnect.
+        Safe to call more than once; the connection id is cleared after the first disconnect.
         """
         if self.cid is not None:
             self.fig.canvas.mpl_disconnect(self.cid)

@@ -16,23 +16,17 @@ from sympy import latex, symbols
 
 from tvbo.ontology import owl as ontology, query
 
-# The platform serves the generated, individual-based ontology
-# (tvbo/data/ontology/tvbo.owl). It is loaded into a DEDICATED owlready2 World,
-# isolated from owl.py's global class-based `onto` that the tvbo core depends on
-# (see dev/runtime_ontology_migration.md). owl.py's class-based high-level API
-# stays on the deprecated ontology until the Phase B rewrite.
+# The platform serves the generated, individual-based ontology (tvbo/data/ontology/tvbo.owl). It is loaded into a DEDICATED owlready2 World, isolated from owl.py's global class-based `onto` that the tvbo core depends on (see dev/runtime_ontology_migration.md). owl.py's class-based high-level API stays on the deprecated ontology until the Phase B rewrite.
 _GENERATED_ONTO_PATH = os.path.join(ontology.ONTO_DIR, "tvbo.owl")
 
 
 def _load_generated_ontology():
-    """Load the generated ontology into its own World (no reasoning; ROBOT
-    already materialised the ELK inferences at build time)."""
+    """Load the generated ontology into its own World (no reasoning; ROBOT already materialised the ELK inferences at build time)."""
     world = owl.World()
     return world.get_ontology("file://" + _GENERATED_ONTO_PATH).load()
 
 
-# Type mapping: database types → generated-ontology class names (the LinkML
-# schema classes; the generated ontology types domain entities against these).
+# Type mapping: database types → generated-ontology class names (the LinkML schema classes; the generated ontology types domain entities against these).
 TYPE_MAPPING = {
     "dynamics": "Dynamics",
     "network": "Network",
@@ -69,12 +63,9 @@ def _get_symbol(entity) -> str:
 def _requirements(entity):
     """Split ``requires`` into (entity references, bare names).
 
-    Two different properties share the Python attribute name: ``tvbo:requires``
-    is an ObjectProperty holding entities, while the NeuroML ingest adds
-    ``tvbo/neuroml:requires``, an AnnotationProperty holding the *name* of a
-    quantity a ComponentType needs from its context (``'surfaceArea'``,
-    ``'iCa'``). owlready2 merges both into one slot, so it yields entities and
-    plain strings together. Only the entities have a ``storid`` or a node.
+    Two different properties share the Python attribute name: ``tvbo:requires`` is an ObjectProperty holding entities, while the NeuroML ingest adds
+    ``tvbo/neuroml:requires``, an AnnotationProperty holding the *name* of a quantity a ComponentType needs from its context (``'surfaceArea'``,
+    ``'iCa'``). owlready2 merges both into one slot, so it yields entities and plain strings together. Only the entities have a ``storid`` or a node.
     """
     refs, names = [], []
     for req in getattr(entity, "requires", None) or []:
@@ -86,8 +77,7 @@ def _get_type(entity) -> str:
     """Primary type/class label. Entity-local so it is world-agnostic.
 
     A domain individual's asserted class and a class's superclass both live in
-    ``is_a`` as a ThingClass, so the first non-``Thing`` entry is the natural
-    type for both. Returns ``"Thing"`` when none is present.
+    ``is_a`` as a ThingClass, so the first non-``Thing`` entry is the natural type for both. Returns ``"Thing"`` when none is present.
     """
     for parent in getattr(entity, "is_a", []) or []:
         if isinstance(parent, owl.ThingClass) and parent.name != "Thing":
@@ -153,10 +143,7 @@ class DirectOntologyAPI:
         )
         serialized = [_serialize_entity(r) for r in results]
 
-        # label_search returns an unordered set; rank so the queried entity
-        # surfaces first (exact label > prefix > substring). Necessary now that
-        # the individual-based ontology adds many sub-entities (a model's
-        # parameters/state variables) that also match a model-name search.
+        # label_search returns an unordered set; rank so the queried entity surfaces first (exact label > prefix > substring). Necessary now that the individual-based ontology adds many sub-entities (a model's parameters/state variables) that also match a model-name search.
         t = term.strip().lower()
 
         def _rank(item):
@@ -249,10 +236,8 @@ class DirectOntologyAPI:
         """Get the full ontology graph for visualization.
 
         Includes both classes (the system scaffold: Dynamics, Coupling,
-        Parameter, …) and individuals (the domain entities: JansenRit, its
-        parameters, …), since the generated ontology models domain entities as
-        individuals. ``is_a`` links a node to its superclass (for a class) or
-        its asserted type (for an individual) — both are ThingClasses. Deeper
+        Parameter, …) and individuals (the domain entities: JansenRit, its parameters, …), since the generated ontology models domain entities as
+        individuals. ``is_a`` links a node to its superclass (for a class) or its asserted type (for an individual) — both are ThingClasses. Deeper
         object-property edges (hasParameter, …) are surfaced on demand via
         ``get_children`` / ``get_parents`` rather than inlined here.
         """

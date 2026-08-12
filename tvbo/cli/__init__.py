@@ -1,7 +1,6 @@
 """TVB-O command-line interface.
 
-See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based,
-registry-driven, and transport-aware. This module assembles the top-level
+See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based, registry-driven, and transport-aware. This module assembles the top-level
 :class:`typer.Typer` ``app`` from per-verb sub-modules.
 """
 
@@ -10,8 +9,7 @@ from __future__ import annotations
 import typer
 
 # Shared helper sub-modules used by the verb modules below (which do
-# ``from . import _common`` / ``_workflow`` at import time). Importing them here
-# first binds them on the package so those relative imports resolve by attribute.
+# ``from . import _common`` / ``_workflow`` at import time). Importing them here first binds them on the package so those relative imports resolve by attribute.
 from . import _backends, _common, _workflow  # noqa: F401
 
 from . import (
@@ -100,8 +98,7 @@ def _configure(
     """Configure tvbo logging once for every verb.
 
     Progress and status flow through the central ``tvbo`` logger (see
-    :mod:`tvbo.log`), so ``tvbo run`` and the in-process ``.run()`` API behave
-    identically. ``--log-level`` wins over ``--quiet``/``--verbose``; with none
+    :mod:`tvbo.log`), so ``tvbo run`` and the in-process ``.run()`` API behave identically. ``--log-level`` wins over ``--quiet``/``--verbose``; with none
     set the level falls back to ``TVBO_LOG_LEVEL`` and then INFO.
     """
     from tvbo.log import configure_logging
@@ -113,10 +110,7 @@ def _configure(
         level = "ERROR"
     if log_level:
         level = log_level
-    # CLI output is user-facing: keep it bare (no "LEVEL [name]" diagnostic
-    # prefix), matching the plain lines the CLI printed before. force=True so
-    # this format wins even if ``import tvbo`` already installed the default
-    # (diagnostic) handler because ``TVBO_LOG_LEVEL`` was set in the environment.
+    # CLI output is user-facing: keep it bare (no "LEVEL [name]" diagnostic prefix), matching the plain lines the CLI printed before. force=True so this format wins even if ``import tvbo`` already installed the default (diagnostic) handler because ``TVBO_LOG_LEVEL`` was set in the environment.
     configure_logging(level, fmt="%(message)s", force=True)
 
 

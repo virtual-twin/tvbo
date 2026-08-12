@@ -94,8 +94,7 @@ def get_sidecar(experiment_id: str, format: str = Query("yaml")):
 class RenderExperimentRequest(BaseModel):
     """Request body for rendering or saving an experiment from an inline payload.
 
-    Describes a [`SimulationExperiment`](/api/classes/experiment.qmd) to render (or
-    persist) via the `POST /api/v1/experiments/render` endpoint. The experiment is
+    Describes a [`SimulationExperiment`](/api/classes/experiment.qmd) to render (or persist) via the `POST /api/v1/experiments/render` endpoint. The experiment is
     supplied inline as a mapping rather than referenced by stored id.
 
     Args:

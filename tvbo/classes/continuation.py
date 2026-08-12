@@ -11,8 +11,7 @@ Continuation
 ============
 Runtime wrapper around the auto-generated ``Continuation`` dataclass.
 
-Provides ``from_file`` / ``from_string`` factory methods so that a
-continuation specification can be loaded from YAML just like ``Dynamics``.
+Provides ``from_file`` / ``from_string`` factory methods so that a continuation specification can be loaded from YAML just like ``Dynamics``.
 
 Usage
 -----
@@ -43,8 +42,7 @@ class Continuation(tvbo_datamodel.Continuation):
     """Runtime continuation specification with factory constructors.
 
     Inherits all schema-defined fields (``free_parameters``, ``ds``,
-    ``max_steps``, ``branches``, etc.) from the generated datamodel and
-    adds convenience factory methods.
+    ``max_steps``, ``branches``, etc.) from the generated datamodel and adds convenience factory methods.
     """
 
     def __init__(self, name="continuation", **kwargs):
@@ -66,8 +64,7 @@ class Continuation(tvbo_datamodel.Continuation):
 
         The file can be either:
         1. A standalone Continuation YAML (root keys are Continuation fields).
-        2. A SimulationExperiment YAML that contains a ``continuations``
-           section — in which case the *first* continuation entry is returned.
+        2. A SimulationExperiment YAML that contains a ``continuations`` section — in which case the *first* continuation entry is returned.
 
         Parameters
         ----------

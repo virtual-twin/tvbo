@@ -6,8 +6,7 @@
 """
 OpenMINDS JSON-LD conversion utilities for TVBO.
 
-This module provides bidirectional conversion between TVBO datamodel objects
-and openMINDS-compatible JSON-LD format.
+This module provides bidirectional conversion between TVBO datamodel objects and openMINDS-compatible JSON-LD format.
 
 This module is the **single source of truth** for all openMINDS type mappings.
 Both runtime conversion and schema generation import from here.
@@ -167,8 +166,7 @@ LINKML_TO_JSON_TYPE: dict[str, str] = {
 # Fields to skip during serialization (internal/computed)
 SKIP_FIELDS = {"_as_dict", "metadata", "experiments"}
 
-# Fields that should use snake_case in openMINDS (matching LinkML)
-# openMINDS typically uses camelCase, but we preserve snake_case for TVBO extension
+# Fields that should use snake_case in openMINDS (matching LinkML) openMINDS typically uses camelCase, but we preserve snake_case for TVBO extension
 
 
 def _get_openminds_type(obj: Any) -> str | None:

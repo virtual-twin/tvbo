@@ -2,22 +2,18 @@
 
 Renders the excitatory/inhibitory **population circuit** of a model: population nodes plus
 **typed, signed** connections — synapse type (NMDA / AMPA / GABA / …) sets the line colour,
-biophysical sign sets the terminal (excitatory ``▶``, inhibitory ``●``) — within a population,
-between populations, as recurrent self-loops, and across ``n_areas`` coupled areas. It is the
+biophysical sign sets the terminal (excitatory ``▶``, inhibitory ``●``) — within a population, between populations, as recurrent self-loops, and across ``n_areas`` coupled areas. It is the
 standing "what is this model" diagram every recipe wants (Deco 2014 Fig. 1a/2a, Jansen-Rit, …).
 
 **Rendering backend = graphviz layout + matplotlib draw.** graphviz (the ``dot`` engine) solves
-node placement and edge-spline routing — its strength — and matplotlib draws the result with full
-styling control: crisp custom arrowheads, endpoints snapped to node edges, small compact
-self-loops, neuron-dot population glyphs, and publication typography. This beats either alone
-(graphviz styling is rigid; hand-placed matplotlib arrows don't route cleanly).
+node placement and edge-spline routing — its strength — and matplotlib draws the result with full styling control: crisp custom arrowheads, endpoints snapped to node edges, small compact
+self-loops, neuron-dot population glyphs, and publication typography. This beats either alone (graphviz styling is rigid; hand-placed matplotlib arrows don't route cleanly).
 
 Two entry points:
 
 * **Declarative** — build ``Population`` / ``Connection`` objects → ``PopulationSchematic``.
 * **Model-derived** — ``PopulationSchematic.from_dynamics(dynamics)`` reads a tvbo ``Dynamics``:
-  populations are its state variables (``S_E`` → ``E``); connections are recovered by expanding
-  the derived variables into each state variable's dfun and classifying every cross-population
+  populations are its state variables (``S_E`` → ``E``); connections are recovered by expanding the derived variables into each state variable's dfun and classifying every cross-population
   term by the **sign** of its coefficient and the **synapse** named in the multiplying parameter.
 
 Flexible layout/style, all via ``plot(...)`` keywords:
@@ -57,8 +53,7 @@ class Population:
 @dataclass
 class Connection:
     """Directed connection ``source → target``. ``synapse`` (NMDA/AMPA/GABA) sets colour;
-    ``sign`` (``excitatory`` ▶ / ``inhibitory`` ●) sets the terminal; ``scope`` is ``"local"``
-    (within an area) or ``"long_range"`` (between adjacent areas). ``recurrent`` (self-loop) is
+    ``sign`` (``excitatory`` ▶ / ``inhibitory`` ●) sets the terminal; ``scope`` is ``"local"`` (within an area) or ``"long_range"`` (between adjacent areas). ``recurrent`` (self-loop) is
     inferred from ``source == target`` when omitted."""
 
     source: str
@@ -117,8 +112,7 @@ def _edge_synapse(coeff, synapse_map, default_sign):
 
 
 def _derive_from_dynamics(dynamics, coupling_symbols, long_range_synapse, synapse_map):
-    """Recover (populations, connections) from a ``Dynamics`` by reading the **input-current**
-    derived variables (affine in state vars + coupling), which capture the connections that the
+    """Recover (populations, connections) from a ``Dynamics`` by reading the **input-current** derived variables (affine in state vars + coupling), which capture the connections that the
     nonlinear transfer function ``r = H(I)`` hides from a plain state-variable coefficient."""
     import sympy as sp
 
@@ -224,8 +218,7 @@ def _bspline(ax, pts, color, lw, dashed):
 
 
 def _self_loop(ax, x, y, r, up, color, kind, height, width):
-    """Small compact self-loop tangent to the node edge (little rope). ``height``/``width`` are
-    the loop's extent beyond the edge in node-radius units."""
+    """Small compact self-loop tangent to the node edge (little rope). ``height``/``width`` are the loop's extent beyond the edge in node-radius units."""
     s = 1 if up else -1
     a = np.deg2rad(26)
     p0 = (x - r * np.sin(a), y + s * r * np.cos(a))
@@ -259,8 +252,7 @@ def _plain_node(ax, x, y, r, sign, label, fontsize):
 
 def _stretch_x(pos, splines, target):
     """Scale x about the centre so the circuit's width:height ≥ ``target`` (nodes keep radius
-    ``r`` and stay round; only inter-node spacing + edge splines stretch). This makes a narrow
-    stacked circuit span the same width as a wide mirror circuit, so panels align edge to edge."""
+    ``r`` and stay round; only inter-node spacing + edge splines stretch). This makes a narrow stacked circuit span the same width as a wide mirror circuit, so panels align edge to edge."""
     if not target or not pos:
         return pos, splines
     xs = [p[0] for p in pos.values()]
@@ -344,8 +336,7 @@ class PopulationSchematic:
     def _layout(self, layout, node_size, ranksep, nodesep, hide=None, ellipsis=False):
         """Run graphviz (dot); return {node:(x,y,r)}, [(t,h,spline_pts)], meta, loops.
 
-        When ``ellipsis``, adds a left/right ``…`` placeholder to every rank as its OWN column
-        (aligned across ranks), so the ellipsis reserves layout space instead of being painted
+        When ``ellipsis``, adds a left/right ``…`` placeholder to every rank as its OWN column (aligned across ranks), so the ellipsis reserves layout space instead of being painted
         over the edges, and the real areas pack toward the centre.
         """
         import json
@@ -375,9 +366,7 @@ class PopulationSchematic:
         for ri in range(len(ranks) - 1):  # align the … columns vertically
             g.edge(f"dotL{ri}", f"dotL{ri + 1}", style="invis")
             g.edge(f"dotR{ri}", f"dotR{ri + 1}", style="invis")
-        # Only CROSS-rank edges may set ranks; an edge whose endpoints share a rank (all edges
-        # in a single-row `mirror` layout, or E→E long-range in `stacked`) must NOT constrain
-        # ranking, or it fights the rank=same and scrambles the node order.
+        # Only CROSS-rank edges may set ranks; an edge whose endpoints share a rank (all edges in a single-row `mirror` layout, or E→E long-range in `stacked`) must NOT constrain ranking, or it fights the rank=same and scrambles the node order.
         for t, h in edges:
             same_rank = rank_of.get(t) is not None and rank_of.get(t) == rank_of.get(h)
             g.edge(t, h, constraint="false" if (same_rank or t == h) else "true")
@@ -442,16 +431,12 @@ class PopulationSchematic:
 
         Hiding connections (declare in the figure caption when you do):
         ``hide`` — a predicate ``callable(Connection) -> bool`` to drop any connection; and
-        ``long_range_targets`` — a convenience restricting long-range projections to those target
-        populations (e.g. ``["E"]`` = E→E only, no FFI, for the spiking Fig 1a view).
+        ``long_range_targets`` — a convenience restricting long-range projections to those target populations (e.g. ``["E"]`` = E→E only, no FFI, for the spiking Fig 1a view).
 
         Width control (two independent knobs):
-        ``fill_width`` (float, default 2.6) stretches the circuit horizontally to at least this
-        width:height aspect (how wide the circuit spreads; ``None``/0 disables); and
-        ``fit`` controls how the axes box maps to that circuit — ``"tight"`` shrinks the box to
-        the circuit (minimal whitespace, panels may differ in width) · ``"width"`` keeps the
-        box's given width and pads the data limits (panels in a mosaic column stay the SAME
-        width) · a ``float`` forces that exact width:height box aspect. Circles stay round in all.
+        ``fill_width`` (float, default 2.6) stretches the circuit horizontally to at least this width:height aspect (how wide the circuit spreads; ``None``/0 disables); and
+        ``fit`` controls how the axes box maps to that circuit — ``"tight"`` shrinks the box to the circuit (minimal whitespace, panels may differ in width) · ``"width"`` keeps the
+        box's given width and pads the data limits (panels in a mosaic column stay the SAME width) · a ``float`` forces that exact width:height box aspect. Circles stay round in all.
         """
         import matplotlib.pyplot as plt
         from matplotlib.patches import Ellipse
@@ -568,9 +553,7 @@ class PopulationSchematic:
             for (lbl, col, mk, _s) in items
         ]
         if handles:
-            # "below": legend TOP just under the axis (grows down); "top": legend BOTTOM just
-            # above the axis (grows up — use when a panel sits directly below the schematic, so
-            # the legend does not overlap it). Layout engine reserves the space either way.
+            # "below": legend TOP just under the axis (grows down); "top": legend BOTTOM just above the axis (grows up — use when a panel sits directly below the schematic, so the legend does not overlap it). Layout engine reserves the space either way.
             anchor, mloc = ((0.5, 1.02), "lower center") if loc == "top" else ((0.5, -0.02), "upper center")
             leg = ax.legend(
                 handles=handles,

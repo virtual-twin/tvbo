@@ -1,13 +1,10 @@
 """Measure how a rendered figure differs in LAYOUT from a reference image.
 
-A replication's figure is meant to land on the published one's layout: same aspect,
-same panel grid, panels in the same places at the same relative sizes. Judging that by
-eye does not scale and does not produce a number you can put in a report, so this
-module reduces both images to their panel geometry and reports the differences.
+A replication's figure is meant to land on the published one's layout: same aspect, same panel grid, panels in the same places at the same relative sizes. Judging that by
+eye does not scale and does not produce a number you can put in a report, so this module reduces both images to their panel geometry and reports the differences.
 
 Panels are found by recursive XY-cut — the classic document-layout decomposition:
-project the ink onto each axis, split at runs of blank, recurse. It needs no knowledge
-of either figure's provenance, which is the point: the reference is a bitmap from a PDF
+project the ink onto each axis, split at runs of blank, recurse. It needs no knowledge of either figure's provenance, which is the point: the reference is a bitmap from a PDF
 and ours comes from a mosaic spec, and they are compared on equal terms.
 """
 
@@ -62,8 +59,7 @@ def _ink(path: Path, threshold: float = 0.98) -> np.ndarray:
         arr = arr / 255.0
     alpha = arr[..., 3] if arr.shape[-1] == 4 else None
     rgb = arr[..., :3] if arr.shape[-1] >= 3 else arr[..., :1]
-    # Compare against the modal corner colour rather than assuming white: a figure
-    # saved on a transparent or tinted canvas is otherwise all ink.
+    # Compare against the modal corner colour rather than assuming white: a figure saved on a transparent or tinted canvas is otherwise all ink.
     corners = np.stack([rgb[0, 0], rgb[0, -1], rgb[-1, 0], rgb[-1, -1]])
     bg = np.median(corners, axis=0)
     mask = np.abs(rgb - bg).max(axis=-1) > (1.0 - threshold)
@@ -150,8 +146,7 @@ def page_boxes(path: Path, **kwargs) -> tuple[list[Box], tuple[int, int]]:
 def match_boxes(ours: list[Box], theirs: list[Box]) -> list[tuple[Box | None, Box | None]]:
     """Pair our panels with theirs by best overlap, leaving unmatched panels as ``None``.
 
-    Greedy on IoU rather than an assignment solve: when the layouts already broadly
-    agree the two are identical, and when they do not, a greedy pairing degrades into
+    Greedy on IoU rather than an assignment solve: when the layouts already broadly agree the two are identical, and when they do not, a greedy pairing degrades into
     obvious ``None`` rows instead of an inscrutable global optimum.
     """
     pairs, used = [], set()
@@ -290,13 +285,10 @@ def _pane_image(images) -> np.ndarray | None:
 def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
     """A one-row figure holding *panes* at a COMMON height, widths following their aspect.
 
-    Equal heights with aspect-proportional widths is what makes an A/B honest: neither side is
-    stretched to match the other, and the row fills *width* inches exactly, so the pair lands
-    on a report's text block without letterboxing. Returns ``(fig, axes)`` so a caller can
-    annotate before saving.
+    Equal heights with aspect-proportional widths is what makes an A/B honest: neither side is stretched to match the other, and the row fills *width* inches exactly, so the pair lands
+    on a report's text block without letterboxing. Returns ``(fig, axes)`` so a caller can annotate before saving.
 
-    Built on `matplotlib.figure.Figure` rather than `pyplot`, so calling this from a notebook
-    (a Quarto report is one) neither switches the global backend nor leaks a figure into
+    Built on `matplotlib.figure.Figure` rather than `pyplot`, so calling this from a notebook (a Quarto report is one) neither switches the global backend nor leaks a figure into
     pyplot's registry.
     """
     from matplotlib.figure import Figure
@@ -319,8 +311,7 @@ def image_row(panes: Sequence[Pane], width: float = 6.7, fontsize: float = 8):
 def side_by_side(panes: Sequence[Pane], outfile: Path, width: float = 6.7, fontsize: float = 6, dpi: int = 300) -> Path:
     """Write *panes* as one row at a common height — the A/B composite a report embeds.
 
-    A replication report sets the published figure beside its reproduction. Composing that
-    pair at render time, rather than shipping a rendered composite, is what keeps a
+    A replication report sets the published figure beside its reproduction. Composing that pair at render time, rather than shipping a rendered composite, is what keeps a
     copyrighted original out of every artifact but the one the caller names here.
     """
     fig, _ = image_row(panes, width, fontsize)

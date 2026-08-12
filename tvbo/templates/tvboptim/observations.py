@@ -8,9 +8,7 @@ import numpy as np
 from tvboptim.experimental.network_dynamics.result import NativeSolution
 from tvboptim.observations.tvb_monitors.downsampling import AbstractMonitor, _slice_variable_names
 
-# Canonical, backend-shared rounding + sampling resolution. Imported here so the
-# tvboptim runtime (the reference) and the jax/tvb code-gen paths compute
-# identical step counts from the same declarative observation and integration dt.
+# Canonical, backend-shared rounding + sampling resolution. Imported here so the tvboptim runtime (the reference) and the jax/tvb code-gen paths compute identical step counts from the same declarative observation and integration dt.
 from tvbo.adapters.observation_sampling import _tvb_iround
 
 

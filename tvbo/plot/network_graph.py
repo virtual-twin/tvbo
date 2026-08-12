@@ -69,8 +69,7 @@ def _resolve_positions(G, pos, network=None, plot_brain=None):
 
     Parameters
     ----------
-    G : networkx graph
-    pos : str or dict
+    G : networkx graph pos : str or dict
         ``"spring"`` / ``"graphviz"`` / brain-view string / explicit dict.
     network : Network, optional
         Used to read explicit node positions or atlas centres.
@@ -419,8 +418,7 @@ def _match_cortical_labels(region_labels, annot_dir, vertices_lh, vertices_rh):
 
     Returns
     -------
-    centers_matched : dict  {matrix_idx: ndarray(3,)}
-    cortical_idx : list[int]
+    centers_matched : dict  {matrix_idx: ndarray(3,)} cortical_idx : list[int]
     """
     from nibabel.freesurfer.io import read_annot
     from bsplot.graph import get_centers_from_surface_parc
@@ -476,8 +474,7 @@ def plot_graph_brain(
 ) -> Tuple[Figure, Axes, dict]:
     """Render a network on the cortical brain surface using ``bsplot``.
 
-    Nodes are rendered as coloured spheres at parcel centroids; edges
-    as coloured tubes between them.  Only **cortical** parcels that can
+    Nodes are rendered as coloured spheres at parcel centroids; edges as coloured tubes between them.  Only **cortical** parcels that can
     be matched to the FreeSurfer ``aparc`` annotation are shown.
 
     Parameters
@@ -527,9 +524,7 @@ def plot_graph_brain(
 
     Returns
     -------
-    fig : Figure
-    ax : Axes
-    mappables : dict
+    fig : Figure ax : Axes mappables : dict
         ``ScalarMappable`` objects (keys ``"nodes"`` / ``"edges"``).
     """
     from bsplot.data.surface import get_surface_geometry

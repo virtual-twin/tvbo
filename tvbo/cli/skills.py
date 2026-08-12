@@ -3,8 +3,7 @@
 Three subcommands:
 
 * ``tvbo skills sync``       — repo-side: regenerate ``.claude/skills/``,
-  ``.github/instructions/`` and the index region of ``AGENTS.md`` from the
-  canonical sources in ``skills/`` and ``tvbo/skills/canonical/``.
+  ``.github/instructions/`` and the index region of ``AGENTS.md`` from the canonical sources in ``skills/`` and ``tvbo/skills/canonical/``.
 * ``tvbo skills install``    — user-side: render canonical user skills onto
   a user's machine (``~/.claude/skills/``, ``./.cursor/rules/``, stdout, …).
 * ``tvbo skills uninstall``  — user-side: remove files previously written by
@@ -62,8 +61,7 @@ class Audience(str, Enum):
     """Intended reader of a skill, used to filter which skills apply.
 
     A skill declares an `audience` of `user`, `maintainer`, or `both`;
-    this enum selects the subset to act on, where `all` keeps every skill
-    regardless of its declared audience.
+    this enum selects the subset to act on, where `all` keeps every skill regardless of its declared audience.
     """
 
     user = "user"
@@ -74,8 +72,7 @@ class Audience(str, Enum):
 class Scope(str, Enum):
     """Install location for rendered skill files.
 
-    `user` writes to the per-user config directory (e.g. `~/.claude/skills`),
-    while `project` writes to the current working directory (e.g.
+    `user` writes to the per-user config directory (e.g. `~/.claude/skills`), while `project` writes to the current working directory (e.g.
     `./.claude/skills`).
     """
 
@@ -152,16 +149,14 @@ def sync(
 
     typer.echo(f"synced {len(skills)} skills → {len(written)} files")
 
-    # Warn, never repair: an unrecognised file may be someone's local work, and
-    # a bad reference or extra is a content decision the maintainer has to make.
+    # Warn, never repair: an unrecognised file may be someone's local work, and a bad reference or extra is a content decision the maintainer has to make.
     _report(_lint(skills, claude_dir, copilot_dir, repo_root))
 
 
 def _references(body: str, name: str) -> bool:
     """True if *body* points at the skill *name*.
 
-    Matches the three forms the corpus actually uses — ``**name**``, ``/name``,
-    and ``` `name` skill ``` — rather than a bare substring, so a skill named
+    Matches the three forms the corpus actually uses — ``**name**``, ``/name``, and ``` `name` skill ``` — rather than a bare substring, so a skill named
     ``git`` is not matched by every mention of ``gitignore``.
     """
     n = re.escape(name)
@@ -171,8 +166,7 @@ def _references(body: str, name: str) -> bool:
 def _find_leaked_refs(skills: list[Skill]) -> list[str]:
     """Shipped user skills that point at maintainer skills.
 
-    ``install`` renders only the user root, so a maintainer skill named in a
-    shipped body is a dead pointer for everyone outside this repo. It looks
+    ``install`` renders only the user root, so a maintainer skill named in a shipped body is a dead pointer for everyone outside this repo. It looks
     fine here because ``sync`` renders both audiences side by side.
     """
     maintainer = {s.name for s in skills if s.audience == "maintainer"}
@@ -188,10 +182,8 @@ def _find_leaked_refs(skills: list[Skill]) -> list[str]:
 def _find_dead_asset_refs(skills: list[Skill]) -> list[str]:
     """``assets/…`` paths a body points at that do not exist on disk.
 
-    Same class as :func:`_find_leaked_refs`: a pointer the reader cannot
-    follow. It matters most for a body that *defers* detail to a reference
-    chapter, where a dead pointer silently drops that content instead of
-    erroring.
+    Same class as :func:`_find_leaked_refs`: a pointer the reader cannot follow. It matters most for a body that *defers* detail to a reference
+    chapter, where a dead pointer silently drops that content instead of erroring.
     """
     return [
         f"{skill.source}: references missing asset {ref!r}"
@@ -220,8 +212,7 @@ def _find_bad_extras(skills: list[Skill], repo_root: Path) -> list[str]:
 def _lint(skills: list[Skill], claude_dir: Path, copilot_dir: Path, repo_root: Path) -> list[tuple[str, list[str], str]]:
     """Content problems that re-rendering cannot fix, as (title, items, hint).
 
-    Distinct from drift: these live in the canonical sources, or in what
-    surrounds the rendered output, so they are reported for a human to resolve
+    Distinct from drift: these live in the canonical sources, or in what surrounds the rendered output, so they are reported for a human to resolve
     rather than silently repaired.
     """
     findings: list[tuple[str, list[str], str]] = []
@@ -276,10 +267,8 @@ def _report(findings: list[tuple[str, list[str], str]]) -> None:
 def _find_orphans(skills: list[Skill], claude_dir: Path, copilot_dir: Path) -> list[str]:
     """Rendered skill files that no canonical source accounts for.
 
-    The rendered directories hold generated output only, so anything in them
-    without a canonical source behind it is a stray — typically a personal
-    skill committed by accident. Those belong in a user-scope directory
-    (``~/.claude/skills/``) instead.
+    The rendered directories hold generated output only, so anything in them without a canonical source behind it is a stray — typically a personal
+    skill committed by accident. Those belong in a user-scope directory (``~/.claude/skills/``) instead.
     """
     claude_known = {s.name for s in skills}
     copilot_known = {s.name for s in skills if s.audience in {"maintainer", "both"}}
@@ -306,13 +295,11 @@ def _sync_check(
 ) -> None:
     """Render in-memory, compare to on-disk; non-zero exit if anything differs.
 
-    Two independent failure modes: *drift*, where a committed copy no longer
-    matches what its canonical source renders to (fix by re-running sync), and
+    Two independent failure modes: *drift*, where a committed copy no longer matches what its canonical source renders to (fix by re-running sync), and
     the :func:`_lint` findings, which sync cannot fix.
 
     ``.claude/skills/`` is a local render and is not committed — the skills live in
-    ``skills/`` and ``tvbo/skills/canonical/`` — so it is gated only where it exists,
-    which is exactly where a stale copy could mislead someone.
+    ``skills/`` and ``tvbo/skills/canonical/`` — so it is gated only where it exists, which is exactly where a stale copy could mislead someone.
     """
     import tempfile
 
@@ -337,8 +324,7 @@ def _sync_check(
         def _cmp_tree(a: Path, b: Path, label: str) -> None:
             """Compare two directory trees byte-for-byte, recording per-file drift.
 
-            Byte-compiled and OS-noise files are ignored on both sides (they are
-            never rendered), so a locally-run asset script cannot spoof drift.
+            Byte-compiled and OS-noise files are ignored on both sides (they are never rendered), so a locally-run asset script cannot spoof drift.
             """
 
             def _files(root: Path) -> dict[Path, bytes]:
