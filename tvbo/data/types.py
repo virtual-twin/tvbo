@@ -2917,7 +2917,7 @@ class TimeSeries:
         labels_dimensions={},
         units=None,
     ):
-        """ labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] }
+        """labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] }
         units: Dictionary mapping dimension names to their units, e.g., {'time': 'ms', 'state': 'mV', 'region': None, 'mode': None}
         """
         # 1. Essential Data
@@ -3124,7 +3124,6 @@ class TimeSeries:
         list_of_indices_for_labels = self._get_indices_for_labels(list_of_labels)
         return self.get_subspace_by_index(list_of_indices_for_labels)
 
-
     def copy(self):
         """Return a deep copy of the current instance."""
         return deepcopy(self)
@@ -3187,7 +3186,6 @@ class TimeSeries:
             )
         elif dimension == "state":
             return self.duplicate(data=self.data * scale_factor, units=new_units)
-
 
     def duplicate(self, **kwargs):
         """
@@ -4494,7 +4492,6 @@ class TimeSeries:
 #             )
 
 
-
 #         # Initialize figure and axes
 #         fig, (ax, ax_ts) = plt.subplots(1, 2, layout="compressed", figsize=(8, 4))
 #         sc = ax.scatter(x, y, c=data[0], cmap="viridis", s=node_size, vmin=0, vmax=1)
@@ -4513,11 +4510,9 @@ class TimeSeries:
 #         (avg_line,) = ax_ts.plot([], [], color="red", linewidth=2, label="Average")
 
 
-
 #         # Create animation
 # ani = FuncAnimation( fig, update, frames=len(time), interval=interval, blit=False
 #         )
-
 
 
 @register_pytree_node_class
