@@ -260,10 +260,16 @@ def test_every_mask_spelling_scopes_the_reduction_at_runtime(spelling):
 
 @pytest.mark.parametrize("spelling", sorted(SPELLINGS))
 def test_every_mask_spelling_reaches_the_kit_unchanged(spelling):
-    """Codegen and runtime resolve one expression, so a kit cannot normalise differently."""
+    """Codegen and runtime resolve one expression, so a kit cannot normalise differently.
+
+    A masked expression is also a use of its *base* symbol: `mean(weight[weight > 0])`
+    binds `weight`, not a symbol literally named `weight[weight > 0]`. Checking the raw
+    free-symbol text rejected that as undeclared and refused to render the recipe.
+    """
     net = Network.from_matrix(SPARSE, transforms=[{"name": "weight", **SPELLINGS[spelling]}])
-    expr, _ = weight_transform_codegen(net)[0][0]
+    expr, chained = weight_transform_codegen(net)[0][0]
     assert "jnp.where" in expr, expr
+    assert chained == ["weight = weights"]
     assert np.allclose(_apply_emitted(net, SPARSE), MASKED_MEAN)
 
 
