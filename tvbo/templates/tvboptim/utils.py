@@ -924,16 +924,19 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
             transforms.append((f"{alias}(weights{args})", []))
             continue
 
-        exp = network.transform_expression(t)
+        exp, masks = network.transform_expression(t)
         if exp is None:
             continue
         expr = render_expression(exp, format="jax")
-        if "jsp." in expr:
+        mask_lines = [
+            f"{symbol} = {render_expression(mask, format='jax')}" for symbol, mask in masks.items()
+        ]
+        if any("jsp." in line for line in [expr, *mask_lines]):
             _add_const("jsp", "import jax.scipy as jsp")
-        chained, constant = emit_env(edge_symbols(exp), _resolver(t), target="weight")
+        chained, constant = emit_env(edge_symbols(exp, masks), _resolver(t), target="weight")
         for line in constant:
             _add_const(line.split(" = ", 1)[0], line)
-        transforms.append((expr, chained))
+        transforms.append((expr, chained + mask_lines))
     return transforms, const_env, "length" in labels_used
 
 

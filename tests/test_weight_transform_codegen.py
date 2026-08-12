@@ -269,7 +269,9 @@ def test_every_mask_spelling_reaches_the_kit_unchanged(spelling):
     net = Network.from_matrix(SPARSE, transforms=[{"name": "weight", **SPELLINGS[spelling]}])
     expr, chained = weight_transform_codegen(net)[0][0]
     assert "jnp.where" in expr, expr
-    assert chained == ["weight = weights"]
+    assert chained[0] == "weight = weights"
+    assert chained[1:] == ["_mask0 = jnp.greater(weight, 0)"]   # bound once, not per mention
+    assert expr.count("jnp.greater") == 0                       # the predicate is not re-emitted
     assert np.allclose(_apply_emitted(net, SPARSE), MASKED_MEAN)
 
 

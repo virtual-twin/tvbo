@@ -27,10 +27,21 @@ from __future__ import annotations
 import re
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from sympy import Basic, Function, Indexed, IndexedBase, Integer, Piecewise, oo, preorder_traversal
+from sympy import (
+    Basic,
+    Function,
+    Indexed,
+    IndexedBase,
+    Integer,
+    Piecewise,
+    Symbol,
+    oo,
+    preorder_traversal,
+)
 from sympy.logic.boolalg import Boolean
 
 _SUBSCRIPTED = re.compile(r"([A-Za-z_]\w*)\s*\[")
+MASK_PREFIX = "_mask"
 
 REDUCTIONS: Dict[str, Basic] = {
     "sum": Integer(0),
@@ -105,21 +116,37 @@ def lower_reductions(expr):
 
     ``mean`` becomes a kept-sum over a kept-count rather than a masked ``mean``, because
     an array library's ``mean`` divides by the full size no matter what it was handed.
+    That mentions the predicate twice, so each distinct one is replaced by a symbol the
+    caller binds once: ``create_network`` runs eagerly, and XLA never gets to CSE the
+    duplicate.
+
+    Returns:
+        A ``(lowered, mask_bindings)`` pair, mapping each mask symbol to its predicate.
     """
-    replacements = {}
+    replacements: Dict[Basic, Basic] = {}
+    bindings: Dict[Symbol, Basic] = {}
+
+    def _bind(mask):
+        for symbol, bound in bindings.items():
+            if bound == mask:
+                return symbol
+        symbol = Symbol(f"{MASK_PREFIX}{len(bindings)}")
+        bindings[symbol] = mask
+        return symbol
+
     for node in preorder_traversal(expr):
         head = getattr(getattr(node, "func", None), "__name__", None)
         if head not in REDUCTIONS or len(node.args) != 2 or not isinstance(node.args[1], Boolean):
             continue
         operand, mask = node.args
-        fill = REDUCTIONS[head]
-        kept = Piecewise((operand, mask), (fill, True))
+        symbol = _bind(mask)
+        kept = Piecewise((operand, symbol), (REDUCTIONS[head], True))
         if head == "mean":
-            counted = Function("sum")(Piecewise((Integer(1), mask), (Integer(0), True)))
+            counted = Function("sum")(Piecewise((Integer(1), symbol), (Integer(0), True)))
             replacements[node] = Function("sum")(kept) / counted
         else:
             replacements[node] = Function(head)(kept)
-    return expr.xreplace(replacements) if replacements else expr
+    return (expr.xreplace(replacements) if replacements else expr), bindings
 
 
 def prepare(expr, what: str = "transform"):
@@ -133,13 +160,17 @@ def prepare(expr, what: str = "transform"):
         what: How to name the transform in an error.
 
     Returns:
-        The lowered expression, ready for :func:`tvbo.codegen.code.render_expression`.
+        A ``(lowered, mask_bindings)`` pair, both ready for
+        :func:`tvbo.codegen.code.render_expression`. Bind each mask before the
+        expression that reads it.
 
     Raises:
         ValueError: A boolean subscript survived outside a reduction. Its output shape
             depends on the data, so there is nothing static to emit.
     """
-    lowered = _plain(lower_reductions(canonical_reductions(_plain(expr))))
+    lowered, bindings = lower_reductions(canonical_reductions(_plain(expr)))
+    lowered = _plain(lowered)
+    bindings = {symbol: _plain(mask) for symbol, mask in bindings.items()}
     for node in preorder_traversal(lowered):
         if isinstance(node, Indexed) and any(isinstance(i, Boolean) for i in node.indices):
             raise ValueError(
@@ -148,12 +179,19 @@ def prepare(expr, what: str = "transform"):
                 f"no static shape to emit; only a reduction over it does. Write the reduction "
                 f"explicitly, e.g. `mean({node.base}[{node.indices[0]}])`."
             )
-    return lowered
+    return lowered, bindings
 
 
-def edge_symbols(expr) -> List[str]:
-    """Names *expr* references, in sorted order, for the caller to resolve as edges."""
-    return sorted({str(s) for s in _plain(expr).free_symbols})
+def edge_symbols(expr, masks=None) -> List[str]:
+    """Names to resolve as edge attributes, in sorted order.
+
+    A mask symbol stands for a predicate the caller binds itself, so it is excluded while
+    the names *inside* that predicate are included — those are edge attributes too.
+    """
+    names = {str(s) for s in _plain(expr).free_symbols}
+    for mask in (masks or {}).values():
+        names |= {str(s) for s in _plain(mask).free_symbols}
+    return sorted(names - {str(symbol) for symbol in (masks or {})})
 
 
 def runtime_env(resolve, symbols: Sequence[str], jnp, jsp=None) -> Dict[str, object]:

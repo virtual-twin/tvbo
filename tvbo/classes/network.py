@@ -4775,12 +4775,13 @@ class Network(tvbo_datamodel.Network):
             func: The `Function` transform.
 
         Returns:
-            The substituted expression, or `None` when *func* declares no equation
-            (a callable-based transform) or the equation does not parse.
+            A `(expression, mask_bindings)` pair; the expression is `None` when *func*
+            declares no equation (a callable-based transform) or it does not parse. Each
+            mask binding is evaluated once, before the expression that reads it.
         """
         eq = getattr(func, "equation", None)
         if eq is None:
-            return None
+            return None, {}
         from tvbo.codegen.code import parse_eq
 
         arg_values: dict = {}
@@ -4795,7 +4796,7 @@ class Network(tvbo_datamodel.Network):
         rhs = str(getattr(eq, "rhs", eq) or "")
         exp = parse_eq(eq, local_dict=subscript_locals(rhs))
         if exp is None:
-            return None
+            return None, {}
         subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if arg_values.get(str(s)) is not None}
         exp = exp.subs(subs_map) if subs_map else exp
 
@@ -4867,13 +4868,15 @@ class Network(tvbo_datamodel.Network):
                 return fn(M, **kwargs)
 
         # Equation-based transform
-        exp = self.transform_expression(func)
+        exp, masks = self.transform_expression(func)
         if exp is None:
             return M
         from tvbo.codegen.code import render_expression
         from tvbo.codegen.transforms import edge_symbols, runtime_env
 
-        env = runtime_env(self._transform_operand(func, M), edge_symbols(exp), jnp, jsp)
+        env = runtime_env(self._transform_operand(func, M), edge_symbols(exp, masks), jnp, jsp)
+        for symbol, mask in masks.items():
+            env[str(symbol)] = eval(render_expression(mask, format="jax"), env)
         code_str = render_expression(exp, format="jax")
         if isinstance(code_str, str):
             M = eval(code_str, env)
