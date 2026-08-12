@@ -48,15 +48,15 @@ network:
   edges:
     - {source: 0, target: 1, weight: 0.5}
     - {source: 1, target: 0, weight: 0.5}
-coupling:
-  name: LinearCoupling
-  label: LinearCoupling
-  parameters:
-    a: {name: a, value: 0.01}
-  pre_expression: {rhs: "x_j"}
-  post_expression: {rhs: "a * gx"}
-  incoming_states: [x]
-  local_states: [x]
+  coupling:
+    LinearCoupling:
+      label: LinearCoupling
+      parameters:
+        a: {value: 0.01}
+      pre_expression: {rhs: "x_j"}
+      post_expression: {rhs: "a * gx"}
+      incoming_states: [x]
+      local_states: [x]
 integration:
   method: Heun
   duration: 20.0

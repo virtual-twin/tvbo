@@ -446,14 +446,16 @@ class OntologyAPI:
         Accepts either legacy ``model``/``connectivity`` keys or the current
         ``dynamics``/``network`` keys.  Model and coupling names are resolved
         via ``Dynamics.from_db`` / ``Coupling.from_db`` so that equations,
-        parameters, and state variables are fully populated.
+        parameters, and state variables are fully populated. A coupling named at
+        the top level is placed on the network it acts over, which is where the
+        schema declares one.
 
         Example metadata::
 
             {
                 "dynamics": "Generic2dOscillator",
-                "coupling": "Linear",
                 "network": {
+                    "coupling": {"long_range": {"iri": "tvbo:Linear"}},
                     "parcellation": {"atlas": {"name": "DesikanKilliany"}},
                     "tractogram": {"name": "dTOR"},
                 },
@@ -476,7 +478,7 @@ class OntologyAPI:
                 dyn_name = str(dyn_raw)
             md["dynamics"] = Dynamics.from_db(dyn_name)
 
-        # --- Resolve coupling name → full Coupling object ---
+        # --- Resolve a coupling named at the top level onto the network it acts over ---
         coup_raw = md.pop("coupling", None)
         if coup_raw is not None:
             if isinstance(coup_raw, str):
@@ -485,7 +487,8 @@ class OntologyAPI:
                 coup_name = coup_raw.get("name") or coup_raw.get("label", "Linear")
             else:
                 coup_name = str(coup_raw)
-            md["coupling"] = Coupling.from_db(coup_name)
+            network = md.setdefault("network", {})
+            network.setdefault("coupling", {})[coup_name] = Coupling.from_db(coup_name)
 
         # --- Normalise legacy connectivity → network ---
         if "connectivity" in md and "network" not in md:
