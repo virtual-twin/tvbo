@@ -1,8 +1,7 @@
 """Export-format registry.
 
 Single source of truth for *all* SimulationExperiment export backends:
-serialisation formats (YAML, openMINDS), reports (markdown, PDF), and code
-generators (TVB, JAX, tvboptim, Julia, NeuroML/LEMS, …).
+serialisation formats (YAML, openMINDS), reports (markdown, PDF), and code generators (TVB, JAX, tvboptim, Julia, NeuroML/LEMS, …).
 
 A backend self-registers an :class:`ExportFormat` describing:
 
@@ -12,10 +11,10 @@ A backend self-registers an :class:`ExportFormat` describing:
 * optional flags                            (``supports_with_data``, …)
 
 Adding a new backend = importing this module and calling
-:func:`register` once. Dispatch (`SimulationExperiment.render`),
-discovery (`/api/v1/experiments/formats`, OntologyAPI), and the
+:func:`register` once. Dispatch (`SimulationExperiment.render`), discovery (`/api/v1/experiments/formats`, OntologyAPI), and the
 extension/UI dropdown all light up automatically.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
@@ -31,6 +30,7 @@ Importer = Callable[..., Any]
 @dataclass(frozen=True)
 class ExportFormat:
     """Descriptor for an export backend."""
+
     key: str
     label: str
     extension: str
@@ -65,10 +65,7 @@ def register(fmt: ExportFormat, *, overwrite: bool = False) -> ExportFormat:
     if not overwrite:
         for k in keys:
             if k in _REGISTRY:
-                raise ValueError(
-                    f"Export format key '{k}' is already registered "
-                    f"(by '{_REGISTRY[k].key}')."
-                )
+                raise ValueError(f"Export format key '{k}' is already registered (by '{_REGISTRY[k].key}').")
     for k in keys:
         _REGISTRY[k.lower()] = fmt
     return fmt
@@ -121,10 +118,8 @@ def keys() -> Iterable[str]:
 def render(experiment, fmt_key: str, **kwargs) -> str:
     """Resolve *fmt_key*, invoke its renderer, prune its dead imports, and format it.
 
-    All three happen here rather than in each renderer so that every backend —
-    including the ones that render through an adapter and never touch the template
-    helpers — is held to the same house style. Pruning precedes formatting because it
-    edits statements and black only edits layout. See :mod:`tvbo.codegen.prune` and
+    All three happen here rather than in each renderer so that every backend — including the ones that render through an adapter and never touch the template
+    helpers — is held to the same house style. Pruning precedes formatting because it edits statements and black only edits layout. See :mod:`tvbo.codegen.prune` and
     :mod:`tvbo.codegen.style`.
     """
     fmt = resolve(fmt_key)
@@ -149,8 +144,7 @@ def _all_extensions(fmt: ExportFormat) -> tuple[str, ...]:
 def resolve_by_extension(suffix: str) -> ExportFormat:
     """Look up a format by file suffix (e.g. ``'.yaml'``, ``'.nml'``).
 
-    Raises ``ValueError`` if no format claims the suffix or if multiple
-    formats claim it ambiguously.
+    Raises ``ValueError`` if no format claims the suffix or if multiple formats claim it ambiguously.
     """
     suffix = suffix.lower()
     if not suffix.startswith("."):
@@ -160,10 +154,7 @@ def resolve_by_extension(suffix: str) -> ExportFormat:
         raise ValueError(f"No export format registered for suffix {suffix!r}.")
     if len(matches) > 1:
         keys_ = sorted({f.key for f in matches})
-        raise ValueError(
-            f"Suffix {suffix!r} is ambiguous — claimed by: {', '.join(keys_)}. "
-            f"Pass an explicit format."
-        )
+        raise ValueError(f"Suffix {suffix!r} is ambiguous — claimed by: {', '.join(keys_)}. Pass an explicit format.")
     return matches[0]
 
 

@@ -12,6 +12,7 @@ one validation source of truth (the test can no longer pass while the CLI fails,
 vice-versa) and avoids importing ``linkml`` here, whose enums are mutated to an
 unhashable form once ``tvbo`` is imported elsewhere in a combined test run.
 """
+
 import json
 from pathlib import Path
 
@@ -59,9 +60,7 @@ def validators():
     its target class via a ``$ref`` into the schema's ``$defs``.
     """
     if not SCHEMA_JSON.exists():
-        pytest.skip(
-            f"Generated JSON Schema missing at {SCHEMA_JSON}; run `make gen-linkml`."
-        )
+        pytest.skip(f"Generated JSON Schema missing at {SCHEMA_JSON}; run `make gen-linkml`.")
     full = json.loads(SCHEMA_JSON.read_text(encoding="utf-8"))
     defs = full.get("$defs", {})
     cache = {}
@@ -82,10 +81,6 @@ def test_database_yaml_validates(validators, path, target_class):
     if not isinstance(data, dict):
         pytest.skip(f"{path} is not a top-level mapping")
     messages = [
-        f"{e.message} in /{'/'.join(str(p) for p in e.absolute_path)}"
-        for e in validators[target_class].iter_errors(data)
+        f"{e.message} in /{'/'.join(str(p) for p in e.absolute_path)}" for e in validators[target_class].iter_errors(data)
     ]
-    assert not messages, (
-        f"{path.relative_to(REPO)} failed validation as {target_class}:\n  - "
-        + "\n  - ".join(messages)
-    )
+    assert not messages, f"{path.relative_to(REPO)} failed validation as {target_class}:\n  - " + "\n  - ".join(messages)

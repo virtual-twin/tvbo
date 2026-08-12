@@ -197,8 +197,7 @@ class TestDatamodel:
         public = [n for n in dir(dm) if not n.startswith("_")]
         boilerplate = sorted(n for n in public if not inspect.isclass(getattr(dm, n)))
         modules = [n for n in boilerplate if inspect.ismodule(getattr(dm, n))]
-        assert len(boilerplate) < 60, (
-            f"tvbo_datamodel leaks {len(boilerplate)} non-class public names: {boilerplate}")
+        assert len(boilerplate) < 60, f"tvbo_datamodel leaks {len(boilerplate)} non-class public names: {boilerplate}"
         assert len(modules) <= 2, f"tvbo_datamodel leaks modules: {modules}"
 
     def test_pydantic_module_importable(self):

@@ -30,7 +30,7 @@ import sys
 
 import yaml
 from rdflib import Graph, Literal, Namespace, URIRef
-from rdflib.namespace import OWL, RDF, RDFS, SKOS, XSD
+from rdflib.namespace import OWL, RDF, RDFS, SKOS
 
 from _bib import load_bib_records, sanitize_citekey
 
@@ -112,6 +112,7 @@ def _resolve_study(citekey: str) -> str | None:
 # (model, coupling, integrator, observation, ...) receives the same metadata
 # coverage including groundings.
 
+
 def _add_groundings(g: Graph, iri: URIRef, data: dict) -> None:
     for cur in data.get("grounding") or []:
         u = expand_curie(str(cur))
@@ -162,8 +163,7 @@ def emit_parameter(g: Graph, parent_iri: URIRef, key: str, p: dict) -> None:
     g.add((parent_iri, TVBO.hasParameter, iri))
 
 
-def emit_state_variable(g: Graph, parent_iri: URIRef, key: str,
-                        sv: dict) -> None:
+def emit_state_variable(g: Graph, parent_iri: URIRef, key: str, sv: dict) -> None:
     iri = URIRef(f"{parent_iri}/state_variables/{safe_local(key)}")
     symbol = sv.get("name", key)
     g.add((iri, RDF.type, OWL.NamedIndividual))
@@ -179,8 +179,7 @@ def emit_state_variable(g: Graph, parent_iri: URIRef, key: str,
     g.add((parent_iri, TVBO.hasStateVariable, iri))
 
 
-def emit_derived_variable(g: Graph, parent_iri: URIRef, key: str,
-                          dv: dict) -> None:
+def emit_derived_variable(g: Graph, parent_iri: URIRef, key: str, dv: dict) -> None:
     iri = URIRef(f"{parent_iri}/derived_variables/{safe_local(key)}")
     symbol = dv.get("name", key)
     g.add((iri, RDF.type, OWL.NamedIndividual))
@@ -272,8 +271,7 @@ def _record_label(data: dict, fallback: str) -> str:
 _FILENAME_LABEL_FOLDERS = {"atlases", "networks", "coordinate_spaces"}
 
 
-def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef,
-                        path: pathlib.Path) -> URIRef | None:
+def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef, path: pathlib.Path) -> URIRef | None:
     data = yaml.safe_load(path.read_text())
     if not isinstance(data, dict):
         return None
@@ -366,12 +364,18 @@ def build_graph() -> Graph:
     onto = URIRef("https://w3id.org/tvbo/data")
     g.add((onto, RDF.type, OWL.Ontology))
     g.add((onto, DCTERMS.title, Literal("TVB-O A-box (database individuals)")))
-    g.add((onto, DCTERMS.description, Literal(
-        "Generated A-box: one owl:NamedIndividual per YAML database entry. "
-        "Companion to ontology/tvb-o-struct.owl (T-box) and "
-        "ontology/tvb-o-axioms.ttl (axioms). Replaces the legacy "
-        "tvbo/data/ontology/tvb-o.owl A-box."
-    )))
+    g.add(
+        (
+            onto,
+            DCTERMS.description,
+            Literal(
+                "Generated A-box: one owl:NamedIndividual per YAML database entry. "
+                "Companion to ontology/tvb-o-struct.owl (T-box) and "
+                "ontology/tvb-o-axioms.ttl (axioms). Replaces the legacy "
+                "tvbo/data/ontology/tvb-o.owl A-box."
+            ),
+        )
+    )
     g.add((onto, DCTERMS.license, URIRef("https://creativecommons.org/licenses/by/4.0/")))
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/struct")))
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/axioms")))
@@ -392,6 +396,8 @@ def build_graph() -> Graph:
         for path in sorted((DB / folder).glob("*.yaml")):
             emit_generic_record(g, folder, cls_iri, path)
     return g
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--output", default=str(ROOT / "ontology" / "tvb-o-data.ttl"))

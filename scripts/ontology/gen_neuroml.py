@@ -83,8 +83,7 @@ def locate_core_types(dest: str) -> str:
     jars = glob.glob(os.path.join(libdir, "jNeuroML-*-jar-with-dependencies.jar"))
     if not jars:
         raise FileNotFoundError(
-            f"No jNeuroML-*-jar-with-dependencies.jar under {libdir}. "
-            "Install the neuroml extra: pip install tvbo[neuroml]."
+            f"No jNeuroML-*-jar-with-dependencies.jar under {libdir}. Install the neuroml extra: pip install tvbo[neuroml]."
         )
 
     def _version(path):
@@ -162,8 +161,8 @@ def _accumulate(component_types, name):
                 "multiple": bool(getattr(ch, "multiple", False)),
             }
         dyn = getattr(ct, "dynamics", None)
-        for os_block in (getattr(dyn, "on_starts", []) or []):
-            for sa in (getattr(os_block, "state_assignments", []) or []):
+        for os_block in getattr(dyn, "on_starts", []) or []:
+            for sa in getattr(os_block, "state_assignments", []) or []:
                 on_start[sa.variable] = sa.value
     self_ct = component_types[name]
     return {
@@ -207,10 +206,18 @@ def build_ttl(component_types, domain_names) -> Graph:
 
     g.add((NML_ONT, RDF.type, OWL.Ontology))
     g.add((NML_ONT, DCTERMS.title, Literal("TVB-O NeuroML-core reference", lang="en")))
-    g.add((NML_ONT, DCTERMS.description, Literal(
-        "OWL rendering of the NeuroML2 core LEMS ComponentType hierarchy: one class "
-        "per ComponentType, extends as rdfs:subClassOf, cross-referenced to the "
-        "canonical NeuroML type via skos:exactMatch.", lang="en")))
+    g.add(
+        (
+            NML_ONT,
+            DCTERMS.description,
+            Literal(
+                "OWL rendering of the NeuroML2 core LEMS ComponentType hierarchy: one class "
+                "per ComponentType, extends as rdfs:subClassOf, cross-referenced to the "
+                "canonical NeuroML type via skos:exactMatch.",
+                lang="en",
+            ),
+        )
+    )
     g.add((NML_ONT, DCTERMS.license, URIRef("https://creativecommons.org/licenses/by/4.0/")))
     g.add((NML_ONT, RDFS.seeAlso, URIRef("http://www.neuroml.org/schema/neuroml2")))
 
@@ -269,9 +276,12 @@ def main() -> int:
 
     domain_names = {n for n in all_types if _is_domain(n)}
     skipped = sorted(n for n in all_types if not _is_domain(n))
-    print(f"  {len(all_types)} ComponentTypes total; {len(domain_names)} domain, "
-          f"{len(skipped)} plumbing skipped: {', '.join(skipped[:8])}"
-          f"{' …' if len(skipped) > 8 else ''}", file=sys.stderr)
+    print(
+        f"  {len(all_types)} ComponentTypes total; {len(domain_names)} domain, "
+        f"{len(skipped)} plumbing skipped: {', '.join(skipped[:8])}"
+        f"{' …' if len(skipped) > 8 else ''}",
+        file=sys.stderr,
+    )
 
     g = build_ttl(all_types, domain_names)
     out = pathlib.Path(args.output)

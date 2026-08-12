@@ -18,9 +18,7 @@ from tvbo.utils import as_list, noise_sigma, normalize_params
 if TYPE_CHECKING:
     from tvbo.classes.network import Network
 
-# Integration method -> tvboptim native solver. Shared with the codegen templates
-# (which render `SOLVER_MAP[method]`) so a recipe that runs through the experiment
-# template also runs on the in-process heterogeneous path, on the same spellings.
+# Integration method -> tvboptim native solver. Shared with the codegen templates (which render `SOLVER_MAP[method]`) so a recipe that runs through the experiment template also runs on the in-process heterogeneous path, on the same spellings.
 SOLVER_MAP = {
     "euler": "Euler",
     "heun": "Heun",
@@ -63,11 +61,7 @@ def _build_graph(network: "Network", delays: bool = True, max_delay: float | Non
         cs = getattr(network, "conduction_speed", None)
         speed = float(getattr(cs, "value", cs)) if cs is not None else 3.0
         # Size the bound the way DenseLengthGraph measures the largest delay: elementwise
-        # ``lengths / speed`` then max — NOT ``max(lengths) / speed``. The two are equal in
-        # exact arithmetic but differ by a float32 ULP for some speeds, landing the bound just
-        # under the graph's own ``max(delay)`` and tripping its strict ``bound >= max(delay)``
-        # check (fails for scattered conduction speeds, e.g. a sweep cell at v=5 while v=6
-        # passes). A hair of headroom guarantees the buffer is never an ULP short.
+        # ``lengths / speed`` then max — NOT ``max(lengths) / speed``. The two are equal in exact arithmetic but differ by a float32 ULP for some speeds, landing the bound just under the graph's own ``max(delay)`` and tripping its strict ``bound >= max(delay)`` check (fails for scattered conduction speeds, e.g. a sweep cell at v=5 while v=6 passes). A hair of headroom guarantees the buffer is never an ULP short.
         if max_delay is not None:
             bound = max_delay
         elif speed > 0:
@@ -102,8 +96,7 @@ def _build_graph(network: "Network", delays: bool = True, max_delay: float | Non
 def _extract_noise(dyn_obj):
     """Extract tvboptim noise from tvbo dynamics state variable metadata.
 
-    Iterates state variables looking for noise definitions.  Returns a
-    tvboptim ``AdditiveNoise`` or ``MultiplicativeNoise`` when found,
+    Iterates state variables looking for noise definitions.  Returns a tvboptim ``AdditiveNoise`` or ``MultiplicativeNoise`` when found,
     ``None`` otherwise.
     """
     svs = getattr(dyn_obj, "state_variables", None)
@@ -115,8 +108,7 @@ def _extract_noise(dyn_obj):
     additive = True
 
     for sv_name, sv in svs.items():
-        # A state variable whose noise declares no amplitude (or zero) is not a noise
-        # target, exactly as in the codegen template; never a fabricated default.
+        # A state variable whose noise declares no amplitude (or zero) is not a noise target, exactly as in the codegen template; never a fabricated default.
         sv_sigma = noise_sigma(getattr(sv, "noise", None))
         if not sv_sigma:
             continue
@@ -155,8 +147,7 @@ def to_tvboptim(
 ):
     """Export a tvbo Network to a tvboptim Network or graph object.
 
-    When *dynamics* / *coupling* are not provided explicitly, they are
-    auto-extracted from ``network.dynamics`` and ``network.coupling``
+    When *dynamics* / *coupling* are not provided explicitly, they are auto-extracted from ``network.dynamics`` and ``network.coupling``
     using each object's ``.execute('tvboptim')`` method.
 
     Parameters
@@ -220,8 +211,7 @@ def to_tvboptim(
         dyn_obj = None
 
     # Auto-extract coupling from network if not provided.
-    # Resolution: use CouplingInput.source to remap function keys → CI keys,
-    # then fall back to name matching, then positional order.
+    # Resolution: use CouplingInput.source to remap function keys → CI keys, then fall back to name matching, then positional order.
     if coupling is None and hasattr(network, "coupling") and network.coupling:
         coup_dict = {key: coup_obj.execute("tvboptim") for key, coup_obj in network.coupling.items()}
         if dynamics is not None and hasattr(dynamics, "COUPLING_INPUTS"):
@@ -263,8 +253,7 @@ def to_tvboptim(
         noise = _extract_noise(dyn_obj)
 
     # Enable differentiable (interpolated) delays on every delayed coupling:
-    # linear history interpolation makes d(state)/d(delay) informative, so
-    # conduction speed becomes gradient-optimisable.
+    # linear history interpolation makes d(state)/d(delay) informative, so conduction speed becomes gradient-optimisable.
     if interpolate_delays:
         if isinstance(coupling, dict):
             _coups = coupling.values()
@@ -295,10 +284,8 @@ def to_tvboptim(
 def is_heterogeneous(experiment) -> bool:
     """True when the experiment's nodes run more than one distinct dynamics.
 
-    The trigger for the heterogeneous tvboptim path: a homogeneous experiment
-    (one model on every node) uses :func:`to_tvboptim`, a heterogeneous one
-    :func:`to_heterogeneous_network`. Delegates to the adapter-layer predicate
-    every codegen backend already uses, so this path agrees with them about the
+    The trigger for the heterogeneous tvboptim path: a homogeneous experiment (one model on every node) uses :func:`to_tvboptim`, a heterogeneous one
+    :func:`to_heterogeneous_network`. Delegates to the adapter-layer predicate every codegen backend already uses, so this path agrees with them about the
     nodes that declare no ``dynamics`` and fall back to the experiment's.
     """
     from tvbo.adapters.base import BaseAdapter
@@ -309,10 +296,8 @@ def is_heterogeneous(experiment) -> bool:
 def _source_readout(source_var, state_names, group_name):
     """Map an ``Edge.source_var`` to a ``SignalRoute`` source (a state name).
 
-    P1 supports state variables, including the ``<state>_out`` spelling (the
-    node's coupling-source value, which for a plain neural mass equals the
-    state). A ``source_var`` that names a derived/output variable — one that
-    depends on the node's coupling input, e.g. a relay's ``r_eff`` — needs the
+    P1 supports state variables, including the ``<state>_out`` spelling (the node's coupling-source value, which for a plain neural mass equals the
+    state). A ``source_var`` that names a derived/output variable — one that depends on the node's coupling input, e.g. a relay's ``r_eff`` — needs the
     upstream readout-signature change and is deferred (see plan problem #2).
     """
     states = tuple(state_names)
@@ -340,25 +325,18 @@ def _target_input(target_var, dyn_optim, group_name):
         return inputs[0]
     if target_var in inputs:
         return target_var
-    raise ValueError(
-        f"target_var {target_var!r} is not a coupling input {inputs} on "
-        f"group {group_name!r}"
-    )
+    raise ValueError(f"target_var {target_var!r} is not a coupling input {inputs} on group {group_name!r}")
 
 
 def _resolve_coupling(network, edge):
     """The ``Coupling`` governing an edge, as ``(name, object)``.
 
-    ``Edge.coupling`` is a name-reference slot (``inlined: false``), so it arrives
-    either as a bare name — resolved here against the network's declared
+    ``Edge.coupling`` is a name-reference slot (``inlined: false``), so it arrives either as a bare name — resolved here against the network's declared
     couplings — or as an inline ``Coupling`` that ``Network.__init__`` reattached.
-    An edge that names no coupling inherits the network's own, when the network
-    declares exactly one. Returns ``(None, None)`` when nothing is declared
+    An edge that names no coupling inherits the network's own, when the network declares exactly one. Returns ``(None, None)`` when nothing is declared
     anywhere, i.e. the default linear route.
     """
-    declared = {
-        getattr(c, "name", None): c for c in as_list(getattr(network, "coupling", None))
-    }
+    declared = {getattr(c, "name", None): c for c in as_list(getattr(network, "coupling", None))}
     ref = getattr(edge, "coupling", None)
     if ref is None:
         return next(iter(declared.items())) if len(declared) == 1 else (None, None)
@@ -370,12 +348,9 @@ def _resolve_coupling(network, edge):
 def _route_coupling(coupling, name, delayed: bool):
     """Build a selector-free ``PrePostCoupling`` for a route.
 
-    A ``SignalRoute`` owns its source/local readouts, so the coupling must be
-    constructed without ``incoming_states`` / ``local_states``. Linear coupling
-    lowers directly — tvbo's ``a``/``b`` (``post_expression: a*gx + b``) are
-    tvboptim's ``G``/``b``. Any other coupling function needs a selector-free
-    emission of its own expressions, which is not implemented yet; it raises
-    rather than being silently simulated as linear.
+    A ``SignalRoute`` owns its source/local readouts, so the coupling must be constructed without ``incoming_states`` / ``local_states``. Linear coupling
+    lowers directly — tvbo's ``a``/``b`` (``post_expression: a*gx + b``) are tvboptim's ``G``/``b``. Any other coupling function needs a selector-free
+    emission of its own expressions, which is not implemented yet; it raises rather than being silently simulated as linear.
     """
     from tvboptim.experimental.network_dynamics.coupling import (
         DelayedLinearCoupling,
@@ -407,12 +382,9 @@ def to_heterogeneous_network(
 ):
     """Build a tvboptim ``HeterogeneousNetwork`` from a heterogeneous tvbo Network.
 
-    Nodes are partitioned into ``DynamicsGroup``s by their referenced dynamics
-    (graph order = node order); edges are collapsed into ``SignalRoute``s keyed by
-    ``(coupling NAME, target_var, delayed)`` — keying on object identity would split
-    two edges naming one coupling into two routes, applying the shared graph twice. The shared graph is built by the same
-    :func:`_build_graph` the homogeneous path uses, so the connectome weights
-    (with signs) and delays carry over unchanged.
+    Nodes are partitioned into ``DynamicsGroup``s by their referenced dynamics (graph order = node order); edges are collapsed into ``SignalRoute``s keyed by
+    ``(coupling NAME, target_var, delayed)`` — keying on object identity would split two edges naming one coupling into two routes, applying the shared graph twice. The shared graph is built by the same
+    :func:`_build_graph` the homogeneous path uses, so the connectome weights (with signs) and delays carry over unchanged.
 
     Parameters
     ----------
@@ -441,8 +413,7 @@ def to_heterogeneous_network(
     dyn_lib = dict(dynamics_lib or getattr(network, "dynamics", None) or {})
 
     # --- partition nodes into groups by dynamics name (graph order = node order)
-    # `Node.id` is a unique identifier, not a position, and edges address nodes by
-    # id — so map ids to graph indices rather than conflating the two.
+    # `Node.id` is a unique identifier, not a position, and edges address nodes by id — so map ids to graph indices rather than conflating the two.
     node_index = network.node_index_map()
     group_idx: dict[str, list[int]] = {}
     node_group: list[str] = []
@@ -450,21 +421,15 @@ def to_heterogeneous_network(
         dname = node_dynamics_name(node, default_dynamics)
         if dname is None:
             raise ValueError(
-                f"node {i} ({getattr(node, 'label', '?')}) has no dynamics and the "
-                "experiment declares none to fall back on"
+                f"node {i} ({getattr(node, 'label', '?')}) has no dynamics and the experiment declares none to fall back on"
             )
         group_idx.setdefault(dname, []).append(i)
         node_group.append(dname)
 
     if delays is None:
-        # Infer from network-level coupling AND edge-level coupling: `delayed` may be
-        # declared only on edges (Edge.coupling), and `coupling` can be a plain list
-        # rather than a keyed dict — `.values()` would raise AttributeError on it.
-        delays = any(
-            getattr(c, "delayed", False) for c in as_list(getattr(network, "coupling", None))
-        ) or any(
-            getattr(getattr(e, "coupling", None), "delayed", False)
-            for e in (getattr(network, "edges", None) or [])
+        # Infer from network-level coupling AND edge-level coupling: `delayed` may be declared only on edges (Edge.coupling), and `coupling` can be a plain list rather than a keyed dict — `.values()` would raise AttributeError on it.
+        delays = any(getattr(c, "delayed", False) for c in as_list(getattr(network, "coupling", None))) or any(
+            getattr(getattr(e, "coupling", None), "delayed", False) for e in (getattr(network, "edges", None) or [])
         )
     graph = _build_graph(network, delays=delays, max_delay=max_delay)
 
@@ -474,10 +439,7 @@ def to_heterogeneous_network(
     for dname, idxs in group_idx.items():
         dyn_obj = dyn_lib.get(dname)
         if dyn_obj is None:
-            raise ValueError(
-                f"dynamics {dname!r} not found; pass dynamics_lib or set "
-                "network.dynamics[{dname!r}]"
-            )
+            raise ValueError(f"dynamics {dname!r} not found; pass dynamics_lib or set network.dynamics[{{dname!r}}]")
         D = dyn_obj.execute("tvboptim")
         optim_dyn[dname] = D
         groups[dname] = DynamicsGroup(
@@ -494,8 +456,7 @@ def to_heterogeneous_network(
             continue  # template/matrix edges live entirely in graph.weights
         if s not in node_index or t not in node_index:
             raise ValueError(
-                f"edge {s} -> {t} references a node id that the network does not "
-                f"declare (known ids: {sorted(node_index)})"
+                f"edge {s} -> {t} references a node id that the network does not declare (known ids: {sorted(node_index)})"
             )
         sg, tg = node_group[node_index[s]], node_group[node_index[t]]
         cname, ccoup = _resolve_coupling(network, edge)
@@ -529,17 +490,13 @@ def to_heterogeneous_network(
 def _heterogeneous_solution_to_dataarray(sol, het, network):
     """Assemble a ``HeterogeneousSolution`` into ONE labeled xarray ``DataArray``.
 
-    Groups carry different state variables, so the ``variable`` axis is the
-    ordered UNION of every group's variable names and a node holds ``NaN`` for
-    variables its group lacks. Dims and coords are written directly in the
-    canonical tvbo layout ``(time, variable, node, mode)`` — the final container
+    Groups carry different state variables, so the ``variable`` axis is the ordered UNION of every group's variable names and a node holds ``NaN`` for
+    variables its group lacks. Dims and coords are written directly in the canonical tvbo layout ``(time, variable, node, mode)`` — the final container
     is correctly keyed at assembly time, with no positional reshaping or
     ``TimeSeries`` round-trip downstream.
 
-    ``sol.to_graph`` owns the group -> graph-node scatter and its NaN fill, so the
-    ordering contract stays on the tvboptim side. Variables are written into a
-    preallocated container rather than stacked, which would hold a second full copy
-    of the result while it copies.
+    ``sol.to_graph`` owns the group -> graph-node scatter and its NaN fill, so the ordering contract stays on the tvboptim side. Variables are written into a
+    preallocated container rather than stacked, which would hold a second full copy of the result while it copies.
     """
     import xarray as xr
 
@@ -568,10 +525,8 @@ def _heterogeneous_solution_to_dataarray(sol, het, network):
 def _declared_covariance(dyn_obj, context=None):
     """The one ``(covariance, axis)`` a dynamics declares, or ``(None, None)``.
 
-    Resolved through ``param_io`` so the matrix carries the same provenance a
-    parameter does — a literal, a file, or (the usual case) a ``producer:``. Every
-    noisy state variable must agree on the structure: tvboptim draws one Wiener block
-    per step for all of them, so two different covariances cannot both be imposed on
+    Resolved through ``param_io`` so the matrix carries the same provenance a parameter does — a literal, a file, or (the usual case) a ``producer:``. Every
+    noisy state variable must agree on the structure: tvboptim draws one Wiener block per step for all of them, so two different covariances cannot both be imposed on
     it, and silently honouring one would change the science on the other.
     """
     from tvbo.data import param_io
@@ -605,10 +560,8 @@ def _declared_covariance(dyn_obj, context=None):
 def _correlated_noise_factors(lib, het, context=None):
     """Per-group covariance factors for every group whose dynamics declares one.
 
-    Groups are named after their dynamics, so the library key *is* the group key. Each
-    group keeps its own factor rather than one winning globally: a heterogeneous
-    network may legitimately drive its groups with different processes, and a group
-    that declares no covariance must keep its independent increment.
+    Groups are named after their dynamics, so the library key *is* the group key. Each group keeps its own factor rather than one winning globally: a heterogeneous
+    network may legitimately drive its groups with different processes, and a group that declares no covariance must keep its independent increment.
 
     Returns ``(factors_by_group, axis)``, or ``(None, None)`` when nothing is declared.
     """
@@ -644,10 +597,8 @@ def _correlated_noise_factors(lib, het, context=None):
 def _seed_group_noise(config, het, seed: int) -> None:
     """Seed every noisy group's PRNG from the experiment's resolved seed.
 
-    ``prepare`` leaves each group on tvboptim's default ``jax.random.key(0)``, so
-    without this the declared ``execution.random_seed`` is ignored and two groups
-    of matching shape draw byte-identical noise. Folding the group's index into
-    one base key gives each an independent stream that still reproduces from the
+    ``prepare`` leaves each group on tvboptim's default ``jax.random.key(0)``, so without this the declared ``execution.random_seed`` is ignored and two groups
+    of matching shape draw byte-identical noise. Folding the group's index into one base key gives each an independent stream that still reproduces from the
     declared seed.
     """
     import jax
@@ -662,12 +613,10 @@ def _seed_group_noise(config, het, seed: int) -> None:
 def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kwargs):
     """Run a heterogeneous ``SimulationExperiment`` on tvboptim, in process.
 
-    Builds a ``HeterogeneousNetwork`` from the experiment's network, integrates
-    with a native fixed-step solver, and returns an ``ExperimentResult`` whose
+    Builds a ``HeterogeneousNetwork`` from the experiment's network, integrates with a native fixed-step solver, and returns an ``ExperimentResult`` whose
     integration ``TimeSeries`` carries a per-group variable union (see
     :func:`_heterogeneous_solution_to_dataarray`). This is the P1 path that lets
-    ``exp.run("tvboptim")`` handle heterogeneous networks without the codegen
-    experiment template (that is a later milestone). *seed* overrides the
+    ``exp.run("tvboptim")`` handle heterogeneous networks without the codegen experiment template (that is a later milestone). *seed* overrides the
     recipe's ``execution.random_seed``. Unknown ``kwargs`` (e.g. ``benchmark``,
     ``mode``) are accepted and ignored.
     """
@@ -691,8 +640,7 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
     method = "heun" if method is None else str(getattr(method, "text", method)).lower()
     if method not in SOLVER_MAP:
         raise NotImplementedError(
-            f"integration method {method!r} has no heterogeneous tvboptim solver; "
-            f"declared one of {sorted(SOLVER_MAP)}"
+            f"integration method {method!r} has no heterogeneous tvboptim solver; declared one of {sorted(SOLVER_MAP)}"
         )
     n_steps = max(1, int(round(dur / dt)))
     solver = getattr(solvers, SOLVER_MAP[method])(block_size=min(100, n_steps))

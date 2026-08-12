@@ -8,8 +8,7 @@
 """
 # Graph-based representation of the ontology.
 
-This module contains functions for representing ontology-based structures
-as graphs, and various utilities for manipulating and visualizing these graphs.
+This module contains functions for representing ontology-based structures as graphs, and various utilities for manipulating and visualizing these graphs.
 
 ## Functions:
 
@@ -132,8 +131,7 @@ def onto2graph(
         if add_object_properties:
             for prop in props["object_properties"]:
                 p, o = next(iter(prop.items()))
-                # skip data-valued properties whose object is a literal/datatype (e.g. a
-                # float or xsd datatype) rather than an ontology entity — these are not graph edges
+                # skip data-valued properties whose object is a literal/datatype (e.g. a float or xsd datatype) rather than an ontology entity — these are not graph edges
                 if p in ["has_data_type", "has_dependency"] or not hasattr(o, "name") or o.name == "Thing":
                     continue
                 object_id = o.storid if storid else (o if not object2string else o.label.first())
@@ -167,8 +165,7 @@ def onto2graph(
                         type="is_instance_of",
                     )
 
-        # Connect individuals via their object properties (e.g. a clinical study ->
-        # the clinical domain it applies to and the node-dynamics model it uses).
+        # Connect individuals via their object properties (e.g. a clinical study -> the clinical domain it applies to and the node-dynamics model it uses).
         if add_object_properties:
             for prop in i.get_properties():
                 if isinstance(prop, str):
@@ -181,7 +178,11 @@ def onto2graph(
                     if not hasattr(o, "storid") or not hasattr(o, "name") or o.name == "Thing":
                         continue
                     target_id = o.storid if storid else (o if not object2string else (o.label.first() or str(o)))
-                    property_id = prop.storid if storid else (prop if not object2string else (prop.label.first() if prop.label else prop.name))
+                    property_id = (
+                        prop.storid
+                        if storid
+                        else (prop if not object2string else (prop.label.first() if prop.label else prop.name))
+                    )
                     if not edge_exists(nx_graph, individual_id, target_id, edge_type=prop):
                         nx_graph.add_edge(individual_id, target_id, type=property_id)
 
@@ -388,8 +389,7 @@ def subset2graph(
 ) -> nx.MultiDiGraph:
     """Build a directed multigraph from a subset of ontology classes.
 
-    Each class in `subset` becomes a node with `is_a` edges to its parent
-    classes and, optionally, edges derived from object-property restrictions and
+    Each class in `subset` becomes a node with `is_a` edges to its parent classes and, optionally, edges derived from object-property restrictions and
     links from individuals that reference the class.
 
     Args:
@@ -441,16 +441,13 @@ def subset2graph(
         for edge in edges_to_add:
             G.add_edge(*edge)
 
-    # if not expand_nodes:
-    #     G = G.subgraph(subset)
     return G
 
 
 def hierarchy_graph(G: nx.MultiDiGraph) -> nx.MultiDiGraph:
     """Extract the `is_a` hierarchy of a graph into a new multigraph.
 
-    Copies only the edges whose `type` attribute equals `"is_a"`, together with
-    their incident nodes and attributes, dropping all object-property and other
+    Copies only the edges whose `type` attribute equals `"is_a"`, together with their incident nodes and attributes, dropping all object-property and other
     relation edges.
 
     Args:
@@ -474,10 +471,8 @@ def hierarchy_graph(G: nx.MultiDiGraph) -> nx.MultiDiGraph:
 def model2graph(model) -> nx.MultiDiGraph:
     """Build a dependency graph of a model's dynamics components.
 
-    Resolves `model` (by name if given as a string), walks its descendant
-    classes, and keeps only those categorised as a `Parameter`, `StateVariable`,
-    `TimeDerivative`, `Function`, or `ConditionalDerivedVariable`. Each retained
-    class becomes a node tagged with its category, with `is_a` edges to parent
+    Resolves `model` (by name if given as a string), walks its descendant classes, and keeps only those categorised as a `Parameter`, `StateVariable`,
+    `TimeDerivative`, `Function`, or `ConditionalDerivedVariable`. Each retained class becomes a node tagged with its category, with `is_a` edges to parent
     classes and object-property edges to other in-model classes.
 
     Args:
@@ -525,25 +520,10 @@ def model2graph(model) -> nx.MultiDiGraph:
                 # print(cls, isa.property.name, isa.value)
                 G.add_edge(cls, isa.value, type=isa.property.name)
 
-        # for isa in cls.is_a:
-        #     if isinstance(isa, owl.ThingClass) and isa in model.descendants(
-        #         include_self=False
-        #     ):
-        #         G.add_edge(cls, isa, type=isa.property)
-
         # if isinstance(isa, owl.Restriction) and isa.value in model.descendants(
         #     include_self=False
         # ):
 
-        # if isa.value in list(model.descendants(include_self=False)):
-        #     if isinstance(isa.property, owl.prop.DataPropertyClass):
-        #         continue
-        #         # print(type(isa.property))
-        #         # if isinstance(isa.property, owl.ObjectPropertyClass):
-        #         #     # print(cls, isa.value, isa.property)
-        # elif hasattr(isa, "property"):
-        #     include_nodes.append(isa.value)
-        #     G.add_edge(cls, isa.value, type=isa.property.name)
     G = G.subgraph(include_nodes)
     # isolated = list(nx.isolates(G))
     G = G.copy()
@@ -557,10 +537,8 @@ def adjust_positions(
 ) -> Dict[Any, np.ndarray]:
     """Nudge node positions apart or together along the chosen axes.
 
-    Compares every pair of points and, where their separation along an axis is
-    below (outward mode) or above (inward mode) a threshold expressed as a
-    percentage of the layout span, shifts the two points relative to each other
-    to enforce the spacing.
+    Compares every pair of points and, where their separation along an axis is below (outward mode) or above (inward mode) a threshold expressed as a
+    percentage of the layout span, shifts the two points relative to each other to enforce the spacing.
 
     Args:
         pos: Mapping from node to its 2-D position array.
@@ -613,8 +591,7 @@ def adjust_positions(
 def labels_as_symbols(G: nx.Graph) -> Dict[Any, str]:
     """Map graph nodes to LaTeX-rendered symbol labels.
 
-    For each node exposing a non-empty `symbol` annotation, the label is that
-    symbol typeset as inline LaTeX (e.g. `$x$`); nodes without a symbol map to
+    For each node exposing a non-empty `symbol` annotation, the label is that symbol typeset as inline LaTeX (e.g. `$x$`); nodes without a symbol map to
     themselves.
 
     Args:

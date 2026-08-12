@@ -50,8 +50,9 @@ def test_uniform_sigma_is_unchanged_by_the_fold():
     C = np.array([[1.0, 0.3, 0.1], [0.3, 1.0, 0.2], [0.1, 0.2, 1.0]])
     s = np.full(3, 0.02)
     assert np.array_equal(covariance_factor(C) @ np.diag(s), np.diag(s) @ covariance_factor(C))
-    assert np.allclose(covariance_factor(fold_amplitudes(C, s)) @ covariance_factor(fold_amplitudes(C, s)).T,
-                       np.diag(s) @ C @ np.diag(s))
+    assert np.allclose(
+        covariance_factor(fold_amplitudes(C, s)) @ covariance_factor(fold_amplitudes(C, s)).T, np.diag(s) @ C @ np.diag(s)
+    )
 
 
 def test_fold_rejects_a_length_mismatch():

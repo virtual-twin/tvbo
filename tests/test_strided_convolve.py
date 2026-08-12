@@ -54,7 +54,7 @@ def test_byte_identical_to_windowed_matmul(signal):
 
     n_valid = x.shape[0] - L + 1
     kept = np.arange(s, n_valid, s)
-    windows = np.stack([x[j:j + L] for j in kept], axis=0)  # (n_kept, L, N)
+    windows = np.stack([x[j : j + L] for j in kept], axis=0)  # (n_kept, L, N)
     ref = np.tensordot(k[::-1], windows, axes=([0], [1]))
 
     assert got.shape == ref.shape

@@ -167,9 +167,7 @@ class TestObservationSampleCountConsistency:
         if len(counts) < 2:
             pytest.skip("Need >= 2 backends installed to compare sampling")
 
-        assert len(set(counts.values())) == 1, (
-            f"TemporalAverage sample count diverges across backends: {counts}"
-        )
+        assert len(set(counts.values())) == 1, f"TemporalAverage sample count diverges across backends: {counts}"
 
     @pytest.mark.backend_tvboptim
     @pytest.mark.skipif(not _HAVE_TVBOPTIM, reason="tvboptim not installed")
@@ -225,10 +223,7 @@ class TestTVBNetworkAcceptance:
             result = experiment.run("tvb")
         except ValueError as exc:
             if "is not available in the dataset" in str(exc):
-                pytest.fail(
-                    "TVB backend rejected a standard weights Network by demanding "
-                    f"a parcellation volume: {exc}"
-                )
+                pytest.fail(f"TVB backend rejected a standard weights Network by demanding a parcellation volume: {exc}")
             raise
 
         assert result is not None
@@ -236,6 +231,5 @@ class TestTVBNetworkAcceptance:
         assert hasattr(result, "time")
         bold_samples = _sample_count(result, "bold")
         assert bold_samples == _EXPECTED_BOLD_SAMPLES, (
-            f"Expected {_EXPECTED_BOLD_SAMPLES} BOLD samples on the weights "
-            f"network, got {bold_samples}"
+            f"Expected {_EXPECTED_BOLD_SAMPLES} BOLD samples on the weights network, got {bold_samples}"
         )

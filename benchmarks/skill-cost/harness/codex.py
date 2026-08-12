@@ -11,6 +11,7 @@ To implement:
   * ``run``: drive ``codex exec`` non-interactively with a JSON/experimental
     output mode and parse tokens/cost/turns from its event log.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -23,8 +24,7 @@ class CodexHarness(Harness):
 
     def prepare_workspace(self, workdir: Path, condition: str) -> None:
         raise NotImplementedError(
-            "CodexHarness is a stub. Install the Codex CLI and implement "
-            "AGENTS.md-based skill injection + event-log parsing."
+            "CodexHarness is a stub. Install the Codex CLI and implement AGENTS.md-based skill injection + event-log parsing."
         )
 
     def run(

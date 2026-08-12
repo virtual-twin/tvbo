@@ -18,6 +18,7 @@ runtime argument), so no connectivity source is required to check which class is
 one test additionally runs the emitted module so sparse/dense agreement is checked, not
 just the class name.
 """
+
 import copy
 
 import pytest
@@ -56,8 +57,7 @@ MINI_EXP = {
             }
         },
     },
-    "integration": {"method": "heun", "step_size": 0.1, "duration": 1.0,
-                    "transient_time": 0.0, "unit": "s"},
+    "integration": {"method": "heun", "step_size": 0.1, "duration": 1.0, "transient_time": 0.0, "unit": "s"},
 }
 
 
@@ -210,9 +210,7 @@ def test_sparse_with_tract_lengths_is_rejected():
     Rejected at codegen rather than silently downgraded, because a silent downgrade
     would quietly discard the memory characteristic the recipe explicitly asked for.
     """
-    exp = SimulationExperiment.from_file(
-        str(EXPERIMENTS_DIR / "JR_MEG_FrequencyGradient_Optimization.yaml")
-    )
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "JR_MEG_FrequencyGradient_Optimization.yaml"))
     exp.network.graph_representation = "sparse"
     with pytest.raises(ValueError, match="tract lengths"):
         exp.render_code("tvboptim")
@@ -224,8 +222,6 @@ def test_tract_length_network_is_dense_length_graph_by_default():
     DenseLengthGraph subclasses DenseDelayGraph; the distinction matters because only
     the length graph carries the live `speed` leaf a conduction_speed axis sweeps.
     """
-    exp = SimulationExperiment.from_file(
-        str(EXPERIMENTS_DIR / "JR_MEG_FrequencyGradient_Optimization.yaml")
-    )
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "JR_MEG_FrequencyGradient_Optimization.yaml"))
     code = exp.render_code("tvboptim")
     assert "DenseLengthGraph(" in code and "SparseGraph(" not in code

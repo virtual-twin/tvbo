@@ -1,15 +1,12 @@
 """Build a structural connectome from a tractogram + parcellation via MRtrix3.
 
-A thin wrapper around MRtrix3's ``tck2connectome``. Given a streamline tractogram
-and an integer-labelled parcellation image that already live in the *same* space,
-it returns the edge-weight (streamline-count) and mean-tract-length matrices. The
-inputs are assumed to be co-registered — this module does not register them.
+A thin wrapper around MRtrix3's ``tck2connectome``. Given a streamline tractogram and an integer-labelled parcellation image that already live in the *same* space,
+it returns the edge-weight (streamline-count) and mean-tract-length matrices. The inputs are assumed to be co-registered — this module does not register them.
 
-Assembling the matrices into a :class:`tvbo.classes.network.Network` and writing
-the ``…_desc-SC_relmat.h5`` + YAML sidecar happens in the caller (``tvbo network
-build``); this module only shells out to MRtrix and reads back the CSVs, so it is
-the single place the ``tck2connectome`` invocation is defined.
+Assembling the matrices into a :class:`tvbo.classes.network.Network` and writing the ``…_desc-SC_relmat.h5`` + YAML sidecar happens in the caller (``tvbo network
+build``); this module only shells out to MRtrix and reads back the CSVs, so it is the single place the ``tck2connectome`` invocation is defined.
 """
+
 from __future__ import annotations
 
 import shutil
@@ -55,8 +52,7 @@ def tck2connectome_commands(
 ) -> list[list[str]]:
     """Return the two ``tck2connectome`` argv lists (edge weights, then lengths).
 
-    The first call counts streamlines between each node pair (edge weights); the
-    second scales each streamline by its length and averages per edge to get mean
+    The first call counts streamlines between each node pair (edge weights); the second scales each streamline by its length and averages per edge to get mean
     tract lengths. Returned rather than run so callers can preview them (dry-run).
     """
     common: list[str] = []
@@ -75,8 +71,13 @@ def tck2connectome_commands(
     weights_cmd += common
 
     lengths_cmd = [
-        TCK2CONNECTOME, str(tractogram), str(parcellation), str(lengths_csv),
-        "-scale_length", "-stat_edge", "mean",
+        TCK2CONNECTOME,
+        str(tractogram),
+        str(parcellation),
+        str(lengths_csv),
+        "-scale_length",
+        "-stat_edge",
+        "mean",
     ] + common
 
     return [weights_cmd, lengths_cmd]
@@ -96,8 +97,14 @@ def run_tck2connectome(
 ) -> None:
     """Run ``tck2connectome`` twice: edge weights (count) then mean tract lengths."""
     for cmd in tck2connectome_commands(
-        tractogram, parcellation, weights_csv, lengths_csv, assignments_csv,
-        symmetric=symmetric, zero_diagonal=zero_diagonal, force=force,
+        tractogram,
+        parcellation,
+        weights_csv,
+        lengths_csv,
+        assignments_csv,
+        symmetric=symmetric,
+        zero_diagonal=zero_diagonal,
+        force=force,
         extra_args=extra_args,
     ):
         subprocess.run(cmd, check=True)
@@ -145,8 +152,14 @@ def connectome_from_tractogram(
         assignments_csv = tmpdir / "assignments.csv" if assignments_out else None
 
         run_tck2connectome(
-            tractogram, parcellation, weights_csv, lengths_csv, assignments_csv,
-            symmetric=symmetric, zero_diagonal=zero_diagonal, extra_args=extra_args,
+            tractogram,
+            parcellation,
+            weights_csv,
+            lengths_csv,
+            assignments_csv,
+            symmetric=symmetric,
+            zero_diagonal=zero_diagonal,
+            extra_args=extra_args,
         )
 
         weights = np.atleast_2d(np.loadtxt(weights_csv, delimiter=","))

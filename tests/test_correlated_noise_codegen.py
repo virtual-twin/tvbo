@@ -80,9 +80,7 @@ def _render(tmp_path, covariance_block):
     exp = SimulationExperiment.from_file(str(p))
     exp.configure()
     experiment_code = exp.render_code("tvboptim")
-    solver_code = templates.lookup.get_template(
-        "tvboptim/tvbo-tvboptim-solver.py.mako"
-    ).render(experiment=exp)
+    solver_code = templates.lookup.get_template("tvboptim/tvbo-tvboptim-solver.py.mako").render(experiment=exp)
     return experiment_code, solver_code
 
 
@@ -97,9 +95,7 @@ def test_declared_covariance_emits_the_correlated_solver(tmp_path):
     """Both codegen paths must wrap the solver — one alone would be dead code."""
     experiment_code, solver_code = _render(tmp_path, _COVARIANCE)
     for code in (experiment_code, solver_code):
-        assert "import CorrelatedNoiseSolver" in code or (
-            "CorrelatedNoiseSolver" in code and "covariance_factor" in code
-        )
+        assert "import CorrelatedNoiseSolver" in code or ("CorrelatedNoiseSolver" in code and "covariance_factor" in code)
         assert "CorrelatedNoiseSolver(" in code
         assert "axis='node'" in code or 'axis="node"' in code
         assert "[[1.0, 0.6], [0.6, 1.0]]" in code
@@ -146,9 +142,7 @@ def test_the_declared_covariance_reaches_the_integrated_trajectory(tmp_path):
         exp = SimulationExperiment.from_file(str(p))
         exp.configure()
         data = exp.run("tvboptim").integration.data
-        arr = np.asarray(
-            data.sel(variable="x") if "variable" in data.dims else data
-        ).squeeze()
+        arr = np.asarray(data.sel(variable="x") if "variable" in data.dims else data).squeeze()
         increments = np.diff(arr.reshape(arr.shape[0], -1), axis=0)
         return float(np.corrcoef(increments[:, 0], increments[:, 1])[0, 1])
 

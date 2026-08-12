@@ -15,10 +15,7 @@ from tests.functional.simulation_backends_shared import (
 # skipped on the non-TVB backends (see simulation_backends_shared._SKIP_NON_TVB)
 # and kept here with a longer per-test budget.
 _TVB_SLOW = {"ZerlautAdaptationSecondOrder"}
-_TVB_PARAMS = [
-    pytest.param(f, marks=pytest.mark.timeout(1800)) if f.stem in _TVB_SLOW else f
-    for f in TVB_MODEL_FILES
-]
+_TVB_PARAMS = [pytest.param(f, marks=pytest.mark.timeout(1800)) if f.stem in _TVB_SLOW else f for f in TVB_MODEL_FILES]
 
 
 @pytest.mark.backend_tvb

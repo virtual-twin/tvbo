@@ -63,13 +63,16 @@ def _observer(source="x", period=None, states=None, dvs=None, output=None, **obs
         dynamics=Dynamics(
             name="observer",
             state_variables={
-                n: StateVariable(name=n, equation=Equation(rhs=rhs), equation_type="recurrence",
-                                 **({} if init is None else {"initial_value": init}))
+                n: StateVariable(
+                    name=n,
+                    equation=Equation(rhs=rhs),
+                    equation_type="recurrence",
+                    **({} if init is None else {"initial_value": init}),
+                )
                 for n, (rhs, init) in states.items()
             },
             derived_variables={
-                n: DerivedVariable(name=n, equation=Equation(rhs=rhs), record=rec)
-                for n, (rhs, rec) in dvs.items()
+                n: DerivedVariable(name=n, equation=Equation(rhs=rhs), record=rec) for n, (rhs, rec) in dvs.items()
             },
             **({"output": output} if output else {}),
         ),
@@ -196,7 +199,10 @@ def _bw_reducer(period_steps, dt=1.0, n_var=1):
     red = resolve_reduction(obs, exp)
     red["period_steps"] = period_steps
     src = _OBS_TEMPLATE.get_def("render_recurrence_reduction").render(
-        red=red, name="bold", s_idx=0, dt=dt,
+        red=red,
+        name="bold",
+        s_idx=0,
+        dt=dt,
     )
     ns = {"jnp": jnp, "jax": jax}
     exec(compile(src, "<reducer>", "exec"), ns)
@@ -251,7 +257,7 @@ def test_the_reducer_is_block_decomposition_invariant(blocks):
     acc = init(data[0], n_steps)
     block = n_steps // blocks
     for start in range(0, n_steps, block):
-        acc = update(acc, data[start:start + block])
+        acc = update(acc, data[start : start + block])
     assert np.array_equal(np.asarray(finalize(acc)), ref)
 
 
@@ -265,13 +271,12 @@ def test_a_short_tail_block_advances_the_observer_without_emitting():
     init, update, finalize = _bw_reducer(period_steps)()
     acc = init(data[0], n_steps)
     for b in range(n_steps // period_steps):
-        acc = update(acc, data[b * period_steps:(b + 1) * period_steps])
-    acc = update(acc, data[(n_steps // period_steps) * period_steps:])
+        acc = update(acc, data[b * period_steps : (b + 1) * period_steps])
+    acc = update(acc, data[(n_steps // period_steps) * period_steps :])
     got = np.asarray(finalize(acc))
 
     assert got.shape == (n_steps // period_steps, n_node)
-    assert np.allclose(got, _tvboptim_bw(data[:, 0, :], period_steps * 1.0, 1.0)[:got.shape[0]],
-                       rtol=1e-12, atol=1e-14)
+    assert np.allclose(got, _tvboptim_bw(data[:, 0, :], period_steps * 1.0, 1.0)[: got.shape[0]], rtol=1e-12, atol=1e-14)
 
 
 def test_a_block_that_is_not_a_whole_number_of_periods_raises():
@@ -329,8 +334,7 @@ def test_a_state_only_readout_is_evaluated_once_per_sample():
     assert resolve_reduction(obs, _Exp())["output_per_step"] is False
 
     # ... whereas one that reads the source itself must stay per-step.
-    reads_source = _observer(source="r", period=720.0, states={"acc": ("acc + r", None)},
-                             dvs={"out": ("acc * r", True)})
+    reads_source = _observer(source="r", period=720.0, states={"acc": ("acc + r", None)}, dvs={"out": ("acc * r", True)})
     assert resolve_reduction(reads_source, _Exp())["output_per_step"] is True
 
 
@@ -347,8 +351,7 @@ def test_derived_parameters_are_bound_once_outside_the_scan():
     assert [d["name"] for d in red["derived_constants"]] == ["dt_s", "k1", "k2", "k3"]
     assert red["derived"] == [] or all(d["name"] == "bold_signal" for d in red["derived"])
 
-    src = _OBS_TEMPLATE.get_def("render_recurrence_reduction").render(
-        red=red, name="bold", s_idx=0, dt=1.0)
+    src = _OBS_TEMPLATE.get_def("render_recurrence_reduction").render(red=red, name="bold", s_idx=0, dt=1.0)
     body = src.split("def _step(")[1]
     assert "k1 = " not in body and "dt_s = " not in body
 
@@ -357,7 +360,6 @@ def test_a_derived_parameter_that_varies_per_step_is_rejected():
     """A constant that reads a state is not a constant; say so instead of emitting it."""
     obs = _observer(period=720.0)
     # multivalued slot: mutate in place, an assignment does not go through the normaliser
-    obs.dynamics.derived_parameters["bad"] = DerivedParameter(
-        name="bad", equation=Equation(rhs="acc * 2"))
+    obs.dynamics.derived_parameters["bad"] = DerivedParameter(name="bad", equation=Equation(rhs="acc * 2"))
     with pytest.raises(ValueError, match="which vary per step"):
         resolve_reduction(obs, _Exp())

@@ -41,10 +41,8 @@ _MARKUP_RE = re.compile(r"[{}\\_^$]")
 def _visual_width(cell: Any) -> int:
     """Approximate the *rendered* character width of a markdown/LaTeX cell.
 
-    A cell like ``$\\mathrm{s}$`` renders as a single ``s``, so its raw source
-    length badly over-states how wide it is on the page. This strips the math
-    delimiters, ``\\mathrm`` wrappers and control sequences so column sizing
-    tracks what the reader sees, not the LaTeX source length.
+    A cell like ``$\\mathrm{s}$`` renders as a single ``s``, so its raw source length badly over-states how wide it is on the page. This strips the math
+    delimiters, ``\\mathrm`` wrappers and control sequences so column sizing tracks what the reader sees, not the LaTeX source length.
     """
     s = _MATHRM_RE.sub(r"\1", str(cell))
     s = _CMD_RE.sub("x", s)
@@ -55,10 +53,8 @@ def _visual_width(cell: Any) -> int:
 def _as_prose(headers: Sequence[str], rows: Sequence[Sequence[str]], keep: Sequence[int]) -> str:
     """A grid too small to earn a float, written as a sentence.
 
-    One surviving column is a list of its own values (the caller's heading already
-    says what they are). Otherwise each row reads ``Header value``, fields separated
-    by commas and rows by semicolons, so the sentence carries its own column names
-    and needs no caption to be understood.
+    One surviving column is a list of its own values (the caller's heading already says what they are). Otherwise each row reads ``Header value``, fields separated
+    by commas and rows by semicolons, so the sentence carries its own column names and needs no caption to be understood.
     """
     if not keep:
         return ""
@@ -85,17 +81,11 @@ def md_table(
     """Render a GitHub-markdown table, omitting columns with no data.
 
     A column is dropped when every one of its data cells is empty (blank,
-    ``None``, or one of the placeholder markers). Kept columns render their
-    empty cells as ``empty`` (blank by default — no ``—`` placeholder). This
+    ``None``, or one of the placeholder markers). Kept columns render their empty cells as ``empty`` (blank by default — no ``—`` placeholder). This
     keeps auto-generated report tables narrow: a parameter set with no
-    ``default``/``domain``/``flags`` values shows only the columns that carry
-    information.
+    ``default``/``domain``/``flags`` values shows only the columns that carry information.
 
-    Always returns a table. A caller that would rather write a small grid as a
-    sentence calls [`table_or_prose`](#tvbo.utils.report.table_or_prose) instead;
-    the decision needs the caller's subject and keying to read correctly, and
-    [`read_md_tables`](#tvbo.utils.report.read_md_tables) is the documented inverse
-    of this function only while it renders a table.
+    Once the drop leaves fewer than two columns there is no table left to render, and what survives is written as a list of its values: a one-column float spends a number and a caption restating the heading above it. Collapsing a grid that still *has* columns is a different call — it needs the caller's subject and keying to read as a sentence — and is opt-in through [`table_or_prose`](#tvbo.utils.report.table_or_prose). [`read_md_tables`](#tvbo.utils.report.read_md_tables) is this function's inverse for everything it renders as a table.
 
     Args:
         headers: Column titles.
@@ -103,11 +93,10 @@ def md_table(
         aligns: Per-column alignment, ``'l'``/``'r'``/``'c'``; defaults to left.
         empty: Placeholder rendered for an empty cell in a kept column.
         col_cap: Width above which a column stops earning more of the page.
-        col_floor: Width below which a column stops giving it up, so a short
-            column keeps enough room to typeset its own cells.
+        col_floor: Width below which a column stops giving it up, so a short column keeps enough room to typeset its own cells.
 
     Returns:
-        The markdown table as a string: header, rule, and body rows.
+        The markdown table — header, rule, and body rows — or the surviving column's values as a list when fewer than two columns carry data.
     """
     n = len(headers)
     norm = [[("" if c is None else str(c)).strip() for c in row] for row in rows]
@@ -116,15 +105,12 @@ def md_table(
         return cell in _EMPTY_MARKERS
 
     keep = [j for j in range(n) if any(not _blank(r[j]) for r in norm)] if norm else list(range(n))
+    if len(keep) < 2:
+        return _as_prose(headers, norm, keep)
 
     aligns = list(aligns) if aligns else ["l"] * n
 
-    # Size each kept column's separator to its rendered content width, clamped to
-    # [col_floor, col_cap], so pandoc/LaTeX allocates PDF column widths *proportional to
-    # content* instead of equally: a lone name column no longer hogs space while a long
-    # description is squished. The floor matters as much as the cap -- a 3-character `ID`
-    # column beside two 44-character prose columns gets ~3 % of the text width, which is
-    # narrower than the word it holds, so its cells collide with the next column.
+    # Size each kept column's separator to its rendered content width, clamped to [col_floor, col_cap], so pandoc/LaTeX allocates PDF column widths *proportional to content* instead of equally: a lone name column no longer hogs space while a long description is squished. The floor matters as much as the cap -- a 3-character `ID` column beside two 44-character prose columns gets ~3 % of the text width, which is narrower than the word it holds, so its cells collide with the next column.
     def _sep(j):
         widths = [_visual_width(headers[j])] + [_visual_width(r[j]) for r in norm]
         width = max(col_floor, min(max(widths), col_cap))
@@ -137,10 +123,7 @@ def md_table(
 
     head = "| " + " | ".join(headers[j] for j in keep) + " |"
     sep = "|" + "|".join(_sep(j) for j in keep) + "|"
-    body = "\n".join(
-        "| " + " | ".join((r[j] if not _blank(r[j]) else empty) for j in keep) + " |"
-        for r in norm
-    )
+    body = "\n".join("| " + " | ".join((r[j] if not _blank(r[j]) else empty) for j in keep) + " |" for r in norm)
     return "\n".join([head, sep] + ([body] if body else []))
 
 
@@ -153,16 +136,9 @@ def table_or_prose(
 ) -> str:
     """Render a grid as a table, or as a sentence when it is too small to earn a float.
 
-    A numbered, captioned table announces to the reader that something has to be looked
-    up, and journals cap how many a paper may carry; a table holding two numbers spends
-    that budget on nothing. The threshold is `min_cells` values outside the key column,
-    and at least two rows — so a lone `| Term |` column collapses to its values, a single
-    declared event stops being a one-row float, and two experiments differing only in
-    duration become a clause. Anything larger stays a table.
+    A numbered, captioned table announces to the reader that something has to be looked up, and journals cap how many a paper may carry; a table holding two numbers spends that budget on nothing. The threshold is `min_cells` values outside the key column, and at least two rows — so a single declared event stops being a one-row float, and two experiments differing only in duration become a clause. Anything larger stays a table.
 
-    Opt-in, because the sentence reads correctly only where the first column names a
-    subject. A parameter block, a state-variable list or a scorecard has no such subject
-    and stays a table however small it is — call `md_table` for those.
+    Opt-in, because a multi-column sentence reads correctly only where the first column names a subject. A parameter block, a state-variable list or a scorecard has no such subject and stays a table however few rows it has — call `md_table` for those, which still declines to render a grid down to a single column.
 
     Args:
         headers: Column titles; the first names the subject of each clause.
@@ -204,8 +180,7 @@ def read_md_tables(source) -> list[MarkdownTable]:
     """Read the GitHub-markdown tables out of a document — the inverse of `md_table`.
 
     Lets a report *compute* from a hand-maintained analysis file (a replication's
-    `targets.md`, a divergence register) instead of restating its contents in prose,
-    so the two can never disagree.
+    `targets.md`, a divergence register) instead of restating its contents in prose, so the two can never disagree.
 
     Args:
         source: A path to a markdown file, or the markdown text itself.
@@ -246,12 +221,7 @@ def read_md_tables(source) -> list[MarkdownTable]:
 
 
 # ── The replication-report toolkit ──────────────────────────────────────────
-# Every replication report does the same handful of things: format a number that may not have
-# been computed, open a result or analysis container, read a value off the recipe, embed a
-# figure with the published original beside it, caption it from the recipe's own metadata, and
-# score the run against the targets written before it. Those live here, once, so a report holds
-# only what is specific to its study -- its metrics -- and ten reports cannot drift apart on the
-# parts they share.
+# Every replication report does the same handful of things: format a number that may not have been computed, open a result or analysis container, read a value off the recipe, embed a figure with the published original beside it, caption it from the recipe's own metadata, and score the run against the targets written before it. Those live here, once, so a report holds only what is specific to its study -- its metrics -- and ten reports cannot drift apart on the parts they share.
 
 
 _FIG_LABEL_RE = re.compile(r"(EDF|Fig)(\d+)")
@@ -262,8 +232,7 @@ _MISSING = "—"
 def fmt(x, digits: int = 2, missing: str = _MISSING) -> str:
     """A computed number for prose, or *missing* when it could not be computed.
 
-    A report reads containers that may not exist yet, and a half-run study must render rather
-    than crash: an absent number shows as a dash, which is visibly not a result.
+    A report reads containers that may not exist yet, and a half-run study must render rather than crash: an absent number shows as a dash, which is visibly not a result.
     """
     import math
 
@@ -290,23 +259,20 @@ def recipe_param(experiment, name, group: str = "dynamics"):
     """A declared parameter's value, read from the recipe rather than typed into prose.
 
     *group* selects where to look: ``"dynamics"`` for the model's parameters, or the name of a
-    single event/coupling whose parameters to read. Returns None when the name is not declared,
-    so a renamed parameter shows as a dash instead of silently reporting a stale literal.
+    single event/coupling whose parameters to read. Returns None when the name is not declared, so a renamed parameter shows as a dash instead of silently reporting a stale literal.
     """
     holder = getattr(experiment, group, None) if group != "dynamics" else experiment.dynamics
     params = getattr(holder, "parameters", None)
     if params is None:
         return None
-    items = params.items() if hasattr(params, "items") else [
-        (getattr(p, "name", None), p) for p in params]
+    items = params.items() if hasattr(params, "items") else [(getattr(p, "name", None), p) for p in params]
     return next((value_of(p) for n, p in items if n == name), None)
 
 
 def open_result(out_dir, experiment: str | None = None):
     """The result container of an experiment, or None when it has not been run.
 
-    Network sidecars share the directory and are excluded by name — opening one instead of the
-    result is the failure this exists to prevent.
+    Network sidecars share the directory and are excluded by name — opening one instead of the result is the failure this exists to prevent.
     """
     import xarray as xr
 
@@ -338,8 +304,7 @@ def sidecar_value(meta: dict, *path):
 def analysis_dataset(out_dir, name):
     """A declared analysis's own container, or None when the analysis has not been run.
 
-    The report reads the same container the figures do, so a number in the prose and the number
-    in the panel are the same number — never two computations of one quantity.
+    The report reads the same container the figures do, so a number in the prose and the number in the panel are the same number — never two computations of one quantity.
     """
     import xarray as xr
 
@@ -371,10 +336,8 @@ def analysis_scalar(out_dir, name, variable):
 def crossref_div(identifier: str, content: str, caption: str) -> str:
     """Wrap *content* as a Quarto cross-referenceable float with a COMPUTED caption.
 
-    Quarto's `tbl-cap`/`fig-cap` cell options take a literal string, so a caption holding a
-    computed value has to use the cross-reference div instead: the div's last paragraph is the
-    caption, and it is ordinary markdown. This is what gives a printed table a real "Table N"
-    number and a `@tbl-…` target rather than leaving it captionless in the flow.
+    Quarto's `tbl-cap`/`fig-cap` cell options take a literal string, so a caption holding a computed value has to use the cross-reference div instead: the div's last paragraph is the
+    caption, and it is ordinary markdown. This is what gives a printed table a real "Table N" number and a `@tbl-…` target rather than leaving it captionless in the flow.
 
     Args:
         identifier: Reference id, e.g. ``"tbl-scorecard"``. Must carry a float prefix
@@ -388,8 +351,7 @@ def crossref_div(identifier: str, content: str, caption: str) -> str:
 def is_internal() -> bool:
     """True in the INTERNAL build — the one allowed to open the paper's © figures.
 
-    Quarto exposes the *input filename* as ``QUARTO_DOCUMENT_FILE``, which is why the
-    public/internal split is two entry files rather than two formats in one file.
+    Quarto exposes the *input filename* as ``QUARTO_DOCUMENT_FILE``, which is why the public/internal split is two entry files rather than two formats in one file.
     """
     import os
 
@@ -399,13 +361,10 @@ def is_internal() -> bool:
 def may_show_original(cleared: bool = False) -> bool:
     """Whether this build is permitted to embed the paper's published figure.
 
-    Two grounds, and only two. The **INTERNAL build** is local and git-ignored, so the original
-    never leaves the machine. **Documented copyright clearance** from the publisher and the
-    authors permits it anywhere, including the shareable PDF — that is a real case, not a
-    hypothetical, and a study that has obtained clearance says so by passing ``cleared=True``.
+    Two grounds, and only two. The **INTERNAL build** is local and git-ignored, so the original never leaves the machine. **Documented copyright clearance** from the publisher and the
+    authors permits it anywhere, including the shareable PDF — that is a real case, not a hypothetical, and a study that has obtained clearance says so by passing ``cleared=True``.
 
-    No study in this repository currently has clearance, so in practice the internal build is
-    the only route. Default to ``False``: clearance is something a study proves it has, never
+    No study in this repository currently has clearance, so in practice the internal build is the only route. Default to ``False``: clearance is something a study proves it has, never
     something the code assumes.
     """
     return bool(cleared) or is_internal()
@@ -414,8 +373,7 @@ def may_show_original(cleared: bool = False) -> bool:
 def figure_label(figure) -> tuple[str, int]:
     """The paper's own label for a figure, parsed from the name the recipe declares.
 
-    Returns ``("Fig", 4)`` or ``("EDF", 10)``, and ``("New", 0)`` for a figure the paper has
-    no counterpart for. Sorting on it puts the main-text figures in order, the extended data
+    Returns ``("Fig", 4)`` or ``("EDF", 10)``, and ``("New", 0)`` for a figure the paper has no counterpart for. Sorting on it puts the main-text figures in order, the extended data
     after them and our own last, so a report never hardcodes a figure list.
     """
     match = _FIG_LABEL_RE.search(slot(figure, "name", "") or "")
@@ -425,10 +383,8 @@ def figure_label(figure) -> tuple[str, int]:
 def figure_title(figure) -> str:
     """A figure's heading: the paper's number, or its own name where it has none.
 
-    A replication answers questions the paper left open, and those answers are figures with
-    no published counterpart. Titling one with a number would present it as the paper's, so
-    an unnumbered figure is headed by its declared ``label:``, or failing that by its own
-    name — visibly ours, which is the whole point of the distinction.
+    A replication answers questions the paper left open, and those answers are figures with no published counterpart. Titling one with a number would present it as the paper's, so
+    an unnumbered figure is headed by its declared ``label:``, or failing that by its own name — visibly ours, which is the whole point of the distinction.
     """
     kind, number = figure_label(figure)
     if kind == "EDF":
@@ -445,7 +401,7 @@ def figure_title(figure) -> str:
 def find_figure(name: str, *studies):
     """The declared figure of that name, across one or more loaded studies."""
     for study in studies:
-        for figure in (getattr(study, "figures", None) or []):
+        for figure in getattr(study, "figures", None) or []:
             if slot(figure, "name") == name:
                 return figure
     return None
@@ -454,10 +410,8 @@ def find_figure(name: str, *studies):
 def figure_caption(figure, *studies) -> str:
     """A figure's public-facing caption — its own ``description:`` in the recipe.
 
-    Single source of truth: the caption cannot drift from the figure it describes, and it is
-    never the paper's caption (that would be plagiarism) nor the internal A/B framing. Accepts
-    a figure or its name (with the studies to look it up in — a study may span more than one
-    spec). Returns "" for an unknown name, so a caption is missing rather than a crash.
+    Single source of truth: the caption cannot drift from the figure it describes, and it is never the paper's caption (that would be plagiarism) nor the internal A/B framing. Accepts
+    a figure or its name (with the studies to look it up in — a study may span more than one spec). Returns "" for an unknown name, so a caption is missing rather than a crash.
     """
     if isinstance(figure, str):
         figure = find_figure(figure, *studies)
@@ -469,19 +423,17 @@ _FIGURE_ORDER = {"Fig": 0, "EDF": 1, "New": 2}
 
 def figures_in_paper_order(figures) -> list:
     """The study's figures, ordered as the paper prints them, with ours after."""
-    return sorted(figures, key=lambda f: (_FIGURE_ORDER[figure_label(f)[0]],
-                                          figure_label(f)[1], slot(f, "name", "")))
+    return sorted(figures, key=lambda f: (_FIGURE_ORDER[figure_label(f)[0]], figure_label(f)[1], slot(f, "name", "")))
 
 
 def figure_targets(figure, rows: Sequence[dict], column: str = "Fig(s)") -> list[dict]:
     """The declared targets a figure carries, joined on the targets table's own figure column.
 
-    Lets a per-figure status callout be *derived* from the scorecard rather than asserted
-    beside it, so the two cannot disagree.
+    Lets a per-figure status callout be *derived* from the scorecard rather than asserted beside it, so the two cannot disagree.
     """
     kind, number = figure_label(figure)
     if kind == "New":
-        return []       # a figure the paper never printed carries none of its targets
+        return []  # a figure the paper never printed carries none of its targets
     want = f"EDF{number}" if kind == "EDF" else str(number)
     hits = []
     for row in rows:
@@ -504,14 +456,11 @@ DIVERGENCE_CLASSES = {
 def divergence_register(source) -> dict:
     """Parse a study's ``methods-vs-code.md`` into per-class counts and rows.
 
-    The register is a skill-mandated artifact of any replication whose study ships code,
-    and its counts are quoted in the report's prose. Parsing it here means the report can
+    The register is a skill-mandated artifact of any replication whose study ships code, and its counts are quoted in the report's prose. Parsing it here means the report can
     never disagree with the register it cites — the drift the register itself documents.
 
-    Rows are recognised by a leading ``| <class><n> |`` cell. ``material`` counts only rows
-    whose final cell opens with a bold "Yes", which is the convention of the classes that
-    carry a materiality column; classes without one report ``material`` as ``None`` rather
-    than zero, so a caption can say what it actually counted.
+    Rows are recognised by a leading ``| <class><n> |`` cell. ``material`` counts only rows whose final cell opens with a bold "Yes", which is the convention of the classes that
+    carry a materiality column; classes without one report ``material`` as ``None`` rather than zero, so a caption can say what it actually counted.
     """
     text = Path(source).read_text() if Path(source).exists() else str(source)
     classes: dict[str, dict] = {}
@@ -541,16 +490,22 @@ def divergence_register(source) -> dict:
     }
 
 
-def report_figure(ours, theirs=None, stage=Path("_figures"), credit: str = "the authors",
-                  label: str = "", missing: str = "", width: float = 6.7,
-                  dpi: int = 300, cleared: bool = False) -> Path | None:
+def report_figure(
+    ours,
+    theirs=None,
+    stage=Path("_figures"),
+    credit: str = "the authors",
+    label: str = "",
+    missing: str = "",
+    width: float = 6.7,
+    dpi: int = 300,
+    cleared: bool = False,
+) -> Path | None:
     """The image a report embeds for one figure, staged inside the render project.
 
     This is the A/B helper every replication report used to carry its own copy of. Pass
-    ``theirs=None`` — what the PUBLIC build does — and the copyrighted original is never
-    opened, let alone embedded. Pass it in the INTERNAL build and the two are composed
-    left-right at a common height. Staging keeps the render reading only from its own project
-    directory, and makes the composite a gitignored artifact rather than a committed file.
+    ``theirs=None`` — what the PUBLIC build does — and the copyrighted original is never opened, let alone embedded. Pass it in the INTERNAL build and the two are composed
+    left-right at a common height. Staging keeps the render reading only from its own project directory, and makes the composite a gitignored artifact rather than a committed file.
 
     Args:
         ours: Our rendered figure. A missing file returns None rather than a blank slot.
@@ -579,7 +534,8 @@ def report_figure(ours, theirs=None, stage=Path("_figures"), credit: str = "the 
             "the shareable artifact, so embedding the paper's figure needs one of two grounds: "
             "the INTERNAL build (resolve the reference image behind `if is_internal()`), or "
             "documented copyright clearance from the publisher and authors (`cleared=True`). "
-            "See the A/B section of the writing-reports skill.")
+            "See the A/B section of the writing-reports skill."
+        )
     if not ours.is_file():
         return None
     stage.mkdir(parents=True, exist_ok=True)
@@ -589,9 +545,14 @@ def report_figure(ours, theirs=None, stage=Path("_figures"), credit: str = "the 
     from tvbo.utils.figure_compare import Pane, side_by_side
 
     return side_by_side(
-        [Pane(theirs, f"Original — {credit}", missing or "original not available"),
-         Pane(ours, f"TVBO replication{f' ({label})' if label else ''}")],
-        stage / f"{ours.stem}_ab.png", width=width, dpi=dpi)
+        [
+            Pane(theirs, f"Original — {credit}", missing or "original not available"),
+            Pane(ours, f"TVBO replication{f' ({label})' if label else ''}"),
+        ],
+        stage / f"{ours.stem}_ab.png",
+        width=width,
+        dpi=dpi,
+    )
 
 
 VERDICTS = {
@@ -625,8 +586,7 @@ the table is counting two things or one.
 class Scorecard:
     """A replication's targets, read from the `targets.md` written before anything ran.
 
-    Owns the vocabulary, the tally, the reason register and the figure join, so a report can
-    state a verdict only where the targets file supports one — the tally, the per-figure callout
+    Owns the vocabulary, the tally, the reason register and the figure join, so a report can state a verdict only where the targets file supports one — the tally, the per-figure callout
     and the shortfall prose all come from this single reading of that file.
 
     The file's shape is fixed by the replicating-studies skill: one or more tables carrying a
@@ -638,8 +598,7 @@ class Scorecard:
         self.verdicts = dict(verdicts or VERDICTS)
         self.tiers = list(tiers)
         self.rows = [r for t in tables if "Status" in t.headers for r in t.rows]
-        self.reasons = {r["ID"]: r[self.WHY]
-                        for t in tables if self.WHY in t.headers for r in t.rows}
+        self.reasons = {r["ID"]: r[self.WHY] for t in tables if self.WHY in t.headers for r in t.rows}
 
     WHY = "Why it falls short"
 
@@ -664,8 +623,7 @@ class Scorecard:
         return row["Target"].split(",")[0].split("(")[0].strip()
 
     def reason(self, row) -> str:
-        return self.reasons.get(
-            row["ID"], "No reason is recorded in `targets.md` — that is a gap.")
+        return self.reasons.get(row["ID"], "No reason is recorded in `targets.md` — that is a gap.")
 
     def tally_table(self, tier_column: str = "Scope") -> str:
         """Targets counted by tier against outcome — each target in exactly one cell."""
@@ -674,22 +632,21 @@ class Scorecard:
             tier, status = row[tier_column].strip(), row["Status"].strip()
             if tier in counts and status in counts[tier]:
                 counts[tier][status] += 1
-        body = [[tier, *(counts[tier][v] for v in self.verdicts), sum(counts[tier].values())]
-                for tier in self.tiers if sum(counts[tier].values())]
-        body.append(["**all**",
-                     *(sum(counts[t][v] for t in self.tiers) for v in self.verdicts),
-                     len(self.rows)])
-        return md_table(["Tier", *self.verdicts.values(), "Total"], body,
-                        aligns=["l"] + ["r"] * (len(self.verdicts) + 1))
+        body = [
+            [tier, *(counts[tier][v] for v in self.verdicts), sum(counts[tier].values())]
+            for tier in self.tiers
+            if sum(counts[tier].values())
+        ]
+        body.append(["**all**", *(sum(counts[t][v] for t in self.tiers) for v in self.verdicts), len(self.rows)])
+        return md_table(["Tier", *self.verdicts.values(), "Total"], body, aligns=["l"] + ["r"] * (len(self.verdicts) + 1))
 
-    def target_table(self, columns: Sequence[str] = ("ID", "Target", "Fig(s)", "Scope",
-                                                     "Fidelity", "Status")) -> str:
+    def target_table(self, columns: Sequence[str] = ("ID", "Target", "Fig(s)", "Scope", "Fidelity", "Status")) -> str:
         """One row per target, with its outcome spelled out."""
         headers = ["Tier" if c == "Scope" else c for c in columns]
         cell = {"Target": self.headline, "Status": self.verdict}
-        return md_table(headers,
-                        [[cell[c](r) if c in cell else r[c] for c in columns] for r in self.rows],
-                        aligns=["l"] * len(headers))
+        return md_table(
+            headers, [[cell[c](r) if c in cell else r[c] for c in columns] for r in self.rows], aligns=["l"] * len(headers)
+        )
 
     def for_figure(self, figure, column: str = "Fig(s)") -> list[dict]:
         """Every target a figure carries, joined on the targets table's own figure column."""
@@ -698,13 +655,12 @@ class Scorecard:
     def figure_callout(self, figure, scored_in: str = "@sec-scorecard") -> str:
         """A figure's verdict, assembled from the outcome of every target it carries.
 
-        Red is reserved for a target that was attempted and missed. A declared scope decision is
-        not a failure of the figure, and an unobtainable input is a gap in the data — both are
+        Red is reserved for a target that was attempted and missed. A declared scope decision is not a failure of the figure, and an unobtainable input is a gap in the data — both are
         yellow, and a figure whose targets all met is green.
         """
+
         def names(rows):
-            ids = sorted((r["ID"] for r in rows), key=lambda s: int("".join(
-                c for c in s if c.isdigit()) or 0))
+            ids = sorted((r["ID"] for r in rows), key=lambda s: int("".join(c for c in s if c.isdigit()) or 0))
             return ids[0] if len(ids) == 1 else ", ".join(ids[:-1]) + f" and {ids[-1]}"
 
         by = {}
@@ -730,25 +686,40 @@ class Scorecard:
     def shortfall_prose(self) -> str:
         """The shortfall, as one paragraph per outcome — never one undifferentiated list.
 
-        Separate paragraphs are what stop a scope decision reading as a failure. The default
-        wording states what each outcome means before naming its targets; reword it in the
+        Separate paragraphs are what stop a scope decision reading as a failure. The default wording states what each outcome means before naming its targets; reword it in the
         report if a study needs to, but keep the three groups apart.
         """
+
         def sentences(rows):
             return " ".join(f"**{r['ID']}**, {self.headline(r)}. {self.reason(r)}" for r in rows)
 
-        blocks, groups = [], [
-            ("short", "Attempted and {}", "These were run and did not meet the "
-             "criterion written for them, so they are the replication's own shortfall."),
-            ("out", "Declared {}", "Nothing was attempted here and nothing failed. Each "
-             "row says which of two things it is: a target judged, before anything was run, to "
-             "add no test of the paper's claims that another target does not already make, or "
-             "one that is in scope and simply not done yet. The first is a closed decision, the "
-             "second an open commitment, and the row must not blur them."),
-            ("blocked", "Blocked — {}", "These would be in scope, and the "
-             "method for them is the one already used elsewhere in this replication. What is "
-             "missing is data we cannot get."),
-        ]
+        blocks, groups = (
+            [],
+            [
+                (
+                    "short",
+                    "Attempted and {}",
+                    "These were run and did not meet the "
+                    "criterion written for them, so they are the replication's own shortfall.",
+                ),
+                (
+                    "out",
+                    "Declared {}",
+                    "Nothing was attempted here and nothing failed. Each "
+                    "row says which of two things it is: a target judged, before anything was run, to "
+                    "add no test of the paper's claims that another target does not already make, or "
+                    "one that is in scope and simply not done yet. The first is a closed decision, the "
+                    "second an open commitment, and the row must not blur them.",
+                ),
+                (
+                    "blocked",
+                    "Blocked — {}",
+                    "These would be in scope, and the "
+                    "method for them is the one already used elsewhere in this replication. What is "
+                    "missing is data we cannot get.",
+                ),
+            ],
+        )
         groups = [(s, t.format(self.verdicts.get(s, s)), lead) for s, t, lead in groups]
         for status, title, lead in groups:
             rows = self.of(status)
@@ -761,8 +732,7 @@ def show_report_figure(ours, theirs=None, **kwargs) -> None:
     """`report_figure`, displayed in the current cell.
 
     For reports that emit figures from a plain python cell. Prefer embedding the path
-    `report_figure` returns as markdown — that gets a figure number, a caption and a
-    cross-reference target; this exists so a report with many inline call sites can share the
+    `report_figure` returns as markdown — that gets a figure number, a caption and a cross-reference target; this exists so a report with many inline call sites can share the
     one implementation without restructuring every cell.
     """
     from IPython.display import Image, display
@@ -775,8 +745,7 @@ def show_report_figure(ours, theirs=None, **kwargs) -> None:
 
 
 # ── Report cell formatters ──────────────────────────────────────────────────
-# Shared by the model / experiment / coupling report templates so the table
-# building lives here (the adapter) rather than being duplicated in each Mako.
+# Shared by the model / experiment / coupling report templates so the table building lives here (the adapter) rather than being duplicated in each Mako.
 
 
 def slot(obj, name, default=None):
@@ -795,15 +764,12 @@ _SYMBOL_LATEX_FNS = None
 def _symbol_latex(text):
     """Render ``text`` as an inline-LaTeX symbol via sympy, imported lazily once.
 
-    sympy is a heavy import deliberately kept out of this module's import path (as
-    are the other local imports here), so the ``(Symbol, latex)`` pair is cached on
+    sympy is a heavy import deliberately kept out of this module's import path (as are the other local imports here), so the ``(Symbol, latex)`` pair is cached on
     first use rather than re-imported per table row.
 
-    sympy renders a symbol *name* verbatim, so a LaTeX-active character in the
-    source notation (``% # & $``) survives unescaped and would corrupt the
+    sympy renders a symbol *name* verbatim, so a LaTeX-active character in the source notation (``% # & $``) survives unescaped and would corrupt the
     enclosing ``$...$`` cell — ``%`` silently comments out the rest of the line,
-    ``$`` closes math mode. sympy never emits these for a symbol, so they are
-    escaped after rendering: a no-op for ordinary notation (Greek, sub/superscripts,
+    ``$`` closes math mode. sympy never emits these for a symbol, so they are escaped after rendering: a no-op for ordinary notation (Greek, sub/superscripts,
     ``\\`` commands), whose ``\\ { } _ ^`` sympy emits legitimately and must keep.
     """
     global _SYMBOL_LATEX_FNS
@@ -818,10 +784,8 @@ def _symbol_latex(text):
 def display_symbol(obj, name):
     """Inline-LaTeX symbol for a report row, preferring an explicit ``symbol`` override.
 
-    When a parameter / variable carries a ``symbol`` slot (e.g. ``w_+`` for an
-    identifier ``w_plus``, or ``S^{(E)}`` for ``S_e``), render *that* symbol so the
-    report matches the source's own notation; otherwise fall back to the element's
-    name. Fully sympy-native — the override string is itself rendered via
+    When a parameter / variable carries a ``symbol`` slot (e.g. ``w_+`` for an identifier ``w_plus``, or ``S^{(E)}`` for ``S_e``), render *that* symbol so the
+    report matches the source's own notation; otherwise fall back to the element's name. Fully sympy-native — the override string is itself rendered via
     ``sympy.latex(Symbol(...))``, so it inherits Greek/subscript/superscript handling.
     """
     sym = slot(obj, "symbol", None)
@@ -831,12 +795,9 @@ def display_symbol(obj, name):
 def format_number(value, decimals=4):
     """APA-style numeric formatting for report-table cells.
 
-    Rounds to at most ``decimals`` decimal places and strips trailing zeros, so raw
-    floats render publication-clean — ``0.8333333333`` → ``0.8333``,
-    ``314.1592653589793`` → ``314.1593``, ``40000.0`` → ``40000``, ``0.0`` → ``0`` —
-    while very large or very small magnitudes fall back to scientific notation
-    (``1e-06``). Non-numeric values (strings, symbolic expressions, arrays) and
-    booleans pass through unchanged.
+    Rounds to at most ``decimals`` decimal places and strips trailing zeros, so raw floats render publication-clean — ``0.8333333333`` → ``0.8333``,
+    ``314.1592653589793`` → ``314.1593``, ``40000.0`` → ``40000``, ``0.0`` → ``0`` — while very large or very small magnitudes fall back to scientific notation
+    (``1e-06``). Non-numeric values (strings, symbolic expressions, arrays) and booleans pass through unchanged.
     """
     if isinstance(value, bool):
         return value
@@ -929,10 +890,8 @@ def metadata_text(obj):
 def flag_text(obj, flags=None):
     """Flags cell: boolean flags + shape / dataset / reported optimum.
 
-    ``flags`` is a list of ``(attr, label)`` pairs; it defaults to the standard
-    parameter flags (``free``, ``heterogeneous``). A purely symbolic shape such
-    as ``(n_nodes,)`` is skipped: it names the broadcast dimension rather than a
-    concrete size, so it carries no information for a reader and would otherwise
+    ``flags`` is a list of ``(attr, label)`` pairs; it defaults to the standard parameter flags (``free``, ``heterogeneous``). A purely symbolic shape such
+    as ``(n_nodes,)`` is skipped: it names the broadcast dimension rather than a concrete size, so it carries no information for a reader and would otherwise
     keep an empty Flags column alive. A concrete shape like ``(84, 84)`` is kept.
     """
     flags = _PARAM_FLAGS if flags is None else flags
@@ -944,10 +903,8 @@ def flag_text(obj, flags=None):
         if attr == "shape" and not any(ch.isdigit() for ch in str(val)):
             continue
         if attr == "source" and not isinstance(val, str):
-            # `source` may be a structured object (iri / path / producer); show a
-            # concise pointer, never its raw repr.
-            val = (getattr(val, "iri", None) or getattr(val, "path", None)
-                   or getattr(val, "name", None) or type(val).__name__)
+            # `source` may be a structured object (iri / path / producer); show a concise pointer, never its raw repr.
+            val = getattr(val, "iri", None) or getattr(val, "path", None) or getattr(val, "name", None) or type(val).__name__
         labels.append(f"{key}={val}")
     return ", ".join(labels) or ""
 
@@ -959,10 +916,8 @@ _PARAM_FLAGS = [("free", "free"), ("heterogeneous", "heterogeneous")]
 def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=None):
     """One SymPy equation as LaTeX, with the derivative written the report's way.
 
-    Takes an already-parsed ``Eq`` — never a source string. Re-parsing an authored
-    right-hand side needs a symbol vocabulary assembled by hand, and every symbol the
-    assembler forgets (an event's name, a coupling term) turns into a silent fall-back to
-    raw Python in the middle of the Methods section. ``Dynamics.get_equations()`` has
+    Takes an already-parsed ``Eq`` — never a source string. Re-parsing an authored right-hand side needs a symbol vocabulary assembled by hand, and every symbol the
+    assembler forgets (an event's name, a coupling term) turns into a silent fall-back to raw Python in the middle of the Methods section. ``Dynamics.get_equations()`` has
     already done that resolution against the model's own scope, so this only prints.
 
     Args:
@@ -979,8 +934,7 @@ def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=
         order = sum(1 for v in deriv.variables if v == Symbol("t"))
         base = latex(deriv.expr, mul_symbol=mul_symbol, symbol_names=symbol_names)
         dots = {1: "dot", 2: "ddot", 3: "dddot"}.get(order)
-        lhs = (f"\\{dots}{{{base}}}" if dots
-               else f"\\frac{{d^{order}}}{{d t^{order}}} {base}")
+        lhs = f"\\{dots}{{{base}}}" if dots else f"\\frac{{d^{order}}}{{d t^{order}}} {base}"
         return f"{lhs} = {latex(eq.rhs, mul_symbol=mul_symbol, symbol_names=symbol_names)}"
     return latex(eq, mul_symbol=mul_symbol, symbol_names=symbol_names)
 
@@ -988,17 +942,18 @@ def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=
 def model_equations(model, kind="state", derivative_notation="dot", mul_symbol=None):
     """``(name, latex)`` for a model's equations of one kind, from its symbolic form.
 
-    ``kind`` selects ``state`` (state variables) or ``derived`` (derived variables). The
-    equations come from :meth:`Dynamics.get_equations`, so the report shows the same
-    expressions the backend integrates. The *name* comes back with the LaTeX because a
-    numbered report has to anchor each equation on the variable it defines, and because a
+    ``kind`` selects ``state`` (state variables) or ``derived`` (derived variables). The equations come from :meth:`Dynamics.get_equations`, so the report shows the same
+    expressions the backend integrates. The *name* comes back with the LaTeX because a numbered report has to anchor each equation on the variable it defines, and because a
     variant prints only the subset its delta names.
     """
     collection = "state_variables" if kind == "state" else "derived_variables"
     members = getattr(model, collection, None) or {}
     symbol_names = model.symbol_map() if hasattr(model, "symbol_map") else {}
-    return [(name, equation_latex(eq, derivative_notation, symbol_names, mul_symbol))
-            for name, eq in _equations_of(model).items() if name in members]
+    return [
+        (name, equation_latex(eq, derivative_notation, symbol_names, mul_symbol))
+        for name, eq in _equations_of(model).items()
+        if name in members
+    ]
 
 
 def model_equations_latex(model, kind="state", derivative_notation="dot", mul_symbol=None):
@@ -1009,8 +964,14 @@ def model_equations_latex(model, kind="state", derivative_notation="dot", mul_sy
 def _model_vocabulary(model):
     """The symbol and function names a model's authored expressions may reference."""
     names = []
-    for collection in ("parameters", "derived_parameters", "state_variables",
-                       "derived_variables", "coupling_terms", "coupling_inputs"):
+    for collection in (
+        "parameters",
+        "derived_parameters",
+        "state_variables",
+        "derived_variables",
+        "coupling_terms",
+        "coupling_inputs",
+    ):
         names += [n for n, _ in name_items(slot(model, collection, None))]
     return names, [n for n, _ in name_items(slot(model, "functions", None))]
 
@@ -1018,10 +979,8 @@ def _model_vocabulary(model):
 def model_functions(model, derivative_notation="dot", mul_symbol=None):
     """``(name, latex)`` for a model's named functions, written ``f(args) = rhs``.
 
-    Unlike the state equations these are not in ``get_equations()``, so the authored
-    right-hand side is parsed against the model's own vocabulary — assembled from the
-    model rather than by hand, so a symbol the assembler would have forgotten cannot fall
-    back to raw Python in the middle of the Methods.
+    Unlike the state equations these are not in ``get_equations()``, so the authored right-hand side is parsed against the model's own vocabulary — assembled from the
+    model rather than by hand, so a symbol the assembler would have forgotten cannot fall back to raw Python in the middle of the Methods.
     """
     from tvbo.parse.expression import parse_eq
 
@@ -1035,8 +994,9 @@ def model_functions(model, derivative_notation="dot", mul_symbol=None):
         args = list(args.values()) if hasattr(args, "values") else list(args or [])
         args = [str(slot(a, "name", a)) for a in args]
         try:
-            body = equation_latex(parse_eq(str(rhs), parameters=symbols + args, functions=functions),
-                                  derivative_notation, None, mul_symbol)
+            body = equation_latex(
+                parse_eq(str(rhs), parameters=symbols + args, functions=functions), derivative_notation, None, mul_symbol
+            )
         except Exception:
             body = str(rhs)
         out.append((name, f"\\operatorname{{{name}}}({', '.join(args)}) = {body}"))
@@ -1046,8 +1006,7 @@ def model_functions(model, derivative_notation="dot", mul_symbol=None):
 def study_sweeps(experiments):
     """Every parameter any of these experiments sweeps, mapped to its range.
 
-    A parameter one experiment sweeps is not well described by the single value another
-    happens to hold it at, so the symbol table shows the range instead.
+    A parameter one experiment sweeps is not well described by the single value another happens to hold it at, so the symbol table shows the range instead.
     """
     merged = {}
     for exp in experiments:
@@ -1063,8 +1022,7 @@ def _plural(n, noun):
 def variant_sentence(variant, equations, baseline):
     """The lead-in to a variant's delta: who uses it, and what it changes.
 
-    Replaces reprinting a near-identical system. Where the equations it redefines were
-    themselves numbered, they are named by cross-reference, so the reader is pointed at
+    Replaces reprinting a near-identical system. Where the equations it redefines were themselves numbered, they are named by cross-reference, so the reader is pointed at
     the equation above rather than asked to diff two blocks by eye.
     """
     ids = _id_text(slot(e, "id", "") for e in variant.experiments)
@@ -1072,8 +1030,7 @@ def variant_sentence(variant, equations, baseline):
     redefined = sorted(variant.delta.eq_svars - variant.delta.new_svars)
     clauses = []
     if redefined:
-        refs = [equations.ref(baseline, key) or f"the equation for ${_symbol_latex(key)}$"
-                for key in redefined]
+        refs = [equations.ref(baseline, key) or f"the equation for ${_symbol_latex(key)}$" for key in redefined]
         clauses.append("redefines " + ", ".join(refs))
     if variant.delta.new_svars:
         clauses.append("adds " + _plural(len(variant.delta.new_svars), "state variable"))
@@ -1114,16 +1071,12 @@ def coupling_of(experiments):
 def coupling_prose(experiments, equations=None):
     """Each distinct coupling a family uses, rendered by the coupling's own report.
 
-    ``Coupling.report`` already writes this block — equation, pre/post decomposition
-    and incoming states — so the study report calls it rather than carrying a second
-    rendering of the same object that could drift from it. Its parameter table is
-    suppressed: :func:`symbol_table` lists those symbols with the model's, where they
+    ``Coupling.report`` already writes this block — equation, pre/post decomposition and incoming states — so the study report calls it rather than carrying a second
+    rendering of the same object that could drift from it. Its parameter table is suppressed: :func:`symbol_table` lists those symbols with the model's, where they
     are captioned and numbered, and most of them are the model's own.
 
-    Pass the report's *equations* so the coupling equation is numbered into the same
-    sequence as the state equations. Without it the coupling is the one display
-    equation on the page a reader cannot cite — eleven of them across ten studies,
-    and in every case the equation that joins the nodes into a network.
+    Pass the report's *equations* so the coupling equation is numbered into the same sequence as the state equations. Without it the coupling is the one display
+    equation on the page a reader cannot cite — eleven of them across ten studies, and in every case the equation that joins the nodes into a network.
     """
     blocks = []
     for cpl in coupling_of(experiments):
@@ -1138,8 +1091,7 @@ def coupling_prose(experiments, equations=None):
 def event_table(events, derivative_notation="dot"):
     """Markdown table of a model's events (spike conditions, stimuli, resets).
 
-    An event is part of the model's definition — a stimulus protocol is not decoration —
-    so it belongs in the report beside the state equations. Its condition and effect are
+    An event is part of the model's definition — a stimulus protocol is not decoration — so it belongs in the report beside the state equations. Its condition and effect are
     rendered symbolically like every other equation.
     """
     from sympy import sympify
@@ -1163,25 +1115,31 @@ def event_table(events, derivative_notation="dot"):
         if str(name).startswith("_"):
             continue
         params = slot(ev, "parameters", None)
-        rows.append([
-            f"`{name}`",
-            str(slot(ev, "event_type", "") or ""),
-            _expr(ev, "condition"),
-            _expr(ev, "equation", "effect"),
-            ", ".join(f"{p} = {format_number(slot(v, 'value', ''))}"
-                      for p, v in name_items(params)) if params else "",
-            slot(ev, "description", "") or slot(ev, "label", "") or "",
-        ])
+        rows.append(
+            [
+                f"`{name}`",
+                str(slot(ev, "event_type", "") or ""),
+                _expr(ev, "condition"),
+                _expr(ev, "equation", "effect"),
+                ", ".join(f"{p} = {format_number(slot(v, 'value', ''))}" for p, v in name_items(params)) if params else "",
+                slot(ev, "description", "") or slot(ev, "label", "") or "",
+            ]
+        )
     return table_or_prose(["Event", "Type", "Condition", "Effect", "Parameters", "Description"], rows)
 
 
 def state_variable_table(svars):
     """Markdown State-Variables table (empty columns dropped) from a name->obj map."""
     rows = [
-        [f"${display_symbol(sv, name)}$", format_number(slot(sv, "initial_value", "")), unit_text(slot(sv, "unit")),
-         f"{slot(sv, 'equation_type', 'differential')} (order {slot(sv, 'equation_order', 1)})",
-         metadata_text(sv), flag_text(sv, _STATE_VAR_FLAGS),
-         slot(sv, "description", "") or slot(sv, "definition", "") or ""]
+        [
+            f"${display_symbol(sv, name)}$",
+            format_number(slot(sv, "initial_value", "")),
+            unit_text(slot(sv, "unit")),
+            f"{slot(sv, 'equation_type', 'differential')} (order {slot(sv, 'equation_order', 1)})",
+            metadata_text(sv),
+            flag_text(sv, _STATE_VAR_FLAGS),
+            slot(sv, "description", "") or slot(sv, "definition", "") or "",
+        ]
         for name, sv in name_items(svars)
     ]
     return md_table(["Variable", "Initial Value", "Unit", "Equation", "Domain / Sampling", "Flags", "Description"], rows)
@@ -1190,11 +1148,9 @@ def state_variable_table(svars):
 def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
     """Markdown table for any parameter-like collection, empty columns dropped.
 
-    Renders the full column set (name, value, default, unit, domain/sampling,
-    flags, description) and lets :func:`md_table` drop every column that is empty
+    Renders the full column set (name, value, default, unit, domain/sampling, flags, description) and lets :func:`md_table` drop every column that is empty
     across all rows, so each collection shows only the columns that carry data.
-    One builder serves model parameters, coupling terms, and the stimulation,
-    integration, noise, and hyperparameter tables, instead of a hand-written
+    One builder serves model parameters, coupling terms, and the stimulation, integration, noise, and hyperparameter tables, instead of a hand-written
     table per section.
 
     Args:
@@ -1204,17 +1160,27 @@ def param_table(collection, name_header="Parameter", symbolic=True, flags=None):
         flags: ``(attr, label)`` pairs for :func:`flag_text`; defaults to the
             standard parameter flags.
     """
+
     def _name(name, p):
         return f"${display_symbol(p, name)}$" if symbolic else str(name)
 
     rows = [
-        [_name(name, p), format_number(slot(p, "value", "")), format_number(slot(p, "default", "")), unit_text(slot(p, "unit")),
-         metadata_text(p), flag_text(p, flags),
-         slot(p, "description", "") or slot(p, "definition", "") or ""]
+        [
+            _name(name, p),
+            format_number(slot(p, "value", "")),
+            format_number(slot(p, "default", "")),
+            unit_text(slot(p, "unit")),
+            metadata_text(p),
+            flag_text(p, flags),
+            slot(p, "description", "") or slot(p, "definition", "") or "",
+        ]
         for name, p in name_items(collection)
     ]
-    return md_table([name_header, "Value", "Default", "Unit", "Domain / Sampling", "Flags", "Description"],
-                    rows, aligns=["l", "r", "l", "l", "l", "l", "l"])
+    return md_table(
+        [name_header, "Value", "Default", "Unit", "Domain / Sampling", "Flags", "Description"],
+        rows,
+        aligns=["l", "r", "l", "l", "l", "l", "l"],
+    )
 
 
 def parameter_table(params):
@@ -1225,10 +1191,8 @@ def parameter_table(params):
 def _scalar(value):
     """A value keyed as a number where it is one, so ``6`` and ``6.0`` are one setting.
 
-    Compared as text they are two, and the report then invents a difference that does
-    not exist: Jansen1995's coupling writes ``v0: 6.0`` where its model writes ``6``,
-    and the glossary listed $v_0$ twice — once as the model's, once as a symbol the
-    coupling supposedly introduces. The conversion is exact, never rounded, so a
+    Compared as text they are two, and the report then invents a difference that does not exist: Jansen1995's coupling writes ``v0: 6.0`` where its model writes ``6``,
+    and the glossary listed $v_0$ twice — once as the model's, once as a symbol the coupling supposedly introduces. The conversion is exact, never rounded, so a
     genuine difference in the last decimal still reads as one.
     """
     try:
@@ -1241,23 +1205,23 @@ def _param_signature(p):
     """Everything that makes a parameter's *setting* distinct, for delta and merge tests.
 
     Value and defining expression alone are not enough: a re-tuned ``distribution``,
-    ``domain`` or per-node ``heterogeneous`` flag changes what runs while leaving both
-    unchanged. Koller2024's per-node inherent-frequency dispersion differs from its
-    baseline in nothing else, and a value-only comparison reports the two models as
-    identical — so the variant vanishes from the report rather than being described.
+    ``domain`` or per-node ``heterogeneous`` flag changes what runs while leaving both unchanged. Koller2024's per-node inherent-frequency dispersion differs from its
+    baseline in nothing else, and a value-only comparison reports the two models as identical — so the variant vanishes from the report rather than being described.
     """
-    return (_scalar(slot(p, "value", "")), str(slot(slot(p, "equation"), "rhs", "")),
-            str(slot(p, "distribution", "")), str(slot(p, "domain", "")),
-            bool(slot(p, "heterogeneous", False)))
+    return (
+        _scalar(slot(p, "value", "")),
+        str(slot(slot(p, "equation"), "rhs", "")),
+        str(slot(p, "distribution", "")),
+        str(slot(p, "domain", "")),
+        bool(slot(p, "heterogeneous", False)),
+    )
 
 
 def model_delta(model, baseline):
     """Names of what *model* adds or changes relative to *baseline*.
 
-    Compares two related models (e.g. a controlled variant against its
-    uncontrolled base) and returns the subsets that are new or redefined, so a
-    report can render only the **delta** instead of repeating every shared state
-    variable, parameter, derived variable and coupling input.
+    Compares two related models (e.g. a controlled variant against its uncontrolled base) and returns the subsets that are new or redefined, so a
+    report can render only the **delta** instead of repeating every shared state variable, parameter, derived variable and coupling input.
 
     Returns a :class:`~types.SimpleNamespace` with:
 
@@ -1306,10 +1270,8 @@ def experiment_models(experiment):
     """Every distinct model an experiment integrates — one, or one per node.
 
     ``SimulationExperiment.dynamics`` carries the single model of a homogeneous network.
-    A heterogeneous one leaves it unset and declares a model per node (Deco2014's spiking
-    populations, Mongillo2008's pre/post pair), either inline or by name into the
-    network's own catalogue, so a report reading only the former describes nothing at all
-    for those studies.
+    A heterogeneous one leaves it unset and declares a model per node (Deco2014's spiking populations, Mongillo2008's pre/post pair), either inline or by name into the
+    network's own catalogue, so a report reading only the former describes nothing at all for those studies.
     """
     single = slot(experiment, "dynamics")
     if single is not None:
@@ -1317,7 +1279,7 @@ def experiment_models(experiment):
     net = slot(experiment, "network") or slot(experiment, "connectivity")
     catalogue = dict(name_items(slot(net, "dynamics", None)))
     out, seen = [], set()
-    for node in (slot(net, "nodes", None) or []):
+    for node in slot(net, "nodes", None) or []:
         model = slot(node, "dynamics", None)
         if isinstance(model, str):
             model = catalogue.get(model)
@@ -1331,16 +1293,12 @@ def experiment_models(experiment):
 def _equations_of(model):
     """A model's symbolic equations, resolving a bare declaration into a real model first.
 
-    A per-node model on a heterogeneous network arrives as the plain datamodel object,
-    which carries the declaration but not ``Dynamics``'s symbolic machinery. Treating
-    that as "no equations" printed a Methods section with **no mathematics at all** for
-    every heterogeneous study: Mongillo2008's twenty-nine experiments got symbol tables
+    A per-node model on a heterogeneous network arrives as the plain datamodel object, which carries the declaration but not ``Dynamics``'s symbolic machinery. Treating
+    that as "no equations" printed a Methods section with **no mathematics at all** for every heterogeneous study: Mongillo2008's twenty-nine experiments got symbol tables
     and nothing else, and Deco2014 lost both of its spiking families.
 
-    So promote it. ``Dynamics.from_datamodel`` copies the already-normalised state and
-    gives back the same resolution the backend uses — which is the point, because the
-    authored right-hand sides must not be re-parsed here against a hand-assembled
-    vocabulary (see :func:`equation_latex`). A model that still cannot resolve is a
+    So promote it. ``Dynamics.from_datamodel`` copies the already-normalised state and gives back the same resolution the backend uses — which is the point, because the
+    authored right-hand sides must not be re-parsed here against a hand-assembled vocabulary (see :func:`equation_latex`). A model that still cannot resolve is a
     legitimate miss, not a crash.
     """
     if hasattr(model, "get_equations"):
@@ -1356,36 +1314,30 @@ def _equations_of(model):
 def _model_signature(model):
     """What makes two models the same model, for collapsing repeats in a report."""
     eqs = _equations_of(model)
-    return (str(slot(model, "label", "") or slot(model, "name", "")),
-            tuple(sorted((k, str(getattr(v, "rhs", v))) for k, v in (eqs or {}).items())),
-            tuple(sorted((k, _param_signature(p))
-                         for k, p in name_items(slot(model, "parameters", {})))))
+    return (
+        str(slot(model, "label", "") or slot(model, "name", "")),
+        tuple(sorted((k, str(getattr(v, "rhs", v))) for k, v in (eqs or {}).items())),
+        tuple(sorted((k, _param_signature(p)) for k, p in name_items(slot(model, "parameters", {})))),
+    )
 
 
 def model_families(experiments):
     """The experiments' models, grouped into families, each printed once.
 
-    A **family** is one system: its first model is written out in full, and every later
-    model in it contributes only its :func:`model_delta`, the way Jansen1995 §3.3 adds a
+    A **family** is one system: its first model is written out in full, and every later model in it contributes only its :func:`model_delta`, the way Jansen1995 §3.3 adds a
     flash stimulus by printing Eq. 18 alone instead of reprinting the six-equation column.
-    Two models share a family when they span the same state variables, which also settles
-    the case a delta cannot: a model that introduces the *entire* state is not a variant
+    Two models share a family when they span the same state variables, which also settles the case a delta cannot: a model that introduces the *entire* state is not a variant
     but a second system — Pang2023's mass model against its wave field, Koller2024's
     Jansen–Rit against its Kuramoto — and starts a family of its own, printed in full.
 
-    Membership is tested by **subset-or-superset** of the family's first model, not by
-    equality and not by mere overlap. Equality splits Jansen1995's delayed column off from
-    the column it extends (it only adds ``z0``/``z1``); bare overlap goes wrong the other
-    way and merges genuinely unrelated systems that happen to share auxiliary state —
-    Pang2023's wave field and its BEI mass model both carry the four Balloon–Windkessel
-    haemodynamic variables, and overlap presented the mass model, which the paper never
+    Membership is tested by **subset-or-superset** of the family's first model, not by equality and not by mere overlap. Equality splits Jansen1995's delayed column off from
+    the column it extends (it only adds ``z0``/``z1``); bare overlap goes wrong the other way and merges genuinely unrelated systems that happen to share auxiliary state —
+    Pang2023's wave field and its BEI mass model both carry the four Balloon–Windkessel haemodynamic variables, and overlap presented the mass model, which the paper never
     even deposited, as a *variant* of the wave field.
 
     Returns one namespace per family, in the order the experiments declare them, with
-    ``label``, ``base`` and ``variants`` (each a namespace of ``model``, ``experiments``
-    and, for a variant, its ``delta`` against the base), plus the family's own
-    ``experiments`` and ``shared_parameters`` — the parameter names every member defines,
-    which are the only ones an experiment table can compare without leaving holes.
+    ``label``, ``base`` and ``variants`` (each a namespace of ``model``, ``experiments`` and, for a variant, its ``delta`` against the base), plus the family's own
+    ``experiments`` and ``shared_parameters`` — the parameter names every member defines, which are the only ones an experiment table can compare without leaving holes.
     """
     from types import SimpleNamespace
 
@@ -1402,9 +1354,7 @@ def model_families(experiments):
         if family is None:
             family = SimpleNamespace(base_state=state, models=[], experiments=[])
             families.append(family)
-        # Once per experiment, not once per model: a heterogeneous experiment contributes
-        # several models to the same family — Deco2014's spiking columns declare a dozen —
-        # and appending per model gave its comparison table six rows for three experiments.
+        # Once per experiment, not once per model: a heterogeneous experiment contributes several models to the same family — Deco2014's spiking columns declare a dozen — and appending per model gave its comparison table six rows for three experiments.
         if exp not in family.experiments:
             family.experiments.append(exp)
         signature = _model_signature(model)
@@ -1414,8 +1364,7 @@ def model_families(experiments):
                     entry.experiments.append(exp)
                 break
         else:
-            family.models.append(SimpleNamespace(model=model, signature=signature,
-                                                 experiments=[exp], delta=None))
+            family.models.append(SimpleNamespace(model=model, signature=signature, experiments=[exp], delta=None))
 
     out = []
     for family in families:
@@ -1423,8 +1372,7 @@ def model_families(experiments):
         family.variants = family.models[1:]
         for entry in family.variants:
             entry.delta = model_delta(entry.model, family.base.model)
-        family.label = (slot(family.base.model, "label", None)
-                        or slot(family.base.model, "name", None) or "Model")
+        family.label = slot(family.base.model, "label", None) or slot(family.base.model, "name", None) or "Model"
         shared = None
         for entry in family.models:
             names = set(dict(name_items(slot(entry.model, "parameters", {}) or {})))
@@ -1437,10 +1385,8 @@ def model_families(experiments):
 def _initial_text(sv):
     """A state variable's starting value: its distribution, else the value it starts at.
 
-    An undeclared ``initial_value`` still starts somewhere — ``tvbo.utils.initial_value``
-    supplies the fallback the run actually uses — so the report prints what is integrated
-    rather than leaving the cell blank. Today's report drops the column entirely whenever
-    no model declares one, which hides the starting state from every reader.
+    An undeclared ``initial_value`` still starts somewhere — ``tvbo.utils.initial_value`` supplies the fallback the run actually uses — so the report prints what is integrated
+    rather than leaving the cell blank. Today's report drops the column entirely whenever no model declares one, which hides the starting state from every reader.
     """
     from tvbo.utils import initial_value
 
@@ -1463,31 +1409,23 @@ def _value_text(p, swept=None):
 def _meaning(obj, name=""):
     """The glossary cell for a symbol: what the recipe says it means, or nothing.
 
-    Deliberately does *not* fall back to the symbol's own name — printing "y0" as the
-    meaning of $y_0$ fills the cell without informing anyone, and hides from the author
+    Deliberately does *not* fall back to the symbol's own name — printing "y0" as the meaning of $y_0$ fills the cell without informing anyone, and hides from the author
     that the description is missing.
     """
-    return str(slot(obj, "description", "") or slot(obj, "definition", "")
-               or slot(obj, "label", "") or "")
+    return str(slot(obj, "description", "") or slot(obj, "definition", "") or slot(obj, "label", "") or "")
 
 
 def symbol_table(model, swept=None, couplings=()):
     """One dense glossary of every symbol in a model: state, parameters, derived, coupling.
 
-    ``Symbol | Kind | Meaning | Value | Unit``, where every row fills every cell — a state
-    variable contributes the value it starts at, a parameter its value (or the range a
-    sweep gives it), a derived parameter its defining expression. Replaces the three
-    separate tables (state variables, parameters, derived parameters), whose column sets
-    do not overlap and which therefore cannot be merged without leaving most of the grid
-    empty. Derived *variables* are deliberately absent: they are equations and appear as
+    ``Symbol | Kind | Meaning | Value | Unit``, where every row fills every cell — a state variable contributes the value it starts at, a parameter its value (or the range a
+    sweep gives it), a derived parameter its defining expression. Replaces the three separate tables (state variables, parameters, derived parameters), whose column sets
+    do not overlap and which therefore cannot be merged without leaving most of the grid empty. Derived *variables* are deliberately absent: they are equations and appear as
     equations, so listing them here would print each one twice.
 
-    A coupling's parameters land here too, rather than in a table of their own after the
-    coupling block: they are symbols of the same system, and a coupling usually restates
-    the model's. Jansen1995's sigmoid coupling declares $e_0$, $r$ and $v_0$ at exactly
-    the model's values — a separate table repeated three rows the reader had already
-    read. A coupling parameter that genuinely differs, or that the model does not
-    declare, keeps its row and is marked as the coupling's.
+    A coupling's parameters land here too, rather than in a table of their own after the coupling block: they are symbols of the same system, and a coupling usually restates
+    the model's. Jansen1995's sigmoid coupling declares $e_0$, $r$ and $v_0$ at exactly the model's values — a separate table repeated three rows the reader had already
+    read. A coupling parameter that genuinely differs, or that the model does not declare, keeps its row and is marked as the coupling's.
 
     Args:
         model: The ``Dynamics`` to describe.
@@ -1499,17 +1437,38 @@ def symbol_table(model, swept=None, couplings=()):
     rows = []
     for name, sv in name_items(slot(model, "state_variables", {})):
         flags = flag_text(sv, _STATE_VAR_FLAGS)
-        rows.append([f"${display_symbol(sv, name)}$", f"state ({flags})" if flags else "state",
-                     _meaning(sv, name), _initial_text(sv), unit_text(slot(sv, "unit"))])
+        rows.append(
+            [
+                f"${display_symbol(sv, name)}$",
+                f"state ({flags})" if flags else "state",
+                _meaning(sv, name),
+                _initial_text(sv),
+                unit_text(slot(sv, "unit")),
+            ]
+        )
     for name, p in name_items(slot(model, "parameters", {})):
         flags = flag_text(p, _PARAM_FLAGS)
         kind = "parameter (swept)" if name in swept else (f"parameter ({flags})" if flags else "parameter")
-        rows.append([f"${display_symbol(p, name)}$", kind, _meaning(p, name),
-                     _value_text(p, swept.get(name)), unit_text(slot(p, "unit"))])
+        rows.append(
+            [
+                f"${display_symbol(p, name)}$",
+                kind,
+                _meaning(p, name),
+                _value_text(p, swept.get(name)),
+                unit_text(slot(p, "unit")),
+            ]
+        )
     for name, dp in name_items(slot(model, "derived_parameters", {})):
         rhs = slot(slot(dp, "equation"), "rhs", "")
-        rows.append([f"${display_symbol(dp, name)}$", "derived", _meaning(dp, name),
-                     f"${_safe_latex(rhs)}$" if rhs != "" else "", unit_text(slot(dp, "unit"))])
+        rows.append(
+            [
+                f"${display_symbol(dp, name)}$",
+                "derived",
+                _meaning(dp, name),
+                f"${_safe_latex(rhs)}$" if rhs != "" else "",
+                unit_text(slot(dp, "unit")),
+            ]
+        )
     declared = dict(name_items(slot(model, "parameters", {})))
     seen = set()
     for cpl in couplings:
@@ -1517,12 +1476,18 @@ def symbol_table(model, swept=None, couplings=()):
             if name in seen or (name in declared and _param_signature(p) == _param_signature(declared[name])):
                 continue
             seen.add(name)
-            rows.append([f"${display_symbol(p, name)}$", "coupling", _meaning(p, name),
-                         _value_text(p, swept.get(name)), unit_text(slot(p, "unit"))])
+            rows.append(
+                [
+                    f"${display_symbol(p, name)}$",
+                    "coupling",
+                    _meaning(p, name),
+                    _value_text(p, swept.get(name)),
+                    unit_text(slot(p, "unit")),
+                ]
+            )
     if not rows:
         return ""
-    return table_or_prose(["Symbol", "Kind", "Meaning", "Value", "Unit"], rows,
-                    aligns=["l", "l", "l", "r", "l"])
+    return table_or_prose(["Symbol", "Kind", "Meaning", "Value", "Unit"], rows, aligns=["l", "l", "l", "r", "l"])
 
 
 def _safe_latex(expression):
@@ -1545,33 +1510,29 @@ def _axis_range(axis):
 def sweep_axes(experiment):
     """``{axis name: range text}`` for every parameter an experiment explores.
 
-    Axis names are scoped (``network.G``, ``execution.random_seed``); a bare name is a
-    model parameter, which is what lets a swept parameter show its *range* in the symbol
+    Axis names are scoped (``network.G``, ``execution.random_seed``); a bare name is a model parameter, which is what lets a swept parameter show its *range* in the symbol
     and experiment tables instead of a single value it never actually holds.
 
-    Reads ``space``, which is what an exploration sweeps. ``parameters`` is the
-    exploration's own hyper-parameters — tolerances, sampler settings — and reading those
-    returned nothing for every curated recipe, so no report ever showed a range; where an
-    exploration did declare one, its domain would have been printed as if it were swept.
+    Reads ``space``, which is what an exploration sweeps. ``parameters`` is the exploration's own hyper-parameters — tolerances, sampler settings — and reading those
+    returned nothing for every curated recipe, so no report ever showed a range; where an exploration did declare one, its domain would have been printed as if it were swept.
 
-    ``explorations`` is keyed by name, so iterate the values: iterating the mapping walks
-    the keys, and a string has no slots, which is the other half of why this was empty.
+    ``explorations`` is keyed by name, so iterate the values: iterating the mapping walks the keys, and a string has no slots, which is the other half of why this was empty.
     """
     explorations = slot(experiment, "explorations", None) or {}
     members = explorations.values() if hasattr(explorations, "values") else explorations
-    return {slot(axis, "name", None) or str(name): _axis_range(axis)
-            for exploration in members
-            for name, axis in name_items(slot(exploration, "space", None))}
+    return {
+        slot(axis, "name", None) or str(name): _axis_range(axis)
+        for exploration in members
+        for name, axis in name_items(slot(exploration, "space", None))
+    }
 
 
 def _integration_unit(integ):
     """The integrator's time unit, from whichever slot the recipe declared.
 
-    `Integrator` carries both `unit` and `time_scale`, and `time_scale` is the one the
-    schema defaults (to `ms`). Reading `unit` alone left every recipe that omits it
+    `Integrator` carries both `unit` and `time_scale`, and `time_scale` is the one the schema defaults (to `ms`). Reading `unit` alone left every recipe that omits it
     falling back to seconds, so a 0.5 ms step over 800 ms was reported as 0.5 s over
-    800 s — the same 1000x error the hardcoded `ms` used to make, with the recipes
-    swapped.
+    800 s — the same 1000x error the hardcoded `ms` used to make, with the recipes swapped.
     """
     return slot(integ, "unit", None) or slot(integ, "time_scale", None)
 
@@ -1579,8 +1540,7 @@ def _integration_unit(integ):
 def time_text(value, unit=None, decimals=4):
     """A time with the integrator's own unit, never an assumed one.
 
-    The integration block used to print a hardcoded ``ms``, so Jansen1995 — whose rate
-    constants are per second and whose recipe declares 2.0 — reported a 2 ms run of a
+    The integration block used to print a hardcoded ``ms``, so Jansen1995 — whose rate constants are per second and whose recipe declares 2.0 — reported a 2 ms run of a
     model that integrates for 2 s, with a 0.5 ms transient in place of 0.5 s.
     """
     if value in (None, ""):
@@ -1591,8 +1551,7 @@ def time_text(value, unit=None, decimals=4):
 def _speed_text(conduction_speed):
     """A conduction speed with its own unit, or "none" where the network has no delays.
 
-    A speed is not a time: routing it through :func:`time_text` prints "3 mm_per_ms" or,
-    where the unit is undeclared, the seconds default applied to a velocity.
+    A speed is not a time: routing it through :func:`time_text` prints "3 mm_per_ms" or, where the unit is undeclared, the seconds default applied to a velocity.
     """
     value = slot(conduction_speed, "value", None)
     if not value:
@@ -1612,15 +1571,11 @@ def _reference_text(experiment):
 def experiment_facts(experiment, shared_parameters=()):
     """Ordered ``{column: cell}`` of everything an experiment can differ from its siblings in.
 
-    Spans the model parameters the family shares, the network, the integrator and the
-    sweep — because the differences that matter are rarely all of one kind: Jansen1995's
-    seven experiments differ in node count, delay and duration and in **not one** model
-    parameter, so a parameters-only comparison would come out blank.
+    Spans the model parameters the family shares, the network, the integrator and the sweep — because the differences that matter are rarely all of one kind: Jansen1995's
+    seven experiments differ in node count, delay and duration and in **not one** model parameter, so a parameters-only comparison would come out blank.
 
-    Only parameters *every* member of the family defines are included. A parameter a
-    variant introduces has no counterpart in the base and would leave a hole in the
-    column, which is the one thing a merged table must not do; the variant's own delta
-    describes it instead.
+    Only parameters *every* member of the family defines are included. A parameter a variant introduces has no counterpart in the base and would leave a hole in the
+    column, which is the one thing a merged table must not do; the variant's own delta describes it instead.
     """
     net, integ = (slot(experiment, "network") or slot(experiment, "connectivity")), slot(experiment, "integration")
     unit = _integration_unit(integ)
@@ -1651,22 +1606,18 @@ def experiment_facts(experiment, shared_parameters=()):
 def experiment_table(experiments, shared_parameters=(), orient="auto", caption_only_varying=True):
     """One table comparing a family's experiments, carrying only what actually varies.
 
-    Every quantity constant across the experiments is dropped: it is stated once in the
-    symbol table or the settings sentence, and repeating it down a column says nothing.
+    Every quantity constant across the experiments is dropped: it is stated once in the symbol table or the settings sentence, and repeating it down a column says nothing.
 
-    Orientation is chosen to keep the table narrow, because columns are the axis that
-    cannot be paged: whichever of the two axes is shorter becomes the columns, ties going
+    Orientation is chosen to keep the table narrow, because columns are the axis that cannot be paged: whichever of the two axes is shorter becomes the columns, ties going
     to experiments-as-rows (the conventional study-design layout). Pass ``orient`` as
-    ``"rows"`` or ``"columns"`` — meaning where the *experiments* go — to pin it, so a
-    study's Methods keeps its shape when a seventh experiment lands.
+    ``"rows"`` or ``"columns"`` — meaning where the *experiments* go — to pin it, so a study's Methods keeps its shape when a seventh experiment lands.
     """
     facts = [experiment_facts(exp, shared_parameters) for exp in experiments]
     if not facts:
         return ""
     keys = list(facts[0])
     if caption_only_varying:
-        keys = [k for k in keys
-                if k in ("Exp",) or len({f.get(k, "") for f in facts}) > 1]
+        keys = [k for k in keys if k in ("Exp",) or len({f.get(k, "") for f in facts}) > 1]
     if orient == "auto":
         orient = "rows" if len(facts) >= len(keys) - 1 else "columns"
     if orient == "rows":
@@ -1678,24 +1629,20 @@ def experiment_table(experiments, shared_parameters=(), orient="auto", caption_o
 def experiment_title(experiment):
     """An experiment's heading text, without the id the heading already carries.
 
-    Recipes commonly open a label with the experiment's own number, so the heading came
-    out as "Experiment 30: Exp 30 — FIC+EIB tuning". Six of Schirner2023's ten read that
+    Recipes commonly open a label with the experiment's own number, so the heading came out as "Experiment 30: Exp 30 — FIC+EIB tuning". Six of Schirner2023's ten read that
     way. Stripping the prefix also drops the dash the recipe used to attach it.
     """
     label = str(slot(experiment, "label", "") or "").strip()
     ident = re.escape(str(slot(experiment, "id", "")))
-    stripped = re.sub(rf"^(?:exp(?:eriment)?\.?\s*){ident}\b\s*[-–—:.]*\s*", "", label,
-                      flags=re.IGNORECASE)
+    stripped = re.sub(rf"^(?:exp(?:eriment)?\.?\s*){ident}\b\s*[-–—:.]*\s*", "", label, flags=re.IGNORECASE)
     return stripped or label or "simulation"
 
 
 def settings_sentence(experiment):
     """The factual half of an experiment's paragraph, composed from what it declares.
 
-    Solver, step, duration, transient, network size and swept range are stated here so a
-    recipe's authored ``description:`` never has to restate them — the numbers a
-    description repeats are the numbers that go stale when the recipe changes. What the
-    description says about *why* an experiment exists is left untouched.
+    Solver, step, duration, transient, network size and swept range are stated here so a recipe's authored ``description:`` never has to restate them — the numbers a
+    description repeats are the numbers that go stale when the recipe changes. What the description says about *why* an experiment exists is left untouched.
     """
     net, integ = (slot(experiment, "network") or slot(experiment, "connectivity")), slot(experiment, "integration")
     unit = _integration_unit(integ)
@@ -1715,42 +1662,51 @@ def settings_sentence(experiment):
         clauses.append(f"the first {time_text(slot(integ, 'transient_time'), unit)} discarded")
     swept = sweep_axes(experiment)
     if swept:
-        clauses.append("sweeping " + ", ".join(f"${_symbol_latex(a.split('.')[-1])}$ over {r}"
-                                               for a, r in swept.items()))
+        clauses.append("sweeping " + ", ".join(f"${_symbol_latex(a.split('.')[-1])}$ over {r}" for a, r in swept.items()))
     if not clauses:
         return ""
     sentence = ", ".join(clauses) + "."
     return sentence[:1].upper() + sentence[1:]
 
 
-_SAMPLING_SLOTS = (("period", "period"), ("downsample_period", "downsample"),
-                   ("aggregation", "aggregation"), ("imaging_modality", "modality"),
-                   ("time_scale", "scale"), ("voi", "VOI"), ("skip_t", "skip"),
-                   ("tail_samples", "tail"), ("window_size", "window"))
+_SAMPLING_SLOTS = (
+    ("period", "period"),
+    ("downsample_period", "downsample"),
+    ("aggregation", "aggregation"),
+    ("imaging_modality", "modality"),
+    ("time_scale", "scale"),
+    ("voi", "VOI"),
+    ("skip_t", "skip"),
+    ("tail_samples", "tail"),
+    ("window_size", "window"),
+)
 
 
 def pipeline_text(pipeline):
     """A pipeline as arrow-separated step names.
 
-    A step is named by what the recipe *calls* it, not by the library function it
-    happens to dispatch to. Reading ``callable`` first printed Deco2014's five-step
-    BOLD pipeline as ``? → ? → fftconvolve → ? → ?`` — every step declares a ``name``
-    and only the convolution also names an implementation, so the one step that
+    A step is named by what the recipe *calls* it, not by the library function it happens to dispatch to. Reading ``callable`` first printed Deco2014's five-step
+    BOLD pipeline as ``? → ? → fftconvolve → ? → ?`` — every step declares a ``name`` and only the convolution also names an implementation, so the one step that
     resolved showed a scipy entry point where the reader wanted "convolve".
     """
     steps = pipeline if isinstance(pipeline, (list, tuple)) else ([pipeline] if pipeline else [])
-    names = [slot(s, "name", None) or slot(s, "label", None) or slot(s, "function", None)
-             or slot(slot(s, "callable", None), "name", None)
-             or slot(slot(s, "class_call", None), "name", None) for s in steps]
+    names = [
+        slot(s, "name", None)
+        or slot(s, "label", None)
+        or slot(s, "function", None)
+        or slot(slot(s, "callable", None), "name", None)
+        or slot(slot(s, "class_call", None), "name", None)
+        for s in steps
+    ]
     return " → ".join(str(n) if n else "?" for n in names)
 
 
 def _id_text(ids):
     """Experiment ids in numeric order, comma-separated.
 
-    Ordering them as text gives ``1, 2, 20, 21, 3, 30`` — Deco2014 records the same
-    three observables across ten experiments and listed them in exactly that order.
+    Ordering them as text gives ``1, 2, 20, 21, 3, 30`` — Deco2014 records the same three observables across ten experiments and listed them in exactly that order.
     """
+
     def key(i):
         s = str(i)
         return (0, int(s), "") if s.lstrip("-").isdigit() else (1, 0, s)
@@ -1761,19 +1717,20 @@ def _id_text(ids):
 def _observation_row(name, obs, observed_names):
     """One observation's cells, primary or derived — the two differ only in *Source*.
 
-    Sampling arrives as ``(label, value)`` pairs rather than joined text so the table
-    can drop the ones every observation shares.
+    Sampling arrives as ``(label, value)`` pairs rather than joined text so the table can drop the ones every observation shares.
     """
     sources = slot(obs, "source", None)
     sources = sources if isinstance(sources, (list, tuple)) else ([sources] if sources else [])
     names = [str(slot(s, "name", None) or s) for s in sources]
     derived = any(n in observed_names for n in names)
-    sampling = tuple((label, str(slot(obs, attr))) for attr, label in _SAMPLING_SLOTS
-                     if slot(obs, attr, None) is not None)
-    return (str(slot(obs, "label", None) or name),
-            ", ".join(names) if derived else _source_text(names),
-            sampling, pipeline_text(slot(obs, "pipeline", [])),
-            str(slot(obs, "description", "") or ""))
+    sampling = tuple((label, str(slot(obs, attr))) for attr, label in _SAMPLING_SLOTS if slot(obs, attr, None) is not None)
+    return (
+        str(slot(obs, "label", None) or name),
+        ", ".join(names) if derived else _source_text(names),
+        sampling,
+        pipeline_text(slot(obs, "pipeline", [])),
+        str(slot(obs, "description", "") or ""),
+    )
 
 
 _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
@@ -1782,17 +1739,13 @@ _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 def _source_text(names):
     """An observation's sources: symbols as math, anything else as literal code.
 
-    A source is usually a state variable, but it can equally be a pointer into external
-    data — ``phenotype:Schirner2023_HCPYA_phenotype#PMAT24_A_RTCR``, or a dotted path like
-    ``network.observations.BoldCorrelation``. Typesetting those as math asks the engine to
-    parse ``#`` and ``:`` as operators; pandoc rejected the first outright ("unexpected
-    '#'") and passed it through as raw TeX, and the second rendered as a product of
-    variables named after its path segments.
+    A source is usually a state variable, but it can equally be a pointer into external data — ``phenotype:Schirner2023_HCPYA_phenotype#PMAT24_A_RTCR``, or a dotted path like
+    ``network.observations.BoldCorrelation``. Typesetting those as math asks the engine to parse ``#`` and ``:`` as operators; pandoc rejected the first outright ("unexpected
+    '#'") and passed it through as raw TeX, and the second rendered as a product of variables named after its path segments.
     """
     if not names:
         return ""
-    return ", ".join(f"${_symbol_latex(n)}$" if _IDENTIFIER.fullmatch(n) else f"`{n}`"
-                     for n in names)
+    return ", ".join(f"${_symbol_latex(n)}$" if _IDENTIFIER.fullmatch(n) else f"`{n}`" for n in names)
 
 
 class Observations(NamedTuple):
@@ -1806,25 +1759,20 @@ class Observations(NamedTuple):
 def observation_table(experiments):
     """Everything the study records, as one table plus the prose the table cannot hold.
 
-    Primary and derived observations share a column set — a derived one names source
-    observations where a primary one names a state expression — so they merge into one
-    table rather than two half-empty ones. Identical observations collapse onto a single
-    row listing the experiments that declare them, which is where the real duplication
+    Primary and derived observations share a column set — a derived one names source observations where a primary one names a state expression — so they merge into one
+    table rather than two half-empty ones. Identical observations collapse onto a single row listing the experiments that declare them, which is where the real duplication
     sits: a ten-experiment study usually records the same two things ten times.
 
-    Three things keep the grid dense, measured across the studies that have the widest
-    ones (Deco2014's 29 observations, Schirner2023's 34):
+    Three things keep the grid dense, measured across the studies that have the widest ones (Deco2014's 29 observations, Schirner2023's 34):
 
     - **Shared settings are lifted out.** A sampling setting every observation agrees on
-      is stated once instead of per row. The one that matters is ``time_scale``, which
-      the schema defaults to ``ms`` — nobody chose it, and it was printed on every one
+      is stated once instead of per row. The one that matters is ``time_scale``, which the schema defaults to ``ms`` — nobody chose it, and it was printed on every one
       of those 63 rows.
     - **Sampling and pipeline are one column.** Each was under half full and they are
       complementary: both answer *how the raw state becomes the reported quantity*.
       Apart they left a 34 %-empty grid; merged, ``Reduction`` fills 66–91 %.
     - **Descriptions become prose.** They are paragraphs — the Balloon–Windkessel note
-      runs to four lines — in a column filled by 12 % of Schirner2023's rows. As a cell
-      they widen the table for everyone; below it they read as text.
+      runs to four lines — in a column filled by 12 % of Schirner2023's rows. As a cell they widen the table for everyone; below it they read as text.
     """
     rows = {}
     for exp in experiments:
@@ -1840,13 +1788,12 @@ def observation_table(experiments):
     shared = {k: v for k, v in per_row[0].items() if all(r.get(k) == v for r in per_row)}
 
     def _reduction(cells):
-        return "; ".join(part for part in
-                         (", ".join(f"{k}={v}" for k, v in cells[2] if k not in shared), cells[3])
-                         if part)
+        return "; ".join(part for part in (", ".join(f"{k}={v}" for k, v in cells[2] if k not in shared), cells[3]) if part)
 
-    table = table_or_prose(["Observation", "Experiments", "Source", "Reduction"],
-                     [[cells[0], _id_text(ids), cells[1], _reduction(cells)]
-                      for cells, ids in rows.items()])
+    table = table_or_prose(
+        ["Observation", "Experiments", "Source", "Reduction"],
+        [[cells[0], _id_text(ids), cells[1], _reduction(cells)] for cells, ids in rows.items()],
+    )
     notes = "\n\n".join(f"**{cells[0]}.** {cells[4]}" for cells in rows if cells[4])
     return Observations(table, ", ".join(f"{k} = {v}" for k, v in shared.items()), notes)
 
@@ -1859,11 +1806,9 @@ def _slug(text):
 def section_slug(text):
     """An ASCII anchor for a generated heading, so no renderer has to derive one.
 
-    Left to itself Quarto builds a heading's identifier from the heading *text*, which
-    here is recipe-authored and may hold anything: Cortes2013 labels an experiment with
+    Left to itself Quarto builds a heading's identifier from the heading *text*, which here is recipe-authored and may hold anything: Cortes2013 labels an experiment with
     ``I₀``, and the derived Typst label ``<…-in-i₀-…>`` failed the compile outright with
-    "unclosed label". Emitting our own slug keeps the identifier alphanumeric whatever the
-    label says, and makes it stable — it no longer changes when someone edits the wording.
+    "unclosed label". Emitting our own slug keeps the identifier alphanumeric whatever the label says, and makes it stable — it no longer changes when someone edits the wording.
     """
     return _slug(text)
 
@@ -1871,10 +1816,8 @@ def section_slug(text):
 class Equations:
     """Numbering and cross-reference labels for one rendered report.
 
-    A report that prints ``$$...$$`` and nothing else cannot be referred to: Jansen1995
-    numbers 19 equations and its prose says "Eq. 3" and "Eqs. 15-17", and our render had
-    no way to point at any of them. This assigns each equation a display number and,
-    where the target format supports one, an anchor.
+    A report that prints ``$$...$$`` and nothing else cannot be referred to: Jansen1995 numbers 19 equations and its prose says "Eq. 3" and "Eqs. 15-17", and our render had
+    no way to point at any of them. This assigns each equation a display number and, where the target format supports one, an anchor.
 
     ``style`` is the caller's choice, per the ``equations=`` argument:
 
@@ -1884,8 +1827,7 @@ class Equations:
       but silently repoints every reference when an equation is inserted before it.
     - ``none`` — no numbering at all.
 
-    ``format`` picks the syntax: ``qmd`` emits Quarto's ``{#eq-...}``, everything else
-    emits ``\\tag{n}`` inside the math, which MathJax and pandoc-to-LaTeX both honour.
+    ``format`` picks the syntax: ``qmd`` emits Quarto's ``{#eq-...}``, everything else emits ``\\tag{n}`` inside the math, which MathJax and pandoc-to-LaTeX both honour.
     """
 
     def __init__(self, style="semantic", format="markdown", prefix=""):
@@ -1897,12 +1839,9 @@ class Equations:
     def unique_anchor(self, anchor):
         """*anchor*, suffixed if this report already used it.
 
-        A variant may share its base model's name — Pang2023's haemodynamic wave model is
-        declared under the same name as the wave model it extends — and both redefine the
-        same state variable. Emitting the anchor twice makes every reference to it
-        ambiguous, and Quarto resolves the duplicate silently. Tables register here too,
-        so one report has one namespace: Mongillo2008 declares four distinct ``Ext_E``
-        input models and would otherwise emit ``#tbl-delta-ext-e`` four times.
+        A variant may share its base model's name — Pang2023's haemodynamic wave model is declared under the same name as the wave model it extends — and both redefine the
+        same state variable. Emitting the anchor twice makes every reference to it ambiguous, and Quarto resolves the duplicate silently. Tables register here too,
+        so one report has one namespace: Mongillo2008 declares four distinct ``Ext_E`` input models and would otherwise emit ``#tbl-delta-ext-e`` four times.
         """
         candidate, n = anchor, 2
         while candidate in self._used:
@@ -1942,16 +1881,13 @@ _DISPLAY_MATH = re.compile(r"\$\$(.+?)\$\$", re.S)
 def unrendered_equations(source):
     """Display equations written by hand in a report body, as ``(line, equation)``.
 
-    An equation belongs in a report only if the code runs it, and it gets there by being
-    rendered from the recipe — never typed. A typed one can drift from what executes, and
+    An equation belongs in a report only if the code runs it, and it gets there by being rendered from the recipe — never typed. A typed one can drift from what executes, and
     the reader has no way to tell which they are looking at. Pang2023 carried the paper's
     PDE, hand-set, above a section explaining that TVBO does not integrate that PDE.
 
-    Executable cells are stripped first, so equations that :meth:`SimulationStudy.report`
-    emits are not flagged: the check is for ``$$…$$`` typed into the prose.
+    Executable cells are stripped first, so equations that :meth:`SimulationStudy.report` emits are not flagged: the check is for ``$$…$$`` typed into the prose.
 
-    Assert this is empty in the report's own harness cell, so a hand-written equation
-    fails the render rather than reaching a reader::
+    Assert this is empty in the report's own harness cell, so a hand-written equation fails the render rather than reaching a reader::
 
         bad = report.unrendered_equations("report.qmd")
         assert not bad, f"hand-written equations: {bad}"
@@ -1965,8 +1901,7 @@ def unrendered_equations(source):
     """
     text = Path(source).read_text(encoding="utf-8") if _looks_like_path(source) else str(source)
     prose = _PYTHON_CELL.sub(lambda m: "\n" * m.group(0).count("\n"), text)
-    return [(prose[:m.start()].count("\n") + 1, " ".join(m.group(1).split()))
-            for m in _DISPLAY_MATH.finditer(prose)]
+    return [(prose[: m.start()].count("\n") + 1, " ".join(m.group(1).split())) for m in _DISPLAY_MATH.finditer(prose)]
 
 
 def _looks_like_path(source):
@@ -1980,23 +1915,18 @@ def _looks_like_path(source):
 def captioned(table, caption, anchor, format="markdown", anchors=None):
     """A table with its caption and cross-reference anchor attached.
 
-    An uncaptioned table is a wall of numbers, and in LaTeX it still steps the table
-    counter — which is why a Methods section that emitted thirty anonymous tables pushed
-    the first captioned table in Results out to "Table 34". Captioning them removes the
-    need for the counter reset rather than working around it.
+    An uncaptioned table is a wall of numbers, and in LaTeX it still steps the table counter — which is why a Methods section that emitted thirty anonymous tables pushed
+    the first captioned table in Results out to "Table 34". Captioning them removes the need for the counter reset rather than working around it.
 
-    Pass ``anchors`` (the report's :class:`Equations`) so tables share the equations'
-    anchor namespace and a repeated model name cannot mint the same ``#tbl-`` twice.
+    Pass ``anchors`` (the report's :class:`Equations`) so tables share the equations' anchor namespace and a repeated model name cannot mint the same ``#tbl-`` twice.
 
-    Input that is not a table — what `table_or_prose` returns for a grid too small to
-    earn a float — passes through uncaptioned, because captioning prose would announce a
-    table the reader cannot see and, in LaTeX, number one that was never typeset.
+    Input that is not a table — what `table_or_prose` and `md_table` return for a grid with no float left in it — takes the caption as a lead-in sentence instead of a numbered label below, since numbering a float the reader cannot see would announce a table LaTeX never typeset. The caption still has to be *said*: the observations one carries every sampling setting the rows agree on, lifted out of the grid, so dropping it took those settings out of the report entirely.
     """
     text = str(table).strip()
     if not text:
         return ""
     if not text.startswith("|"):
-        return f"{table}\n"
+        return f"{caption}\n\n{text}\n"
     if format != "qmd":
         return f"{table}\n\n**Table.** {caption}\n"
     label = f"tbl-{_slug(anchor)}"
@@ -2008,14 +1938,11 @@ def variant_parameter_table(family):
     """One table of every parameter the family's variants change, not one table each.
 
     A study that varies a model across many experiments produces many two-row deltas —
-    Mongillo2008 emitted twenty-one of them — and a page of two-row tables is not a
-    readable Methods section. Collapsing them keeps the same information in one grid, and
+    Mongillo2008 emitted twenty-one of them — and a page of two-row tables is not a readable Methods section. Collapsing them keeps the same information in one grid, and
     the *Variant* column carries what the separate captions used to.
 
-    With only one variant that column has one value, repeated down the page to say what
-    the sentence introducing the variant said a line earlier. It is left blank so
-    :func:`md_table` drops it, which is also what stops a long model label from taking a
-    third of the table's width.
+    With only one variant that column has one value, repeated down the page to say what the sentence introducing the variant said a line earlier. It is left blank so
+    :func:`md_table` drops it, which is also what stops a long model label from taking a third of the table's width.
     """
     contributors = [e for e in family.variants if e.delta.params]
     rows = []
@@ -2026,12 +1953,10 @@ def variant_parameter_table(family):
         params = dict(name_items(slot(entry.model, "parameters", {})))
         for name in sorted(entry.delta.params):
             p = params.get(name)
-            rows.append([cell, f"${display_symbol(p, name)}$",
-                         _value_text(p), unit_text(slot(p, "unit")), _meaning(p, name)])
+            rows.append([cell, f"${display_symbol(p, name)}$", _value_text(p), unit_text(slot(p, "unit")), _meaning(p, name)])
     if not rows:
         return ""
-    return table_or_prose(["Variant", "Parameter", "Value", "Unit", "Description"], rows,
-                    aligns=["l", "l", "r", "l", "l"])
+    return table_or_prose(["Variant", "Parameter", "Value", "Unit", "Description"], rows, aligns=["l", "l", "r", "l", "l"])
 
 
 def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
@@ -2238,8 +2163,7 @@ def get_citation(citation_key) -> str:
 def to_pdf(render, outputfile):
     """Convert Markdown text to a PDF file via pandoc.
 
-    Uses `pypandoc` with the `xelatex` PDF engine and a 3.5 cm page margin to
-    render the given Markdown source and write the result to disk.
+    Uses `pypandoc` with the `xelatex` PDF engine and a 3.5 cm page margin to render the given Markdown source and write the result to disk.
 
     Args:
         render: Markdown-formatted source text to convert.

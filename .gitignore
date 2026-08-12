@@ -160,3 +160,6 @@ docs/Usage/*.so
 # and `skills/` (maintainer-only). `.claude/skills/` is only ever a `tvbo skills sync`
 # render of those, so it does not belong in the index.
 .claude
+
+# Scratch renders left by `tvbo export pyrates` runs.
+pyrates_run__*.py

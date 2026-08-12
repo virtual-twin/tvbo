@@ -1,7 +1,6 @@
 """User-facing `SimulationStudy` class for grouping related experiments.
 
-Provides a thin wrapper around the generated datamodel that adds loading
-helpers (YAML files, the tvbo database, openMINDS JSON-LD), citation
+Provides a thin wrapper around the generated datamodel that adds loading helpers (YAML files, the tvbo database, openMINDS JSON-LD), citation
 formatting, and access to individual `SimulationExperiment`s.
 """
 
@@ -21,13 +20,10 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
 
     Aggregates the experiments behind a published paper or analysis (model,
     DOI, year, citation, dataset) into one declarative YAML/Pydantic object.
-    Load with `from_db(name)` for curated studies, `from_file(path)` for
-    local YAML, or `from_openminds(...)` for JSON-LD provenance graphs.
+    Load with `from_db(name)` for curated studies, `from_file(path)` for local YAML, or `from_openminds(...)` for JSON-LD provenance graphs.
 
-    The most-used entry points are
-    [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment)
-    to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite)
-    for the formatted citation, and
+    The most-used entry points are [`get_experiment(id)`](#tvbo.classes.study.SimulationStudy.get_experiment)
+    to materialise a single run, [`cite()`](#tvbo.classes.study.SimulationStudy.cite) for the formatted citation, and
     [`to_openminds(...)`](#tvbo.classes.study.SimulationStudy.to_openminds) for
     JSON-LD export.
     """
@@ -53,8 +49,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
     def from_file(cls, filepath):
         """Load a study from a local YAML file.
 
-        The resolved absolute path is stored on the returned instance so that
-        experiments materialised later can locate sibling data files.
+        The resolved absolute path is stored on the returned instance so that experiments materialised later can locate sibling data files.
 
         Args:
             filepath: Path to the study YAML file.
@@ -66,25 +61,12 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
 
         study = yaml_loader.load(filepath, cls)
         study._source_file = str(Path(filepath).resolve())
-        # Make the recipe's callable code importable so custom builders/callables
-        # resolve by bare module name without a PYTHONPATH prefix: an explicit
-        # code_source (local dir or git repo) when declared, else the code/
-        # subdir beside the YAML.
+        # Make the recipe's callable code importable so custom builders/callables resolve by bare module name without a PYTHONPATH prefix: an explicit code_source (local dir or git repo) when declared, else the code/ subdir beside the YAML.
         register_recipe_code_paths(study._source_file, getattr(study, "code_source", None))
-        # Keep the raw (anchor- and !include-resolved) experiment dicts so experiments
-        # can be materialised through SimulationExperiment.from_string — that path
-        # iri-sources dynamics/coupling from the registry, which loading the datamodel
-        # object directly does not. Extract them with the SAME loader as the LinkML load
-        # above (yaml_loader, NOT a plain yaml.safe_load) so the two load paths cannot
-        # diverge: load_as_dict resolves `!include` fragments and folds slot aliases
-        # identically, so a modular (!include-split) study materialises exactly like a
-        # monolithic one. A plain safe_load chokes on the `!include` tag and would silently
-        # empty this, dropping every experiment to the iri-unaware from_datamodel fallback.
+        # Keep the raw (anchor- and !include-resolved) experiment dicts so experiments can be materialised through SimulationExperiment.from_string — that path iri-sources dynamics/coupling from the registry, which loading the datamodel object directly does not. Extract them with the SAME loader as the LinkML load above (yaml_loader, NOT a plain yaml.safe_load) so the two load paths cannot diverge: load_as_dict resolves `!include` fragments and folds slot aliases identically, so a modular (!include-split) study materialises exactly like a monolithic one. A plain safe_load chokes on the `!include` tag and would silently empty this, dropping every experiment to the iri-unaware from_datamodel fallback.
         try:
             _raw = yaml_loader.load_as_dict(filepath) or {}
-            _raw_exps = {
-                e.get("id"): e for e in (_raw.get("experiments") or []) if isinstance(e, dict)
-            }
+            _raw_exps = {e.get("id"): e for e in (_raw.get("experiments") or []) if isinstance(e, dict)}
         except Exception:
             _raw_exps = {}
         # Store as a plain dict (bypass the JsonObj setattr that would wrap it).
@@ -144,10 +126,8 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
     ) -> str:
         """Render one Methods section for the whole study.
 
-        Experiments that share a model share its equations and its symbol table; a model
-        that merely varies a sibling contributes only its delta. Everything the
-        experiments hold in common is stated once, and the comparison table carries only
-        what actually differs — so a seven-experiment study stops emitting seven copies
+        Experiments that share a model share its equations and its symbol table; a model that merely varies a sibling contributes only its delta. Everything the
+        experiments hold in common is stated once, and the comparison table carries only what actually differs — so a seven-experiment study stops emitting seven copies
         of the same six equations and three copies of the same parameter table.
 
         Args:
@@ -211,26 +191,16 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
                 if source_file:
                     experiment.SimulationExperiment._pending_source_file = source_file
                 try:
-                    # Materialise through the YAML construction path so that
-                    # iri-sourced components (dynamics, coupling) are merged from
-                    # the registry — exactly as SimulationExperiment.from_file
-                    # does. from_datamodel alone skips that resolution and would
-                    # leave an iri-only dynamics unpopulated. Prefer the raw
-                    # authored experiment dict (minimal, anchor-resolved) so the
-                    # merge behaves identically to loading a standalone spec.
+                    # Materialise through the YAML construction path so that iri-sourced components (dynamics, coupling) are merged from the registry — exactly as SimulationExperiment.from_file does. from_datamodel alone skips that resolution and would leave an iri-only dynamics unpopulated. Prefer the raw authored experiment dict (minimal, anchor-resolved) so the merge behaves identically to loading a standalone spec.
                     raw = raw_experiments.get(experiment_id)
                     if isinstance(raw, dict):
                         import yaml
 
-                        exp = experiment.SimulationExperiment.from_string(
-                            yaml.safe_dump(raw)
-                        )
+                        exp = experiment.SimulationExperiment.from_string(yaml.safe_dump(raw))
                     else:
                         from linkml_runtime.dumpers import yaml_dumper
 
-                        exp = experiment.SimulationExperiment.from_string(
-                            yaml_dumper.dumps(exp_dm)
-                        )
+                        exp = experiment.SimulationExperiment.from_string(yaml_dumper.dumps(exp_dm))
                     if source_file:
                         exp._source_file = source_file
                 finally:
@@ -314,12 +284,9 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
 class StudyCollection(SimulationStudy, tvbo_datamodel.StudyCollection):
     """A whole manuscript as one runnable specification.
 
-    Aggregates the member studies a paper reports (`members`) and owns the
-    paper's own demonstration experiments, analyses and figures (inherited from
-    `SimulationStudy`). `tvbo run` walks the members and the owned content, emits
-    every reported number to a results manifest (`results`) and every figure with
-    its composed caption, then packages the run as a COMBINE/OMEX archive
-    (`archive`) — so the paper becomes an instance of the reproducibility it
+    Aggregates the member studies a paper reports (`members`) and owns the paper's own demonstration experiments, analyses and figures (inherited from
+    `SimulationStudy`). `tvbo run` walks the members and the owned content, emits every reported number to a results manifest (`results`) and every figure with
+    its composed caption, then packages the run as a COMBINE/OMEX archive (`archive`) — so the paper becomes an instance of the reproducibility it
     argues for. Load with `from_file(path)` (inherited).
     """
 
@@ -328,23 +295,17 @@ class StudyCollection(SimulationStudy, tvbo_datamodel.StudyCollection):
         n_members = len(getattr(self, "members", None) or [])
         n_results = len(getattr(self, "results", None) or [])
         n_figures = len(getattr(self, "figures", None) or [])
-        return (
-            f"StudyCollection(\n"
-            f"  title={title!r},\n"
-            f"  members={n_members}, results={n_results}, figures={n_figures}\n"
-            f")"
-        )
+        return f"StudyCollection(\n  title={title!r},\n  members={n_members}, results={n_results}, figures={n_figures}\n)"
 
     def member_recipes(self, base=None, *, include_optional: bool = True) -> list[tuple[str, "Path"]]:
         """The member study recipes as ``(label, resolved_path)`` pairs.
 
-        Each ``recipe`` is resolved relative to *base* (the StudyCollection file's
-        directory) when it is not an IRI or an absolute path. ``optional`` members
+        Each ``recipe`` is resolved relative to *base* (the StudyCollection file's directory) when it is not an IRI or an absolute path. ``optional`` members
         are dropped when *include_optional* is False (a ``--skip``-style light run).
         """
         base = Path(base) if base is not None else Path(getattr(self, "_source_file", ".")).resolve().parent
         out: list[tuple[str, Path]] = []
-        for m in (getattr(self, "members", None) or []):
+        for m in getattr(self, "members", None) or []:
             if getattr(m, "optional", None) and not include_optional:
                 continue
             recipe = str(getattr(m, "recipe", ""))

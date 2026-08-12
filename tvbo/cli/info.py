@@ -1,4 +1,5 @@
 """``tvbo info`` — inspect a SPEC without running it."""
+
 from __future__ import annotations
 
 import typer
@@ -33,8 +34,7 @@ def _summarize(kind: str, obj) -> dict:
         except Exception:
             exps_list = []
         out["experiments"] = [
-            {"key": getattr(e, "key", None) or getattr(e, "id", None) or getattr(e, "label", None)}
-            for e in exps_list
+            {"key": getattr(e, "key", None) or getattr(e, "id", None) or getattr(e, "label", None)} for e in exps_list
         ]
 
     if kind == "experiment":
@@ -43,9 +43,11 @@ def _summarize(kind: str, obj) -> dict:
         explorations = getattr(obj, "explorations", None)
         if explorations:
             try:
-                names = list(explorations.keys()) if hasattr(explorations, "keys") else [
-                    getattr(e, "name", None) or getattr(e, "key", None) for e in explorations
-                ]
+                names = (
+                    list(explorations.keys())
+                    if hasattr(explorations, "keys")
+                    else [getattr(e, "name", None) or getattr(e, "key", None) for e in explorations]
+                )
             except Exception:
                 names = []
             out["explorations"] = names

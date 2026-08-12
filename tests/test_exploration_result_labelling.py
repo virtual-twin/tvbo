@@ -27,8 +27,11 @@ def test_single_axis_timeseries_is_labelled_by_parameter():
     """The leading run axis takes the swept parameter's name and values."""
     data = np.zeros((len(C_VALS), 50, 2, 1))
     r = ExplorationResult(
-        name="sweep", results=data, axes=[_axis("model.c", C_VALS)],
-        dt=0.1, output_names=["x", "y"],
+        name="sweep",
+        results=data,
+        axes=[_axis("model.c", C_VALS)],
+        dt=0.1,
+        output_names=["x", "y"],
     )
     assert isinstance(r.results, xr.DataArray)
     assert r.results.dims == ("model.c", "time", "variable", "node")
@@ -40,8 +43,11 @@ def test_labelling_preserves_shape():
     """Labels are added without reshaping, so positional consumers still work."""
     data = np.zeros((len(C_VALS), 50, 2, 1))
     r = ExplorationResult(
-        name="sweep", results=data, axes=[_axis("model.c", C_VALS)],
-        dt=0.1, output_names=["x", "y"],
+        name="sweep",
+        results=data,
+        axes=[_axis("model.c", C_VALS)],
+        dt=0.1,
+        output_names=["x", "y"],
     )
     assert r.results.shape == data.shape
     assert np.asarray(r.results).shape == data.shape
@@ -52,9 +58,11 @@ def test_multi_axis_results_flat_and_grid_expands():
     n_grid = len(C_VALS) * len(W_VALS)
     data = np.zeros((n_grid, 50, 2, 1))
     r = ExplorationResult(
-        name="sweep2", results=data,
+        name="sweep2",
+        results=data,
         axes=[_axis("model.c", C_VALS), _axis("model.w", W_VALS)],
-        dt=0.1, output_names=["x", "y"],
+        dt=0.1,
+        output_names=["x", "y"],
     )
     assert r.results.dims == ("point", "time", "variable", "node")
     grid = r.as_grid()
@@ -66,8 +74,12 @@ def test_trials_only_results_are_labelled():
     """A trials-only ensemble has no swept axis but is still labelled."""
     data = np.zeros((4, 50, 2, 1))
     r = ExplorationResult(
-        name="ICs", results=data, axes=[], dt=0.1,
-        output_names=["x", "y"], n_trials=4,
+        name="ICs",
+        results=data,
+        axes=[],
+        dt=0.1,
+        output_names=["x", "y"],
+        n_trials=4,
     )
     assert r.results.dims == ("trial", "time", "variable", "node")
     assert r.as_grid().dims == ("trial", "time", "variable", "node")
@@ -76,7 +88,8 @@ def test_trials_only_results_are_labelled():
 def test_scalar_results_are_labelled():
     """Scalar-per-point results are labelled too, and keep ``optimal`` tracking."""
     r = ExplorationResult(
-        name="loss", results=np.array([3.0, 1.0, 2.0]),
+        name="loss",
+        results=np.array([3.0, 1.0, 2.0]),
         axes=[_axis("model.c", C_VALS)],
     )
     assert isinstance(r.results, xr.DataArray)
@@ -94,8 +107,11 @@ def test_as_grid_never_returns_a_bare_array():
     """
     data = np.zeros((7, 50, 2, 1))  # 7 does not match the 3-point axis
     r = ExplorationResult(
-        name="mismatch", results=data, axes=[_axis("model.c", C_VALS)],
-        dt=0.1, output_names=["x", "y"],
+        name="mismatch",
+        results=data,
+        axes=[_axis("model.c", C_VALS)],
+        dt=0.1,
+        output_names=["x", "y"],
     )
     grid = r.as_grid()
     assert isinstance(grid, xr.DataArray)
@@ -115,8 +131,12 @@ def _stacked(shape, dims=None, ts=None, cell_coords=None):
     from tvbo.data.types import _stacked_to_dataarray
 
     return _stacked_to_dataarray(
-        np.zeros(shape), [_axis("model.c", C_VALS)], intrinsic_ts=ts,
-        name="obs", cell_coords=cell_coords, dims=dims,
+        np.zeros(shape),
+        [_axis("model.c", C_VALS)],
+        intrinsic_ts=ts,
+        name="obs",
+        cell_coords=cell_coords,
+        dims=dims,
     )
 
 
@@ -144,8 +164,7 @@ def test_undeclared_observations_keep_the_positional_fallback():
 
 
 def test_declared_dims_apply_on_the_sharded_point_path():
-    da = _stacked((2, 1338, 200), dims=("time", "node"),
-                  cell_coords={"model.c": np.array([0.1, 0.3])})
+    da = _stacked((2, 1338, 200), dims=("time", "node"), cell_coords={"model.c": np.array([0.1, 0.3])})
     assert da.dims == ("point", "time", "node")
     assert list(da.coords["model.c"].values) == [0.1, 0.3]
 
@@ -205,16 +224,14 @@ def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
     # so at least one label reads the wrong cell — this is exactly the bug cell_coords fixes.
     bare = _stacked_to_dataarray(stacked, axes, name="obs")
     mism = sum(
-        float(bare.sel({"Osc.omega": o, "Cpl.a": k, "network.v": v}).values) != enc(o, k, v)
-        for o in OM for k in K for v in V
+        float(bare.sel({"Osc.omega": o, "Cpl.a": k, "network.v": v}).values) != enc(o, k, v) for o in OM for k in K for v in V
     )
     assert mism > 0
 
 
 def _expl(cell_counts, axis_sizes, **kw):
     """An ExplorationResult carrying *cell_counts* cells over axes of *axis_sizes*."""
-    axes = [Bunch(name=f"ax{i}", explored_values=np.arange(n, dtype=float), n=n)
-            for i, n in enumerate(axis_sizes)]
+    axes = [Bunch(name=f"ax{i}", explored_values=np.arange(n, dtype=float), n=n) for i, n in enumerate(axis_sizes)]
     coords = {f"ax{i}": np.zeros(cell_counts) for i in range(len(axis_sizes))}
     return ExplorationResult(name="sweep", axes=axes, cell_coords=coords, **kw)
 

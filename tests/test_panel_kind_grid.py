@@ -11,6 +11,7 @@ A grid cell IS an inset — the same class, resolved by the same function — an
 below pin that: the geometry the grid computes, the labels it writes once, and the fact
 that a cell draws exactly as the same kind draws in a mosaic slot.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -47,8 +48,9 @@ class _Layer:
     """The minimum a layer resolver reads; the container path is never opened here."""
 
     def __init__(self, output="x"):
-        self.used = type("U", (), {"iri": f"file:{output}.h5", "output": output,
-                                   "sel": None, "experiment": None, "analysis": None})()
+        self.used = type(
+            "U", (), {"iri": f"file:{output}.h5", "output": output, "sel": None, "experiment": None, "analysis": None}
+        )()
         self.encoding = self.mark = self.style = self.triangle = None
         self.transform = self.label = None
 
@@ -58,6 +60,7 @@ def _surface_cell(**opts):
 
 
 # ------------------------------------------------------------------ geometry
+
 
 def test_cells_tile_the_panel_top_left_to_bottom_right():
     boxes, _ = _grid_geometry({"nrows": 2, "ncols": 2, "wspace": 0.0, "hspace": 0.0}, 4)
@@ -79,28 +82,25 @@ def test_a_cell_past_the_declared_rows_is_dropped():
 
 def test_label_strips_are_reserved_only_when_there_are_labels():
     plain, _ = _grid_geometry({"nrows": 1, "ncols": 1}, 1)
-    labelled, _ = _grid_geometry({"nrows": 1, "ncols": 1, "row_labels": ["a"],
-                                  "col_labels": ["b"]}, 1)
+    labelled, _ = _grid_geometry({"nrows": 1, "ncols": 1, "row_labels": ["a"], "col_labels": ["b"]}, 1)
     assert plain[0][0] == pytest.approx(0.01) and plain[0][3] == pytest.approx(0.98)
     assert labelled[0][0] > plain[0][0] and labelled[0][3] < plain[0][3]
 
 
 def test_each_row_and_column_is_labelled_once():
-    _, labels = _grid_geometry({"nrows": 2, "ncols": 3,
-                                "row_labels": ["r0", "r1"], "col_labels": ["c0", "c1", "c2"]}, 6)
-    assert [l["text"] for l in labels] == ["c0", "c1", "c2", "r0", "r1"]
-    assert all(l["kwargs"]["va"] == "bottom" for l in labels[:3])
+    _, labels = _grid_geometry({"nrows": 2, "ncols": 3, "row_labels": ["r0", "r1"], "col_labels": ["c0", "c1", "c2"]}, 6)
+    assert [lbl["text"] for lbl in labels] == ["c0", "c1", "c2", "r0", "r1"]
+    assert all(lbl["kwargs"]["va"] == "bottom" for lbl in labels[:3])
 
 
 def test_surplus_labels_are_ignored_rather_than_drawn_off_the_grid():
     _, labels = _grid_geometry({"nrows": 1, "ncols": 2, "col_labels": ["a", "b", "c"]}, 2)
-    assert [l["text"] for l in labels] == ["a", "b"]
+    assert [lbl["text"] for lbl in labels] == ["a", "b"]
 
 
 def test_between_and_trailing_write_an_equation_through_the_gaps():
-    _, labels = _grid_geometry({"nrows": 1, "ncols": 3, "between": [" ", "=", "+"],
-                                "trailing": "..."}, 3)
-    assert [l["text"] for l in labels] == ["=", "+", "..."]
+    _, labels = _grid_geometry({"nrows": 1, "ncols": 3, "between": [" ", "=", "+"], "trailing": "..."}, 3)
+    assert [lbl["text"] for lbl in labels] == ["=", "+", "..."]
 
 
 def test_a_bottom_strip_is_reserved_like_the_top_one():
@@ -112,17 +112,16 @@ def test_a_bottom_strip_is_reserved_like_the_top_one():
 
 
 def test_a_rotated_row_label_is_centred_rather_than_right_aligned():
-    _, labels = _grid_geometry({"nrows": 1, "ncols": 1, "row_labels": ["Connectome"],
-                                "row_label_rotation": 90.0}, 1)
+    _, labels = _grid_geometry({"nrows": 1, "ncols": 1, "row_labels": ["Connectome"], "row_label_rotation": 90.0}, 1)
     assert labels[0]["kwargs"]["rotation"] == 90.0
     assert labels[0]["kwargs"]["ha"] == "center"
 
 
 # ------------------------------------------------------------------ resolution
 
+
 def test_layers_fill_the_grid_one_cell_each_through_the_shared_template():
-    panel = _Panel(opts={"nrows": 1, "ncols": 2}, cell=_surface_cell(view="lateral"),
-                   layers=[_Layer("a"), _Layer("b")])
+    panel = _Panel(opts={"nrows": 1, "ncols": 2}, cell=_surface_cell(view="lateral"), layers=[_Layer("a"), _Layer("b")])
     got = _resolve_drawable(panel, "p", Path("."))
     assert len(got["insets"]) == 2
     assert all(c["kind"] == "surface" for c in got["insets"])
@@ -137,33 +136,38 @@ def test_a_grid_draws_nothing_itself_so_its_layers_are_not_drawn_twice():
 
 def test_declared_cells_may_differ_and_are_merged_over_the_template():
     """The common shape: a first cell showing the bare mesh the rest are maps on."""
-    panel = _Panel(opts={"nrows": 1, "ncols": 2}, cell=_surface_cell(view="lateral"),
-                   cells=[_Cell(kind="surface", opts={"color": "w"}),
-                          _Cell(kind="surface", layers=[_Layer("a")])])
+    panel = _Panel(
+        opts={"nrows": 1, "ncols": 2},
+        cell=_surface_cell(view="lateral"),
+        cells=[_Cell(kind="surface", opts={"color": "w"}), _Cell(kind="surface", layers=[_Layer("a")])],
+    )
     cells = _resolve_drawable(panel, "p", Path("."))["insets"]
     assert cells[0]["ctx"]["opts"] == {"mesh": "m.npz", "view": "lateral", "color": "w"}
     assert not cells[0]["layers"] and cells[1]["layers"]
 
 
 def test_a_row_scoped_opt_is_declared_once_for_the_row():
-    panel = _Panel(opts={"nrows": 2, "ncols": 2, "row.view": ["lateral", "medial"]},
-                   cell=_surface_cell(),
-                   layers=[_Layer(str(i)) for i in range(4)])
+    panel = _Panel(
+        opts={"nrows": 2, "ncols": 2, "row.view": ["lateral", "medial"]},
+        cell=_surface_cell(),
+        layers=[_Layer(str(i)) for i in range(4)],
+    )
     views = [c["ctx"]["opts"]["view"] for c in _resolve_drawable(panel, "p", Path("."))["insets"]]
     assert views == ["lateral", "lateral", "medial", "medial"]
 
 
 def test_a_column_scoped_opt_advances_across_instead_of_down():
-    panel = _Panel(opts={"nrows": 2, "ncols": 2, "col.cmap": ["viridis", "seismic"]},
-                   cell=_surface_cell(),
-                   layers=[_Layer(str(i)) for i in range(4)])
+    panel = _Panel(
+        opts={"nrows": 2, "ncols": 2, "col.cmap": ["viridis", "seismic"]},
+        cell=_surface_cell(),
+        layers=[_Layer(str(i)) for i in range(4)],
+    )
     maps = [c["ctx"]["opts"]["cmap"] for c in _resolve_drawable(panel, "p", Path("."))["insets"]]
     assert maps == ["viridis", "seismic", "viridis", "seismic"]
 
 
 def test_cells_and_layers_together_are_refused():
-    panel = _Panel(opts={"ncols": 1}, cell=_surface_cell(),
-                   cells=[_Cell(kind="surface")], layers=[_Layer("a")])
+    panel = _Panel(opts={"ncols": 1}, cell=_surface_cell(), cells=[_Cell(kind="surface")], layers=[_Layer("a")])
     with pytest.raises(ValueError, match="not both"):
         _resolve_drawable(panel, "p", Path("."))
 
@@ -184,8 +188,7 @@ def test_grid_cell_keys_are_unique_so_nesting_cannot_collide():
     outer = _Panel(opts={"ncols": 1}, cell=_surface_cell(), layers=[_Layer("c")])
     outer.insets = [inner]
     got = _resolve_drawable(outer, "p", Path("."))
-    keys = [c["key"] for c in got["insets"]] + \
-           [c["key"] for c in got["insets"][-1]["insets"]]
+    keys = [c["key"] for c in got["insets"]] + [c["key"] for c in got["insets"][-1]["insets"]]
     assert len(keys) == len(set(keys))
 
 
@@ -203,6 +206,7 @@ def test_an_inset_without_bounds_is_refused_with_the_grid_named_as_the_exception
 
 
 # ------------------------------------------------------------------ built-in kinds
+
 
 @pytest.mark.parametrize("kind", ["colorbar", "legend"])
 def test_a_builtin_kind_needs_no_render_and_no_code_modules(kind):
@@ -226,11 +230,10 @@ def test_a_legend_names_its_entries_in_parallel_typed_lists():
         def legend(self, handles, labels, **kw):
             drawn["handles"], drawn["labels"], drawn["kw"] = handles, labels, kw
 
-    legend_panel(None, _Ax(), {"opts": {"labels": ["long", "short"],
-                                        "colors": ["#000000"], "linestyles": ["-", "--"]}})
+    legend_panel(None, _Ax(), {"opts": {"labels": ["long", "short"], "colors": ["#000000"], "linestyles": ["-", "--"]}})
     assert drawn["labels"] == ["long", "short"] and drawn["axis"] == "off"
     assert [h.get_linestyle() for h in drawn["handles"]] == ["-", "--"]
-    assert drawn["handles"][1].get_color() == "k"      # shorter than labels -> default
+    assert drawn["handles"][1].get_color() == "k"  # shorter than labels -> default
 
 
 def test_a_legend_with_no_labels_says_what_is_missing():

@@ -1,10 +1,10 @@
 """Runtime wrapper around the auto-generated :class:`tvbo_datamodel.Event`.
 
-Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal
-is built generically from the event's symbolic equation and its parameters,
+Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal is built generically from the event's symbolic equation and its parameters,
 mirroring the pattern used by :class:`tvbo.classes.dynamics.Dynamics` and
 :class:`tvbo.classes.perturbation.Stimulus`.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -23,25 +23,26 @@ class Event(tvbo_datamodel.Event):
         ``t`` and the event's own parameters.
         """
         # Imported here rather than at module top: this module is imported by
-        # ``tvbo.datamodel`` to attach the Event helpers, and parse.expression
-        # imports back from ``tvbo.datamodel.schema`` — a module-top import would
-        # form an import cycle when parse.expression is imported first.
+        # ``tvbo.datamodel`` to attach the Event helpers, and parse.expression imports back from ``tvbo.datamodel.schema`` — a module-top import would form an import cycle when parse.expression is imported first.
         from tvbo.parse.expression import parse_eq
 
         params = {name: Symbol(name) for name in (self.parameters or {})}
         params.setdefault("t", Symbol("t"))
         expr = parse_eq(self.equation, local_dict=params)
-        subs = {Symbol(name): float(p.value)
-                for name, p in (self.parameters or {}).items()
-                if p.value is not None}
+        subs = {Symbol(name): float(p.value) for name, p in (self.parameters or {}).items() if p.value is not None}
         return lambdify(Symbol("t"), expr.subs(subs), modules="numpy")
 
     def _default_window(self):
         """Infer a sensible (t0, t1) window from event parameters."""
         p = self.parameters or {}
         onset = float(p["onset"].value) if "onset" in p and p["onset"].value is not None else 0.0
-        width = (float(p["width"].value) if "width" in p and p["width"].value is not None
-                 else float(self.duration) if self.duration else 1.0)
+        width = (
+            float(p["width"].value)
+            if "width" in p and p["width"].value is not None
+            else float(self.duration)
+            if self.duration
+            else 1.0
+        )
         return onset - max(width, 0.1), onset + width + max(width, 0.1)
 
     def plot(self, t=None, n=1001, ax=None, onset_kw=None, **kwargs):
@@ -92,17 +93,14 @@ class Event(tvbo_datamodel.Event):
 
 
 # Make the helpers available on the auto-generated schema class itself, so
-# ``schema.Event(...).plot()`` works without requiring callers to import the
-# wrapper explicitly. This mirrors the ``__class__`` patching pattern used for
+# ``schema.Event(...).plot()`` works without requiring callers to import the wrapper explicitly. This mirrors the ``__class__`` patching pattern used for
 # Network/Continuation in :mod:`tvbo.classes.experiment`.
 for _name in ("plot", "_signal", "_default_window"):
     setattr(tvbo_datamodel.Event, _name, getattr(Event, _name))
 
 
 # Back-compatibility: the stimulus-targeting slots were renamed
-# ``regions`` -> ``nodes`` and ``weighting`` -> ``weights`` (the old names are
-# kept as LinkML aliases). LinkML aliases are metadata only and are not accepted
-# as constructor kwargs, so map the deprecated names here at construction time.
+# ``regions`` -> ``nodes`` and ``weighting`` -> ``weights`` (the old names are kept as LinkML aliases). LinkML aliases are metadata only and are not accepted as constructor kwargs, so map the deprecated names here at construction time.
 _SLOT_ALIASES = {"regions": "nodes", "weighting": "weights"}
 _orig_event_init = tvbo_datamodel.Event.__init__
 
@@ -116,4 +114,3 @@ def _event_init_with_aliases(self, *args, **kwargs):
 
 
 tvbo_datamodel.Event.__init__ = _event_init_with_aliases
-

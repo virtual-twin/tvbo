@@ -1,14 +1,10 @@
 """Transform vocabulary: the network's own edge attributes, and masked reductions.
 
-A ``transforms:`` entry is a ``Function`` whose equation is written over the network's
-edge attributes — ``weight``, ``length``, or the canonical ``network.edges.<label>`` —
-resolved by the same :func:`tvbo.utils.edge_label` that observation sources and
-exploration axes go through. There is no second, invented vocabulary: a derived quantity
-is spelled as the reduction it is (``max(weight)``), so nothing has to be declared twice
-and no backend can be handed a name the runtime never defined.
+A ``transforms:`` entry is a ``Function`` whose equation is written over the network's edge attributes — ``weight``, ``length``, or the canonical ``network.edges.<label>`` —
+resolved by the same :func:`tvbo.utils.edge_label` that observation sources and exploration axes go through. There is no second, invented vocabulary: a derived quantity
+is spelled as the reduction it is (``max(weight)``), so nothing has to be declared twice and no backend can be handed a name the runtime never defined.
 
-A reduction may be scoped by a boolean mask, in either of two spellings, because the
-notation people reach for differs and both are unambiguous:
+A reduction may be scoped by a boolean mask, in either of two spellings, because the notation people reach for differs and both are unambiguous:
 
 .. code-block:: yaml
 
@@ -16,10 +12,8 @@ notation people reach for differs and both are unambiguous:
     rhs: "weight / mean(weight, weight > 0)"    # the predicate as an argument
 
 Both normalise to one node, ``red(expr, predicate)``, lowered once into ``Piecewise``.
-Each printer already turns that into its own ``where``/``ifelse``, so the mask is
-backend-independent for free and no two backends can disagree about what it means. A
-boolean subscript is only legal *inside* a reduction: on its own it has a data-dependent
-output shape, so it cannot be jitted and is rejected.
+Each printer already turns that into its own ``where``/``ifelse``, so the mask is backend-independent for free and no two backends can disagree about what it means. A
+boolean subscript is only legal *inside* a reduction: on its own it has a data-dependent output shape, so it cannot be jitted and is rejected.
 """
 
 from __future__ import annotations
@@ -74,8 +68,7 @@ def subscript_locals(source: str) -> Dict[str, IndexedBase]:
 def _plain(expr):
     """*expr* with every ``IndexedBase`` collapsed to its bare symbol.
 
-    ``parse_expr`` builds ``IndexedBase`` for any name it sees subscripted, including in
-    the predicate, so the same edge attribute would otherwise reach the printer as two
+    ``parse_expr`` builds ``IndexedBase`` for any name it sees subscripted, including in the predicate, so the same edge attribute would otherwise reach the printer as two
     different objects depending on where it appeared.
     """
     bases = {b: b.label for b in expr.atoms(IndexedBase)}
@@ -114,10 +107,8 @@ def canonical_reductions(expr):
 def lower_reductions(expr):
     """Lower canonical masked reductions to ``Piecewise``, which every printer handles.
 
-    ``mean`` becomes a kept-sum over a kept-count rather than a masked ``mean``, because
-    an array library's ``mean`` divides by the full size no matter what it was handed.
-    That mentions the predicate twice, so each distinct one is replaced by a symbol the
-    caller binds once: ``create_network`` runs eagerly, and XLA never gets to CSE the
+    ``mean`` becomes a kept-sum over a kept-count rather than a masked ``mean``, because an array library's ``mean`` divides by the full size no matter what it was handed.
+    That mentions the predicate twice, so each distinct one is replaced by a symbol the caller binds once: ``create_network`` runs eagerly, and XLA never gets to CSE the
     duplicate.
 
     Returns:
@@ -152,8 +143,7 @@ def lower_reductions(expr):
 def prepare(expr, what: str = "transform"):
     """Normalise, lower and validate a transform expression. The one entry point.
 
-    Both the runtime and every emitter go through this, so a mask cannot mean one thing
-    when evaluated and another when printed.
+    Both the runtime and every emitter go through this, so a mask cannot mean one thing when evaluated and another when printed.
 
     Args:
         expr: The parsed transform expression.
@@ -185,8 +175,7 @@ def prepare(expr, what: str = "transform"):
 def edge_symbols(expr, masks=None) -> List[str]:
     """Names to resolve as edge attributes, in sorted order.
 
-    A mask symbol stands for a predicate the caller binds itself, so it is excluded while
-    the names *inside* that predicate are included — those are edge attributes too.
+    A mask symbol stands for a predicate the caller binds itself, so it is excluded while the names *inside* that predicate are included — those are edge attributes too.
     """
     names = {str(s) for s in _plain(expr).free_symbols}
     for mask in (masks or {}).values():
@@ -215,9 +204,7 @@ def runtime_env(resolve, symbols: Sequence[str], jnp, jsp=None) -> Dict[str, obj
     return env
 
 
-def emit_env(
-    symbols: Sequence[str], resolve, target: Optional[str] = None
-) -> Tuple[List[str], List[str]]:
+def emit_env(symbols: Sequence[str], resolve, target: Optional[str] = None) -> Tuple[List[str], List[str]]:
     """Source lines binding the edge attributes *symbols* names, for an emitted script.
 
     Args:

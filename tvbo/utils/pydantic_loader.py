@@ -1,23 +1,17 @@
 """Pydantic loader / validator for TVBO YAML — the trustworthy validation path.
 
-TVBO authors write experiments in a human-friendly YAML dialect where
-collections are *keyed dicts* and the key doubles as the member's identifier::
+TVBO authors write experiments in a human-friendly YAML dialect where collections are *keyed dicts* and the key doubles as the member's identifier::
 
     parameters:
       a: {value: 0.27}        # name == "a"
       b: {value: 0.108}       # name == "b"
 
-The LinkML runtime loader injects that key into each member's identifier slot
-(``name``) automatically. The generated Pydantic datamodel
-(:mod:`tvbo.datamodel.pydantic`) does **not** — it expects ``name`` to be
-present inside every member — so validating raw TVBO YAML against the Pydantic
-models fails with a flood of ``name Field required`` errors that are purely an
-artefact of the keyed-dict convention, not real schema violations.
+The LinkML runtime loader injects that key into each member's identifier slot (``name``) automatically. The generated Pydantic datamodel
+(:mod:`tvbo.datamodel.pydantic`) does **not** — it expects ``name`` to be present inside every member — so validating raw TVBO YAML against the Pydantic
+models fails with a flood of ``name Field required`` errors that are purely an artefact of the keyed-dict convention, not real schema violations.
 
-This module performs exactly that key→identifier normalization and then
-validates with the strict (``extra="forbid"``) Pydantic models, giving callers
-a single, trustworthy "is this a valid TVBO object?" entry point. The YAML
-preprocessing for ``<<:`` merge keys and ``!include`` directives is delegated to
+This module performs exactly that key→identifier normalization and then validates with the strict (``extra="forbid"``) Pydantic models, giving callers
+a single, trustworthy "is this a valid TVBO object?" entry point. The YAML preprocessing for ``<<:`` merge keys and ``!include`` directives is delegated to
 :mod:`tvbo.utils.yaml_loader` so there is one implementation of those idioms.
 
 Typical use::
@@ -29,8 +23,7 @@ Typical use::
     exp = pydantic_loader.validate(some_dict)              # from an already-parsed dict
     yaml_text = pydantic_loader.dump(exp)                  # canonical YAML round-trip
 
-All three loaders raise :class:`pydantic.ValidationError` on genuinely invalid
-input, so they are real validators rather than lenient coercers.
+All three loaders raise :class:`pydantic.ValidationError` on genuinely invalid input, so they are real validators rather than lenient coercers.
 """
 
 from __future__ import annotations
@@ -64,8 +57,7 @@ _ENVELOPE_KEYS = ("tvbo_class", "schema_version")
 def _resolve_target(target_class: Union[str, Type[BaseModel], None]) -> Type[BaseModel]:
     """Resolve ``target_class`` (a class, a class name, or ``None``) to a model.
 
-    Strings are looked up in :mod:`tvbo.datamodel.pydantic` so the platform can
-    pass ``"SimulationExperiment"`` / ``"Dynamics"`` / ... straight through.
+    Strings are looked up in :mod:`tvbo.datamodel.pydantic` so the platform can pass ``"SimulationExperiment"`` / ``"Dynamics"`` / ... straight through.
     """
     if target_class is None:
         target_class = DEFAULT_TARGET
@@ -104,12 +96,9 @@ def _first_model(annotation: Any) -> Type[BaseModel] | None:
 def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
     """Name of the slot the inlined-dict key maps onto.
 
-    A non-``name``/``id`` key slot marks itself with a ``collection_key``
-    annotation, because LinkML consumes ``identifier``/``key`` into the field's
-    required-ness and drops them from the emitted metadata (so they can't be read
-    back here). Otherwise falls back to the universal TVBO conventions ``name``
-    then ``id``. Returns ``None`` when no identifier slot can be determined (the
-    member is then left untouched).
+    A non-``name``/``id`` key slot marks itself with a ``collection_key`` annotation, because LinkML consumes ``identifier``/``key`` into the field's
+    required-ness and drops them from the emitted metadata (so they can't be read back here). Otherwise falls back to the universal TVBO conventions ``name``
+    then ``id``. Returns ``None`` when no identifier slot can be determined (the member is then left untouched).
     """
     fields = model_cls.model_fields
     for fname, info in fields.items():
@@ -127,12 +116,9 @@ def _identifier_field(model_cls: Type[BaseModel]) -> str | None:
 def _slot_alias_map(model_cls: Type[BaseModel]) -> dict[str, str]:
     """This class's ``{alias: canonical}`` slot-alias map.
 
-    Reused verbatim from the LinkML dataclass path (``schema._SLOT_ALIASES``) so
-    this validator accepts exactly the keys that loader does. The dataclasses fold
-    these aliases in ``__init__``; the Pydantic models cannot, so :func:`_inject`
-    folds them here, class-scoped — the same context that keeps ``target_variable``
-    (an ``Edge`` alias, but the canonical slot on a stimulus ``Event``) from being
-    renamed where it must not be.
+    Reused verbatim from the LinkML dataclass path (``schema._SLOT_ALIASES``) so this validator accepts exactly the keys that loader does. The dataclasses fold
+    these aliases in ``__init__``; the Pydantic models cannot, so :func:`_inject` folds them here, class-scoped — the same context that keeps ``target_variable``
+    (an ``Edge`` alias, but the canonical slot on a stimulus ``Event``) from being renamed where it must not be.
     """
     from tvbo.datamodel.schema import _SLOT_ALIASES
 
@@ -154,15 +140,13 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
     # Fold this class's slot aliases (``dt``->``step_size``, ``righthandside``->``rhs``,
     # ...), class-scoped, exactly as the generated dataclasses fold them in ``__init__``.
     # The Pydantic models cannot, so a raw alias key would otherwise be rejected by
-    # ``extra='forbid'``. Runs before the field walk so an aliased key is seen under its
-    # canonical name.
+    # ``extra='forbid'``. Runs before the field walk so an aliased key is seen under its canonical name.
     for alias, canonical in _slot_alias_map(model_cls).items():
         if alias not in data:
             continue
         if canonical in data:
             warnings.warn(
-                f"{model_cls.__name__} got both {alias!r} and its canonical slot "
-                f"{canonical!r}; ignoring {alias!r}.",
+                f"{model_cls.__name__} got both {alias!r} and its canonical slot {canonical!r}; ignoring {alias!r}.",
                 stacklevel=2,
             )
             data.pop(alias)
@@ -178,10 +162,7 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
         for cand in _candidates(info.annotation):
             origin = get_origin(cand)
 
-            # dict[str, SomeModel] — keyed collection. Accept either the keyed
-            # form (inject the key as the member's identifier) or a list form
-            # (Odoo many2many and JS arrays use lists) which we coerce into a
-            # keyed dict using each member's identifier value.
+            # dict[str, SomeModel] — keyed collection. Accept either the keyed form (inject the key as the member's identifier) or a list form (Odoo many2many and JS arrays use lists) which we coerce into a keyed dict using each member's identifier value.
             if origin is dict and isinstance(value, (dict, list)):
                 args = get_args(cand)
                 member_cls = _first_model(args[1]) if len(args) == 2 else None
@@ -206,8 +187,7 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
                         data[key] = coerced
                     break
 
-            # list[...] — recurse into model members, or split a newline/
-            # bulleted Text blob (how Odoo stores list[scalar]) into a list.
+            # list[...] — recurse into model members, or split a newline/ bulleted Text blob (how Odoo stores list[scalar]) into a list.
             elif origin in (list, tuple, set):
                 args = get_args(cand)
                 member_cls = _first_model(args[0]) if args else None
@@ -216,15 +196,11 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
                         for member in value:
                             _inject(member_cls, member)
                     else:
-                        # Scalar list (e.g. list[str]); Odoo many2many can yield
-                        # full objects -> collapse each to its identifier.
-                        data[key] = [
-                            (m.get("name") or m.get("id")) if isinstance(m, dict) else m
-                            for m in value
-                        ]
+                        # Scalar list (e.g. list[str]); Odoo many2many can yield full objects -> collapse each to its identifier.
+                        data[key] = [(m.get("name") or m.get("id")) if isinstance(m, dict) else m for m in value]
                     break
                 if isinstance(value, str) and member_cls is None:
-                    parts = [re.sub(r'^[-*]\s*', '', p.strip()) for p in re.split(r'[\r\n]+', value)]
+                    parts = [re.sub(r"^[-*]\s*", "", p.strip()) for p in re.split(r"[\r\n]+", value)]
                     data[key] = [p for p in parts if p]
                     break
 
@@ -233,8 +209,7 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
                 _inject(cand, value)
                 break
 
-            # Scalar string slot that received an object (Odoo many2one for a
-            # by-name reference, e.g. FunctionCall.function or Continuation.dynamics)
+            # Scalar string slot that received an object (Odoo many2one for a by-name reference, e.g. FunctionCall.function or Continuation.dynamics)
             # -> collapse to the referenced identifier.
             elif cand is str and isinstance(value, dict):
                 data[key] = value.get("name") or value.get("id")
@@ -246,8 +221,7 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
 def normalize(data: dict, target_class: Union[str, Type[BaseModel], None] = None) -> dict:
     """Return a copy of ``data`` with keyed-dict keys injected as identifiers.
 
-    Pure data transformation — performs no validation. Useful when a caller
-    wants the normalized dict (e.g. to merge with other state) without building
+    Pure data transformation — performs no validation. Useful when a caller wants the normalized dict (e.g. to merge with other state) without building
     a model instance.
     """
     target = _resolve_target(target_class)
@@ -260,8 +234,7 @@ def normalize(data: dict, target_class: Union[str, Type[BaseModel], None] = None
 # Public validation / load API
 # --------------------------------------------------------------------------- #
 def _strip_unknown(model_cls: Type[BaseModel], data: Any) -> None:
-    """Recursively drop keys not declared by ``model_cls`` (by field name or
-    alias). Assumes ``data`` is already normalized (collections as keyed dicts)."""
+    """Recursively drop keys not declared by ``model_cls`` (by field name or alias). Assumes ``data`` is already normalized (collections as keyed dicts)."""
     if not isinstance(data, dict) or not hasattr(model_cls, "model_fields"):
         return
     known = {}
@@ -296,15 +269,12 @@ def _strip_unknown(model_cls: Type[BaseModel], data: Any) -> None:
                 break
 
 
-def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None,
-             *, drop_unknown: bool = False) -> BaseModel:
+def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False) -> BaseModel:
     """Validate an already-parsed ``dict`` and return a model instance.
 
     Raises :class:`pydantic.ValidationError` if ``data`` does not conform. With
-    ``drop_unknown=True``, keys not declared by the schema are discarded before
-    validation instead of being rejected — used by the TVBO platform's database
-    export to ignore Odoo-only fields (e.g. portal ``visibility``/``owner``)
-    while hand-authored input still rejects unknown keys.
+    ``drop_unknown=True``, keys not declared by the schema are discarded before validation instead of being rejected — used by the TVBO platform's database
+    export to ignore Odoo-only fields (e.g. portal ``visibility``/``owner``) while hand-authored input still rejects unknown keys.
     """
     target = _resolve_target(target_class)
     data = normalize(data, target)
@@ -313,24 +283,24 @@ def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None,
     return target.model_validate(data)
 
 
-def loads(source: str, target_class: Union[str, Type[BaseModel], None] = None,
-          *, drop_unknown: bool = False, **kwargs: Any) -> BaseModel:
+def loads(
+    source: str, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False, **kwargs: Any
+) -> BaseModel:
     """Parse a YAML string (with ``<<:`` / ``!include`` support) and validate it.
 
-    ``drop_unknown`` is forwarded to :func:`validate` (see its docstring); the
-    remaining ``kwargs`` go to the YAML loader.
+    ``drop_unknown`` is forwarded to :func:`validate` (see its docstring); the remaining ``kwargs`` go to the YAML loader.
     """
     target = _resolve_target(target_class)
     data = yaml_loader.load_as_dict(source, **kwargs) or {}
     return validate(data, target, drop_unknown=drop_unknown)
 
 
-def load(source: Any, target_class: Union[str, Type[BaseModel], None] = None,
-         *, drop_unknown: bool = False, **kwargs: Any) -> BaseModel:
+def load(
+    source: Any, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False, **kwargs: Any
+) -> BaseModel:
     """Load YAML from a path / stream / string and validate it.
 
-    ``!include`` paths are resolved relative to ``source``'s directory when it is
-    a path, matching :func:`tvbo.utils.yaml_loader.load`. ``drop_unknown`` is
+    ``!include`` paths are resolved relative to ``source``'s directory when it is a path, matching :func:`tvbo.utils.yaml_loader.load`. ``drop_unknown`` is
     forwarded to :func:`validate`; the remaining ``kwargs`` go to the YAML loader.
     """
     target = _resolve_target(target_class)

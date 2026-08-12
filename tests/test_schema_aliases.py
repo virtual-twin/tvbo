@@ -82,16 +82,14 @@ def test_a_user_key_that_collides_with_an_alias_is_left_alone():
     name or a free-form key. A context-free rename silently rewrites those.
     """
     exp = SimulationExperiment.from_string(
-        _BASE + "integration: {dt: 0.05}\n"
-        "network: {number_of_nodes: 1, nodes: [{id: 0}]}\n"
+        _BASE + "integration: {dt: 0.05}\nnetwork: {number_of_nodes: 1, nodes: [{id: 0}]}\n"
     )
     assert exp.integration.step_size == 0.05
 
 
 def test_a_model_parameter_named_dt_survives_a_real_load():
     dyn = Dynamics.from_string(
-        "name: M\nparameters: {dt: {value: 0.25}}\n"
-        "state_variables:\n  x: {equation: {rhs: '-dt*x'}, initial_value: 0.1}\n"
+        "name: M\nparameters: {dt: {value: 0.25}}\nstate_variables:\n  x: {equation: {rhs: '-dt*x'}, initial_value: 0.1}\n"
     )
     assert "dt" in dyn.parameters and dyn.parameters["dt"].value == 0.25
 
@@ -105,9 +103,7 @@ def test_dt_is_accepted_for_integrator_step_size():
 
 
 def test_righthandside_is_accepted():
-    dyn = Dynamics.from_string(
-        "name: M\nstate_variables:\n  x: {equation: {righthandside: '-x'}, initial_value: 0.1}\n"
-    )
+    dyn = Dynamics.from_string("name: M\nstate_variables:\n  x: {equation: {righthandside: '-x'}, initial_value: 0.1}\n")
     assert dyn.state_variables["x"].equation.rhs == "-x"
 
 
@@ -125,8 +121,7 @@ def test_scalar_shortcut_lifts_an_array_literal():
     vanished — a sourced argument then arrived unsliced."""
     from tvbo.datamodel.schema import DataRef
 
-    ref = DataRef(experiment="1", output="integration",
-                  sel={"variable": "phi", "time": [0.006, 0.016]})
+    ref = DataRef(experiment="1", output="integration", sel={"variable": "phi", "time": [0.006, 0.016]})
     assert ref.sel["variable"].value == "phi"
     assert list(ref.sel["time"].value) == [0.006, 0.016]
     assert ref.sel["time"].description is None
@@ -172,8 +167,7 @@ def test_stimulus_event_target_variable_is_not_rewritten():
 
 def test_edge_source_and_target_variable_fold_to_the_edge_slots():
     net = SimulationExperiment.from_string(
-        _BASE + "network: {number_of_nodes: 2, edges: [{source: 0, target: 1, "
-        "source_variable: V, target_variable: W}]}"
+        _BASE + "network: {number_of_nodes: 2, edges: [{source: 0, target: 1, source_variable: V, target_variable: W}]}"
     ).network
     assert (net.edges[0].source_var, net.edges[0].target_var) == ("V", "W")
 
@@ -184,9 +178,7 @@ def test_boundaries_still_implies_clamp_and_domain_still_does_not():
     from tvbo.utils import domain_enforcement
 
     def enforce(spec):
-        d = Dynamics.from_string(
-            "name: M\nstate_variables:\n  x: {equation: {rhs: '-x'}, initial_value: 0.1, " + spec + "}\n"
-        )
+        d = Dynamics.from_string("name: M\nstate_variables:\n  x: {equation: {rhs: '-x'}, initial_value: 0.1, " + spec + "}\n")
         return domain_enforcement(d.state_variables["x"].domain)
 
     assert enforce("domain: {lo: 0.0, hi: 1.0}") == "none"
@@ -230,10 +222,7 @@ def _pyd(yaml_text, target="SimulationExperiment"):
 
 
 def test_pydantic_loader_accepts_dt_righthandside_and_number_of_regions():
-    exp = _pyd(
-        _BASE + "integration: {dt: 0.05}\n"
-        "network: {number_of_regions: 1, nodes: [{id: 0}]}\n"
-    )
+    exp = _pyd(_BASE + "integration: {dt: 0.05}\nnetwork: {number_of_regions: 1, nodes: [{id: 0}]}\n")
     assert exp.integration.step_size == 0.05
     assert exp.network.number_of_nodes == 1
 

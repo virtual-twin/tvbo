@@ -11,6 +11,7 @@ Templates → RateML, tvboptim) rather than appearing as flat siblings.
 
 Run automatically as a Quarto pre-render step (after quartodoc build).
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -25,7 +26,7 @@ BEGIN_MARKER = "# BEGIN:api-autogen"
 END_MARKER = "# END:api-autogen"
 
 BASE_INDENT = 14  # spaces — matches sidebar nesting level in _toc.yml
-INDENT_STEP = 4   # additional spaces per nesting level
+INDENT_STEP = 4  # additional spaces per nesting level
 
 # Section titles that are internal/noise — skip them entirely
 SKIP_TITLES = {
@@ -37,31 +38,31 @@ SKIP_TITLES = {
 # → ``Base``). Use this map to preserve product casings that ``.title()``
 # would mangle (``Tvb`` → ``TVB``, ``Pyrates`` → ``PyRates`` …).
 MODULE_DISPLAY_NAMES: dict[str, str] = {
-    "bids":                  "BIDS",
-    "tvb":                   "TVB",
-    "tvboptim":              "tvboptim",
-    "pyrates":               "PyRates",
-    "pyrates_bifurcation":   "PyRates (Bifurcation)",
-    "modelingtoolkit":       "ModelingToolkit",
-    "networkdynamics":       "NetworkDynamics",
-    "neuroml":               "NeuroML",
-    "openminds":             "openMINDS",
-    "bifurcationkit":        "BifurcationKit",
-    "numcont":               "NumCont",
-    "diffeq":                "DiffEq",
-    "rateml":                "RateML",
-    "lems":                  "LEMS",
-    "cuda":                  "CUDA",
-    "jax":                   "JAX",
-    "cli":                   "CLI",
-    "api":                   "API",
-    "io":                    "I/O",
-    "fc":                    "FC",
-    "psd":                   "PSD",
-    "owl":                   "OWL",
-    "db":                    "DB",
-    "tvbgo":                 "TVB-GO",
-    "import_":               "Import",   # trailing underscore to avoid keyword clash
+    "bids": "BIDS",
+    "tvb": "TVB",
+    "tvboptim": "tvboptim",
+    "pyrates": "PyRates",
+    "pyrates_bifurcation": "PyRates (Bifurcation)",
+    "modelingtoolkit": "ModelingToolkit",
+    "networkdynamics": "NetworkDynamics",
+    "neuroml": "NeuroML",
+    "openminds": "openMINDS",
+    "bifurcationkit": "BifurcationKit",
+    "numcont": "NumCont",
+    "diffeq": "DiffEq",
+    "rateml": "RateML",
+    "lems": "LEMS",
+    "cuda": "CUDA",
+    "jax": "JAX",
+    "cli": "CLI",
+    "api": "API",
+    "io": "I/O",
+    "fc": "FC",
+    "psd": "PSD",
+    "owl": "OWL",
+    "db": "DB",
+    "tvbgo": "TVB-GO",
+    "import_": "Import",  # trailing underscore to avoid keyword clash
 }
 
 
@@ -125,8 +126,7 @@ class _Node:
 
     __slots__ = ("package", "label", "index_href", "pages", "children")
 
-    def __init__(self, package: str, label: str,
-                 index_href: str | None, pages: list[tuple[str, str]]):
+    def __init__(self, package: str, label: str, index_href: str | None, pages: list[tuple[str, str]]):
         self.package = package
         self.label = label
         self.index_href = index_href
@@ -198,14 +198,14 @@ def _render_node(node: _Node, depth: int, lines: list[str]) -> None:
     i = _indent(depth)
     ic = _indent(depth + 1)
 
-    lines.append(f"{i}- section: \"{node.label}\"")
+    lines.append(f'{i}- section: "{node.label}"')
     if node.index_href:
         lines.append(f"{i}  href: {node.index_href}")
     lines.append(f"{i}  contents:")
 
     # Render leaf pages first
     for display, href in node.pages:
-        lines.append(f"{ic}- text: \"{display}\"")
+        lines.append(f'{ic}- text: "{display}"')
         lines.append(f"{ic}  href: {href}")
 
     # Then render child sections
@@ -222,7 +222,7 @@ def build_block() -> str:
     lines: list[str] = [BEGIN_MARKER]
     i0 = _indent(0)
     i1 = _indent(1)
-    lines.append(f"{i0}- section: \"API Documentation\"")
+    lines.append(f'{i0}- section: "API Documentation"')
     lines.append(f"{i0}  href: api/index.qmd")
     lines.append(f"{i0}  contents:")
 
@@ -231,7 +231,7 @@ def build_block() -> str:
         # pages directly (they're top-level modules like tvbo.utils).
         if node.package == "tvbo":
             for display, href in node.pages:
-                lines.append(f"{i1}- text: \"{display}\"")
+                lines.append(f'{i1}- text: "{display}"')
                 lines.append(f"{i1}  href: {href}")
             continue
 
@@ -255,7 +255,7 @@ def update_toc() -> None:
         raise SystemExit(1)
 
     new_block = build_block()
-    new_text = text[:begin_idx] + new_block + text[end_idx + len(END_MARKER):]
+    new_text = text[:begin_idx] + new_block + text[end_idx + len(END_MARKER) :]
 
     if new_text == text:
         print("API TOC section unchanged — skipping write.")

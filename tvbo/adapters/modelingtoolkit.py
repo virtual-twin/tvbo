@@ -5,8 +5,7 @@ Pure MTK adapter using @component + mtkcompile + ODEProblem + solve.
 No dependency on NetworkDynamics.jl.
 
 Key capability: symbolic round-trip.  tvbo's SymPy equations are rendered to
-MTK Julia code, MTK's ``mtkcompile`` performs structural transformations
-(e.g. higher-order ODE lowering), and the resulting equations are extracted
+MTK Julia code, MTK's ``mtkcompile`` performs structural transformations (e.g. higher-order ODE lowering), and the resulting equations are extracted
 back into SymPy.
 """
 
@@ -131,10 +130,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         n_sv = ctx["n_sv"]
         n_nodes = ctx["n_nodes"]
 
-        # Pure MTK: single model, n_nodes=1 typically
-        # u shape from MTK: (n_unknowns, n_t)
-        # n_unknowns may differ from n_sv if mtkcompile introduced
-        # auxiliary variables (e.g., higher-order ODE lowering)
+        # Pure MTK: single model, n_nodes=1 typically u shape from MTK: (n_unknowns, n_t) n_unknowns may differ from n_sv if mtkcompile introduced auxiliary variables (e.g., higher-order ODE lowering)
         n_unknowns = u.shape[0] if u.ndim == 2 else 1
         if n_unknowns != n_sv * n_nodes:
             try:
@@ -163,8 +159,7 @@ class ModelingToolkitAdapter(BaseAdapter):
     def lower(self, source=None, returns="auto", **kwargs):
         """Lower higher-order ODEs via MTK's ``mtkcompile``.
 
-        Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile →
-        lowered first-order SymPy equations, optionally wrapped back into
+        Performs a symbolic round-trip: tvbo → MTK Julia → mtkcompile → lowered first-order SymPy equations, optionally wrapped back into
         a tvbo ``Dynamics`` or ``SimulationExperiment``.
 
         Parameters
@@ -233,8 +228,7 @@ class ModelingToolkitAdapter(BaseAdapter):
         ensure_packages(*MTK_PACKAGES)
         code = self.render_code(**kwargs)
 
-        # Only keep code up to (and including) the mtkcompile line —
-        # we don't need ODEProblem / solve / plot for equation extraction.
+        # Only keep code up to (and including) the mtkcompile line — we don't need ODEProblem / solve / plot for equation extraction.
         lines = []
         for line in code.splitlines():
             lines.append(line)

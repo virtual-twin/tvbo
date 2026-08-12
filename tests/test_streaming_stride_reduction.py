@@ -52,8 +52,7 @@ def _stride_observation(period=0.72, step=None, reduce="streaming", name="SubSam
         name="bold_frames",
         source=["BOLD"],
         reduce=reduce,
-        pipeline=[FunctionCall(callable={"name": name, "module": "tvbo.observations"},
-                               arguments=arguments)],
+        pipeline=[FunctionCall(callable={"name": name, "module": "tvbo.observations"}, arguments=arguments)],
     )
     return obs, _Exp()
 
@@ -71,7 +70,7 @@ def test_period_and_step_size_give_the_stride():
     red = resolve_reduction(obs, exp)
     assert red["kind"] == "stride"
     assert red["source"] == "BOLD"
-    assert red["ds_steps"] == 1440          # 0.72 s / 0.0005 s
+    assert red["ds_steps"] == 1440  # 0.72 s / 0.0005 s
 
 
 def test_explicit_step_is_honoured_without_a_period():
@@ -81,7 +80,7 @@ def test_explicit_step_is_honoured_without_a_period():
 
 def test_predicate_call_without_experiment_is_side_effect_free_and_truthy():
     obs, _ = _stride_observation()
-    red = resolve_reduction(obs)   # the "is this streaming?" predicate — no experiment
+    red = resolve_reduction(obs)  # the "is this streaming?" predicate — no experiment
     assert red is not None and red["kind"] == "stride"
 
 
@@ -104,12 +103,15 @@ def test_post_eval_plan_aligns_the_block_to_the_stride():
 # ── Declared axis names ─────────────────────────────────────────────────────────────────
 
 
-@pytest.mark.parametrize("kind,dims", [
-    ("convolution", ("time", "node")),   # HRF-Volterra BOLD: one kept sample per TR, per node
-    ("stride", ("time", "node")),        # decimation: every k-th sample, per node
-    ("comoment", ("node", "node_j")),    # cumulative co-moment FC: a node-by-node matrix
-    ("recurrence", ("node",)),           # a folded statistic: one value per node
-])
+@pytest.mark.parametrize(
+    "kind,dims",
+    [
+        ("convolution", ("time", "node")),  # HRF-Volterra BOLD: one kept sample per TR, per node
+        ("stride", ("time", "node")),  # decimation: every k-th sample, per node
+        ("comoment", ("node", "node_j")),  # cumulative co-moment FC: a node-by-node matrix
+        ("recurrence", ("node",)),  # a folded statistic: one value per node
+    ],
+)
 def test_each_reduction_kind_declares_its_axes(kind, dims):
     """Axis names come from the reduction's KIND, not from the array's shape.
 
@@ -150,7 +152,9 @@ def test_a_plan_with_nothing_streaming_still_carries_a_dims_mapping():
 def _emit_reducer(ds_steps):
     src = _OBS_TEMPLATE.get_def("render_stride_reduction").render(
         red={"kind": "stride", "source": "BOLD", "ds_steps": ds_steps},
-        name="bold_frames", s_idx=0, dt=1.0,
+        name="bold_frames",
+        s_idx=0,
+        dt=1.0,
     )
     ns = {"jnp": jnp, "jax": jax}
     exec(compile(src, "<reducer>", "exec"), ns)
@@ -167,7 +171,7 @@ def test_reducer_matches_a_from_scratch_stride(ds):
     acc = update(init(data[0], n_steps), data)
     got = np.asarray(finalize(acc))
 
-    expected = np.asarray(data[:, 0, :])[ds - 1::ds]
+    expected = np.asarray(data[:, 0, :])[ds - 1 :: ds]
     assert got.shape == expected.shape
     assert np.array_equal(got, expected)
 
@@ -181,10 +185,10 @@ def test_reducer_is_block_decomposition_invariant(block):
     init, update, finalize = _emit_reducer(ds)()
     acc = init(data[0], n_steps)
     for start in range(0, n_steps, block):
-        acc = update(acc, data[start:start + block])
+        acc = update(acc, data[start : start + block])
     got = np.asarray(finalize(acc))
 
-    assert np.array_equal(got, np.asarray(data[:, 0, :])[ds - 1::ds])
+    assert np.array_equal(got, np.asarray(data[:, 0, :])[ds - 1 :: ds])
 
 
 @pytest.mark.parametrize("n_steps", [305, 312, 324])
@@ -206,12 +210,12 @@ def test_reducer_handles_a_partial_tail_block(n_steps):
     acc = init(data[0], n_steps)
     n_blocks = n_steps // ds
     for b in range(n_blocks):
-        acc = update(acc, data[b * ds:(b + 1) * ds])
+        acc = update(acc, data[b * ds : (b + 1) * ds])
     if n_steps % ds:
-        acc = update(acc, data[n_blocks * ds:])
+        acc = update(acc, data[n_blocks * ds :])
     got = np.asarray(finalize(acc))
 
-    expected = np.asarray(data[:, 0, :])[ds - 1::ds]
+    expected = np.asarray(data[:, 0, :])[ds - 1 :: ds]
     assert got.shape == expected.shape
     assert np.array_equal(got, expected)
 
@@ -222,11 +226,11 @@ def test_reducer_handles_a_partial_tail_block(n_steps):
 @pytest.mark.parametrize(
     "skip, ds, n_steps, kept",
     [
-        (0, 25, 300, 12),        # no transient: every strided sample
-        (100, 25, 300, 8),       # skip on a stride boundary
-        (124, 25, 300, 8),       # the sample AT skip survives
-        (125, 25, 300, 7),       # skip past it, one fewer
-        (200_000, 1440, 1_928_000, 1200),   # the Pang2023 resting sweep
+        (0, 25, 300, 12),  # no transient: every strided sample
+        (100, 25, 300, 8),  # skip on a stride boundary
+        (124, 25, 300, 8),  # the sample AT skip survives
+        (125, 25, 300, 7),  # skip past it, one fewer
+        (200_000, 1440, 1_928_000, 1200),  # the Pang2023 resting sweep
     ],
 )
 def test_skip_drops_exactly_the_transient_samples(skip, ds, n_steps, kept):
@@ -242,7 +246,7 @@ def test_skip_drops_exactly_the_transient_samples(skip, ds, n_steps, kept):
     acc = init(data[0], n_steps)
     # One update per block, block == stride, which is how the sweep drives it.
     for b in range(n_steps // ds):
-        acc = update(acc, data[b * ds:(b + 1) * ds])
+        acc = update(acc, data[b * ds : (b + 1) * ds])
     got = np.asarray(finalize(acc))
 
     assert got.shape[0] == kept
@@ -258,6 +262,6 @@ def test_skip_keeps_the_post_transient_samples_themselves():
     acc = update(init(data[0], n_steps), data)
     got = np.asarray(finalize(acc))
 
-    every = np.asarray(data[:, 0, :])[ds - 1::ds]
+    every = np.asarray(data[:, 0, :])[ds - 1 :: ds]
     positions = np.arange(ds - 1, n_steps, ds)
     assert np.array_equal(got, every[positions >= skip])

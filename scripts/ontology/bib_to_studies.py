@@ -9,6 +9,7 @@ in references.bib and is resolved by citekey, so it is never duplicated here.
 
 Re-running is idempotent: existing study yaml files are overwritten.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -25,8 +26,7 @@ STUDIES = ROOT / "tvbo" / "database" / "studies"
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--bib", action="append", default=None,
-                    help="BibTeX file(s); defaults to both database refs.")
+    ap.add_argument("--bib", action="append", default=None, help="BibTeX file(s); defaults to both database refs.")
     ap.add_argument("-o", "--out-dir", default=str(STUDIES))
     args = ap.parse_args()
 

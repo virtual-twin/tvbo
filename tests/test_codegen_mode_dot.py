@@ -4,6 +4,7 @@
 matrix, i.e. TVB's ``numpy.dot(xi, A_ik)`` for reduced-set / mode-coupled models.
 It renders to ``{np,jnp}.dot(X, M)`` per backend.
 """
+
 import numpy as np
 import pytest
 
@@ -24,9 +25,7 @@ def test_mode_dot_renders(fmt, expected):
 def test_mode_dot_in_expression():
     from tvbo.codegen import render_expression
 
-    assert render_expression("mode_dot(xi, A_ik) + 0.5*xi", format="numpy") == (
-        "0.5*xi + np.dot(xi, A_ik)"
-    )
+    assert render_expression("mode_dot(xi, A_ik) + 0.5*xi", format="numpy") == ("0.5*xi + np.dot(xi, A_ik)")
 
 
 def test_mode_dot_contracts_mode_axis():
@@ -35,8 +34,8 @@ def test_mode_dot_contracts_mode_axis():
 
     code = render_expression("mode_dot(xi, A_ik)", format="numpy")
     rs = np.random.RandomState(0)
-    xi = rs.rand(4, 3)      # (n_nodes, n_modes)
-    A_ik = rs.rand(3, 3)    # (n_modes, n_modes)
+    xi = rs.rand(4, 3)  # (n_nodes, n_modes)
+    A_ik = rs.rand(3, 3)  # (n_modes, n_modes)
     got = eval(code, {"np": np, "xi": xi, "A_ik": A_ik})
     np.testing.assert_allclose(got, np.dot(xi, A_ik))
     assert got.shape == (4, 3)

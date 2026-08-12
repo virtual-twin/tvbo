@@ -1,16 +1,15 @@
 """TVB-O command-line interface.
 
-See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based,
-registry-driven, and transport-aware. This module assembles the top-level
+See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based, registry-driven, and transport-aware. This module assembles the top-level
 :class:`typer.Typer` ``app`` from per-verb sub-modules.
 """
+
 from __future__ import annotations
 
 import typer
 
 # Shared helper sub-modules used by the verb modules below (which do
-# ``from . import _common`` / ``_workflow`` at import time). Importing them here
-# first binds them on the package so those relative imports resolve by attribute.
+# ``from . import _common`` / ``_workflow`` at import time). Importing them here first binds them on the package so those relative imports resolve by attribute.
 from . import _backends, _common, _workflow  # noqa: F401
 
 from . import (
@@ -50,7 +49,7 @@ app = typer.Typer(
         "  tvbo skills uninstall                        remove TVBO-managed skill files\n"
         "  tvbo skills --help                           all targets, scopes, flags\n"
         "\n"
-        "Docs: https://thevirtualbrain.github.io/tvbo/  (see Agentic Coding section)"
+        "Docs: https://virtual-twin.github.io/tvbo/  (see Agentic Coding section)"
     ),
     no_args_is_help=True,
     add_completion=True,
@@ -64,7 +63,9 @@ app.command("save", help="Like export, with bundled data when supported.")(_save
 app.command("import", help="Load a foreign file (auto-dispatch by extension).")(_import_cmd.import_)
 app.command("info", help="Inspect a SPEC (tasks, outputs, declared backends).")(_info_cmd.info)
 app.command("formats", help="List all registered I/O formats.")(_formats_cmd.formats)
-app.command("verify", help="Check a StudyCollection is buildable (completeness / staleness / manifest coverage).")(_verify_cmd.verify)
+app.command("verify", help="Check a StudyCollection is buildable (completeness / staleness / manifest coverage).")(
+    _verify_cmd.verify
+)
 app.command("version", help="Print the tvbo version.")(_version_cmd.version)
 
 # Sub-trees (registered as their own Typer apps)
@@ -72,16 +73,23 @@ app.add_typer(_validate_cmd.app, name="validate", help="Validate YAML / OMEX / B
 app.add_typer(_config_cmd.app, name="config", help="Manage CLI configuration.")
 app.add_typer(_cache_cmd.app, name="cache", help="Inspect and reclaim tvbo's caches.")
 app.add_typer(_network_cmd.app, name="network", help="Build connectomes from a tractogram + parcellation (MRtrix wrapper).")
-app.add_typer(_figures_cmd.app, name="figure", help="Render declarative figures (Figure / SimulationStudy YAML) via bsplot codegen.")
+app.add_typer(
+    _figures_cmd.app, name="figure", help="Render declarative figures (Figure / SimulationStudy YAML) via bsplot codegen."
+)
 app.add_typer(_workflow_cmd.app, name="workflow", help="Plan / emit HPC + pipeline artefacts (slurm, snakemake, nextflow).")
-app.add_typer(_skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally.")
+app.add_typer(
+    _skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally."
+)
 app.add_typer(_install_cmd.app, name="install", help="Provision optional native components pip cannot place (e.g. AUTO-07p).")
 
 
 @app.callback()
 def _configure(
     log_level: str = typer.Option(
-        None, "--log-level", "-L", metavar="LEVEL",
+        None,
+        "--log-level",
+        "-L",
+        metavar="LEVEL",
         help="tvbo log level (DEBUG|INFO|WARNING|ERROR|OFF); overrides TVBO_LOG_LEVEL.",
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output (DEBUG)."),
@@ -90,8 +98,7 @@ def _configure(
     """Configure tvbo logging once for every verb.
 
     Progress and status flow through the central ``tvbo`` logger (see
-    :mod:`tvbo.log`), so ``tvbo run`` and the in-process ``.run()`` API behave
-    identically. ``--log-level`` wins over ``--quiet``/``--verbose``; with none
+    :mod:`tvbo.log`), so ``tvbo run`` and the in-process ``.run()`` API behave identically. ``--log-level`` wins over ``--quiet``/``--verbose``; with none
     set the level falls back to ``TVBO_LOG_LEVEL`` and then INFO.
     """
     from tvbo.log import configure_logging
@@ -103,10 +110,7 @@ def _configure(
         level = "ERROR"
     if log_level:
         level = log_level
-    # CLI output is user-facing: keep it bare (no "LEVEL [name]" diagnostic
-    # prefix), matching the plain lines the CLI printed before. force=True so
-    # this format wins even if ``import tvbo`` already installed the default
-    # (diagnostic) handler because ``TVBO_LOG_LEVEL`` was set in the environment.
+    # CLI output is user-facing: keep it bare (no "LEVEL [name]" diagnostic prefix), matching the plain lines the CLI printed before. force=True so this format wins even if ``import tvbo`` already installed the default (diagnostic) handler because ``TVBO_LOG_LEVEL`` was set in the environment.
     configure_logging(level, fmt="%(message)s", force=True)
 
 

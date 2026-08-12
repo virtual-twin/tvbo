@@ -58,7 +58,7 @@ def test_reduce_absent_keeps_the_post_scan_path():
 
 def test_mean_stream_synthesizes_one_accumulator():
     red = resolve_reduction(_stat_observation("mean"))
-    assert "kind" not in red                       # routes to the recurrence emitter
+    assert "kind" not in red  # routes to the recurrence emitter
     assert red["source"] == "x"
     assert red["statistic"] == "mean"
     assert red["windowed"] is False
@@ -112,15 +112,15 @@ def _trajectory(seed, T=512, n_states=4, n=6):
     "aggregation, reference",
     [
         ("mean", lambda c: jnp.mean(c, axis=0)),
-        ("std", lambda c: jnp.std(c, axis=0)),        # ddof=0
-        ("variance", lambda c: jnp.var(c, axis=0)),   # ddof=0
+        ("std", lambda c: jnp.std(c, axis=0)),  # ddof=0
+        ("variance", lambda c: jnp.var(c, axis=0)),  # ddof=0
     ],
 )
 def test_reducer_matches_host_aggregation(aggregation, reference):
     red = resolve_reduction(_stat_observation(aggregation))
     factory = _emit_reducer(red)
     data = _trajectory(seed=1)
-    col = data[:, 0, :]                               # source column -> [T, n]
+    col = data[:, 0, :]  # source column -> [T, n]
 
     init, update, finalize = factory(s_var=0, dt=1.0)
     acc = init(data[0], data.shape[0])
@@ -141,8 +141,7 @@ def test_mean_includes_the_first_sample():
     init, update, finalize = factory(s_var=0, dt=1.0)
     got = finalize(update(init(data[0], data.shape[0]), data))
     # Byte-identical count: mean over ALL T samples, not T-1.
-    np.testing.assert_allclose(np.asarray(got), np.asarray(jnp.mean(data[:, 0, :], axis=0)),
-                               rtol=1e-9, atol=1e-12)
+    np.testing.assert_allclose(np.asarray(got), np.asarray(jnp.mean(data[:, 0, :], axis=0)), rtol=1e-9, atol=1e-12)
 
 
 @pytest.mark.parametrize("aggregation", ["mean", "std", "variance"])
@@ -174,8 +173,7 @@ def test_factory_accepts_warm_history_and_progress_kwargs():
 
     init, update, finalize = factory(s_var=0, dt=1.0, warm_history=None, progress=True)
     got = finalize(update(init(data[0], data.shape[0]), data))
-    np.testing.assert_allclose(np.asarray(got), np.asarray(jnp.mean(data[:, 0, :], axis=0)),
-                               rtol=1e-9, atol=1e-12)
+    np.testing.assert_allclose(np.asarray(got), np.asarray(jnp.mean(data[:, 0, :], axis=0)), rtol=1e-9, atol=1e-12)
 
 
 # ── Differentiability: the streamed statistic must be a usable fit target ───────────────────
@@ -185,7 +183,7 @@ def test_factory_accepts_warm_history_and_progress_kwargs():
     "aggregation, host",
     [
         ("mean", lambda c: jnp.mean(c, axis=0)),
-        ("std", lambda c: jnp.std(c, axis=0)),   # ddof=0
+        ("std", lambda c: jnp.std(c, axis=0)),  # ddof=0
     ],
 )
 def test_grad_flows_through_the_reducer_and_matches_host(aggregation, host):
@@ -200,7 +198,7 @@ def test_grad_flows_through_the_reducer_and_matches_host(aggregation, host):
     base = _trajectory(seed=5, T=200)
 
     def _traj(theta):
-        return 1.0 + theta * base   # source column 0 depends differentiably on theta
+        return 1.0 + theta * base  # source column 0 depends differentiably on theta
 
     def _stream_loss(theta):
         data = _traj(theta)
@@ -247,10 +245,17 @@ import tvboptim.observations.observation as _tvboptim_obs
 
 def _fc_observation(skip_t=20, source="x_e_pre"):
     """A compute_fc (node-node correlation) pipeline opted into streaming."""
-    return Observation(name="inp_corr", source=[source], reduce="streaming", pipeline=[{
-        "callable": {"name": "compute_fc", "module": "tvboptim.observations.observation"},
-        "arguments": [{"name": "timeseries", "value": source}, {"name": "skip_t", "value": skip_t}],
-    }])
+    return Observation(
+        name="inp_corr",
+        source=[source],
+        reduce="streaming",
+        pipeline=[
+            {
+                "callable": {"name": "compute_fc", "module": "tvboptim.observations.observation"},
+                "arguments": [{"name": "timeseries", "value": source}, {"name": "skip_t", "value": skip_t}],
+            }
+        ],
+    )
 
 
 def _emit_fc_reducer(red, s_idx=4, name="inp_corr"):
@@ -262,7 +267,7 @@ def _emit_fc_reducer(red, s_idx=4, name="inp_corr"):
 
 def test_fc_stream_routes_to_the_comoment_reducer():
     red = resolve_reduction(_fc_observation(skip_t=20))
-    assert red["kind"] == "comoment"           # NOT the BOLD convolution path
+    assert red["kind"] == "comoment"  # NOT the BOLD convolution path
     assert red["source"] == "x_e_pre"
     assert red["skip_t"] == 20
     assert red["windowed"] is False
@@ -275,9 +280,9 @@ def test_fc_reducer_matches_compute_fc():
     post-skip window — held as an O(n^2) co-moment with no trajectory."""
     red = resolve_reduction(_fc_observation(skip_t=20))
     factory = _emit_fc_reducer(red, s_idx=4)
-    data = _trajectory(seed=13, T=400, n_states=5, n=8)   # x_e_pre at column 4
+    data = _trajectory(seed=13, T=400, n_states=5, n=8)  # x_e_pre at column 4
 
-    init, update, finalize = factory(s_var=4, dt=1.0, skip=0)   # factory adds skip_t=20
+    init, update, finalize = factory(s_var=4, dt=1.0, skip=0)  # factory adds skip_t=20
     got = finalize(update(init(data[0], data.shape[0]), data))
     ref = _tvboptim_obs.compute_fc(timeseries=data[:, 4, :], skip_t=20)
     assert got.shape == ref.shape == (8, 8)
@@ -315,7 +320,7 @@ def test_fc_reducer_gradient_matches_compute_fc():
     common = jax.random.normal(jax.random.PRNGKey(22), (T, 1))
 
     def _traj(theta):
-        return base.at[:, 4, :].add(theta * common)   # shared drive -> tunable FC
+        return base.at[:, 4, :].add(theta * common)  # shared drive -> tunable FC
 
     def _stream_loss(theta):
         d = _traj(theta)

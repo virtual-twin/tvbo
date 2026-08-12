@@ -1,39 +1,27 @@
 """Correlated-noise lowering: a declared covariance becomes a Wiener-increment mixer.
 
-`Noise.covariance` states the second-order structure of the driving process across the
-axis named by `Noise.correlated_over` — mathematics, not a factorisation. Turning that
-statement into samples is a backend concern, and this module is tvbo's concrete
-implementation of it for the JAX/tvboptim path.
+`Noise.covariance` states the second-order structure of the driving process across the axis named by `Noise.correlated_over` — mathematics, not a factorisation. Turning that
+statement into samples is a backend concern, and this module is tvbo's concrete implementation of it for the JAX/tvboptim path.
 
-It is built the way tvbo extends every backend: tvboptim supplies the abstract framework
-(`NativeSolver`, its `step` contract), and tvbo emits a concrete implementation against
-it. :class:`CorrelatedNoiseSolver` wraps any native solver and mixes the increment before
-delegating, exactly as tvboptim's own `BoundedSolver` wraps one and clips after. Because
-every integration path — the codegen template, the in-process heterogeneous runner,
-homogeneous and grouped networks alike — funnels its increment through `solver.step`,
+It is built the way tvbo extends every backend: tvboptim supplies the abstract framework (`NativeSolver`, its `step` contract), and tvbo emits a concrete implementation against
+it. :class:`CorrelatedNoiseSolver` wraps any native solver and mixes the increment before delegating, exactly as tvboptim's own `BoundedSolver` wraps one and clips after. Because
+every integration path — the codegen template, the in-process heterogeneous runner, homogeneous and grouped networks alike — funnels its increment through `solver.step`,
 one wrapper covers all of them and there is no second mechanism to keep in sync.
 
 Mixing iid draws by a factor ``L`` with ``L Lᵀ = C`` yields increments with covariance
 ``C`` along the chosen axis. Which factor is used is deliberately invisible to the spec:
-Cholesky when ``C`` is positive definite, a symmetric eigendecomposition when it is only
-positive semi-definite (a rank-deficient covariance is legitimate — it says fewer
+Cholesky when ``C`` is positive definite, a symmetric eigendecomposition when it is only positive semi-definite (a rank-deficient covariance is legitimate — it says fewer
 independent sources than elements).
 
-The declared reading is that σ carries the amplitude and ``C`` the correlation, so the
-realised covariance is ``diag(σ) C diag(σ) dt`` — for a scalar σ, ``σ² dt C``.
+The declared reading is that σ carries the amplitude and ``C`` the correlation, so the realised covariance is ``diag(σ) C diag(σ) dt`` — for a scalar σ, ``σ² dt C``.
 
-That composition is ``diag(σ) L``, NOT ``L diag(σ)``. The two agree exactly when σ is
-uniform along the mixed axis, which is why a per-node covariance with a scalar amplitude is
-insensitive to the difference; they diverge when σ varies along that axis, and there the
-wrong order is not a small error but a silent loss of the process. With a rank-deficient
-``C`` — one independent source shared by two states, say — ``L``'s surviving column is
-placed by the eigendecomposition, and multiplying by a σ that is zero on the states the
+That composition is ``diag(σ) L``, NOT ``L diag(σ)``. The two agree exactly when σ is uniform along the mixed axis, which is why a per-node covariance with a scalar amplitude is
+insensitive to the difference; they diverge when σ varies along that axis, and there the wrong order is not a small error but a silent loss of the process. With a rank-deficient
+``C`` — one independent source shared by two states, say — ``L``'s surviving column is placed by the eigendecomposition, and multiplying by a σ that is zero on the states the
 column happens to land on annihilates the increment entirely.
 
-So the amplitude is folded into the covariance (:func:`fold_amplitudes`) and the increment
-arrives at unit amplitude, leaving the mixer to apply ``L'`` alone. Conjugating instead —
-``diag(σ) L diag(1/σ⁺)`` — looks equivalent and is not, for the same reason: it drops the
-draw components at the zero-σ indices, which is where the rank-deficient source lives.
+So the amplitude is folded into the covariance (:func:`fold_amplitudes`) and the increment arrives at unit amplitude, leaving the mixer to apply ``L'`` alone. Conjugating instead —
+``diag(σ) L diag(1/σ⁺)`` — looks equivalent and is not, for the same reason: it drops the draw components at the zero-σ indices, which is where the rank-deficient source lives.
 """
 
 from __future__ import annotations
@@ -48,8 +36,7 @@ _AXIS = {"state": -2, "node": -1, "region": -1}
 """`Noise.correlated_over` names mapped onto axes of the [n_noise_states, n_nodes]
 increment. `mode` is absent by design: a model's modes are folded into the state axis."""
 
-# Symmetry and PSD are checked against the matrix's own scale, so the tolerance means
-# the same thing for a covariance of order 1e-6 and one of order 1e6.
+# Symmetry and PSD are checked against the matrix's own scale, so the tolerance means the same thing for a covariance of order 1e-6 and one of order 1e6.
 _SYM_RTOL = 1e-8
 _PSD_RTOL = 1e-10
 
@@ -57,8 +44,7 @@ _PSD_RTOL = 1e-10
 def covariance_factor(cov, *, name: str = "covariance") -> np.ndarray:
     """A factor ``L`` with ``L Lᵀ = C``, after validating that ``C`` is a covariance.
 
-    Raises rather than silently repairing: a non-symmetric or indefinite matrix is a
-    specification error, and letting it through would surface as NaNs deep inside a
+    Raises rather than silently repairing: a non-symmetric or indefinite matrix is a specification error, and letting it through would surface as NaNs deep inside a
     jitted scan, far from the declaration that caused it.
 
     Args:
@@ -88,8 +74,7 @@ def covariance_factor(cov, *, name: str = "covariance") -> np.ndarray:
     except np.linalg.LinAlgError:
         pass
 
-    # Not positive definite. Legitimate when the covariance is genuinely rank-deficient
-    # (fewer independent sources than elements); an error when it is indefinite.
+    # Not positive definite. Legitimate when the covariance is genuinely rank-deficient (fewer independent sources than elements); an error when it is indefinite.
     evals, evecs = np.linalg.eigh(C)
     most_negative = float(evals.min())
     if most_negative < -_PSD_RTOL * scale:
@@ -104,10 +89,8 @@ def covariance_factor(cov, *, name: str = "covariance") -> np.ndarray:
 def fold_amplitudes(cov, sigmas, *, name: str = "covariance") -> np.ndarray:
     """``diag(σ) C diag(σ)`` — the declared covariance carried at each element's amplitude.
 
-    Folding the amplitude in here, and driving the increment at unit amplitude, is what
-    makes the realised covariance ``diag(σ) C diag(σ)`` rather than ``L diag(σ²) Lᵀ``. The
-    two coincide for uniform σ, so this is a no-op wherever σ does not vary along the
-    correlated axis; where it does vary, it is the difference between the declared process
+    Folding the amplitude in here, and driving the increment at unit amplitude, is what makes the realised covariance ``diag(σ) C diag(σ)`` rather than ``L diag(σ²) Lᵀ``. The
+    two coincide for uniform σ, so this is a no-op wherever σ does not vary along the correlated axis; where it does vary, it is the difference between the declared process
     and (for a rank-deficient ``C``) no process at all.
 
     Args:
@@ -133,10 +116,8 @@ def fold_amplitudes(cov, sigmas, *, name: str = "covariance") -> np.ndarray:
 def _axis_position(axis: str) -> int:
     """The increment axis a `correlated_over` name indexes.
 
-    Raises for a name that is not an axis of the increment. `mode` gets its own message
-    because the schema's own vocabulary offers it and the failure would otherwise read
-    as a typo: a multi-mode model carries its modes inside the state axis, so a modal
-    covariance is declared over `state`, not over a mode axis that does not exist here.
+    Raises for a name that is not an axis of the increment. `mode` gets its own message because the schema's own vocabulary offers it and the failure would otherwise read
+    as a typo: a multi-mode model carries its modes inside the state axis, so a modal covariance is declared over `state`, not over a mode axis that does not exist here.
     """
     key = str(axis)
     if key == "mode":
@@ -147,18 +128,14 @@ def _axis_position(axis: str) -> int:
             "'state' (modes within a state variable) or 'node'."
         )
     if key not in _AXIS:
-        raise ValueError(
-            f"correlated_over={key!r} is not an axis of the noise increment; expected "
-            f"one of {sorted(_AXIS)}."
-        )
+        raise ValueError(f"correlated_over={key!r} is not an axis of the noise increment; expected one of {sorted(_AXIS)}.")
     return _AXIS[key]
 
 
 def _mix_leaf(factor, xi, axis_pos: int):
     """Impose the covariance on one increment array; pass non-arrays through.
 
-    An ODE step carries the scalar ``0.0`` as its increment, and a group that declares
-    no noise carries an all-zero block; both must survive untouched.
+    An ODE step carries the scalar ``0.0`` as its increment, and a group that declares no noise carries an all-zero block; both must survive untouched.
     """
     import jax.numpy as jnp
 
@@ -171,8 +148,7 @@ def _mix_leaf(factor, xi, axis_pos: int):
             f"has {n} elements on that axis; the covariance must be square in the axis "
             f"named by `correlated_over`."
         )
-    # Contract the factor's source index against the correlated axis, leaving every
-    # other axis (leading time/block axes, and the axis not being correlated) alone.
+    # Contract the factor's source index against the correlated axis, leaving every other axis (leading time/block axes, and the axis not being correlated) alone.
     subs = "...sb,ab->...sa" if axis_pos == -1 else "...bn,ab->...an"
     return jnp.einsum(subs, xi, jnp.asarray(factor))
 
@@ -200,11 +176,9 @@ def noise_mixer(factor, axis: str = "node"):
 def CorrelatedNoiseSolver(base_solver, factor, axis: str = "node"):
     """Wrap a native solver so its Wiener increment carries a declared covariance.
 
-    tvboptim owns the integration step; this is tvbo's concrete solver against that
-    abstract contract, mirroring the backend's own `BoundedSolver` (delegate, then
+    tvboptim owns the integration step; this is tvbo's concrete solver against that abstract contract, mirroring the backend's own `BoundedSolver` (delegate, then
     transform — here the increment on the way in rather than the state on the way out).
-    Wrapping is the one place that works for every network shape, because the grouped
-    and ungrouped scans both hand their increment to `solver.step`.
+    Wrapping is the one place that works for every network shape, because the grouped and ungrouped scans both hand their increment to `solver.step`.
 
     Args:
         base_solver: The native solver to wrap.
@@ -227,8 +201,7 @@ def CorrelatedNoiseSolver(base_solver, factor, axis: str = "node"):
         def __init__(self, base_solver, factor):
             """Wrap `base_solver`, delegating its scan settings via the properties below.
 
-            Skips `NativeSolver.__init__` so wrapping cannot silently drop a block size
-            or gradient horizon — the idiom `BoundedSolver` uses.
+            Skips `NativeSolver.__init__` so wrapping cannot silently drop a block size or gradient horizon — the idiom `BoundedSolver` uses.
             """
             self.base_solver = base_solver
             self.factor = factor
@@ -253,9 +226,7 @@ def CorrelatedNoiseSolver(base_solver, factor, axis: str = "node"):
             if not isinstance(self.factor, Mapping):
                 import jax
 
-                return jax.tree.map(
-                    lambda leaf: _mix_leaf(self.factor, leaf, axis_pos), noise_sample
-                )
+                return jax.tree.map(lambda leaf: _mix_leaf(self.factor, leaf, axis_pos), noise_sample)
             if not hasattr(noise_sample, "items"):
                 raise ValueError(
                     "a per-group covariance was declared but the solver received a "
@@ -269,8 +240,6 @@ def CorrelatedNoiseSolver(base_solver, factor, axis: str = "node"):
 
         def step(self, dynamics_fn, t, state, dt, params, noise_sample=0.0):
             """Integration step whose increment carries the declared covariance."""
-            return self.base_solver.step(
-                dynamics_fn, t, state, dt, params, self._mix(noise_sample)
-            )
+            return self.base_solver.step(dynamics_fn, t, state, dt, params, self._mix(noise_sample))
 
     return _CorrelatedNoiseSolver(base_solver, factor)
