@@ -37,7 +37,7 @@ _cfg_jax()
 
 from tvbo.data.registry import database_dir
 from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.utils import edge_param
+from tvbo.utils import edge_param, transform_target
 from tvbo.utils.yaml_loader import resolve_edge_var_aliases
 
 # HDF5+YAML network files — resolved via registry (works for pip & editable installs)
@@ -3444,22 +3444,22 @@ class Network(tvbo_datamodel.Network):
 
         return G
 
-    def normalize_weights(self, equation_rhs: str = "(M - M_min) / (M_max - M_min)") -> None:
+    def normalize_weights(self, equation_rhs: Optional[str] = None) -> None:
         """Add a normalization transform for connection weights.
 
         Convenience wrapper for ``add_transform("weight", ...)``.
 
         Parameters
         ----------
-        equation_rhs : str, default="(M - M_min) / (M_max - M_min)"
-            Right-hand side of normalization equation. Can reference
-            M (matrix), M_min, M_max.
+        equation_rhs : str, optional
+            Right-hand side of the normalization equation, written over the network's
+            edge attributes. Defaults to min-max normalisation of ``weight``.
 
         Examples
         --------
         ```python
         sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        sc.normalize_weights("M / M_max")  # Normalize to [0, 1]
+        sc.normalize_weights("weight / max(weight)")  # Normalize to [0, 1]
         normalized = sc.weights_matrix  # Returns normalized weights
         ```
 
@@ -4358,7 +4358,7 @@ class Network(tvbo_datamodel.Network):
         """Add min-max normalization of connection weights.
 
         Appends a transform to scale weights to [0, 1] range.
-        Equivalent to ``add_transform("weight", "(M - M_min) / (M_max - M_min)")``.
+        Equivalent to ``add_transform("weight")``, whose default is that normalisation.
 
         Examples
         --------
@@ -4373,7 +4373,7 @@ class Network(tvbo_datamodel.Network):
         add_transform : Add a transform on any edge property
         normalize_weights : Set custom normalization equation
         """
-        self.add_transform("weight", "(M - M_min) / (M_max - M_min)")
+        self.add_transform("weight")
 
     # ── Node mapping (hierarchical composition) ─────────────────────
 
@@ -4760,7 +4760,7 @@ class Network(tvbo_datamodel.Network):
             List of `Function` transforms declared against *target*.
         """
         names = next((a for a in _TRANSFORM_TARGET_ALIASES if target in a), (target,))
-        return [t for t in (self.transforms or []) if getattr(t, "name", None) in names]
+        return [t for t in (self.transforms or []) if transform_target(t) in names]
 
     def transform_expression(self, func):
         """A transform's equation as a sympy expression, with its arguments substituted.
@@ -4790,32 +4790,46 @@ class Network(tvbo_datamodel.Network):
             for pname, pval in eq.parameters.items():
                 arg_values.setdefault(pname, getattr(pval, "value", pval))
 
-        exp = parse_eq(eq)
+        from tvbo.codegen.transforms import prepare, subscript_locals
+
+        rhs = str(getattr(eq, "rhs", eq) or "")
+        exp = parse_eq(eq, local_dict=subscript_locals(rhs))
         if exp is None:
             return None
         subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if arg_values.get(str(s)) is not None}
         exp = exp.subs(subs_map) if subs_map else exp
 
-        from sympy import Indexed
+        return prepare(exp, what=f"transform {transform_target(func) or '?'!r}")
 
-        if exp.has(Indexed):
-            raise ValueError(
-                f"transform {getattr(func, 'name', '?')!r} subscripts a matrix "
-                f"({eq.rhs if hasattr(eq, 'rhs') else eq!r}). A boolean subscript is not a mask: "
-                "its output shape depends on the data, so it cannot be jitted, and the printer "
-                "drops it — the reduction then silently runs over every entry. Declare `mask:` "
-                "beside the equation instead, e.g. `mask: \"W > 0\"` with `equation: W / mean(W)`."
-            )
+    def _transform_operand(self, func, M):
+        """A resolver from a transform symbol to the live array it names.
 
-        mask = getattr(func, "mask", None)
-        if mask:
-            from tvbo.codegen.transforms import mask_reductions
+        The transform's own target binds to *M*, the value flowing through the chain, so
+        a second transform in a chain sees the first one's output — and so a
+        length-target transform does not re-enter itself by asking the network for the
+        matrix it is busy producing. Every other edge attribute binds to the network's
+        stored matrix through the same :func:`tvbo.utils.edge_label` the emitters use, and
+        a declared per-node parameter binds as an ``(n, 1)`` column, so
+        ``weight / roi_size`` divides each target row by that region's size and broadcasts
+        across the source axis.
+        """
+        from tvbo.utils import edge_label
 
-            mask_exp = parse_eq(str(mask))
-            if mask_exp is None:
-                raise ValueError(f"transform {getattr(func, 'name', '?')!r} declares a `mask:` that does not parse: {mask!r}")
-            exp = mask_reductions(exp, mask_exp.subs(subs_map) if subs_map else mask_exp)
-        return exp
+        target = edge_label(transform_target(func)) or transform_target(func)
+
+        def resolve(name):
+            label = edge_label(name) or name
+            if label == target:
+                return M
+            stored = self.matrix(label)
+            if stored is not None:
+                return stored
+            vec = self.node_parameter_vectors.get(name)
+            if vec is None or vec.shape[0] != M.shape[0]:
+                return None
+            return jnp.asarray(vec).reshape(-1, 1)
+
+        return resolve
 
     def _apply_transform(self, M, func):
         """Apply a Function transform to matrix *M*.
@@ -4848,7 +4862,7 @@ class Network(tvbo_datamodel.Network):
                 # the lengths, so use it directly — reading ``self.lengths_matrix``
                 # here would re-enter this same transform (infinite recursion).
                 if "L" in sig.parameters:
-                    _is_length = getattr(func, "name", None) in _LENGTH_TARGETS
+                    _is_length = transform_target(func) in _LENGTH_TARGETS
                     kwargs.setdefault("L", M if _is_length else self.lengths_matrix)
                 return fn(M, **kwargs)
 
@@ -4857,28 +4871,15 @@ class Network(tvbo_datamodel.Network):
         if exp is None:
             return M
         from tvbo.codegen.code import render_expression
-        from tvbo.codegen.transforms import runtime_env
+        from tvbo.codegen.transforms import edge_symbols, runtime_env
 
-        _is_length = getattr(func, "name", None) in _LENGTH_TARGETS
-        env = runtime_env(M, M if _is_length else self.lengths_matrix, jnp, jsp)
-        # Expose declared per-node parameters as (n, 1) column vectors, so a symbolic
-        # weight transform can normalise per target region — e.g. ``W / roi_size`` divides
-        # each target row by that region's size (Deco's fibers-per-neuron SC). Column
-        # shape mirrors ``W_rowsum`` and broadcasts across the source axis.
-        for _pn, _vec in self.node_parameter_vectors.items():
-            if _pn not in env and _vec.shape[0] == M.shape[0]:
-                env[_pn] = jnp.asarray(_vec).reshape(-1, 1)
+        env = runtime_env(self._transform_operand(func, M), edge_symbols(exp), jnp, jsp)
         code_str = render_expression(exp, format="jax")
         if isinstance(code_str, str):
             M = eval(code_str, env)
         return M
 
-    def add_transform(
-        self,
-        target: str,
-        equation_rhs: str = "(M - M_min) / (M_max - M_min)",
-        mask: str | None = None,
-    ) -> None:
+    def add_transform(self, target: str, equation_rhs: Optional[str] = None) -> None:
         """Append a matrix transform for a named edge property.
 
         Transforms are applied in order when the matrix is accessed
@@ -4888,31 +4889,30 @@ class Network(tvbo_datamodel.Network):
         ----------
         target : str
             Edge property name (e.g. ``"weight"``, ``"length"``, ``"fc"``).
-        equation_rhs : str, default="(M - M_min) / (M_max - M_min)"
-            Right-hand side of the transform equation. Can reference
-            M (matrix), M_min, M_max.
-        mask : str, optional
-            Boolean predicate scoping every reduction in *equation_rhs*, e.g. ``"M > 0"``
-            so ``M / mean(M)`` divides by the mean of the non-zero entries. Write it here
-            rather than subscripting inside the equation: ``mean(M[M > 0])`` is boolean
-            indexing, whose shape depends on the data, so it cannot be jitted and is
-            refused.
+        equation_rhs : str, optional
+            Right-hand side of the transform equation, written over the network's own
+            edge attributes — ``weight``, ``length``, or ``network.edges.<label>``. The
+            attribute named by *target* is the value under transform. Defaults to
+            min-max normalisation of *target*. A reduction may be scoped by a boolean
+            predicate, written either as a subscript or as a second argument.
 
         Examples
         --------
         ```python
         sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        sc.add_transform("weight", "M / M_max")
-        sc.add_transform("weight", "M / mean(M)", mask="M > 0")
+        sc.add_transform("weight", "weight / max(weight)")
+        sc.add_transform("weight", "weight / mean(weight[weight > 0])")
+        sc.add_transform("weight", "weight / mean(weight, weight > 0)")
         ```
         """
+        if equation_rhs is None:
+            equation_rhs = f"({target} - min({target})) / (max({target}) - min({target}))"
         if self.transforms is None:
             self.transforms = []
         self.transforms.append(
             tvbo_datamodel.Function(
                 name=target,
                 equation=tvbo_datamodel.Equation(rhs=equation_rhs),
-                **({"mask": mask} if mask else {}),
             )
         )
 

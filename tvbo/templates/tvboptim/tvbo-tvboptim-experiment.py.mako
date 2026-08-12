@@ -257,11 +257,8 @@ conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is 
 
 # `transforms:` -> JAX, applied in create_network on the RAW weights, so the kit is self-contained.
 from tvbo.templates.tvboptim.utils import weight_transform_codegen as _weight_transform_codegen
-weight_transform_jax, weight_transform_const_env = _weight_transform_codegen(network)
+weight_transform_jax, weight_transform_const_env, weight_transform_needs_lengths = _weight_transform_codegen(network)
 has_weight_transforms = bool(weight_transform_jax)
-# A transform that reads L only works if the caller hands create_network the real lengths.
-from tvbo.codegen.transforms import DATA_DERIVED as _transform_data_derived
-weight_transform_needs_lengths = any(_l.split(" = ", 1)[0] in _transform_data_derived for _l in weight_transform_const_env)
 weight_transform_distances_arg = "distances=distances, " if weight_transform_needs_lengths else ""
 
 # Simulation parameters

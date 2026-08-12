@@ -1,20 +1,25 @@
 """Weight `transforms:` are inlined in the generated tvboptim code (self-contained kit).
 
-A declared connectome transform (e.g. ``log(W+1)/max(log(W+1))``) is applied at runtime by
-``Network.weights_matrix``. A frozen/standalone kit must not depend on that: the codegen
-renders the transform to pure ``jnp`` inside ``create_network`` and is handed the RAW weights,
-so the transform stays declared in the spec, the raw SC stays in the network file, and the
-exact op is visible in the script rather than hidden in tvbo runtime. These freeze the
+A declared connectome transform (e.g. ``log(weight+1)/max(log(weight+1))``) is applied at
+runtime by ``Network.weights_matrix``. A frozen/standalone kit must not depend on that: the
+codegen renders the transform to pure ``jnp`` inside ``create_network`` and is handed the RAW
+weights, so the transform stays declared in the spec, the raw SC stays in the network file,
+and the exact op is visible in the script rather than hidden in tvbo runtime. These freeze the
 raw/transformed accessor split, byte-identity of the inlined op against ``weights_matrix``,
 and that the emitted network builder carries the transform as pure ``jnp``.
+
+A transform equation is written over the network's own edge attributes — ``weight``,
+``length``, ``network.edges.<label>`` — and any reduction in it may be masked, in either of the
+two spellings. These also freeze that both mean the same thing on both paths.
 """
 import jax.numpy as jnp
 import numpy as np
+import pytest
 
 from tvbo.classes.network import Network
 from tvbo.templates.tvboptim.utils import weight_transform_codegen
 
-RHS = "log(W + 1) / max(log(W + 1))"
+RHS = "log(weight + 1) / max(log(weight + 1))"
 
 
 def _net_with_transform():
@@ -27,13 +32,27 @@ def _net_with_transform():
     return net, W
 
 
+def _apply_emitted(net, weights, distances=None):
+    """Run the emitted const_env + per-transform env exactly as `create_network` does."""
+    transforms, const_env, _ = weight_transform_codegen(net)
+    scope = {"jnp": jnp, "weights": jnp.asarray(weights),
+             "distances": None if distances is None else jnp.asarray(distances)}
+    for line in const_env:
+        exec(line, scope)
+    for expr, chained_env in transforms:
+        for line in chained_env:
+            exec(line, scope)
+        scope["weights"] = eval(expr, scope)
+    return np.asarray(scope["weights"])
+
+
 def test_raw_accessor_is_untouched_transformed_is_normalised():
     net, W = _net_with_transform()
     raw = np.asarray(net.raw_weights_matrix)
     transformed = np.asarray(net.weights_matrix)
     assert np.array_equal(raw, W)                    # raw_weights_matrix skips transforms
     assert not np.allclose(raw, transformed)         # the transform actually changed it
-    assert transformed.max() <= 1.0 + 1e-6           # log(W+1)/max normalises to <= 1
+    assert transformed.max() <= 1.0 + 1e-6           # log(weight+1)/max normalises to <= 1
 
 
 def test_inline_transform_is_byte_identical_to_weights_matrix():
@@ -41,26 +60,24 @@ def test_inline_transform_is_byte_identical_to_weights_matrix():
     so ``experiment.py`` passing ``raw_weights_matrix`` while ``create_network`` inlines the
     transform is a no-op for every working run."""
     net, _ = _net_with_transform()
-    transforms, const_env = weight_transform_codegen(net)
+    transforms, const_env, needs_lengths = weight_transform_codegen(net)
     assert len(transforms) == 1
     assert const_env == []
-    expr, matrix_env = transforms[0]
-    assert expr.startswith("jnp.") and "W" in expr   # pure jnp, references the raw matrix
-
-    weights = jnp.asarray(net.raw_weights_matrix)
-    env = {"jnp": jnp, "distances": None, "weights": weights}
-    for line in matrix_env:
-        exec(line, env)
-    inlined = np.asarray(eval(expr, env))
-    assert np.array_equal(inlined, np.asarray(net.weights_matrix))
+    assert needs_lengths is False
+    expr, chained_env = transforms[0]
+    assert expr.startswith("jnp.") and "weight" in expr
+    assert chained_env == ["weight = weights"]       # the target rebinds from the running value
+    assert np.array_equal(_apply_emitted(net, net.raw_weights_matrix),
+                          np.asarray(net.weights_matrix))
 
 
 def test_network_without_transform_emits_nothing():
     net = Network.from_matrix(weights=np.array([[0, 1.0], [1.0, 0]]),
                               lengths=np.zeros((2, 2)))
-    transforms, const_env = weight_transform_codegen(net)
+    transforms, const_env, needs_lengths = weight_transform_codegen(net)
     assert transforms == []
     assert const_env == []
+    assert needs_lengths is False
     assert np.array_equal(np.asarray(net.raw_weights_matrix),
                           np.asarray(net.weights_matrix))
 
@@ -86,26 +103,12 @@ def test_rendered_tvboptim_source_inlines_the_transform():
 
     code = exp.render_code("tvboptim")
     builder = code.split("def create_network", 1)[-1].split("\ndef ", 1)[0]
-    assert "jnp.log(1 + W)" in builder                 # transform inlined in the builder
-    assert "weights_matrix" not in builder             # not delegated to tvbo runtime
+    assert "jnp.log(1 + weight)" in builder             # transform inlined in the builder
+    assert "weights_matrix" not in builder              # not delegated to tvbo runtime
     assert "_apply_transform" not in builder
 
 
 # ── A transform is a Function: callable and equation are both lowered ───────────────────
-
-
-def _apply_emitted(net, weights, distances=None):
-    """Run the emitted const_env + per-transform env exactly as `create_network` does."""
-    transforms, const_env = weight_transform_codegen(net)
-    scope = {"jnp": jnp, "weights": jnp.asarray(weights),
-             "distances": None if distances is None else jnp.asarray(distances)}
-    for line in const_env:
-        exec(line, scope)
-    for expr, matrix_env in transforms:
-        for line in matrix_env:
-            exec(line, scope)
-        scope["weights"] = eval(expr, scope)
-    return np.asarray(scope["weights"])
 
 
 def test_a_callable_transform_reaches_the_kit():
@@ -122,7 +125,7 @@ def test_a_callable_transform_reaches_the_kit():
     net.transforms = [Function(name="weight", callable=CallableRef(
         module="tvbo.classes.network", name="normalized_graph_laplacian"))]
 
-    transforms, const_env = weight_transform_codegen(net)
+    transforms, const_env, _ = weight_transform_codegen(net)
     assert len(transforms) == 1
     assert any(line.startswith("from tvbo.classes.network import") for line in const_env)
     assert np.allclose(_apply_emitted(net, W), np.asarray(net.weights_matrix))
@@ -139,32 +142,20 @@ def test_equation_parameters_are_substituted_like_the_runtime():
     W = np.array([[0, 2.0], [4.0, 0]])
     net = Network.from_matrix(weights=W, lengths=np.zeros_like(W))
     net.transforms = [Function(name="weight",
-                               equation=Equation(rhs="W / k", parameters={"k": {"value": 4.0}}))]
+                                    equation=Equation(rhs="weight / k",
+                                                 parameters={"k": {"value": 4.0}}))]
 
-    (expr, _), = weight_transform_codegen(net)[0]
+    expr, _ = weight_transform_codegen(net)[0][0]
     assert "k" not in expr
     assert np.allclose(_apply_emitted(net, W), np.asarray(net.weights_matrix))
 
 
 def test_an_undeclared_symbol_fails_at_render_time():
     """Better a render-time error than an undefined name in a kit that dies on the cluster."""
-    import pytest
-
     net = Network.from_matrix(weights=np.array([[0, 1.0], [1.0, 0]]), lengths=np.zeros((2, 2)))
-    net.add_transform("weight", "W / k_undeclared")
+    net.add_transform("weight", "weight / k_undeclared")
     with pytest.raises(ValueError, match="k_undeclared"):
         weight_transform_codegen(net)
-
-
-def test_a_reduction_is_bound_once():
-    """`W_rowsum_safe` reuses one `_rs` binding instead of re-reducing per mention.
-
-    `create_network` runs eagerly, so XLA never gets to CSE the duplicate.
-    """
-    net = Network.from_matrix(weights=np.array([[0, 2.0], [4.0, 0]]), lengths=np.zeros((2, 2)))
-    net.add_transform("weight", "W / W_rowsum_safe")
-    _, matrix_env = weight_transform_codegen(net)[0][0]
-    assert sum(line.count("sum(axis=1") for line in matrix_env) == 1
 
 
 def test_transforms_for_matches_the_length_alias():
@@ -173,81 +164,135 @@ def test_transforms_for_matches_the_length_alias():
 
     net = Network.from_matrix(weights=np.zeros((2, 2)), lengths=np.zeros((2, 2)))
     net.transforms = [
-        Function(name="lengths", equation=Equation(rhs="M * 2")),
-        Function(name="weight", equation=Equation(rhs="W * 3")),
+        Function(name="lengths", equation=Equation(rhs="length * 2")),
+        Function(name="weight", equation=Equation(rhs="weight * 3")),
     ]
     assert len(net.transforms_for("length")) == 1
     assert len(net.transforms_for("lengths")) == 1
     assert len(net.transforms_for("weight")) == 1
 
 
-def test_a_declared_mask_survives_validation_and_renders():
-    """The undeclared-symbol check must not reject a recipe for naming `mask:`.
+# ── The vocabulary is the network's own edge attributes ─────────────────────────────────
 
-    Its predecessor asserted that `W / mean(W[W > 0])` renders, and that codegen and
-    runtime agree on it. They did agree — on the wrong number, both reducing over every
-    entry, because the printer drops the subscript. The property worth holding is that a
-    *declared* mask renders, which is what this checks.
+
+def test_an_edge_attribute_is_the_vocabulary_not_an_invented_alias():
+    """A transform names `weight`/`length`, resolved by the resolver observations use.
+
+    The equation body used to be written against a private table of `W`/`L`/`W_max`
+    primitives, declared once for the runtime and again as JAX source for the emitter —
+    two lists that had already drifted.
     """
-    net = Network.from_matrix(weights=np.array([[0, 2.0, 0], [4.0, 0, 3.0], [0, 5.0, 0]]),
-                              lengths=np.zeros((3, 3)))
-    net.add_transform("weight", "W / mean(W)", mask="W > 0")
-    (expr, matrix_env), = weight_transform_codegen(net)[0]
-    assert "W = weights" in matrix_env
-    assert np.allclose(_apply_emitted(net, np.asarray(net.raw_weights_matrix)),
-                       np.asarray(net.weights_matrix))
+    W = np.array([[0, 2.0], [4.0, 0]])
+    L = np.array([[0, 10.0], [10.0, 0]])
+    net = Network.from_matrix(weights=W, lengths=L)
+    net.add_transform("weight", "weight / (length + 1)")
+
+    transforms, const_env, needs_lengths = weight_transform_codegen(net)
+    assert needs_lengths is True                       # create_network must be handed lengths
+    assert "length = distances" in const_env           # bound once, not per transform
+    assert transforms[0][1] == ["weight = weights"]    # the target rebinds per transform
+    assert np.allclose(_apply_emitted(net, W, L), np.asarray(net.weights_matrix))
 
 
-def test_a_declared_mask_scopes_the_reduction_at_runtime():
-    """`mask:` makes `mean(W)` the mean of the masked entries, not of every entry.
+def test_a_third_edge_attribute_resolves_at_runtime_but_not_in_a_kit():
+    """The runtime reads any label through `matrix()`; a kit holds only what it is handed.
+
+    Refusing at render time beats emitting a name the kit does not define and only
+    discovering it once the job reaches a cluster.
+    """
+    W = np.array([[0, 2.0], [4.0, 0]])
+    net = Network.from_matrix(weights=W, lengths=np.zeros((2, 2)))
+    net.set_matrix("fc", np.array([[0, 0.5], [0.5, 0]]))
+    net.add_transform("weight", "weight * fc")
+
+    assert np.allclose(np.asarray(net.weights_matrix), W * np.array([[0, 0.5], [0.5, 0]]))
+    with pytest.raises(ValueError, match="fc"):
+        weight_transform_codegen(net)
+
+
+def test_the_default_transform_is_written_over_its_own_target():
+    """`add_transform` with no equation min-max normalises whatever it targets."""
+    net = Network.from_matrix(weights=np.array([[0, 2.0], [4.0, 0]]), lengths=np.zeros((2, 2)))
+    net.add_transform("weight")
+    assert net.transforms[0].equation.rhs == "(weight - min(weight)) / (max(weight) - min(weight))"
+    transformed = np.asarray(net.weights_matrix)
+    assert transformed.min() == 0.0 and transformed.max() == 1.0
+
+
+# ── A mask scopes a reduction, in whichever of the three spellings ──────────────────────
+
+
+SPARSE = np.array([[0.0, 2, 1], [4, 0, 3], [1, 5, 0]])
+MASKED_MEAN = SPARSE / SPARSE[SPARSE > 0].mean()
+
+SPELLINGS = {
+    "subscript": {"equation": {"rhs": "weight / mean(weight[weight > 0])"}},
+    "argument": {"equation": {"rhs": "weight / mean(weight, weight > 0)"}},
+}
+
+
+@pytest.mark.parametrize("spelling", sorted(SPELLINGS))
+def test_every_mask_spelling_scopes_the_reduction_at_runtime(spelling):
+    """A mask makes `mean(weight)` the mean of the existing edges, not of every cell.
 
     The whole point: a sparse connectome normalised by the all-entry mean is scaled by
     roughly 1/density — ~5x on a 20%-dense matrix — and nothing reports it.
     """
-    import numpy as np
-
-    from tvbo import Network
-
-    W = np.array([[0.0, 2, 1], [4, 0, 3], [1, 5, 0]])
-    net = Network.from_matrix(W, transforms=[{"name": "weight", "mask": "W > 0", "equation": {"rhs": "W / mean(W)"}}])
-    assert np.allclose(np.asarray(net.weights_matrix), W / W[W > 0].mean())
+    net = Network.from_matrix(SPARSE, transforms=[{"name": "weight", **SPELLINGS[spelling]}])
+    assert np.allclose(np.asarray(net.weights_matrix), MASKED_MEAN)
 
 
-def test_the_emitted_kit_masks_the_same_reduction():
+@pytest.mark.parametrize("spelling", sorted(SPELLINGS))
+def test_every_mask_spelling_reaches_the_kit_unchanged(spelling):
     """Codegen and runtime resolve one expression, so a kit cannot normalise differently."""
-    import numpy as np
-
-    from tvbo import Network
-    from tvbo.templates.tvboptim.utils import weight_transform_codegen
-
-    W = np.array([[0.0, 2, 1], [4, 0, 3], [1, 5, 0]])
-    net = Network.from_matrix(W, transforms=[{"name": "weight", "mask": "W > 0", "equation": {"rhs": "W / mean(W)"}}])
-    emitted = weight_transform_codegen(net)[0][0][0]
-    assert "jnp.where" in emitted, emitted
-    weights = W
-    assert np.allclose(eval(emitted, {"jnp": __import__("jax.numpy", fromlist=["x"]), "W": weights}), W / W[W > 0].mean())
+    net = Network.from_matrix(SPARSE, transforms=[{"name": "weight", **SPELLINGS[spelling]}])
+    expr, _ = weight_transform_codegen(net)[0][0]
+    assert "jnp.where" in expr, expr
+    assert np.allclose(_apply_emitted(net, SPARSE), MASKED_MEAN)
 
 
-def test_a_boolean_subscript_is_refused_rather_than_silently_dropped():
-    """`mean(W[W > 0])` parsed fine and rendered as `jnp.mean(W)` — the mask vanished."""
-    import numpy as np
-    import pytest
+def test_both_spellings_lower_to_the_same_source():
+    """They are two notations for one node, so they cannot drift apart at the printer."""
+    rendered = {
+        name: weight_transform_codegen(
+            Network.from_matrix(SPARSE, transforms=[{"name": "weight", **spec}])
+        )[0][0][0]
+        for name, spec in SPELLINGS.items()
+    }
+    assert len(set(rendered.values())) == 1, rendered
 
-    from tvbo import Network
 
+def test_two_reductions_carry_their_own_predicates():
+    """A predicate scopes the reduction it is written on, so one equation can mix them."""
     net = Network.from_matrix(
-        np.array([[0.0, 2], [3, 0]]), transforms=[{"name": "weight", "equation": {"rhs": "W / mean(W[W > 0])"}}]
+        SPARSE,
+        transforms=[{"name": "weight",
+                     "equation": {"rhs": "mean(weight[weight > 0]) / max(weight, weight < 4)"}}],
     )
-    with pytest.raises(ValueError, match="not a mask"):
+    expected = SPARSE[SPARSE > 0].mean() / SPARSE[SPARSE < 4].max()
+    assert np.allclose(np.asarray(net.weights_matrix), expected)
+
+
+def test_a_masked_extremum_fills_with_its_identity():
+    """max over the empty set is -inf: an all-false mask must poison, not look plausible."""
+    net = Network.from_matrix(SPARSE, transforms=[
+        {"name": "weight", "equation": {"rhs": "weight / max(weight[weight < 4])"}}])
+    assert np.allclose(np.asarray(net.weights_matrix), SPARSE / SPARSE[SPARSE < 4].max())
+
+    empty = Network.from_matrix(SPARSE, transforms=[
+        {"name": "weight", "equation": {"rhs": "max(weight[weight > 1e9])"}}])
+    assert np.isneginf(np.asarray(empty.weights_matrix)).all()
+
+
+def test_a_boolean_subscript_outside_a_reduction_is_refused():
+    """`weight[weight > 0]` alone selects a data-dependent count, so it has no static shape.
+
+    Inside a reduction it does — which is why the subscript spelling is accepted there and
+    only there.
+    """
+    net = Network.from_matrix(
+        np.array([[0.0, 2], [3, 0]]),
+        transforms=[{"name": "weight", "equation": {"rhs": "weight[weight > 0] / 2"}}],
+    )
+    with pytest.raises(ValueError, match="outside a reduction"):
         _ = net.weights_matrix
-
-
-def test_a_mask_over_an_unsupported_reduction_says_so():
-    """min/max need a backend-specific infinity fill; refusing beats reducing unmasked."""
-    import pytest
-
-    from tvbo.codegen.transforms import mask_reductions
-    from tvbo.parse.expression import parse_eq
-
-    with pytest.raises(NotImplementedError, match="cannot scope"):
-        mask_reductions(parse_eq("W / max(W)"), parse_eq("W > 0"))

@@ -1126,7 +1126,7 @@ def test_delay_speed_trajectory(eager):
 
     # --- tvbo-native ---
     exp = _load_sim("Delay_Speed_Synchronization", T1, 0.0)
-    W = np.asarray(exp.network.weights_matrix)  # already W / W_max
+    W = np.asarray(exp.network.weights_matrix)  # already weight / max(weight)
     L = np.asarray(exp.network.lengths_matrix)
     labels = [n.label for n in exp.network.nodes]
     omega = float(exp.dynamics.parameters["omega"].value)

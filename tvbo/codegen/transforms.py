@@ -1,163 +1,208 @@
-"""The matrix-transform vocabulary, declared once for the runtime and for codegen.
+"""Transform vocabulary: the network's own edge attributes, and masked reductions.
 
-A `transforms:` entry is a `Function`, so it is either equation-based or callable-based, and
-a symbolic one is written against a small vocabulary of primitives — `W`, `W_max`,
-`W_rowsum_safe`, `L`, plus the network's per-node parameter vectors. Both the runtime
-evaluator (`Network._apply_transform`) and the emitters that inline a transform into a
-generated script need that vocabulary, and a second hand-written copy of it drifts: the
-runtime is where a transform author adds a primitive, so the emitted kit is the side that
-silently goes wrong.
+A ``transforms:`` entry is a ``Function`` whose equation is written over the network's
+edge attributes — ``weight``, ``length``, or the canonical ``network.edges.<label>`` —
+resolved by the same :func:`tvbo.utils.edge_label` that observation sources and
+exploration axes go through. There is no second, invented vocabulary: a derived quantity
+is spelled as the reduction it is (``max(weight)``), so nothing has to be declared twice
+and no backend can be handed a name the runtime never defined.
 
-Each primitive is therefore declared once, as a source expression over two base names —
-`_M`, the matrix being transformed, and `_L`, the lengths. The runtime evaluates those
-strings; an emitter prints them. Neither can define a primitive the other lacks.
+A reduction may be scoped by a boolean mask, in either of two spellings, because the
+notation people reach for differs and both are unambiguous:
+
+.. code-block:: yaml
+
+    rhs: "weight / mean(weight[weight > 0])"    # the boolean subscript
+    rhs: "weight / mean(weight, weight > 0)"    # the predicate as an argument
+
+Both normalise to one node, ``red(expr, predicate)``, lowered once into ``Piecewise``.
+Each printer already turns that into its own ``where``/``ifelse``, so the mask is
+backend-independent for free and no two backends can disagree about what it means. A
+boolean subscript is only legal *inside* a reduction: on its own it has a data-dependent
+output shape, so it cannot be jitted and is rejected.
 """
 
 from __future__ import annotations
 
 import re
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
-_IDENTIFIER = re.compile(r"[A-Za-z_]\w*")
+from sympy import Basic, Function, Indexed, IndexedBase, Integer, Piecewise, oo, preorder_traversal
+from sympy.logic.boolalg import Boolean
 
-BASE_MATRIX = "_M"
-BASE_LENGTHS = "_L"
+_SUBSCRIPTED = re.compile(r"([A-Za-z_]\w*)\s*\[")
 
-PRELUDE: Tuple[Tuple[str, str], ...] = (
-    ("_rs", f"{BASE_MATRIX}.sum(axis=1, keepdims=True)"),
-    ("_cs", f"{BASE_MATRIX}.sum(axis=0, keepdims=True)"),
-)
-
-PRIMITIVES: Dict[str, str] = {
-    "M": BASE_MATRIX,
-    "W": BASE_MATRIX,
-    "M_min": f"jnp.nanmin({BASE_MATRIX})",
-    "W_min": f"jnp.nanmin({BASE_MATRIX})",
-    "M_max": f"jnp.nanmax({BASE_MATRIX})",
-    "W_max": f"jnp.nanmax({BASE_MATRIX})",
-    "W_rowsum": "_rs",
-    "W_colsum": "_cs",
-    "W_rowsum_safe": "jnp.where(_rs > 0, _rs, 1.0)",
-    "W_colsum_safe": "jnp.where(_cs > 0, _cs, 1.0)",
-    "L": BASE_LENGTHS,
+REDUCTIONS: Dict[str, Basic] = {
+    "sum": Integer(0),
+    "mean": Integer(0),
+    "min": oo,
+    "nanmin": oo,
+    "max": -oo,
+    "nanmax": -oo,
 }
+"""Reduction head to the value a masked-out entry contributes.
 
-DATA_DERIVED = frozenset({"L"})
-"""Primitives that do not depend on the matrix under transform.
-
-An emitter binds these once; everything else is rebound per transform so a chain of
-transforms sees the preceding one's output.
+``sum`` and ``mean`` fill with zero. An extremum fills with its identity, so a mask that
+keeps nothing yields ±inf and poisons the result loudly, rather than returning the
+plausible-looking extremum of the entries it was told to ignore. ``mean`` additionally
+divides by the number of kept entries, which is the whole reason an unmasked
+``mean(weight)`` over a sparse connectome is not the mean of its edges.
 """
 
 
-MASKABLE_REDUCTIONS = frozenset({"mean", "sum"})
-"""Reductions a declared `mask:` rewrites.
+def subscript_locals(source: str) -> Dict[str, IndexedBase]:
+    """An ``IndexedBase`` for every name *source* subscripts, to hand the parser.
 
-`min`/`max` are deliberately absent: masking them needs a ±infinity fill whose spelling
-is backend-specific, and no recipe asks for it yet. A masked `min(...)` raises rather
-than silently reducing over the unmasked matrix — the failure this whole mechanism
-exists to prevent.
-"""
-
-
-def mask_reductions(expr, mask):
-    """Rewrite every reduction in *expr* to reduce over *mask* only.
-
-    `mean(W)` becomes `sum(where(mask, W, 0)) / sum(where(mask, 1, 0))` and `sum(W)`
-    becomes `sum(where(mask, W, 0))`, built as sympy `Piecewise` so every backend prints
-    it through its own `where` primitive rather than a numpy-shaped string.
-
-    The rewrite is what makes a mask expressible at all: `mean(W[W > 0])` is boolean
-    indexing, whose output shape depends on the data, so it is illegal under `jax.jit`
-    and silently loses the mask through a printer that drops the subscript.
-
-    Args:
-        expr: The transform expression.
-        mask: A sympy boolean expression over the same primitives, e.g. `W > 0`.
-
-    Returns:
-        *expr* with its reductions masked.
-
-    Raises:
-        NotImplementedError: A reduction outside `MASKABLE_REDUCTIONS` appears under a mask.
+    ``parse_expr`` builds a plain ``Symbol`` for a name it has not been given, and a
+    ``Symbol`` is not subscriptable — so ``mean(weight[weight > 0])`` would die with
+    ``'Symbol' object is not subscriptable`` before anything could read the mask.
     """
-    from sympy import Function, Integer, Piecewise, preorder_traversal
+    return {name: IndexedBase(name) for name in set(_SUBSCRIPTED.findall(source or ""))}
 
-    counted = Function("sum")(Piecewise((Integer(1), mask), (Integer(0), True)))
+
+def _plain(expr):
+    """*expr* with every ``IndexedBase`` collapsed to its bare symbol.
+
+    ``parse_expr`` builds ``IndexedBase`` for any name it sees subscripted, including in
+    the predicate, so the same edge attribute would otherwise reach the printer as two
+    different objects depending on where it appeared.
+    """
+    bases = {b: b.label for b in expr.atoms(IndexedBase)}
+    return expr.xreplace(bases) if bases else expr
+
+
+def _split_mask(node):
+    """A reduction node's ``(operand, predicate)``, for either inline spelling.
+
+    Returns ``(operand, None)`` when the reduction declares no mask of its own.
+    """
+    args = node.args
+    if len(args) == 2 and isinstance(args[1], Boolean):
+        return args[0], args[1]
+    if len(args) == 1 and isinstance(args[0], Indexed):
+        indices = args[0].indices
+        if len(indices) == 1 and isinstance(indices[0], Boolean):
+            return args[0].base.label, indices[0]
+    return args[0] if args else None, None
+
+
+def canonical_reductions(expr):
+    """Rewrite either mask spelling into the canonical ``red(operand, predicate)``."""
     replacements = {}
     for node in preorder_traversal(expr):
         head = getattr(getattr(node, "func", None), "__name__", None)
-        if head is None or not node.args:
+        if head not in REDUCTIONS or not node.args:
             continue
-        if head in MASKABLE_REDUCTIONS:
-            kept = Function("sum")(Piecewise((node.args[0], mask), (Integer(0), True)))
-            replacements[node] = kept / counted if head == "mean" else kept
-        elif head in ("min", "max", "nanmin", "nanmax"):
-            raise NotImplementedError(
-                f"`mask:` cannot scope `{head}(...)` yet — it needs a backend-specific "
-                f"infinity fill. Drop the mask, or reduce with mean/sum."
-            )
-    return expr.subs(replacements, simultaneous=True) if replacements else expr
+        operand, mask = _split_mask(node)
+        if mask is None:
+            continue
+        replacements[node] = Function(head)(operand, mask)
+    return expr.xreplace(replacements) if replacements else expr
 
 
-def required_prelude(symbols: Iterable[str]) -> List[Tuple[str, str]]:
-    """The prelude bindings *symbols* need, in declaration order.
+def lower_reductions(expr):
+    """Lower canonical masked reductions to ``Piecewise``, which every printer handles.
 
-    Dependencies are matched as whole identifiers, never as substrings: a primitive
-    whose expression merely contains the text of a prelude name (``_rsq``, a name
-    inside a string) must not drag that binding in, and a binding that is genuinely
-    referenced must not be missed.
+    ``mean`` becomes a kept-sum over a kept-count rather than a masked ``mean``, because
+    an array library's ``mean`` divides by the full size no matter what it was handed.
     """
-    wanted = {s for s in symbols if s in PRIMITIVES}
-    referenced: set[str] = set()
-    for s in wanted:
-        referenced |= set(_IDENTIFIER.findall(PRIMITIVES[s]))
-    return [(name, expr) for name, expr in PRELUDE if name in referenced]
+    replacements = {}
+    for node in preorder_traversal(expr):
+        head = getattr(getattr(node, "func", None), "__name__", None)
+        if head not in REDUCTIONS or len(node.args) != 2 or not isinstance(node.args[1], Boolean):
+            continue
+        operand, mask = node.args
+        fill = REDUCTIONS[head]
+        kept = Piecewise((operand, mask), (fill, True))
+        if head == "mean":
+            counted = Function("sum")(Piecewise((Integer(1), mask), (Integer(0), True)))
+            replacements[node] = Function("sum")(kept) / counted
+        else:
+            replacements[node] = Function(head)(kept)
+    return expr.xreplace(replacements) if replacements else expr
 
 
-def runtime_env(matrix, lengths, jnp, jsp=None) -> Dict[str, object]:
-    """Evaluate every primitive against live arrays.
+def prepare(expr, what: str = "transform"):
+    """Normalise, lower and validate a transform expression. The one entry point.
+
+    Both the runtime and every emitter go through this, so a mask cannot mean one thing
+    when evaluated and another when printed.
 
     Args:
-        matrix: The matrix under transform, bound to `M`/`W`.
-        lengths: The network's length matrix, bound to `L`.
-        jnp: The array module the primitive expressions are written against.
-        jsp: Optional scipy namespace, exposed to transform equations that use it.
+        expr: The parsed transform expression.
+        what: How to name the transform in an error.
 
     Returns:
-        Mapping of every primitive name to its value, plus the array modules.
+        The lowered expression, ready for :func:`tvbo.codegen.code.render_expression`.
+
+    Raises:
+        ValueError: A boolean subscript survived outside a reduction. Its output shape
+            depends on the data, so there is nothing static to emit.
     """
-    scope: Dict[str, object] = {BASE_MATRIX: matrix, BASE_LENGTHS: lengths, "jnp": jnp}
-    for name, expr in PRELUDE:
-        scope[name] = eval(expr, dict(scope))
-    env = {name: eval(expr, dict(scope)) for name, expr in PRIMITIVES.items()}
+    lowered = _plain(lower_reductions(canonical_reductions(_plain(expr))))
+    for node in preorder_traversal(lowered):
+        if isinstance(node, Indexed) and any(isinstance(i, Boolean) for i in node.indices):
+            raise ValueError(
+                f"{what} subscripts {node.base} with a boolean outside a reduction. "
+                f"A boolean subscript selects a data-dependent number of entries, so it has "
+                f"no static shape to emit; only a reduction over it does. Write the reduction "
+                f"explicitly, e.g. `mean({node.base}[{node.indices[0]}])`."
+            )
+    return lowered
+
+
+def edge_symbols(expr) -> List[str]:
+    """Names *expr* references, in sorted order, for the caller to resolve as edges."""
+    return sorted({str(s) for s in _plain(expr).free_symbols})
+
+
+def runtime_env(resolve, symbols: Sequence[str], jnp, jsp=None) -> Dict[str, object]:
+    """Bind every symbol *expr* names to a live array.
+
+    Args:
+        resolve: Callable mapping an edge-attribute name to its matrix, or None.
+        symbols: The names to bind, from :func:`edge_symbols`.
+        jnp: The array module the lowered expression is evaluated against.
+        jsp: Optional scipy namespace, for a transform equation that uses one.
+
+    Returns:
+        Mapping of each resolvable name to its array, plus the array modules.
+    """
+    env: Dict[str, object] = {}
+    for name in symbols:
+        value = resolve(name)
+        if value is not None:
+            env[name] = value
     env.update(jnp=jnp, np=jnp, jsp=jsp)
     return env
 
 
-def emit_env(symbols: Sequence[str], matrix: str, lengths: str) -> Tuple[List[str], List[str]]:
-    """Source lines binding the primitives *symbols* uses, for an emitted script.
+def emit_env(
+    symbols: Sequence[str], resolve, target: Optional[str] = None
+) -> Tuple[List[str], List[str]]:
+    """Source lines binding the edge attributes *symbols* names, for an emitted script.
 
     Args:
-        symbols: Free symbols of the transform expression; anything outside
-            `PRIMITIVES` is ignored here and handled by the caller.
-        matrix: Expression the emitted code calls the matrix under transform.
-        lengths: Expression the emitted code calls the length matrix.
+        symbols: The names to bind, from :func:`edge_symbols`.
+        resolve: Callable mapping an edge-attribute name to the expression the emitted
+            code calls it, or None for a name that is not an edge attribute.
+        target: The transform's own target. That attribute binds to the value flowing
+            through the chain, so a second transform sees the first one's output; every
+            other attribute binds once to the network's stored matrix.
 
     Returns:
-        A `(matrix_lines, data_lines)` pair. `matrix_lines` must be re-emitted for
-        each transform in a chain; `data_lines` are bound once.
+        A ``(chained_lines, constant_lines)`` pair. ``chained_lines`` are re-emitted for
+        each transform in a chain; ``constant_lines`` are bound once.
     """
-    used = [s for s in dict.fromkeys(symbols) if s in PRIMITIVES]
-    if not used:
-        return [], []
+    from tvbo.utils import edge_label
 
-    def _bind(expr: str) -> str:
-        return expr.replace(BASE_MATRIX, matrix).replace(BASE_LENGTHS, lengths)
-
-    matrix_lines = [f"{name} = {_bind(expr)}" for name, expr in required_prelude(used)]
-    data_lines: List[str] = []
-    for s in used:
-        line = f"{s} = {_bind(PRIMITIVES[s])}"
-        (data_lines if s in DATA_DERIVED else matrix_lines).append(line)
-    return matrix_lines, data_lines
+    target_label = edge_label(target) or target
+    chained: List[str] = []
+    constant: List[str] = []
+    for name in dict.fromkeys(symbols):
+        source = resolve(name)
+        if source is None:
+            continue
+        label = edge_label(name) or name
+        (chained if label == target_label else constant).append(f"{name} = {source}")
+    return chained, constant
