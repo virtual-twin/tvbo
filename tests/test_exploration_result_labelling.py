@@ -281,3 +281,18 @@ def test_an_axis_is_read_however_the_producer_shaped_it():
     )
     assert _is_partial_shard(as_dict) is True
     assert _is_partial_shard(values_only) is True
+
+
+def test_a_non_numeric_axis_still_labels_rather_than_raising():
+    """Placement subtracts coordinates, which strings cannot do.
+
+    Newly reachable: `cell_coords` is now set for every sweep, so a full grid over
+    `integration.method` reaches the by-value placement it used to skip. The TypeError
+    escaped `as_grid` entirely rather than falling back to the positional reshape.
+    """
+    from tvbo.data.types import _stacked_to_dataarray
+
+    axes = [Bunch(name="integration.method", explored_values=np.array(["heun", "euler"], dtype=object), n=2)]
+    coords = {"integration.method": np.array(["heun", "euler"], dtype=object)}
+    da = _stacked_to_dataarray(np.zeros((2, 5)), axes, cell_coords=coords, name="obs")
+    assert da is not None and da.dims[0] == "integration.method"
