@@ -68,8 +68,8 @@ def test_dynamics_from_db_backcompat():
 def _exp(**net):
     from tvbo import SimulationExperiment
 
+    net.setdefault("network", {}).setdefault("coupling", {"long_range": {"iri": "tvbo:Linear"}})
     return SimulationExperiment(
-        coupling={"iri": "tvbo:Linear"},
         integration={"method": "Heun", "noise": None},
         **net,
     )
@@ -113,11 +113,21 @@ def test_coupling_iri_resolves_by_local_name(curie, expected):
 
 
 def test_coupling_explicit_name_preserved():
+    """A named coupling keeps its name and is filled from the function its ``iri`` names.
+
+    Naming it makes the record a definition, so construction expands nothing — that stays
+    the cheap, local step. ``enrich()`` is where it draws on the function it says it is an
+    instance of, and a ``network.coupling`` entry gets that at experiment load.
+    """
     from tvbo.classes.coupling import Coupling
 
     c = Coupling(name="MyCustom", iri="tvbo:Sigmoidal")
-    assert c.name == "MyCustom"                  # explicit name wins
-    assert len(c.parameters) == 5                # but params from Sigmoidal
+    assert c.name == "MyCustom"
+    assert not c.parameters
+
+    c.enrich()
+    assert c.name == "MyCustom"                  # explicit name still wins
+    assert len(c.parameters) == 5                # params now from Sigmoidal
 
 
 @pytest.mark.parametrize("curie", ["tvbo:Linear", "tvbo:Sigmoidal", "tvbo:SigmoidalJansenRit"])
