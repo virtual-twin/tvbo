@@ -1,9 +1,7 @@
 """Runtime `Noise` and `Integrator` wrappers around the TVBO datamodel classes.
 
-These subclasses add computed properties (sigma/nsig, ontology-derived integrator
-metadata), JAX pytree registration, and code-generation/execution helpers on top of
-the plain serializable datamodel definitions, without introducing runtime caches or
-mutating stored parameters.
+These subclasses add computed properties (sigma/nsig, ontology-derived integrator metadata), JAX pytree registration, and code-generation/execution helpers on top of
+the plain serializable datamodel definitions, without introducing runtime caches or mutating stored parameters.
 """
 
 import functools
@@ -259,8 +257,7 @@ class Integrator(tvbo_datamodel.Integrator):
     def noise_wrapper(self):
         """The noise as a runtime `Noise` wrapper, or `None` when non-stochastic.
 
-        A plain datamodel `Noise` is upgraded to the runtime `Noise` subclass so it gains
-        the computed properties and code-generation helpers.
+        A plain datamodel `Noise` is upgraded to the runtime `Noise` subclass so it gains the computed properties and code-generation helpers.
         """
         if not self.stochastic:
             return None
@@ -339,8 +336,7 @@ class Integrator(tvbo_datamodel.Integrator):
     def execute(self, format="tvb"):
         """Render, execute, and instantiate the integrator backend object.
 
-        For the `tvb` backend the integrator class is instantiated (wiring in an executed
-        noise object when stochastic) and stored on `self.tvb`; for other backends the
+        For the `tvb` backend the integrator class is instantiated (wiring in an executed noise object when stochastic) and stored on `self.tvb`; for other backends the
         generated class is returned directly.
 
         Args:

@@ -1,9 +1,7 @@
 """Gillespie SSA backend — a finite-size stochastic realization of a mean-field rate model.
 
-Runs a relaxation-type rate model as a finite birth-death process (Gillespie 1977). The
-model must have one *activity* state variable ``X`` obeying a relaxation equation
-``tau*X' = -X + F(state)`` (a leak ``-X`` toward a gain ``F``); any remaining state
-variables are treated as slow internal variables that evolve deterministically between
+Runs a relaxation-type rate model as a finite birth-death process (Gillespie 1977). The model must have one *activity* state variable ``X`` obeying a relaxation equation
+``tau*X' = -X + F(state)`` (a leak ``-X`` toward a gain ``F``); any remaining state variables are treated as slow internal variables that evolve deterministically between
 events. The activity becomes a discrete count ``n ≈ Omega*X`` where ``Omega`` is the van
 Kampen system size (``execution.system_size``): the number of discrete units per unit of
 ``X``. The rate equation is read as
@@ -13,8 +11,7 @@ Kampen system size (``execution.system_size``): the number of discrete units per
 
 and the slow variables integrate deterministically over each inter-event interval. Finite
 ``Omega`` is the sole source of noise; the deterministic mean field is recovered as
-``Omega -> infinity``. Applicable to any single-activity Wilson-Cowan / Tsodyks-Markram
-type rate model — the birth/death split and the between-event ODEs are derived from the
+``Omega -> infinity``. Applicable to any single-activity Wilson-Cowan / Tsodyks-Markram type rate model — the birth/death split and the between-event ODEs are derived from the
 model's own equations, so nothing here is model-specific.
 
 Reference: Cortes et al. (2013) PNAS 110(41):16610, SI §2 (Eq. S10/S11) and Fig 5.
@@ -39,8 +36,7 @@ class GillespieAdapter:
     def _compile(self, model):
         """Return (activity_name, sv_names, tau, birth_fn, slow_fns) from the model equations.
 
-        Everything is derived from the model's own equations: derived variables are inlined,
-        parameters substituted, and the activity's ``tau*X' = -X + F`` split into a birth
+        Everything is derived from the model's own equations: derived variables are inlined, parameters substituted, and the activity's ``tau*X' = -X + F`` split into a birth
         flux ``F/tau`` (the gain) and a death flux ``X/tau`` (the leak).
         """
         sv_names = list(model.state_variables)

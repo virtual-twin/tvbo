@@ -69,11 +69,9 @@ def build(
 ) -> None:
     """Build a structural connectome (SC) from a tractogram + parcellation.
 
-    A thin wrapper around MRtrix3 ``tck2connectome``: it counts streamlines between
-    parcellation nodes (edge weights) and their mean lengths, then writes a tvbo
+    A thin wrapper around MRtrix3 ``tck2connectome``: it counts streamlines between parcellation nodes (edge weights) and their mean lengths, then writes a tvbo
     network (``…_desc-SC_relmat.h5`` + YAML sidecar) you can load with
-    ``tvbo.Network(...)``. The tractogram and parcellation must already be in the
-    same space — this command does not register them.
+    ``tvbo.Network(...)``. The tractogram and parcellation must already be in the same space — this command does not register them.
     """
     from tvbo.data.connectome_build import (
         connectome_from_tractogram,
@@ -129,8 +127,7 @@ def build(
     def apply_metadata(net: "Network") -> "Network":
         """Attach the flag-derived SC metadata used for naming and serialisation.
 
-        The ``atlas`` filename entity is read from ``parcellation.atlas.name``
-        (not ``bids``), so the naming shell needs the same parcellation the saved
+        The ``atlas`` filename entity is read from ``parcellation.atlas.name`` (not ``bids``), so the naming shell needs the same parcellation the saved
         network gets — hence one shared helper for both.
         """
         net.descriptor = "SC"
@@ -146,8 +143,7 @@ def build(
             net.label = " ".join(label_bits)
         return net
 
-    # BIDS entities are entirely flag-derived, so resolve the output path and the
-    # overwrite guard up front — before the (potentially minutes-long) MRtrix run.
+    # BIDS entities are entirely flag-derived, so resolve the output path and the overwrite guard up front — before the (potentially minutes-long) MRtrix run.
     if output is not None:
         sidecar = Path(output).with_suffix(".yaml")
     else:

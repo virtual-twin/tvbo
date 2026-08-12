@@ -1,13 +1,10 @@
 """``tvbo verify`` — check a StudyCollection is buildable, and hard-fail if not.
 
 The build gate, in two modes. Offline (where the run containers live) it resolves every
-``results:`` binding and checks analysis staleness. In a build/CI checkout the containers are
-generated artifacts that are never committed, so ``--manifest manuscript_results.yml`` runs it
+``results:`` binding and checks analysis staleness. In a build/CI checkout the containers are generated artifacts that are never committed, so ``--manifest manuscript_results.yml`` runs it
 CONTAINER-FREE: the declared bindings and, with ``--manuscript``, the prose's
-``{{< meta results.* >}}`` keys are checked against the committed manifest instead of being
-resolved. Either way a citation with no number, a number no one cites, a binding added
-without regenerating the manifest, or a committed ``<figure>.caption.qmd`` that no longer
-matches the caption its spec composes is caught. A non-empty problem list exits non-zero, so a
+``{{< meta results.* >}}`` keys are checked against the committed manifest instead of being resolved. Either way a citation with no number, a number no one cites, a binding added
+without regenerating the manifest, or a committed ``<figure>.caption.qmd`` that no longer matches the caption its spec composes is caught. A non-empty problem list exits non-zero, so a
 Quarto pre-render step fails loudly instead of rendering a stale or wrong figure.
 """
 
@@ -26,8 +23,7 @@ _META_KEY = re.compile(r"\{\{<\s*meta\s+results\.([A-Za-z0-9_]+)\s*>\}\}")
 def _scan_meta_keys(target: Path) -> set[str]:
     """The ``results.<key>`` tokens cited across a manuscript file or directory tree.
 
-    A path that does not exist is an error, not an empty scan. Swallowing it produced the
-    worst possible diagnostic: every declared key reported as "never cited", burying the
+    A path that does not exist is an error, not an empty scan. Swallowing it produced the worst possible diagnostic: every declared key reported as "never cited", burying the
     one real problem (the typo) under a wall of wrong ones.
     """
     target = Path(target)

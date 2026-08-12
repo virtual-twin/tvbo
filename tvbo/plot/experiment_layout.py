@@ -62,9 +62,7 @@ def _plot_exploration_timeseries_overlay(exploration, panel, ax):
     results = exploration.results
     lead_dim = results.dims[0] if hasattr(results, "dims") and results.dims else None
     for idx, value in enumerate(values):
-        # Select the run by its named leading dim (the swept parameter, trial, or
-        # flat point) rather than by position, so a change in layout cannot quietly
-        # read the wrong slice.
+        # Select the run by its named leading dim (the swept parameter, trial, or flat point) rather than by position, so a change in layout cannot quietly read the wrong slice.
         if lead_dim:
             run = results.isel({lead_dim: idx})
             # Variable is selected by name; do not also index it positionally.

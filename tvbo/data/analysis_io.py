@@ -1,25 +1,18 @@
 """Run a study's declarative ``analyses:`` and persist each as its own container.
 
-A study reports quantities that no simulation produced — a basis decomposition of
-empirical maps, a spectrum, a permutation test — and reductions that span several
+A study reports quantities that no simulation produced — a basis decomposition of empirical maps, a spectrum, a permutation test — and reductions that span several
 experiments. ``SimulationStudy.analyses`` declares each as the same ``FunctionCall`` a
-``Parameter.producer`` uses, and this module is what executes one: resolve its
-arguments (a literal ``value``, or a ``used:`` DataRef reading an experiment, another
+``Parameter.producer`` uses, and this module is what executes one: resolve its arguments (a literal ``value``, or a ``used:`` DataRef reading an experiment, another
 analysis, or a dataset), call it, and write the result to
 ``<results_root>/results/<name>/result.h5`` beside a ``result.yaml`` provenance sidecar.
 
-That path is the container convention every consumer already resolves, so a figure
-layer binds an analysis exactly as it binds a run. Arrays are written through xarray
-untouched: an invocation that returns labelled ``DataArray``s keeps its dims and
-coordinates, which is what lets a grammar panel name them in an ``encoding``.
+That path is the container convention every consumer already resolves, so a figure layer binds an analysis exactly as it binds a run. Arrays are written through xarray
+untouched: an invocation that returns labelled ``DataArray``s keeps its dims and coordinates, which is what lets a grammar panel name them in an ``encoding``.
 
-Which backend renders an analysis is declared, not assumed — ``Analysis.execution``
-carries the same choice a ``SimulationExperiment`` makes. :data:`RENDERERS` maps a
-backend name to the renderer that runs it; a backend with no renderer raises rather
-than being quietly run by another.
+Which backend renders an analysis is declared, not assumed — ``Analysis.execution`` carries the same choice a ``SimulationExperiment`` makes. :data:`RENDERERS` maps a
+backend name to the renderer that runs it; a backend with no renderer raises rather than being quietly run by another.
 
-The ``used:`` edges also order the work. :func:`schedule` splits the analyses into
-those that run before the experiments (an experiment may source one through a parameter)
+The ``used:`` edges also order the work. :func:`schedule` splits the analyses into those that run before the experiments (an experiment may source one through a parameter)
 and those that run after (they read an experiment's result), each topologically ordered.
 """
 
@@ -90,8 +83,7 @@ def container_path(name: str, results_root=None) -> Path:
     """Path an analysis named ``name`` writes, whether or not it exists yet.
 
     The layout itself is defined once, by
-    :func:`tvbo.data.dataref.locate_analysis_container`; this is its write-side
-    counterpart, which must not raise on a container that has not been produced.
+    :func:`tvbo.data.dataref.locate_analysis_container`; this is its write-side counterpart, which must not raise on a container that has not been produced.
     """
     return _dref.analysis_container_path(results_root, name)
 
@@ -102,13 +94,10 @@ def container_path(name: str, results_root=None) -> Path:
 def dependencies(analysis) -> dict:
     """What this analysis consumes, read off its arguments' ``used:`` edges.
 
-    Returns ``{"experiments": {...}, "analyses": {...}}`` — the ids/names that must have
-    run before it. A literal argument contributes nothing.
+    Returns ``{"experiments": {...}, "analyses": {...}}`` — the ids/names that must have run before it. A literal argument contributes nothing.
 
-    An ``experiment:`` edge contributes BOTH the spelling the recipe used and its bare
-    numeric id, because a recipe may write ``exp-3``, ``exp3`` or ``3`` for the same
-    experiment while the runtime identifies it by ``{key, name, label, id}``. Keeping only
-    the literal string makes every dotted spelling silently match nothing — an empty stale
+    An ``experiment:`` edge contributes BOTH the spelling the recipe used and its bare numeric id, because a recipe may write ``exp-3``, ``exp3`` or ``3`` for the same
+    experiment while the runtime identifies it by ``{key, name, label, id}``. Keeping only the literal string makes every dotted spelling silently match nothing — an empty stale
     set reads exactly like a clean one.
     """
     exps: set[str] = set()
@@ -137,14 +126,11 @@ def dependencies(analysis) -> dict:
 def dependents_of(analyses, *, experiments=(), changed_analyses=()) -> list[str]:
     """Every analysis downstream of the given experiments or analyses, in declaration order.
 
-    An analysis container records no link back to the run it was derived from, so re-running
-    part of a study leaves each downstream container holding the PREVIOUS run's numbers with
-    nothing to raise. This names the set to invalidate, and it must be transitive: the
-    second-order analyses (a landscape built from a per-cell reduction, a correlation built
+    An analysis container records no link back to the run it was derived from, so re-running part of a study leaves each downstream container holding the PREVIOUS run's numbers with
+    nothing to raise. This names the set to invalidate, and it must be transitive: the second-order analyses (a landscape built from a per-cell reduction, a correlation built
     from that) are exactly the ones a hand-written list forgets.
 
-    The seed is either kind of node, because both partial-run modes exist: ``--experiment``
-    re-runs a simulation, ``--analysis`` re-runs a derivation, and what goes stale downstream
+    The seed is either kind of node, because both partial-run modes exist: ``--experiment`` re-runs a simulation, ``--analysis`` re-runs a derivation, and what goes stale downstream
     is found by the same walk over the study's own ``used:`` edges. Analyses named in
     ``changed_analyses`` come back in the result — a caller that just ran them drops them.
     """
@@ -167,13 +153,10 @@ def dependents_of(analyses, *, experiments=(), changed_analyses=()) -> list[str]
 def analysis_closure(analyses, names, exists) -> set[str]:
     """The named analyses plus the upstream ones that have no container yet.
 
-    The upstream counterpart of :func:`dependents_of`, and it belongs beside it: both walk
-    the study's ``used:`` edges, and a caller that needs one usually needs the other.
+    The upstream counterpart of :func:`dependents_of`, and it belongs beside it: both walk the study's ``used:`` edges, and a caller that needs one usually needs the other.
 
-    Asking for an analysis by name means asking for it to be RE-derived, so its own inputs
-    are left alone wherever they already exist — re-running them would be the whole study,
-    which is what asking by name is an alternative to. An input that has never been produced
-    is different: it cannot be read, so it is pulled in, and transitively, because the first
+    Asking for an analysis by name means asking for it to be RE-derived, so its own inputs are left alone wherever they already exist — re-running them would be the whole study,
+    which is what asking by name is an alternative to. An input that has never been produced is different: it cannot be read, so it is pulled in, and transitively, because the first
     missing container's own inputs may be missing too.
 
     Args:
@@ -194,10 +177,8 @@ def analysis_closure(analyses, names, exists) -> set[str]:
 def _toposort(analyses) -> list:
     """Analyses in dependency order, declaration order breaking every tie.
 
-    Also enforces the two things a name-keyed container makes structural: names are
-    unique (two analyses sharing one would overwrite each other's result), and every
-    ``used: {analysis: …}`` names one that exists. Raises on a cycle, listing the
-    analyses left unresolved.
+    Also enforces the two things a name-keyed container makes structural: names are unique (two analyses sharing one would overwrite each other's result), and every
+    ``used: {analysis: …}`` names one that exists. Raises on a cycle, listing the analyses left unresolved.
     """
     items = list(analyses)
     names = [analysis_name(a) for a in items]
@@ -237,8 +218,7 @@ def _toposort(analyses) -> list:
 def schedule(analyses) -> tuple[list, list]:
     """Split the analyses into ``(before_experiments, after_experiments)``.
 
-    An analysis that reads an experiment result runs after the experiments, and so does
-    everything downstream of it. The rest run first, so an experiment's own parameter can
+    An analysis that reads an experiment result runs after the experiments, and so does everything downstream of it. The rest run first, so an experiment's own parameter can
     source one through a ``used:``. Each list is topologically ordered.
     """
     ordered = _toposort(analyses)
@@ -276,15 +256,11 @@ def _import_attr(module: str, attr: str, name: str):
 def render_inprocess(analysis, kwargs):
     """Renderer that performs the declared invocation in this interpreter.
 
-    ``callable:`` calls the function with the resolved arguments. ``class_call:``
-    instantiates the class with its ``constructor_args`` and calls the instance with the
-    resolved arguments, so an analysis carried by a class (a fitted estimator, a stateful
-    reduction) declares the same way a monitor does. The ``function:`` and ``equation:``
-    forms are refused rather than half-executed — they describe a step inside an
-    observation pipeline, whose inputs come from a running solve, not a container.
+    ``callable:`` calls the function with the resolved arguments. ``class_call:`` instantiates the class with its ``constructor_args`` and calls the instance with the
+    resolved arguments, so an analysis carried by a class (a fitted estimator, a stateful reduction) declares the same way a monitor does. The ``function:`` and ``equation:``
+    forms are refused rather than half-executed — they describe a step inside an observation pipeline, whose inputs come from a running solve, not a container.
 
-    It imposes no array library: whatever the declared code uses is what runs. The
-    written container is xarray either way.
+    It imposes no array library: whatever the declared code uses is what runs. The written container is xarray either way.
     """
     name = analysis_name(analysis)
 
@@ -333,10 +309,8 @@ here rather than at the call site.
 def _expression_fn(analysis, names, fmt="jax"):
     """Compile the declared ``equation:`` into a function of *names*, for backend *fmt*.
 
-    The RHS is parsed against the same vocabulary a streaming reducer uses — tvbo's
-    array functions plus one symbol per declared argument — and printed by the *fmt*
-    printer, so the one declaration lowers to whichever backend renders it. Nothing
-    about the analysis is hard-coded here; the recipe is the data.
+    The RHS is parsed against the same vocabulary a streaming reducer uses — tvbo's array functions plus one symbol per declared argument — and printed by the *fmt*
+    printer, so the one declaration lowers to whichever backend renders it. Nothing about the analysis is hard-coded here; the recipe is the data.
     """
     import sympy as sp
 
@@ -364,15 +338,11 @@ def _expression_fn(analysis, names, fmt="jax"):
 def _aligned(value, arg_dims, dims, mapped):
     """``(array, is_mapped)`` — one argument laid out on the expression's own axis order.
 
-    An elementwise expression combines its arguments positionally once they are arrays,
-    but the containers they come from are keyed, so two inputs may carry the same axes in
-    different orders — ``(node, time)`` and ``(time, node)`` are the same data. Ordering
-    each argument by *dims* is what makes the expression mean what it reads as; without
-    it numpy pairs the axes by position and silently multiplies node against time whenever
-    the lengths happen to agree.
+    An elementwise expression combines its arguments positionally once they are arrays, but the containers they come from are keyed, so two inputs may carry the same axes in
+    different orders — ``(node, time)`` and ``(time, node)`` are the same data. Ordering each argument by *dims* is what makes the expression mean what it reads as; without
+    it numpy pairs the axes by position and silently multiplies node against time whenever the lengths happen to agree.
 
-    An axis an argument does not carry becomes a length-1 axis in the right place rather
-    than being left to numpy's right-alignment, which would land a per-node vector on the
+    An axis an argument does not carry becomes a length-1 axis in the right place rather than being left to numpy's right-alignment, which would land a per-node vector on the
     time axis of a ``(node, time)`` result.
     """
     import numpy as np
@@ -391,8 +361,7 @@ def _aligned(value, arg_dims, dims, mapped):
 def _elementwise_dims(kwargs, mapped) -> tuple:
     """Axis names an elementwise expression over *kwargs* produces, mapped axis first.
 
-    Order is first-mention across the labelled inputs, which is what makes the derivation
-    reproducible from the recipe rather than from any one input's storage layout.
+    Order is first-mention across the labelled inputs, which is what makes the derivation reproducible from the recipe rather than from any one input's storage layout.
     """
     order: list = []
     for value in kwargs.values():
@@ -411,10 +380,8 @@ def _elementwise_dims(kwargs, mapped) -> tuple:
 def _pin_accelerator(execution) -> None:
     """Pin JAX to the declared ``execution.accelerator``, or say why it could not be.
 
-    Effective only before JAX initialises, which is why it is attempted here rather
-    than at import: an analyses-only run touches JAX for the first time in this
-    renderer, so the declaration still lands. Once JAX is up the platform is fixed for
-    the process and the declaration cannot be honoured retroactively — that is reported,
+    Effective only before JAX initialises, which is why it is attempted here rather than at import: an analyses-only run touches JAX for the first time in this
+    renderer, so the declaration still lands. Once JAX is up the platform is fixed for the process and the declaration cannot be honoured retroactively — that is reported,
     not silently dropped, because the analysis then ran somewhere it did not ask for.
     """
     from tvbo.templates.tvboptim.utils import jax_platform
@@ -444,14 +411,10 @@ def _pin_accelerator(execution) -> None:
 def _device_plan(analysis, n_items, per_lane_bytes):
     """``(n_pmap, n_vmap)`` for the mapped axis — how many shards, how wide each batch.
 
-    ``n_workers`` is the shard count, exactly as it is for an experiment: the devices
-    the mapped axis spreads across. It is clamped to the devices that actually exist
-    (and to the item count), and a shortfall is logged rather than raised — a recipe
-    declaring 8 shards must still run on a one-device laptop, just not silently as if
-    it had 8. ``batch_size`` is the per-device vmap width; unset means ``auto``, which
-    resolves against the same per-cell memory budget an exploration's ``n_parallel:
-    auto`` uses. The live batch is ``n_pmap x n_vmap`` lanes in whatever RAM those
-    devices share, which is what :func:`shared_ram_device_count` accounts for on
+    ``n_workers`` is the shard count, exactly as it is for an experiment: the devices the mapped axis spreads across. It is clamped to the devices that actually exist
+    (and to the item count), and a shortfall is logged rather than raised — a recipe declaring 8 shards must still run on a one-device laptop, just not silently as if
+    it had 8. ``batch_size`` is the per-device vmap width; unset means ``auto``, which resolves against the same per-cell memory budget an exploration's ``n_parallel:
+    auto`` uses. The live batch is ``n_pmap x n_vmap`` lanes in whatever RAM those devices share, which is what :func:`shared_ram_device_count` accounts for on
     host-replicated CPU devices.
     """
     import jax
@@ -483,13 +446,10 @@ def _map_over(analysis, fn, names, args, in_axes, mapped):
 
     One device by default (``jax.vmap`` under ``jit``). When the analysis declares
     ``n_workers`` or ``batch_size``, the axis instead runs through tvboptim's own
-    :class:`ParallelExecution` — the pmap-of-``lax.map`` an experiment's grid runs on —
-    so a cohort-sized analysis spreads across devices and chunks within one instead of
-    holding every lane at once. Reusing that path rather than re-deriving it is what
-    keeps the padding, shard reshape and trim identical to an experiment's.
+    :class:`ParallelExecution` — the pmap-of-``lax.map`` an experiment's grid runs on — so a cohort-sized analysis spreads across devices and chunks within one instead of
+    holding every lane at once. Reusing that path rather than re-deriving it is what keeps the padding, shard reshape and trim identical to an experiment's.
 
-    Parallelism is declared, never inferred: an analysis with no ``execution`` block
-    takes the single-device path and produces the same array it always did.
+    Parallelism is declared, never inferred: an analysis with no ``execution`` block takes the single-device path and produces the same array it always did.
     """
     import jax
     import numpy as np
@@ -545,30 +505,21 @@ def _map_over(analysis, fn, names, args, in_axes, mapped):
 def render_tvboptim(analysis, kwargs):
     """Renderer that lowers a declarative ``equation:`` analysis to JAX and vmaps it.
 
-    This is the metadata-native form: instead of pointing at arbitrary ``code/`` Python,
-    the analysis states an expression over its named arguments and the axis to map it
-    over, and tvbo emits the realization — so the framework, not the study, owns the
-    parallelism. ``apply_on_dimension`` becomes a ``jax.vmap`` over that axis of every
-    argument carrying it (arguments without it are broadcast, not copied per element),
-    and ``aggregate`` reduces a named axis of the result.
+    This is the metadata-native form: instead of pointing at arbitrary ``code/`` Python, the analysis states an expression over its named arguments and the axis to map it
+    over, and tvbo emits the realization — so the framework, not the study, owns the parallelism. ``apply_on_dimension`` becomes a ``jax.vmap`` over that axis of every
+    argument carrying it (arguments without it are broadcast, not copied per element), and ``aggregate`` reduces a named axis of the result.
 
     The expression is ELEMENTWISE over the inputs' axes; ``aggregate`` is what reduces.
-    Output axes are derived from that contract — ``apply_on_dimension`` first, then the
-    inputs' own axes minus ``aggregate.over`` — and cross-checked against the result's
-    rank, never read off its shape. An expression that reshapes or reduces on its own
-    (an outer product, a correlation) fails that check and must declare ``dims:``,
+    Output axes are derived from that contract — ``apply_on_dimension`` first, then the inputs' own axes minus ``aggregate.over`` — and cross-checked against the result's
+    rank, never read off its shape. An expression that reshapes or reduces on its own (an outer product, a correlation) fails that check and must declare ``dims:``,
     which is honoured as written.
 
-    How that map is spread is declared too. By default it is one ``jit``-ed vmap on one
-    device; ``execution.n_workers`` shards the mapped axis across devices and
-    ``execution.batch_size`` bounds how many lanes are live per device, both through
-    the same tvboptim machinery an experiment's grid uses (see :func:`_map_over`).
+    How that map is spread is declared too. By default it is one ``jit``-ed vmap on one device; ``execution.n_workers`` shards the mapped axis across devices and
+    ``execution.batch_size`` bounds how many lanes are live per device, both through the same tvboptim machinery an experiment's grid uses (see :func:`_map_over`).
     ``execution.accelerator`` pins the platform when JAX has not yet initialised.
 
-    Host-only work stays host-only: a sparse eigensolve, a CIFTI read or a spin-permutation
-    generator is not JAX-expressible and belongs on the ``inprocess`` renderer. This
-    renderer refuses a ``callable:``/``class_call:`` analysis rather than silently jitting
-    code that was never written to be traced.
+    Host-only work stays host-only: a sparse eigensolve, a CIFTI read or a spin-permutation generator is not JAX-expressible and belongs on the ``inprocess`` renderer. This
+    renderer refuses a ``callable:``/``class_call:`` analysis rather than silently jitting code that was never written to be traced.
     """
     import numpy as np
     import xarray as xr
@@ -666,8 +617,7 @@ def _render(analysis, kwargs):
 def _kwargs_of(analysis, results_root) -> dict:
     """The analysis's arguments as kwargs — literals as written, ``used:`` refs resolved.
 
-    A sourced argument arrives as a labelled ``xarray.DataArray`` (sliced and reconciled
-    by :func:`tvbo.data.dataref.resolve_dataref`), never a bare positional array, so the
+    A sourced argument arrives as a labelled ``xarray.DataArray`` (sliced and reconciled by :func:`tvbo.data.dataref.resolve_dataref`), never a bare positional array, so the
     callable selects by name.
     """
     name = analysis_name(analysis)
@@ -693,10 +643,8 @@ def _kwargs_of(analysis, results_root) -> dict:
 def _as_dataset(name: str, produced):
     """The callable's return as an xarray ``Dataset`` of ``observation__<key>`` variables.
 
-    A mapping contributes one variable per key; a ``Dataset`` keeps its own variable
-    names; anything else is a single array keyed by the analysis name. A labelled
-    ``DataArray`` passes through with its dims and coordinates intact — that fidelity is
-    the point, since a figure's ``encoding`` names them.
+    A mapping contributes one variable per key; a ``Dataset`` keeps its own variable names; anything else is a single array keyed by the analysis name. A labelled
+    ``DataArray`` passes through with its dims and coordinates intact — that fidelity is the point, since a figure's ``encoding`` names them.
     """
     import numpy as np
     import xarray as xr
@@ -770,8 +718,7 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
     ds.to_netcdf(path, engine="h5netcdf", encoding=encoding)
     record = _provenance(analysis, (str(v)[len("observation__") :] for v in ds.data_vars))
     (path.parent / "result.yaml").write_text(yaml.safe_dump(record, sort_keys=False))
-    # Digest of the declaration this container came from, so staleness is per analysis
-    # rather than "the spec file was touched" (see study_collection._stale_or_missing_analyses).
+    # Digest of the declaration this container came from, so staleness is per analysis rather than "the spec file was touched" (see study_collection._stale_or_missing_analyses).
     from tvbo.data.study_collection import _analysis_fingerprint
 
     (path.parent / ".fingerprint").write_text(_analysis_fingerprint(analysis))
@@ -781,8 +728,7 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
 def run_analyses(analyses, results_root=None, *, compress: bool = True, on_start=None, on_done=None) -> list[Path]:
     """Execute ``analyses`` in the given order, returning the containers written.
 
-    ``on_start(name)`` / ``on_done(name, path)`` report progress to a caller's logger
-    without this module choosing an output style.
+    ``on_start(name)`` / ``on_done(name, path)`` report progress to a caller's logger without this module choosing an output style.
     """
     written: list[Path] = []
     for analysis in as_list(analyses):

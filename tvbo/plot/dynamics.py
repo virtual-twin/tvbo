@@ -7,10 +7,8 @@
 #
 """General-purpose plotting for ``Dynamics`` objects.
 
-A single entry point ``plot_dynamics`` (also exposed as ``Dynamics.plot``)
-that selects between several ``kind`` of representations: time series,
-1D/2D/3D phase portraits, and 2D vector fields. Dimensions can be
-state-variable names, derived-variable names, or arbitrary
+A single entry point ``plot_dynamics`` (also exposed as ``Dynamics.plot``) that selects between several ``kind`` of representations: time series,
+1D/2D/3D phase portraits, and 2D vector fields. Dimensions can be state-variable names, derived-variable names, or arbitrary
 sympy-parseable expressions over them. Labels are rendered as LaTeX via
 ``sympy.latex``. Styling and colormaps come from ``bsplot``.
 """
@@ -433,8 +431,7 @@ def _kind_phaseplane(
 ):
     """Vector field + nullclines + (optional) sample trajectories.
 
-    Nullclines are the zero-level contours of each component of the vector
-    field (``\\dot x_i = 0``). Their intersections are equilibria.
+    Nullclines are the zero-level contours of each component of the vector field (``\\dot x_i = 0``). Their intersections are equilibria.
     """
     fig, (X, Y, U, V) = _kind_vectorfield(
         dynamics,
@@ -493,9 +490,7 @@ def _kind_phaseplane(
             ax.plot(x_fp, y_fp, "ko", ms=7, mec="white", mew=1.2, zorder=10)
 
     if show_limit_cycle:
-        # Integrate one long trajectory from a small offset, discard
-        # transient, and check if the tail forms a closed loop. If yes,
-        # draw it as a red ring (and mark the inner unstable focus).
+        # Integrate one long trajectory from a small offset, discard transient, and check if the tail forms a closed loop. If yes, draw it as a red ring (and mark the inner unstable focus).
         state_names = list(dynamics.state_variables)
         sv_idx = [state_names.index(str(expr)) for _, expr in resolved]
         base_ic = np.asarray(dynamics.get_initial_values(), dtype=float).reshape(-1)
@@ -596,10 +591,7 @@ def plot_dynamics(
         Matplotlib / bsplot colormap name.
     transient : float
         Discard this many ms from the start of each trajectory.
-    ax : matplotlib.axes.Axes, optional
-    show_ic : bool
-    lw, alpha : float
-    grid_n : int
+    ax : matplotlib.axes.Axes, optional show_ic : bool lw, alpha : float grid_n : int
         Grid resolution for ``kind="vectorfield"`` / ``"phaseplane"``.
     stream : bool
         Stream- vs quiver-plot for vectorfield / phaseplane.
@@ -710,16 +702,13 @@ def animate_dynamics(
 ):
     """Animate a :class:`Dynamics` by sweeping one parameter through ``values``.
 
-    For each frame the parameter is set, the chosen ``kind`` of plot is drawn
-    on the same axes (cleared between frames), and a title shows the current
-    value. Returns a :class:`matplotlib.animation.FuncAnimation` that you can
-    display with ``anim.to_jshtml()`` (Quarto / notebooks) or save with
+    For each frame the parameter is set, the chosen ``kind`` of plot is drawn on the same axes (cleared between frames), and a title shows the current
+    value. Returns a :class:`matplotlib.animation.FuncAnimation` that you can display with ``anim.to_jshtml()`` (Quarto / notebooks) or save with
     ``anim.save("foo.mp4")``.
 
     Parameters
     ----------
-    dynamics : Dynamics
-    parameter : str
+    dynamics : Dynamics parameter : str
         Name of the parameter to sweep (must be in ``dynamics.parameters``).
     values : sequence of float
         Parameter values, one per frame.
@@ -727,8 +716,7 @@ def animate_dynamics(
         Forwarded to :func:`plot_dynamics`.
     interval : int
         Delay between frames in ms.
-    figsize : (float, float)
-    title_fmt : str
+    figsize : (float, float) title_fmt : str
         Format string with ``{name}`` and ``{value}`` placeholders.
     """
     import copy

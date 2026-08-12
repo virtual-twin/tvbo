@@ -51,8 +51,7 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
     *kind* is one of ``'study'``, ``'experiment'``, ``'dynamics'``,
     ``'network'``, … and *obj* is the loaded class instance.
 
-    HTTP and platform transports are not yet implemented (raise a
-    helpful message).
+    HTTP and platform transports are not yet implemented (raise a helpful message).
     """
     if spec.startswith(("http://", "https://")):
         raise typer.BadParameter(f"HTTP transport not yet implemented (C2). Pull the file locally first: {spec}")
@@ -87,15 +86,12 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
 def experiment_ids(exp: Any) -> set[str]:
     """The identifiers an experiment can be selected by on the CLI.
 
-    Its ``key``, ``name``, ``label``, and stringified ``id`` (dropping the empty
-    ones), plus the bare numeric id those spell — ``exp-3``, ``exp3`` and ``3`` name one
+    Its ``key``, ``name``, ``label``, and stringified ``id`` (dropping the empty ones), plus the bare numeric id those spell — ``exp-3``, ``exp3`` and ``3`` name one
     experiment, and an experiment carrying only ``key: exp-3`` must still answer to ``3``.
-    Normalising HERE and in ``analysis_io.dependencies`` is what lets the two sides of the
-    staleness walk intersect; normalising one side only makes every dotted spelling match
+    Normalising HERE and in ``analysis_io.dependencies`` is what lets the two sides of the staleness walk intersect; normalising one side only makes every dotted spelling match
     nothing, and an empty stale set reads exactly like a clean one.
 
-    Shared by ``tvbo run`` and ``tvbo workflow`` so ``--experiment`` matches the same way
-    in both.
+    Shared by ``tvbo run`` and ``tvbo workflow`` so ``--experiment`` matches the same way in both.
     """
     from tvbo.data.dataref import experiment_id
 
@@ -111,10 +107,8 @@ def experiment_ids(exp: Any) -> set[str]:
 def experiment_key(exp: Any) -> str:
     """The canonical short key for an experiment.
 
-    An explicit ``key`` if set, else its ``id`` (the usual identifier, e.g. ``40``),
-    else ``name``. Used for job names, result stems, and kit paths so they read
-    ``…-40`` rather than a generic fallback — one source of truth shared by every
-    emitter (``experiment_ids`` is the wider *match* set for ``--experiment``).
+    An explicit ``key`` if set, else its ``id`` (the usual identifier, e.g. ``40``), else ``name``. Used for job names, result stems, and kit paths so they read
+    ``…-40`` rather than a generic fallback — one source of truth shared by every emitter (``experiment_ids`` is the wider *match* set for ``--experiment``).
     """
     return str(getattr(exp, "key", None) or getattr(exp, "id", None) or getattr(exp, "name", None) or "experiment")
 
@@ -137,17 +131,11 @@ def _load_from_file(path: Path) -> tuple[str, Any]:
         obj = _load(fmt.key, path)
         return _classify(obj), obj
 
-    # YAML — try StudyCollection (study-of-studies), then Study (it can contain Experiments),
-    # falling back to Experiment. A StudyCollection is a Study, so its more specific
-    # interpretation is tried first, keyed on the `members:` slot only it declares.
+    # YAML — try StudyCollection (study-of-studies), then Study (it can contain Experiments), falling back to Experiment. A StudyCollection is a Study, so its more specific interpretation is tried first, keyed on the `members:` slot only it declares.
     text = path.read_text(encoding="utf-8")
     looks_like_study_collection = "members:" in text and ("recipe:" in text or "results:" in text)
     looks_like_study = "simulation_experiments" in text or ("experiments:" in text and "title:" in text)
-    # Each fallback's error is kept: when they all fail, the last one (Dynamics) is
-    # about the least likely interpretation, so reporting only that sends the reader
-    # chasing a "bad Dynamics" that was never what the file is. A spec the running
-    # tvbo is too old to parse looked exactly like a malformed Dynamics until the
-    # earlier errors were surfaced.
+    # Each fallback's error is kept: when they all fail, the last one (Dynamics) is about the least likely interpretation, so reporting only that sends the reader chasing a "bad Dynamics" that was never what the file is. A spec the running tvbo is too old to parse looked exactly like a malformed Dynamics until the earlier errors were surfaced.
     attempts: list[tuple[str, Exception]] = []
     if looks_like_study_collection:
         try:
@@ -174,8 +162,7 @@ def _load_from_file(path: Path) -> tuple[str, Any]:
     except Exception as e:
         attempts.append(("dynamics", e))
 
-    # Report the most specific interpretation the file actually looked like — the
-    # first one tried — and list the rest so nothing is hidden.
+    # Report the most specific interpretation the file actually looked like — the first one tried — and list the rest so nothing is hidden.
     kind, primary = attempts[0]
     detail = "\n".join(f"  - as {k}: {type(x).__name__}: {x}" for k, x in attempts)
     raise typer.BadParameter(
@@ -235,8 +222,7 @@ def warn(msg: str) -> None:
 def die(msg: str, code: int = 1) -> None:
     """Log *msg* at ERROR and abort the CLI with *code*.
 
-    A fatal abort must always explain itself: when the configured level would
-    suppress ERROR (e.g. ``--log-level OFF`` / ``TVBO_LOG_LEVEL=OFF``) the reason
+    A fatal abort must always explain itself: when the configured level would suppress ERROR (e.g. ``--log-level OFF`` / ``TVBO_LOG_LEVEL=OFF``) the reason
     still goes to stderr, so the CLI never exits non-zero in silence.
     """
     if logger.isEnabledFor(logging.ERROR):

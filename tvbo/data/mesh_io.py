@@ -1,15 +1,12 @@
 """Read a surface mesh file into vertices and faces.
 
 ``Mesh.mesh_file`` has always declared that a mesh may live in an external GIFTI / VTK /
-FreeSurfer / MSH file, and ``Mesh.mesh_format`` that the format may be stated rather than
-guessed — but nothing in core read one, so every study that draws a cortical surface
-shipped its own reader in ``code/``. That is a format-support gap, not a modelling
-decision: which reader parses a ``.surf.gii`` is exactly the kind of mechanism a
+FreeSurfer / MSH file, and ``Mesh.mesh_format`` that the format may be stated rather than guessed — but nothing in core read one, so every study that draws a cortical surface
+shipped its own reader in ``code/``. That is a format-support gap, not a modelling decision: which reader parses a ``.surf.gii`` is exactly the kind of mechanism a
 declarative spec should not have to name.
 
 The formats here are the ones ``mesh_format`` already lists. Each returns the SAME pair —
-``(vertices (V, 3) float64, faces (F, 3) int64)`` — so a mesh is interchangeable across
-them and nothing downstream can tell which reader produced it.
+``(vertices (V, 3) float64, faces (F, 3) int64)`` — so a mesh is interchangeable across them and nothing downstream can tell which reader produced it.
 """
 
 from __future__ import annotations
@@ -27,8 +24,7 @@ _VTK_SCALARS = {"float": np.float32, "double": np.float64, "int": np.int32, "lon
 def detect_format(path: str | Path) -> str:
     """The reader a mesh file's name implies — what ``mesh_format`` overrides.
 
-    FreeSurfer geometry carries no extension of its own (``lh.pial``), so it is recognised
-    by its surface-name suffix; everything unrecognised falls through to meshio, which
+    FreeSurfer geometry carries no extension of its own (``lh.pial``), so it is recognised by its surface-name suffix; everything unrecognised falls through to meshio, which
     reads the long tail of mesh formats and raises its own error on a genuine miss.
     """
     path = Path(path)
@@ -59,18 +55,13 @@ def _read_vtk(path: Path):
     """ASCII VTK PolyData, parsed directly rather than through a mesh library.
 
     This is the format brain-surface templates ship in, and its PolyData form is a flat
-    POINTS block followed by a POLYGONS block whose every entry is prefixed by its vertex
-    count. Parsing it here keeps a common case free of a heavyweight dependency; anything
-    else in a ``.vtk`` wrapper (binary, unstructured grid) is handed to meshio, which
-    reads those properly.
+    POINTS block followed by a POLYGONS block whose every entry is prefixed by its vertex count. Parsing it here keeps a common case free of a heavyweight dependency; anything
+    else in a ``.vtk`` wrapper (binary, unstructured grid) is handed to meshio, which reads those properly.
 
-    The POINTS block names its scalar type and that type is honoured: VTK's ``float`` is
-    single precision, so reading its decimals at full width would give coordinates the
-    file does not claim to carry and leave this reader a rounding step away from every
-    other one. The array is widened to float64 afterwards, which is lossless.
+    The POINTS block names its scalar type and that type is honoured: VTK's ``float`` is single precision, so reading its decimals at full width would give coordinates the
+    file does not claim to carry and leave this reader a rounding step away from every other one. The array is widened to float64 afterwards, which is lossless.
 
-    A pure-triangle POLYGONS block is exactly 4·n_faces ints (``[3, v0, v1, v2]`` per face),
-    so the total is checked before the per-face reshape — reshaping a mixed block first
+    A pure-triangle POLYGONS block is exactly 4·n_faces ints (``[3, v0, v1, v2]`` per face), so the total is checked before the per-face reshape — reshaping a mixed block first
     fails with an opaque numpy error instead of the actionable one raised here.
     """
     text = path.read_text(errors="ignore")

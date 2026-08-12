@@ -1,8 +1,7 @@
 """Canonical database registry — resolves short names to YAML file paths.
 
 Works both from pip-installed packages and editable/dev installs.
-Searches recursively within each category directory so that models in
-subfolders (e.g. database/models/julia/) are automatically discovered.
+Searches recursively within each category directory so that models in subfolders (e.g. database/models/julia/) are automatically discovered.
 See TVBO-Database-Access-Proposal.md §5 for design rationale.
 """
 
@@ -43,8 +42,7 @@ _CATEGORIES = {
 def local_name(iri: str) -> str:
     """Strip an optional ``prefix:`` from a CURIE / IRI, returning the local name.
 
-    ``tvbo:KuramotoCoupling`` -> ``KuramotoCoupling``; a bare name is returned
-    unchanged. Single source of truth for CURIE-prefix stripping, so the
+    ``tvbo:KuramotoCoupling`` -> ``KuramotoCoupling``; a bare name is returned unchanged. Single source of truth for CURIE-prefix stripping, so the
     class-layer ``_iri_local`` helpers don't each re-implement it.
     """
     return iri.split(":", 1)[-1] if ":" in iri else iri
@@ -53,8 +51,7 @@ def local_name(iri: str) -> str:
 def resolve(cls_name: str, name: str) -> Path:
     """Resolve a short name to a database YAML file path.
 
-    Tries exact top-level stem match first (fast path), then searches
-    recursively by canonical `name:` field and file stem (case-insensitive).
+    Tries exact top-level stem match first (fast path), then searches recursively by canonical `name:` field and file stem (case-insensitive).
     For Network, also matches BIDS filenames containing the atlas name.
     """
     if DATABASE_ROOT is None:
@@ -134,8 +131,7 @@ def list_entries(cls_name: str) -> list[str]:
 
 
 def list_entries_with_metadata(cls_name: str) -> list[dict]:
-    """Return a list of dicts with `name`, `model_type`, `description`, `path`
-    for every entry in the given class category.  Fast — reads only the first
+    """Return a list of dicts with `name`, `model_type`, `description`, `path` for every entry in the given class category.  Fast — reads only the first
     ~30 lines of each YAML file.
     """
     if DATABASE_ROOT is None:

@@ -31,8 +31,7 @@ class BaseAdapter:
     """Base class for backend adapters.
 
     Provides shared metadata processing that all code-generation backends need:
-    dynamics library, node-dynamics mapping, coupling resolution, graph info,
-    initial state parsing, etc.
+    dynamics library, node-dynamics mapping, coupling resolution, graph info, initial state parsing, etc.
     """
 
     def __init__(self, experiment: "SimulationExperiment"):
@@ -43,8 +42,7 @@ class BaseAdapter:
     def build_dynamics_dict(self) -> OrderedDict:
         """Build an ordered dict of all unique Dynamics models.
 
-        Always includes the default model first, then any additional dynamics
-        from the network's dynamics library (for heterogeneous networks).
+        Always includes the default model first, then any additional dynamics from the network's dynamics library (for heterogeneous networks).
         """
         exp = self.experiment
         model = exp.dynamics
@@ -135,8 +133,7 @@ class BaseAdapter:
     def get_outsym_names(dynamics, outdim: int, coupling=None) -> list[str]:
         """Output symbol names for the edge model.
 
-        Uses coupling.outsym if available, otherwise generates from
-        coupling variables or state variables.
+        Uses coupling.outsym if available, otherwise generates from coupling variables or state variables.
         """
         # Prefer coupling-defined outsym
         if coupling and getattr(coupling, "outsym", None):
@@ -348,8 +345,7 @@ class BaseAdapter:
     def prepare_context(self) -> dict:
         """Build the full pre-computed context dict for template rendering.
 
-        This is the main entry point: templates receive this dict instead of
-        doing metadata processing themselves.
+        This is the main entry point: templates receive this dict instead of doing metadata processing themselves.
         """
         exp = self.experiment
         model = exp.dynamics

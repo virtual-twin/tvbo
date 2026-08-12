@@ -1,9 +1,7 @@
 """Graph-based simulation of a connectome as a network of coupled local models.
 
-This module provides [`GraphRunner`](/api/run/graph.qmd#GraphRunner), which turns a
-connectome into a `networkx` graph, attaches a local dynamics model to each
-node and a coupling to each edge, and integrates the resulting network in time
-using the helpers in [`tvbo.run.compgraph`](/api/run/compgraph.qmd).
+This module provides [`GraphRunner`](/api/run/graph.qmd#GraphRunner), which turns a connectome into a `networkx` graph, attaches a local dynamics model to each
+node and a coupling to each edge, and integrates the resulting network in time using the helpers in [`tvbo.run.compgraph`](/api/run/compgraph.qmd).
 """
 
 import copy
@@ -22,10 +20,8 @@ class GraphRunner:
     """Assemble and integrate a connectome as a network of coupled local models.
 
     A `GraphRunner` holds a `networkx` graph snapshot built from a connectome.
-    Node attributes carry the local dynamics model, its integrated state and
-    optional stimulus; edge attributes carry the coupling. After the local
-    models, couplings and stimuli have been attached, [`run`](/api/run/graph.qmd#GraphRunner.run)
-    compiles per-node and per-edge functions and integrates the network in time.
+    Node attributes carry the local dynamics model, its integrated state and optional stimulus; edge attributes carry the coupling. After the local
+    models, couplings and stimuli have been attached, [`run`](/api/run/graph.qmd#GraphRunner.run) compiles per-node and per-edge functions and integrates the network in time.
 
     Args:
         connectome: Connectome whose weights and node/edge structure define the
@@ -165,8 +161,7 @@ class GraphRunner:
         """Compile each edge's coupling into callable coupling functions.
 
         For every edge, stores the compiled `python` coupling function under
-        `"cfun"`, together with `"prefun"` and `"postfun"` lambdas obtained by
-        substituting the coupling's parameter values into its pre- and
+        `"cfun"`, together with `"prefun"` and `"postfun"` lambdas obtained by substituting the coupling's parameter values into its pre- and
         post-summation expressions. Handles both simple graphs and multigraphs.
         """
         from sympy import Symbol, lambdify
@@ -201,8 +196,7 @@ class GraphRunner:
     def setup_initial_conditions(self):
         """Initialize each node's state from its model's initial values.
 
-        Stores, under each node's `"state"` attribute, an array of the initial
-        values of the model's state variables.
+        Stores, under each node's `"state"` attribute, an array of the initial values of the model's state variables.
         """
         for node in self.graph.nodes:
             self.graph.nodes[node]["state"] = np.array(
@@ -213,10 +207,8 @@ class GraphRunner:
     def setup_stimulation(self, sampling_rate=500, duration=2000):
         """Compile stimulus functions for every stimulated node.
 
-        For each node that carries a non-`None` `"stimulus"`, compiles the
-        stimulus to a `python` callable sampled at `sampling_rate` over the
-        stimulus's own duration and stores it under the node's `"stimfun"`
-        attribute.
+        For each node that carries a non-`None` `"stimulus"`, compiles the stimulus to a `python` callable sampled at `sampling_rate` over the
+        stimulus's own duration and stores it under the node's `"stimfun"` attribute.
 
         Args:
             sampling_rate: Sampling rate, in Hz, at which each stimulus is
@@ -235,10 +227,8 @@ class GraphRunner:
     def run(self, duration=1000, dt=1, format="graph"):
         """Integrate the network in time and return the simulated time series.
 
-        Sets up initial conditions, stimulation, node derivative functions and
-        edge coupling functions, initializes the delay history buffer, then
-        integrates the network dynamics with delays and collects the resulting
-        time series.
+        Sets up initial conditions, stimulation, node derivative functions and edge coupling functions, initializes the delay history buffer, then
+        integrates the network dynamics with delays and collects the resulting time series.
 
         Args:
             duration: Total simulation time, in the model's time units.

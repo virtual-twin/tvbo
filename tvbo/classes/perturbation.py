@@ -1,9 +1,7 @@
 """Exogenous stimuli for simulation experiments.
 
-Provides the [`Stimulus`](#tvbo.classes.perturbation.Stimulus) class, which
-turns declarative stimulus metadata (from the datamodel, the ontology, or a
-YAML file) into backend code and executable stimulus functions, plus helpers to
-convert ontology classes to metadata and to replay audio files as stimuli.
+Provides the [`Stimulus`](#tvbo.classes.perturbation.Stimulus) class, which turns declarative stimulus metadata (from the datamodel, the ontology, or a
+YAML file) into backend code and executable stimulus functions, plus helpers to convert ontology classes to metadata and to replay audio files as stimuli.
 """
 
 import logging
@@ -45,10 +43,8 @@ from tvbo.classes.equation import (
 def class2metadata(ontoclass):
     """Build `Stimulus` metadata from an ontology stimulus class.
 
-    Reads the class's defining equation and, if it uses `where`, rewrites it
-    into sympy form. The class name (identifier) and definition become the
-    stimulus label and description, and every descendant `Parameter` is added
-    with its default value and definition.
+    Reads the class's defining equation and, if it uses `where`, rewrites it into sympy form. The class name (identifier) and definition become the
+    stimulus label and description, and every descendant `Parameter` is added with its default value and definition.
 
     Args:
         ontoclass: An owlready2 stimulus class whose `value`, `definition` and
@@ -87,8 +83,7 @@ def load_acoustic_stimulus_from_audiofile(file_path, sampling_rate=1000, duratio
     """Load an audio file as a callable stimulus time course.
 
     Loads the waveform, resamples it to `sampling_rate`, normalises it to the
-    `[-1, 1]` range, optionally truncates it to `duration`, and fits a smoothing
-    spline over time (in milliseconds).
+    `[-1, 1]` range, optionally truncates it to `duration`, and fits a smoothing spline over time (in milliseconds).
 
     Args:
         file_path: Path to the audio file to read (any format `librosa`
@@ -137,34 +132,13 @@ class Stimulus(tvbo_datamodel.Stimulus):
     A `Stimulus` describes *what* gets perturbed (target state variable),
     *where* (spatial pattern across nodes), *when* (temporal envelope), and
     *how much* (amplitude). The pattern and envelope are arbitrary symbolic
-    expressions, so the same class covers DC steps, sinusoids, Gaussian
-    pulses, and audio-file replay.
+    expressions, so the same class covers DC steps, sinusoids, Gaussian pulses, and audio-file replay.
 
-    Attach via `experiment.add_stimulus(stim)`; see
-    [`load_acoustic_stimulus_from_audiofile`](#tvbo.classes.perturbation.load_acoustic_stimulus_from_audiofile)
+    Attach via `experiment.add_stimulus(stim)`; see [`load_acoustic_stimulus_from_audiofile`](#tvbo.classes.perturbation.load_acoustic_stimulus_from_audiofile)
     for the WAV/MP3 entry point.
     """
 
     def __init__(self, **kwargs):
-        # if isinstance(instance, owl.ThingClass):
-        #     self.ontology = instance
-        #     self = class2metadata(instance)
-        # elif isinstance(instance, str) and (
-        #     ontoclasses := query.label_search(
-        #         instance,
-        #         exact_match="all",
-        #     )
-        # ):
-        #     if len(ontoclasses) > 1:
-        #         print(f"Multiple stimulus classes found: {ontoclasses}")
-        #     self.ontology = ontoclasses[0]
-        #     self = class2metadata(self.ontology)
-        # elif isinstance(instance, tvbo_datamodel.Stimulus):
-        #     self = instance
-        # else:
-        #     if "name" not in kwargs:
-        #         kwargs["name"] = "Stimulus"
-        #     self = tvbo_datamodel.Stimulus(**kwargs)
 
         # if self.equation:
         #     eq, params = self.get_expression()
@@ -189,10 +163,8 @@ class Stimulus(tvbo_datamodel.Stimulus):
     def from_ontology(cls, ontoclass: str | owl.ThingClass):
         """Construct a `Stimulus` from an ontology class or its label.
 
-        When given a string, searches the ontology for a stimulus class with
-        that label (raising if none is found and warning if several match), then
-        converts the resolved class to metadata via
-        [`class2metadata`](#tvbo.classes.perturbation.class2metadata).
+        When given a string, searches the ontology for a stimulus class with that label (raising if none is found and warning if several match), then
+        converts the resolved class to metadata via [`class2metadata`](#tvbo.classes.perturbation.class2metadata).
 
         Args:
             ontoclass: A stimulus label to look up, or an ontology stimulus
@@ -236,16 +208,10 @@ class Stimulus(tvbo_datamodel.Stimulus):
         """The stimulus itself, exposed as its own metadata."""
         return self
 
-    # @property
-    # def equation(self):
-    #     eq, params = self.get_expression()
-    #     return eq
-
     def render_code(self, format="tvb", **kwargs):
         """Render the stimulus to backend source code.
 
-        Selects the template for the requested backend, renders it with this
-        stimulus, and formats the result.
+        Selects the template for the requested backend, renders it with this stimulus, and formats the result.
 
         Args:
             format: Target backend: `"tvb"` for a TVB stimulus equation, or
@@ -272,10 +238,8 @@ class Stimulus(tvbo_datamodel.Stimulus):
     ):
         """Build an executable stimulus for the requested backend.
 
-        For `"tvb"`, evaluates the rendered stimulus equation, resolves a
-        connectivity (creating a single-region one when needed) and a per-region
-        weighting, and returns a TVB `StimuliRegion`. For `"python"`/`"jax"`,
-        returns a callable stimulus function built from the symbolic equation,
+        For `"tvb"`, evaluates the rendered stimulus equation, resolves a connectivity (creating a single-region one when needed) and a per-region
+        weighting, and returns a TVB `StimuliRegion`. For `"python"`/`"jax"`, returns a callable stimulus function built from the symbolic equation,
         or from an audio file when the stimulus is defined by a `dataLocation`.
 
         Args:
@@ -380,8 +344,7 @@ class Stimulus(tvbo_datamodel.Stimulus):
     def plot(self, duration=1000, dt=0.1, ax=None, plot_onset=True, cut_transient=0, **kwargs):
         """Plot the stimulus time course.
 
-        Evaluates the python stimulus function over `[cut_transient, duration]`
-        at step `dt` and draws it, optionally marking the `onset` parameter with
+        Evaluates the python stimulus function over `[cut_transient, duration]` at step `dt` and draws it, optionally marking the `onset` parameter with
         a vertical line.
 
         Args:

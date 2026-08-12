@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """One-shot script to enrich all software database YAML entries.
 
-Adds: date_created, development_status, reference_publication, author, funder,
-keywords, same_as, issue_tracker, is_accessible_for_free, operating_system.
+Adds: date_created, development_status, reference_publication, author, funder, keywords, same_as, issue_tracker, is_accessible_for_free, operating_system.
 Converts ecosystem from string to list, programming_language to enum values.
 """
 
@@ -12,8 +11,7 @@ from pathlib import Path
 DB_DIR = Path(__file__).parent
 
 # ─── Enrichment data keyed by tool name ───
-# Fields: date_created, development_status, reference_publication, author,
-#         funder, keywords, same_as, issue_tracker
+# Fields: date_created, development_status, reference_publication, author, funder, keywords, same_as, issue_tracker
 ENRICHMENT = {
     "TVB": {
         "date_created": "2013-01-01",

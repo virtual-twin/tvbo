@@ -1,7 +1,6 @@
 """Runtime wrapper around the auto-generated :class:`tvbo_datamodel.Event`.
 
-Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal
-is built generically from the event's symbolic equation and its parameters,
+Adds an ``intelligent`` :meth:`Event.plot` for stimulus-type events. The signal is built generically from the event's symbolic equation and its parameters,
 mirroring the pattern used by :class:`tvbo.classes.dynamics.Dynamics` and
 :class:`tvbo.classes.perturbation.Stimulus`.
 """
@@ -24,9 +23,7 @@ class Event(tvbo_datamodel.Event):
         ``t`` and the event's own parameters.
         """
         # Imported here rather than at module top: this module is imported by
-        # ``tvbo.datamodel`` to attach the Event helpers, and parse.expression
-        # imports back from ``tvbo.datamodel.schema`` — a module-top import would
-        # form an import cycle when parse.expression is imported first.
+        # ``tvbo.datamodel`` to attach the Event helpers, and parse.expression imports back from ``tvbo.datamodel.schema`` — a module-top import would form an import cycle when parse.expression is imported first.
         from tvbo.parse.expression import parse_eq
 
         params = {name: Symbol(name) for name in (self.parameters or {})}
@@ -96,17 +93,14 @@ class Event(tvbo_datamodel.Event):
 
 
 # Make the helpers available on the auto-generated schema class itself, so
-# ``schema.Event(...).plot()`` works without requiring callers to import the
-# wrapper explicitly. This mirrors the ``__class__`` patching pattern used for
+# ``schema.Event(...).plot()`` works without requiring callers to import the wrapper explicitly. This mirrors the ``__class__`` patching pattern used for
 # Network/Continuation in :mod:`tvbo.classes.experiment`.
 for _name in ("plot", "_signal", "_default_window"):
     setattr(tvbo_datamodel.Event, _name, getattr(Event, _name))
 
 
 # Back-compatibility: the stimulus-targeting slots were renamed
-# ``regions`` -> ``nodes`` and ``weighting`` -> ``weights`` (the old names are
-# kept as LinkML aliases). LinkML aliases are metadata only and are not accepted
-# as constructor kwargs, so map the deprecated names here at construction time.
+# ``regions`` -> ``nodes`` and ``weighting`` -> ``weights`` (the old names are kept as LinkML aliases). LinkML aliases are metadata only and are not accepted as constructor kwargs, so map the deprecated names here at construction time.
 _SLOT_ALIASES = {"regions": "nodes", "weighting": "weights"}
 _orig_event_init = tvbo_datamodel.Event.__init__
 

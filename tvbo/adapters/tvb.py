@@ -89,11 +89,7 @@ def _extract_dynamics(sim) -> tvbo_datamodel.Dynamics:
             voi = []
 
         sv_range = tvbo_datamodel.Range(lo=float(lo), hi=float(hi)) if (lo is not None or hi is not None) else None
-        # TVB's state_variable_boundaries is a hard clamp → unified domain with
-        # enforce='clamp'. The descriptive state_variable_range is the distinct
-        # (finite) IC-sampling support, so preserve it as the sampling
-        # distribution — but only when it differs from the clamp, else the clamp
-        # already conveys it and a redundant slot would break round-trip identity.
+        # TVB's state_variable_boundaries is a hard clamp → unified domain with enforce='clamp'. The descriptive state_variable_range is the distinct (finite) IC-sampling support, so preserve it as the sampling distribution — but only when it differs from the clamp, else the clamp already conveys it and a redundant slot would break round-trip identity.
         sv_distribution = None
         if boundaries is not None:
             boundaries.enforce = "clamp"
@@ -118,8 +114,7 @@ def _extract_dynamics(sim) -> tvbo_datamodel.Dynamics:
 def _sv_ic_range(sv):
     """Range a state variable's initial conditions are drawn from (TVB ``state_variable_range``).
 
-    The export inverse of the ingestion in :func:`_extract_dynamics`: prefer the
-    explicit sampling ``distribution`` support (set when the IC range differs
+    The export inverse of the ingestion in :func:`_extract_dynamics`: prefer the explicit sampling ``distribution`` support (set when the IC range differs
     from a clamp), else the descriptive ``domain``.
     """
     dist = getattr(sv, "distribution", None)
@@ -138,19 +133,15 @@ def _sv_clamp(sv):
 def tvb_state_variable_ranges(model, default=(-1e9, 1e9)):
     """Build the TVB ``state_variable_range`` mapping ``{name: (lo, hi)}``.
 
-    These are TVB's initial-condition sampling support, drawn with ``rng.uniform``
-    and so always finite — the IC range (sampling distribution, else descriptive
-    domain) is used here, never a half-open clamp. ``default`` fills a bound only
-    when a state variable has neither a distribution nor a domain.
+    These are TVB's initial-condition sampling support, drawn with ``rng.uniform`` and so always finite — the IC range (sampling distribution, else descriptive
+    domain) is used here, never a half-open clamp. ``default`` fills a bound only when a state variable has neither a distribution nor a domain.
     """
     ranges = {}
     for sv in model.state_variables.values():
         rng = _sv_ic_range(sv)
         lo = float(rng.lo) if (rng is not None and rng.lo is not None) else default[0]
         hi = float(rng.hi) if (rng is not None and rng.hi is not None) else default[1]
-        # IC sampling support must be finite (TVB draws it with rng.uniform). If a
-        # half-open clamp domain reached here without a finite sampling
-        # distribution, fall back to the default rather than emit inf.
+        # IC sampling support must be finite (TVB draws it with rng.uniform). If a half-open clamp domain reached here without a finite sampling distribution, fall back to the default rather than emit inf.
         if not np.isfinite(lo):
             lo = default[0]
         if not np.isfinite(hi):
@@ -162,8 +153,7 @@ def tvb_state_variable_ranges(model, default=(-1e9, 1e9)):
 def tvb_state_variable_boundaries(model):
     """Build the TVB ``state_variable_boundaries`` mapping ``{name: (lo, hi)}``.
 
-    Only state variables whose domain opts into a hard clamp appear. An unset
-    side becomes the corresponding infinity (a one-sided clamp), matching TVB.
+    Only state variables whose domain opts into a hard clamp appear. An unset side becomes the corresponding infinity (a one-sided clamp), matching TVB.
     """
     boundaries = {}
     for sv in model.state_variables.values():
@@ -189,8 +179,7 @@ def _extract_coupling(sim) -> tvbo_datamodel.Coupling:
 def _extract_noise(sim, model_metadata) -> tvbo_datamodel.Noise | None:
     """Extract Noise metadata from a TVB integrator.
 
-    Also sets per-state-variable noise on model_metadata if nsig is
-    state-variable-specific.
+    Also sets per-state-variable noise on model_metadata if nsig is state-variable-specific.
     """
     noise_obj = getattr(sim.integrator, "noise", None)
     if noise_obj is None:
@@ -301,8 +290,7 @@ def _extract_stimulus(sim) -> tvbo_datamodel.Stimulus | None:
 def _extract_observations(sim) -> dict:
     """Extract monitors as Observations from a TVB simulator.
 
-    Maps each TVB monitor to a tvbo Observation with full metadata
-    including ``class_reference`` for exact TVB class reconstruction.
+    Maps each TVB monitor to a tvbo Observation with full metadata including ``class_reference`` for exact TVB class reconstruction.
     """
     from tvb.simulator import monitors as tvb_monitors
     from tvb.datatypes import equations as tvb_equations
@@ -498,8 +486,7 @@ def _extract_observations(sim) -> dict:
 def to_tvb_monitor(observation):
     """Convert a tvbo Observation to a TVB Monitor instance.
 
-    Uses ``class_reference`` to reconstruct the exact TVB Monitor subclass
-    with all constructor arguments including HRF kernel type.
+    Uses ``class_reference`` to reconstruct the exact TVB Monitor subclass with all constructor arguments including HRF kernel type.
 
     Parameters
     ----------
@@ -607,8 +594,7 @@ def to_tvb_monitor(observation):
 def _load_projection_monitor_sensors(observation, tvb_class_name, kwargs):
     """Load sensors and projection for a projection-type monitor.
 
-    Reads the sensor network referenced by ``observation.data_source``
-    and populates ``kwargs`` with sensor and projection objects.
+    Reads the sensor network referenced by ``observation.data_source`` and populates ``kwargs`` with sensor and projection objects.
     """
     from tvb.datatypes import sensors as tvb_sensors
     from tvb.datatypes import projections as tvb_projections
@@ -751,8 +737,7 @@ def from_tvb_zip(zip_path):
 def from_tvb(connectivity):
     """Import a live TVB Connectivity object into a tvbo Network.
 
-    Lossless conversion — all TVB fields are preserved as tvbo Node
-    parameters and Network-level metadata.
+    Lossless conversion — all TVB fields are preserved as tvbo Node parameters and Network-level metadata.
 
     Parameters
     ----------
@@ -828,8 +813,7 @@ def from_tvb_surface(connectivity, surface, region_mapping):
     Produces two linked networks:
 
     1. **Region-level** (parent): from TVB Connectivity
-    2. **Vertex-level** (child): mesh + region_mapping linking vertices
-       to regions via hierarchical ``node_mapping``
+    2. **Vertex-level** (child): mesh + region_mapping linking vertices to regions via hierarchical ``node_mapping``
 
     Parameters
     ----------
@@ -883,8 +867,7 @@ def from_tvb_surface(connectivity, surface, region_mapping):
         number_of_vertices=n_vertices,
         number_of_elements=n_elements,
     )
-    # ``mesh`` is now a first-class schema slot on Network. Set it
-    # directly; runtime array caches stay as private attributes.
+    # ``mesh`` is now a first-class schema slot on Network. Set it directly; runtime array caches stay as private attributes.
     surface_net.mesh = mesh
     object.__setattr__(surface_net, "_mesh_vertices", vertices)
     object.__setattr__(surface_net, "_mesh_elements", triangles)
@@ -921,11 +904,7 @@ def to_tvb(network):
     cs_value = cs_param.value if cs_param and hasattr(cs_param, "value") else 3.0
     _speed = np.asarray([cs_value], dtype=float)
 
-    # Region labels for THIS connectome come from its own nodes (they align with
-    # the weights matrix). Only fall back to the parcellation atlas for networks
-    # with no per-node labels; the atlas may lack terminology (-> nii volume
-    # lookup that raises for label-only parcellations like Lobar8) or hold the
-    # full parcellation (87 DK entities vs an 84-node connectome subset).
+    # Region labels for THIS connectome come from its own nodes (they align with the weights matrix). Only fall back to the parcellation atlas for networks with no per-node labels; the atlas may lack terminology (-> nii volume lookup that raises for label-only parcellations like Lobar8) or hold the full parcellation (87 DK entities vs an 84-node connectome subset).
     _labels = network.node_labels
     if not _labels or len(_labels) != _weights.shape[0]:
         _labels = list(network.atlas.region_labels)

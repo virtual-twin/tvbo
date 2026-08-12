@@ -111,8 +111,7 @@ def _unrename_expr(expr_str: str) -> str:
 def _extract_sign_arg(cond):
     """Argument of ``sign`` for a relational, plus whether the sign must be flipped.
 
-    Returns ``(arg, negate)`` such that ``sign(arg)`` is positive exactly when *cond*
-    holds, or ``(None, False)`` when *cond* is not a form this can express.
+    Returns ``(arg, negate)`` such that ``sign(arg)`` is positive exactly when *cond* holds, or ``(None, False)`` when *cond* is not a form this can express.
     """
     import sympy
 
@@ -128,8 +127,7 @@ def _convert_piecewise(pw):
 
     ``Piecewise((a, x > c), (b, True))`` becomes
     ``(a + b)/2 + (a - b)/2 * sign(x - c)``; a ``<`` comparison flips the sign term.
-    Extra branches nest from the last backwards. A branch whose condition is not a
-    simple relational cannot be expressed this way, and the original is returned
+    Extra branches nest from the last backwards. A branch whose condition is not a simple relational cannot be expressed this way, and the original is returned
     untouched so the failure surfaces in PyRates rather than as a silent misread.
     """
     import sympy
@@ -170,13 +168,10 @@ def _pyrates_compatible(expr):
 def _renamed_scope(model) -> dict:
     """The model's own symbols, rebuilt under their PyRates-safe names.
 
-    Equations are sympified against this so a declared name shadows SymPy's globals —
-    without it PinskyRinzelCA3's ``chi`` parses as the hyperbolic cosine integral.
+    Equations are sympified against this so a declared name shadows SymPy's globals — without it PinskyRinzelCA3's ``chi`` parses as the hyperbolic cosine integral.
 
-    The rebuild is what makes renaming survive the round trip. Binding the safe name to
-    the *original* symbol makes ``sympify("gamma_")`` return ``Symbol("gamma")``, which
-    prints back as ``gamma`` and undoes the rename — the equation then said ``gamma*x``
-    while the variable block declared ``gamma_``, and PyRates resolved the orphaned
+    The rebuild is what makes renaming survive the round trip. Binding the safe name to the *original* symbol makes ``sympify("gamma_")`` return ``Symbol("gamma")``, which
+    prints back as ``gamma`` and undoes the rename — the equation then said ``gamma*x`` while the variable block declared ``gamma_``, and PyRates resolved the orphaned
     ``gamma`` to SymPy's gamma function.
     """
     import sympy
@@ -196,13 +191,11 @@ def _renamed_scope(model) -> dict:
 def operator_template(model, op_name: str | None = None) -> dict:
     """Resolve a Dynamics model into the fields of a PyRates ``OperatorTemplate``.
 
-    Everything the template needs to decide is decided here, so the Mako file only
-    emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined
+    Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through :data:`PYRATES_REPL`, functions are inlined
     (PyRates YAML has no user functions), and unsupported constructs are rewritten by
     :func:`_pyrates_compatible`.
 
-    Equations are sympified against :func:`_renamed_scope`, keyed by the renamed
-    spelling because renaming has already been applied to the equation strings.
+    Equations are sympified against :func:`_renamed_scope`, keyed by the renamed spelling because renaming has already been applied to the equation strings.
 
     Args:
         model: The :class:`~tvbo.classes.dynamics.Dynamics` to convert.
@@ -340,8 +333,7 @@ def to_pyrates_yaml_string(
 ) -> str:
     """Export to complete PyRates experiment YAML (model + network, ready to run).
 
-    This generates a self-contained YAML with OperatorTemplate, NodeTemplate,
-    and CircuitTemplate - everything needed to run with PyRates.
+    This generates a self-contained YAML with OperatorTemplate, NodeTemplate, and CircuitTemplate - everything needed to run with PyRates.
 
     Parameters
     ----------
@@ -571,8 +563,7 @@ def _parse_single_operator(template_name: str, template_def: dict) -> dict:
     """Parse a single OperatorTemplate into a Dynamics-compatible dict.
 
     Automatically reverses PYRATES_REPL renames (e.g. ``y_`` -> ``y``,
-    ``gamma_`` -> ``gamma``) so that round-tripped models recover the
-    original TVBO variable names.
+    ``gamma_`` -> ``gamma``) so that round-tripped models recover the original TVBO variable names.
     """
     state_variables = {}
     parameters = {}

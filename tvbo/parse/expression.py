@@ -1,10 +1,8 @@
 """Parse TVBO equation strings into SymPy expressions.
 
-Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a raw
-string) into a SymPy expression, along with the custom aggregation symbols and the
+Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a raw string) into a SymPy expression, along with the custom aggregation symbols and the
 `ARRAY_FUNCTIONS` registry of array reduction/manipulation functions (`sum`, `mean`,
-`slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to
-backend-specific calls.
+`slice_axis`, `mode_dot`, …) that the code printers in `tvbo.codegen.code` lower to backend-specific calls.
 """
 
 from sympy import parse_expr, Symbol, Function, IndexedBase, Sum, Product, sqrt
@@ -17,10 +15,7 @@ from sympy.parsing.sympy_parser import (
     function_exponentiation,
 )
 
-# Implicit multiplication WITHOUT split_symbols: multi-letter identifiers
-# (e.g. "perturbation") stay as a single Symbol instead of being expanded into
-# the product of their letters. Digit-prefix splitting like "2x" -> "2*x"
-# is unaffected because that lives in `implicit_multiplication`.
+# Implicit multiplication WITHOUT split_symbols: multi-letter identifiers (e.g. "perturbation") stay as a single Symbol instead of being expanded into the product of their letters. Digit-prefix splitting like "2x" -> "2*x" is unaffected because that lives in `implicit_multiplication`.
 _no_split_symbols = split_symbols_custom(lambda _name: False)
 _implicit_mul_app_no_split = (
     _no_split_symbols,
@@ -41,8 +36,7 @@ from tvbo.datamodel.schema import Equation
 class Mean(Function):
     """Mean over indexed expression: Mean(f(x[i]), (i, 0, N-1)).
 
-    Mathematical notation for averaging over a dimension. Translates to
-    jnp.mean(jax.vmap(...)) or jnp.mean(...) depending on the inner function.
+    Mathematical notation for averaging over a dimension. Translates to jnp.mean(jax.vmap(...)) or jnp.mean(...) depending on the inner function.
 
     Example:
         Mean(1 - correlation(x[i], y[i]), (i, 0, N-1))
@@ -54,10 +48,8 @@ class Mean(Function):
         """Suppress automatic simplification so the symbol survives to codegen.
 
         SymPy calls this classmethod when a `Mean(...)` is constructed. Returning
-        `None` signals that no closed-form evaluation should be performed, keeping
-        the expression as an unevaluated `Mean` node that the code printers in
-        [`tvbo.codegen.code`](../codegen/code.qmd) translate into the backend's
-        mean/reduction call.
+        `None` signals that no closed-form evaluation should be performed, keeping the expression as an unevaluated `Mean` node that the code printers in
+        [`tvbo.codegen.code`](../codegen/code.qmd) translate into the backend's mean/reduction call.
 
         Args:
             *args: The positional arguments the `Mean` was called with (the inner
@@ -85,12 +77,9 @@ class Mean(Function):
 # Array Function Definitions (single source of truth for parsing)
 # =============================================================================
 # These are array reduction/aggregation functions that SymPy doesn't have natively.
-# We define them as undefined SymPy Functions so they parse correctly (preventing
-# implicit multiplication like 'mean(x)' -> 'm*e*a*n*(x)').
+# We define them as undefined SymPy Functions so they parse correctly (preventing implicit multiplication like 'mean(x)' -> 'm*e*a*n*(x)').
 #
-# NOTE: These use lowercase names to distinguish from SymPy's symbolic Sum/Product
-# which require explicit index variables. Our versions are for array reduction
-# operations (like numpy's sum/mean) that reduce over all elements.
+# NOTE: These use lowercase names to distinguish from SymPy's symbolic Sum/Product which require explicit index variables. Our versions are for array reduction operations (like numpy's sum/mean) that reduce over all elements.
 #
 # For printer mappings (jnp.sum, np.mean, etc.), see tvbo.codegen.code
 
@@ -106,12 +95,10 @@ ARRAY_FUNCTIONS = {
     "concatenate": Function("concatenate"),
     # Array-manipulation functions that carry Python-specific semantics.
     # Custom printer methods in tvbo.codegen.code expand these to the correct
-    # JAX / NumPy calls (including .reshape() and keyword args that SymPy
-    # cannot represent natively).
+    # JAX / NumPy calls (including .reshape() and keyword args that SymPy cannot represent natively).
     "window_mean": Function("window_mean"),  # window_mean(X, w) → jnp.mean(X.reshape(-1, w, *X.shape[1:]), axis=1)
     "subsample": Function("subsample"),  # subsample(X, step[, start]) → X[start::step]
-    # Structural slice/shape ops — let an observation pipeline that selects a voi, trims a
-    # transient, or downsamples be authored as declarative equations instead of source_code.
+    # Structural slice/shape ops — let an observation pipeline that selects a voi, trims a transient, or downsamples be authored as declarative equations instead of source_code.
     "slice_axis": Function("slice_axis"),  # slice_axis(X, axis, start, stop[, step]) → bounded slice of one axis (keeps ndim)
     "slice_from": Function(
         "slice_from"
@@ -132,9 +119,7 @@ ARRAY_FUNCTIONS = {
         "strided_convolve"
     ),  # strided_convolve(X, k, s) → 'valid' conv of X⊛k evaluated only at the [s::s] output indices (fuses convolve+subsample; no full FFT)
     # General array ops for per-timestep detectors / permutation-significance tests: a
-    # 2-D gather, a single-axis reduction, and Pearson correlation — expressible in any
-    # backend's array algebra so a wave / graph / significance observable is authored as
-    # declarative equations, not backend source_code.
+    # 2-D gather, a single-axis reduction, and Pearson correlation — expressible in any backend's array algebra so a wave / graph / significance observable is authored as declarative equations, not backend source_code.
     "take": Function("take"),  # take(x, idx) → gather x by an int index array (result has idx.shape)
     "sum_axis": Function("sum_axis"),  # sum_axis(x, axis) → reduce one axis ({np,jnp}.sum(x, axis=..))
     "pearson": Function(
@@ -143,16 +128,9 @@ ARRAY_FUNCTIONS = {
     "clip": Function("clip"),  # clip(x, lo, hi) → bound x to [lo, hi] ({np,jnp}.clip); e.g. clip(cos_sim, -1, 1) before acos
     "any": Function("any"),  # any(x) → True if any element is truthy ({np,jnp}.any); e.g. any(p_div <= sig)
     "all": Function("all"),  # all(x) → True if every element is truthy ({np,jnp}.all)
-    # Graph-construction primitives — the vocabulary a `Procedural` GraphGenerator's
-    # typed DAG lowers to, so a paper's network construction (distance kernel, stochastic
-    # connection mask, Gaussian field, axis normalisation) is authored as metadata and
-    # emitted natively per backend instead of living in per-generator Python.
+    # Graph-construction primitives — the vocabulary a `Procedural` GraphGenerator's typed DAG lowers to, so a paper's network construction (distance kernel, stochastic connection mask, Gaussian field, axis normalisation) is authored as metadata and emitted natively per backend instead of living in per-generator Python.
     #
-    # Every argument is POSITIONAL: SymPy's parser forwards `f(x, axis=0)` into Basic's
-    # options and raises `ValueError: Unknown options`, so a primitive can never carry a
-    # keyword. Options that would be keywords (metric, axis, target range, distribution,
-    # seed) are schema FIELDS on the DAG step and are lowered here into positional
-    # arguments — which is the reason the DAG is typed rather than free-form.
+    # Every argument is POSITIONAL: SymPy's parser forwards `f(x, axis=0)` into Basic's options and raises `ValueError: Unknown options`, so a primitive can never carry a keyword. Options that would be keywords (metric, axis, target range, distribution, seed) are schema FIELDS on the DAG step and are lowered here into positional arguments — which is the reason the DAG is typed rather than free-form.
     "grid_positions": Function(
         "grid_positions"
     ),  # grid_positions(nx, ny, x_extent, y_extent) → [nx*ny, 2] regular-lattice node coordinates, x-major
@@ -170,12 +148,8 @@ ARRAY_FUNCTIONS = {
         "minmax_rescale"
     ),  # minmax_rescale(x, lo, hi) → x affinely rescaled from its own min/max onto [lo, hi]
     "eigvals": Function("eigvals"),  # eigvals(M) → eigenvalues of M (e.g. spectral-radius rescaling)
-    # Distribution samplers. One head per distribution, mirroring the backend sampler
-    # table in dev/GenericProcedureEngine.md §2.3 (numpy rng.<d> | jax.random.<d> |
-    # Distributions.jl). The PRNG state is the FIRST argument because JAX is functionally
-    # pure — a key cannot be threaded implicitly through a rendered expression — and the
-    # trailing arguments are the sample shape. Cross-backend bit-identical draws are NOT
-    # guaranteed (numpy PCG64 != jax Threefry); see the RNG contract in §4.
+    # Distribution samplers. One head per distribution, mirroring the backend sampler table in dev/GenericProcedureEngine.md §2.3 (numpy rng.<d> | jax.random.<d> |
+    # Distributions.jl). The PRNG state is the FIRST argument because JAX is functionally pure — a key cannot be threaded implicitly through a rendered expression — and the trailing arguments are the sample shape. Cross-backend bit-identical draws are NOT guaranteed (numpy PCG64 != jax Threefry); see the RNG contract in §4.
     "sample_normal": Function("sample_normal"),  # sample_normal(key, mean, std, *shape)
     "sample_uniform": Function("sample_uniform"),  # sample_uniform(key, lo, hi, *shape)
     "sample_lognormal": Function("sample_lognormal"),  # sample_lognormal(key, mu, sigma, *shape)
@@ -191,8 +165,7 @@ def parse_eq(
 ):
     """Parse the right-hand side of an equation or a raw expression string.
 
-    Extends parsing with the ability to pass parameters, functions, symbols, and
-    arbitrary SymPy objects commonly used in nonlinear systems dynamics.
+    Extends parsing with the ability to pass parameters, functions, symbols, and arbitrary SymPy objects commonly used in nonlinear systems dynamics.
 
     Parameters
     ----------
@@ -302,8 +275,7 @@ def parse_eq(
 
     # Auto-detect indexed variables (e.g., x[i], y[j]) and create IndexedBase for them
     # This allows natural mathematical notation: Sum(x[i]*y[i], (i, 0, n-1))
-    # NOTE: This MUST override any Symbol definitions (including from parameters)
-    # because x[i] syntax requires IndexedBase, not Symbol
+    # NOTE: This MUST override any Symbol definitions (including from parameters) because x[i] syntax requires IndexedBase, not Symbol
     indexed_pattern = re.compile(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\[")
     for match in indexed_pattern.finditer(expression):
         var_name = match.group(1)

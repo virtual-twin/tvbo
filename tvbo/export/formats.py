@@ -1,11 +1,9 @@
 """Built-in export-format registrations.
 
-Importing this module populates :mod:`tvbo.export.registry` with every
-backend that ships with TVBO. Third-party packages can register their own
+Importing this module populates :mod:`tvbo.export.registry` with every backend that ships with TVBO. Third-party packages can register their own
 formats the same way (preferably in their own module's import-time code).
 
-Each renderer is a thin closure ``(experiment, **kwargs) -> str``. Heavy
-adapter imports happen *inside* the closure so that simply listing
+Each renderer is a thin closure ``(experiment, **kwargs) -> str``. Heavy adapter imports happen *inside* the closure so that simply listing
 formats does not pull in optional dependencies (Mako templates, NeuroML, …).
 """
 
@@ -67,9 +65,7 @@ def _render_jax(exp, **kw):
 
     template = templates.lookup.get_template("autodiff/tvbo-jax-sim.py.mako")
     # Resolve observation sampling step counts once, in Python, and hand the
-    # {obs_name: ObservationSampling} mapping to the template (which only emits
-    # the resolved integers). This is the same backend-shared resolver the
-    # tvboptim runtime uses, so all Python backends emit identical sample counts.
+    # {obs_name: ObservationSampling} mapping to the template (which only emits the resolved integers). This is the same backend-shared resolver the tvboptim runtime uses, so all Python backends emit identical sample counts.
     observations = getattr(exp, "observations", None) or {}
     dt = exp.integration.step_size
     kw.setdefault(
@@ -83,14 +79,11 @@ def _render_tvboptim(exp, **kw):
     from tvbo.classes.experiment import templates
 
     template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
-    # Resolve network- and dataset-sourced observation pointers once, in Python,
-    # and hand the {obs_name: measure} mapping to the template (which only emits
-    # code). Both bind at run_experiment time via _bind_network_observations.
+    # Resolve network- and dataset-sourced observation pointers once, in Python, and hand the {obs_name: measure} mapping to the template (which only emits code). Both bind at run_experiment time via _bind_network_observations.
     measures = dict(exp.network_observation_measures)
     measures.update(exp.dataset_observation_targets)
     kw.setdefault("network_obs_measures", measures)
-    # Model-side gather (keyed by label, never positional) that aligns a simulated
-    # observable to a by_label empirical target's shared nodes in the loss.
+    # Model-side gather (keyed by label, never positional) that aligns a simulated observable to a by_label empirical target's shared nodes in the loss.
     kw.setdefault("dataset_reconcile_indices", exp.dataset_reconcile_indices())
     return template.render(experiment=exp, **kw)
 
