@@ -26,9 +26,7 @@ from typing import Any
 
 from tvbo.utils import as_list
 
-# =============================================================================
 # Basic Helpers
-# =============================================================================
 
 
 def safe_name(name: str) -> str:
@@ -74,8 +72,7 @@ def get_param_info(parameters: dict) -> tuple[list[str], dict[str, float], dict[
             param_defaults[p.name] = list(p.value)
         elif p.value is not None:
             param_defaults[p.name] = float(p.value)
-        # A parameter with no literal `value` is simply ABSENT from the defaults: it may be free, or sourced/produced (resolved from storage, never inlined).
-        # Emission sites supply their own fallback via `.get(name, 1.0)`; inventing one here instead would erase the difference between "undeclared" and "1.0" and let a resolved operator silently emit as a scalar.
+        # A parameter with no literal `value` is simply ABSENT from the defaults: it may be free, or sourced/produced (resolved from storage, never inlined). Emission sites supply their own fallback via `.get(name, 1.0)`; inventing one here instead would erase the difference between "undeclared" and "1.0" and let a resolved operator silently emit as a scalar.
         shape = getattr(p, "shape", None)
         if shape:
             param_shapes[p.name] = str(shape)
@@ -134,8 +131,7 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> tuple[lis
         model: Dynamics object (with state_variables and derived_variables).
         experiment: Optional SimulationExperiment; observations are scanned when present.
     """
-    # Recorded state channels follow the solver's (possibly mode-folded) layout:
-    # for number_of_modes>1 each variable contributes n_modes scalar slots.
+    # Recorded state channels follow the solver's (possibly mode-folded) layout: for number_of_modes>1 each variable contributes n_modes scalar slots.
     _, state_names, _ = get_mode_layout(model) if model and model.state_variables else (1, [], {})
     aux_names = list(model.derived_variables.keys()) if model and getattr(model, "derived_variables", None) else []
 
@@ -438,13 +434,7 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     pre_terms = parse_list_elements(_pre_rhs0) if pre_is_list else ([_pre_rhs0] if _pre_rhs0 else [])
     n_pre = len(pre_terms)
 
-    # Vectorized (matmul) vs per-edge reduction. The identity-sentinel pre() — no
-    # pre_expr, or the bare `local_states`/`incoming_states` keyword meaning "sources
-    # unchanged" — is a pure linear incoming sum (gx = W @ source): it takes the
-    # vectorized incoming-identity path however its states are declared — local-only
-    # (FastLinearCoupling), incoming-only, or both (e.g. c_glob: incoming+local same
-    # cvar). Source-only phase couplings with a real pre-expression stay per-edge (exact
-    # for any connectome) unless the coupling opts in with `vectorized: true`.
+    # Vectorized (matmul) vs per-edge reduction. The identity-sentinel pre() — no pre_expr, or the bare `local_states`/`incoming_states` keyword meaning "sources unchanged" — is a pure linear incoming sum (gx = W @ source): it takes the vectorized incoming-identity path however its states are declared — local-only (FastLinearCoupling), incoming-only, or both (e.g. c_glob: incoming+local same cvar). Source-only phase couplings with a real pre-expression stay per-edge (exact for any connectome) unless the coupling opts in with `vectorized: true`.
     vectorized = getattr(coupling, "vectorized", False)
     vec_identity_sentinel = (not pre_expr) or (_pre_rhs0 in ("local_states", "incoming_states"))
     if (
@@ -1352,9 +1342,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
 
     A ``partition`` lifts the observer into a GROUPED reduction (``kind: 'wave'``): the per-step chain is written once for a single group, vmapped over the partition axis, and folded to per-group scalar metrics.
     """
-    # Opt-in streaming of a post-scan observation: lifted to a block reducer instead of the dynamics-observer recurrence path below. A cumulative mean/std/variance over a source (no HRF/BOLD pipeline) synthesizes a running-moment accumulator; an HRF-Volterra BOLD pipeline lifts the convolution reducer.
-    # An observation that declares its own `dynamics` is already a reducer; `reduce:
-    # streaming` on it opts that reducer into the post-tuning carry (streaming_post_eval_plan) rather than selecting a pipeline-lifted one, so the observer path below owns it.
+    # Opt-in streaming of a post-scan observation: lifted to a block reducer instead of the dynamics-observer recurrence path below. A cumulative mean/std/variance over a source (no HRF/BOLD pipeline) synthesizes a running-moment accumulator; an HRF-Volterra BOLD pipeline lifts the convolution reducer. An observation that declares its own `dynamics` is already a reducer; `reduce: streaming` on it opts that reducer into the post-tuning carry (streaming_post_eval_plan) rather than selecting a pipeline-lifted one, so the observer path below owns it.
     _rm = get_attr(obs, "reduce")
     if _rm is not None and str(getattr(_rm, "value", _rm)) == "streaming" and get_attr(obs, "dynamics") is None:
         _agg = get_attr(obs, "aggregation", None)
@@ -1384,8 +1372,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     sv_pairs = list(svs.items()) if hasattr(svs, "items") else []
     sv_names = [str(n) for n, _ in sv_pairs]
 
-    # Derived variables (per-step intermediates). Their names join the symbolic vocabulary so a richer observer's DV can reference an earlier DV (a detector chain, e.g.
-    # ``pgn = pg / nrm``); a simple observer has none and this is inert.
+    # Derived variables (per-step intermediates). Their names join the symbolic vocabulary so a richer observer's DV can reference an earlier DV (a detector chain, e.g. ``pgn = pg / nrm``); a simple observer has none and this is inert.
     dvs = get_attr(dyn, "derived_variables")
     dv_map = dict(dvs.items()) if hasattr(dvs, "items") else {}
     dv_names = [str(n) for n in dv_map]
@@ -1402,9 +1389,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     param_objs = dict(param_map.items()) if hasattr(param_map, "items") else {str(get_attr(p, "name")): p for p in param_map}
     param_names, param_values, param_shapes = get_param_info(param_map)
 
-    # Resolve each constant to what the template emits: a literal binds inline; a sourced/produced one is materialised (codegen-time) to a content-addressed artifact and emitted as a lazy (file, key) the backend reads at run time, so a large operator never enters the generated source. The spec dir grounds a relative source path exactly as bids_dir is grounded.
-    #
-    # Materialisation runs the producer and writes to disk, so it happens ONLY when an experiment is supplied — i.e. at genuine emission. resolve_reduction is also called bare (no experiment) as a cheap "is this a streaming reducer?" predicate; that path must stay side-effect-free, so a lazy constant is left deferred (never materialised just to answer a boolean, and never triggering an igl precompute as a side effect).
+    # Resolve each constant to what the template emits: a literal binds inline; a sourced/produced one is materialised (codegen-time) to a content-addressed artifact and emitted as a lazy (file, key) the backend reads at run time, so a large operator never enters the generated source. The spec dir grounds a relative source path exactly as bids_dir is grounded. Materialisation runs the producer and writes to disk, so it happens ONLY when an experiment is supplied — i.e. at genuine emission. resolve_reduction is also called bare (no experiment) as a cheap "is this a streaming reducer?" predicate; that path must stay side-effect-free, so a lazy constant is left deferred (never materialised just to answer a boolean, and never triggering an igl precompute as a side effect).
     src_file = get_attr(experiment, "_source_file", None) if experiment is not None else None
     src_dir = Path(src_file).parent if src_file else None
     parameters: dict[str, Any] = {}
@@ -1468,8 +1453,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         if rhs is None:
             continue
         expr = _parse(str(rhs), f"state {name!r}")
-        # Optional reverse recurrence: the per-step downdate removing the sample leaving a sliding window (the inverse of ``update``, which folds an arriving one in). Parsed against the same vocabulary — ``source`` denotes the sample being folded/removed.
-        # Its presence marks the observer a *windowed* reduction (add + evict + resync) rather than a cumulative accumulator; absent -> cumulative, unchanged.
+        # Optional reverse recurrence: the per-step downdate removing the sample leaving a sliding window (the inverse of ``update``, which folds an arriving one in). Parsed against the same vocabulary — ``source`` denotes the sample being folded/removed. Its presence marks the observer a *windowed* reduction (add + evict + resync) rather than a cumulative accumulator; absent -> cumulative, unchanged.
         eeq = get_attr(sv, "evict_equation")
         erhs = get_attr(eeq, "rhs") if eeq is not None else None
         evict = _parse(str(erhs), f"evict of state {name!r}") if erhs is not None else None
@@ -1624,8 +1608,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
             "hi": float(get_attr(hist, "hi", 55.0)),
             "bins": int(_bins) if _bins is not None else 512,
         }
-    # A streaming median needs explicit bins spanning the reduced quantity's range;
-    # silently assuming a default window would clip out-of-range samples and pin the result to an edge. Require the histogram slot rather than guess.
+    # A streaming median needs explicit bins spanning the reduced quantity's range; silently assuming a default window would clip out-of-range samples and pin the result to an edge. Require the histogram slot rather than guess.
     if statistic == "median" and histogram is None:
         raise ValueError(
             f"Observation {get_attr(obs, 'name', None)!r} sets aggregation: median but declares no "
@@ -1633,9 +1616,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
             "reduced quantity's range."
         )
 
-    # `period` makes the observer a MONITOR: its output is emitted every period into a time series, instead of collapsing time into one value per node at the final step. That is the declared contract of Observation.dynamics ("read at the final step for a reduction
-    # ... or, when `period` is set, sub-sampled over time for a monitor"). The period is
-    # resolved against the integration grid, so it needs the experiment; the bare predicate call ("is this a reduction?") only asks whether the observer exists.
+    # `period` makes the observer a MONITOR: its output is emitted every period into a time series, instead of collapsing time into one value per node at the final step. That is the declared contract of Observation.dynamics ("read at the final step for a reduction ... or, when `period` is set, sub-sampled over time for a monitor"). The period is resolved against the integration grid, so it needs the experiment; the bare predicate call ("is this a reduction?") only asks whether the observer exists.
     _period = get_attr(obs, "period")
     _period = float(to_numeric(_period)) if _period is not None else None
     _dt = _integration_dt(experiment)
@@ -1654,8 +1635,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
                 f"than the integration step {_dt} ms; an observer cannot emit faster than it advances."
             )
 
-    # A readout built only from states and constants is the same value whether it is evaluated every step or once per emitted sample, so a monitor evaluates it per sample.
-    # One that reads the observed signal or a per-step derived variable cannot be deferred.
+    # A readout built only from states and constants is the same value whether it is evaluated every step or once per emitted sample, so a monitor evaluates it per sample. One that reads the observed signal or a per-step derived variable cannot be deferred.
     _step_ctx = ({source} if source else set()) | {d["name"] for d in derived if d["name"] != output_name}
     output_per_step = bool(output is not None and {str(s) for s in output.free_symbols} & _step_ctx)
 
@@ -1906,9 +1886,7 @@ def _adapt_tvb_bold_reference(class_info: dict[str, Any], obs: Any, dt: float) -
     return adapted
 
 
-# =============================================================================
 # Solver / differentiation kwargs
-# =============================================================================
 
 
 def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False) -> str:
@@ -1921,8 +1899,7 @@ def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False)
     if integration is None or is_diffrax:
         return ""
     kwargs = []
-    # Coupling evaluation across integrator stages (backend-neutral -> native flag):
-    # per_stage recomputes the coupling every solver stage (accurate); per_step (the native default) holds it constant across stages. Only emit the non-default.
+    # Coupling evaluation across integrator stages (backend-neutral -> native flag): per_stage recomputes the coupling every solver stage (accurate); per_step (the native default) holds it constant across stages. Only emit the non-default.
     ce = getattr(integration, "coupling_evaluation", None)
     if ce is not None and str(ce) == "per_stage":
         kwargs.append("recompute_coupling_per_stage=True")
@@ -2344,9 +2321,7 @@ def render_inference(
     return "\n".join(f"        {ln}" for ln in (model + [""] + runner))
 
 
-# =============================================================================
 # State Variable Bounds
-# =============================================================================
 
 
 def materialise_lazy_params(parameters: Any, experiment: Any = None) -> dict[str, tuple]:
@@ -2511,9 +2486,7 @@ def format_bounds_array(bounds: list, format: str = "jax") -> str:
     return "[" + ", ".join(parts) + "]"
 
 
-# =============================================================================
 # Observation Helpers
-# =============================================================================
 
 
 def is_network_observation(obs: Any) -> bool:
@@ -2635,9 +2608,7 @@ def toposort_observations(obs_names: list[str], derived_obs_dict: dict[str, Any]
     return sorted_obs
 
 
-# =============================================================================
 # Loss Function Parsing
-# =============================================================================
 
 
 def parse_loss_arguments(loss_call: Any) -> tuple[list[dict], set[str]]:
@@ -2767,9 +2738,7 @@ def parse_loss_function(opt: Any) -> dict | None:
     }
 
 
-# =============================================================================
 # Parameter Parsing
-# =============================================================================
 
 
 def get_domain_bounds(param_name: str, model: Any, all_couplings: dict) -> tuple[float | None, float | None]:
@@ -3001,9 +2970,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
     return result
 
 
-# =============================================================================
 # Exploration Parsing
-# =============================================================================
 
 
 def normalize_n_parallel(expl: Any):
@@ -3124,9 +3091,7 @@ def parse_exploration(expl: Any, all_couplings: dict, get_pipeline_output_key_fn
     return exp_info
 
 
-# =============================================================================
 # Algorithm Helpers
-# =============================================================================
 
 
 def get_include_info(inc: Any) -> tuple[str, dict]:
@@ -3211,10 +3176,7 @@ def get_all_hyperparams(algo: Any, algorithms_dict: dict) -> dict:
     return all_hp
 
 
-# ---------------------------------------------------------------------------
-# Network edge references (network.weight(s)/length(s) → connectome matrices)
-# ---------------------------------------------------------------------------
-# `weight`/`weights`/`length`/`lengths` are ergonomic shortcuts for the canonical `network.edges.<label>`; both resolve to a connectome matrix via Network.matrix().
+# Network edge references (network.weight(s)/length(s) → connectome matrices) `weight`/`weights`/`length`/`lengths` are ergonomic shortcuts for the canonical `network.edges.<label>`; both resolve to a connectome matrix via Network.matrix().
 _NETWORK_EDGE_ALIASES = {"weight": "weight", "weights": "weight", "length": "length", "lengths": "length"}
 
 
@@ -3238,7 +3200,6 @@ def edge_const(label: str) -> str:
     return "_network_edge_" + re.sub(r"\W", "_", label)
 
 
-# ---------------------------------------------------------------------------
 # `network.`-scoped exploration axes sweep a live leaf of the backend graph, so every cell sees its own value without a Network or graph rebuild. Each entry below names the graph leaf carrying an attribute; adding a sweepable edge attribute is one entry here plus a graph leaf that holds it.
 _NETWORK_EDGE_GRAPH_LEAVES = {"weight": "weights", "length": "lengths"}
 _NETWORK_SCALAR_GRAPH_LEAVES = {"conduction_speed": "speed"}
@@ -3342,10 +3303,7 @@ def collect_network_edge_arrays(experiment: Any) -> dict[str, list]:
     return arrays
 
 
-# ---------------------------------------------------------------------------
-# Network node references (network.positions/instrength → per-node vectors)
-# ---------------------------------------------------------------------------
-# Node-level analogue of the edge-matrix refs above: a callable argument or an observer (Observation.dynamics) parameter may reference a per-node vector derived from the network — its region centroids (for mesh building) or its in-strength (weighted in-degree). Both embed once as a module constant, exactly like a connectome matrix, so any backend consumes them without a live Network object.
+# Network node references (network.positions/instrength → per-node vectors) Node-level analogue of the edge-matrix refs above: a callable argument or an observer (Observation.dynamics) parameter may reference a per-node vector derived from the network — its region centroids (for mesh building) or its in-strength (weighted in-degree). Both embed once as a module constant, exactly like a connectome matrix, so any backend consumes them without a live Network object.
 _NETWORK_NODE_MEASURES = ("positions", "instrength")
 
 

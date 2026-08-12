@@ -180,11 +180,7 @@ def test_an_undeclared_trailing_singleton_is_still_squeezed():
 def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
     """A full product whose cells arrive in Space (pytree-leaf) order is keyed into the grid BY VALUE, never by a positional reshape.
 
-    When swept axes live on different state sub-objects (dynamics / coupling / graph), Space
-    emits cells in pytree-leaf order, which differs from the declared ``axes_info`` order. A
-    bare ``reshape(grid_sizes)`` then scrambles the surface (each cell reads another cell's
-    value). ``cell_coords`` — the per-cell parameter values in the grid's own order — lets
-    the assembler place each cell at the index its values map to.
+    When swept axes live on different state sub-objects (dynamics / coupling / graph), Space emits cells in pytree-leaf order, which differs from the declared ``axes_info`` order. A bare ``reshape(grid_sizes)`` then scrambles the surface (each cell reads another cell's value). ``cell_coords`` — the per-cell parameter values in the grid's own order — lets the assembler place each cell at the index its values map to.
     """
     from tvbo.data.types import _stacked_to_dataarray
 
@@ -210,8 +206,7 @@ def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
                 got = float(da.sel({"Osc.omega": o, "Cpl.a": k, "network.v": v}).values)
                 assert got == pytest.approx(enc(o, k, v)), (o, k, v, got)
 
-    # Without cell_coords the same Space-order data is reshaped positionally and scrambles,
-    # so at least one label reads the wrong cell — this is exactly the bug cell_coords fixes.
+    # Without cell_coords the same Space-order data is reshaped positionally and scrambles, so at least one label reads the wrong cell — this is exactly the bug cell_coords fixes.
     bare = _stacked_to_dataarray(stacked, axes, name="obs")
     mism = sum(
         float(bare.sel({"Osc.omega": o, "Cpl.a": k, "network.v": v}).values) != enc(o, k, v) for o in OM for k in K for v in V
@@ -229,9 +224,7 @@ def _expl(cell_counts, axis_sizes, **kw):
 def test_a_whole_sweep_is_not_mistaken_for_an_hpc_shard():
     """`cell_coords` is set for every keyed sweep, so presence alone must not mean "shard".
 
-    Reading it as a shard marker made `save()` skip the YAML provenance sidecar for
-    every local sweep — silently, since the write is best-effort. The run then claimed
-    to be self-describing while shipping only the .h5.
+    Reading it as a shard marker made `save()` skip the YAML provenance sidecar for every local sweep — silently, since the write is best-effort. The run then claimed to be self-describing while shipping only the .h5.
     """
     assert _is_partial_shard(_expl(6, [2, 3])) is False
 
@@ -250,8 +243,7 @@ def test_an_undecidable_exploration_defaults_to_writing_provenance():
 def test_the_producer_declaration_beats_the_cell_count():
     """A branch shard's axis `n` comes from the already-sliced index, so counting says "whole run".
 
-    Only the generated script knows — it holds `kwargs['shard']` — so a declared
-    `is_shard` wins over the fallback in both directions.
+    Only the generated script knows — it holds `kwargs['shard']` — so a declared `is_shard` wins over the fallback in both directions.
     """
     assert _is_partial_shard(_expl(6, [2, 3], is_shard=True)) is True
     assert _is_partial_shard(_expl(2, [2, 3], is_shard=False)) is False
@@ -276,9 +268,7 @@ def test_an_axis_is_read_however_the_producer_shaped_it():
 def test_a_non_numeric_axis_still_labels_rather_than_raising():
     """Placement subtracts coordinates, which strings cannot do.
 
-    Newly reachable: `cell_coords` is now set for every sweep, so a full grid over
-    `integration.method` reaches the by-value placement it used to skip. The TypeError
-    escaped `as_grid` entirely rather than falling back to the positional reshape.
+    Newly reachable: `cell_coords` is now set for every sweep, so a full grid over `integration.method` reaches the by-value placement it used to skip. The TypeError escaped `as_grid` entirely rather than falling back to the positional reshape.
     """
     from tvbo.data.types import _stacked_to_dataarray
 

@@ -1,9 +1,6 @@
 """Regression guard for the compile-once tuning core (Bug 2).
 
-A multi-stage `fic_eib` schedule must route its tuning ``lax.scan`` through ONE
-module-level ``_<algo>_tuning_core`` that XLA-compiles once across stages, with the
-per-stage-varying scalars (eta, resync period, ring window) threaded TRACED rather
-than baked — otherwise the scan recompiles once per stage (the 47-min compile).
+A multi-stage `fic_eib` schedule must route its tuning ``lax.scan`` through ONE module-level ``_<algo>_tuning_core`` that XLA-compiles once across stages, with the per-stage-varying scalars (eta, resync period, ring window) threaded TRACED rather than baked — otherwise the scan recompiles once per stage (the 47-min compile).
 """
 
 import pytest

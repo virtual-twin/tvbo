@@ -356,9 +356,7 @@ def test_a_computed_caption_becomes_a_crossreferenceable_float():
 def test_the_integration_time_unit_comes_from_whichever_slot_declared_it():
     """`Integrator` carries `unit` AND `time_scale`, and the schema defaults `time_scale`.
 
-    Reading `unit` alone made every recipe that omits it fall back to seconds: a 0.5 ms
-    step over 800 ms reported as 0.5 s over 800 s. Same 1000x error as the hardcoded
-    `ms` it replaced, with the affected recipes swapped.
+    Reading `unit` alone made every recipe that omits it fall back to seconds: a 0.5 ms step over 800 ms reported as 0.5 s over 800 s. Same 1000x error as the hardcoded `ms` it replaced, with the affected recipes swapped.
     """
     from tvbo import SimulationExperiment
     from tvbo.utils import report

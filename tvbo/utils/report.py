@@ -1891,7 +1891,6 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
 
     report_table = pd.DataFrame()
     report_table.index.name = "Parameter"
-    # for k, v in param_settingconfig.items():
     for k in sorted(param_setting.config, key=operator.attrgetter("name")):
         v = param_setting.config[k]
 
@@ -1911,7 +1910,6 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
             .to_latex(
                 position="h!",
                 hrules=True,
-                # float_format="%.2f",
                 caption=(long_caption, short_caption),
                 label="tab_{}_setting".format(param_setting.model.label.first(), **kwargs),
             )
@@ -1961,9 +1959,7 @@ def save_latex(conf, fpath):
         texfile.write(conf.get_report(format="latex"))
 
 
-##############
 # References #
-##############
 
 
 def render_citation(citation: Any, style: str = "apa") -> str:

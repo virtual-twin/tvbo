@@ -471,8 +471,7 @@ class Network(tvbo_datamodel.Network):
                 if isinstance(_dv, dict):
                     _resolve_dynamics_aliases(_dv)
 
-        # `Edge.coupling` is a name-reference slot at the datamodel level (its range is the identified `Coupling` class, `inlined: false`), so the base constructor would stringify an *inline* coupling definition into a bare `CouplingName`, discarding its coupling_function / parameters.
-        # Detach inline (dict) definitions here so the base constructor doesn't see them, then reattach as real `Coupling` objects below. Bare-string references are left untouched and resolve by name as before.
+        # `Edge.coupling` is a name-reference slot at the datamodel level (its range is the identified `Coupling` class, `inlined: false`), so the base constructor would stringify an *inline* coupling definition into a bare `CouplingName`, discarding its coupling_function / parameters. Detach inline (dict) definitions here so the base constructor doesn't see them, then reattach as real `Coupling` objects below. Bare-string references are left untouched and resolve by name as before.
         _detached_couplings = self._detach_inline_edge_couplings(kwargs.get("edges"))
 
         super().__init__(**kwargs)
@@ -515,9 +514,7 @@ class Network(tvbo_datamodel.Network):
             self.number_of_nodes = 1
             self.nodes = [tvbo_datamodel.Node(id=0, label="node_0")]
 
-    # -------------------------------------------------------------------- #
     # Canonical resolver                                                   #
-    # -------------------------------------------------------------------- #
     def _is_materialized(self) -> bool:
         """Return True when this Network already carries connectivity data.
 
@@ -573,8 +570,7 @@ class Network(tvbo_datamodel.Network):
                 self._resolve_from_graph_generator(source_dir)
             elif getattr(self, "parcellation", None):
                 self._resolve_from_parcellation()
-        # 2. Multi-scale resolution (idempotent no-ops when unused). Runs whether or not macro connectivity was already materialised so a
-        # DB-loaded network still gets its node_template / subnetworks / sourced parameters expanded.
+        # 2. Multi-scale resolution (idempotent no-ops when unused). Runs whether or not macro connectivity was already materialised so a DB-loaded network still gets its node_template / subnetworks / sourced parameters expanded.
         self._expand_node_template()
         self._resolve_subnetworks(source_dir)
         self._resolve_parameter_sources(source_dir)
@@ -755,8 +751,7 @@ class Network(tvbo_datamodel.Network):
             # Preferred path: resolve the typed DAG (no per-generator Python).
             from tvbo.graph_generators.procedural import materialize
 
-            # Size is the network's, never the generator's: a generator parameter for it would be a second source of truth that can disagree with the network it builds. `_resolve` sets number_of_nodes before reaching here.
-            # `not` rather than `is None`: a declared 0 would otherwise reach the DAG and fail deep inside a step on an empty matrix, naming the step rather than the empty network that caused it.
+            # Size is the network's, never the generator's: a generator parameter for it would be a second source of truth that can disagree with the network it builds. `_resolve` sets number_of_nodes before reaching here. `not` rather than `is None`: a declared 0 would otherwise reach the DAG and fail deep inside a step on an empty matrix, naming the step rather than the empty network that caused it.
             if not self.number_of_nodes:
                 raise ValueError(
                     f"GraphGenerator {gg.type!r} builds an n_nodes x n_nodes network, so "
@@ -1011,9 +1006,7 @@ class Network(tvbo_datamodel.Network):
         if l_arr is not None:
             self._cached_lengths = np.asarray(l_arr)
 
-    # -------------------------------------------------------------------- #
     # Multi-scale resolution                                               #
-    # -------------------------------------------------------------------- #
     def _expand_node_template(self) -> None:
         """Apply ``node_template`` to every materialized node.
 
@@ -1026,8 +1019,7 @@ class Network(tvbo_datamodel.Network):
             return
 
         def _is_unset(v: Any) -> bool:
-            # Treat only None or an empty container as "not set on this node".
-            # Use type/len checks (not `v in (None, [], {}, ())`), which would raise on array-valued fields and mis-handle scalars like 0/False.
+            # Treat only None or an empty container as "not set on this node". Use type/len checks (not `v in (None, [], {}, ())`), which would raise on array-valued fields and mis-handle scalars like 0/False.
             if v is None:
                 return True
             if isinstance(v, (list, tuple, dict)) and len(v) == 0:
@@ -1099,8 +1091,7 @@ class Network(tvbo_datamodel.Network):
         if path is None:
             return None
 
-        # from_file → load_network already resolves the network on construction;
-        # the explicit _resolve() is a harmless idempotent guard.
+        # from_file → load_network already resolves the network on construction; the explicit _resolve() is a harmless idempotent guard.
         net = cls.from_file(path)
         net._resolve()
         vals = []
@@ -1139,9 +1130,7 @@ class Network(tvbo_datamodel.Network):
         """Store `val` as the `global_coupling_strength` entry in the parameters dict."""
         self.parameters["global_coupling_strength"] = val
 
-    # -- Serialization: hide internal cached arrays from LinkML dumpers --
-    # JsonObj._items() controls what yaml_dumper / json_dumper / as_dict see.
-    # Without this, _cached_weights (numpy arrays) leak into yaml.SafeDumper.
+    # -- Serialization: hide internal cached arrays from LinkML dumpers -- JsonObj._items() controls what yaml_dumper / json_dumper / as_dict see. Without this, _cached_weights (numpy arrays) leak into yaml.SafeDumper.
     _INTERNAL_ATTRS = frozenset(
         {
             "_cached_weights",
@@ -1579,8 +1568,7 @@ class Network(tvbo_datamodel.Network):
                         labels = df["label"].tolist()
                         self.nodes = [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
 
-                # Record the parcellation atlas. BIDS connectomes carry no parcellation, so get_atlas() would default to "wholebrain";
-                # naming the atlas lets get_centers() resolve region centres from the atlas's entities (matched to node labels).
+                # Record the parcellation atlas. BIDS connectomes carry no parcellation, so get_atlas() would default to "wholebrain"; naming the atlas lets get_centers() resolve region centres from the atlas's entities (matched to node labels).
                 if atlas and getattr(self, "parcellation", None) is None:
                     parc = tvbo_datamodel.Parcellation(
                         label=atlas,
@@ -2182,6 +2170,15 @@ class Network(tvbo_datamodel.Network):
         """Flatten into JAX pytree children `(weights, lengths)` plus metadata aux data.
 
         Metadata is stored without the array data to avoid duplicating the leaves.
+
+        Four groups of slots are held out of that metadata, by the same private-attr rule ``Network._items()`` applies, so there is one source of truth for what is internal and never serialised:
+
+        - ``weight`` / ``length`` — the matrices themselves, already carried in `children`.
+        - ``edges`` — hold ``Parameter`` objects whose string form is not deterministic,
+          and whose weight/length content is likewise already in `children`.
+        - ``parcellation`` / ``data_file`` / ``bids_dir`` — loading specs; keeping them
+          would make ``tree_unflatten`` re-resolve from disk, and fail.
+        - the cache attributes, which are derived state.
         """
         # Convert metadata to a JSON string for stable equality in JAX
         import json as _json
@@ -2249,13 +2246,6 @@ class Network(tvbo_datamodel.Network):
         # as_dict can return various dict-like structures
         if not isinstance(meta_dict, dict):
             meta_dict = dict(meta_dict) if hasattr(meta_dict, "__iter__") else {}
-        # Remove weights, lengths, parcellation, edges, and cache attributes from metadata Parcellation is excluded to prevent reloading data during unflatten Edges are excluded because they contain Parameter objects with non-deterministic string serialization, and the weight/length info is already in the children arrays Exclude (a) any private attribute and (b) the array/loading slots whose data already rides in `children` or would trigger a reload on unflatten.
-        # The private-attr rule is the SAME one Network._items() applies — the single source of truth for "internal, never-serialized" state — so a new cache added there is dropped here too, with no parallel list to keep in sync. (`meta_dict` comes from as_dict() -> _items(), so private attrs are already gone; the guard documents and enforces the invariant.)
-        #   - weight/length: the matrices, captured in `children`.
-        #   - edges: contain Parameter objects with non-deterministic string
-        #     serialization; weight/length info is already in `children`.
-        #   - parcellation/data_file/bids_dir: loading specs; including them makes
-        #     tree_unflatten re-resolve from disk (and fail).
         _ARRAY_OR_LOADING_SLOTS = (
             "weight",
             "length",
@@ -2295,9 +2285,7 @@ class Network(tvbo_datamodel.Network):
         # Reconstruct from metadata dict (which doesn't include weights/lengths/parcellation)
         meta_dict = _json.loads(meta_json)
 
-        # Don't try to reconstruct Matrix objects from the arrays here because during JAX tracing, we can't convert tracers to Python lists.
-        # Instead, we'll create a minimal object and rely on _pytree_data for array access.
-        # The weights_matrix and lengths_matrix properties will use _pytree_data if available.
+        # Don't try to reconstruct Matrix objects from the arrays here because during JAX tracing, we can't convert tracers to Python lists. Instead, we'll create a minimal object and rely on _pytree_data for array access. The weights_matrix and lengths_matrix properties will use _pytree_data if available.
 
         obj = cls(**meta_dict)
 
@@ -2837,8 +2825,7 @@ class Network(tvbo_datamodel.Network):
                     G.add_edge(edge.target, edge.source, **edge_attrs)
 
         else:
-            # No explicit edges - generate from stored matrices.
-            # Build edges from the union of all stored matrices, attaching each matrix's values as named edge attributes.
+            # No explicit edges - generate from stored matrices. Build edges from the union of all stored matrices, attaching each matrix's values as named edge attributes.
             from scipy import sparse as _sp
 
             arrays = self._get_arrays()
