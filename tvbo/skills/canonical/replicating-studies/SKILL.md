@@ -78,6 +78,11 @@ subagent doing that phase alone.
    grep the prose for numeric literals and classify each as yours (compute it into `M`) or the
    paper's (quote it). A report can read as fully computed and still hide a typed peak or step
    size (see **writing-reports**).
+   The same rule governs **equations**, and here it is not asymmetric: an equation is in the
+   report because the code runs it, and it gets there by being rendered from the recipe. Never
+   typed — not even the paper's own, which is how Pang2023 came to set a PDF of a PDE above a
+   section explaining that TVBO does not integrate that PDE. Guard it in the harness with
+   `report.unrendered_equations("report.qmd")`.
 3. **A panel shows TVBO output or an honest placeholder — NEVER the paper's replotted
    source data.** Replotting the source arrays is a dev check that plotting *works*; it is
    never a deliverable panel (it passes off the paper's own numbers as your reproduction).

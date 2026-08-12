@@ -360,3 +360,32 @@ def test_a_computed_caption_becomes_a_crossreferenceable_float():
     out = crossref_div("tbl-x", "| A |\n|---|\n| 1 |", "Caption with 4 items.")
     assert out.startswith("::: {#tbl-x}") and out.rstrip().endswith(":::")
     assert out.index("| A |") < out.index("Caption with 4 items.")
+
+
+def test_the_integration_time_unit_comes_from_whichever_slot_declared_it():
+    """`Integrator` carries `unit` AND `time_scale`, and the schema defaults `time_scale`.
+
+    Reading `unit` alone made every recipe that omits it fall back to seconds: a 0.5 ms
+    step over 800 ms reported as 0.5 s over 800 s. Same 1000x error as the hardcoded
+    `ms` it replaced, with the affected recipes swapped.
+    """
+    from tvbo import SimulationExperiment
+    from tvbo.utils import report
+
+    exp = SimulationExperiment.from_db("Delay_Speed_Synchronization")
+    assert getattr(exp.integration, "unit", None) is None, "fixture must exercise the time_scale fallback"
+    sentence = report.settings_sentence(exp)
+    assert "0.5 ms" in sentence and "800 ms" in sentence, sentence
+
+
+def test_a_swept_axis_reaches_the_report():
+    """`sweep_axes` read `parameters` (the exploration's own hyper-parameters) and iterated
+    the `explorations` mapping's keys, so it returned {} for every curated recipe and no
+    report ever showed a swept range."""
+    from tvbo import SimulationExperiment
+    from tvbo.utils import report
+
+    exp = SimulationExperiment.from_db("Delay_Speed_Synchronization")
+    axes = report.sweep_axes(exp)
+    assert "network.conduction_speed" in axes, axes
+    assert "n=50" in axes["network.conduction_speed"]
