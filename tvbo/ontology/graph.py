@@ -181,7 +181,11 @@ def onto2graph(
                     if not hasattr(o, "storid") or not hasattr(o, "name") or o.name == "Thing":
                         continue
                     target_id = o.storid if storid else (o if not object2string else (o.label.first() or str(o)))
-                    property_id = prop.storid if storid else (prop if not object2string else (prop.label.first() if prop.label else prop.name))
+                    property_id = (
+                        prop.storid
+                        if storid
+                        else (prop if not object2string else (prop.label.first() if prop.label else prop.name))
+                    )
                     if not edge_exists(nx_graph, individual_id, target_id, edge_type=prop):
                         nx_graph.add_edge(individual_id, target_id, type=property_id)
 

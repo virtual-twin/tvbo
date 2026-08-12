@@ -59,7 +59,6 @@ from __future__ import annotations
 import io
 import os
 import warnings
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, Type
 
@@ -132,8 +131,7 @@ def _compose_include_merges(loader: yaml.Loader, node: yaml.MappingNode) -> None
         if key_node.tag != _MERGE_TAG:
             continue
         if isinstance(value_node, yaml.SequenceNode):
-            value_node.value = [_compose_included(loader, s) if s.tag == _INCLUDE_TAG else s
-                                for s in value_node.value]
+            value_node.value = [_compose_included(loader, s) if s.tag == _INCLUDE_TAG else s for s in value_node.value]
         elif value_node.tag == _INCLUDE_TAG:
             node.value[entry] = (key_node, _compose_included(loader, value_node))
 
@@ -150,7 +148,8 @@ def _compose_included(loader: yaml.Loader, node: yaml.ScalarNode) -> yaml.Node:
         composed = yaml.compose(fh, _make_loader_class(path.parent))
     if not isinstance(composed, yaml.MappingNode):
         raise yaml.constructor.ConstructorError(
-            None, None,
+            None,
+            None,
             f"a merged !include must hold a mapping, but {path} holds {composed.id}",
             node.start_mark,
         )
@@ -175,9 +174,7 @@ def _make_include_constructor(base_dir: Path):
         if isinstance(node, yaml.ScalarNode):
             rel = loader.construct_scalar(node)
         else:
-            raise yaml.constructor.ConstructorError(
-                None, None, "!include expects a scalar (a file path)", node.start_mark
-            )
+            raise yaml.constructor.ConstructorError(None, None, "!include expects a scalar (a file path)", node.start_mark)
         path = _include_path(rel, base_dir)
         # Fresh loader instance for the included document so anchors are
         # file-local (no name capture from or into the parent document).
@@ -263,8 +260,7 @@ def resolve_edge_var_aliases(edges: Any) -> None:
                 continue
             if canonical in edge:
                 warnings.warn(
-                    f"Edge has both '{alias}' and its canonical alias target "
-                    f"'{canonical}'; ignoring '{alias}'.",
+                    f"Edge has both '{alias}' and its canonical alias target '{canonical}'; ignoring '{alias}'.",
                     stacklevel=2,
                 )
                 edge.pop(alias)
@@ -338,8 +334,7 @@ def _fold_one_state_variable_domain(sv: dict) -> None:
             sv["domain"] = sv.pop("range")
         else:
             warnings.warn(
-                "State variable has both 'range' and its canonical alias 'domain'; "
-                "ignoring 'range'.",
+                "State variable has both 'range' and its canonical alias 'domain'; ignoring 'range'.",
                 stacklevel=2,
             )
             sv.pop("range")
@@ -366,11 +361,7 @@ def _fold_state_variable_domains(obj: Any) -> Any:
     """
     if isinstance(obj, dict):
         svs = obj.get("state_variables")
-        sv_iter = (
-            svs.values() if isinstance(svs, dict)
-            else svs if isinstance(svs, list)
-            else []
-        )
+        sv_iter = svs.values() if isinstance(svs, dict) else svs if isinstance(svs, list) else []
         for sv in sv_iter:
             if isinstance(sv, dict):
                 _fold_one_state_variable_domain(sv)

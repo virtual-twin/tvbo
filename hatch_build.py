@@ -16,6 +16,7 @@ This single file is used two ways so from-source and build-time codegen are byte
 Determinism: the Python generator emits a ``# Generation date:`` header line — we strip
 it so the generated modules are byte-reproducible across builds.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -58,9 +59,7 @@ def generate_datamodel(root: str | Path) -> None:
     js = json.loads(JsonSchemaGenerator(str(schema)).serialize())
     _relax_additional_properties(js)
     _drop_redundant_anyof_type(js)
-    (out_dir / "tvbo_datamodel.schema.json").write_text(
-        json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    (out_dir / "tvbo_datamodel.schema.json").write_text(json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 # `boundaries` also implies `enforce: clamp`; yaml_loader._fold_state_variable_domains owns it.
@@ -251,11 +250,7 @@ def _drop_redundant_anyof_type(node) -> None:
 
 
 def _write(target: Path, code: str) -> None:
-    body = "".join(
-        line
-        for line in code.splitlines(keepends=True)
-        if not line.startswith(_NONDETERMINISTIC_PREFIX)
-    )
+    body = "".join(line for line in code.splitlines(keepends=True) if not line.startswith(_NONDETERMINISTIC_PREFIX))
     target.write_text(body, encoding="utf-8")
 
 

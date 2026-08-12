@@ -80,7 +80,8 @@ tvbo install auto7p --build                    # build from source, then link
 Verify the engine is reachable:
 
 ```python
-import pycobi, auto   # both import cleanly once AUTO-07p is linked
+import pycobi, auto  # both import cleanly once AUTO-07p is linked
+
 print("AUTO-07p continuation ready")
 ```
 
@@ -136,5 +137,6 @@ Test your installation:
 
 ```python
 from tvbo import Dynamics
+
 print("TVBO successfully installed!")
 ```

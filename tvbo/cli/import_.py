@@ -1,4 +1,5 @@
 """``tvbo import`` — load a foreign file via the registry's importer dispatch."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -11,11 +12,11 @@ from . import _common
 
 def import_(
     path: Path = typer.Argument(..., exists=True, readable=True, help="Input file."),
-    format: str = typer.Option(
-        None, "--format", help="Force a format key (otherwise inferred from extension)."
-    ),
+    format: str = typer.Option(None, "--format", help="Force a format key (otherwise inferred from extension)."),
     output: Path = typer.Option(
-        None, "-o", "--output",
+        None,
+        "-o",
+        "--output",
         help="If given, save the loaded object as YAML to this path.",
     ),
 ) -> None:

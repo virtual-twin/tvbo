@@ -8,6 +8,7 @@ the workspace's ``.claude/skills`` load, so the user's globally installed TVBO
 skills never leak into the ``control`` condition. Auth and model selection are
 unaffected by ``--setting-sources``.
 """
+
 from __future__ import annotations
 
 import json
@@ -39,9 +40,13 @@ class ClaudeCodeHarness(Harness):
         # `tvbo skills install --scope project` writes to <cwd>/.claude/skills.
         subprocess.run(
             [
-                "tvbo", "skills", "install",
-                "--target", "claude-code",
-                "--scope", "project",
+                "tvbo",
+                "skills",
+                "install",
+                "--target",
+                "claude-code",
+                "--scope",
+                "project",
                 "--force",
             ],
             cwd=str(workdir),
@@ -63,13 +68,20 @@ class ClaudeCodeHarness(Harness):
         env: dict[str, str],
     ) -> RunResult:
         cmd = [
-            self.claude_bin, "-p", task.prompt,
-            "--output-format", "stream-json",
+            self.claude_bin,
+            "-p",
+            task.prompt,
+            "--output-format",
+            "stream-json",
             "--verbose",
-            "--permission-mode", "bypassPermissions",
-            "--max-turns", str(max_turns),
-            "--setting-sources", "project",
-            "--add-dir", str(workdir),
+            "--permission-mode",
+            "bypassPermissions",
+            "--max-turns",
+            str(max_turns),
+            "--setting-sources",
+            "project",
+            "--add-dir",
+            str(workdir),
         ]
         if model:
             cmd += ["--model", model]
@@ -91,8 +103,7 @@ class ClaudeCodeHarness(Harness):
         except subprocess.TimeoutExpired as exc:
             wall = time.time() - t0
             transcript.write_text(exc.stdout or "", encoding="utf-8")
-            return RunResult(0, 0, 0, wall, None, subtype="timeout",
-                             error=f"agent timed out after {timeout:.0f}s")
+            return RunResult(0, 0, 0, wall, None, subtype="timeout", error=f"agent timed out after {timeout:.0f}s")
         wall = time.time() - t0
         transcript.write_text(stdout, encoding="utf-8")
 

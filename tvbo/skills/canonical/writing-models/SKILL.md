@@ -22,8 +22,9 @@ match is one `from_db` call and is already unit-checked:
 
 ```python
 from tvbo import Dynamics
-Dynamics.list_db()                        # every curated model name
-dyn = Dynamics.from_db("JansenRit")       # load one
+
+Dynamics.list_db()  # every curated model name
+dyn = Dynamics.from_db("JansenRit")  # load one
 ```
 
 Only write a new `Dynamics` when the catalog has no match. See the

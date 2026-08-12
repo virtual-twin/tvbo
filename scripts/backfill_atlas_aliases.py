@@ -21,6 +21,7 @@ Atlases live under ``tvbo/database/atlases`` (resolved via ``ATLAS_DIR``).
 Usage:
     python scripts/backfill_atlas_aliases.py [--check] [--atlas NAME ...]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -55,8 +56,15 @@ def hemisphere(label: str) -> str | None:
 
 # ── per-atlas canonical -> empirical rules ────────────────────────────────────
 _HCPMMP1_SUBCORTICAL = {
-    "Cerebellum", "Thalamus", "Caudate", "Putamen", "Pallidum",
-    "Hippocampus", "Amygdala", "Accumbens", "VentralDC",
+    "Cerebellum",
+    "Thalamus",
+    "Caudate",
+    "Putamen",
+    "Pallidum",
+    "Hippocampus",
+    "Amygdala",
+    "Accumbens",
+    "VentralDC",
 }
 _HCPMMP1_EMPIRICAL_STEM = {"VentralDC": "DIENCEPHALON_VENTRAL"}
 
@@ -76,9 +84,15 @@ def hcpmmp1_rule(canon: str) -> str:
 
 # DesikanKilliany canonical subcortical stem -> empirical stem.
 _DK_SUBCORTICAL_STEM = {
-    "cerebellum-cortex": "CEREBELLUM", "thalamus": "THALAMUS", "caudate": "CAUDATE",
-    "putamen": "PUTAMEN", "pallidum": "PALLIDUM", "hippocampus": "HIPPOCAMPUS",
-    "amygdala": "AMYGDALA", "accumbens-area": "ACCUMBENS", "ventraldc": "DIENCEPHALON_VENTRAL",
+    "cerebellum-cortex": "CEREBELLUM",
+    "thalamus": "THALAMUS",
+    "caudate": "CAUDATE",
+    "putamen": "PUTAMEN",
+    "pallidum": "PALLIDUM",
+    "hippocampus": "HIPPOCAMPUS",
+    "amygdala": "AMYGDALA",
+    "accumbens-area": "ACCUMBENS",
+    "ventraldc": "DIENCEPHALON_VENTRAL",
 }
 
 
@@ -87,12 +101,12 @@ def desikankilliany_rule(canon: str) -> str:
     if canon == "brain-stem":
         return "BRAIN_STEM"
     if canon.startswith("ctx-lh-"):
-        return f"L_{canon[len('ctx-lh-'):]}"
+        return f"L_{canon[len('ctx-lh-') :]}"
     if canon.startswith("ctx-rh-"):
-        return f"R_{canon[len('ctx-rh-'):]}"
+        return f"R_{canon[len('ctx-rh-') :]}"
     for prefix, side in (("left-", "LEFT"), ("right-", "RIGHT")):
         if canon.startswith(prefix):
-            stem = canon[len(prefix):]
+            stem = canon[len(prefix) :]
             if stem not in _DK_SUBCORTICAL_STEM:
                 raise ValueError(f"Unknown DK subcortical stem: {stem!r} (in {canon!r})")
             return f"{_DK_SUBCORTICAL_STEM[stem]}_{side}"
@@ -160,8 +174,7 @@ def process_atlas(name: str, spec: dict, check: bool) -> int:
             return 2
         print(f"[{name}] bijection OK: {len(empirical)}/{len(empirical)} vs empirical sidecar")
     else:
-        print(f"[{name}] NOTE: no empirical sidecar reachable; wrote rule-derived aliases "
-              f"without a data cross-check")
+        print(f"[{name}] NOTE: no empirical sidecar reachable; wrote rule-derived aliases without a data cross-check")
 
     # One pass over the entities: append the empirical alias to each entity's
     # alternateName (keep existing, dedup), flag which entities drift, and check global
@@ -178,8 +191,10 @@ def process_atlas(name: str, spec: dict, check: bool) -> int:
         for alias in merged:
             prev = final_index.get(alias)
             if prev is not None and prev != c:
-                print(f"FAIL[{name}]: alias {alias!r} maps to both {prev!r} and {c!r} "
-                      f"(pre-existing crosswalk collision)", file=sys.stderr)
+                print(
+                    f"FAIL[{name}]: alias {alias!r} maps to both {prev!r} and {c!r} (pre-existing crosswalk collision)",
+                    file=sys.stderr,
+                )
                 return 2
             final_index[alias] = c
 
@@ -188,8 +203,7 @@ def process_atlas(name: str, spec: dict, check: bool) -> int:
         print(f"[{name}] up to date: all {len(canon_labels)} entities carry their empirical alias")
         return 0
     if check:
-        print(f"[{name}] DRIFT: {len(drift)} entities need the empirical alias "
-              f"(e.g. {drift[:3]})", file=sys.stderr)
+        print(f"[{name}] DRIFT: {len(drift)} entities need the empirical alias (e.g. {drift[:3]})", file=sys.stderr)
         return 1
     for c in drift:
         entities[c]["alternateName"] = merged_by_c[c]
@@ -202,8 +216,7 @@ def process_atlas(name: str, spec: dict, check: bool) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true", help="verify only; do not write")
-    ap.add_argument("--atlas", nargs="*", default=list(ATLASES),
-                    help=f"atlases to process (default: all of {list(ATLASES)})")
+    ap.add_argument("--atlas", nargs="*", default=list(ATLASES), help=f"atlases to process (default: all of {list(ATLASES)})")
     args = ap.parse_args()
     rc = 0
     for name in args.atlas:

@@ -10,6 +10,7 @@ to prevent for every other external array.
 provenance triple, and it is resolved into the per-node weighting at load time — the codegen
 downstream still sees the plain array it already consumed.
 """
+
 from __future__ import annotations
 
 import sys
@@ -138,12 +139,7 @@ def test_weighting_length_must_match_the_targeted_nodes(tmp_path, producer_modul
 
 
 def test_parameter_without_any_value_is_refused(tmp_path):
-    block = (
-        "weight_parameter:\n"
-        "  name: v1_weighting\n"
-        "  description: 'declares nothing'\n"
-        "nodes: [0, 1, 2]\n"
-    )
+    block = "weight_parameter:\n  name: v1_weighting\n  description: 'declares nothing'\nnodes: [0, 1, 2]\n"
     with pytest.raises(ValueError, match="no `value`, `source` or `producer`"):
         _experiment(tmp_path, block)
 
@@ -157,12 +153,7 @@ def test_a_literal_weighting_still_wins(tmp_path, producer_module):
 
 def test_a_literal_value_on_the_parameter_also_resolves(tmp_path):
     """`value:` is the degenerate case of the same slot — no provenance, but no special path."""
-    block = (
-        "weight_parameter:\n"
-        "  name: v1_weighting\n"
-        "  value: [0.1, 0.2, 0.3]\n"
-        "nodes: [0, 1, 2]\n"
-    )
+    block = "weight_parameter:\n  name: v1_weighting\n  value: [0.1, 0.2, 0.3]\nnodes: [0, 1, 2]\n"
     np.testing.assert_allclose(_event(_experiment(tmp_path, block)).weights, [0.1, 0.2, 0.3])
 
 

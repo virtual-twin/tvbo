@@ -27,7 +27,9 @@ def _reservoir_network(n=30, seed=5, **params):
     return Network(
         number_of_nodes=n,
         graph_generator={
-            "name": "reservoir", "type": "RandomReservoir", "seed": seed,
+            "name": "reservoir",
+            "type": "RandomReservoir",
+            "seed": seed,
             "parameters": {k: {"name": k, "value": v} for k, v in values.items()},
         },
     )
@@ -36,8 +38,7 @@ def _reservoir_network(n=30, seed=5, **params):
 @pytest.fixture
 def bound_source(monkeypatch):
     """Bind WeightShuffle's source matrix directly, so the null model needs no I/O."""
-    for module in ("tvbo.graph_generators.load_matrix",
-                   "tvbo.graph_generators.catalog.load_matrix"):
+    for module in ("tvbo.graph_generators.load_matrix", "tvbo.graph_generators.catalog.load_matrix"):
         monkeypatch.setattr(module, lambda _source: SOURCE, raising=True)
 
 
@@ -59,8 +60,7 @@ def test_shipped_yaml_reproduces_the_pre_migration_engine(seed, n, sparsity, rad
     tighter than any real stream-scheme change but looser than a ULP.
     """
     expected = np.load(_GOLDEN)[f"{seed}_{n}_{sparsity}_{radius}"]
-    got = random_reservoir(n_nodes=n, sparsity=sparsity,
-                           spectral_radius=radius, seed=seed)["weights"]
+    got = random_reservoir(n_nodes=n, sparsity=sparsity, spectral_radius=radius, seed=seed)["weights"]
     np.testing.assert_array_equal(got != 0, expected != 0)  # topology: exact
     np.testing.assert_allclose(got, expected, rtol=1e-9, atol=0)  # weights: LAPACK-ULP tolerant
 
@@ -80,20 +80,32 @@ def test_size_comes_from_the_network_not_the_generator():
 def test_a_generator_without_a_node_count_is_rejected():
     """Size has one source. Guessing it would silently build the wrong-sized network."""
     with pytest.raises(ValueError, match="number_of_nodes"):
-        Network(graph_generator={"name": "reservoir", "type": "RandomReservoir",
-                                 "parameters": {"sparsity": {"name": "sparsity", "value": 0.2},
-                                                "spectral_radius": {"name": "spectral_radius",
-                                                                    "value": 0.9}}})
+        Network(
+            graph_generator={
+                "name": "reservoir",
+                "type": "RandomReservoir",
+                "parameters": {
+                    "sparsity": {"name": "sparsity", "value": 0.2},
+                    "spectral_radius": {"name": "spectral_radius", "value": 0.9},
+                },
+            }
+        )
 
 
 def test_a_zero_node_count_is_rejected_with_the_same_clear_message():
     """`is None` would let 0 through to fail deep inside a step on an empty matrix."""
     with pytest.raises(ValueError, match="positive count"):
-        Network(number_of_nodes=0,
-                graph_generator={"name": "reservoir", "type": "RandomReservoir",
-                                 "parameters": {"sparsity": {"name": "sparsity", "value": 0.2},
-                                                "spectral_radius": {"name": "spectral_radius",
-                                                                    "value": 0.9}}})
+        Network(
+            number_of_nodes=0,
+            graph_generator={
+                "name": "reservoir",
+                "type": "RandomReservoir",
+                "parameters": {
+                    "sparsity": {"name": "sparsity", "value": 0.2},
+                    "spectral_radius": {"name": "spectral_radius", "value": 0.9},
+                },
+            },
+        )
 
 
 def test_a_builder_is_not_handed_defaults_its_signature_cannot_accept(monkeypatch):
@@ -109,7 +121,7 @@ def test_a_builder_is_not_handed_defaults_its_signature_cannot_accept(monkeypatc
     seen = {}
     module = types.ModuleType("_tvbo_test_builder")
 
-    def build(source, seed=None):          # deliberately has no `preserve`
+    def build(source, seed=None):  # deliberately has no `preserve`
         seen["source"] = source
         return {"weights": SOURCE}
 
@@ -118,9 +130,13 @@ def test_a_builder_is_not_handed_defaults_its_signature_cannot_accept(monkeypatc
 
     net = Network(
         number_of_nodes=3,
-        graph_generator={"name": "null", "type": "WeightShuffle", "seed": 2,
-                         "builder": {"name": "build", "module": "_tvbo_test_builder"},
-                         "parameters": {"source": {"name": "source", "value": "x://y"}}},
+        graph_generator={
+            "name": "null",
+            "type": "WeightShuffle",
+            "seed": 2,
+            "builder": {"name": "build", "module": "_tvbo_test_builder"},
+            "parameters": {"source": {"name": "source", "value": "x://y"}},
+        },
     )
     assert seen["source"] == "x://y"
     np.testing.assert_array_equal(np.asarray(net.weights), SOURCE)
@@ -130,9 +146,11 @@ def test_weight_distribution_overrides_the_declared_default():
     """The parameter is the generator's one configurable family; it must reach the draw."""
     default = random_reservoir(n_nodes=40, sparsity=0.9, spectral_radius=1.0, seed=3)["weights"]
     uniform = random_reservoir(
-        n_nodes=40, sparsity=0.9, spectral_radius=1.0, seed=3,
-        weight_distribution={"name": "Uniform",
-                             "parameters": {"lo": {"value": -1.0}, "hi": {"value": 1.0}}},
+        n_nodes=40,
+        sparsity=0.9,
+        spectral_radius=1.0,
+        seed=3,
+        weight_distribution={"name": "Uniform", "parameters": {"lo": {"value": -1.0}, "hi": {"value": 1.0}}},
     )["weights"]
     assert not np.array_equal(default, uniform)
 
@@ -146,9 +164,11 @@ def test_overriding_the_weights_leaves_the_sparsity_pattern_untouched():
     """
     default = random_reservoir(n_nodes=40, sparsity=0.9, spectral_radius=1.0, seed=3)["weights"]
     uniform = random_reservoir(
-        n_nodes=40, sparsity=0.9, spectral_radius=1.0, seed=3,
-        weight_distribution={"name": "Uniform",
-                             "parameters": {"lo": {"value": -1.0}, "hi": {"value": 1.0}}},
+        n_nodes=40,
+        sparsity=0.9,
+        spectral_radius=1.0,
+        seed=3,
+        weight_distribution={"name": "Uniform", "parameters": {"lo": {"value": -1.0}, "hi": {"value": 1.0}}},
     )["weights"]
     np.testing.assert_array_equal(default != 0, uniform != 0)
 
@@ -170,21 +190,25 @@ def test_weight_shuffle_resolves_through_its_python_binding(bound_source):
     """The escape hatch is reached by the standard `bindings.python` slot, not a special case."""
     net = Network(
         number_of_nodes=3,
-        graph_generator={"name": "null", "type": "WeightShuffle", "seed": 7,
-                         "parameters": {"source": {"name": "source",
-                                                   "value": "irrelevant://source"}}},
+        graph_generator={
+            "name": "null",
+            "type": "WeightShuffle",
+            "seed": 7,
+            "parameters": {"source": {"name": "source", "value": "irrelevant://source"}},
+        },
     )
-    np.testing.assert_array_equal(
-        np.asarray(net.weights), weight_shuffle("irrelevant://source", seed=7)["weights"]
-    )
+    np.testing.assert_array_equal(np.asarray(net.weights), weight_shuffle("irrelevant://source", seed=7)["weights"])
 
 
 def test_weight_shuffle_through_a_network_preserves_the_null_model(bound_source):
     net = Network(
         number_of_nodes=3,
-        graph_generator={"name": "null", "type": "WeightShuffle", "seed": 7,
-                         "parameters": {"source": {"name": "source",
-                                                   "value": "irrelevant://source"}}},
+        graph_generator={
+            "name": "null",
+            "type": "WeightShuffle",
+            "seed": 7,
+            "parameters": {"source": {"name": "source", "value": "irrelevant://source"}},
+        },
     )
     W = np.asarray(net.weights)
     np.testing.assert_array_equal(W != 0, SOURCE != 0)
@@ -200,9 +224,12 @@ def test_the_declared_preserve_default_reaches_the_callable(bound_source):
     """
     net = Network(
         number_of_nodes=3,
-        graph_generator={"name": "null", "type": "WeightShuffle", "seed": 1,
-                         "parameters": {"source": {"name": "source",
-                                                   "value": "irrelevant://source"}}},
+        graph_generator={
+            "name": "null",
+            "type": "WeightShuffle",
+            "seed": 1,
+            "parameters": {"source": {"name": "source", "value": "irrelevant://source"}},
+        },
     )
     np.testing.assert_array_equal(
         np.asarray(net.weights),

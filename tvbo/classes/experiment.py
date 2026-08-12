@@ -13,12 +13,12 @@ simulator), configuring and resolving its coupling/delay metadata, rendering
 backend code, and running it on any of the supported backends (`tvb`,
 `tvboptim`, `jax`, `pde`, `cuda`, `python`).
 """
+
 import copy as _copy
 import logging
 import os
 import re
 from collections import Counter
-from os.path import join
 from pathlib import Path
 from typing import Any
 
@@ -80,9 +80,7 @@ def _strip_private_yaml_keys(text: str) -> str:
         if drop_indent is not None:
             stripped = line.strip()
             indent = len(line) - len(line.lstrip())
-            same_indent_seq_item = indent == drop_indent and (
-                stripped == "-" or stripped.startswith("- ")
-            )
+            same_indent_seq_item = indent == drop_indent and (stripped == "-" or stripped.startswith("- "))
             if stripped == "" or indent > drop_indent or same_indent_seq_item:
                 continue
             drop_indent = None
@@ -99,17 +97,25 @@ def _strip_private_yaml_keys(text: str) -> str:
 # is deliberately absent — it is the trailing filename component, not a key-value
 # entity, and is handled separately by its consumers.
 _BIDS_ENTITY_SHORT_KEYS = {
-    "template": "tpl", "cohort": "cohort", "reconstruction": "rec",
-    "segmentation": "seg", "scale": "scale", "atlas": "atlas",
-    "acquisition": "acq", "hemi": "hemi", "desc": "desc",
+    "template": "tpl",
+    "cohort": "cohort",
+    "reconstruction": "rec",
+    "segmentation": "seg",
+    "scale": "scale",
+    "atlas": "atlas",
+    "acquisition": "acq",
+    "hemi": "hemi",
+    "desc": "desc",
 }
 
 
 def _bids_entities_to_short_dict(obj) -> dict:
     """Convert a ``BidsEntities`` object to ``{short_key: value}`` for the set entities."""
-    return {short: str(getattr(obj, attr))
-            for attr, short in _BIDS_ENTITY_SHORT_KEYS.items()
-            if getattr(obj, attr, None) is not None}
+    return {
+        short: str(getattr(obj, attr))
+        for attr, short in _BIDS_ENTITY_SHORT_KEYS.items()
+        if getattr(obj, attr, None) is not None
+    }
 
 
 def _sync_network_node_count(net):
@@ -223,8 +229,7 @@ def _resolve_coupling(experiment):
         ]
         if cvars:
             for coup in (getattr(network, "coupling", None) or {}).values():
-                if (not getattr(coup, "incoming_states", None)
-                        and not getattr(coup, "local_states", None)):
+                if not getattr(coup, "incoming_states", None) and not getattr(coup, "local_states", None):
                     coup.incoming_states = list(cvars)
 
 
@@ -466,6 +471,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         evts = getattr(self, "events", None)
         if evts and hasattr(evts, "items"):
             from tvbo.classes.event import Event as _EventCls
+
             for val in evts.values():
                 if val is not None and not isinstance(val, _EventCls):
                     val.__class__ = _EventCls
@@ -476,6 +482,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         obss = getattr(self, "observations", None)
         if obss and hasattr(obss, "values"):
             from tvbo.classes.observation import populate_observation_from_iri
+
             # A curated model may ship the helper functions its pipeline calls; collect
             # them into a fresh sink so an experiment with no iri-referenced model keeps
             # its functions table untouched (reassigning it re-wraps the type downstream).
@@ -1157,9 +1164,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # Compare shapes
             if ts_rerun.shape != timeseries.shape:
-                logger.warning(
-                    "Shape mismatch! Loaded: %s, Rerun: %s", timeseries.shape, ts_rerun.shape
-                )
+                logger.warning("Shape mismatch! Loaded: %s, Rerun: %s", timeseries.shape, ts_rerun.shape)
             else:
                 # Compare data
                 max_diff = np.max(np.abs(np.asarray(ts_rerun.data) - np.asarray(timeseries.data)))
@@ -1167,8 +1172,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     logger.info("Verification passed! Max difference: %.2e", max_diff)
                 else:
                     logger.warning(
-                        "Data differs. Max difference: %.2e "
-                        "(may be expected if noise was used or parameters differ).",
+                        "Data differs. Max difference: %.2e (may be expected if noise was used or parameters differ).",
                         max_diff,
                     )
 
@@ -1450,7 +1454,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     filepath=filepath,
                 )
         else:
-            import re
             from pathlib import Path as _Path
             from tvbo.utils import to_yaml as _to_yaml
 
@@ -1865,7 +1868,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                         f"dims {tuple(da.dims)}. Only a single-axis branch can be restarted per cell."
                     )
                 sd = sweep[0]
-                da = da.transpose(sd, nd)                       # (n_cells, n_nodes), by name
+                da = da.transpose(sd, nd)  # (n_cells, n_nodes), by name
                 seeds[sv] = jnp.asarray(np.asarray(da.values))
                 if axis_values is None:
                     axis_name = str(sd)
@@ -1921,8 +1924,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         def _items(params):
             if params is None:
                 return []
-            return list(params.items()) if hasattr(params, "items") \
-                else [(getattr(p, "name", None), p) for p in params]
+            return list(params.items()) if hasattr(params, "items") else [(getattr(p, "name", None), p) for p in params]
 
         def _couplings(obj):
             if obj is None:
@@ -1974,7 +1976,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # 'branch' has no single point for a parameter value; settle to the endpoint.
         settle = -1 if point in ("", "endpoint", "branch") else int(point)
 
-        _recon: dict = {}   # network-invariant alias map + model labels, computed lazily
+        _recon: dict = {}  # network-invariant alias map + model labels, computed lazily
+
         def _recon_ctx():
             if not _recon:
                 _recon["amap"] = self.network.region_alias_map()
@@ -1996,9 +1999,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if kind != "used":
                 continue
             amap, labels = _recon_ctx() if _dref.reconcile_mode(spec) == "by_label" else (None, None)
-            da = _dref.resolve_dataref(spec, results_root=results_root,
-                                       fallback_experiment=fallback,
-                                       alias_map=amap, model_labels=labels)
+            da = _dref.resolve_dataref(
+                spec, results_root=results_root, fallback_experiment=fallback, alias_map=amap, model_labels=labels
+            )
             out[pname] = jnp.asarray(np.asarray(da.values))
 
         # Legacy ``measure:`` params all share the one from_experiment source — locate and
@@ -2014,7 +2017,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     da = ds[_dref.match_output(ds.data_vars, measure)]
                     node_dims = _node_dims(da)
                     for d in [d for d in da.dims if d not in node_dims]:
-                        da = da.isel({d: settle})     # settle swept dims to the operating point
+                        da = da.isel({d: settle})  # settle swept dims to the operating point
                     da = da.load()
                     if any(d in da.coords for d in node_dims):
                         amap, labels = _recon_ctx()
@@ -2054,8 +2057,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 args = getattr(builder, "arguments", None) if builder is not None else None
                 if not args:
                     continue
-                items = args.items() if hasattr(args, "items") \
-                    else [(getattr(a, "name", None), a) for a in args]
+                items = args.items() if hasattr(args, "items") else [(getattr(a, "name", None), a) for a in args]
                 for an, arg in items:
                     ref = getattr(arg, "used", None)
                     if ref is None:
@@ -2064,13 +2066,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     if _dref.reconcile_mode(ref) == "by_label":
                         amap = self.network.region_alias_map()
                         labels = self._resolve_model_node_labels()
-                    da = _dref.resolve_dataref(ref, results_root=results_root,
-                                               alias_map=amap, model_labels=labels)
+                    da = _dref.resolve_dataref(ref, results_root=results_root, alias_map=amap, model_labels=labels)
                     out[f"{getattr(axis, 'parameter', '')}::{an}"] = np.asarray(da.values)
         return out or None
 
-    def run(self, format=None, initial_conditions=None, results_root=None,
-            rendered_code=None, **kwargs):
+    def run(self, format=None, initial_conditions=None, results_root=None, rendered_code=None, **kwargs):
         """Configure, build, and run the experiment on a backend.
 
         Dispatches on `format` to the corresponding backend (`tvb`, `tvboptim`,
@@ -2227,7 +2227,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if _declared:
                     raise NotImplementedError(
                         "Heterogeneous tvboptim runs do not yet apply cross-experiment "
-                        "seeds, but this experiment declares: " + ", ".join(_declared)
+                        "seeds, but this experiment declares: "
+                        + ", ".join(_declared)
                         + ". Run the homogeneous tvboptim path, or remove the seed until "
                         "the HeterogeneousNetwork engine supports it."
                     )
@@ -2342,8 +2343,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 jax.config.update("jax_enable_x64", False)
                 state = state.convert_dtype(target_dtype=jnp.float32)
 
-            jax_model, _jax_ns = self.execute(format="jax", _return_namespace=True,
-                                              rendered_code=rendered_code, **kwargs)
+            jax_model, _jax_ns = self.execute(format="jax", _return_namespace=True, rendered_code=rendered_code, **kwargs)
             _run_fn = _jax_ns.get("run_experiment")
             if _run_fn is not None:
                 # Template builds ExperimentResult directly (mirrors tvboptim backend).
@@ -2656,9 +2656,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                         else:
                             values = [float(v) for v in jnp.linspace(lo, hi, 11)]
                 if not values:
-                    raise ValueError(
-                        f"Exploration {name!r} axis {parameter!r} needs explored_values or a domain (lo/hi)"
-                    )
+                    raise ValueError(f"Exploration {name!r} axis {parameter!r} needs explored_values or a domain (lo/hi)")
                 axis_values.append(values)
                 # Harmonized axis shape shared by every backend: Bunch(name,
                 # explored_values, n) — the coordinate source for ExplorationResult.as_grid().
@@ -2821,7 +2819,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         try:
             delays = self.network.calculate_delays()
         except ValueError:
-            return 0.0        # the network declares neither tract lengths nor edge delays
+            return 0.0  # the network declares neither tract lengths nor edge delays
         # Use nanmax to ignore NaN values for non-existent edges
         max_val = np.nanmax(delays)
         return float(max_val) if not np.isnan(max_val) else 0.0
@@ -3010,8 +3008,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ents, suffix = self._bids_query_dict(query)
         return self._find_subject_file_by_entities(root, subject, ents, suffix)
 
-    def _find_subject_file_by_entities(self, root: Path, subject: str,
-                                       ents: dict, suffix: str | None) -> Path:
+    def _find_subject_file_by_entities(self, root: Path, subject: str, ents: dict, suffix: str | None) -> Path:
         """Resolve the single per-subject file under *root* matching *ents* + *suffix*.
 
         The entity-level entry point behind :meth:`_find_subject_file`: callers that
@@ -3022,9 +3019,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         files = sorted((Path(root) / f"sub-{sub}").glob("*.yaml"))
         matches = [f for s, f in self._match_subject_files(files, ents, suffix) if s == sub]
         if not matches:
-            raise ValueError(
-                f"No file for sub-{sub} matching query {ents} suffix={suffix!r} under {root}."
-            )
+            raise ValueError(f"No file for sub-{sub} matching query {ents} suffix={suffix!r} under {root}.")
         if len(matches) > 1:
             raise ValueError(
                 f"Query {ents} suffix={suffix!r} is ambiguous for sub-{sub}: "
@@ -3120,10 +3115,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             target_net = Network.load(str(path))
             mat = np.asarray(target_net.matrix(measure))
             if mat.ndim != 2:
-                raise ValueError(
-                    f"Observation '{name}': measure '{measure}' is not a 2-D matrix "
-                    f"in {path.name}."
-                )
+                raise ValueError(f"Observation '{name}': measure '{measure}' is not a 2-D matrix in {path.name}.")
             tlabels = list(target_net.node_labels)
             if self._reconcile_mode(obs) == "by_label" and model_labels:
                 # Relabel the target's node axes to the model's canonical labels by
@@ -3141,9 +3133,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 shared = [lbl for lbl in model_labels if lbl in tcanon_set]
                 coverage = len(shared) / len(model_labels) if model_labels else 0.0
                 logger.info(
-                    "reconcile[%s] sub-%s: %d/%d model nodes matched (coverage %.3f) "
-                    "against %s",
-                    name, active_subject, len(shared), len(model_labels), coverage,
+                    "reconcile[%s] sub-%s: %d/%d model nodes matched (coverage %.3f) against %s",
+                    name,
+                    active_subject,
+                    len(shared),
+                    len(model_labels),
+                    coverage,
                     path.name,
                 )
                 if not shared:
@@ -3162,13 +3157,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                         f"Set observation.min_coverage to accept a partial subset."
                     )
                 da = xr.DataArray(
-                    mat, dims=("node_i", "node_j"),
+                    mat,
+                    dims=("node_i", "node_j"),
                     coords={"node_i": tcanon, "node_j": tcanon},
                 )
                 da = da.sel(node_i=shared, node_j=shared)
             else:
                 da = xr.DataArray(
-                    mat, dims=("node_i", "node_j"),
+                    mat,
+                    dims=("node_i", "node_j"),
                     coords={"node_i": tlabels, "node_j": tlabels},
                 )
             resolved[name] = da
@@ -3215,10 +3212,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return {}, []
         per_subject = [self.resolve_dataset_observations(s) for s in subjects]
         names = list(per_subject[0].keys())
-        batched = {
-            name: np.stack([np.asarray(ps[name].values) for ps in per_subject], axis=0)
-            for name in names
-        }
+        batched = {name: np.stack([np.asarray(ps[name].values) for ps in per_subject], axis=0) for name in names}
         return batched, list(subjects)
 
     def dataset_reconcile_index(self, shared_labels: list, model_labels: list = None) -> np.ndarray:
@@ -3279,9 +3273,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return []
         subs = getattr(ds, "subjects", None)
         if subs:
-            ids = list(subs.keys()) if hasattr(subs, "keys") else [
-                getattr(x, "subject_id", x) for x in subs
-            ]
+            ids = list(subs.keys()) if hasattr(subs, "keys") else [getattr(x, "subject_id", x) for x in subs]
             return [str(s).replace("sub-", "") for s in ids]
         targets = self.dataset_observation_targets
         root = getattr(ds, "bids_root", None)
@@ -3312,7 +3304,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             meta = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
         except Exception:
             return []
-        if not isinstance(meta, dict):   # a malformed (non-mapping) sidecar has no companions
+        if not isinstance(meta, dict):  # a malformed (non-mapping) sidecar has no companions
             return []
         refs: list = []
         for key in ("data_file", "nodes", "edges"):
@@ -3390,8 +3382,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         dynamics = getattr(self, "dynamics", None)
         if not events or dynamics is None:
             return
-        names = (list(events.keys()) if hasattr(events, "keys")
-                 else [getattr(e, "name", None) for e in events])
+        names = list(events.keys()) if hasattr(events, "keys") else [getattr(e, "name", None) for e in events]
         is_mapping = isinstance(dynamics, dict)
         existing = dynamics.get("events") if is_mapping else getattr(dynamics, "events", None)
         if existing:
@@ -3432,11 +3423,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return
         from tvbo.graph_generators.procedural import draw
 
-        n_nodes = (
-            getattr(self.network, "number_of_nodes", None)
-            or getattr(self.network, "number_of_regions", None)
-            or 1
-        )
+        n_nodes = getattr(self.network, "number_of_nodes", None) or getattr(self.network, "number_of_regions", None) or 1
         labels = {}
         try:
             for i, node in enumerate(getattr(self.network, "nodes", None) or []):
@@ -3506,9 +3493,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     # The sampler names a graph-generator step, which says nothing about
                     # which stimulus is unresolvable. Fail — dropping the weighting
                     # silently is the bug this replaced — but name the event and field.
-                    raise ValueError(
-                        f"event {_key!r}: `weight_distribution` cannot be sampled: {exc}"
-                    ) from exc
+                    raise ValueError(f"event {_key!r}: `weight_distribution` cannot be sampled: {exc}") from exc
                 weighting = [float(x) for x in samples]
                 if not regions:
                     regions = list(range(int(n_nodes)))
@@ -3522,7 +3507,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             eq_params = getattr(eq, "parameters", None) if eq is not None else None
             if eq_params:
                 merged = dict(getattr(ev, "parameters", None) or {})
-                for pk, pv in (eq_params.items() if hasattr(eq_params, "items") else []):
+                for pk, pv in eq_params.items() if hasattr(eq_params, "items") else []:
                     merged.setdefault(pk, pv)
                 ev.parameters = merged
 
@@ -3670,11 +3655,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
         _ci = getattr(self.dynamics, "coupling_inputs", {}) or {}
         coupling_out_name = next(
-            (
-                str(name)
-                for name, ci in _ci.items()
-                if str(name) != "local_coupling" and not getattr(ci, "local", False)
-            ),
+            (str(name) for name, ci in _ci.items() if str(name) != "local_coupling" and not getattr(ci, "local", False)),
             "c_pop0",
         )
         coupling_ct.add(lems.DerivedParameter(name=coupling_out_name, value="post"))
@@ -3730,6 +3711,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # lowers coupling + stimulus events; idempotent).
         self.configure()
         from tvbo import export as _export
+
         return _export.render(self, format, **kwargs)
 
     def render(self, format="yaml", **kwargs) -> str:
@@ -3752,12 +3734,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         str
         """
         from tvbo import export as _export
+
         return _export.render(self, format, **kwargs)
 
     @classmethod
     def supported_export_formats(cls) -> list[dict]:
         """Return metadata for API/UI export format dropdowns."""
         from tvbo import export as _export
+
         return _export.list_format_dicts()
 
     def save(
@@ -3791,11 +3775,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Infer format from suffix if not provided
         if format is None:
             suffix_to_key = {
-                ".yaml": "yaml", ".yml": "yaml",
-                ".jsonld": "openminds", ".json": "openminds",
-                ".nml": "neuroml", ".xml": "lems",
-                ".py": "tvb", ".jl": "julia",
-                ".md": "markdown", ".pdf": "pdf",
+                ".yaml": "yaml",
+                ".yml": "yaml",
+                ".jsonld": "openminds",
+                ".json": "openminds",
+                ".nml": "neuroml",
+                ".xml": "lems",
+                ".py": "tvb",
+                ".jl": "julia",
+                ".md": "markdown",
+                ".pdf": "pdf",
             }
             format = suffix_to_key.get(path.suffix.lower(), "yaml")
 
@@ -3841,6 +3830,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         if file_name is not None:
             from pathlib import Path as _Path
+
             return self.save(_Path(dir) / file_name, format="tvb")
         return self.save(dir, format="tvb")
 
@@ -3918,9 +3908,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError("format must be one of: markdown, pdf")
 
         md_template = templates.lookup.get_template(f"report/{template_name}.md.mako")
-        md_render = md_template.render(experiment=self,
-                                       derivative_notation=derivative_notation,
-                                       mul_symbol=mul_symbol)
+        md_render = md_template.render(experiment=self, derivative_notation=derivative_notation, mul_symbol=mul_symbol)
 
         render = md_render
 

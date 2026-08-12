@@ -6,6 +6,7 @@ mesh load, medial-wall masking and symmetric colour limits, re-derived per study
 to get the limits subtly wrong. The kind is built in and its geometry comes from the network,
 which is where a mesh belongs.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -35,9 +36,11 @@ class _Panel:
 def mesh_npz(tmp_path):
     """A two-triangle mesh: four vertices is enough to check every branch."""
     path = tmp_path / "mesh.npz"
-    np.savez(path,
-             vertices=np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.], [1., 1., 0.]]),
-             faces=np.array([[0, 1, 2], [1, 3, 2]]))
+    np.savez(
+        path,
+        vertices=np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]]),
+        faces=np.array([[0, 1, 2], [1, 3, 2]]),
+    )
     return path
 
 
@@ -63,8 +66,7 @@ def stub_load_layer(monkeypatch):
 
     from tvbo.adapters import bsplot as adapter
 
-    monkeypatch.setattr(adapter, "load_layer",
-                        lambda layer: xr.DataArray(layer["values"], dims=["vertex"]))
+    monkeypatch.setattr(adapter, "load_layer", lambda layer: xr.DataArray(layer["values"], dims=["vertex"]))
 
 
 def test_registered_as_a_builtin_so_no_code_modules_are_needed():
@@ -98,22 +100,19 @@ def test_colour_limits_are_symmetric_by_default(tmp_path, mesh_npz, drawn):
 
 
 def test_explicit_limits_override_the_symmetric_default(tmp_path, mesh_npz, drawn):
-    surface_panel(None, _Ax(),
-                  _ctx(tmp_path, [1.0, -2.0, 0.5, 0.0], mesh=str(mesh_npz), vmin=0.0, vmax=1.0))
+    surface_panel(None, _Ax(), _ctx(tmp_path, [1.0, -2.0, 0.5, 0.0], mesh=str(mesh_npz), vmin=0.0, vmax=1.0))
     assert (drawn[0]["vmin"], drawn[0]["vmax"]) == (0.0, 1.0)
 
 
 def test_percentile_clips_a_single_outlier(tmp_path, mesh_npz, drawn):
-    surface_panel(None, _Ax(),
-                  _ctx(tmp_path, [1.0, 1.0, 1.0, 50.0], mesh=str(mesh_npz), percentile=75))
+    surface_panel(None, _Ax(), _ctx(tmp_path, [1.0, 1.0, 1.0, 50.0], mesh=str(mesh_npz), percentile=75))
     assert drawn[0]["vmax"] < 50.0
 
 
 def test_a_mask_greys_the_wall_and_leaves_it_out_of_the_range(tmp_path, mesh_npz, drawn):
     """A medial wall must not be coloured as a zero, nor set the colour range."""
     (tmp_path / "mask.txt").write_text("1\n1\n1\n0\n")
-    surface_panel(None, _Ax(),
-                  _ctx(tmp_path, [1.0, -0.5, 0.5, 99.0], mesh=str(mesh_npz), mask="mask.txt"))
+    surface_panel(None, _Ax(), _ctx(tmp_path, [1.0, -0.5, 0.5, 99.0], mesh=str(mesh_npz), mask="mask.txt"))
     kw = drawn[0]
     assert bool(kw["mask"][3]) and not bool(kw["mask"][0])
     assert np.isnan(kw["overlay"][3])
@@ -128,10 +127,9 @@ def test_a_length_mismatch_names_the_two_counts(tmp_path, mesh_npz):
 def test_a_mask_of_the_wrong_length_is_refused(tmp_path, mesh_npz):
     """A mask sidecar for the wrong parcellation/hemisphere must fail with the two counts,
     not a cryptic broadcast error from `np.where`."""
-    (tmp_path / "mask3.txt").write_text("1\n1\n0\n")   # 3 rows for a 4-vertex mesh
+    (tmp_path / "mask3.txt").write_text("1\n1\n0\n")  # 3 rows for a 4-vertex mesh
     with pytest.raises(ValueError, match="per-vertex 0/1 mask needs"):
-        surface_panel(None, _Ax(),
-                      _ctx(tmp_path, [1.0, 2.0, 3.0, 4.0], mesh=str(mesh_npz), mask="mask3.txt"))
+        surface_panel(None, _Ax(), _ctx(tmp_path, [1.0, 2.0, 3.0, 4.0], mesh=str(mesh_npz), mask="mask3.txt"))
 
 
 def test_an_out_of_range_vertex_index_names_the_mismatch():
@@ -161,8 +159,7 @@ def test_a_network_without_a_mesh_says_so(tmp_path, monkeypatch):
     """The common miss: a network built from edges alone has no geometry to paint on."""
     import tvbo.classes.network as network_mod
 
-    monkeypatch.setattr(network_mod.Network, "from_file",
-                        classmethod(lambda cls, path, **kw: object()))
+    monkeypatch.setattr(network_mod.Network, "from_file", classmethod(lambda cls, path, **kw: object()))
     (tmp_path / "net.yaml").write_text("name: n\n")
     with pytest.raises(ValueError, match="carries no mesh"):
         surface_panel(None, _Ax(), _ctx(tmp_path, [1.0], network="net.yaml"))
@@ -188,6 +185,5 @@ class _Ax:
 
 def test_the_frame_is_turned_off(tmp_path, mesh_npz, drawn):
     ax = _Ax()
-    surface_panel(None, ax, _ctx(tmp_path, [1.0, 1.0, 1.0, 1.0], mesh=str(mesh_npz),
-                                 title="V1"))
+    surface_panel(None, ax, _ctx(tmp_path, [1.0, 1.0, 1.0, 1.0], mesh=str(mesh_npz), title="V1"))
     assert ax.aspect == "equal" and ax.axis_state == "off" and ax.title == "V1"

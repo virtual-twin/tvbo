@@ -55,6 +55,7 @@ def result_entities(experiment, extension: str = ".h5") -> dict:
     filenames stay compact. Returns a dict ready for
     :func:`bids.layout.writing.build_path` with ``RESULT_PATTERNS``.
     """
+
     def _alnum(s):
         return "".join(c for c in str(s) if c.isalnum())
 

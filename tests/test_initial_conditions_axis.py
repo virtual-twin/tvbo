@@ -29,11 +29,11 @@ def test_resolves_state_variable(ref, sv):
 @pytest.mark.parametrize(
     "ref",
     [
-        "ReducedWongWang.a",       # dynamics-scoped
-        "FastLinearCoupling.G",    # coupling-scoped
+        "ReducedWongWang.a",  # dynamics-scoped
+        "FastLinearCoupling.G",  # coupling-scoped
         "network.conduction_speed",  # network-scoped
-        "execution.random_seed",   # seed-scoped
-        "E",                       # bare name is not scoped
+        "execution.random_seed",  # seed-scoped
+        "E",  # bare name is not scoped
         "",
         None,
         3.0,
@@ -169,9 +169,7 @@ def test_sweep_yields_distinct_per_cell_trajectories(tmp_path):
     """
     import numpy as np
 
-    spec = _SPEC.replace(
-        "        # AXIS\n", "        explored_values: [0.0, 0.5, 1.0]\n"
-    )
+    spec = _SPEC.replace("        # AXIS\n", "        explored_values: [0.0, 0.5, 1.0]\n")
     p = tmp_path / "spec.yaml"
     p.write_text(spec)
     exp = SimulationExperiment.from_file(str(p))
@@ -185,9 +183,7 @@ def test_sweep_yields_distinct_per_cell_trajectories(tmp_path):
 
     grid = expl.as_grid()  # keyed DataArray: (initial_conditions.theta, time, node)
     assert "initial_conditions.theta" in grid.dims
-    np.testing.assert_allclose(
-        np.asarray(grid.coords["initial_conditions.theta"]), [0.0, 0.5, 1.0]
-    )
+    np.testing.assert_allclose(np.asarray(grid.coords["initial_conditions.theta"]), [0.0, 0.5, 1.0])
 
     cells = np.asarray(grid.transpose("initial_conditions.theta", ...))
     flat = cells.reshape(cells.shape[0], -1)

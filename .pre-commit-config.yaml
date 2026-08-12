@@ -1,17 +1,27 @@
-# Pre-commit hooks for TVBO.
-#
-# Closes plan.md row 1 / §11.1 item 2: every commit that touches a YAML file in
-# `tvbo/database/` (or the LinkML schema) re-runs `tests/test_database_validation.py`
-# to catch schema-violating database entries before they land. Mirrors the
-# `database-validation` job in `.github/workflows/ci.yml` so local commits and
-# CI agree.
-#
-# Install once with: `pre-commit install`
-# Run manually with: `pre-commit run --all-files`
+# Install once with `pre-commit install`; run over everything with `pre-commit run --all-files`.
 
 repos:
   - repo: local
     hooks:
+      - id: ruff-check
+        name: ruff (lint)
+        entry: ruff check --force-exclude
+        language: system
+        types: [python]
+        require_serial: false
+
+      - id: ruff-format
+        name: ruff (format)
+        entry: ruff format --force-exclude
+        language: system
+        types: [python]
+
+      - id: check-prose
+        name: Comment and docstring prose (no formatter fixes these)
+        entry: python scripts/check_prose.py
+        language: system
+        types: [python]
+
       - id: database-validation
         name: Validate tvbo/database/*.yaml against LinkML schema
         entry: pytest tests/test_database_validation.py -q --no-header

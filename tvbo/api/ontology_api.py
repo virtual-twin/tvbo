@@ -499,6 +499,7 @@ class OntologyAPI:
     def get_export_formats(self) -> list:
         """Return supported export format descriptors for UI dropdowns."""
         from tvbo import export as _export
+
         return _export.list_format_dicts()
 
     def export_experiment(
@@ -522,9 +523,7 @@ class OntologyAPI:
         out_dir = Path(directory)
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        saved_path = self.experiment.save(
-            out_dir, format=fmt.key, metadata_only=metadata_only, **kwargs
-        )
+        saved_path = self.experiment.save(out_dir, format=fmt.key, metadata_only=metadata_only, **kwargs)
         files = [saved_path]
 
         # Network HDF5 sidecar (if save() wrote one)

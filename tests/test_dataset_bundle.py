@@ -4,6 +4,7 @@ exact BIDS variant, and rewrites ``dataset.bids_root`` to a relative path that r
 against the frozen spec (like a network ``data_file``) — so the kit ships the data its
 fan-out consumes and nothing else, with no separate upload or ``$TVBO_BIDS_ROOT``.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -24,9 +25,7 @@ def _write_subject(root: Path, subject: str, atlas: str) -> Path:
     (subdir / f"{stem}.h5").write_bytes(b"\x89HDF\r\n\x1a\n" + atlas.encode())  # payload marker
     sidecar = subdir / f"{stem}.yaml"
     sidecar.write_text(
-        f"label: HCPYA FC | sub-{subject} | atlas {atlas}\n"
-        f"number_of_nodes: 3\n"
-        f"data_file: {stem}.h5\n",
+        f"label: HCPYA FC | sub-{subject} | atlas {atlas}\nnumber_of_nodes: 3\ndata_file: {stem}.h5\n",
         encoding="utf-8",
     )
     return sidecar
@@ -37,9 +36,16 @@ def _stub(dataset, observations, source_file=None):
     the shipping code paths without constructing a full SimulationExperiment."""
     stub = SimpleNamespace(dataset=dataset, observations=observations, _source_file=source_file)
     stub.dataset_observation_targets = _SE.dataset_observation_targets.fget(stub)
-    for name in ("_dataset_bids_root", "dataset_subject_ids", "dataset_bundle_files",
-                 "_find_subject_file", "_find_subject_file_by_entities",
-                 "_bids_query_dict", "_match_subject_files", "_sidecar_companions"):
+    for name in (
+        "_dataset_bids_root",
+        "dataset_subject_ids",
+        "dataset_bundle_files",
+        "_find_subject_file",
+        "_find_subject_file_by_entities",
+        "_bids_query_dict",
+        "_match_subject_files",
+        "_sidecar_companions",
+    ):
         setattr(stub, name, _SE.__dict__[name].__get__(stub))
     return stub
 
@@ -57,7 +63,7 @@ def cohort(tmp_path: Path) -> Path:
     root = tmp_path / "functional_connectomes"
     for subj in ("100206", "100307"):
         _write_subject(root, subj, "HCPMMP1")
-        _write_subject(root, subj, "Schaefer400")   # the "much more" that must NOT be bundled
+        _write_subject(root, subj, "Schaefer400")  # the "much more" that must NOT be bundled
     return root
 
 
@@ -94,7 +100,7 @@ def test_bundle_dataset_copies_and_returns_relative_root(cohort: Path, tmp_path:
     dest = tmp_path / "kit" / "spec" / "dataset"
     root = _wf._bundle_dataset(exp, dest, {})
 
-    assert root == "dataset"                       # relative root recorded in the frozen spec
+    assert root == "dataset"  # relative root recorded in the frozen spec
     copied = sorted(p.name for p in dest.rglob("*") if p.is_file())
     assert (dest / "sub-100206").is_dir() and (dest / "sub-100307").is_dir()
     assert all("Schaefer" not in n for n in copied)
@@ -117,7 +123,7 @@ def test_relative_bids_root_rebases_to_spec_dir(tmp_path: Path):
 def test_no_dataset_target_bundles_nothing(tmp_path: Path, monkeypatch):
     warned: list[str] = []
     monkeypatch.setattr("tvbo.cli._common.warn", lambda m: warned.append(m))
-    exp = _stub(SimpleNamespace(bids_root=None, subjects=None), {})   # no dataset-sourced obs
+    exp = _stub(SimpleNamespace(bids_root=None, subjects=None), {})  # no dataset-sourced obs
     assert _wf._bundle_dataset(exp, tmp_path / "d", {}) is None
     assert warned and "no dataset-sourced target" in warned[0]
 
@@ -127,7 +133,7 @@ def test_missing_payload_raises_not_silently_dropped(tmp_path: Path):
     its matrix would only break at load time on a compute node."""
     root = tmp_path / "fc"
     sidecar = _write_subject(root, "100206", "HCPMMP1")
-    sidecar.with_suffix(".h5").unlink()          # payload gone; sidecar still references it
+    sidecar.with_suffix(".h5").unlink()  # payload gone; sidecar still references it
     exp = _fc_experiment(root, subjects=["100206"])
     with pytest.raises(FileNotFoundError):
         exp.dataset_bundle_files()
@@ -141,8 +147,7 @@ def test_directory_payload_is_copied_as_tree(tmp_path: Path):
     zarr = subdir / f"{stem}.zarr"
     (zarr / "0").mkdir(parents=True)
     (zarr / "0" / ".zarray").write_text("{}", encoding="utf-8")
-    (subdir / f"{stem}.yaml").write_text(
-        f"label: z\nnumber_of_nodes: 3\ndata_file: {stem}.zarr\n", encoding="utf-8")
+    (subdir / f"{stem}.yaml").write_text(f"label: z\nnumber_of_nodes: 3\ndata_file: {stem}.zarr\n", encoding="utf-8")
 
     exp = _fc_experiment(root, subjects=["100206"])
     dest = tmp_path / "kit" / "spec" / "dataset"

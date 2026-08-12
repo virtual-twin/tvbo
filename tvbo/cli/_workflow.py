@@ -13,6 +13,7 @@ so the same ``study.yaml`` produces a *different* DAG when re-rendered
 against a different backend — exactly as §4.10.1 of ``dev/tvbo-cli.md``
 requires.
 """
+
 from __future__ import annotations
 
 import os
@@ -37,6 +38,7 @@ def _default_container_tag() -> str:
     """Tag matching the running CLI, so a kit pulls the image built from its source.
     Overridable with ``TVBO_CONTAINER_TAG``."""
     from tvbo import __version__
+
     return os.environ.get("TVBO_CONTAINER_TAG") or __version__
 
 
@@ -81,7 +83,7 @@ def resolve_container_ref(raw: Any) -> str | None:
     if val.startswith("docker://"):
         # A tag or digest lives in the final path segment; its absence means the
         # reference names an image stream without pinning a version.
-        last = val[len("docker://"):].rsplit("/", 1)[-1]
+        last = val[len("docker://") :].rsplit("/", 1)[-1]
         if ":" not in last and "@" not in last:
             return f"{val}:{_default_container_tag()}"
     return val
@@ -91,13 +93,15 @@ def resolve_container_ref(raw: Any) -> str | None:
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class SweepAxis:
     """One sweep dimension extracted from an Exploration."""
-    name: str               # short identifier used as wildcard (e.g. ``G``)
-    parameter: str          # dotted path (e.g. ``ReducedWongWang.G``)
+
+    name: str  # short identifier used as wildcard (e.g. ``G``)
+    parameter: str  # dotted path (e.g. ``ReducedWongWang.G``)
     values: tuple[float, ...]
-    kind: str               # AXIS_KIND (parameters | initial_conditions | ...)
+    kind: str  # AXIS_KIND (parameters | initial_conditions | ...)
     placement: str = "auto"  # auto | vectorize | workflow
     # A branch-restart axis (initial_state source_point='branch') whose cell count is
     # known only at run time, from the source run's recorded branch. It fans into a
@@ -113,11 +117,12 @@ class SweepAxis:
 @dataclass
 class WorkflowPlan:
     """Result of planning. Drives all emitters."""
+
     study_key: str
     experiment_key: str
     backend: BackendSpec
-    engine: str                       # local | slurm | snakemake | nextflow
-    out_dir: str                      # template; may contain ``{wildcard}``
+    engine: str  # local | slurm | snakemake | nextflow
+    out_dir: str  # template; may contain ``{wildcard}``
     container: str | None
     container_binds: list[str]
     container_args: str | None
@@ -127,18 +132,26 @@ class WorkflowPlan:
 
     vectorize_axes: list[SweepAxis] = field(default_factory=list)
     workflow_axes: list[SweepAxis] = field(default_factory=list)
-    cohort_subjects: list[str] = field(default_factory=list)  # on_device: the whole cohort runs as ONE job producing these per-subject results
-    cohort_result_files: list[str] = field(default_factory=list)  # canonical per-subject result filenames (build_result_path), one per cohort_subjects entry
+    cohort_subjects: list[str] = field(
+        default_factory=list
+    )  # on_device: the whole cohort runs as ONE job producing these per-subject results
+    cohort_result_files: list[str] = field(
+        default_factory=list
+    )  # canonical per-subject result filenames (build_result_path), one per cohort_subjects entry
 
-    chunk: int = 1                    # workflow-fanned: cells per array task;
-                                      # fully-vectorized sweep: number of array shards
+    chunk: int = 1  # workflow-fanned: cells per array task;
+    # fully-vectorized sweep: number of array shards
     engine_block: dict[str, Any] = field(default_factory=dict)
     overrides: list[dict[str, Any]] = field(default_factory=list)
     requirements: list[dict[str, Any]] = field(default_factory=list)  # normalized pip/conda deps
-    source_spec: str = ""             # SPEC arg for `tvbo run` (recipe path / CURIE / DB name)
+    source_spec: str = ""  # SPEC arg for `tvbo run` (recipe path / CURIE / DB name)
     experiment_selector: str | None = None  # --experiment value picking this experiment in a study
-    workflow_spec: dict[str, Any] = field(default_factory=dict)  # effective merged workflow config (study < experiment < --set)
-    depends_on: list[str] = field(default_factory=list)  # experiment keys whose result seeds this run (initial_state.from_experiment)
+    workflow_spec: dict[str, Any] = field(
+        default_factory=dict
+    )  # effective merged workflow config (study < experiment < --set)
+    depends_on: list[str] = field(
+        default_factory=list
+    )  # experiment keys whose result seeds this run (initial_state.from_experiment)
 
     @property
     def container_exec_flags(self) -> str:
@@ -205,7 +218,8 @@ class WorkflowPlan:
         for r in self.requirements:
             url = r.get("source_url") or r.get("url")
             if url:
-                out.append(str(url)); continue
+                out.append(str(url))
+                continue
             pkg = r.get("package") or r.get("name")
             if pkg:
                 out.append(f"{pkg}{r.get('version_spec') or ''}")
@@ -258,6 +272,7 @@ class WorkflowPlan:
             yield {}
             return
         from itertools import product
+
         names = [ax.name for ax in self.workflow_axes]
         for combo in product(*(ax.values for ax in self.workflow_axes)):
             yield dict(zip(names, combo))
@@ -266,6 +281,7 @@ class WorkflowPlan:
 # ---------------------------------------------------------------------------
 # Sweep extraction
 # ---------------------------------------------------------------------------
+
 
 def _axis_values(ax) -> tuple[float, ...]:
     """Materialise an ExplorationAxis into a tuple of values."""
@@ -308,9 +324,11 @@ def extract_axes(experiment) -> list[SweepAxis]:
     # recorded branch: its exploration axes carry no domain (values come from the branch at
     # run time), so they are runtime-sized shard axes rather than statically-valued grids.
     _ini = getattr(experiment, "initial_state", None)
-    _is_branch = (_ini is not None
-                  and str(getattr(_ini, "method", "") or "") == "from_experiment"
-                  and str(getattr(_ini, "source_point", "") or "endpoint") == "branch")
+    _is_branch = (
+        _ini is not None
+        and str(getattr(_ini, "method", "") or "") == "from_experiment"
+        and str(getattr(_ini, "source_point", "") or "endpoint") == "branch"
+    )
 
     out: list[SweepAxis] = []
     seen: set[str] = set()
@@ -327,15 +345,16 @@ def extract_axes(experiment) -> list[SweepAxis]:
                 uniq = f"{name}{i}"
                 i += 1
             seen.add(uniq)
-            _branch_axis = (_is_branch and getattr(ax, "domain", None) is None
-                            and not getattr(ax, "explored_values", None))
-            out.append(SweepAxis(
-                name=uniq,
-                parameter=param,
-                values=() if _branch_axis else _axis_values(ax),
-                kind=axis_kind_of(param),
-                runtime_sized=_branch_axis,
-            ))
+            _branch_axis = _is_branch and getattr(ax, "domain", None) is None and not getattr(ax, "explored_values", None)
+            out.append(
+                SweepAxis(
+                    name=uniq,
+                    parameter=param,
+                    values=() if _branch_axis else _axis_values(ax),
+                    kind=axis_kind_of(param),
+                    runtime_sized=_branch_axis,
+                )
+            )
     return out
 
 
@@ -369,6 +388,7 @@ def _dataset_subject_axis(experiment) -> "SweepAxis | None":
 # Planner
 # ---------------------------------------------------------------------------
 
+
 def _norm_requirement(item) -> dict[str, Any]:
     """Normalize a dep (``'libigl>=2.5'`` string, a dict, or a SoftwareRequirement
     object) into ``{package, version_spec, source_url}`` for the env-file emitters."""
@@ -378,9 +398,11 @@ def _norm_requirement(item) -> dict[str, Any]:
         m = re.match(r"^\s*([A-Za-z0-9_.\-]+)\s*(.*)$", item)
         return {"package": m.group(1), "version_spec": (m.group(2).strip() or None)} if m else {}
     get = item.get if isinstance(item, dict) else (lambda k, d=None: getattr(item, k, d))
-    return {"package": get("package") or get("name"),
-            "version_spec": get("version_spec"),
-            "source_url": get("source_url") or get("url")}
+    return {
+        "package": get("package") or get("name"),
+        "version_spec": get("version_spec"),
+        "source_url": get("source_url") or get("url"),
+    }
 
 
 def _normalize_env(raw) -> list[dict[str, str]]:
@@ -454,9 +476,11 @@ def _normalize_directives(raw) -> list[dict[str, str]]:
     directive tokens (e.g. a Slurm ``#SBATCH --<name>=<value>`` line), not shell
     words, so they are emitted verbatim rather than shell-quoted.
     """
-    src = raw.items() if isinstance(raw, dict) else (
-        ((i.get("name"), i.get("value")) for i in raw if isinstance(i, dict))
-        if isinstance(raw, (list, tuple)) else ())
+    src = (
+        raw.items()
+        if isinstance(raw, dict)
+        else (((i.get("name"), i.get("value")) for i in raw if isinstance(i, dict)) if isinstance(raw, (list, tuple)) else ())
+    )
     out: list[dict[str, str]] = []
     for name, value in src:
         if name is None:
@@ -486,7 +510,7 @@ def _as_lines(raw) -> list[str]:
 #: is handed back to it as a bare number in the same unit — so a decimal
 #: conversion would reserve ~2.4% less than the recipe asked for and OOM-kill a
 #: task sized to its own declared limit.
-_MEM_UNIT_MIB = {"K": 1 / 1024, "M": 1, "G": 1024, "T": 1024 ** 2, "P": 1024 ** 3}
+_MEM_UNIT_MIB = {"K": 1 / 1024, "M": 1, "G": 1024, "T": 1024**2, "P": 1024**3}
 
 
 def mem_mb(mem) -> int | None:
@@ -528,13 +552,13 @@ def runtime_minutes(t) -> int | None:
     try:
         days = int(day_part) if sep else 0
         parts = [int(x) for x in (clock if sep else s).split(":")]
-        if sep:                          # days-hours[:minutes[:seconds]]
+        if sep:  # days-hours[:minutes[:seconds]]
             hours, minutes, seconds = (parts + [0, 0])[:3]
-        elif len(parts) == 3:            # hours:minutes:seconds
+        elif len(parts) == 3:  # hours:minutes:seconds
             hours, minutes, seconds = parts
-        elif len(parts) == 2:            # minutes:seconds
+        elif len(parts) == 2:  # minutes:seconds
             hours, minutes, seconds = 0, parts[0], parts[1]
-        else:                            # bare minutes
+        else:  # bare minutes
             hours, minutes, seconds = 0, parts[0], 0
         return days * 1440 + hours * 60 + minutes + (1 if seconds else 0)
     except (ValueError, IndexError):
@@ -608,8 +632,7 @@ def fan_expand_kwargs(ep: dict) -> str:
     so any rule in the same Snakefile (including an ``include:``-d figure rule) can reference
     them to expand a fanned experiment's whole grid of cells.
     """
-    return ", ".join("%s=%s" % (a["name"], ep["rule_name"].upper() + "_" + a["name"].upper())
-                     for a in ep["axes"])
+    return ", ".join("%s=%s" % (a["name"], ep["rule_name"].upper() + "_" + a["name"].upper()) for a in ep["axes"])
 
 
 def fan_input_expr(ep: dict) -> str:
@@ -687,9 +710,7 @@ def plan(
         forced_vec = ax.parameter in explicit_vec or ax.name in explicit_vec
         forced_wf = ax.parameter in explicit_wf or ax.name in explicit_wf
         if forced_vec and forced_wf:
-            raise ValueError(
-                f"Axis {ax.parameter!r} is in both distribute.vectorize and distribute.workflow."
-            )
+            raise ValueError(f"Axis {ax.parameter!r} is in both distribute.vectorize and distribute.workflow.")
         if forced_vec:
             if not bk.can_vectorize(ax.kind):
                 raise ValueError(
@@ -754,11 +775,8 @@ def plan(
     # Software dependencies come from the experiment's schema-native
     # environment.requirements (overridable via workflow_spec["requirements"]).
     _exp_env = getattr(experiment, "environment", None)
-    _req_raw = (spec.get("requirements")
-                or (getattr(_exp_env, "requirements", None) if _exp_env is not None else None)
-                or [])
-    _reqs = [r for r in (_norm_requirement(x) for x in _as_list(_req_raw))
-             if r.get("package") or r.get("source_url")]
+    _req_raw = spec.get("requirements") or (getattr(_exp_env, "requirements", None) if _exp_env is not None else None) or []
+    _reqs = [r for r in (_norm_requirement(x) for x in _as_list(_req_raw)) if r.get("package") or r.get("source_url")]
 
     from ._common import experiment_key as _experiment_key  # canonical (id-first) key
 
@@ -801,7 +819,7 @@ def plan(
             _src = getattr(_it, "source", None)
             if not _src:
                 continue
-            for _s in (_src if isinstance(_src, (list, tuple)) else [_src]):
+            for _s in _src if isinstance(_src, (list, tuple)) else [_src]:
                 _sn = _s if isinstance(_s, str) else (getattr(_s, "name", None) or str(_s))
                 _m = _exp_ref.search(str(_sn))
                 if _m and _m.group(1) != str(getattr(experiment, "id", "")) and _m.group(1) not in depends_on:
@@ -830,6 +848,7 @@ def plan(
             # yields None here, so it never registers a phantom edge on a non-existent
             # experiment (which would deadlock the DAG on a rule that is never emitted).
             from tvbo.data.dataref import experiment_id
+
             _id = experiment_id(getattr(ref, "iri", None))
         if _id and _id != str(getattr(experiment, "id", "")) and _id not in depends_on:
             depends_on.append(_id)
@@ -843,15 +862,19 @@ def plan(
         _record_used_param_deps(getattr(_dyn, "parameters", None))
     _record_used_param_deps(getattr(experiment, "parameters", None))
     _net = getattr(experiment, "network", None)
-    for _cpl in (list((getattr(_net, "coupling", None) or {}).values()) if hasattr(getattr(_net, "coupling", None), "values") else _as_list(getattr(_net, "coupling", None) or [])):
+    for _cpl in (
+        list((getattr(_net, "coupling", None) or {}).values())
+        if hasattr(getattr(_net, "coupling", None), "values")
+        else _as_list(getattr(_net, "coupling", None) or [])
+    ):
         _record_used_param_deps(getattr(_cpl, "parameters", None))
     # Exploration-builder arguments (ExplorationAxis.builder → Argument.used).
     _expls = getattr(experiment, "explorations", None)
-    for _expl in (list(_expls.values()) if hasattr(_expls, "values") else _as_list(_expls or [])):
+    for _expl in list(_expls.values()) if hasattr(_expls, "values") else _as_list(_expls or []):
         _space = getattr(_expl, "space", None)
-        for _axis in (list(_space.values()) if hasattr(_space, "values") else _as_list(_space or [])):
+        for _axis in list(_space.values()) if hasattr(_space, "values") else _as_list(_space or []):
             _bargs = getattr(getattr(_axis, "builder", None), "arguments", None)
-            for _barg in (list(_bargs.values()) if hasattr(_bargs, "values") else _as_list(_bargs or [])):
+            for _barg in list(_bargs.values()) if hasattr(_bargs, "values") else _as_list(_bargs or []):
                 _dep_from_used(getattr(_barg, "used", None))
 
     # An explicit run venv wins over a declared container, with a notice.
@@ -859,6 +882,7 @@ def plan(
     _run_venv = str(engine_block.get("venv") or "").strip()
     if _container and _run_venv:
         from ._common import info as _info
+
         _info(f"slurm.venv set ({_run_venv}) → running in the venv; ignoring the declared container ({_container})")
         _container = None
 
@@ -902,8 +926,7 @@ def workflow_config_from_spec(spec: dict) -> Any:
     if not spec:
         return None
     wc = dm.WorkflowConfig()
-    for key in ("out_dir", "container", "container_binds", "container_args",
-                "retries", "rng", "emit_provenance", "chunk"):
+    for key in ("out_dir", "container", "container_binds", "container_args", "retries", "rng", "emit_provenance", "chunk"):
         if spec.get(key) is not None:
             setattr(wc, key, spec[key])
     dist = spec.get("distribute")
@@ -930,9 +953,21 @@ def _engine_config_from_dict(blk: dict) -> Any:
     from tvbo import datamodel as dm
 
     ec = dm.WorkflowEngineConfig()
-    for key in ("cpus_per_task", "mem", "time", "gres", "partition", "account",
-                "cores", "executor", "queue", "venv", "mail_type", "mail_user",
-                "array_chunk"):
+    for key in (
+        "cpus_per_task",
+        "mem",
+        "time",
+        "gres",
+        "partition",
+        "account",
+        "cores",
+        "executor",
+        "queue",
+        "venv",
+        "mail_type",
+        "mail_user",
+        "array_chunk",
+    ):
         if blk.get(key) is not None:
             setattr(ec, key, blk[key])
     if blk.get("modules"):
@@ -957,8 +992,8 @@ def merge_workflow_spec(study, experiment=None) -> dict[str, Any]:
     """
     base = _canonicalize_engine_maps(_as_plain_dict(getattr(study, "workflow", None)))
     override = _canonicalize_engine_maps(
-        _as_plain_dict(getattr(experiment, "workflow", None))
-        if experiment is not None else {})
+        _as_plain_dict(getattr(experiment, "workflow", None)) if experiment is not None else {}
+    )
     return _deep_merge(base, override)
 
 
@@ -998,8 +1033,7 @@ def _plainify(obj):
     if isinstance(obj, (list, tuple)):
         return [_plainify(v) for v in obj]
     if hasattr(obj, "__dict__"):
-        return {k: _plainify(v) for k, v in vars(obj).items()
-                if not k.startswith("_") and not _unset(v)}
+        return {k: _plainify(v) for k, v in vars(obj).items() if not k.startswith("_") and not _unset(v)}
     return obj
 
 

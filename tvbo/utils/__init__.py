@@ -164,7 +164,10 @@ def _fetch_git_code_source(url, ref=None):
     first-clone state** — pin a tag or commit for reproducibility, or delete the
     cache dir to re-fetch.
     """
-    import hashlib, os, shutil, subprocess
+    import hashlib
+    import os
+    import shutil
+    import subprocess
     from pathlib import Path
 
     key = hashlib.sha1(f"{url}@{ref or 'HEAD'}".encode(), usedforsecurity=False).hexdigest()[:16]
@@ -212,7 +215,7 @@ def as_list(obj) -> list:
         return list(obj.values())
     try:
         return list(obj)
-    except TypeError:      # a genuine scalar (int, float, LinkML leaf, …)
+    except TypeError:  # a genuine scalar (int, float, LinkML leaf, …)
         return [obj]
 
 
@@ -315,6 +318,7 @@ def noise_sigma(noise, **legacy):
 def sanitize_name(name) -> str:
     """Sanitise a name into a filesystem- and rule-safe token (keep alnum, ``_``, ``-``)."""
     import re
+
     return re.sub(r"[^0-9A-Za-z_-]+", "_", str(name))
 
 

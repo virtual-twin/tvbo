@@ -82,9 +82,7 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
         # empty this, dropping every experiment to the iri-unaware from_datamodel fallback.
         try:
             _raw = yaml_loader.load_as_dict(filepath) or {}
-            _raw_exps = {
-                e.get("id"): e for e in (_raw.get("experiments") or []) if isinstance(e, dict)
-            }
+            _raw_exps = {e.get("id"): e for e in (_raw.get("experiments") or []) if isinstance(e, dict)}
         except Exception:
             _raw_exps = {}
         # Store as a plain dict (bypass the JsonObj setattr that would wrap it).
@@ -222,15 +220,11 @@ class SimulationStudy(tvbo_datamodel.SimulationStudy):
                     if isinstance(raw, dict):
                         import yaml
 
-                        exp = experiment.SimulationExperiment.from_string(
-                            yaml.safe_dump(raw)
-                        )
+                        exp = experiment.SimulationExperiment.from_string(yaml.safe_dump(raw))
                     else:
                         from linkml_runtime.dumpers import yaml_dumper
 
-                        exp = experiment.SimulationExperiment.from_string(
-                            yaml_dumper.dumps(exp_dm)
-                        )
+                        exp = experiment.SimulationExperiment.from_string(yaml_dumper.dumps(exp_dm))
                     if source_file:
                         exp._source_file = source_file
                 finally:
@@ -328,12 +322,7 @@ class StudyCollection(SimulationStudy, tvbo_datamodel.StudyCollection):
         n_members = len(getattr(self, "members", None) or [])
         n_results = len(getattr(self, "results", None) or [])
         n_figures = len(getattr(self, "figures", None) or [])
-        return (
-            f"StudyCollection(\n"
-            f"  title={title!r},\n"
-            f"  members={n_members}, results={n_results}, figures={n_figures}\n"
-            f")"
-        )
+        return f"StudyCollection(\n  title={title!r},\n  members={n_members}, results={n_results}, figures={n_figures}\n)"
 
     def member_recipes(self, base=None, *, include_optional: bool = True) -> list[tuple[str, "Path"]]:
         """The member study recipes as ``(label, resolved_path)`` pairs.
@@ -344,7 +333,7 @@ class StudyCollection(SimulationStudy, tvbo_datamodel.StudyCollection):
         """
         base = Path(base) if base is not None else Path(getattr(self, "_source_file", ".")).resolve().parent
         out: list[tuple[str, Path]] = []
-        for m in (getattr(self, "members", None) or []):
+        for m in getattr(self, "members", None) or []:
             if getattr(m, "optional", None) and not include_optional:
                 continue
             recipe = str(getattr(m, "recipe", ""))

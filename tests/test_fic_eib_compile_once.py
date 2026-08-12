@@ -5,6 +5,7 @@ module-level ``_<algo>_tuning_core`` that XLA-compiles once across stages, with 
 per-stage-varying scalars (eta, resync period, ring window) threaded TRACED rather
 than baked — otherwise the scan recompiles once per stage (the 47-min compile).
 """
+
 import pytest
 
 from tvbo.classes.experiment import SimulationExperiment
@@ -18,10 +19,12 @@ def _multistage_experiment(n_iter=3):
     exp = SimulationExperiment.from_file(_EXP)
     fe, fic = exp.algorithms["fic_eib"], exp.algorithms["fic"]
     fe.stages = [
-        AlgorithmStage(n_iterations=n_iter, arguments=[
-            Parameter(name="eta", value=0.10), Parameter(name="window_size", value=4)]),
-        AlgorithmStage(n_iterations=n_iter, arguments=[
-            Parameter(name="eta", value=0.05), Parameter(name="window_size", value=8)]),
+        AlgorithmStage(
+            n_iterations=n_iter, arguments=[Parameter(name="eta", value=0.10), Parameter(name="window_size", value=4)]
+        ),
+        AlgorithmStage(
+            n_iterations=n_iter, arguments=[Parameter(name="eta", value=0.05), Parameter(name="window_size", value=8)]
+        ),
     ]
     fe.n_iterations = fic.n_iterations = n_iter
     return exp
@@ -34,27 +37,27 @@ def test_tuning_scan_hoisted_to_module_level_core():
     assert "_fic_eib_tuning_core = jax.jit(" in code
     assert "_ls_final, _ys_all = _fic_eib_tuning_core(" in code
 
-    run = code[code.index("def run_fic_eib("):code.index("def _fic_eib_tuning_core_impl(")]
+    run = code[code.index("def run_fic_eib(") : code.index("def _fic_eib_tuning_core_impl(")]
     assert "jax.lax.scan(_tuning_step" not in run, "run_<algo> must delegate the scan to the core"
 
 
 def test_core_threads_per_stage_scalars_traced():
     """Per-stage-varying scalars enter the core TRACED; model_fn is a STATIC arg."""
     code = _multistage_experiment().render_code("tvboptim")
-    sig = code[code.index("def _fic_eib_tuning_core_impl("):]
-    sig = sig[:sig.index("):")]
+    sig = code[code.index("def _fic_eib_tuning_core_impl(") :]
+    sig = sig[: sig.index("):")]
     for traced in ("eta", "_resync_period", "ws0", "use_ring"):
         assert traced in sig, f"core must take {traced} as an argument"
-    core = code[code.index("_fic_eib_tuning_core = jax.jit("):]
-    core = core[:core.index(")\n") + 1]
+    core = code[code.index("_fic_eib_tuning_core = jax.jit(") :]
+    core = core[: core.index(")\n") + 1]
     assert '"model_fn"' in core, "model_fn must be a STATIC arg for the jit cache to key stably"
 
 
 def test_eta_call_site_passes_variable_not_literal():
     """Bug 1 guard: the update call passes the `eta` variable, never a baked float."""
     code = _multistage_experiment().render_code("tvboptim")
-    call = code[code.index("new_wLRE = wLRE_update("):]
-    call = call[:call.index(")")]
+    call = code[code.index("new_wLRE = wLRE_update(") :]
+    call = call[: call.index(")")]
     assert "eta," in call and "0.1" not in call and "0.05" not in call
 
 

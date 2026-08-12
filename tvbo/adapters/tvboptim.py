@@ -340,10 +340,7 @@ def _target_input(target_var, dyn_optim, group_name):
         return inputs[0]
     if target_var in inputs:
         return target_var
-    raise ValueError(
-        f"target_var {target_var!r} is not a coupling input {inputs} on "
-        f"group {group_name!r}"
-    )
+    raise ValueError(f"target_var {target_var!r} is not a coupling input {inputs} on group {group_name!r}")
 
 
 def _resolve_coupling(network, edge):
@@ -356,9 +353,7 @@ def _resolve_coupling(network, edge):
     declares exactly one. Returns ``(None, None)`` when nothing is declared
     anywhere, i.e. the default linear route.
     """
-    declared = {
-        getattr(c, "name", None): c for c in as_list(getattr(network, "coupling", None))
-    }
+    declared = {getattr(c, "name", None): c for c in as_list(getattr(network, "coupling", None))}
     ref = getattr(edge, "coupling", None)
     if ref is None:
         return next(iter(declared.items())) if len(declared) == 1 else (None, None)
@@ -450,8 +445,7 @@ def to_heterogeneous_network(
         dname = node_dynamics_name(node, default_dynamics)
         if dname is None:
             raise ValueError(
-                f"node {i} ({getattr(node, 'label', '?')}) has no dynamics and the "
-                "experiment declares none to fall back on"
+                f"node {i} ({getattr(node, 'label', '?')}) has no dynamics and the experiment declares none to fall back on"
             )
         group_idx.setdefault(dname, []).append(i)
         node_group.append(dname)
@@ -460,11 +454,8 @@ def to_heterogeneous_network(
         # Infer from network-level coupling AND edge-level coupling: `delayed` may be
         # declared only on edges (Edge.coupling), and `coupling` can be a plain list
         # rather than a keyed dict — `.values()` would raise AttributeError on it.
-        delays = any(
-            getattr(c, "delayed", False) for c in as_list(getattr(network, "coupling", None))
-        ) or any(
-            getattr(getattr(e, "coupling", None), "delayed", False)
-            for e in (getattr(network, "edges", None) or [])
+        delays = any(getattr(c, "delayed", False) for c in as_list(getattr(network, "coupling", None))) or any(
+            getattr(getattr(e, "coupling", None), "delayed", False) for e in (getattr(network, "edges", None) or [])
         )
     graph = _build_graph(network, delays=delays, max_delay=max_delay)
 
@@ -474,10 +465,7 @@ def to_heterogeneous_network(
     for dname, idxs in group_idx.items():
         dyn_obj = dyn_lib.get(dname)
         if dyn_obj is None:
-            raise ValueError(
-                f"dynamics {dname!r} not found; pass dynamics_lib or set "
-                "network.dynamics[{dname!r}]"
-            )
+            raise ValueError(f"dynamics {dname!r} not found; pass dynamics_lib or set network.dynamics[{{dname!r}}]")
         D = dyn_obj.execute("tvboptim")
         optim_dyn[dname] = D
         groups[dname] = DynamicsGroup(
@@ -494,8 +482,7 @@ def to_heterogeneous_network(
             continue  # template/matrix edges live entirely in graph.weights
         if s not in node_index or t not in node_index:
             raise ValueError(
-                f"edge {s} -> {t} references a node id that the network does not "
-                f"declare (known ids: {sorted(node_index)})"
+                f"edge {s} -> {t} references a node id that the network does not declare (known ids: {sorted(node_index)})"
             )
         sg, tg = node_group[node_index[s]], node_group[node_index[t]]
         cname, ccoup = _resolve_coupling(network, edge)
@@ -691,8 +678,7 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
     method = "heun" if method is None else str(getattr(method, "text", method)).lower()
     if method not in SOLVER_MAP:
         raise NotImplementedError(
-            f"integration method {method!r} has no heterogeneous tvboptim solver; "
-            f"declared one of {sorted(SOLVER_MAP)}"
+            f"integration method {method!r} has no heterogeneous tvboptim solver; declared one of {sorted(SOLVER_MAP)}"
         )
     n_steps = max(1, int(round(dur / dt)))
     solver = getattr(solvers, SOLVER_MAP[method])(block_size=min(100, n_steps))

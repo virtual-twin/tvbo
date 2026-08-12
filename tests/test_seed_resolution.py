@@ -39,8 +39,11 @@ BASE = {
         },
     },
     "integration": {
-        "method": "heun", "step_size": 0.1, "duration": 1.0,
-        "transient_time": 0.0, "unit": "s",
+        "method": "heun",
+        "step_size": 0.1,
+        "duration": 1.0,
+        "transient_time": 0.0,
+        "unit": "s",
     },
     "explorations": {
         "ens": {
@@ -68,10 +71,10 @@ def _spec(dist_seed=None, exec_seed=None):
 def test_distribution_seed_overrides_execution_random_seed(unwrapped):
     """A distribution's own seed wins over execution.random_seed, and each trial folds it in."""
     code = SimulationExperiment(**_spec(dist_seed=7, exec_seed=99)).render_code("tvboptim")
-    assert "jax.random.key(7)" in code                          # distribution.seed, not 99
-    assert "jax.random.fold_in(jax.random.key(7)" in code       # per-trial key = fold_in(key(seed), i)
+    assert "jax.random.key(7)" in code  # distribution.seed, not 99
+    assert "jax.random.fold_in(jax.random.key(7)" in code  # per-trial key = fold_in(key(seed), i)
     assert unwrapped("jax.vmap(_sample_ics)(jnp.arange(_n_trials))") in unwrapped(code)
-    assert "jax.random.key(99)" not in code                     # execution seed is overridden
+    assert "jax.random.key(99)" not in code  # execution seed is overridden
 
 
 def test_ic_sampler_inherits_execution_random_seed_when_distribution_unseeded():
@@ -95,7 +98,9 @@ def test_each_distributed_variable_uses_its_own_seed():
     svs = spec["dynamics"]["state_variables"]
     svs["x"]["distribution"] = {"name": "Uniform", "seed": 3, "domain": {"lo": 0.0, "hi": 1.0}}
     svs["y"] = {
-        "equation": {"rhs": "-a * y"}, "initial_value": 0.2, "domain": {"lo": 0.0, "hi": 1.0},
+        "equation": {"rhs": "-a * y"},
+        "initial_value": 0.2,
+        "domain": {"lo": 0.0, "hi": 1.0},
         "distribution": {"name": "Uniform", "seed": 5, "domain": {"lo": 0.0, "hi": 1.0}},
     }
     spec["dynamics"]["output"] = ["x", "y"]

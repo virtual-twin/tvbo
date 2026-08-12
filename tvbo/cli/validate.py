@@ -1,4 +1,5 @@
 """``tvbo validate`` — sub-tree of validators (schema today; OMEX/SED-ML/BIDS later)."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,7 +16,8 @@ app = typer.Typer(name="validate", no_args_is_help=True)
 def schema(
     path: Path = typer.Argument(..., exists=True, readable=True, help="YAML file."),
     target_class: str = typer.Option(
-        None, "--class",
+        None,
+        "--class",
         help="Target class (auto-detected from `class:` key when omitted).",
     ),
 ) -> None:
@@ -69,18 +71,16 @@ def schema(
 # C5 stubs: bids / sedml / omex / all
 # ---------------------------------------------------------------------------
 
+
 @app.command("bids", help="Validate a BIDS dataset directory.")
 def bids(
-    path: Path = typer.Argument(..., exists=True, file_okay=False, dir_okay=True,
-                                readable=True, help="BIDS dataset root."),
+    path: Path = typer.Argument(..., exists=True, file_okay=False, dir_okay=True, readable=True, help="BIDS dataset root."),
 ) -> None:
     """Validate a BIDS dataset directory using the `bids_validator` package."""
     try:
         from bids_validator import BIDSValidator  # type: ignore
     except ImportError:
-        _common.die(
-            "bids_validator not installed. Install with: uv pip install bids-validator"
-        )
+        _common.die("bids_validator not installed. Install with: uv pip install bids-validator")
 
     v = BIDSValidator()
     bad: list[str] = []
@@ -125,6 +125,7 @@ def omex(
     Full COMBINE-archive validation is scheduled for the post-P3 milestone.
     """
     import zipfile
+
     if not zipfile.is_zipfile(path):
         _common.die(f"{path}: not a zip archive (OMEX must be a zip).")
     with zipfile.ZipFile(path) as zf:
@@ -139,10 +140,10 @@ def omex(
 
 @app.command("all", help="Recursively validate every YAML file under DIR via `validate schema`.")
 def all_(
-    directory: Path = typer.Argument(..., exists=True, file_okay=False, dir_okay=True,
-                                     readable=True, help="Directory to walk."),
-    pattern: str = typer.Option("*.yaml", "--pattern",
-                                help="Glob pattern, e.g. '*.yml' or '**/*.yaml'."),
+    directory: Path = typer.Argument(
+        ..., exists=True, file_okay=False, dir_okay=True, readable=True, help="Directory to walk."
+    ),
+    pattern: str = typer.Option("*.yaml", "--pattern", help="Glob pattern, e.g. '*.yml' or '**/*.yaml'."),
     fail_fast: bool = typer.Option(False, "--fail-fast", help="Stop at first failure."),
 ) -> None:
     """Recursively run `validate schema` on every YAML file under *directory* matching *pattern*."""

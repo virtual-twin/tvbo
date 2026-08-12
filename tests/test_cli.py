@@ -2,6 +2,7 @@
 
 These tests exercise the C0/C1 surface (no execution-heavy paths).
 """
+
 from __future__ import annotations
 
 from typer.testing import CliRunner
@@ -21,6 +22,7 @@ def test_root_help_shows_subcommands():
 
 def test_version_prints_semver():
     import tvbo
+
     res = runner.invoke(app, ["version"])
     assert res.exit_code == 0
     assert tvbo.__version__ in res.stdout
@@ -34,6 +36,7 @@ def test_formats_lists_yaml():
 
 def test_formats_json_is_machine_readable():
     import json
+
     res = runner.invoke(app, ["formats", "--json"])
     assert res.exit_code == 0
     payload = json.loads(res.stdout.strip().splitlines()[-1])

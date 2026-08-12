@@ -6,6 +6,7 @@ behind them (a personal skill committed by accident), shipped user skills
 pointing at maintainer skills that never ship, and ``requires_extras`` naming
 a group that does not exist in ``pyproject.toml``.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -74,18 +75,14 @@ def test_detects_stray_claude_skill(synced):
     stray.mkdir()
     (stray / "SKILL.md").write_text("---\nname: personal-thing\n---\n\nmine\n")
 
-    assert _find_orphans(skills, claude_dir, copilot_dir) == [
-        ".claude/skills/personal-thing/"
-    ]
+    assert _find_orphans(skills, claude_dir, copilot_dir) == [".claude/skills/personal-thing/"]
 
 
 def test_detects_stray_copilot_instructions(synced):
     skills, claude_dir, copilot_dir, *_ = synced
     (copilot_dir / "ghost.instructions.md").write_text("---\napplyTo: '**'\n---\n\nx\n")
 
-    assert _find_orphans(skills, claude_dir, copilot_dir) == [
-        ".github/instructions/ghost.instructions.md"
-    ]
+    assert _find_orphans(skills, claude_dir, copilot_dir) == [".github/instructions/ghost.instructions.md"]
 
 
 def test_user_skill_needs_no_copilot_render(tmp_path):
@@ -128,9 +125,7 @@ def test_bare_substring_is_not_a_reference():
 def test_user_skill_referencing_maintainer_skill_is_a_leak(tmp_path):
     src = tmp_path / "skills"
     _canonical(src, "internal-only", audience="maintainer")
-    _canonical(
-        src, "shipped", audience="user", body="see the `internal-only` skill for more"
-    )
+    _canonical(src, "shipped", audience="user", body="see the `internal-only` skill for more")
     leaks = _find_leaked_refs(load_canonical([src]))
     assert len(leaks) == 1 and "internal-only" in leaks[0]
 
@@ -139,9 +134,7 @@ def test_maintainer_skill_may_reference_maintainer_skill(tmp_path):
     """Maintainer skills never ship, so cross-refs between them are fine."""
     src = tmp_path / "skills"
     _canonical(src, "internal-only", audience="maintainer")
-    _canonical(
-        src, "other", audience="maintainer", body="see the `internal-only` skill"
-    )
+    _canonical(src, "other", audience="maintainer", body="see the `internal-only` skill")
     assert _find_leaked_refs(load_canonical([src])) == []
 
 

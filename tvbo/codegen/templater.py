@@ -11,6 +11,7 @@ Provides helpers that read model, parameter, state-variable, equation,
 coupling and integrator metadata from the ontology and render it into
 executable TVBO/TVB source using the templates in `tvbo.templates`.
 """
+
 import logging
 import re
 from os.path import join
@@ -32,10 +33,9 @@ def _log_source(rendered_code: str) -> None:
     """Emit rendered code with line numbers when ``print_source`` is requested."""
     if not logger.isEnabledFor(logging.INFO):
         return
-    numbered = "\n".join(
-        f"{i}\t{line}" for i, line in enumerate(rendered_code.split("\n"), start=1)
-    )
+    numbered = "\n".join(f"{i}\t{line}" for i, line in enumerate(rendered_code.split("\n"), start=1))
     logger.info("rendered source:\n%s", numbered)
+
 
 exec_globals = {}
 TEMPLATES = templates.root
@@ -60,7 +60,7 @@ def is_derived(obs: Any, experiment: Any) -> bool:
     if not obs_names:
         return False
     self_name = getattr(obs, "name", None)
-    for s in (getattr(obs, "source", None) or []):
+    for s in getattr(obs, "source", None) or []:
         name = getattr(s, "name", None) or s
         if isinstance(name, str) and name in obs_names and name != self_name:
             return True
@@ -78,7 +78,7 @@ def source_observations(obs: Any, experiment: Any) -> list:
         return []
     self_name = getattr(obs, "name", None)
     out = []
-    for s in (getattr(obs, "source", None) or []):
+    for s in getattr(obs, "source", None) or []:
         name = getattr(s, "name", None) or s
         if isinstance(name, str) and name in obs_names and name != self_name:
             out.append(name)
@@ -150,10 +150,7 @@ def time_dependent_equations(model) -> list[str]:
     # means that symbol, not the reserved time — flagging it would block a valid, autonomous export.
     if "t" in scoped | set(model.parameters):
         return []
-    return sorted(
-        name for name, eq in (model.get_equations() or {}).items()
-        if name in scoped and t in eq.rhs.free_symbols
-    )
+    return sorted(name for name, eq in (model.get_equations() or {}).items() if name in scoped and t in eq.rhs.free_symbols)
 
 
 def derived_parameter_inputs(model) -> list[str]:

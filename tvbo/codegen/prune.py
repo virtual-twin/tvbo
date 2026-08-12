@@ -34,6 +34,7 @@ Both passes are deliberately conservative — they drop a name only when the mod
 plausibly refer to it. A string literal that parses as Python counts as a reference, so a
 name reached by ``getattr`` or an ``eval``-ed expression survives.
 """
+
 from __future__ import annotations
 
 import ast
@@ -58,11 +59,7 @@ def _docstrings(tree: ast.AST) -> set[int]:
         if not isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             continue
         first = node.body[0] if node.body else None
-        if (
-            isinstance(first, ast.Expr)
-            and isinstance(first.value, ast.Constant)
-            and isinstance(first.value.value, str)
-        ):
+        if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
             out.add(id(first.value))
     return out
 
@@ -302,8 +299,10 @@ def prune_unused_imports(source: str) -> str:
             continue
         indent = " " * node.col_offset
         if keep:
-            kept = ast.Import(names=keep) if isinstance(node, ast.Import) else ast.ImportFrom(
-                module=node.module, names=keep, level=node.level
+            kept = (
+                ast.Import(names=keep)
+                if isinstance(node, ast.Import)
+                else ast.ImportFrom(module=node.module, names=keep, level=node.level)
             )
             text = [indent + ast.unparse(ast.fix_missing_locations(kept))]
         else:
@@ -367,6 +366,7 @@ def _own_nodes(scope: ast.AST):
 def _assigned_once(scope: ast.AST) -> dict[str, int]:
     """How many times each name is bound in *scope*, by any binding form."""
     counts: dict[str, int] = {}
+
     def bump(name: str) -> None:
         counts[name] = counts.get(name, 0) + 1
 

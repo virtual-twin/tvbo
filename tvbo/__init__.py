@@ -66,7 +66,7 @@ __maintainer__ = "Leon K. Martin (leon.martin@bih-charite.de)"
 __contact__ = "petra.ritter@charite.de"
 __status__ = "beta"
 
-__copyright__ = "Copyright (c) 2026, Brain Simulation SectionCharité Universitätsmedizin Berlin"
+__copyright__ = "Copyright (c) 2026, Brain Simulation Section, Charité Universitätsmedizin Berlin"
 __license__ = "EUPL-1.2-or-later"
 
 
@@ -129,6 +129,8 @@ def _configure_jax_backend():
                 jax.config.update("jax_default_device", jax.devices("cpu")[0])
     except ImportError:
         pass  # JAX not installed – nothing to configure
+
+
 # ---------------------------------------------------------------------------
 
 

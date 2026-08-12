@@ -19,10 +19,8 @@ import tempfile
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 
 if TYPE_CHECKING:
-    from tvbo.analysis.bifurcation import BifurcationResult
     from tvbo.classes.experiment import SimulationExperiment
 
 
@@ -176,8 +174,7 @@ class NumContAdapter:
         conts = getattr(exp, "continuations", None) or {}
         if not conts:
             raise ValueError(
-                "No continuations defined. Add continuation specs via "
-                "exp.continuations or load from a bifurcation YAML."
+                "No continuations defined. Add continuation specs via exp.continuations or load from a bifurcation YAML."
             )
 
         results = {}
@@ -208,6 +205,7 @@ class NumContAdapter:
     def _run_one(self, model, cont, cont_name, **kwargs):
         import contextlib
         import io
+
         # AUTO-07p prints a Tkinter import warning to stdout even when
         # plotting is unused. Suppress it.
         _buf = io.StringIO()
@@ -344,10 +342,7 @@ class NumContAdapter:
             return []
         if not isinstance(branches, dict):
             # Coerce list-of-BranchSwitch → name-keyed dict
-            branches = {
-                getattr(bs, "name", f"branch_{i}"): bs
-                for i, bs in enumerate(branches)
-            }
+            branches = {getattr(bs, "name", f"branch_{i}"): bs for i, bs in enumerate(branches)}
 
         out = []
         for bname, bswitch in branches.items():
@@ -372,8 +367,7 @@ class NumContAdapter:
             if sub_cont is None:
                 continue
             fps_raw = getattr(sub_cont, "free_parameters", None)
-            fps = (list(fps_raw.values()) if isinstance(fps_raw, dict)
-                   else (list(fps_raw) if fps_raw else []))
+            fps = list(fps_raw.values()) if isinstance(fps_raw, dict) else (list(fps_raw) if fps_raw else [])
             if len(fps) < 2:
                 continue
             fp1_name = str(fps[0].name)
@@ -381,8 +375,8 @@ class NumContAdapter:
 
             def _dom(fp, default=10.0):
                 dom = getattr(fp, "domain", None)
-                lo = (float(dom.lo) if dom and dom.lo is not None else -default)
-                hi = (float(dom.hi) if dom and dom.hi is not None else  default)
+                lo = float(dom.lo) if dom and dom.lo is not None else -default
+                hi = float(dom.hi) if dom and dom.hi is not None else default
                 return lo, hi
 
             fp2_lo, fp2_hi = _dom(fps[1])
@@ -445,10 +439,8 @@ class NumContAdapter:
                     out.append((c2_name, source_type, fp1_name, fp2_name, R_c2))
                 except Exception as e:
                     import warnings
-                    warnings.warn(
-                        f"Codim-2 continuation '{bname}' from {label_prefix}{lab} "
-                        f"failed: {type(e).__name__}: {e}"
-                    )
+
+                    warnings.warn(f"Codim-2 continuation '{bname}' from {label_prefix}{lab} failed: {type(e).__name__}: {e}")
         return out
 
     # ── Cleanup ──────────────────────────────────────────────────────────

@@ -19,6 +19,7 @@ model's own equations, so nothing here is model-specific.
 
 Reference: Cortes et al. (2013) PNAS 110(41):16610, SI §2 (Eq. S10/S11) and Fig 5.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -48,15 +49,9 @@ class GillespieAdapter:
         allsyms = {n: sp.Symbol(n) for n in (*sv_names, *params, *derived_names)}
 
         # Inline derived variables into pure (state-variable, parameter) expressions.
-        derived = {
-            d: sp.sympify(parse_eq(model.derived_variables[d].equation, symbols=allsyms))
-            for d in derived_names
-        }
+        derived = {d: sp.sympify(parse_eq(model.derived_variables[d].equation, symbols=allsyms)) for d in derived_names}
         for _ in range(len(derived) + 1):  # resolve nested derived refs to a fixed point
-            derived = {
-                d: e.xreplace({sp.Symbol(k): v for k, v in derived.items() if k != d})
-                for d, e in derived.items()
-            }
+            derived = {d: e.xreplace({sp.Symbol(k): v for k, v in derived.items() if k != d}) for d, e in derived.items()}
         derived_subs = {sp.Symbol(k): v for k, v in derived.items()}
         param_subs = {sp.Symbol(k): v for k, v in params.items()}
 
@@ -79,9 +74,7 @@ class GillespieAdapter:
 
         argsyms = [allsyms[n] for n in sv_names]
         birth_fn = sp.lambdify(argsyms, birth_flux, "numpy")
-        slow_fns = {
-            n: sp.lambdify(argsyms, rhs(n), "numpy") for n in sv_names if n != activity
-        }
+        slow_fns = {n: sp.lambdify(argsyms, rhs(n), "numpy") for n in sv_names if n != activity}
         return activity, sv_names, tau, birth_fn, slow_fns
 
     def run(self, **kwargs):
@@ -116,10 +109,7 @@ class GillespieAdapter:
         duration = float(integ.duration)
         rec_dt = float(getattr(integ, "step_size", None) or 1e-3)  # output sampling cadence
 
-        state = {
-            n: initial_value(model.state_variables[n])
-            for n in sv_names
-        }
+        state = {n: initial_value(model.state_variables[n]) for n in sv_names}
         n_count = int(round(omega * state[activity]))
         rng = np.random.default_rng(seed)
 

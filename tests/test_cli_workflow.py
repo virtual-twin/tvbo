@@ -1,4 +1,5 @@
 """Tests for ``tvbo workflow`` (C4) and ``tvbo validate`` stubs (C5)."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -26,6 +27,7 @@ EXP = "experiment:JR_MEG_FrequencyGradient_Optimization"
 # Backend table (ontology-derived)
 # ---------------------------------------------------------------------------
 
+
 def test_backends_match_ontology_keys():
     keys = {b.name for b in list_backends()}
     assert keys == {"jax", "tvb", "pyrates", "tvboptim", "networkdynamics", "bifurcationkit", "numpy", "brian2"}
@@ -47,12 +49,15 @@ def test_alias_resolution():
     assert resolve_backend("nd").name == "networkdynamics"
 
 
-@pytest.mark.parametrize("path,kind", [
-    ("integrator.noise.seed", "noise_seed"),
-    ("model.initial_conditions", "initial_conditions"),
-    ("subject", "subjects"),
-    ("JansenRit.a", "parameters"),
-])
+@pytest.mark.parametrize(
+    "path,kind",
+    [
+        ("integrator.noise.seed", "noise_seed"),
+        ("model.initial_conditions", "initial_conditions"),
+        ("subject", "subjects"),
+        ("JansenRit.a", "parameters"),
+    ],
+)
 def test_axis_kind_of(path, kind):
     assert axis_kind_of(path) == kind
 
@@ -61,10 +66,12 @@ def test_axis_kind_of(path, kind):
 # CLI: workflow backends / plan
 # ---------------------------------------------------------------------------
 
+
 def test_workflow_backends_lists_all():
     r = runner.invoke(app, ["workflow", "backends", "--json"])
     assert r.exit_code == 0
     import json
+
     data = json.loads(r.stdout)
     names = {row["name"] for row in data}
     assert names == set(BACKENDS)
@@ -74,6 +81,7 @@ def test_workflow_plan_jax_vectorizes_both_axes():
     r = runner.invoke(app, ["workflow", "plan", EXP, "--backend", "jax", "--json"])
     assert r.exit_code == 0, r.stdout
     import json
+
     p = json.loads(r.stdout)
     vec = {a["name"] for a in p["vectorize_axes"]}
     wf = {a["name"] for a in p["workflow_axes"]}
@@ -86,6 +94,7 @@ def test_workflow_plan_tvb_fans_out_both_axes():
     r = runner.invoke(app, ["workflow", "plan", EXP, "--backend", "tvb", "--json"])
     assert r.exit_code == 0, r.stdout
     import json
+
     p = json.loads(r.stdout)
     vec = {a["name"] for a in p["vectorize_axes"]}
     wf = {a["name"] for a in p["workflow_axes"]}
@@ -99,16 +108,47 @@ def test_a_run_venv_wins_over_a_declared_container():
     ignored the venv; an explicit slurm.venv must WIN — drop the container — so a venv/GPU
     run needs only `--set slurm.venv=…`, not also `--set container=`."""
     import json
-    img = "docker://ghcr.io/virtual-twin/tvbo:dev"
-    both = runner.invoke(app, ["workflow", "plan", EXP, "--backend", "jax", "--engine", "snakemake",
-                               "--set", f"container={img}", "--set", "slurm.venv=/w/.venv", "--json"])
-    assert both.exit_code == 0, both.stdout
-    assert json.loads(both.stdout)["container"] is None       # venv won → container dropped
 
-    solo = runner.invoke(app, ["workflow", "plan", EXP, "--backend", "jax", "--engine", "snakemake",
-                               "--set", f"container={img}", "--set", "slurm.venv=", "--json"])
+    img = "docker://ghcr.io/virtual-twin/tvbo:dev"
+    both = runner.invoke(
+        app,
+        [
+            "workflow",
+            "plan",
+            EXP,
+            "--backend",
+            "jax",
+            "--engine",
+            "snakemake",
+            "--set",
+            f"container={img}",
+            "--set",
+            "slurm.venv=/w/.venv",
+            "--json",
+        ],
+    )
+    assert both.exit_code == 0, both.stdout
+    assert json.loads(both.stdout)["container"] is None  # venv won → container dropped
+
+    solo = runner.invoke(
+        app,
+        [
+            "workflow",
+            "plan",
+            EXP,
+            "--backend",
+            "jax",
+            "--engine",
+            "snakemake",
+            "--set",
+            f"container={img}",
+            "--set",
+            "slurm.venv=",
+            "--json",
+        ],
+    )
     assert solo.exit_code == 0, solo.stdout
-    assert json.loads(solo.stdout)["container"] == img        # no venv → container kept
+    assert json.loads(solo.stdout)["container"] == img  # no venv → container kept
 
 
 _USED_DEP_RECIPE = """
@@ -158,14 +198,15 @@ def test_used_dataref_dependency_ignores_curated_entities():
         exp = SimulationExperiment.from_string(_USED_DEP_RECIPE.format(iri=iri))
         return _workflow.plan(study_key="s", experiment=exp, backend="tvboptim").depends_on
 
-    assert deps("tvbo:dataset/HCP1200") == []          # curated dataset → no phantom '1200'
-    assert deps("rec-avgMatrix_atlas-HCPMMP1") == []   # curated atlas → no phantom '1'
-    assert deps("tvbo:exp/s/exp-7") == ["7"]           # sibling experiment → real edge
+    assert deps("tvbo:dataset/HCP1200") == []  # curated dataset → no phantom '1200'
+    assert deps("rec-avgMatrix_atlas-HCPMMP1") == []  # curated atlas → no phantom '1'
+    assert deps("tvbo:exp/s/exp-7") == ["7"]  # sibling experiment → real edge
 
 
 # ---------------------------------------------------------------------------
 # CLI: workflow snakemake / slurm / nextflow kit emission
 # ---------------------------------------------------------------------------
+
 
 def test_workflow_snakemake_emits_kit(tmp_path: Path):
     out = tmp_path / "kit"
@@ -187,8 +228,7 @@ def test_workflow_snakemake_emits_kit(tmp_path: Path):
     # experiment — so a flat `spec/<key>.yaml` claim would send the reader nowhere.
     readme = (out / "README.md").read_text()
     assert "spec/<experiment>/experiment.yaml" in readme
-    assert not any(line.startswith(f"- `spec/{p.parent.name}.yaml`")
-                   for p in frozen for line in readme.splitlines())
+    assert not any(line.startswith(f"- `spec/{p.parent.name}.yaml`") for p in frozen for line in readme.splitlines())
 
 
 def test_snakemake_rule_emits_the_resolved_backend_never_none(tmp_path: Path):
@@ -214,19 +254,27 @@ def test_study_rules_do_not_share_one_experiments_resources():
     """
     from tvbo.cli.workflow import _render_template
 
-    heavy = {"cpus_per_task": 2, "mem": "128G", "time": "24:00:00",
-             "env": [{"name": "OMP_NUM_THREADS", "value": "1"}]}
+    heavy = {"cpus_per_task": 2, "mem": "128G", "time": "24:00:00", "env": [{"name": "OMP_NUM_THREADS", "value": "1"}]}
 
     def ep(key, block):
-        return {"key": key, "rule_name": f"exp_{key}", "spec_relpath": f"spec/{key}/experiment.yaml",
-                "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
-                "container": None, "block": block, "axes": [], "depends_on": []}
+        return {
+            "key": key,
+            "rule_name": f"exp_{key}",
+            "spec_relpath": f"spec/{key}/experiment.yaml",
+            "select": None,
+            "backend": "tvboptim",
+            "out_dir": "results",
+            "result_stem": "result",
+            "container": None,
+            "block": block,
+            "axes": [],
+            "depends_on": [],
+        }
 
-    smk = _render_template("snakemake/study.smk.mako",
-                           exp_plans=[ep("40", heavy), ep("1", {})], block={}, bundled_code=False)
+    smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep("40", heavy), ep("1", {})], block={}, bundled_code=False)
 
-    grid = smk[smk.index("rule exp_40:"):smk.index("rule exp_1:")]
-    sheet = smk[smk.index("rule exp_1:"):]
+    grid = smk[smk.index("rule exp_40:") : smk.index("rule exp_1:")]
+    sheet = smk[smk.index("rule exp_1:") :]
     # 128 GiB, not 128_000 MB: Slurm sizes are binary, so a decimal conversion would
     # reserve ~2.4% less than the recipe declared.
     assert "mem_mb=131072" in grid and "runtime=1440" in grid
@@ -237,18 +285,21 @@ def test_study_rules_do_not_share_one_experiments_resources():
     assert "threads: 1" in sheet
 
 
-@pytest.mark.parametrize("walltime,minutes", [
-    ("3-00:00:00", 4320),   # days-hours:minutes:seconds — the sbatch form that silently parsed to None
-    ("7-00:00:00", 10080),
-    ("1-06:30", 1830),      # days-hours:minutes
-    ("2-12", 3600),         # days-hours
-    ("08:00:00", 480),      # hours:minutes:seconds
-    ("30:00", 30),          # minutes:seconds
-    ("480", 480),           # bare minutes
-    ("00:00:30", 1),        # a sub-minute request still reserves a whole minute
-    (None, None),
-    ("garbage", None),
-])
+@pytest.mark.parametrize(
+    "walltime,minutes",
+    [
+        ("3-00:00:00", 4320),  # days-hours:minutes:seconds — the sbatch form that silently parsed to None
+        ("7-00:00:00", 10080),
+        ("1-06:30", 1830),  # days-hours:minutes
+        ("2-12", 3600),  # days-hours
+        ("08:00:00", 480),  # hours:minutes:seconds
+        ("30:00", 30),  # minutes:seconds
+        ("480", 480),  # bare minutes
+        ("00:00:30", 1),  # a sub-minute request still reserves a whole minute
+        (None, None),
+        ("garbage", None),
+    ],
+)
 def test_runtime_minutes_accepts_every_sbatch_walltime_spelling(walltime, minutes):
     """A declared walltime must survive into Snakemake's ``runtime`` resource.
 
@@ -266,11 +317,25 @@ def test_declared_walltime_reaches_the_snakemake_rule():
     from tvbo.cli.workflow import _render_template
 
     smk = _render_template(
-        "snakemake/study.smk.mako", block={}, bundled_code=False,
-        exp_plans=[{"key": "30", "rule_name": "exp_30", "spec_relpath": "spec/30/experiment.yaml",
-                    "select": None, "backend": "tvboptim", "out_dir": "results",
-                    "result_stem": "result", "container": None, "axes": [], "depends_on": [],
-                    "block": {"cpus_per_task": 2, "mem": "8G", "time": "3-00:00:00"}}])
+        "snakemake/study.smk.mako",
+        block={},
+        bundled_code=False,
+        exp_plans=[
+            {
+                "key": "30",
+                "rule_name": "exp_30",
+                "spec_relpath": "spec/30/experiment.yaml",
+                "select": None,
+                "backend": "tvboptim",
+                "out_dir": "results",
+                "result_stem": "result",
+                "container": None,
+                "axes": [],
+                "depends_on": [],
+                "block": {"cpus_per_task": 2, "mem": "8G", "time": "3-00:00:00"},
+            }
+        ],
+    )
     assert "runtime=4320" in smk
 
 
@@ -285,28 +350,43 @@ def test_retries_escalation_emits_attempt_scaled_resources():
     from tvbo.cli.workflow import _render_template
 
     def ep(key, block, retries):
-        return {"key": key, "rule_name": f"exp_{key}", "spec_relpath": f"spec/{key}/experiment.yaml",
-                "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
-                "container": None, "block": block, "axes": [], "depends_on": [], "retries": retries}
+        return {
+            "key": key,
+            "rule_name": f"exp_{key}",
+            "spec_relpath": f"spec/{key}/experiment.yaml",
+            "select": None,
+            "backend": "tvboptim",
+            "out_dir": "results",
+            "result_stem": "result",
+            "container": None,
+            "block": block,
+            "axes": [],
+            "depends_on": [],
+            "retries": retries,
+        }
 
     gpu = {"cpus_per_task": 2, "mem": "128G", "time": "04:00:00", "gres": "gpu:1", "partition": "gpu"}
     cpu = {"cpus_per_task": 4, "mem": "16G", "time": "06:00:00"}
-    smk = _render_template("snakemake/study.smk.mako", block={}, bundled_code=False,
-                           exp_plans=[ep("41", gpu, 2), ep("50", cpu, 2), ep("1", {}, 0)])
+    smk = _render_template(
+        "snakemake/study.smk.mako",
+        block={},
+        bundled_code=False,
+        exp_plans=[ep("41", gpu, 2), ep("50", cpu, 2), ep("1", {}, 0)],
+    )
 
-    g = smk[smk.index("rule exp_41:"):smk.index("rule exp_50:")]
-    c = smk[smk.index("rule exp_50:"):smk.index("rule exp_1:")]
-    z = smk[smk.index("rule exp_1:"):]
+    g = smk[smk.index("rule exp_41:") : smk.index("rule exp_50:")]
+    c = smk[smk.index("rule exp_50:") : smk.index("rule exp_1:")]
+    z = smk[smk.index("rule exp_1:") :]
 
     assert "retries: 2" in g
-    assert "mem_mb=131072," in g                                  # host mem FIXED on a GPU rule
+    assert "mem_mb=131072," in g  # host mem FIXED on a GPU rule
     assert "runtime=lambda wildcards, attempt:" in g
-    assert "nvmap_max=lambda wildcards, attempt:" in g            # a RESOURCE, not params
+    assert "nvmap_max=lambda wildcards, attempt:" in g  # a RESOURCE, not params
     assert "params:" not in g
     assert "export TVBO_NVMAP_MAX={resources.nvmap_max}" in g
 
     assert "retries: 2" in c
-    assert "mem_mb=lambda wildcards, attempt:" in c               # CPU rule: host mem escalates
+    assert "mem_mb=lambda wildcards, attempt:" in c  # CPU rule: host mem escalates
     assert "nvmap_max" not in c and "TVBO_NVMAP_MAX" not in c
 
     assert "retries:" not in z and "nvmap_max" not in z and "attempt" not in z
@@ -329,12 +409,25 @@ def test_fanout_snakefile_is_executable_python():
     from tvbo.cli.workflow import _render_template
 
     smk = _render_template(
-        "snakemake/study.smk.mako", block={}, bundled_code=False,
-        exp_plans=[{"key": "30", "rule_name": "exp_30", "spec_relpath": "spec/30/experiment.yaml",
-                    "select": None, "backend": "tvboptim", "out_dir": "results",
-                    "result_stem": "result", "container": None, "block": {}, "depends_on": [],
-                    "axes": [{"name": "subject", "parameter": "dataset.active_subject",
-                              "values": ["100206", "100307"]}]}])
+        "snakemake/study.smk.mako",
+        block={},
+        bundled_code=False,
+        exp_plans=[
+            {
+                "key": "30",
+                "rule_name": "exp_30",
+                "spec_relpath": "spec/30/experiment.yaml",
+                "select": None,
+                "backend": "tvboptim",
+                "out_dir": "results",
+                "result_stem": "result",
+                "container": None,
+                "block": {},
+                "depends_on": [],
+                "axes": [{"name": "subject", "parameter": "dataset.active_subject", "values": ["100206", "100307"]}],
+            }
+        ],
+    )
 
     # Evaluate every path f-string the Snakefile builds, with only OUT_DIR bound —
     # exactly the namespace Snakemake parses them in. A wildcard that leaked a single
@@ -347,8 +440,7 @@ def test_fanout_snakefile_is_executable_python():
     assert "results/30/sub-{subject}_result.h5" in resolved
 
 
-def _snakemake_cmd(tmp_path, monkeypatch, *, sbatch: bool, ship_profile: bool,
-                   cores=None, profile=None):
+def _snakemake_cmd(tmp_path, monkeypatch, *, sbatch: bool, ship_profile: bool, cores=None, profile=None):
     """Capture the snakemake argv `_execute_engine_artefact` would run for a kit.
 
     *sbatch* toggles whether a scheduler is discoverable; *ship_profile* whether the
@@ -364,9 +456,11 @@ def _snakemake_cmd(tmp_path, monkeypatch, *, sbatch: bool, ship_profile: bool,
 
     # has_scheduler consults _resolve_launcher (which itself checks the venv sibling AND
     # $PATH), so mocking it fully controls both the launcher path and scheduler discovery.
-    monkeypatch.setattr(wf, "_resolve_launcher",
-                        lambda n: (f"/fake/{n}" if n == "snakemake"
-                                   else (f"/fake/{n}" if (n == "sbatch" and sbatch) else None)))
+    monkeypatch.setattr(
+        wf,
+        "_resolve_launcher",
+        lambda n: f"/fake/{n}" if n == "snakemake" else (f"/fake/{n}" if (n == "sbatch" and sbatch) else None),
+    )
 
     captured = {}
 
@@ -416,10 +510,13 @@ def test_snakemake_explicit_profile_wins_over_shipped(tmp_path, monkeypatch):
     assert cmd[1:] == ["--profile", "cubi-v1", "--executor", "local", "--cores", "all"]
 
 
-@pytest.mark.parametrize("engine,expected_tail", [
-    ("snakemake", "--dry-run"),
-    ("slurm", "--test-only"),
-])
+@pytest.mark.parametrize(
+    "engine,expected_tail",
+    [
+        ("snakemake", "--dry-run"),
+        ("slurm", "--test-only"),
+    ],
+)
 def test_submit_dry_run_reports_without_queueing(tmp_path: Path, monkeypatch, engine, expected_tail):
     """`--dry-run` must reach the engine and must not queue anything.
 
@@ -438,8 +535,7 @@ def test_submit_dry_run_reports_without_queueing(tmp_path: Path, monkeypatch, en
     monkeypatch.setattr("shutil.which", lambda n: f"/usr/bin/{n}")
 
     out = tmp_path / "kit"
-    assert runner.invoke(app, ["workflow", engine, EXP, "--backend", "jax",
-                               "-o", str(out)]).exit_code == 0
+    assert runner.invoke(app, ["workflow", engine, EXP, "--backend", "jax", "-o", str(out)]).exit_code == 0
     r = runner.invoke(app, ["workflow", "submit", str(out), "--dry-run"])
     assert r.exit_code == 0, r.stdout
 
@@ -470,15 +566,17 @@ def test_scalar_set_override_lands_as_one_bind(tmp_path: Path):
     assert 'apptainer-args: "--bind /data/cephfs-1"' in cfg
 
 
-def _container_plan(image="docker://ghcr.io/virtual-twin/tvbo:dev",
-                    binds=("/data/cephfs-1",), args=None):
+def _container_plan(image="docker://ghcr.io/virtual-twin/tvbo:dev", binds=("/data/cephfs-1",), args=None):
     """Minimal stand-in for the container fields the profile writer reads."""
     from tvbo.cli._workflow import WorkflowPlan
 
     return SimpleNamespace(
-        container=image, container_binds=list(binds), container_args=args,
+        container=image,
+        container_binds=list(binds),
+        container_args=args,
         container_exec_flags=WorkflowPlan.container_exec_flags.fget(
-            SimpleNamespace(container_binds=list(binds), container_args=args)),
+            SimpleNamespace(container_binds=list(binds), container_args=args)
+        ),
     )
 
 
@@ -487,16 +585,28 @@ def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=(
     from tvbo.cli._workflow import WorkflowPlan
 
     p = SimpleNamespace(
-        study_key="S", experiment_key="fig6", chunk=156, n_array_tasks=156,
-        n_workflow_cells=1560, n_vectorize_cells=1560, vectorize_axes=[], workflow_axes=[],
-        wildcards=[], overrides=[], container=container, container_binds=list(binds),
-        container_args=None, requirements=list(reqs), experiment_selector=None,
-        source_spec=None, out_dir="out/S/fig6", run_spec="experiment:fig6",
+        study_key="S",
+        experiment_key="fig6",
+        chunk=156,
+        n_array_tasks=156,
+        n_workflow_cells=1560,
+        n_vectorize_cells=1560,
+        vectorize_axes=[],
+        workflow_axes=[],
+        wildcards=[],
+        overrides=[],
+        container=container,
+        container_binds=list(binds),
+        container_args=None,
+        requirements=list(reqs),
+        experiment_selector=None,
+        source_spec=None,
+        out_dir="out/S/fig6",
+        run_spec="experiment:fig6",
         backend=SimpleNamespace(name="tvboptim"),
         engine_block={"partition": "medium", "mem": "16G", "time": "02:00:00", "cpus_per_task": 4},
     )
-    for prop in ("pip_specs", "needs_env_layer", "needs_container_layer",
-                 "container_extras_venv", "container_exec_flags"):
+    for prop in ("pip_specs", "needs_env_layer", "needs_container_layer", "container_extras_venv", "container_exec_flags"):
         setattr(p, prop, getattr(WorkflowPlan, prop).fget(p))
     return p
 
@@ -507,11 +617,11 @@ def test_env_layer_provisions_requirements_container_or_not():
     `needs_container_layer` only fires when a container is ALSO declared (the Slurm --env
     path); with requirements but no container it stays a native venv."""
     assert _layer_plan().needs_env_layer is True
-    assert _layer_plan(container=None).needs_env_layer is True          # native venv
-    assert _layer_plan(reqs=()).needs_env_layer is False                # nothing to provision
+    assert _layer_plan(container=None).needs_env_layer is True  # native venv
+    assert _layer_plan(reqs=()).needs_env_layer is False  # nothing to provision
 
     assert _layer_plan().needs_container_layer is True
-    assert _layer_plan(container=None).needs_container_layer is False   # no image to layer onto
+    assert _layer_plan(container=None).needs_container_layer is False  # no image to layer onto
     assert _layer_plan(reqs=()).needs_container_layer is False
 
 
@@ -520,10 +630,13 @@ def test_concrete_container_reference_passes_through_unchanged():
     author's exact choice and must survive resolution verbatim."""
     from tvbo.cli._workflow import resolve_container_ref
 
-    for ref in ("~/work/tvbo-dev.sif", "/abs/img.simg",
-                "docker://ghcr.io/virtual-twin/tvbo:dev",
-                "docker://ghcr.io/virtual-twin/tvbo:0.5.3",
-                "docker://ghcr.io/virtual-twin/tvbo@sha256:abc"):
+    for ref in (
+        "~/work/tvbo-dev.sif",
+        "/abs/img.simg",
+        "docker://ghcr.io/virtual-twin/tvbo:dev",
+        "docker://ghcr.io/virtual-twin/tvbo:0.5.3",
+        "docker://ghcr.io/virtual-twin/tvbo@sha256:abc",
+    ):
         assert resolve_container_ref(ref) == ref
 
 
@@ -567,16 +680,19 @@ def test_fan_input_expr_expands_over_every_fanned_cell():
     fan's value lists. A group run (no axes) is its single result path."""
     from tvbo.cli._workflow import fan_input_expr
 
-    fanned = {"key": "41", "rule_name": "exp_41",
-              "result_stem": "exp-41_desc-Kuramoto_result",
-              "axes": [{"name": "a", "parameter": "K.a", "values": [1, 2]},
-                       {"name": "conduction_speed",
-                        "parameter": "network.conduction_speed", "values": [6]}]}
+    fanned = {
+        "key": "41",
+        "rule_name": "exp_41",
+        "result_stem": "exp-41_desc-Kuramoto_result",
+        "axes": [
+            {"name": "a", "parameter": "K.a", "values": [1, 2]},
+            {"name": "conduction_speed", "parameter": "network.conduction_speed", "values": [6]},
+        ],
+    }
     expr = fan_input_expr(fanned)
     assert expr.startswith("expand(")
     # the cell pattern (doubled wildcards for the carrying f-string) + the fan value lists
-    assert ('f"{OUT_DIR}/41/a={{a}}/conduction_speed={{conduction_speed}}/'
-            'exp-41_desc-Kuramoto_result.h5"') in expr
+    assert ('f"{OUT_DIR}/41/a={{a}}/conduction_speed={{conduction_speed}}/exp-41_desc-Kuramoto_result.h5"') in expr
     assert "a=EXP_41_A" in expr and "conduction_speed=EXP_41_CONDUCTION_SPEED" in expr
 
     group = {"key": "9", "rule_name": "exp_9", "result_stem": "exp-9_result", "axes": []}
@@ -593,7 +709,7 @@ def test_setup_sh_layers_requirements_onto_the_image_via_system_site_venv():
     assert "python -m venv --system-site-packages" in sh
     assert "/w/tvbo-dev.sif" in sh and "--bind /data/cephfs-1" in sh
     # install runs through the container's interpreter, into the venv
-    assert 'singularity exec' in sh and '${VENV}/bin/pip" install' in sh
+    assert "singularity exec" in sh and '${VENV}/bin/pip" install' in sh
     assert 'VENV=".tvbo-extras-venv"' in sh and "-r requirements.txt" in sh
 
 
@@ -606,7 +722,7 @@ def test_setup_sh_provisions_a_native_venv_when_no_container():
     sh = _render_template("setup.sh.mako", plan=_layer_plan(container=None, binds=()))
     assert "python -m venv --system-site-packages" in sh
     assert "-r requirements.txt" in sh and 'VENV=".tvbo-extras-venv"' in sh
-    assert "singularity exec" not in sh          # native: no container to exec into
+    assert "singularity exec" not in sh  # native: no container to exec into
     assert ".sif" not in sh
 
 
@@ -616,13 +732,24 @@ def test_snakemake_rule_prepends_the_native_venv_to_pythonpath():
     `import igl` resolves without any manual install."""
     from tvbo.cli.workflow import _render_template
 
-    ep = {"key": "fig6", "rule_name": "exp_fig6", "spec_relpath": "spec/fig6/experiment.yaml",
-          "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
-          "container": None, "needs_env_layer": True, "extras_venv": ".tvbo-extras-venv",
-          "block": {}, "axes": [], "depends_on": []}
+    ep = {
+        "key": "fig6",
+        "rule_name": "exp_fig6",
+        "spec_relpath": "spec/fig6/experiment.yaml",
+        "select": None,
+        "backend": "tvboptim",
+        "out_dir": "results",
+        "result_stem": "result",
+        "container": None,
+        "needs_env_layer": True,
+        "extras_venv": ".tvbo-extras-venv",
+        "block": {},
+        "axes": [],
+        "depends_on": [],
+    }
     smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep], block={}, bundled_code=False)
     assert "export PYTHONPATH=$(echo .tvbo-extras-venv/lib/python*/site-packages):" in smk
-    assert "container:" not in smk               # native: no container directive
+    assert "container:" not in smk  # native: no container directive
 
 
 def test_run_sbatch_exposes_the_layer_via_pythonpath_and_guards_on_setup():
@@ -630,9 +757,10 @@ def test_run_sbatch_exposes_the_layer_via_pythonpath_and_guards_on_setup():
     fail loudly if setup.sh was never run, rather than crashing mid-import on the node."""
     from tvbo.cli.workflow import _render_template
 
-    sb = _render_template("slurm/run.sbatch.mako", plan=_layer_plan(),
-                          block=_layer_plan().engine_block, spec_relpath=None, bundled_code=False)
-    assert 'if [ ! -d "${TVBO_EXTRAS}" ]' in sb            # guard: setup.sh must run first
+    sb = _render_template(
+        "slurm/run.sbatch.mako", plan=_layer_plan(), block=_layer_plan().engine_block, spec_relpath=None, bundled_code=False
+    )
+    assert 'if [ ! -d "${TVBO_EXTRAS}" ]' in sb  # guard: setup.sh must run first
     assert 'TVBO_EXTRAS=$(echo "$(pwd)/.tvbo-extras-venv"/lib/python*/site-packages)' in sb
     assert '--env PYTHONPATH="${TVBO_EXTRAS}${PYTHONPATH:+:$PYTHONPATH}"' in sb
     assert "singularity exec" in sb and "tvbo run" in sb
@@ -645,13 +773,23 @@ def test_snakemake_rule_prepends_the_container_layer_to_pythonpath():
     Double braces survive Snakemake's `.format()` (single braces are wildcards)."""
     from tvbo.cli.workflow import _render_template
 
-    ep = {"key": "fig6", "rule_name": "exp_fig6", "spec_relpath": "spec/fig6/experiment.yaml",
-          "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
-          "container": "/w/tvbo-dev.sif", "needs_env_layer": True,
-          "extras_venv": ".tvbo-extras-venv", "block": {}, "axes": [], "depends_on": []}
+    ep = {
+        "key": "fig6",
+        "rule_name": "exp_fig6",
+        "spec_relpath": "spec/fig6/experiment.yaml",
+        "select": None,
+        "backend": "tvboptim",
+        "out_dir": "results",
+        "result_stem": "result",
+        "container": "/w/tvbo-dev.sif",
+        "needs_env_layer": True,
+        "extras_venv": ".tvbo-extras-venv",
+        "block": {},
+        "axes": [],
+        "depends_on": [],
+    }
     smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep], block={}, bundled_code=False)
-    assert ('"export PYTHONPATH=$(echo .tvbo-extras-venv/lib/python*/site-packages):'
-            '${{PYTHONPATH:-}} && "') in smk
+    assert ('"export PYTHONPATH=$(echo .tvbo-extras-venv/lib/python*/site-packages):${{PYTHONPATH:-}} && "') in smk
     # the layer precedes the run and the rule execs in the image
     assert smk.index("PYTHONPATH=$(echo .tvbo-extras") < smk.index("tvbo run spec/fig6")
     assert "container:" in smk and "/w/tvbo-dev.sif" in smk
@@ -663,17 +801,26 @@ def test_a_venv_rule_opts_out_of_the_study_global_container():
     wraps its venv activation in the image and the image's interpreter shadows the venv."""
     from tvbo.cli.workflow import _render_template
 
-    img = {"key": "30", "rule_name": "exp_30", "spec_relpath": "spec/30/experiment.yaml",
-           "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
-           "container": "docker://img:dev", "needs_env_layer": False, "extras_venv": None,
-           "block": {}, "axes": [], "depends_on": []}
-    venv = {**img, "key": "34", "rule_name": "exp_34",
-            "spec_relpath": "spec/34/experiment.yaml", "container": None}
-    smk = _render_template("snakemake/study.smk.mako", exp_plans=[img, venv],
-                           block={}, bundled_code=False)
-    assert 'container: "docker://img:dev"' in smk        # study-wide global (keyed on the first experiment)
-    assert "    container:\n        None" in smk         # the venv rule opts out
-    assert smk.count("    container:\n") == 1            # the containerized rule inherits the global, no directive of its own
+    img = {
+        "key": "30",
+        "rule_name": "exp_30",
+        "spec_relpath": "spec/30/experiment.yaml",
+        "select": None,
+        "backend": "tvboptim",
+        "out_dir": "results",
+        "result_stem": "result",
+        "container": "docker://img:dev",
+        "needs_env_layer": False,
+        "extras_venv": None,
+        "block": {},
+        "axes": [],
+        "depends_on": [],
+    }
+    venv = {**img, "key": "34", "rule_name": "exp_34", "spec_relpath": "spec/34/experiment.yaml", "container": None}
+    smk = _render_template("snakemake/study.smk.mako", exp_plans=[img, venv], block={}, bundled_code=False)
+    assert 'container: "docker://img:dev"' in smk  # study-wide global (keyed on the first experiment)
+    assert "    container:\n        None" in smk  # the venv rule opts out
+    assert smk.count("    container:\n") == 1  # the containerized rule inherits the global, no directive of its own
 
 
 def test_snakemake_fans_a_model_param_axis_via_pin_not_set():
@@ -683,11 +830,22 @@ def test_snakemake_fans_a_model_param_axis_via_pin_not_set():
     The dataset subject axis keeps `--subject`."""
     from tvbo.cli.workflow import _render_template
 
-    ep = {"key": "fig6", "rule_name": "exp_fig6", "spec_relpath": "spec/fig6/experiment.yaml",
-          "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
-          "container": None, "block": {}, "depends_on": [],
-          "axes": [{"name": "omega_mean_hz", "parameter": "Kuramoto.omega_mean_hz", "values": [10, 20]},
-                   {"name": "conduction_speed", "parameter": "network.conduction_speed", "values": [3, 6]}]}
+    ep = {
+        "key": "fig6",
+        "rule_name": "exp_fig6",
+        "spec_relpath": "spec/fig6/experiment.yaml",
+        "select": None,
+        "backend": "tvboptim",
+        "out_dir": "results",
+        "result_stem": "result",
+        "container": None,
+        "block": {},
+        "depends_on": [],
+        "axes": [
+            {"name": "omega_mean_hz", "parameter": "Kuramoto.omega_mean_hz", "values": [10, 20]},
+            {"name": "conduction_speed", "parameter": "network.conduction_speed", "values": [3, 6]},
+        ],
+    }
     smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep], block={}, bundled_code=False)
     assert "--pin=Kuramoto.omega_mean_hz={wildcards.omega_mean_hz}" in smk
     assert "--pin=network.conduction_speed={wildcards.conduction_speed}" in smk
@@ -704,8 +862,7 @@ def test_snakemake_fanned_parameter_experiment_is_spec_only(tmp_path: Path):
     pin collapses the exploration to the pinned point) even if the kit was packed
     `--code-source frozen`."""
     out = tmp_path / "kit"
-    r = runner.invoke(app, ["workflow", "snakemake", EXP, "--backend", "tvb",
-                            "-o", str(out), "--code-source", "frozen"])
+    r = runner.invoke(app, ["workflow", "snakemake", EXP, "--backend", "tvb", "-o", str(out), "--code-source", "frozen"])
     assert r.exit_code == 0, r.stdout
     # EXP (tvb) fans model/coupling params a,b (kind 'parameters') → no frozen script.
     assert not (out / "scripts").exists(), "a fanned-parameter experiment must not freeze a script"
@@ -759,15 +916,13 @@ def test_slurm_rejects_explicit_per_cell_workflow_fanout(tmp_path: Path):
     recipe = tmp_path / "fanned.yaml"
     recipe.write_text(_FANNED_WORKFLOW_RECIPE)
 
-    r = runner.invoke(app, ["workflow", "slurm", str(recipe), "--backend", "tvb",
-                            "-o", str(tmp_path / "slurm")])
+    r = runner.invoke(app, ["workflow", "slurm", str(recipe), "--backend", "tvb", "-o", str(tmp_path / "slurm")])
     assert r.exit_code != 0
     combined = (r.stdout or "") + (r.stderr or "")
     assert "snakemake" in combined and "distribute.workflow" in combined
     assert not (tmp_path / "slurm" / "run.sbatch").exists()
 
-    r2 = runner.invoke(app, ["workflow", "snakemake", str(recipe), "--backend", "tvb",
-                             "-o", str(tmp_path / "smk")])
+    r2 = runner.invoke(app, ["workflow", "snakemake", str(recipe), "--backend", "tvb", "-o", str(tmp_path / "smk")])
     assert r2.exit_code == 0, r2.stdout
     assert not (tmp_path / "smk" / "scripts").exists()
     assert "--pin=" in (tmp_path / "smk" / "Snakefile").read_text()
@@ -782,8 +937,7 @@ def test_submit_provisions_the_container_layer_before_submitting(tmp_path, monke
     kit.mkdir()
     (kit / "setup.sh").write_text("#!/bin/bash\necho layered\n")
     calls = []
-    monkeypatch.setattr(wf.subprocess, "run",
-                        lambda *a, **k: calls.append((a, k)) or type("R", (), {"returncode": 0})())
+    monkeypatch.setattr(wf.subprocess, "run", lambda *a, **k: calls.append((a, k)) or type("R", (), {"returncode": 0})())
     wf._provision_env_layer(kit, dry_run=False)
     assert calls and calls[0][0][0] == ["bash", "setup.sh"] and calls[0][1]["cwd"] == str(kit)
 
@@ -794,7 +948,7 @@ def test_submit_without_a_layer_provisions_nothing(tmp_path, monkeypatch):
 
     ran = []
     monkeypatch.setattr(wf.subprocess, "run", lambda *a, **k: ran.append(a))
-    wf._provision_env_layer(tmp_path, dry_run=False)   # empty dir, no setup.sh
+    wf._provision_env_layer(tmp_path, dry_run=False)  # empty dir, no setup.sh
     assert not ran
 
 
@@ -802,9 +956,19 @@ def test_snakemake_rule_without_layer_has_no_pythonpath_injection():
     """The layer is strictly opt-in: an experiment that declares no layer emits a bare rule."""
     from tvbo.cli.workflow import _render_template
 
-    ep = {"key": "e", "rule_name": "exp_e", "spec_relpath": "spec/e/experiment.yaml",
-          "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
-          "container": None, "block": {}, "axes": [], "depends_on": []}
+    ep = {
+        "key": "e",
+        "rule_name": "exp_e",
+        "spec_relpath": "spec/e/experiment.yaml",
+        "select": None,
+        "backend": "tvboptim",
+        "out_dir": "results",
+        "result_stem": "result",
+        "container": None,
+        "block": {},
+        "axes": [],
+        "depends_on": [],
+    }
     smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep], block={}, bundled_code=False)
     assert ".tvbo-extras-venv" not in smk
 
@@ -814,8 +978,7 @@ def test_no_container_layer_means_no_pythonpath_injection():
     from tvbo.cli.workflow import _render_template
 
     plan = _layer_plan(container=None)
-    sb = _render_template("slurm/run.sbatch.mako", plan=plan, block=plan.engine_block,
-                          spec_relpath=None, bundled_code=False)
+    sb = _render_template("slurm/run.sbatch.mako", plan=plan, block=plan.engine_block, spec_relpath=None, bundled_code=False)
     assert "TVBO_EXTRAS" not in sb and "--env PYTHONPATH" not in sb
     assert "singularity exec" not in sb
 
@@ -836,18 +999,21 @@ def test_profile_carries_container_binds(tmp_path: Path):
     assert "slurm_partition: medium" in cfg
 
 
-@pytest.mark.parametrize("mem,mib", [
-    ("8G", 8192),        # binary, not 8000 — Slurm's --mem=8G is 8 GiB
-    ("8GB", 8192),
-    ("128G", 131072),
-    ("512M", 512),
-    ("1T", 1048576),     # every sbatch suffix parses; an unknown one used to vanish
-    ("2000", 2000),      # bare number is already MiB
-    ("512K", 1),         # sub-mebibyte rounds up; 0 would reserve nothing
-    (None, None),
-    ("garbage", None),
-    ("8X", None),        # unrecognised suffix -> None, never a wrong number
-])
+@pytest.mark.parametrize(
+    "mem,mib",
+    [
+        ("8G", 8192),  # binary, not 8000 — Slurm's --mem=8G is 8 GiB
+        ("8GB", 8192),
+        ("128G", 131072),
+        ("512M", 512),
+        ("1T", 1048576),  # every sbatch suffix parses; an unknown one used to vanish
+        ("2000", 2000),  # bare number is already MiB
+        ("512K", 1),  # sub-mebibyte rounds up; 0 would reserve nothing
+        (None, None),
+        ("garbage", None),
+        ("8X", None),  # unrecognised suffix -> None, never a wrong number
+    ],
+)
 def test_mem_mb_uses_binary_units_and_every_sbatch_suffix(mem, mib):
     """A declared memory size must reach Slurm as the size that was declared.
 
@@ -871,8 +1037,8 @@ def test_bind_paths_survive_spaces_and_commas():
     from tvbo.cli._workflow import WorkflowPlan
 
     flags = WorkflowPlan.container_exec_flags.fget(
-        SimpleNamespace(container_binds=["/data/cephfs-1", "/my scratch"],
-                        container_args=None))
+        SimpleNamespace(container_binds=["/data/cephfs-1", "/my scratch"], container_args=None)
+    )
     assert flags == "--bind /data/cephfs-1 --bind '/my scratch'"
 
 
@@ -917,15 +1083,27 @@ def test_per_experiment_partition_reaches_its_own_rule():
     from tvbo.cli.workflow import _render_template
 
     def ep(key, block):
-        return {"key": key, "rule_name": f"exp_{key}", "spec_relpath": f"spec/{key}/experiment.yaml",
-                "select": None, "backend": "tvboptim", "out_dir": "results", "result_stem": "result",
-                "container": None, "block": block, "axes": [], "depends_on": []}
+        return {
+            "key": key,
+            "rule_name": f"exp_{key}",
+            "spec_relpath": f"spec/{key}/experiment.yaml",
+            "select": None,
+            "backend": "tvboptim",
+            "out_dir": "results",
+            "result_stem": "result",
+            "container": None,
+            "block": block,
+            "axes": [],
+            "depends_on": [],
+        }
 
     smk = _render_template(
-        "snakemake/study.smk.mako", block={}, bundled_code=False,
-        exp_plans=[ep("1", {"partition": "short"}),
-                   ep("30", {"partition": "medium", "time": "24:00:00"})])
-    long_rule = smk[smk.index("rule exp_30:"):]
+        "snakemake/study.smk.mako",
+        block={},
+        bundled_code=False,
+        exp_plans=[ep("1", {"partition": "short"}), ep("30", {"partition": "medium", "time": "24:00:00"})],
+    )
+    long_rule = smk[smk.index("rule exp_30:") :]
     assert 'slurm_partition="medium"' in long_rule
     assert 'slurm_partition="short"' not in long_rule
 
@@ -941,13 +1119,26 @@ def test_snakemake_rule_activates_declared_venv_and_modules():
     from tvbo.cli.workflow import _render_template
 
     smk = _render_template(
-        "snakemake/study.smk.mako", block={}, bundled_code=False,
-        exp_plans=[{"key": "30", "rule_name": "exp_30", "spec_relpath": "spec/30/experiment.yaml",
-                    "select": None, "backend": "tvboptim", "out_dir": "results",
-                    "result_stem": "result", "container": None, "axes": [], "depends_on": [],
-                    "block": {"venv": "/work/env", "modules": ["python/3.12"],
-                              "setup": ["export FOO=1"]}}])
-    shell = smk[smk.index("    shell:"):]
+        "snakemake/study.smk.mako",
+        block={},
+        bundled_code=False,
+        exp_plans=[
+            {
+                "key": "30",
+                "rule_name": "exp_30",
+                "spec_relpath": "spec/30/experiment.yaml",
+                "select": None,
+                "backend": "tvboptim",
+                "out_dir": "results",
+                "result_stem": "result",
+                "container": None,
+                "axes": [],
+                "depends_on": [],
+                "block": {"venv": "/work/env", "modules": ["python/3.12"], "setup": ["export FOO=1"]},
+            }
+        ],
+    )
+    shell = smk[smk.index("    shell:") :]
     assert "module load python/3.12 && " in shell
     assert "source /work/env/bin/activate && " in shell
     # Order matters: modules, then venv, then setup.
@@ -959,11 +1150,25 @@ def test_venv_path_with_a_space_is_shell_quoted():
     from tvbo.cli.workflow import _render_template
 
     smk = _render_template(
-        "snakemake/study.smk.mako", block={}, bundled_code=False,
-        exp_plans=[{"key": "30", "rule_name": "exp_30", "spec_relpath": "spec/30/experiment.yaml",
-                    "select": None, "backend": "tvboptim", "out_dir": "results",
-                    "result_stem": "result", "container": None, "axes": [], "depends_on": [],
-                    "block": {"venv": "/work/my env"}}])
+        "snakemake/study.smk.mako",
+        block={},
+        bundled_code=False,
+        exp_plans=[
+            {
+                "key": "30",
+                "rule_name": "exp_30",
+                "spec_relpath": "spec/30/experiment.yaml",
+                "select": None,
+                "backend": "tvboptim",
+                "out_dir": "results",
+                "result_stem": "result",
+                "container": None,
+                "axes": [],
+                "depends_on": [],
+                "block": {"venv": "/work/my env"},
+            }
+        ],
+    )
     assert "source '/work/my env'/bin/activate && " in smk
 
 
@@ -979,10 +1184,8 @@ def test_experiment_override_does_not_clear_inherited_list():
     from tvbo.cli._workflow import merge_workflow_spec
     from types import SimpleNamespace as NS
 
-    study = NS(workflow=NS(container="img", container_binds=["/data/cephfs-1"],
-                           container_args=None, requirements=[]))
-    exp = NS(workflow=NS(container=None, container_binds=[], container_args=None,
-                         requirements=[], slurm=NS(time="48:00:00")))
+    study = NS(workflow=NS(container="img", container_binds=["/data/cephfs-1"], container_args=None, requirements=[]))
+    exp = NS(workflow=NS(container=None, container_binds=[], container_args=None, requirements=[], slurm=NS(time="48:00:00")))
 
     merged = merge_workflow_spec(study, exp)
     assert merged["container_binds"] == ["/data/cephfs-1"]
@@ -1001,9 +1204,15 @@ def test_nextflow_enables_the_container_runtime():
     plan = SimpleNamespace(
         container="docker://ghcr.io/virtual-twin/tvbo:dev",
         container_exec_flags="--bind /data/cephfs-1",
-        backend=SimpleNamespace(name="tvboptim"), study_key="s", experiment_key="30",
-        wildcards=[], vectorize_axes=[], workflow_axes=[], out_dir="results",
-        n_array_tasks=1, chunk=1,
+        backend=SimpleNamespace(name="tvboptim"),
+        study_key="s",
+        experiment_key="30",
+        wildcards=[],
+        vectorize_axes=[],
+        workflow_axes=[],
+        out_dir="results",
+        n_array_tasks=1,
+        chunk=1,
     )
     nf = _render_template("nextflow/main.nf.mako", plan=plan, block={}, bundled_code=False)
     assert "singularity.enabled = true" in nf
@@ -1048,9 +1257,19 @@ def test_study_readme_covers_every_experiment():
     from tvbo.cli.workflow import _write_readme
 
     def plan(key, jobs, vec_cells):
-        return NS(study_key="Koller2024", experiment_key=key, backend=NS(name="tvboptim", label="tvboptim"),
-                  container=None, n_workflow_cells=jobs, n_vectorize_cells=vec_cells, chunk=1,
-                  n_array_tasks=1, vectorize_axes=[], workflow_axes=[NS(name="K")], overrides=[])
+        return NS(
+            study_key="Koller2024",
+            experiment_key=key,
+            backend=NS(name="tvboptim", label="tvboptim"),
+            container=None,
+            n_workflow_cells=jobs,
+            n_vectorize_cells=vec_cells,
+            chunk=1,
+            n_array_tasks=1,
+            vectorize_axes=[],
+            workflow_axes=[NS(name="K")],
+            overrides=[],
+        )
 
     # Exp 40/48 vectorize their whole 4x39x10 grid into one job; exp 52 is a single run.
     plans = [plan("40", 1, 1560), plan("48", 1, 1560), plan("52", 1, 1)]
@@ -1059,8 +1278,9 @@ def test_study_readme_covers_every_experiment():
 
     with tempfile.TemporaryDirectory() as td:
         out = Path(td)
-        _write_readme(out, engine="snakemake", plans=plans, script_relpath=None,
-                      spec_layout="spec/<experiment>/experiment.yaml")
+        _write_readme(
+            out, engine="snakemake", plans=plans, script_relpath=None, spec_layout="spec/<experiment>/experiment.yaml"
+        )
         readme = (out / "README.md").read_text()
 
     # Titled by the study, never "study / <last experiment>".
@@ -1121,14 +1341,20 @@ def test_env_set_merges_by_name_not_replace():
     from tvbo.utils import deep_merge
 
     yaml_side = _canonicalize_engine_maps(
-        {"slurm": {"env": [{"name": "XLA_PYTHON_CLIENT_PREALLOCATE", "value": "false"},
-                           {"name": "XLA_FLAGS", "value": "--host_device_count=1"}]}}
+        {
+            "slurm": {
+                "env": [
+                    {"name": "XLA_PYTHON_CLIENT_PREALLOCATE", "value": "false"},
+                    {"name": "XLA_FLAGS", "value": "--host_device_count=1"},
+                ]
+            }
+        }
     )
     cli_side = {"slurm": {"env": {"XLA_FLAGS": ""}}}  # --set slurm.env.XLA_FLAGS=""
     merged = deep_merge(yaml_side, cli_side)["slurm"]["env"]
     names = {e["name"]: e["value"] for e in _normalize_env(merged)}
     assert names["XLA_PYTHON_CLIENT_PREALLOCATE"] == "false"  # preserved
-    assert names["XLA_FLAGS"] == "''"                          # overridden (empty, quoted)
+    assert names["XLA_FLAGS"] == "''"  # overridden (empty, quoted)
 
 
 def test_workflow_nextflow_emits_kit(tmp_path: Path):
@@ -1151,14 +1377,24 @@ def test_workflow_nextflow_emits_kit(tmp_path: Path):
 def test_env_and_options_render_across_engines(tmp_path, engine, artefact, opt_needle, env_needle):
     """env + options are name-keyed passthroughs rendered by every engine's emitter,
     each in its native form (Slurm #SBATCH / Snakemake resources / Nextflow process)."""
-    opt = {"slurm": "qos=normal", "snakemake": "slurm_partition=gpu",
-           "nextflow": "clusterOptions=--gres=gpu:1"}[engine]
+    opt = {"slurm": "qos=normal", "snakemake": "slurm_partition=gpu", "nextflow": "clusterOptions=--gres=gpu:1"}[engine]
     out = tmp_path / "kit"
-    r = runner.invoke(app, [
-        "workflow", engine, EXP, "--backend", "jax", "-o", str(out),
-        "--set", f"{engine}.env.OMP_NUM_THREADS=2",
-        "--set", f"{engine}.options.{opt}",
-    ])
+    r = runner.invoke(
+        app,
+        [
+            "workflow",
+            engine,
+            EXP,
+            "--backend",
+            "jax",
+            "-o",
+            str(out),
+            "--set",
+            f"{engine}.env.OMP_NUM_THREADS=2",
+            "--set",
+            f"{engine}.options.{opt}",
+        ],
+    )
     assert r.exit_code == 0, r.stdout
     text = (out / artefact).read_text()
     assert opt_needle in text
@@ -1170,11 +1406,24 @@ def test_frozen_spec_captures_merged_workflow_for_reproducibility(tmp_path: Path
     --set), so re-emitting from it reproduces the run with no flags — one-click
     provenance rather than the overrides living only in run.sbatch."""
     k1 = tmp_path / "k1"
-    r = runner.invoke(app, [
-        "workflow", "slurm", EXP, "--backend", "jax", "-o", str(k1),
-        "--set", "slurm.partition=gpu", "--set", "slurm.array_chunk=1",
-        "--set", "slurm.env.FOO=bar",
-    ])
+    r = runner.invoke(
+        app,
+        [
+            "workflow",
+            "slurm",
+            EXP,
+            "--backend",
+            "jax",
+            "-o",
+            str(k1),
+            "--set",
+            "slurm.partition=gpu",
+            "--set",
+            "slurm.array_chunk=1",
+            "--set",
+            "slurm.env.FOO=bar",
+        ],
+    )
     assert r.exit_code == 0, r.stdout
     spec_yaml = next(p for p in (k1 / "spec").glob("*.yaml") if p.name != "network.yaml")
     frozen = spec_yaml.read_text()
@@ -1186,14 +1435,13 @@ def test_frozen_spec_captures_merged_workflow_for_reproducibility(tmp_path: Path
     assert r2.exit_code == 0, r2.stdout
     sbatch = (k2 / "run.sbatch").read_text()
     assert "#SBATCH --partition=gpu" in sbatch
-    assert "#SBATCH --array=0-0" in sbatch          # array_chunk=1 → single shard
+    assert "#SBATCH --array=0-0" in sbatch  # array_chunk=1 → single shard
     assert "export FOO=bar" in sbatch
 
 
 def test_workflow_stdout_only_does_not_create_kit(tmp_path: Path):
     out = tmp_path / "kit"
-    r = runner.invoke(app, ["workflow", "snakemake", EXP, "--backend", "jax",
-                            "-o", str(out), "--stdout"])
+    r = runner.invoke(app, ["workflow", "snakemake", EXP, "--backend", "jax", "-o", str(out), "--stdout"])
     assert r.exit_code == 0, r.stdout
     assert "rule" in r.stdout
     assert not out.exists()
@@ -1233,8 +1481,7 @@ def test_workflow_run_emits_and_executes_engine(tmp_path: Path, monkeypatch, eng
     assert (out / expected_file).is_file()
     # Filter to the engine's submission commands — a globally-patched subprocess.run
     # also captures an incidental platform `uname -p` (jax init) on some hosts.
-    submits = [c for c in calls
-               if c["cmd"] and Path(c["cmd"][0]).name in {"sbatch", "snakemake", "nextflow"}]
+    submits = [c for c in calls if c["cmd"] and Path(c["cmd"][0]).name in {"sbatch", "snakemake", "nextflow"}]
     assert submits, "expected workflow run to execute engine command"
     # argv[0] is an absolute path when the launcher is installed beside this
     # interpreter, so compare the program name plus the arguments.
@@ -1259,8 +1506,7 @@ def test_workflow_run_slurm_chains_gather_when_sharded(tmp_path: Path, monkeypat
     out = tmp_path / "kit"
     r = runner.invoke(
         app,
-        ["workflow", "run", "slurm", EXP, "--backend", "jax",
-         "--set", "distribute.chunk=4", "-o", str(out)],
+        ["workflow", "run", "slurm", EXP, "--backend", "jax", "--set", "distribute.chunk=4", "-o", str(out)],
     )
     assert r.exit_code == 0, r.stdout
     assert (out / "finalize.sbatch").is_file()
@@ -1310,8 +1556,7 @@ def test_slurm_pack_emits_only_tarball(tmp_path: Path):
     """`tvbo workflow slurm … --pack` writes ONLY <kit>.tar.gz and removes the loose
     kit directory (the tarball is the shippable artifact; submit/run re-extract it)."""
     kit = tmp_path / "mykit"
-    r = runner.invoke(app, ["workflow", "slurm", EXP, "--backend", "jax",
-                            "-o", str(kit), "--pack"])
+    r = runner.invoke(app, ["workflow", "slurm", EXP, "--backend", "jax", "-o", str(kit), "--pack"])
     assert r.exit_code == 0, r.stdout
     assert (tmp_path / "mykit.tar.gz").is_file(), "expected the packed tarball"
     assert not kit.exists(), "--pack must remove the loose kit directory"
@@ -1447,6 +1692,7 @@ def test_workflow_run_slurm_array_throttle(tmp_path: Path, monkeypatch):
 # CLI: validate stubs (C5)
 # ---------------------------------------------------------------------------
 
+
 def test_validate_sedml_stub_rejects_non_xml(tmp_path: Path):
     fp = tmp_path / "fake.sedml"
     fp.write_text("not sedml")
@@ -1470,6 +1716,7 @@ def test_validate_omex_stub_rejects_non_zip(tmp_path: Path):
 
 def test_validate_omex_stub_accepts_zip_with_manifest(tmp_path: Path):
     import zipfile
+
     fp = tmp_path / "fake.omex"
     with zipfile.ZipFile(fp, "w") as zf:
         zf.writestr("manifest.xml", "<omexManifest/>")
@@ -1480,6 +1727,7 @@ def test_validate_omex_stub_accepts_zip_with_manifest(tmp_path: Path):
 # ---------------------------------------------------------------------------
 # Backend templates expose a runnable __main__ entry point
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("fmt", ["jax", "tvb", "tvboptim"])
 def test_python_experiment_script_has_main_block(fmt):
@@ -1493,9 +1741,7 @@ def test_python_experiment_script_has_main_block(fmt):
 
     exp = SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization")
     code = exp.render(fmt)
-    assert 'if __name__ == "__main__":' in code, (
-        f"backend {fmt!r} renders a script without a __main__ entry point"
-    )
+    assert 'if __name__ == "__main__":' in code, f"backend {fmt!r} renders a script without a __main__ entry point"
 
 
 def test_pde_experiment_template_has_main_block():
@@ -1518,11 +1764,12 @@ def test_bundler_carries_a_callables_local_helper_but_not_stdlib_or_installed(tm
     (tmp_path / "helper_a.py").write_text("import os\nimport json\nimport helper_b\n")
     monkeypatch.syspath_prepend(str(tmp_path))
     import importlib
+
     a = importlib.import_module("helper_a")
     try:
         deps = dict(_local_module_deps(a, set()))
-        assert "helper_b" in deps and deps["helper_b"].endswith("helper_b.py")   # the local helper
-        assert "os" not in deps and "json" not in deps                            # stdlib excluded
+        assert "helper_b" in deps and deps["helper_b"].endswith("helper_b.py")  # the local helper
+        assert "os" not in deps and "json" not in deps  # stdlib excluded
     finally:
         for m in ("helper_a", "helper_b"):
             sys.modules.pop(m, None)
@@ -1534,11 +1781,21 @@ def test_benchmark_and_smoke_reach_the_snakemake_rule():
     Both are run modifiers carried on the exp_plan, never in the frozen workflow block."""
     from tvbo.cli.workflow import _render_template
 
-    ep = {"key": "34", "rule_name": "exp_34", "spec_relpath": "spec/34/experiment.yaml",
-          "select": None, "backend": "tvboptim", "out_dir": "results",
-          "result_stem": "result", "container": None, "axes": [], "depends_on": [],
-          "block": {"cpus_per_task": 2, "mem": "120G"},
-          "benchmark": True, "max_iterations": 1}
+    ep = {
+        "key": "34",
+        "rule_name": "exp_34",
+        "spec_relpath": "spec/34/experiment.yaml",
+        "select": None,
+        "backend": "tvboptim",
+        "out_dir": "results",
+        "result_stem": "result",
+        "container": None,
+        "axes": [],
+        "depends_on": [],
+        "block": {"cpus_per_task": 2, "mem": "120G"},
+        "benchmark": True,
+        "max_iterations": 1,
+    }
     smk = _render_template("snakemake/study.smk.mako", block={}, bundled_code=False, exp_plans=[ep])
     assert "benchmark:" in smk
     assert "result.benchmark.tsv" in smk
@@ -1609,8 +1866,7 @@ def test_two_constants_sharing_a_basename_is_an_error(tmp_path):
     for sub in ("fc", "other"):
         (tmp_path / sub).mkdir()
         (tmp_path / sub / "target.h5").write_text(sub)
-    code = (f'_load_constant("{tmp_path / "fc" / "target.h5"}")\n'
-            f'_load_constant("{tmp_path / "other" / "target.h5"}")\n')
+    code = f'_load_constant("{tmp_path / "fc" / "target.h5"}")\n_load_constant("{tmp_path / "other" / "target.h5"}")\n'
     with pytest.raises((SystemExit, typer.Exit, typer.BadParameter)):
         _bundle_script_constants(code, tmp_path / "kit")
 

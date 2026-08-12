@@ -32,13 +32,20 @@ RESERVOIR = {
         # `seed_offset` selects the sub-stream. It must be stated: two seeded steps
         # sharing an offset would be perfectly correlated, and drawing them sequentially
         # from one stream (rather than from offset-derived ones) changes every value.
-        "raw": {"type": "sample", "seed_offset": 0,
-                "distribution": {"name": "Normal", "parameters": {"mean": 0.0, "std": 1.0}}},
+        "raw": {
+            "type": "sample",
+            "seed_offset": 0,
+            "distribution": {"name": "Normal", "parameters": {"mean": 0.0, "std": 1.0}},
+        },
         # The original writes `sample(Uniform(0,1)) < sparsity`; expressed with the draw on
         # the right as `sparsity > draw`, which is the same relation.
-        "mask": {"type": "stochastic_mask", "of": "sparsity", "comparison": "gt",
-                 "seed_offset": 1,
-                 "distribution": {"name": "Uniform", "parameters": {"lo": 0.0, "hi": 1.0}}},
+        "mask": {
+            "type": "stochastic_mask",
+            "of": "sparsity",
+            "comparison": "gt",
+            "seed_offset": 1,
+            "distribution": {"name": "Uniform", "parameters": {"lo": 0.0, "hi": 1.0}},
+        },
         "masked": {"equation": {"rhs": "raw * mask"}},
         "rho": {"equation": {"rhs": "max(abs(eigvals(masked)))"}},
         # `scale` is a step of its own rather than a parenthesised sub-expression, and that
@@ -130,8 +137,7 @@ def test_a_fully_seeded_dag_has_no_deterministic_prefix():
 
 def test_missing_n_nodes_is_rejected():
     """Size comes from Network.number_of_nodes; guessing it would be a silent wrong shape."""
-    spec = {**RESERVOIR, "parameters": {k: v for k, v in RESERVOIR["parameters"].items()
-                                        if k != "n_nodes"}}
+    spec = {**RESERVOIR, "parameters": {k: v for k, v in RESERVOIR["parameters"].items() if k != "n_nodes"}}
     with pytest.raises(ProceduralError, match="n_nodes"):
         materialize(spec, seed=1)
 
@@ -139,8 +145,7 @@ def test_missing_n_nodes_is_rejected():
 def test_a_failing_step_reports_which_step_and_what_was_rendered():
     """A broken procedure must name the step and show the emitted source, not raise
     an opaque NameError from inside an eval."""
-    spec = {"parameters": {"n_nodes": 4},
-            "steps": {"bad": {"equation": {"rhs": "normalize(nope, 0)"}}}}
+    spec = {"parameters": {"n_nodes": 4}, "steps": {"bad": {"equation": {"rhs": "normalize(nope, 0)"}}}}
     with pytest.raises(ProceduralError, match=r"step 'bad' failed to evaluate"):
         materialize(spec, seed=1)
 
@@ -187,6 +192,5 @@ def test_a_degenerate_spectral_radius_is_still_rejected():
 
 def test_two_seeded_steps_use_distinct_substreams():
     """Sharing a seed_offset makes two draws perfectly correlated, not independent."""
-    same = {**RESERVOIR, "steps": {**RESERVOIR["steps"],
-            "mask": {**RESERVOIR["steps"]["mask"], "seed_offset": 0}}}
+    same = {**RESERVOIR, "steps": {**RESERVOIR["steps"], "mask": {**RESERVOIR["steps"]["mask"], "seed_offset": 0}}}
     assert not np.array_equal(_weights(), materialize(same, seed=42)["weights"])

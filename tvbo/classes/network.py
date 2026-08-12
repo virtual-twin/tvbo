@@ -99,6 +99,7 @@ def normalized_graph_laplacian(M):
     """
     return graph_laplacian(M / jnp.max(M))
 
+
 try:
     from bids.layout import BIDSLayout  # noqa: F401  # optional dep probe
 
@@ -282,8 +283,7 @@ def get_normative_connectome_data(
     sidecar = _find_network_sidecar(atlas, tractogram, segmentation, scale)
     if sidecar is None:
         raise FileNotFoundError(
-            f"No network found for atlas={atlas}, tractogram={tractogram}, "
-            f"seg={segmentation}, scale={scale} in {NETWORK_DIR}"
+            f"No network found for atlas={atlas}, tractogram={tractogram}, seg={segmentation}, scale={scale} in {NETWORK_DIR}"
         )
 
     from tvbo.data.network_io import load_network
@@ -409,9 +409,7 @@ class Network(tvbo_datamodel.Network):
         # coupling, node_template, …) are preserved on self. Skip when the
         # caller already supplied explicit connectivity.
         _iri = kwargs.pop("iri", None)
-        if _iri and not any(
-            kwargs.get(k) for k in ("data_file", "nodes", "edges", "edge_matrix_files", "bids_dir")
-        ):
+        if _iri and not any(kwargs.get(k) for k in ("data_file", "nodes", "edges", "edge_matrix_files", "bids_dir")):
             _resolved_path = self._resolve_network_iri(_iri)
             if _resolved_path is not None:
                 kwargs["data_file"] = _resolved_path
@@ -560,6 +558,7 @@ class Network(tvbo_datamodel.Network):
         # so relative paths resolve correctly even when Network is built as
         # a kwarg inside SimulationExperiment.__init__.
         from tvbo.classes.experiment import SimulationExperiment as _SE
+
         _source_dir = None
         _pending = getattr(_SE, "_pending_source_file", None)
         if _pending:
@@ -808,11 +807,7 @@ class Network(tvbo_datamodel.Network):
             return kwargs  # builtins / C callables expose no signature
         if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
             return kwargs
-        return {
-            name: value
-            for name, value in kwargs.items()
-            if name in params or name not in defaults
-        }
+        return {name: value for name, value in kwargs.items() if name in params or name not in defaults}
 
     @classmethod
     def _db_procedure_for(cls, gg):
@@ -936,8 +931,7 @@ class Network(tvbo_datamodel.Network):
                 val = getattr(result, attr, None)
                 if val is not None:
                     setattr(self, attr, val)
-            for cache in ("_cached_weights", "_cached_lengths", "_store",
-                          "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
+            for cache in ("_cached_weights", "_cached_lengths", "_store", "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
                 v = getattr(result, cache, None)
                 if v is not None:
                     setattr(self, cache, v)
@@ -946,9 +940,7 @@ class Network(tvbo_datamodel.Network):
             # `node_parameters`), or tuple `(weights, lengths[, node_params])`.
             if isinstance(result, dict):
                 if "weights" not in result:
-                    raise TypeError(
-                        "graph_generator materialiser dict must include a `weights` key."
-                    )
+                    raise TypeError("graph_generator materialiser dict must include a `weights` key.")
                 weights = np.asarray(result["weights"])
                 lengths = np.asarray(result["lengths"]) if result.get("lengths") is not None else None
                 node_params = result.get("node_parameters") or result.get("node_params") or None
@@ -964,9 +956,7 @@ class Network(tvbo_datamodel.Network):
                 )
             n_nodes = weights.shape[0]
             self.number_of_nodes = n_nodes
-            self.nodes = [
-                tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)
-            ]
+            self.nodes = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(n_nodes)]
             # The generator supplies the internal weight matrix only. Preserve
             # any declared edges (e.g. cross-layer routing edges on a
             # subnetwork); only default to empty when none were authored.
@@ -984,9 +974,7 @@ class Network(tvbo_datamodel.Network):
                     for i in range(n_nodes):
                         if self.nodes[i].parameters is None:
                             self.nodes[i].parameters = {}
-                        self.nodes[i].parameters[pname] = tvbo_datamodel.Parameter(
-                            name=pname, value=float(arr[i])
-                        )
+                        self.nodes[i].parameters[pname] = tvbo_datamodel.Parameter(name=pname, value=float(arr[i]))
 
     def _resolve_from_data_file(self, source_dir: Optional[Union[str, Path]]) -> None:
         """Populate self from a companion .h5/.zarr sidecar referenced by ``self.data_file``."""
@@ -1017,8 +1005,7 @@ class Network(tvbo_datamodel.Network):
         loaded_mesh = getattr(loaded, "mesh", None)
         if loaded_mesh is not None and getattr(self, "mesh", None) is None:
             self.mesh = loaded_mesh
-        for cache in ("_cached_weights", "_cached_lengths",
-                       "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
+        for cache in ("_cached_weights", "_cached_lengths", "_mesh_vertices", "_mesh_elements", "_mesh_normals"):
             v = getattr(loaded, cache, None)
             if v is not None:
                 setattr(self, cache, v)
@@ -1071,6 +1058,7 @@ class Network(tvbo_datamodel.Network):
         ``W / roi_size`` to normalise each target region by its size). Silent when no
         such sidecar or no matching labels."""
         import csv
+
         nodes = self.nodes or []
         by_label = {str(getattr(n, "label", "")): n for n in nodes}
         for f in sorted(Path(bids_dir).glob("*_desc-regionSize.tsv")):
@@ -1807,9 +1795,7 @@ class Network(tvbo_datamodel.Network):
             # Declare loaded measures so the `observations` property (which
             # gates on ``observational_measures``) can resolve them.
             existing = list(self.observational_measures or [])
-            self.observational_measures = existing + [
-                m for m in obs if m not in existing
-            ]
+            self.observational_measures = existing + [m for m in obs if m not in existing]
 
         object.__setattr__(self, "_bids_dir", str(bids_dir))
         return self
@@ -2486,12 +2472,15 @@ class Network(tvbo_datamodel.Network):
         #   - parcellation/data_file/bids_dir: loading specs; including them makes
         #     tree_unflatten re-resolve from disk (and fail).
         _ARRAY_OR_LOADING_SLOTS = (
-            "weight", "length", "parcellation", "edges", "data_file", "bids_dir",
+            "weight",
+            "length",
+            "parcellation",
+            "edges",
+            "data_file",
+            "bids_dir",
         )
         meta_dict_without_arrays = {
-            k: v
-            for k, v in meta_dict.items()
-            if not str(k).startswith("_") and k not in _ARRAY_OR_LOADING_SLOTS
+            k: v for k, v in meta_dict.items() if not str(k).startswith("_") and k not in _ARRAY_OR_LOADING_SLOTS
         }
 
         def _strip_none(obj):
@@ -2558,10 +2547,7 @@ class Network(tvbo_datamodel.Network):
         order. Matrix-only networks (no ``nodes``) address rows directly, so the
         map is the identity there.
         """
-        return {
-            (i if getattr(nd, "id", None) is None else int(nd.id)): i
-            for i, nd in enumerate(self.nodes or [])
-        }
+        return {(i if getattr(nd, "id", None) is None else int(nd.id)): i for i, nd in enumerate(self.nodes or [])}
 
     def _edge_matrix(self, value_of, fill: float = 0.0) -> Optional[np.ndarray]:
         """Build one connectome matrix from the explicit edges.
@@ -2632,12 +2618,11 @@ class Network(tvbo_datamodel.Network):
         than merely incomplete. Use ``_get_node_position`` for a tolerant per-node lookup.
         """
         out = []
-        for node in (self.nodes or []):
+        for node in self.nodes or []:
             pos = getattr(node, "position", None)
             if pos is None:
                 raise ValueError(
-                    f"node {getattr(node, 'id', '?')!r} has no position; a full "
-                    f"(n_nodes, 3) coordinate array cannot be built."
+                    f"node {getattr(node, 'id', '?')!r} has no position; a full (n_nodes, 3) coordinate array cannot be built."
                 )
             out.append([pos.x, pos.y, getattr(pos, "z", 0.0) or 0.0])
         return np.asarray(out, dtype=float)
@@ -2674,6 +2659,7 @@ class Network(tvbo_datamodel.Network):
         Reads ``length``, then ``distance``; with neither declared, falls back to the
         Euclidean distance between the two nodes' positions (in ``distance_unit``).
         """
+
         def length(edge, i, j):
             d = edge_param(edge, "length")
             if d is None:
@@ -2721,8 +2707,10 @@ class Network(tvbo_datamodel.Network):
         try:
             from tvbo.classes.atlas import Atlas, available_atlases
 
-            resolved = name if name in available_atlases else next(
-                (a for a in available_atlases if a.lower() == str(name).lower()), None
+            resolved = (
+                name
+                if name in available_atlases
+                else next((a for a in available_atlases if a.lower() == str(name).lower()), None)
             )
             if not resolved:
                 return {}
@@ -2733,7 +2721,8 @@ class Network(tvbo_datamodel.Network):
 
             logging.getLogger(__name__).warning(
                 "Could not load atlas terminology for %r (region aliases unavailable): %s",
-                name, exc,
+                name,
+                exc,
             )
             return {}
 
@@ -2958,9 +2947,7 @@ class Network(tvbo_datamodel.Network):
         # Apply transforms targeting "length" (mirrors weights_matrix; the
         # add_transform contract lists "length" as a valid edge-property target).
         for t in self.transforms_for("length"):
-            L = self._apply_transform(
-                L.toarray() if _sp.issparse(L) else np.asarray(L), t
-            )
+            L = self._apply_transform(L.toarray() if _sp.issparse(L) else np.asarray(L), t)
         return L
 
     @property
@@ -3004,9 +2991,7 @@ class Network(tvbo_datamodel.Network):
         out: Dict[str, np.ndarray] = {}
 
         # 1) BIDS-loaded observations (from_bids path)
-        bids_obs = object.__getattribute__(self, "__dict__").get(
-            "_bids_observations", {}
-        ) or {}
+        bids_obs = object.__getattribute__(self, "__dict__").get("_bids_observations", {}) or {}
         for name in measures:
             if name in bids_obs:
                 m = _dense(bids_obs[name])
@@ -3106,9 +3091,7 @@ class Network(tvbo_datamodel.Network):
         # graph in one key space; without it the graph gains a phantom set of
         # index-keyed nodes (N+1 nodes for N regions) and any lookup by node key
         # fails — e.g. plot_graph raising ``KeyError: 0``.
-        index_to_id = {
-            i: (node.id if node.id is not None else i) for i, node in enumerate(self.nodes or [])
-        }
+        index_to_id = {i: (node.id if node.id is not None else i) for i, node in enumerate(self.nodes or [])}
         if explicit_edges:
             # Use explicit edges
             for edge in explicit_edges:
@@ -3872,8 +3855,11 @@ class Network(tvbo_datamodel.Network):
             if isinstance(entity, dict):
                 names = [entity.get("name"), entity.get("abbreviation"), *(entity.get("alternateName") or [])]
             else:
-                names = [getattr(entity, "name", None), getattr(entity, "abbreviation", None),
-                         *(getattr(entity, "alternateName", None) or [])]
+                names = [
+                    getattr(entity, "name", None),
+                    getattr(entity, "abbreviation", None),
+                    *(getattr(entity, "alternateName", None) or []),
+                ]
             for nm in names:
                 if nm:
                     by_label[str(nm)] = coord
@@ -3882,8 +3868,8 @@ class Network(tvbo_datamodel.Network):
         # centres line up with node order regardless of the atlas's own ordering.
         if nodes and by_label:
             node_labels = [getattr(node, "label", None) for node in nodes]
-            matched = {i: by_label[str(l)] for i, l in enumerate(node_labels) if l and str(l) in by_label}
-            n_labelled = sum(1 for l in node_labels if l)
+            matched = {i: by_label[str(label)] for i, label in enumerate(node_labels) if label and str(label) in by_label}
+            n_labelled = sum(1 for label in node_labels if label)
             if matched and len(matched) >= max(1, n_labelled // 2):
                 return matched
 
@@ -4473,13 +4459,12 @@ class Network(tvbo_datamodel.Network):
         """
         from tvbo.data import param_io
 
-        for edge in (self.edges or []):
+        for edge in self.edges or []:
             label = str(getattr(edge, "label", "") or "")
             if not label or label in arrays or getattr(edge, "producer", None) is None:
                 continue
             source_dir = getattr(self, "_source_dir", None)
-            produced = param_io.resolve(
-                edge, source_dir=Path(source_dir) if source_dir else None, context=self)
+            produced = param_io.resolve(edge, source_dir=Path(source_dir) if source_dir else None, context=self)
             if produced is None:
                 raise ValueError(
                     f"network edge {label!r}: its `producer:` returned nothing. A matrix "
@@ -4818,9 +4803,7 @@ class Network(tvbo_datamodel.Network):
                 for name, arg in func.arguments.items():  # arguments keyed by name
                     kwargs[name] = getattr(arg, "value", None)
                 sig = inspect.signature(fn)
-                accepts_var_kw = any(
-                    p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
-                )
+                accepts_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
                 if "network" in sig.parameters or accepts_var_kw:
                     kwargs.setdefault("network", self)
                 # Inject L only when asked. For a length-target transform ``M`` IS

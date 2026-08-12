@@ -8,6 +8,7 @@ exact op is visible in the script rather than hidden in tvbo runtime. These free
 raw/transformed accessor split, byte-identity of the inlined op against ``weights_matrix``,
 and that the emitted network builder carries the transform as pure ``jnp``.
 """
+
 import jax.numpy as jnp
 import numpy as np
 
@@ -18,10 +19,7 @@ RHS = "log(W + 1) / max(log(W + 1))"
 
 
 def _net_with_transform():
-    W = np.array([[0, 4, 16, 0],
-                  [4, 0, 0, 100],
-                  [16, 0, 0, 1],
-                  [0, 100, 1, 0]], float)
+    W = np.array([[0, 4, 16, 0], [4, 0, 0, 100], [16, 0, 0, 1], [0, 100, 1, 0]], float)
     net = Network.from_matrix(weights=W, lengths=np.zeros_like(W))
     net.add_transform("weight", RHS)
     return net, W
@@ -31,9 +29,9 @@ def test_raw_accessor_is_untouched_transformed_is_normalised():
     net, W = _net_with_transform()
     raw = np.asarray(net.raw_weights_matrix)
     transformed = np.asarray(net.weights_matrix)
-    assert np.array_equal(raw, W)                    # raw_weights_matrix skips transforms
-    assert not np.allclose(raw, transformed)         # the transform actually changed it
-    assert transformed.max() <= 1.0 + 1e-6           # log(W+1)/max normalises to <= 1
+    assert np.array_equal(raw, W)  # raw_weights_matrix skips transforms
+    assert not np.allclose(raw, transformed)  # the transform actually changed it
+    assert transformed.max() <= 1.0 + 1e-6  # log(W+1)/max normalises to <= 1
 
 
 def test_inline_transform_is_byte_identical_to_weights_matrix():
@@ -45,7 +43,7 @@ def test_inline_transform_is_byte_identical_to_weights_matrix():
     assert len(transforms) == 1
     assert const_env == []
     expr, matrix_env = transforms[0]
-    assert expr.startswith("jnp.") and "W" in expr   # pure jnp, references the raw matrix
+    assert expr.startswith("jnp.") and "W" in expr  # pure jnp, references the raw matrix
 
     weights = jnp.asarray(net.raw_weights_matrix)
     env = {"jnp": jnp, "distances": None, "weights": weights}
@@ -56,13 +54,11 @@ def test_inline_transform_is_byte_identical_to_weights_matrix():
 
 
 def test_network_without_transform_emits_nothing():
-    net = Network.from_matrix(weights=np.array([[0, 1.0], [1.0, 0]]),
-                              lengths=np.zeros((2, 2)))
+    net = Network.from_matrix(weights=np.array([[0, 1.0], [1.0, 0]]), lengths=np.zeros((2, 2)))
     transforms, const_env = weight_transform_codegen(net)
     assert transforms == []
     assert const_env == []
-    assert np.array_equal(np.asarray(net.raw_weights_matrix),
-                          np.asarray(net.weights_matrix))
+    assert np.array_equal(np.asarray(net.raw_weights_matrix), np.asarray(net.weights_matrix))
 
 
 def test_rendered_tvboptim_source_inlines_the_transform():
@@ -71,23 +67,25 @@ def test_rendered_tvboptim_source_inlines_the_transform():
     from tvbo import SimulationExperiment
 
     exp = SimulationExperiment(
-        id=1, label="weight-transform",
-        dynamics={"name": "Osc", "system_type": "continuous", "output": ["x"],
-                  "parameters": {"a": {"value": 1.0}},
-                  "state_variables": {"x": {"equation": {"rhs": "-a*x"},
-                                            "initial_value": 0.1}}},
-        network={"number_of_nodes": 4,
-                 "nodes": [{"id": i, "label": f"n{i}"} for i in range(4)]},
-        integration={"method": "heun", "step_size": 0.1, "duration": 1.0,
-                     "transient_time": 0.0, "unit": "s"},
+        id=1,
+        label="weight-transform",
+        dynamics={
+            "name": "Osc",
+            "system_type": "continuous",
+            "output": ["x"],
+            "parameters": {"a": {"value": 1.0}},
+            "state_variables": {"x": {"equation": {"rhs": "-a*x"}, "initial_value": 0.1}},
+        },
+        network={"number_of_nodes": 4, "nodes": [{"id": i, "label": f"n{i}"} for i in range(4)]},
+        integration={"method": "heun", "step_size": 0.1, "duration": 1.0, "transient_time": 0.0, "unit": "s"},
     )
     net, _ = _net_with_transform()
     exp.network = net
 
     code = exp.render_code("tvboptim")
     builder = code.split("def create_network", 1)[-1].split("\ndef ", 1)[0]
-    assert "jnp.log(1 + W)" in builder                 # transform inlined in the builder
-    assert "weights_matrix" not in builder             # not delegated to tvbo runtime
+    assert "jnp.log(1 + W)" in builder  # transform inlined in the builder
+    assert "weights_matrix" not in builder  # not delegated to tvbo runtime
     assert "_apply_transform" not in builder
 
 
@@ -97,8 +95,7 @@ def test_rendered_tvboptim_source_inlines_the_transform():
 def _apply_emitted(net, weights, distances=None):
     """Run the emitted const_env + per-transform env exactly as `create_network` does."""
     transforms, const_env = weight_transform_codegen(net)
-    scope = {"jnp": jnp, "weights": jnp.asarray(weights),
-             "distances": None if distances is None else jnp.asarray(distances)}
+    scope = {"jnp": jnp, "weights": jnp.asarray(weights), "distances": None if distances is None else jnp.asarray(distances)}
     for line in const_env:
         exec(line, scope)
     for expr, matrix_env in transforms:
@@ -119,8 +116,9 @@ def test_a_callable_transform_reaches_the_kit():
 
     W = np.array([[0, 2.0, 1.0], [4.0, 0, 3.0], [1.0, 5.0, 0]])
     net = Network.from_matrix(weights=W, lengths=np.zeros_like(W))
-    net.transforms = [Function(name="weight", callable=CallableRef(
-        module="tvbo.classes.network", name="normalized_graph_laplacian"))]
+    net.transforms = [
+        Function(name="weight", callable=CallableRef(module="tvbo.classes.network", name="normalized_graph_laplacian"))
+    ]
 
     transforms, const_env = weight_transform_codegen(net)
     assert len(transforms) == 1
@@ -138,10 +136,9 @@ def test_equation_parameters_are_substituted_like_the_runtime():
 
     W = np.array([[0, 2.0], [4.0, 0]])
     net = Network.from_matrix(weights=W, lengths=np.zeros_like(W))
-    net.transforms = [Function(name="weight",
-                               equation=Equation(rhs="W / k", parameters={"k": {"value": 4.0}}))]
+    net.transforms = [Function(name="weight", equation=Equation(rhs="W / k", parameters={"k": {"value": 4.0}}))]
 
-    (expr, _), = weight_transform_codegen(net)[0]
+    ((expr, _),) = weight_transform_codegen(net)[0]
     assert "k" not in expr
     assert np.allclose(_apply_emitted(net, W), np.asarray(net.weights_matrix))
 
@@ -187,10 +184,8 @@ def test_a_masked_expression_is_validated_by_its_base_symbol():
     Delay_Speed_Synchronization declares exactly that. Checking the raw free-symbol text
     rejected it as undeclared and refused to render the recipe at all.
     """
-    net = Network.from_matrix(weights=np.array([[0, 2.0, 0], [4.0, 0, 3.0], [0, 5.0, 0]]),
-                              lengths=np.zeros((3, 3)))
+    net = Network.from_matrix(weights=np.array([[0, 2.0, 0], [4.0, 0, 3.0], [0, 5.0, 0]]), lengths=np.zeros((3, 3)))
     net.add_transform("weight", "W / mean(W[W > 0])")
-    (expr, matrix_env), = weight_transform_codegen(net)[0]
+    ((expr, matrix_env),) = weight_transform_codegen(net)[0]
     assert "W = weights" in matrix_env
-    assert np.allclose(_apply_emitted(net, np.asarray(net.raw_weights_matrix)),
-                       np.asarray(net.weights_matrix))
+    assert np.allclose(_apply_emitted(net, np.asarray(net.raw_weights_matrix)), np.asarray(net.weights_matrix))

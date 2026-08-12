@@ -151,9 +151,9 @@ def _lint(code: str, ruff: str) -> list[str]:
         path = Path(tmp) / "generated.py"
         path.write_text(code)
         proc = subprocess.run(
-            [ruff, "check", "--isolated", "--select", RUFF_RULES,
-             "--output-format=json", str(path)],
-            capture_output=True, text=True,
+            [ruff, "check", "--isolated", "--select", RUFF_RULES, "--output-format=json", str(path)],
+            capture_output=True,
+            text=True,
         )
     return sorted({item["code"] for item in json.loads(proc.stdout or "[]")})
 
@@ -175,8 +175,7 @@ def test_generated_python_is_black_clean(name, fmt):
 
     code = _render(name, fmt)
     assert code == black.format_str(code, mode=black.FileMode()), (
-        f"{fmt} output is not black-clean; the central format gate in "
-        f"tvbo.export.registry.render should have made it so"
+        f"{fmt} output is not black-clean; the central format gate in tvbo.export.registry.render should have made it so"
     )
 
 
@@ -191,9 +190,8 @@ def test_generated_python_is_lint_clean(name, fmt):
     known = KNOWN_VIOLATIONS.get(f"{name}.{fmt}", ())
     codes = _lint(_render(name, fmt), _ruff())
     unexpected = [c for c in codes if c not in known]
-    assert not unexpected, (
-        f"{fmt} generated code trips {', '.join(unexpected)}"
-        + (f" beyond its recorded {', '.join(known)}" if known else "")
+    assert not unexpected, f"{fmt} generated code trips {', '.join(unexpected)}" + (
+        f" beyond its recorded {', '.join(known)}" if known else ""
     )
 
 

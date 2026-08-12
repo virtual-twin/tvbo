@@ -15,6 +15,7 @@ publication-readiness items in §2.3 of the ontology restructuring plan:
 We do this as a post-process rather than fighting LinkML's emitter so
 that future LinkML upgrades remain drop-in.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -46,8 +47,7 @@ def _retype_float_facets(g: Graph) -> None:
     facets, so only HermiT surfaces it. Re-type each facet literal to
     ``xsd:float`` so the restriction is internally consistent for both reasoners.
     """
-    facet_predicates = (XSD.minInclusive, XSD.maxInclusive,
-                        XSD.minExclusive, XSD.maxExclusive)
+    facet_predicates = (XSD.minInclusive, XSD.maxInclusive, XSD.minExclusive, XSD.maxExclusive)
     for datatype_node in set(g.subjects(OWL.onDatatype, XSD.float)):
         for restriction_list in g.objects(datatype_node, OWL.withRestrictions):
             for facet_node in g.items(restriction_list):
@@ -70,8 +70,7 @@ def _augment(g: Graph, schema: dict) -> None:
     onto = CANONICAL_IRI
     g.add((onto, RDF.type, OWL.Ontology))
     g.add((onto, RDFS.label, Literal(schema.get("name", "tvb-o-struct"))))
-    g.add((onto, DCTERMS.title, Literal(schema.get(
-        "title", "The Virtual Brain Ontology — Structural T-box"))))
+    g.add((onto, DCTERMS.title, Literal(schema.get("title", "The Virtual Brain Ontology — Structural T-box"))))
     if schema.get("description"):
         g.add((onto, DCTERMS.description, Literal(schema["description"])))
     if schema.get("license"):
@@ -83,12 +82,10 @@ def _augment(g: Graph, schema: dict) -> None:
 
     today = datetime.date.today().isoformat()
     if schema.get("created_on"):
-        g.add((onto, DCTERMS.created, Literal(
-            str(schema["created_on"]), datatype=XSD.date)))
+        g.add((onto, DCTERMS.created, Literal(str(schema["created_on"]), datatype=XSD.date)))
     g.add((onto, DCTERMS.modified, Literal(today, datatype=XSD.date)))
 
-    for slot, prop in (("created_by", DCTERMS.creator),
-                       ("contributors", DCTERMS.contributor)):
+    for slot, prop in (("created_by", DCTERMS.creator), ("contributors", DCTERMS.contributor)):
         val = schema.get(slot)
         if not val:
             continue
@@ -104,10 +101,8 @@ def _augment(g: Graph, schema: dict) -> None:
     # Hard-coded fallback contributor: the project itself, since the schema
     # does not carry per-author ORCIDs (LinkML's gen-owl rejects bare-string
     # contributor entries, so we inject them here instead).
-    g.add((onto, DCTERMS.contributor,
-           Literal("The Virtual Brain Ontology contributors")))
-    g.add((onto, DCTERMS.publisher,
-           URIRef("https://www.thevirtualbrain.org/")))
+    g.add((onto, DCTERMS.contributor, Literal("The Virtual Brain Ontology contributors")))
+    g.add((onto, DCTERMS.publisher, URIRef("https://www.thevirtualbrain.org/")))
 
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/axioms")))
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/data")))
@@ -127,8 +122,7 @@ def _augment(g: Graph, schema: dict) -> None:
     # (`tvb-o/dbs/scale`, `tvb-o/software/scale`) which collide on the bare
     # local name `scale`. The unscoped sibling (`tvb-o/scale`) is treated
     # as canonical and keeps the bare label.
-    PROPERTY_TYPES = (OWL.Class, OWL.ObjectProperty, OWL.DatatypeProperty,
-                      OWL.AnnotationProperty)
+    PROPERTY_TYPES = (OWL.Class, OWL.ObjectProperty, OWL.DatatypeProperty, OWL.AnnotationProperty)
     seen_subjects: set[URIRef] = set()
     for ptype in PROPERTY_TYPES:
         for s in g.subjects(RDF.type, ptype):
@@ -139,7 +133,7 @@ def _augment(g: Graph, schema: dict) -> None:
         s = str(subj)
         if not s.startswith(str(TVBO)):
             continue
-        local = s[len(str(TVBO)):]
+        local = s[len(str(TVBO)) :]
         scope: str | None = None
         value: str | None = None
         if "#" in local:
@@ -162,8 +156,7 @@ def _augment(g: Graph, schema: dict) -> None:
     # imported class IRIs that share the same readable label. Scope the
     # TVBO-side label as "<name> (slot)" while leaving the imported class
     # label untouched. Bare value moves to `skos:notation`.
-    SLOT_TYPES = (OWL.ObjectProperty, OWL.DatatypeProperty,
-                  OWL.AnnotationProperty)
+    SLOT_TYPES = (OWL.ObjectProperty, OWL.DatatypeProperty, OWL.AnnotationProperty)
     slot_subjects: set[URIRef] = set()
     for st in SLOT_TYPES:
         for s in g.subjects(RDF.type, st):
@@ -173,7 +166,7 @@ def _augment(g: Graph, schema: dict) -> None:
         s = str(subj)
         if not s.startswith(str(TVBO)):
             continue
-        local = s[len(str(TVBO)):]
+        local = s[len(str(TVBO)) :]
         if "/" in local or "#" in local:
             continue  # already handled above
         bare_label = Literal(local)
@@ -223,22 +216,21 @@ def _augment(g: Graph, schema: dict) -> None:
             continue
         # Group labels by lexical value; if all share the same value,
         # collapse to a single label preferring one with a language tag.
-        unique_lex = {str(l) for l in labels}
+        unique_lex = {str(lbl) for lbl in labels}
         if len(unique_lex) == 1:
-            preferred = next((l for l in labels if isinstance(l, Literal)
-                              and l.language), labels[0])
-            for l in labels:
-                if l != preferred:
-                    g.remove((subj, RDFS.label, l))
+            preferred = next((lbl for lbl in labels if isinstance(lbl, Literal) and lbl.language), labels[0])
+            for lbl in labels:
+                if lbl != preferred:
+                    g.remove((subj, RDFS.label, lbl))
             continue
         if str(subj).startswith(str(TVBO)):
             continue  # genuine multiple labels on a TVBO IRI: leave alone
-        sorted_labels = sorted({str(l) for l in labels})
-        for l in labels:
-            g.remove((subj, RDFS.label, l))
+        sorted_labels = sorted({str(lbl) for lbl in labels})
+        for lbl in labels:
+            g.remove((subj, RDFS.label, lbl))
         g.add((subj, RDFS.label, Literal(sorted_labels[0])))
-        for l in sorted_labels[1:]:
-            g.add((subj, SKOS.altLabel, Literal(l)))
+        for lbl in sorted_labels[1:]:
+            g.add((subj, SKOS.altLabel, Literal(lbl)))
 
 
 def main() -> int:

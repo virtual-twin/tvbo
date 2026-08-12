@@ -121,9 +121,7 @@ def _number(value: Any, step: str, field: str) -> sp.Expr:
     try:
         return sp.sympify(value)
     except (TypeError, ValueError) as exc:
-        raise ProceduralError(
-            f"step {step!r}: field {field!r} must be a number, got {value!r}."
-        ) from exc
+        raise ProceduralError(f"step {step!r}: field {field!r} must be a number, got {value!r}.") from exc
 
 
 def _dist_name(spec: Any) -> str:
@@ -149,9 +147,7 @@ def _steps(spec: Mapping[str, Any]) -> List[Tuple[str, Any]]:
     if steps is None:
         return []
     if not isinstance(steps, Mapping):
-        raise ProceduralError(
-            f"`steps` must be a mapping keyed by step name, got {type(steps).__name__}."
-        )
+        raise ProceduralError(f"`steps` must be a mapping keyed by step name, got {type(steps).__name__}.")
     return list(steps.items())
 
 
@@ -165,9 +161,7 @@ def _dist_param(spec: Any, name: str) -> Any:
     return entry if value is None else value
 
 
-def _sampler(
-    spec: Any, step: str, shape: Sequence[sp.Expr], substream: Any = 0
-) -> sp.Expr:
+def _sampler(spec: Any, step: str, shape: Sequence[sp.Expr], substream: Any = 0) -> sp.Expr:
     """Build a draw: ``sample_<d>(key, substream, *params, *shape)``.
 
     ``substream`` is written in the spec (``seed_offset``) rather than inferred from step
@@ -178,8 +172,7 @@ def _sampler(
     name = _dist_name(spec)
     if name not in _SAMPLERS:
         raise ProceduralError(
-            f"step {step!r}: distribution {_get(spec, 'name')!r} has no sampler "
-            f"(known: {', '.join(sorted(_SAMPLERS))})."
+            f"step {step!r}: distribution {_get(spec, 'name')!r} has no sampler (known: {', '.join(sorted(_SAMPLERS))})."
         )
     head, defaults = _SAMPLERS[name]
     known = {pname for pname, _ in defaults}
@@ -233,16 +226,11 @@ def _step_distribution_pdf(fields, env, ctx, step):
     if dist is None:
         raise ProceduralError(f"step {step!r}: `distribution` is required.")
     if _dist_name(dist) not in ("normal", "gaussian"):
-        raise ProceduralError(
-            f"step {step!r}: distribution_pdf is defined for Normal, got "
-            f"{_get(dist, 'name')!r}."
-        )
+        raise ProceduralError(f"step {step!r}: distribution_pdf is defined for Normal, got {_get(dist, 'name')!r}.")
     mean = _dist_param(dist, "mean")
     cov = _dist_param(dist, "cov")
     if mean is None or cov is None:
-        raise ProceduralError(
-            f"step {step!r}: a Normal field requires `mean` and `cov` parameters."
-        )
+        raise ProceduralError(f"step {step!r}: a Normal field requires `mean` and `cov` parameters.")
     if not isinstance(mean, (list, tuple)):
         raise ProceduralError(f"step {step!r}: `mean` must be a coordinate list.")
     mean_t = sp.Tuple(*[_number(m, step, "mean") for m in mean])
@@ -262,9 +250,7 @@ def _step_minmax_rescale(fields, env, ctx, step):
     lo, hi = _get(target, "lo"), _get(target, "hi")
     if lo is None or hi is None:
         raise ProceduralError(f"step {step!r}: `target_range` needs both `lo` and `hi`.")
-    return sp.Function("minmax_rescale")(
-        of, _number(lo, step, "target_range.lo"), _number(hi, step, "target_range.hi")
-    )
+    return sp.Function("minmax_rescale")(of, _number(lo, step, "target_range.lo"), _number(hi, step, "target_range.hi"))
 
 
 def _step_sample(fields, env, ctx, step):
@@ -317,10 +303,7 @@ def _step_stochastic_mask(fields, env, ctx, step):
     of = _ref(_get(fields, "of"), env, step, "of")
     comparison = str(_get(fields, "comparison") or "le").lower()
     if comparison not in _COMPARISONS:
-        raise ProceduralError(
-            f"step {step!r}: comparison {comparison!r} unknown "
-            f"(known: {', '.join(sorted(_COMPARISONS))})."
-        )
+        raise ProceduralError(f"step {step!r}: comparison {comparison!r} unknown (known: {', '.join(sorted(_COMPARISONS))}).")
     dist = _get(fields, "distribution")
     if dist is None:
         raise ProceduralError(f"step {step!r}: `distribution` is required.")
@@ -369,10 +352,7 @@ def build(spec: Mapping[str, Any]) -> List[Tuple[str, sp.Expr]]:
         step_type = str(_get(fields, "type") or "equation")
         builder = _STEP_BUILDERS.get(step_type)
         if builder is None:
-            raise ProceduralError(
-                f"step {name!r}: unknown type {step_type!r} "
-                f"(known: {', '.join(sorted(_STEP_BUILDERS))})."
-            )
+            raise ProceduralError(f"step {name!r}: unknown type {step_type!r} (known: {', '.join(sorted(_STEP_BUILDERS))}).")
         expr = builder(fields, env, ctx, name)
         resolved.append((name, expr))
         env[name] = sp.Symbol(name)
@@ -391,7 +371,7 @@ def seeded_steps(spec: Mapping[str, Any], resolved=None) -> set:
     """
     sampler_heads = {head for head, _ in _SAMPLERS.values()}
     seeded: set = set()
-    for name, expr in (resolved if resolved is not None else build(spec)):
+    for name, expr in resolved if resolved is not None else build(spec):
         # Primary signal: does the expression actually DRAW? Keying off the presence of a
         # sampler head rather than the PRNG symbol's name means an `equation` step that
         # calls a sampler is caught however its key argument is spelled — a step wrongly
@@ -438,9 +418,7 @@ def materialize(
     # traced backend threads; the DAG only ever says *that* a step is seeded.
     env[KEY.name] = 0 if seed is None else int(seed)
     if env.get("n_nodes") is None:
-        raise ProceduralError(
-            "materialize: `n_nodes` must be supplied (from Network.number_of_nodes)."
-        )
+        raise ProceduralError("materialize: `n_nodes` must be supplied (from Network.number_of_nodes).")
 
     symbol_names: List[str] = [k for k in env if k not in host and k != "np"]
     for name, expr in build(spec):
@@ -450,8 +428,7 @@ def materialize(
             env[name] = eval(source, {"__builtins__": {}}, env)  # noqa: S307 — rendered by us
         except Exception as exc:  # noqa: BLE001
             raise ProceduralError(
-                f"step {name!r} failed to evaluate: {type(exc).__name__}: {exc}\n"
-                f"  rendered: {source}"
+                f"step {name!r} failed to evaluate: {type(exc).__name__}: {exc}\n  rendered: {source}"
             ) from exc
 
     outputs: Dict[str, Any] = {}

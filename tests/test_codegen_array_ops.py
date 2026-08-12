@@ -15,6 +15,7 @@ The two invariants under test:
    to the hand-written slicing it replaces (so migrating ``source_code`` -> declarative
    equation changes nothing numerically).
 """
+
 import numpy as np
 import pytest
 

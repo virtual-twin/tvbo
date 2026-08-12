@@ -13,6 +13,7 @@ mapping a study key to its file path. Helpers are provided to load individual st
 into [`SimulationStudy`](../classes/study.qmd) objects and to parse the accompanying
 BibTeX database.
 """
+
 import glob
 import os
 from collections import namedtuple
