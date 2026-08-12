@@ -116,6 +116,23 @@ def _coord(da, name, axis):
     return np.arange(da.shape[axis])
 
 
+def _bounds(da, x, output):
+    """The two edges of a ``band`` layer, as ``(lower, upper)`` over *x*.
+
+    A band spans two series, so its output carries a length-2 axis beside the swept one —
+    the analysis returns the pair in ONE labelled array rather than the figure binding two
+    outputs and trusting them to stay in step.
+    """
+    v = np.asarray(da.values)
+    if v.ndim != 2 or 2 not in v.shape:
+        raise ValueError(
+            f"band layer {output!r}: needs a (n, 2) output holding the two edges of the "
+            f"band, got shape {v.shape}."
+        )
+    v = v if v.shape[0] == len(x) else v.T
+    return v[:, 0], v[:, 1]
+
+
 def _apply_axopts(ax, o):
     """Apply a grammar panel's resolved axis directives (labels, limits, ticks, legend)."""
     for _key, _draw in (("axhline", ax.axhline), ("axvline", ax.axvline)):
@@ -310,6 +327,17 @@ def _restore_fixed_axes(snap):
 % elif L['mark'] == 'area':
     _x = _coord(_da, ${repr(L['x'])}, 0)
     ax.fill_between(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
+% elif L['mark'] == 'band':
+    _x = _coord(_da, ${repr(L['x'])}, 0 if _da.shape[0] != 2 else 1)  # swept axis is the non-pair one
+    _b = _bounds(_da, _x, ${repr(L['output'])})
+    ax.fill_between(_x, _b[0], _b[1], **${repr(L['style'])})
+% elif L['mark'] == 'rule':
+    # The channel the value is ON decides the orientation: an `x:` rule is vertical.
+    _line = ax.axvline if ${repr(bool(L['x']))} else ax.axhline
+    _rule_style = dict(${repr(L['style'])})
+    _rule_label = _rule_style.pop("label", None)   # label once, else N duplicate legend entries
+    for _i, _v in enumerate(np.atleast_1d(np.asarray(_da.values, dtype=float)).ravel()):
+        _line(_v, label=(_rule_label if _i == 0 else None), **_rule_style)
 % elif L['color']:
     _dim, _labels = _color_dim(_da, ${repr(L['color'])})   # one line per entry, coloured along the map
     _cmap = plt.get_cmap(${repr(L['cmap'] or 'viridis')})

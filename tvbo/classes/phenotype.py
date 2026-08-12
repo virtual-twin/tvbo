@@ -28,6 +28,7 @@ import numpy as np
 import yaml
 
 from tvbo.datamodel import pydantic as tvbo_datamodel
+from tvbo.utils import yaml_loader
 
 
 class Phenotype(tvbo_datamodel.Phenotype):
@@ -62,7 +63,7 @@ class Phenotype(tvbo_datamodel.Phenotype):
         with open(path) as f:
             data = yaml.safe_load(f) or {}
 
-        inst = cls(**{k: v for k, v in data.items() if k != "tvbo_class"})
+        inst = cls(**yaml_loader.strip_envelope(data))
         inst._yaml_path = str(path)
 
         # Resolve the h5 companion path relative to the YAML

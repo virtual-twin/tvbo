@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -491,6 +492,74 @@ def test_render_code_bar_mark():
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     assert "ax.bar(_x," in code
     assert "ax.plot(_x," not in code
+
+
+def test_render_code_band_mark():
+    """``mark: band`` emits ``fill_between`` across two edges, not the line fallback.
+
+    The schema has offered ``band`` since the figure spec existed while the renderer had no branch for it, so a spec asking for an error band silently got a single line through the middle of its own bounds.
+    """
+    fig = _cartesian_figure()
+    fig.panels["a"].layers[0].mark = "band"
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "_b = _bounds(_da, _x," in code
+    assert "ax.fill_between(_x, _b[0], _b[1]," in code
+    assert "ax.plot(_x," not in code
+    # x is taken from the swept (non-pair) axis, not hardcoded axis 0 — else a pair-first (2, n) output with no x coord makes _x length 2 and the band collapses to two points.
+    assert "_da.shape[0] != 2" in code
+
+
+def test_render_code_rule_mark_takes_its_orientation_from_the_encoding():
+    """``mark: rule`` draws a reference line at a value the CONTAINER holds.
+
+    Same gap as `band`: the schema has always offered it and the renderer had no branch, so a layer marking a published value silently plotted it as a one-point line. An `x:` encoding means the value lives on x, so the line is vertical.
+    """
+    fig = _cartesian_figure()
+    fig.panels["a"].layers[0].mark = "rule"
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "_line = ax.axvline if True" in code
+    assert "ax.plot(_x," not in code
+    # A multi-value rule labels ONCE (not once per value -> N duplicate legend entries).
+    assert '_rule_style.pop("label"' in code and "_i == 0" in code
+
+    fig.panels["a"].layers[0].encoding = P.Encoding(y="v")
+    assert "_line = ax.axvline if False" in bsplot.render_code(fig, TAHER_BASE, "out.png")
+
+
+def test_band_and_rule_with_a_colour_encoding_keep_their_colour_and_label():
+    """Band / rule draw a SINGLE artist above the colour fan-out, so an ``encoding.color`` must not strip their style colour or drop their legend label (only a bare line fans by colour)."""
+    for mark in ("band", "rule"):
+        layer = P.Layer(
+            used=P.DataRef(iri=EXP3_IRI, output="delta_omega"),
+            encoding=P.Encoding(x="KuramotoInertia.K", color="seed"),
+            style=P.Style(color="C1"),
+            label="lbl",
+        )
+        layer.mark = mark
+        d = bsplot._resolve_layer(layer, "cartesian", TAHER_BASE)
+        assert d["style"].get("color") == "C1", f"{mark} lost its style colour"
+        assert d["style"].get("label") == "lbl", f"{mark} lost its legend label"
+
+
+def test_a_band_whose_output_is_not_a_pair_of_edges_is_rejected():
+    """A band spans TWO series; one is a line drawn as if it were an interval."""
+    import re
+
+    import numpy as np
+
+    code = bsplot.render_code(_cartesian_figure(), TAHER_BASE, "out.png")
+    source = re.search(r"^def _bounds\(.*?(?=^def |\Z)", code, re.S | re.M).group(0)
+    scope: dict = {}
+    exec(source, {"np": np}, scope)
+    x = np.arange(5.0)
+    pair = SimpleNamespace(values=np.stack([x - 1, x + 1], axis=1))
+    lo, hi = scope["_bounds"](pair, x, "r_band")
+    assert lo[0] == -1.0 and hi[0] == 1.0
+    # Transposed the other way round, the swept axis still decides which axis is which.
+    lo, hi = scope["_bounds"](SimpleNamespace(values=pair.values.T), x, "r_band")
+    assert lo[0] == -1.0 and hi[0] == 1.0
+    with pytest.raises(ValueError, match="two edges"):
+        scope["_bounds"](SimpleNamespace(values=x), x, "r_band")
 
 
 def test_render_code_annotation_text_kwargs():

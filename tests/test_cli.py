@@ -55,6 +55,29 @@ def test_validate_help():
     assert "schema" in res.stdout
 
 
+def test_validate_schema_detects_the_class_from_the_file_envelope(tmp_path):
+    """Without `--class`, the target comes from the file's own `tvbo_class`.
+
+    A study validated as the default SimulationExperiment fails on a required `id` it has no business carrying, so a spec that declares its class must be taken at its word.
+    """
+    (tmp_path / "study.yaml").write_text("tvbo_class: tvbo:SimulationStudy\nkey: Probe\ntitle: probe\n")
+    res = runner.invoke(app, ["validate", "schema", str(tmp_path / "study.yaml")])
+    assert res.exit_code == 0, res.output
+    assert "valid SimulationStudy" in res.stdout
+
+
+def test_validate_all_reports_every_failure(tmp_path):
+    """The walk collects failures instead of aborting on the first one."""
+    (tmp_path / "bad1.yaml").write_text("tvbo_class: tvbo:Network\nnumber_of_nodes: nope\n")
+    (tmp_path / "bad2.yaml").write_text("tvbo_class: tvbo:Network\nnumber_of_nodes: also-nope\n")
+    (tmp_path / "good.yaml").write_text("tvbo_class: tvbo:SimulationStudy\nkey: Probe\n")
+    res = runner.invoke(app, ["validate", "all", str(tmp_path)])
+    assert res.exit_code != 0
+    assert "2 file(s) failed validation" in res.output
+    for name in ("bad1.yaml", "bad2.yaml"):
+        assert name in res.output
+
+
 def test_config_path():
     res = runner.invoke(app, ["config", "path"])
     assert res.exit_code == 0

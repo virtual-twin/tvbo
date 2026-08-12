@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import yaml as _yaml_mod
 
 # ── matrix_io tests ──────────────────────────────────────────────────
 
@@ -755,13 +756,20 @@ class TestRegionAliasMap:
 
 
 def _atlas_hemi(label):
-    """Hemisphere of a node label under any packaged-atlas convention, or None."""
-    if label in ("Brain-Stem", "BRAIN_STEM", "brain-stem"):
+    """Hemisphere of a node label under any packaged-atlas convention, or None.
+
+    Covers the CIFTI (``L_V1_ROI``, ``CEREBELLUM_LEFT``), FreeSurfer ``aseg`` (``Left-Cerebellum-Cortex``, ``lh-Accumbens-area``), FreeSurfer ``aparc`` (``ctx-lh-V1``) and abbreviated-BIDS (``L.V1``) spellings. Matching is case-insensitive because the same tool emits ``Left-`` and ``lh-`` interchangeably.
+    """
+    lower = label.lower()
+    if "brainstem" in lower.replace("-", "").replace("_", ""):
         return None
-    if label[:2] == "L_" or label.endswith("_LEFT") or label.startswith(("ctx-lh-", "left-")):
-        return "L"
-    if label[:2] == "R_" or label.endswith("_RIGHT") or label.startswith(("ctx-rh-", "right-")):
-        return "R"
+    for hemi, short, long in (("L", "l", "left"), ("R", "r", "right")):
+        if (
+            lower[:2] in (f"{short}_", f"{short}.")
+            or lower.endswith(f"_{long}")
+            or lower.startswith((f"ctx-{short}h-", f"{short}h-", f"{long}-", f"{long}_"))
+        ):
+            return hemi
     return None
 
 
@@ -799,3 +807,110 @@ class TestAtlasAliases:
                 assert _atlas_hemi(canon) == _atlas_hemi(alt), f"hemisphere swap {canon} -> {alt}"
                 assert alt not in seen or seen[alt] == canon, f"alias {alt} on two regions"
                 seen[alt] = canon
+
+
+class TestCompanionWinsOverParcellation:
+    """A sidecar's own matrices must beat the atlas's normative connectome.
+
+    ``load_network`` must strip ``data_file`` before construction, because ``_resolve_from_data_file`` treats it as an indirect reference to another network's sidecar and would recurse into the load in progress. That used to leave the eager ``_resolve`` in ``Network.__init__`` seeing no explicit source, so a sidecar declaring BOTH ``data_file:`` and ``parcellation:`` fell through to the parcellation branch, cached a normative database connectome, and served that forever — silently, because ``_cached_weights`` is consulted ahead of ``_store``. The loader now defers connectivity resolution until it has attached the store.
+    """
+
+    @staticmethod
+    def _write(tmp_path, weights, *, parcellation):
+        import h5py
+
+        from tvbo.data.matrix_io import write_matrix
+
+        n = weights.shape[0]
+        h5_path = tmp_path / "net.h5"
+        with h5py.File(h5_path, "w") as f:
+            write_matrix(f.create_group("edges").create_group("weight"), weights, fmt="dense")
+        meta = {
+            "tvbo_class": "tvbo:Network",
+            "label": "companion-vs-parcellation",
+            "number_of_nodes": n,
+            "data_file": h5_path.name,
+            "structural_measures": ["weight"],
+            "nodes": [{"id": i, "label": f"n{i}"} for i in range(n)],
+        }
+        if parcellation:
+            meta["parcellation"] = {"atlas": {"name": "DesikanKilliany"}}
+        yaml_path = tmp_path / "net.yaml"
+        with open(yaml_path, "w") as f:
+            _yaml_mod.safe_dump(meta, f, sort_keys=False)
+        return yaml_path, meta
+
+    @pytest.mark.parametrize("parcellation", [False, True])
+    def test_declared_companion_weights_are_served(self, tmp_path, parcellation):
+        from tvbo.classes.network import Network
+
+        rng = np.random.default_rng(0)
+        w = np.round(rng.random((87, 87)) * 0.01, 6)
+        np.fill_diagonal(w, 0.0)
+        yaml_path, _ = self._write(tmp_path, w, parcellation=parcellation)
+
+        loaded = np.asarray(Network.from_file(str(yaml_path)).weights)
+        assert loaded.shape == w.shape
+        np.testing.assert_allclose(loaded, w)
+
+    def test_deferred_resolve_still_materialises(self, tmp_path):
+        """Deferring connectivity must not skip the rest of `_resolve`."""
+        from tvbo.classes.network import Network
+
+        yaml_path, _ = self._write(tmp_path, np.eye(4), parcellation=True)
+        net = Network.from_file(str(yaml_path))
+        assert net.number_of_nodes == 4
+        assert getattr(net, "_resolved", False)
+
+
+class TestSelfDescribingCompanion:
+    """A companion carrying its own metadata loads with no sidecar file at all."""
+
+    def _write_single_file(self, tmp_path, weights):
+        import h5py
+
+        from tvbo.data.matrix_io import write_matrix
+        from tvbo.data.network_io import write_embedded_metadata
+
+        n = weights.shape[0]
+        h5_path = tmp_path / "tpl-X_atlas-DesikanKilliany_desc-SC_relmat.h5"
+        with h5py.File(h5_path, "w") as f:
+            write_matrix(f.create_group("edges").create_group("weight"), weights, fmt="dense")
+        write_embedded_metadata(
+            h5_path,
+            {
+                "tvbo_class": "tvbo:Network",
+                "label": "self-describing",
+                "number_of_nodes": n,
+                "structural_measures": ["weight"],
+                "parcellation": {"atlas": {"name": "DesikanKilliany"}},
+                "nodes": [{"id": i, "label": f"n{i}"} for i in range(n)],
+            },
+        )
+        return h5_path
+
+    def test_loads_without_a_sidecar(self, tmp_path):
+        from tvbo.classes.network import Network
+
+        rng = np.random.default_rng(1)
+        w = np.round(rng.random((87, 87)) * 0.01, 6)
+        np.fill_diagonal(w, 0.0)
+        h5_path = self._write_single_file(tmp_path, w)
+        assert not h5_path.with_suffix(".yaml").exists()
+
+        net = Network.from_file(str(h5_path))
+        assert net.number_of_nodes == 87
+        assert net.label == "self-describing"
+        np.testing.assert_allclose(np.asarray(net.weights), w)
+
+    def test_probe_returns_none_for_plain_companions(self, tmp_path):
+        import h5py
+
+        from tvbo.data.network_io import read_embedded_metadata
+
+        plain = tmp_path / "plain.h5"
+        with h5py.File(plain, "w") as f:
+            f.create_dataset("x", data=np.zeros(3))
+        assert read_embedded_metadata(plain) is None
+        assert read_embedded_metadata(tmp_path / "absent.h5") is None
+        assert read_embedded_metadata(tmp_path / "some.yaml") is None
