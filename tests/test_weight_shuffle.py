@@ -25,9 +25,7 @@ def shuffled(monkeypatch):
     """Bind the source matrix directly, so the null model is tested without I/O."""
 
     def _run(seed=0, matrix=M):
-        monkeypatch.setattr(
-            "tvbo.graph_generators.load_matrix", lambda _source: matrix, raising=True
-        )
+        monkeypatch.setattr("tvbo.graph_generators.load_matrix", lambda _source: matrix, raising=True)
         return weight_shuffle("irrelevant://source", seed=seed)["weights"]
 
     return _run

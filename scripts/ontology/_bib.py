@@ -12,6 +12,7 @@ field normalisation stay defined once:
 Parsing is lenient (pybtex non-strict): a repeated citekey within a file warns
 and the first occurrence wins, matching the historical behaviour.
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -137,8 +138,7 @@ def load_bib_records(bibs: list[pathlib.Path] | None = None) -> dict[str, dict]:
         data = parse_file(str(bib))
         for raw_key, entry in data.entries.items():
             if _MALFORMED_KEY_RE.search(raw_key):
-                print(f"  ! skipping malformed citekey {raw_key!r} in {bib.name}",
-                      file=sys.stderr)
+                print(f"  ! skipping malformed citekey {raw_key!r} in {bib.name}", file=sys.stderr)
                 continue
             citekey = sanitize_citekey(raw_key.strip())
             records.setdefault(citekey, _entry_to_record(citekey, entry))

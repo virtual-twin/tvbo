@@ -2,11 +2,11 @@
 
 Keeps the per-verb modules as thin as possible.
 """
+
 from __future__ import annotations
 
 import json as _json
 import logging
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -55,12 +55,10 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
     helpful message).
     """
     if spec.startswith(("http://", "https://")):
-        raise typer.BadParameter(
-            f"HTTP transport not yet implemented (C2). Pull the file locally first: {spec}"
-        )
+        raise typer.BadParameter(f"HTTP transport not yet implemented (C2). Pull the file locally first: {spec}")
 
     if spec.startswith("file://"):
-        spec = spec[len("file://"):]
+        spec = spec[len("file://") :]
 
     # Path?
     if _is_pathlike(spec):
@@ -74,10 +72,7 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
         prefix, _, name = spec.partition(":")
         cls_name = _CURIE_TO_CLASS.get(prefix.lower())
         if cls_name is None:
-            raise typer.BadParameter(
-                f"Unknown CURIE prefix {prefix!r}. "
-                f"Known: {', '.join(sorted(_CURIE_TO_CLASS))}"
-            )
+            raise typer.BadParameter(f"Unknown CURIE prefix {prefix!r}. Known: {', '.join(sorted(_CURIE_TO_CLASS))}")
         return _load_from_db(cls_name, name)
 
     # Bare name — try Study, then Experiment, then Dynamics
@@ -86,9 +81,7 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
             return _load_from_db(cls_name, spec)
         except (FileNotFoundError, ValueError):
             continue
-    raise typer.BadParameter(
-        f"Could not resolve {spec!r}: not a path, CURIE, or known DB entry."
-    )
+    raise typer.BadParameter(f"Could not resolve {spec!r}: not a path, CURIE, or known DB entry.")
 
 
 def experiment_ids(exp: Any) -> set[str]:
@@ -106,8 +99,12 @@ def experiment_ids(exp: Any) -> set[str]:
     """
     from tvbo.data.dataref import experiment_id
 
-    spellings = {getattr(exp, "key", None), getattr(exp, "name", None),
-                 getattr(exp, "label", None), str(getattr(exp, "id", ""))} - {None, ""}
+    spellings = {
+        getattr(exp, "key", None),
+        getattr(exp, "name", None),
+        getattr(exp, "label", None),
+        str(getattr(exp, "id", "")),
+    } - {None, ""}
     return spellings | {experiment_id(s) for s in spellings} - {None}
 
 
@@ -119,8 +116,7 @@ def experiment_key(exp: Any) -> str:
     ``…-40`` rather than a generic fallback — one source of truth shared by every
     emitter (``experiment_ids`` is the wider *match* set for ``--experiment``).
     """
-    return str(getattr(exp, "key", None) or getattr(exp, "id", None)
-               or getattr(exp, "name", None) or "experiment")
+    return str(getattr(exp, "key", None) or getattr(exp, "id", None) or getattr(exp, "name", None) or "experiment")
 
 
 def _load_from_file(path: Path) -> tuple[str, Any]:
@@ -131,14 +127,13 @@ def _load_from_file(path: Path) -> tuple[str, Any]:
     if suffix not in {".yaml", ".yml"}:
         # Try the registry's importer (e.g. *.bidsdir, *.sedml, *.omex)
         from tvbo.export import resolve_by_extension, load as _load
+
         try:
             fmt = resolve_by_extension(suffix)
         except ValueError as e:
             raise typer.BadParameter(str(e)) from e
         if fmt.importer is None:
-            raise typer.BadParameter(
-                f"Format {fmt.key!r} has no importer; cannot load {path}."
-            )
+            raise typer.BadParameter(f"Format {fmt.key!r} has no importer; cannot load {path}.")
         obj = _load(fmt.key, path)
         return _classify(obj), obj
 
@@ -147,9 +142,7 @@ def _load_from_file(path: Path) -> tuple[str, Any]:
     # interpretation is tried first, keyed on the `members:` slot only it declares.
     text = path.read_text(encoding="utf-8")
     looks_like_study_collection = "members:" in text and ("recipe:" in text or "results:" in text)
-    looks_like_study = "simulation_experiments" in text or (
-        "experiments:" in text and "title:" in text
-    )
+    looks_like_study = "simulation_experiments" in text or ("experiments:" in text and "title:" in text)
     # Each fallback's error is kept: when they all fail, the last one (Dynamics) is
     # about the least likely interpretation, so reporting only that sends the reader
     # chasing a "bad Dynamics" that was never what the file is. A spec the running
@@ -214,6 +207,7 @@ def _classify(obj: Any) -> str:
 # ---------------------------------------------------------------------------
 # Output helpers
 # ---------------------------------------------------------------------------
+
 
 def emit_json(payload: Any) -> None:
     """Write a single JSON line to stdout (CLI machine-readable contract)."""

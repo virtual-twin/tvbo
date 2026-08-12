@@ -17,6 +17,7 @@ validates. We assert that:
 A small number of fringe classes whose generated Pydantic models lag the LinkML
 schema are tracked as ``xfail`` (see ``todo.md`` in the platform repo).
 """
+
 from pathlib import Path
 
 import pytest
@@ -155,8 +156,8 @@ label: Envelope
 @pytest.mark.parametrize(
     "payload",
     [
-        {"label": "no id"},                       # missing required id
-        {"id": 1, "totally_bogus_key": 123},      # extra forbidden
+        {"label": "no id"},  # missing required id
+        {"id": 1, "totally_bogus_key": 123},  # extra forbidden
         {"id": 1, "dynamics": ["not", "a", "model"]},  # wrong nested type
     ],
 )

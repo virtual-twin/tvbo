@@ -22,6 +22,7 @@ The ``used:`` edges also order the work. :func:`schedule` splits the analyses in
 those that run before the experiments (an experiment may source one through a parameter)
 and those that run after (they read an experiment's result), each topologically ordered.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -29,7 +30,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Optional
+from typing import Any, Iterable, Mapping
 
 from tvbo.data import dataref as _dref
 from tvbo.utils import as_list
@@ -257,10 +258,7 @@ def schedule(analyses) -> tuple[list, list]:
 def _import_attr(module: str, attr: str, name: str):
     """``module.attr``, with an error that says how a study makes its code importable."""
     if not module or not attr:
-        raise ValueError(
-            f"analysis {name!r}: needs both `module` and `name` "
-            f"(got module={module!r}, name={attr!r})."
-        )
+        raise ValueError(f"analysis {name!r}: needs both `module` and `name` (got module={module!r}, name={attr!r}).")
     try:
         mod = importlib.import_module(module)
     except ImportError as e:
@@ -300,8 +298,7 @@ def render_inprocess(analysis, kwargs):
     cls_ref = _slot(analysis, "class_call")
     if cls_ref is not None:
         cls = _import_attr(str(_slot(cls_ref, "module", "")), str(_slot(cls_ref, "name", "")), name)
-        ctor = {str(_slot(a, "name")): _slot(a, "value")
-                for a in as_list(_slot(cls_ref, "constructor_args"))}
+        ctor = {str(_slot(a, "name")): _slot(a, "value") for a in as_list(_slot(cls_ref, "constructor_args"))}
         return cls(**ctor)(**kwargs)
 
     declared = [k for k in ("function", "equation") if _slot(analysis, k) is not None]
@@ -360,8 +357,7 @@ def _expression_fn(analysis, names, fmt="jax"):
     src = get_printer(fmt).doprint(sp.sympify(str(rhs), locals=vocab))
 
     ns: dict = {}
-    exec(f"def _analysis({', '.join(names)}):\n    return {src}\n",
-         _EXPRESSION_NAMESPACES[str(fmt)](), ns)
+    exec(f"def _analysis({', '.join(names)}):\n    return {src}\n", _EXPRESSION_NAMESPACES[str(fmt)](), ns)
     return ns["_analysis"], src
 
 
@@ -387,8 +383,7 @@ def _aligned(value, arg_dims, dims, mapped):
     inner = dims[1:] if mapped else dims
     rest = order[1:] if is_mapped else order
     if rest != inner:
-        idx = ((slice(None),) if is_mapped else ()) + tuple(
-            slice(None) if d in rest else None for d in inner)
+        idx = ((slice(None),) if is_mapped else ()) + tuple(slice(None) if d in rest else None for d in inner)
         arr = arr[idx]
     return arr, is_mapped
 
@@ -439,7 +434,10 @@ def _pin_accelerator(execution) -> None:
             "execution.accelerator=%r cannot be applied: JAX is already initialised on %s. "
             "The platform is process-wide and fixed at first import — set JAX_PLATFORMS=%s "
             "in the environment to run this analysis on %s.",
-            declared, sorted(live) or ["an unknown platform"], jax_platform(declared), declared,
+            declared,
+            sorted(live) or ["an unknown platform"],
+            jax_platform(declared),
+            declared,
         )
 
 
@@ -467,8 +465,12 @@ def _device_plan(analysis, n_items, per_lane_bytes):
         logger.warning(
             "analysis %r declares execution.n_workers=%d but only %d device(s) and %d item(s) "
             "are available; sharding the %r axis %d ways.",
-            analysis_name(analysis), workers, jax.local_device_count(), int(n_items),
-            str(_slot(analysis, "apply_on_dimension")), n_pmap,
+            analysis_name(analysis),
+            workers,
+            jax.local_device_count(),
+            int(n_items),
+            str(_slot(analysis, "apply_on_dimension")),
+            n_pmap,
         )
     per_shard = -(-int(n_items) // n_pmap)
     spec = _slot(execution, "batch_size") or "auto"
@@ -501,7 +503,8 @@ def _map_over(analysis, fn, names, args, in_axes, mapped):
             logger.warning(
                 "analysis %r declares execution.n_workers/batch_size but no "
                 "`apply_on_dimension:` — there is no axis to shard, so the expression "
-                "is evaluated whole.", analysis_name(analysis),
+                "is evaluated whole.",
+                analysis_name(analysis),
             )
         kernel = jax.vmap(fn, in_axes=tuple(in_axes)) if mapped else fn
         return np.asarray(jax.jit(kernel)(*args))
@@ -522,11 +525,18 @@ def _map_over(analysis, fn, names, args, in_axes, mapped):
     )
     logger.debug(
         "analysis %r: %d %r lanes over n_pmap=%d x n_vmap=%d (per-lane %s B)",
-        analysis_name(analysis), n_items, mapped, n_pmap, n_vmap, per_lane,
+        analysis_name(analysis),
+        n_items,
+        mapped,
+        n_pmap,
+        n_vmap,
+        per_lane,
     )
     result = ParallelExecution(
         lambda lane_state: fn(**{n: lane_state[n] for n in names}),
-        space, n_vmap=n_vmap, n_pmap=n_pmap,
+        space,
+        n_vmap=n_vmap,
+        n_pmap=n_pmap,
     ).run()
     sharded = np.asarray(result.results)
     return sharded.reshape((-1,) + sharded.shape[2:])[:n_items]
@@ -711,9 +721,7 @@ def _as_dataset(name: str, produced):
                     "Return arrays, DataArrays, or scalars — a result container holds "
                     "labelled numeric arrays."
                 )
-            da = xr.DataArray(arr) if arr.ndim == 0 else xr.DataArray(
-                arr, dims=[f"{key}_d{i}" for i in range(arr.ndim)]
-            )
+            da = xr.DataArray(arr) if arr.ndim == 0 else xr.DataArray(arr, dims=[f"{key}_d{i}" for i in range(arr.ndim)])
         data_vars[f"observation__{key}"] = da.rename(f"observation__{key}")
     if not data_vars:
         raise ValueError(f"analysis {name!r}: the callable returned nothing to persist.")
@@ -739,7 +747,8 @@ def _provenance(analysis, produced_keys: Iterable[str]) -> dict:
         "label": _slot(analysis, "label"),
         "description": _slot(analysis, "description"),
         ("class_call" if call is None and cls_ref is not None else "callable"): {
-            "module": _slot(invoked, "module"), "name": _slot(invoked, "name"),
+            "module": _slot(invoked, "module"),
+            "name": _slot(invoked, "name"),
         },
         "backend": str(backend),
         "arguments": args,
@@ -757,9 +766,9 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
 
     path = container_path(name, results_root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    encoding = ({v: {"zlib": True, "complevel": 4} for v in ds.data_vars} if compress else None)
+    encoding = {v: {"zlib": True, "complevel": 4} for v in ds.data_vars} if compress else None
     ds.to_netcdf(path, engine="h5netcdf", encoding=encoding)
-    record = _provenance(analysis, (str(v)[len("observation__"):] for v in ds.data_vars))
+    record = _provenance(analysis, (str(v)[len("observation__") :] for v in ds.data_vars))
     (path.parent / "result.yaml").write_text(yaml.safe_dump(record, sort_keys=False))
     # Digest of the declaration this container came from, so staleness is per analysis
     # rather than "the spec file was touched" (see study_collection._stale_or_missing_analyses).
@@ -769,8 +778,7 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True) -> Path:
     return path
 
 
-def run_analyses(analyses, results_root=None, *, compress: bool = True,
-                 on_start=None, on_done=None) -> list[Path]:
+def run_analyses(analyses, results_root=None, *, compress: bool = True, on_start=None, on_done=None) -> list[Path]:
     """Execute ``analyses`` in the given order, returning the containers written.
 
     ``on_start(name)`` / ``on_done(name, path)`` report progress to a caller's logger

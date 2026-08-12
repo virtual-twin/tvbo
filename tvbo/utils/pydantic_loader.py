@@ -161,8 +161,7 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
             continue
         if canonical in data:
             warnings.warn(
-                f"{model_cls.__name__} got both {alias!r} and its canonical slot "
-                f"{canonical!r}; ignoring {alias!r}.",
+                f"{model_cls.__name__} got both {alias!r} and its canonical slot {canonical!r}; ignoring {alias!r}.",
                 stacklevel=2,
             )
             data.pop(alias)
@@ -218,13 +217,10 @@ def _inject(model_cls: Type[BaseModel], data: Any) -> Any:
                     else:
                         # Scalar list (e.g. list[str]); Odoo many2many can yield
                         # full objects -> collapse each to its identifier.
-                        data[key] = [
-                            (m.get("name") or m.get("id")) if isinstance(m, dict) else m
-                            for m in value
-                        ]
+                        data[key] = [(m.get("name") or m.get("id")) if isinstance(m, dict) else m for m in value]
                     break
                 if isinstance(value, str) and member_cls is None:
-                    parts = [re.sub(r'^[-*]\s*', '', p.strip()) for p in re.split(r'[\r\n]+', value)]
+                    parts = [re.sub(r"^[-*]\s*", "", p.strip()) for p in re.split(r"[\r\n]+", value)]
                     data[key] = [p for p in parts if p]
                     break
 
@@ -296,8 +292,7 @@ def _strip_unknown(model_cls: Type[BaseModel], data: Any) -> None:
                 break
 
 
-def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None,
-             *, drop_unknown: bool = False) -> BaseModel:
+def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False) -> BaseModel:
     """Validate an already-parsed ``dict`` and return a model instance.
 
     Raises :class:`pydantic.ValidationError` if ``data`` does not conform. With
@@ -313,8 +308,9 @@ def validate(data: dict, target_class: Union[str, Type[BaseModel], None] = None,
     return target.model_validate(data)
 
 
-def loads(source: str, target_class: Union[str, Type[BaseModel], None] = None,
-          *, drop_unknown: bool = False, **kwargs: Any) -> BaseModel:
+def loads(
+    source: str, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False, **kwargs: Any
+) -> BaseModel:
     """Parse a YAML string (with ``<<:`` / ``!include`` support) and validate it.
 
     ``drop_unknown`` is forwarded to :func:`validate` (see its docstring); the
@@ -325,8 +321,9 @@ def loads(source: str, target_class: Union[str, Type[BaseModel], None] = None,
     return validate(data, target, drop_unknown=drop_unknown)
 
 
-def load(source: Any, target_class: Union[str, Type[BaseModel], None] = None,
-         *, drop_unknown: bool = False, **kwargs: Any) -> BaseModel:
+def load(
+    source: Any, target_class: Union[str, Type[BaseModel], None] = None, *, drop_unknown: bool = False, **kwargs: Any
+) -> BaseModel:
     """Load YAML from a path / stream / string and validate it.
 
     ``!include`` paths are resolved relative to ``source``'s directory when it is

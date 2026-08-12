@@ -6,8 +6,6 @@ cover the pure logic — detecting a valid tree, the search order, strict handli
 of an explicit path, and idempotent linking — without requiring a real build.
 """
 
-import os
-
 import pytest
 import typer
 
@@ -100,12 +98,8 @@ def test_uninstall_removes_link(tmp_path, monkeypatch):
     monkeypatch.setattr(inst, "_site_packages", lambda: site)
     (site / inst.PTH_NAME).write_text("/some/auto/python\n")
 
-    inst.auto7p(
-        auto_dir=None, build=False, prefix="x", force=False, uninstall=True
-    )
+    inst.auto7p(auto_dir=None, build=False, prefix="x", force=False, uninstall=True)
     assert not (site / inst.PTH_NAME).exists()
 
     # Idempotent: removing an absent link does not raise.
-    inst.auto7p(
-        auto_dir=None, build=False, prefix="x", force=False, uninstall=True
-    )
+    inst.auto7p(auto_dir=None, build=False, prefix="x", force=False, uninstall=True)

@@ -323,9 +323,7 @@ class BifurcationKitAdapter:
         # A multi-node network on the experiment ⇒ continue the coupled system.
         network = getattr(self.experiment, "network", None)
         constraints = self._derive_constraints(model)
-        ctx = self._prepare_context(
-            model, continuation, network=network, constraints=constraints, **kwargs
-        )
+        ctx = self._prepare_context(model, continuation, network=network, constraints=constraints, **kwargs)
 
         template = templates.lookup.get_template("tvbo-julia-BifurcationKit.jl.mako")
         return template.render(**ctx)
@@ -373,8 +371,7 @@ class BifurcationKitAdapter:
             # free params each get their own target); fall back to a lone activity
             # objective only when this is the sole free param.
             obj = next(
-                (_activity_objective(a) for a in algos
-                 if fp in _tuned_params(a) and _activity_objective(a)),
+                (_activity_objective(a) for a in algos if fp in _tuned_params(a) and _activity_objective(a)),
                 None,
             )
             if obj is None and len(free) == 1:
@@ -382,9 +379,7 @@ class BifurcationKitAdapter:
             if obj is None:
                 continue
             tv = getattr(obj.target_variable, "name", None) or str(obj.target_variable)
-            constraints.append(
-                {"parameter": str(fp), "target_variable": str(tv), "target_value": float(obj.target_value)}
-            )
+            constraints.append({"parameter": str(fp), "target_variable": str(tv), "target_value": float(obj.target_value)})
         return constraints
 
     @staticmethod

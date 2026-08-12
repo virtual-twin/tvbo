@@ -9,6 +9,7 @@
 - update_every: a batched-update cadence knob — absent leaves the rendered code
   byte-identical (no gate); declared gates every update-rule write TRACED through the core.
 """
+
 import pytest
 
 from tvbo.classes.experiment import SimulationExperiment
@@ -22,10 +23,12 @@ def _multistage_experiment(n_iter=3):
     exp = SimulationExperiment.from_file(_EXP)
     fe, fic = exp.algorithms["fic_eib"], exp.algorithms["fic"]
     fe.stages = [
-        AlgorithmStage(n_iterations=n_iter, arguments=[
-            Parameter(name="eta", value=0.10), Parameter(name="window_size", value=4)]),
-        AlgorithmStage(n_iterations=n_iter, arguments=[
-            Parameter(name="eta", value=0.05), Parameter(name="window_size", value=8)]),
+        AlgorithmStage(
+            n_iterations=n_iter, arguments=[Parameter(name="eta", value=0.10), Parameter(name="window_size", value=4)]
+        ),
+        AlgorithmStage(
+            n_iterations=n_iter, arguments=[Parameter(name="eta", value=0.05), Parameter(name="window_size", value=8)]
+        ),
     ]
     fe.n_iterations = fic.n_iterations = n_iter
     return exp
@@ -38,27 +41,27 @@ def test_tuning_scan_hoisted_to_module_level_core():
     assert "_fic_eib_tuning_core = jax.jit(" in code
     assert "_ls_final, _ys_all = _fic_eib_tuning_core(" in code
 
-    run = code[code.index("def run_fic_eib("):code.index("def _fic_eib_tuning_core_impl(")]
+    run = code[code.index("def run_fic_eib(") : code.index("def _fic_eib_tuning_core_impl(")]
     assert "jax.lax.scan(_tuning_step" not in run, "run_<algo> must delegate the scan to the core"
 
 
 def test_core_threads_per_stage_scalars_traced():
     """Per-stage-varying scalars enter the core TRACED; model_fn is a STATIC arg."""
     code = _multistage_experiment().render_code("tvboptim")
-    sig = code[code.index("def _fic_eib_tuning_core_impl("):]
-    sig = sig[:sig.index("):")]
+    sig = code[code.index("def _fic_eib_tuning_core_impl(") :]
+    sig = sig[: sig.index("):")]
     for traced in ("eta", "_resync_period", "ws0", "use_ring"):
         assert traced in sig, f"core must take {traced} as an argument"
-    core = code[code.index("_fic_eib_tuning_core = jax.jit("):]
-    core = core[:core.index(")\n") + 1]
+    core = code[code.index("_fic_eib_tuning_core = jax.jit(") :]
+    core = core[: core.index(")\n") + 1]
     assert '"model_fn"' in core, "model_fn must be a STATIC arg for the jit cache to key stably"
 
 
 def test_eta_call_site_passes_variable_not_literal():
     """Bug 1 guard: the update call passes the `eta` variable, never a baked float."""
     code = _multistage_experiment().render_code("tvboptim")
-    call = code[code.index("new_wLRE = wLRE_update("):]
-    call = call[:call.index(")")]
+    call = code[code.index("new_wLRE = wLRE_update(") :]
+    call = call[: call.index(")")]
     assert "eta," in call and "0.1" not in call and "0.05" not in call
 
 
@@ -81,8 +84,7 @@ def test_update_every_gate_emitted_and_traced_when_declared():
     import re
 
     exp = _multistage_experiment()
-    exp.algorithms["fic_eib"].hyperparameters.append(
-        Parameter(name="update_every", value=20))
+    exp.algorithms["fic_eib"].hyperparameters.append(Parameter(name="update_every", value=20))
     code = exp.render_code("tvboptim")
 
     assert "_apply_update" in code
@@ -91,8 +93,8 @@ def test_update_every_gate_emitted_and_traced_when_declared():
     assert len(re.findall(r"jnp\.where\(\s*_apply_update", code)) == 3
     # threaded TRACED into the compile-once core (not baked), like eta / resync period
     assert "_canon_tree(update_every)" in code
-    core_sig = code[code.index("def _fic_eib_tuning_core_impl("):]
-    core_sig = core_sig[:core_sig.index("):")]
+    core_sig = code[code.index("def _fic_eib_tuning_core_impl(") :]
+    core_sig = core_sig[: core_sig.index("):")]
     assert "update_every" in core_sig
 
 
@@ -107,7 +109,7 @@ def test_nan_guard_reads_final_state_not_rec_buffer():
     blocks, start = [], 0
     while (i := code.find("_nonfinite_estimates = [", start)) != -1:
         j = code.index("]", i)
-        blocks.append(code[i:j + 1])
+        blocks.append(code[i : j + 1])
         start = j + 1
     assert blocks, "no NaN guard emitted"
     for b in blocks:

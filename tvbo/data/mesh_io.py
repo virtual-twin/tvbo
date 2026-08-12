@@ -11,6 +11,7 @@ The formats here are the ones ``mesh_format`` already lists. Each returns the SA
 ``(vertices (V, 3) float64, faces (F, 3) int64)`` — so a mesh is interchangeable across
 them and nothing downstream can tell which reader produced it.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -20,8 +21,7 @@ import numpy as np
 _GIFTI_SUFFIXES = (".gii",)
 _FREESURFER_STEMS = (".pial", ".white", ".inflated", ".sphere", ".midthickness", ".orig")
 
-_VTK_SCALARS = {"float": np.float32, "double": np.float64,
-                "int": np.int32, "long": np.int64, "short": np.int16}
+_VTK_SCALARS = {"float": np.float32, "double": np.float64, "int": np.int32, "long": np.int64, "short": np.int16}
 
 
 def detect_format(path: str | Path) -> str:
@@ -46,8 +46,7 @@ def _read_gifti(path: Path):
     import nibabel as nib
 
     gii = nib.load(str(path))
-    return (gii.agg_data("NIFTI_INTENT_POINTSET"),
-            gii.agg_data("NIFTI_INTENT_TRIANGLE"))
+    return (gii.agg_data("NIFTI_INTENT_POINTSET"), gii.agg_data("NIFTI_INTENT_TRIANGLE"))
 
 
 def _read_freesurfer(path: Path):
@@ -82,12 +81,12 @@ def _read_vtk(path: Path):
     start = tokens.index("POINTS")
     n_points = int(tokens[start + 1])
     dtype = _VTK_SCALARS.get(tokens[start + 2].lower(), np.float64)
-    flat = np.asarray(tokens[start + 3: start + 3 + 3 * n_points], dtype=dtype)
+    flat = np.asarray(tokens[start + 3 : start + 3 + 3 * n_points], dtype=dtype)
     vertices = flat.reshape(n_points, 3)
 
     start = tokens.index("POLYGONS")
     n_faces, n_entries = int(tokens[start + 1]), int(tokens[start + 2])
-    entries = np.asarray(tokens[start + 3: start + 3 + n_entries], dtype=np.int64)
+    entries = np.asarray(tokens[start + 3 : start + 3 + n_entries], dtype=np.int64)
     if n_entries != 4 * n_faces:
         raise ValueError(
             f"{path.name}: only triangular POLYGONS are read here (its POLYGONS block has "
@@ -113,13 +112,17 @@ def _read_meshio(path: Path):
         if block.type == "triangle":
             return mesh.points, block.data
     raise ValueError(
-        f"{path.name}: no triangle cells found (blocks: "
-        f"{sorted({b.type for b in mesh.cells})}); a surface mesh is triangular."
+        f"{path.name}: no triangle cells found (blocks: {sorted({b.type for b in mesh.cells})}); a surface mesh is triangular."
     )
 
 
-_READERS = {"gifti": _read_gifti, "freesurfer": _read_freesurfer,
-            "vtk": _read_vtk, "meshio": _read_meshio, "gmsh": _read_meshio}
+_READERS = {
+    "gifti": _read_gifti,
+    "freesurfer": _read_freesurfer,
+    "vtk": _read_vtk,
+    "meshio": _read_meshio,
+    "gmsh": _read_meshio,
+}
 
 
 def read_mesh(path: str | Path, mesh_format: str | None = None):
@@ -140,8 +143,6 @@ def read_mesh(path: str | Path, mesh_format: str | None = None):
     try:
         reader = _READERS[fmt]
     except KeyError:
-        raise ValueError(
-            f"unknown mesh_format {fmt!r}; expected one of {sorted(_READERS)}."
-        ) from None
+        raise ValueError(f"unknown mesh_format {fmt!r}; expected one of {sorted(_READERS)}.") from None
     vertices, faces = reader(path)
     return np.asarray(vertices, dtype=float), np.asarray(faces, dtype=np.int64)

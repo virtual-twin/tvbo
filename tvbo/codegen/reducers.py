@@ -9,6 +9,7 @@ the algorithm template emits the resolved assignments into a backend-shaped scaf
 Verified byte-identical to ``compute_fc`` including a large DC baseline
 (``scratchpad/proto_general.py``).
 """
+
 from __future__ import annotations
 
 from typing import Any

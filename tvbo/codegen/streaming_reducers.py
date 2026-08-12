@@ -19,6 +19,7 @@ Registering a new streaming reducer (e.g. for dFC / metastability) is a new
 ``database/reducers/*.yaml`` recipe — state + add/evict/resync/emit assignment
 strings — loaded at import; no code change.
 """
+
 from __future__ import annotations
 
 import os
@@ -69,6 +70,7 @@ class StreamingReducerSpec:
 
 # backend -> {fully_qualified_reducer_name -> StreamingReducerSpec}
 _REGISTRY: dict[str, dict[str, StreamingReducerSpec]] = {}
+
 
 def register_streaming_reducer(backend: str, reducer: str, spec: StreamingReducerSpec) -> None:
     """Register *spec* as *backend*'s streaming form of the *reducer* callable.
@@ -142,6 +144,7 @@ _REDUCERS_DIR = pathlib.Path(__file__).resolve().parents[1] / "database" / "redu
 
 def _spec_from_metadata(meta: dict) -> StreamingReducerSpec:
     """Build a :class:`StreamingReducerSpec` from a parsed reducer YAML."""
+
     def _assigns(key):
         return tuple((str(lhs), str(rhs)) for lhs, rhs in meta.get(key, []))
 

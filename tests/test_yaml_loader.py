@@ -21,19 +21,24 @@ def _write(path: Path, content: str) -> Path:
 
 
 def test_anchors_and_aliases_round_trip(tmp_path: Path) -> None:
-    yaml_file = _write(tmp_path / "a.yaml", """
+    yaml_file = _write(
+        tmp_path / "a.yaml",
+        """
         defaults: &defaults
           a: 1
           b: 2
         echo: *defaults
-    """)
+    """,
+    )
     result = yaml_loader.load_as_dict(yaml_file)
     assert result["defaults"] == {"a": 1, "b": 2}
     assert result["echo"] == {"a": 1, "b": 2}
 
 
 def test_merge_keys_expand_with_overrides(tmp_path: Path) -> None:
-    yaml_file = _write(tmp_path / "a.yaml", """
+    yaml_file = _write(
+        tmp_path / "a.yaml",
+        """
         defaults: &defaults
           a: 1
           b: 2
@@ -41,7 +46,8 @@ def test_merge_keys_expand_with_overrides(tmp_path: Path) -> None:
           <<: *defaults
           b: 99
           c: 3
-    """)
+    """,
+    )
     result = yaml_loader.load_as_dict(yaml_file)
     assert result["override"] == {"a": 1, "b": 99, "c": 3}
 
@@ -53,13 +59,19 @@ def test_explicit_duplicate_keys_still_rejected(tmp_path: Path) -> None:
 
 
 def test_include_substitutes_external_file(tmp_path: Path) -> None:
-    _write(tmp_path / "frag.yaml", """
+    _write(
+        tmp_path / "frag.yaml",
+        """
         name: Fragment
         value: 42
-    """)
-    main = _write(tmp_path / "main.yaml", """
+    """,
+    )
+    main = _write(
+        tmp_path / "main.yaml",
+        """
         wrapper: !include frag.yaml
-    """)
+    """,
+    )
     result = yaml_loader.load_as_dict(main)
     assert result["wrapper"] == {"name": "Fragment", "value": 42}
 
@@ -68,20 +80,26 @@ def test_include_resolves_relative_to_source_file(tmp_path: Path) -> None:
     sub = tmp_path / "sub"
     sub.mkdir()
     _write(sub / "child.yaml", "id: child\n")
-    main = _write(tmp_path / "main.yaml", """
+    main = _write(
+        tmp_path / "main.yaml",
+        """
         nested: !include sub/child.yaml
-    """)
+    """,
+    )
     result = yaml_loader.load_as_dict(main)
     assert result["nested"] == {"id": "child"}
 
 
 def test_anchor_scope_is_file_local_across_include(tmp_path: Path) -> None:
     _write(tmp_path / "frag.yaml", "x: *defaults\n")
-    main = _write(tmp_path / "main.yaml", """
+    main = _write(
+        tmp_path / "main.yaml",
+        """
         defaults: &defaults
           a: 1
         included: !include frag.yaml
-    """)
+    """,
+    )
     with pytest.raises(Exception):
         # Anchor &defaults is defined in main; *defaults inside frag.yaml
         # must NOT resolve. Expect a YAML composer error.
@@ -134,14 +152,19 @@ def test_study_from_file_materialises_an_included_experiment(tmp_path: Path) -> 
     """
     import tvbo
 
-    _write(tmp_path / "dyn.yaml", """
+    _write(
+        tmp_path / "dyn.yaml",
+        """
         name: Osc
         system_type: continuous
         output: [x]
         parameters: {a: {value: 1.0}}
         state_variables: {x: {equation: {rhs: '-a*x'}, initial_value: 0.1}}
-    """)
-    study_yaml = _write(tmp_path / "Study.yaml", """
+    """,
+    )
+    study_yaml = _write(
+        tmp_path / "Study.yaml",
+        """
         key: T
         experiments:
           - id: 1
@@ -149,7 +172,8 @@ def test_study_from_file_materialises_an_included_experiment(tmp_path: Path) -> 
             dynamics: !include dyn.yaml
             network: {number_of_nodes: 1}
             integration: {method: heun, step_size: 0.1, duration: 1.0, transient_time: 0.0, unit: s}
-    """)
+    """,
+    )
 
     study = tvbo.SimulationStudy.from_file(str(study_yaml))
     # The included experiment is captured (not emptied by a safe_load choke on !include)...
@@ -167,12 +191,17 @@ def test_include_merges_into_a_mapping(tmp_path: Path) -> None:
     models) has to copy it. Explicit keys must still win over merged ones, and an earlier
     merge over a later one, exactly as with plain anchors.
     """
-    _write(tmp_path / "frag.yaml", """
+    _write(
+        tmp_path / "frag.yaml",
+        """
         z: {rhs: 'a - z'}
         f: {rhs: 'z'}
         shared: from_fragment
-    """)
-    main = _write(tmp_path / "main.yaml", """
+    """,
+    )
+    main = _write(
+        tmp_path / "main.yaml",
+        """
         base: &base
           shared: from_anchor
           only_in_base: 1
@@ -182,27 +211,34 @@ def test_include_merges_into_a_mapping(tmp_path: Path) -> None:
           z: {rhs: 'overridden'}
         combined:
           <<: [*base, !include frag.yaml]
-    """)
+    """,
+    )
     data = yaml_loader.load_as_dict(main)
 
     assert set(data["solo"]) == {"z", "f", "shared", "phi"}
     assert data["solo"]["f"] == {"rhs": "z"}
-    assert data["solo"]["z"] == {"rhs": "overridden"}      # explicit beats merged
+    assert data["solo"]["z"] == {"rhs": "overridden"}  # explicit beats merged
     assert data["combined"]["only_in_base"] == 1
     assert data["combined"]["f"] == {"rhs": "z"}
-    assert data["combined"]["shared"] == "from_anchor"     # earlier merge wins
+    assert data["combined"]["shared"] == "from_anchor"  # earlier merge wins
 
 
 def test_merged_include_anchors_stay_file_local(tmp_path: Path) -> None:
     """A merged fragment's anchors resolve inside the fragment and do not leak out."""
-    _write(tmp_path / "frag.yaml", """
+    _write(
+        tmp_path / "frag.yaml",
+        """
         one: &shape {rhs: 'x'}
         two: *shape
-    """)
-    main = _write(tmp_path / "main.yaml", """
+    """,
+    )
+    main = _write(
+        tmp_path / "main.yaml",
+        """
         block:
           <<: !include frag.yaml
-    """)
+    """,
+    )
     assert yaml_loader.load_as_dict(main)["block"] == {"one": {"rhs": "x"}, "two": {"rhs": "x"}}
 
 
@@ -222,16 +258,22 @@ def test_included_file_envelope_is_dropped_on_both_include_forms(tmp_path: Path)
     Reading the file for its own sake keeps them, because that is how a caller learns which
     class to construct.
     """
-    frag = _write(tmp_path / "frag.yaml", """
+    frag = _write(
+        tmp_path / "frag.yaml",
+        """
         tvbo_class: tvbo:Network
         schema_version: tvb-datamodel/0.7.0
         number_of_nodes: 3
-    """)
-    merged = _write(tmp_path / "merged.yaml", """
+    """,
+    )
+    merged = _write(
+        tmp_path / "merged.yaml",
+        """
         network:
           <<: !include frag.yaml
           descriptor: SC
-    """)
+    """,
+    )
     spliced = _write(tmp_path / "spliced.yaml", "network: !include frag.yaml\n")
     assert yaml_loader.load_as_dict(merged)["network"] == {"number_of_nodes": 3, "descriptor": "SC"}
     assert yaml_loader.load_as_dict(spliced)["network"] == {"number_of_nodes": 3}
@@ -247,11 +289,14 @@ def test_document_root_envelope_never_reaches_the_target_class(tmp_path: Path) -
     """
     from tvbo.classes.study import SimulationStudy
 
-    doc = _write(tmp_path / "study.yaml", """
+    doc = _write(
+        tmp_path / "study.yaml",
+        """
         tvbo_class: tvbo:SimulationStudy
         schema_version: tvb-datamodel/0.7.0
         key: Probe
         title: probe study
-    """)
+    """,
+    )
     assert yaml_loader.load(doc, SimulationStudy).key == "Probe"
     assert yaml_loader.load_as_dict(doc)["tvbo_class"] == "tvbo:SimulationStudy"

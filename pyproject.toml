@@ -43,20 +43,7 @@ dependencies = [
     "sympy>=1.13.0",
 
     # Visualization
-    # >=0.0.7: format_fig no longer force-sets the "compressed" layout engine,
-    # which raised RuntimeError on figures built with layout="tight" once a
-    # colorbar existed (the tvboptim docs, e.g. RWW_tvboptim). Bumping the floor
-    # also busts the Docker deps-layer cache (keyed on pyproject.toml) so the
-    # container image stops shipping the stale bsplot that carried the bug.
-    # >=0.0.9: bsplot/graph/edges.py gained the missing matplotlib colormap-registry
-    # import; below this, any graph drawn through the bsplot backend (the
-    # Visualization doc) dies with "NameError: name 'colormaps' is not defined".
-    # A >=0.0.7 floor is satisfied by an already-installed 0.0.7, so the stale
-    # build survives an env that is never explicitly upgraded.
-    # >=0.0.10: the declarative Figure renderer (tvbo/adapters/bsplot.py) drives
-    # bsplot.figure.subplots / style.format_fig / panels.add_panel_number as a
-    # first-class dependency; keeping the floor current stops a stale 0.0.8 (below
-    # the previous floor) from lingering in an env that is never explicitly upgraded.
+    # Floor tracks the declarative Figure renderer in tvbo/adapters/bsplot.py.
     "bsplot>=0.0.10",
     "networkx>=3.4.2",
     "pydot>=3.0.3",
@@ -267,15 +254,21 @@ extend-exclude = [
     "docs/.quarto",
     "docs/_site",
     "docs/**/.vdoc.*.py",
-    "tvbo/datamodel/**",
+    "tvbo/datamodel/schema.py",
+    "tvbo/datamodel/pydantic.py",
+    "tvbo/datamodel/dialect_tables.py",
 ]
 
 [tool.ruff.lint]
 # Pyflakes (F), pycodestyle errors (E) + warnings (W).
 # C90 (mccabe complexity) is advisory and tracked separately; not gated.
 select = ["E", "F", "W"]
-# Auto-generated code: don't lint generated LinkML models.
-exclude = ["tvbo/datamodel/**"]
+# Only the build-time artefacts are generated; the rest of the dir is hand-written.
+exclude = [
+    "tvbo/datamodel/schema.py",
+    "tvbo/datamodel/pydantic.py",
+    "tvbo/datamodel/dialect_tables.py",
+]
 # Idiomatic patterns that we accept across the codebase.
 ignore = [
     "E501", # line-too-long: many docstrings narrate; black/format handles code.
@@ -301,7 +294,16 @@ python_version = "3.12"
 # Non-blocking mode: report issues but don't fail builds yet.
 ignore_missing_imports = true
 follow_imports = "silent"
-exclude = ["tvbo/datamodel/", "tests/", ".venv/", "build/", "dist/", "docs/"]
+exclude = [
+    "tvbo/datamodel/schema.py",
+    "tvbo/datamodel/pydantic.py",
+    "tvbo/datamodel/dialect_tables.py",
+    "tests/",
+    ".venv/",
+    "build/",
+    "dist/",
+    "docs/",
+]
 files = ["tvbo"]
 
 [tool.pytest.ini_options]

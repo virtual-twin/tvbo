@@ -66,16 +66,16 @@ def _factory(red, name="wave"):
 def _reference(block, P, period=5, skip=0):
     """Koller's finalize on the same synthetic per-step body: proportion_waves = nw/T,
     proportion_directed = sum(sig & wave)/nw, rho = median(corr[wave]) — per group."""
-    theta_ds = block[period - 1 :: period, 0, :]              # (T_ds, n) downsampled
-    grp = theta_ds @ P.T / P.sum(1)                          # (T_ds, G) group means
+    theta_ds = block[period - 1 :: period, 0, :]  # (T_ds, n) downsampled
+    grp = theta_ds @ P.T / P.sum(1)  # (T_ds, G) group means
     grp = grp[skip // period :]
     corr, wave, sig = grp, grp > 0, grp < 0.5
-    nw = wave.sum(0)                                         # (G,)
+    nw = wave.sum(0)  # (G,)
     pw = nw / wave.shape[0]
     with np.errstate(invalid="ignore"):
         pd = np.where(nw > 0, (sig & wave).sum(0) / nw, np.nan)
         rho = np.array([np.median(corr[wave[:, g], g]) if nw[g] else np.nan for g in range(P.shape[0])])
-    return np.stack([pw, pd, rho], axis=-1)                  # (G, 3)
+    return np.stack([pw, pd, rho], axis=-1)  # (G, 3)
 
 
 def _partition(n, groups):
@@ -96,14 +96,14 @@ def _trajectory(seed, T=200, n=8, offset=0.0):
 
 
 def test_wave_metrics_match_numpy_finalize():
-    P = _partition(8, [0, 0, 0, 0, 1, 1, 1, 1])             # two hemispheres of 4 nodes
+    P = _partition(8, [0, 0, 0, 0, 1, 1, 1, 1])  # two hemispheres of 4 nodes
     data = _trajectory(seed=1, T=205)
     factory, _ = _factory(_wave_red(P, period=5))
     init, update, finalize = factory(s_var=0, dt=1.0, skip=0)
     got = finalize(update(init(data[0], data.shape[0]), data))
 
     ref = _reference(data, P, period=5, skip=0)
-    assert got.shape == ref.shape == (2, 3)                 # (group, metric) — NOT per-node
+    assert got.shape == ref.shape == (2, 3)  # (group, metric) — NOT per-node
     np.testing.assert_allclose(np.asarray(got), ref, rtol=1e-9, atol=1e-12)
 
 
@@ -112,13 +112,13 @@ def test_group_without_waves_is_nan():
     proportion_directed and rho must be NaN, matching the CPU `if nw else np.nan`."""
     P = _partition(6, [0, 0, 0, 1, 1, 1])
     data = _trajectory(seed=2, T=155, n=6)
-    data[:, 0, 3:] = -np.abs(data[:, 0, 3:]) - 1.0          # group 1 strictly negative → no wave
+    data[:, 0, 3:] = -np.abs(data[:, 0, 3:]) - 1.0  # group 1 strictly negative → no wave
     factory, _ = _factory(_wave_red(P, period=5))
     init, update, finalize = factory(s_var=0, dt=1.0, skip=0)
     got = np.asarray(finalize(update(init(data[0], data.shape[0]), data)))
 
-    assert got[1, 0] == 0.0                                 # proportion_waves = 0
-    assert np.isnan(got[1, 1]) and np.isnan(got[1, 2])      # directed / rho undefined
+    assert got[1, 0] == 0.0  # proportion_waves = 0
+    assert np.isnan(got[1, 1]) and np.isnan(got[1, 2])  # directed / rho undefined
     ref = _reference(data, P, period=5, skip=0)
     np.testing.assert_allclose(got, ref, rtol=1e-9, atol=1e-12, equal_nan=True)
 
@@ -134,7 +134,7 @@ def test_wave_reducer_is_block_decomposition_invariant(block_size):
 
     single = finalize(update(init(data[0], data.shape[0]), data))
     acc = init(data[0], data.shape[0])
-    for s in range(0, data.shape[0], block_size):           # block_size is a multiple of period
+    for s in range(0, data.shape[0], block_size):  # block_size is a multiple of period
         acc = update(acc, data[s : s + block_size])
     assert float(jnp.nanmax(jnp.abs(finalize(acc) - single))) == 0.0
 
@@ -145,7 +145,7 @@ def test_transient_skip_drops_leading_samples():
     P = _partition(8, [0, 0, 0, 0, 1, 1, 1, 1])
     data = _trajectory(seed=4, T=200)
     factory, _ = _factory(_wave_red(P, period=5))
-    init, update, finalize = factory(s_var=0, dt=1.0, skip=25)   # drop 25 steps = 5 samples
+    init, update, finalize = factory(s_var=0, dt=1.0, skip=25)  # drop 25 steps = 5 samples
     got = finalize(update(init(data[0], data.shape[0]), data))
     ref = _reference(data, P, period=5, skip=25)
     np.testing.assert_allclose(np.asarray(got), ref, rtol=1e-9, atol=1e-12, equal_nan=True)
@@ -181,7 +181,7 @@ def _grouped_wave_red(grp_verts, A, period=5):
 
 def _grouped_reference(block, grp_verts, A, period=5):
     """Numpy: loop the single-group body over the partition — what the vmap must equal."""
-    theta_ds = block[period - 1 :: period, 0, :]                 # (T_ds, n_total)
+    theta_ds = block[period - 1 :: period, 0, :]  # (T_ds, n_total)
     G = grp_verts.shape[0]
     val = np.stack([theta_ds[:, grp_verts[g]] @ A[g] for g in range(G)], axis=1)  # (T_ds, G)
     corr, wave, sig = val, val > 0, val < 0.5
@@ -198,7 +198,7 @@ def test_group_vmap_matches_numpy_group_loop():
     to looping the body over groups. This is what makes the detector general to any partition
     (2 hemispheres, or N parcels) with the surrogate staying a clean per-vertex test inside vmap."""
     rng = np.random.default_rng(7)
-    grp_verts = np.array([[0, 1, 2, 3], [5, 6, 7, 8]])          # 2 groups of 4, from 10 nodes
+    grp_verts = np.array([[0, 1, 2, 3], [5, 6, 7, 8]])  # 2 groups of 4, from 10 nodes
     A = rng.standard_normal((2, 4))
     data = 0.3 + rng.standard_normal((200, 1, 10))
     factory, src = _factory(_grouped_wave_red(grp_verts, A, period=5))
@@ -207,7 +207,7 @@ def test_group_vmap_matches_numpy_group_loop():
 
     ref = _grouped_reference(data, grp_verts, A, period=5)
     assert got.shape == ref.shape == (2, 3)
-    assert "jax.vmap(_detect" in src                            # single-group body, vmapped over groups
+    assert "jax.vmap(_detect" in src  # single-group body, vmapped over groups
     np.testing.assert_allclose(np.asarray(got), ref, rtol=1e-9, atol=1e-12, equal_nan=True)
 
 
@@ -272,11 +272,14 @@ def test_partition_wave_obs_streams_in_the_base_run():
     `wave` must also be a slotted kind so the block aligns to its downsample period, not 1000."""
     grp_verts = np.array([[0, 1, 2, 3], [5, 6, 7, 8]])
     A = np.linspace(0.5, 2.0, 8).reshape(2, 4)
-    exp = SimpleNamespace(integration=SimpleNamespace(step_size=1.0), _source_file=None,
-                          observations={"wave": _wave_observation(grp_verts, A, period=5.0)})
+    exp = SimpleNamespace(
+        integration=SimpleNamespace(step_size=1.0),
+        _source_file=None,
+        observations={"wave": _wave_observation(grp_verts, A, period=5.0)},
+    )
     plan = streaming_post_eval_plan(exp)
-    assert "wave" in plan["names"]              # streamed, not materialised → no full-trajectory vmap
-    assert plan["period_in_steps"] == 5         # slotted → block aligns to the wave period, not the 1000 default
+    assert "wave" in plan["names"]  # streamed, not materialised → no full-trajectory vmap
+    assert plan["period_in_steps"] == 5  # slotted → block aligns to the wave period, not the 1000 default
 
 
 def test_partition_without_period_is_rejected():
@@ -309,9 +312,9 @@ def test_the_wave_kind_declares_its_axes():
     from tvbo.templates.tvboptim.utils import reduction_dims
 
     red = resolve_reduction(
-        _wave_observation(np.array([[0, 1, 2, 3], [5, 6, 7, 8]]),
-                          np.linspace(0.5, 2.0, 8).reshape(2, 4), period=5.0),
-        _stub_experiment(dt=1.0))
+        _wave_observation(np.array([[0, 1, 2, 3], [5, 6, 7, 8]]), np.linspace(0.5, 2.0, 8).reshape(2, 4), period=5.0),
+        _stub_experiment(dt=1.0),
+    )
     assert reduction_dims(red) == ("group", "metric")
 
 
@@ -344,10 +347,10 @@ def test_declarative_wave_observation_end_to_end_matches_numpy():
 def test_output_is_grouped_not_per_node():
     """Regression on the architecture: the wave reducer's output axis is the GROUP count, not
     the model node count — the reduction that motivated the bespoke kind."""
-    P = _partition(12, [0] * 6 + [1] * 6)                   # 12 nodes, 2 groups
+    P = _partition(12, [0] * 6 + [1] * 6)  # 12 nodes, 2 groups
     data = _trajectory(seed=5, T=100, n=12)
     factory, src = _factory(_wave_red(P, period=5))
     init, update, finalize = factory(s_var=0, dt=1.0, skip=0)
     got = finalize(update(init(data[0], data.shape[0]), data))
-    assert got.shape == (2, 3)                              # groups, not 12 nodes
+    assert got.shape == (2, 3)  # groups, not 12 nodes
     assert "jnp.nanmedian" in src and "template.shape[-1]" not in src

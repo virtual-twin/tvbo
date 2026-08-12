@@ -1,6 +1,5 @@
 import ast
 import os
-import sys
 from typing import Dict, List, Tuple
 
 import yaml
@@ -14,35 +13,35 @@ SIDEBAR_AUTO_PATH = os.path.join("api", "_sidebar.auto.yml")
 # These are also used as sidebar labels by update_toc_api.py.
 # For sub-packages, the label is the SHORT name (nesting provides context).
 SECTION_TITLES: Dict[str, str] = {
-    "tvbo":                          "tvbo",
-    "tvbo.adapters":                 "Adapters",
-    "tvbo.analysis":                 "Analysis",
-    "tvbo.api":                      "API",
-    "tvbo.bids":                     "BIDS",
-    "tvbo.classes":                  "Classes",
-    "tvbo.cli":                      "CLI",
-    "tvbo.codegen":                  "TVB-O Code Generation",
-    "tvbo.data":                     "Data",
-    "tvbo.data.db":                  "DB",
-    "tvbo.data.tvbo_data":           "TVB-O Data",
-    "tvbo.data.tvbo_data.atlas":     "Atlas",
+    "tvbo": "tvbo",
+    "tvbo.adapters": "Adapters",
+    "tvbo.analysis": "Analysis",
+    "tvbo.api": "API",
+    "tvbo.bids": "BIDS",
+    "tvbo.classes": "Classes",
+    "tvbo.cli": "CLI",
+    "tvbo.codegen": "TVB-O Code Generation",
+    "tvbo.data": "Data",
+    "tvbo.data.db": "DB",
+    "tvbo.data.tvbo_data": "TVB-O Data",
+    "tvbo.data.tvbo_data.atlas": "Atlas",
     "tvbo.data.tvbo_data.connectome": "Connectome",
-    "tvbo.datamodel":                "Data Model",
-    "tvbo.export":                   "Export",
-    "tvbo.graph_generators":         "Graph Generators",
-    "tvbo.jax":                      "JAX",
-    "tvbo.ontology":                 "TVB-O Ontology",
-    "tvbo.ontology.atlas":           "Atlas",
-    "tvbo.ontology.semanticweb":     "Semantic Web",
-    "tvbo.parse":                    "Parse",
-    "tvbo.plot":                     "Plot",
-    "tvbo.report":                   "Report",
-    "tvbo.run":                      "Run",
-    "tvbo.skills":                   "Skills",
-    "tvbo.templates":                "Templates",
-    "tvbo.templates.rateml":         "RateML",
-    "tvbo.templates.tvboptim":       "tvboptim",
-    "tvbo.utils":                    "Utilities",
+    "tvbo.datamodel": "Data Model",
+    "tvbo.export": "Export",
+    "tvbo.graph_generators": "Graph Generators",
+    "tvbo.jax": "JAX",
+    "tvbo.ontology": "TVB-O Ontology",
+    "tvbo.ontology.atlas": "Atlas",
+    "tvbo.ontology.semanticweb": "Semantic Web",
+    "tvbo.parse": "Parse",
+    "tvbo.plot": "Plot",
+    "tvbo.report": "Report",
+    "tvbo.run": "Run",
+    "tvbo.skills": "Skills",
+    "tvbo.templates": "Templates",
+    "tvbo.templates.rateml": "RateML",
+    "tvbo.templates.tvboptim": "tvboptim",
+    "tvbo.utils": "Utilities",
 }
 
 
@@ -135,7 +134,7 @@ def pkg_to_subpath(full_pkg: str, package_name: str) -> str:
     """
     if full_pkg == package_name:
         return ""
-    suffix = full_pkg[len(package_name) + 1:]   # e.g. "adapters" or "knowledge.simulation"
+    suffix = full_pkg[len(package_name) + 1 :]  # e.g. "adapters" or "knowledge.simulation"
     return suffix.replace(".", "/")
 
 
@@ -190,21 +189,25 @@ def build_sections(package_name: str, package_path: str):
         if subpath:
             parent_pkg = full_pkg.rsplit(".", 1)[0] if "." in full_pkg else package_name
             pkg_basename = full_pkg.rsplit(".", 1)[-1]
-            contents.append({
-                "kind": "page",
-                "path": f"{subpath}/index",
-                "package": parent_pkg,
-                "contents": [{"name": pkg_basename, **auto_opts}],
-            })
+            contents.append(
+                {
+                    "kind": "page",
+                    "path": f"{subpath}/index",
+                    "package": parent_pkg,
+                    "contents": [{"name": pkg_basename, **auto_opts}],
+                }
+            )
 
         for mod in modules:
             page_path = f"{subpath}/{mod}" if subpath else mod
-            contents.append({
-                "kind": "page",
-                "path": page_path,
-                "package": full_pkg,
-                "contents": [{"name": mod, **auto_opts}],
-            })
+            contents.append(
+                {
+                    "kind": "page",
+                    "path": page_path,
+                    "package": full_pkg,
+                    "contents": [{"name": mod, **auto_opts}],
+                }
+            )
 
         sections.append(
             {
@@ -230,7 +233,7 @@ def write_full_qdoc_config(sections, out_path):
     # so we can generate our own nested sidebar without it being overwritten.
     config = {
         "quartodoc": {
-            "sidebar": "./_sidebar.auto.yml",   # quartodoc will write this
+            "sidebar": "./_sidebar.auto.yml",  # quartodoc will write this
             "parser": "google",
             "style": "pkgdown",
             # Custom markdown renderer (../_renderer.py) that teaches quartodoc
@@ -252,7 +255,7 @@ def main(argv=None):
     # Import tvbo only when we need to inspect the package structure
     try:
         import tvbo  # type: ignore
-    except Exception as e:
+    except Exception:
         print("Error: 'tvbo' package is required to build sections.")
         raise
 
@@ -282,12 +285,12 @@ def main(argv=None):
     if os.path.exists(QDOC_CONFIG_PATH) and os.path.exists(stamp_file):
         stamp_mtime = os.path.getmtime(stamp_file)
         if input_mtime <= stamp_mtime:
-            print(f"Quartodoc config up-to-date (tvbo package unchanged). Skipping.")
+            print("Quartodoc config up-to-date (tvbo package unchanged). Skipping.")
             return
 
     sections = build_sections(package_name, package_path)
-    write_sections_yaml(sections, SECTIONS_PATH)       # for Quarto metadata-files
-    write_full_qdoc_config(sections, QDOC_CONFIG_PATH) # for quartodoc CLI
+    write_sections_yaml(sections, SECTIONS_PATH)  # for Quarto metadata-files
+    write_full_qdoc_config(sections, QDOC_CONFIG_PATH)  # for quartodoc CLI
 
     # Write stamp
     os.makedirs(os.path.dirname(stamp_file), exist_ok=True)

@@ -33,6 +33,7 @@ Languages divide by how much a formatter can safely change:
     Normalised only. Their real formatters (JuliaFormatter.jl, clang-format) are
     not dependencies of tvbo and would make codegen require a foreign toolchain.
 """
+
 from __future__ import annotations
 
 import re
@@ -63,9 +64,7 @@ def _excerpt(code: str, lineno: int | None, context: int = 2) -> str:
     lineno = lineno or 1
     lo = max(1, lineno - context)
     hi = min(len(lines), lineno + context)
-    return "\n".join(
-        f"{'->' if i == lineno else '  '} {i:4d} | {lines[i - 1]}" for i in range(lo, hi + 1)
-    )
+    return "\n".join(f"{'->' if i == lineno else '  '} {i:4d} | {lines[i - 1]}" for i in range(lo, hi + 1))
 
 
 def _format_python(code: str) -> str:
@@ -86,9 +85,7 @@ def _format_python(code: str) -> str:
             lineno = None
         except SyntaxError as syn:
             lineno = syn.lineno
-        raise GeneratedSourceError(
-            f"generated Python does not parse: {exc}\n{_excerpt(code, lineno)}"
-        ) from exc
+        raise GeneratedSourceError(f"generated Python does not parse: {exc}\n{_excerpt(code, lineno)}") from exc
 
 
 def _validated(code: str, parse, errors, message: str, lineno_of) -> str:
@@ -104,9 +101,7 @@ def _validated(code: str, parse, errors, message: str, lineno_of) -> str:
     try:
         parse(text)
     except errors as exc:
-        raise GeneratedSourceError(
-            f"{message}: {exc}\n{_excerpt(text, lineno_of(exc))}"
-        ) from exc
+        raise GeneratedSourceError(f"{message}: {exc}\n{_excerpt(text, lineno_of(exc))}") from exc
     return text
 
 
@@ -115,9 +110,12 @@ def _format_xml(code: str) -> str:
     from xml.etree import ElementTree
 
     return _validated(
-        code, ElementTree.fromstring, ElementTree.ParseError,
+        code,
+        ElementTree.fromstring,
+        ElementTree.ParseError,
         "generated XML is not well-formed",
-        lambda exc: exc.position[0] if getattr(exc, "position", None) else None)
+        lambda exc: exc.position[0] if getattr(exc, "position", None) else None,
+    )
 
 
 def _format_yaml(code: str) -> str:
@@ -128,8 +126,7 @@ def _format_yaml(code: str) -> str:
         mark = getattr(exc, "problem_mark", None)
         return mark.line + 1 if mark is not None else None
 
-    return _validated(code, lambda t: list(yaml.safe_load_all(t)), yaml.YAMLError,
-                      "generated YAML does not parse", _lineno)
+    return _validated(code, lambda t: list(yaml.safe_load_all(t)), yaml.YAMLError, "generated YAML does not parse", _lineno)
 
 
 _FORMATTERS = {

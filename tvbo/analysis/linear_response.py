@@ -71,8 +71,7 @@ def _dfun_symbols(model):
     # Dynamics) so parameter names that collide with sympy builtins — e.g. `gamma`,
     # `beta` — resolve to Symbols, not functions.
     scope = model.get_symbolic_elements()
-    dvars = {n: parse_eq(dv.equation, local_dict=scope)
-             for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
+    dvars = {n: parse_eq(dv.equation, local_dict=scope) for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
     zero_local = {sp.Symbol(c): 0 for c in local_cpls}
 
     # Inline the derived-variable chain into the state equations with the codebase's
@@ -123,8 +122,7 @@ def constraint_expr(model, var_name):
     local_cpls = [c for c, ci in cpl_inputs.items() if getattr(ci, "local", False)]
     # Parse against the model scope (canonical path) — builtin-colliding names stay Symbols.
     scope = model.get_symbolic_elements()
-    dvars = {n: parse_eq(dv.equation, local_dict=scope)
-             for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
+    dvars = {n: parse_eq(dv.equation, local_dict=scope) for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
     if var_name not in dvars:
         raise KeyError(f"constraint variable '{var_name}' is not a derived variable of the model")
     expr = {var_name: dvars[var_name]}
@@ -263,8 +261,8 @@ def network_jacobian(model, weights: Any, state: Any, params: dict) -> np.ndarra
         jl = np.asarray(Jloc(*Y[:, i], *ci, *pvals_i), float).reshape(n_sv, n_sv)
         jc = np.asarray(Jcpl(*Y[:, i], *ci, *pvals_i), float).reshape(n_sv, len(net_cpls))
         for k in range(n_sv):
-            for l in range(n_sv):
-                A[k * N + i, l * N + i] += jl[k, l]  # local block (node-diagonal)
+            for m in range(n_sv):
+                A[k * N + i, m * N + i] += jl[k, m]  # local block (node-diagonal)
             for cix in range(len(net_cpls)):
                 # ∂f_k/∂c · ∂c_i/∂s_src,j = jc[k]·W_ij  (source variable's column block)
                 A[k * N + i, src_k * N : src_k * N + N] += jc[k, cix] * W[i, :]

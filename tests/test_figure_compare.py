@@ -10,7 +10,14 @@ import numpy as np
 import pytest
 
 from tvbo.utils.figure_compare import (
-    Box, Pane, compare, content_blocks, match_boxes, page_boxes, report_table, side_by_side,
+    Box,
+    Pane,
+    compare,
+    content_blocks,
+    match_boxes,
+    page_boxes,
+    report_table,
+    side_by_side,
 )
 
 
@@ -18,13 +25,14 @@ def _mask(h, w, rects):
     """An ink mask with a filled rectangle per (y0, y1, x0, x1) in fractional coords."""
     m = np.zeros((h, w), dtype=bool)
     for y0, y1, x0, x1 in rects:
-        m[int(y0 * h):int(y1 * h), int(x0 * w):int(x1 * w)] = True
+        m[int(y0 * h) : int(y1 * h), int(x0 * w) : int(x1 * w)] = True
     return m
 
 
 def _png(path, rects, size=(400, 600)):
     """Write a white page with black rectangles — a stand-in for a rendered figure."""
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.image as mpimg
 
@@ -56,13 +64,12 @@ def test_iou_of_a_half_overlap():
 
 
 def test_a_two_by_two_grid_is_found_in_reading_order():
-    rects = [(0.05, 0.40, 0.05, 0.45), (0.05, 0.40, 0.55, 0.95),
-             (0.60, 0.95, 0.05, 0.45), (0.60, 0.95, 0.55, 0.95)]
+    rects = [(0.05, 0.40, 0.05, 0.45), (0.05, 0.40, 0.55, 0.95), (0.60, 0.95, 0.05, 0.45), (0.60, 0.95, 0.55, 0.95)]
     blocks = content_blocks(_mask(400, 600, rects))
     assert len(blocks) == 4
     tops = [b[1] for b in blocks]
-    assert tops[0] < tops[2] and tops[1] < tops[3]      # top row precedes bottom
-    assert blocks[0][0] < blocks[1][0]                   # left precedes right
+    assert tops[0] < tops[2] and tops[1] < tops[3]  # top row precedes bottom
+    assert blocks[0][0] < blocks[1][0]  # left precedes right
 
 
 def test_one_solid_block_stays_one_block():
@@ -141,7 +148,7 @@ def test_the_panel_counts_of_both_sides_are_reported(tmp_path):
 def test_the_markdown_table_names_every_panel(tmp_path):
     a = _png(tmp_path / "a.png", [(0.05, 0.40, 0.05, 0.45), (0.60, 0.95, 0.05, 0.45)])
     table = report_table(compare(a, a))
-    assert table.count("\n") >= 3          # header, rule, one row per panel
+    assert table.count("\n") >= 3  # header, rule, one row per panel
     assert "IoU" in table
 
 
@@ -150,14 +157,15 @@ def test_the_markdown_table_names_every_panel(tmp_path):
 
 def _aspect(path):
     import matplotlib.image as mpimg
+
     a = mpimg.imread(str(path))
     return a.shape[1] / a.shape[0]
 
 
 def test_the_composite_is_as_wide_as_both_images_at_one_height(tmp_path):
     """Equal heights, aspect-proportional widths: the row's aspect is the sum of theirs."""
-    a = _png(tmp_path / "a.png", [(0.1, 0.9, 0.1, 0.9)], size=(400, 600))   # 1.5
-    b = _png(tmp_path / "b.png", [(0.1, 0.9, 0.1, 0.9)], size=(600, 600))   # 1.0
+    a = _png(tmp_path / "a.png", [(0.1, 0.9, 0.1, 0.9)], size=(400, 600))  # 1.5
+    b = _png(tmp_path / "b.png", [(0.1, 0.9, 0.1, 0.9)], size=(600, 600))  # 1.0
     out = side_by_side([Pane(a, "left"), Pane(b, "right")], tmp_path / "ab.png", fontsize=0)
     assert _aspect(out) == pytest.approx(1.5 + 1.0, rel=0.05)
 

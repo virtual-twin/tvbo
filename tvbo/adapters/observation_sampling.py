@@ -25,6 +25,7 @@ It is intentionally free of heavy dependencies (no jax/tvb/juliacall, no
 ``tvbo.classes``) so both the tvboptim runtime module and the export adapters
 can import it cheaply and without circular-import risk.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

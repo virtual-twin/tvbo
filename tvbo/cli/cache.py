@@ -9,6 +9,7 @@ deliberately, because nothing at write time knows whether another study still re
 That is what this reclaims: given a study, the artifacts of ITS producers that IT no longer
 reaches. Producers the study does not declare are never touched.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -40,7 +41,7 @@ def prune(
         live |= keep
         dead += param_io.superseded_artifacts(study, cache_dir)
 
-    dead = [p for p in dict.fromkeys(dead) if p not in live]     # live for ANY spec wins
+    dead = [p for p in dict.fromkeys(dead) if p not in live]  # live for ANY spec wins
     if not dead:
         typer.echo(f"nothing superseded ({len(live)} artifact(s) still reached)")
         return
@@ -51,5 +52,4 @@ def prune(
         if delete:
             p.unlink()
     verb = "reclaimed" if delete else "reclaimable"
-    typer.echo(f"{len(dead)} artifact(s), {_mb(total)} {verb}"
-               + ("" if delete else "  — re-run with --delete"))
+    typer.echo(f"{len(dead)} artifact(s), {_mb(total)} {verb}" + ("" if delete else "  — re-run with --delete"))

@@ -36,8 +36,18 @@ JULIA_SOLVER_PACKAGES = {
 
 # Elementary functions that require ``using SpecialFunctions`` in Julia.
 JULIA_SPECIAL_FUNCTIONS = (
-    "erf", "erfc", "erfi", "erfcx", "lgamma", "digamma",
-    "beta", "lbeta", "besselj", "bessely", "besseli", "gamma",
+    "erf",
+    "erfc",
+    "erfi",
+    "erfcx",
+    "lgamma",
+    "digamma",
+    "beta",
+    "lbeta",
+    "besselj",
+    "bessely",
+    "besseli",
+    "gamma",
 )
 
 
@@ -111,9 +121,7 @@ def make_renderer(model, fmt="julia"):
     sv, params, coupling, dvars, dparams = symbol_names(model)
     all_symbols = sv + params + coupling + dvars + dparams
     func_names = {str(f): str(f) for f in (getattr(model, "functions", None) or {})}
-    return lambda expr: render_expression(
-        expr, format=fmt, parameters=all_symbols, user_functions=func_names
-    )
+    return lambda expr: render_expression(expr, format=fmt, parameters=all_symbols, user_functions=func_names)
 
 
 def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
@@ -179,10 +187,7 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     functions = []
     for fname, fdef in (getattr(model, "functions", None) or {}).items():
         functions.append((str(fname), [str(a) for a in fdef.arguments], jl(fdef.equation.rhs)))
-    derived_params = [
-        (dp.name, jl(dp.equation.rhs))
-        for dp in (getattr(model, "derived_parameters", None) or {}).values()
-    ]
+    derived_params = [(dp.name, jl(dp.equation.rhs)) for dp in (getattr(model, "derived_parameters", None) or {}).values()]
     derived_vars = []
     for dv in (getattr(model, "derived_variables", None) or {}).values():
         if getattr(dv, "conditional", False) and getattr(dv, "cases", None):
@@ -333,10 +338,7 @@ def build_model_context(model, network=None, constraints=None) -> dict:
         functions.append((str(fname), fargs, jl(fdef.equation.rhs)))
 
     # Derived parameters and derived variables (conditional ones folded to ifelse).
-    derived_params = [
-        (dp.name, jl(dp.equation.rhs))
-        for dp in (getattr(model, "derived_parameters", None) or {}).values()
-    ]
+    derived_params = [(dp.name, jl(dp.equation.rhs)) for dp in (getattr(model, "derived_parameters", None) or {}).values()]
     derived_vars = []
     for dv in (getattr(model, "derived_variables", None) or {}).values():
         if getattr(dv, "conditional", False) and getattr(dv, "cases", None):

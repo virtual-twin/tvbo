@@ -1,4 +1,5 @@
 """``tvbo config`` — view CLI configuration (full impl in C2)."""
+
 from __future__ import annotations
 
 import os

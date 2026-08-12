@@ -109,32 +109,40 @@ ARRAY_FUNCTIONS = {
     # JAX / NumPy calls (including .reshape() and keyword args that SymPy
     # cannot represent natively).
     "window_mean": Function("window_mean"),  # window_mean(X, w) → jnp.mean(X.reshape(-1, w, *X.shape[1:]), axis=1)
-    "subsample": Function("subsample"),      # subsample(X, step[, start]) → X[start::step]
+    "subsample": Function("subsample"),  # subsample(X, step[, start]) → X[start::step]
     # Structural slice/shape ops — let an observation pipeline that selects a voi, trims a
     # transient, or downsamples be authored as declarative equations instead of source_code.
-    "slice_axis": Function("slice_axis"),    # slice_axis(X, axis, start, stop[, step]) → bounded slice of one axis (keeps ndim)
-    "slice_from": Function("slice_from"),    # slice_from(X, axis, start)               → open-ended slice of one axis (to the end)
-    "shape": Function("shape"),              # shape(X, axis)                           → length of X along axis
+    "slice_axis": Function("slice_axis"),  # slice_axis(X, axis, start, stop[, step]) → bounded slice of one axis (keeps ndim)
+    "slice_from": Function(
+        "slice_from"
+    ),  # slice_from(X, axis, start)               → open-ended slice of one axis (to the end)
+    "shape": Function("shape"),  # shape(X, axis)                           → length of X along axis
     "global_mean": Function("global_mean"),  # global_mean(X) → jnp.mean(X, axis=-2, keepdims=True)
-    "transpose": Function("transpose"),      # transpose(X) → X.T
-    "mode_dot": Function("mode_dot"),        # mode_dot(X, M) → X·M contracted over the mode axis ({np,jnp}.dot)
-    "mode_sum": Function("mode_sum"),        # mode_sum(X) → sum over the mode axis, keepdims ({np,jnp}.sum(X, axis=-1, keepdims=True))
+    "transpose": Function("transpose"),  # transpose(X) → X.T
+    "mode_dot": Function("mode_dot"),  # mode_dot(X, M) → X·M contracted over the mode axis ({np,jnp}.dot)
+    "mode_sum": Function(
+        "mode_sum"
+    ),  # mode_sum(X) → sum over the mode axis, keepdims ({np,jnp}.sum(X, axis=-1, keepdims=True))
     # Linear-algebra ops (e.g. streaming co-moment reducers, projections).
-    "outer": Function("outer"),              # outer(a, b) → rank-1 outer product a_i b_j
-    "diag": Function("diag"),                # diag(M) → the main diagonal of M as a vector
+    "outer": Function("outer"),  # outer(a, b) → rank-1 outer product a_i b_j
+    "diag": Function("diag"),  # diag(M) → the main diagonal of M as a vector
     "zero_diagonal": Function("zero_diagonal"),  # zero_diagonal(M) → M with its main diagonal set to 0
-    "matmul": Function("matmul"),            # matmul(A, B) → ordinary matrix product A @ B
-    "strided_convolve": Function("strided_convolve"),  # strided_convolve(X, k, s) → 'valid' conv of X⊛k evaluated only at the [s::s] output indices (fuses convolve+subsample; no full FFT)
+    "matmul": Function("matmul"),  # matmul(A, B) → ordinary matrix product A @ B
+    "strided_convolve": Function(
+        "strided_convolve"
+    ),  # strided_convolve(X, k, s) → 'valid' conv of X⊛k evaluated only at the [s::s] output indices (fuses convolve+subsample; no full FFT)
     # General array ops for per-timestep detectors / permutation-significance tests: a
     # 2-D gather, a single-axis reduction, and Pearson correlation — expressible in any
     # backend's array algebra so a wave / graph / significance observable is authored as
     # declarative equations, not backend source_code.
-    "take": Function("take"),          # take(x, idx) → gather x by an int index array (result has idx.shape)
+    "take": Function("take"),  # take(x, idx) → gather x by an int index array (result has idx.shape)
     "sum_axis": Function("sum_axis"),  # sum_axis(x, axis) → reduce one axis ({np,jnp}.sum(x, axis=..))
-    "pearson": Function("pearson"),    # pearson(x, y) → Pearson r of two FLAT/1-D operands (reduces all elements; the per-step node-collapsing corr — NOT a columnwise 2-D corr, and distinct from the loss-helper `correlation`)
-    "clip": Function("clip"),          # clip(x, lo, hi) → bound x to [lo, hi] ({np,jnp}.clip); e.g. clip(cos_sim, -1, 1) before acos
-    "any": Function("any"),            # any(x) → True if any element is truthy ({np,jnp}.any); e.g. any(p_div <= sig)
-    "all": Function("all"),            # all(x) → True if every element is truthy ({np,jnp}.all)
+    "pearson": Function(
+        "pearson"
+    ),  # pearson(x, y) → Pearson r of two FLAT/1-D operands (reduces all elements; the per-step node-collapsing corr — NOT a columnwise 2-D corr, and distinct from the loss-helper `correlation`)
+    "clip": Function("clip"),  # clip(x, lo, hi) → bound x to [lo, hi] ({np,jnp}.clip); e.g. clip(cos_sim, -1, 1) before acos
+    "any": Function("any"),  # any(x) → True if any element is truthy ({np,jnp}.any); e.g. any(p_div <= sig)
+    "all": Function("all"),  # all(x) → True if every element is truthy ({np,jnp}.all)
     # Graph-construction primitives — the vocabulary a `Procedural` GraphGenerator's
     # typed DAG lowers to, so a paper's network construction (distance kernel, stochastic
     # connection mask, Gaussian field, axis normalisation) is authored as metadata and
@@ -145,23 +153,33 @@ ARRAY_FUNCTIONS = {
     # keyword. Options that would be keywords (metric, axis, target range, distribution,
     # seed) are schema FIELDS on the DAG step and are lowered here into positional
     # arguments — which is the reason the DAG is typed rather than free-form.
-    "grid_positions": Function("grid_positions"),        # grid_positions(nx, ny, x_extent, y_extent) → [nx*ny, 2] regular-lattice node coordinates, x-major
-    "pairwise_distance": Function("pairwise_distance"),  # pairwise_distance(pos) → [n,n] euclidean distances between rows of pos
-    "fill_diagonal": Function("fill_diagonal"),          # fill_diagonal(M, v) → M with its main diagonal set to v (v=inf suppresses self-connections)
-    "gaussian_pdf": Function("gaussian_pdf"),            # gaussian_pdf(pos, mean, cov) → isotropic multivariate-normal density at each row of pos
-    "normalize": Function("normalize"),                  # normalize(M, axis) → M divided by its sum along `axis` (axis must be a literal int)
-    "minmax_rescale": Function("minmax_rescale"),        # minmax_rescale(x, lo, hi) → x affinely rescaled from its own min/max onto [lo, hi]
-    "eigvals": Function("eigvals"),                      # eigvals(M) → eigenvalues of M (e.g. spectral-radius rescaling)
+    "grid_positions": Function(
+        "grid_positions"
+    ),  # grid_positions(nx, ny, x_extent, y_extent) → [nx*ny, 2] regular-lattice node coordinates, x-major
+    "pairwise_distance": Function(
+        "pairwise_distance"
+    ),  # pairwise_distance(pos) → [n,n] euclidean distances between rows of pos
+    "fill_diagonal": Function(
+        "fill_diagonal"
+    ),  # fill_diagonal(M, v) → M with its main diagonal set to v (v=inf suppresses self-connections)
+    "gaussian_pdf": Function(
+        "gaussian_pdf"
+    ),  # gaussian_pdf(pos, mean, cov) → isotropic multivariate-normal density at each row of pos
+    "normalize": Function("normalize"),  # normalize(M, axis) → M divided by its sum along `axis` (axis must be a literal int)
+    "minmax_rescale": Function(
+        "minmax_rescale"
+    ),  # minmax_rescale(x, lo, hi) → x affinely rescaled from its own min/max onto [lo, hi]
+    "eigvals": Function("eigvals"),  # eigvals(M) → eigenvalues of M (e.g. spectral-radius rescaling)
     # Distribution samplers. One head per distribution, mirroring the backend sampler
     # table in dev/GenericProcedureEngine.md §2.3 (numpy rng.<d> | jax.random.<d> |
     # Distributions.jl). The PRNG state is the FIRST argument because JAX is functionally
     # pure — a key cannot be threaded implicitly through a rendered expression — and the
     # trailing arguments are the sample shape. Cross-backend bit-identical draws are NOT
     # guaranteed (numpy PCG64 != jax Threefry); see the RNG contract in §4.
-    "sample_normal": Function("sample_normal"),            # sample_normal(key, mean, std, *shape)
-    "sample_uniform": Function("sample_uniform"),          # sample_uniform(key, lo, hi, *shape)
-    "sample_lognormal": Function("sample_lognormal"),      # sample_lognormal(key, mu, sigma, *shape)
-    "sample_beta": Function("sample_beta"),                # sample_beta(key, a, b, *shape)
+    "sample_normal": Function("sample_normal"),  # sample_normal(key, mean, std, *shape)
+    "sample_uniform": Function("sample_uniform"),  # sample_uniform(key, lo, hi, *shape)
+    "sample_lognormal": Function("sample_lognormal"),  # sample_lognormal(key, mu, sigma, *shape)
+    "sample_beta": Function("sample_beta"),  # sample_beta(key, a, b, *shape)
     "sample_exponential": Function("sample_exponential"),  # sample_exponential(key, scale, *shape)
 }
 

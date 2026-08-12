@@ -18,6 +18,7 @@ in Python; the rule *structure* lives in
 rule). ``emit_figure_rules`` returns the Snakemake rule text; ``write_figure_kit``
 also freezes each figure's self-contained ``plot.py`` and the ``.smk`` snippet to disk.
 """
+
 from __future__ import annotations
 
 import datetime as _dt
@@ -35,6 +36,7 @@ _RULE_TEMPLATE = "tvbo-figure-rule.smk.mako"
 
 
 # --------------------------------------------------------------------------- helpers
+
 
 def _figure_block(workflow, overrides, engine: str = "snakemake"):
     """Merge ``figure.workflow_overrides`` over the study ``workflow`` -> (spec, block).
@@ -92,7 +94,7 @@ def _rule_resources(block: dict) -> dict:
         r["slurm_account"] = repr(str(block["account"]))
     if block.get("gres"):
         r["slurm_extra"] = repr("--gres=" + str(block["gres"]))
-    for opt in (block.get("options") or []):
+    for opt in block.get("options") or []:
         v = str(opt["value"])
         # numeric -> bare int literal; else a repr'd (safely escaped) string literal
         r[opt["name"]] = v if v.lstrip("-").isdigit() else repr(v)
@@ -193,8 +195,7 @@ def _activation_lines(block: dict) -> list[str]:
     return lines + list(block.get("setup") or [])
 
 
-def figure_contexts(figures, base_dir=".", workflow=None, exp_plans=None,
-                    bundled_code=False) -> list[dict]:
+def figure_contexts(figures, base_dir=".", workflow=None, exp_plans=None, bundled_code=False) -> list[dict]:
     """Per-figure template contexts (fan-aware inputs). ``exp_plans`` are the emitter's
     per-experiment dicts; without them (author-time render) inputs fall back to
     ``output/nc`` containers. Public so the study emitter can read the figure outputs it
@@ -205,9 +206,10 @@ def figure_contexts(figures, base_dir=".", workflow=None, exp_plans=None,
 
 # --------------------------------------------------------------------------- emit
 
-def emit_figure_rules(figures, base_dir=".", workflow=None, kit_dir="kit",
-                      include_all: bool = False, exp_plans=None,
-                      bundled_code: bool = False) -> str:
+
+def emit_figure_rules(
+    figures, base_dir=".", workflow=None, kit_dir="kit", include_all: bool = False, exp_plans=None, bundled_code: bool = False
+) -> str:
     """Render Snakemake render rules for *figures* — one rule per figure.
 
     Args:
@@ -234,13 +236,12 @@ def emit_figure_rules(figures, base_dir=".", workflow=None, kit_dir="kit",
     """
     fig_ctxs = figure_contexts(figures, base_dir, workflow, exp_plans, bundled_code)
     now = _dt.datetime.now().isoformat(timespec="seconds")
-    return lookup.get_template(_RULE_TEMPLATE).render(
-        figures=fig_ctxs, now=now, include_all=include_all)
+    return lookup.get_template(_RULE_TEMPLATE).render(figures=fig_ctxs, now=now, include_all=include_all)
 
 
-def write_figure_kit(figures, base_dir=".", out_dir="kit", workflow=None,
-                     include_all: bool = True, exp_plans=None,
-                     bundled_code: bool = False) -> Path:
+def write_figure_kit(
+    figures, base_dir=".", out_dir="kit", workflow=None, include_all: bool = True, exp_plans=None, bundled_code: bool = False
+) -> Path:
     """Freeze a figure workflow kit to disk: per-figure ``plot.py`` + the ``.smk`` snippet.
 
     Layout::
@@ -263,11 +264,16 @@ def write_figure_kit(figures, base_dir=".", out_dir="kit", workflow=None,
         name = figure.name or "figure"
         fmt = (figure.format or "png").lstrip(".")
         script = out_dir / "figures" / "scripts" / f"plot_{sanitize_name(name)}.py"
-        code = bsplot.render_code(figure, base_dir=base_dir,
-                                  outfile=f"figures/{name}.{fmt}")
+        code = bsplot.render_code(figure, base_dir=base_dir, outfile=f"figures/{name}.{fmt}")
         script.write_text(code, encoding="utf-8")
-    rules = emit_figure_rules(figures, base_dir, workflow=workflow,
-                              kit_dir=str(out_dir), include_all=include_all,
-                              exp_plans=exp_plans, bundled_code=bundled_code)
+    rules = emit_figure_rules(
+        figures,
+        base_dir,
+        workflow=workflow,
+        kit_dir=str(out_dir),
+        include_all=include_all,
+        exp_plans=exp_plans,
+        bundled_code=bundled_code,
+    )
     (out_dir / "figures.smk").write_text(rules, encoding="utf-8")
     return out_dir

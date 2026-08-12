@@ -24,12 +24,15 @@ from typing import Any, Optional
 from .catalog import load_matrix, run_generator
 
 
-def random_reservoir(n_nodes: int, sparsity: float = 0.1, spectral_radius: float = 0.95,
-                     weight_distribution: Optional[Any] = None,
-                     seed: Optional[int] = None) -> dict:
+def random_reservoir(
+    n_nodes: int,
+    sparsity: float = 0.1,
+    spectral_radius: float = 0.95,
+    weight_distribution: Optional[Any] = None,
+    seed: Optional[int] = None,
+) -> dict:
     """Materialise a ``RandomReservoir`` adjacency through the typed-DAG resolver."""
-    params: dict = {"n_nodes": n_nodes, "sparsity": sparsity,
-                    "spectral_radius": spectral_radius}
+    params: dict = {"n_nodes": n_nodes, "sparsity": sparsity, "spectral_radius": spectral_radius}
     # Left unset, the generator's `raw` step falls back to the standard Normal it
     # declares; binding None here would look like a supplied-but-empty distribution.
     if weight_distribution is not None:
@@ -37,8 +40,7 @@ def random_reservoir(n_nodes: int, sparsity: float = 0.1, spectral_radius: float
     return run_generator("RandomReservoir", params, seed=seed)
 
 
-def weight_shuffle(source: str, preserve: str = "binary_mask",
-                   seed: Optional[int] = None) -> dict:
+def weight_shuffle(source: str, preserve: str = "binary_mask", seed: Optional[int] = None) -> dict:
     """Materialise a ``WeightShuffle`` null-model adjacency: permute the non-zero weights.
 
     This is the documented exception to the typed-DAG rule (see

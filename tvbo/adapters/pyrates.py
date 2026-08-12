@@ -44,7 +44,6 @@ TVBO_TO_PYRATES_SOLVER = {
 }
 
 
-
 def _patch_pyrates_networkx_backend():
     """Fix networkx 3.4+ backend dispatch conflict with PyRates.
 
@@ -494,8 +493,7 @@ class PyRatesAdapter(BaseAdapter):
             # declares the parameter, else the first dynamics.
             py_name = PYRATES_REPL.get(param_name, param_name)
             resolved = None
-            if dyn_class and dyn_class in dynamics_dict \
-                    and param_name in (dynamics_dict[dyn_class].parameters or {}):
+            if dyn_class and dyn_class in dynamics_dict and param_name in (dynamics_dict[dyn_class].parameters or {}):
                 resolved = dyn_class
             else:
                 for dyn_name, dyn in dynamics_dict.items():
@@ -567,17 +565,13 @@ class PyRatesAdapter(BaseAdapter):
         if len(grid_shape) > 1 and 0 not in grid_shape and int(np.prod(grid_shape)) == n_conditions:
             # Use the grid key carried on the axis (== results_map column); fall back
             # to the trailing name segment only for axes built elsewhere.
-            bare = [
-                getattr(ax, "key", None) or str(getattr(ax, "name", "")).rsplit(".", 1)[-1]
-                for ax in axes
-            ]
+            bare = [getattr(ax, "key", None) or str(getattr(ax, "name", "")).rsplit(".", 1)[-1] for ax in axes]
             vals = [np.asarray(v, dtype=float) for v in _axis_vals]
             ordered = np.empty_like(results_arr)
             filled = np.zeros(n_conditions, dtype=bool)
             for c_idx, cond_name in enumerate(results_map.index):
                 midx = tuple(
-                    int(np.argmin(np.abs(vals[k] - float(results_map.loc[cond_name, bare[k]]))))
-                    for k in range(len(axes))
+                    int(np.argmin(np.abs(vals[k] - float(results_map.loc[cond_name, bare[k]])))) for k in range(len(axes))
                 )
                 pos = int(np.ravel_multi_index(midx, grid_shape))
                 ordered[pos] = results_arr[c_idx]

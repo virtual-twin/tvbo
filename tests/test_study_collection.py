@@ -29,9 +29,7 @@ def _write_container(root: Path, name: str, var: str, value) -> None:
 @pytest.fixture
 def collection(tmp_path):
     (tmp_path / "members").mkdir()
-    (tmp_path / "members" / "toy.yaml").write_text(
-        "title: Toy\nkey: toy\nsimulation_experiments: []\n", encoding="utf-8"
-    )
+    (tmp_path / "members" / "toy.yaml").write_text("title: Toy\nkey: toy\nsimulation_experiments: []\n", encoding="utf-8")
     spec = tmp_path / "tvbo_manuscript.yaml"
     spec.write_text(
         "title: TVB-O\n"
@@ -64,8 +62,7 @@ def test_optional_member_dropped_unless_requested(collection):
 def test_authored_value_resolves_without_a_container(collection, tmp_path):
     results, prov, problems = I.resolve_results(collection, tmp_path / "output")
     assert results["parcels"] == "379"
-    assert prov["parcels"] == {"computed": False, "value": "379",
-                               "source": "Glasser2016", "description": "HCP parcels"}
+    assert prov["parcels"] == {"computed": False, "value": "379", "source": "Glasser2016", "description": "HCP parcels"}
     assert any(p.startswith("n_errors:") for p in problems)  # no container yet
 
 
@@ -79,10 +76,10 @@ def test_computed_value_resolves_and_formats(collection, tmp_path):
 
 def test_emit_manifest_writes_quarto_meta_shape(collection, tmp_path):
     _write_container(tmp_path / "output", "tally", "n_errors", 17)
-    out, problems = I.emit_manifest(collection, tmp_path / "output",
-                                    tmp_path / "_output" / "manuscript_results.yml")
+    out, problems = I.emit_manifest(collection, tmp_path / "output", tmp_path / "_output" / "manuscript_results.yml")
     assert problems == []
     import yaml
+
     payload = yaml.safe_load(out.read_text())
     assert payload["results"] == {"n_errors": "17", "parcels": "379"}
 
@@ -105,16 +102,17 @@ def test_verify_coverage_is_bidirectional(collection, tmp_path):
 
 def test_verify_against_committed_manifest_is_container_free(collection, tmp_path):
     import yaml
+
     (tmp_path / "members" / "heavy.yaml").write_text("title: Heavy\nkey: heavy\n", encoding="utf-8")
     manifest = tmp_path / "manuscript_results.yml"
     manifest.write_text(yaml.safe_dump({"results": {"n_errors": "17", "parcels": "379"}}), encoding="utf-8")
     # NO container is written; offline verify would fail on n_errors, but a committed manifest skips resolution
-    assert I.verify(collection, tmp_path,
-                    manuscript_keys={"n_errors", "parcels"}, manifest_path=manifest) == []
+    assert I.verify(collection, tmp_path, manuscript_keys={"n_errors", "parcels"}, manifest_path=manifest) == []
 
 
 def test_verify_manifest_flags_binding_absent_from_manifest(collection, tmp_path):
     import yaml
+
     (tmp_path / "members" / "heavy.yaml").write_text("title: Heavy\nkey: heavy\n", encoding="utf-8")
     manifest = tmp_path / "manuscript_results.yml"
     manifest.write_text(yaml.safe_dump({"results": {"parcels": "379"}}), encoding="utf-8")  # n_errors not regenerated
@@ -151,8 +149,8 @@ def count_investigation(tmp_path):
 def test_count_tallies_member_and_investigation_collections(count_investigation, tmp_path):
     results, prov, problems = I.resolve_results(count_investigation, tmp_path / "output")
     assert problems == []
-    assert results["n_members"] == "1"                                  # bare collection on the collection
-    assert results["n_toy_figs"] == "3"                                 # counted from the loaded member spec
+    assert results["n_members"] == "1"  # bare collection on the collection
+    assert results["n_toy_figs"] == "3"  # counted from the loaded member spec
     assert prov["n_toy_figs"] == {"computed": True, "count": "toy.figures"}
 
 
@@ -168,7 +166,7 @@ def test_count_unknown_collection_is_a_build_problem(tmp_path):
     )
     inv = tvbo.StudyCollection.from_file(str(spec))
     _, _, problems = I.resolve_results(inv, tmp_path / "output")
-    assert any("oops" in p and "bogus" in p for p in problems)          # typo fails the build, not tallies to 0
+    assert any("oops" in p and "bogus" in p for p in problems)  # typo fails the build, not tallies to 0
 
 
 def test_count_value_used_are_mutually_exclusive(tmp_path):
@@ -217,15 +215,15 @@ def figure(tmp_path):
 
 def test_caption_walks_layout_order_not_declaration_order(figure):
     caption = bsplot.compose_caption(figure)
-    assert caption.index("(a)") < caption.index("(b)")           # layout ab, though b declared first
-    assert caption.startswith("Overview.")                       # authored lead first
+    assert caption.index("(a)") < caption.index("(b)")  # layout ab, though b declared first
+    assert caption.startswith("Overview.")  # authored lead first
 
 
 def test_caption_derives_structure_and_keeps_authored_interpretation(figure):
     caption = bsplot.compose_caption(figure)
     assert "line of rate vs time from experiment sweep" in caption
     assert "region as a matrix from analysis fc" in caption
-    assert "reproduces the gradient" in caption                  # Panel.description survives
+    assert "reproduces the gradient" in caption  # Panel.description survives
 
 
 def test_write_caption_emits_a_partial(figure, tmp_path):
@@ -391,9 +389,7 @@ def test_an_unrelated_spec_edit_does_not_mark_an_analysis_stale(tmp_path):
 def test_editing_the_analysis_itself_does_mark_it_stale(tmp_path):
     root = tmp_path / "output"
     _write_container(root, "tally", "n_errors", 3)
-    (root / "results" / "tally" / ".fingerprint").write_text(
-        I._analysis_fingerprint(_analysis(rhs="the previous body"))
-    )
+    (root / "results" / "tally" / ".fingerprint").write_text(I._analysis_fingerprint(_analysis(rhs="the previous body")))
     inv = SimpleNamespace(analyses=[_analysis()])
     problems = I._stale_or_missing_analyses(inv, root, tmp_path / "spec.yaml")
     assert problems and "edited but not re-run" in problems[0]
@@ -418,8 +414,15 @@ def test_run_analysis_records_the_fingerprint_it_will_be_checked_against(tmp_pat
     from tvbo.data.analysis_io import run_analysis
 
     analysis = SimpleNamespace(
-        name="tally", equation=None, arguments=None, execution=None,
-        apply_on_dimension=None, aggregate=None, dims=None, class_call=None, function=None,
+        name="tally",
+        equation=None,
+        arguments=None,
+        execution=None,
+        apply_on_dimension=None,
+        aggregate=None,
+        dims=None,
+        class_call=None,
+        function=None,
         callable=SimpleNamespace(module="numpy", name="mean"),
     )
     analysis.arguments = {"a": SimpleNamespace(name="a", value=[1.0, 2.0, 3.0], used=None)}
@@ -479,10 +482,8 @@ def test_a_caption_failure_does_not_abort_the_render_loop(tmp_path, monkeypatch)
     from tvbo.cli import figures as figures_cli
 
     rendered: list = []
-    monkeypatch.setattr(bsplot, "render",
-                        lambda fig, **kw: rendered.append(getattr(fig, "name", None)))
-    monkeypatch.setattr(bsplot, "compose_caption",
-                        lambda fig: (_ for _ in ()).throw(AttributeError("bad panel shape")))
+    monkeypatch.setattr(bsplot, "render", lambda fig, **kw: rendered.append(getattr(fig, "name", None)))
+    monkeypatch.setattr(bsplot, "compose_caption", lambda fig: (_ for _ in ()).throw(AttributeError("bad panel shape")))
 
     figs = [SimpleNamespace(name="fig-a", format="png"), SimpleNamespace(name="fig-b", format="png")]
     written = figures_cli.render_figures(figs, tmp_path, tmp_path / "figures")
@@ -502,9 +503,7 @@ def test_a_manifest_is_not_written_when_an_analysis_stage_failed(tmp_path, monke
 
     emitted: list = []
     monkeypatch.setattr(run_cli, "_run_whole_study", lambda *a, **k: False)
-    monkeypatch.setattr(run_cli, "emit_manifest",
-                        lambda *a, **k: emitted.append(a) or (tmp_path / "m.yml", []),
-                        raising=False)
+    monkeypatch.setattr(run_cli, "emit_manifest", lambda *a, **k: emitted.append(a) or (tmp_path / "m.yml", []), raising=False)
 
     spec = tmp_path / "collection.yaml"
     (tmp_path / "members").mkdir()

@@ -12,6 +12,7 @@ Currently one target:
   ``.pth`` link to its ``python/`` front-end into the active environment's
   site-packages, so ``import auto`` resolves for every process using this venv.
 """
+
 from __future__ import annotations
 
 import os
@@ -120,16 +121,11 @@ def _build_auto(prefix: Path) -> Path:
         _common.info(f"updating AUTO-07p source in {prefix}")
         _run_step(["git", "-C", str(prefix), "pull", "--ff-only"], what="git pull")
     elif prefix.exists() and any(prefix.iterdir()):
-        _common.die(
-            f"--prefix {prefix} already exists and is not an AUTO-07p checkout; "
-            "remove it or choose another --prefix."
-        )
+        _common.die(f"--prefix {prefix} already exists and is not an AUTO-07p checkout; remove it or choose another --prefix.")
     else:
         prefix.parent.mkdir(parents=True, exist_ok=True)
         _common.info(f"cloning AUTO-07p into {prefix}")
-        _run_step(
-            ["git", "clone", "--depth", "1", AUTO_REPO, str(prefix)], what="git clone"
-        )
+        _run_step(["git", "clone", "--depth", "1", AUTO_REPO, str(prefix)], what="git clone")
     _common.info("configuring AUTO-07p")
     _run_step(["./configure"], cwd=str(prefix), what="configure")
     _common.info("building AUTO-07p (make) — this can take a few minutes")
@@ -155,8 +151,7 @@ def auto7p(
         None,
         "--auto-dir",
         metavar="PATH",
-        help="Path to an existing AUTO-07p install. Defaults to $AUTO_DIR, then "
-        "common locations.",
+        help="Path to an existing AUTO-07p install. Defaults to $AUTO_DIR, then common locations.",
     ),
     build: bool = typer.Option(
         False,
@@ -169,12 +164,8 @@ def auto7p(
         metavar="PATH",
         help="Where to clone + build AUTO-07p when --build is used.",
     ),
-    force: bool = typer.Option(
-        False, "--force", help="Rewrite the .pth link even if it is already correct."
-    ),
-    uninstall: bool = typer.Option(
-        False, "--uninstall", help="Remove the AUTO-07p link from this environment."
-    ),
+    force: bool = typer.Option(False, "--force", help="Rewrite the .pth link even if it is already correct."),
+    uninstall: bool = typer.Option(False, "--uninstall", help="Remove the AUTO-07p link from this environment."),
 ) -> None:
     """Install AUTO-07p and link it onto this environment for pycobi continuation.
 
@@ -200,10 +191,7 @@ def auto7p(
         # than fall through to a different auto-detected install.
         given = Path(auto_dir).expanduser()
         if not _is_auto_dir(given):
-            _common.die(
-                f"--auto-dir {auto_dir} is not an AUTO-07p install "
-                "(no python/auto/__init__.py under it)."
-            )
+            _common.die(f"--auto-dir {auto_dir} is not an AUTO-07p install (no python/auto/__init__.py under it).")
         resolved = given.resolve()
     else:
         resolved = _search_auto_dir()
@@ -218,11 +206,7 @@ def auto7p(
                 )
 
     pth, changed = _write_link(resolved, force=force)
-    _common.info(
-        f"linked AUTO-07p ({resolved}) → {pth}"
-        if changed
-        else f"AUTO-07p already linked → {pth}"
-    )
+    _common.info(f"linked AUTO-07p ({resolved}) → {pth}" if changed else f"AUTO-07p already linked → {pth}")
 
     if not _module_importable("auto"):
         _common.die(

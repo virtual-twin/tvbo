@@ -663,8 +663,7 @@ class TestMultiEdgeFreezeRoundtrip:
         # a sidecar naming the length edge ``tract_length`` must still drive delays
         rng = np.random.RandomState(2)
         L = rng.rand(6, 6) * 100.0
-        frozen, net = self._roundtrip({"tract_length": L, "streamlinecount": rng.rand(6, 6)},
-                                      primary="streamlinecount")
+        frozen, net = self._roundtrip({"tract_length": L, "streamlinecount": rng.rand(6, 6)}, primary="streamlinecount")
         assert "tract_length" in frozen
         np.testing.assert_allclose(np.asarray(net.lengths_matrix), L, atol=1e-4)
 
@@ -722,15 +721,15 @@ class TestRegionAliasMap:
         M = M + M.T  # symmetric so the check is unambiguous
 
         def align(labels, mat):
-            canon = [amap.get(l, l) for l in labels]
+            canon = [amap.get(lbl, lbl) for lbl in labels]
             da = xr.DataArray(mat, dims=("i", "j"), coords={"i": canon, "j": canon})
             return da.sel(i=model_labels, j=model_labels).values
 
         A = align(tlabels, M)
 
         # hemisphere parity: no L<->R crossing
-        def hemi(l):
-            return "L" if l[:2] == "L_" or l.endswith("_LEFT") else "R"
+        def hemi(lbl):
+            return "L" if lbl[:2] == "L_" or lbl.endswith("_LEFT") else "R"
 
         assert all(hemi(t) == hemi(amap[t]) for t in tlabels)
 
@@ -754,9 +753,11 @@ def _atlas_hemi(label):
     if "brainstem" in lower.replace("-", "").replace("_", ""):
         return None
     for hemi, short, long in (("L", "l", "left"), ("R", "r", "right")):
-        if (lower[:2] in (f"{short}_", f"{short}.")
-                or lower.endswith(f"_{long}")
-                or lower.startswith((f"ctx-{short}h-", f"{short}h-", f"{long}-", f"{long}_"))):
+        if (
+            lower[:2] in (f"{short}_", f"{short}.")
+            or lower.endswith(f"_{long}")
+            or lower.startswith((f"ctx-{short}h-", f"{short}h-", f"{long}-", f"{long}_"))
+        ):
             return hemi
     return None
 
@@ -764,12 +765,21 @@ def _atlas_hemi(label):
 class TestAtlasAliases:
     """Packaged atlas terminologies carry hemisphere-correct empirical aliases."""
 
-    @pytest.mark.parametrize("atlas,checks", [
-        ("hcpmmp1", {"L_Thalamus": "THALAMUS_LEFT", "R_Thalamus": "THALAMUS_RIGHT",
-                     "Brain-Stem": "BRAIN_STEM"}),
-        ("DesikanKilliany", {"left-thalamus": "THALAMUS_LEFT", "right-thalamus": "THALAMUS_RIGHT",
-                             "ctx-lh-bankssts": "L_bankssts", "brain-stem": "BRAIN_STEM"}),
-    ])
+    @pytest.mark.parametrize(
+        "atlas,checks",
+        [
+            ("hcpmmp1", {"L_Thalamus": "THALAMUS_LEFT", "R_Thalamus": "THALAMUS_RIGHT", "Brain-Stem": "BRAIN_STEM"}),
+            (
+                "DesikanKilliany",
+                {
+                    "left-thalamus": "THALAMUS_LEFT",
+                    "right-thalamus": "THALAMUS_RIGHT",
+                    "ctx-lh-bankssts": "L_bankssts",
+                    "brain-stem": "BRAIN_STEM",
+                },
+            ),
+        ],
+    )
     def test_atlas_aliases_present_and_hemisphere_consistent(self, atlas, checks):
         from tvbo.classes.atlas import Atlas
 
@@ -862,14 +872,17 @@ class TestSelfDescribingCompanion:
         h5_path = tmp_path / "tpl-X_atlas-DesikanKilliany_desc-SC_relmat.h5"
         with h5py.File(h5_path, "w") as f:
             write_matrix(f.create_group("edges").create_group("weight"), weights, fmt="dense")
-        write_embedded_metadata(h5_path, {
-            "tvbo_class": "tvbo:Network",
-            "label": "self-describing",
-            "number_of_nodes": n,
-            "structural_measures": ["weight"],
-            "parcellation": {"atlas": {"name": "DesikanKilliany"}},
-            "nodes": [{"id": i, "label": f"n{i}"} for i in range(n)],
-        })
+        write_embedded_metadata(
+            h5_path,
+            {
+                "tvbo_class": "tvbo:Network",
+                "label": "self-describing",
+                "number_of_nodes": n,
+                "structural_measures": ["weight"],
+                "parcellation": {"atlas": {"name": "DesikanKilliany"}},
+                "nodes": [{"id": i, "label": f"n{i}"} for i in range(n)],
+            },
+        )
         return h5_path
 
     def test_loads_without_a_sidecar(self, tmp_path):

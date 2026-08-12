@@ -64,6 +64,7 @@ class TestNeuroMLOntologyModule:
 
     def test_synapse_subclass_chain(self, ttl):
         """``extends`` is faithfully rendered as a navigable ``subClassOf`` chain."""
+
         def parent(cls):
             supers = list(ttl.objects(cls, RDFS.subClassOf))
             return supers[0] if supers else None
@@ -134,7 +135,8 @@ class TestGeneratorDeterminism:
         try:
             subprocess.run(
                 [sys.executable, str(script), "-o", str(ttl_out), "--contracts", str(json_out)],
-                check=True, capture_output=True,
+                check=True,
+                capture_output=True,
             )
         except FileNotFoundError:
             pytest.skip("jNeuroML jar not available")

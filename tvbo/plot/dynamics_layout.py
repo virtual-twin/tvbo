@@ -131,11 +131,31 @@ def render_dynamics_panel(dynamics, panel, ax, cache):
     kind = panel.get("kind", "timeseries")
     if kind in _KINDS:
         dims = _coerce_dims(panel)
-        kwargs = {k: v for k, v in panel.items() if k not in {
-            "kind", "dims", "VOI", "title", "xlabel", "ylabel", "box_aspect",
-            "legend", "legend_title", "legend_loc", "plot", "run", "parameter",
-            "ICS", "values", "from_panel", "n_values", "label_fmt",
-        }}
+        kwargs = {
+            k: v
+            for k, v in panel.items()
+            if k
+            not in {
+                "kind",
+                "dims",
+                "VOI",
+                "title",
+                "xlabel",
+                "ylabel",
+                "box_aspect",
+                "legend",
+                "legend_title",
+                "legend_loc",
+                "plot",
+                "run",
+                "parameter",
+                "ICS",
+                "values",
+                "from_panel",
+                "n_values",
+                "label_fmt",
+            }
+        }
         plot_dynamics(dynamics.copy(), *dims, kind=kind, ax=ax, **kwargs)
         return None
 

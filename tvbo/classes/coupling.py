@@ -405,8 +405,7 @@ class Coupling(tvbo_datamodel.Coupling):
 
         return templater.format_code(rendered_code)
 
-    def report(self, format: str = "markdown", outputfile: str | None = None,
-               parameters: bool = True, equations=None) -> str:
+    def report(self, format: str = "markdown", outputfile: str | None = None, parameters: bool = True, equations=None) -> str:
         """Render a human-readable markdown (or pdf) report for this coupling.
 
         Includes pre/post expressions, the full assembled coupling equation
@@ -434,6 +433,7 @@ class Coupling(tvbo_datamodel.Coupling):
         if outputfile:
             if fmt == "pdf":
                 from tvbo.utils import report as _report
+
                 _report.to_pdf(md, outputfile)
             else:
                 with open(outputfile, "w", encoding="utf-8") as f:
@@ -638,8 +638,7 @@ class Coupling(tvbo_datamodel.Coupling):
                 c0, rest = edge.as_coeff_Mul()
                 odd = (sp.sin, sp.tan, sp.sinh, sp.tanh)
                 if c0 == -1 and getattr(rest, "func", None) in odd and rest.args[0].is_Add:
-                    terms = sorted((-t for t in rest.args[0].as_ordered_terms()),
-                                   key=lambda t: t.could_extract_minus_sign())
+                    terms = sorted((-t for t in rest.args[0].as_ordered_terms()), key=lambda t: t.could_extract_minus_sign())
                     with sp.evaluate(False):
                         edge = rest.func(sp.Add(*terms, evaluate=False))
                 return Sum(w[i, j] * edge, (j, 0, N - 1))
@@ -680,8 +679,7 @@ class Coupling(tvbo_datamodel.Coupling):
         for sn in states:
             subs[Symbol(sn)] = _incoming(sn)
             subs[Symbol(f"{sn}_j")] = _incoming(sn)
-        return [(Symbol(f"gx_{k}"), Sum(w[i, j] * comp.subs(subs), (j, 0, N - 1)))
-                for k, comp in enumerate(pre)]
+        return [(Symbol(f"gx_{k}"), Sum(w[i, j] * comp.subs(subs), (j, 0, N - 1))) for k, comp in enumerate(pre)]
 
     def plot(self, weights=None, node_idx=0, xs=None, ax=None, **kwargs):
         """Plot the coupling output against a single input state component.

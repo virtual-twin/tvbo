@@ -143,8 +143,7 @@ def _unnumbered(text):
     lookahead, so it silently reports whatever makes the assertion pass. The first
     version of this check did exactly that and could not fail.
     """
-    return [" ".join(m.group(1).split())[:60] for m in _BLOCK.finditer(text)
-            if not m.group(3) and "\\tag{" not in m.group(1)]
+    return [" ".join(m.group(1).split())[:60] for m in _BLOCK.finditer(text) if not m.group(3) and "\\tag{" not in m.group(1)]
 
 
 @pytest.fixture(scope="module")
@@ -208,8 +207,7 @@ def test_every_emitted_table_is_captioned(study):
 
     report = study.report("qmd", part="all")
     lines = report.splitlines()
-    tables = sum(1 for i, l in enumerate(lines)
-                 if l.startswith("|") and (i == 0 or not lines[i - 1].startswith("|")))
+    tables = sum(1 for i, line in enumerate(lines) if line.startswith("|") and (i == 0 or not lines[i - 1].startswith("|")))
     captions = len(re.findall(r"^: .*\{#tbl-[a-z0-9-]+\}", report, re.M))
     assert tables == captions, f"{tables} tables but {captions} captions"
 
@@ -357,8 +355,7 @@ def test_a_generated_equation_is_not_reported(tmp_path):
     from tvbo.utils.report import unrendered_equations
 
     qmd = tmp_path / "report.qmd"
-    qmd.write_text('# Methods\n\n```{python}\n#| echo: false\n'
-                   'print(STUDY.report("qmd"))   # emits $$\\dot{x} = -k x$$\n```\n')
+    qmd.write_text('# Methods\n\n```{python}\n#| echo: false\nprint(STUDY.report("qmd"))   # emits $$\\dot{x} = -k x$$\n```\n')
     assert unrendered_equations(qmd) == []
 
 
@@ -367,18 +364,20 @@ def test_the_reported_line_number_survives_a_stripped_cell(tmp_path):
     from tvbo.utils.report import unrendered_equations
 
     qmd = tmp_path / "report.qmd"
-    qmd.write_text('```{python}\na = 1\nb = 2\n```\n\n$$E = mc^2$$\n')
+    qmd.write_text("```{python}\na = 1\nb = 2\n```\n\n$$E = mc^2$$\n")
     assert unrendered_equations(qmd) == [(6, "E = mc^2")]
 
 
 # ── A grid too small to be a float is a sentence ────────────────────────────────────────
 
 
-@pytest.mark.parametrize("rows,expected", [
-    ([["`Q`", "stimulus"]], "Event `Q` (Type: stimulus)."),
-    ([["50", "2000 ms"], ["51", "7000 ms"]],
-     "Event 50 (Type: 2000 ms); Event 51 (Type: 7000 ms)."),
-])
+@pytest.mark.parametrize(
+    "rows,expected",
+    [
+        ([["`Q`", "stimulus"]], "Event `Q` (Type: stimulus)."),
+        ([["50", "2000 ms"], ["51", "7000 ms"]], "Event 50 (Type: 2000 ms); Event 51 (Type: 7000 ms)."),
+    ],
+)
 def test_a_grid_too_small_to_be_a_float_is_written_as_a_sentence(rows, expected):
     """A captioned float tells the reader to look something up; two numbers do not earn one.
 
@@ -396,18 +395,39 @@ def test_a_grid_large_enough_stays_a_table():
     assert table_or_prose(["Event", "Type"], [["a", "1"], ["b", "2"], ["c", "3"]]).startswith("|")
 
 
-def test_md_table_always_renders_a_table():
-    """The shared primitive never collapses: 13 curated models are single-state.
+def test_a_one_row_table_still_renders_as_a_table():
+    """The shared primitive does not collapse on row count: 13 curated models are single-state.
 
-    `state_variable_table`, `param_table` and the scorecard have no subject column for a
-    sentence to name, and `read_md_tables` is documented as md_table's inverse.
+    `state_variable_table`, `param_table` and the scorecard have no subject column for a sentence to name, and `read_md_tables` is documented as md_table's inverse.
     """
     from tvbo.utils.report import md_table, read_md_tables
 
     one_row = md_table(["Parameter", "Value"], [["sigma", "0.01"]])
     assert one_row.startswith("|")
     assert read_md_tables(one_row)[0].rows == [{"Parameter": "sigma", "Value": "0.01"}]
-    assert md_table(["A", "B"], [["", ""], ["", ""]]).startswith("|")
+
+
+def test_a_grid_down_to_one_column_is_a_list_not_a_table():
+    """A one-column float spends a number and a caption restating the heading above it.
+
+    Column dropping gets there on its own: a coupling whose terms carry no value, unit or description leaves `| Term |` and nothing else.
+    """
+    from tvbo.utils.report import md_table
+
+    assert md_table(["Term", "Value"], [["$c_1$", ""], ["$c_2$", ""]]) == "$c_1$, $c_2$"
+    assert md_table(["A", "B"], [["", ""], ["", ""]]) == ""
+
+
+def test_prose_keeps_its_caption_as_a_lead_in():
+    """The observations caption carries the settings lifted out of the rows.
+
+    Dropping it on the prose path took `time_scale = ms` — chosen by nobody, stated nowhere else — out of the report entirely.
+    """
+    from tvbo.utils.report import captioned
+
+    out = captioned("Observation bold (Source: S).", "What each records. Throughout, time_scale = ms.", "obs", "qmd")
+    assert out == "What each records. Throughout, time_scale = ms.\n\nObservation bold (Source: S).\n"
+    assert "tbl-" not in out
 
 
 def test_experiment_ids_are_listed_in_numeric_order():
@@ -421,8 +441,10 @@ def test_a_pipeline_step_is_named_by_what_the_recipe_calls_it():
     """Reading `callable` first printed Deco2014's five named steps as `? → ? → fftconvolve → ? → ?`."""
     from tvbo.utils.report import pipeline_text
 
-    steps = [SimpleNamespace(name="hemodynamic_response"),
-             SimpleNamespace(name="convolve", callable=SimpleNamespace(name="fftconvolve"))]
+    steps = [
+        SimpleNamespace(name="hemodynamic_response"),
+        SimpleNamespace(name="convolve", callable=SimpleNamespace(name="fftconvolve")),
+    ]
     assert pipeline_text(steps) == "hemodynamic_response → convolve"
 
 
@@ -476,8 +498,7 @@ def test_a_coupling_parameter_the_model_already_declares_is_not_listed_twice():
     """
     from tvbo.utils.report import symbol_table
 
-    model = SimpleNamespace(state_variables={}, derived_parameters={},
-                            parameters={"e0": _param(2.5), "r": _param(0.56)})
+    model = SimpleNamespace(state_variables={}, derived_parameters={}, parameters={"e0": _param(2.5), "r": _param(0.56)})
     coupling = SimpleNamespace(parameters={"e0": _param(2.5), "K": _param(1.0, description="gain")})
     table = symbol_table(model, couplings=[coupling])
     assert table.count("$e_{0}$") == 1

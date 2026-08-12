@@ -127,6 +127,8 @@ def find_version() -> str:
 
 DATA_DIR = realpath(join(ROOT_DIR, "data"))
 ONTO_DIR = join(DATA_DIR, "ontology")
+
+
 # %% Load Ontology (lazily)
 #
 # The TVB-O ontology is metadata only: it is consulted to retrieve specifications for
@@ -1126,9 +1128,7 @@ def get_model_cvars(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.Thing
     # A state variable is a coupling variable if its derivative consumes a
     # global coupling term.  Match the model's actual coupling-term names
     # rather than a hard-coded prefix, so any naming (c_glob, c_pop, …) works.
-    global_coupling_names = [
-        c for c in get_model_coupling_terms(NMM, return_as_dict=True).keys() if c != "local_coupling"
-    ]
+    global_coupling_names = [c for c in get_model_coupling_terms(NMM, return_as_dict=True).keys() if c != "local_coupling"]
     for k, v in get_model_derivatives(NMM).items():
         rhs = v.value.first() or ""
         if any(cn in rhs for cn in global_coupling_names):

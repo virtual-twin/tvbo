@@ -27,17 +27,19 @@ functions, and whole experiments). Query it directly instead of searching files:
 
 ```python
 from tvbo import Dynamics
-Dynamics.list_db()                       # every model name (100+)
-Dynamics.list_db(model_type="mean_field")# filter: mean_field | neural_mass |
-                                         # phase_oscillator | spiking | field | …
-Dynamics.db_overview()                   # pandas DataFrame: name, type, description
+
+Dynamics.list_db()  # every model name (100+)
+Dynamics.list_db(model_type="mean_field")  # filter: mean_field | neural_mass |
+# phase_oscillator | spiking | field | …
+Dynamics.db_overview()  # pandas DataFrame: name, type, description
 
 from tvbo.data.registry import list_entries
-list_entries("Network")                  # curated connectomes (dTOR, Schaefer, HCP, …)
-list_entries("BrainAtlas")               # DesikanKilliany, Schaefer2018, Yeo17, hcpmmp1, …
-list_entries("Coupling")                 # Linear, Sigmoidal, Difference, Kuramoto, …
-list_entries("SimulationExperiment")     # ready-to-run experiments
-list_entries("SimulationStudy")          # published studies (parameter sweeps, fits)
+
+list_entries("Network")  # curated connectomes (dTOR, Schaefer, HCP, …)
+list_entries("BrainAtlas")  # DesikanKilliany, Schaefer2018, Yeo17, hcpmmp1, …
+list_entries("Coupling")  # Linear, Sigmoidal, Difference, Kuramoto, …
+list_entries("SimulationExperiment")  # ready-to-run experiments
+list_entries("SimulationStudy")  # published studies (parameter sweeps, fits)
 ```
 
 To inspect one entry without running it, use the CLI (no Python needed):
@@ -57,6 +59,7 @@ If an experiment already exists, loading it is one call — no reconstruction:
 
 ```python
 from tvbo import SimulationExperiment
+
 exp = SimulationExperiment.from_db("RWW_BOLD_FC_Optimization")
 result = exp.run("jax")
 result.plot()
@@ -79,12 +82,12 @@ from tvbo import SimulationExperiment
 exp = SimulationExperiment(
     dynamics={"name": "ReducedWongWangExcInh", "iri": "tvbo:ReducedWongWangExcInh"},
     coupling={"name": "Linear", "iri": "tvbo:Linear"},
-    network={"iri": "network:example_3node_network"},   # or any list_entries("Network") name
+    network={"iri": "network:example_3node_network"},  # or any list_entries("Network") name
     integration={"method": "Heun", "duration": 500, "noise": None},
 )
-result = exp.run("jax")     # ExperimentResult
-result.plot()               # built-in plotting
-result.data                 # xarray DataArray, dims (time, state_variable, node)
+result = exp.run("jax")  # ExperimentResult
+result.plot()  # built-in plotting
+result.data  # xarray DataArray, dims (time, state_variable, node)
 ```
 
 For a real connectome, point `network` at a curated relmat, e.g.
@@ -96,6 +99,7 @@ For a bare `Dynamics` with no network (single node), the minimal form still hold
 
 ```python
 from tvbo import Dynamics, SimulationExperiment
+
 SimulationExperiment(dynamics=my_dynamics).run("jax").plot()
 ```
 
@@ -122,9 +126,9 @@ The backend is selected by the **`format`** argument, not a constructor
 `backend=` kwarg:
 
 ```python
-result = exp.run("jax")           # execute on JAX (recommended default for sims)
-result = exp.run("tvb")           # execute on The Virtual Brain
-code   = exp.render_code("jax")   # render code WITHOUT executing (export)
+result = exp.run("jax")  # execute on JAX (recommended default for sims)
+result = exp.run("tvb")  # execute on The Virtual Brain
+code = exp.render_code("jax")  # render code WITHOUT executing (export)
 ```
 
 `run()`'s default `format` is `tvboptim` (the optimisation backend); pass an
@@ -188,7 +192,7 @@ runs it on the `tvboptim` backend (a JAX autodiff engine):
 
 ```python
 exp = SimulationExperiment.from_db("RWW_BOLD_FC_Optimization")
-result = exp.run("tvboptim")     # fit G to empirical FC, gradient-based
+result = exp.run("tvboptim")  # fit G to empirical FC, gradient-based
 ```
 
 Reuse a curated optimization experiment as your starting point instead of wiring
@@ -233,8 +237,8 @@ So converge on the number you will publish:
 ```python
 base = exp.run("jax")
 
-exp.integration.step_size /= 4        # fixed-step (Heun, RK4): halve/quarter dt
-exp.integration.rel_tol = 1e-12       # adaptive (Tsit5, Vern9, Rodas5): tighten
+exp.integration.step_size /= 4  # fixed-step (Heun, RK4): halve/quarter dt
+exp.integration.rel_tol = 1e-12  # adaptive (Tsit5, Vern9, Rodas5): tighten
 exp.integration.abs_tol = 1e-12
 refined = exp.run("jax")
 

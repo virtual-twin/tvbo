@@ -46,6 +46,7 @@ _CACHE: dict[tuple, Any] = {}
 # module name -> digest of the source that module was LOADED from, pinned for the process
 _SOURCE_DIGESTS: dict[str, str] = {}
 
+
 def _default_cache_dir() -> Path:
     """On-disk home for materialised produced constants, alongside the network cache
     (``~/.tvbo/networks``). Resolved per call, not at import, so a harness that sets
@@ -60,6 +61,7 @@ def clear_cache() -> None:
 
 
 # --------------------------------------------------------------------------- helpers
+
 
 def _slot(obj: Any, name: str, default: Any = None) -> Any:
     return getattr(obj, name, default) if obj is not None else default
@@ -121,13 +123,14 @@ _REF_PREFIX = "network."
 
 def _mesh_array(net: Any, field: str) -> np.ndarray:
     """A mesh array off the Network's lazy runtime caches (set by the h5 load path)."""
-    attr = {"vertices": "_mesh_vertices", "elements": "_mesh_elements",
-            "faces": "_mesh_elements", "normals": "_mesh_normals"}.get(field)
+    attr = {
+        "vertices": "_mesh_vertices",
+        "elements": "_mesh_elements",
+        "faces": "_mesh_elements",
+        "normals": "_mesh_normals",
+    }.get(field)
     if attr is None:
-        raise ValueError(
-            f"network.mesh.{field}: unknown mesh array; expected one of "
-            f"vertices, elements/faces, normals."
-        )
+        raise ValueError(f"network.mesh.{field}: unknown mesh array; expected one of vertices, elements/faces, normals.")
     try:
         return np.asarray(object.__getattribute__(net, attr))
     except AttributeError:
@@ -175,14 +178,13 @@ def _resolve_ref(ref: str, context: Any, where: str) -> Any:
     if net is None:
         raise ValueError(f"{where}: {ref!r} needs a network but the context has none.")
 
-    rest = ref[len(_REF_PREFIX):]
+    rest = ref[len(_REF_PREFIX) :]
     if rest == "nodes.position":
-        rest = "positions"   # legacy spelling of network.positions
+        rest = "positions"  # legacy spelling of network.positions
     if rest in _NODE_MEASURES:
         vec = resolve_network_node(net, rest)
         if vec is None:
-            raise ValueError(f"{where}: {ref!r} needs a network that can build {rest!r}, "
-                             f"got {type(net).__name__}.")
+            raise ValueError(f"{where}: {ref!r} needs a network that can build {rest!r}, got {type(net).__name__}.")
         return vec
     if rest.startswith("mesh."):
         return _mesh_array(net, rest.split(".", 1)[1])
@@ -271,6 +273,7 @@ def _module_source_digest(module: str) -> str:
 
 # --------------------------------------------------------------------------- sources
 
+
 def _read_source(path: Path, measure: Optional[str]) -> Any:
     """Read ``measure`` out of a binary store, or the whole array when it holds one."""
     from tvbo.data.matrix_io import LazyArrayStore
@@ -281,10 +284,7 @@ def _read_source(path: Path, measure: Optional[str]) -> Any:
     arrays = store.arrays
     if len(arrays) == 1:
         return next(iter(arrays.values()))
-    raise ValueError(
-        f"{path} holds {len(arrays)} arrays {sorted(arrays)}; the parameter must name "
-        f"one with `measure:`."
-    )
+    raise ValueError(f"{path} holds {len(arrays)} arrays {sorted(arrays)}; the parameter must name one with `measure:`.")
 
 
 def read_artifact(path: Any, key: Optional[str] = None) -> Any:
@@ -295,6 +295,7 @@ def read_artifact(path: Any, key: Optional[str] = None) -> Any:
 
 
 # ------------------------------------------------------------------------- producers
+
 
 def _argument_values(producer: Any, context: Any, where: str) -> dict:
     """The producer's arguments as plain kwargs, entity references resolved.
@@ -315,9 +316,7 @@ def _producer_spec(producer: Any, param_name: str, context: Any) -> tuple:
     """The producer's ``(module, name, kwargs)`` — its identity and its inputs."""
     call = _slot(producer, "callable", None)
     if call is None:
-        raise ValueError(
-            f"Parameter {param_name!r} declares a producer with no `callable:`."
-        )
+        raise ValueError(f"Parameter {param_name!r} declares a producer with no `callable:`.")
     module, name = str(_slot(call, "module", "")), str(_slot(call, "name", ""))
     if not module or not name:
         raise ValueError(
@@ -329,7 +328,10 @@ def _producer_spec(producer: Any, param_name: str, context: Any) -> tuple:
 
 
 def _producer_bundle(
-    producer: Any, param_name: str, context: Any, spec: Optional[tuple] = None,
+    producer: Any,
+    param_name: str,
+    context: Any,
+    spec: Optional[tuple] = None,
     key: Optional[tuple] = None,
 ) -> Any:
     """Everything the producer returns, cached on the CALL — no output selection.
@@ -381,8 +383,7 @@ def _call_producer(producer: Any, param_name: str, context: Any) -> Any:
         except (TypeError, KeyError, IndexError) as exc:
             keys = sorted(produced) if hasattr(produced, "keys") else type(produced).__name__
             raise ValueError(
-                f"Parameter {param_name!r}: producer {module}.{name} has no output "
-                f"{output!r} (it returned {keys})."
+                f"Parameter {param_name!r}: producer {module}.{name} has no output {output!r} (it returned {keys})."
             ) from exc
     elif isinstance(produced, dict):
         # Hand back a shallow copy of the bundle: its arrays are read-only, but the dict
@@ -393,6 +394,7 @@ def _call_producer(producer: Any, param_name: str, context: Any) -> Any:
 
 
 # ------------------------------------------------------------------------------- API
+
 
 def _declared_name(obj: Any) -> str:
     """What to call this thing in a cache key and an error message.
@@ -438,8 +440,7 @@ def _source_file(param: Any, source_dir: Optional[Path], name: str) -> Path:
     path = _resolve_path(str(source), source_dir)
     if path is None:
         raise ValueError(
-            f"Parameter {name!r}: source {source!r} does not resolve to an existing "
-            f"file (source_dir={source_dir})."
+            f"Parameter {name!r}: source {source!r} does not resolve to an existing file (source_dir={source_dir})."
         )
     return path
 
@@ -481,8 +482,7 @@ def materialise(
         measure = _slot(param, "measure")
         if not measure:
             raise ValueError(
-                f"Parameter {name!r}: a sourced constant must name its array with "
-                f"`measure:` for a backend to read it back."
+                f"Parameter {name!r}: a sourced constant must name its array with `measure:` for a backend to read it back."
             )
         return path, _checked_key(path, str(measure), name)
 
@@ -499,8 +499,7 @@ def materialise(
     path = root / f"{module}.{fname}.{digest}.h5"
 
     if not path.exists():
-        _write_bundle(path, _producer_bundle(producer, name, context,
-                                             (module, fname, kwargs), key))
+        _write_bundle(path, _producer_bundle(producer, name, context, (module, fname, kwargs), key))
     return path, _checked_key(path, _slot(producer, "output", None), name)
 
 
@@ -525,10 +524,7 @@ def _checked_key(path: Path, key: Optional[str], name: str) -> str:
                 f"the one to read with `output:` (produced) or `measure:` (sourced)."
             )
         if str(key) not in f:
-            raise ValueError(
-                f"Parameter {name!r}: {path.name} has no array {str(key)!r} "
-                f"(it holds {keys})."
-            )
+            raise ValueError(f"Parameter {name!r}: {path.name} has no array {str(key)!r} (it holds {keys}).")
     return str(key)
 
 
@@ -600,8 +596,7 @@ def live_artifacts(root: Any, cache_dir: Optional[Path] = None) -> tuple[set, se
         name = str(_slot(owner, "name", "<unnamed>"))
         try:
             module, fname, kwargs = _producer_spec(_slot(owner, "producer"), name, root)
-            digest = hashlib.sha256(
-                repr(_producer_key(module, fname, kwargs)).encode()).hexdigest()[:16]
+            digest = hashlib.sha256(repr(_producer_key(module, fname, kwargs)).encode()).hexdigest()[:16]
         except Exception:
             continue
         producers.add(f"{module}.{fname}")
@@ -622,8 +617,7 @@ def superseded_artifacts(root: Any, cache_dir: Optional[Path] = None) -> list:
     if not root_dir.is_dir():
         return []
     keep, producers = live_artifacts(root, cache_dir)
-    dead = [p for p in sorted(root_dir.glob("*.h5"))
-            if p not in keep and p.name.rsplit(".", 2)[0] in producers]
+    dead = [p for p in sorted(root_dir.glob("*.h5")) if p not in keep and p.name.rsplit(".", 2)[0] in producers]
     return sorted(dead, key=lambda p: -p.stat().st_size)
 
 

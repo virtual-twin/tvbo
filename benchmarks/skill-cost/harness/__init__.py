@@ -1,4 +1,5 @@
 """Pluggable agent-harness registry for the skill-cost benchmark."""
+
 from __future__ import annotations
 
 from .base import CONDITIONS, Harness, Metrics, RunResult, Task

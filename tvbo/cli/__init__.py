@@ -4,6 +4,7 @@ See ``dev/tvbo-cli.md`` for the full design. The CLI is Typer-based,
 registry-driven, and transport-aware. This module assembles the top-level
 :class:`typer.Typer` ``app`` from per-verb sub-modules.
 """
+
 from __future__ import annotations
 
 import typer
@@ -50,7 +51,7 @@ app = typer.Typer(
         "  tvbo skills uninstall                        remove TVBO-managed skill files\n"
         "  tvbo skills --help                           all targets, scopes, flags\n"
         "\n"
-        "Docs: https://thevirtualbrain.github.io/tvbo/  (see Agentic Coding section)"
+        "Docs: https://virtual-twin.github.io/tvbo/  (see Agentic Coding section)"
     ),
     no_args_is_help=True,
     add_completion=True,
@@ -64,7 +65,9 @@ app.command("save", help="Like export, with bundled data when supported.")(_save
 app.command("import", help="Load a foreign file (auto-dispatch by extension).")(_import_cmd.import_)
 app.command("info", help="Inspect a SPEC (tasks, outputs, declared backends).")(_info_cmd.info)
 app.command("formats", help="List all registered I/O formats.")(_formats_cmd.formats)
-app.command("verify", help="Check a StudyCollection is buildable (completeness / staleness / manifest coverage).")(_verify_cmd.verify)
+app.command("verify", help="Check a StudyCollection is buildable (completeness / staleness / manifest coverage).")(
+    _verify_cmd.verify
+)
 app.command("version", help="Print the tvbo version.")(_version_cmd.version)
 
 # Sub-trees (registered as their own Typer apps)
@@ -72,16 +75,23 @@ app.add_typer(_validate_cmd.app, name="validate", help="Validate YAML / OMEX / B
 app.add_typer(_config_cmd.app, name="config", help="Manage CLI configuration.")
 app.add_typer(_cache_cmd.app, name="cache", help="Inspect and reclaim tvbo's caches.")
 app.add_typer(_network_cmd.app, name="network", help="Build connectomes from a tractogram + parcellation (MRtrix wrapper).")
-app.add_typer(_figures_cmd.app, name="figure", help="Render declarative figures (Figure / SimulationStudy YAML) via bsplot codegen.")
+app.add_typer(
+    _figures_cmd.app, name="figure", help="Render declarative figures (Figure / SimulationStudy YAML) via bsplot codegen."
+)
 app.add_typer(_workflow_cmd.app, name="workflow", help="Plan / emit HPC + pipeline artefacts (slurm, snakemake, nextflow).")
-app.add_typer(_skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally.")
+app.add_typer(
+    _skills_cmd.app, name="skills", help="Render skills for Claude Code / Copilot / Cursor; install user skills locally."
+)
 app.add_typer(_install_cmd.app, name="install", help="Provision optional native components pip cannot place (e.g. AUTO-07p).")
 
 
 @app.callback()
 def _configure(
     log_level: str = typer.Option(
-        None, "--log-level", "-L", metavar="LEVEL",
+        None,
+        "--log-level",
+        "-L",
+        metavar="LEVEL",
         help="tvbo log level (DEBUG|INFO|WARNING|ERROR|OFF); overrides TVBO_LOG_LEVEL.",
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output (DEBUG)."),

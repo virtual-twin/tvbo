@@ -200,12 +200,11 @@ def coupling_bindings(model, coupling, incoming=(), local=()):
 
     pre_rhs = str(coupling.pre_expression.rhs) if coupling.pre_expression else ""
     post_rhs = str(coupling.post_expression.rhs) if coupling.post_expression else ""
-    bare = lambda name, text: re.search(rf"\b{re.escape(name)}\b", text) is not None
 
-    ungathered = [
-        s for s in vec_states
-        if s not in cvar_index and s not in local and bare(s, pre_rhs)
-    ]
+    def bare(name, text):
+        return re.search(rf"\b{re.escape(name)}\b", text) is not None
+
+    ungathered = [s for s in vec_states if s not in cvar_index and s not in local and bare(s, pre_rhs)]
     if ungathered:
         raise ValueError(
             f"coupling `pre_expression` reads {ungathered} as a source state, but only "
@@ -220,12 +219,9 @@ def coupling_bindings(model, coupling, incoming=(), local=()):
         "sv_index": sv_index,
         "vec_states": vec_states,
         "bare": [s for s in vec_states if s in cvar_index and bare(s, pre_rhs)],
-        "pre_j": [(f"{s}_j", cvar_index[s]) for s in vec_states
-                  if f"{s}_j" in pre_rhs and s in cvar_index],
-        "pre_i": [(f"{s}_i", sv_index[s]) for s in vec_states
-                  if f"{s}_i" in pre_rhs and s in sv_index],
-        "post_i": [(f"{s}_i", sv_index[s]) for s in vec_states
-                   if f"{s}_i" in post_rhs and s in sv_index],
+        "pre_j": [(f"{s}_j", cvar_index[s]) for s in vec_states if f"{s}_j" in pre_rhs and s in cvar_index],
+        "pre_i": [(f"{s}_i", sv_index[s]) for s in vec_states if f"{s}_i" in pre_rhs and s in sv_index],
+        "post_i": [(f"{s}_i", sv_index[s]) for s in vec_states if f"{s}_i" in post_rhs and s in sv_index],
     }
 
 
@@ -437,8 +433,7 @@ def _load_bindings(gtype: str) -> dict:
         path = resolve("GraphGenerator", gtype)
     except (FileNotFoundError, ValueError) as e:
         raise ValueError(
-            f"Unknown graph generator type {gtype!r}. Add a YAML file under "
-            f"tvbo/database/graph_generators/ to register it."
+            f"Unknown graph generator type {gtype!r}. Add a YAML file under tvbo/database/graph_generators/ to register it."
         ) from e
 
     with open(path) as f:

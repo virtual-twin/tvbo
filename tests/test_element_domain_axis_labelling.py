@@ -82,4 +82,4 @@ def test_the_emitted_runtime_bridges_leaf_name_to_declared_axis(code):
     """
     assert "element_idx" in code
     assert "_bare_to_label" in code
-    assert "_el{_a.element_idx}" in code   # the alias key, quote-agnostic: emitted source is auto-formatted
+    assert "_el{_a.element_idx}" in code  # the alias key, quote-agnostic: emitted source is auto-formatted

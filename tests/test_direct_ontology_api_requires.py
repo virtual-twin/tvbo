@@ -50,9 +50,19 @@ def api() -> DirectOntologyAPI:
 def test_search_covers_the_concepts_the_platform_asks_for(api):
     """The KG endpoint searches these in one pass; one bad entity broke all of them."""
     carrying = {}
-    for concept in ("Model", "NeuralMassModel", "Coupling", "IntegrationMethod",
-                    "StateVariable", "Parameter", "BrainRegion", "Parcellation",
-                    "Tractogram", "Monitor", "Noise"):
+    for concept in (
+        "Model",
+        "NeuralMassModel",
+        "Coupling",
+        "IntegrationMethod",
+        "StateVariable",
+        "Parameter",
+        "BrainRegion",
+        "Parcellation",
+        "Tractogram",
+        "Monitor",
+        "Noise",
+    ):
         for hit in api.search(concept, limit=50):
             if hit["requires"]:
                 carrying[hit["name"]] = hit["requires"]

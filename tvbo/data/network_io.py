@@ -180,8 +180,7 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
             pg.attrs["tvbo_class"] = "tvbo:Parameter"
             p_meta = (m.get("parameters") or {}).get(pname) if isinstance(m.get("parameters"), dict) else None
             p_meta = p_meta if isinstance(p_meta, dict) else {}
-            write_matrix(pg, pmatrix, fmt=p_meta.get("format", fmt),
-                         dtype=p_meta.get("dtype", dtype))
+            write_matrix(pg, pmatrix, fmt=p_meta.get("format", fmt), dtype=p_meta.get("dtype", dtype))
 
 
 def _nodes_are_placeholders(nodes, number_of_nodes) -> bool:
@@ -719,8 +718,9 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
         names = [nm for nm in names if nm]
         nameset = set(names)
         if "weight" in arrays and "weight" not in nameset:
-            w_name = (next((nm for nm in names if nm.lower() in _WEIGHT_MEASURES), None)
-                      or next((nm for nm in names if nm.lower() not in _LENGTH_MEASURES), None))
+            w_name = next((nm for nm in names if nm.lower() in _WEIGHT_MEASURES), None) or next(
+                (nm for nm in names if nm.lower() not in _LENGTH_MEASURES), None
+            )
             if w_name and w_name != "weight":
                 arrays[w_name] = arrays.pop("weight")
         if "length" in arrays and "length" not in nameset:

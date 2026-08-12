@@ -13,6 +13,7 @@ Renders TVBO ontology entities and SymPy expressions as matplotlib figures:
 draws a temporal equation over a time vector. Both substitute the curated
 default parameters from the ontology before evaluating.
 """
+
 from typing import Any, Optional
 
 import matplotlib.pyplot as plt

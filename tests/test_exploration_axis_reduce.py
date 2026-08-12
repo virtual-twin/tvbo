@@ -108,9 +108,7 @@ def test_reduce_on_internally_labelled_observations():
     rng = np.random.default_rng(1)
     # Flat leading dim = prod(grid) = 3 * 4, followed by a node dim.
     raw = rng.standard_normal((len(MU_VALS) * len(SEED_VALS), 5))
-    res = ExplorationResult(
-        name="t", axes=_axes("mean"), observations={"decision": raw}
-    )
+    res = ExplorationResult(name="t", axes=_axes("mean"), observations={"decision": raw})
     dec = res.observations["decision"]
     # Grid dims are named by the axis names; the reduced one is gone while the
     # surviving grid axis stays leading. (The lone trailing spatial dim is named
@@ -120,12 +118,8 @@ def test_reduce_on_internally_labelled_observations():
     assert "MurrayWangDM.mu" in dec.dims
 
     # Compare against the same array labelled without reduction, then meaned.
-    ref = ExplorationResult(
-        name="t", axes=_axes(None), observations={"decision": raw.copy()}
-    ).observations["decision"]
-    np.testing.assert_allclose(
-        dec.values, ref.mean(dim="execution.random_seed").values
-    )
+    ref = ExplorationResult(name="t", axes=_axes(None), observations={"decision": raw.copy()}).observations["decision"]
+    np.testing.assert_allclose(dec.values, ref.mean(dim="execution.random_seed").values)
 
 
 def test_no_reduce_leaves_observations_unchanged():

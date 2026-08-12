@@ -11,6 +11,7 @@ The spec may be a standalone ``Figure`` (top-level ``panels:``) or a
 ``SimulationStudy`` carrying a ``figures:`` list — the latter closes the
 replication loop (a study is its experiments plus the figures that read them).
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -79,15 +80,13 @@ def render_figures(figures, base_dir: Path, out_dir: Path) -> list[Path]:
         fmt = (getattr(figure, "format", None) or "png").lstrip(".")
         outfile = out_dir / f"{name}.{fmt}"
         script_path = script_dir / f"plot_{sanitize_name(name)}.py"
-        bsplot.render(figure, base_dir=str(base_dir), outfile=str(outfile),
-                      script_path=str(script_path))
+        bsplot.render(figure, base_dir=str(base_dir), outfile=str(outfile), script_path=str(script_path))
         _common.info(f"wrote {outfile}")
         _common.info(f"wrote {script_path}")
         written.append(outfile)
         # Caption partial beside the image, for `{{< include >}}` in the prose.
         try:
-            cap = (bsplot.write_caption(figure, out_dir, name=name)
-                   if bsplot.compose_caption(figure) else None)
+            cap = bsplot.write_caption(figure, out_dir, name=name) if bsplot.compose_caption(figure) else None
             if cap:
                 _common.info(f"wrote {cap}")
         except Exception as e:  # noqa: BLE001 — a caption must never lose a rendered figure
@@ -101,19 +100,24 @@ def render(
         ..., help="Path to a Figure YAML (top-level panels:) or a SimulationStudy YAML with a figures: list."
     ),
     out: Path = typer.Option(
-        None, "-o", "--out",
+        None,
+        "-o",
+        "--out",
         help="Directory for the rendered figures + plot scripts (default: <base-dir>/figures).",
     ),
     base_dir: Path = typer.Option(
-        None, "--base-dir",
+        None,
+        "--base-dir",
         help="Root the experiment result containers live under (where output/nc/ sits). "
-             "Defaults to the spec file's directory.",
+        "Defaults to the spec file's directory.",
     ),
     name: str = typer.Option(
-        None, "-n", "--name",
+        None,
+        "-n",
+        "--name",
         help="Render only the figure(s) with this name (comma-separated for several). "
-             "Default: render every figure in the spec. Iterating one panel? "
-             "`tvbo figure render <Study>.yaml -n Fig3_<study>` re-renders just that figure.",
+        "Default: render every figure in the spec. Iterating one panel? "
+        "`tvbo figure render <Study>.yaml -n Fig3_<study>` re-renders just that figure.",
     ),
 ) -> None:
     """Render figures in *spec* via bsplot codegen (all of them, or the ``--name`` subset).
@@ -132,8 +136,7 @@ def render(
 
     figures, kind = _load_figures(spec_path)
     if not figures:
-        detail = ("study has an empty `figures:` list" if kind == "study"
-                  else "spec has no panels")
+        detail = "study has an empty `figures:` list" if kind == "study" else "spec has no panels"
         _common.info(f"{spec_path.name}: no figures to render ({detail}).")
         return
 
@@ -149,24 +152,23 @@ def _select(figures, name: str | None, spec_path: Path) -> list:
     available = [getattr(f, "name", None) for f in figures]
     chosen = [f for f in figures if getattr(f, "name", None) in wanted]
     if not chosen:
-        _common.die(
-            f"{spec_path.name}: no figure named {wanted!r} "
-            f"(available: {[n for n in available if n]})."
-        )
+        _common.die(f"{spec_path.name}: no figure named {wanted!r} (available: {[n for n in available if n]}).")
     return chosen
 
 
 @app.command("caption", help="Compose figure captions from the spec (no rendering) into .caption.qmd partials.")
 def caption(
-    spec: str = typer.Argument(
-        ..., help="Path to a Figure / SimulationStudy / StudyCollection YAML."
-    ),
+    spec: str = typer.Argument(..., help="Path to a Figure / SimulationStudy / StudyCollection YAML."),
     out: Path = typer.Option(
-        None, "-o", "--out",
+        None,
+        "-o",
+        "--out",
         help="Directory for the .caption.qmd partials (default: <base-dir>/figures).",
     ),
     name: str = typer.Option(
-        None, "-n", "--name",
+        None,
+        "-n",
+        "--name",
         help="Caption only the figure(s) with this name (comma-separated). Default: all.",
     ),
 ) -> None:
@@ -197,29 +199,28 @@ def caption(
 
 @app.command("compare", help="Measure how a rendered figure's LAYOUT differs from a reference image.")
 def compare(
-    spec: str = typer.Argument(
-        ..., help="Path to a Figure YAML or a SimulationStudy YAML with a figures: list."
-    ),
+    spec: str = typer.Argument(..., help="Path to a Figure YAML or a SimulationStudy YAML with a figures: list."),
     reference: Path = typer.Option(
-        None, "-r", "--reference",
+        None,
+        "-r",
+        "--reference",
         help="Reference image, or a directory of them. Optional: by default each figure's "
-             "declared `reference_image:` is used, resolved against the study root.",
+        "declared `reference_image:` is used, resolved against the study root.",
     ),
     figures_dir: Path = typer.Option(
-        None, "-f", "--figures",
+        None,
+        "-f",
+        "--figures",
         help="Directory holding the rendered figures (default: <base-dir>/figures).",
     ),
     out: Path = typer.Option(
-        None, "-o", "--out",
-        help="Directory for the side-by-side overlays and the markdown summary "
-             "(default: <base-dir>/output/figure-compare).",
+        None,
+        "-o",
+        "--out",
+        help="Directory for the side-by-side overlays and the markdown summary (default: <base-dir>/output/figure-compare).",
     ),
-    base_dir: Path = typer.Option(
-        None, "--base-dir", help="Study root. Defaults to the spec file's directory."
-    ),
-    name: str = typer.Option(
-        None, "-n", "--name", help="Compare only the figure(s) with this name (comma-separated)."
-    ),
+    base_dir: Path = typer.Option(None, "--base-dir", help="Study root. Defaults to the spec file's directory."),
+    name: str = typer.Option(None, "-n", "--name", help="Compare only the figure(s) with this name (comma-separated)."),
 ) -> None:
     """Compare each rendered figure against its published counterpart, by panel geometry.
 
@@ -254,22 +255,24 @@ def compare(
             _common.info(f"skip {fname}: not rendered ({ours})")
             continue
         if theirs is None or not theirs.exists():
-            _common.info(f"skip {fname}: no reference image (declare `reference_image:`, "
-                         f"or pass --reference)")
+            _common.info(f"skip {fname}: no reference image (declare `reference_image:`, or pass --reference)")
             continue
 
         result = fc.compare(ours, theirs)
         image = fc.overlay(result, out_dir / f"{fname}_compare.png", titles=(fname, theirs.name))
         _common.info(f"wrote {image}")
-        summary_rows.append([
-            fname, f'{result["ours"]["aspect"]:.3f}', f'{result["theirs"]["aspect"]:.3f}',
-            f'{result["ours"]["n_panels"]}/{result["theirs"]["n_panels"]}',
-            f'{result["mean_iou"]:.3f}', f'{result["mean_offset"]:.1f}',
-            f'{result["max_offset"]:.1f}',
-        ])
-        sections.append(f"### {fname}\n\nReference: `{theirs.name}`\n\n"
-                        f"{fc.report_table(result)}\n\n"
-                        f"![]({image.name})\n")
+        summary_rows.append(
+            [
+                fname,
+                f"{result['ours']['aspect']:.3f}",
+                f"{result['theirs']['aspect']:.3f}",
+                f"{result['ours']['n_panels']}/{result['theirs']['n_panels']}",
+                f"{result['mean_iou']:.3f}",
+                f"{result['mean_offset']:.1f}",
+                f"{result['max_offset']:.1f}",
+            ]
+        )
+        sections.append(f"### {fname}\n\nReference: `{theirs.name}`\n\n{fc.report_table(result)}\n\n![]({image.name})\n")
 
     if not sections:
         _common.info("nothing compared.")
@@ -279,9 +282,9 @@ def compare(
 
     out_dir.mkdir(parents=True, exist_ok=True)
     summary = md_table(
-        ["Figure", "Our aspect", "Ref aspect", "Panels (ours/ref)", "Mean IoU",
-         "Mean offset %", "Max offset %"],
-        summary_rows, aligns=["l", "r", "r", "r", "r", "r", "r"],
+        ["Figure", "Our aspect", "Ref aspect", "Panels (ours/ref)", "Mean IoU", "Mean offset %", "Max offset %"],
+        summary_rows,
+        aligns=["l", "r", "r", "r", "r", "r", "r"],
     )
     doc = out_dir / "figure-compare.md"
     doc.write_text(

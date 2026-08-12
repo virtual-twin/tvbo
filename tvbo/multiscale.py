@@ -39,7 +39,7 @@ engine emitting the procedure on-device).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -51,11 +51,11 @@ class FlatReservoir:
     dynamics: dict
     coupling: dict
     integration: dict
-    weights: np.ndarray          # W_global, (R·n, R·n)
-    n_units: int                 # n  (reservoir units per region)
-    n_regions: int               # R
+    weights: np.ndarray  # W_global, (R·n, R·n)
+    n_units: int  # n  (reservoir units per region)
+    n_regions: int  # R
     tau: float
-    activation: str              # inner activation, e.g. "tanh"
+    activation: str  # inner activation, e.g. "tanh"
 
 
 def _pluck(d: dict, *keys, default=None):
@@ -124,8 +124,7 @@ def flatten_reservoir(
 
     # --- reservoir recurrence W_int (via the typed-DAG resolver) --------------
     gg = subnet["graph_generator"]
-    gg_params = {k: _param_value(gg.get("parameters", {}), k)
-                 for k in (gg.get("parameters") or {})}
+    gg_params = {k: _param_value(gg.get("parameters", {}), k) for k in (gg.get("parameters") or {})}
     # weight_distribution carries its spec under `.distribution`
     wd = _pluck(gg, "parameters", "weight_distribution", "distribution")
     # Size is the subnetwork's node count, as it is for every generator; `n_nodes` on the
@@ -145,7 +144,7 @@ def flatten_reservoir(
 
     # --- macro SC + long-range coupling gain kappa ----------------------------
     SC = np.asarray(catalog.load_matrix(net["iri"]), dtype=float)
-    for tr in (net.get("transforms") or []):
+    for tr in net.get("transforms") or []:
         rhs = _pluck(tr, "equation", "rhs") or ""
         if "max(W)" in rhs.replace(" ", "").replace("/max(W)", "/max(W)"):
             m = SC.max()
@@ -157,7 +156,7 @@ def flatten_reservoir(
     # float64 matrix, so memory grows quadratically in the flat node count.
     flat_nodes = R * n
     if max_flat_nodes is not None and flat_nodes > max_flat_nodes:
-        gib = (flat_nodes ** 2) * 8 / 2 ** 30
+        gib = (flat_nodes**2) * 8 / 2**30
         raise ValueError(
             f"flatten_reservoir: {R} regions x {n} units = {flat_nodes} flat "
             f"nodes would allocate a dense {flat_nodes}x{flat_nodes} float64 "
@@ -168,8 +167,7 @@ def flatten_reservoir(
 
     macro_coupling = net["coupling"]
     _, mc_spec = next(iter(macro_coupling.items()))
-    kappa = float(_param_value(mc_spec.get("parameters", {}),
-                               _gain_param_name(mc_spec), 1.0))
+    kappa = float(_param_value(mc_spec.get("parameters", {}), _gain_param_name(mc_spec), 1.0))
 
     # --- downward projection W_in (per-unit) from the sc_drive edge -----------
     W_in = _project_weights(subnet, n)
@@ -201,12 +199,17 @@ def flatten_reservoir(
             "post_expression": {"rhs": "gx"},  # gain folded into W_global
         }
     }
-    integ = dict(exp.get("integration") or {"method": "Heun", "step_size": 1.0,
-                                            "duration": 1000, "transient_time": 0})
+    integ = dict(exp.get("integration") or {"method": "Heun", "step_size": 1.0, "duration": 1000, "transient_time": 0})
 
     fr = FlatReservoir(
-        dynamics=flat_dynamics, coupling=flat_coupling, integration=integ,
-        weights=W_global, n_units=n, n_regions=R, tau=tau, activation=activation,
+        dynamics=flat_dynamics,
+        coupling=flat_coupling,
+        integration=integ,
+        weights=W_global,
+        n_units=n,
+        n_regions=R,
+        tau=tau,
+        activation=activation,
     )
     fr.noise_sigma = noise_sigma  # type: ignore[attr-defined]
     return fr
@@ -215,7 +218,7 @@ def flatten_reservoir(
 def _gain_param_name(coupling_spec: dict) -> str:
     """The scalar gain parameter referenced by the macro post_expression (e.g. kappa, G)."""
     post = _pluck(coupling_spec, "post_expression", "rhs") or ""
-    for name in (coupling_spec.get("parameters") or {}):
+    for name in coupling_spec.get("parameters") or {}:
         if name in post:
             return name
     return next(iter(coupling_spec.get("parameters") or {"G": None}), "G")
@@ -225,7 +228,7 @@ def _project_weights(subnet: dict, n: int) -> np.ndarray:
     """Materialise the per-unit downward projection W_in from the sc_drive edge."""
     from tvbo.graph_generators import procedural
 
-    for edge in (subnet.get("edges") or []):
+    for edge in subnet.get("edges") or []:
         if edge.get("source_network") in ("..", "parent"):
             wparams = _pluck(edge, "coupling", "parameters") or {}
             for pname, pspec in wparams.items():

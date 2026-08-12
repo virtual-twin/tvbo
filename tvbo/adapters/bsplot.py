@@ -9,6 +9,7 @@ lives in the Mako template.
 ``render_code(figure, base_dir)`` returns the script; ``render(...)`` emits and runs
 it — mirroring ``experiment.render_code`` / ``.run``.
 """
+
 from __future__ import annotations
 
 import functools
@@ -23,7 +24,9 @@ from tvbo.utils import as_list
 def _open_ds(path):
     """Open a result container once per distinct path (shared by the adapter's custom panels)."""
     import xarray as xr
+
     return xr.open_dataset(path, engine="h5netcdf")
+
 
 _TEMPLATE = "bsplot/tvbo-bsplot-figure.py.mako"
 
@@ -34,23 +37,27 @@ _TEMPLATE = "bsplot/tvbo-bsplot-figure.py.mako"
 # decorates them with these; the emitted plot.py imports that module so the registration fires
 # before lookup (see Figure.code_modules).
 
-TRANSFORMS: dict = {}       # name -> fn(da) -> da       presentation-only layer reductions
-CUSTOM_PANELS: dict = {}    # name -> fn(fig, ax, ctx)   bespoke `custom` panel drawers
+TRANSFORMS: dict = {}  # name -> fn(da) -> da       presentation-only layer reductions
+CUSTOM_PANELS: dict = {}  # name -> fn(fig, ax, ctx)   bespoke `custom` panel drawers
 
 
 def register_transform(name):
     """Register a presentation-only layer transform ``fn(da) -> da`` under *name* (decorator)."""
+
     def deco(fn):
         TRANSFORMS[name] = fn
         return fn
+
     return deco
 
 
 def register_panel(name):
     """Register a ``custom``-panel callable ``fn(fig, ax, ctx)`` under *name* (decorator)."""
+
     def deco(fn):
         CUSTOM_PANELS[name] = fn
         return fn
+
     return deco
 
 
@@ -64,8 +71,10 @@ def _read_mesh_cached(path: str, kind: str, mesh_format):
 
         net = Network.from_file(path)
         try:
-            return (_np.asarray(object.__getattribute__(net, "_mesh_vertices")),
-                    _np.asarray(object.__getattribute__(net, "_mesh_elements")))
+            return (
+                _np.asarray(object.__getattribute__(net, "_mesh_vertices")),
+                _np.asarray(object.__getattribute__(net, "_mesh_elements")),
+            )
         except AttributeError:
             raise ValueError(
                 f"surface panel: network {path!r} carries no mesh. Its companion needs a "
@@ -110,8 +119,7 @@ def _surface_mesh(ctx):
     if net_path:
         return _read_mesh(str(resolve_path(net_path, base)), "network", None)
     if mesh_path:
-        return _read_mesh(str(resolve_path(mesh_path, base)), "file",
-                          opts.get("mesh_format"))
+        return _read_mesh(str(resolve_path(mesh_path, base)), "file", opts.get("mesh_format"))
     raise ValueError(
         "surface panel: declare where the mesh comes from — `network:` (a tvbo Network whose "
         "companion carries a mesh group) or `mesh:` (a GIFTI/VTK/FreeSurfer surface, or an "
@@ -208,8 +216,7 @@ def surface_panel(fig, ax, ctx):
         verts = _np.asarray(load_layer(layers[0]).values, dtype=float)
         if verts.ndim != 2 or verts.shape[1] != 3:
             raise ValueError(
-                f"surface panel: `geometry: true` means the layer supplies (V, 3) vertex "
-                f"coordinates; got shape {verts.shape}."
+                f"surface panel: `geometry: true` means the layer supplies (V, 3) vertex coordinates; got shape {verts.shape}."
             )
     elif layers:
         values = _vertex_values(load_layer(layers[0]), len(verts))
@@ -221,28 +228,37 @@ def surface_panel(fig, ax, ctx):
                     f"has {len(verts)} vertices — a per-vertex 0/1 mask needs exactly one value "
                     "per vertex (wrong parcellation or hemisphere sidecar?)."
                 )
-            values = _np.where(grey, _np.nan, values)   # also keeps it out of the limits
+            values = _np.where(grey, _np.nan, values)  # also keeps it out of the limits
 
     vmin, vmax = opts.get("vmin"), opts.get("vmax")
     if values is not None:
         finite = values[_np.isfinite(values)]
         if (vmin is None or vmax is None) and opts.get("symmetric", True) and finite.size:
-            lim = float(_np.percentile(_np.abs(finite),
-                                       float(opts.get("percentile", 100.0)))) or 1.0
+            lim = float(_np.percentile(_np.abs(finite), float(opts.get("percentile", 100.0)))) or 1.0
             # Each end is filled independently: a declared one is a fixed scale to honour.
             vmin = -lim if vmin is None else vmin
             vmax = lim if vmax is None else vmax
 
-    edges = ({"edgecolor": str(opts["edgecolor"]),
-              "linewidth": float(opts.get("edge_linewidth", 0.08))}
-             if opts.get("edgecolor") else None)
-    bsplot.plot_surf(
-        vertices=verts, faces=faces, overlay=values, ax=ax, mask=grey,
-        hemi=str(opts.get("hemi", "lh")), view=str(opts.get("view", "lateral")),
-        cmap=_resolve_cmap(opts.get("cmap", "viridis")), vmin=vmin, vmax=vmax,
-        color=opts.get("color"), faces_kwargs=edges,
+    edges = (
+        {"edgecolor": str(opts["edgecolor"]), "linewidth": float(opts.get("edge_linewidth", 0.08))}
+        if opts.get("edgecolor")
+        else None
     )
-    ax.set_aspect("equal")      # a surface's frame is anatomy, not a coordinate system
+    bsplot.plot_surf(
+        vertices=verts,
+        faces=faces,
+        overlay=values,
+        ax=ax,
+        mask=grey,
+        hemi=str(opts.get("hemi", "lh")),
+        view=str(opts.get("view", "lateral")),
+        cmap=_resolve_cmap(opts.get("cmap", "viridis")),
+        vmin=vmin,
+        vmax=vmax,
+        color=opts.get("color"),
+        faces_kwargs=edges,
+    )
+    ax.set_aspect("equal")  # a surface's frame is anatomy, not a coordinate system
     ax.axis("off")
     if opts.get("title"):
         ax.set_title(str(opts["title"]))
@@ -285,12 +301,9 @@ def colorbar_panel(fig, ax, ctx):
     frac = float(opts.get("width", 0.22))
     ax.axis("off")
     box = [0.0, 0.18, frac, 0.64] if vertical else [0.18, 0.0, 0.64, frac]
-    norm = mpl.colors.Normalize(vmin=float(vmin if vmin is not None else 0.0),
-                                vmax=float(vmax if vmax is not None else 1.0))
-    mappable = mpl.cm.ScalarMappable(norm=norm,
-                                     cmap=_resolve_cmap(opts.get("cmap", "viridis")))
-    cb = fig.colorbar(mappable, cax=ax.inset_axes(box),
-                      orientation="vertical" if vertical else "horizontal")
+    norm = mpl.colors.Normalize(vmin=float(vmin if vmin is not None else 0.0), vmax=float(vmax if vmax is not None else 1.0))
+    mappable = mpl.cm.ScalarMappable(norm=norm, cmap=_resolve_cmap(opts.get("cmap", "viridis")))
+    cb = fig.colorbar(mappable, cax=ax.inset_axes(box), orientation="vertical" if vertical else "horizontal")
     cb.outline.set_linewidth(0.6)
     cb.ax.tick_params(direction="in", labelsize=plt.rcParams["ytick.labelsize"])
     if opts.get("ticks") is not None:
@@ -330,13 +343,24 @@ def legend_panel(fig, ax, ctx):
     handles = []
     for i in range(len(labels)):
         marker = _at("markers", i, None)
-        handles.append(Line2D([], [], color=str(_at("colors", i, "k")),
-                              linestyle=str(_at("linestyles", i, "-")),
-                              **({"marker": str(marker)} if marker else {})))
+        handles.append(
+            Line2D(
+                [],
+                [],
+                color=str(_at("colors", i, "k")),
+                linestyle=str(_at("linestyles", i, "-")),
+                **({"marker": str(marker)} if marker else {}),
+            )
+        )
     ax.axis("off")
-    ax.legend(handles, labels, loc=str(opts.get("loc", "center")), frameon=False,
-              title=opts.get("title"),
-              handlelength=float(opts.get("handlelength", 2.2)))
+    ax.legend(
+        handles,
+        labels,
+        loc=str(opts.get("loc", "center")),
+        frameon=False,
+        title=opts.get("title"),
+        handlelength=float(opts.get("handlelength", 2.2)),
+    )
 
 
 def registered(registry, name, kind):
@@ -434,19 +458,50 @@ def _heatmap_kwargs(style) -> dict:
 
 # Grammar-panel axis directives on ``Panel.opts`` — a small backend-independent set the template applies uniformly (a ``custom`` panel routes ``opts`` to its callable; see ``build_context``).
 _AXIS_OPTS = {
-    "xlabel", "ylabel", "title", "xlim", "ylim", "xticks", "yticks",
-    "hide_xticklabels", "hide_yticklabels", "axhline", "axvline", "legend",
-    "xscale", "yscale",   # axis scale (log/symlog/linear): part of the claim, not cosmetic
-    "nbins",              # tick budget: a small multi-panel slot cannot hold the automatic count
-    "aspect", "box_aspect", "invert_x", "invert_y", "frame",   # frame geometry/direction/visibility
-    "zlabel", "zlim", "elev", "azim", "invert_z", "zoom",  # line3d only
+    "xlabel",
+    "ylabel",
+    "title",
+    "xlim",
+    "ylim",
+    "xticks",
+    "yticks",
+    "hide_xticklabels",
+    "hide_yticklabels",
+    "axhline",
+    "axvline",
+    "legend",
+    "xscale",
+    "yscale",  # axis scale (log/symlog/linear): part of the claim, not cosmetic
+    "nbins",  # tick budget: a small multi-panel slot cannot hold the automatic count
+    "aspect",
+    "box_aspect",
+    "invert_x",
+    "invert_y",
+    "frame",  # frame geometry/direction/visibility
+    "zlabel",
+    "zlim",
+    "elev",
+    "azim",
+    "invert_z",
+    "zoom",  # line3d only
 }
 
 
 # Axis directives the format pass can overwrite, so they are re-applied after it.
-_POST_FORMAT_OPTS = {"xticks", "yticks", "xlim", "ylim", "xscale", "yscale",
-                     "hide_xticklabels", "hide_yticklabels", "aspect", "box_aspect",
-                     "frame", "nbins"}
+_POST_FORMAT_OPTS = {
+    "xticks",
+    "yticks",
+    "xlim",
+    "ylim",
+    "xscale",
+    "yscale",
+    "hide_xticklabels",
+    "hide_yticklabels",
+    "aspect",
+    "box_aspect",
+    "frame",
+    "nbins",
+}
 
 
 def _panel_opts(panel) -> dict:
@@ -468,8 +523,13 @@ def _axopts(panel) -> dict:
     return o
 
 
-_ANNOT_LOC = {"upper left": (0.03, 0.95), "upper right": (0.97, 0.95),
-              "lower left": (0.03, 0.05), "lower right": (0.97, 0.05), "center": (0.5, 0.5)}
+_ANNOT_LOC = {
+    "upper left": (0.03, 0.95),
+    "upper right": (0.97, 0.95),
+    "lower left": (0.03, 0.05),
+    "lower right": (0.97, 0.05),
+    "center": (0.5, 0.5),
+}
 
 # How much larger than the body font a panel letter is drawn when the figure does not say.
 # Journals set panel letters well above the body size; matching the body size makes the
@@ -480,10 +540,10 @@ _PANEL_NUMBER_SCALE = 1.6
 # In its coord="axes" mode the label lands at (x_shift, 1.0 + y_shift), so ha/va anchor
 # the text and the shifts hug it just inside the corresponding spine.
 _PANEL_NUM_LOC = {
-    "upper left":  {"x_shift": 0.02, "y_shift": -0.02, "ha": "left",  "va": "top"},
+    "upper left": {"x_shift": 0.02, "y_shift": -0.02, "ha": "left", "va": "top"},
     "upper right": {"x_shift": 0.98, "y_shift": -0.02, "ha": "right", "va": "top"},
-    "lower left":  {"x_shift": 0.02, "y_shift": 0.02,  "ha": "left",  "va": "bottom"},
-    "lower right": {"x_shift": 0.98, "y_shift": 0.02,  "ha": "right", "va": "bottom"},
+    "lower left": {"x_shift": 0.02, "y_shift": 0.02, "ha": "left", "va": "bottom"},
+    "lower right": {"x_shift": 0.98, "y_shift": 0.02, "ha": "right", "va": "bottom"},
 }
 
 
@@ -505,31 +565,35 @@ def _group_axis(opts, axis: str) -> dict | None:
     if not spec:
         return None
     # A nested opt value arrives as a LinkML JsonObj, whose plain-dict() carries internals.
-    spec = ({k: v for k, v in vars(spec).items() if not k.startswith("_")}
-            if hasattr(spec, "__dict__") and not isinstance(spec, dict)
-            else dict(spec) if isinstance(spec, dict) else {"bounds": spec})
+    spec = (
+        {k: v for k, v in vars(spec).items() if not k.startswith("_")}
+        if hasattr(spec, "__dict__") and not isinstance(spec, dict)
+        else dict(spec)
+        if isinstance(spec, dict)
+        else {"bounds": spec}
+    )
     bounds = [float(b) for b in (spec.get("bounds") or [])]
     labels = [str(t) for t in (spec.get("labels") or [])]
     if not bounds:
-        raise ValueError(
-            f"`{axis}groups` needs `bounds:` — the cumulative index where each group ends.")
+        raise ValueError(f"`{axis}groups` needs `bounds:` — the cumulative index where each group ends.")
     if labels and len(labels) != len(bounds):
         raise ValueError(
             f"`{axis}groups` has {len(bounds)} bounds and {len(labels)} labels; a group is "
-            "one bound and one name, so the two lists have to be parallel.")
+            "one bound and one name, so the two lists have to be parallel."
+        )
     starts = [0.0] + bounds[:-1]
-    edge = float(spec.get("edge_offset", -0.5))     # count -> plotted coordinate of the gap
+    edge = float(spec.get("edge_offset", -0.5))  # count -> plotted coordinate of the gap
     return {
         "axis": axis,
-        "rules": [b + edge for b in bounds[:-1]],   # interior only: the last is the axis end
-        "rule_kwargs": {"color": str(spec.get("color", "k")),
-                        "linewidth": float(spec.get("linewidth", 0.6))},
-        "labels": [{"text": t, "at": (s + e) / 2.0 + edge}
-                   for (s, e), t in zip(zip(starts, bounds), labels)],
+        "rules": [b + edge for b in bounds[:-1]],  # interior only: the last is the axis end
+        "rule_kwargs": {"color": str(spec.get("color", "k")), "linewidth": float(spec.get("linewidth", 0.6))},
+        "labels": [{"text": t, "at": (s + e) / 2.0 + edge} for (s, e), t in zip(zip(starts, bounds), labels)],
         "pad": float(spec.get("pad", 0.04)),
-        "kwargs": {"ha": "right" if axis == "y" else "center",
-                   "va": "center" if axis == "y" else "top",
-                   **{k: spec[k] for k in ("rotation", "size", "color") if k in spec}},
+        "kwargs": {
+            "ha": "right" if axis == "y" else "center",
+            "va": "center" if axis == "y" else "top",
+            **{k: spec[k] for k in ("rotation", "size", "color") if k in spec},
+        },
     }
 
 
@@ -541,7 +605,7 @@ def _annotations(panel, base_dir=Path(".")) -> list:
     printed statistic is computed from the run, never typed into the spec.
     """
     out = []
-    for a in (getattr(panel, "annotations", None) or []):
+    for a in getattr(panel, "annotations", None) or []:
         loc = getattr(a, "loc", None)
         if loc in _ANNOT_LOC:
             x, y = _ANNOT_LOC[loc]
@@ -554,14 +618,11 @@ def _annotations(panel, base_dir=Path(".")) -> list:
         tail_used = getattr(a, "tail_used", None)
         tail = None
         if tail_used is not None and getattr(a, "tail_x", None) is not None:
-            tail = {"x": float(a.tail_x),
-                    "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir)}
-        text_kwargs = {k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color")
-                       if getattr(a, k, None) is not None}
+            tail = {"x": float(a.tail_x), "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir)}
+        text_kwargs = {k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color") if getattr(a, k, None) is not None}
         text_kwargs.setdefault("ha", "center")
         text_kwargs.setdefault("va", "center")
-        out.append({"text": a.text, "x": x, "y": y, "layer": layer, "arrow": arrow,
-                    "tail": tail, "kwargs": text_kwargs})
+        out.append({"text": a.text, "x": x, "y": y, "layer": layer, "arrow": arrow, "tail": tail, "kwargs": text_kwargs})
     return out
 
 
@@ -595,11 +656,12 @@ def _container_path(iri, base_dir: Path) -> str:
     """
     if not iri:
         return ""
-    key = re.split(r"[:/#]", str(iri))[-1]          # last IRI segment (e.g. "exp-3" or "fig3")
+    key = re.split(r"[:/#]", str(iri))[-1]  # last IRI segment (e.g. "exp-3" or "fig3")
     # Only an experiment reference (exp-N / expN / bare N) yields exp-<id> candidates. A
     # digit-bearing but non-experiment IRI (e.g. rec-avgMatrix_atlas-HCPMMP1) must NOT be
     # misread as exp-1 — reuse the strict matcher DataRef.experiment_id already uses.
     from tvbo.data.dataref import experiment_id as _experiment_id
+
     eid = _experiment_id(iri)
     cands = [key, *([f"exp-{eid}", f"exp{eid}"] if eid else [])]
     nc = base_dir / "output" / "nc"
@@ -609,16 +671,16 @@ def _container_path(iri, base_dir: Path) -> str:
             files = [f for f in sorted(d.glob("*.h5")) if "network" not in f.name]
             if files:
                 return str(files[0].resolve())
-        if nc.is_dir():                              # flat BIDS files directly inside output/nc/
+        if nc.is_dir():  # flat BIDS files directly inside output/nc/
             files = [f for f in sorted(nc.glob(f"{cand}_*result.h5")) if "network" not in f.name]
             if files:
                 return str(files[0].resolve())
         result = base_dir / "output" / "results" / cand / "result.h5"
         if result.is_file():
             return str(result.resolve())
-    out = base_dir / "output"                        # flat whole-study layout: output/<exp>_*result.h5
+    out = base_dir / "output"  # flat whole-study layout: output/<exp>_*result.h5
     if out.is_dir():
-        for cand in cands:                           # `_` boundary so exp-1 never matches exp-10
+        for cand in cands:  # `_` boundary so exp-1 never matches exp-10
             files = [f for f in sorted(out.glob(f"{cand}_*result.h5")) if "network" not in f.name]
             if files:
                 return str(files[0].resolve())
@@ -632,6 +694,7 @@ def _container_path(iri, base_dir: Path) -> str:
 # a callable opens the container(s) itself and draws exactly what the paper needs. A study
 # registers its own the same way it registers a transform.
 
+
 def load_layer(layer: dict):
     """Open a custom panel's resolved layer into a DataArray (public API).
 
@@ -642,7 +705,7 @@ def load_layer(layer: dict):
     container cache means opening the same file across panels is free.
     """
     name = layer.get("transform")
-    fn = registered(TRANSFORMS, name, "transform") if name else None   # spec error before any IO
+    fn = registered(TRANSFORMS, name, "transform") if name else None  # spec error before any IO
     ds = _open_ds(layer["container"])
     from tvbo.data.dataref import match_output
 
@@ -660,8 +723,7 @@ def _items(coll):
         return []
     if isinstance(coll, dict):
         return list(coll.items())
-    return [(getattr(v, "panel_key", None) or getattr(v, "name", i), v)
-            for i, v in enumerate(coll)]
+    return [(getattr(v, "panel_key", None) or getattr(v, "name", i), v) for i, v in enumerate(coll)]
 
 
 def _sel_dict(used):
@@ -718,7 +780,7 @@ def _resolve_layer(layer, panel_kind, base_dir):
     # single artist that must keep its own colour and label; only a bare line fans by colour.
     _fans_by_color = bool(color) and mark not in ("scatter", "bar", "area", "heatmap", "band", "rule")
     if label and mark != "heatmap" and not _fans_by_color:
-        kwargs["label"] = str(label)    # matplotlib reads the legend entry off the artist
+        kwargs["label"] = str(label)  # matplotlib reads the legend entry off the artist
     if _fans_by_color:
         kwargs.pop("color", None)
     return {
@@ -800,34 +862,36 @@ def _grid_geometry(opts, n_cells):
         r, c = divmod(n, ncols)
         if r >= nrows:
             break
-        boxes.append([left + c * cw + wspace / 2, 1.0 - top - (r + 1) * ch + hspace / 2,
-                      cw - wspace, ch - hspace])
+        boxes.append([left + c * cw + wspace / 2, 1.0 - top - (r + 1) * ch + hspace / 2, cw - wspace, ch - hspace])
 
     def _text(text, x, y, **kw):
         kwargs = {"ha": "center", "va": "center", **kw}
-        return {"text": str(text), "x": x, "y": y, "layer": None, "arrow": None,
-                "tail": None, "kwargs": kwargs}
+        return {"text": str(text), "x": x, "y": y, "layer": None, "arrow": None, "tail": None, "kwargs": kwargs}
 
     labels = []
     _col_size = {"size": float(opts["col_label_size"])} if opts.get("col_label_size") else {}
     for c, text in enumerate(cols[:ncols]):
-        labels.append(_text(text, left + (c + 0.5) * cw,
-                            1.0 - top + float(opts.get("col_label_pad", 0.012)),
-                            va="bottom", **_col_size))
+        labels.append(
+            _text(text, left + (c + 0.5) * cw, 1.0 - top + float(opts.get("col_label_pad", 0.012)), va="bottom", **_col_size)
+        )
     rotation = float(opts.get("row_label_rotation", 0.0))
     for r, text in enumerate(rows[:nrows]):
-        labels.append(_text(text, left * (0.55 if rotation else 0.9),
-                            1.0 - top - (r + 0.5) * ch,
-                            ha="center" if rotation else "right",
-                            **({"rotation": rotation} if rotation else {})))
+        labels.append(
+            _text(
+                text,
+                left * (0.55 if rotation else 0.9),
+                1.0 - top - (r + 0.5) * ch,
+                ha="center" if rotation else "right",
+                **({"rotation": rotation} if rotation else {}),
+            )
+        )
     for n, text in enumerate(list(opts.get("between") or [])[:n_cells]):
         if str(text).strip():
             r, c = divmod(n, ncols)
             labels.append(_text(text, left + c * cw, 1.0 - top - (r + 0.5) * ch))
     if opts.get("trailing"):
         r, c = divmod(n_cells - 1, ncols)
-        labels.append(_text(opts["trailing"], min(left + (c + 1) * cw + wspace / 4, 0.99),
-                            1.0 - top - (r + 0.5) * ch))
+        labels.append(_text(opts["trailing"], min(left + (c + 1) * cw + wspace / 4, 0.99), 1.0 - top - (r + 0.5) * ch))
     return boxes, labels
 
 
@@ -851,10 +915,7 @@ def _grid_cells(panel, key, base_dir, opts) -> tuple:
             "layers) or `layers:` (one cell per layer, all drawn by `cell:`) — not both."
         )
     if not declared and not layers:
-        raise ValueError(
-            f"grid panel {key!r}: nothing to draw. Give it `layers:` (one cell each) or "
-            "`cells:`."
-        )
+        raise ValueError(f"grid panel {key!r}: nothing to draw. Give it `layers:` (one cell each) or `cells:`.")
     if template is None and not declared:
         raise ValueError(
             f"grid panel {key!r}: `layers:` fills the grid with cells drawn by `cell:`, "
@@ -876,8 +937,10 @@ def _grid_cells(panel, key, base_dir, opts) -> tuple:
         cells.append(_GridCell(template, cell, cell_layers, merged))
 
     boxes, labels = _grid_geometry(opts, len(cells))
-    resolved = [dict(_resolve_drawable(cell, f"{key}_cell{i}", base_dir), bounds=box)
-                for i, (cell, box) in enumerate(zip(cells, boxes))]
+    resolved = [
+        dict(_resolve_drawable(cell, f"{key}_cell{i}", base_dir), bounds=box)
+        for i, (cell, box) in enumerate(zip(cells, boxes))
+    ]
     return resolved, labels
 
 
@@ -900,22 +963,24 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
     the template emits both from one partial. Splitting them would let an inset's heatmap,
     triangle gap or colourbar quietly diverge from the identical panel beside it.
     """
-    kind = str(panel.kind)                          # datamodel enum -> plain string (flavor-agnostic)
+    kind = str(panel.kind)  # datamodel enum -> plain string (flavor-agnostic)
     opts = _panel_opts(panel)
     # A grid's `layers:` belong to its cells, so they are not also drawn on the host axes.
     cells, cell_labels = _grid_cells(panel, key, base_dir, opts) if kind == "grid" else ([], [])
-    layers = [] if kind == "grid" else [
-        _resolve_layer(l, kind, base_dir) for l in (getattr(panel, "layers", None) or [])]
+    layers = (
+        [] if kind == "grid" else [_resolve_layer(layer, kind, base_dir) for layer in (getattr(panel, "layers", None) or [])]
+    )
     # A callable-drawn kind gets the whole opts dict; grammar panels read the axis subset.
-    ctx = ({"layers": layers, "opts": opts, "key": key, "base_dir": str(base_dir)}
-           if kind == "custom" or kind in _BUILTIN_PANELS else None)
+    ctx = (
+        {"layers": layers, "opts": opts, "key": key, "base_dir": str(base_dir)}
+        if kind == "custom" or kind in _BUILTIN_PANELS
+        else None
+    )
     # One colourbar per panel (not per layer — a split matrix is two layers, one scale),
     # suppressed with `colorbar: false` where the paper prints none. It is slim by
     # default: matplotlib's own default steals ~20% of a small panel's width.
-    colorbar = (any(l["mark"] == "heatmap" for l in layers)
-                and opts.get("colorbar", True) is not False)
-    colorbar_kwargs = {"fraction": opts.get("colorbar_fraction", 0.046),
-                       "pad": opts.get("colorbar_pad", 0.04)}
+    colorbar = any(layer["mark"] == "heatmap" for layer in layers) and opts.get("colorbar", True) is not False
+    colorbar_kwargs = {"fraction": opts.get("colorbar_fraction", 0.046), "pad": opts.get("colorbar_pad", 0.04)}
     # Default the axis labels to the first layer's x-dim / output; opts override them.
     axopts = _axopts(panel)
     # bsplot's format pass re-derives ticks and can re-normalise limits, so a DECLARED
@@ -957,9 +1022,9 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
         "groups": [g for g in (_group_axis(opts, "x"), _group_axis(opts, "y")) if g],
         "number_loc": getattr(panel, "number_loc", None),
         "number": getattr(panel, "number", None),
-        "insets": cells + [   # a grid cell IS an inset; only who computes the bounds differs
-            dict(_resolve_drawable(inset, f"{key}_inset{i}", base_dir),
-                 bounds=_inset_bounds(inset, key, i))
+        "insets": cells
+        + [  # a grid cell IS an inset; only who computes the bounds differs
+            dict(_resolve_drawable(inset, f"{key}_inset{i}", base_dir), bounds=_inset_bounds(inset, key, i))
             for i, inset in enumerate(getattr(panel, "insets", None) or [])
         ],
     }
@@ -968,27 +1033,27 @@ def _resolve_drawable(panel, key, base_dir) -> dict:
 def build_context(figure, base_dir, outfile: str) -> dict:
     """Resolve a ``Figure`` into the template context (all IO paths + names resolved)."""
     base_dir = Path(base_dir)
-    panels = [_resolve_drawable(panel, key, base_dir)
-              for key, panel in _items(figure.panels)]
-    layout = (figure.layout or "".join(str(p["key"]) for p in panels) or "a")
-    layout = layout.replace("/", "\n")                  # bsplot mosaics split rows on newline
+    panels = [_resolve_drawable(panel, key, base_dir) for key, panel in _items(figure.panels)]
+    layout = figure.layout or "".join(str(p["key"]) for p in panels) or "a"
+    layout = layout.replace("/", "\n")  # bsplot mosaics split rows on newline
     fmt = getattr(figure, "panel_number_format", None) or "{}"
-    fig_loc = getattr(figure, "panel_number_loc", None)   # unset -> keep bsplot's own default placement
+    fig_loc = getattr(figure, "panel_number_loc", None)  # unset -> keep bsplot's own default placement
     font_size = getattr(figure, "font_size", None)
-    number_size = getattr(figure, "panel_number_size", None) or (
-        font_size * _PANEL_NUMBER_SCALE if font_size else None)
+    number_size = getattr(figure, "panel_number_size", None) or (font_size * _PANEL_NUMBER_SCALE if font_size else None)
     offset = [float(v) for v in (getattr(figure, "panel_number_offset", None) or [])]
     for p in panels:
-        override = p.pop("number", None)   # overrides the mosaic key; "false" suppresses the letter (many cells = one paper panel)
+        override = p.pop(
+            "number", None
+        )  # overrides the mosaic key; "false" suppresses the letter (many cells = one paper panel)
         ident = _letter_identity(override, p["key"])
         if ident is None:
             p["letter"] = None
             p["number_kwargs"] = {}
             continue
         p["letter"] = fmt.format(ident)
-        place = {"option": "numbers"}               # label is given verbatim, no int->letter conversion
+        place = {"option": "numbers"}  # label is given verbatim, no int->letter conversion
         loc = p["number_loc"] or fig_loc
-        if loc:                                     # only override placement when a corner was asked for
+        if loc:  # only override placement when a corner was asked for
             # loc is a Corner enum whose str() is the corner text in both datamodel flavors.
             place.update(_PANEL_NUM_LOC.get(str(loc), _PANEL_NUM_LOC["upper left"]))
         if number_size:
@@ -996,13 +1061,13 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         if offset:
             place["x_shift"] = place.get("x_shift", 0.0) + offset[0]
             place["y_shift"] = place.get("y_shift", 0.0) + offset[1]
-        p["number_kwargs"] = place                  # resolved here; the template just splats it
+        p["number_kwargs"] = place  # resolved here; the template just splats it
 
     # bsplot.figure.subplots kwargs, resolved here so the template just splats them.
     dpi = getattr(figure, "dpi", None) or 200
     subplots_kwargs = {"layout": layout, "dpi": dpi}
     width, height = getattr(figure, "width", None), getattr(figure, "height", None)
-    if width and height:                            # physical size in mm -> inches
+    if width and height:  # physical size in mm -> inches
         subplots_kwargs["figsize"] = (width / 25.4, height / 25.4)
     for key in ("height_ratios", "width_ratios"):
         ratios = list(getattr(figure, key, None) or [])
@@ -1031,8 +1096,7 @@ def build_context(figure, base_dir, outfile: str) -> dict:
         spine_rcparams = {**spine_rcparams, "savefig.bbox": None}
 
     offset = getattr(figure, "spine_offset", None)
-    format_kwargs = {} if offset is None else {
-        "shift_left_spine": -float(offset), "shift_bottom_spine": -float(offset)}
+    format_kwargs = {} if offset is None else {"shift_left_spine": -float(offset), "shift_bottom_spine": -float(offset)}
 
     return {
         "name": figure.name or "figure",
@@ -1136,8 +1200,7 @@ def _panel_descriptor(panel) -> str:
         src = getattr(panel, "source", None)
         return f"rendered from {Path(str(src)).name}" if src else ""
     # A grid's cells all draw the same kind, which names them better than "grid" does.
-    cell_kind = (str(getattr(getattr(panel, "cell", None), "kind", "") or "")
-                 if kind == "grid" else "")
+    cell_kind = str(getattr(getattr(panel, "cell", None), "kind", "") or "") if kind == "grid" else ""
 
     by_source: dict = {}
     for layer in as_list(getattr(panel, "layers", None)):
@@ -1165,8 +1228,7 @@ def _panel_descriptor(panel) -> str:
         clauses = by_source.setdefault(src or "", [])
         if body and body not in clauses:
             clauses.append(body)
-    return "; ".join(", ".join(c) + (f" from {s}" if s else "")
-                     for s, c in by_source.items()) or kind
+    return "; ".join(", ".join(c) + (f" from {s}" if s else "") for s, c in by_source.items()) or kind
 
 
 def _sentence(text: str) -> str:
@@ -1190,7 +1252,7 @@ def compose_caption(figure) -> str:
     lead: list[str] = []
     label = getattr(figure, "label", None)
     if label:
-        lead.append(f"**{str(label).strip()}.**")   # journal convention: a bold figure title
+        lead.append(f"**{str(label).strip()}.**")  # journal convention: a bold figure title
     lead.append(_sentence(getattr(figure, "description", None) or ""))
     clauses: list[str] = []
     for key in _panel_layout_order(figure):

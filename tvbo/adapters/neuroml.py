@@ -25,7 +25,6 @@ from tvbo.adapters.base import BaseAdapter
 from tvbo.adapters.smallscale.lowering import (
     assign_cell_population,
     classify_node_role,
-    connectivity_pairs as _connectivity_pairs,
     expand_edge_connections,
     expand_input_targets,
     group_nodes_by_dynamics,
@@ -395,8 +394,6 @@ def _build_regime_data(events):
             "reset_vars": reset_vars,
         }
     return None
-
-
 
 
 def validate_lems_xml(xml_string):
@@ -2296,15 +2293,11 @@ def _build_std_network_context(experiment):
         else:
             return None
 
-        pop_id, node_ids, pop_size = assign_cell_population(
-            dyn_name, group_nodes, node_pop_map, node_size_map
-        )
+        pop_id, node_ids, pop_size = assign_cell_population(dyn_name, group_nodes, node_pop_map, node_size_map)
 
         # Node positions map one-to-one onto cells, so a populationList is only
         # meaningful when every node in the group is a single cell (size == 1).
-        has_positions = pop_size == len(group_nodes) and any(
-            getattr(n, "position", None) is not None for n in group_nodes
-        )
+        has_positions = pop_size == len(group_nodes) and any(getattr(n, "position", None) is not None for n in group_nodes)
         node_positions = []
         if has_positions:
             for node in group_nodes:
@@ -2373,9 +2366,7 @@ def _build_std_network_context(experiment):
             # A connectivity rule on an input edge attaches an independent copy
             # of the input component to every target cell; otherwise the input
             # hits the node's base cell (shared fan-out).
-            tgt_indices = expand_input_targets(
-                tgt_base, node_size_map.get(tgt, 1), getattr(edge, "connectivity", None)
-            )
+            tgt_indices = expand_input_targets(tgt_base, node_size_map.get(tgt, 1), getattr(edge, "connectivity", None))
             for _ti in tgt_indices:
                 explicit_inputs.append(
                     {
@@ -2791,9 +2782,7 @@ def _build_network_context(experiment):
             dyn_obj = Dynamics.from_db(dyn_name)
         cell_types[dyn_name] = dyn_obj
 
-        pop_id, node_ids, _base = assign_cell_population(
-            dyn_name, group_nodes, node_pop_map, node_size_map
-        )
+        pop_id, node_ids, _base = assign_cell_population(dyn_name, group_nodes, node_pop_map, node_size_map)
 
         populations.append(
             {
@@ -2835,9 +2824,7 @@ def _build_network_context(experiment):
                     inp_weight = float(getattr(pv, "value", pv))
             # A connectivity rule attaches an independent input copy per target
             # cell; otherwise the input hits the node's base cell (shared fan-out).
-            tgt_indices = expand_input_targets(
-                tgt_base, node_size_map.get(tgt, 1), getattr(edge, "connectivity", None)
-            )
+            tgt_indices = expand_input_targets(tgt_base, node_size_map.get(tgt, 1), getattr(edge, "connectivity", None))
             for _ti in tgt_indices:
                 inputs.append(
                     {
@@ -3085,6 +3072,7 @@ def build_lems_context(experiment):
     #   (iri starting with 'neuroml:', or names absent from the DB) are
     #   left as-is and emitted via the network template.
     from tvbo.classes.dynamics import Dynamics
+
     if dyn is None:
         dyn = Dynamics(name="dynamics")
     elif dyn.name and not (dyn.state_variables or dyn.parameters):
@@ -3110,11 +3098,7 @@ def build_lems_context(experiment):
     # literal, so the Coupling ComponentType matches the dynamics ComponentType.
     _ci_items = coupling_inputs.items() if hasattr(coupling_inputs, "items") else []
     coupling_output_name = next(
-        (
-            str(name)
-            for name, ci in _ci_items
-            if str(name) != "local_coupling" and not getattr(ci, "local", False)
-        ),
+        (str(name) for name, ci in _ci_items if str(name) != "local_coupling" and not getattr(ci, "local", False)),
         "c_pop0",
     )
 
@@ -3455,9 +3439,7 @@ def build_lems_context(experiment):
             # A Dynamics that only parameterises a standard NeuroML type is
             # emitted as that built-in component; a custom ComponentType is for
             # one that brings its own equations.
-            has_own_dynamics = bool(
-                getattr(rdyn, "state_variables", None) or getattr(rdyn, "derived_variables", None)
-            )
+            has_own_dynamics = bool(getattr(rdyn, "state_variables", None) or getattr(rdyn, "derived_variables", None))
             if rdyn and has_own_dynamics and syn["id"] not in cell_contexts:
                 ct_dyn = rdyn
                 ct_name = syn["id"]

@@ -1,4 +1,5 @@
 """``tvbo export`` — render a SPEC into a target format (no execution)."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -13,11 +14,14 @@ def export(
     format: str = typer.Argument(..., help="Format key or alias (see `tvbo formats`)."),
     spec: str = typer.Argument(..., help="Path, CURIE, or DB name."),
     output: Path = typer.Option(
-        None, "-o", "--output",
+        None,
+        "-o",
+        "--output",
         help="Output file or directory. When omitted, writes to stdout (text formats only).",
     ),
     metadata_only: bool = typer.Option(
-        True, "--metadata-only/--with-data",
+        True,
+        "--metadata-only/--with-data",
         help="Bundle binary network/data alongside the metadata file.",
     ),
 ) -> None:

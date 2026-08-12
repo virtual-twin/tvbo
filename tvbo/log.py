@@ -29,6 +29,7 @@ Example:
     >>> tvbo.set_log_level("WARNING")   # quiet the progress banners everywhere
     >>> tvbo.silence()                  # turn tvbo logging off entirely
 """
+
 from __future__ import annotations
 
 import logging
@@ -90,10 +91,7 @@ def _coerce_level(level: LevelLike) -> Optional[int]:
     value = logging.getLevelName(text)  # name → int for known levels
     if isinstance(value, int):
         return value
-    raise ValueError(
-        f"Unknown log level {level!r}; use an int or one of "
-        "DEBUG, INFO, WARNING, ERROR, CRITICAL, OFF."
-    )
+    raise ValueError(f"Unknown log level {level!r}; use an int or one of DEBUG, INFO, WARNING, ERROR, CRITICAL, OFF.")
 
 
 def _env_level() -> Optional[int]:

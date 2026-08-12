@@ -9,6 +9,7 @@ For every concrete TVB simulator model that tvbo mirrors (matched by the YAML
 * ``TVB -> tvbo -> TVB`` round-trips those losslessly;
 * the tvbo-generated TVB model's drift (``dfun``) matches the original.
 """
+
 import importlib
 import inspect
 import pkgutil
@@ -35,12 +36,7 @@ def _tvb_classes():
         except Exception:
             continue
         for nm, obj in vars(mod).items():
-            if (
-                inspect.isclass(obj)
-                and issubclass(obj, Model)
-                and nm not in ABSTRACT
-                and not inspect.isabstract(obj)
-            ):
+            if inspect.isclass(obj) and issubclass(obj, Model) and nm not in ABSTRACT and not inspect.isabstract(obj):
                 out[nm] = obj
     return out
 
@@ -74,9 +70,7 @@ def _ground_truth(cls):
             out[k] = (lo, hi)
         return out
 
-    return conv(getattr(m, "state_variable_range", None)), conv(
-        getattr(m, "state_variable_boundaries", None)
-    )
+    return conv(getattr(m, "state_variable_range", None)), conv(getattr(m, "state_variable_boundaries", None))
 
 
 MATCHED = _matched()
@@ -142,8 +136,10 @@ def test_generated_dfun_matches_tvb(name):
     GenCls = ns.get(name)
     assert GenCls is not None, f"generated class {name} not found"
 
-    orig = cls(); orig.configure()
-    gen = GenCls(); gen.configure()
+    orig = cls()
+    orig.configure()
+    gen = GenCls()
+    gen.configure()
     nmodes = int(getattr(orig, "number_of_modes", 1) or 1)
     nnodes = 4
     rng = getattr(orig, "state_variable_range", {})
@@ -176,6 +172,9 @@ def test_generated_dfun_matches_tvb(name):
     gi = {n: i for i, n in enumerate(gen.state_variables)}
     for sv in orig.state_variables:
         np.testing.assert_allclose(
-            d_gen[gi[sv]], d_orig[oi[sv]], rtol=1e-6, atol=1e-6,
+            d_gen[gi[sv]],
+            d_orig[oi[sv]],
+            rtol=1e-6,
+            atol=1e-6,
             err_msg=f"{name} generated dfun for '{sv}' != TVB",
         )

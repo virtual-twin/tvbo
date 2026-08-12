@@ -162,8 +162,7 @@ class BaseAdapter:
     def is_stochastic_dynamics(dynamics_dict: OrderedDict) -> bool:
         """Detect a stochastic system: any state variable with a positive noise amplitude."""
         return any(
-            BaseAdapter.get_noise_sigmas(dyn) and max(BaseAdapter.get_noise_sigmas(dyn)) > 0
-            for dyn in dynamics_dict.values()
+            BaseAdapter.get_noise_sigmas(dyn) and max(BaseAdapter.get_noise_sigmas(dyn)) > 0 for dyn in dynamics_dict.values()
         )
 
     # ── Graph / network ──────────────────────────────────────────────────
@@ -292,10 +291,7 @@ class BaseAdapter:
     @staticmethod
     def get_noise_sigmas(dynamics) -> list[float]:
         """Per-state-variable noise amplitude σ, ``0.0`` where none is declared."""
-        return [
-            noise_sigma(getattr(sv, "noise", None)) or 0.0
-            for sv in (dynamics.state_variables or {}).values()
-        ]
+        return [noise_sigma(getattr(sv, "noise", None)) or 0.0 for sv in (dynamics.state_variables or {}).values()]
 
     # ── Events ────────────────────────────────────────────────────────
 

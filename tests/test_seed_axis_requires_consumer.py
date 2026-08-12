@@ -98,9 +98,7 @@ def test_seed_axis_with_noise_still_renders():
 def test_no_seed_axis_is_unaffected_without_noise():
     """A deterministic experiment with no seed axis must still render."""
     spec = copy.deepcopy(MINI_EXP)
-    spec["explorations"]["seed_sweep"]["space"] = [
-        {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}}
-    ]
+    spec["explorations"]["seed_sweep"]["space"] = [{"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}}]
     code = SimulationExperiment(**spec).render_code("tvboptim")
     assert "grid_state.dynamics.a" in code
 
@@ -125,9 +123,7 @@ def test_two_axis_seed_sweep_maps_the_noise_seed_leaf_to_its_label():
     the axis and the container assembly refuses rather than scrambling.
     """
     spec = _with_noise(copy.deepcopy(MINI_EXP))
-    spec["explorations"]["seed_sweep"]["space"].insert(
-        0, {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}}
-    )
+    spec["explorations"]["seed_sweep"]["space"].insert(0, {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}})
     code = SimulationExperiment(**spec).render_code("tvboptim")
     squeezed = "".join(code.split()).replace('"', "'")
     assert "_bare_to_label.setdefault('_noise_seed',str(_a.name))" in squeezed

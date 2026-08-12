@@ -29,6 +29,7 @@ Usage
 Neither input ships with tvbo (~1 MB + 2x1.8 MB); both come from the HCP S1200 release /
 BALSA study RVVG. Pass ``--dry-run`` to print the comparison without writing.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -131,12 +132,12 @@ def find_surface(surf_dir: Path, structure: str) -> Path:
     hemi = "L" if structure.endswith("_LEFT") else "R"
     hits = sorted(surf_dir.glob(SURFACE_GLOB.format(hemi=hemi)))
     if not hits:
-        raise FileNotFoundError(
-            f"no {SURFACE_GLOB.format(hemi=hemi)} in {surf_dir} for {structure}")
+        raise FileNotFoundError(f"no {SURFACE_GLOB.format(hemi=hemi)} in {surf_dir} for {structure}")
     if len(hits) > 1:
         raise FileNotFoundError(
             f"{len(hits)} candidate {hemi} midthickness surfaces in {surf_dir}: "
-            f"{[h.name for h in hits]} — keep one, or point --surf-dir at a narrower directory")
+            f"{[h.name for h in hits]} — keep one, or point --surf-dir at a narrower directory"
+        )
     return hits[0]
 
 
@@ -192,7 +193,8 @@ def pair_entities(entities: dict, centroids: dict[str, np.ndarray]) -> dict[str,
     if unpaired:
         raise ValueError(
             f"{len(unpaired)} atlas entities have no name or alternateName in the dlabel: "
-            f"{unpaired[:5]} — add the dlabel spelling as an alternateName")
+            f"{unpaired[:5]} — add the dlabel spelling as an alternateName"
+        )
     if len(set(mapping.values())) != len(mapping):
         raise ValueError("two atlas entities paired with the same dlabel label")
     return mapping
@@ -200,18 +202,18 @@ def pair_entities(entities: dict, centroids: dict[str, np.ndarray]) -> dict[str,
 
 def invariants(centres: dict[str, np.ndarray], cortical: set[str]) -> str:
     """Hemisphere placement and L/R mirror consistency — the reference-free quality measures."""
-    wrong = [k for k in cortical
-             if (k.startswith("L_") and centres[k][0] > 0) or (k.startswith("R_") and centres[k][0] < 0)]
+    wrong = [k for k in cortical if (k.startswith("L_") and centres[k][0] > 0) or (k.startswith("R_") and centres[k][0] < 0)]
     pairs = [(k, "R_" + k[2:]) for k in cortical if k.startswith("L_") and "R_" + k[2:] in centres]
     mirror = np.array([np.linalg.norm(centres[a][1:] - centres[b][1:]) for a, b in pairs])
-    return (f"{len(wrong)}/{len(cortical)} on the WRONG hemisphere"
-            + (f" {sorted(wrong)}" if wrong else "")
-            + f"; L/R mirror median {np.median(mirror):.2f} max {mirror.max():.2f} mm")
+    return (
+        f"{len(wrong)}/{len(cortical)} on the WRONG hemisphere"
+        + (f" {sorted(wrong)}" if wrong else "")
+        + f"; L/R mirror median {np.median(mirror):.2f} max {mirror.max():.2f} mm"
+    )
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dlabel", type=Path, required=True)
     ap.add_argument("--surf-dir", type=Path, required=True)
     ap.add_argument("--atlas", default="hcpmmp1")
@@ -229,19 +231,22 @@ def main() -> int:
     centroids, sizes = dlabel_centroids(args.dlabel, args.surf_dir)
     pairing = pair_entities(entities, centroids)
 
-    old = {n: np.array([e["center"]["x"], e["center"]["y"], e["center"]["z"]])
-           for n, e in entities.items() if e.get("center")}
+    old = {n: np.array([e["center"]["x"], e["center"]["y"], e["center"]["z"]]) for n, e in entities.items() if e.get("center")}
     new = {n: centroids[pairing[n]] for n in entities}
     cortical = {n for n in entities if pairing[n].endswith("_ROI")}
 
     print(f"── {src.name} ──")
-    print(f"  {len(entities)} entities paired with dlabel labels by name/alternateName; "
-          f"parcel sizes {min(sizes.values())}–{max(sizes.values())} grayordinates")
+    print(
+        f"  {len(entities)} entities paired with dlabel labels by name/alternateName; "
+        f"parcel sizes {min(sizes.values())}–{max(sizes.values())} grayordinates"
+    )
     if old:
         shared = sorted(set(old) & set(new))
         d = np.array([np.linalg.norm(old[k] - new[k]) for k in shared])
-        print(f"  shift: median {np.median(d):.2f} mm, p95 {np.percentile(d, 95):.2f} mm, "
-              f"max {d.max():.2f} mm ({shared[int(d.argmax())]})")
+        print(
+            f"  shift: median {np.median(d):.2f} mm, p95 {np.percentile(d, 95):.2f} mm, "
+            f"max {d.max():.2f} mm ({shared[int(d.argmax())]})"
+        )
         print(f"  old: {invariants(old, cortical & set(old))}")
     print(f"  new: {invariants(new, cortical)}")
 
@@ -267,8 +272,11 @@ def main() -> int:
     out_yaml.write_text(yaml.safe_dump(doc, sort_keys=False, default_flow_style=False, width=120))
     # No companion `_centers.txt`: Atlas._load_metadata reads one only when the yaml carries
     # NO centers, and every entity here has one. A second copy could only drift.
-    stale = [src, src.with_name(src.name.replace("_dseg.yaml", "_centers.txt")),
-             out_yaml.with_name(out_yaml.name.replace("_dseg.yaml", "_centers.txt"))]
+    stale = [
+        src,
+        src.with_name(src.name.replace("_dseg.yaml", "_centers.txt")),
+        out_yaml.with_name(out_yaml.name.replace("_dseg.yaml", "_centers.txt")),
+    ]
     retired = [p.name for p in stale if p.exists() and p != out_yaml and not p.unlink()]
     print(f"  wrote {out_yaml.name} ({len(entities)} centers inline)")
     print(f"  coordinateSpace -> {TPL}" + (f"; retired {', '.join(retired)}" if retired else ""))

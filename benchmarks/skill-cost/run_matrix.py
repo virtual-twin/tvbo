@@ -16,6 +16,7 @@ Smoke-test a single cell first:
 
     .venv/bin/python benchmarks/skill-cost/run_matrix.py --cell explicit:0
 """
+
 from __future__ import annotations
 
 import argparse
@@ -70,8 +71,7 @@ def append_row(results_path: Path, metrics: Metrics) -> None:
         fh.write(json.dumps(metrics.to_row()) + "\n")
 
 
-def run_cell(harness, task, condition, rep, *, model, runs_dir, max_turns,
-             timeout, env) -> Metrics:
+def run_cell(harness, task, condition, rep, *, model, runs_dir, max_turns, timeout, env) -> Metrics:
     workdir = runs_dir / f"{harness.name}_{model}_{condition}_{rep}"
     if workdir.exists():
         shutil.rmtree(workdir)
@@ -79,8 +79,13 @@ def run_cell(harness, task, condition, rep, *, model, runs_dir, max_turns,
 
     harness.prepare_workspace(workdir, condition)
     run = harness.run(
-        task, condition, workdir,
-        model=model, max_turns=max_turns, timeout=timeout, env=env,
+        task,
+        condition,
+        workdir,
+        model=model,
+        max_turns=max_turns,
+        timeout=timeout,
+        env=env,
     )
 
     if run.error:
@@ -124,24 +129,22 @@ def parse_cells(cell_args, conditions, reps):
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--harness", default="claude", choices=sorted(HARNESSES))
-    ap.add_argument("--model", default="sonnet",
-                    help="Model alias/name passed to the harness (default: sonnet).")
+    ap.add_argument("--model", default="sonnet", help="Model alias/name passed to the harness (default: sonnet).")
     ap.add_argument("--task", default="whole_brain_sim", choices=sorted(TASKS))
-    ap.add_argument("--conditions", default=",".join(CONDITIONS),
-                    help="Comma-separated subset of: " + ",".join(CONDITIONS))
+    ap.add_argument("--conditions", default=",".join(CONDITIONS), help="Comma-separated subset of: " + ",".join(CONDITIONS))
     ap.add_argument("--reps", type=int, default=5)
-    ap.add_argument("--cell", action="append", default=[],
-                    help="Run a single cell 'condition[:rep]'. Repeatable. "
-                         "Overrides --conditions/--reps.")
+    ap.add_argument(
+        "--cell",
+        action="append",
+        default=[],
+        help="Run a single cell 'condition[:rep]'. Repeatable. Overrides --conditions/--reps.",
+    )
     ap.add_argument("--max-turns", type=int, default=80)
-    ap.add_argument("--timeout", type=float, default=1200.0,
-                    help="Per-agent wall-clock timeout in seconds.")
+    ap.add_argument("--timeout", type=float, default=1200.0, help="Per-agent wall-clock timeout in seconds.")
     ap.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR)
     ap.add_argument("--results", type=Path, default=DEFAULT_RESULTS)
-    ap.add_argument("--force", action="store_true",
-                    help="Re-run cells even if already present in results.")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="List the cells that would run, then exit.")
+    ap.add_argument("--force", action="store_true", help="Re-run cells even if already present in results.")
+    ap.add_argument("--dry-run", action="store_true", help="List the cells that would run, then exit.")
     args = ap.parse_args()
 
     conditions = [c.strip() for c in args.conditions.split(",") if c.strip()]
@@ -151,8 +154,7 @@ def main() -> None:
     done = set() if args.force else load_done_keys(args.results)
     env = build_agent_env()
 
-    plan = [(c, r) for (c, r) in cells
-            if args.force or f"{args.harness}/{args.model}/{c}/{r}" not in done]
+    plan = [(c, r) for (c, r) in cells if args.force or f"{args.harness}/{args.model}/{c}/{r}" not in done]
     print(f"harness={args.harness} model={args.model} task={args.task}")
     print(f"planned cells: {len(plan)} (skipping {len(cells) - len(plan)} already done)")
     for c, r in plan:
@@ -163,9 +165,15 @@ def main() -> None:
     for cond, rep in plan:
         print(f"\n=== running {cond}:{rep} ===", flush=True)
         metrics = run_cell(
-            harness, task, cond, rep,
-            model=args.model, runs_dir=args.runs_dir,
-            max_turns=args.max_turns, timeout=args.timeout, env=env,
+            harness,
+            task,
+            cond,
+            rep,
+            model=args.model,
+            runs_dir=args.runs_dir,
+            max_turns=args.max_turns,
+            timeout=args.timeout,
+            env=env,
         )
         append_row(args.results, metrics)
         cost = f"${metrics.cost_usd:.4f}" if metrics.cost_usd is not None else "n/a"
@@ -178,8 +186,7 @@ def main() -> None:
         )
 
     print(f"\nwrote results → {args.results}")
-    print("aggregate with: "
-          f"{sys.executable} {SCRIPT_DIR / 'aggregate.py'} --results {args.results}")
+    print(f"aggregate with: {sys.executable} {SCRIPT_DIR / 'aggregate.py'} --results {args.results}")
 
 
 if __name__ == "__main__":

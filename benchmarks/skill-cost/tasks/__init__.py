@@ -1,4 +1,5 @@
 """Benchmark task registry."""
+
 from __future__ import annotations
 
 from .whole_brain_sim import TASK as whole_brain_sim

@@ -47,8 +47,9 @@ Google style is also less line-noise than NumPy and renders predictably as param
 # ✗ Wrong — type duplicated in docstring
 def foo(x):
     """Args:
-        x (int): The thing.
+    x (int): The thing.
     """
+
 
 # ✓ Right — type on signature only
 def foo(x: int) -> str:
@@ -80,9 +81,10 @@ Quarto's renderer processes the body as markdown after quartodoc lifts the param
 Imperative, period-terminated, fits on one line. This becomes the entry in the module's summary table.
 
 ```python
-"""Render a SimulationExperiment to YAML."""        # ✓
-"""Renders a SimulationExperiment to YAML"""        # ✗ (no period, "Renders" not imperative)
-"""This function renders a SimulationExperiment.""" # ✗ (filler words)
+"""Render a SimulationExperiment to YAML."""  # ✓
+
+"""Renders a SimulationExperiment to YAML"""  # ✗ (no period, "Renders" not imperative)
+"""This function renders a SimulationExperiment."""  # ✗ (filler words)
 ```
 
 After a blank line, free-form prose can elaborate.
@@ -243,8 +245,8 @@ class Dynamics:
     Examples:
         >>> lorenz = Dynamics(name="Lorenz", parameters={"sigma": {"value": 10}})
     """
-    def __init__(self, name, parameters=None, state_variables=None):
-        ...
+
+    def __init__(self, name, parameters=None, state_variables=None): ...
 ```
 
 Methods on the class follow the same conventions as standalone functions.

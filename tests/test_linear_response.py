@@ -77,10 +77,13 @@ def test_noise_terms_reads_the_declared_per_state_amplitudes():
 
 
 def test_noise_terms_is_none_when_no_state_declares_noise():
-    spec = _SPEC.replace("""    noise:
+    spec = _SPEC.replace(
+        """    noise:
       additive: true
       parameters: {sigma: {value: 0.02}}
-""", "")
+""",
+        "",
+    )
     assert noise_terms(_model(spec)) is None
 
 
@@ -114,15 +117,20 @@ def _exec_rendered(model, sigma, obs_name):
 
     src = _render("lr_vf", ctx=ctx) + _render("lr_jacobian", ctx=ctx)
     if obs_name is not None:
-        src += _render("lr_observable", ctx=ctx, name="_H_t",
-                       terms=observable_terms(model, obs_name))
-    src += _render("lr_covariance", ctx=ctx, name="_cov_t", sigma=sigma,
-                   return_="covariance", obs_fn="_H_t" if obs_name else None)
+        src += _render("lr_observable", ctx=ctx, name="_H_t", terms=observable_terms(model, obs_name))
+    src += _render(
+        "lr_covariance", ctx=ctx, name="_cov_t", sigma=sigma, return_="covariance", obs_fn="_H_t" if obs_name else None
+    )
 
     import types as _types
 
-    ns = {"jnp": jnp, "jax": jax, "_lr_fp": jnp.asarray(fp), "_lr_weights": jnp.asarray(W),
-          "_lr_params": _types.SimpleNamespace(**params)}
+    ns = {
+        "jnp": jnp,
+        "jax": jax,
+        "_lr_fp": jnp.asarray(fp),
+        "_lr_weights": jnp.asarray(W),
+        "_lr_params": _types.SimpleNamespace(**params),
+    }
     exec(compile(src, "<lr>", "exec"), ns)
     A = np.asarray(ns["_lr_jacobian"](jnp.asarray(fp), jnp.asarray(W), ns["_lr_params"]))
     return np.asarray(ns["_cov_t"](A)), A, ctx, params
@@ -140,7 +148,7 @@ def test_covariance_through_a_declared_observation_cascade():
     A_ref = network_jacobian(model, _weights(), np.zeros((2, N)), params)
     assert np.allclose(A, A_ref, atol=1e-12)
 
-    Q = np.diag(np.concatenate([np.full(N, s ** 2) for s in ctx["noise"]]))
+    Q = np.diag(np.concatenate([np.full(N, s**2) for s in ctx["noise"]]))
     sigma_full = scipy_linalg.solve_continuous_lyapunov(A_ref, -Q)
     H = np.hstack([params["m"] * np.eye(N), params["k"] * np.eye(N)])
     assert np.allclose(P, H @ sigma_full @ H.T, rtol=1e-9, atol=1e-14)
@@ -157,7 +165,7 @@ def test_declared_noise_does_not_leak_into_an_unforced_state():
     P_declared, A, ctx, params = _exec_rendered(model, sigma=None, obs_name="obs")
 
     N = _weights().shape[0]
-    Q_uniform = (0.02 ** 2) * np.eye(2 * N)
+    Q_uniform = (0.02**2) * np.eye(2 * N)
     H = np.hstack([params["m"] * np.eye(N), params["k"] * np.eye(N)])
     P_uniform = H @ scipy_linalg.solve_continuous_lyapunov(A, -Q_uniform) @ H.T
     assert not np.allclose(P_declared, P_uniform, rtol=1e-3)
@@ -171,10 +179,9 @@ def test_uniform_sigma_still_returns_the_first_state_block():
     P, A, _, _ = _exec_rendered(model, sigma=0.02, obs_name=None)
 
     N = _weights().shape[0]
-    Q = (0.02 ** 2) * np.eye(2 * N)
+    Q = (0.02**2) * np.eye(2 * N)
     assert P.shape == (N, N)
-    assert np.allclose(P, scipy_linalg.solve_continuous_lyapunov(A, -Q)[:N, :N],
-                       rtol=1e-9, atol=1e-14)
+    assert np.allclose(P, scipy_linalg.solve_continuous_lyapunov(A, -Q)[:N, :N], rtol=1e-9, atol=1e-14)
 
 
 @pytest.mark.parametrize("dt,expected", [(1.0, 0.1), (0.1, 0.1), (0.001, 0.001), (None, 0.1)])
