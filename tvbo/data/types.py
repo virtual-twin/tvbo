@@ -336,6 +336,9 @@ def reassemble_experiment_results(
         stem: basename of the result artifact (default ``result``).
         sidecar: path to the frozen spec YAML to copy as ``<stem>.yaml``
             (typically the kit's ``spec/<name>.yaml``). Omit to skip the sidecar.
+        compress: whether the reassembled artifact is written compressed. A gathered
+            sweep is the archival copy of a run that will not be repeated, so it is
+            worth the write time by default.
 
     Returns:
         List of written paths (``<stem>.h5`` first, then ``<stem>.yaml``).
@@ -647,7 +650,7 @@ class SimulationResult:
         try:
             ts = self.to_timeseries()
         except (ValueError, AttributeError, RecursionError):
-            raise AttributeError(name)
+            raise AttributeError(name) from None
         if hasattr(ts, name):
             return getattr(ts, name)
         raise AttributeError(f"SimulationResult has no attribute '{name}'")
@@ -744,7 +747,7 @@ class AlgorithmResult:
         try:
             return self._extras[name]
         except KeyError:
-            raise AttributeError(f"AlgorithmResult has no attribute '{name}'")
+            raise AttributeError(f"AlgorithmResult has no attribute '{name}'") from None
 
     def get(self, key, default=None):
         """Dict-like get for backward compat with Bunch-based code."""
@@ -851,7 +854,7 @@ class OptimizationResult:
         try:
             return self._extras[name]
         except KeyError:
-            raise AttributeError(f"OptimizationResult has no attribute '{name}'")
+            raise AttributeError(f"OptimizationResult has no attribute '{name}'") from None
 
     def __repr__(self):
         loss_str = f", final_loss={self.final_loss:.4f}" if self.final_loss is not None else ""
@@ -994,7 +997,7 @@ class OptimizationResult:
             squeeze=False,
         )
         axes = axes[:, 0]
-        for ax, (name, values) in zip(axes, trajectories.items()):
+        for ax, (name, values) in zip(axes, trajectories.items(), strict=True):
             steps = np.arange(values.shape[0])
             if values.ndim == 1 or (values.ndim == 2 and values.shape[1] == 1):
                 ax.plot(steps, values.ravel(), **kwargs)
@@ -1466,9 +1469,9 @@ class ExplorationResult(Bunch):
                     return labelled
                 data = data.reshape(grid_shape)
                 dims = list(names)
-            sizes = dict(zip(dims, data.shape))
+            sizes = dict(zip(dims, data.shape, strict=True))
             coords = {}
-            for ax, nm in zip(self.axes, names):
+            for ax, nm in zip(self.axes, names, strict=True):
                 vals = self._axis_values(ax)
                 if vals is not None and len(vals) == sizes.get(nm):
                     coords[nm] = np.asarray(vals)  # coordinate labels, like TimeSeries' time
@@ -2016,7 +2019,7 @@ class ExperimentResult:
         _saved_active = getattr(src, "_active_subject", None)
         written = []
         try:
-            for sid, algos_i in zip(subject_ids, per_subject):
+            for sid, algos_i in zip(subject_ids, per_subject, strict=True):
                 src._active_subject = str(sid)  # drives the sub-<id>_ result stem
                 view = copy.copy(self)
                 view.algorithms = algos_i
@@ -2224,7 +2227,7 @@ class ExperimentResult:
             _pops = list(_spk)
             # Key the population axis by the same filename-safe token the per-population raster variables use (``spikes__<key>__t/i``), so a consumer can select a rate by name and map it straight to that population's raster — never a positional zip against attrs.
             _pops_key = [_san(p) for p in _pops]
-            for pop, key in zip(_pops, _pops_key):
+            for pop, key in zip(_pops, _pops_key, strict=True):
                 t = np.asarray(_spk[pop].get("t_ms"), dtype=float)
                 idx = np.asarray(_spk[pop].get("i"), dtype=float)
                 dim = f"spike__{key}"
@@ -2280,7 +2283,7 @@ class ExperimentResult:
 
             _dim_sizes: dict = defaultdict(set)
             for _da in data_vars.values():
-                for _d, _s in zip(_da.dims, _da.shape):
+                for _d, _s in zip(_da.dims, _da.shape, strict=True):
                     _dim_sizes[_d].add(int(_s))
             _conflicting = {_d for _d, _sizes in _dim_sizes.items() if len(_sizes) > 1}
             if _conflicting:
@@ -2742,7 +2745,7 @@ class ExperimentResult:
         primary_xv = None
         observations = {}
 
-        for monitor, (tv, xv) in zip(simulator.monitors, result):
+        for monitor, (tv, xv) in zip(simulator.monitors, result, strict=True):
             mon_labels = deepcopy(base_labels)
             if hasattr(monitor, "sensors") and monitor.sensors is not None:
                 mon_labels["Region"] = list(monitor.sensors.labels)
@@ -2832,14 +2835,14 @@ class TimeSeries:
         network=None,
         title="TimeSeries",
         sample_period=None,
-        labels_dimensions={},
+        labels_dimensions=None,
         units=None,
     ):
-        """labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] } units: Dictionary mapping dimension names to their units, e.g., {'time': 'ms', 'state': 'mV', 'region': None, 'mode': None}"""
+        """labels_dimensions: Specific labels for each dimension for the data stored in this timeseries. A dictionary containing mappings of the form {'dimension_name' : [labels for this dimension] } units: Dictionary mapping dimension names to their units, e.g., {'time': 'ms', 'state': 'mV', 'region': None, 'mode': None}."""
         # 1. Essential Data
         self.time = time
         self.data = data
-        self.labels_dimensions = labels_dimensions
+        self.labels_dimensions = {} if labels_dimensions is None else labels_dimensions
 
         # 2. Metadata
         self.title = title
@@ -3279,7 +3282,7 @@ class TimeSeries:
         if legend and any(labels):
             ax.legend(loc="upper right", fontsize="smaller")
             handles, labels = ax.get_legend_handles_labels()
-            unique = list(dict(zip(labels, handles)).items())  # Keep only the last occurrence of each label
+            unique = list(dict(zip(labels, handles, strict=True)).items())  # Keep only the last occurrence of each label
             ax.legend(
                 [handle for _, handle in unique],
                 [label for label, _ in unique],
@@ -4495,7 +4498,8 @@ class SimulationState:
         )
 
     def __repr__(self):
-        """Returns a string representation of the SimulationState object.
+        """Return a string representation of the SimulationState object.
+
         Shows all fields in the pytree structure.
         """
         return format_pytree_as_string(self, "SimulationState", "", False, False)
@@ -4590,7 +4594,7 @@ class SimulationState:
         return self
 
     def set_sigma_many(self, mapping: dict):
-        """Set multiple sigma values using a dict: { 'V': 0.02, 'W': 0.0 }"""
+        """Set multiple sigma values using a dict: { 'V': 0.02, 'W': 0.0 }."""
         import jax.numpy as jnp
 
         noise = self._ensure_noise_holder()
@@ -4641,7 +4645,7 @@ class SimulationState:
 
     @property
     def state_variables(self):
-        """Ergonomic proxy: state.state_variables.V.noise.sigma = 0.02
+        """Ergonomic proxy: state.state_variables.V.noise.sigma = 0.02.
 
         This updates state.noise.sigma_vec appropriately. Safe to use before jit/vmap.
         """

@@ -436,7 +436,8 @@ class Network(tvbo_datamodel.Network):
                 import warnings
 
                 warnings.warn(
-                    f"number_of_nodes={declared} doesn't match len(nodes)={n_nodes}. Using {n_nodes} from nodes list."
+                    f"number_of_nodes={declared} doesn't match len(nodes)={n_nodes}. Using {n_nodes} from nodes list.",
+                    stacklevel=2,
                 )
             kwargs["number_of_nodes"] = n_nodes
         # Create default nodes if number_of_nodes is set but nodes list is empty
@@ -916,8 +917,9 @@ class Network(tvbo_datamodel.Network):
         self._attach_node_attributes(bids_dir)
 
     def _attach_node_attributes(self, bids_dir) -> None:
-        """Attach per-node attributes from ``*_desc-regionSize.tsv`` sidecars as Node parameters, keyed by label. Every column beyond ``label`` becomes a node parameter of that name — so a symbolic weight transform can reference it (e.g.
-        ``W / roi_size`` to normalise each target region by its size). Silent when no such sidecar or no matching labels.
+        """Attach per-node attributes from ``*_desc-regionSize.tsv`` sidecars as Node parameters, keyed by label.
+
+        Every column beyond ``label`` becomes a node parameter of that name — so a symbolic weight transform can reference it (e.g. ``W / roi_size`` to normalise each target region by its size). Silent when no such sidecar or no matching labels.
         """
         import csv
 
@@ -989,7 +991,8 @@ class Network(tvbo_datamodel.Network):
             warnings.warn(
                 f"Weight matrix ({n_nodes}x{n_nodes}) and length matrix "
                 f"({l_arr.shape[0]}x{l_arr.shape[1]}) have different sizes. "
-                f"Using minimum size."
+                f"Using minimum size.",
+                stacklevel=2,
             )
             n_nodes = min(n_nodes, l_arr.shape[0])
             w_arr = w_arr[:n_nodes, :n_nodes]

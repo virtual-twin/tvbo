@@ -6,8 +6,7 @@
 # Copyright (c) 2023 Charité Universitätsmedizin Berlin
 #
 
-"""Report Module
-=============
+"""Report Module.
 
 This module provides utilities for generating reports related to model parameters and configurations.
 
@@ -39,7 +38,7 @@ _MARKUP_RE = re.compile(r"[{}\\_^$]")
 
 
 def _visual_width(cell: Any) -> int:
-    """Approximate the *rendered* character width of a markdown/LaTeX cell.
+    r"""Approximate the *rendered* character width of a markdown/LaTeX cell.
 
     A cell like ``$\\mathrm{s}$`` renders as a single ``s``, so its raw source length badly over-states how wide it is on the page. This strips the math delimiters, ``\\mathrm`` wrappers and control sequences so column sizing tracks what the reader sees, not the LaTeX source length.
     """
@@ -162,7 +161,7 @@ class MarkdownTable(NamedTuple):
 
 
 def _cells(line: str) -> list[str]:
-    """A table row's cells, honouring ``\\|`` escapes inside a cell."""
+    r"""A table row's cells, honouring ``\\|`` escapes inside a cell."""
     parts = _CELL_SPLIT_RE.split(line.strip())
     if parts and not parts[0].strip():
         parts = parts[1:]
@@ -592,6 +591,7 @@ class Scorecard:
         return sorted((r for r in self.rows if r["Status"].strip() in verdicts), key=self._key)
 
     def count(self, *verdicts) -> int:
+        """How many targets carry any of *verdicts*."""
         return len(self.of(*verdicts))
 
     def verdict(self, row) -> str:
@@ -604,6 +604,7 @@ class Scorecard:
         return row["Target"].split(",")[0].split("(")[0].strip()
 
     def reason(self, row) -> str:
+        """The recorded reason for a row's outcome, or a note that none was given."""
         return self.reasons.get(row["ID"], "No reason is recorded in `targets.md` — that is a gap.")
 
     def tally_table(self, tier_column: str = "Scope") -> str:
@@ -738,7 +739,7 @@ _SYMBOL_LATEX_FNS = None
 
 
 def _symbol_latex(text):
-    """Render ``text`` as an inline-LaTeX symbol via sympy, imported lazily once.
+    r"""Render ``text`` as an inline-LaTeX symbol via sympy, imported lazily once.
 
     sympy is a heavy import deliberately kept out of this module's import path (as are the other local imports here), so the ``(Symbol, latex)`` pair is cached on first use rather than re-imported per table row.
 
@@ -880,7 +881,7 @@ _PARAM_FLAGS = [("free", "free"), ("heterogeneous", "heterogeneous")]
 
 
 def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=None):
-    """One SymPy equation as LaTeX, with the derivative written the report's way.
+    r"""One SymPy equation as LaTeX, with the derivative written the report's way.
 
     Takes an already-parsed ``Eq`` — never a source string. Re-parsing an authored right-hand side needs a symbol vocabulary assembled by hand, and every symbol the assembler forgets (an event's name, a coupling term) turns into a silent fall-back to raw Python in the middle of the Methods section. ``Dynamics.get_equations()`` has already done that resolution against the model's own scope, so this only prints.
 
@@ -1724,7 +1725,7 @@ def section_slug(text):
 
 
 class Equations:
-    """Numbering and cross-reference labels for one rendered report.
+    r"""Numbering and cross-reference labels for one rendered report.
 
     A report that prints ``$$...$$`` and nothing else cannot be referred to: Jansen1995 numbers 19 equations and its prose says "Eq. 3" and "Eqs. 15-17", and our render had no way to point at any of them. This assigns each equation a display number and, where the target format supports one, an anchor.
 

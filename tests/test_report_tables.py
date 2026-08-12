@@ -370,9 +370,9 @@ def test_the_integration_time_unit_comes_from_whichever_slot_declared_it():
 
 
 def test_a_swept_axis_reaches_the_report():
-    """`sweep_axes` read `parameters` (the exploration's own hyper-parameters) and iterated
-    the `explorations` mapping's keys, so it returned {} for every curated recipe and no
-    report ever showed a swept range.
+    """A swept axis reaches the report.
+
+    `sweep_axes` read `parameters` (the exploration's own hyper-parameters) and iterated the `explorations` mapping's keys, so it returned {} for every curated recipe and no report ever showed a swept range.
     """
     from tvbo import SimulationExperiment
     from tvbo.utils import report

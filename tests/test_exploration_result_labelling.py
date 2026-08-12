@@ -178,8 +178,7 @@ def test_an_undeclared_trailing_singleton_is_still_squeezed():
 
 
 def test_full_grid_is_keyed_by_value_when_space_order_differs_from_declared():
-    """A full product whose cells arrive in the Space (pytree-leaf) order — NOT the declared
-    axis order — is keyed into the grid BY VALUE, never by a positional reshape.
+    """A full product whose cells arrive in Space (pytree-leaf) order is keyed into the grid BY VALUE, never by a positional reshape.
 
     When swept axes live on different state sub-objects (dynamics / coupling / graph), Space
     emits cells in pytree-leaf order, which differs from the declared ``axes_info`` order. A

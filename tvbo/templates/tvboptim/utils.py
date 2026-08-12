@@ -5,8 +5,7 @@
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
 # Licensed under the EUPL-1.2-or-later
 #
-"""TVB-Optim Template Utilities
-============================
+"""TVB-Optim Template Utilities.
 
 Reusable Python functions for tvboptim Mako templates.
 Import these in template blocks to avoid code duplication.
@@ -493,7 +492,7 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     uses_local = (
         bool(state_aliases_i) or bool(re.search(r"\bx_i\b", _pre_rhs0)) or bool(re.search(r"\blocal_states\b", _pre_rhs0))
     )
-    gx_symbols = ["gx_%d" % k for k in range(n_pre)] if n_pre > 1 else []
+    gx_symbols = [f"gx_{k}" for k in range(n_pre)] if n_pre > 1 else []
     post_alias_symbols = [a[0] for a in post_aliases_i]
 
     all_symbols = (
@@ -576,7 +575,7 @@ def resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict):
                 ci_coupling_map[ci_name] = unmapped_funcs[0]
             func_to_first_ci.setdefault(unmapped_funcs[0][0], unmapped_cis[0])
         elif len(unmapped_funcs) == len(unmapped_cis):
-            for ci_name, (fn, co) in zip(unmapped_cis, unmapped_funcs):
+            for ci_name, (fn, co) in zip(unmapped_cis, unmapped_funcs, strict=True):
                 ci_coupling_map[ci_name] = (fn, co)
                 func_to_first_ci.setdefault(fn, ci_name)
 
@@ -1279,6 +1278,7 @@ def reduction_dims(red: dict[str, Any] | None) -> tuple:
 
 def _partition_group_count(pdef: dict[str, Any], gather: str) -> int:
     """Group count for a `partition` = the leading axis of its (n_groups, n) gather table.
+
     Fixed at codegen: from the declared shape's literal leading dim, the literal value's outer length, or the leading dim of the materialised (produced/sourced) gather artifact.
     """
     shape = pdef.get("shape")
@@ -1912,8 +1912,7 @@ def _adapt_tvb_bold_reference(class_info: dict[str, Any], obs: Any, dt: float) -
 
 
 def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False) -> str:
-    """Map the backend-neutral ``integration.differentiation`` strategy onto native-solver kwargs, returned as a ready-to-emit string (e.g.
-    ``"grad_horizon=100, block_size=50"``).
+    """Map the backend-neutral ``integration.differentiation`` strategy onto native-solver kwargs, returned as a ready-to-emit string (e.g. ``"grad_horizon=100, block_size=50"``).
 
     ``truncation_window`` / ``checkpoint_interval`` are in ms of simulated time;
     the native JAX solver counts integration steps, so they are converted with ``dt``. Diffrax has no such knobs, so ``is_diffrax=True`` yields ``""``.
@@ -2227,7 +2226,7 @@ def render_recorded_observable(
         if only_obs is not None:
             _only = [n for n in only_obs if n not in channel]
             # An empty closure must emit an empty *set* literal — "{}" is an empty dict, which would change compute_all_observations' `only=` semantics.
-            _only_lit = ("{%s}" % ", ".join(repr(n) for n in sorted(_only))) if _only else "set()"
+            _only_lit = ("{{{}}}".format(", ".join(repr(n) for n in sorted(_only)))) if _only else "set()"
             lines.append(f"_all_obs = compute_all_observations(result, s, result_transient, only={_only_lit})")
         else:
             lines.append("_all_obs = compute_all_observations(result, s, result_transient)")
