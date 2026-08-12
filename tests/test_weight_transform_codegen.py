@@ -210,6 +210,22 @@ def test_a_third_edge_attribute_resolves_at_runtime_but_not_in_a_kit():
         weight_transform_codegen(net)
 
 
+def test_a_per_node_vector_is_guarded_by_node_count():
+    """The runtime skips a mismatched vector; a kit would embed it and broadcast it wrongly.
+
+    A cohort kit is rendered once from one subject, so an unguarded vector reaches every
+    other subject's connectome at the wrong length.
+    """
+    from tvbo.datamodel.schema import Node
+
+    net = Network.from_matrix(weights=np.zeros((3, 3)), lengths=np.zeros((3, 3)))
+    net.nodes = [Node(id=i, label=f"n{i}", parameters={"roi_size": {"value": float(i + 1)}})
+                 for i in range(2)]
+    net.add_transform("weight", "weight / roi_size")
+    with pytest.raises(ValueError, match="2 values, but the network has 3 nodes"):
+        weight_transform_codegen(net)
+
+
 def test_the_default_transform_is_written_over_its_own_target():
     """`add_transform` with no equation min-max normalises whatever it targets."""
     net = Network.from_matrix(weights=np.array([[0, 2.0], [4.0, 0]]), lengths=np.zeros((2, 2)))

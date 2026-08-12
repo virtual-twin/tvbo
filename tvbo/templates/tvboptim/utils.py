@@ -859,6 +859,8 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
 
     _source_dir = getattr(network, "_source_dir", None)
     node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
+    raw = getattr(network, "raw_weights_matrix", None)
+    n_nodes = None if raw is None else np.asarray(raw).shape[0]
     transforms: List[Tuple[str, List[str]]] = []
     const_env: List[str] = []
     const_seen: Set[str] = set()
@@ -877,8 +879,15 @@ def weight_transform_codegen(network) -> Tuple[List[Tuple[str, List[str]]], List
                 labels_used.add(label)
                 return source
             if name in node_vectors:
-                vals = ", ".join(repr(float(v)) for v in np.asarray(node_vectors[name]).ravel())
-                return f"jnp.asarray([{vals}]).reshape(-1, 1)"
+                vec = np.asarray(node_vectors[name]).ravel()
+                if n_nodes is not None and vec.shape[0] != n_nodes:
+                    raise ValueError(
+                        f"weight transform {transform_target(t)!r} uses per-node parameter "
+                        f"{name!r} with {vec.shape[0]} values, but the network has {n_nodes} "
+                        f"nodes. The runtime skips a mismatched vector; a kit would embed it "
+                        f"and broadcast it against another subject's connectome."
+                    )
+                return f"jnp.asarray([{', '.join(repr(float(v)) for v in vec)}]).reshape(-1, 1)"
             if network.matrix(label) is not None:
                 raise ValueError(
                     f"weight transform {transform_target(t)!r} reads edge attribute {label!r}, "
