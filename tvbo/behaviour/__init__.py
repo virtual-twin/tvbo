@@ -29,4 +29,11 @@ Three rules keep this working:
   method that needs it.
 * A mixin's name must end in ``Behaviour`` and its stem must name a class the schema
   defines, or the build fails — otherwise it would attach to nothing, silently.
+
+One mixin attaches by a schema rule instead of by its name: :class:`IriEnrichable`, which
+``hatch_build`` gives to every class the schema declares an ``iri`` on. It lives in
+:mod:`tvbo.behaviour._enrich`, under a leading underscore, because the name rule above
+would otherwise look for a class called ``Enrich``. A behaviour mixin may refine what it
+provides — ``DynamicsBehaviour._from_ontology`` is how a model reaches the ontology — and
+reach the generic implementation through ``super()``, since behaviour is listed first.
 """

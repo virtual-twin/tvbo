@@ -6,11 +6,9 @@ coupling carries these however it was built. The experiment loader used to reass
 any other way — ``network.coupling`` entries, an inner coupling, a hand-built one — as
 plain records.
 
-Unlike the other mixins this one hooks construction. It can: the generated
-``__post_init__`` ends in ``super().__post_init__(**kwargs)``, and the mixin sits directly
-before ``YAMLRoot`` in the MRO, so the hook runs once the generated normalization is done,
-whichever path built the object. That is where a coupling given only an ``iri`` adopts the
-name and the expressions that ``iri`` points at, as the wrapper's ``__init__`` used to.
+A coupling named solely by ``iri`` is expanded before validation, by the dialect; filling
+one that names its function any other way is :meth:`IriEnrichable.enrich`, whose ontology
+source is :meth:`CouplingBehaviour._from_ontology` below.
 """
 
 from __future__ import annotations
@@ -18,96 +16,29 @@ from __future__ import annotations
 import numpy as np
 
 
-def _schema_default(cls, slot: str):
-    """The default the schema gives *slot*, whichever generated form *cls* is.
-
-    A post-init hook cannot see the keywords as they were passed — the defaults are
-    already applied — so "the recipe did not name this" is read as "the value still equals
-    the schema default", and the two forms keep that default in different places.
-    """
-    fields = getattr(cls, "__dataclass_fields__", None)
-    if fields is not None:
-        return fields[slot].default
-    return cls.model_fields[slot].default
-
-
 class CouplingBehaviour:
     """Population, rendering and symbolic reading for a coupling function."""
 
-    def __post_init__(self, *args, **kwargs):
-        """The LinkML dataclasses' construction hook."""
-        super().__post_init__(*args, **kwargs)
-        self._adopt_iri_entry()
-
-    def model_post_init(self, context, /):
-        """The Pydantic models' construction hook.
-
-        The two generated forms do not share one. Without this the same YAML produced two
-        different couplings — the dataclass populated from its ``iri``, the Pydantic model
-        left as a bare default ``Linear`` — which is the divergence
-        ``tests/test_schema_aliases.py`` exists to prevent.
-        """
-        super().model_post_init(context)
-        self._adopt_iri_entry()
-
-    def _adopt_iri_entry(self):
-        """Adopt the ontology entry an ``iri``-only coupling points at.
-
-        A recipe that names the coupling solely by ``iri`` gets that entry's local name and
-        its expressions; an explicitly named one keeps its own name and is only filled in.
-        `name` carries a schema default, so "explicitly named" is read as differing from
-        that default — the one thing ``__init__`` could see that a post-init hook cannot.
-        """
-        if not getattr(self, "iri", None) or getattr(self, "pre_expression", None):
-            return
-
-        from tvbo.data.registry import local_name
-
-        local = local_name(self.iri)
-        if self.name == _schema_default(type(self), "name"):
-            self.name = local
-        self._populate_from_ontology(lookup_name=local)
-
-    def _populate_from_ontology(self, lookup_name=None):
-        """Fill missing metadata fields from ontology/database.
-
-        Parameters
-        ----------
-        lookup_name : str, optional
-            Name or CURIE to look up. If None, uses ``self.name``.
-            Supports plain names (``KuramotoCoupling``) and CURIEs
-            (``tvbo:KuramotoCoupling``).
-        """
-        from tvbo.classes.coupling import _load_coupling_from_database, coupling_class2metadata
+    def _from_ontology(self, key: str) -> bool:
+        """Gap-fill from the ontology coupling function *key* labels. True when found."""
+        from tvbo.classes.coupling import coupling_class2metadata
         from tvbo.ontology import query
 
-        if lookup_name:
-            lookup = lookup_name.split(":", 1)[-1] if ":" in lookup_name else lookup_name
-        else:
-            lookup = getattr(self, "name", None)
-
-        if lookup and _load_coupling_from_database(lookup, self):
-            return
-
         try:
-            if lookup:
-                hits = query.label_search(lookup, root_class="Coupling")
-                oc = hits[0] if hits else None
-            else:
-                oc = self.ontoclass
+            hits = query.label_search(key, root_class="Coupling")
         except Exception:
-            oc = None
-        if not oc:
-            return
-
-        coupling_class2metadata(oc, self, overwrite=False)
+            return False
+        if not hits:
+            return False
+        coupling_class2metadata(hits[0], self, overwrite=False)
+        return True
 
     def populate_from_type(self, type_ref):
-        """Fill missing pre/post expressions and parameters from a type reference.
+        """Fill this coupling from the coupling function *type_ref* names.
 
-        This is used when ``network.coupling`` entries specify a ``type`` field
-        to reference a known coupling function (e.g. ``KuramotoCoupling`` or
-        ``tvbo:KuramotoCoupling``).
+        A ``network.coupling`` entry is keyed by its role in the network, so its ``type``
+        is what says which function it is an instance of — the entity to enrich from,
+        rather than the one this record names.
 
         Parameters
         ----------
@@ -115,8 +46,10 @@ class CouplingBehaviour:
             Coupling function name or CURIE (e.g. ``"KuramotoCoupling"``
             or ``"tvbo:KuramotoCoupling"``).
         """
+        from tvbo.data.registry import local_name
+
         self._coupling_type = type_ref
-        self._populate_from_ontology(lookup_name=type_ref)
+        self.enrich(key=local_name(type_ref))
         self._resolve_xi_xj()
 
     def _resolve_xi_xj(self):
@@ -149,14 +82,15 @@ class CouplingBehaviour:
         """
         import owlready2
 
-        from tvbo.classes.coupling import _load_coupling_from_database, coupling_class2metadata
+        from tvbo.classes.coupling import coupling_class2metadata
+        from tvbo.data.registry import local_name
         from tvbo.datamodel import schema as tvbo_datamodel
         from tvbo.ontology import query
 
         if isinstance(ontoclass, str):
-            lookup = ontoclass.split(":", 1)[-1] if ":" in ontoclass else ontoclass
+            lookup = local_name(ontoclass)
             coup = cls(name=lookup)
-            if _load_coupling_from_database(lookup, coup):
+            if coup._from_database(lookup):
                 return coup
             hits = query.label_search(lookup, root_class="Coupling", exact_match=["label"])
             if not hits:

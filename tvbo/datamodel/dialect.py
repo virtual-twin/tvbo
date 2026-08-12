@@ -31,6 +31,7 @@ __all__ = [
     "KEYED_COLLECTIONS",
     "SCALAR_SHORTCUTS",
     "SLOT_ALIASES",
+    "curated_entry",
     "expand_iri",
     "fold_aliases",
     "is_literal",
@@ -101,13 +102,17 @@ def fold_aliases(cls_name: str, data: dict) -> dict:
 
 
 @lru_cache(maxsize=None)
-def _curated_entry(cls_name: str, iri: str) -> dict | None:
-    """The curated record *iri* names, alias-folded and ready to merge, or ``None``.
+def curated_entry(cls_name: str, name: str) -> dict | None:
+    """The curated *cls_name* record called *name*, alias-folded and ready to merge.
+
+    ``None`` when the database holds no such record — including when *cls_name* is not a
+    category it keeps at all.
 
     Cached because a recipe naming the same entity twice — every node of a homogeneous
-    network — would otherwise re-read and re-parse the same file per object. The result is
-    only ever fed to :func:`tvbo.utils.deep_merge`, which mutates neither side, so callers
-    share one instance safely.
+    network — would otherwise re-read and re-parse the same file per object. Callers must
+    not mutate the result: :func:`expand_iri` only feeds it to
+    :func:`tvbo.utils.deep_merge`, which mutates neither side, and
+    :meth:`IriEnrichable._from_database` only reads it into a constructor.
 
     The entry's own ``iri`` is dropped: keeping it would make the expanded record ask to be
     expanded again on every later construction, and a self-referential entry would not
@@ -115,10 +120,10 @@ def _curated_entry(cls_name: str, iri: str) -> dict | None:
     """
     import yaml
 
-    from tvbo.data.registry import local_name, resolve
+    from tvbo.data.registry import resolve
 
     try:
-        path = resolve(cls_name, local_name(iri))
+        path = resolve(cls_name, name)
     except (FileNotFoundError, RuntimeError, ValueError):
         return None
     entry = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -142,7 +147,7 @@ def expand_iri(cls_name: str, data: dict) -> dict:
     Only the curated database is consulted. It is a local file read and its content is
     ordered, whereas the ontology answers with an unordered set — a different parameter
     order per process, which no frozen record can be written against. Reaching it is
-    :meth:`IriEnrichable.enrich`, which the caller asks for.
+    :meth:`tvbo.behaviour._enrich.IriEnrichable.enrich`, which the caller asks for.
 
     Only a *reference* expands. A record that also states its own ``name`` is a definition,
     and its ``iri`` is grounding — "this model is a ReducedWongWang in the ontology" — not
@@ -155,10 +160,12 @@ def expand_iri(cls_name: str, data: dict) -> dict:
     the ontology, and this pass cannot tell that from a typo. ``tvbo validate`` is where a
     name that resolves nowhere is reported.
     """
+    from tvbo.data.registry import local_name
+
     iri = data.get("iri")
     if not isinstance(iri, str) or data.get("name") is not None:
         return data
-    entry = _curated_entry(cls_name, iri)
+    entry = curated_entry(cls_name, local_name(iri))
     if entry is None:
         return data
 

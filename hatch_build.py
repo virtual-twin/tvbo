@@ -51,7 +51,7 @@ def generate_datamodel(root: str | Path) -> None:
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
     shortcuts, aliases, keyed = _dialect_tables(schema)
-    mixins = _behaviour_mixins(root, schema)
+    mixins = _mixins(root, schema)
     _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases, keyed))
     _write(
         out_dir / "schema.py",
@@ -196,6 +196,33 @@ from tvbo.datamodel.dialect import install_on_dataclasses as _install_dialect
 _install_dialect(globals())
 """
 
+#: Attached to every class the schema gives an ``iri``; see :mod:`tvbo.behaviour._enrich`.
+_ENRICHABLE_MIXIN = "tvbo.behaviour._enrich.IriEnrichable"
+
+
+def _mixins(root: Path, schema: Path) -> dict[str, list[str]]:
+    """``{class: dotted paths of the mixins it takes}``, most specific first.
+
+    Two rules, each derived rather than listed. A class takes its behaviour mixin because
+    one is named after it, and it takes :class:`IriEnrichable` because the schema gives it
+    an ``iri`` — a record that may name an entity elsewhere is a record that can be filled
+    from one. Only the classes that declare the slot *directly* are named: a subclass
+    inherits the base it was given, and naming it again would put the same mixin twice in
+    one class statement.
+
+    Behaviour comes first so a behaviour mixin can refine an enrichment method and reach
+    the generic one through ``super()``.
+    """
+    from linkml_runtime.utils.schemaview import SchemaView
+
+    view = SchemaView(str(schema))
+    mixins = {cls: [path] for cls, path in _behaviour_mixins(root, schema).items()}
+    for cls_name in view.all_classes():
+        if "iri" in view.class_slots(cls_name, direct=True):
+            mixins.setdefault(cls_name, []).append(_ENRICHABLE_MIXIN)
+    return mixins
+
+
 def _behaviour_mixins(root: Path, schema: Path) -> dict[str, str]:
     """``{class: dotted path of its behaviour mixin}``, discovered from ``tvbo/behaviour``.
 
@@ -282,18 +309,23 @@ class _DialectBase(BaseModel):
 '''
 
 
-def _mixin_imports(mixins: dict[str, str]) -> str:
-    """``from <module> import <Mixin>`` for each declared behaviour mixin."""
+def _mixin_imports(mixins: dict[str, list[str]]) -> str:
+    """``from <module> import <Mixin>`` for each declared mixin."""
     return "".join(
         f"from {path.rsplit('.', 1)[0]} import {path.rsplit('.', 1)[1]}\n"
-        for path in sorted(set(mixins.values()))
+        for path in sorted({path for paths in mixins.values() for path in paths})
     )
 
 
-def _with_behaviour(code: str, mixins: dict[str, str]) -> str:
-    """Give each annotated dataclass its behaviour mixin.
+def _mixin_bases(mixins: dict[str, list[str]]) -> dict[str, list[str]]:
+    """``{class: mixin class names}`` — the dotted paths reduced to what a base is written as."""
+    return {cls: [path.rsplit(".", 1)[1] for path in paths] for cls, paths in mixins.items()}
 
-    Both generated forms take the same mixin, so behaviour reaches an object whether it
+
+def _with_behaviour(code: str, mixins: dict[str, list[str]]) -> str:
+    """Give each annotated dataclass its mixins.
+
+    Both generated forms take the same mixins, so behaviour reaches an object whether it
     came from LinkML's loader (a dataclass) or from Pydantic validation. Without this the
     dataclasses would lose every helper the moment it moved out of a runtime subclass,
     since that is still what the loaders construct.
@@ -303,14 +335,14 @@ def _with_behaviour(code: str, mixins: dict[str, str]) -> str:
     code = code.replace(
         'metamodel_version = "', _mixin_imports(mixins) + '\nmetamodel_version = "', 1
     )
-    return _inject_bases(code, {cls: [path.rsplit(".", 1)[1]] for cls, path in mixins.items()})
+    return _inject_bases(code, _mixin_bases(mixins))
 
 
-def _with_dialect_and_behaviour(code: str, mixins: dict[str, str]) -> str:
-    """Give the generated models the dialect, and each annotated class its behaviour.
+def _with_dialect_and_behaviour(code: str, mixins: dict[str, list[str]]) -> str:
+    """Give the generated models the dialect, and each annotated class its mixins.
 
     The mixins are imported beside ``_DialectBase``, above every generated class, so a
-    behaviour module must not import the datamodel at module scope — the same discipline
+    mixin module must not import the datamodel at module scope — the same discipline
     :mod:`tvbo.datamodel.dialect` follows.
     """
     code = code.replace(
@@ -319,7 +351,7 @@ def _with_dialect_and_behaviour(code: str, mixins: dict[str, str]) -> str:
         1,
     )
     additions = {"ConfiguredBaseModel": ["_DialectBase"]}
-    additions.update({cls: [path.rsplit(".", 1)[1]] for cls, path in mixins.items()})
+    additions.update(_mixin_bases(mixins))
     return _inject_bases(code, additions)
 
 

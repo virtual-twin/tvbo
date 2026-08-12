@@ -158,7 +158,7 @@ def _upgrade_network_couplings(network, coupling_types=None):
 
     for key, coup in items:
         if not getattr(coup, "pre_expression", None):
-            coup._populate_from_ontology()
+            coup.enrich()
         if key in coupling_types:
             coup.populate_from_type(coupling_types[key])
 
@@ -203,7 +203,7 @@ def _resolve_coupling(experiment):
         # Ensure ontology-derived fields (pre/post expressions, parameters)
         # are populated — backends require them at codegen time.
         if not getattr(func, "pre_expression", None):
-            func._populate_from_ontology()
+            func.enrich()
         coup_name = str(getattr(func, "name", "Linear"))
         network.coupling[coup_name] = func
 
@@ -600,7 +600,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         if not getattr(self, "integration", None):
             self.integration = Integrator(method="Heun")
-        self.integration._populate_from_ontology()
+        self.integration.enrich()
 
     def _load_network_from_data_file(self):
         """Load network matrices from a companion data file (h5/zarr/yaml sidecar).
@@ -712,7 +712,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if isinstance(v, tvbo_datamodel.Dynamics) and not isinstance(v, Dynamics):
                     v.__class__ = Dynamics
                     if getattr(v, "iri", None):
-                        v.enrich_from_ontology()
+                        v.enrich()
             first = next(iter(dyn.values()))
             obj.__dict__["dynamics"] = first
             obj.__dict__["model"] = first.name
@@ -720,13 +720,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if not isinstance(dyn, Dynamics):
                 dyn.__class__ = Dynamics
                 if getattr(dyn, "iri", None):
-                    dyn.enrich_from_ontology()
+                    dyn.enrich()
             obj.__dict__["model"] = dyn.name
         else:
             obj.__dict__.setdefault("dynamics", None)
 
         integ = getattr(obj, "integration", None) or Integrator(method="Heun")
-        integ._populate_from_ontology()
+        integ.enrich()
         obj.__dict__["integration"] = integ
 
         stim = getattr(obj, "stimulation", None)
@@ -735,7 +735,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         coup = getattr(obj, "coupling", None)
         if coup is not None and not getattr(coup, "pre_expression", None):
-            coup._populate_from_ontology()
+            coup.enrich()
         if not getattr(obj, "coupling", None):
             obj.__dict__["coupling"] = Coupling(name="Linear")
 

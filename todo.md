@@ -35,19 +35,19 @@ statements**, then retire the isolated world (inverting the Phase-A
 `api.world is not owl.onto.world` invariant). Full file-by-file spec, impact map,
 and verification: **see `dev/runtime_ontology_migration.md` §3.0–§5**.
 
-**Design principle: three explicit load routes; YAML supervenes (from PR #43).**
+**Design principle: three explicit load routes; YAML supervenes (from PR #43). DONE — #95.**
 A model / experiment / class spec can be obtained three ways, all supported:
 1. **From ontology** — explicit (`Dynamics.from_ontology`).
 2. **From YAML / string / metadata** — the default
-   (`from_file`/`from_string`/`from_datamodel`/`from_db`, `use_ontology=False`).
-3. **From YAML enriched by ontology** — explicit opt-in (`use_ontology=True` /
-   `enrich_from_ontology()`).
+   (`from_file`/`from_string`/`from_datamodel`/`from_db`).
+3. **From YAML enriched by another source** — explicit (`enrich()`).
 
-Rules: **YAML supervenes** — by default the ontology is not touched; **enrichment
-is NOT the default** and, when requested, only **fills missing pieces** (never
-overrides a value present in the YAML). The load side already honours this
-(default `use_ontology=False`); TODO: verify `enrich_from_ontology` /
-`_populate_from_ontology` are strictly gap-fill and never clobber YAML.
+Rules: **YAML supervenes** — the ontology is never touched at construction, and
+enrichment only **fills missing pieces**. Construction resolves what is
+deterministic, local and cheap: `dialect.expand_iri` reads the one curated file an
+`iri` reference names. `enrich()` is the verb for everything past that; it is
+carried by every class the schema declares an `iri` on, and its sources dispatch on
+the reader the class defines.
 
 Concrete route-3 example — a component referenced by `iri` draws its spec from
 the ontology, with inline metadata overriding on top (YAML supervenes):
@@ -1170,19 +1170,17 @@ Depends on:
   need new DB entries.
 
 
-## Drop `use_ontology` / `_skip_ontology` flags once IRI handling is canonical
-- Today there are ~37 occurrences across `tvbo/` of `use_ontology`, `_skip_ontology`, `_populate_from_ontology*` runtime flags that gate ontology backfill.
-- Once IRI is the canonical way to declare a sourced component, the flag becomes redundant: **iri present → use ontology/DB data; iri absent → fully self-contained spec.**
-- Override semantics should follow YAML/dict merge: ontology defaults are the base, user-provided fields override key by key. Example target:
-    ```python
+## Drop `use_ontology` / `_skip_ontology` flags once IRI handling is canonical — DONE (#95)
+`use_ontology`, `_skip_ontology`, `_populate_from_ontology*` and `enrich_from_ontology`
+are gone, along with the three hand-rolled `iri`-expansions (dynamics, coupling,
+observation). What replaced them:
+
     Dynamics(iri='tvbo:ReducedWongWang', parameters={'a': {'value': 2}})
-    # → loads all parameters/state_variables from ontology, then overrides only a.value
-    ```
-- Cleanup steps:
-    1. Remove `use_ontology` / `_skip_ontology` parameters from `DynamicalSystem.__init__`, `Dynamics.from_*`, `Coupling.*` and any other class constructors.
-    2. Remove the explicit `_populate_from_ontology_by_name()` / `_populate_from_ontology()` call sites — they become unconditional inside the single `_resolve_iri` step from the previous TODO.
-    3. Ensure parameter/state-variable merging is non-destructive: user dict values overwrite at the leaf level (e.g. `parameters.a.value`), not the whole `parameters` slot.
-    4. Update tests that pass `use_ontology=True/False` explicitly.
+
+expands in the dialect, before validation — the only point that still knows which keys the
+recipe wrote — merging leaf by leaf so `a.value` supervenes and its siblings are inherited.
+Reaching the ontology is `enrich()`, one verb across Dynamics, Coupling, Observation,
+Function and Integrator.
 
 
 ## Experimental / parked
