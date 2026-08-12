@@ -65,6 +65,46 @@ def test_filling_never_overwrites(model):
 
 @pytest.mark.backend_core
 @GENERATED_FORMS
+def test_the_first_source_that_resolves_answers_alone(monkeypatch, model):
+    """Ranked, not combined — otherwise one record enriches to two different things.
+
+    Topping a curated record up from the ontology adds whatever the curators left out,
+    and only where the ontology resolves the same names: ``Sigmoidal`` filled from both
+    came to 5 parameters locally and 10 in CI, from the same YAML.
+
+    Asserted on the mechanism rather than a count, so it holds wherever it runs.
+    """
+    reached = []
+    monkeypatch.setattr(
+        type(model.Coupling(name="probe")),
+        "_from_ontology",
+        lambda self, key: reached.append(key) or True,
+    )
+
+    coupling = model.Coupling(name="Mine", iri="tvbo:Sigmoidal").enrich()
+
+    assert coupling.parameters, "the database source did not answer"
+    assert reached == [], "the ontology was consulted after the database had answered"
+
+
+@pytest.mark.backend_core
+@GENERATED_FORMS
+def test_a_later_source_answers_when_the_first_does_not(monkeypatch, model):
+    """Ranked means fallback, not exclusivity: the ontology still covers what is uncurated."""
+    reached = []
+    monkeypatch.setattr(
+        type(model.Coupling(name="probe")),
+        "_from_ontology",
+        lambda self, key: reached.append(key) or True,
+    )
+
+    model.Coupling(name="Mine", iri="tvbo:NotCuratedAnywhere").enrich()
+
+    assert reached == ["NotCuratedAnywhere"]
+
+
+@pytest.mark.backend_core
+@GENERATED_FORMS
 def test_a_pointer_that_resolves_nowhere_raises(model):
     """An ``iri`` is a pointer, and one pointing at nothing is a typo worth hearing about."""
     coupling = model.Coupling(iri="tvbo:NoSuchCouplingAnywhere")

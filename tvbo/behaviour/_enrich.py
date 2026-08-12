@@ -13,9 +13,11 @@ to a class is what makes its records enrichable.
 Which sources answer is read off the class. ``database`` is implemented here and applies to
 every enrichable record; ``ontology`` is a ``_from_ontology`` a behaviour mixin defines,
 so a class reaches the ontology by knowing how to, rather than by being named in a table
-here. The two are ordered rather than equal: the database is a local file whose content is
-ordered, while the ontology answers with an unordered set — a different parameter order per
-process — so it is consulted only for what the database did not have.
+here. They are ranked rather than combined: the first that resolves the entity answers
+alone. The database is a local file whose content is curated and ordered, and the ontology
+answers with an unordered set, so a curated record topped up from the ontology would gain
+whatever the curators left out — and only in a process where the ontology happens to be
+loaded, which is one record enriching to two different things.
 
 The mixin is deliberately not named ``*Behaviour``: that name attaches a class by its stem
 (``EventBehaviour`` -> ``Event``), and this one attaches by a schema rule instead.
@@ -68,8 +70,12 @@ class IriEnrichable:
         schema default and so must run before one is applied.
 
         Args:
-            source: Consult only this source. By default every source the class has is
-                tried, in :data:`SOURCES` order, and each fills what the ones before left.
+            source: Consult only this source. By default the sources are tried in
+                :data:`SOURCES` order and the FIRST that resolves the entity answers
+                alone. Topping a curated record up from the ontology would add whatever
+                the curators left out and make the result depend on whether the ontology
+                happens to be loaded — the same record enriching to a different thing in
+                two processes.
             key: The entity to enrich *from*, when this record does not name it itself —
                 a ``network.coupling`` entry named for its role in the network, say,
                 declaring the coupling function it is an instance of. Defaults to what
@@ -93,7 +99,9 @@ class IriEnrichable:
                 if source is not None:
                     raise ValueError(f"{cls_name} has no {name!r} to enrich from.")
                 continue
-            found |= bool(key and reader(key))
+            if key and reader(key):
+                found = True
+                break
         if not found and pointer:
             raise LookupError(f"{cls_name} names {pointer!r}, which no source resolves.")
         return self
