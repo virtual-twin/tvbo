@@ -216,6 +216,29 @@ def as_list(obj) -> list:
         return [obj]
 
 
+def keyed_items(collection, kind: str = "collection") -> list:
+    """A keyed collection's ``(key, member)`` pairs, whichever shape holds it.
+
+    The generated dataclasses wrap a keyed collection in a ``JsonObj`` when it is assigned,
+    and a ``JsonObj`` has no ``.items``; the Pydantic models keep a plain dict. The schema
+    also allows the list spelling, whose members carry their own ``name``. Anything else
+    raises: a reader that answers "nothing here" for a shape it did not recognise reports
+    an empty collection as an empty *result*, which is how an unchecked ``from_datamodel``
+    load went unchecked.
+    """
+    from jsonasobj2 import JsonObj, items as _json_items
+
+    if collection is None:
+        return []
+    if isinstance(collection, JsonObj):
+        return list(_json_items(collection))
+    if hasattr(collection, "items"):
+        return list(collection.items())
+    if isinstance(collection, (list, tuple)):
+        return [(getattr(member, "name", None), member) for member in collection]
+    raise TypeError(f"cannot read {kind} names from {type(collection).__name__}")
+
+
 def normalize_params(params) -> dict:
     """Normalize a ``parameters`` collection to a flat ``{name: param}`` dict.
 

@@ -50,9 +50,9 @@ def generate_datamodel(root: str | Path) -> None:
         )
     out_dir = root / "tvbo" / "datamodel"
     out_dir.mkdir(parents=True, exist_ok=True)
-    shortcuts, aliases = _dialect_tables(schema)
+    shortcuts, aliases, keyed = _dialect_tables(schema)
     mixins = _behaviour_mixins(root, schema)
-    _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases))
+    _write(out_dir / "dialect_tables.py", _render_dialect_tables(shortcuts, aliases, keyed))
     _write(
         out_dir / "schema.py",
         _with_behaviour(PythonGenerator(str(schema)).serialize(), mixins) + _INSTALL_DIALECT,
@@ -77,8 +77,8 @@ def generate_datamodel(root: str | Path) -> None:
 _SEMANTIC_ALIASES = ("range", "boundaries")
 
 
-def _dialect_tables(schema: Path) -> tuple[dict, dict]:
-    """``(scalar shortcuts, slot aliases)`` — the TVBO dialect, read once off the schema.
+def _dialect_tables(schema: Path) -> tuple[dict, dict, dict]:
+    """``(scalar shortcuts, slot aliases, keyed collections)`` — the dialect, read off the schema.
 
     LinkML treats ``aliases:`` as documentation — its loaders key on the canonical slot
     name, so a declared alias is inert and raises ``unexpected keyword argument``. Each
@@ -100,6 +100,12 @@ def _dialect_tables(schema: Path) -> tuple[dict, dict]:
     slot whose range has an identifier is a reference by default while leaving
     ``inlined`` unset — six such slots were being wrapped, and since the wrapper then had
     to fit a string-ranged slot it landed as the literal ``"JsonObj(value='x')"``.
+
+    Last, it records each keyed collection's identifier slot, so a member written under
+    its key can be given the name the key already states. The generated dataclasses do
+    that themselves in ``__post_init__``; the generated Pydantic models do not, and a
+    curated entry spelled the way this project requires — ``TR: {value: 720.0}``, no
+    redundant inner ``name`` — was accepted by one form and rejected by the other.
     """
     from linkml_runtime.utils.schemaview import SchemaView
 
@@ -130,6 +136,19 @@ def _dialect_tables(schema: Path) -> tuple[dict, dict]:
         if slot_lifts:
             lifts[cls_name] = slot_lifts
 
+    keyed: dict[str, dict[str, str]] = {}
+    for cls_name in view.all_classes():
+        members = {}
+        for slot in view.class_induced_slots(cls_name):
+            # `inlined_as_list` is a collection whose spelling IS a list; it has no keys.
+            if not slot.multivalued or slot.inlined_as_list or not view.is_inlined(slot):
+                continue
+            identifier = view.get_identifier_slot(str(slot.range), use_key=True)
+            if identifier is not None:
+                members[slot.name] = identifier.name
+        if members:
+            keyed[cls_name] = members
+
     table: dict[str, dict[str, str]] = {}
     for cls_name in view.all_classes():
         amap = {
@@ -143,11 +162,11 @@ def _dialect_tables(schema: Path) -> tuple[dict, dict]:
         amap = {a: c for a, c in amap.items() if a not in own}
         if amap:
             table[cls_name] = amap
-    return lifts, table
+    return lifts, table, keyed
 
 
-def _render_dialect_tables(shortcuts: dict, aliases: dict) -> str:
-    """The two dialect tables as their own module.
+def _render_dialect_tables(shortcuts: dict, aliases: dict, keyed: dict) -> str:
+    """The dialect tables as their own module.
 
     Kept apart from ``schema.py`` so the Pydantic models can read them without importing
     the dataclasses: that import is the coupling the migration exists to remove, and it
@@ -158,11 +177,14 @@ def _render_dialect_tables(shortcuts: dict, aliases: dict) -> str:
 ``SCALAR_SHORTCUTS`` maps ``{{class: {{slot: (slot the bare scalar stands for,
 multivalued, keyed)}}}}``, from ``annotations.simple_dict_value`` on each range class.
 ``SLOT_ALIASES`` maps ``{{class: {{alias: canonical slot}}}}`` from the schema's ``aliases:``.
+``KEYED_COLLECTIONS`` maps ``{{class: {{slot: the member slot its key states}}}}``.
 """
 
 SCALAR_SHORTCUTS = {shortcuts!r}
 
 SLOT_ALIASES = {aliases!r}
+
+KEYED_COLLECTIONS = {keyed!r}
 '''
 
 

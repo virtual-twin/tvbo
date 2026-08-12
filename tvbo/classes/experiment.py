@@ -256,27 +256,14 @@ def _reject_unnamed(kind: str, entries) -> None:
     ``target_variable`` when one is given, so checking the key alone let a recipe keyed
     ``drive`` reach codegen carrying the name ``flash burst``.
 
-    Both shapes the schema allows are read — the keyed mapping and the list — and a
-    third would raise rather than pass. A guard that answers "nothing wrong" for input
-    it never looked at is worse than no guard: LinkML hands these over as ``JsonObj``,
-    which has no ``.items``, so skipping the unrecognised shape meant every
-    ``from_datamodel`` load — that is, every load from a file — went unchecked.
+    Every shape the schema allows is read, and a shape it does not allow raises rather
+    than passing — see :func:`tvbo.utils.keyed_items`.
     """
-    from jsonasobj2 import JsonObj, items as _json_items
-
     from tvbo.templates.base.utils import is_name
-
-    if isinstance(entries, JsonObj):
-        items = list(_json_items(entries))
-    elif hasattr(entries, "items"):
-        items = list(entries.items())
-    elif isinstance(entries, (list, tuple)):
-        items = [(getattr(entry, "name", None), entry) for entry in entries]
-    else:
-        raise TypeError(f"cannot read {kind} names from {type(entries).__name__}")
+    from tvbo.utils import keyed_items
 
     lines = []
-    for key, entry in items:
+    for key, entry in keyed_items(entries, kind):
         spellings = dict.fromkeys(
             str(value)
             for value in (key, getattr(entry, "name", None), getattr(entry, "target_variable", None))
