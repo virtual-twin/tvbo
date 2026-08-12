@@ -1,11 +1,20 @@
-# Copyright © 2023 Charité Universitätsmedizin Berlin.
-# SPDX-License-Identifier: EUPL-1.2
+#  report.py
+#
+# Created on Mon Aug 07 2023
+# Author: Leon K. Martin
+#
+# Copyright (c) 2023 Charité Universitätsmedizin Berlin
+#
 
-"""The shared toolkit every TVBO report is built from.
+"""Report Module
+=============
 
-Two groups of helpers live here. The **replication-report toolkit** does the handful of things every replication report does: format a number that may not have been computed, open a result or analysis container, read a value off the recipe, embed a figure with the published original beside it, caption it from the recipe's own metadata, and score the run against the targets written before it. The **cell formatters** build the tables the model, experiment and coupling Mako templates emit.
+This module provides utilities for generating reports related to model parameters and configurations.
 
-Both live here once, so a report holds only what is specific to its study — its metrics — and ten reports cannot drift apart on the parts they share.
+.. moduleauthor:: Leon K. Martin
+
+Functions:
+----------
 """
 
 import operator
@@ -30,7 +39,7 @@ _MARKUP_RE = re.compile(r"[{}\\_^$]")
 
 
 def _visual_width(cell: Any) -> int:
-    r"""Approximate the *rendered* character width of a markdown/LaTeX cell.
+    """Approximate the *rendered* character width of a markdown/LaTeX cell.
 
     A cell like ``$\\mathrm{s}$`` renders as a single ``s``, so its raw source length badly over-states how wide it is on the page. This strips the math delimiters, ``\\mathrm`` wrappers and control sequences so column sizing tracks what the reader sees, not the LaTeX source length.
     """
@@ -153,7 +162,7 @@ class MarkdownTable(NamedTuple):
 
 
 def _cells(line: str) -> list[str]:
-    r"""A table row's cells, honouring ``\\|`` escapes inside a cell."""
+    """A table row's cells, honouring ``\\|`` escapes inside a cell."""
     parts = _CELL_SPLIT_RE.split(line.strip())
     if parts and not parts[0].strip():
         parts = parts[1:]
@@ -205,7 +214,8 @@ def read_md_tables(source) -> list[MarkdownTable]:
     return tables
 
 
-# ── The replication-report toolkit ──
+# ── The replication-report toolkit ────────────────────────────────────────── Every replication report does the same handful of things: format a number that may not have been computed, open a result or analysis container, read a value off the recipe, embed a figure with the published original beside it, caption it from the recipe's own metadata, and score the run against the targets written before it. Those live here, once, so a report holds only what is specific to its study -- its metrics -- and ten reports cannot drift apart on the parts they share.
+
 
 _FIG_LABEL_RE = re.compile(r"(EDF|Fig)(\d+)")
 
@@ -582,7 +592,6 @@ class Scorecard:
         return sorted((r for r in self.rows if r["Status"].strip() in verdicts), key=self._key)
 
     def count(self, *verdicts) -> int:
-        """How many targets carry one of *verdicts*."""
         return len(self.of(*verdicts))
 
     def verdict(self, row) -> str:
@@ -595,7 +604,6 @@ class Scorecard:
         return row["Target"].split(",")[0].split("(")[0].strip()
 
     def reason(self, row) -> str:
-        """Why the target fell short, as `targets.md` states it."""
         return self.reasons.get(row["ID"], "No reason is recorded in `targets.md` — that is a gap.")
 
     def tally_table(self, tier_column: str = "Scope") -> str:
@@ -713,7 +721,7 @@ def show_report_figure(ours, theirs=None, **kwargs) -> None:
     display(Image(str(staged)))
 
 
-# ── Report cell formatters ──
+# ── Report cell formatters ────────────────────────────────────────────────── Shared by the model / experiment / coupling report templates so the table building lives here (the adapter) rather than being duplicated in each Mako.
 
 
 def slot(obj, name, default=None):
@@ -730,7 +738,7 @@ _SYMBOL_LATEX_FNS = None
 
 
 def _symbol_latex(text):
-    r"""Render ``text`` as an inline-LaTeX symbol via sympy, imported lazily once.
+    """Render ``text`` as an inline-LaTeX symbol via sympy, imported lazily once.
 
     sympy is a heavy import deliberately kept out of this module's import path (as are the other local imports here), so the ``(Symbol, latex)`` pair is cached on first use rather than re-imported per table row.
 
@@ -872,7 +880,7 @@ _PARAM_FLAGS = [("free", "free"), ("heterogeneous", "heterogeneous")]
 
 
 def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=None):
-    r"""One SymPy equation as LaTeX, with the derivative written the report's way.
+    """One SymPy equation as LaTeX, with the derivative written the report's way.
 
     Takes an already-parsed ``Eq`` — never a source string. Re-parsing an authored right-hand side needs a symbol vocabulary assembled by hand, and every symbol the assembler forgets (an event's name, a coupling term) turns into a silent fall-back to raw Python in the middle of the Methods section. ``Dynamics.get_equations()`` has already done that resolution against the model's own scope, so this only prints.
 
@@ -1432,12 +1440,26 @@ def sweep_axes(experiment):
     """``{axis name: range text}`` for every parameter an experiment explores.
 
     Axis names are scoped (``network.G``, ``execution.random_seed``); a bare name is a model parameter, which is what lets a swept parameter show its *range* in the symbol and experiment tables instead of a single value it never actually holds.
+
+    Reads ``space``, which is what an exploration sweeps. ``parameters`` is the exploration's own hyper-parameters — tolerances, sampler settings — and reading those returned nothing for every curated recipe, so no report ever showed a range; where an exploration did declare one, its domain would have been printed as if it were swept.
+
+    ``explorations`` is keyed by name, so iterate the values: iterating the mapping walks the keys, and a string has no slots, which is the other half of why this was empty.
     """
+    explorations = slot(experiment, "explorations", None) or {}
+    members = explorations.values() if hasattr(explorations, "values") else explorations
     return {
         slot(axis, "name", None) or str(name): _axis_range(axis)
-        for exploration in (slot(experiment, "explorations", None) or [])
-        for name, axis in name_items(slot(exploration, "parameters", None))
+        for exploration in members
+        for name, axis in name_items(slot(exploration, "space", None))
     }
+
+
+def _integration_unit(integ):
+    """The integrator's time unit, from whichever slot the recipe declared.
+
+    `Integrator` carries both `unit` and `time_scale`, and `time_scale` is the one the schema defaults (to `ms`). Reading `unit` alone left every recipe that omits it falling back to seconds, so a 0.5 ms step over 800 ms was reported as 0.5 s over 800 s — the same 1000x error the hardcoded `ms` used to make, with the recipes swapped.
+    """
+    return slot(integ, "unit", None) or slot(integ, "time_scale", None)
 
 
 def time_text(value, unit=None, decimals=4):
@@ -1478,7 +1500,7 @@ def experiment_facts(experiment, shared_parameters=()):
     Only parameters *every* member of the family defines are included. A parameter a variant introduces has no counterpart in the base and would leave a hole in the column, which is the one thing a merged table must not do; the variant's own delta describes it instead.
     """
     net, integ = (slot(experiment, "network") or slot(experiment, "connectivity")), slot(experiment, "integration")
-    unit = slot(integ, "unit", None)
+    unit = _integration_unit(integ)
     swept = sweep_axes(experiment)
     facts = {"Exp": str(slot(experiment, "id", "")), "Fig": _reference_text(experiment)}
 
@@ -1541,7 +1563,7 @@ def settings_sentence(experiment):
     Solver, step, duration, transient, network size and swept range are stated here so a recipe's authored ``description:`` never has to restate them — the numbers a description repeats are the numbers that go stale when the recipe changes. What the description says about *why* an experiment exists is left untouched.
     """
     net, integ = (slot(experiment, "network") or slot(experiment, "connectivity")), slot(experiment, "integration")
-    unit = slot(integ, "unit", None)
+    unit = _integration_unit(integ)
     nodes = slot(net, "number_of_nodes", None) or slot(net, "number_of_regions", None)
     if nodes is None and present(slot(net, "nodes", None)):
         nodes = len(slot(net, "nodes"))
@@ -1656,7 +1678,8 @@ def observation_table(experiments):
     Three things keep the grid dense, measured across the studies that have the widest ones (Deco2014's 29 observations, Schirner2023's 34):
 
     - **Shared settings are lifted out.** A sampling setting every observation agrees on
-      is stated once instead of per row. The one that matters is ``time_scale``, which the schema defaults to ``ms`` — nobody chose it, and it was printed on every one of those 63 rows.
+      is stated once instead of per row. The one that matters is ``time_scale``, which the schema defaults to ``ms`` — nobody chose it, and it was printed on every one
+      of those 63 rows.
     - **Sampling and pipeline are one column.** Each was under half full and they are
       complementary: both answer *how the raw state becomes the reported quantity*.
       Apart they left a 34 %-empty grid; merged, ``Reduction`` fills 66–91 %.
@@ -1701,7 +1724,7 @@ def section_slug(text):
 
 
 class Equations:
-    r"""Numbering and cross-reference labels for one rendered report.
+    """Numbering and cross-reference labels for one rendered report.
 
     A report that prints ``$$...$$`` and nothing else cannot be referred to: Jansen1995 numbers 19 equations and its prose says "Eq. 3" and "Eqs. 15-17", and our render had no way to point at any of them. This assigns each equation a display number and, where the target format supports one, an anchor.
 
@@ -1867,6 +1890,7 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
 
     report_table = pd.DataFrame()
     report_table.index.name = "Parameter"
+    # for k, v in param_settingconfig.items():
     for k in sorted(param_setting.config, key=operator.attrgetter("name")):
         v = param_setting.config[k]
 
@@ -1886,6 +1910,7 @@ def parameter_report(param_setting, decimals=3, format="latex", **kwargs):
             .to_latex(
                 position="h!",
                 hrules=True,
+                # float_format="%.2f",
                 caption=(long_caption, short_caption),
                 label="tab_{}_setting".format(param_setting.model.label.first(), **kwargs),
             )
@@ -1935,7 +1960,9 @@ def save_latex(conf, fpath):
         texfile.write(conf.get_report(format="latex"))
 
 
+##############
 # References #
+##############
 
 
 def render_citation(citation: Any, style: str = "apa") -> str:

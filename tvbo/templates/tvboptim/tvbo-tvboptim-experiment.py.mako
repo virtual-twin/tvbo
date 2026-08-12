@@ -259,7 +259,10 @@ conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is 
 from tvbo.templates.tvboptim.utils import weight_transform_codegen as _weight_transform_codegen
 weight_transform_jax, weight_transform_const_env = _weight_transform_codegen(network)
 has_weight_transforms = bool(weight_transform_jax)
-weight_transform_needs_lengths = any(_l.startswith("L = ") for _l in weight_transform_const_env)
+# A transform that reads L only works if the caller hands create_network the real lengths.
+from tvbo.codegen.transforms import DATA_DERIVED as _transform_data_derived
+weight_transform_needs_lengths = any(_l.split(" = ", 1)[0] in _transform_data_derived for _l in weight_transform_const_env)
+weight_transform_distances_arg = "distances=distances, " if weight_transform_needs_lengths else ""
 
 # Simulation parameters
 assert integration.duration, "integration.duration required in YAML"
@@ -1597,7 +1600,8 @@ def create_network(
     # Declared weight `transforms:` applied to the raw weights (kit stays self-contained).
 % if weight_transform_needs_lengths:
     if distances is None:
-        distances = jnp.zeros_like(weights)
+        # Zero-filling here would silently normalise by the wrong denominator.
+        raise ValueError("a declared weight transform reads the tract lengths L; pass distances= to create_network")
 % endif
 % for _line in weight_transform_const_env:
     ${_line}
@@ -3462,36 +3466,33 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
 % endfor
     ]
 
-    # Sharded run: read each retained cell's actual parameter values back from
-    # the sliced grid itself, so the coordinates track the grid's own cell order
-    # regardless of how the Space orders axes internally (avoids positional
-    # mislabelling). Relabel to the exploration's axis names where unambiguous,
-    # else keep the grid keypath. The flat per-shard result is then
-    # self-describing and reassembles by value across tasks.
+    # Read each cell's actual parameter values back from the grid so coordinates track the
+    # grid's OWN cell order, never a positional reshape that assumes axes_info order: Space
+    # emits cells in pytree-leaf order, which differs from the declared axis order whenever
+    # axes live on different state sub-objects (dynamics/coupling/graph). Both the sharded
+    # subset (flat `point` dim) and the whole grid (keyed by value into the rectangular grid)
+    # consume these coords downstream.
     _cell_coords = None
 % if has_axes:
-    _shard = kwargs.get('shard')
-    if _shard is not None:
-        _df = grid.to_dataframe()
-        _bare_to_label, _network_label = {}, None
-        for _a in _axes_info:
-            _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
-            if str(_a.name).startswith('network.'):
-                _network_label = str(_a.name)   # network-scope axis (e.g. conduction_speed)
-        _cell_coords, _used = {}, set()
-        for _col in _df.columns:
-            _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], None)
-            if _label is None and _network_label is not None and str(_col).startswith('graph.'):
-                # The network.conduction_speed axis sweeps the DenseLengthGraph's `speed`
-                # leaf, which flattens to a keypath like "graph.2" whose bare name ("2")
-                # does not match the axis label — restore the friendly network name.
-                _label = _network_label
-            if _label is None:
-                _label = str(_col)
-            if _label in _used:
-                _label = str(_col)  # disambiguate a bare-name collision with the keypath
-            _used.add(_label)
-            _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
+    _df = grid.to_dataframe()
+    _bare_to_label, _network_label = {}, None
+    for _a in _axes_info:
+        _bare_to_label.setdefault(str(_a.name).rsplit('.', 1)[-1], str(_a.name))
+        if str(_a.name).startswith('network.'):
+            _network_label = str(_a.name)   # network-scope axis (e.g. conduction_speed)
+    _cell_coords, _used = {}, set()
+    for _col in _df.columns:
+        _label = _bare_to_label.get(str(_col).rsplit('.', 1)[-1], None)
+        # network.conduction_speed sweeps the DenseLengthGraph `speed` leaf, keypath "graph.2":
+        # its bare name ("2") matches no axis label, so restore the friendly network name.
+        if _label is None and _network_label is not None and str(_col).startswith('graph.'):
+            _label = _network_label
+        if _label is None:
+            _label = str(_col)
+        if _label in _used:
+            _label = str(_col)  # disambiguate a bare-name collision with the keypath
+        _used.add(_label)
+        _cell_coords[_label] = np.asarray(_df[_col].to_numpy())
 % endif
 
 % if returns_bunch:
@@ -3526,6 +3527,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
         axes=_axes_info,
 % if has_axes:
         cell_coords=_cell_coords,
+        # Inside the same guard as the slicing: an axis-less exploration is never sliced, so
+        # declaring it sharded would suppress the provenance sidecar for every task.
+        is_shard=kwargs.get('shard') is not None,
 % endif
 <% _obs_label = obs_name if obs_name else (', '.join(model_output_names) if has_model_output else obs_func) %>\
         observable='${_obs_label}',
@@ -3608,9 +3612,9 @@ def run_experiment(
         delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
     else:
         delays = jnp.array(delays)
-    network = create_network(weights, delays=delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, ${weight_transform_distances_arg}delays=delays, region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
-    network = create_network(weights, region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, ${weight_transform_distances_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
 
     # Determine if we need to run main simulation or just transient.
@@ -4383,9 +4387,9 @@ def run_experiment(
             % if use_length_graph:
             opt_network = create_network(weights, distances=distances, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % elif use_delay_graph:
-            opt_network = create_network(weights, delays=delays, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, ${weight_transform_distances_arg}delays=delays, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % else:
-            opt_network = create_network(weights, region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, ${weight_transform_distances_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % endif
             opt_model_init, opt_state_init = prepare(opt_network, get_solver(), t1=${opt_t1}, dt=${opt_dt})
             opt_transient = opt_model_init(opt_state_init)  # Fresh BOLD history

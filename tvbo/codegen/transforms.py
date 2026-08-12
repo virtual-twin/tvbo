@@ -7,7 +7,10 @@ Each primitive is therefore declared once, as a source expression over two base 
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Sequence
+
+_IDENTIFIER = re.compile(r"[A-Za-z_]\w*")
 
 BASE_MATRIX = "_M"
 BASE_LENGTHS = "_L"
@@ -40,10 +43,15 @@ transforms sees the preceding one's output.
 
 
 def required_prelude(symbols: Iterable[str]) -> list[tuple[str, str]]:
-    """The prelude bindings *symbols* transitively need, in declaration order."""
+    """The prelude bindings *symbols* need, in declaration order.
+
+    Dependencies are matched as whole identifiers, never as substrings: a primitive whose expression merely contains the text of a prelude name (``_rsq``, a name inside a string) must not drag that binding in, and a binding that is genuinely referenced must not be missed.
+    """
     wanted = {s for s in symbols if s in PRIMITIVES}
-    exprs = " ".join(PRIMITIVES[s] for s in wanted)
-    return [(name, expr) for name, expr in PRELUDE if name in exprs]
+    referenced: set[str] = set()
+    for s in wanted:
+        referenced |= set(_IDENTIFIER.findall(PRIMITIVES[s]))
+    return [(name, expr) for name, expr in PRELUDE if name in referenced]
 
 
 def runtime_env(matrix, lengths, jnp, jsp=None) -> dict[str, object]:
