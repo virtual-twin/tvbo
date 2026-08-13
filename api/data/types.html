@@ -276,7 +276,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.data.types.TimeSeries">TimeSeries</a></td>
-<td>Time-series dataType with JAX pytree support, domain-specific analysis,</td>
+<td>Time-series dataType with JAX pytree support, domain-specific analysis, and visualization methods.</td>
 </tr>
 </tbody>
 </table>
@@ -448,6 +448,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>data.types.ExperimentResult.save(out_dir, compress<span class="op">=</span><span class="va">True</span>, record_only<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Persist the run as one keyed HDF5 result plus a YAML provenance sidecar.</p>
 <p>Writes <code>&lt;prefix&gt;_result.h5</code> — a single xarray <code>Dataset</code> where every output is a data-variable and the sweep parameters are shared coordinates (a full run is gridded; a sharded run keeps the flat, self-describing <code>point</code> dim that reassembles by value) — and <code>&lt;prefix&gt;_result.yaml</code>, the frozen experiment spec. <code>&lt;prefix&gt;</code> is the experiment’s BIDS-style key-value name (<code>ses-&lt;id&gt;_desc-&lt;label&gt;</code>). The <strong>same</strong> artifact is produced by a local run and by the HPC gather pass, so they are interchangeable. Returns the written paths.</p>
+<p>An on-device cohort run fans here into one per-subject result (see :meth:<code>_save_per_subject</code>), mirroring the per-subject workflow fan-out.</p>
 </section>
 </section>
 </section>
@@ -463,8 +464,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    output_names<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    observations<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    cell_coords<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    is_shard<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Result of parameter exploration (grid search).</p>
 <p>A thin wrapper around tvboptim exploration outputs that provides: - Access to labelled results (flat or grid-shaped) - Axis information for parameter values - Utility methods for finding optimal points and slicing - Time series plotting for parameter sweeps (when observable returns time series)</p>
 <p>Designed to work with tvboptim’s Space and ParallelResult directly, while also supporting other exploration backends.</p>
@@ -501,7 +503,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h5 class="anchored" data-anchor-id="tvbo.data.types.ExplorationResult.as_grid">as_grid</h5>
 <div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>data.types.ExplorationResult.as_grid()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Reshape the flat results into a grid <strong>labeled by parameter name</strong>.</p>
-<p>Returns an <code>xr.DataArray</code> with one dimension per exploration axis — named by the swept parameter, coordinates set to the swept values — so grid results are addressed by name (<code>g.sel(**{"ReducedWongWang.w": 0.5})</code>) and are <strong>independent of axis order</strong>. The data stays a JAX array (the DataArray is a registered JAX pytree); only the coordinate labels are materialised. A time-series observable keeps its intrinsic dims (time, variable, node, mode) after the grid dims. <code>None</code> when empty; otherwise always labelled — a payload that cannot be reshaped into the grid is returned with the dim names it already carries (see :meth:<code>_label_payload</code>) rather than as a bare array, so no consumer is handed positional data. A sharded result (<code>cell_coords</code> set) is a subset of grid points, not a full product, so it is labelled with a single <code>point</code> dim carrying each axis’s value — reassemble across shards by parameter value.</p>
+<p>Returns an <code>xr.DataArray</code> with one dimension per exploration axis — named by the swept parameter, coordinates set to the swept values — so grid results are addressed by name (<code>g.sel(**{"ReducedWongWang.w": 0.5})</code>) and are <strong>independent of axis order</strong>. The data stays a JAX array (the DataArray is a registered JAX pytree); only the coordinate labels are materialised. A time-series observable keeps its intrinsic dims (time, variable, node, mode) after the grid dims. <code>None</code> when empty; otherwise always labelled — a payload that cannot be reshaped into the grid is returned with the dim names it already carries (see :meth:<code>_label_payload</code>) rather than as a bare array, so no consumer is handed positional data. A set <code>cell_coords</code> selects the keyed path below, which every sweep takes because every sweep sets it; :func:<code>_stacked_to_dataarray</code> then decides the shape from whether the cells fill the Cartesian product. A full product is placed into the rectangular grid BY VALUE, so <code>sel</code> by parameter works as usual. A subset — an HPC array task’s slice, or a branch restart — gets a single <code>point</code> dim carrying each axis’s value, so it reassembles across shards by parameter value.</p>
+<p>Do not read a set <code>cell_coords</code> as “this is a shard”. <code>_is_partial_shard</code> answers that separate question, for provenance rather than labelling, and prefers the producer’s declared <code>is_shard</code>.</p>
 </section>
 <section id="tvbo.data.types.ExplorationResult.plot" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.data.types.ExplorationResult.plot">plot</h5>
@@ -654,9 +657,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    result<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    state_names<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    nodes<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    units<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    observation_dims<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    units<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Output from a single simulation run with its computed observations.</p>
 <p>Stores simulation data as an <code>xr.DataArray</code> with named dimensions (time, variable, node[, mode][, trial]). Observations are bound to the simulation that produced them.</p>
 <p>Accepts both new-style (<code>data=xr.DataArray</code>) and legacy (<code>result=NativeSolution, state_names=[...]</code>) constructor signatures for backward compatibility with generated template code.</p>
@@ -1222,7 +1226,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.data.types.TimeSeries.plot_eeg">plot_eeg</a></td>
-<td>Plot each region as a separate channel stacked vertically on a single axes</td>
+<td>Plot each region as a separate channel stacked vertically on a single axes (EEG-like representation).</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.data.types.TimeSeries.plot_power_spectrum">plot_power_spectrum</a></td>
@@ -2497,7 +2501,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

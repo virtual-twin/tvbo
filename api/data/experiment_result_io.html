@@ -217,10 +217,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>reference/exp_&lt;id&gt;_seed&lt;seed&gt;.yaml          (descriptor + provenance)
 reference/exp_&lt;id&gt;_seed&lt;seed&gt;.h5
 └── parameters/
-    ├── w_LRE     (n_nodes, n_nodes) float32
-    ├── w_FFI     (n_nodes, n_nodes) float32
-    ├── J_i       (n_nodes,)         float32
+    ├── w_LRE     (n_nodes, n_nodes)
+    ├── w_FFI     (n_nodes, n_nodes)
+    ├── J_i       (n_nodes,)
     └── ...</code></pre>
+<p>Each array is stored at the precision it was computed at, which is the precision the descriptor’s <code>parameters[].dtype</code> reports.</p>
 </section>
 <section id="cache-invalidation" class="level2 doc-section doc-section-cache-invalidation">
 <h2 class="doc-section doc-section-cache-invalidation anchored" data-anchor-id="cache-invalidation">Cache invalidation</h2>
@@ -420,7 +421,7 @@ reference/exp_&lt;id&gt;_seed&lt;seed&gt;.h5
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

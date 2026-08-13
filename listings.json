@@ -6,6 +6,14 @@
     ]
   },
   {
+    "listing": "/examples/index.html",
+    "items": [
+      "/examples/dynamics_from_db.html",
+      "/examples/network_from_db.html",
+      "/examples/create_network.html"
+    ]
+  },
+  {
     "listing": "/Interoperability/NeuroML/examples/index.html",
     "items": [
       "/Interoperability/NeuroML/examples/Ex0_IaF.html",
@@ -35,14 +43,6 @@
       "/Interoperability/NeuroML/examples/Ex7_STP.html",
       "/Interoperability/NeuroML/examples/Ex8_AdEx.html",
       "/Interoperability/NeuroML/examples/Ex9_FN.html"
-    ]
-  },
-  {
-    "listing": "/examples/index.html",
-    "items": [
-      "/examples/dynamics_from_db.html",
-      "/examples/network_from_db.html",
-      "/examples/create_network.html"
     ]
   }
 ]

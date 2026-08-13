@@ -187,6 +187,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#tvbo.codegen.templater.boolean2bitwise" id="toc-tvbo.codegen.templater.boolean2bitwise" class="nav-link" data-scroll-target="#tvbo.codegen.templater.boolean2bitwise">boolean2bitwise</a></li>
   <li><a href="#tvbo.codegen.templater.coupling2class" id="toc-tvbo.codegen.templater.coupling2class" class="nav-link" data-scroll-target="#tvbo.codegen.templater.coupling2class">coupling2class</a></li>
+  <li><a href="#tvbo.codegen.templater.derived_parameter_inputs" id="toc-tvbo.codegen.templater.derived_parameter_inputs" class="nav-link" data-scroll-target="#tvbo.codegen.templater.derived_parameter_inputs">derived_parameter_inputs</a></li>
   <li><a href="#tvbo.codegen.templater.equation2class" id="toc-tvbo.codegen.templater.equation2class" class="nav-link" data-scroll-target="#tvbo.codegen.templater.equation2class">equation2class</a></li>
   <li><a href="#tvbo.codegen.templater.format_code" id="toc-tvbo.codegen.templater.format_code" class="nav-link" data-scroll-target="#tvbo.codegen.templater.format_code">format_code</a></li>
   <li><a href="#tvbo.codegen.templater.formulate_dependency_imports" id="toc-tvbo.codegen.templater.formulate_dependency_imports" class="nav-link" data-scroll-target="#tvbo.codegen.templater.formulate_dependency_imports">formulate_dependency_imports</a></li>
@@ -198,7 +199,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.codegen.templater.integrator2class" id="toc-tvbo.codegen.templater.integrator2class" class="nav-link" data-scroll-target="#tvbo.codegen.templater.integrator2class">integrator2class</a></li>
   <li><a href="#tvbo.codegen.templater.is_derived" id="toc-tvbo.codegen.templater.is_derived" class="nav-link" data-scroll-target="#tvbo.codegen.templater.is_derived">is_derived</a></li>
   <li><a href="#tvbo.codegen.templater.model2class" id="toc-tvbo.codegen.templater.model2class" class="nav-link" data-scroll-target="#tvbo.codegen.templater.model2class">model2class</a></li>
+  <li><a href="#tvbo.codegen.templater.source_language" id="toc-tvbo.codegen.templater.source_language" class="nav-link" data-scroll-target="#tvbo.codegen.templater.source_language">source_language</a></li>
   <li><a href="#tvbo.codegen.templater.source_observations" id="toc-tvbo.codegen.templater.source_observations" class="nav-link" data-scroll-target="#tvbo.codegen.templater.source_observations">source_observations</a></li>
+  <li><a href="#tvbo.codegen.templater.time_dependent_equations" id="toc-tvbo.codegen.templater.time_dependent_equations" class="nav-link" data-scroll-target="#tvbo.codegen.templater.time_dependent_equations">time_dependent_equations</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -226,14 +229,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.codegen.templater.COMPONENT_LANGUAGES">COMPONENT_LANGUAGES</a></td>
+<td>Component-level <code>format</code> aliases, which name no export format, to their language.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.codegen.templater.TEMPLATES">TEMPLATES</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.codegen.templater.exec_globals">exec_globals</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.codegen.templater.logger">logger</a></td>
 <td></td>
 </tr>
@@ -259,52 +266,64 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Generate a TVBO coupling class from an ontology coupling function.</td>
 </tr>
 <tr class="odd">
+<td><a href="#tvbo.codegen.templater.derived_parameter_inputs">derived_parameter_inputs</a></td>
+<td>Base parameter names the derived-parameter expressions read, in model order.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.codegen.templater.equation2class">equation2class</a></td>
 <td>Generate a TVBO equation class from an ontology equation.</td>
 </tr>
-<tr class="even">
-<td><a href="#tvbo.codegen.templater.format_code">format_code</a></td>
-<td>Format code using black for Python variants.</td>
-</tr>
 <tr class="odd">
+<td><a href="#tvbo.codegen.templater.format_code">format_code</a></td>
+<td>Format generated <em>code</em> for the backend named by <em>format</em>.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.codegen.templater.formulate_dependency_imports">formulate_dependency_imports</a></td>
 <td>Build <code>from ... import ...</code> statements for dotted dependency paths.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.codegen.templater.get_integrator_info">get_integrator_info</a></td>
 <td>Collect scheme metadata for an integrator into a dict.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.codegen.templater.get_model_info">get_model_info</a></td>
 <td>Collect the codegen-relevant metadata for a model into a dict.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.codegen.templater.get_param_info">get_param_info</a></td>
 <td>Extract label, symbol, default, range, definition and dependencies of a parameter.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.codegen.templater.get_statevariable_equations">get_statevariable_equations</a></td>
 <td>Map each state variable to its symbolic time-derivative equation.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.codegen.templater.get_sv_info">get_sv_info</a></td>
 <td>Extract label, symbol, default, range, boundaries and definition of a state variable.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.codegen.templater.integrator2class">integrator2class</a></td>
 <td>Resolve an ontology integrator to a TVB integrator class or instance.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.codegen.templater.is_derived">is_derived</a></td>
 <td>Return True if <code>obs</code> derives from other observations in <code>experiment</code>.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.codegen.templater.model2class">model2class</a></td>
 <td>Generate a TVBO model class from an ontology model.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.codegen.templater.source_language">source_language</a></td>
+<td>Return the output language of <em>format</em>, or <code>""</code> when it emits none.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.codegen.templater.source_observations">source_observations</a></td>
 <td>Return the source names of <code>obs</code> that resolve to other observations.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.codegen.templater.time_dependent_equations">time_dependent_equations</a></td>
+<td>Names whose equation reads the time symbol <code>t</code>, sorted.</td>
 </tr>
 </tbody>
 </table>
@@ -440,9 +459,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 </section>
+<section id="tvbo.codegen.templater.derived_parameter_inputs" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.codegen.templater.derived_parameter_inputs">derived_parameter_inputs</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.derived_parameter_inputs(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Base parameter names the derived-parameter expressions read, in model order.</p>
+<p>A backend that computes derived parameters must first unpack the base parameters they depend on — <code>ReducedSetHindmarshRose</code> derives twelve of them from <code>a</code>, <code>b</code>, <code>sigma</code> and friends, so dropping the unpack breaks the model. Unpacking <em>every</em> parameter instead leaves the unread ones as dead bindings, so this returns exactly the ones consumed.</p>
+<p>Returns an empty list when the model derives no parameters, which is the case where the whole unpack is dead.</p>
+</section>
 <section id="tvbo.codegen.templater.equation2class" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.equation2class">equation2class</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.equation2class(EQ, fout<span class="op">=</span><span class="va">None</span>, print_source<span class="op">=</span><span class="va">False</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.equation2class(EQ, fout<span class="op">=</span><span class="va">None</span>, print_source<span class="op">=</span><span class="va">False</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate a TVBO equation class from an ontology equation.</p>
 <p>Sympify the equation, render it (with its Python and LaTeX forms and default parameter values) through the <code>_tvbo-tvb-equation.py.mako</code> template, then either write the source, print it, or execute it and return an instantiated equation object.</p>
 <section id="parameters-2" class="level4 doc-section doc-section-parameters">
@@ -517,16 +543,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.templater.format_code" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.format_code">format_code</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.format_code(code, <span class="bu">format</span><span class="op">=</span><span class="st">'python'</span>, use_black<span class="op">=</span><span class="va">True</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Format code using black for Python variants.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.format_code(code, <span class="bu">format</span><span class="op">=</span><span class="st">'python'</span>, use_black<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Format generated <em>code</em> for the backend named by <em>format</em>.</p>
+<p>Component-level renders (a Dynamics, a Coupling, an Observation) come through here; whole-experiment renders are formatted by :func:<code>tvbo.export.registry.render</code>. Both resolve the language the same way and both route to :mod:<code>tvbo.codegen.style</code>, so they cannot drift apart.</p>
 <section id="parameters-3" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 12%">
-<col style="width: 9%">
-<col style="width: 64%">
-<col style="width: 13%">
+<col style="width: 10%">
+<col style="width: 7%">
+<col style="width: 69%">
+<col style="width: 11%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -546,20 +573,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <td>format</td>
 <td>str</td>
-<td>Language/variant (python, jax, numpy, scipy, tvboptim)</td>
+<td>Backend key or component-level alias (python, jax, numpy, tvboptim…)</td>
 <td><code>'python'</code></td>
 </tr>
 <tr class="odd">
 <td>use_black</td>
 <td>bool</td>
-<td>Whether to apply black formatting (default True)</td>
+<td>Set False to return <em>code</em> untouched</td>
 <td><code>True</code></td>
 </tr>
-<tr class="even">
-<td>**kwargs</td>
-<td>Any</td>
-<td>Additional black.FileMode options (line_length, etc.)</td>
-<td><code>{}</code></td>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 46%">
+<col style="width: 44%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>tvbo.codegen.style.GeneratedSourceError</td>
+<td><em>code</em> does not parse as its language.</td>
 </tr>
 </tbody>
 </table>
@@ -567,7 +612,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.templater.formulate_dependency_imports" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.formulate_dependency_imports">formulate_dependency_imports</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.formulate_dependency_imports(dependencies)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.formulate_dependency_imports(dependencies)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Build <code>from ... import ...</code> statements for dotted dependency paths.</p>
 <p>Only dependencies containing a dotted path produce an import; the final segment is imported from the preceding module path.</p>
 <section id="parameters-4" class="level4 doc-section doc-section-parameters">
@@ -624,7 +669,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.templater.get_integrator_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.get_integrator_info">get_integrator_info</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_integrator_info(integrator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_integrator_info(integrator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Collect scheme metadata for an integrator into a dict.</p>
 <section id="parameters-5" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
@@ -690,7 +735,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.templater.get_model_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.get_model_info">get_model_info</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_model_info(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_model_info(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Collect the codegen-relevant metadata for a model into a dict.</p>
 <p>Resolve <code>model</code> from the ontology if given as a name, then gather its parameters and constants, coupling-variable indices, coupling terms, non-integrated variables (functions and conditionals) with their dependency-sorted symbolic expressions, state variables, state-variable differential equations, and variables of interest.</p>
 <section id="parameters-6" class="level4 doc-section doc-section-parameters">
@@ -757,7 +802,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.templater.get_param_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.get_param_info">get_param_info</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_param_info(param_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_param_info(param_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Extract label, symbol, default, range, definition and dependencies of a parameter.</p>
 <p>Fall back from the ontology <code>defaultValue</code> to <code>value</code> when no default is set.</p>
 <section id="parameters-7" class="level4 doc-section doc-section-parameters">
@@ -809,7 +854,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.templater.get_statevariable_equations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.get_statevariable_equations">get_statevariable_equations</h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_statevariable_equations(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_statevariable_equations(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Map each state variable to its symbolic time-derivative equation.</p>
 <p>For every state variable of <code>model</code>, look up the matching <code>TimeDerivative</code> expression among the model’s symbolic differential equations, keyed by the derivative’s label with the model acronym suffix stripped.</p>
 <section id="parameters-8" class="level4 doc-section doc-section-parameters">
@@ -871,7 +916,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.templater.get_sv_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.get_sv_info">get_sv_info</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_sv_info(sv_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.get_sv_info(sv_class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Extract label, symbol, default, range, boundaries and definition of a state variable.</p>
 <p>Parse the ontology <code>stateVariableRange</code> and <code>stateVariableBoundaries</code> strings, defaulting to an effectively unbounded range and open boundaries when unset.</p>
 <section id="parameters-9" class="level4 doc-section doc-section-parameters">
@@ -923,7 +968,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.templater.integrator2class" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.integrator2class">integrator2class</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.integrator2class(integrator, return_instance<span class="op">=</span><span class="va">True</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.integrator2class(integrator, return_instance<span class="op">=</span><span class="va">True</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve an ontology integrator to a TVB integrator class or instance.</p>
 <p>Look up the matching <code>tvb.simulator.integrators</code> class, selecting the stochastic variant when a <code>noise</code> keyword is supplied and the deterministic variant otherwise.</p>
 <section id="parameters-10" class="level4 doc-section doc-section-parameters">
@@ -987,23 +1032,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.codegen.templater.is_derived" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.is_derived">is_derived</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.is_derived(obs, experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.is_derived(obs, experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return True if <code>obs</code> derives from other observations in <code>experiment</code>.</p>
 <p>An Observation is derived when any item in its multivalued <code>source</code> slot names ANOTHER observation in the same experiment. Source entries may be bare strings, objects with a <code>name</code> attribute, or inlined Observation/StateVariable instances.</p>
 <p>A SELF-reference (an observation whose <code>source</code> names itself — e.g.&nbsp;an observation <code>r_A</code> with <code>source: [r_A]</code> that simply observes the model variable <code>r_A</code>) is NOT derived: an observation cannot derive from itself. Without this exclusion such observations are mis-routed to the derived path, where they have no pipeline and are never computed, so the generated <code>observations.r_A = _all_obs.r_A</code> extraction raises AttributeError.</p>
 </section>
 <section id="tvbo.codegen.templater.model2class" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.model2class">model2class</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.model2class(</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    model,</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    fout<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    print_source<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    split_nonintegrated_variables<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    return_instance<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    sub_ninvars<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    bifmodel<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.model2class(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    model,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    fout<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    print_source<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    split_nonintegrated_variables<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    return_instance<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    sub_ninvars<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    bifmodel<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Generate a TVBO model class from an ontology model.</p>
 <p>Resolve <code>model</code> from the ontology if given as a name, assemble its state variables, differential equations, non-integrated variables, parameters and dependency imports via <code>get_model_info</code>, and render them through the <code>_tvbo-tvb-model_old.py.mako</code> template. Then either write the source, print it, or execute it and return the model class or an instance.</p>
 <section id="parameters-11" class="level4 doc-section doc-section-parameters">
@@ -1099,8 +1144,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="raises" class="level4 doc-section doc-section-raises">
-<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h4>
+<section id="raises-1" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-1">Raises</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 10%">
@@ -1124,11 +1169,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 </section>
+<section id="tvbo.codegen.templater.source_language" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.codegen.templater.source_language">source_language</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.source_language(<span class="bu">format</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Return the output language of <em>format</em>, or <code>""</code> when it emits none.</p>
+<p>Resolves through the export registry so a backend declares its language once, on its :class:<code>~tvbo.export.registry.ExportFormat</code>. The component-level aliases in :data:<code>COMPONENT_LANGUAGES</code> are not registered formats and are mapped here.</p>
+</section>
 <section id="tvbo.codegen.templater.source_observations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.codegen.templater.source_observations">source_observations</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.source_observations(obs, experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.source_observations(obs, experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return the source names of <code>obs</code> that resolve to other observations.</p>
 <p>A filtered view of <code>obs.source</code> keeping only entries whose name matches a key in <code>experiment.observations</code>.</p>
+</section>
+<section id="tvbo.codegen.templater.time_dependent_equations" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.codegen.templater.time_dependent_equations">time_dependent_equations</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>codegen.templater.time_dependent_equations(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Names whose equation reads the time symbol <code>t</code>, sorted.</p>
+<p>A backend whose derivative signature carries no time — TVB’s <code>Model.dfun</code> — cannot express these, and emitting the term anyway yields an unbound name. The equations are the ground truth rather than the <code>autonomous</code> slot, which is author-declared and can disagree with them.</p>
 
 
 </section>
@@ -1208,7 +1265,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

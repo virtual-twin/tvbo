@@ -221,7 +221,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.codegen.reducers.resolve_streaming_reducer">resolve_streaming_reducer</h3>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>codegen.reducers.resolve_streaming_reducer(spec, fmt<span class="op">=</span><span class="st">'jax'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Lower a declarative reducer <em>spec</em> to printed per-assignment source for <em>fmt</em>.</p>
-<p>Returns <code>{"state": [...], "add": [(lhs, rhs_src), ...], "evict": ..., "resync": ..., "emit": rhs_src}</code>. The reducer’s symbolic vocabulary is the state variables plus the per-step sample <code>v</code> and the window <code>x</code>; each assignment’s <code>lhs</code> joins the vocabulary so later RHS may reference it (sequential data flow). State-var symbols win over same-named array functions (e.g.&nbsp;a state <code>mean</code> shadows the <code>mean</code> reducer).</p>
+<p>Returns <code>{"state": [...], "add": [(lhs, rhs_src), ...], "evict": ..., "resync": ..., "resync_masked": ..., "emit": rhs_src}</code>. The reducer’s symbolic vocabulary is the state variables plus the per-step sample <code>v</code>, the window <code>x</code>, and the masked-resync mask <code>m</code> / count <code>L</code>; each assignment’s <code>lhs</code> joins the vocabulary so later RHS may reference it (sequential data flow). State-var symbols win over same-named array functions (e.g.&nbsp;a state <code>mean</code> shadows the <code>mean</code> reducer).</p>
 
 
 </section>
@@ -301,7 +301,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

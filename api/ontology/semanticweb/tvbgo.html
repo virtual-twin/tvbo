@@ -296,7 +296,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.semanticweb.tvbgo.get_term">get_term</a></td>
-<td>This function retrieves the definition of a given Gene Ontology term,</td>
+<td>This function retrieves the definition of a given Gene Ontology term, using EMBL-EBI’s QuickGO browser.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.semanticweb.tvbgo.go_term2id">go_term2id</a></td>
@@ -569,7 +569,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

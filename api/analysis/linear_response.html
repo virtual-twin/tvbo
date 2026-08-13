@@ -189,6 +189,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.analysis.linear_response.jacobian_terms" id="toc-tvbo.analysis.linear_response.jacobian_terms" class="nav-link" data-scroll-target="#tvbo.analysis.linear_response.jacobian_terms">jacobian_terms</a></li>
   <li><a href="#tvbo.analysis.linear_response.linear_response_context" id="toc-tvbo.analysis.linear_response.linear_response_context" class="nav-link" data-scroll-target="#tvbo.analysis.linear_response.linear_response_context">linear_response_context</a></li>
   <li><a href="#tvbo.analysis.linear_response.network_jacobian" id="toc-tvbo.analysis.linear_response.network_jacobian" class="nav-link" data-scroll-target="#tvbo.analysis.linear_response.network_jacobian">network_jacobian</a></li>
+  <li><a href="#tvbo.analysis.linear_response.noise_terms" id="toc-tvbo.analysis.linear_response.noise_terms" class="nav-link" data-scroll-target="#tvbo.analysis.linear_response.noise_terms">noise_terms</a></li>
+  <li><a href="#tvbo.analysis.linear_response.observable_terms" id="toc-tvbo.analysis.linear_response.observable_terms" class="nav-link" data-scroll-target="#tvbo.analysis.linear_response.observable_terms">observable_terms</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -239,6 +241,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><a href="#tvbo.analysis.linear_response.network_jacobian">network_jacobian</a></td>
 <td>NumPy <strong>reference oracle</strong> — assemble <code>A</code> numerically for verification only.</td>
 </tr>
+<tr class="odd">
+<td><a href="#tvbo.analysis.linear_response.noise_terms">noise_terms</a></td>
+<td>Per-state-variable noise standard deviations declared on the model, or <code>None</code>.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.analysis.linear_response.observable_terms">observable_terms</a></td>
+<td>Symbolic observation row <code>∂y/∂x</code> of a declared observable <code>y</code>.</td>
+</tr>
 </tbody>
 </table>
 <section id="tvbo.analysis.linear_response.constraint_expr" class="level3">
@@ -257,7 +267,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>analysis.linear_response.linear_response_context(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolution for the linear-response codegen: symbolic terms + layout, NO code.</p>
 <p>Keeps <em>resolution</em> in Python and <em>code structure</em> in the template, per the codegen convention. The Mako <code>&lt;%def&gt;</code> partials in <code>_linear_response.py.mako</code> consume this and emit the vector-field / Jacobian / covariance structure, rendering each symbolic entry with <code>render_expression</code> (so any backend prints it) — no Python string-emit.</p>
-<p>Returns the state / coupling / parameter layout — including which parameters are per-node (<code>pernode</code>: heterogeneous, gathered by node index) and the symbol set the printer must treat as plain symbols (<code>syms</code>) — plus the symbolic per-node RHS (<code>rhs</code>), local Jacobian (<code>Jloc</code>) and coupling Jacobian (<code>Jcpl</code>).</p>
+<p>Returns the state / coupling / parameter layout — including which parameters are per-node (<code>pernode</code>: heterogeneous, gathered by node index) and the symbol set the printer must treat as plain symbols (<code>syms</code>) — plus the symbolic per-node RHS (<code>rhs</code>), local Jacobian (<code>Jloc</code>), coupling Jacobian (<code>Jcpl</code>) and the declared per-state noise amplitudes (<code>noise</code>, or <code>None</code> when the model declares none).</p>
 </section>
 <section id="tvbo.analysis.linear_response.network_jacobian" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.analysis.linear_response.network_jacobian">network_jacobian</h3>
@@ -271,9 +281,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="returns" class="level4 doc-section doc-section-returns">
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
 <p>A : array (n_sv·n_nodes, n_sv·n_nodes) The Jacobian in block layout (state-variable block <code>k</code> spans rows/cols <code>k·N .. (k+1)·N</code>), matching the network state layout used elsewhere.</p>
-
-
 </section>
+</section>
+<section id="tvbo.analysis.linear_response.noise_terms" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.analysis.linear_response.noise_terms">noise_terms</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>analysis.linear_response.noise_terms(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Per-state-variable noise standard deviations declared on the model, or <code>None</code>.</p>
+<p>The Lyapunov equation’s input matrix <code>Q</code> is <code>diag(σ_k²)</code> over the state blocks, which is only <code>σ² I</code> when every state variable is driven. A model whose noise enters two of six equations — two synaptic gating variables and a four-state haemodynamic cascade that is driven, not forced — needs the declared per-state amplitudes, and a uniform <code>Q</code> would put noise into the haemodynamics.</p>
+<p>Returns <code>None</code> when no state variable declares noise at all, which is the signal to fall back to a uniform amplitude supplied by the analysis observation.</p>
+</section>
+<section id="tvbo.analysis.linear_response.observable_terms" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.analysis.linear_response.observable_terms">observable_terms</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>analysis.linear_response.observable_terms(model, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Symbolic observation row <code>∂y/∂x</code> of a declared observable <code>y</code>.</p>
+<p><code>y</code> is either a state variable (the row is a selector) or a derived variable — a BOLD signal, a firing rate, any declared readout — unfolded through the same derived-variable chain the RHS uses, so the linear response can be carried through whatever cascade the model declares rather than stopping at the state vector.</p>
+<p>Returns the per-node Jacobian of <code>y</code> with respect to the state variables (<code>Hloc</code>, <code>1 × n_sv</code>) and with respect to the network coupling inputs (<code>Hcpl</code>, <code>1 × n_cpl</code>); the latter scatters through the connectome exactly as <code>Jcpl</code> does, so an observable reading a coupling term stays correct.</p>
+
+
 </section>
 </section>
 </section>
@@ -351,7 +375,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

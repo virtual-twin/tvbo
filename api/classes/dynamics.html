@@ -390,7 +390,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.classes.dynamics.DynamicalSystem.from_datamodel">from_datamodel</a></td>
-<td>Create from a datamodel Dynamics instance by copying its</td>
+<td>Create from a datamodel Dynamics instance by copying its already-normalized state (avoids <code>_as_dict</code> re-init crash on</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.dynamics.DynamicalSystem.from_db">from_db</a></td>
@@ -1685,7 +1685,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    outputfile<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    derivative_notation<span class="op">=</span><span class="st">'dot'</span>,</span>
 <span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    baseline<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    citeformat<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render a human-readable report of the model.</p>
 <p>Refreshes metadata and renders the Markdown report template; the result is optionally written to <code>outputfile</code> (as Markdown or, for <code>format="pdf"</code>, a PDF).</p>
 <section id="parameters-17" class="level6 doc-section doc-section-parameters">
@@ -1734,6 +1735,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>baseline</td>
 <td></td>
 <td>Another <code>Dynamics</code> to diff against. When given, the report lists only the state variables, parameters, derived variables and couplings that are new or changed relative to it (a “relative to” note replaces the shared rows) — e.g.&nbsp;a controlled variant shown against its uncontrolled base without repeating every shared term.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>citeformat</td>
+<td></td>
+<td>How references are emitted. Default (<code>None</code>) renders a formatted <strong>References</strong> section at the end (a standalone report). <code>"quarto"</code> instead emits inline <code>@key</code> citations in the fulltext and omits the list, so the report can be embedded in a Quarto document whose own <code>bibliography:</code> resolves the citations into one bibliography.</td>
 <td><code>None</code></td>
 </tr>
 </tbody>
@@ -2098,7 +2105,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h5 class="anchored" data-anchor-id="tvbo.classes.dynamics.DynamicalSystem.get_symbolic_elements">get_symbolic_elements</h5>
 <div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>classes.dynamics.DynamicalSystem.get_symbolic_elements(include_time_symbol<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Build a unified local_dict for parsing model expressions.</p>
-<p>Includes symbols for parameters, coupling terms, derived parameters, derived variables, output transforms, state variables, function names, and (optionally) the time symbol ‘t’.</p>
+<p>Includes symbols for parameters, coupling terms, derived parameters, derived variables, output transforms, state variables, event names, function names, and (optionally) the time symbol ‘t’.</p>
+<p>Every declared name must appear here so it shadows SymPy’s own global namespace: <code>Q</code> is SymPy’s assumptions object, <code>S</code> its sympify shortcut, <code>O</code> big-O, <code>N</code> numeric evaluation and <code>I</code> the imaginary unit, so a model that names a quantity after any of them would otherwise fail to parse.</p>
 <section id="returns-21" class="level6 doc-section doc-section-returns">
 <h6 class="doc-section doc-section-returns anchored" data-anchor-id="returns-21">Returns</h6>
 <p>dict Mapping of names to SymPy objects suitable for parse_eq(local_dict=…).</p>
@@ -3222,7 +3230,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -731,9 +731,59 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.coupling.Coupling.report" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.report">report</h5>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.report(<span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>, outputfile<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.report(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    outputfile<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    parameters<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    equations<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render a human-readable markdown (or pdf) report for this coupling.</p>
 <p>Includes pre/post expressions, the full assembled coupling equation (<code>Coupling.equation</code>), and the parameter table.</p>
+<section id="parameters-5" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 3%">
+<col style="width: 4%">
+<col style="width: 87%">
+<col style="width: 4%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td>str</td>
+<td><code>markdown</code>/<code>md</code> or <code>pdf</code>.</td>
+<td><code>'markdown'</code></td>
+</tr>
+<tr class="even">
+<td>outputfile</td>
+<td>str | None</td>
+<td>Where to write the rendering, if anywhere.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>parameters</td>
+<td>bool</td>
+<td>Emit the parameter table. A host report that already glossaries these symbols passes <code>False</code> — a study’s Methods lists them beside the model’s, so the table here would repeat rows the reader has just read, uncaptioned and unnumbered.</td>
+<td><code>True</code></td>
+</tr>
+<tr class="even">
+<td>equations</td>
+<td></td>
+<td>A <code>tvbo.utils.report.Equations</code> to number and anchor the coupling equation with. Without one it renders bare, and in a study report that is the only unnumbered equation on the page — the reader can cite every state equation and not the coupling that joins them.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.coupling.Coupling.summed_inputs" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.summed_inputs">summed_inputs</h5>
@@ -746,8 +796,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.symbolic(delays<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Full symbolic coupling equation with proper indexed state variables.</p>
 <p>Resolves all expression styles (<code>theta_j</code>/<code>theta_i</code>, <code>x_j</code>/<code>x_i</code>, <code>incoming_states</code>/<code>local_states</code>) into proper <code>IndexedBase</code> notation and wraps the pre-expression in a weighted summation over connected nodes.</p>
-<section id="parameters-5" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
+<section id="parameters-6" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h6>
 <p>delays : bool If True, incoming states carry an explicit time-delay index: <code>y1[j, t - tau[i, j]]</code> instead of plain <code>y1[j]</code>.</p>
 </section>
 <section id="returns-4" class="level6 doc-section doc-section-returns">
@@ -759,8 +809,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h5 class="anchored" data-anchor-id="tvbo.classes.coupling.Coupling.to_yaml">to_yaml</h5>
 <div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.Coupling.to_yaml(filepath<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Serialize this coupling to YAML.</p>
-<section id="parameters-6" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h6>
+<section id="parameters-7" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h6>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 9%">
@@ -873,8 +923,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.classes.coupling.get_parameters">get_parameters</h3>
 <div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>classes.coupling.get_parameters(CF)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Extract parameter metadata from a coupling function ontology class.</p>
-<section id="parameters-7" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
+<section id="parameters-8" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 4%">
@@ -1013,7 +1063,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

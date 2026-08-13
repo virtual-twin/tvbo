@@ -192,8 +192,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes" id="toc-tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes">auto_nvmap_budget_bytes</a></li>
   <li><a href="#tvbo.templates.tvboptim.callbacks.auto_nvmap_cap" id="toc-tvbo.templates.tvboptim.callbacks.auto_nvmap_cap" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.auto_nvmap_cap">auto_nvmap_cap</a></li>
   <li><a href="#tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes" id="toc-tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes">estimate_per_cell_bytes</a></li>
+  <li><a href="#tvbo.templates.tvboptim.callbacks.nvmap_hard_cap" id="toc-tvbo.templates.tvboptim.callbacks.nvmap_hard_cap" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.nvmap_hard_cap">nvmap_hard_cap</a></li>
   <li><a href="#tvbo.templates.tvboptim.callbacks.progress_ticker" id="toc-tvbo.templates.tvboptim.callbacks.progress_ticker" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.progress_ticker">progress_ticker</a></li>
+  <li><a href="#tvbo.templates.tvboptim.callbacks.resolve_cohort_batch_size" id="toc-tvbo.templates.tvboptim.callbacks.resolve_cohort_batch_size" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.resolve_cohort_batch_size">resolve_cohort_batch_size</a></li>
+  <li><a href="#tvbo.templates.tvboptim.callbacks.resolve_exploration_n_vmap" id="toc-tvbo.templates.tvboptim.callbacks.resolve_exploration_n_vmap" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.resolve_exploration_n_vmap">resolve_exploration_n_vmap</a></li>
   <li><a href="#tvbo.templates.tvboptim.callbacks.resolve_n_vmap" id="toc-tvbo.templates.tvboptim.callbacks.resolve_n_vmap" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.resolve_n_vmap">resolve_n_vmap</a></li>
+  <li><a href="#tvbo.templates.tvboptim.callbacks.shared_ram_device_count" id="toc-tvbo.templates.tvboptim.callbacks.shared_ram_device_count" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.callbacks.shared_ram_device_count">shared_ram_device_count</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -311,15 +315,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes">estimate_per_cell_bytes</a></td>
-<td>Best-effort per-cell working-memory estimate for <code>n_parallel: auto</code>.</td>
+<td>Best-effort per-cell peak working-memory estimate for <code>n_parallel: auto</code>.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.templates.tvboptim.callbacks.nvmap_hard_cap">nvmap_hard_cap</a></td>
+<td>Hard ceiling on the resolved vmap width, from <code>TVBO_NVMAP_MAX</code> (unset → no cap).</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.callbacks.progress_ticker">progress_ticker</a></td>
 <td>Wrap a scanned/vmapped per-item function so it streams <code>label i/total</code> progress.</td>
 </tr>
+<tr class="even">
+<td><a href="#tvbo.templates.tvboptim.callbacks.resolve_cohort_batch_size">resolve_cohort_batch_size</a></td>
+<td>Resolve <code>dataset.batch_size</code> to a subject count per on-device batch.</td>
+</tr>
 <tr class="odd">
+<td><a href="#tvbo.templates.tvboptim.callbacks.resolve_exploration_n_vmap">resolve_exploration_n_vmap</a></td>
+<td>Resolve <code>Exploration.n_parallel</code> to a vmap chunk width for a grid run.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.callbacks.resolve_n_vmap">resolve_n_vmap</a></td>
 <td>Resolve an <code>Exploration.n_parallel</code> spec to a concrete vmap chunk width.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.templates.tvboptim.callbacks.shared_ram_device_count">shared_ram_device_count</a></td>
+<td>Number of devices whose per-cell batches share one physical RAM pool.</td>
 </tr>
 </tbody>
 </table>
@@ -327,7 +347,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.auto_nvmap_budget_bytes">auto_nvmap_budget_bytes</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.auto_nvmap_budget_bytes()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Batch working-memory budget for <code>n_parallel: auto</code>, in bytes.</p>
-<p>Overridable via <code>TVBO_NVMAP_MEM_BUDGET_GB</code> (default :data:<code>AUTO_NVMAP_MEM_BUDGET_GB</code>). Bounds <code>n_vmap × per-cell-bytes</code> so auto-vectorisation cannot blow up peak memory on a large-per-cell model (e.g.&nbsp;a whole-brain delay network).</p>
+<p>Overridable via <code>TVBO_NVMAP_MEM_BUDGET_GB</code> (default :data:<code>AUTO_NVMAP_MEM_BUDGET_GB</code>). Bounds the live batch (<code>shared_ram_devices × n_vmap × per-cell-bytes</code>) so auto-vectorisation cannot blow up peak memory on a large-per-cell model.</p>
 </section>
 <section id="tvbo.templates.tvboptim.callbacks.auto_nvmap_cap" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.auto_nvmap_cap">auto_nvmap_cap</h3>
@@ -338,17 +358,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.estimate_per_cell_bytes">estimate_per_cell_bytes</h3>
 <div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.estimate_per_cell_bytes(observable_fn, state)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Best-effort per-cell working-memory estimate for <code>n_parallel: auto</code>.</p>
-<p>Sums the recorded output size (via <code>jax.eval_shape</code> — abstract, no compute) and the live per-cell input <code>state</code> (which carries any delay/history buffers). This is the buffer that a vmapped batch holds <code>n_vmap</code> copies of. Returns <code>None</code> if the shapes cannot be inferred, so the caller falls back to the count-only cap.</p>
+<p>Best-effort per-cell peak working-memory estimate for <code>n_parallel: auto</code>.</p>
+<p>Compiles the single-cell observable ahead-of-time and reads XLA’s memory analysis (<code>temp + output + argument</code>), so the estimate includes the transient buffers the observable allocates and then reduces away — e.g.&nbsp;a BOLD trajectory and its FFT convolution behind a scalar loss. Summing only the output (as <code>eval_shape</code> would) under-counts such reduction observables, so a vmapped batch of them silently OOMs. Falls back to an output+input shape sum, then <code>None</code>, so the caller degrades to the count-only cap.</p>
+</section>
+<section id="tvbo.templates.tvboptim.callbacks.nvmap_hard_cap" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.nvmap_hard_cap">nvmap_hard_cap</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.nvmap_hard_cap()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Hard ceiling on the resolved vmap width, from <code>TVBO_NVMAP_MAX</code> (unset → no cap).</p>
+<p>Unlike the auto-mode budget this also caps an <em>explicit</em> <code>n_parallel</code>, so a failed cell can be retried with a smaller on-device batch (the workflow escalation exports a shrinking value per attempt) or an operator can pin a smaller GPU — both without re-emitting the kit. Read at call time so the retry’s value takes effect. <code>0</code>/negative/unset all mean “no cap” (the escalation’s attempt-1 sentinel), so a bare <code>0</code> is honoured silently rather than warned about.</p>
 </section>
 <section id="tvbo.templates.tvboptim.callbacks.progress_ticker" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.progress_ticker">progress_ticker</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.progress_ticker(</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    total,</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    every<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">'batch'</span>,</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.progress_ticker(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    total,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    every<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="st">'batch'</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Wrap a scanned/vmapped per-item function so it streams <code>label i/total</code> progress.</p>
 <p>The exploration / sweep grid runs as one JIT-compiled <code>jax.lax.map</code>, so it prints <code>STEP 2 &gt; &lt;exploration&gt;</code> and then nothing until it returns — the cluster “empty log” problem. This fires a JAX-native <code>jax.debug.callback</code> (no JIT break, vmap-safe) once per <code>lax.map</code> batch — a no-arg callback has no batched input to vectorise, so it runs once per scan step — ticking a host-side counter and logging through the central <code>tvbo.run</code> logger. The <code>jax_tqdm</code> pattern, reduced to the logging we already route.</p>
 <section id="parameters-1" class="level4 doc-section doc-section-parameters">
@@ -420,18 +446,45 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 </section>
+<section id="tvbo.templates.tvboptim.callbacks.resolve_cohort_batch_size" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.resolve_cohort_batch_size">resolve_cohort_batch_size</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.resolve_cohort_batch_size(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    spec,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    n_subjects,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    fit_fn<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    example_args<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resolve <code>dataset.batch_size</code> to a subject count per on-device batch.</p>
+<p>An explicit integer passes straight through (clamped to <code>[1, n_subjects]</code>) — the caller opted in, so no memory bound applies. <code>None</code> requests automatic sizing: the whole cohort in one batch unless one lane’s estimated peak memory (:func:<code>estimate_per_cell_bytes</code>, compiling <em>fit_fn</em> on <em>example_args</em>) times the shared-RAM device count would exceed :func:<code>auto_nvmap_budget_bytes</code>, in which case the batch is narrowed to fit. Without an estimate it degrades to the whole cohort, i.e.&nbsp;the un-chunked vmap. Unlike :func:<code>resolve_n_vmap</code>, no fixed count cap applies: a cohort’s batch is bounded by memory, not an exploration-grid cap.</p>
+</section>
+<section id="tvbo.templates.tvboptim.callbacks.resolve_exploration_n_vmap" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.resolve_exploration_n_vmap">resolve_exploration_n_vmap</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.resolve_exploration_n_vmap(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    spec,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    grid_n,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    observable_fn,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    state,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resolve <code>Exploration.n_parallel</code> to a vmap chunk width for a grid run.</p>
+<p>Composition both exploration templates call: for <code>"auto"</code> it estimates per-cell memory (:func:<code>estimate_per_cell_bytes</code>) and counts shared-RAM devices (:func:<code>shared_ram_device_count</code>) to bound the batch; an explicit integer skips the estimate (and its compile) and passes straight through :func:<code>resolve_n_vmap</code>.</p>
+</section>
 <section id="tvbo.templates.tvboptim.callbacks.resolve_n_vmap" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.resolve_n_vmap">resolve_n_vmap</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.resolve_n_vmap(spec, grid_n, per_cell_bytes<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.resolve_n_vmap(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    spec,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    grid_n,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    per_cell_bytes<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    n_pmap<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve an <code>Exploration.n_parallel</code> spec to a concrete vmap chunk width.</p>
 <section id="parameters-2" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 6%">
+<col style="width: 4%">
+<col style="width: 2%">
+<col style="width: 88%">
 <col style="width: 3%">
-<col style="width: 84%">
-<col style="width: 5%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -457,8 +510,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td>per_cell_bytes</td>
 <td></td>
-<td>Optional per-cell working-memory estimate (see :func:<code>estimate_per_cell_bytes</code>). When given, <code>"auto"</code> additionally caps <code>n_vmap</code> at <code>budget // per_cell_bytes</code> so the batch fits the budget.</td>
+<td>Optional per-cell working-memory estimate (see :func:<code>estimate_per_cell_bytes</code>). When given, <code>"auto"</code> additionally caps <code>n_vmap</code> so the concurrently-held batch fits the budget.</td>
 <td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>n_pmap</td>
+<td></td>
+<td>Number of devices whose batches share one RAM pool (see :func:<code>shared_ram_device_count</code>). The live batch is <code>n_pmap × n_vmap</code> cells in that shared RAM, so the budget bounds <code>n_pmap × n_vmap × per_cell</code> — not <code>n_vmap</code> alone (else forced host devices multiply the footprint past it).</td>
+<td><code>1</code></td>
 </tr>
 </tbody>
 </table>
@@ -469,7 +528,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <colgroup>
 <col style="width: 8%">
 <col style="width: 8%">
-<col style="width: 82%">
+<col style="width: 83%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -482,18 +541,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td></td>
 <td></td>
-<td>Positive integer vmap chunk width. An explicit integer is passed through</td>
+<td>Positive integer vmap chunk width. An explicit integer bypasses the auto memory</td>
 </tr>
 <tr class="even">
 <td></td>
 <td></td>
-<td>unchanged (memory bounds do not apply — the caller opted in).</td>
+<td>budget (the caller opted in), but a <code>TVBO_NVMAP_MAX</code> env cap, when set, still</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>applies to it — the workflow retry lowers it to shrink a failed cell’s batch.</td>
 </tr>
 </tbody>
 </table>
-
-
 </section>
+</section>
+<section id="tvbo.templates.tvboptim.callbacks.shared_ram_device_count" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.callbacks.shared_ram_device_count">shared_ram_device_count</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.callbacks.shared_ram_device_count()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Number of devices whose per-cell batches share one physical RAM pool.</p>
+<p>CPU host-replication (<code>xla_force_host_platform_device_count</code>) fans one host’s RAM across N logical devices, so a pmapped batch holds <code>N × n_vmap</code> cells in the <em>same</em> RAM. Real GPU/TPU devices each have independent memory (only <code>n_vmap</code> cells apiece), so returns 1 there. Scales the <code>n_parallel: auto</code> memory budget (see :func:<code>resolve_exploration_n_vmap</code>). Returns 1 if JAX or the device list is unavailable.</p>
+
+
 </section>
 </section>
 </section>
@@ -571,7 +641,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

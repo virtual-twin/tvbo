@@ -343,15 +343,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.draw_edge_labels">draw_edge_labels</a></td>
-<td>A function to draw the edge labels on the graph. The labels are extracted from the edge attributes</td>
+<td>A function to draw the edge labels on the graph. The labels are extracted from the edge attributes and can be customized using various parameters in the params dictionary.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.ontology.draw_edges">draw_edges</a></td>
-<td>A function to draw the edges on the graph. Depending on the parameters, it can draw colored edges</td>
+<td>A function to draw the edges on the graph. Depending on the parameters, it can draw colored edges and adjust the width of the edges.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.plot.ontology.draw_legend">draw_legend</a></td>
-<td>A function to draw the legend on the graph. The legend is created based on the node types and</td>
+<td>A function to draw the legend on the graph. The legend is created based on the node types and their respective colors, which are derived from the ‘tvb_colors’ parameter in the params dictionary.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.plot.ontology.draw_nodes">draw_nodes</a></td>
@@ -2028,7 +2028,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

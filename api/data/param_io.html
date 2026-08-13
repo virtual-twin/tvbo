@@ -187,8 +187,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.data.param_io.clear_cache" id="toc-tvbo.data.param_io.clear_cache" class="nav-link" data-scroll-target="#tvbo.data.param_io.clear_cache">clear_cache</a></li>
   <li><a href="#tvbo.data.param_io.is_lazy" id="toc-tvbo.data.param_io.is_lazy" class="nav-link" data-scroll-target="#tvbo.data.param_io.is_lazy">is_lazy</a></li>
   <li><a href="#tvbo.data.param_io.is_reference" id="toc-tvbo.data.param_io.is_reference" class="nav-link" data-scroll-target="#tvbo.data.param_io.is_reference">is_reference</a></li>
+  <li><a href="#tvbo.data.param_io.live_artifacts" id="toc-tvbo.data.param_io.live_artifacts" class="nav-link" data-scroll-target="#tvbo.data.param_io.live_artifacts">live_artifacts</a></li>
   <li><a href="#tvbo.data.param_io.materialise" id="toc-tvbo.data.param_io.materialise" class="nav-link" data-scroll-target="#tvbo.data.param_io.materialise">materialise</a></li>
+  <li><a href="#tvbo.data.param_io.read_artifact" id="toc-tvbo.data.param_io.read_artifact" class="nav-link" data-scroll-target="#tvbo.data.param_io.read_artifact">read_artifact</a></li>
   <li><a href="#tvbo.data.param_io.resolve" id="toc-tvbo.data.param_io.resolve" class="nav-link" data-scroll-target="#tvbo.data.param_io.resolve">resolve</a></li>
+  <li><a href="#tvbo.data.param_io.resolve_network_node" id="toc-tvbo.data.param_io.resolve_network_node" class="nav-link" data-scroll-target="#tvbo.data.param_io.resolve_network_node">resolve_network_node</a></li>
+  <li><a href="#tvbo.data.param_io.superseded_artifacts" id="toc-tvbo.data.param_io.superseded_artifacts" class="nav-link" data-scroll-target="#tvbo.data.param_io.superseded_artifacts">superseded_artifacts</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -233,12 +237,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>True when an argument value points at an entity rather than being a literal.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.data.param_io.live_artifacts">live_artifacts</a></td>
+<td><code>(paths, producers)</code> this study still reaches in the produced-constant store.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.data.param_io.materialise">materialise</a></td>
 <td>The <code>(file, key)</code> a backend reads this parameter’s array from.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.param_io.read_artifact">read_artifact</a></td>
+<td>Load a materialised <code>(path, key)</code> artifact back to its array — for codegen probes that need a produced/sourced constant’s shape (e.g.&nbsp;a partition’s group count) without</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.data.param_io.resolve">resolve</a></td>
 <td>This parameter’s value, resolving <code>source</code>/<code>producer</code> on demand.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.param_io.resolve_network_node">resolve_network_node</a></td>
+<td>Per-node vector for a <code>network.&lt;measure&gt;</code> reference — the single definition shared by the producer-argument path (<code>_resolve_ref</code>) and the observation-embedding path</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.data.param_io.superseded_artifacts">superseded_artifacts</a></td>
+<td>Artifacts of THIS study’s producers that it no longer reaches, newest first.</td>
 </tr>
 </tbody>
 </table>
@@ -258,20 +278,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.param_io.is_reference(value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>True when an argument value points at an entity rather than being a literal.</p>
 </section>
+<section id="tvbo.data.param_io.live_artifacts" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.data.param_io.live_artifacts">live_artifacts</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data.param_io.live_artifacts(root, cache_dir<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>(paths, producers)</code> this study still reaches in the produced-constant store.</p>
+<p><em>producers</em> is every <code>module.function</code> whose liveness could be decided; a producer whose arguments cannot be resolved is left out of BOTH sets, so its artifacts are never judged dead on the strength of a failure to look at them.</p>
+</section>
 <section id="tvbo.data.param_io.materialise" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.param_io.materialise">materialise</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data.param_io.materialise(param, source_dir<span class="op">=</span><span class="va">None</span>, context<span class="op">=</span><span class="va">None</span>, cache_dir<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data.param_io.materialise(param, source_dir<span class="op">=</span><span class="va">None</span>, context<span class="op">=</span><span class="va">None</span>, cache_dir<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The <code>(file, key)</code> a backend reads this parameter’s array from.</p>
 <p>Codegen emits this pair rather than the bytes, so a large constant never enters the spec or the generated source and is read at run time instead. Generated modules are <code>exec</code>’d in memory as often as they are written to disk, so the path is absolute (resolved against the declaring spec’s directory) — the same way <code>bids_dir</code> is emitted. A kit stays correct without rewriting code: its emitter rewrites the <em>spec</em> to point at the companion it staged and re-renders, exactly as it already does for <code>network.h5</code>.</p>
 <p>A <code>source:</code> parameter already lives in a file, so nothing is written. A <code>producer:</code> parameter is computed once and cached content-addressed under <code>~/.tvbo/constants</code>, keyed by the producing call — so it survives across runs and every parameter naming that producer shares the one artifact.</p>
 <p>Raises for a literal (there is nothing to read; it inlines) or for a parameter with no declared value.</p>
 </section>
+<section id="tvbo.data.param_io.read_artifact" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.data.param_io.read_artifact">read_artifact</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>data.param_io.read_artifact(path, key<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Load a materialised <code>(path, key)</code> artifact back to its array — for codegen probes that need a produced/sourced constant’s shape (e.g.&nbsp;a partition’s group count) without re-running the producer.</p>
+</section>
 <section id="tvbo.data.param_io.resolve" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.param_io.resolve">resolve</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data.param_io.resolve(param, source_dir<span class="op">=</span><span class="va">None</span>, context<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>data.param_io.resolve(param, source_dir<span class="op">=</span><span class="va">None</span>, context<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This parameter’s value, resolving <code>source</code>/<code>producer</code> on demand.</p>
 <p>Returns the literal <code>value</code> untouched when there is one, so a scalar costs nothing. Returns <code>None</code> for a parameter that declares no value at all (a free parameter, say) rather than raising — the caller decides whether that is an error.</p>
 <p><code>context</code> is the owning experiment (or a network); a producer argument naming an entity — <code>positions: network.nodes.position</code> — resolves against it. Resolved arrays are cached and returned <strong>read-only</strong>: they are shared, and a resolved constant is not the caller’s to modify.</p>
+</section>
+<section id="tvbo.data.param_io.resolve_network_node" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.data.param_io.resolve_network_node">resolve_network_node</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>data.param_io.resolve_network_node(net, measure)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Per-node vector for a <code>network.&lt;measure&gt;</code> reference — the single definition shared by the producer-argument path (<code>_resolve_ref</code>) and the observation-embedding path (<code>utils.collect_network_node_arrays</code>), so both resolve <code>network.positions</code> / <code>network.instrength</code> identically. <code>positions</code> → region centroids <code>(n_nodes, 3)</code>; <code>instrength</code> → weighted in-degree <code>matrix('weight').sum(axis=1)</code> (row sum = incoming, the TVB/Koller convention).</p>
+<p>Anything else is read as a <strong>named per-node attribute</strong>, the node-side twin of <code>network.edges.&lt;attr&gt;</code>: first from the nodes’ own <code>parameters</code> (in node order), then from a <code>nodes/&lt;attr&gt;</code> dataset in the companion store. That is what lets a study carry a measured per-region array — a per-node current range, a region size — in the network file and reference it from a spec instead of pasting it into code. Returns None when the measure is unknown or unbuildable.</p>
+</section>
+<section id="tvbo.data.param_io.superseded_artifacts" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.data.param_io.superseded_artifacts">superseded_artifacts</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>data.param_io.superseded_artifacts(root, cache_dir<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Artifacts of THIS study’s producers that it no longer reaches, newest first.</p>
+<p>Superseded, not merely old: the content address keys on the producing call <em>and</em> on its module’s source, so an artifact of a producer this study uses, at a digest this study no longer computes, can only be a version left behind by an edit or by a changed argument. Files belonging to producers not seen here are never listed — they may well be another study’s, and this reads one study.</p>
 
 
 </section>
@@ -351,7 +394,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

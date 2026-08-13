@@ -191,6 +191,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.codegen.pyrates.from_pyrates_yaml" id="toc-tvbo.codegen.pyrates.from_pyrates_yaml" class="nav-link" data-scroll-target="#tvbo.codegen.pyrates.from_pyrates_yaml">from_pyrates_yaml</a></li>
   <li><a href="#tvbo.codegen.pyrates.from_pyrates_yaml_all" id="toc-tvbo.codegen.pyrates.from_pyrates_yaml_all" class="nav-link" data-scroll-target="#tvbo.codegen.pyrates.from_pyrates_yaml_all">from_pyrates_yaml_all</a></li>
   <li><a href="#tvbo.codegen.pyrates.network_to_pyrates_yaml_string" id="toc-tvbo.codegen.pyrates.network_to_pyrates_yaml_string" class="nav-link" data-scroll-target="#tvbo.codegen.pyrates.network_to_pyrates_yaml_string">network_to_pyrates_yaml_string</a></li>
+  <li><a href="#tvbo.codegen.pyrates.operator_template" id="toc-tvbo.codegen.pyrates.operator_template" class="nav-link" data-scroll-target="#tvbo.codegen.pyrates.operator_template">operator_template</a></li>
   <li><a href="#tvbo.codegen.pyrates.to_pyrates_model_yaml" id="toc-tvbo.codegen.pyrates.to_pyrates_model_yaml" class="nav-link" data-scroll-target="#tvbo.codegen.pyrates.to_pyrates_model_yaml">to_pyrates_model_yaml</a></li>
   <li><a href="#tvbo.codegen.pyrates.to_pyrates_network_yaml" id="toc-tvbo.codegen.pyrates.to_pyrates_network_yaml" class="nav-link" data-scroll-target="#tvbo.codegen.pyrates.to_pyrates_network_yaml">to_pyrates_network_yaml</a></li>
   <li><a href="#tvbo.codegen.pyrates.to_pyrates_yaml_string" id="toc-tvbo.codegen.pyrates.to_pyrates_yaml_string" class="nav-link" data-scroll-target="#tvbo.codegen.pyrates.to_pyrates_yaml_string">to_pyrates_yaml_string</a></li>
@@ -280,14 +281,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Export a TVBO Network to complete PyRates experiment YAML.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.codegen.pyrates.operator_template">operator_template</a></td>
+<td>Resolve a Dynamics model into the fields of a PyRates <code>OperatorTemplate</code>.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.codegen.pyrates.to_pyrates_model_yaml">to_pyrates_model_yaml</a></td>
 <td>Export a Dynamics model to PyRates OperatorTemplate YAML (model only).</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.codegen.pyrates.to_pyrates_network_yaml">to_pyrates_network_yaml</a></td>
 <td>Export to PyRates NodeTemplate + CircuitTemplate YAML (network topology only).</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.codegen.pyrates.to_pyrates_yaml_string">to_pyrates_yaml_string</a></td>
 <td>Export to complete PyRates experiment YAML (model + network, ready to run).</td>
 </tr>
@@ -329,53 +334,122 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Export a TVBO Network to complete PyRates experiment YAML.</p>
 <p>Alias for to_pyrates_yaml_string(network=network, filepath=filepath).</p>
 </section>
-<section id="tvbo.codegen.pyrates.to_pyrates_model_yaml" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.codegen.pyrates.to_pyrates_model_yaml">to_pyrates_model_yaml</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>codegen.pyrates.to_pyrates_model_yaml(dynamics, filepath<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Export a Dynamics model to PyRates OperatorTemplate YAML (model only).</p>
-<p>This generates ONLY the OperatorTemplate (dynamics/equations). Use to_pyrates_network_yaml for topology, or to_pyrates_yaml_string for complete.</p>
+<section id="tvbo.codegen.pyrates.operator_template" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.codegen.pyrates.operator_template">operator_template</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>codegen.pyrates.operator_template(model, op_name<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resolve a Dynamics model into the fields of a PyRates <code>OperatorTemplate</code>.</p>
+<p>Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through :data:<code>PYRATES_REPL</code>, functions are inlined (PyRates YAML has no user functions), and unsupported constructs are rewritten by :func:<code>_pyrates_compatible</code>.</p>
+<p>Equations are sympified against :func:<code>_renamed_scope</code>, keyed by the renamed spelling because renaming has already been applied to the equation strings.</p>
 <section id="parameters-2" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
-<p>dynamics : Dynamics TVBO Dynamics model to export. filepath : str, optional Path to write the YAML file. If None, returns the YAML string.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 14%">
+<col style="width: 63%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td></td>
+<td>The :class:<code>~tvbo.classes.dynamics.Dynamics</code> to convert.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>op_name</td>
+<td>str | None</td>
+<td>Operator name; defaults to <code>&lt;model name&gt;_op</code>.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="returns-2" class="level4 doc-section doc-section-returns">
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
-<p>str YAML string (or filepath if written to file).</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 80%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>dict</td>
+<td>dict</td>
+<td><code>op_name</code>, <code>description</code>, <code>equations</code> (list of strings) and</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>dict</td>
+<td><code>variables</code> (name → PyRates spec).</td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
-<section id="tvbo.codegen.pyrates.to_pyrates_network_yaml" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.codegen.pyrates.to_pyrates_network_yaml">to_pyrates_network_yaml</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>codegen.pyrates.to_pyrates_network_yaml(</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    network<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    filepath<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Export to PyRates NodeTemplate + CircuitTemplate YAML (network topology only).</p>
-<p>This generates ONLY the network structure (nodes, edges, circuit). Operators are referenced but not defined.</p>
+<section id="tvbo.codegen.pyrates.to_pyrates_model_yaml" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.codegen.pyrates.to_pyrates_model_yaml">to_pyrates_model_yaml</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>codegen.pyrates.to_pyrates_model_yaml(dynamics, filepath<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Export a Dynamics model to PyRates OperatorTemplate YAML (model only).</p>
+<p>This generates ONLY the OperatorTemplate (dynamics/equations). Use to_pyrates_network_yaml for topology, or to_pyrates_yaml_string for complete.</p>
 <section id="parameters-3" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
-<p>dynamics : Dynamics, optional TVBO Dynamics model for single-node circuit. network : Network, optional TVBO Network for multi-node circuit. filepath : str, optional Path to write the YAML file. If None, returns the YAML string.</p>
+<p>dynamics : Dynamics TVBO Dynamics model to export. filepath : str, optional Path to write the YAML file. If None, returns the YAML string.</p>
 </section>
 <section id="returns-3" class="level4 doc-section doc-section-returns">
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
 <p>str YAML string (or filepath if written to file).</p>
 </section>
 </section>
-<section id="tvbo.codegen.pyrates.to_pyrates_yaml_string" class="level3">
-<h3 class="anchored" data-anchor-id="tvbo.codegen.pyrates.to_pyrates_yaml_string">to_pyrates_yaml_string</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>codegen.pyrates.to_pyrates_yaml_string(</span>
+<section id="tvbo.codegen.pyrates.to_pyrates_network_yaml" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.codegen.pyrates.to_pyrates_network_yaml">to_pyrates_network_yaml</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>codegen.pyrates.to_pyrates_network_yaml(</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    network<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    filepath<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Export to complete PyRates experiment YAML (model + network, ready to run).</p>
-<p>This generates a self-contained YAML with OperatorTemplate, NodeTemplate, and CircuitTemplate - everything needed to run with PyRates.</p>
+<p>Export to PyRates NodeTemplate + CircuitTemplate YAML (network topology only).</p>
+<p>This generates ONLY the network structure (nodes, edges, circuit). Operators are referenced but not defined.</p>
 <section id="parameters-4" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
-<p>dynamics : Dynamics or dict[str, Dynamics], optional TVBO Dynamics model for single-node experiment, or a dictionary of dynamics models keyed by name for heterogeneous networks. network : Network, optional TVBO Network for multi-node experiment. filepath : str, optional Path to write the YAML file. If None, returns the YAML string.</p>
+<p>dynamics : Dynamics, optional TVBO Dynamics model for single-node circuit. network : Network, optional TVBO Network for multi-node circuit. filepath : str, optional Path to write the YAML file. If None, returns the YAML string.</p>
 </section>
 <section id="returns-4" class="level4 doc-section doc-section-returns">
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<p>str YAML string (or filepath if written to file).</p>
+</section>
+</section>
+<section id="tvbo.codegen.pyrates.to_pyrates_yaml_string" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.codegen.pyrates.to_pyrates_yaml_string">to_pyrates_yaml_string</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>codegen.pyrates.to_pyrates_yaml_string(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    dynamics<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    network<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    filepath<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Export to complete PyRates experiment YAML (model + network, ready to run).</p>
+<p>This generates a self-contained YAML with OperatorTemplate, NodeTemplate, and CircuitTemplate - everything needed to run with PyRates.</p>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<p>dynamics : Dynamics or dict[str, Dynamics], optional TVBO Dynamics model for single-node experiment, or a dictionary of dynamics models keyed by name for heterogeneous networks. network : Network, optional TVBO Network for multi-node experiment. filepath : str, optional Path to write the YAML file. If None, returns the YAML string.</p>
+</section>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
 <p>str YAML string (or filepath if written to file).</p>
 
 
@@ -457,7 +531,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

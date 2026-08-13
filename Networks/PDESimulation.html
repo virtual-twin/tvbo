@@ -55,7 +55,27 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="../site_libs/quarto-nav/quarto-nav.js"></script>
@@ -251,6 +271,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../Simulation/SimulationExperiments.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">The SimulationExperiment object</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../Specification/YAML.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Writing TVB-O YAML</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -1439,6 +1465,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/ArchiveConfig.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Archive Config</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/Argument.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Argument</span></a>
   </div>
@@ -1483,6 +1515,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/BranchSwitch.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Branch Switch</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/CachedArray.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cached Array</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1709,6 +1747,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/ExperimentResultSidecar.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Experiment Result Sidecar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/Exploration.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Exploration</span></a>
   </div>
@@ -1771,6 +1815,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/InitialState.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Initial State</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/Inset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Inset</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1907,6 +1957,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/Partition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Partition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/PDE.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">PDE</span></a>
   </div>
@@ -1975,6 +2031,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/RegionMapping.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Region Mapping</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/RenderSpec.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Render Spec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/ResultBinding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Result Binding</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2087,6 +2155,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/StudyCollection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Collection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/classes/StudyMember.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Member</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/Style.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Style</span></a>
   </div>
@@ -2101,12 +2181,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/classes/Surrogate.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Surrogate</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../datamodel/classes/TemporalApplicableEquation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Temporal Applicable Equation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2290,6 +2364,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/analyses.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analyses</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/analysis.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">analysis</span></a>
   </div>
@@ -2326,6 +2406,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/archive.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">archive</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/args.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">args</span></a>
   </div>
@@ -2340,6 +2426,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/array_chunk.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">array_chunk</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/arrow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">arrow</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2410,6 +2502,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/batch_mode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">batch_mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/batch_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">batch_size</span></a>
   </div>
@@ -2442,6 +2540,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/bindings.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">bindings</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/block_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">block_size</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2512,6 +2616,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/capture.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">capture</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/cases.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">cases</span></a>
   </div>
@@ -2520,6 +2630,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/category.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">category</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/cell.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cell</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/cells.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cells</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2574,6 +2696,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/clinical_scores.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">clinical_scores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/clip.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">clip</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2776,8 +2904,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/correlated_over.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">correlated_over</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/correlation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">correlation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/count.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">count</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2814,6 +2954,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/coupling_variable.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">coupling_variable</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/covariance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">covariance</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3022,6 +3168,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/device_scale_factor.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">device_scale_factor</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/diagnosis.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">diagnosis</span></a>
   </div>
@@ -3054,6 +3206,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/dimension_labels.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">dimension_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/dims.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dims</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3138,12 +3296,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/ds_min.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ds_min</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../datamodel/slots/dt.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dt</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3382,6 +3534,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/family_wise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">family_wise</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/field.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">field</span></a>
   </div>
@@ -3466,6 +3624,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/gather.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">gather</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/gaussian.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">gaussian</span></a>
   </div>
@@ -3528,6 +3692,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/groups.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">groups</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/ha.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ha</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3640,6 +3810,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/include.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">include</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/includes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">includes</span></a>
   </div>
@@ -3696,6 +3872,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/inputs.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">inputs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/insets.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">insets</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4012,6 +4194,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/members.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">members</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/mesh.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">mesh</span></a>
   </div>
@@ -4300,6 +4488,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/number.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">number</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/number_loc.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">number_loc</span></a>
   </div>
@@ -4492,6 +4686,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/pad.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/panel_key.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_key</span></a>
   </div>
@@ -4506,6 +4706,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/panel_number_loc.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/panel_number_offset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_offset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/panel_number_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_size</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4566,6 +4778,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/parent_score.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">parent_score</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/part.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">part</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4762,6 +4980,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/recipe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">recipe</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/recon_path.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">recon_path</span></a>
   </div>
@@ -4800,6 +5024,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/reference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">reference</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/reference_image.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">reference_image</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4888,6 +5118,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/reset_state.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">reset_state</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/results.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">results</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/retries.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">retries</span></a>
   </div>
@@ -4914,6 +5156,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/role.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/rotation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">rotation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5176,6 +5424,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/spine_offset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spine_offset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/spines.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">spines</span></a>
   </div>
@@ -5326,6 +5580,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/system_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">system_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/system_type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">system_type</span></a>
   </div>
@@ -5338,8 +5598,26 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/tail_duration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tail_duration</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/tail_samples.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tail_samples</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/tail_used.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tail_used</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/tail_x.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tail_x</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5470,12 +5748,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../datamodel/slots/time_integrator.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">time_integrator</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/time_post_surgery.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">time_post_surgery</span></a>
   </div>
@@ -5524,12 +5796,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../datamodel/slots/tolerances.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">tolerances</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/tool_role.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tool_role</span></a>
   </div>
@@ -5562,6 +5828,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/transient_time.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">transient_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/triangle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">triangle</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5616,6 +5888,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/used.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">used</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/va.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">va</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5704,6 +5982,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/wait_selector.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">wait_selector</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/warmup.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">warmup</span></a>
   </div>
@@ -5722,6 +6006,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/waves.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">waves</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/weight.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">weight</span></a>
   </div>
@@ -5730,6 +6020,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/slots/weight_distribution.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">weight_distribution</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/slots/weight_parameter.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">weight_parameter</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6033,6 +6329,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/enums/ReportPart.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Report Part</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/enums/RequirementRole.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Requirement Role</span></a>
   </div>
@@ -6075,6 +6377,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../datamodel/enums/SubjectBatchMode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Subject Batch Mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../datamodel/enums/SweepDirection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Sweep Direction</span></a>
   </div>
@@ -6095,6 +6403,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../datamodel/enums/ToolRole.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tool Role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../datamodel/enums/Triangle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Triangle</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6168,6 +6482,10 @@ window.Quarto = {
   <ul class="collapse">
   <li><a href="#setup-and-run" id="toc-setup-and-run" class="nav-link" data-scroll-target="#setup-and-run">Setup and run</a></li>
   <li><a href="#animate-with-bsplot" id="toc-animate-with-bsplot" class="nav-link" data-scroll-target="#animate-with-bsplot">Animate with bsplot</a></li>
+  </ul></li>
+  <li><a href="#sec-pde-wave" id="toc-sec-pde-wave" class="nav-link" data-scroll-target="#sec-pde-wave">Example 3: A damped wave equation with a heterogeneous medium</a></li>
+  <li><a href="#sec-pde-modal" id="toc-sec-pde-modal" class="nav-link" data-scroll-target="#sec-pde-modal">Example 4: A brain wave equation, and the ODE system it becomes</a>
+  <ul class="collapse">
   <li><a href="#numerical-details" id="toc-numerical-details" class="nav-link" data-scroll-target="#numerical-details">Numerical details</a></li>
   </ul></li>
   <li><a href="#mesh-support" id="toc-mesh-support" class="nav-link" data-scroll-target="#mesh-support">Mesh Support</a></li>
@@ -6199,7 +6517,48 @@ window.Quarto = {
 </header>
 
 
-<p>TVB-O supports surface-based partial differential equations using finite element methods via <a href="https://scikit-fem.readthedocs.io/">scikit-fem</a>. The PDE backend generates a self-contained implicit Euler FEM solver from a YAML experiment description, supporting triangle and tetrahedral meshes, Dirichlet boundary conditions, and constant or time-dependent source terms.</p>
+<p>TVB-O integrates partial differential equations on a mesh with linear finite elements. The PDE backend generates a self-contained solver from a YAML experiment description, supporting triangle meshes — flat or a curved surface in space, which is the cortical case — as well as tetrahedral meshes via <a href="https://scikit-fem.readthedocs.io/">scikit-fem</a>, Dirichlet boundary conditions, declared <code>events:</code> as drives, and spatially varying coefficients.</p>
+<p><strong>The declared equation is the operator that runs.</strong> Each state variable’s <code>equation.rhs</code> is parsed into mass and stiffness blocks, so a system is lowered to</p>
+<p><span class="math display">\[
+M\,\dot{\mathbf{u}} = A\,\mathbf{u} + M\,\mathbf{f}(\mathbf{u},t)
+\]</span></p>
+<p>with one block row per state variable. Terms that are linear in the state go into <span class="math inline">\(A\)</span> and are solved implicitly — unconditionally stable, so the step size follows accuracy rather than a stability limit — while anything else is evaluated at the current state each step. Because the constraint set and <span class="math inline">\(A\)</span> are fixed, the sparse factorisation is computed once and every step is a triangular solve.</p>
+<p>That covers rather more than diffusion:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>You can write</th>
+<th>Because</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>D * laplacian(u)</code></td>
+<td>the classic heat equation</td>
+</tr>
+<tr class="even">
+<td><code>D * laplacian(u) - k * u</code></td>
+<td>reaction terms become mass blocks</td>
+</tr>
+<tr class="odd">
+<td>a system of several <code>state_variables</code></td>
+<td>one block row each, so second-order-in-time systems (waves) work</td>
+</tr>
+<tr class="even">
+<td><code>div(c * grad(u))</code> with per-vertex <code>c</code></td>
+<td>weighted stiffness assembly — a heterogeneous medium</td>
+</tr>
+<tr class="odd">
+<td>a term naming an <code>events:</code> entry</td>
+<td>the stimulus is substituted into the equation and evaluated each step</td>
+</tr>
+</tbody>
+</table>
+<p>Time integration is <strong>Crank–Nicolson</strong> by default (second-order accurate and non-dissipative, which matters for waves: backward Euler damps oscillations artificially). Set <code>method: implicit Euler</code> for the first-order, strongly damping alternative.</p>
 <p><span class="math display">\[
 \partial_t u(t,\mathbf{x}) = D\,\Delta u(t,\mathbf{x}) \quad \text{in } \Omega, \qquad u(t,\mathbf{x}) = 0 \quad \text{on } \partial\Omega
 \]</span></p>
@@ -6208,7 +6567,7 @@ window.Quarto = {
 <p>A minimal diffusion example on a unit square, using scikit-fem’s built-in mesh generators.</p>
 <section id="step-1-create-a-triangle-mesh-and-experiment-yaml" class="level3">
 <h3 class="anchored" data-anchor-id="step-1-create-a-triangle-mesh-and-experiment-yaml">Step 1 — Create a triangle mesh and experiment YAML</h3>
-<div id="0ec01ba1" class="cell" data-execution_count="2">
+<div id="5bf752bb" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile, os, yaml</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> meshio</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -6255,7 +6614,7 @@ window.Quarto = {
 <span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>        <span class="st">"solver"</span>: {</span>
 <span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>            <span class="st">"label"</span>: <span class="st">"FEM implicit Euler"</span>,</span>
 <span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>            <span class="st">"discretization"</span>: <span class="st">"FEM"</span>,</span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>            <span class="st">"time_integrator"</span>: <span class="st">"implicit Euler"</span>,</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>            <span class="st">"method"</span>: <span class="st">"implicit Euler"</span>,</span>
 <span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>            <span class="st">"dt"</span>: <span class="fl">0.01</span>,</span>
 <span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>        },</span>
 <span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    },</span>
@@ -6271,7 +6630,7 @@ window.Quarto = {
 </section>
 <section id="step-2-run-the-simulation" class="level3">
 <h3 class="anchored" data-anchor-id="step-2-run-the-simulation">Step 2 — Run the simulation</h3>
-<div id="8ae6bebc" class="cell" data-execution_count="3">
+<div id="6e15e663" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_file(yaml_path)</span>
@@ -6293,7 +6652,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </section>
 <section id="step-3-animate-the-diffusion" class="level3">
 <h3 class="anchored" data-anchor-id="step-3-animate-the-diffusion">Step 3 — Animate the diffusion</h3>
-<div id="ffe023a7" class="cell" data-execution_count="4">
+<div id="d36c9134" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.tri <span class="im">as</span> mtri</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> PowerNorm</span>
@@ -6344,7 +6703,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 <p>Diffusion on a cortical surface mesh (fsLR 32k), using the <code>mesh_file</code> attribute to reference an external GIFTI file directly. The cortical midthickness surface is a closed manifold (no boundary), so the Dirichlet BC has no effect and total mass is conserved — the field spreads but doesn’t decay.</p>
 <section id="setup-and-run" class="level3">
 <h3 class="anchored" data-anchor-id="setup-and-run">Setup and run</h3>
-<div id="b1abbd56" class="cell" data-execution_count="5">
+<div id="8e95f6ad" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> templateflow.api <span class="im">as</span> tfa</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> nibabel <span class="im">as</span> nib</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -6370,7 +6729,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 <span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>            <span class="st">'equation'</span>: {<span class="st">'lhs'</span>: <span class="st">'u_t'</span>, <span class="st">'rhs'</span>: <span class="st">'D * laplacian(u)'</span>},</span>
 <span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        }],</span>
 <span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>        <span class="st">'operators'</span>: [{<span class="st">'label'</span>: <span class="st">'Diffusion'</span>, <span class="st">'operator_type'</span>: <span class="st">'laplacian'</span>, <span class="st">'coefficient'</span>: <span class="st">'D'</span>}],</span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">'solver'</span>: {<span class="st">'label'</span>: <span class="st">'FEM IE'</span>, <span class="st">'discretization'</span>: <span class="st">'FEM'</span>, <span class="st">'time_integrator'</span>: <span class="st">'implicit Euler'</span>, <span class="st">'dt'</span>: <span class="fl">2.0</span>},</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">'solver'</span>: {<span class="st">'label'</span>: <span class="st">'FEM IE'</span>, <span class="st">'discretization'</span>: <span class="st">'FEM'</span>, <span class="st">'method'</span>: <span class="st">'implicit Euler'</span>, <span class="st">'dt'</span>: <span class="fl">2.0</span>},</span>
 <span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    },</span>
 <span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'integration'</span>: {<span class="st">'duration'</span>: <span class="dv">60</span>},</span>
 <span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>}</span>
@@ -6401,7 +6760,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </section>
 <section id="animate-with-bsplot" class="level3">
 <h3 class="anchored" data-anchor-id="animate-with-bsplot">Animate with bsplot</h3>
-<div id="ea550cdf" class="cell" data-execution_count="6">
+<div id="7ca9a275" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> PowerNorm</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bsplot.surface <span class="im">import</span> plot_surf</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bsplot.animate <span class="im">import</span> animate_axes</span>
@@ -6418,42 +6777,41 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 <span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>sm2 <span class="op">=</span> cm.ScalarMappable(norm<span class="op">=</span>norm2, cmap<span class="op">=</span><span class="st">"inferno"</span>)</span>
 <span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>fig2.colorbar(sm2, ax<span class="op">=</span>ax_surf, label<span class="op">=</span><span class="st">"u"</span>, shrink<span class="op">=</span><span class="fl">0.8</span>)</span>
 <span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Area-weighted mean (conserved on closed surface), not arithmetic mean</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>faces <span class="op">=</span> gi.darrays[<span class="dv">1</span>].data</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>v0, v1, v2 <span class="op">=</span> vertices[faces[:, <span class="dv">0</span>]], vertices[faces[:, <span class="dv">1</span>]], vertices[faces[:, <span class="dv">2</span>]]</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>tri_areas <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> np.linalg.norm(np.cross(v1 <span class="op">-</span> v0, v2 <span class="op">-</span> v0), axis<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>vertex_areas <span class="op">=</span> np.zeros(<span class="bu">len</span>(vertices))</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    np.add.at(vertex_areas, faces[:, k], tri_areas <span class="op">/</span> <span class="dv">3</span>)</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>global_mean <span class="op">=</span> np.array([</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    (vertex_areas <span class="op">*</span> np.asarray(ts2.data[t, <span class="dv">0</span>, :])).<span class="bu">sum</span>() <span class="op">/</span> vertex_areas.<span class="bu">sum</span>()</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(n_frames)</span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>])</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cortex_update(frame, ax, axis_idx, context):</span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    ax.clear()</span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> axis_idx <span class="op">==</span> <span class="dv">0</span>:</span>
-<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>        overlay <span class="op">=</span> np.asarray(context[<span class="st">"ts"</span>].data[frame, <span class="dv">0</span>, :])</span>
-<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>        plot_surf(</span>
-<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>            context[<span class="st">"gii"</span>], overlay<span class="op">=</span>overlay,</span>
-<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>            hemi<span class="op">=</span><span class="st">"rh"</span>, view<span class="op">=</span><span class="st">"lateral"</span>, ax<span class="op">=</span>ax,</span>
-<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>            cmap<span class="op">=</span><span class="st">"inferno"</span>, norm<span class="op">=</span>context[<span class="st">"norm"</span>],</span>
-<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>        ax.set_title(<span class="ss">f"t = </span><span class="sc">{</span>context[<span class="st">'ts'</span>]<span class="sc">.</span>time[frame]<span class="sc">:.0f}</span><span class="ss">"</span>)</span>
-<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> []</span>
-<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
-<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>        ax.plot(context[<span class="st">"ts"</span>].time, context[<span class="st">"mean"</span>], color<span class="op">=</span><span class="st">"black"</span>)</span>
-<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>        ax.axvline(context[<span class="st">"ts"</span>].time[frame], color<span class="op">=</span><span class="st">"red"</span>, lw<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>        ax.set_xlabel(<span class="st">"Time"</span>)</span>
-<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>        ax.set_ylabel(<span class="st">"Area-weighted mean u"</span>)</span>
-<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>        ax.set_title(<span class="st">"Mass conservation"</span>)</span>
-<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> []</span>
-<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>ctx <span class="op">=</span> {<span class="st">"ts"</span>: ts2, <span class="st">"gii"</span>: gi, <span class="st">"norm"</span>: norm2, <span class="st">"mean"</span>: global_mean}</span>
-<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a>anim2 <span class="op">=</span> animate_axes(fig2, [ax_surf, ax_ts], n_frames<span class="op">=</span>n_frames,</span>
-<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>                     update_fn<span class="op">=</span>cortex_update, context<span class="op">=</span>ctx, interval<span class="op">=</span><span class="dv">200</span>)</span>
-<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>anim2.save(<span class="st">"_output/pde_cortex.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">6</span>)</span>
-<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a>plt.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="co"># The conserved quantity is 1'Mu, so weight by the mass matrix the solver integrates</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="co"># rather than by a second, hand-rolled notion of vertex area.</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.data.mesh_fem <span class="im">import</span> p1_mass</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>M_cortex <span class="op">=</span> p1_mass(vertices, gi.darrays[<span class="dv">1</span>].data)</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>vertex_areas <span class="op">=</span> np.asarray(M_cortex.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">1</span>)).ravel()</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>global_mean <span class="op">=</span> np.array([</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    (vertex_areas <span class="op">*</span> np.asarray(ts2.data[t, <span class="dv">0</span>, :])).<span class="bu">sum</span>() <span class="op">/</span> vertex_areas.<span class="bu">sum</span>()</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(n_frames)</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> cortex_update(frame, ax, axis_idx, context):</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    ax.clear()</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> axis_idx <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>        overlay <span class="op">=</span> np.asarray(context[<span class="st">"ts"</span>].data[frame, <span class="dv">0</span>, :])</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>        plot_surf(</span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>            context[<span class="st">"gii"</span>], overlay<span class="op">=</span>overlay,</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>            hemi<span class="op">=</span><span class="st">"rh"</span>, view<span class="op">=</span><span class="st">"lateral"</span>, ax<span class="op">=</span>ax,</span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>            cmap<span class="op">=</span><span class="st">"inferno"</span>, norm<span class="op">=</span>context[<span class="st">"norm"</span>],</span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>        ax.set_title(<span class="ss">f"t = </span><span class="sc">{</span>context[<span class="st">'ts'</span>]<span class="sc">.</span>time[frame]<span class="sc">:.0f}</span><span class="ss">"</span>)</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> []</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>        ax.plot(context[<span class="st">"ts"</span>].time, context[<span class="st">"mean"</span>], color<span class="op">=</span><span class="st">"black"</span>)</span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>        ax.axvline(context[<span class="st">"ts"</span>].time[frame], color<span class="op">=</span><span class="st">"red"</span>, lw<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>        ax.set_xlabel(<span class="st">"Time"</span>)</span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>        ax.set_ylabel(<span class="st">"Area-weighted mean u"</span>)</span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>        ax.set_title(<span class="st">"Mass conservation"</span>)</span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> []</span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>ctx <span class="op">=</span> {<span class="st">"ts"</span>: ts2, <span class="st">"gii"</span>: gi, <span class="st">"norm"</span>: norm2, <span class="st">"mean"</span>: global_mean}</span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>anim2 <span class="op">=</span> animate_axes(fig2, [ax_surf, ax_ts], n_frames<span class="op">=</span>n_frames,</span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a>                     update_fn<span class="op">=</span>cortex_update, context<span class="op">=</span>ctx, interval<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>anim2.save(<span class="st">"_output/pde_cortex.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">6</span>)</span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>plt.close()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -6462,12 +6820,218 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </figure>
 </div>
 </section>
+</section>
+<section id="sec-pde-wave" class="level2">
+<h2 class="anchored" data-anchor-id="sec-pde-wave">Example 3: A damped wave equation with a heterogeneous medium</h2>
+<p>A second-order-in-time system, written as two first-order state variables, with a spatially varying propagation scale. This is the neural-field form used by geometric eigenmode models <span class="citation" data-cites="Pang2023"><a href="#ref-Pang2023" role="doc-biblioref">[1]</a></span>, generalised: those fit a single <span class="math inline">\(r_s\)</span> for the whole cortex, which the modal route requires — vary <span class="math inline">\(r_s\)</span> in space and the operator stops being diagonal in the eigenbasis, so only a field formulation reaches this regime.</p>
+<p><span class="math display">\[
+\gamma^{-2}\,\partial_{tt}\phi + 2\gamma^{-1}\,\partial_t\phi + \phi - \nabla\!\cdot\!\big(r_s(\mathbf{x})^2 \nabla \phi\big) = Q
+\]</span></p>
+<div id="82df9762" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>gamma <span class="op">=</span> <span class="fl">2.0</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>exp_wave <span class="op">=</span> {</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'label'</span>: <span class="st">'Damped wave with heterogeneous propagation scale'</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'field_dynamics'</span>: {</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">'label'</span>: <span class="st">'Damped wave'</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">'mesh'</span>: {<span class="st">'label'</span>: <span class="st">'unit_square'</span>, <span class="st">'element_type'</span>: <span class="st">'triangle'</span>, <span class="st">'mesh_file'</span>: mesh_path},</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        <span class="co"># A parameter with no scalar value is a PER-VERTEX field. Give it a `producer:` and</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># the run needs no caller at all; passed to build() here so the sweep below can vary it.</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">'parameters'</span>: {<span class="st">'g'</span>: {<span class="st">'name'</span>: <span class="st">'g'</span>, <span class="st">'value'</span>: gamma}, <span class="st">'rsq'</span>: {<span class="st">'name'</span>: <span class="st">'rsq'</span>, <span class="st">'value'</span>: <span class="va">None</span>}},</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">'state_variables'</span>: [</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'name'</span>: <span class="st">'phi'</span>, <span class="st">'label'</span>: <span class="st">'phi'</span>, <span class="st">'initial_value'</span>: <span class="fl">1.0</span>,</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>             <span class="st">'equation'</span>: {<span class="st">'lhs'</span>: <span class="st">'phi_t'</span>, <span class="st">'rhs'</span>: <span class="st">'w'</span>}},</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'name'</span>: <span class="st">'w'</span>, <span class="st">'label'</span>: <span class="st">'w'</span>, <span class="st">'initial_value'</span>: <span class="fl">0.0</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>             <span class="st">'equation'</span>: {<span class="st">'lhs'</span>: <span class="st">'w_t'</span>, <span class="st">'rhs'</span>: <span class="st">'g**2 * (-(2/g)*w - phi + div(rsq * grad(phi)))'</span>}},</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>        ],</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">'solver'</span>: {<span class="st">'label'</span>: <span class="st">'CN'</span>, <span class="st">'discretization'</span>: <span class="st">'FEM'</span>, <span class="st">'method'</span>: <span class="st">'crank-nicolson'</span>, <span class="st">'dt'</span>: <span class="fl">0.005</span>},</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'integration'</span>: {<span class="st">'duration'</span>: <span class="fl">2.0</span>},</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>yaml_path3 <span class="op">=</span> os.path.join(tmpdir, <span class="st">'pde_wave.yaml'</span>)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(yaml_path3, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    yaml.dump(exp_wave, f)</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>exp3 <span class="op">=</span> SimulationExperiment.from_file(yaml_path3)</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>ns3 <span class="op">=</span> exp3.execute(<span class="st">'pde'</span>)</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"per-vertex fields this system needs:"</span>, ns3[<span class="st">'meta'</span>][<span class="st">'requires_fields'</span>])</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Fast propagation on the left half, slow on the right</span></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>xs <span class="op">=</span> MeshTri.init_symmetric().refined(<span class="dv">3</span>).p[<span class="dv">0</span>]</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>solve3, _, meta3 <span class="op">=</span> ns3[<span class="st">'build'</span>](fields<span class="op">=</span>{<span class="st">'rsq'</span>: np.where(xs <span class="op">&lt;</span> <span class="fl">0.5</span>, <span class="fl">0.05</span>, <span class="fl">0.005</span>)})</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>_, U3 <span class="op">=</span> solve3(steps<span class="op">=</span><span class="dv">400</span>, save_timeseries<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"states: </span><span class="sc">{</span>meta3[<span class="st">'variables'</span>]<span class="sc">}</span><span class="ss">, U shape </span><span class="sc">{</span>U3<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>per-vertex fields this system needs: ['rsq']
+states: ['phi', 'w'], U shape (401, 2, 145)</code></pre>
+</div>
+</div>
+<p>For the spatially uniform mode the Laplacian vanishes and the system is exactly critically damped, <span class="math inline">\(\phi = \phi_0(1+\gamma t)e^{-\gamma t}\)</span> — which is how the backend is verified:</p>
+<div id="d68c113a" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>t3 <span class="op">=</span> np.arange(U3.shape[<span class="dv">0</span>]) <span class="op">*</span> <span class="fl">0.005</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>analytic <span class="op">=</span> (<span class="dv">1</span> <span class="op">+</span> gamma <span class="op">*</span> t3) <span class="op">*</span> np.exp(<span class="op">-</span>gamma <span class="op">*</span> t3)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"max deviation from the analytic envelope: </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">abs</span>(U3[:, <span class="dv">0</span>, :].mean(axis<span class="op">=</span><span class="dv">1</span>) <span class="op">-</span> analytic)<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.2e}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>max deviation from the analytic envelope: 3.84e-06</code></pre>
+</div>
+</div>
+</section>
+<section id="sec-pde-modal" class="level2">
+<h2 class="anchored" data-anchor-id="sec-pde-modal">Example 4: A brain wave equation, and the ODE system it becomes</h2>
+<p>Geometric eigenmode models of cortex <span class="citation" data-cites="Pang2023"><a href="#ref-Pang2023" role="doc-biblioref">[1]</a></span> pose a damped wave equation on the cortical surface and then <strong>never integrate it</strong>. They expand the field in the eigenbasis of the Laplace–Beltrami operator, <span class="math inline">\(\Delta\psi_k = -\lambda_k\psi_k\)</span>, which turns the field equation into one damped oscillator per mode,</p>
+<p><span class="math display">\[
+\gamma^{-2}\ddot{a}_k + 2\gamma^{-1}\dot{a}_k + \big(1 + r_s^2\lambda_k\big)a_k = Q_k(t),
+\]</span></p>
+<p>and integrate a few hundred of those instead. With constant coefficients this is an <strong>exact reformulation</strong> of the PDE, not an approximation of it, so the only error is the one introduced by stopping the sum. Having both routes in one framework is what turns that from a claim into a measurement.</p>
+<p>The demonstration needs a closed curved surface, because that is the cortical case: no boundary anywhere, so a Dirichlet condition would constrain nothing.</p>
+<div id="474c1644" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.linalg <span class="im">import</span> eigh</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> icosphere(subdivisions, radius):</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A closed triangulated sphere, refined by splitting every triangle in four."""</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> (<span class="dv">1</span> <span class="op">+</span> <span class="dv">5</span> <span class="op">**</span> <span class="fl">0.5</span>) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    v <span class="op">=</span> np.array([[<span class="op">-</span><span class="dv">1</span>,t,<span class="dv">0</span>],[<span class="dv">1</span>,t,<span class="dv">0</span>],[<span class="op">-</span><span class="dv">1</span>,<span class="op">-</span>t,<span class="dv">0</span>],[<span class="dv">1</span>,<span class="op">-</span>t,<span class="dv">0</span>],[<span class="dv">0</span>,<span class="op">-</span><span class="dv">1</span>,t],[<span class="dv">0</span>,<span class="dv">1</span>,t],</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                  [<span class="dv">0</span>,<span class="op">-</span><span class="dv">1</span>,<span class="op">-</span>t],[<span class="dv">0</span>,<span class="dv">1</span>,<span class="op">-</span>t],[t,<span class="dv">0</span>,<span class="op">-</span><span class="dv">1</span>],[t,<span class="dv">0</span>,<span class="dv">1</span>],[<span class="op">-</span>t,<span class="dv">0</span>,<span class="op">-</span><span class="dv">1</span>],[<span class="op">-</span>t,<span class="dv">0</span>,<span class="dv">1</span>]], <span class="bu">float</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    f <span class="op">=</span> np.array([[<span class="dv">0</span>,<span class="dv">11</span>,<span class="dv">5</span>],[<span class="dv">0</span>,<span class="dv">5</span>,<span class="dv">1</span>],[<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">7</span>],[<span class="dv">0</span>,<span class="dv">7</span>,<span class="dv">10</span>],[<span class="dv">0</span>,<span class="dv">10</span>,<span class="dv">11</span>],[<span class="dv">1</span>,<span class="dv">5</span>,<span class="dv">9</span>],[<span class="dv">5</span>,<span class="dv">11</span>,<span class="dv">4</span>],</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>                  [<span class="dv">11</span>,<span class="dv">10</span>,<span class="dv">2</span>],[<span class="dv">10</span>,<span class="dv">7</span>,<span class="dv">6</span>],[<span class="dv">7</span>,<span class="dv">1</span>,<span class="dv">8</span>],[<span class="dv">3</span>,<span class="dv">9</span>,<span class="dv">4</span>],[<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">2</span>],[<span class="dv">3</span>,<span class="dv">2</span>,<span class="dv">6</span>],[<span class="dv">3</span>,<span class="dv">6</span>,<span class="dv">8</span>],</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>                  [<span class="dv">3</span>,<span class="dv">8</span>,<span class="dv">9</span>],[<span class="dv">4</span>,<span class="dv">9</span>,<span class="dv">5</span>],[<span class="dv">2</span>,<span class="dv">4</span>,<span class="dv">11</span>],[<span class="dv">6</span>,<span class="dv">2</span>,<span class="dv">10</span>],[<span class="dv">8</span>,<span class="dv">6</span>,<span class="dv">7</span>],[<span class="dv">9</span>,<span class="dv">8</span>,<span class="dv">1</span>]])</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(subdivisions):</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>        mid, split, pts <span class="op">=</span> {}, [], <span class="bu">list</span>(v)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">def</span> midpoint(a, b):</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>            key <span class="op">=</span> (<span class="bu">min</span>(a, b), <span class="bu">max</span>(a, b))</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> key <span class="kw">not</span> <span class="kw">in</span> mid:</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>                mid[key] <span class="op">=</span> <span class="bu">len</span>(pts)<span class="op">;</span> pts.append((np.asarray(pts[a]) <span class="op">+</span> pts[b]) <span class="op">/</span> <span class="dv">2</span>)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> mid[key]</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> a, b, c <span class="kw">in</span> f:</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>            ab, bc, ca <span class="op">=</span> midpoint(a, b), midpoint(b, c), midpoint(c, a)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>            split <span class="op">+=</span> [[a,ab,ca],[b,bc,ab],[c,ca,bc],[ab,bc,ca]]</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>        v, f <span class="op">=</span> np.array(pts), np.array(split)</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> radius <span class="op">*</span> v <span class="op">/</span> np.linalg.norm(v, axis<span class="op">=</span><span class="dv">1</span>, keepdims<span class="op">=</span><span class="va">True</span>), f</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>vertices, faces <span class="op">=</span> icosphere(<span class="dv">3</span>, <span class="fl">50.0</span>)          <span class="co"># mm, roughly a hemisphere's scale</span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>meshio.Mesh(points<span class="op">=</span>vertices, cells<span class="op">=</span>[(<span class="st">'triangle'</span>, faces)]).write(</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>    os.path.join(tmpdir, <span class="st">'sphere.msh'</span>))</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(vertices)<span class="sc">}</span><span class="ss"> vertices, </span><span class="sc">{</span><span class="bu">len</span>(faces)<span class="sc">}</span><span class="ss"> triangles"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>642 vertices, 1280 triangles</code></pre>
+</div>
+</div>
+<p>The equation is <span class="citation" data-cites="Pang2023"><a href="#ref-Pang2023" role="doc-biblioref">[1]</a></span>’s, at their fitted parameters, driven by a 1 ms pulse declared as an <code>events:</code> entry — the backend substitutes it into the equation that names it:</p>
+<div id="6bc607ce" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>GAMMA, R_S, DT, STEPS <span class="op">=</span> <span class="fl">116.0</span>, <span class="fl">28.9</span>, <span class="fl">1e-4</span>, <span class="dv">200</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>exp_modal <span class="op">=</span> {</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'label'</span>: <span class="st">'Damped cortical wave equation'</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'events'</span>: {<span class="st">'Q'</span>: {</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">'name'</span>: <span class="st">'Q'</span>, <span class="st">'event_type'</span>: <span class="st">'stimulus'</span>, <span class="st">'label'</span>: <span class="st">'1 ms pulse'</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">'equation'</span>: {<span class="st">'rhs'</span>: <span class="st">'Piecewise((amplitude, (t &gt;= t_on) &amp; (t &lt; t_off)), (0, True))'</span>},</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">'parameters'</span>: {<span class="st">'amplitude'</span>: {<span class="st">'name'</span>: <span class="st">'amplitude'</span>, <span class="st">'value'</span>: <span class="fl">20.0</span>},</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>                       <span class="st">'t_on'</span>: {<span class="st">'name'</span>: <span class="st">'t_on'</span>, <span class="st">'value'</span>: <span class="fl">0.001</span>},</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>                       <span class="st">'t_off'</span>: {<span class="st">'name'</span>: <span class="st">'t_off'</span>, <span class="st">'value'</span>: <span class="fl">0.002</span>}}}},</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'field_dynamics'</span>: {</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">'label'</span>: <span class="st">'Neural field'</span>,</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">'mesh'</span>: {<span class="st">'label'</span>: <span class="st">'sphere'</span>, <span class="st">'element_type'</span>: <span class="st">'triangle'</span>,</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'mesh_file'</span>: os.path.join(tmpdir, <span class="st">'sphere.msh'</span>)},</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">'parameters'</span>: {<span class="st">'gamma_s'</span>: {<span class="st">'name'</span>: <span class="st">'gamma_s'</span>, <span class="st">'value'</span>: GAMMA},</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>                       <span class="st">'r_s'</span>: {<span class="st">'name'</span>: <span class="st">'r_s'</span>, <span class="st">'value'</span>: R_S},</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>                       <span class="st">'q'</span>: {<span class="st">'name'</span>: <span class="st">'q'</span>, <span class="st">'value'</span>: <span class="va">None</span>}},</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">'state_variables'</span>: [</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'name'</span>: <span class="st">'phi'</span>, <span class="st">'label'</span>: <span class="st">'phi'</span>, <span class="st">'initial_value'</span>: <span class="fl">0.0</span>,</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>             <span class="st">'equation'</span>: {<span class="st">'lhs'</span>: <span class="st">'phi_t'</span>, <span class="st">'rhs'</span>: <span class="st">'w'</span>}},</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>            {<span class="st">'name'</span>: <span class="st">'w'</span>, <span class="st">'label'</span>: <span class="st">'w'</span>, <span class="st">'initial_value'</span>: <span class="fl">0.0</span>,</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>             <span class="st">'equation'</span>: {<span class="st">'lhs'</span>: <span class="st">'w_t'</span>, <span class="st">'rhs'</span>: <span class="st">'gamma_s**2 * (q * Q - (2/gamma_s)*w '</span></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>                                               <span class="st">'- phi + r_s**2 * laplacian(phi))'</span>}}],</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>        <span class="st">'solver'</span>: {<span class="st">'label'</span>: <span class="st">'CN'</span>, <span class="st">'discretization'</span>: <span class="st">'FEM'</span>,</span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>                   <span class="st">'method'</span>: <span class="st">'crank-nicolson'</span>, <span class="st">'dt'</span>: DT}},</span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">'integration'</span>: {<span class="st">'duration'</span>: STEPS <span class="op">*</span> DT},</span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>yaml_path4 <span class="op">=</span> os.path.join(tmpdir, <span class="st">'pde_modal.yaml'</span>)</span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(yaml_path4, <span class="st">'w'</span>) <span class="im">as</span> f:</span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>    yaml.dump(exp_modal, f)</span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>patch <span class="op">=</span> (vertices[:, <span class="dv">0</span>] <span class="op">&gt;</span> <span class="fl">40.0</span>).astype(<span class="bu">float</span>)          <span class="co"># a localised "V1"</span></span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>ns4 <span class="op">=</span> SimulationExperiment.from_file(yaml_path4).execute(<span class="st">'pde'</span>)</span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>solve4, _, meta4 <span class="op">=</span> ns4[<span class="st">'build'</span>](fields<span class="op">=</span>{<span class="st">'q'</span>: patch})</span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>_, U4 <span class="op">=</span> solve4(steps<span class="op">=</span>STEPS, save_timeseries<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>field <span class="op">=</span> U4[<span class="op">-</span><span class="dv">1</span>, <span class="dv">0</span>]</span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"stimulated </span><span class="sc">{</span><span class="bu">int</span>(patch.<span class="bu">sum</span>())<span class="sc">}</span><span class="ss"> vertices; peak |phi| = </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">abs</span>(field)<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>stimulated 61 vertices; peak |phi| = 0.1365</code></pre>
+</div>
+</div>
+<p>Now the same system as modal ODEs. Solving <span class="math inline">\(K\psi = \lambda M\psi\)</span> mass-orthonormally gives the discrete eigenbasis; each mode is stepped with the scheme the field solver uses, and the stimulus enters through its own projection <span class="math inline">\(\psi^\top M q\)</span>:</p>
+<div id="64152478" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>evals, modes <span class="op">=</span> eigh(meta4[<span class="st">'stiffness_matrix'</span>].toarray(), meta4[<span class="st">'mass_matrix'</span>].toarray())</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>projected_drive <span class="op">=</span> modes.T <span class="op">@</span> (meta4[<span class="st">'mass_matrix'</span>] <span class="op">@</span> patch)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> integrate_modes(n_modes):</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""The paper's route: keep `n_modes` oscillators and sum them back up."""</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    lam, psi, drive <span class="op">=</span> evals[:n_modes], modes[:, :n_modes], projected_drive[:n_modes]</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    jac <span class="op">=</span> np.zeros((n_modes, <span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    jac[:, <span class="dv">0</span>, <span class="dv">1</span>] <span class="op">=</span> <span class="fl">1.0</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    jac[:, <span class="dv">1</span>, <span class="dv">0</span>] <span class="op">=</span> <span class="op">-</span>GAMMA<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> (<span class="fl">1.0</span> <span class="op">+</span> R_S<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> lam)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    jac[:, <span class="dv">1</span>, <span class="dv">1</span>] <span class="op">=</span> <span class="op">-</span><span class="fl">2.0</span> <span class="op">*</span> GAMMA</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    eye <span class="op">=</span> np.eye(<span class="dv">2</span>)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    step <span class="op">=</span> np.linalg.solve(eye <span class="op">-</span> <span class="fl">0.5</span><span class="op">*</span>DT<span class="op">*</span>jac, eye <span class="op">+</span> <span class="fl">0.5</span><span class="op">*</span>DT<span class="op">*</span>jac)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    kick <span class="op">=</span> np.linalg.solve(eye <span class="op">-</span> <span class="fl">0.5</span><span class="op">*</span>DT<span class="op">*</span>jac, np.tile(eye, (n_modes, <span class="dv">1</span>, <span class="dv">1</span>)))[:, :, <span class="dv">1</span>]</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    state <span class="op">=</span> np.zeros((n_modes, <span class="dv">2</span>))</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(STEPS):</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>        state <span class="op">=</span> np.einsum(<span class="st">'kij,kj-&gt;ki'</span>, step, state)</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="fl">0.001</span> <span class="op">&lt;=</span> k<span class="op">*</span>DT <span class="op">&lt;</span> <span class="fl">0.002</span>:</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>            state <span class="op">=</span> state <span class="op">+</span> DT <span class="op">*</span> GAMMA<span class="op">**</span><span class="dv">2</span> <span class="op">*</span> <span class="fl">20.0</span> <span class="op">*</span> drive[:, <span class="va">None</span>] <span class="op">*</span> kick</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> psi <span class="op">@</span> state[:, <span class="dv">0</span>]</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>peak <span class="op">=</span> np.<span class="bu">abs</span>(field).<span class="bu">max</span>()</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'modes kept'</span><span class="sc">:&gt;12}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'max error / peak'</span><span class="sc">:&gt;18}</span><span class="ss">"</span>)</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n_modes <span class="kw">in</span> (<span class="dv">10</span>, <span class="dv">50</span>, <span class="dv">200</span>, meta4[<span class="st">'ndofs'</span>]):</span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>    err <span class="op">=</span> np.<span class="bu">abs</span>(field <span class="op">-</span> integrate_modes(n_modes)).<span class="bu">max</span>() <span class="op">/</span> peak</span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>n_modes<span class="sc">:12d}</span><span class="ss"> </span><span class="sc">{</span>err<span class="sc">:18.3e}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  modes kept   max error / peak
+          10          3.406e-01
+          50          7.420e-02
+         200          2.566e-02
+         642          1.146e-12</code></pre>
+</div>
+</div>
+<p>The last row is the point: <strong>with the complete basis the two agree to round-off</strong>, so the reformulation is exact and every row above it is pure truncation. That is what licenses reading a mode-truncated model’s residual as a statement about mode count rather than about the solver.</p>
+<p>The sphere keeps the page fast, but nothing here changes at brain scale. On the full fsLR-32k left midthickness — 32,492 vertices, 64,984 degrees of freedom for this two-variable system — assembling <span class="math inline">\(M\)</span> and <span class="math inline">\(K\)</span> takes 0.07 s, the sparse factorisation 8.4 s, and each subsequent step is a triangular solve at roughly 76 ms, in about 3 GiB. The factorisation cost is paid once because <span class="math inline">\(\Delta t\)</span> and the operator are both fixed; changing either invalidates it.</p>
 <section id="numerical-details" class="level3">
 <h3 class="anchored" data-anchor-id="numerical-details">Numerical details</h3>
-<p>The backward-Euler FEM update assembles mass (<span class="math inline">\(M\)</span>) and stiffness (<span class="math inline">\(K\)</span>) matrices over linear triangular elements and solves, at each step:</p>
+<p>The FEM update assembles mass (<span class="math inline">\(M\)</span>) and stiffness (<span class="math inline">\(K\)</span>) matrices over linear elements, builds the block operator <span class="math inline">\(A\)</span> from the declared equations, and solves at each step</p>
 <p><span class="math display">\[
-(M + \Delta t \, D \, K) \, \mathbf{u}^{n+1} = M \, \mathbf{u}^{n} + \Delta t \, M \, \mathbf{f}^{n}
+(M_\text{blk} - \theta \Delta t\, A)\, \mathbf{u}^{n+1} = \big(M_\text{blk} + (1-\theta)\Delta t\, A\big)\mathbf{u}^{n} + \Delta t\, M_\text{blk}\mathbf{f}^{n}
 \]</span></p>
+<p>with <span class="math inline">\(\theta = \tfrac12\)</span> for Crank–Nicolson and <span class="math inline">\(\theta = 1\)</span> for implicit Euler. A term <code>a * laplacian(u)</code> contributes <span class="math inline">\(-aK\)</span> (the weak form of the Laplacian is <span class="math inline">\(-\!\int\!\nabla u\cdot\nabla v\)</span>), a term <code>a * u</code> contributes <span class="math inline">\(aM\)</span>, and <code>div(c*grad(u))</code> contributes the weighted stiffness <span class="math inline">\(-\!\int\! c\,\nabla u\cdot\nabla v\)</span>.</p>
+<p><code>meta</code> carries the assembled <code>mass_matrix</code>, <code>stiffness_matrix</code> and <code>operator</code>, so a conservation law can be checked directly — note that the conserved quantity of pure diffusion is <span class="math inline">\(\mathbf{1}^\top M\mathbf{u}\)</span>, not the nodal sum.</p>
+<p>Triangles are assembled in closed form rather than through a FEM library, which is what makes a cortical mesh usable: it is a 2-manifold carrying three coordinates, and a general-purpose assembler expects the element and coordinate dimensions to agree. The P1 gradients on a surface triangle are tangential and known analytically, so the surface case is exact, and the stiffness matrix it produces is the familiar cotangent operator. Tetrahedra go through scikit-fem.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Surface operators carry the surface metric
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A general-purpose assembler handed a curved triangle mesh does not necessarily refuse it — it may quietly discretise the mesh’s <strong>projection onto a coordinate plane</strong>, which runs, looks right, and answers a different question. On fsLR-32k that projection has an area of 33,070 mm² against the surface’s true 69,589 mm². The operators here are invariant under rotation and translation of the mesh, and <code>tests/test_mesh_fem.py</code> pins that against both scikit-fem (where the two agree, in the plane) and the analytic sphere spectrum (where only the surface form applies).</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Not yet supported
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>c(x) * laplacian(u)</code> is refused rather than approximated: its weak form requires <span class="math inline">\(\nabla c\)</span> and is not self-adjoint. Write it in divergence form, <code>div(c*grad(u))</code>, which is conservative and symmetric. Neumann, Robin and Periodic boundary conditions are schema-only and raise if declared, rather than being silently dropped. Declared noise and coupling to a node-level <code>dynamics:</code> block are not lowered onto the field.</p>
+<p>The explicit remainder <span class="math inline">\(\mathbf{f}\)</span> is evaluated at the start of the step, so a system with a nonlinear or time-dependent term is first-order in time even under Crank–Nicolson. The linear part keeps its second order, and it is the linear part that sets stability.</p>
+</div>
+</div>
 </section>
 </section>
 <section id="mesh-support" class="level2">
@@ -6500,7 +7064,13 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </tbody>
 </table>
 <p>Supported mesh formats:</p>
+<p>Meshes are read by <code>tvbo.data.mesh_io.read_mesh</code>, the same reader the rest of TVB-O uses, so a surface behaves identically wherever it appears:</p>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 29%">
+<col style="width: 40%">
+<col style="width: 29%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Format</th>
@@ -6516,27 +7086,17 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </tr>
 <tr class="even">
 <td>FreeSurfer</td>
-<td><code>.pial</code>, <code>.white</code>, <code>.inflated</code></td>
+<td><code>.pial</code>, <code>.white</code>, <code>.inflated</code>, <code>.sphere</code></td>
 <td>nibabel</td>
 </tr>
 <tr class="odd">
-<td>Gmsh</td>
-<td><code>.msh</code></td>
-<td>meshio</td>
-</tr>
-<tr class="even">
 <td>VTK</td>
-<td><code>.vtk</code>, <code>.vtu</code></td>
-<td>meshio</td>
-</tr>
-<tr class="odd">
-<td>Wavefront OBJ</td>
-<td><code>.obj</code></td>
-<td>meshio</td>
+<td><code>.vtk</code></td>
+<td>parsed directly, including the ASCII <strong>PolyData</strong> form brain-surface templates ship in — which meshio refuses</td>
 </tr>
 <tr class="even">
-<td>PLY</td>
-<td><code>.ply</code></td>
+<td>Gmsh, VTU, OBJ, PLY</td>
+<td><code>.msh</code>, <code>.vtu</code>, <code>.obj</code>, <code>.ply</code></td>
 <td>meshio</td>
 </tr>
 </tbody>
@@ -6544,9 +7104,9 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </section>
 <section id="generated-code" class="level2">
 <h2 class="anchored" data-anchor-id="generated-code">Generated Code</h2>
-<p>The PDE backend generates a self-contained scikit-fem solver from the YAML specification:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>code <span class="op">=</span> exp.render_code(<span class="st">"pde"</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(code[:<span class="dv">500</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The PDE backend generates a self-contained solver from the YAML specification:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>code <span class="op">=</span> exp.render_code(<span class="st">"pde"</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(code[:<span class="dv">500</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The generated module contains:</p>
 <table class="caption-top table">
 <colgroup>
@@ -6561,20 +7121,20 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>_load_mesh()</code></td>
-<td>Load GIFTI, FreeSurfer, or meshio mesh formats</td>
+<td><code>_discretise()</code></td>
+<td>Read the mesh and assemble the P1 operators its element type supports</td>
 </tr>
 <tr class="even">
-<td><code>build()</code></td>
-<td>Assemble mass and stiffness matrices, return solver closures</td>
+<td><code>build(fields=...)</code></td>
+<td>Assemble the block operator and factor it once; <code>fields</code> supplies any per-vertex coefficient that did not declare its own provenance</td>
 </tr>
 <tr class="odd">
 <td><code>solve_pde()</code></td>
-<td>Implicit Euler timestepping with optional source terms</td>
+<td>Crank–Nicolson / implicit Euler timestepping with optional source terms</td>
 </tr>
 <tr class="even">
 <td><code>visualize()</code></td>
-<td>Matplotlib field plot via scikit-fem</td>
+<td>Matplotlib field plot, in the plane or on the surface</td>
 </tr>
 </tbody>
 </table>
@@ -6632,9 +7192,14 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
 </ul>
 
 
+
 </section>
 
-</main> <!-- /main -->
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body" data-entry-spacing="0" role="list">
+<div id="ref-Pang2023" class="csl-entry" role="listitem">
+<div class="csl-left-margin">[1] </div><div class="csl-right-inline">J. C. Pang <em>et al.</em>, <span>“Geometric constraints on human brain function,”</span> <em>Nature</em>, vol. 618, no. 7965, pp. 566–574, May 2023, doi: <a href="https://doi.org/10.1038/s41586-023-06098-1">10.1038/s41586-023-06098-1</a>.</div>
+</div>
+</div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const icon = "";
@@ -6707,7 +7272,7 @@ Time: 0.00 to 1.00, dt=0.010</code></pre>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

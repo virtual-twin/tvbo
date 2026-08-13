@@ -278,7 +278,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.adapters.base.BaseAdapter.get_noise_sigmas">get_noise_sigmas</a></td>
-<td>Extract per-SV noise intensity values.</td>
+<td>Per-state-variable noise amplitude σ, <code>0.0</code> where none is declared.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.adapters.base.BaseAdapter.get_outdim">get_outdim</a></td>
@@ -298,7 +298,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.adapters.base.BaseAdapter.is_stochastic_dynamics">is_stochastic_dynamics</a></td>
-<td>Detect stochastic system: any SV with noise intensity &gt; 0.</td>
+<td>Detect a stochastic system: any state variable with a positive noise amplitude.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.adapters.base.BaseAdapter.parse_node_parameters">parse_node_parameters</a></td>
@@ -377,7 +377,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.adapters.base.BaseAdapter.get_noise_sigmas" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.base.BaseAdapter.get_noise_sigmas">get_noise_sigmas</h5>
 <div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>adapters.base.BaseAdapter.get_noise_sigmas(dynamics)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Extract per-SV noise intensity values.</p>
+<p>Per-state-variable noise amplitude σ, <code>0.0</code> where none is declared.</p>
 </section>
 <section id="tvbo.adapters.base.BaseAdapter.get_outdim" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.base.BaseAdapter.get_outdim">get_outdim</h5>
@@ -406,7 +406,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.adapters.base.BaseAdapter.is_stochastic_dynamics" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.base.BaseAdapter.is_stochastic_dynamics">is_stochastic_dynamics</h5>
 <div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>adapters.base.BaseAdapter.is_stochastic_dynamics(dynamics_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Detect stochastic system: any SV with noise intensity &gt; 0.</p>
+<p>Detect a stochastic system: any state variable with a positive noise amplitude.</p>
 </section>
 <section id="tvbo.adapters.base.BaseAdapter.parse_node_parameters" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.base.BaseAdapter.parse_node_parameters">parse_node_parameters</h5>
@@ -505,7 +505,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

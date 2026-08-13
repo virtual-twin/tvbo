@@ -182,6 +182,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#tvbo.adapters.tvboptim" id="toc-tvbo.adapters.tvboptim" class="nav-link active" data-scroll-target="#tvbo.adapters.tvboptim">tvboptim</a>
   <ul class="collapse">
+  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
   <li><a href="#tvbo.adapters.tvboptim.is_heterogeneous" id="toc-tvbo.adapters.tvboptim.is_heterogeneous" class="nav-link" data-scroll-target="#tvbo.adapters.tvboptim.is_heterogeneous">is_heterogeneous</a></li>
@@ -207,6 +208,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li>:func:<code>to_tvboptim</code> — Network → tvboptim Network or DenseGraph / DenseDelayGraph</li>
 </ul>
+<section id="attributes" class="level2">
+<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.adapters.tvboptim.SOLVER_MAP">SOLVER_MAP</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="functions" class="level2">
 <h2 class="anchored" data-anchor-id="functions">Functions</h2>
 <table class="caption-top table">
@@ -219,7 +237,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.adapters.tvboptim.is_heterogeneous">is_heterogeneous</a></td>
-<td>True when the network’s nodes reference more than one distinct dynamics.</td>
+<td>True when the experiment’s nodes run more than one distinct dynamics.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.adapters.tvboptim.run_heterogeneous_tvboptim">run_heterogeneous_tvboptim</a></td>
@@ -237,9 +255,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.adapters.tvboptim.is_heterogeneous" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.tvboptim.is_heterogeneous">is_heterogeneous</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adapters.tvboptim.is_heterogeneous(network)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>True when the network’s nodes reference more than one distinct dynamics.</p>
-<p>This is the trigger for the heterogeneous tvboptim path: a homogeneous network (all nodes one model) uses :func:<code>to_tvboptim</code>; a heterogeneous one uses :func:<code>to_heterogeneous_network</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adapters.tvboptim.is_heterogeneous(experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>True when the experiment’s nodes run more than one distinct dynamics.</p>
+<p>The trigger for the heterogeneous tvboptim path: a homogeneous experiment (one model on every node) uses :func:<code>to_tvboptim</code>, a heterogeneous one :func:<code>to_heterogeneous_network</code>. Delegates to the adapter-layer predicate every codegen backend already uses, so this path agrees with them about the nodes that declare no <code>dynamics</code> and fall back to the experiment’s.</p>
 </section>
 <section id="tvbo.adapters.tvboptim.run_heterogeneous_tvboptim" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.tvboptim.run_heterogeneous_tvboptim">run_heterogeneous_tvboptim</h3>
@@ -247,10 +265,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    experiment,</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    dynamics_lib<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    seed<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Run a heterogeneous <code>SimulationExperiment</code> on tvboptim, in process.</p>
-<p>Builds a <code>HeterogeneousNetwork</code> from the experiment’s network, integrates with a native fixed-step solver, and returns an <code>ExperimentResult</code> whose integration <code>TimeSeries</code> carries a per-group variable union (see :func:<code>_heterogeneous_solution_to_dataarray</code>). This is the P1 path that lets <code>exp.run("tvboptim")</code> handle heterogeneous networks without the codegen experiment template (that is a later milestone). Unknown <code>kwargs</code> (e.g. <code>benchmark</code>, <code>mode</code>) are accepted and ignored.</p>
+<p>Builds a <code>HeterogeneousNetwork</code> from the experiment’s network, integrates with a native fixed-step solver, and returns an <code>ExperimentResult</code> whose integration <code>TimeSeries</code> carries a per-group variable union (see :func:<code>_heterogeneous_solution_to_dataarray</code>). This is the P1 path that lets <code>exp.run("tvboptim")</code> handle heterogeneous networks without the codegen experiment template (that is a later milestone). <em>seed</em> overrides the recipe’s <code>execution.random_seed</code>. Unknown <code>kwargs</code> (e.g.&nbsp;<code>benchmark</code>, <code>mode</code>) are accepted and ignored.</p>
 </section>
 <section id="tvbo.adapters.tvboptim.to_heterogeneous_network" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.tvboptim.to_heterogeneous_network">to_heterogeneous_network</h3>
@@ -258,14 +277,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    network,</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    dynamics_lib<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    delays<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    max_delay<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    default_dynamics<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    delays<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    max_delay<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Build a tvboptim <code>HeterogeneousNetwork</code> from a heterogeneous tvbo Network.</p>
-<p>Nodes are partitioned into <code>DynamicsGroup</code>s by their referenced dynamics (graph order = node order); edges are collapsed into <code>SignalRoute</code>s keyed by <code>(coupling, target_var, delayed)</code>. The shared graph is built by the same :func:<code>_build_graph</code> the homogeneous path uses, so the connectome weights (with signs) and delays carry over unchanged.</p>
+<p>Nodes are partitioned into <code>DynamicsGroup</code>s by their referenced dynamics (graph order = node order); edges are collapsed into <code>SignalRoute</code>s keyed by <code>(coupling NAME, target_var, delayed)</code> — keying on object identity would split two edges naming one coupling into two routes, applying the shared graph twice. The shared graph is built by the same :func:<code>_build_graph</code> the homogeneous path uses, so the connectome weights (with signs) and delays carry over unchanged.</p>
 <section id="parameters" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
-<p>network : Network A heterogeneous tvbo Network (<code>is_heterogeneous(network)</code> is True). dynamics_lib : mapping, optional <code>{name: Dynamics}</code> resolving each <code>Node.dynamics</code> reference. Defaults to <code>network.dynamics</code>. delays, max_delay Forwarded to :func:<code>_build_graph</code>; <code>delays=None</code> auto-infers from the network’s couplings (any <code>delayed=True</code>).</p>
+<p>network : Network A heterogeneous tvbo Network (<code>is_heterogeneous(network)</code> is True). dynamics_lib : mapping, optional <code>{name: Dynamics}</code> resolving each <code>Node.dynamics</code> reference. Defaults to <code>network.dynamics</code>. default_dynamics : str, optional Name used for nodes that declare no <code>dynamics</code> of their own (<code>Node.dynamics</code> is optional — the experiment’s dynamics is the documented fallback). delays, max_delay Forwarded to :func:<code>_build_graph</code>; <code>delays=None</code> auto-infers from the network’s couplings (any <code>delayed=True</code>).</p>
 </section>
 </section>
 <section id="tvbo.adapters.tvboptim.to_tvboptim" class="level3">
@@ -370,7 +390,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -332,11 +332,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.data.matrix_io.write_matrix" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.matrix_io.write_matrix">write_matrix</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data.matrix_io.write_matrix(grp, matrix, fmt<span class="op">=</span><span class="st">'dense'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data.matrix_io.write_matrix(grp, matrix, fmt<span class="op">=</span><span class="st">'dense'</span>, dtype<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Write a matrix to an HDF5/Zarr group in the specified format.</p>
 <section id="parameters-3" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
-<p>grp : h5py.Group or zarr.Group Target group. matrix : array-like Matrix data to write. fmt : str Storage format: “dense”, “csr”, or “coo”.</p>
+<p>grp : h5py.Group or zarr.Group Target group. matrix : array-like Matrix data to write. fmt : str Storage format: “dense”, “csr”, or “coo”. dtype : str or numpy.dtype, optional Store at this precision instead of the matrix’s own. Index arrays of the sparse formats are unaffected — they keep the width scipy chose, which is int64 exactly when the matrix is too large for int32 to address.</p>
+<p>The shape is read off <code>.shape</code> directly, never via <code>np.asarray</code> — a scipy sparse matrix survives that call as a 0-d object array, which would record an empty shape.</p>
 
 
 </section>
@@ -417,7 +418,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

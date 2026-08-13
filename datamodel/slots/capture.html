@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>temporalapplicableequation – TVB-O Documentation</title>
+<title>capture – TVB-O Documentation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -65,8 +65,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../../">
-<link href="../../datamodel/classes/TimeSeries.html" rel="next">
-<link href="../../datamodel/classes/Surrogate.html" rel="prev">
+<link href="../../datamodel/slots/cases.html" rel="next">
+<link href="../../datamodel/slots/callable.html" rel="prev">
 <link href="../../_static/tvbo_python_square.svg" rel="icon" type="image/svg+xml">
 <script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
@@ -105,9 +105,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
-<script src="../../site_libs/quarto-diagram/mermaid.min.js"></script>
-<script src="../../site_libs/quarto-diagram/mermaid-init.js"></script>
-<link href="../../site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer">
 <script src="//unpkg.com/3d-force-graph"></script>
 <script src="../../_static/tvbo-icons.js"></script>
@@ -180,7 +177,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../datamodel/index.html">Data Model</a></li><li class="breadcrumb-item"><a href="../../datamodel/classes/Aggregation.html">Classes</a></li><li class="breadcrumb-item"><a href="../../datamodel/classes/TemporalApplicableEquation.html">Temporal Applicable Equation</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../datamodel/index.html">Data Model</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/abbreviation.html">Slots</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/capture.html">capture</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -225,6 +222,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../Simulation/SimulationExperiments.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">The SimulationExperiment object</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Specification/YAML.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Writing TVB-O YAML</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -1368,13 +1371,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false">
  <span class="menu-text">Classes</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-27" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-27" class="collapse list-unstyled sidebar-section depth2 show">  
+      <ul id="quarto-sidebar-section-27" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Aggregation.html" class="sidebar-item-text sidebar-link">
@@ -1409,6 +1412,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Annotation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Annotation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/ArchiveConfig.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Archive Config</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1457,6 +1466,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/BranchSwitch.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Branch Switch</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/CachedArray.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cached Array</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1683,6 +1698,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/ExperimentResultSidecar.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Experiment Result Sidecar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Exploration.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Exploration</span></a>
   </div>
@@ -1745,6 +1766,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/InitialState.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Initial State</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Inset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Inset</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1881,6 +1908,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Partition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Partition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/PDE.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">PDE</span></a>
   </div>
@@ -1949,6 +1982,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/RegionMapping.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Region Mapping</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/RenderSpec.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Render Spec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/ResultBinding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Result Binding</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2061,6 +2106,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/StudyCollection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Collection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/StudyMember.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Member</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Style.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Style</span></a>
   </div>
@@ -2075,12 +2132,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Surrogate.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Surrogate</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/TemporalApplicableEquation.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Temporal Applicable Equation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2123,13 +2174,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="true">
  <span class="menu-text">Slots</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-28" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-28" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-28" class="collapse list-unstyled sidebar-section depth2 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/abbreviation.html" class="sidebar-item-text sidebar-link">
@@ -2264,6 +2315,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/analyses.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analyses</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/analysis.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">analysis</span></a>
   </div>
@@ -2300,6 +2357,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/archive.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">archive</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/args.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">args</span></a>
   </div>
@@ -2314,6 +2377,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/array_chunk.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">array_chunk</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/arrow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">arrow</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2384,6 +2453,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/batch_mode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">batch_mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/batch_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">batch_size</span></a>
   </div>
@@ -2416,6 +2491,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/bindings.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">bindings</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/block_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">block_size</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2486,6 +2567,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/capture.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">capture</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/cases.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">cases</span></a>
   </div>
@@ -2494,6 +2581,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/category.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">category</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cell.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cell</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cells.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cells</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2548,6 +2647,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/clinical_scores.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">clinical_scores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/clip.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">clip</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2750,8 +2855,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/correlated_over.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">correlated_over</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/correlation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">correlation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/count.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">count</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2788,6 +2905,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/coupling_variable.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">coupling_variable</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/covariance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">covariance</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2996,6 +3119,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/device_scale_factor.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">device_scale_factor</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/diagnosis.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">diagnosis</span></a>
   </div>
@@ -3028,6 +3157,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/dimension_labels.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">dimension_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/dims.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dims</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3112,12 +3247,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/ds_min.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ds_min</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dt.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dt</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3356,6 +3485,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/family_wise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">family_wise</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/field.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">field</span></a>
   </div>
@@ -3440,6 +3575,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/gather.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">gather</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/gaussian.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">gaussian</span></a>
   </div>
@@ -3502,6 +3643,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/groups.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">groups</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/ha.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ha</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3614,6 +3761,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/include.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">include</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/includes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">includes</span></a>
   </div>
@@ -3670,6 +3823,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/inputs.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">inputs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/insets.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">insets</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3986,6 +4145,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/members.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">members</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/mesh.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">mesh</span></a>
   </div>
@@ -4274,6 +4439,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/number.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">number</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/number_loc.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">number_loc</span></a>
   </div>
@@ -4466,6 +4637,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/pad.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_key.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_key</span></a>
   </div>
@@ -4480,6 +4657,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_number_loc.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_offset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_offset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_size</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4540,6 +4729,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/parent_score.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">parent_score</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/part.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">part</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4736,6 +4931,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/recipe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">recipe</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/recon_path.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">recon_path</span></a>
   </div>
@@ -4774,6 +4975,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/reference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">reference</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/reference_image.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">reference_image</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4862,6 +5069,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/reset_state.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">reset_state</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/results.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">results</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/retries.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">retries</span></a>
   </div>
@@ -4888,6 +5107,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/role.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/rotation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">rotation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5150,6 +5375,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/spine_offset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spine_offset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/spines.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">spines</span></a>
   </div>
@@ -5300,6 +5531,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/system_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">system_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/system_type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">system_type</span></a>
   </div>
@@ -5312,8 +5549,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tail_duration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tail_duration</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tail_samples.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tail_samples</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tail_used.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tail_used</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tail_x.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tail_x</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5444,12 +5699,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/time_integrator.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">time_integrator</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/time_post_surgery.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">time_post_surgery</span></a>
   </div>
@@ -5498,12 +5747,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/tolerances.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">tolerances</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tool_role.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tool_role</span></a>
   </div>
@@ -5536,6 +5779,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/transient_time.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">transient_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/triangle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">triangle</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5590,6 +5839,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/used.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">used</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/va.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">va</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5678,6 +5933,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/wait_selector.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">wait_selector</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/warmup.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">warmup</span></a>
   </div>
@@ -5696,6 +5957,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/waves.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">waves</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/weight.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">weight</span></a>
   </div>
@@ -5704,6 +5971,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/weight_distribution.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">weight_distribution</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/weight_parameter.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">weight_parameter</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6007,6 +6280,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ReportPart.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Report Part</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/RequirementRole.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Requirement Role</span></a>
   </div>
@@ -6049,6 +6328,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/SubjectBatchMode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Subject Batch Mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SweepDirection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Sweep Direction</span></a>
   </div>
@@ -6069,6 +6354,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/ToolRole.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tool Role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/Triangle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Triangle</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6132,170 +6423,44 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#class-temporalapplicableequation" id="toc-class-temporalapplicableequation" class="nav-link active" data-scroll-target="#class-temporalapplicableequation">Class: TemporalApplicableEquation</a></li>
+  <li><a href="#slot-capture" id="toc-slot-capture" class="nav-link active" data-scroll-target="#slot-capture">Slot: capture</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/datamodel/classes/TemporalApplicableEquation.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/datamodel/slots/capture.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../datamodel/index.html">Data Model</a></li><li class="breadcrumb-item"><a href="../../datamodel/classes/Aggregation.html">Classes</a></li><li class="breadcrumb-item"><a href="../../datamodel/classes/TemporalApplicableEquation.html">Temporal Applicable Equation</a></li></ol></nav></header>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../datamodel/index.html">Data Model</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/abbreviation.html">Slots</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/capture.html">capture</a></li></ol></nav></header>
 
 
 
 
-<section id="class-temporalapplicableequation" class="level1">
-<h1>Class: TemporalApplicableEquation</h1>
+<section id="slot-capture" class="level1">
+<h1>Slot: capture</h1>
+<p><em>How to turn an <code>image</code> panel’s HTML/URL <code>source</code> into its <code>path</code>: the headless-browser recipe (viewport, scale, wait, clip). The declarative form of code/capture-screenshots.py, so a screenshot regenerates from the spec instead of being hand-captured. Ignored when <code>source</code> is a static file or a script.</em></p>
 <div data-search-exclude="" data-markdown="1">
-<p>URI: <a href="https://w3id.org/tvbo/TemporalApplicableEquation">tvbo:TemporalApplicableEquation</a></p>
-<div class="cell" data-layout-align="center">
-<div class="cell-output-display">
-<div>
-<p></p><figure class="figure"><p></p>
-<div>
-<pre class="mermaid mermaid-js"> classDiagram
-    class TemporalApplicableEquation
-    click TemporalApplicableEquation href "./TemporalApplicableEquation.html"
-      Equation &lt;|-- TemporalApplicableEquation
-        click Equation href "./Equation.html"
-      
-      TemporalApplicableEquation : conditionals
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "*" ConditionalBlock : conditionals
-        click ConditionalBlock href "./ConditionalBlock.html"
-    
-
-        
-      TemporalApplicableEquation : definition
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "0..1" String : definition
-        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
-    
-
-        
-      TemporalApplicableEquation : description
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "0..1" String : description
-        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
-    
-
-        
-      TemporalApplicableEquation : engine
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "0..1" SoftwareRequirement : engine
-        click SoftwareRequirement href "./SoftwareRequirement.html"
-    
-
-        
-      TemporalApplicableEquation : label
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "0..1" String : label
-        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
-    
-
-        
-      TemporalApplicableEquation : latex
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "0..1" Boolean : latex
-        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
-    
-
-        
-      TemporalApplicableEquation : lhs
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "0..1" String : lhs
-        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
-    
-
-        
-      TemporalApplicableEquation : parameters
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "*" Parameter : parameters
-        click Parameter href "./Parameter.html"
-    
-
-        
-      TemporalApplicableEquation : pycode
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "0..1" String : pycode
-        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
-    
-
-        
-      TemporalApplicableEquation : rhs
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "0..1" String : rhs
-        click String href "../http://www.w3.org/2001/XMLSchema#string.html"
-    
-
-        
-      TemporalApplicableEquation : time_dependent
-        
-          
-    
-        
-        
-        TemporalApplicableEquation --&gt; "0..1" Boolean : time_dependent
-        click Boolean href "../http://www.w3.org/2001/XMLSchema#boolean.html"
-    
-
-        
-      
-</pre>
-</div>
-<p></p></figure><p></p>
-</div>
-</div>
-</div>
-<section id="inheritance" class="level2">
-<h2 class="anchored" data-anchor-id="inheritance">Inheritance</h2>
-<ul>
-<li><a href="../../datamodel/classes/Equation.html">Equation</a>
-<ul>
-<li><strong>TemporalApplicableEquation</strong></li>
-</ul></li>
-</ul>
+<p>URI: <a href="https://w3id.org/tvbo/slot/capture">tvbo:slot/capture</a> <!-- no inheritance hierarchy --></p>
+<section id="applicable-classes" class="level2">
+<h2 class="anchored" data-anchor-id="applicable-classes">Applicable Classes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+<th>Modifies Slot</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="../../datamodel/classes/Panel.html">Panel</a></td>
+<td>One cell of the figure</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="class-properties" class="level2">
-<h2 class="anchored" data-anchor-id="class-properties">Class Properties</h2>
+<section id="properties" class="level2">
+<h2 class="anchored" data-anchor-id="properties">Properties</h2>
+<section id="type-and-range" class="level3">
+<h3 class="anchored" data-anchor-id="type-and-range">Type and Range</h3>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -6305,99 +6470,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td>Class URI</td>
-<td><a href="https://w3id.org/tvbo/TemporalApplicableEquation">tvbo:TemporalApplicableEquation</a></td>
+<td>Range</td>
+<td><a href="../../datamodel/classes/RenderSpec.html">RenderSpec</a></td>
+</tr>
+<tr class="even">
+<td>Domain Of</td>
+<td><a href="../../datamodel/classes/Panel.html">Panel</a></td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="slots" class="level2">
-<h2 class="anchored" data-anchor-id="slots">Slots</h2>
-<table class="caption-top table">
+<section id="cardinality-and-requirements" class="level3">
+<h3 class="anchored" data-anchor-id="cardinality-and-requirements">Cardinality and Requirements</h3>
+<table class="caption-top">
 <thead>
 <tr class="header">
-<th>Name</th>
-<th>Cardinality and Range</th>
-<th>Description</th>
-<th>Inheritance</th>
+<th>Property</th>
+<th>Value</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><a href="../../datamodel/slots/parameters.html">parameters</a></td>
-<td>* <br> <a href="../../datamodel/classes/Parameter.html">Parameter</a></td>
-<td></td>
-<td>direct</td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/slots/time_dependent.html">time_dependent</a></td>
-<td>0..1 <br> <a href="http://www.w3.org/2001/XMLSchema#boolean">xsd:boolean</a></td>
-<td></td>
-<td>direct</td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/slots/label.html">label</a></td>
-<td>0..1 <br> <a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></td>
-<td></td>
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/slots/definition.html">definition</a></td>
-<td>0..1 <br> <a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></td>
-<td></td>
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/slots/description.html">description</a></td>
-<td>0..1 <br> <a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></td>
-<td></td>
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/slots/lhs.html">lhs</a></td>
-<td>0..1 <br> <a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></td>
-<td></td>
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/slots/rhs.html">rhs</a></td>
-<td>0..1 <br> <a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></td>
-<td></td>
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/slots/conditionals.html">conditionals</a></td>
-<td>* <br> <a href="../../datamodel/classes/ConditionalBlock.html">ConditionalBlock</a></td>
-<td>Conditional logic for piecewise equations</td>
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/slots/engine.html">engine</a></td>
-<td>0..1 <br> <a href="../../datamodel/classes/SoftwareRequirement.html">SoftwareRequirement</a></td>
-<td>Primary engine (must appear in environment</td>
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
-</tr>
-<tr class="even">
-<td><a href="../../datamodel/slots/pycode.html">pycode</a></td>
-<td>0..1 <br> <a href="http://www.w3.org/2001/XMLSchema#string">xsd:string</a></td>
-<td>Python code for the equation</td>
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
-</tr>
-<tr class="odd">
-<td><a href="../../datamodel/slots/latex.html">latex</a></td>
-<td>0..1 <br> <a href="http://www.w3.org/2001/XMLSchema#boolean">xsd:boolean</a></td>
-<td></td>
-<td><a href="../../datamodel/classes/Equation.html">Equation</a></td>
-</tr>
 </tbody>
 </table>
+</section>
 </section>
 <section id="identifier-and-mapping-information" class="level2">
 <h2 class="anchored" data-anchor-id="identifier-and-mapping-information">Identifier and Mapping Information</h2>
 <section id="schema-source" class="level3">
 <h3 class="anchored" data-anchor-id="schema-source">Schema Source</h3>
 <ul>
-<li>from schema: https://w3id.org/tvbo</li>
+<li>from schema: https://w3id.org/tvbo/figure</li>
 </ul>
 </section>
 </section>
@@ -6413,287 +6515,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>self</td>
-<td>tvbo:TemporalApplicableEquation</td>
+<td>tvbo:capture</td>
 </tr>
 <tr class="even">
 <td>native</td>
-<td>tvbo:TemporalApplicableEquation</td>
+<td>tvbo:capture</td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="linkml-source" class="level2">
 <h2 class="anchored" data-anchor-id="linkml-source">LinkML Source</h2>
-<!-- TODO: investigate https://stackoverflow.com/questions/37606292/how-to-create-tabbed-code-blocks-in-mkdocs-or-sphinx -->
-<section id="direct" class="level3">
-<h3 class="anchored" data-anchor-id="direct">Direct</h3>
 <details>
-<div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">is_a</span><span class="kw">:</span><span class="at"> Equation</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">slots</span><span class="kw">:</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> parameters</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span><span class="kw">:</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">time_dependent</span><span class="kw">:</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> time_dependent</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ifabsent</span><span class="kw">:</span><span class="at"> </span><span class="st">'False'</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SpatialField</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> BoundaryCondition</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> boolean</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="fu">class_uri</span><span class="kw">:</span><span class="at"> tvbo:TemporalApplicableEquation</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> capture</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">'How to turn an `image` panel</span><span class="sc">''</span><span class="st">s HTML/URL `source` into its `path`: the</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st">  headless-browser recipe (viewport, scale, wait, clip). The declarative form of code/capture-screenshots.py,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">  so a screenshot regenerates from the spec instead of being hand-captured. Ignored</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">  when `source` is a static file or a script.'</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo/figure</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">domain_of</span><span class="kw">:</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> Panel</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> RenderSpec</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">inlined</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-</section>
-<section id="induced" class="level3">
-<h3 class="anchored" data-anchor-id="induced">Induced</h3>
-<details>
-<div class="sourceCode" id="cb2"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">is_a</span><span class="kw">:</span><span class="at"> Equation</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span><span class="kw">:</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">time_dependent</span><span class="kw">:</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> time_dependent</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ifabsent</span><span class="kw">:</span><span class="at"> </span><span class="st">'False'</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SpatialField</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> BoundaryCondition</span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> boolean</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">parameters</span><span class="kw">:</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> parameters</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Equation</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Stimulus</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Event</span></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Network</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> GraphGenerator</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Node</span></span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Edge</span></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Observation</span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Analysis</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Dynamics</span></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Distribution</span></span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Noise</span></span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Exploration</span></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Discretization</span></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> BranchSwitch</span></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Integrator</span></span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Coupling</span></span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> PDE</span></span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> Parameter</span></span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">multivalued</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">inlined</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">label</span><span class="kw">:</span></span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> label</span></span>
-<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">slot_uri</span><span class="kw">:</span><span class="at"> rdfs:label</span></span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ParcellationTerminology</span></span>
-<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Subject</span></span>
-<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Session</span></span>
-<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Dataset</span></span>
-<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Contact</span></span>
-<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SoftwareEnvironment</span></span>
-<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Panel</span></span>
-<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Equation</span></span>
-<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Stimulus</span></span>
-<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Event</span></span>
-<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Parcellation</span></span>
-<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Tractogram</span></span>
-<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Matrix</span></span>
-<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Phenotype</span></span>
-<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Network</span></span>
-<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Node</span></span>
-<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Edge</span></span>
-<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Observation</span></span>
-<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Dynamics</span></span>
-<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> StateVariable</span></span>
-<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Parameter</span></span>
-<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Function</span></span>
-<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> FunctionCall</span></span>
-<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> DerivedVariable</span></span>
-<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> RandomStream</span></span>
-<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> DataSource</span></span>
-<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> OptimizationStage</span></span>
-<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Exploration</span></span>
-<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ExplorationAxis</span></span>
-<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> FreeParameter</span></span>
-<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Inference</span></span>
-<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> AlgorithmStage</span></span>
-<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> TuningObjective</span></span>
-<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Continuation</span></span>
-<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Coupling</span></span>
-<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> RegionMapping</span></span>
-<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SimulationExperiment</span></span>
-<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SimulationStudy</span></span>
-<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> TimeSeries</span></span>
-<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> NDArray</span></span>
-<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SpatialDomain</span></span>
-<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Mesh</span></span>
-<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SpatialField</span></span>
-<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> FieldStateVariable</span></span>
-<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> DifferentialOperator</span></span>
-<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> BoundaryCondition</span></span>
-<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> PDESolver</span></span>
-<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> PDE</span></span>
-<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span>
-<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">definition</span><span class="kw">:</span></span>
-<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> definition</span></span>
-<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">slot_uri</span><span class="kw">:</span><span class="at"> skos:definition</span></span>
-<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Equation</span></span>
-<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> StateVariable</span></span>
-<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Parameter</span></span>
-<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Function</span></span>
-<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> DifferentialOperator</span></span>
-<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span>
-<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">description</span><span class="kw">:</span></span>
-<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> description</span></span>
-<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">slot_uri</span><span class="kw">:</span><span class="at"> dcterms:description</span></span>
-<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Dataset</span></span>
-<span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ClinicalScore</span></span>
-<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SoftwarePackage</span></span>
-<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SoftwareRequirement</span></span>
-<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SoftwareEnvironment</span></span>
-<span id="cb2-125"><a href="#cb2-125" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Figure</span></span>
-<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Equation</span></span>
-<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Stimulus</span></span>
-<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Event</span></span>
-<span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Tractogram</span></span>
-<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Matrix</span></span>
-<span id="cb2-131"><a href="#cb2-131" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Phenotype</span></span>
-<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> MeasureSpec</span></span>
-<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> NamedArray</span></span>
-<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Network</span></span>
-<span id="cb2-135"><a href="#cb2-135" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> GraphGenerator</span></span>
-<span id="cb2-136"><a href="#cb2-136" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ProcedureStep</span></span>
-<span id="cb2-137"><a href="#cb2-137" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> File</span></span>
-<span id="cb2-138"><a href="#cb2-138" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Node</span></span>
-<span id="cb2-139"><a href="#cb2-139" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Edge</span></span>
-<span id="cb2-140"><a href="#cb2-140" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Observation</span></span>
-<span id="cb2-141"><a href="#cb2-141" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Dynamics</span></span>
-<span id="cb2-142"><a href="#cb2-142" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> StateVariable</span></span>
-<span id="cb2-143"><a href="#cb2-143" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Parameter</span></span>
-<span id="cb2-144"><a href="#cb2-144" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> CouplingInput</span></span>
-<span id="cb2-145"><a href="#cb2-145" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Argument</span></span>
-<span id="cb2-146"><a href="#cb2-146" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Function</span></span>
-<span id="cb2-147"><a href="#cb2-147" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> FunctionCall</span></span>
-<span id="cb2-148"><a href="#cb2-148" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Callable</span></span>
-<span id="cb2-149"><a href="#cb2-149" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> DerivedParameter</span></span>
-<span id="cb2-150"><a href="#cb2-150" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> DerivedVariable</span></span>
-<span id="cb2-151"><a href="#cb2-151" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> RandomStream</span></span>
-<span id="cb2-152"><a href="#cb2-152" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> DataSource</span></span>
-<span id="cb2-153"><a href="#cb2-153" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> OptimizationStage</span></span>
-<span id="cb2-154"><a href="#cb2-154" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Exploration</span></span>
-<span id="cb2-155"><a href="#cb2-155" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ExplorationAxis</span></span>
-<span id="cb2-156"><a href="#cb2-156" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> FreeParameter</span></span>
-<span id="cb2-157"><a href="#cb2-157" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Inference</span></span>
-<span id="cb2-158"><a href="#cb2-158" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Prior</span></span>
-<span id="cb2-159"><a href="#cb2-159" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Likelihood</span></span>
-<span id="cb2-160"><a href="#cb2-160" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> UpdateRule</span></span>
-<span id="cb2-161"><a href="#cb2-161" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> AlgorithmStage</span></span>
-<span id="cb2-162"><a href="#cb2-162" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> TuningObjective</span></span>
-<span id="cb2-163"><a href="#cb2-163" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Algorithm</span></span>
-<span id="cb2-164"><a href="#cb2-164" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> BranchSwitch</span></span>
-<span id="cb2-165"><a href="#cb2-165" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Continuation</span></span>
-<span id="cb2-166"><a href="#cb2-166" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Integrator</span></span>
-<span id="cb2-167"><a href="#cb2-167" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Coupling</span></span>
-<span id="cb2-168"><a href="#cb2-168" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> RegionMapping</span></span>
-<span id="cb2-169"><a href="#cb2-169" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SimulationExperiment</span></span>
-<span id="cb2-170"><a href="#cb2-170" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Study</span></span>
-<span id="cb2-171"><a href="#cb2-171" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> TimeSeries</span></span>
-<span id="cb2-172"><a href="#cb2-172" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> NDArray</span></span>
-<span id="cb2-173"><a href="#cb2-173" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SpatialDomain</span></span>
-<span id="cb2-174"><a href="#cb2-174" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Mesh</span></span>
-<span id="cb2-175"><a href="#cb2-175" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> SpatialField</span></span>
-<span id="cb2-176"><a href="#cb2-176" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> FieldStateVariable</span></span>
-<span id="cb2-177"><a href="#cb2-177" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> BoundaryCondition</span></span>
-<span id="cb2-178"><a href="#cb2-178" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> PDESolver</span></span>
-<span id="cb2-179"><a href="#cb2-179" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> PDE</span></span>
-<span id="cb2-180"><a href="#cb2-180" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span>
-<span id="cb2-181"><a href="#cb2-181" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">lhs</span><span class="kw">:</span></span>
-<span id="cb2-182"><a href="#cb2-182" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> lhs</span></span>
-<span id="cb2-183"><a href="#cb2-183" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-184"><a href="#cb2-184" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">aliases</span><span class="kw">:</span></span>
-<span id="cb2-185"><a href="#cb2-185" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> lefthandside</span></span>
-<span id="cb2-186"><a href="#cb2-186" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-187"><a href="#cb2-187" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-188"><a href="#cb2-188" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-189"><a href="#cb2-189" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Equation</span></span>
-<span id="cb2-190"><a href="#cb2-190" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span>
-<span id="cb2-191"><a href="#cb2-191" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">rhs</span><span class="kw">:</span></span>
-<span id="cb2-192"><a href="#cb2-192" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> rhs</span></span>
-<span id="cb2-193"><a href="#cb2-193" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-194"><a href="#cb2-194" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">aliases</span><span class="kw">:</span></span>
-<span id="cb2-195"><a href="#cb2-195" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> righthandside</span></span>
-<span id="cb2-196"><a href="#cb2-196" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-197"><a href="#cb2-197" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-198"><a href="#cb2-198" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-199"><a href="#cb2-199" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Equation</span></span>
-<span id="cb2-200"><a href="#cb2-200" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span>
-<span id="cb2-201"><a href="#cb2-201" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">conditionals</span><span class="kw">:</span></span>
-<span id="cb2-202"><a href="#cb2-202" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> conditionals</span></span>
-<span id="cb2-203"><a href="#cb2-203" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Conditional logic for piecewise equations.</span></span>
-<span id="cb2-204"><a href="#cb2-204" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-205"><a href="#cb2-205" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-206"><a href="#cb2-206" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-207"><a href="#cb2-207" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-208"><a href="#cb2-208" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Equation</span></span>
-<span id="cb2-209"><a href="#cb2-209" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> ConditionalBlock</span></span>
-<span id="cb2-210"><a href="#cb2-210" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">multivalued</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb2-211"><a href="#cb2-211" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">inlined</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb2-212"><a href="#cb2-212" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">engine</span><span class="kw">:</span></span>
-<span id="cb2-213"><a href="#cb2-213" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> engine</span></span>
-<span id="cb2-214"><a href="#cb2-214" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Primary engine (must appear in environment.requirements; migration</span></span>
-<span id="cb2-215"><a href="#cb2-215" aria-hidden="true" tabindex="-1"></a><span class="at">      target replacing deprecated 'software').</span></span>
-<span id="cb2-216"><a href="#cb2-216" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-217"><a href="#cb2-217" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-218"><a href="#cb2-218" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-219"><a href="#cb2-219" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-220"><a href="#cb2-220" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Equation</span></span>
-<span id="cb2-221"><a href="#cb2-221" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> SoftwareRequirement</span></span>
-<span id="cb2-222"><a href="#cb2-222" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">inlined</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb2-223"><a href="#cb2-223" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pycode</span><span class="kw">:</span></span>
-<span id="cb2-224"><a href="#cb2-224" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> pycode</span></span>
-<span id="cb2-225"><a href="#cb2-225" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Python code for the equation.</span></span>
-<span id="cb2-226"><a href="#cb2-226" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-227"><a href="#cb2-227" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-228"><a href="#cb2-228" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-229"><a href="#cb2-229" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-230"><a href="#cb2-230" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Equation</span></span>
-<span id="cb2-231"><a href="#cb2-231" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Noise</span></span>
-<span id="cb2-232"><a href="#cb2-232" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span>
-<span id="cb2-233"><a href="#cb2-233" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">latex</span><span class="kw">:</span></span>
-<span id="cb2-234"><a href="#cb2-234" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> latex</span></span>
-<span id="cb2-235"><a href="#cb2-235" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb2-236"><a href="#cb2-236" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb2-237"><a href="#cb2-237" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ifabsent</span><span class="kw">:</span><span class="at"> </span><span class="st">'False'</span></span>
-<span id="cb2-238"><a href="#cb2-238" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> TemporalApplicableEquation</span></span>
-<span id="cb2-239"><a href="#cb2-239" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb2-240"><a href="#cb2-240" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Equation</span></span>
-<span id="cb2-241"><a href="#cb2-241" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">range</span><span class="kw">:</span><span class="at"> boolean</span></span>
-<span id="cb2-242"><a href="#cb2-242" aria-hidden="true" tabindex="-1"></a><span class="fu">class_uri</span><span class="kw">:</span><span class="at"> tvbo:TemporalApplicableEquation</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-</section>
 </section>
 </div>
 
@@ -6773,7 +6617,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
@@ -7102,13 +6946,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../../datamodel/classes/Surrogate.html" class="pagination-link" aria-label="Surrogate">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Surrogate</span>
+      <a href="../../datamodel/slots/callable.html" class="pagination-link" aria-label="callable">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">callable</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../../datamodel/classes/TimeSeries.html" class="pagination-link" aria-label="Time Series">
-        <span class="nav-page-text">Time Series</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../../datamodel/slots/cases.html" class="pagination-link" aria-label="cases">
+        <span class="nav-page-text">cases</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
@@ -7120,7 +6964,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </div>   
     <div class="nav-footer-center">
 <p>© Charité - Universitätsmedizin Berlin</p>
-<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/datamodel/classes/TemporalApplicableEquation.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/datamodel/slots/capture.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
     <li class="nav-item compact">

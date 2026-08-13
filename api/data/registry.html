@@ -243,7 +243,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.data.registry.list_entries_with_metadata">list_entries_with_metadata</a></td>
-<td>Return a list of dicts with <code>name</code>, <code>model_type</code>, <code>description</code>, <code>path</code></td>
+<td>Return a list of dicts with <code>name</code>, <code>model_type</code>, <code>description</code>, <code>path</code> for every entry in the given class category. Fast — reads only the first</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.data.registry.local_name">local_name</a></td>
@@ -360,7 +360,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

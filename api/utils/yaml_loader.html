@@ -182,11 +182,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#tvbo.utils.yaml_loader" id="toc-tvbo.utils.yaml_loader" class="nav-link active" data-scroll-target="#tvbo.utils.yaml_loader">yaml_loader</a>
   <ul class="collapse">
+  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
   <li><a href="#tvbo.utils.yaml_loader.load" id="toc-tvbo.utils.yaml_loader.load" class="nav-link" data-scroll-target="#tvbo.utils.yaml_loader.load">load</a></li>
   <li><a href="#tvbo.utils.yaml_loader.load_as_dict" id="toc-tvbo.utils.yaml_loader.load_as_dict" class="nav-link" data-scroll-target="#tvbo.utils.yaml_loader.load_as_dict">load_as_dict</a></li>
   <li><a href="#tvbo.utils.yaml_loader.loads" id="toc-tvbo.utils.yaml_loader.loads" class="nav-link" data-scroll-target="#tvbo.utils.yaml_loader.loads">loads</a></li>
+  <li><a href="#tvbo.utils.yaml_loader.resolve_edge_var_aliases" id="toc-tvbo.utils.yaml_loader.resolve_edge_var_aliases" class="nav-link" data-scroll-target="#tvbo.utils.yaml_loader.resolve_edge_var_aliases">resolve_edge_var_aliases</a></li>
+  <li><a href="#tvbo.utils.yaml_loader.strip_envelope" id="toc-tvbo.utils.yaml_loader.strip_envelope" class="nav-link" data-scroll-target="#tvbo.utils.yaml_loader.strip_envelope">strip_envelope</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -217,9 +220,34 @@ kuramoto_20hz:
 <p>.. code-block:: yaml</p>
 <pre><code>experiments:
   - !include _experiments/exp1.yaml
-  - !include _experiments/exp2.yaml</code></pre></li>
+  - !include _experiments/exp2.yaml</code></pre>
+<p>The two idioms <strong>compose</strong>: an <code>!include</code> may appear as the value of a merge key, so a fragment file can be merged into a mapping alongside the mapping’s own entries and alongside other anchors. Without this a shared fragment could only ever <em>replace</em> a whole slot, which forces every consumer of a partial fragment (a haemodynamic cascade shared by two models) to copy it instead:</p>
+<p>.. code-block:: yaml</p>
+<pre><code>state_variables:
+  &lt;&lt;: !include _balloon_states.yaml
+  phi: {...}
+
+parameters:
+  &lt;&lt;: [*model_params, !include _balloon_parameters.yaml]</code></pre></li>
 </ul>
 <p>Both idioms are pure data-format machinery; they don’t introduce any TVBO-specific semantics into user YAMLs. The wrapper is transparent — any LinkML class can still load through <code>yaml_loader.load</code> and get back the same datamodel instance it would have produced before.</p>
+<section id="attributes" class="level2">
+<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.utils.yaml_loader.ENVELOPE_KEYS">ENVELOPE_KEYS</a></td>
+<td>Keys that annotate a serialized FILE’s class and schema version rather than the</td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="functions" class="level2">
 <h2 class="anchored" data-anchor-id="functions">Functions</h2>
 <table class="caption-top table">
@@ -242,24 +270,44 @@ kuramoto_20hz:
 <td><a href="#tvbo.utils.yaml_loader.loads">loads</a></td>
 <td>Drop-in replacement for <code>linkml_runtime.loaders.yaml_loader.loads</code>.</td>
 </tr>
+<tr class="even">
+<td><a href="#tvbo.utils.yaml_loader.resolve_edge_var_aliases">resolve_edge_var_aliases</a></td>
+<td>Fold the <code>source_variable</code> / <code>target_variable</code> slot aliases onto the canonical <code>source_var</code> / <code>target_var</code> on inline edge dicts, in place.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.utils.yaml_loader.strip_envelope">strip_envelope</a></td>
+<td>Drop :data:<code>ENVELOPE_KEYS</code> from a document root bound for a class constructor.</td>
+</tr>
 </tbody>
 </table>
 <section id="tvbo.utils.yaml_loader.load" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.yaml_loader.load">load</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>utils.yaml_loader.load(source, target_class, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>utils.yaml_loader.load(source, target_class, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Drop-in replacement for <code>linkml_runtime.loaders.yaml_loader.load</code>.</p>
 <p>Accepts the same arguments as the LinkML loader. Expands TVBO YAML extensions (<code>&lt;&lt;:</code> merge keys, <code>!include</code>) before delegating to LinkML’s constructor-class machinery. Relative <code>!include</code> paths are resolved against the directory of <code>source</code> when <code>source</code> is a path; otherwise against the current working directory.</p>
 </section>
 <section id="tvbo.utils.yaml_loader.load_as_dict" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.yaml_loader.load_as_dict">load_as_dict</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>utils.yaml_loader.load_as_dict(source, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>utils.yaml_loader.load_as_dict(source, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Drop-in replacement for <code>yaml_loader.load_as_dict</code>.</p>
 <p>Returns a plain Python <code>dict</code> (or <code>list</code> of dicts) after applying the TVBO YAML extensions. Useful for callers that need to inspect or mutate the parsed structure before handing it to LinkML.</p>
 </section>
 <section id="tvbo.utils.yaml_loader.loads" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.yaml_loader.loads">loads</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>utils.yaml_loader.loads(source, target_class, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>utils.yaml_loader.loads(source, target_class, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Drop-in replacement for <code>linkml_runtime.loaders.yaml_loader.loads</code>.</p>
+</section>
+<section id="tvbo.utils.yaml_loader.resolve_edge_var_aliases" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.yaml_loader.resolve_edge_var_aliases">resolve_edge_var_aliases</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>utils.yaml_loader.resolve_edge_var_aliases(edges)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Fold the <code>source_variable</code> / <code>target_variable</code> slot aliases onto the canonical <code>source_var</code> / <code>target_var</code> on inline edge dicts, in place.</p>
+<p><code>edges</code> may be a single edge dict, a list of them, or <code>None</code>; non-dict entries are left untouched.</p>
+</section>
+<section id="tvbo.utils.yaml_loader.strip_envelope" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.yaml_loader.strip_envelope">strip_envelope</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>utils.yaml_loader.strip_envelope(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Drop :data:<code>ENVELOPE_KEYS</code> from a document root bound for a class constructor.</p>
+<p>A file may name its own class and schema version (<code>tvbo_class: tvbo:SimulationStudy</code>) so tooling can dispatch on it without being told. Those keys are slots of no class, so they must not survive into the target’s <code>__init__</code>.</p>
 
 
 </section>
@@ -339,7 +387,7 @@ kuramoto_20hz:
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -222,6 +222,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner(connectome, normalize_weights<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Assemble and integrate a connectome as a network of coupled local models.</p>
 <p>A <code>GraphRunner</code> holds a <code>networkx</code> graph snapshot built from a connectome. Node attributes carry the local dynamics model, its integrated state and optional stimulus; edge attributes carry the coupling. After the local models, couplings and stimuli have been attached, <a href="../../api/run/graph.html#GraphRunner.run"><code>run</code></a> compiles per-node and per-edge functions and integrates the network in time.</p>
+<p>The integrator reads one edge per node pair: a multigraph snapshot is flattened to a simple digraph at construction, and true parallel edges (typed projections between the same pair) are rejected with a <code>ValueError</code>.</p>
 <section id="parameters" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
 <table class="caption-top table">
@@ -307,7 +308,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.add_coupling">add_coupling</h5>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.add_coupling(coupling)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Attach a coupling function to the graph edges.</p>
-<p>Handles both simple graphs and multigraphs.</p>
+<p>The snapshot is a simple digraph (see <code>__init__</code>), so edges are keyed by <code>(source, target)</code>.</p>
 <section id="parameters-1" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
 <table class="caption-top table">
@@ -323,7 +324,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td>coupling</td>
 <td></td>
-<td>A <a href="../../api/classes/coupling.html#Coupling"><code>Coupling</code></a> instance, a deep copy of which is assigned to every edge; a bare datamodel <code>Coupling</code>, which is wrapped in a <code>Coupling</code> and then copied to every edge; or a dict mapping edges to per-edge couplings. For a dict on a multigraph, edges are looked up by <code>(src, tgt, key)</code> with fallback to <code>(src, tgt)</code>; on a simple graph, by <code>(src, tgt)</code>.</td>
+<td>A <a href="../../api/classes/coupling.html#Coupling"><code>Coupling</code></a> instance, a deep copy of which is assigned to every edge; a bare datamodel <code>Coupling</code>, which is wrapped in a <code>Coupling</code> and then copied to every edge; or a dict mapping <code>(source, target)</code> pairs to per-edge couplings.</td>
 <td><em>required</em></td>
 </tr>
 </tbody>
@@ -490,7 +491,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.setup_cfuns">setup_cfuns</h5>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>run.graph.GraphRunner.setup_cfuns()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Compile each edge’s coupling into callable coupling functions.</p>
-<p>For every edge, stores the compiled <code>python</code> coupling function under <code>"cfun"</code>, together with <code>"prefun"</code> and <code>"postfun"</code> lambdas obtained by substituting the coupling’s parameter values into its pre- and post-summation expressions. Handles both simple graphs and multigraphs.</p>
+<p>For every edge, stores the compiled <code>python</code> coupling function under <code>"cfun"</code>, <code>"prefun"</code> and <code>"postfun"</code> lambdas obtained by substituting the coupling’s parameter values into its pre- and post-summation expressions, and <code>"post_src"</code>, the substituted post expression the integrator compares to reject mixed post-transforms on one node.</p>
 </section>
 <section id="tvbo.run.graph.GraphRunner.setup_dfuns" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.run.graph.GraphRunner.setup_dfuns">setup_dfuns</h5>
@@ -636,7 +637,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -184,11 +184,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvb-optim-template-utilities" id="toc-tvb-optim-template-utilities" class="nav-link" data-scroll-target="#tvb-optim-template-utilities">TVB-Optim Template Utilities</a>
   <ul class="collapse">
   <li><a href="#usage-in-templates" id="toc-usage-in-templates" class="nav-link" data-scroll-target="#usage-in-templates">Usage in templates</a></li>
+  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
   <li><a href="#tvbo.templates.tvboptim.utils.adapt_class_reference_for_tvboptim" id="toc-tvbo.templates.tvboptim.utils.adapt_class_reference_for_tvboptim" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.adapt_class_reference_for_tvboptim">adapt_class_reference_for_tvboptim</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.collect_network_edge_arrays" id="toc-tvbo.templates.tvboptim.utils.collect_network_edge_arrays" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.collect_network_edge_arrays">collect_network_edge_arrays</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.collect_network_node_arrays" id="toc-tvbo.templates.tvboptim.utils.collect_network_node_arrays" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.collect_network_node_arrays">collect_network_node_arrays</a></li>
+  <li><a href="#tvbo.templates.tvboptim.utils.derived_equation_sample_period" id="toc-tvbo.templates.tvboptim.utils.derived_equation_sample_period" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.derived_equation_sample_period">derived_equation_sample_period</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.dist_expr" id="toc-tvbo.templates.tvboptim.utils.dist_expr" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.dist_expr">dist_expr</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.edge_const" id="toc-tvbo.templates.tvboptim.utils.edge_const" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.edge_const">edge_const</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.edge_label" id="toc-tvbo.templates.tvboptim.utils.edge_label" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.edge_label">edge_label</a></li>
@@ -202,6 +204,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.templates.tvboptim.utils.get_mode_layout" id="toc-tvbo.templates.tvboptim.utils.get_mode_layout" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.get_mode_layout">get_mode_layout</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.get_node_param_overrides" id="toc-tvbo.templates.tvboptim.utils.get_node_param_overrides" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.get_node_param_overrides">get_node_param_overrides</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.get_node_state_overrides" id="toc-tvbo.templates.tvboptim.utils.get_node_state_overrides" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.get_node_state_overrides">get_node_state_overrides</a></li>
+  <li><a href="#tvbo.templates.tvboptim.utils.get_noise_covariance" id="toc-tvbo.templates.tvboptim.utils.get_noise_covariance" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.get_noise_covariance">get_noise_covariance</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.get_observation_dependencies" id="toc-tvbo.templates.tvboptim.utils.get_observation_dependencies" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.get_observation_dependencies">get_observation_dependencies</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.get_observation_refs" id="toc-tvbo.templates.tvboptim.utils.get_observation_refs" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.get_observation_refs">get_observation_refs</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.get_output_channels" id="toc-tvbo.templates.tvboptim.utils.get_output_channels" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.get_output_channels">get_output_channels</a></li>
@@ -213,6 +216,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.templates.tvboptim.utils.is_external_observation" id="toc-tvbo.templates.tvboptim.utils.is_external_observation" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.is_external_observation">is_external_observation</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.is_network_observation" id="toc-tvbo.templates.tvboptim.utils.is_network_observation" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.is_network_observation">is_network_observation</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.iter_parameter_values" id="toc-tvbo.templates.tvboptim.utils.iter_parameter_values" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.iter_parameter_values">iter_parameter_values</a></li>
+  <li><a href="#tvbo.templates.tvboptim.utils.jax_platform" id="toc-tvbo.templates.tvboptim.utils.jax_platform" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.jax_platform">jax_platform</a></li>
+  <li><a href="#tvbo.templates.tvboptim.utils.materialise_lazy_params" id="toc-tvbo.templates.tvboptim.utils.materialise_lazy_params" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.materialise_lazy_params">materialise_lazy_params</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.network_axis_leaf" id="toc-tvbo.templates.tvboptim.utils.network_axis_leaf" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.network_axis_leaf">network_axis_leaf</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.node_const" id="toc-tvbo.templates.tvboptim.utils.node_const" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.node_const">node_const</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.node_label" id="toc-tvbo.templates.tvboptim.utils.node_label" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.node_label">node_label</a></li>
@@ -227,6 +232,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.templates.tvboptim.utils.parse_loss_function" id="toc-tvbo.templates.tvboptim.utils.parse_loss_function" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.parse_loss_function">parse_loss_function</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.pipeline_argument" id="toc-tvbo.templates.tvboptim.utils.pipeline_argument" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.pipeline_argument">pipeline_argument</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.pipeline_equation_parameters" id="toc-tvbo.templates.tvboptim.utils.pipeline_equation_parameters" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.pipeline_equation_parameters">pipeline_equation_parameters</a></li>
+  <li><a href="#tvbo.templates.tvboptim.utils.reduction_dims" id="toc-tvbo.templates.tvboptim.utils.reduction_dims" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.reduction_dims">reduction_dims</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.render_adiabatic_signal" id="toc-tvbo.templates.tvboptim.utils.render_adiabatic_signal" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.render_adiabatic_signal">render_adiabatic_signal</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.render_analysis_observations" id="toc-tvbo.templates.tvboptim.utils.render_analysis_observations" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.render_analysis_observations">render_analysis_observations</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.render_inference" id="toc-tvbo.templates.tvboptim.utils.render_inference" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.render_inference">render_inference</a></li>
@@ -239,6 +245,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.templates.tvboptim.utils.resolve_optimizer_mode" id="toc-tvbo.templates.tvboptim.utils.resolve_optimizer_mode" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.resolve_optimizer_mode">resolve_optimizer_mode</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.resolve_reduction" id="toc-tvbo.templates.tvboptim.utils.resolve_reduction" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.resolve_reduction">resolve_reduction</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.resolve_solver_kwargs" id="toc-tvbo.templates.tvboptim.utils.resolve_solver_kwargs" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.resolve_solver_kwargs">resolve_solver_kwargs</a></li>
+  <li><a href="#tvbo.templates.tvboptim.utils.resolve_tail_samples" id="toc-tvbo.templates.tvboptim.utils.resolve_tail_samples" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.resolve_tail_samples">resolve_tail_samples</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.safe_name" id="toc-tvbo.templates.tvboptim.utils.safe_name" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.safe_name">safe_name</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.state_only_derived_var_names" id="toc-tvbo.templates.tvboptim.utils.state_only_derived_var_names" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.state_only_derived_var_names">state_only_derived_var_names</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.state_only_recorded_aux" id="toc-tvbo.templates.tvboptim.utils.state_only_recorded_aux" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.state_only_recorded_aux">state_only_recorded_aux</a></li>
@@ -246,6 +253,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.templates.tvboptim.utils.time_argument_ms" id="toc-tvbo.templates.tvboptim.utils.time_argument_ms" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.time_argument_ms">time_argument_ms</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.to_numeric" id="toc-tvbo.templates.tvboptim.utils.to_numeric" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.to_numeric">to_numeric</a></li>
   <li><a href="#tvbo.templates.tvboptim.utils.toposort_observations" id="toc-tvbo.templates.tvboptim.utils.toposort_observations" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.toposort_observations">toposort_observations</a></li>
+  <li><a href="#tvbo.templates.tvboptim.utils.weight_transform_codegen" id="toc-tvbo.templates.tvboptim.utils.weight_transform_codegen" class="nav-link" data-scroll-target="#tvbo.templates.tvboptim.utils.weight_transform_codegen">weight_transform_codegen</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -267,6 +275,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="usage-in-templates" class="level2 doc-section doc-section-usage-in-templates">
 <h2 class="doc-section doc-section-usage-in-templates anchored" data-anchor-id="usage-in-templates">Usage in templates</h2>
 <p>&lt;% from tvbo.templates.tvboptim.utils import ( safe_name, as_list, is_network_observation, parse_loss_function, get_observation_refs ) %&gt;</p>
+</section>
+<section id="attributes" class="level2">
+<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.templates.tvboptim.utils.OBSERVER_INPUT">OBSERVER_INPUT</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="functions" class="level2">
 <h2 class="anchored" data-anchor-id="functions">Functions</h2>
@@ -291,60 +316,68 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Embed per-node vectors referenced by observations as <code>{measure: nested list}</code>.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.templates.tvboptim.utils.derived_equation_sample_period">derived_equation_sample_period</a></td>
+<td>Sample period to bind as <code>dt</code> inside a derived observation’s <code>equation</code>.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.dist_expr">dist_expr</a></td>
 <td>Render a Distribution as a numpyro <code>dist.*</code> constructor string.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.edge_const">edge_const</a></td>
 <td>Module-constant identifier holding the embedded matrix for <code>label</code>.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.edge_label">edge_label</a></td>
 <td>Canonical <code>Network.matrix()</code> label for a network reference, else None.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.format_bounds_array">format_bounds_array</a></td>
 <td>Render a list of SymPy bound values as a code-level list literal.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.format_channel_index">format_channel_index</a></td>
 <td>Render axis-1 channel indices as the narrowest correct index expression.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.get_all_hyperparams">get_all_hyperparams</a></td>
 <td>Get all hyperparameters including from COMBINED included algorithms.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.get_all_observations_from_algo">get_all_observations_from_algo</a></td>
 <td>Get all observation names including from COMBINED included algorithms.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.get_attr">get_attr</a></td>
 <td>Safe attribute access.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.get_domain_bounds">get_domain_bounds</a></td>
 <td>Lookup domain bounds from model.parameters or coupling.parameters.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.get_include_info">get_include_info</a></td>
 <td>Extract algorithm name and argument overrides from AlgorithmInclude.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.get_mode_layout">get_mode_layout</a></td>
 <td>Compute the folded scalar-state layout for a (possibly multi-mode) model.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.get_node_param_overrides">get_node_param_overrides</a></td>
 <td>Scan network.nodes for per-node parameter overrides.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.get_node_state_overrides">get_node_state_overrides</a></td>
 <td>Scan network.nodes for per-node initial state overrides.</td>
 </tr>
+<tr class="even">
+<td><a href="#tvbo.templates.tvboptim.utils.get_noise_covariance">get_noise_covariance</a></td>
+<td>The noise covariance a model declares, ready for the solver template to emit.</td>
+</tr>
 <tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.get_observation_dependencies">get_observation_dependencies</a></td>
-<td>Observations that <code>obs_name</code> derives from — its <code>source</code> entries that are</td>
+<td>Observations that <code>obs_name</code> derives from — its <code>source</code> entries that are themselves observations (edges in the observation dependency graph).</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.get_observation_refs">get_observation_refs</a></td>
@@ -387,6 +420,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Yield <code>(name, value)</code> pairs from schema Parameter collections.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.templates.tvboptim.utils.jax_platform">jax_platform</a></td>
+<td>Map an <code>ExecutionConfig.accelerator</code> to the JAX platform name it pins.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.templates.tvboptim.utils.materialise_lazy_params">materialise_lazy_params</a></td>
+<td>Resolve every sourced/produced parameter to a content-addressed artifact.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.network_axis_leaf">network_axis_leaf</a></td>
 <td>Graph leaf swept by a <code>network.</code>-scoped exploration axis, else None.</td>
 </tr>
@@ -424,7 +465,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.parse_list_elements">parse_list_elements</a></td>
-<td>Split a <code>[a, b, c]</code> list-literal string into top-level element strings,</td>
+<td>Split a <code>[a, b, c]</code> list-literal string into top-level element strings, respecting nested brackets/parens (so <code>[f(x, y), g(z)]</code> yields two elements).</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.parse_loss_arguments">parse_loss_arguments</a></td>
@@ -443,52 +484,60 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Collect equation parameters from all observation pipeline steps.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.templates.tvboptim.utils.reduction_dims">reduction_dims</a></td>
+<td>The axis names a reduction’s output carries.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.render_adiabatic_signal">render_adiabatic_signal</a></td>
 <td>Render an envelope-signal expression over recorded variables as an <code>observe</code> body.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.render_analysis_observations">render_analysis_observations</a></td>
 <td>Render the body of the generated <code>compute_analysis_observations()</code> function.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.render_inference">render_inference</a></td>
 <td>Render the body of one Bayesian inference (numpyro NUTS/MCMC), 8-space indented.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.render_jax_default">render_jax_default</a></td>
 <td>Render a parameter default as a JAX-ready source literal.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.render_recorded_observable">render_recorded_observable</a></td>
 <td>Render the body of an exploration <code>observable_fn</code> that records a <code>record:</code> list.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.resolve_config_access">resolve_config_access</a></td>
 <td>Dotted state-config path for a <code>&lt;scope&gt;.&lt;param&gt;</code> parameter reference.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.resolve_coupling_input_map">resolve_coupling_input_map</a></td>
 <td>Map coupling-input names to coupling functions for the tvboptim network dict.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.resolve_coupling_spec">resolve_coupling_spec</a></td>
 <td>Resolve every derived field a tvboptim coupling class needs from a Coupling.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.resolve_model_output_indices">resolve_model_output_indices</a></td>
 <td>Resolve <code>model.output</code> entries to channel indices in the recorded ordering.</td>
 </tr>
-<tr class="odd">
-<td><a href="#tvbo.templates.tvboptim.utils.resolve_optimizer_mode">resolve_optimizer_mode</a></td>
-<td>Map the backend-neutral <code>integration.differentiation.mode</code> onto the native</td>
-</tr>
 <tr class="even">
+<td><a href="#tvbo.templates.tvboptim.utils.resolve_optimizer_mode">resolve_optimizer_mode</a></td>
+<td>Map the backend-neutral <code>integration.differentiation.mode</code> onto the native optimizer differentiation mode.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.templates.tvboptim.utils.resolve_reduction">resolve_reduction</a></td>
 <td>Lift an observation’s auxiliary <code>dynamics</code> into a backend-agnostic reduction.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.resolve_solver_kwargs">resolve_solver_kwargs</a></td>
-<td>Map the backend-neutral <code>integration.differentiation</code> strategy onto</td>
+<td>Map the backend-neutral <code>integration.differentiation</code> strategy onto native-solver kwargs, returned as a ready-to-emit string (e.g.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.templates.tvboptim.utils.resolve_tail_samples">resolve_tail_samples</a></td>
+<td>Trailing-window length of <code>obs</code> in samples, from <code>tail_samples</code> or <code>tail_duration</code>.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.safe_name">safe_name</a></td>
@@ -516,7 +565,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.templates.tvboptim.utils.toposort_observations">toposort_observations</a></td>
-<td>Dependency-order observations so any that lists another as a <code>source</code> is</td>
+<td>Dependency-order observations so any that lists another as a <code>source</code> is emitted AFTER that source — the same dependency-graph principle used for derived</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.templates.tvboptim.utils.weight_transform_codegen">weight_transform_codegen</a></td>
+<td>Render <code>transforms:</code> targeting weight to JAX for inlining in the generated script.</td>
 </tr>
 </tbody>
 </table>
@@ -538,26 +591,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Embed per-node vectors referenced by observations as <code>{measure: nested list}</code>.</p>
 <p>Scans every observation’s <code>source</code>, its pipeline-step arguments, AND its observer (<code>dynamics</code>) parameters for a <code>network.positions</code> / <code>network.instrength</code> reference, resolving each once against the network: <code>positions</code> → <code>Network.node_positions()</code>; <code>instrength</code> → the weighted in-degree <code>matrix('weight').sum(axis=1)</code> (row sum = incoming, the TVB/Koller convention, <code>koller2024_networks.instrength_normalize</code>). Raises if a referenced vector cannot be built.</p>
 </section>
+<section id="tvbo.templates.tvboptim.utils.derived_equation_sample_period" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.derived_equation_sample_period">derived_equation_sample_period</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.derived_equation_sample_period(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    dobs,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    all_observations,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    step_size,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Sample period to bind as <code>dt</code> inside a derived observation’s <code>equation</code>.</p>
+<p>A sample-indexed aggregation (<code>first_passage</code>) returns an index, so any equation turning it into a time has to multiply by the spacing of those samples. Binding that spacing here is what keeps the step size out of the recipe: <code>Min(t_A, t_B) * dt</code> stays correct when the experiment’s <code>step_size</code> changes, where a literal silently rescales the result.</p>
+<p>The spacing is the integration <code>step_size</code> when no source declares a recording <code>period</code>, or that period when every source declares the same one. Sources that disagree return None, leaving <code>dt</code> unbound so the render fails on the unknown symbol rather than picking one source’s clock for all of them.</p>
+<p>Substituted as a render-time constant, which is what the emitted module does with the step everywhere else (the solver call carries a literal <code>dt=</code>, not a runtime argument), so the equation cannot drift from the step the rest of the module integrates at.</p>
+</section>
 <section id="tvbo.templates.tvboptim.utils.dist_expr" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.dist_expr">dist_expr</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.dist_expr(dist_obj)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.dist_expr(dist_obj)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render a Distribution as a numpyro <code>dist.*</code> constructor string.</p>
 <p><code>Normal</code> -&gt; <code>dist.Normal(mean, std)</code>; <code>Uniform</code> -&gt; <code>dist.Uniform(lo, hi)</code> (from <code>parameters</code> or <code>domain</code>). Reuses the standard Distribution vocabulary (name + parameters/domain) as both prior and likelihood-noise family.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.edge_const" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.edge_const">edge_const</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.edge_const(label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.edge_const(label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Module-constant identifier holding the embedded matrix for <code>label</code>.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.edge_label" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.edge_label">edge_label</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.edge_label(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.edge_label(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Canonical <code>Network.matrix()</code> label for a network reference, else None.</p>
 <p>Accepts the fully-qualified form (<code>network.weight</code>, <code>network.edges.length</code>), the explicit <code>edges.&lt;label&gt;</code> form (any label), and the bare <code>weight(s)</code>/<code>length(s)</code> shortcut. Returns None for anything that is not a connectome-matrix reference (state variables, <code>network.observations.*</code>, …), which callers route through their normal path.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.format_bounds_array" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.format_bounds_array">format_bounds_array</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.format_bounds_array(bounds, <span class="bu">format</span><span class="op">=</span><span class="st">'jax'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.format_bounds_array(bounds, <span class="bu">format</span><span class="op">=</span><span class="st">'jax'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render a list of SymPy bound values as a code-level list literal.</p>
 <p>Uses the appropriate TVBO code printer so infinity is rendered correctly for any backend (<code>jnp.inf</code>, <code>np.inf</code>, <code>Inf</code>, …).</p>
 <section id="parameters" class="level4 doc-section doc-section-parameters">
@@ -620,42 +685,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.format_channel_index" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.format_channel_index">format_channel_index</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.format_channel_index(indices, n_channels)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.format_channel_index(indices, n_channels)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render axis-1 channel indices as the narrowest correct index expression.</p>
 <p>A single channel yields a scalar index (dropping the variable dimension); a contiguous run yields a slice, so the common all-auxiliaries case emits the same <code>n_states:</code> slice as before; anything else yields an explicit index list, which preserves the declared output order under advanced indexing. An empty selection yields <code>:</code> (all channels) rather than raising.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_all_hyperparams" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_all_hyperparams">get_all_hyperparams</h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_all_hyperparams(algo, algorithms_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_all_hyperparams(algo, algorithms_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get all hyperparameters including from COMBINED included algorithms.</p>
 <p>Nested includes are skipped — their hyperparameters are passed directly to the inner algorithm’s run_<inner>() call, not exposed on the outer signature.</inner></p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_all_observations_from_algo" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_all_observations_from_algo">get_all_observations_from_algo</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_all_observations_from_algo(algo, algorithms_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_all_observations_from_algo(algo, algorithms_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Get all observation names including from COMBINED included algorithms.</p>
 <p>Nested includes are skipped — their observations are computed inside the inner algorithm’s own loop, not the outer one.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_attr" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_attr">get_attr</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_attr(obj, name, default<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_attr(obj, name, default<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Safe attribute access.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_domain_bounds" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_domain_bounds">get_domain_bounds</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_domain_bounds(param_name, model, all_couplings)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_domain_bounds(param_name, model, all_couplings)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Lookup domain bounds from model.parameters or coupling.parameters.</p>
 <p>Returns (lo, hi) tuple, where None means unbounded.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_include_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_include_info">get_include_info</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_include_info(inc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_include_info(inc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Extract algorithm name and argument overrides from AlgorithmInclude.</p>
 <p>Returns (algo_name, {param_name: value}) tuple.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_mode_layout" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_mode_layout">get_mode_layout</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_mode_layout(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_mode_layout(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Compute the folded scalar-state layout for a (possibly multi-mode) model.</p>
 <p>tvboptim’s solver carries a 2-D state <code>(n_states, n_nodes)</code> and its coupling contracts the node axis with a plain matmul, so it has no place for a third per-node mode axis. A model with <code>number_of_modes &gt; 1</code> (the Stefanescu-Jirsa ReducedSet models) folds that mode axis into the state axis: each state variable <code>v</code> occupies <code>n_modes</code> contiguous scalar slots <code>v__mode0 .. v__mode{M-1}</code>. The dfun reconstructs the <code>(n_nodes, n_modes)</code> mode-vector for each variable from its slots, evaluates the mode-aware equations (<code>mode_dot</code>/<code>mode_sum</code>), and scatters the per-mode derivatives back into those slots; per-mode coupling falls out of the existing 2-D matmul because each <code>(var, mode)</code> slot couples to the same slot across nodes.</p>
 <p>For a single-mode model this is the identity (one slot per variable), so the generated code is byte-for-byte unchanged.</p>
@@ -663,11 +728,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_node_param_overrides" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_node_param_overrides">get_node_param_overrides</h3>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_node_param_overrides(</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    network,</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    n_nodes,</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    dyn_param_defaults,</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_node_param_overrides(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    network,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    n_nodes,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    dyn_param_defaults,</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Scan network.nodes for per-node parameter overrides.</p>
 <p>When nodes define parameters that differ from the dynamics defaults, build per-node arrays. Only parameters that differ on at least one node are returned.</p>
 <section id="parameters-1" class="level4 doc-section doc-section-parameters">
@@ -736,12 +801,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_node_state_overrides" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_node_state_overrides">get_node_state_overrides</h3>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_node_state_overrides(</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    network,</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    n_nodes,</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    state_names,</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    default_initial_state,</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_node_state_overrides(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    network,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    n_nodes,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    state_names,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    default_initial_state,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Scan network.nodes for per-node initial state overrides.</p>
 <p>When nodes define <code>state: {theta: {value: 0.8}}</code> in the YAML, build per-node arrays for state variables that differ across nodes.</p>
 <section id="parameters-2" class="level4 doc-section doc-section-parameters">
@@ -814,22 +879,91 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 </section>
+<section id="tvbo.templates.tvboptim.utils.get_noise_covariance" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_noise_covariance">get_noise_covariance</h3>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_noise_covariance(model, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The noise covariance a model declares, ready for the solver template to emit.</p>
+<p>Mirrors the provenance rule every other array-valued quantity follows: a literal binds inline, while a sourced or produced matrix (the usual case — a projection operator, a connectome-derived structure) is materialised codegen-time to a content-addressed artifact and emitted as a lazy <code>(file, key)</code> the generated module reads at run time, so a large operator never enters the generated source.</p>
+<p>Every noisy state variable must agree: one Wiener increment is drawn per step for all of them, so two different covariances cannot both be imposed on it.</p>
+<section id="parameters-3" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 3%">
+<col style="width: 86%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>model</td>
+<td>Any</td>
+<td>Dynamics instance with <code>.state_variables</code>.</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>experiment</td>
+<td>Any</td>
+<td>The declaring experiment, used to ground a relative source path and to resolve a producer’s arguments. Without it a lazy covariance stays deferred, so calling this as a cheap predicate has no side effects.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-3" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 24%">
+<col style="width: 68%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>Optional[Dict[str, Any]]</td>
+<td><code>{"axis": str, "value": [[...]] \| None, "lazy": (path, key) \| None}</code>, or None</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>Optional[Dict[str, Any]]</td>
+<td>when no covariance is declared.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.templates.tvboptim.utils.get_observation_dependencies" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_observation_dependencies">get_observation_dependencies</h3>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_observation_dependencies(</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    obs_name,</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    derived_obs_dict,</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    all_observations,</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_observation_dependencies(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    obs_name,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    derived_obs_dict,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    all_observations,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Observations that <code>obs_name</code> derives from — its <code>source</code> entries that are themselves observations (edges in the observation dependency graph).</p>
 <p><code>all_observations</code> is the full observation collection (its membership test filters sources down to observation references, ignoring result/state sources).</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_observation_refs" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_observation_refs">get_observation_refs</h3>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_observation_refs(observations_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_observation_refs(observations_dict)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Categorize observations into network vs simulation-derived.</p>
-<section id="returns-3" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
+<section id="returns-4" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 7%">
@@ -855,18 +989,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_output_channels" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_output_channels">get_output_channels</h3>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_output_channels(model, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_output_channels(model, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve the <code>sv.record</code>-honoring output channels for the presented result.</p>
 <p>tvboptim’s solver records ALL states (<code>VARIABLES_OF_INTEREST</code> = states + recorded aux) because the full trajectory is needed for observations and the algorithm warmup. The user-facing <code>SimulationResult</code> should instead present only <code>record=True</code> state channels (+ recorded auxiliaries), matching the tvb backend’s <code>variables_of_interest</code>.</p>
 <p>Returns <code>(output_indices, output_names, is_subset)</code> — the indices/names of the kept channels within the full recorded ordering (:func:<code>get_recorded_variable_names</code>), and whether that is a strict subset. For the common all-<code>record</code> model this is the identity (<code>is_subset</code> False), so the template emits the result unsliced. Modes are honored: each <code>v__mode{m}</code> slot inherits <code>v</code>’s record flag.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_param_info" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_param_info">get_param_info</h3>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_param_info(parameters)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_param_info(parameters)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Extract parameter names, defaults, and shapes from a parameters collection.</p>
 <p>Works for both model.parameters and coupling.parameters.</p>
-<section id="parameters-3" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
+<section id="parameters-4" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -886,8 +1020,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-4" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
+<section id="returns-5" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 2%">
@@ -913,12 +1047,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_recorded_variable_names" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_recorded_variable_names">get_recorded_variable_names</h3>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_recorded_variable_names(model, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_recorded_variable_names(model, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Compute the variable layout recorded by tvboptim’s solver.</p>
 <p>The generated dynamics class declares <code>VARIABLES_OF_INTEREST = state_names + recorded_aux</code> where <code>recorded_aux</code> is the union of: * derived variables with <code>record: true</code>, * model.output entries that are derived (auxiliary) variables, and * derived variables referenced as the <code>source</code> of any experiment observation (so observations of auxiliaries work without requiring users to also list them in <code>model.output</code>).</p>
 <p>Returns <code>(state_names, recorded_aux, all_var_names)</code> where <code>all_var_names</code> is the runtime ordering on axis 1 of <code>solution.ys</code> / <code>result.data</code> and matches <code>solution.variable_names</code> produced by tvboptim &gt;= 0.2.7.</p>
-<section id="parameters-4" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
+<section id="parameters-5" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 11%">
@@ -953,11 +1087,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.get_state_bounds" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.get_state_bounds">get_state_bounds</h3>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_state_bounds(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.get_state_bounds(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Extract state variable bounds as SymPy expressions.</p>
 <p>Uses <code>sympy.oo</code> for unbounded dimensions so that code printers automatically render the correct backend literal (<code>jnp.inf</code>, <code>np.inf</code>, <code>Inf</code>, etc.).</p>
-<section id="parameters-5" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
+<section id="parameters-6" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 10%">
@@ -983,8 +1117,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="returns-5" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
+<section id="returns-6" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 3%">
@@ -1010,7 +1144,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.graph_selection" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.graph_selection">graph_selection</h3>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.graph_selection(network, has_delay)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.graph_selection(network, has_delay)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Pick the tvboptim graph type for a (possibly delayed) network.</p>
 <p>Returns <code>(use_length_graph, use_delay_graph)</code>:</p>
 <ul>
@@ -1022,7 +1156,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.initial_conditions_axis_sv" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.initial_conditions_axis_sv">initial_conditions_axis_sv</h3>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.initial_conditions_axis_sv(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.initial_conditions_axis_sv(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>State variable swept by an <code>initial_conditions.</code>-scoped axis, else None.</p>
 <p><code>initial_conditions.&lt;state_var&gt;</code> sweeps the <em>initial value</em> of one state variable across grid cells — a deterministic initial-condition ensemble (one trajectory per swept value), as opposed to the stochastic <code>n_trials</code> + <code>StateVariable.distribution</code> ensemble. Returns the bare <code>&lt;state_var&gt;</code> name; None for a reference outside the <code>initial_conditions.</code> scope, which callers route through the dynamics/coupling path. The name is validated against the model’s state variables at codegen, where they are known.</p>
 <section id="raises" class="level4 doc-section doc-section-raises">
@@ -1052,23 +1186,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.is_external_observation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.is_external_observation">is_external_observation</h3>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.is_external_observation(obs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.is_external_observation(obs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Check if observation is external (has data_source or network.observations source).</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.is_network_observation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.is_network_observation">is_network_observation</h3>
-<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.is_network_observation(obs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.is_network_observation(obs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Check if observation is bound from data rather than the simulation state.</p>
 <p>True when the source starts with <code>network.observations</code>, <code>network.edges</code> (data carried by the model network), or <code>dataset.subject</code> (a per-subject empirical target resolved from the dataset). All three are materialized into a module-level constant and bound at <code>run_experiment</code> time via <code>_bind_network_observations</code>, not recorded from the solver. The slot is multivalued; accept both scalar and list forms.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.iter_parameter_values" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.iter_parameter_values">iter_parameter_values</h3>
-<div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.iter_parameter_values(parameters)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.iter_parameter_values(parameters)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Yield <code>(name, value)</code> pairs from schema Parameter collections.</p>
+</section>
+<section id="tvbo.templates.tvboptim.utils.jax_platform" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.jax_platform">jax_platform</h3>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.jax_platform(accelerator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Map an <code>ExecutionConfig.accelerator</code> to the JAX platform name it pins.</p>
+<p><code>'auto'</code> (the schema default) means “let JAX detect the machine”, which is expressed by leaving <code>JAX_PLATFORMS</code> unset — hence <code>None</code> rather than a string. <code>'gpu'</code> is JAX’s <code>'cuda'</code>; any other tier passes through lowercased, so a platform JAX gains needs no change here.</p>
+</section>
+<section id="tvbo.templates.tvboptim.utils.materialise_lazy_params" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.materialise_lazy_params">materialise_lazy_params</h3>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.materialise_lazy_params(parameters, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resolve every sourced/produced parameter to a content-addressed artifact.</p>
+<p>A <code>Parameter</code> carrying <code>producer:</code>, <code>source:</code> or <code>used:</code> has no literal <code>value</code>, so the emission sites would otherwise fall back to a scalar default and silently drop the array — a per-node operator would become <code>jnp.full(shape, 1.0)</code> and the model would run with the geometry erased. Materialising here writes the array once at codegen time and lets the generated module read it back, so an operator of any size costs nothing in the generated source.</p>
+<p>Returns <code>{param_name: (path, key)}</code> for the lazy parameters only; literals and free parameters are absent. Empty when <em>experiment</em> is None, because materialising runs the producer and this must stay side-effect-free when called as a predicate.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.network_axis_leaf" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.network_axis_leaf">network_axis_leaf</h3>
-<div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.network_axis_leaf(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.network_axis_leaf(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Graph leaf swept by a <code>network.</code>-scoped exploration axis, else None.</p>
 <p>Accepts the canonical <code>network.edges.&lt;label&gt;</code> form and the <code>network.weight(s)</code>/<code>network.length(s)</code> shortcuts (both via <code>edge_label</code>, so axes and observations resolve a matrix identically), plus the network’s own scalars (<code>network.conduction_speed</code>). Returns None for a reference outside the <code>network.</code> scope, which callers route through the dynamics/coupling path.</p>
 <section id="raises-1" class="level4 doc-section doc-section-raises">
@@ -1098,24 +1245,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.node_const" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.node_const">node_const</h3>
-<div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.node_const(label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.node_const(label)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Module-constant identifier holding the embedded per-node vector for <code>label</code>.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.node_label" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.node_label">node_label</h3>
-<div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.node_label(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.node_label(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Canonical per-node vector name for a <code>network.&lt;measure&gt;</code> reference, else None.</p>
-<p>Recognises <code>network.positions</code> (region centroids, <code>(n_nodes, 3)</code>) and <code>network.instrength</code> (weighted in-degree, <code>(n_nodes,)</code>). Accepts BOTH the fully-qualified <code>network.positions</code> form (observation source / collect scan) and the bare <code>positions</code> key that <code>parse_reference</code> hands <code>ref_to_code</code> (it splits <code>network.X</code> into <code>('network', 'X')</code>) — mirroring <code>edge_label</code>, so the emitted constant name and the resolved reference cannot disagree. Returns None for everything else (edge matrices, state variables, <code>network.observations.*</code>), which callers route through their normal path.</p>
+<p>Recognises <code>network.positions</code> (region centroids, <code>(n_nodes, 3)</code>) and <code>network.instrength</code> (weighted in-degree, <code>(n_nodes,)</code>). Accepts BOTH the fully-qualified <code>network.positions</code> form (observation source / collect scan) and the bare <code>positions</code> key that <code>parse_reference</code> hands <code>ref_to_code</code> (it splits <code>network.X</code> into <code>('network', 'X')</code>) — mirroring <code>edge_label</code>, so the emitted constant name and the resolved reference cannot disagree. Also accepts the explicit <code>nodes.&lt;attr&gt;</code> form for any attribute name — the node-side twin of <code>edges.&lt;label&gt;</code> — which resolves to a named per-node array carried by the network (node <code>parameters</code>, or a <code>nodes/&lt;attr&gt;</code> dataset in the companion store).</p>
+<p>Returns None for everything else (edge matrices, state variables, <code>network.observations.*</code>), which callers route through their normal path.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.normalize_coupling_aliases" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.normalize_coupling_aliases">normalize_coupling_aliases</h3>
-<div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.normalize_coupling_aliases(all_couplings, model<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.normalize_coupling_aliases(all_couplings, model<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Collapse duplicate keys that point to the same coupling object.</p>
 <p>tvbo can expose one coupling under multiple names such as the coupling function name, a coupling-input key, or an explicit CouplingInput.source. tvboptim only needs one key per distinct object, so prefer stable, user-meaningful aliases before attempting input-to-coupling mapping.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.normalize_n_parallel" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.normalize_n_parallel">normalize_n_parallel</h3>
-<div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.normalize_n_parallel(expl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.normalize_n_parallel(expl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Normalise an <code>Exploration.n_parallel</code> to an int chunk size or <code>"auto"</code>.</p>
 <p><code>"auto"</code> (the schema default) defers the vmap chunk width to runtime, where the grid size is known — the generated script resolves it via :func:<code>tvbo.templates.tvboptim.callbacks.resolve_n_vmap</code>. An explicit integer is passed through unchanged (<code>1</code> = fully sequential).</p>
 <section id="raises-2" class="level4 doc-section doc-section-raises">
@@ -1145,33 +1293,33 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.obs_has_all_args" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.obs_has_all_args">obs_has_all_args</h3>
-<div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.obs_has_all_args(obs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.obs_has_all_args(obs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Check if observation has all required arguments satisfied.</p>
 <p>Returns True if all pipeline step arguments either have values or are implicitly satisfied by source.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.parameter_value" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.parameter_value">parameter_value</h3>
-<div class="sourceCode" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parameter_value(parameters, name, default<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parameter_value(parameters, name, default<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return a named Parameter value from a schema collection.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.parse_exploration" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.parse_exploration">parse_exploration</h3>
-<div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parse_exploration(</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    expl,</span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    all_couplings,</span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    get_pipeline_output_key_fn<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parse_exploration(</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>    expl,</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    all_couplings,</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>    get_pipeline_output_key_fn<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Parse exploration specification from YAML.</p>
 <p>Returns dict with: name, label, mode, n_parallel, axes, observable_*</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.parse_free_param" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.parse_free_param">parse_free_param</h3>
-<div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parse_free_param(</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    fp,</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    coupling_keys,</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    all_couplings<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parse_free_param(</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>    fp,</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    coupling_keys,</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>    all_couplings<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Parse a free_parameter entry.</p>
 <p>Handles: str, dotted notation, stringified dict, dict, and Parameter objects.</p>
 <section id="name-heterogeneous-shape-coupling_key-dynamics_key" class="level4 doc-section doc-section-name-heterogeneous-shape-couplingkey-dynamicskey">
@@ -1181,15 +1329,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.parse_list_elements" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.parse_list_elements">parse_list_elements</h3>
-<div class="sourceCode" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parse_list_elements(rhs_str)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parse_list_elements(rhs_str)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Split a <code>[a, b, c]</code> list-literal string into top-level element strings, respecting nested brackets/parens (so <code>[f(x, y), g(z)]</code> yields two elements).</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.parse_loss_arguments" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.parse_loss_arguments">parse_loss_arguments</h3>
-<div class="sourceCode" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parse_loss_arguments(loss_call)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parse_loss_arguments(loss_call)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Parse loss function call arguments.</p>
-<section id="returns-6" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
+<section id="returns-7" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-7">Returns</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 6%">
@@ -1225,82 +1373,88 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.parse_loss_function" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.parse_loss_function">parse_loss_function</h3>
-<div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parse_loss_function(opt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.parse_loss_function(opt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Parse optimization loss function specification.</p>
 <p>Returns dict with: opt_name, func_name, args, obs_refs, agg_over, agg_type or None if no loss defined.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.pipeline_argument" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.pipeline_argument">pipeline_argument</h3>
-<div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.pipeline_argument(pipeline, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.pipeline_argument(pipeline, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return the named pipeline argument object (arguments are keyed by name).</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.pipeline_equation_parameters" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.pipeline_equation_parameters">pipeline_equation_parameters</h3>
-<div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.pipeline_equation_parameters(pipeline)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.pipeline_equation_parameters(pipeline)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Collect equation parameters from all observation pipeline steps.</p>
+</section>
+<section id="tvbo.templates.tvboptim.utils.reduction_dims" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.reduction_dims">reduction_dims</h3>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.reduction_dims(red)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The axis names a reduction’s output carries.</p>
+<p>A reduction’s output shape is fixed by its kind, so its axes are named here — where the reducer is chosen — and travel with it to the result container. Naming them at the point of production is what keeps a reduced observation keyed like every other tvbo array without anyone re-deriving the axes from shape afterwards, which cannot distinguish (say) a frequency-by-node spectrum from a node-by-node matrix.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.render_adiabatic_signal" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.render_adiabatic_signal">render_adiabatic_signal</h3>
-<div class="sourceCode" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.render_adiabatic_signal(signal_expr, var_names)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.render_adiabatic_signal(signal_expr, var_names)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render an envelope-signal expression over recorded variables as an <code>observe</code> body.</p>
 <p>Each recorded-variable name in <code>signal_expr</code> (e.g.&nbsp;<code>"y1 - y2"</code>) is replaced by its slice <code>_r.ys[:, &lt;index&gt;, :]</code> (a <code>[n_time, n_nodes]</code> view). <code>&lt;index&gt;</code> is the variable’s position in the solver’s recorded ordering (:func:<code>get_recorded_variable_names</code>). The replacement is a single alternation pass (longest names first, so a name is not matched where it is a prefix of another like <code>y1</code> in <code>y12</code>); a single pass — not iterated <code>re.sub</code> per name — also guarantees the emitted slice text (which itself contains <code>ys</code>/<code>r</code>) is never re-scanned and re-substituted. Lets the adiabatic-scan exploration observe an arbitrary state/derived signal declaratively, without a driver.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.render_analysis_observations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.render_analysis_observations">render_analysis_observations</h3>
-<div class="sourceCode" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.render_analysis_observations(</span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    analysis_obs,</span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    coupling_keys,</span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    solver_class,</span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>    transient_time,</span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>    t1_default,</span>
-<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>    dt,</span>
-<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>    solver_kwargs<span class="op">=</span><span class="st">''</span>,</span>
-<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>    time_si_factor<span class="op">=</span><span class="fl">0.001</span>,</span>
-<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>    events<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>    op_constraint<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.render_analysis_observations(</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    analysis_obs,</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>    coupling_keys,</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>    solver_class,</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>    transient_time,</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>    t1_default,</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>    dt,</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>    solver_kwargs<span class="op">=</span><span class="st">''</span>,</span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>    time_si_factor<span class="op">=</span><span class="fl">0.001</span>,</span>
+<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>    events<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>    op_constraint<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render the body of the generated <code>compute_analysis_observations()</code> function.</p>
 <p>Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than transforming <code>result.data</code>. Each is emitted from its declarative <code>analysis</code> metadata (type + target + wrt + parameters). This lives in the adapter/Python layer — NOT the mako template — so the per-type branching can be deduped/harmonized and reused across backends; the template only interpolates the returned block. Analysis solves drop the differentiation-truncation window (an optimization knob, not part of these diagnostics — see :func:<code>_analysis_solver_kwargs</code>) while keeping the coupling- evaluation config. <code>time_si_factor</code> is seconds per model time unit (ms -&gt; 1e-3); the linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose lines are indented for a function body (4 spaces), empty string if there are no analysis observations.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.render_inference" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.render_inference">render_inference</h3>
-<div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.render_inference(</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    inf,</span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    coupling_keys,</span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    external_keys,</span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>    derived_names,</span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    network_obs_names,</span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.render_inference(</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>    inf,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    coupling_keys,</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>    external_keys,</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>    derived_names,</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>    network_obs_names,</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render the body of one Bayesian inference (numpyro NUTS/MCMC), 8-space indented.</p>
 <p>Mirrors the tvboptim workflow’s <code>make_model</code> + <code>MCMC(NUTS(...)).run</code>: sample each prior, inject it into the forward config at its resolved path, run the SAME differentiable <code>model_fn</code>, score the observed observable under the likelihood. Config injection uses <code>eqx.tree_at</code> (functionally identical to the reference’s in-place mutation). The observed data comes from the <code>likelihood.source</code> observation — a runtime binding or a loaded network measure — so synthetic ground-truth generation stays out of the schema.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.render_jax_default" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.render_jax_default">render_jax_default</h3>
-<div class="sourceCode" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.render_jax_default(value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.render_jax_default(value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render a parameter default as a JAX-ready source literal.</p>
 <p>Array-valued constants (mode-coupling matrices, Gaussian-quadrature vectors) must be wrapped in <code>jnp.array(...)</code> so the generated dfun’s arithmetic broadcasts; emitting the bare Python list would make <code>scalar * list</code> raise <code>TypeError</code> at runtime. Scalars render as their full-precision <code>repr</code> literal (<code>str</code>/<code>repr</code> of a float are equivalent in Python 3, so no precision is lost).</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.render_recorded_observable" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.render_recorded_observable">render_recorded_observable</h3>
-<div class="sourceCode" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.render_recorded_observable(</span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>    record_names,</span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>    derived_names,</span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>    network_obs_names,</span>
-<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>    analysis_names,</span>
-<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>    only_obs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>    recorded_var_names<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.render_recorded_observable(</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>    record_names,</span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    derived_names,</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>    network_obs_names,</span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>    analysis_names,</span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>    only_obs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>    recorded_var_names<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Render the body of an exploration <code>observable_fn</code> that records a <code>record:</code> list.</p>
 <p>Each recorded name resolves to one of three sources: an <code>analysis</code> diagnostic (Lyapunov, gradients) from <code>compute_analysis_observations</code>; a raw model channel — a state variable or a recorded auxiliary/derived variable in <code>recorded_var_names</code> — read from <code>result.data</code> at its channel index; or a declared observation from <code>compute_all_observations</code>. The observable returns a <code>Bunch</code> of the named values, which the exploration stacks over the grid into one array per name. Kept in the adapter (not the template) so the same routing serves any backend. Returns the function-body string (8-space indented for <code>def observable_fn(s):</code> inside the exploration function).</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.resolve_config_access" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.resolve_config_access">resolve_config_access</h3>
-<div class="sourceCode" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_config_access(</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>    dotted,</span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>    coupling_keys,</span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>    external_keys<span class="op">=</span><span class="bu">frozenset</span>(),</span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_config_access(</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>    dotted,</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    coupling_keys,</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>    external_keys<span class="op">=</span><span class="bu">frozenset</span>(),</span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Dotted state-config path for a <code>&lt;scope&gt;.&lt;param&gt;</code> parameter reference.</p>
 <p>One addressing grammar, shared by optimization <code>free_parameters</code>, analysis <code>wrt</code>, and inference <code>priors</code> — so “which knob” reads the same everywhere:</p>
 <ul>
@@ -1312,36 +1466,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.resolve_coupling_input_map" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.resolve_coupling_input_map">resolve_coupling_input_map</h3>
-<div class="sourceCode" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_coupling_input_map(</span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    model,</span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>    all_couplings,</span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>    coupling_inputs_dict,</span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_coupling_input_map(</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>    model,</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>    all_couplings,</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>    coupling_inputs_dict,</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Map coupling-input names to coupling functions for the tvboptim network dict.</p>
 <p>tvboptim keys coupling by coupling-input name; the schema keys by function name. Resolution order: (1) explicit <code>CouplingInput.source</code>, (2) same name, (3) a single unmapped function broadcasts to all remaining inputs, (4) equal counts zip positionally. LOCAL inputs (<code>CouplingInput.local=True</code>, e.g. <code>local_coupling</code>) are then dropped from the network mapping — a local term is TVB’s surface/local coupling, zero for the region-based simulations tvboptim supports, so it must not be wired to the long-range connectome (the dfun binds it to 0 via its fallback).</p>
 <p>Returns <code>(ci_coupling_map, func_to_first_ci)</code> where <code>ci_coupling_map</code> maps ci_name -&gt; (func_name, coupling_obj) and <code>func_to_first_ci</code> maps func_name to the first ci_name using it (for state-access translation).</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.resolve_coupling_spec" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.resolve_coupling_spec">resolve_coupling_spec</h3>
-<div class="sourceCode" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_coupling_spec(</span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>    coupling,</span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    coupling_key,</span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>    model,</span>
-<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>    coupling_inputs_info,</span>
-<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>    func_to_ci,</span>
-<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>    n_modes<span class="op">=</span><span class="dv">1</span>,</span>
-<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_coupling_spec(</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>    coupling,</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>    coupling_key,</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>    model,</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>    coupling_inputs_info,</span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>    func_to_ci,</span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>    n_modes<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve every derived field a tvboptim coupling class needs from a Coupling.</p>
 <p>Keeps the cfun mako template emission-only (resolution lives here, per the resolve-in-Python-not-mako convention). Covers: output dimension, incoming/local states (explicit, inferred from the pre-expression, or the model’s coupling_variable states), the mode fold (a multi-mode cvar → its per-node mode slots, one output per mode), pre-expression term parsing (list decomposition + n_pre), vectorized-vs-per-edge selection, class/base names, the differentiable- delay kwarg, state-subscript aliases (<code>{state}_j</code>/<code>_i</code>) and post-recombination symbols, plus the symbol list for the JAX expression printer. Expression rendering (<code>jaxcode</code>) stays in the template.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.resolve_model_output_indices" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.resolve_model_output_indices">resolve_model_output_indices</h3>
-<div class="sourceCode" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_model_output_indices(model, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_model_output_indices(model, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve <code>model.output</code> entries to channel indices in the recorded ordering.</p>
 <p><code>model.output</code> may name state variables, auxiliary (derived) variables, or a mix of the two. The recorded ordering is the state channels followed by the auxiliaries that were actually requested (:func:<code>get_recorded_variable_names</code>), so an output’s position cannot be inferred from its kind — a state output sits <em>before</em> the auxiliaries, not after them. Multi-mode state variables expand to all of their <code>v__mode{m}</code> slots.</p>
 <p>Returns <code>(indices, names)</code> in the declared output order, so the emitted channel order and the reported <code>output_names</code> always agree.</p>
-<section id="parameters-6" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-6">Parameters</h4>
+<section id="parameters-7" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 12%">
@@ -1400,77 +1554,207 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.templates.tvboptim.utils.resolve_optimizer_mode" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.resolve_optimizer_mode">resolve_optimizer_mode</h3>
-<div class="sourceCode" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_optimizer_mode(integration)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_optimizer_mode(integration)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Map the backend-neutral <code>integration.differentiation.mode</code> onto the native optimizer differentiation mode.</p>
 <p><code>reverse</code> -&gt; <code>"rev"</code> (reverse-mode BPTT; pairs with a <code>grad_horizon</code> window for truncated BPTT); <code>forward</code> -&gt; <code>"fwd"</code> (forward-mode AD, the exact untruncated gradient for a scalar parameter). Defaults to <code>"rev"</code> when no differentiation strategy is declared.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.resolve_reduction" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.resolve_reduction">resolve_reduction</h3>
-<div class="sourceCode" id="cb52"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_reduction(obs, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_reduction(obs, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Lift an observation’s auxiliary <code>dynamics</code> into a backend-agnostic reduction.</p>
 <p>An observation may declare a co-integrated auxiliary <code>Dynamics</code> (the observer) that computes it online as a time recurrence, instead of a post-scan <code>pipeline</code>. An observation may instead opt a post-scan <code>pipeline</code> into streaming via <code>reduce: streaming</code> (currently the HRF-Volterra BOLD pipeline), in which case the reducer is lifted by :func:<code>_resolve_bold_stream</code> (tagged <code>kind: 'convolution'</code>). This resolves that Dynamics into clean context for the reduction partial: the source state variable read, and for each observer state its <code>init</code> value, its discrete update RHS (<code>equation.rhs</code> with <code>equation_type: recurrence</code>), and whether it is an <em>accumulator</em> — its update references its own symbol, so its commit is gated on the first step while its memory input is still unset (a memory state, which does not reference itself, updates every step). The readout is the observer <code>output</code> (a derived variable’s RHS, or a bare final state), and any user <code>functions</code> (e.g.&nbsp;<code>wrap</code>) are surfaced for the printer. Returns <code>None</code> when the observation declares no <code>dynamics</code> (the post-scan path runs).</p>
 <p>Every RHS is parsed to a <strong>sympy</strong> expression against the observer’s symbolic vocabulary (its states, its <code>parameters</code>, the source, and the framework scalars <code>dt</code>/<code>count</code>; user functions become undefined <code>Function</code>s). An observer parameter is a named constant exactly as a model Dynamics’ parameters are, scalar or array-valued (a mesh operator, a template matrix), and binds by name in the rendered update. That makes the analysis symbolic, not string-based: accumulator classification is <code>state_symbol in expr.free_symbols</code>, and an unknown symbol (a typo) is caught here rather than surfacing as a codegen error. The context carries sympy <code>Expr</code> objects; the partial renders them per backend via <code>render_expression</code> (which accepts sympy directly). Returns <code>None</code> when the observation declares no <code>dynamics</code> (the post-scan path runs).</p>
+<p>Backend array primitives (<code>take</code>, <code>sum_axis</code>, <code>clip</code>, <code>matmul</code>, …) join that vocabulary as undefined <code>Function</code>s the printer lowers later, exactly as <code>parse_eq</code> registers them — without it a name colliding with a SymPy builtin (<code>take</code> is <code>sympy.utilities.iterables.take</code>) is evaluated at parse time and blows up.</p>
+<p>A derived variable’s <code>surrogate</code> reuses the already-computed statistic DV as its observed value, so the statistic has to be declared BEFORE it; the reverse order would reference a name assigned further down the emitted function, a runtime <code>NameError</code> with nothing failing at codegen. The family-wise (Westfall–Young) extremum follows the test sidedness — max-T for a <code>&gt;=</code> test, min-T for <code>&lt;=</code> — and is derived here rather than author-set, so an incoherent extremum/direction pairing cannot be expressed. Each surrogate’s p-value DV is interleaved back into the chain at its declaration position so a DV consuming it is emitted after it; a surrogate entry carries no <code>expr</code>, because the renderer emits the vmap-fold over the permutation table instead.</p>
+<p>A <code>partition</code> lifts the observer into a GROUPED reduction (<code>kind: 'wave'</code>): the per-step chain is written once for a single group, vmapped over the partition axis, and folded to per-group scalar metrics.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.resolve_solver_kwargs" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.resolve_solver_kwargs">resolve_solver_kwargs</h3>
-<div class="sourceCode" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_solver_kwargs(</span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>    integration,</span>
-<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>    dt,</span>
-<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>    is_diffrax<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_solver_kwargs(</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>    integration,</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>    dt,</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>    is_diffrax<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Map the backend-neutral <code>integration.differentiation</code> strategy onto native-solver kwargs, returned as a ready-to-emit string (e.g. <code>"grad_horizon=100, block_size=50"</code>).</p>
 <p><code>truncation_window</code> / <code>checkpoint_interval</code> are in ms of simulated time; the native JAX solver counts integration steps, so they are converted with <code>dt</code>. Diffrax has no such knobs, so <code>is_diffrax=True</code> yields <code>""</code>. Shared by the experiment and solver templates so the mapping lives in one place rather than being duplicated in both mako blocks.</p>
 </section>
+<section id="tvbo.templates.tvboptim.utils.resolve_tail_samples" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.resolve_tail_samples">resolve_tail_samples</h3>
+<div class="sourceCode" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.resolve_tail_samples(obs, step_size)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Trailing-window length of <code>obs</code> in samples, from <code>tail_samples</code> or <code>tail_duration</code>.</p>
+<p><code>tail_duration</code> states the window as a length of simulated time and is divided here by the observation’s own sample period — its <code>period</code>/<code>downsample_period</code>, else the integration <code>step_size</code> — so the window covers the same duration at any step. <code>tail_samples</code> states the count directly and is returned unchanged.</p>
+<section id="raises-4" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-4">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 8%">
+<col style="width: 86%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>if both slots are set (the two would disagree the moment the step changes), or if <code>tail_duration</code> is shorter than one sample.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.templates.tvboptim.utils.safe_name" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.safe_name">safe_name</h3>
-<div class="sourceCode" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.safe_name(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.safe_name(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert name to valid Python identifier (preserves case).</p>
 <p>Python identifiers are case-sensitive, and result keys must match the user’s YAML keys verbatim so that <code>res.explorations.C_sweep_fig3</code> works for a YAML entry named <code>C_sweep_fig3</code>. Only characters that are invalid in identifiers (spaces, hyphens) are replaced.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.state_only_derived_var_names" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.state_only_derived_var_names">state_only_derived_var_names</h3>
-<div class="sourceCode" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.state_only_derived_var_names(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.state_only_derived_var_names(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Derived-variable names that are provably functions of the state alone.</p>
 <p>Returned in the model’s declaration order (dependency order — a derived variable may only reference earlier ones, as the dfun requires). The post-solve realignment binds these as locals so a recorded auxiliary can reach the <em>intermediate</em> derived variables it depends on (e.g.&nbsp;a firing rate that is a function of a synaptic-current derived variable) without a <code>NameError</code>.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.state_only_recorded_aux" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.state_only_recorded_aux">state_only_recorded_aux</h3>
-<div class="sourceCode" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.state_only_recorded_aux(model, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb62"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.state_only_recorded_aux(model, experiment<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Recorded derived variables that are provably functions of the state alone.</p>
 <p>Returns <code>[(name, aux_offset), ...]</code> for each recorded derived variable that is state-recomputable (see :func:<code>_state_recomputable_derived</code>); <code>aux_offset</code> is the variable’s index within the recorded-auxiliary block (trajectory channel <code>len(state_names) + aux_offset</code>). These can be recomputed from the recorded post-step state to undo the solver’s one-step auxiliary lag; coupling-dependent ones cannot (they need the in-scan coupling) and are omitted.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.streaming_post_eval_plan" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.streaming_post_eval_plan">streaming_post_eval_plan</h3>
-<div class="sourceCode" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.streaming_post_eval_plan(experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.streaming_post_eval_plan(experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Plan a streaming post-tuning evaluation for a fitting experiment.</p>
 <p>A <code>reduce: streaming</code> observation (currently HRF-Volterra BOLD) is folded into the integrator carry via <code>prepare(reduce=...)</code> in the algorithm post-tuning evaluation, so the full-length fit trajectory is never materialised (the memory bomb an FC group fit hits at the paper’s real per-stage duration). This resolves, once for the whole experiment:</p>
 <ul>
 <li><code>names</code>: the streaming observations to fold (empty =&gt; no streaming post-eval; the materialise path is unchanged, so every non-opted-in experiment is untouched);</li>
 <li><code>deliverables</code>: the derived observations computable from the streamed values plus the static network observations ALONE — i.e.&nbsp;WITHOUT the raw trajectory (the FC family: <code>fc</code> from streamed <code>bold</code>, then <code>fc_corr</code>/<code>fc_rmse</code> from <code>fc</code> and the empirical target). Observations that need the raw trajectory (e.g.&nbsp;a post-scan <code>mean</code> over a state variable) are intentionally absent — at fit scale they cannot be materialised anyway;</li>
-<li><code>period_in_steps</code>: the block-size unit — a multiple of every reducer’s <code>ds_steps * tr_stride</code> — so BOLD TR boundaries align to integrator block boundaries (a partial-TR block would misalign the reducer’s slot writing).</li>
+<li><code>period_in_steps</code>: the block-size unit — a multiple of every reducer’s <code>ds_steps * tr_stride</code> — so BOLD TR boundaries align to integrator block boundaries (a partial-TR block would misalign the reducer’s slot writing);</li>
+<li><code>dims</code>: each streamed observation’s axis names, from the reduction that produces it (:func:<code>reduction_dims</code>), so the result container binds declared labels rather than inferring them from the array’s shape.</li>
 </ul>
 <p>Both the experiment template (which builds the streaming <code>post_model_fn</code>) and the algorithm template (which consumes it) call this, so the two sides cannot drift.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.time_argument_ms" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.time_argument_ms">time_argument_ms</h3>
-<div class="sourceCode" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.time_argument_ms(argument, default)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.time_argument_ms(argument, default)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve a time-valued schema argument to milliseconds.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.to_numeric" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.to_numeric">to_numeric</h3>
-<div class="sourceCode" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.to_numeric(val)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.to_numeric(val)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert string to numeric if possible.</p>
 </section>
 <section id="tvbo.templates.tvboptim.utils.toposort_observations" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.toposort_observations">toposort_observations</h3>
-<div class="sourceCode" id="cb60"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.toposort_observations(</span>
-<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>    obs_names,</span>
-<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>    derived_obs_dict,</span>
-<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>    all_observations,</span>
-<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.toposort_observations(</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>    obs_names,</span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>    derived_obs_dict,</span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>    all_observations,</span>
+<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Dependency-order observations so any that lists another as a <code>source</code> is emitted AFTER that source — the same dependency-graph principle used for derived variables/parameters (see <code>tvbo.classes.equation</code>). Independent observations keep their input order (stable / deterministic). Lives in the tvboptim adapter so the mako templates only call it rather than redefining the sort inline.</p>
+</section>
+<section id="tvbo.templates.tvboptim.utils.weight_transform_codegen" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.templates.tvboptim.utils.weight_transform_codegen">weight_transform_codegen</h3>
+<div class="sourceCode" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>templates.tvboptim.utils.weight_transform_codegen(network)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render <code>transforms:</code> targeting weight to JAX for inlining in the generated script.</p>
+<p>A transform is a <code>Function</code>, so both of its forms are lowered: an <code>equation:</code> renders through the same expression resolver and primitive table the runtime evaluates (<code>Network.transform_expression</code>, <code>tvbo.codegen.transforms</code>), and a <code>callable:</code> renders as an import of that callable plus a call. The kit therefore applies the declared transform exactly as the runtime does, but visibly, on the RAW weights the generated <code>create_network</code> is handed — raw SC stays in the network file, the transform stays declared in the spec, and the operation is in the script rather than hidden in the tvbo runtime. This helper runs only at render time, inside the tvbo environment.</p>
+<section id="parameters-8" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-8">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 10%">
+<col style="width: 63%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>network</td>
+<td></td>
+<td>The <code>Network</code> whose transforms are being lowered.</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-8" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-8">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 38%">
+<col style="width: 56%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>List[Tuple[str, List[str]]]</td>
+<td>A <code>(transforms, const_env)</code> pair. <code>transforms</code> is a list of</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>List[str]</td>
+<td><code>(jax_expr, matrix_env)</code>; <code>matrix_env</code> rebinds matrix-derived primitives from the</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>Tuple[List[Tuple[str, List[str]]], List[str]]</td>
+<td>current <code>weights</code> so a chain of transforms composes. <code>const_env</code> binds</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>Tuple[List[Tuple[str, List[str]]], List[str]]</td>
+<td>data-derived symbols — <code>L</code>, per-node parameter vectors, imported callables — once.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises-5" class="level4 doc-section doc-section-raises">
+<h4 class="doc-section doc-section-raises anchored" data-anchor-id="raises-5">Raises</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 1%">
+<col style="width: 2%">
+<col style="width: 95%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If a transform equation names a symbol that is neither a primitive, a declared per-node parameter, nor a substituted argument. Failing here beats emitting an undefined name into a kit that only dies once it reaches a cluster. Symbols are checked by base identifier, so a masked expression such as <code>mean(W[W &gt; 0])</code> is validated — and bound — as <code>W</code>. Also if a callable transform takes the <code>network</code> the runtime injects, which a kit cannot supply.</td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 </section>
@@ -1548,7 +1832,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

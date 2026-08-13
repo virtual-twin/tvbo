@@ -184,9 +184,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
+  <li><a href="#tvbo.data.dataref.analysis_container_path" id="toc-tvbo.data.dataref.analysis_container_path" class="nav-link" data-scroll-target="#tvbo.data.dataref.analysis_container_path">analysis_container_path</a></li>
   <li><a href="#tvbo.data.dataref.apply_transform" id="toc-tvbo.data.dataref.apply_transform" class="nav-link" data-scroll-target="#tvbo.data.dataref.apply_transform">apply_transform</a></li>
   <li><a href="#tvbo.data.dataref.experiment_id" id="toc-tvbo.data.dataref.experiment_id" class="nav-link" data-scroll-target="#tvbo.data.dataref.experiment_id">experiment_id</a></li>
   <li><a href="#tvbo.data.dataref.is_local_ref" id="toc-tvbo.data.dataref.is_local_ref" class="nav-link" data-scroll-target="#tvbo.data.dataref.is_local_ref">is_local_ref</a></li>
+  <li><a href="#tvbo.data.dataref.locate_analysis_container" id="toc-tvbo.data.dataref.locate_analysis_container" class="nav-link" data-scroll-target="#tvbo.data.dataref.locate_analysis_container">locate_analysis_container</a></li>
   <li><a href="#tvbo.data.dataref.locate_container" id="toc-tvbo.data.dataref.locate_container" class="nav-link" data-scroll-target="#tvbo.data.dataref.locate_container">locate_container</a></li>
   <li><a href="#tvbo.data.dataref.locate_exp_container" id="toc-tvbo.data.dataref.locate_exp_container" class="nav-link" data-scroll-target="#tvbo.data.dataref.locate_exp_container">locate_exp_container</a></li>
   <li><a href="#tvbo.data.dataref.match_output" id="toc-tvbo.data.dataref.match_output" class="nav-link" data-scroll-target="#tvbo.data.dataref.match_output">match_output</a></li>
@@ -223,16 +225,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.data.dataref.analysis_container_path">analysis_container_path</a></td>
+<td><code>&lt;results_root&gt;/results/&lt;name&gt;/result.h5</code> — the analysis-container layout, once.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.data.dataref.apply_transform">apply_transform</a></td>
 <td>Apply a named <code>fn(da) -&gt; da</code> reduction, or return <code>da</code> unchanged for no transform.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.data.dataref.experiment_id">experiment_id</a></td>
 <td>Experiment id of an <code>iri</code> whose last segment IS an experiment token, else <code>None</code>.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.data.dataref.is_local_ref">is_local_ref</a></td>
 <td>A <code>DataRef</code> with no WHERE (neither <code>experiment</code> nor <code>iri</code>).</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.data.dataref.locate_analysis_container">locate_analysis_container</a></td>
+<td>Path to the container a study analysis named <code>name</code> writes under <code>results_root</code>.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.data.dataref.locate_container">locate_container</a></td>
@@ -260,7 +270,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.data.dataref.sel_dict">sel_dict</a></td>
-<td><code>DataRef.sel</code> (a list of <code>Argument</code>) as a plain <code>{dim: value}</code> mapping.</td>
+<td><code>DataRef.sel</code> (a collection of <code>Argument</code>) as a plain <code>{dim: value}</code> mapping.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.data.dataref.select_labeled">select_labeled</a></td>
@@ -268,81 +278,93 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
+<section id="tvbo.data.dataref.analysis_container_path" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.data.dataref.analysis_container_path">analysis_container_path</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>data.dataref.analysis_container_path(results_root, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>&lt;results_root&gt;/results/&lt;name&gt;/result.h5</code> — the analysis-container layout, once.</p>
+</section>
 <section id="tvbo.data.dataref.apply_transform" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.apply_transform">apply_transform</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>data.dataref.apply_transform(da, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data.dataref.apply_transform(da, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Apply a named <code>fn(da) -&gt; da</code> reduction, or return <code>da</code> unchanged for no transform.</p>
 <p>Resolves the name against the shared <code>bsplot</code> transform registry — the same one a figure <code>Layer.transform</code> and a study’s <code>code_modules</code> use — so a sourced array and a figure layer name the same transforms. Imported lazily to keep this module free of an adapter dependency; a miss raises the registry’s actionable “not registered” error.</p>
 </section>
 <section id="tvbo.data.dataref.experiment_id" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.experiment_id">experiment_id</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data.dataref.experiment_id(iri)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.dataref.experiment_id(iri)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Experiment id of an <code>iri</code> whose last segment IS an experiment token, else <code>None</code>.</p>
 <p><code>tvbo:exp/&lt;study&gt;/exp-32</code> / <code>exp-32</code> / <code>exp32</code> / a bare <code>32</code> -&gt; <code>"32"</code>. A curated / dataset iri whose last segment merely <em>contains</em> digits (<code>rec-avgMatrix_atlas-HCPMMP1</code>) returns <code>None</code> — so it is not misread as an experiment (which would silently bind to <code>exp-1</code>); <code>locate_container</code> then treats it as a path / curated reference instead.</p>
 </section>
 <section id="tvbo.data.dataref.is_local_ref" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.is_local_ref">is_local_ref</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.dataref.is_local_ref(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data.dataref.is_local_ref(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A <code>DataRef</code> with no WHERE (neither <code>experiment</code> nor <code>iri</code>).</p>
 <p>Such a reference names one of <em>this</em> experiment’s own outputs (the local end of the reference spectrum, subsuming an <code>Argument.value: "observations.x"</code>); it is resolved by the in-run observation machinery, not by opening a sibling container. Consumers test this to route a local reference to the right resolver.</p>
 </section>
+<section id="tvbo.data.dataref.locate_analysis_container" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.data.dataref.locate_analysis_container">locate_analysis_container</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data.dataref.locate_analysis_container(results_root, name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Path to the container a study analysis named <code>name</code> writes under <code>results_root</code>.</p>
+<p><code>&lt;results_root&gt;/results/&lt;name&gt;/result.h5</code> — the one place the convention is spelled, so the writer (:mod:<code>tvbo.data.analysis_io</code>), the run-time resolver and the figure adapter cannot disagree about where an analysis result lives. Raises when it has not been produced yet, with the command that produces it.</p>
+</section>
 <section id="tvbo.data.dataref.locate_container" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.locate_container">locate_container</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data.dataref.locate_container(</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    ref,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    results_root<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    fallback_experiment<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>data.dataref.locate_container(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    ref,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    results_root<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    fallback_experiment<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve a <code>DataRef</code>’s WHERE to a result-container path.</p>
-<p>Precedence ladder (matches the design’s one rule): an explicit <code>experiment</code> id or an <code>iri</code> carrying a trailing experiment number resolves against <code>results_root</code>; a filesystem <code>iri</code> that exists is taken as-is (a curated / external container); a reference with no WHERE falls back to <code>fallback_experiment</code> (the enclosing <code>initial_state.source_experiment</code>, so the warm-start ergonomic of naming the sibling once is preserved). Raises when none applies.</p>
+<p>Precedence ladder (matches the design’s one rule): an explicit <code>experiment</code> id, an <code>analysis</code> name, or an <code>iri</code> carrying a trailing experiment number resolves against <code>results_root</code>; a filesystem <code>iri</code> that exists is taken as-is (a curated / external container); a reference with no WHERE falls back to <code>fallback_experiment</code> (the enclosing <code>initial_state.source_experiment</code>, so the warm-start ergonomic of naming the sibling once is preserved). Raises when none applies.</p>
 </section>
 <section id="tvbo.data.dataref.locate_exp_container" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.locate_exp_container">locate_exp_container</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data.dataref.locate_exp_container(results_root, source_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>data.dataref.locate_exp_container(results_root, source_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Path to experiment <code>source_id</code>’s saved result HDF5 under <code>results_root</code>.</p>
 <p>Globs by the <code>exp-&lt;id&gt;_</code> file stem, skipping the <code>*network*</code> sidecar, so the output-directory layout (<code>results/2</code>, <code>output/nc/exp2</code>, flat BIDS files, …) does not matter. Raises when the source has not been run yet — the actionable “run experiment N first” error shared by every consumer.</p>
 </section>
 <section id="tvbo.data.dataref.match_output" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.match_output">match_output</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>data.dataref.match_output(keys, output)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>data.dataref.match_output(keys, output)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Container data-var key for <code>output</code> — exact, or the <code>&lt;producer&gt;__&lt;name&gt;</code> suffix.</p>
-<p>A recorded state variable matches by name; a declared observation / estimate is stored <code>observation__&lt;name&gt;</code> / <code>estimate__&lt;name&gt;</code>, so the trailing-<code>__</code> suffix matches too. Shared by every consumer (figure layers, warm-start parameters, state seeds) so <code>output</code> addresses them all identically.</p>
+<p>A recorded state variable matches by name; a declared observation / estimate is stored <code>observation__&lt;name&gt;</code> / <code>estimate__&lt;name&gt;</code>, so the trailing-<code>__</code> suffix matches too. An EXACT match always wins: a container holding both a recorded <code>power</code> and an <code>observation__power</code> would otherwise resolve by dict iteration order, so one spec could bind different arrays in different containers. Shared by every consumer (figure layers, warm-start parameters, state seeds) so <code>output</code> addresses them all identically.</p>
 </section>
 <section id="tvbo.data.dataref.reconcile_by_label" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.reconcile_by_label">reconcile_by_label</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>data.dataref.reconcile_by_label(da, alias_map, model_labels, node_dims<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>data.dataref.reconcile_by_label(da, alias_map, model_labels, node_dims<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Align every labelled node axis of <code>da</code> to the model’s node order, by label.</p>
 <p>A node axis is any dimension carrying string coordinates. Each is relabelled source -&gt; canonical through <code>alias_map</code> (alias-aware, so a divergent nomenclature or a hemisphere-swapped convention still matches) then restricted to <code>model_labels</code> in the model’s order — on <em>both</em> axes of a per-edge matrix. Unlabelled axes are left untouched (assumed already in model order). Pass <code>node_dims</code> to restrict reconciliation to a known set of node axes (so a labelled <em>non-node</em> dimension is not mistaken for one); the default reconciles every string-coordinate axis. This is the <code>reconcile: by_label</code> path; <code>none</code> skips it.</p>
 </section>
 <section id="tvbo.data.dataref.reconcile_mode" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.reconcile_mode">reconcile_mode</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>data.dataref.reconcile_mode(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>data.dataref.reconcile_mode(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The reference’s node-reconcile mode as a plain string (<code>'by_label'</code> / <code>'none'</code>).</p>
 </section>
 <section id="tvbo.data.dataref.resolve_dataref" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.resolve_dataref">resolve_dataref</h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>data.dataref.resolve_dataref(</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    ref,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    results_root<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    fallback_experiment<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    alias_map<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    model_labels<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>data.dataref.resolve_dataref(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    ref,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    results_root<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    fallback_experiment<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    alias_map<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    model_labels<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Resolve a container-backed <code>DataRef</code> to a labelled :class:<code>xarray.DataArray</code>.</p>
 <p>Runs the four steps in order — WHERE (:func:<code>locate_container</code>), WHICH (:func:<code>match_output</code>), SLICE (:func:<code>select_labeled</code>), RECONCILE (:func:<code>reconcile_by_label</code>, only when the reference asks for <code>by_label</code> and a network context is supplied) — and returns the array detached from the source file. <code>alias_map</code> / <code>model_labels</code> are the consuming network’s <code>region_alias_map()</code> and node order, injected so this stays network-agnostic.</p>
 <p>For a <em>local</em> reference (no WHERE) raises via :func:<code>locate_container</code>; callers test :func:<code>is_local_ref</code> first and route those to the in-run resolver.</p>
 </section>
 <section id="tvbo.data.dataref.sel_dict" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.sel_dict">sel_dict</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>data.dataref.sel_dict(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p><code>DataRef.sel</code> (a list of <code>Argument</code>) as a plain <code>{dim: value}</code> mapping.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>data.dataref.sel_dict(ref)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>DataRef.sel</code> (a collection of <code>Argument</code>) as a plain <code>{dim: value}</code> mapping.</p>
 <p>The Argument name is the dimension/coordinate; its <code>value</code> the coordinate label. Keyed by name, never positional. Empty when the reference carries no <code>sel</code>.</p>
+<p>Both spellings resolve: the keyed dict a study writes (<code>sel: {variable: phi}</code>) and the list of Arguments a dataclass build produces.</p>
 </section>
 <section id="tvbo.data.dataref.select_labeled" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.dataref.select_labeled">select_labeled</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>data.dataref.select_labeled(da, sel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>data.dataref.select_labeled(da, sel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Apply a label-keyed <code>.sel</code> to <code>da</code>, never positional.</p>
 <p>Each entry selects along a dimension by coordinate label (<code>method="nearest"</code> for a numeric selection, e.g.&nbsp;the sampled K on a continuous sweep; exact for a label). A selection key that is a <em>non-dimension</em> coordinate defined along a single dimension is honoured too (the operating-point-out-of-a-branch case: the container is dimmed by <code>branch_point</code> with <code>K</code> a coordinate along it) — the nearest index along that coordinate is taken. Returns <code>da</code> unchanged for an empty sel.</p>
 
@@ -424,7 +446,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

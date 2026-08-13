@@ -194,10 +194,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.utils.as_list" id="toc-tvbo.utils.as_list" class="nav-link" data-scroll-target="#tvbo.utils.as_list">as_list</a></li>
   <li><a href="#tvbo.utils.deep_merge" id="toc-tvbo.utils.deep_merge" class="nav-link" data-scroll-target="#tvbo.utils.deep_merge">deep_merge</a></li>
   <li><a href="#tvbo.utils.domain_enforcement" id="toc-tvbo.utils.domain_enforcement" class="nav-link" data-scroll-target="#tvbo.utils.domain_enforcement">domain_enforcement</a></li>
+  <li><a href="#tvbo.utils.edge_param" id="toc-tvbo.utils.edge_param" class="nav-link" data-scroll-target="#tvbo.utils.edge_param">edge_param</a></li>
   <li><a href="#tvbo.utils.format_pytree_as_string" id="toc-tvbo.utils.format_pytree_as_string" class="nav-link" data-scroll-target="#tvbo.utils.format_pytree_as_string">format_pytree_as_string</a></li>
   <li><a href="#tvbo.utils.from_yaml" id="toc-tvbo.utils.from_yaml" class="nav-link" data-scroll-target="#tvbo.utils.from_yaml">from_yaml</a></li>
+  <li><a href="#tvbo.utils.initial_value" id="toc-tvbo.utils.initial_value" class="nav-link" data-scroll-target="#tvbo.utils.initial_value">initial_value</a></li>
   <li><a href="#tvbo.utils.is_array_valued" id="toc-tvbo.utils.is_array_valued" class="nav-link" data-scroll-target="#tvbo.utils.is_array_valued">is_array_valued</a></li>
+  <li><a href="#tvbo.utils.noise_sigma" id="toc-tvbo.utils.noise_sigma" class="nav-link" data-scroll-target="#tvbo.utils.noise_sigma">noise_sigma</a></li>
+  <li><a href="#tvbo.utils.normalize_params" id="toc-tvbo.utils.normalize_params" class="nav-link" data-scroll-target="#tvbo.utils.normalize_params">normalize_params</a></li>
   <li><a href="#tvbo.utils.numbered_print" id="toc-tvbo.utils.numbered_print" class="nav-link" data-scroll-target="#tvbo.utils.numbered_print">numbered_print</a></li>
+  <li><a href="#tvbo.utils.parameter_number" id="toc-tvbo.utils.parameter_number" class="nav-link" data-scroll-target="#tvbo.utils.parameter_number">parameter_number</a></li>
   <li><a href="#tvbo.utils.pretty_print_pytree" id="toc-tvbo.utils.pretty_print_pytree" class="nav-link" data-scroll-target="#tvbo.utils.pretty_print_pytree">pretty_print_pytree</a></li>
   <li><a href="#tvbo.utils.register_recipe_code_paths" id="toc-tvbo.utils.register_recipe_code_paths" class="nav-link" data-scroll-target="#tvbo.utils.register_recipe_code_paths">register_recipe_code_paths</a></li>
   <li><a href="#tvbo.utils.sanitize_name" id="toc-tvbo.utils.sanitize_name" class="nav-link" data-scroll-target="#tvbo.utils.sanitize_name">sanitize_name</a></li>
@@ -364,38 +369,58 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Normalise a state-variable domain’s enforcement mode to a plain string.</td>
 </tr>
 <tr class="odd">
+<td><a href="#tvbo.utils.edge_param">edge_param</a></td>
+<td>A named quantity off an <code>Edge</code>: its <code>parameters</code> entry, else its own slot.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.utils.format_pytree_as_string">format_pytree_as_string</a></td>
 <td>Recursively formats a JAX pytree structure as a string with Unicode box-drawing characters.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.utils.from_yaml">from_yaml</a></td>
 <td>Load a LinkML datamodel object from a YAML file.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.utils.initial_value">initial_value</a></td>
+<td>The initial value a state variable declares, else <em>default</em>.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.utils.is_array_valued">is_array_valued</a></td>
 <td>Return True if a parameter value is an array constant rather than a scalar.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.utils.noise_sigma">noise_sigma</a></td>
+<td>The noise standard deviation σ off a declared <code>Noise</code>, or <code>None</code>.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.utils.normalize_params">normalize_params</a></td>
+<td>Normalize a <code>parameters</code> collection to a flat <code>{name: param}</code> dict.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.utils.numbered_print">numbered_print</a></td>
 <td>Print <code>text</code> with each line prefixed by a zero-padded line number.</td>
 </tr>
 <tr class="odd">
+<td><a href="#tvbo.utils.parameter_number">parameter_number</a></td>
+<td>A parameter’s declared value as plain numbers, uniform sequences collapsed.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.utils.pretty_print_pytree">pretty_print_pytree</a></td>
 <td>Prints a pretty formatted representation of a JAX pytree structure.</td>
 </tr>
-<tr class="even">
-<td><a href="#tvbo.utils.register_recipe_code_paths">register_recipe_code_paths</a></td>
-<td>Make a recipe’s callable code importable — the <code>code/</code> convention, or a</td>
-</tr>
 <tr class="odd">
+<td><a href="#tvbo.utils.register_recipe_code_paths">register_recipe_code_paths</a></td>
+<td>Make a recipe’s callable code importable — the <code>code/</code> convention, or a declared :class:<code>CodeSource</code> (a local directory or a git repository).</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.utils.sanitize_name">sanitize_name</a></td>
 <td>Sanitise a name into a filesystem- and rule-safe token (keep alnum, <code>_</code>, <code>-</code>).</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.utils.to_yaml">to_yaml</a></td>
 <td>Dump a LinkML datamodel object to YAML.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.utils.traverse_metadata">traverse_metadata</a></td>
 <td>Recursively traverses the attributes of a metadata object, calling a callback on each Parameter.</td>
 </tr>
@@ -427,18 +452,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Normalise a state-variable domain’s enforcement mode to a plain string.</p>
 <p>Returns one of <code>'none'</code> (default — descriptive metadata only), <code>'clamp'</code> (hard-clip to [lo, hi]) or <code>'wrap'</code> (periodic). Accepts a Range/domain object (reads its <code>enforce</code> slot), a bare <code>DomainEnforcement</code> value, or <code>None</code>. Normalises across both generated representations of the enum — the pydantic <code>(str, Enum)</code> (compare via <code>.value</code>) and the gen-python permissible value (compare via <code>str()</code>) — so callers can simply test <code>domain_enforcement(sv.domain) == 'clamp'</code>.</p>
 </section>
+<section id="tvbo.utils.edge_param" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.edge_param">edge_param</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>utils.edge_param(edge, name, default<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A named quantity off an <code>Edge</code>: its <code>parameters</code> entry, else its own slot.</p>
+<p><code>weight</code>/<code>delay</code>/<code>distance</code> are both first-class <code>Edge</code> slots and valid entries in the generic <code>parameters</code> collection, so a recipe may spell either. <code>parameters</code> wins when both are set. This is the single reader every backend goes through, so one recipe cannot mean different connectomes on different backends. Returns the value verbatim (no coercion), or <em>default</em>.</p>
+</section>
 <section id="tvbo.utils.format_pytree_as_string" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.format_pytree_as_string">format_pytree_as_string</h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>utils.format_pytree_as_string(</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    pytree,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">'root'</span>,</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    prefix<span class="op">=</span><span class="st">''</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    is_last<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    show_numerical_only<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    is_root<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    hide_none<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    show_array_values<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>utils.format_pytree_as_string(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    pytree,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">'root'</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    prefix<span class="op">=</span><span class="st">''</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    is_last<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    show_numerical_only<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    is_root<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    hide_none<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    show_array_values<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Recursively formats a JAX pytree structure as a string with Unicode box-drawing characters.</p>
 <section id="parameters" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
@@ -531,7 +562,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.utils.from_yaml" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.from_yaml">from_yaml</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>utils.from_yaml(filepath, cls)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>utils.from_yaml(filepath, cls)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load a LinkML datamodel object from a YAML file.</p>
 <section id="parameters-1" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
@@ -585,15 +616,40 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 </section>
+<section id="tvbo.utils.initial_value" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.initial_value">initial_value</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>utils.initial_value(sv, default<span class="op">=</span><span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The initial value a state variable declares, else <em>default</em>.</p>
+<p><code>StateVariable.initial_value</code> has no schema default: undeclared is <code>None</code> and means “the spec did not say”, which is what makes the fallback the caller’s to name. A model state starts at the generic 0.1; an observation reduction’s accumulator starts at its reduction identity <code>0.0</code>, which is a different question and so is passed explicitly.</p>
+<p>The slot used to carry <code>ifabsent: float(0.1)</code>, which materialised 0.1 for every state variable. That made “undeclared” unrepresentable — every consumer’s own <code>is None</code> fallback was unreachable, and a reduction observer could not distinguish a declared 0.1 from a spec that said nothing.</p>
+</section>
 <section id="tvbo.utils.is_array_valued" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.is_array_valued">is_array_valued</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>utils.is_array_valued(value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>utils.is_array_valued(value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Return True if a parameter value is an array constant rather than a scalar.</p>
 <p>Array-valued parameters (e.g.&nbsp;mode-coupling matrices, Gaussian-quadrature vectors) are stored as nested lists/tuples in YAML or as <code>np.ndarray</code> when set programmatically. Scalar-only call sites (<code>float(p.value)</code> substitution, sympy <code>subs</code>) must skip them. Single source of truth so list/tuple <em>and</em> ndarray are treated consistently everywhere.</p>
 </section>
+<section id="tvbo.utils.noise_sigma" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.noise_sigma">noise_sigma</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>utils.noise_sigma(noise, <span class="op">**</span>legacy)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The noise standard deviation σ off a declared <code>Noise</code>, or <code>None</code>.</p>
+<p>The one reader for every spelling the schema allows, so a recipe cannot mean a different amplitude on different backends. Each spelling has exactly one meaning:</p>
+<ul>
+<li><code>parameters: {sigma: {value: s}}</code> → <code>s</code>. Wins whenever present.</li>
+<li><code>intensity: {value: s}</code> → <code>s</code>. Deprecated spelling of the same quantity; reading one warns.</li>
+<li><code>parameters: {nsig: {value: D}}</code> → <code>sqrt(2 D)</code>. The dispersion spelling (<code>D = σ²/2</code>) — what a TVB import writes.</li>
+</ul>
+<p>Returns <code>None</code> when the noise declares no amplitude at all (and for a missing <code>Noise</code>), leaving “absent” distinguishable from an explicit zero.</p>
+</section>
+<section id="tvbo.utils.normalize_params" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.normalize_params">normalize_params</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>utils.normalize_params(params)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Normalize a <code>parameters</code> collection to a flat <code>{name: param}</code> dict.</p>
+<p>Accepts the keyed mapping <code>{weight: Parameter(...)}</code> (LinkML <code>JsonObj</code> or plain dict), the list-of-mappings <code>[{weight: {value: 1.0}}, ...]</code> that raw YAML may produce, and a list of <code>Parameter</code> objects. Applies to edge, node and dynamics parameter collections alike.</p>
+</section>
 <section id="tvbo.utils.numbered_print" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.numbered_print">numbered_print</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>utils.numbered_print(text)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>utils.numbered_print(text)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Print <code>text</code> with each line prefixed by a zero-padded line number.</p>
 <p>Line numbers start at 1 and are padded to the width of the largest number so the printed numbers stay aligned.</p>
 <section id="parameters-2" class="level4 doc-section doc-section-parameters">
@@ -618,15 +674,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 </section>
+<section id="tvbo.utils.parameter_number" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.utils.parameter_number">parameter_number</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>utils.parameter_number(value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A parameter’s declared value as plain numbers, uniform sequences collapsed.</p>
+<p><code>Parameter.value</code> is scalar for most models, one entry per mode for a multi-mode one, and a matrix for a mode-coupled one (<code>ReducedSetHindmarshRose</code>’s <code>A_ik</code>), so it nests to arbitrary depth. A sequence whose entries are all equal collapses to the scalar it means; anything else keeps its shape, because reducing a genuinely heterogeneous value to its first entry would silently change the model.</p>
+<p>Backends that can only emit scalars use this to decide, rather than each deciding differently — or, as the PyRates emitter did, calling <code>float()</code> and raising.</p>
+</section>
 <section id="tvbo.utils.pretty_print_pytree" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.pretty_print_pytree">pretty_print_pytree</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>utils.pretty_print_pytree(</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    pytree,</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">'root'</span>,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    prefix<span class="op">=</span><span class="st">''</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    show_numerical_only<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    hide_none<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>utils.pretty_print_pytree(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    pytree,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="st">'root'</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    prefix<span class="op">=</span><span class="st">''</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    show_numerical_only<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    hide_none<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Prints a pretty formatted representation of a JAX pytree structure.</p>
 <section id="parameters-3" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
@@ -701,7 +764,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.utils.register_recipe_code_paths" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.register_recipe_code_paths">register_recipe_code_paths</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>utils.register_recipe_code_paths(source_file, code_source<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>utils.register_recipe_code_paths(source_file, code_source<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Make a recipe’s callable code importable — the <code>code/</code> convention, or a declared :class:<code>CodeSource</code> (a local directory or a git repository).</p>
 <p>A recipe references custom builders and analysis callables by bare module name (e.g.&nbsp;<code>module: taher2019_analysis</code>); their directory must be on <code>sys.path</code> for <code>import</code> to resolve them. Resolution:</p>
 <ol type="1">
@@ -716,12 +779,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.utils.sanitize_name" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.sanitize_name">sanitize_name</h3>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>utils.sanitize_name(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>utils.sanitize_name(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Sanitise a name into a filesystem- and rule-safe token (keep alnum, <code>_</code>, <code>-</code>).</p>
 </section>
 <section id="tvbo.utils.to_yaml" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.to_yaml">to_yaml</h3>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>utils.to_yaml(obj, filepath<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>utils.to_yaml(obj, filepath<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Dump a LinkML datamodel object to YAML.</p>
 <ul>
 <li>If filepath is provided, write YAML to that file and return the path.</li>
@@ -781,14 +844,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.utils.traverse_metadata" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.utils.traverse_metadata">traverse_metadata</h3>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>utils.traverse_metadata(</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    metadata,</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    target_instance<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    callback<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    callback_kwargs<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    keys_to_exclude<span class="op">=</span>(),</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>utils.traverse_metadata(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    metadata,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    target_instance<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    path<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    callback<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    callback_kwargs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    keys_to_exclude<span class="op">=</span>(),</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Recursively traverses the attributes of a metadata object, calling a callback on each Parameter.</p>
 
 
@@ -869,7 +932,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

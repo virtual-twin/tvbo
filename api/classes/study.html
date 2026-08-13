@@ -185,6 +185,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#classes" id="toc-classes" class="nav-link" data-scroll-target="#classes">Classes</a>
   <ul class="collapse">
   <li><a href="#tvbo.classes.study.SimulationStudy" id="toc-tvbo.classes.study.SimulationStudy" class="nav-link" data-scroll-target="#tvbo.classes.study.SimulationStudy">SimulationStudy</a></li>
+  <li><a href="#tvbo.classes.study.StudyCollection" id="toc-tvbo.classes.study.StudyCollection" class="nav-link" data-scroll-target="#tvbo.classes.study.StudyCollection">StudyCollection</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -215,6 +216,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><a href="#tvbo.classes.study.SimulationStudy">SimulationStudy</a></td>
 <td>A collection of related <code>SimulationExperiment</code>s with shared provenance.</td>
 </tr>
+<tr class="even">
+<td><a href="#tvbo.classes.study.StudyCollection">StudyCollection</a></td>
+<td>A whole manuscript as one runnable specification.</td>
+</tr>
 </tbody>
 </table>
 <section id="tvbo.classes.study.SimulationStudy" class="level3">
@@ -235,9 +240,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    sample<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    workflow<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    experiments<span class="op">=</span>empty_dict(),</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    figures<span class="op">=</span>empty_dict(),</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    code_source<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    analyses<span class="op">=</span>empty_list(),</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    figures<span class="op">=</span>empty_dict(),</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    code_source<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>A collection of related <code>SimulationExperiment</code>s with shared provenance.</p>
 <p>Aggregates the experiments behind a published paper or analysis (model, DOI, year, citation, dataset) into one declarative YAML/Pydantic object. Load with <code>from_db(name)</code> for curated studies, <code>from_file(path)</code> for local YAML, or <code>from_openminds(...)</code> for JSON-LD provenance graphs.</p>
 <p>The most-used entry points are <a href="#tvbo.classes.study.SimulationStudy.get_experiment"><code>get_experiment(id)</code></a> to materialise a single run, <a href="#tvbo.classes.study.SimulationStudy.cite"><code>cite()</code></a> for the formatted citation, and <a href="#tvbo.classes.study.SimulationStudy.to_openminds"><code>to_openminds(...)</code></a> for JSON-LD export.</p>
@@ -256,28 +262,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Return the formatted citation for this study.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.classes.study.SimulationStudy.experiment_ids">experiment_ids</a></td>
+<td>The declared experiment ids, in recipe order.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.classes.study.SimulationStudy.from_datamodel">from_datamodel</a></td>
 <td>Wrap a generated datamodel instance as a <code>SimulationStudy</code>.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.study.SimulationStudy.from_db">from_db</a></td>
 <td>Load a SimulationStudy by name from the tvbo database.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.study.SimulationStudy.from_file">from_file</a></td>
 <td>Load a study from a local YAML file.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.study.SimulationStudy.from_openminds">from_openminds</a></td>
 <td>Create a SimulationStudy from openMINDS JSON-LD.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.classes.study.SimulationStudy.get_experiment">get_experiment</a></td>
 <td>Retrieve a single experiment by its declared id.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.classes.study.SimulationStudy.list_db">list_db</a></td>
 <td>List available studies in the tvbo database.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.classes.study.SimulationStudy.report">report</a></td>
+<td>Render one Methods section for the whole study.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.classes.study.SimulationStudy.to_openminds">to_openminds</a></td>
@@ -314,9 +328,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 </section>
+<section id="tvbo.classes.study.SimulationStudy.experiment_ids" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.study.SimulationStudy.experiment_ids">experiment_ids</h5>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.experiment_ids()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The declared experiment ids, in recipe order.</p>
+</section>
 <section id="tvbo.classes.study.SimulationStudy.from_datamodel" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.study.SimulationStudy.from_datamodel">from_datamodel</h5>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.from_datamodel(datamodel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.from_datamodel(datamodel)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Wrap a generated datamodel instance as a <code>SimulationStudy</code>.</p>
 <section id="parameters" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
@@ -372,12 +391,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.study.SimulationStudy.from_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.study.SimulationStudy.from_db">from_db</h5>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.from_db(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load a SimulationStudy by name from the tvbo database.</p>
 </section>
 <section id="tvbo.classes.study.SimulationStudy.from_file" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.study.SimulationStudy.from_file">from_file</h5>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.from_file(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.from_file(filepath)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Load a study from a local YAML file.</p>
 <p>The resolved absolute path is stored on the returned instance so that experiments materialised later can locate sibling data files.</p>
 <section id="parameters-1" class="level6 doc-section doc-section-parameters">
@@ -423,7 +442,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.study.SimulationStudy.from_openminds" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.study.SimulationStudy.from_openminds">from_openminds</h5>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.from_openminds(source)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.from_openminds(source)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Create a SimulationStudy from openMINDS JSON-LD.</p>
 <section id="parameters-2" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h6>
@@ -446,24 +465,115 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.classes.study.SimulationStudy.get_experiment" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.study.SimulationStudy.get_experiment">get_experiment</h5>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.get_experiment(experiment_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.get_experiment(experiment_id)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Retrieve a single experiment by its declared id.</p>
 </section>
 <section id="tvbo.classes.study.SimulationStudy.list_db" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.study.SimulationStudy.list_db">list_db</h5>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.list_db()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>List available studies in the tvbo database.</p>
+</section>
+<section id="tvbo.classes.study.SimulationStudy.report" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.study.SimulationStudy.report">report</h5>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.report(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'markdown'</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    part<span class="op">=</span><span class="st">'main'</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    level<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    equations<span class="op">=</span><span class="st">'semantic'</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    orient<span class="op">=</span><span class="st">'auto'</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    experiments<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    outputfile<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    derivative_notation<span class="op">=</span><span class="st">'dot'</span>,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    mul_symbol<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Render one Methods section for the whole study.</p>
+<p>Experiments that share a model share its equations and its symbol table; a model that merely varies a sibling contributes only its delta. Everything the experiments hold in common is stated once, and the comparison table carries only what actually differs — so a seven-experiment study stops emitting seven copies of the same six equations and three copies of the same parameter table.</p>
+<section id="parameters-3" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 4%">
+<col style="width: 84%">
+<col style="width: 4%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>format</td>
+<td>str</td>
+<td><code>markdown</code> / <code>md</code> (<code>\tag</code> numbering), <code>qmd</code> (Quarto <code>{#eq-…}</code> / <code>{#tbl-…}</code> anchors), or <code>pdf</code>.</td>
+<td><code>'markdown'</code></td>
+</tr>
+<tr class="even">
+<td>part</td>
+<td>str</td>
+<td><code>main</code>, <code>supplementary</code> or <code>all</code> — which experiments carry their full paragraph, read from each experiment’s declared <code>part</code>. Every experiment appears in the comparison table regardless, so a demoted one is still visible; <code>part</code> never changes what runs.</td>
+<td><code>'main'</code></td>
+</tr>
+<tr class="odd">
+<td>level</td>
+<td>int</td>
+<td>Heading depth of the model sections, so the block nests under the section that hosts it; experiments sit one level deeper.</td>
+<td><code>2</code></td>
+</tr>
+<tr class="even">
+<td>equations</td>
+<td>str</td>
+<td><code>semantic</code> anchors on model and variable (stable when an experiment is inserted), <code>sequential</code> anchors on the number, <code>none</code> leaves equations unnumbered.</td>
+<td><code>'semantic'</code></td>
+</tr>
+<tr class="odd">
+<td>orient</td>
+<td>str</td>
+<td><code>auto</code> keeps the experiment table narrow, or pin it with <code>rows</code> / <code>columns</code> (where the <em>experiments</em> go) so the Methods keeps its shape.</td>
+<td><code>'auto'</code></td>
+</tr>
+<tr class="even">
+<td>experiments</td>
+<td></td>
+<td>Optional explicit ids to describe; defaults to all of them.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>outputfile</td>
+<td>str | None</td>
+<td>Write the render here; the extension (<code>.md</code> / <code>.qmd</code> / <code>.pdf</code>) overrides <code>format</code>.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>derivative_notation</td>
+<td>str</td>
+<td><code>dot</code> for :math:<code>\dot x</code>, anything else for <code>dx/dt</code>.</td>
+<td><code>'dot'</code></td>
+</tr>
+<tr class="odd">
+<td>mul_symbol</td>
+<td>str | None</td>
+<td>Passed to <code>sympy.latex</code>.</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="tvbo.classes.study.SimulationStudy.to_openminds" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.classes.study.SimulationStudy.to_openminds">to_openminds</h5>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.to_openminds(</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    filepath<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    base_id<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    include_context<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>classes.study.SimulationStudy.to_openminds(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    filepath<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    base_id<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    include_context<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Export study to openMINDS JSON-LD format.</p>
-<section id="parameters-3" class="level6 doc-section doc-section-parameters">
-<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
+<section id="parameters-4" class="level6 doc-section doc-section-parameters">
+<h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
 <p>filepath : str, optional If provided, write JSON-LD to this file path. base_id : str, optional Base URI for generating <span class="citation" data-cites="id"><a href="#ref-id" role="doc-biblioref"><strong>id?</strong></a></span> values (e.g., “https://example.org/studies”). If not provided and study has a DOI, uses the DOI as <span class="citation" data-cites="id"><a href="#ref-id" role="doc-biblioref"><strong>id?</strong></a></span>. include_context : bool Whether to include the <span class="citation" data-cites="context"><a href="#ref-context" role="doc-biblioref"><strong>context?</strong></a></span> in the output. Default True.</p>
 </section>
 <section id="returns-4" class="level6 doc-section doc-section-returns">
@@ -479,9 +589,64 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </blockquote>
 </blockquote>
 </blockquote>
-
-
 </section>
+</section>
+</section>
+</section>
+<section id="tvbo.classes.study.StudyCollection" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.classes.study.StudyCollection">StudyCollection</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>classes.study.StudyCollection(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    description<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    citekey<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">type</span><span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    authors<span class="op">=</span>empty_list(),</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    year<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    doi<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    label<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    derived_from<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    references<span class="op">=</span>empty_list(),</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    key<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    sample<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    workflow<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    experiments<span class="op">=</span>empty_dict(),</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    analyses<span class="op">=</span>empty_list(),</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    figures<span class="op">=</span>empty_dict(),</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    code_source<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    members<span class="op">=</span>empty_list(),</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    results<span class="op">=</span>empty_dict(),</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    archive<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A whole manuscript as one runnable specification.</p>
+<p>Aggregates the member studies a paper reports (<code>members</code>) and owns the paper’s own demonstration experiments, analyses and figures (inherited from <code>SimulationStudy</code>). <code>tvbo run</code> walks the members and the owned content, emits every reported number to a results manifest (<code>results</code>) and every figure with its composed caption, then packages the run as a COMBINE/OMEX archive (<code>archive</code>) — so the paper becomes an instance of the reproducibility it argues for. Load with <code>from_file(path)</code> (inherited).</p>
+<section id="methods-1" class="level4">
+<h4 class="anchored" data-anchor-id="methods-1">Methods</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.classes.study.StudyCollection.member_recipes">member_recipes</a></td>
+<td>The member study recipes as <code>(label, resolved_path)</code> pairs.</td>
+</tr>
+</tbody>
+</table>
+<section id="tvbo.classes.study.StudyCollection.member_recipes" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.classes.study.StudyCollection.member_recipes">member_recipes</h5>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>classes.study.StudyCollection.member_recipes(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    base<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    include_optional<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The member study recipes as <code>(label, resolved_path)</code> pairs.</p>
+<p>Each <code>recipe</code> is resolved relative to <em>base</em> (the StudyCollection file’s directory) when it is not an IRI or an absolute path. <code>optional</code> members are dropped when <em>include_optional</em> is False (a <code>--skip</code>-style light run).</p>
+
+
 </section>
 </section>
 </section>
@@ -561,7 +726,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -222,7 +222,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.run.compgraph.compute_delayed_input_signal">compute_delayed_input_signal</a></td>
-<td>Compute input signal using delayed states.</td>
+<td>Aggregate a node’s delayed afferent input.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.run.compgraph.initialize_graph_states_with_history">initialize_graph_states_with_history</a></td>
@@ -313,7 +313,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="tvbo.run.compgraph.compute_delayed_input_signal" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.run.compgraph.compute_delayed_input_signal">compute_delayed_input_signal</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>run.compgraph.compute_delayed_input_signal(node, G, t, dt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Compute input signal using delayed states.</p>
+<p>Aggregate a node’s delayed afferent input.</p>
+<p>Graph edges point in signal direction, so the afferents are the node’s in-edges: each one pre-transforms the source’s delayed state and weights it, and the shared post-transform is applied once to the sum (also while the delay history is still filling, matching the matrix backends). Mixed post-transforms across one node’s in-edges raise, and a node without afferents receives zero input.</p>
 </section>
 <section id="tvbo.run.compgraph.initialize_graph_states_with_history" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.run.compgraph.initialize_graph_states_with_history">initialize_graph_states_with_history</h3>
@@ -413,7 +414,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

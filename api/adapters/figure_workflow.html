@@ -221,7 +221,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.adapters.figure_workflow.figure_contexts">figure_contexts</a></td>
-<td>Per-figure template contexts (fan-aware inputs). <code>exp_plans</code> are the emitter’s</td>
+<td>Per-figure template contexts (fan-aware inputs). <code>exp_plans</code> are the emitter’s per-experiment dicts; without them (author-time render) inputs fall back to</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.adapters.figure_workflow.write_figure_kit">write_figure_kit</a></td>
@@ -365,8 +365,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Layout::</p>
 <pre><code>out_dir/
   figures.smk                # the render rules (from emit_figure_rules)
-  figures/plot_&lt;name&gt;.py     # self-contained bsplot script per figure</code></pre>
-<p>Each <code>plot_&lt;name&gt;.py</code> is <code>bsplot.render_code(figure, base_dir, outfile=…)</code> with <code>outfile</code> set to the rule’s declared <code>output</code> (<code>figures/&lt;name&gt;.&lt;fmt&gt;</code>), so running <code>python figures/plot_&lt;name&gt;.py</code> from the kit root produces exactly what the rule promises. Returns the kit directory.</p>
+  figures/&lt;name&gt;.&lt;fmt&gt;          # the rendered image (what the rule declares)
+  figures/scripts/plot_&lt;name&gt;.py  # self-contained bsplot script per figure</code></pre>
+<p>Each <code>plot_&lt;name&gt;.py</code> is <code>bsplot.render_code(figure, base_dir, outfile=…)</code> with <code>outfile</code> set to the rule’s declared <code>output</code> (<code>figures/&lt;name&gt;.&lt;fmt&gt;</code>), so running <code>python figures/scripts/plot_&lt;name&gt;.py</code> from the kit root produces exactly what the rule promises. The kit mirrors the local render layout — image in <code>figures/</code>, script in <code>figures/scripts/</code> — so a cluster run and a laptop run put the same artefact in the same place. Returns the kit directory.</p>
 
 
 </section>
@@ -446,7 +447,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

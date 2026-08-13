@@ -187,7 +187,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
   <li><a href="#tvbo.data.network_io.load_network" id="toc-tvbo.data.network_io.load_network" class="nav-link" data-scroll-target="#tvbo.data.network_io.load_network">load_network</a></li>
+  <li><a href="#tvbo.data.network_io.read_embedded_metadata" id="toc-tvbo.data.network_io.read_embedded_metadata" class="nav-link" data-scroll-target="#tvbo.data.network_io.read_embedded_metadata">read_embedded_metadata</a></li>
   <li><a href="#tvbo.data.network_io.save_network" id="toc-tvbo.data.network_io.save_network" class="nav-link" data-scroll-target="#tvbo.data.network_io.save_network">save_network</a></li>
+  <li><a href="#tvbo.data.network_io.write_embedded_metadata" id="toc-tvbo.data.network_io.write_embedded_metadata" class="nav-link" data-scroll-target="#tvbo.data.network_io.write_embedded_metadata">write_embedded_metadata</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -220,14 +222,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.data.network_io.EMBEDDED_METADATA_ATTR">EMBEDDED_METADATA_ATTR</a></td>
+<td>Root attribute holding a self-describing companion’s own sidecar, as JSON.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.data.network_io.RELMAT_PATTERNS">RELMAT_PATTERNS</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.data.network_io.SCHEMA_VERSION">SCHEMA_VERSION</a></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.data.network_io.SENSOR_PATTERNS">SENSOR_PATTERNS</a></td>
 <td></td>
 </tr>
@@ -246,45 +252,70 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="#tvbo.data.network_io.load_network">load_network</a></td>
-<td>Load a tvbo Network from YAML/JSON sidecar + companion reference.</td>
+<td>Load a tvbo Network from a sidecar, or from a self-describing companion.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.data.network_io.read_embedded_metadata">read_embedded_metadata</a></td>
+<td>The sidecar dict embedded in a self-describing companion, or <code>None</code>.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.data.network_io.save_network">save_network</a></td>
 <td>Save a tvbo Network as sidecar + binary companion.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.data.network_io.write_embedded_metadata">write_embedded_metadata</a></td>
+<td>Embed a sidecar dict into a companion so the file needs no sidecar.</td>
 </tr>
 </tbody>
 </table>
 <section id="tvbo.data.network_io.load_network" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.network_io.load_network">load_network</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>data.network_io.load_network(yaml_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Load a tvbo Network from YAML/JSON sidecar + companion reference.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>data.network_io.load_network(path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Load a tvbo Network from a sidecar, or from a self-describing companion.</p>
 <p>Uses linkml yaml_loader or json_loader to construct a schema-validated Network instance directly — same pattern as Dynamics.from_file().</p>
+<p>Two layouts are accepted:</p>
+<ul>
+<li><strong>sidecar + companion</strong> — a <code>.yaml</code>/<code>.json</code> metadata file whose <code>data_file</code> names the binary beside it;</li>
+<li><strong>single self-describing file</strong> — a <code>.h5</code>/<code>.zarr</code> carrying its own sidecar in the <code>metadata</code> root attribute (see :data:<code>EMBEDDED_METADATA_ATTR</code>). The file is its own array store, so one path is the whole Network.</li>
+</ul>
 <p>Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.weights_matrix).</p>
 <section id="parameters" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
-<p>yaml_path : str or Path Path to YAML or JSON sidecar file.</p>
+<p>path : str or Path Path to a YAML/JSON sidecar, or to a self-describing <code>.h5</code>/<code>.zarr</code>.</p>
 </section>
 <section id="returns" class="level4 doc-section doc-section-returns">
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
 <p>Network Fully constructed tvbo.Network with lazy array references.</p>
 </section>
 </section>
+<section id="tvbo.data.network_io.read_embedded_metadata" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.data.network_io.read_embedded_metadata">read_embedded_metadata</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data.network_io.read_embedded_metadata(path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The sidecar dict embedded in a self-describing companion, or <code>None</code>.</p>
+<p><code>None</code> covers every “this is not a self-describing binary” case — a YAML/JSON sidecar path, a companion written without the attribute, an unreadable or non-JSON payload — so callers can treat it as a plain feature probe.</p>
+</section>
 <section id="tvbo.data.network_io.save_network" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.data.network_io.save_network">save_network</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data.network_io.save_network(</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    network,</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    yaml_path,</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    binary_format<span class="op">=</span><span class="st">'h5'</span>,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    sidecar_format<span class="op">=</span><span class="st">'yaml'</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data.network_io.save_network(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    network,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    yaml_path,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    binary_format<span class="op">=</span><span class="st">'h5'</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    sidecar_format<span class="op">=</span><span class="st">'yaml'</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Save a tvbo Network as sidecar + binary companion.</p>
 <p>Uses LinkML yaml_dumper or json_dumper for schema-valid sidecar output — no manual field unpacking or yaml.dump() calls.</p>
 <section id="parameters-1" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
 <p>network : Network Network instance to save. yaml_path : str or Path Output path for sidecar (extension overridden by sidecar_format). binary_format : str “h5” (default), “zarr”, or “csv”. sidecar_format : str “yaml” (default) or “json”.</p>
-
-
 </section>
+</section>
+<section id="tvbo.data.network_io.write_embedded_metadata" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.data.network_io.write_embedded_metadata">write_embedded_metadata</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>data.network_io.write_embedded_metadata(companion_path, meta)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Embed a sidecar dict into a companion so the file needs no sidecar.</p>
+<p>The dict is stored as JSON under the <code>metadata</code> root attribute; <code>data_file</code> is dropped because a self-describing file <em>is</em> its own array store. :func:<code>load_network</code> reads it back, so one path is the whole Network.</p>
+
+
 </section>
 </section>
 </section>
@@ -362,7 +393,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

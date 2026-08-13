@@ -182,7 +182,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#tvbo.ontology.owl" id="toc-tvbo.ontology.owl" class="nav-link active" data-scroll-target="#tvbo.ontology.owl">owl</a>
   <ul class="collapse">
-  <li><a href="#author-leon-martin" id="toc-author-leon-martin" class="nav-link" data-scroll-target="#author-leon-martin">author: Leon Martin</a>
+  <li><a href="#title-ontology-module-for-tvb-o-author-leon-martin" id="toc-title-ontology-module-for-tvb-o-author-leon-martin" class="nav-link" data-scroll-target="#title-ontology-module-for-tvb-o-author-leon-martin">title: “Ontology Module for TVB-O” author: Leon Martin</a>
   <ul class="collapse">
   <li><a href="#usage" id="toc-usage" class="nav-link" data-scroll-target="#usage">Usage:</a></li>
   </ul></li>
@@ -267,9 +267,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1>owl</h1>
 <p><code>ontology.owl</code></p>
 <hr>
-<p>title: “Ontology Module for TVB-O”</p>
-<section id="author-leon-martin" class="level2 doc-section doc-section-author-leon-martin">
-<h2 class="doc-section doc-section-author-leon-martin anchored" data-anchor-id="author-leon-martin">author: Leon Martin</h2>
+<section id="title-ontology-module-for-tvb-o-author-leon-martin" class="level2 doc-section doc-section-title-ontology-module-for-tvb-o-author-leon-martin">
+<h2 class="doc-section doc-section-title-ontology-module-for-tvb-o-author-leon-martin anchored" data-anchor-id="title-ontology-module-for-tvb-o-author-leon-martin">title: “Ontology Module for TVB-O” author: Leon Martin</h2>
 <p>This module provides a set of functions to interact with the ontology of TVB-O. It includes functions to:</p>
 <ul>
 <li>Retrieve package version.</li>
@@ -369,7 +368,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.owl.find_best_fuzzy_match">find_best_fuzzy_match</a></td>
-<td>Find the best fuzzy match for a target string in a list of strings,</td>
+<td>Find the best fuzzy match for a target string in a list of strings, prioritizing strings that start with the target followed by an underscore.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.owl.find_variables">find_variables</a></td>
@@ -513,7 +512,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td><a href="#tvbo.ontology.owl.get_sorted_dict">get_sorted_dict</a></td>
-<td>Creates a dictionary from a list of ontology classes. The dictionary’s keys are the class labels</td>
+<td>Creates a dictionary from a list of ontology classes. The dictionary’s keys are the class labels and its values are the class objects. The dictionary is sorted alphabetically based on its keys.</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.owl.get_subclass_list">get_subclass_list</a></td>
@@ -581,7 +580,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.ontology.owl.wrap_text">wrap_text</a></td>
-<td>Pretty print a string with automatic line breaks at specified intervals,</td>
+<td>Pretty print a string with automatic line breaks at specified intervals, while preserving existing new lines.</td>
 </tr>
 </tbody>
 </table>
@@ -4020,7 +4019,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

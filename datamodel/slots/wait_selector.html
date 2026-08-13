@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>tolerances – TVB-O Documentation</title>
+<title>wait_selector – TVB-O Documentation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -65,8 +65,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../../">
-<link href="../../datamodel/slots/tool_role.html" rel="next">
-<link href="../../datamodel/slots/tol_stability.html" rel="prev">
+<link href="../../datamodel/slots/warmup.html" rel="next">
+<link href="../../datamodel/slots/volume_data.html" rel="prev">
 <link href="../../_static/tvbo_python_square.svg" rel="icon" type="image/svg+xml">
 <script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
@@ -177,7 +177,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../datamodel/index.html">Data Model</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/abbreviation.html">Slots</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/tolerances.html">tolerances</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../datamodel/index.html">Data Model</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/abbreviation.html">Slots</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/wait_selector.html">wait_selector</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -222,6 +222,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../Simulation/SimulationExperiments.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">The SimulationExperiment object</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../Specification/YAML.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Writing TVB-O YAML</span></a>
   </div>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -1410,6 +1416,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/ArchiveConfig.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Archive Config</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Argument.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Argument</span></a>
   </div>
@@ -1454,6 +1466,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/BranchSwitch.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Branch Switch</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/CachedArray.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cached Array</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1680,6 +1698,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/ExperimentResultSidecar.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Experiment Result Sidecar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Exploration.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Exploration</span></a>
   </div>
@@ -1742,6 +1766,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/InitialState.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Initial State</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Inset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Inset</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1878,6 +1908,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Partition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Partition</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/PDE.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">PDE</span></a>
   </div>
@@ -1946,6 +1982,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/RegionMapping.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Region Mapping</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/RenderSpec.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Render Spec</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/ResultBinding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Result Binding</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2058,6 +2106,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/StudyCollection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Collection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/StudyMember.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study Member</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Style.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Style</span></a>
   </div>
@@ -2072,12 +2132,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Surrogate.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Surrogate</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/TemporalApplicableEquation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Temporal Applicable Equation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2261,6 +2315,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/analyses.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analyses</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/analysis.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">analysis</span></a>
   </div>
@@ -2297,6 +2357,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/archive.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">archive</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/args.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">args</span></a>
   </div>
@@ -2311,6 +2377,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/array_chunk.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">array_chunk</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/arrow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">arrow</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2381,6 +2453,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/batch_mode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">batch_mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/batch_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">batch_size</span></a>
   </div>
@@ -2413,6 +2491,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/bindings.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">bindings</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/block_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">block_size</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2483,6 +2567,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/capture.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">capture</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/cases.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">cases</span></a>
   </div>
@@ -2491,6 +2581,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/category.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">category</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cell.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cell</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cells.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cells</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2545,6 +2647,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/clinical_scores.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">clinical_scores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/clip.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">clip</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2747,8 +2855,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/correlated_over.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">correlated_over</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/correlation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">correlation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/count.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">count</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2785,6 +2905,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/coupling_variable.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">coupling_variable</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/covariance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">covariance</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2993,6 +3119,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/device_scale_factor.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">device_scale_factor</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/diagnosis.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">diagnosis</span></a>
   </div>
@@ -3025,6 +3157,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/dimension_labels.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">dimension_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/dims.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dims</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3109,12 +3247,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/ds_min.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ds_min</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dt.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dt</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3353,6 +3485,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/family_wise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">family_wise</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/field.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">field</span></a>
   </div>
@@ -3437,6 +3575,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/gather.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">gather</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/gaussian.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">gaussian</span></a>
   </div>
@@ -3499,6 +3643,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/groups.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">groups</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/ha.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ha</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3611,6 +3761,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/include.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">include</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/includes.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">includes</span></a>
   </div>
@@ -3667,6 +3823,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/inputs.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">inputs</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/insets.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">insets</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3983,6 +4145,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/members.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">members</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/mesh.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">mesh</span></a>
   </div>
@@ -4271,6 +4439,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/number.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">number</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/number_loc.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">number_loc</span></a>
   </div>
@@ -4463,6 +4637,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/pad.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_key.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_key</span></a>
   </div>
@@ -4477,6 +4657,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_number_loc.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_offset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_offset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_size</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4537,6 +4729,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/parent_score.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">parent_score</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/part.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">part</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4733,6 +4931,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/recipe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">recipe</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/recon_path.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">recon_path</span></a>
   </div>
@@ -4771,6 +4975,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/reference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">reference</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/reference_image.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">reference_image</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4859,6 +5069,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/reset_state.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">reset_state</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/results.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">results</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/retries.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">retries</span></a>
   </div>
@@ -4885,6 +5107,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/role.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/rotation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">rotation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5147,6 +5375,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/spine_offset.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spine_offset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/spines.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">spines</span></a>
   </div>
@@ -5297,6 +5531,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/system_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">system_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/system_type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">system_type</span></a>
   </div>
@@ -5309,8 +5549,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tail_duration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tail_duration</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tail_samples.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tail_samples</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tail_used.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tail_used</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tail_x.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tail_x</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5441,12 +5699,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/time_integrator.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">time_integrator</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/time_post_surgery.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">time_post_surgery</span></a>
   </div>
@@ -5495,12 +5747,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/tolerances.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">tolerances</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tool_role.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tool_role</span></a>
   </div>
@@ -5533,6 +5779,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/transient_time.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">transient_time</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/triangle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">triangle</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5587,6 +5839,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/used.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">used</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/va.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">va</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5675,6 +5933,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/wait_selector.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">wait_selector</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/warmup.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">warmup</span></a>
   </div>
@@ -5693,6 +5957,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/waves.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">waves</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/weight.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">weight</span></a>
   </div>
@@ -5701,6 +5971,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/weight_distribution.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">weight_distribution</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/weight_parameter.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">weight_parameter</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6004,6 +6280,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/ReportPart.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Report Part</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/RequirementRole.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Requirement Role</span></a>
   </div>
@@ -6046,6 +6328,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/SubjectBatchMode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Subject Batch Mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SweepDirection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Sweep Direction</span></a>
   </div>
@@ -6066,6 +6354,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/ToolRole.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tool Role</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/Triangle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Triangle</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6129,21 +6423,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#slot-tolerances" id="toc-slot-tolerances" class="nav-link active" data-scroll-target="#slot-tolerances">Slot: tolerances</a></li>
+  <li><a href="#slot-wait_selector" id="toc-slot-wait_selector" class="nav-link active" data-scroll-target="#slot-wait_selector">Slot: wait_selector</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/datamodel/slots/tolerances.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/datamodel/slots/wait_selector.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../datamodel/index.html">Data Model</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/abbreviation.html">Slots</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/tolerances.html">tolerances</a></li></ol></nav></header>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../datamodel/index.html">Data Model</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/abbreviation.html">Slots</a></li><li class="breadcrumb-item"><a href="../../datamodel/slots/wait_selector.html">wait_selector</a></li></ol></nav></header>
 
 
 
 
-<section id="slot-tolerances" class="level1">
-<h1>Slot: tolerances</h1>
-<p><em>Abs/rel tolerances.</em></p>
+<section id="slot-wait_selector" class="level1">
+<h1>Slot: wait_selector</h1>
+<p><em>CSS selector to wait for before capturing, so the shot is taken only once the content that matters has rendered.</em></p>
 <div data-search-exclude="" data-markdown="1">
-<p>URI: <a href="https://w3id.org/tvbo/slot/tolerances">tvbo:slot/tolerances</a> <!-- no inheritance hierarchy --></p>
+<p>URI: <a href="https://w3id.org/tvbo/slot/wait_selector">tvbo:slot/wait_selector</a> <!-- no inheritance hierarchy --></p>
 <section id="applicable-classes" class="level2">
 <h2 class="anchored" data-anchor-id="applicable-classes">Applicable Classes</h2>
 <table class="caption-top table">
@@ -6156,8 +6450,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="../../datamodel/classes/PDESolver.html">PDESolver</a></td>
-<td></td>
+<td><a href="../../datamodel/classes/RenderSpec.html">RenderSpec</a></td>
+<td>A headless-browser capture recipe turning an <code>image</code> panel’s HTML/URL `source…</td>
 <td>no</td>
 </tr>
 </tbody>
@@ -6181,7 +6475,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>Domain Of</td>
-<td><a href="../../datamodel/classes/PDESolver.html">PDESolver</a></td>
+<td><a href="../../datamodel/classes/RenderSpec.html">RenderSpec</a></td>
 </tr>
 </tbody>
 </table>
@@ -6211,7 +6505,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>Owner</td>
-<td><a href="../../datamodel/classes/PDESolver.html">PDESolver</a></td>
+<td><a href="../../datamodel/classes/RenderSpec.html">RenderSpec</a></td>
 </tr>
 </tbody>
 </table>
@@ -6222,7 +6516,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="schema-source" class="level3">
 <h3 class="anchored" data-anchor-id="schema-source">Schema Source</h3>
 <ul>
-<li>from schema: https://w3id.org/tvbo</li>
+<li>from schema: https://w3id.org/tvbo/figure</li>
 </ul>
 </section>
 </section>
@@ -6238,11 +6532,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>self</td>
-<td>tvbo:tolerances</td>
+<td>tvbo:wait_selector</td>
 </tr>
 <tr class="even">
 <td>native</td>
-<td>tvbo:tolerances</td>
+<td>tvbo:wait_selector</td>
 </tr>
 </tbody>
 </table>
@@ -6250,14 +6544,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="linkml-source" class="level2">
 <h2 class="anchored" data-anchor-id="linkml-source">LinkML Source</h2>
 <details>
-<div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> tolerances</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> Abs/rel tolerances.</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">owner</span><span class="kw">:</span><span class="at"> PDESolver</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">domain_of</span><span class="kw">:</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> PDESolver</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> wait_selector</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> CSS selector to wait for before capturing, so the shot is taken only</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="at">  once the content that matters has rendered.</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">from_schema</span><span class="kw">:</span><span class="at"> https://w3id.org/tvbo/figure</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">rank</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">owner</span><span class="kw">:</span><span class="at"> RenderSpec</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">domain_of</span><span class="kw">:</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> RenderSpec</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">range</span><span class="kw">:</span><span class="at"> string</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </section>
 </div>
@@ -6338,7 +6633,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
@@ -6667,13 +6962,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../../datamodel/slots/tol_stability.html" class="pagination-link" aria-label="tol_stability">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">tol_stability</span>
+      <a href="../../datamodel/slots/volume_data.html" class="pagination-link" aria-label="volume_data">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">volume_data</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../../datamodel/slots/tool_role.html" class="pagination-link" aria-label="tool_role">
-        <span class="nav-page-text">tool_role</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../../datamodel/slots/warmup.html" class="pagination-link" aria-label="warmup">
+        <span class="nav-page-text">warmup</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
@@ -6685,7 +6980,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </div>   
     <div class="nav-footer-center">
 <p>© Charité - Universitätsmedizin Berlin</p>
-<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/datamodel/slots/tolerances.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/TVB-Ontology/tvbo-python/edit/main/datamodel/slots/wait_selector.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/TVB-Ontology/tvbo-python/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
     <li class="nav-item compact">
