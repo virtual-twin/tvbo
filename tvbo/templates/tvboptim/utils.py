@@ -1135,14 +1135,19 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> Dict[str, Any]:
 
 
 def _resolve_stat_stream(obs: Any) -> Dict[str, Any]:
-    """Synthesize a cumulative streaming mean/std/variance reducer from ``aggregation``.
+    """Synthesize a cumulative streaming reducer from ``aggregation``.
 
-    An observation marked ``reduce: streaming`` whose ``aggregation`` is ``mean``, ``std`` or ``variance`` — and which has no HRF/BOLD ``pipeline`` — folds into the integrator
-    carry as a running-moment accumulator instead of materialising the source trajectory.
+    An observation marked ``reduce: streaming`` whose ``aggregation`` is ``mean``, ``std``, ``variance`` or ``first_passage`` — and which has no HRF/BOLD ``pipeline`` — folds into
+    the integrator carry as an accumulator instead of materialising the source trajectory.
     ``mean`` carries one accumulator (a running sum, divided by the sample count at finalize); ``std``/``variance`` add a sum-of-squares and read ``sqrt(E[x^2] - E[x]^2)``
     (variance without the ``sqrt``) — the ddof=0 form that matches the host ``jnp.std`` /
-    ``jnp.var``. The returned dict is shaped exactly as the recurrence resolver's, with no
-    ``kind`` tag, so a stat stream reuses :func:`render_recurrence_reduction` unchanged.
+    ``jnp.var``. ``first_passage`` carries a latch and a counter, giving the same crossing index
+    the post-scan ``argmax`` form returns; streaming it is what lets a first-passage sweep reach
+    production size, since the host form needs every cell's whole trajectory. The returned dict
+    is shaped exactly as the recurrence resolver's, with no ``kind`` tag, so a stat stream reuses
+    :func:`render_recurrence_reduction` unchanged.
+
+    ``last`` carries a memory state rather than an accumulator: it overwrites instead of reading itself, so the carry holds the newest folded sample and the readout is that sample. In ``first_passage``, ``_fp_hit`` latches at the first crossing while ``_fp_idx`` counts the samples before it and then stops, landing on the crossing index and saturating at the sample count when the source never crosses. The latch is inlined into the counter rather than read from the state because both update from the previous carry, and a crossing on the very first sample has to yield 0.
 
     ``skip_inclusive`` marks the reduction a pure accumulator with no per-sample memory dependency, so the emitter folds the sample AT ``skip`` (``_gstep >= skip``) rather than
     the step after it — a running mean must not silently drop its first sample, unlike a phase-difference observer whose first step has no predecessor. Every RHS is parsed to a
@@ -1159,7 +1164,7 @@ def _resolve_stat_stream(obs: Any) -> Dict[str, Any]:
     agg = get_attr(obs, "aggregation", None)
     agg = str(getattr(agg, "value", agg) or "mean").lower()
 
-    allowed = {source, "_s_sum", "_s_sq", "count", "dt"}
+    allowed = {source, "_s_sum", "_s_sq", "_s_last", "_fp_hit", "_fp_idx", "count", "dt"}
     loc = {n: sp.Symbol(n) for n in allowed}
 
     def _parse(rhs: str) -> Any:
@@ -1173,7 +1178,28 @@ def _resolve_stat_stream(obs: Any) -> Dict[str, Any]:
             )
         return expr
 
-    if agg == "mean":
+    if agg == "last":
+        states = [{"name": "_s_last", "init": 0.0, "update": _parse(source), "evict": None, "is_accumulator": False}]
+        output = _parse("_s_last")
+    elif agg == "first_passage":
+        threshold = (dict(iter_parameter_values(get_attr(obs, "parameters"))) or {}).get("threshold")
+        if threshold is None:
+            raise ValueError(
+                f"Observation {name!r} streams aggregation: first_passage but has no parameters.threshold to cross."
+            )
+        _hit = f"Max(_fp_hit, Piecewise((1, {source} >= {threshold}), (0, True)))"
+        states = [
+            {"name": "_fp_hit", "init": 0.0, "update": _parse(_hit), "evict": None, "is_accumulator": True},
+            {
+                "name": "_fp_idx",
+                "init": 0.0,
+                "update": _parse(f"_fp_idx + 1 - ({_hit})"),
+                "evict": None,
+                "is_accumulator": True,
+            },
+        ]
+        output = _parse("_fp_idx")
+    elif agg == "mean":
         states = [
             {
                 "name": "_s_sum",
@@ -1462,7 +1488,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> Optional[Dict[str, An
         _agg = get_attr(obs, "aggregation", None)
         _agg = str(getattr(_agg, "value", _agg) or "").lower()
         _pipe = as_list(get_attr(obs, "pipeline"))
-        if not _pipe and _agg in {"mean", "std", "variance"}:
+        if not _pipe and _agg in {"mean", "std", "variance", "last", "first_passage"}:
             return _resolve_stat_stream(obs)
         # A compute_fc (windowed-correlation) pipeline streams as a cumulative co-moment
         # FC reducer (add-only Welford), NOT the HRF/BOLD convolution reducer; fall through to the BOLD path only when the pipeline is not a registered windowed reducer.
@@ -2660,6 +2686,61 @@ def format_bounds_array(bounds: List, format: str = "jax") -> str:
 # =============================================================================
 
 
+def resolve_tail_samples(obs: Any, step_size: float) -> Optional[int]:
+    """Trailing-window length of ``obs`` in samples, from ``tail_samples`` or ``tail_duration``.
+
+    ``tail_duration`` states the window as a length of simulated time and is divided here by the observation's own sample period — its ``period``/``downsample_period``,
+    else the integration ``step_size`` — so the window covers the same duration at any step. ``tail_samples`` states the count directly and is returned unchanged.
+
+    Raises:
+        ValueError: if both slots are set (the two would disagree the moment the step changes), or if ``tail_duration`` is shorter than one sample.
+    """
+    count = get_attr(obs, "tail_samples", None)
+    duration = get_attr(obs, "tail_duration", None)
+    if duration is None:
+        return count
+    if count is not None:
+        raise ValueError(
+            f"Observation '{get_attr(obs, 'name', '?')}' sets both tail_samples ({count}) and tail_duration ({duration}); declare one."
+        )
+    period = get_attr(obs, "period", None) or get_attr(obs, "downsample_period", None) or step_size
+    samples = int(round(float(duration) / float(period)))
+    if samples < 1:
+        raise ValueError(
+            f"Observation '{get_attr(obs, 'name', '?')}' has tail_duration {duration} shorter than its {period} sample period, so the window holds no samples."
+        )
+    return samples
+
+
+def derived_equation_sample_period(dobs: Any, all_observations: Any, step_size: float) -> Optional[float]:
+    """Sample period to bind as ``dt`` inside a derived observation's ``equation``.
+
+    A sample-indexed aggregation (``first_passage``) returns an index, so any equation turning it into a time has to multiply by the spacing of those samples. Binding
+    that spacing here is what keeps the step size out of the recipe: ``Min(t_A, t_B) * dt`` stays correct when the experiment's ``step_size`` changes, where a literal
+    silently rescales the result.
+
+    The spacing is the integration ``step_size`` when no source declares a recording ``period``, or that period when every source declares the same one. Sources that
+    disagree return None, leaving ``dt`` unbound so the render fails on the unknown symbol rather than picking one source's clock for all of them.
+
+    Substituted as a render-time constant, which is what the emitted module does with the step everywhere else (the solver call carries a literal ``dt=``, not a runtime argument),
+    so the equation cannot drift from the step the rest of the module integrates at.
+    """
+    periods = set()
+    for so in getattr(dobs, "source", None) or []:
+        name = str(getattr(so, "name", so))
+        src = (all_observations or {}).get(name)
+        if src is None:
+            continue
+        period = get_attr(src, "period", None) or get_attr(src, "downsample_period", None)
+        try:
+            periods.add(float(period) if period is not None else float(step_size))
+        except (TypeError, ValueError):
+            return None
+    if len(periods) > 1:
+        return None
+    return periods.pop() if periods else float(step_size)
+
+
 def is_network_observation(obs: Any) -> bool:
     """Check if observation is bound from data rather than the simulation state.
 
@@ -3522,12 +3603,20 @@ def node_label(ref: Any) -> Optional[str]:
     ``network.instrength`` (weighted in-degree, ``(n_nodes,)``). Accepts BOTH the fully-qualified ``network.positions`` form (observation source / collect scan)
     and the bare ``positions`` key that ``parse_reference`` hands ``ref_to_code`` (it splits ``network.X`` into ``('network', 'X')``) — mirroring ``edge_label``,
     so the emitted constant name and the resolved reference cannot disagree.
+    Also accepts the explicit ``nodes.<attr>`` form for any attribute name — the node-side twin
+    of ``edges.<label>`` — which resolves to a named per-node array carried by the network
+    (node ``parameters``, or a ``nodes/<attr>`` dataset in the companion store).
+
     Returns None for everything else (edge matrices, state variables,
     ``network.observations.*``), which callers route through their normal path.
     """
     if not isinstance(ref, str):
         return None
     measure = ref[len("network.") :] if ref.startswith("network.") else ref
+    if measure == "nodes.position":
+        return "positions"  # legacy spelling, as in param_io._resolve_ref
+    if measure.startswith("nodes."):
+        return measure.split("nodes.", 1)[1] or None
     return measure if measure in _NETWORK_NODE_MEASURES else None
 
 
@@ -3564,8 +3653,9 @@ def collect_network_node_arrays(experiment: Any) -> Dict[str, list]:
         vec = _resolve(lab)
         if vec is None:
             raise ValueError(
-                f"An observation references network.{lab} but it cannot be built from "
-                f"the network (node positions absent, or Network.matrix('weight') is None)."
+                f"An observation references network.{lab} but it cannot be built from the network: "
+                f"'positions' needs node positions, 'instrength' needs Network.matrix('weight'), and a "
+                f"named per-node attribute needs either that node parameter or a nodes/{lab} dataset in the companion file."
             )
         arrays[lab] = vec.tolist()
 

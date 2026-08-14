@@ -148,6 +148,36 @@ def test_match_output_missing():
         dr.match_output(["a", "b"], "nope")
 
 
+# A run with two algorithms records every observation twice — `algorithm__fic__S_e_final` beside
+# `algorithm__fic_eib__S_e_final`. A caller that cannot tolerate an arbitrary pick passes `prefer`.
+_TWO_ALGORITHMS = [
+    "algorithm__fic__S_e_final",
+    "algorithm__fic_eib__S_e_final",
+    "estimate__wLRE",
+]
+
+
+def test_prefer_picks_the_named_producer():
+    assert dr.match_output(_TWO_ALGORITHMS, "S_e_final", prefer=["fic_eib", "fic"]) == "algorithm__fic_eib__S_e_final"
+    assert dr.match_output(_TWO_ALGORITHMS, "S_e_final", prefer=["fic", "fic_eib"]) == "algorithm__fic__S_e_final"
+
+
+def test_prefer_raises_rather_than_guess_when_none_matches():
+    with pytest.raises(KeyError, match="recorded by 2 producers"):
+        dr.match_output(_TWO_ALGORITHMS, "S_e_final", prefer=["nesterov"])
+
+
+def test_prefer_is_inert_when_unambiguous():
+    """One candidate needs no preference — and a preference must not turn it into a failure."""
+    assert dr.match_output(_TWO_ALGORITHMS, "wLRE", prefer=["fic_eib"]) == "estimate__wLRE"
+    assert dr.match_output(_TWO_ALGORITHMS, "wLRE", prefer=["nothing_like_it"]) == "estimate__wLRE"
+
+
+def test_without_prefer_behaviour_is_unchanged():
+    """Callers binding an author-written name keep the legacy first-match resolution."""
+    assert dr.match_output(_TWO_ALGORITHMS, "S_e_final") == "algorithm__fic__S_e_final"
+
+
 # --------------------------------------------------------------------------- SLICE
 
 

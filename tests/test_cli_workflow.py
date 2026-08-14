@@ -580,7 +580,7 @@ def _container_plan(image="docker://ghcr.io/virtual-twin/tvbo:dev", binds=("/dat
     )
 
 
-def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=("/data/cephfs-1",)):
+def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=("/data/cephfs-1",), venv=None):
     """A plan-like stand-in exposing exactly what the layer templates read."""
     from tvbo.cli._workflow import WorkflowPlan
 
@@ -604,7 +604,13 @@ def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=(
         out_dir="out/S/fig6",
         run_spec="experiment:fig6",
         backend=SimpleNamespace(name="tvboptim"),
-        engine_block={"partition": "medium", "mem": "16G", "time": "02:00:00", "cpus_per_task": 4},
+        engine_block={
+            "partition": "medium",
+            "mem": "16G",
+            "time": "02:00:00",
+            "cpus_per_task": 4,
+            **({"venv": venv} if venv else {}),
+        },
     )
     for prop in ("pip_specs", "needs_env_layer", "needs_container_layer", "container_extras_venv", "container_exec_flags"):
         setattr(p, prop, getattr(WorkflowPlan, prop).fget(p))
@@ -615,10 +621,15 @@ def test_env_layer_provisions_requirements_container_or_not():
     """Requirements need provisioning wherever the tasks run: `needs_env_layer` is true as
     soon as requirements exist (a native venv, or one layered on a container). The narrower
     `needs_container_layer` only fires when a container is ALSO declared (the Slurm --env
-    path); with requirements but no container it stays a native venv."""
+    path); with requirements but no container it stays a native venv.
+
+    A provided run venv (`slurm.venv`) IS the environment: a `--system-site-packages` venv layered on it does not chain, so pip would re-resolve the whole stack (a CPU jaxlib shadowing `jax[cuda]`). Trust the venv and emit no setup.sh.
+    """
     assert _layer_plan().needs_env_layer is True
     assert _layer_plan(container=None).needs_env_layer is True  # native venv
     assert _layer_plan(reqs=()).needs_env_layer is False  # nothing to provision
+    assert _layer_plan(venv="/w/tvbo-cuda").needs_env_layer is False
+    assert _layer_plan(venv="/w/tvbo-cuda", container=None).needs_env_layer is False
 
     assert _layer_plan().needs_container_layer is True
     assert _layer_plan(container=None).needs_container_layer is False  # no image to layer onto
@@ -1645,6 +1656,103 @@ def test_no_figure_warning_when_every_input_is_in_the_kit(tmp_path: Path, monkey
     assert not warned
 
 
+def test_a_figure_whose_data_stayed_home_leaves_every_default_target(monkeypatch):
+    """A figure reading the author's analysis container keeps its rule and loses its place
+    in `all_figures`.
+
+    Warning about it was not enough: `snakemake` and `snakemake all_figures` are the two
+    targets the kit's own README advertises, and both died on a path from another machine,
+    which reads as a broken kit rather than as one figure whose data did not travel. The
+    rule stays so the figure can be rendered where its container lives.
+    """
+    from tvbo.adapters import figure_workflow as fw
+
+    monkeypatch.setattr(
+        fw,
+        "_figure_inputs",
+        lambda figure, base, keys: (
+            [{"value": "expand('results/3/{cell}.h5', cell=CELLS)", "raw": True}]
+            if figure.name == "in_kit"
+            else [{"value": "/elsewhere/output/results/curves/result.h5", "raw": False}]
+        ),
+    )
+
+    class _Fig:
+        def __init__(self, name):
+            self.name, self.format, self.panels = name, "png", []
+            self.workflow_overrides = None
+            self.code_modules = []
+
+    figures = [_Fig("in_kit"), _Fig("stranded")]
+    contexts = fw.figure_contexts(figures, base_dir=".")
+    assert [c["kit_satisfiable"] for c in contexts] == [True, False]
+
+    text = fw.emit_figure_rules(figures, base_dir=".", include_all=True)
+    aggregate = text.split("rule fig_")[0]
+    assert "figures/in_kit.png" in aggregate
+    assert "figures/stranded.png" not in aggregate, "unsatisfiable figure must leave all_figures"
+    assert "rule fig_stranded:" in text, "its rule must still exist, to run where the data is"
+    assert "/elsewhere/output/results/curves/result.h5" in aggregate, "say what it wants"
+
+
+def test_the_kit_lists_the_input_files_it_names_but_does_not_carry(tmp_path: Path):
+    """Producer-sourced inputs — a surface mesh, a parcellation — are read at run time and
+    were never staged or even listed, so a kit landed on the cluster looking complete and
+    failed on the first rule that opened one. The manifest turns that into an rsync list.
+    """
+    from tvbo.cli import workflow as workflow_cli
+
+    study = tmp_path / "study"
+    (study / "input").mkdir(parents=True)
+    mesh = study / "input" / "surface-lh.vtk"
+    mesh.write_text("# vtk\n", encoding="utf-8")
+    absent = study / "input" / "not-there.vtk"
+
+    kit = tmp_path / "kit"
+    (kit / "spec").mkdir(parents=True)
+    (kit / "spec" / "experiment.yaml").write_text(
+        "network:\n"
+        "  edges:\n"
+        "    - producer:\n"
+        "        arguments:\n"
+        f"          surface: {{value: 'input/surface-lh.vtk'}}\n"
+        f"          missing: {{value: '{absent}'}}\n",
+        encoding="utf-8",
+    )
+    (kit / "results").mkdir()
+    (kit / "results" / "own.h5").write_text("x", encoding="utf-8")
+
+    assert workflow_cli._write_external_inputs_manifest(kit, study) == 1
+    rows = (kit / "external_inputs.tsv").read_text(encoding="utf-8").splitlines()
+    assert rows[0].split("\t") == ["path", "as_written", "bytes", "referenced_by"]
+    assert len(rows) == 2, "only the file that exists outside the kit is listed"
+    path, as_written, size, referenced = rows[1].split("\t")
+    assert Path(path) == mesh.resolve(), "a relative spec path resolves against the STUDY dir"
+    assert as_written == "input/surface-lh.vtk", "and keeps the spelling the spec used"
+    assert int(size) == mesh.stat().st_size
+    assert referenced == "spec/experiment.yaml"
+
+
+def test_figure_kit_rebases_author_container_to_the_kit_path(monkeypatch):
+    """The kit's frozen ``plot.py`` must read the result where the KIT stores it
+    (``results/<key>/<stem>`` — the same path the render rule's ``input:`` uses), not the
+    author's absolute ``output/nc`` path ``bsplot.render_code`` bakes, which does not exist
+    on a compute node."""
+    from tvbo.adapters import figure_workflow as fw
+
+    figure = SimpleNamespace(panels=[SimpleNamespace(layers=[SimpleNamespace(used={"experiment": "3"})], annotations=[])])
+    keys = {"3": {"key": "3", "axes": [], "out_dir": "results"}}
+    monkeypatch.setattr(fw.bsplot, "_used_ref", lambda used: "3")
+    monkeypatch.setattr(fw, "_exp_key_of", lambda iri, ks: "3" if iri in ks else None)
+    monkeypatch.setattr(fw.bsplot, "_container_path", lambda iri, base: "/abs/study/output/nc/exp-3_result.h5")
+    monkeypatch.setattr(fw._wf, "cell_out_relpath", lambda ep: "exp-3_result.h5")
+
+    code = "layer = {'container': '/abs/study/output/nc/exp-3_result.h5'}"
+    out = fw._rebase_containers_to_kit(code, figure, "/abs/study", keys, "results")
+    assert "/abs/study/output/nc" not in out
+    assert "'container': 'results/3/exp-3_result.h5'" in out
+
+
 def test_workflow_run_rejects_unknown_engine():
     r = runner.invoke(app, ["workflow", "run", "local", EXP, "--backend", "jax"])
     assert r.exit_code != 0
@@ -1947,3 +2055,34 @@ def test_a_constant_missing_on_this_machine_is_reported_not_dropped(tmp_path, ca
         n = _bundle_script_constants('_load_constant("/nowhere/target.h5")\n', tmp_path / "kit")
     assert n == 0
     assert "target.h5" in caplog.text
+
+
+def test_figure_rule_does_not_inherit_the_accelerators_gres():
+    """A figure render is CPU: it inherits the run identity (venv/partition/account) from the
+    study workflow but NOT the accelerator's ``gres`` — an inherited GPU gres would land on the
+    ``medium``-partition figure rule, which the modern slurm executor plugin rejects. A gres the
+    figure declares itself is emitted as the NATIVE ``gres`` resource, never ``slurm_extra``."""
+    from tvbo.adapters.figure_workflow import _figure_block, _rule_resources
+
+    study_wf = {
+        "slurm": {
+            "partition": "gpu",
+            "gres": "gpu:h200:1",
+            "venv": "/w/tvbo-cuda",
+            "account": "acct",
+            "cpus_per_task": 2,
+            "mem": "128G",
+            "time": "12:00:00",
+        }
+    }
+    _, block = _figure_block(study_wf, {"snakemake": {"partition": "medium", "cpus_per_task": 4}}, engine="snakemake")
+    assert "gres" not in block  # accelerator gres NOT inherited by a CPU render
+    assert block.get("venv") == "/w/tvbo-cuda"  # run identity IS inherited
+    assert block.get("partition") == "medium"
+    res = _rule_resources(block)
+    assert "gres" not in res and "slurm_extra" not in res
+
+    _, gblock = _figure_block(study_wf, {"snakemake": {"partition": "gpu", "gres": "gpu:1"}}, engine="snakemake")
+    gres = _rule_resources(gblock)
+    assert gres.get("gres") == repr("gpu:1")  # native gres resource, not slurm_extra
+    assert "slurm_extra" not in gres

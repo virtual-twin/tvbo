@@ -228,6 +228,34 @@ class LazyArrayStore:
         self._ensure_loaded()
         return self._cache[key]
 
+    def dataset_keys(self, prefix: str = "") -> list[str]:
+        """Dataset paths under ``prefix`` (e.g. ``"nodes"``), empty when it holds none.
+
+        Lets a caller carry datasets across a re-save without modelling each one, which is
+        what keeps a companion's per-node arrays alive through ``save_network``.
+        """
+        out: list[str] = []
+        if self._ext in (".h5", ".hdf5"):
+            import h5py
+
+            with h5py.File(self._path, "r") as f:
+                grp = f.get(prefix) if prefix else f
+                if grp is None:
+                    return []
+                for name, obj in grp.items():
+                    if isinstance(obj, h5py.Dataset):
+                        out.append(f"{prefix}/{name}" if prefix else name)
+        elif self._ext == ".zarr" or self._path.is_dir():
+            import zarr
+
+            z = zarr.open(str(self._path), "r")
+            grp = z.get(prefix) if prefix else z
+            if grp is None:
+                return []
+            for name in getattr(grp, "array_keys", lambda: [])():
+                out.append(f"{prefix}/{name}" if prefix else name)
+        return out
+
     def read_dataset(self, key: str) -> np.ndarray:
         """Read an arbitrary dataset by path (e.g. ``"nodes/parent_index"``)."""
         if self._ext in (".h5", ".hdf5"):
