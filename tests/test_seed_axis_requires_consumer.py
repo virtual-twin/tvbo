@@ -127,19 +127,17 @@ def test_a_builder_supplied_seed_axis_still_reseeds(tmp_path, monkeypatch):
     """
     import sys
 
-    (tmp_path / "seed_builder.py").write_text(
-        "def paired_seeds(n):\n"
-        "    return list(range(int(n))) + list(range(int(n)))\n"
-    )
+    (tmp_path / "seed_builder.py").write_text("def paired_seeds(n):\n    return list(range(int(n))) + list(range(int(n)))\n")
     monkeypatch.syspath_prepend(str(tmp_path))
     sys.modules.pop("seed_builder", None)
 
     spec = _with_noise(copy.deepcopy(MINI_EXP))
-    spec["explorations"]["seed_sweep"]["space"] = [{
-        "parameter": "execution.random_seed",
-        "builder": {"callable": {"name": "paired_seeds", "module": "seed_builder"},
-                    "arguments": {"n": {"value": 3}}},
-    }]
+    spec["explorations"]["seed_sweep"]["space"] = [
+        {
+            "parameter": "execution.random_seed",
+            "builder": {"callable": {"name": "paired_seeds", "module": "seed_builder"}, "arguments": {"n": {"value": 3}}},
+        }
+    ]
     code = SimulationExperiment(**spec).render_code("tvboptim")
     assert "_noise_seed" in code and "noise.key" in code, "the seed must reach the PRNG key"
     assert "random_seed[6]" in code, "the builder's six seeds must be resolved at codegen"
@@ -150,11 +148,15 @@ def test_a_seed_builder_needing_runtime_data_is_refused(tmp_path, monkeypatch):
     """Refuse rather than defer: the grid's seeds are fixed at codegen, so a builder that
     cannot answer until run time has no way to supply them."""
     spec = _with_noise(copy.deepcopy(MINI_EXP))
-    spec["explorations"]["seed_sweep"]["space"] = [{
-        "parameter": "execution.random_seed",
-        "builder": {"callable": {"name": "paired_seeds", "module": "seed_builder"},
-                    "arguments": {"n": {"value": "observations.rate"}}},
-    }]
+    spec["explorations"]["seed_sweep"]["space"] = [
+        {
+            "parameter": "execution.random_seed",
+            "builder": {
+                "callable": {"name": "paired_seeds", "module": "seed_builder"},
+                "arguments": {"n": {"value": "observations.rate"}},
+            },
+        }
+    ]
     with pytest.raises(ValueError, match="resolve at run time"):
         SimulationExperiment(**spec).render_code("tvboptim")
 

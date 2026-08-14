@@ -815,13 +815,7 @@ for expl in exploration_list:
                 'reduce': _reduce_stat,
             })
             continue
-        # A seed axis needs its integers at CODEGEN (they are baked into the grid), so a
-        # builder on it is resolved here rather than at run time — and must therefore be a
-        # pure callable. Placed before the builder branch below, which would otherwise claim
-        # this axis and route it through the generic parameter path, where `execution` has no
-        # consumer: every cell would come out identical while the container still reported a
-        # genuine-looking ensemble dimension. That is the exact failure the check further
-        # down exists to prevent, and a builder used to walk straight past it.
+        # Before the builder branch: a seed axis bakes its integers into the grid at CODEGEN, and the generic parameter path would leave every cell identical under a real-looking ensemble dimension.
         if source_key == 'execution' and pname == 'random_seed' and _builder is not None:
             _bc = getattr(_builder, 'callable', None)
             _bargs = dict(_builder.arguments.items()) if getattr(_builder, 'arguments', None) else {}
@@ -2403,9 +2397,7 @@ def compute_all_observations(result, state, result_transient=None, only=None, ne
         if _so_name in _all_observations:
             src_obs_list.append(_so_name)
         elif node_label(_so_name):
-            # A per-node array carried by the network, embedded as a module constant by
-            # collect_network_node_arrays. Bound under its bare attribute name so the equation
-            # reads `(I_E - I_E_range_lo)` rather than a generated constant identifier.
+            # Bound under its bare attribute name, so the equation reads `(I_E - I_E_range_lo)` rather than a generated constant identifier.
             src_node_arrays[node_label(_so_name)] = node_const(node_label(_so_name))
 
     # Get pipeline callable
@@ -4176,10 +4168,7 @@ def run_experiment(
         stage_defs.append(_sd)
     any_stage_resets = any(sd.get('reset_state') for sd in stage_defs)
 
-    # reset_state carries the update rules' tuned targets across the boundary and resets
-    # everything else, so resolve those targets here: own rules plus combined includes
-    # (nested inners tune inside the outer call, not across stages). Each entry is
-    # (param_name, coupling_key or None) — the None case lives on state.dynamics.
+    # Own rules plus combined includes (a nested inner tunes inside the outer call, not across stages); each entry is (param_name, coupling_key or None), where None lives on state.dynamics.
     reset_targets = []
     if any_stage_resets:
         _cp2k = {}
@@ -4196,6 +4185,7 @@ def run_experiment(
             _inc_algo = algorithms_dict.get(_inc_name)
             if _inc_algo is not None:
                 _rule_algos.append(_inc_algo)
+        _dyn_params_r = set((getattr(getattr(experiment, 'dynamics', None), 'parameters', None) or {}).keys())
         _seen_t = set()
         for _ra in _rule_algos:
             for _rule in (getattr(_ra, 'update_rules', None) or []):
@@ -4203,7 +4193,16 @@ def run_experiment(
                 _tn_r = str(getattr(_tp, 'name', _tp))
                 if _tn_r and _tn_r not in _seen_t:
                     _seen_t.add(_tn_r)
-                    reset_targets.append((_tn_r, _cp2k.get(_tn_r)))
+                    _gk_r = _cp2k.get(_tn_r)
+                    # Without a coupling key the target is grafted off state.dynamics, so a name in neither namespace would emit a tree_at on a path that does not exist.
+                    if _gk_r is None and _dyn_params_r and _tn_r not in _dyn_params_r:
+                        raise ValueError(
+                            f"algorithm {algo_name!r} declares reset_state and an update rule "
+                            f"targeting {_tn_r!r}, which is neither a network coupling parameter "
+                            f"nor a dynamics parameter, so it has no state leaf to carry across "
+                            f"the stage boundary."
+                        )
+                    reset_targets.append((_tn_r, _gk_r))
 
     # Max-window ring: when the schedule's window_size VARIES, size the tuning buffer at
     # the largest stage window so the scan compiles once across stages (masked ring in

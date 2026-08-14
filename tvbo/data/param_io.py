@@ -151,9 +151,9 @@ def resolve_network_node(net: Any, measure: str) -> Optional[np.ndarray]:
 def _resolve_node_attribute(net: Any, name: str) -> Optional[np.ndarray]:
     """Named per-node array from the nodes' ``parameters``, else from ``nodes/<name>`` in the companion store.
 
-    Node parameters win, so a spec can override what the file carries. A partially-populated
-    parameter (set on some nodes only) is not a vector and returns None rather than a silently
-    zero-filled array.
+    Node parameters win, so a spec can override what the file carries. A parameter that is not a
+    per-node SCALAR — set on some nodes only, or carrying a vector value — is not a per-node
+    vector and returns None rather than a silently zero-filled or ragged array.
     """
     nodes = getattr(net, "nodes", None) or []
     vals = []
@@ -161,10 +161,11 @@ def _resolve_node_attribute(net: Any, name: str) -> Optional[np.ndarray]:
         params = getattr(n, "parameters", None) or {}
         p = params.get(name) if hasattr(params, "get") else None
         val = getattr(p, "value", None) if p is not None else None
-        if val is None:
+        try:
+            vals.append(float(val))
+        except (TypeError, ValueError):
             vals = []
             break
-        vals.append(float(val))
     if vals:
         return np.asarray(vals, dtype=float)
     store = getattr(net, "_store", None)
@@ -197,13 +198,13 @@ def _resolve_ref(ref: str, context: Any, where: str) -> Any:
     if rest == "nodes.position":
         rest = "positions"  # legacy spelling of network.positions
     if rest.startswith("nodes."):
-        # Explicit per-node attribute, the node-side twin of edges.<label>. Resolved here
-        # rather than in the bare-name fallback below so it can never be shadowed by an edge
-        # alias of the same name.
+        # Resolved before the bare-name fallback below, so an edge alias of the same name can never shadow it.
         attr = rest.split("nodes.", 1)[1]
         vec = resolve_network_node(net, attr)
         if vec is None:
-            raise ValueError(f"{where}: {ref!r} names no per-node attribute of this network (no node parameter and no nodes/{attr} dataset).")
+            raise ValueError(
+                f"{where}: {ref!r} names no per-node attribute of this network (no node parameter and no nodes/{attr} dataset)."
+            )
         return vec
     if rest in _NODE_MEASURES:
         vec = resolve_network_node(net, rest)

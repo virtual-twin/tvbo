@@ -31,9 +31,7 @@ def _q(p):
     stranded = [f for f in figures if not f.get("kit_satisfiable", True)]
 %>\
 
-# Only figures whose every input this kit produces are aggregated here. One reading a
-# container that stayed on the author's machine has a rule but no place in a target that
-# must be satisfiable — see the note below it.
+# Only figures whose every input this kit produces; one reading the author's own tree keeps its rule but leaves this target (see the note below).
 rule all_figures:
     input:
 % for f in in_kit:

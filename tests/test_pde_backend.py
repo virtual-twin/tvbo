@@ -28,26 +28,31 @@ def mesh_path(tmp_path_factory):
     return str(path)
 
 
-def _experiment(mesh_path, state_variables, parameters, method="crank-nicolson",
-                dt=0.01, duration=1.0, events=None):
-    return SimulationExperiment(**{
-        "label": "field test",
-        "events": events or {},
-        "field_dynamics": {
-            "label": "field",
-            "mesh": {"label": "sq", "element_type": "triangle", "mesh_file": mesh_path},
-            "parameters": parameters,
-            "state_variables": state_variables,
-            "solver": {"label": "s", "discretization": "FEM", "method": method, "dt": dt},
-        },
-        "integration": {"duration": duration},
-    })
+def _experiment(mesh_path, state_variables, parameters, method="crank-nicolson", dt=0.01, duration=1.0, events=None):
+    return SimulationExperiment(
+        **{
+            "label": "field test",
+            "events": events or {},
+            "field_dynamics": {
+                "label": "field",
+                "mesh": {"label": "sq", "element_type": "triangle", "mesh_file": mesh_path},
+                "parameters": parameters,
+                "state_variables": state_variables,
+                "solver": {"label": "s", "discretization": "FEM", "method": method, "dt": dt},
+            },
+            "integration": {"duration": duration},
+        }
+    )
 
 
 def _sv(name, rhs, initial_value=0.0, bcs=None):
-    return {"name": name, "label": name, "initial_value": initial_value,
-            "boundary_conditions": bcs or [],
-            "equation": {"lhs": f"{name}_t", "rhs": rhs}}
+    return {
+        "name": name,
+        "label": name,
+        "initial_value": initial_value,
+        "boundary_conditions": bcs or [],
+        "equation": {"lhs": f"{name}_t", "rhs": rhs},
+    }
 
 
 def _gaussian(nodes):
@@ -59,8 +64,7 @@ def test_diffusion_conserves_its_integral_on_a_closed_domain(mesh_path):
     """With no boundary constraint the natural BC is zero-flux, so ``int(u)`` is exactly
     invariant. The conserved quantity is ``1.M.u`` — the nodal sum is not conserved and
     checking it instead would report a spurious 2 % drift."""
-    exp = _experiment(mesh_path, [_sv("u", "D * laplacian(u)")],
-                      {"D": {"name": "D", "value": 0.01}})
+    exp = _experiment(mesh_path, [_sv("u", "D * laplacian(u)")], {"D": {"name": "D", "value": 0.01}})
     ns = exp.execute("pde")
     meta = ns["meta"]
     u0 = _gaussian(meta["nodes"])
@@ -73,10 +77,11 @@ def test_diffusion_conserves_its_integral_on_a_closed_domain(mesh_path):
 
 
 def test_dirichlet_boundary_drains_the_field(mesh_path):
-    exp = _experiment(mesh_path, [
-        _sv("u", "D * laplacian(u)",
-            bcs=[{"label": "zero", "bc_type": "Dirichlet", "value": {"rhs": "0"}}])],
-        {"D": {"name": "D", "value": 0.01}})
+    exp = _experiment(
+        mesh_path,
+        [_sv("u", "D * laplacian(u)", bcs=[{"label": "zero", "bc_type": "Dirichlet", "value": {"rhs": "0"}}])],
+        {"D": {"name": "D", "value": 0.01}},
+    )
     ns = exp.execute("pde")
     u0 = _gaussian(ns["meta"]["nodes"])
     _, U = ns["solve_pde"](steps=100, save_timeseries=True, u0_override=u0)
@@ -88,9 +93,13 @@ def test_reaction_term_decays_at_the_declared_rate(mesh_path):
     """``- k*u`` is a term the old backend could not express at all: it only assembled a
     diffusion operator, so this equation would have run as pure diffusion."""
     k = 2.0
-    exp = _experiment(mesh_path, [_sv("u", "D * laplacian(u) - k * u")],
-                      {"D": {"name": "D", "value": 0.01}, "k": {"name": "k", "value": k}},
-                      dt=0.005, duration=1.0)
+    exp = _experiment(
+        mesh_path,
+        [_sv("u", "D * laplacian(u) - k * u")],
+        {"D": {"name": "D", "value": 0.01}, "k": {"name": "k", "value": k}},
+        dt=0.005,
+        duration=1.0,
+    )
     ns = exp.execute("pde")
     meta = ns["meta"]
     u0 = _gaussian(meta["nodes"])
@@ -109,17 +118,14 @@ DAMPED_WAVE = [
 vanishes and the system is exactly critically damped: ``phi = phi0 (1 + g t) exp(-g t)``."""
 
 
-@pytest.mark.parametrize("method,expected_order", [("crank-nicolson", 2.0),
-                                                   ("implicit Euler", 1.0)])
-def test_damped_wave_matches_the_analytic_solution_at_the_stated_order(
-        mesh_path, method, expected_order):
+@pytest.mark.parametrize("method,expected_order", [("crank-nicolson", 2.0), ("implicit Euler", 1.0)])
+def test_damped_wave_matches_the_analytic_solution_at_the_stated_order(mesh_path, method, expected_order):
     """A second-order-in-time system, which the previous backend could not express: it
     read only ``state_variables[0]`` and assembled a single first-order equation."""
     g = 2.0
     errors = []
     for dt in (0.02, 0.01, 0.005):
-        exp = _experiment(mesh_path, DAMPED_WAVE, {"g": {"name": "g", "value": g}},
-                          method=method, dt=dt, duration=1.0)
+        exp = _experiment(mesh_path, DAMPED_WAVE, {"g": {"name": "g", "value": g}}, method=method, dt=dt, duration=1.0)
         ns = exp.execute("pde")
         assert ns["meta"]["n_vars"] == 2
         _, U = ns["solve_pde"](steps=int(1.0 / dt), save_timeseries=True)
@@ -134,14 +140,12 @@ def test_divergence_form_with_constant_coefficient_equals_a_plain_laplacian(mesh
     """``div(c*grad(u))`` at constant ``c`` and ``c*laplacian(u)`` are the same operator,
     so they must agree to round-off — the check that the weighted assembly is not merely
     plausible but identical where the two forms coincide."""
-    varying = _experiment(mesh_path, [_sv("u", "div(c * grad(u))")],
-                          {"c": {"name": "c", "value": None}})
+    varying = _experiment(mesh_path, [_sv("u", "div(c * grad(u))")], {"c": {"name": "c", "value": None}})
     ns = varying.execute("pde")
     assert ns["meta"]["requires_fields"] == ["c"]
     solve_v, _, meta_v = ns["build"](fields={"c": 0.01})
 
-    plain = _experiment(mesh_path, [_sv("u", "D * laplacian(u)")],
-                        {"D": {"name": "D", "value": 0.01}})
+    plain = _experiment(mesh_path, [_sv("u", "D * laplacian(u)")], {"D": {"name": "D", "value": 0.01}})
     ns_p = plain.execute("pde")
 
     u0 = _gaussian(meta_v["nodes"])
@@ -153,8 +157,7 @@ def test_divergence_form_with_constant_coefficient_equals_a_plain_laplacian(mesh
 def test_spatially_varying_coefficient_still_conserves(mesh_path):
     """The divergence form is conservative whatever the coefficient does — that is the
     reason to prefer it over ``c(x)*laplacian(u)`` for a heterogeneous medium."""
-    varying = _experiment(mesh_path, [_sv("u", "div(c * grad(u))")],
-                          {"c": {"name": "c", "value": None}})
+    varying = _experiment(mesh_path, [_sv("u", "div(c * grad(u))")], {"c": {"name": "c", "value": None}})
     build = varying.execute("pde")["build"]
     _, _, meta = build(fields={"c": 0.01})
     x = meta["nodes"][0]
@@ -203,22 +206,26 @@ def test_a_produced_coefficient_field_needs_no_hand_off(mesh_path, producer_modu
 
     n_nodes = len(read_mesh(mesh_path)[0])
     fast, slow = 0.02, 0.002
-    produced = _experiment(mesh_path, [_sv("u", "div(c * grad(u))")], {"c": {
-        "name": "c",
-        "producer": {
-            "callable": {"name": "split_medium", "module": "pde_field_producer"},
-            "arguments": {"n_nodes": {"value": n_nodes},
-                          "fast": {"value": fast}, "slow": {"value": slow}},
+    produced = _experiment(
+        mesh_path,
+        [_sv("u", "div(c * grad(u))")],
+        {
+            "c": {
+                "name": "c",
+                "producer": {
+                    "callable": {"name": "split_medium", "module": "pde_field_producer"},
+                    "arguments": {"n_nodes": {"value": n_nodes}, "fast": {"value": fast}, "slow": {"value": slow}},
+                },
+            }
         },
-    }})
+    )
     ns = produced.execute("pde")
     assert ns["solve_pde"] is not None, "a produced field must not need build(fields=...)"
 
     u0 = _gaussian(ns["meta"]["nodes"])
     _, U = ns["solve_pde"](steps=50, save_timeseries=True, u0_override=u0)
 
-    handed = _experiment(mesh_path, [_sv("u", "div(c * grad(u))")],
-                         {"c": {"name": "c", "value": None}}).execute("pde")
+    handed = _experiment(mesh_path, [_sv("u", "div(c * grad(u))")], {"c": {"name": "c", "value": None}}).execute("pde")
     coefficient = np.full(n_nodes, slow)
     coefficient[: n_nodes // 2] = fast
     solve_handed, _, _ = handed["build"](fields={"c": coefficient})
@@ -233,18 +240,18 @@ def test_a_produced_coefficient_field_needs_no_hand_off(mesh_path, producer_modu
 def test_a_field_coefficient_on_a_bare_laplacian_is_refused(mesh_path):
     """``c(x)*laplacian(u)`` has no exact FEM assembly. Refusing it names the divergence
     form instead of silently assembling something adjacent."""
-    exp = _experiment(mesh_path, [_sv("u", "c * laplacian(u)")],
-                      {"c": {"name": "c", "value": None}})
+    exp = _experiment(mesh_path, [_sv("u", "c * laplacian(u)")], {"c": {"name": "c", "value": None}})
     with pytest.raises(FieldPlanError, match="divergence form"):
         field_assembly_plan(exp)
 
 
 def test_an_unimplemented_boundary_condition_raises(mesh_path):
     """A declared Neumann condition must not be silently dropped."""
-    exp = _experiment(mesh_path, [
-        _sv("u", "D * laplacian(u)",
-            bcs=[{"label": "flux", "bc_type": "Neumann", "value": {"rhs": "0"}}])],
-        {"D": {"name": "D", "value": 0.01}})
+    exp = _experiment(
+        mesh_path,
+        [_sv("u", "D * laplacian(u)", bcs=[{"label": "flux", "bc_type": "Neumann", "value": {"rhs": "0"}}])],
+        {"D": {"name": "D", "value": 0.01}},
+    )
     with pytest.raises(FieldPlanError, match="not implemented"):
         field_assembly_plan(exp)
 
@@ -254,16 +261,14 @@ def test_the_equation_drives_the_operator_not_the_operators_list(mesh_path):
     EQUATION must change the result, even when ``operators:`` says something else."""
     plans = []
     for value in (0.01, 0.05):
-        exp = _experiment(mesh_path, [_sv("u", "D * laplacian(u)")],
-                          {"D": {"name": "D", "value": value}})
+        exp = _experiment(mesh_path, [_sv("u", "D * laplacian(u)")], {"D": {"name": "D", "value": value}})
         exp.field_dynamics.operators = []
         plans.append(field_assembly_plan(exp)["blocks"][0]["scalar"])
     assert plans == [0.01, 0.05]
 
 
 def test_run_returns_a_timeseries_with_one_entry_per_field_variable(mesh_path):
-    exp = _experiment(mesh_path, DAMPED_WAVE, {"g": {"name": "g", "value": 2.0}},
-                      dt=0.01, duration=0.2)
+    exp = _experiment(mesh_path, DAMPED_WAVE, {"g": {"name": "g", "value": 2.0}}, dt=0.01, duration=0.2)
     result = exp.run("pde")
     data = result.integration.data
     assert list(data.coords["variable"].values) == ["phi", "w"]
@@ -274,9 +279,13 @@ def test_a_constant_source_term_in_the_equation_is_actually_applied(mesh_path):
     """A term the block assembly cannot take (here a constant drive) is evaluated each
     step rather than dropped. Steady state of ``u_t = D*lap(u) - k*u + S`` is ``S/k``."""
     k, S = 2.0, 6.0
-    exp = _experiment(mesh_path, [_sv("u", "D * laplacian(u) - k * u + S")],
-                      {"D": {"name": "D", "value": 0.01}, "k": {"name": "k", "value": k},
-                       "S": {"name": "S", "value": S}}, dt=0.005, duration=5.0)
+    exp = _experiment(
+        mesh_path,
+        [_sv("u", "D * laplacian(u) - k * u + S")],
+        {"D": {"name": "D", "value": 0.01}, "k": {"name": "k", "value": k}, "S": {"name": "S", "value": S}},
+        dt=0.005,
+        duration=5.0,
+    )
     ns = exp.execute("pde")
     assert ns["meta"]["n_vars"] == 1
     _, U = ns["solve_pde"](steps=1000, save_timeseries=True)
@@ -304,9 +313,12 @@ def test_a_declared_stimulus_event_actually_drives_the_field(mesh_path):
     the equation that names it. Dropping it leaves a field that is quiet, plausible and
     wrong — the failure mode that motivated parsing the RHS in the first place."""
     exp = _experiment(
-        mesh_path, [_sv("u", "D * laplacian(u) - k * u + Q")],
+        mesh_path,
+        [_sv("u", "D * laplacian(u) - k * u + Q")],
         {"D": {"name": "D", "value": 0.01}, "k": {"name": "k", "value": 2.0}},
-        dt=0.0005, duration=0.01, events=V1_PULSE,
+        dt=0.0005,
+        duration=0.01,
+        events=V1_PULSE,
     )
     ns = exp.execute("pde")
     assert ns["meta"]["events"] == ["Q"]
@@ -320,10 +332,10 @@ def test_a_declared_stimulus_event_actually_drives_the_field(mesh_path):
 
 def test_an_event_redefining_a_model_parameter_is_refused(mesh_path):
     """Two declarations of one symbol is exactly the drift a single spec exists to prevent."""
-    clashing = {"Q": {**V1_PULSE["Q"],
-                      "parameters": {"k": {"name": "k", "value": 99.0}}}}
+    clashing = {"Q": {**V1_PULSE["Q"], "parameters": {"k": {"name": "k", "value": 99.0}}}}
     exp = _experiment(
-        mesh_path, [_sv("u", "D * laplacian(u) - k * u + Q")],
+        mesh_path,
+        [_sv("u", "D * laplacian(u) - k * u + Q")],
         {"D": {"name": "D", "value": 0.01}, "k": {"name": "k", "value": 2.0}},
         events=clashing,
     )
@@ -350,10 +362,10 @@ def _wave_experiment(path, gamma, r_s, dt, duration):
     """Pang2023 eq (9) as a first-order system on a surface."""
     return _experiment(
         path,
-        [_sv("phi", "w"),
-         _sv("w", "gamma_s**2 * (-(2/gamma_s)*w - phi + r_s**2 * laplacian(phi))")],
+        [_sv("phi", "w"), _sv("w", "gamma_s**2 * (-(2/gamma_s)*w - phi + r_s**2 * laplacian(phi))")],
         {"gamma_s": {"name": "gamma_s", "value": gamma}, "r_s": {"name": "r_s", "value": r_s}},
-        dt=dt, duration=duration,
+        dt=dt,
+        duration=duration,
     )
 
 
@@ -371,7 +383,7 @@ def _modal_system(meta, gamma, r_s, n_modes=None):
         evals, modes = evals[:n_modes], modes[:, :n_modes]
     jacobians = np.zeros((len(evals), 2, 2))
     jacobians[:, 0, 1] = 1.0
-    jacobians[:, 1, 0] = -gamma ** 2 * (1.0 + r_s ** 2 * evals)
+    jacobians[:, 1, 0] = -(gamma**2) * (1.0 + r_s**2 * evals)
     jacobians[:, 1, 1] = -2.0 * gamma
     return modes, jacobians
 
@@ -443,9 +455,13 @@ def test_truncating_the_mode_basis_is_what_makes_the_two_disagree(sphere_path):
 def test_a_state_dependent_nonlinear_term_is_integrated_explicitly(mesh_path):
     """Logistic growth is nonlinear, so it cannot enter the implicit block; it is carried
     as the explicit remainder and must still reach the declared carrying capacity."""
-    exp = _experiment(mesh_path, [_sv("u", "D * laplacian(u) + r*u*(1 - u)", initial_value=0.1)],
-                      {"D": {"name": "D", "value": 0.001}, "r": {"name": "r", "value": 3.0}},
-                      dt=0.002, duration=6.0)
+    exp = _experiment(
+        mesh_path,
+        [_sv("u", "D * laplacian(u) + r*u*(1 - u)", initial_value=0.1)],
+        {"D": {"name": "D", "value": 0.001}, "r": {"name": "r", "value": 3.0}},
+        dt=0.002,
+        duration=6.0,
+    )
     ns = exp.execute("pde")
     _, U = ns["solve_pde"](steps=3000, save_timeseries=True)
     assert U[-1, 0].mean() == pytest.approx(1.0, rel=1e-3)

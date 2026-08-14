@@ -2535,7 +2535,9 @@ class Network(tvbo_datamodel.Network):
         """Parcellation-terminology entities for this network's atlas, or ``{}``.
 
         Resolves ``parcellation.atlas.name`` (case-insensitively — networks may declare ``HCPMMP1`` while the packaged atlas is keyed ``hcpmmp1``) and reads
-        its SANDS ``terminology.entities``. Returns ``{}`` when the network declares no atlas or the atlas has no terminology.
+        its SANDS ``terminology.entities``. Returns ``{}`` when the network declares no atlas or the atlas has no terminology. A network that DOES declare an
+        atlas this installation cannot resolve still returns ``{}`` (a custom parcellation is entitled to have no crosswalk) but warns, because the visible
+        symptom is otherwise a reconciliation that silently matches only the labels that happen to agree verbatim.
         """
         parc = getattr(self, "parcellation", None)
         atlas = getattr(parc, "atlas", None) if parc is not None else None
@@ -2551,6 +2553,14 @@ class Network(tvbo_datamodel.Network):
                 else next((a for a in available_atlases if a.lower() == str(name).lower()), None)
             )
             if not resolved:
+                import logging
+
+                logging.getLogger(__name__).warning(
+                    "Network declares atlas %r, which is not among the available atlases %s — region aliases unavailable, "
+                    "so a by_label reconciliation will match only labels that agree verbatim.",
+                    name,
+                    sorted(available_atlases),
+                )
                 return {}
             term = getattr(Atlas(resolved), "terminology", None)
             return getattr(term, "entities", None) or {}
@@ -2568,13 +2578,15 @@ class Network(tvbo_datamodel.Network):
         """Map each node's canonical label AND every known alias -> canonical label.
 
         Aliases are alternative label strings that denote the SAME region under a different nomenclature. They come from two sources, unioned: each node's own
-        ``alternateName`` (inline on the network) and, when the network declares a parcellation atlas, that atlas terminology's ``alternateName`` per region
-        (joined to nodes by canonical label — never by position). The identity
-        ``label -> label`` is always included so exact matches still resolve.
+        ``alternateName`` (inline on the network) and, when the network declares a parcellation atlas, that atlas terminology's names per region. The atlas
+        join is by NAME, never by position, and matches a region to a node whose label is either the region's canonical name or any of its
+        ``alternateName`` entries — so a network that spells a region divergently (``Left-Thalamus-Proper`` where the atlas says ``L_Thalamus``) still
+        inherits that region's whole crosswalk, keyed on the label the network itself uses. The identity ``label -> label`` is always included so exact
+        matches still resolve.
 
         Used by ``by_label`` node reconciliation so a dataset-sourced target whose nodes carry a divergent convention (e.g. ``THALAMUS_LEFT`` for
-        ``L_Thalamus``) aligns by name. Raises when one alias would map to two different canonical labels — an ambiguous crosswalk must fail loudly rather
-        than silently mis-assign a region (and, in particular, a hemisphere).
+        ``L_Thalamus``) aligns by name. Raises when one alias would map to two different canonical labels, or when one atlas region's names match several
+        nodes — an ambiguous crosswalk must fail loudly rather than silently mis-assign a region (and, in particular, a hemisphere).
         """
         labels = self.node_labels
         canon_set = set(labels)
@@ -2596,12 +2608,58 @@ class Network(tvbo_datamodel.Network):
             for alias in getattr(node, "alternateName", None) or []:
                 _add(str(alias), canonical)
         for key, ent in self._atlas_terminology_entities().items():
-            canonical = str(getattr(ent, "name", None) or key)
-            if canonical not in canon_set:
+            names = {str(getattr(ent, "name", None) or key)}
+            names.update(str(alias) for alias in getattr(ent, "alternateName", None) or [])
+            hits = sorted(names & canon_set)
+            if not hits:
                 continue  # atlas region not present in this (sub)network
-            for alias in getattr(ent, "alternateName", None) or []:
-                _add(str(alias), canonical)
+            if len(hits) > 1:
+                raise ValueError(
+                    f"Ambiguous atlas region {key!r}: its names {hits} match more than "
+                    f"one node of this network. A region must identify exactly one node."
+                )
+            for alias in sorted(names - {hits[0]}):
+                _add(alias, hits[0])
         return index
+
+    def as_data_file_reference(self, data_file: str):
+        """A compact datamodel ``Network`` that points at *data_file* and still IS this network.
+
+        Freezing a connectome writes its matrices to a companion file and replaces the network in the rendered spec with this reference, so what travels beside
+        ``data_file`` has to be everything the reloaded network needs in order to behave identically: the inline coupling / transforms / parameters, the scalar
+        identity, the measure declarations — ``Network.observations`` and the structural resolution gate on those, so a companion holding ``BoldCorrelation`` data is
+        invisible unless the reference also declares ``observational_measures: [BoldCorrelation]`` — and the ``parcellation``, which names the atlas that a
+        ``by_label`` node crosswalk resolves against. Carrying the parcellation cannot re-expand the node set, because ``data_file`` makes the loader defer
+        connectivity to the companion store.
+
+        Note that ``observations`` is deliberately NOT copied: it is a runtime view over the companion's measures, not a schema slot, and
+        ``observational_measures`` is what reconstructs it.
+        """
+        from tvbo import datamodel as dm
+
+        ref = dm.Network(data_file=data_file)
+        if getattr(self, "coupling", None):
+            for key, value in dict(self.coupling).items():
+                ref.coupling[key] = value
+        if getattr(self, "transforms", None):
+            ref.transforms = list(self.transforms)
+        if getattr(self, "parameters", None):
+            for key, value in dict(self.parameters).items():
+                ref.parameters[key] = value
+        for field in (
+            "label",
+            "descriptor",
+            "number_of_nodes",
+            "distance_unit",
+            "time_unit",
+            "structural_measures",
+            "observational_measures",
+            "parcellation",
+        ):
+            value = getattr(self, field, None)
+            if value is not None:
+                setattr(ref, field, list(value) if isinstance(value, (list, tuple)) else value)
+        return ref
 
     @property
     def weights_matrix(self) -> Optional[Union[np.ndarray, JaxArray]]:
@@ -2903,7 +2961,7 @@ class Network(tvbo_datamodel.Network):
         # Step 2: Add edges (prefer explicit edges, fall back to matrix)
         # Filter out template edges (no source/target) — those represent matrix measures stored in the HDF5 companion, not graph edges.
         explicit_edges = [e for e in (self.edges or []) if getattr(e, "source", None) is not None]
-        # Nodes above are keyed by ``node.id``, but ``edge.source`` / ``edge.target`` are positional indices into ``self.nodes``. Mapping between them keeps the graph in one key space; without it the graph gains a phantom set of index-keyed nodes (N+1 nodes for N regions) and any lookup by node key fails — e.g. plot_graph raising ``KeyError: 0``.
+        # Only the matrix fallback needs this: there ``i``/``j`` really are positions, whereas an explicit ``edge.source`` is already a ``Node.id`` (see :meth:`node_index_map`).
         index_to_id = {i: (node.id if node.id is not None else i) for i, node in enumerate(self.nodes or [])}
         if explicit_edges:
             # Use explicit edges
@@ -2920,13 +2978,8 @@ class Network(tvbo_datamodel.Network):
                         if param.unit:
                             edge_attrs[f"{name}_unit"] = param.unit
 
-                G.add_edge(
-                    index_to_id.get(edge.source, edge.source),
-                    index_to_id.get(edge.target, edge.target),
-                    **edge_attrs,
-                )
+                G.add_edge(edge.source, edge.target, **edge_attrs)
 
-                # If undirected, add reverse edge
                 if not edge_attrs["directed"]:
                     G.add_edge(edge.target, edge.source, **edge_attrs)
 
@@ -3535,21 +3588,13 @@ class Network(tvbo_datamodel.Network):
                 }
                 G.add_node(node_id, **node_attrs)
 
-            # Nodes are keyed in the graph by ``node.id``, but ``edge.source`` /
-            # ``edge.target`` are positional indices into ``nodes``. Without this mapping the graph ends up with two disjoint key spaces (ids 1..N and indices 0..N-1), which silently produces N+1 nodes and breaks any consumer that looks a node up by key — e.g. plot_graph raising
-            # ``KeyError: 0`` because the layout has no entry for index 0.
-            index_to_id = {i: getattr(node, "id", i) for i, node in enumerate(nodes)}
-
-            declared_pairs = {
-                (index_to_id.get(e.source, e.source), index_to_id.get(e.target, e.target)) for e in pair_edges
-            }
-            for edge in pair_edges:
-                source = index_to_id.get(edge.source, edge.source)
-                target = index_to_id.get(edge.target, edge.target)
-
+            # Only surviving edges count as declared: a reverse edge dropped for being too weak must not suppress the mirror and leave the pair one-directional.
+            kept = [e for e in pair_edges if (edge_param(e, "weight") or 0.0) > weight_threshold]
+            declared_pairs = {(e.source, e.target) for e in kept}
+            for edge in kept:
+                source = edge.source
+                target = edge.target
                 weight = edge_param(edge, "weight") or 0.0
-                if weight <= weight_threshold:
-                    continue
 
                 edge_attrs = {
                     "weight": weight,

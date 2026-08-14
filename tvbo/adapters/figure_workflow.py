@@ -38,6 +38,10 @@ def _figure_block(workflow, overrides, engine: str = "snakemake"):
     Reuses the ``_workflow`` merge machinery so the semantics match the experiment emitter exactly: name-keyed engine slots (env/options) merge by name, and the
     engine block inherits the engine-agnostic resource keys (and, for Snakemake, the
     SLURM scheduler identity) from the ``slurm`` block when it does not set them — unset falls back, an override wins only where it names a key.
+
+    ``gres`` is NOT among the inherited keys: it is accelerator-scoped and a figure render is
+    CPU, so an inherited GPU ``gres`` would land on a ``medium``-partition rule the executor
+    plugin then rejects. A figure that wants one declares it itself.
     """
     base = _wf._canonicalize_engine_maps(_wf._as_plain_dict(workflow))
     over = _wf._canonicalize_engine_maps(_wf._as_plain_dict(overrides))
@@ -46,7 +50,7 @@ def _figure_block(workflow, overrides, engine: str = "snakemake"):
     block = dict(spec.get(engine) or {})
     shared = ["cpus_per_task", "mem", "time", "modules", "venv", "env", "setup"]
     if engine == "snakemake":
-        shared += ["partition", "account"]       # NOT gres: it is accelerator-scoped, and a figure render is CPU — an inherited GPU gres lands on a `medium`-partition rule the plugin then rejects
+        shared += ["partition", "account"]  # not gres — see docstring
     slurm = spec.get("slurm") or {}
     for k in shared:
         if k not in block and k in slurm:
@@ -140,8 +144,33 @@ def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]
     return inputs
 
 
+def _has_unresolved_used(figure, base_dir: Path, exp_plans_by_key: dict) -> bool:
+    """True when a ``used`` edge names data neither the kit nor the author's tree resolves.
+
+    ``_figure_inputs`` drops such an edge — a rule cannot depend on a file that does not exist —
+    which leaves the figure looking self-contained while its render still opens that container.
+    Reported separately so the figure is kept out of the default target rather than added to it
+    with a dependency silently missing.
+    """
+    for panel in as_list(getattr(figure, "panels", None)):
+        layers = getattr(panel, "layers", None) or []
+        annotations = getattr(panel, "annotations", None) or []
+        for holder in (*layers, *annotations):
+            iri = bsplot._used_ref(getattr(holder, "used", None))
+            if not iri or _exp_key_of(iri, exp_plans_by_key) is not None:
+                continue
+            if not bsplot._container_path(iri, Path(base_dir)):
+                return True
+    return False
+
+
 def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) -> dict:
-    """Resolve one ``Figure`` into the template context for its render rule."""
+    """Resolve one ``Figure`` into the template context for its render rule.
+
+    ``kit_satisfiable`` decides whether the figure joins the kit's default target. A ``raw`` input is an ``expand()`` over a kit experiment's own outputs; anything else is a container resolved against the AUTHOR's tree, which the kit neither produces nor ships — as is a ``used`` edge that resolved to nothing and was dropped from ``input:``. Either way the figure keeps its rule but leaves every default target, because a target that cannot be satisfied on the target host reads as a broken kit.
+
+    ``pythonpath_code`` puts the kit's bundled ``code/`` on ``PYTHONPATH`` for the figure's custom-panel ``code_modules``, exactly as the experiment rules do.
+    """
     base_dir = Path(base_dir)
     name = figure.name or "figure"
     fmt = (figure.format or "png").lstrip(".")
@@ -151,15 +180,10 @@ def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) 
         "name": name,
         "rule_name": "fig_" + sanitize_name(name),
         "inputs": inputs,
-        # A `raw` input is an expand() over a kit experiment's own outputs; anything else
-        # is a container resolved against the AUTHOR's tree, which the kit neither produces
-        # nor ships. Such a figure keeps its rule but leaves every default target, because a
-        # target that cannot be satisfied on the target host reads as a broken kit.
-        "kit_satisfiable": all(i["raw"] for i in inputs),
+        "kit_satisfiable": all(i["raw"] for i in inputs) and not _has_unresolved_used(figure, base_dir, exp_plans_by_key),
         "output": f"figures/{name}.{fmt}",
         "figures_dir": "figures",
         "script": f"figures/scripts/plot_{sanitize_name(name)}.py",
-        # The figure's custom-panel code_modules are bundled into the kit's code/, so put it on PYTHONPATH exactly as the experiment rules do when the kit carries bundled code.
         "pythonpath_code": bool(bundled_code),
         "threads": int(block.get("cpus_per_task") or block.get("cores") or 1),
         "resources": _rule_resources(block),
@@ -229,19 +253,26 @@ def _rebase_containers_to_kit(code: str, figure, base_dir, exp_plans_by_key: dic
     ``<out_dir>/<key>/<stem>`` — the SAME path ``_figure_inputs`` puts in the rule's ``input:``.
     Left unrewritten, the frozen ``plot.py`` reads an absolute laptop path that does not exist on
     the compute node. Only a single-file (group / on-device-vectorized grid) experiment is
-    rebased; a workflow-FANNED experiment resolves to an ``expand()`` with no single container a
-    plot could point at, so it is left alone."""
+    rebased; a workflow-FANNED experiment and an on-device COHORT both resolve to several cell
+    files with no single container a plot could point at, so they are left alone, as is an edge
+    whose author-time container does not resolve (an empty path would splice the kit path
+    between every character of the script)."""
     for panel in as_list(getattr(figure, "panels", None)):
         layers = getattr(panel, "layers", None) or []
         annotations = getattr(panel, "annotations", None) or []
         for holder in (*layers, *annotations):
             iri = bsplot._used_ref(getattr(holder, "used", None))
             key = _exp_key_of(iri, exp_plans_by_key)
-            if key is None or exp_plans_by_key[key].get("axes"):
+            if key is None:
                 continue
-            author = str(bsplot._container_path(iri, Path(base_dir)))
-            kit = "%s/%s/%s" % (out_dir, key, _wf.cell_out_relpath(exp_plans_by_key[key]))
-            code = code.replace(author, kit)
+            plan = exp_plans_by_key[key]
+            if plan.get("axes") or _wf.cohort_out_relpaths(plan):
+                continue
+            author = bsplot._container_path(iri, Path(base_dir))
+            if not author:
+                continue
+            kit = "%s/%s/%s" % (out_dir, key, _wf.cell_out_relpath(plan))
+            code = code.replace(str(author), kit)
     return code
 
 

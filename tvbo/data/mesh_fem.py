@@ -67,9 +67,7 @@ def _assemble(faces, local, n_vertices):
     """Scatter per-triangle ``(F, 3, 3)`` blocks into a sparse ``(V, V)`` matrix."""
     rows = np.repeat(faces, 3, axis=1).ravel()
     cols = np.tile(faces, (1, 3)).ravel()
-    return sps.coo_matrix(
-        (local.reshape(-1), (rows, cols)), shape=(n_vertices, n_vertices)
-    ).tocsr()
+    return sps.coo_matrix((local.reshape(-1), (rows, cols)), shape=(n_vertices, n_vertices)).tocsr()
 
 
 def _element_values(coefficient, faces, n_vertices):
@@ -81,9 +79,7 @@ def _element_values(coefficient, faces, n_vertices):
         return np.full((len(faces), 3), float(arr))
     arr = arr.ravel()
     if arr.size != n_vertices:
-        raise ValueError(
-            f"coefficient has {arr.size} values but the mesh has {n_vertices} vertices"
-        )
+        raise ValueError(f"coefficient has {arr.size} values but the mesh has {n_vertices} vertices")
     return arr[faces]
 
 
@@ -148,8 +144,6 @@ def boundary_vertices(faces) -> np.ndarray:
     which is why a Dirichlet condition declared on one constrains nothing.
     """
     faces = _as_faces(faces)
-    edges = np.sort(
-        np.concatenate([faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [2, 0]]]), axis=1
-    )
+    edges = np.sort(np.concatenate([faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [2, 0]]]), axis=1)
     _, index, counts = np.unique(edges, axis=0, return_index=True, return_counts=True)
     return np.unique(edges[index[counts == 1]])

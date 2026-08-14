@@ -266,13 +266,15 @@ def _freeze_spec_yaml(
     rendered spec references them through ``network.data_file`` while preserving any inline coupling / transforms / parameters. Without a connectome the plain
     metadata render already round-trips.
 
+    The reference is built by :meth:`Network.as_data_file_reference`, which is also what freezes a result's provenance sidecar — one definition of "what a network
+    has to carry to still be itself", since a field missing from only one of the two is a kit that fails on the compute node while the sidecar looks fine.
+
     *workflow_spec* is the effective merged workflow config (study < experiment <
     ``--set``). When given, the frozen spec's ``workflow`` block is rewritten to it, so the spec records exactly what ran and re-emits identically without the flags.
 
     *dataset_bids_root* rewrites the frozen ``dataset.bids_root`` (e.g. to a relative
     ``dataset`` once the per-subject data is bundled under ``spec/dataset``), so the spec points at the bundled tree instead of the author's machine-specific path.
     """
-    from tvbo import datamodel as dm
     from tvbo.classes.network import Network
 
     net = getattr(experiment, "network", None)
@@ -301,30 +303,7 @@ def _freeze_spec_yaml(
         net.save(spec_dir / "network.yaml", binary_format="h5")
         _common.info("wrote spec/network.yaml + spec/network.h5")
 
-        # Compact network reference: data_file + inline coupling/transforms/parameters, so the rendered spec loads the companion connectome rather than a stub.
-        ref = dm.Network(data_file="network.h5")
-        if getattr(net, "coupling", None):
-            for k, v in dict(net.coupling).items():
-                ref.coupling[k] = v
-        if getattr(net, "transforms", None):
-            ref.transforms = list(net.transforms)
-        if getattr(net, "parameters", None):
-            for k, v in dict(net.parameters).items():
-                ref.parameters[k] = v
-        # Carry the scalar identity + measure declarations. The measure lists in particular are not decoration: `Network.observations` (and the structural resolution) gate on them, so a companion h5 that holds `BoldCorrelation` data is invisible unless the reloaded network also declares
-        # `observational_measures: [BoldCorrelation]`. Copying every non-None scalar (rather than a hand-picked list) means the next such field survives the round-trip too, instead of silently dropping a measure the way this did.
-        for _f in (
-            "label",
-            "descriptor",
-            "number_of_nodes",
-            "distance_unit",
-            "time_unit",
-            "structural_measures",
-            "observational_measures",
-        ):
-            _v = getattr(net, _f, None)
-            if _v is not None:
-                setattr(ref, _f, list(_v) if isinstance(_v, (list, tuple)) else _v)
+        ref = net.as_data_file_reference("network.h5")
 
         experiment.network = ref
         return experiment.to_yaml()
@@ -1158,9 +1137,7 @@ def _warn_unsatisfiable_figure_inputs(out_dir: Path) -> None:
     )
 
 
-_PATH_HINT = re.compile(
-    r"""["'\s:]((?:/|\./|\.\./|[A-Za-z0-9_.-]+/)[^"'\s,\]}]*\.[A-Za-z0-9]{1,8})"""
-)
+_PATH_HINT = re.compile(r"""["'\s:]((?:/|\./|\.\./|[A-Za-z0-9_.-]+/)[^"'\s,\]}]*\.[A-Za-z0-9]{1,8})""")
 """A path-shaped token in a spec or a rule — absolute, relative, with a file extension."""
 
 
@@ -1175,13 +1152,18 @@ def _write_external_inputs_manifest(out_dir: Path, source_dir: Path | None) -> i
     exactly what it expects to find and where it expected it, and staging becomes one rsync
     of a named list rather than a guess after a failure.
 
-    Relative paths are resolved against the AUTHORING study's directory, because that is
-    what they meant when they were written; the manifest records both spellings so the
-    reader can see which form the spec used.
+    A relative path is read KIT-relative first — the emitted rules are full of ``results/…`` and
+    ``figures/…`` targets the kit makes itself, and resolving those against the author's tree
+    lists the kit's own products as things it is missing. Only a relative path the kit has no
+    directory for is resolved against the AUTHORING study's directory, because that is what it
+    meant when it was written; the manifest records both spellings so the reader can see which
+    form the spec used.
     """
+    kit_root = out_dir.resolve()
     seen: dict[Path, tuple[str, set[str]]] = {}
     for path in sorted(out_dir.rglob("*")):
-        if not path.is_file() or path.suffix not in (".yaml", ".yml", ".smk") and path.name != "Snakefile":
+        is_spec = path.suffix in (".yaml", ".yml", ".smk") or path.name == "Snakefile"
+        if not path.is_file() or not is_spec:
             continue
         try:
             text = path.read_text(encoding="utf-8")
@@ -1191,10 +1173,15 @@ def _write_external_inputs_manifest(out_dir: Path, source_dir: Path | None) -> i
             raw = match.group(1)
             candidate = Path(raw)
             if not candidate.is_absolute():
+                inside = out_dir / candidate
+                if inside.exists() or inside.parent.is_dir():
+                    continue  # the kit's own layout, produced or carried here
                 if source_dir is None:
                     continue
                 candidate = (source_dir / candidate).resolve()
-            if candidate.is_relative_to(out_dir.resolve()) or not candidate.exists():
+            else:
+                candidate = candidate.resolve()
+            if candidate.is_relative_to(kit_root) or not candidate.exists():
                 continue
             entry = seen.setdefault(candidate, (raw, set()))
             entry[1].add(str(path.relative_to(out_dir)))
@@ -1207,6 +1194,18 @@ def _write_external_inputs_manifest(out_dir: Path, source_dir: Path | None) -> i
         lines.append(f"{resolved}\t{raw}\t{size}\t{','.join(sorted(refs))}")
     (out_dir / "external_inputs.tsv").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return len(seen)
+
+
+def _spec_source_dir(spec: str) -> Path | None:
+    """Directory a spec's relative paths mean, or ``None`` when the spec is not a file.
+
+    ``resolve_spec`` also accepts a CURIE (``study:Deco2014``), a bare database name and a
+    ``file://`` URL; ``Path(spec).parent`` on any of those silently yields the cwd, which would
+    resolve the manifest's relative paths against whatever directory the CLI happened to run in.
+    """
+    raw = spec[len("file://") :] if spec.startswith("file://") else spec
+    path = Path(raw).expanduser()
+    return path.resolve().parent if path.is_file() else None
 
 
 def _finalize_kit(out_dir: Path, *, pack: bool, source_dir: Path | None = None) -> Path:
@@ -1249,7 +1248,7 @@ def _emit(
             bundle_select=bundle_select,
             code_source=code_source,
         )
-        return _finalize_kit(out_dir, pack=pack, source_dir=Path(spec).resolve().parent) if out_dir is not None else None
+        return _finalize_kit(out_dir, pack=pack, source_dir=_spec_source_dir(spec)) if out_dir is not None else None
     plan, exp = _build_plan(spec, engine=engine, backend=backend, experiment=experiment, overrides=override)
     if stdout:
         text = _render_template(_TEMPLATE_PATH[engine], plan=plan, block=plan.engine_block, script_relpath=None)
@@ -1262,7 +1261,7 @@ def _emit(
         parts = [plan.experiment_key] if plan.study_key == plan.experiment_key else [plan.study_key, plan.experiment_key]
         out_dir = Path("output").joinpath(*parts, engine)
     _emit_kit(engine=engine, plan=plan, experiment=exp, out_dir=out_dir, bundle_select=bundle_select)
-    return _finalize_kit(out_dir, pack=pack, source_dir=Path(spec).resolve().parent)
+    return _finalize_kit(out_dir, pack=pack, source_dir=_spec_source_dir(spec))
 
 
 _LAUNCHER = {"slurm": "sbatch", "snakemake": "snakemake", "nextflow": "nextflow"}

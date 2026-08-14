@@ -190,14 +190,18 @@ def _sympify(text: str, variables, parameters):
         raise FieldPlanError(f"cannot parse field equation {text!r}: {exc}") from exc
 
 
+def _operator_names(expr) -> set:
+    """Differential-operator names appearing anywhere in *expr*."""
+    return {getattr(a.func, "__name__", "") for a in expr.atoms(sp.Function)} & set(_OPERATOR_NAMES)
+
+
 def _operand(expr, variables):
     """Classify one multiplicative term.
 
     Returns ``(kind, variable, coefficient_field)`` where kind is ``mass``, ``stiffness``
     or ``None`` when the term carries no state variable at all (a pure source).
     """
-    funcs = [a for a in expr.atoms(sp.Function)
-             if getattr(a.func, "__name__", "") in _TOP_OPERATORS]
+    funcs = [a for a in expr.atoms(sp.Function) if getattr(a.func, "__name__", "") in _TOP_OPERATORS]
     if not funcs:
         syms = {str(s) for s in expr.free_symbols} & set(variables)
         if not syms:
@@ -218,8 +222,7 @@ def _operand(expr, variables):
     if name in ("laplacian", "lap"):
         inner, weight = arg, None
     elif name == "div":
-        grads = [a for a in arg.atoms(sp.Function)
-                 if getattr(a.func, "__name__", "") == "grad"]
+        grads = [a for a in arg.atoms(sp.Function) if getattr(a.func, "__name__", "") == "grad"]
         if len(grads) != 1:
             raise FieldPlanError(f"div(...) must wrap exactly one grad(...): {expr}")
         inner = grads[0].args[0]
@@ -234,20 +237,24 @@ def _operand(expr, variables):
 
 
 def _linear_blocks(rhs, row, variables, parameters, field_params):
-    """Split one equation's RHS into implicit blocks and an explicit remainder."""
+    """Split one equation's RHS into implicit blocks and an explicit remainder.
+
+    A term the block form cannot take is deferred to the explicit remainder — that is the IMEX split, and a nonlinear reaction such as ``u*v`` belongs there. A term carrying a differential operator does not: nothing downstream can evaluate ``laplacian(...)``, so deferring it would surface as a ``NameError`` inside the generated solver rather than as a plan error here.
+    """
     blocks, explicit = [], []
     for term in sp.Add.make_args(sp.expand(rhs)):
         try:
             kind, var, weight = _operand(term, variables)
         except FieldPlanError:
+            if _operator_names(term):
+                raise
             explicit.append(term)
             continue
         if kind is None:
             explicit.append(term)
             continue
 
-        call = [a for a in term.atoms(sp.Function)
-                if getattr(a.func, "__name__", "") in _TOP_OPERATORS]
+        call = [a for a in term.atoms(sp.Function) if getattr(a.func, "__name__", "") in _TOP_OPERATORS]
         factor = sp.simplify(term / (call[0] if call else sp.Symbol(var)))
         if {str(s) for s in factor.free_symbols} & set(variables):
             explicit.append(term)  # coefficient depends on the state -> nonlinear
@@ -268,15 +275,25 @@ def _linear_blocks(rhs, row, variables, parameters, field_params):
                 f"and is not self-adjoint); write it in divergence form as "
                 f"div({coeff_fields[0]}*grad({var})) instead"
             )
-        blocks.append({
-            "row": row,
-            "col": variables.index(var),
-            "kind": kind,
-            "scalar": scalar,
-            "coefficient_field": coeff_fields[0] if coeff_fields else None,
-            "weight_field": weight,
-            "term": str(term),
-        })
+        blocks.append(
+            {
+                "row": row,
+                "col": variables.index(var),
+                "kind": kind,
+                "scalar": scalar,
+                "coefficient_field": coeff_fields[0] if coeff_fields else None,
+                "weight_field": weight,
+                "term": str(term),
+            }
+        )
+    if explicit:
+        stranded = sorted(_operator_names(sp.Add(*explicit)))
+        if stranded:
+            raise FieldPlanError(
+                f"the remainder {sp.Add(*explicit)} still applies {stranded}, which the explicit "
+                f"path cannot evaluate; only laplacian(v) and div(c*grad(v)) over a single state "
+                f"variable are assembled"
+            )
     return blocks, explicit
 
 
@@ -295,8 +312,7 @@ def field_assembly_plan(experiment) -> dict:
     if not svars:
         raise FieldPlanError("field_dynamics declares no state_variables")
 
-    names = [str(getattr(v, "name", None) or getattr(v, "label", f"u{i}"))
-             for i, v in enumerate(svars)]
+    names = [str(getattr(v, "name", None) or getattr(v, "label", f"u{i}")) for i, v in enumerate(svars)]
     if len(set(names)) != len(names):
         raise FieldPlanError(f"duplicate field state-variable names: {names}")
 
@@ -319,7 +335,7 @@ def field_assembly_plan(experiment) -> dict:
 
     if not blocks:
         coeffs = []
-        for op in (getattr(fd, "operators", None) or []):
+        for op in getattr(fd, "operators", None) or []:
             c = op.coefficient
             val = _scalar(c)
             if val is None:
@@ -327,11 +343,19 @@ def field_assembly_plan(experiment) -> dict:
             coeffs.append(val)
         if not coeffs:
             raise FieldPlanError(
-                "no linear operator found: the equations produced no assembleable term "
-                "and no `operators:` were declared"
+                "no linear operator found: the equations produced no assembleable term and no `operators:` were declared"
             )
-        blocks = [{"row": 0, "col": 0, "kind": "stiffness", "scalar": sum(coeffs),
-                   "coefficient_field": None, "weight_field": None, "term": "legacy operators"}]
+        blocks = [
+            {
+                "row": 0,
+                "col": 0,
+                "kind": "stiffness",
+                "scalar": sum(coeffs),
+                "coefficient_field": None,
+                "weight_field": None,
+                "term": "legacy operators",
+            }
+        ]
         legacy = True
 
     solver = getattr(fd, "solver", None)
@@ -340,8 +364,7 @@ def field_assembly_plan(experiment) -> dict:
     method = _METHOD_ALIASES.get(raw_method, "crank-nicolson" if not raw_method else None)
     if method is None:
         raise FieldPlanError(
-            f"unknown time-integration method {raw_method!r}; expected one of "
-            f"{sorted(set(_METHOD_ALIASES.values()))}"
+            f"unknown time-integration method {raw_method!r}; expected one of {sorted(set(_METHOD_ALIASES.values()))}"
         )
     duration = float(getattr(getattr(experiment, "integration", None), "duration", 0.0) or 0.0)
 
@@ -379,26 +402,24 @@ def _boundary_plan(field_dynamics, svars, names) -> list:
     Only Dirichlet is lowered. A declared Neumann/Robin/Periodic condition raises rather
     than being silently dropped: on a closed surface (the cortical case) there is no
     boundary at all and the distinction never arises, but on a bounded domain quietly
-    ignoring it changes the solution.
+    ignoring it changes the solution. Every condition is checked before one is taken, so a
+    Neumann/Robin declared beside a Dirichlet raises instead of being skipped by an early exit.
     """
     out = []
     for row, var in enumerate(svars):
-        bcs = list(getattr(var, "boundary_conditions", None) or []) \
-            or list(getattr(field_dynamics, "boundary_conditions", None) or [])
+        bcs = list(getattr(var, "boundary_conditions", None) or []) or list(
+            getattr(field_dynamics, "boundary_conditions", None) or []
+        )
         for bc in bcs:
             kind = str(getattr(bc, "bc_type", "") or "").lower()
             if kind != "dirichlet":
                 raise FieldPlanError(
-                    f"boundary condition {kind!r} on {names[row]!r} is declared but not "
-                    f"implemented; only Dirichlet is lowered"
+                    f"boundary condition {kind!r} on {names[row]!r} is declared but not implemented; only Dirichlet is lowered"
                 )
+        for bc in bcs[:1]:
             try:
                 value = float(_rhs_text(getattr(bc, "value", None)) or 0.0)
             except ValueError:
-                raise FieldPlanError(
-                    f"non-constant Dirichlet value on {names[row]!r} is not supported"
-                ) from None
-            out.append({"row": row, "value": value,
-                        "on_region": getattr(bc, "on_region", None) or None})
-            break
+                raise FieldPlanError(f"non-constant Dirichlet value on {names[row]!r} is not supported") from None
+            out.append({"row": row, "value": value, "on_region": getattr(bc, "on_region", None) or None})
     return out

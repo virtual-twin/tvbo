@@ -290,15 +290,16 @@ def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str, data_fi
     """Write a strict v0.7-compliant YAML or JSON sidecar.
 
     Dumps the network via LinkML, post-processes to v0.7 form, and writes with controlled key ordering.
+
+    A ``data_file``-backed connectome is materialised — its arrays live in the companion file — so the directives that would rebuild them from a source are dropped and a reload uses the companion. ``parcellation`` is deliberately not one of them: it also states which atlas this network's node labels belong to, which is what a ``by_label`` crosswalk resolves against, so dropping it would leave a saved network unable to reconcile any label the atlas spells differently. Keeping it is safe because ``load_network`` defers connectivity until the companion store is attached, so it no longer re-expands to the atlas node set.
     """
     if data_file:
         network.data_file = data_file
 
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
     meta = _purify(meta)
-    # A data_file-backed connectome is materialised/frozen: its arrays (weights, lengths, coordinates) live in the companion file. Drop resolution directives so a reload uses the explicit companion data instead of re-resolving — otherwise a `parcellation` would re-expand to the full atlas (e.g. 84 saved nodes → 87 atlas regions) and override the saved node set.
     if data_file:
-        for _directive in ("parcellation", "bids_dir", "graph_generator", "tractogram"):
+        for _directive in ("bids_dir", "graph_generator", "tractogram"):
             meta.pop(_directive, None)
     meta = _v07_postprocess(meta)
 
@@ -339,6 +340,8 @@ def _write_nodes(store, network):
 
     Called after ``_write_edges`` during ``save_network``.
     """
+    written: set[str] = set()
+
     # Hierarchical node mapping
     try:
         data = object.__getattribute__(network, "_node_mapping_data")
@@ -347,6 +350,7 @@ def _write_nodes(store, network):
     if data is not None:
         nm_path = getattr(network, "node_mapping", None) or "/nodes/parent_index"
         key = nm_path.lstrip("/")
+        written.add(key)
         parts = key.rsplit("/", 1)
         if len(parts) == 2:
             grp_path, ds_name = parts
@@ -376,19 +380,22 @@ def _write_nodes(store, network):
             "coordinates",
             data=_np.array(coords, dtype="float32"),
         )
+        written.add("nodes/coordinates")
 
     src = getattr(network, "_store", None)
     if src is None or not hasattr(src, "dataset_keys"):
         return
-    written = {"nodes/coordinates", (getattr(network, "node_mapping", None) or "/nodes/parent_index").lstrip("/")}
-    for key in src.dataset_keys("nodes"):
-        if key in written:
-            continue
+    # `written` holds what was ACTUALLY emitted, so a dataset with no in-memory value is carried across from the source rather than silently dropped.
+    keys = [k for k in src.dataset_keys("nodes") if k not in written]
+    if not keys:
+        return
+    grp = store.require_group("nodes")
+    for key in keys:
         try:
             array = src.read_dataset(key)
         except (KeyError, OSError):
             continue
-        _create_ds(store.require_group("nodes"), key.split("/", 1)[1], data=array)
+        _create_ds(grp, key.split("/", 1)[1], data=array)
 
 
 def _write_mesh(store, network):

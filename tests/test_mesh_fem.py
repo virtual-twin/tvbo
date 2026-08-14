@@ -10,7 +10,6 @@ closed form applies.
 
 import numpy as np
 import pytest
-import scipy.sparse as sps
 from scipy.sparse.linalg import eigsh
 
 from tvbo.data.mesh_fem import (
@@ -55,8 +54,7 @@ def test_operators_do_not_change_when_the_mesh_is_moved_through_space(flat):
     """
     _, _, vertices, faces = flat
     angle = 0.7
-    rotation = np.array([[np.cos(angle), 0, -np.sin(angle)], [0, 1, 0],
-                         [np.sin(angle), 0, np.cos(angle)]])
+    rotation = np.array([[np.cos(angle), 0, -np.sin(angle)], [0, 1, 0], [np.sin(angle), 0, np.cos(angle)]])
     moved = np.column_stack([vertices, np.zeros(len(vertices))]) @ rotation.T + [5.0, -2.0, 3.0]
 
     assert abs(p1_stiffness(moved, faces) - p1_stiffness(vertices, faces)).max() < 1e-13
@@ -71,7 +69,7 @@ def test_the_sphere_spectrum_converges_to_the_analytic_one(icosphere):
     while still discretising the wrong metric.
     """
     radius = 2.0
-    exact = np.concatenate([[l * (l + 1) / radius ** 2] * (2 * l + 1) for l in range(4)])[:10]
+    exact = np.concatenate([[deg * (deg + 1) / radius**2] * (2 * deg + 1) for deg in range(4)])[:10]
 
     errors = []
     for subdivisions in (2, 3, 4):

@@ -22,12 +22,20 @@ from tvbo.data.types import TimeSeries
 
 
 def initialize_graph_states_with_history(G, delay_buffer=1000):
-    """Initialize states, time-series, and history buffer for each node."""
+    """Allocate the trace and delay-history buffers, keeping any state already set.
+
+    A node that already carries a ``"state"`` (``GraphRunner.setup_initial_conditions`` puts the
+    model's declared initial values there) keeps it — overwriting with zeros would start every
+    run from the origin whatever the model declares. The delay history is filled with that state
+    rather than zeros, so a delayed read before the trace exists sees the initial condition.
+    """
     for node in G.nodes:
         state_dim = len(G.nodes[node]["model"].state_variables)
-        G.nodes[node]["state"] = np.zeros(state_dim)
+        state = G.nodes[node].get("state")
+        state = np.zeros(state_dim) if state is None else np.asarray(state, dtype=float).ravel()
+        G.nodes[node]["state"] = state
         G.nodes[node]["time-series"] = np.empty((0, state_dim))
-        G.nodes[node]["history"] = np.zeros((delay_buffer, state_dim))
+        G.nodes[node]["history"] = np.tile(state, (delay_buffer, 1))
 
 
 def compute_delayed_input_signal(node, G, t, dt):
@@ -48,9 +56,7 @@ def compute_delayed_input_signal(node, G, t, dt):
         if post is None:
             post = (edge["post_src"], edge["postfun"])
         elif post[0] != edge["post_src"]:
-            raise ValueError(
-                f"node {node}: mixed post-transforms on incoming edges ({post[0]} vs {edge['post_src']})"
-            )
+            raise ValueError(f"node {node}: mixed post-transforms on incoming edges ({post[0]} vs {edge['post_src']})")
         time_series = G.nodes[neighbor]["time-series"]
         if len(time_series) > 1:
             delayed_time = t - edge["delay"]

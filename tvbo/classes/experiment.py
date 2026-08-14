@@ -1739,12 +1739,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     return d
             return da.dims[-1]
 
+        # Last-declared first: that is the algorithm whose endpoint the run actually finished at, and guessing would warm-start from an untuned state that looks tuned.
+        algs = getattr(self, "algorithms", None)
+        alg_names = list(algs.keys()) if hasattr(algs, "keys") else [getattr(a, "name", None) for a in (algs or [])]
+        seed_producers = [str(a) for a in reversed(alg_names) if a]
+
         def _final_key(ds, sv):
             from tvbo.data import dataref as _dref
 
             try:
-                return _dref.match_output(ds.data_vars, f"{sv}_final")
-            except KeyError:
+                return _dref.match_output(ds.data_vars, f"{sv}_final", prefer=seed_producers)
+            except KeyError as exc:
+                if "is recorded by" in str(exc):
+                    raise  # an ambiguity, not an absence — its own message names the candidates
                 raise KeyError(
                     f"initial_state.from_experiment: source experiment {source_id} does not "
                     f"record '{sv}_final'. The source must expose its settled state as an "
@@ -2229,12 +2236,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         elif format.lower() == "python":
             duration = kwargs.get("duration", self.integration.duration)
             net = self.network
-            # Declared-network check on cheap fields only; a declared network that fails to resolve raises downstream instead of silently degrading to a single node.
+            # Every way a network can be declared, matching `to_yaml_with_network`: a matrix-only or parcellation-only connectome must not read as a single node.
             declared = net is not None and bool(
                 (getattr(net, "number_of_nodes", None) or 0) > 1
+                or (getattr(net, "number_of_regions", None) or 0) > 1
                 or getattr(net, "nodes", None)
                 or getattr(net, "edges", None)
                 or getattr(net, "data_file", None)
+                or getattr(net, "parcellation", None)
+                or (getattr(net, "weights", None) is not None and np.asarray(net.weights).size > 1)
             )
             if not declared:
                 ts = self.dynamics.run(format="python", duration=duration, dt=self.integration.step_size)
@@ -2276,8 +2286,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     # Either one variable's field, or the whole stacked state.
                     if arr.size not in (ndofs, n_vars * ndofs):
                         raise ValueError(
-                            f"u0 length {arr.size} != ndofs {ndofs} "
-                            f"(or {n_vars * ndofs} for all {n_vars} variables)")
+                            f"u0 length {arr.size} != ndofs {ndofs} (or {n_vars * ndofs} for all {n_vars} variables)"
+                        )
                 u0_override = arr
             elif initial_conditions is not None:
                 # A TimeSeries contributes its final sample across ALL variables (stacked variable-major, like u0).
@@ -2294,7 +2304,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     if arr.size not in (ndofs, n_vars * ndofs):
                         raise ValueError(
                             f"initial_conditions length {arr.size} != ndofs {ndofs} "
-                            f"(or {n_vars * ndofs} for all {n_vars} variables)")
+                            f"(or {n_vars * ndofs} for all {n_vars} variables)"
+                        )
                 u0_override = arr
 
             # Always compute and return a full TimeSeries (save_timeseries=True)
@@ -2628,7 +2639,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         import numpy as _np
 
-        from tvbo import datamodel as _dm
         from tvbo.classes.network import Network as _Network
 
         net = getattr(self, "network", None)
@@ -2649,18 +2659,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # The network sidecar goes through a different serializer; strip the same private runtime keys so the frozen connectome round-trips on reload.
         sidecar.write_text(_strip_private_yaml_keys(sidecar.read_text()), encoding="utf-8")
 
-        ref = _dm.Network(data_file=f"{network_stem}.h5")
-        if getattr(net, "coupling", None):
-            for k, v in dict(net.coupling).items():
-                ref.coupling[k] = v
-        if getattr(net, "transforms", None):
-            ref.transforms = list(net.transforms)
-        if getattr(net, "parameters", None):
-            for k, v in dict(net.parameters).items():
-                ref.parameters[k] = v
-        if getattr(net, "observations", None):
-            for k, v in dict(net.observations).items():
-                ref.observations[k] = v
+        ref = net.as_data_file_reference(f"{network_stem}.h5")
 
         original = self.network
         self.network = ref
@@ -3314,10 +3313,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if weighting:
                 ev.weights = weighting
 
-            # Merge equation-level parameters onto the event (codegen reads ev.parameters), by
-            # MUTATING the multivalued slot: assigning a dict to it re-coerces to the list form
-            # and every later `dict(ev.parameters)` then fails with an opaque "dictionary update
-            # sequence element" error (see reference-linkml-assignment-jsonobj).
+            # MUTATE the multivalued slot: assigning a dict re-coerces it to the list form and every later `dict(ev.parameters)` fails.
             eq = getattr(ev, "equation", None)
             eq_params = getattr(eq, "parameters", None) if eq is not None else None
             if eq_params:

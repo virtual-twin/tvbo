@@ -73,4 +73,5 @@ def test_absent_node_array_does_not_resolve_silently(tmp_path, attr):
     from tvbo.data.param_io import resolve_network_node
 
     assert resolve_network_node(Network.load(str(src)), attr) is None, (
-        f"{attr!r} names no node array here, so it must not resolve to anything")
+        f"{attr!r} names no node array here, so it must not resolve to anything"
+    )

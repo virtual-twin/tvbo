@@ -604,8 +604,13 @@ def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=(
         out_dir="out/S/fig6",
         run_spec="experiment:fig6",
         backend=SimpleNamespace(name="tvboptim"),
-        engine_block={"partition": "medium", "mem": "16G", "time": "02:00:00", "cpus_per_task": 4,
-                      **({"venv": venv} if venv else {})},
+        engine_block={
+            "partition": "medium",
+            "mem": "16G",
+            "time": "02:00:00",
+            "cpus_per_task": 4,
+            **({"venv": venv} if venv else {}),
+        },
     )
     for prop in ("pip_specs", "needs_env_layer", "needs_container_layer", "container_extras_venv", "container_exec_flags"):
         setattr(p, prop, getattr(WorkflowPlan, prop).fget(p))
@@ -616,13 +621,13 @@ def test_env_layer_provisions_requirements_container_or_not():
     """Requirements need provisioning wherever the tasks run: `needs_env_layer` is true as
     soon as requirements exist (a native venv, or one layered on a container). The narrower
     `needs_container_layer` only fires when a container is ALSO declared (the Slurm --env
-    path); with requirements but no container it stays a native venv."""
+    path); with requirements but no container it stays a native venv.
+
+    A provided run venv (`slurm.venv`) IS the environment: a `--system-site-packages` venv layered on it does not chain, so pip would re-resolve the whole stack (a CPU jaxlib shadowing `jax[cuda]`). Trust the venv and emit no setup.sh.
+    """
     assert _layer_plan().needs_env_layer is True
     assert _layer_plan(container=None).needs_env_layer is True  # native venv
     assert _layer_plan(reqs=()).needs_env_layer is False  # nothing to provision
-    # A provided run venv (slurm.venv) IS the environment: a --system-site-packages venv layered
-    # on it does not chain, so pip would re-resolve the whole stack (a CPU jaxlib shadowing
-    # jax[cuda]); trust the venv, emit no setup.sh.
     assert _layer_plan(venv="/w/tvbo-cuda").needs_env_layer is False
     assert _layer_plan(venv="/w/tvbo-cuda", container=None).needs_env_layer is False
 
@@ -1662,11 +1667,15 @@ def test_a_figure_whose_data_stayed_home_leaves_every_default_target(monkeypatch
     """
     from tvbo.adapters import figure_workflow as fw
 
-    monkeypatch.setattr(fw, "_figure_inputs", lambda figure, base, keys: (
-        [{"value": "expand('results/3/{cell}.h5', cell=CELLS)", "raw": True}]
-        if figure.name == "in_kit"
-        else [{"value": "/elsewhere/output/results/curves/result.h5", "raw": False}]
-    ))
+    monkeypatch.setattr(
+        fw,
+        "_figure_inputs",
+        lambda figure, base, keys: (
+            [{"value": "expand('results/3/{cell}.h5', cell=CELLS)", "raw": True}]
+            if figure.name == "in_kit"
+            else [{"value": "/elsewhere/output/results/curves/result.h5", "raw": False}]
+        ),
+    )
 
     class _Fig:
         def __init__(self, name):
@@ -1731,8 +1740,7 @@ def test_figure_kit_rebases_author_container_to_the_kit_path(monkeypatch):
     on a compute node."""
     from tvbo.adapters import figure_workflow as fw
 
-    figure = SimpleNamespace(panels=[SimpleNamespace(layers=[SimpleNamespace(used={"experiment": "3"})],
-                                                     annotations=[])])
+    figure = SimpleNamespace(panels=[SimpleNamespace(layers=[SimpleNamespace(used={"experiment": "3"})], annotations=[])])
     keys = {"3": {"key": "3", "axes": [], "out_dir": "results"}}
     monkeypatch.setattr(fw.bsplot, "_used_ref", lambda used: "3")
     monkeypatch.setattr(fw, "_exp_key_of", lambda iri, ks: "3" if iri in ks else None)
@@ -2056,18 +2064,25 @@ def test_figure_rule_does_not_inherit_the_accelerators_gres():
     figure declares itself is emitted as the NATIVE ``gres`` resource, never ``slurm_extra``."""
     from tvbo.adapters.figure_workflow import _figure_block, _rule_resources
 
-    study_wf = {"slurm": {"partition": "gpu", "gres": "gpu:h200:1", "venv": "/w/tvbo-cuda",
-                          "account": "acct", "cpus_per_task": 2, "mem": "128G", "time": "12:00:00"}}
-    _, block = _figure_block(study_wf, {"snakemake": {"partition": "medium", "cpus_per_task": 4}},
-                             engine="snakemake")
-    assert "gres" not in block                        # accelerator gres NOT inherited by a CPU render
-    assert block.get("venv") == "/w/tvbo-cuda"        # run identity IS inherited
+    study_wf = {
+        "slurm": {
+            "partition": "gpu",
+            "gres": "gpu:h200:1",
+            "venv": "/w/tvbo-cuda",
+            "account": "acct",
+            "cpus_per_task": 2,
+            "mem": "128G",
+            "time": "12:00:00",
+        }
+    }
+    _, block = _figure_block(study_wf, {"snakemake": {"partition": "medium", "cpus_per_task": 4}}, engine="snakemake")
+    assert "gres" not in block  # accelerator gres NOT inherited by a CPU render
+    assert block.get("venv") == "/w/tvbo-cuda"  # run identity IS inherited
     assert block.get("partition") == "medium"
     res = _rule_resources(block)
     assert "gres" not in res and "slurm_extra" not in res
 
-    _, gblock = _figure_block(study_wf, {"snakemake": {"partition": "gpu", "gres": "gpu:1"}},
-                              engine="snakemake")
+    _, gblock = _figure_block(study_wf, {"snakemake": {"partition": "gpu", "gres": "gpu:1"}}, engine="snakemake")
     gres = _rule_resources(gblock)
-    assert gres.get("gres") == repr("gpu:1")          # native gres resource, not slurm_extra
+    assert gres.get("gres") == repr("gpu:1")  # native gres resource, not slurm_extra
     assert "slurm_extra" not in gres

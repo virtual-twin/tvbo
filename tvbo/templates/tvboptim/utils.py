@@ -1147,6 +1147,8 @@ def _resolve_stat_stream(obs: Any) -> Dict[str, Any]:
     is shaped exactly as the recurrence resolver's, with no ``kind`` tag, so a stat stream reuses
     :func:`render_recurrence_reduction` unchanged.
 
+    ``last`` carries a memory state rather than an accumulator: it overwrites instead of reading itself, so the carry holds the newest folded sample and the readout is that sample. In ``first_passage``, ``_fp_hit`` latches at the first crossing while ``_fp_idx`` counts the samples before it and then stops, landing on the crossing index and saturating at the sample count when the source never crosses. The latch is inlined into the counter rather than read from the state because both update from the previous carry, and a crossing on the very first sample has to yield 0.
+
     ``skip_inclusive`` marks the reduction a pure accumulator with no per-sample memory dependency, so the emitter folds the sample AT ``skip`` (``_gstep >= skip``) rather than
     the step after it — a running mean must not silently drop its first sample, unlike a phase-difference observer whose first step has no predecessor. Every RHS is parsed to a
     sympy ``Expr`` against {source, the accumulators, ``count``, ``dt``}, exactly as the recurrence path resolves its updates. Takes no ``experiment`` — the full dict resolves
@@ -1177,24 +1179,24 @@ def _resolve_stat_stream(obs: Any) -> Dict[str, Any]:
         return expr
 
     if agg == "last":
-        # A memory state, not an accumulator: it overwrites rather than reading itself, so the
-        # carry holds the newest folded sample and the readout is that sample.
         states = [{"name": "_s_last", "init": 0.0, "update": _parse(source), "evict": None, "is_accumulator": False}]
         output = _parse("_s_last")
     elif agg == "first_passage":
         threshold = (dict(iter_parameter_values(get_attr(obs, "parameters"))) or {}).get("threshold")
         if threshold is None:
-            raise ValueError(f"Observation {name!r} streams aggregation: first_passage but has no parameters.threshold to cross.")
-        # `_fp_hit` latches at the first crossing; `_fp_idx` counts the samples before it and
-        # then stops, so it lands on the crossing index and saturates at the sample count when
-        # the source never crosses — the post-scan argmax form's two results, without its
-        # trajectory. The latch is inlined into the counter (rather than read from the state)
-        # because both update from the previous carry, and a crossing on the very first sample
-        # has to yield 0.
+            raise ValueError(
+                f"Observation {name!r} streams aggregation: first_passage but has no parameters.threshold to cross."
+            )
         _hit = f"Max(_fp_hit, Piecewise((1, {source} >= {threshold}), (0, True)))"
         states = [
             {"name": "_fp_hit", "init": 0.0, "update": _parse(_hit), "evict": None, "is_accumulator": True},
-            {"name": "_fp_idx", "init": 0.0, "update": _parse(f"_fp_idx + 1 - ({_hit})"), "evict": None, "is_accumulator": True},
+            {
+                "name": "_fp_idx",
+                "init": 0.0,
+                "update": _parse(f"_fp_idx + 1 - ({_hit})"),
+                "evict": None,
+                "is_accumulator": True,
+            },
         ]
         output = _parse("_fp_idx")
     elif agg == "mean":
