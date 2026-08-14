@@ -96,7 +96,7 @@ network:
   transforms:
   - name: weight
     equation:
-      rhs: W / mean(W[W > 0])
+      rhs: weight / mean(weight[weight > 0])
       latex: false
   bids_dir: ../networks/bids/dk_average
   structural_measures:

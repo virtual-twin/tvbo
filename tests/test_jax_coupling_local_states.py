@@ -14,6 +14,7 @@ NOT pinned here, because it is an open question rather than a bug: what a BARE
 Kuramoto form in the database uses it as the source. Until one reading wins, these tests
 assert only the behaviour both agree on.
 """
+
 from __future__ import annotations
 
 import re
@@ -25,26 +26,29 @@ from tvbo.classes.dynamics import Dynamics
 
 
 def _model():
-    return Dynamics(**{
-        "name": "twostate",
-        "parameters": {"K": {"value": 1.0}},
-        "coupling_inputs": {"c": {}},
-        "state_variables": {
-            "theta": {"equation": {"rhs": "K * c"}, "initial_value": 0.0,
-                      "coupling_variable": True},
-            "v": {"equation": {"rhs": "-v"}, "initial_value": 0.0},
-        },
-    })
+    return Dynamics(
+        **{
+            "name": "twostate",
+            "parameters": {"K": {"value": 1.0}},
+            "coupling_inputs": {"c": {}},
+            "state_variables": {
+                "theta": {"equation": {"rhs": "K * c"}, "initial_value": 0.0, "coupling_variable": True},
+                "v": {"equation": {"rhs": "-v"}, "initial_value": 0.0},
+            },
+        }
+    )
 
 
 def _render(pre, local_states, post="gx_0"):
-    coupling = Coupling(**{
-        "name": "c",
-        "delayed": False,
-        "local_states": local_states,
-        "pre_expression": {"rhs": pre},
-        "post_expression": {"rhs": post},
-    })
+    coupling = Coupling(
+        **{
+            "name": "c",
+            "delayed": False,
+            "local_states": local_states,
+            "pre_expression": {"rhs": pre},
+            "post_expression": {"rhs": post},
+        }
+    )
     return coupling.render_code("jax", model=_model())
 
 

@@ -67,15 +67,13 @@ def test_unknown_output_is_rejected_at_construction():
         _model(["not_a_variable"])
 
 
-
-
 @pytest.mark.parametrize(
     "indices, n_channels, expected",
     [
-        ([2], 4, "2"),                    # single channel drops the variable dim
-        ([2, 3], 4, "2:"),                # contiguous to the end -> open slice
+        ([2], 4, "2"),  # single channel drops the variable dim
+        ([2, 3], 4, "2:"),  # contiguous to the end -> open slice
         ([0, 1], 2, "0:"),
-        ([0, 1], 4, "0:2"),               # contiguous, bounded
+        ([0, 1], 4, "0:2"),  # contiguous, bounded
         ([2, 3, 0, 1], 4, "[2, 3, 0, 1]"),  # reordered -> explicit index list
     ],
 )

@@ -24,6 +24,7 @@ Run with ``--strict`` (recommended in CI and any deploy job) to also fail on
 Rewrites the block between # BEGIN:replication-autogen … # END:replication-autogen
 markers in _toc.yml.
 """
+
 from __future__ import annotations
 
 import sys
@@ -37,8 +38,8 @@ REPL_DIR = DOCS_DIR / "Replication"
 BEGIN_MARKER = "# BEGIN:replication-autogen"
 END_MARKER = "# END:replication-autogen"
 
-L1 = "              "   # 14 sp
-L2 = "                  "   # 18 sp
+L1 = "              "  # 14 sp
+L2 = "                  "  # 18 sp
 
 _TRUE = {"true", "yes", "on", "1"}
 _FALSE = {"false", "no", "off", "0"}
@@ -109,16 +110,14 @@ def enforce_gate(strict: bool) -> list[Path]:
 
     if withheld:
         print(
-            "\n[replication gate] WITHHELD (publish: false) — these still render "
-            "into _site and are reachable by direct URL:",
+            "\n[replication gate] WITHHELD (publish: false) — these still render into _site and are reachable by direct URL:",
             file=sys.stderr,
         )
         for qmd in withheld:
             url = qmd.relative_to(DOCS_DIR).with_suffix(".html")
             print(f"    {qmd.relative_to(DOCS_DIR)}  ->  /{url}", file=sys.stderr)
         print(
-            "    Do not deploy this build. Remove the page from docs/ or run with "
-            "--strict in CI.",
+            "    Do not deploy this build. Remove the page from docs/ or run with --strict in CI.",
             file=sys.stderr,
         )
 
@@ -136,8 +135,7 @@ def enforce_gate(strict: bool) -> list[Path]:
 
     if strict and withheld:
         print(
-            "\n[replication gate] ERROR — --strict: withheld studies must not be "
-            "present in a published build.",
+            "\n[replication gate] ERROR — --strict: withheld studies must not be present in a published build.",
             file=sys.stderr,
         )
         raise SystemExit(1)
@@ -156,19 +154,19 @@ SECTION_PAGES = [
 def build_block(published: list[Path]) -> str:
     lines: list[str] = [BEGIN_MARKER]
     lines.append(f'{L1}- section: "Replication Studies"')
-    lines.append(f'{L1}  href: Replication/index.qmd')
-    lines.append(f'{L1}  contents:')
+    lines.append(f"{L1}  href: Replication/index.qmd")
+    lines.append(f"{L1}  contents:")
 
     for text, href in SECTION_PAGES:
         if (DOCS_DIR / href).is_file():
             lines.append(f'{L2}- text: "{text}"')
-            lines.append(f'{L2}  href: {href}')
+            lines.append(f"{L2}  href: {href}")
 
     for qmd in published:
         title = extract_title(qmd) or qmd.stem.replace("_", " ").title()
         rel = qmd.relative_to(DOCS_DIR)
         lines.append(f'{L2}- text: "{title}"')
-        lines.append(f'{L2}  href: {rel}')
+        lines.append(f"{L2}  href: {rel}")
 
     lines.append(END_MARKER)
     return "\n".join(lines)
@@ -186,7 +184,7 @@ def update_toc(strict: bool = False) -> None:
         raise SystemExit(1)
 
     new_block = build_block(published)
-    new_text = text[:begin_idx] + new_block + text[end_idx + len(END_MARKER):]
+    new_text = text[:begin_idx] + new_block + text[end_idx + len(END_MARKER) :]
 
     print(f"[replication gate] {len(published)} study page(s) cleared for publication.")
 

@@ -46,8 +46,9 @@ SPELLINGS = {
     ),
 }
 
-EXPECTED = np.where((VAR >= PARAMETERS["onset"]) & (VAR < PARAMETERS["onset"] + PARAMETERS["duration"]),
-                    PARAMETERS["amplitude"], 0.0)
+EXPECTED = np.where(
+    (VAR >= PARAMETERS["onset"]) & (VAR < PARAMETERS["onset"] + PARAMETERS["duration"]), PARAMETERS["amplitude"], 0.0
+)
 
 
 def _stimulus(**equation):
@@ -57,9 +58,7 @@ def _stimulus(**equation):
         label="Pulse",
         description="Rectangular pulse.",
         equation=tvbo_schema.Equation(**equation),
-        parameters={
-            name: tvbo_schema.Parameter(name=name, value=value) for name, value in PARAMETERS.items()
-        },
+        parameters={name: tvbo_schema.Parameter(name=name, value=value) for name, value in PARAMETERS.items()},
     )
 
 

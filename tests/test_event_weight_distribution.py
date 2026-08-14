@@ -24,17 +24,17 @@ EXP = {
         "state_variables": {"x": {"equation": {"rhs": "-a * x + drive"}, "initial_value": 0.0}},
     },
     "network": {"number_of_nodes": 6},
-    "integration": {"method": "heun", "step_size": 0.1, "duration": 1.0,
-                    "transient_time": 0.0, "unit": "s"},
+    "integration": {"method": "heun", "step_size": 0.1, "duration": 1.0, "transient_time": 0.0, "unit": "s"},
     "events": {
         "drive": {
             "event_type": "stimulus",
             "target_variable": "drive",
             "equation": {"rhs": "Piecewise((1.0, t >= 0.2), (0.0, True))"},
-            "weight_distribution": {"name": "Normal",
-                                    "parameters": {"mean": {"value": 1.0},
-                                                   "std": {"value": 0.1}},
-                                    "seed": 3},
+            "weight_distribution": {
+                "name": "Normal",
+                "parameters": {"mean": {"value": 1.0}, "std": {"value": 0.1}},
+                "seed": 3,
+            },
         }
     },
 }

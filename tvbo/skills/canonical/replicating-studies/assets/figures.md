@@ -64,8 +64,18 @@ the first render.** Three defaults are wrong for a replication and cost a re-ren
 - **Grammar panels need zero code.** A `cartesian` or `heatmap` panel binds data through its
   `layers`: `used: {iri: tvbo:exp/<Study>/exp-3, output: <var|observation__name>, sel: {dim: label}}`
   (label-keyed, never positional — this binding **is** the PROV `used` edge), plus `mark`
-  (`line`/`scatter`/`rule`/`band`; implied for heatmap) and `encoding: {x, y, color}` naming
-  container dims/coords. `transform:` names an optional presentation-only reduction. Bind an
+  (`line`/`scatter`/`rule`/`band`/`area`/`bar`; implied for heatmap) and `encoding: {x, y, color}`
+  naming container dims/coords. **`band` draws a spread** (`fill_between`) and its output must
+  carry a length-2 axis beside the swept one — the analysis returns `mean ± sd` as ONE
+  `(n, 2)` array with a `bound: [lo, hi]` coordinate, so a figure cannot bind a lower edge
+  from one run and an upper edge from another. Draw the band layer BEFORE its mean line, or
+  the fill covers the curve it belongs to. **`rule` draws a reference line at a value the
+  CONTAINER holds** — an ensemble mean, a published number the recipe declared as an analysis
+  argument and the analysis echoed back — with the encoded channel picking the orientation
+  (`x:` vertical). Prefer it to the `axvline`/`axhline` opts, which take a literal typed into
+  the spec and render as subdued gridlines: a marker the figure exists to make is worth a
+  styleable layer and a PROV edge. `transform:` names an optional presentation-only
+  reduction. Bind an
   **in-study** experiment by id — `used: {experiment: 3}` — rather than spelling a full `iri`:
   it needs no hardcoded study key and registers the run-order dependency (that experiment runs
   before the figure). Reserve an explicit `iri` for a curated/external container.
@@ -76,6 +86,19 @@ the first render.** Three defaults are wrong for a replication and cost a re-ren
   `@bsplot.register_transform` `fn(da)->da`. This is the escape hatch — reach for it only when
   the grammar genuinely can't express the panel (twin axes, connectome, brain surface, dense
   nested subgrids), not by default.
+- **A bespoke panel that builds its OWN sub-grid uses `fig.subplot_mosaic` + the compressed
+  engine — never `add_gridspec` + `canvas.draw()` + `get_position()` + `fig.add_axes`/`fig.text`
+  at hand-computed figure coordinates.** A custom panel takes over the whole figure and its
+  single `ax` is unused, so drop it first (`for a in list(fig.axes): a.remove()`), then lay the
+  whole panel out as ONE mosaic — heatmap cells, a per-row colorbar cell, and a thin spanning
+  header row for group titles — with `width_ratios`/`height_ratios` and `empty_sentinel="."`
+  gutters; let `layout: compressed` pack it. Put the shared axis titles on `fig.supxlabel` /
+  `fig.supylabel`, not `fig.text`. The manual-coordinate approach (`canvas.draw()` to read boxes,
+  then `add_axes`/`text` off `get_position()`) is fragile, breaks under a resize or a different
+  DPI, and is what makes a grid figure look "off". **And do NOT rely on the base style moving the
+  spines**: if the panel wants a clean data-box (a heatmap), reset each axes' spines explicitly
+  (`s.set_visible(True); s.set_position(("outward", 0))`) so an offset-spine base style can't
+  detach them from the axes.
 
 ## Choosing WHICH point a marker marks
 

@@ -98,9 +98,7 @@ def test_seed_axis_with_noise_still_renders():
 def test_no_seed_axis_is_unaffected_without_noise():
     """A deterministic experiment with no seed axis must still render."""
     spec = copy.deepcopy(MINI_EXP)
-    spec["explorations"]["seed_sweep"]["space"] = [
-        {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}}
-    ]
+    spec["explorations"]["seed_sweep"]["space"] = [{"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}}]
     code = SimulationExperiment(**spec).render_code("tvboptim")
     assert "grid_state.dynamics.a" in code
 
@@ -116,3 +114,61 @@ def test_seed_axis_is_rejected_under_a_strategy_that_bypasses_the_grid():
     spec["explorations"]["seed_sweep"]["strategy"] = "nsga2"
     with pytest.raises(ValueError, match="has no consumer"):
         SimulationExperiment(**spec).render_code("tvboptim")
+
+
+def test_a_builder_supplied_seed_axis_still_reseeds(tmp_path, monkeypatch):
+    """A seed axis whose values come from a `builder:` must reach the PRNG key too.
+
+    The builder branch used to claim this axis first and route it through the generic
+    parameter path, where `execution` has no consumer — so every cell ran the identical
+    noise while the container still reported a seed dimension. That is precisely the fake
+    ensemble the checks above exist to refuse, arrived at by walking past them. Seed values
+    are baked into the grid at codegen, so a builder on this axis is resolved there.
+    """
+    import sys
+
+    (tmp_path / "seed_builder.py").write_text("def paired_seeds(n):\n    return list(range(int(n))) + list(range(int(n)))\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    sys.modules.pop("seed_builder", None)
+
+    spec = _with_noise(copy.deepcopy(MINI_EXP))
+    spec["explorations"]["seed_sweep"]["space"] = [
+        {
+            "parameter": "execution.random_seed",
+            "builder": {"callable": {"name": "paired_seeds", "module": "seed_builder"}, "arguments": {"n": {"value": 3}}},
+        }
+    ]
+    code = SimulationExperiment(**spec).render_code("tvboptim")
+    assert "_noise_seed" in code and "noise.key" in code, "the seed must reach the PRNG key"
+    assert "random_seed[6]" in code, "the builder's six seeds must be resolved at codegen"
+    assert "seed_builder" not in code, "a resolved seed axis carries values, not a call"
+
+
+def test_a_seed_builder_needing_runtime_data_is_refused(tmp_path, monkeypatch):
+    """Refuse rather than defer: the grid's seeds are fixed at codegen, so a builder that
+    cannot answer until run time has no way to supply them."""
+    spec = _with_noise(copy.deepcopy(MINI_EXP))
+    spec["explorations"]["seed_sweep"]["space"] = [
+        {
+            "parameter": "execution.random_seed",
+            "builder": {
+                "callable": {"name": "paired_seeds", "module": "seed_builder"},
+                "arguments": {"n": {"value": "observations.rate"}},
+            },
+        }
+    ]
+    with pytest.raises(ValueError, match="resolve at run time"):
+        SimulationExperiment(**spec).render_code("tvboptim")
+
+
+def test_two_axis_seed_sweep_maps_the_noise_seed_leaf_to_its_label():
+    """A (parameter x seed) product keys results by value, and the seed axis's grid
+    column is the ``dynamics._noise_seed`` state leaf — codegen must map that bare name
+    onto the declared ``execution.random_seed`` label, or cell placement cannot find
+    the axis and the container assembly refuses rather than scrambling.
+    """
+    spec = _with_noise(copy.deepcopy(MINI_EXP))
+    spec["explorations"]["seed_sweep"]["space"].insert(0, {"parameter": "MiniOsc.a", "domain": {"lo": 0.5, "hi": 1.5, "n": 3}})
+    code = SimulationExperiment(**spec).render_code("tvboptim")
+    squeezed = "".join(code.split()).replace('"', "'")
+    assert "_bare_to_label.setdefault('_noise_seed',str(_a.name))" in squeezed

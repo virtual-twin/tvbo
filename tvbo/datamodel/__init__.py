@@ -21,12 +21,9 @@ from .schema import *  # noqa: E402, F401, F403
 
 # ── UnitEnum: normalize aliases on construction ──────────────────────
 # The auto-generated __post_init__ has two coercion patterns:
-#   self.unit = UnitEnum(raw_string)              — constructor
-#   self.distance_unit = getattr(UnitEnum, text)  — attribute access
+# self.unit = UnitEnum(raw_string)              — constructor self.distance_unit = getattr(UnitEnum, text)  — attribute access
 #
-# Problems: (1) constructor rejects human-readable aliases ("s^-1"),
-#           (2) getattr returns PermissibleValue, not UnitEnum, which
-#               breaks on as_dict() round-trips (JAX tree_unflatten).
+# Problems: (1) constructor rejects human-readable aliases ("s^-1"), (2) getattr returns PermissibleValue, not UnitEnum, which breaks on as_dict() round-trips (JAX tree_unflatten).
 #
 # Fix: patch __init__ to coerce any input to a canonical string key.
 
@@ -83,11 +80,8 @@ def _unit_enum_init(self, code):
 
 _UnitEnum.__init__ = _unit_enum_init
 
-# Patch metaclass so getattr(UnitEnum, "mm") returns a UnitEnum instance
-# instead of a bare PermissibleValue. The auto-generated __post_init__
-# uses `self.distance_unit = getattr(UnitEnum, self.distance_unit)`.
-# Without this patch, that stores a PermissibleValue which as_dict()
-# serializes to a huge dict that becomes an unparseable JsonObj on round-trip.
+# Patch metaclass so getattr(UnitEnum, "mm") returns a UnitEnum instance instead of a bare PermissibleValue. The auto-generated __post_init__ uses `self.distance_unit = getattr(UnitEnum, self.distance_unit)`.
+# Without this patch, that stores a PermissibleValue which as_dict() serializes to a huge dict that becomes an unparseable JsonObj on round-trip.
 _UnitEnumMeta = type(_UnitEnum)
 _meta_orig_getattribute = _UnitEnumMeta.__getattribute__
 
@@ -168,4 +162,3 @@ from tvbo.datamodel import pydantic as tvbopydantic  # noqa: E402, F401
 
 sys.modules["tvbo.datamodel.tvbo_datamodel"] = tvbo_datamodel
 sys.modules["tvbo.datamodel.tvbopydantic"] = tvbopydantic
-

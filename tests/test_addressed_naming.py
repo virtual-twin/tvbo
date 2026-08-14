@@ -94,9 +94,7 @@ def _event_experiment(name: str) -> SimulationExperiment:
 
 
 def _member_experiment(observation: str = "recorded_ts", function: str = "subsample"):
-    return SimulationExperiment(
-        **yaml.safe_load(MEMBER_RECIPE.format(observation=observation, function=function))
-    )
+    return SimulationExperiment(**yaml.safe_load(MEMBER_RECIPE.format(observation=observation, function=function)))
 
 
 def test_an_event_name_reaches_every_position_it_is_emitted_in():
@@ -109,11 +107,11 @@ def test_an_event_name_reaches_every_position_it_is_emitted_in():
     """
     code = _event_experiment("flash_burst").render_code(format="tvboptim")
 
-    assert '"flash_burst": 1,' in code                      # EXTERNAL_INPUTS
-    assert 'hasattr(external, "flash_burst")' in code       # the binding
-    assert "class flash_burstInput(" in code                # the input class
-    assert '"flash_burst": flash_burstInput()' in code      # the wiring
-    assert "+ flash_burst" in code                          # the dfun's free symbol
+    assert '"flash_burst": 1,' in code  # EXTERNAL_INPUTS
+    assert 'hasattr(external, "flash_burst")' in code  # the binding
+    assert "class flash_burstInput(" in code  # the input class
+    assert '"flash_burst": flash_burstInput()' in code  # the wiring
+    assert "+ flash_burst" in code  # the dfun's free symbol
 
 
 @pytest.mark.parametrize("fmt", ["tvboptim", "jax"])
@@ -169,8 +167,7 @@ def test_a_target_variable_is_a_name_too():
 def test_a_models_own_functions_are_held_to_it_as_well():
     """A `Dynamics` function is emitted as a `def` exactly as an experiment's is."""
     raw = yaml.safe_load(MEMBER_RECIPE.format(observation="recorded_ts", function="subsample"))
-    raw["dynamics"]["functions"] = {"sig func": {"source_code": "1/(1+exp(-x))",
-                                                 "arguments": {"x": {}}}}
+    raw["dynamics"]["functions"] = {"sig func": {"source_code": "1/(1+exp(-x))", "arguments": {"x": {}}}}
 
     with pytest.raises(ValueError, match="function name is not a name"):
         SimulationExperiment(**raw)

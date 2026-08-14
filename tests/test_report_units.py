@@ -101,9 +101,7 @@ class TestDeclaredVersusDerived:
 
     def test_no_marking_at_all_without_the_argument(self, jansen):
         """Every existing caller renders exactly what it did before."""
-        assert report.parameter_table(jansen.parameters) == report.param_table(
-            jansen.parameters, name_header="Parameter"
-        )
+        assert report.parameter_table(jansen.parameters) == report.param_table(jansen.parameters, name_header="Parameter")
 
 
 class TestVerdictTable:

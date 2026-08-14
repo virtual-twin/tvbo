@@ -102,7 +102,7 @@ for every experiment — Jansen1995's seven emitted 1209 lines and ~31 tables wh
 call emits 136 and 3, with 115 lines identical between experiments 1 and 5.
 
 ```python
-print(STUDY.report("qmd", level=3))                        # whole Methods, deduplicated
+print(STUDY.report("qmd", level=3))  # whole Methods, deduplicated
 print(STUDY.report("qmd", level=3, part="supplementary"))  # the experiments demoted out of it
 print(EXP.dynamics.render("markdown", citeformat="quarto"))  # one model's equations, standalone
 ```
@@ -258,7 +258,8 @@ attribution in one function behind the permission check, so the public build nei
 file nor builds the credit string:
 
 ```python
-CLEARED = False   # True ONLY with documented clearance from publisher AND authors
+CLEARED = False  # True ONLY with documented clearance from publisher AND authors
+
 
 def original(fig):
     if not (CLEARED or INTERNAL):
@@ -311,7 +312,9 @@ and hold to six rules.
 
 - **A small grid is a sentence.** A numbered, captioned float tells the reader something has to
   be looked up, and journals cap how many a paper may carry — spending one on two numbers is a
-  waste of a scarce slot. `md_table` writes any grid below the threshold as prose instead
+  waste of a scarce slot. `report.table_or_prose` writes any grid below the threshold as prose
+  instead; `md_table` always renders a table, so reach for it when the grid has no subject
+  column for a sentence to name (a parameter block, a state-variable list, a scorecard).
   (`Exp 50 — Duration: 2000 ms; Exp 51 — Duration: 7000 ms.`), so this is automatic; the rule
   matters when you are deciding whether to build a table at all. Pang2023 had a one-row float
   announcing that a model declares one event.
@@ -398,9 +401,12 @@ greyscale scan through the default colormap. The layout lives in `tvbo.utils.rep
 ```python
 from tvbo.utils.report import report_figure, show_report_figure
 
-staged = report_figure(FIGDIR / f"{fig.name}.png",                    # ours
-                       reference_image_for(fig, ROOT) if INTERNAL else None,   # theirs
-                       STAGE, credit="Pang et al. 2023 (c)")
+staged = report_figure(
+    FIGDIR / f"{fig.name}.png",  # ours
+    reference_image_for(fig, ROOT) if INTERNAL else None,  # theirs
+    STAGE,
+    credit="Pang et al. 2023 (c)",
+)
 print(f"![**Fig {n}.** {figure_caption(fig)}](_figures/{staged.name}){{width=100%}}")
 ```
 

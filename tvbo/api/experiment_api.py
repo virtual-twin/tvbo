@@ -90,11 +90,11 @@ def get_sidecar(experiment_id: str, format: str = Query("yaml")):
 # Export format discovery & render endpoints
 # ---------------------------------------------------------------------------
 
+
 class RenderExperimentRequest(BaseModel):
     """Request body for rendering or saving an experiment from an inline payload.
 
-    Describes a [`SimulationExperiment`](/api/classes/experiment.qmd) to render (or
-    persist) via the `POST /api/v1/experiments/render` endpoint. The experiment is
+    Describes a [`SimulationExperiment`](/api/classes/experiment.qmd) to render (or persist) via the `POST /api/v1/experiments/render` endpoint. The experiment is
     supplied inline as a mapping rather than referenced by stored id.
 
     Args:
@@ -120,6 +120,7 @@ class RenderExperimentRequest(BaseModel):
 
 def _resolve_format(fmt: str):
     from tvbo import export as _export
+
     try:
         return _export.resolve(fmt)
     except ValueError as e:
@@ -136,6 +137,7 @@ def _render_response(content: str, fmt, filename: Optional[str]) -> Response:
 def get_export_formats():
     """Return supported export formats for UI dropdowns."""
     from tvbo import export as _export
+
     return _export.list_format_dicts()
 
 
@@ -183,4 +185,3 @@ def render_experiment_payload(request: RenderExperimentRequest):
 
     content = exp.render(format=fmt.key, **request.render_kwargs)
     return _render_response(content, fmt, request.filename)
-

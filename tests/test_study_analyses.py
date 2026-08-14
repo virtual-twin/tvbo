@@ -6,6 +6,7 @@ contract a recipe author relies on — what runs when, what lands on disk, and w
 ``used: {analysis: …}`` resolves to — plus the errors that must be loud rather than
 silent (duplicate names, unknown references, cycles, an unrenderable backend).
 """
+
 import sys
 import types
 
@@ -25,8 +26,7 @@ def calls(monkeypatch):
 
     def spectrum(n=4, scale=1.0):
         mod.record.append("spectrum")
-        return {"power": xr.DataArray(np.arange(n) * scale, dims=["mode"],
-                                      coords={"mode": np.arange(1, n + 1)})}
+        return {"power": xr.DataArray(np.arange(n) * scale, dims=["mode"], coords={"mode": np.arange(1, n + 1)})}
 
     def total(power=None):
         mod.record.append("total")
@@ -48,8 +48,7 @@ def calls(monkeypatch):
 
 
 def _analysis(name, fn, args=None, **kw):
-    return Analysis(name=name, callable={"name": fn, "module": "_test_analysis_calls"},
-                    arguments=args or {}, **kw)
+    return Analysis(name=name, callable={"name": fn, "module": "_test_analysis_calls"}, arguments=args or {}, **kw)
 
 
 # ------------------------------------------------------------------ persistence
@@ -57,8 +56,7 @@ def _analysis(name, fn, args=None, **kw):
 
 def test_a_declared_analysis_writes_a_container_a_figure_can_bind(tmp_path, calls):
     """The result lands where every consumer looks, keyed so ``output:`` addresses it."""
-    path = analysis_io.run_analysis(
-        _analysis("spec", "spectrum", {"n": {"value": 5}}), tmp_path)
+    path = analysis_io.run_analysis(_analysis("spec", "spectrum", {"n": {"value": 5}}), tmp_path)
 
     assert path == tmp_path / "results" / "spec" / "result.h5"
     ds = xr.open_dataset(path, engine="h5netcdf")
@@ -110,9 +108,7 @@ def test_the_sidecar_records_what_was_invoked_and_what_it_used(tmp_path, calls):
 
 def test_an_analysis_reads_another_analysis_by_name(tmp_path, calls):
     analysis_io.run_analysis(_analysis("spec", "spectrum", {"n": {"value": 4}}), tmp_path)
-    analysis_io.run_analysis(
-        _analysis("agg", "total", {"power": {"used": {"analysis": "spec", "output": "power"}}}),
-        tmp_path)
+    analysis_io.run_analysis(_analysis("agg", "total", {"power": {"used": {"analysis": "spec", "output": "power"}}}), tmp_path)
 
     ds = xr.open_dataset(tmp_path / "results" / "agg" / "result.h5", engine="h5netcdf")
     try:
@@ -127,8 +123,8 @@ def test_a_sourced_argument_arrives_labelled_not_bare(tmp_path, calls):
     analysis_io.run_analysis(_analysis("spec", "spectrum", {"n": {"value": 4}}), tmp_path)
     calls.total = lambda power=None: seen.setdefault("power", power) and {"sum": 0.0}
     kwargs = analysis_io._kwargs_of(
-        _analysis("agg", "total", {"power": {"used": {"analysis": "spec", "output": "power"}}}),
-        tmp_path)
+        _analysis("agg", "total", {"power": {"used": {"analysis": "spec", "output": "power"}}}), tmp_path
+    )
 
     assert isinstance(kwargs["power"], xr.DataArray)
     assert kwargs["power"].dims == ("mode",)
@@ -145,13 +141,11 @@ def test_a_figure_layer_binds_an_analysis_by_name(tmp_path, calls):
     from tvbo.datamodel.schema import DataRef
 
     study_dir = tmp_path / "study"
-    analysis_io.run_analysis(
-        _analysis("spec", "spectrum", {"n": {"value": 4}}), study_dir / "output")
+    analysis_io.run_analysis(_analysis("spec", "spectrum", {"n": {"value": 4}}), study_dir / "output")
 
     bsplot._container_path.cache_clear()
     key = bsplot._used_ref(DataRef(analysis="spec", output="power"))
-    assert bsplot._container_path(key, study_dir) == str(
-        (study_dir / "output" / "results" / "spec" / "result.h5").resolve())
+    assert bsplot._container_path(key, study_dir) == str((study_dir / "output" / "results" / "spec" / "result.h5").resolve())
 
 
 # --------------------------------------------------------------------- schedule
@@ -161,8 +155,7 @@ def test_an_analysis_reading_an_experiment_is_deferred_past_the_runs():
     """Ordering follows the ``used:`` edges, including transitively."""
     first = _analysis("basis", "spectrum")
     after = _analysis("fc", "total", {"x": {"used": {"experiment": "2", "output": "bold"}}})
-    downstream = _analysis("summary", "total",
-                           {"x": {"used": {"analysis": "fc", "output": "sum"}}})
+    downstream = _analysis("summary", "total", {"x": {"used": {"analysis": "fc", "output": "sum"}}})
 
     before, post = analysis_io.schedule([downstream, after, first])
 
@@ -186,8 +179,7 @@ def test_duplicate_analysis_names_are_refused():
 
 def test_an_unknown_analysis_reference_is_refused():
     with pytest.raises(KeyError, match="does not declare"):
-        analysis_io.schedule(
-            [_analysis("b", "total", {"x": {"used": {"analysis": "ghost", "output": "p"}}})])
+        analysis_io.schedule([_analysis("b", "total", {"x": {"used": {"analysis": "ghost", "output": "p"}}})])
 
 
 def test_a_dependency_cycle_is_refused():
@@ -202,9 +194,7 @@ def test_a_dependency_cycle_is_refused():
 
 
 def test_the_declared_backend_selects_the_renderer(tmp_path, calls):
-    analysis_io.run_analysis(
-        _analysis("spec", "spectrum", {"n": {"value": 3}},
-                  execution={"backend": "inprocess"}), tmp_path)
+    analysis_io.run_analysis(_analysis("spec", "spectrum", {"n": {"value": 3}}, execution={"backend": "inprocess"}), tmp_path)
 
     assert (tmp_path / "results" / "spec" / "result.h5").is_file()
 
@@ -212,16 +202,18 @@ def test_the_declared_backend_selects_the_renderer(tmp_path, calls):
 def test_a_backend_with_no_analysis_renderer_raises_rather_than_substituting(tmp_path, calls):
     """An analysis asking for an engine we cannot render must not be run by another."""
     with pytest.raises(NotImplementedError, match="no analysis renderer"):
-        analysis_io.run_analysis(
-            _analysis("spec", "spectrum", execution={"backend": "julia"}), tmp_path)
+        analysis_io.run_analysis(_analysis("spec", "spectrum", execution={"backend": "julia"}), tmp_path)
 
 
 def test_a_class_call_analysis_is_instantiated_then_invoked(tmp_path, calls):
     analysis_io.run_analysis(_analysis("spec", "spectrum", {"n": {"value": 4}}), tmp_path)
     scaled = Analysis(
         name="scaled",
-        class_call={"name": "Scaled", "module": "_test_analysis_calls",
-                    "constructor_args": [{"name": "factor", "value": 10.0}]},
+        class_call={
+            "name": "Scaled",
+            "module": "_test_analysis_calls",
+            "constructor_args": [{"name": "factor", "value": 10.0}],
+        },
         arguments={"power": {"used": {"analysis": "spec", "output": "power"}}},
     )
     analysis_io.run_analysis(scaled, tmp_path)
@@ -236,13 +228,11 @@ def test_a_class_call_analysis_is_instantiated_then_invoked(tmp_path, calls):
 def test_an_observation_pipeline_form_is_refused_with_the_reason(tmp_path):
     """`equation:`/`function:` describe a step inside a solve, not a call over containers."""
     with pytest.raises(ValueError, match="observation\n? *pipeline|observation pipeline"):
-        analysis_io.run_analysis(
-            Analysis(name="e", equation={"rhs": "x + 1"}), tmp_path)
+        analysis_io.run_analysis(Analysis(name="e", equation={"rhs": "x + 1"}), tmp_path)
 
 
 def test_value_and_used_on_one_argument_are_refused(tmp_path, calls):
-    bad = _analysis("spec", "spectrum",
-                    {"n": {"value": 5, "used": {"analysis": "other", "output": "p"}}})
+    bad = _analysis("spec", "spectrum", {"n": {"value": 5, "used": {"analysis": "other", "output": "p"}}})
     with pytest.raises(ValueError, match="mutually exclusive"):
         analysis_io.run_analysis(bad, tmp_path)
 
@@ -274,8 +264,7 @@ def test_dependents_of_an_experiment_are_found_transitively(calls):
         _analysis("unrelated", "spectrum", {"n": {"used": {"experiment": 7, "output": "w"}}}),
     ]
 
-    assert analysis_io.dependents_of(analyses, experiments=["1"]) == [
-        "reduction", "landscape", "correlation"]
+    assert analysis_io.dependents_of(analyses, experiments=["1"]) == ["reduction", "landscape", "correlation"]
     assert analysis_io.dependents_of(analyses, experiments=["7"]) == ["unrelated"]
     assert analysis_io.dependents_of(analyses, experiments=["9"]) == []
 
@@ -293,12 +282,9 @@ def test_dependents_of_an_analysis_are_found_transitively(calls):
         _analysis("unrelated", "spectrum", {"n": {"used": {"experiment": 7, "output": "w"}}}),
     ]
 
-    assert analysis_io.dependents_of(analyses, changed_analyses=["reduction"]) == [
-        "reduction", "landscape", "correlation"]
-    assert analysis_io.dependents_of(analyses, changed_analyses=["landscape"]) == [
-        "landscape", "correlation"]
-    assert analysis_io.dependents_of(analyses, changed_analyses=["correlation"]) == [
-        "correlation"]
+    assert analysis_io.dependents_of(analyses, changed_analyses=["reduction"]) == ["reduction", "landscape", "correlation"]
+    assert analysis_io.dependents_of(analyses, changed_analyses=["landscape"]) == ["landscape", "correlation"]
+    assert analysis_io.dependents_of(analyses, changed_analyses=["correlation"]) == ["correlation"]
     assert analysis_io.dependents_of(analyses, changed_analyses=["unrelated"]) == ["unrelated"]
 
 
@@ -318,13 +304,10 @@ def test_naming_an_analysis_pulls_in_only_the_inputs_that_are_missing(calls):
     ]
 
     assert analysis_closure(analyses, ["summary"], exists=lambda n: True) == {"summary"}
-    assert analysis_closure(analyses, ["summary"], exists=lambda n: False) == {
-        "summary", "curves", "basis"}
+    assert analysis_closure(analyses, ["summary"], exists=lambda n: False) == {"summary", "curves", "basis"}
     # `curves` exists, so it is readable and the walk stops there — `basis` is never reached.
-    assert analysis_closure(analyses, ["summary"], exists=lambda n: n == "curves") == {
-        "summary"}
-    assert analysis_closure(analyses, ["summary"], exists=lambda n: n == "basis") == {
-        "summary", "curves"}
+    assert analysis_closure(analyses, ["summary"], exists=lambda n: n == "curves") == {"summary"}
+    assert analysis_closure(analyses, ["summary"], exists=lambda n: n == "basis") == {"summary", "curves"}
 
 
 @pytest.mark.parametrize("written", ["exp-1", "exp1", "1", 1])
@@ -334,16 +317,14 @@ def test_every_spelling_of_an_experiment_id_is_the_same_edge(calls, written):
     Matching only the literal string makes the whole staleness warning report nothing, and
     an empty stale set is indistinguishable from a clean one.
     """
-    analyses = [_analysis("reduction", "spectrum",
-                          {"n": {"used": {"experiment": written, "output": "w"}}})]
+    analyses = [_analysis("reduction", "spectrum", {"n": {"used": {"experiment": written, "output": "w"}}})]
 
     assert analysis_io.dependents_of(analyses, experiments=["1"]) == ["reduction"]
 
 
 def test_an_iri_reference_counts_as_a_dependency(calls):
     """A layer may name its source by IRI rather than by id; both are the same edge."""
-    analyses = [_analysis("from_iri", "spectrum",
-                          {"n": {"used": {"iri": "tvbo:exp/Study/exp-3", "output": "w"}}})]
+    analyses = [_analysis("from_iri", "spectrum", {"n": {"used": {"iri": "tvbo:exp/Study/exp-3", "output": "w"}}})]
 
     assert analysis_io.dependents_of(analyses, experiments=["3"]) == ["from_iri"]
 
@@ -360,8 +341,7 @@ def test_an_experiment_known_only_by_key_still_matches_a_numeric_used_edge(calls
     from tvbo.cli._common import experiment_ids
 
     exp = SimpleNamespace(key="exp-1")
-    analyses = [_analysis("reduction", "spectrum",
-                          {"n": {"used": {"experiment": "exp-1", "output": "w"}}})]
+    analyses = [_analysis("reduction", "spectrum", {"n": {"used": {"experiment": "exp-1", "output": "w"}}})]
 
     wanted = experiment_ids(exp)
 

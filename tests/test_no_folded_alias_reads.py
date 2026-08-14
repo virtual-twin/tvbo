@@ -21,16 +21,13 @@ from tvbo.datamodel.dialect_tables import SLOT_ALIASES
 
 ROOT = Path(__file__).resolve().parents[1] / "tvbo"
 
-SKIP = ("datamodel/schema.py", "datamodel/pydantic.py", "datamodel/tvbo_datamodel",
-        "datamodel/dialect")
+SKIP = ("datamodel/schema.py", "datamodel/pydantic.py", "datamodel/tvbo_datamodel", "datamodel/dialect")
 
 ACCESSORS = ("getattr", "slot", "_p")
 
 EXEMPT = {
-    ("adapters/tvb.py", "sim.integrator", "dt"):
-        "a TVB Simulator being imported FROM; its integrator owns `dt`",
-    ("templates/tvboptim/tvbo-tvboptim-experiment.py.mako", "_res", "dt"):
-        "a tvboptim solution object, which owns `dt`",
+    ("adapters/tvb.py", "sim.integrator", "dt"): "a TVB Simulator being imported FROM; its integrator owns `dt`",
+    ("templates/tvboptim/tvbo-tvboptim-experiment.py.mako", "_res", "dt"): "a tvboptim solution object, which owns `dt`",
 }
 """``(path, object, alias) -> why THAT object is not a TVBO one``, so the alias is its name.
 
@@ -50,6 +47,7 @@ def _real_slot_names():
     branch's own direction — and an empty set silently widens the check onto names that
     classes legitimately own, failing the hook on correct code.
     """
+
     def declared(cls, attribute):
         """*cls*'s field names under *attribute*, or none.
 
@@ -71,10 +69,9 @@ def _real_slot_names():
 
 _REAL_SLOTS = _real_slot_names()
 
-CHECKED = {alias: canonical
-           for mapping in SLOT_ALIASES.values()
-           for alias, canonical in mapping.items()
-           if alias not in _REAL_SLOTS}
+CHECKED = {
+    alias: canonical for mapping in SLOT_ALIASES.values() for alias, canonical in mapping.items() if alias not in _REAL_SLOTS
+}
 
 
 def _sources():
@@ -83,9 +80,7 @@ def _sources():
             yield path
 
 
-ACCESSOR_READ = re.compile(
-    r"(?:%s)\(\s*(?P<obj>[^,()\n]+?)\s*,\s*['\"](?P<name>\w+)['\"]" % "|".join(ACCESSORS)
-)
+ACCESSOR_READ = re.compile(r"(?:%s)\(\s*(?P<obj>[^,()\n]+?)\s*,\s*['\"](?P<name>\w+)['\"]" % "|".join(ACCESSORS))
 """``getattr(obj, "name"`` and friends, for templates that no parser will accept.
 
 The object group admits neither parentheses nor a newline: widening it let a call with no
@@ -195,19 +190,20 @@ def test_the_guard_accepts_the_canonical_first_fallback(tmp_path):
     """`canonical or alias` is the idiom the codebase uses; it must not be flagged."""
     alias, canonical = next(iter(CHECKED.items()))
     ok = tmp_path / "ok.py"
-    ok.write_text(
-        f'x = (\n    getattr(obj, "{canonical}", None)\n    or getattr(obj, "{alias}", None)\n)\n'
-    )
+    ok.write_text(f'x = (\n    getattr(obj, "{canonical}", None)\n    or getattr(obj, "{alias}", None)\n)\n')
 
     assert _bare_alias_reads(ok) == []
 
 
-@pytest.mark.parametrize("label,body", [
-    ("no alias read at all", 'a = slot(figure)\nb = fmt(x, "dt")\n'),
-    ("nested accessor", 'x = getattr(getattr(exp, "dt", None), "foo", None)\nstep = exp.step_size\n'),
-    ("subscripted object", 'step = nodes[0].step_size\nx = getattr(nodes[0], "dt", None)\n'),
-    ("call result", 'cfg = get(obj).step_size\nx = getattr(get(obj), "dt", None)\n'),
-])
+@pytest.mark.parametrize(
+    "label,body",
+    [
+        ("no alias read at all", 'a = slot(figure)\nb = fmt(x, "dt")\n'),
+        ("nested accessor", 'x = getattr(getattr(exp, "dt", None), "foo", None)\nstep = exp.step_size\n'),
+        ("subscripted object", 'step = nodes[0].step_size\nx = getattr(nodes[0], "dt", None)\n'),
+        ("call result", 'cfg = get(obj).step_size\nx = getattr(get(obj), "dt", None)\n'),
+    ],
+)
 def test_the_guard_does_not_fire_on_these(label, body, tmp_path):
     """Shapes that are correct code. This runs as a pre-push hook, so a false positive
     blocks a push on work that has nothing wrong with it — which is worse than a miss."""

@@ -1,4 +1,5 @@
 """``tvbo validate`` — sub-tree of validators (schema today; OMEX/SED-ML/BIDS later)."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -11,21 +12,32 @@ from . import _common
 app = typer.Typer(name="validate", no_args_is_help=True)
 
 
+def _declared_class(data: object) -> str | None:
+    """Target class named by the document's own file envelope, or None.
+
+    Reads ``tvbo_class`` (the envelope key every self-describing TVBO file carries,
+    CURIE-prefixed as ``tvbo:Network``) and strips the prefix to the bare class name.
+    """
+    if not isinstance(data, dict):
+        return None
+    declared = data.get("tvbo_class")
+    return str(declared).split(":")[-1] if declared else None
+
+
 @app.command("schema", help="Structural JSON Schema validation of a YAML file.")
 def schema(
     path: Path = typer.Argument(..., exists=True, readable=True, help="YAML file."),
     target_class: str = typer.Option(
-        None, "--class",
-        help="Target class (auto-detected from `class:` key when omitted).",
+        None,
+        "--class",
+        help="Target class (auto-detected from the file's `tvbo_class:` envelope when omitted).",
     ),
 ) -> None:
     """Validate *path* against the shipped JSON Schema; auto-detects the target class.
 
     Uses the lightweight ``jsonschema`` library against the pre-generated
-    ``tvbo/datamodel/tvbo_datamodel.schema.json`` (produced from the LinkML schema at
-    build time), so validation needs no runtime ``linkml``. The file is parsed with
-    TVBO's loader so ``!include``/merge-key extensions and slot aliases resolve exactly
-    as they do when the model is loaded.
+    ``tvbo/datamodel/tvbo_datamodel.schema.json`` (produced from the LinkML schema at build time), so validation needs no runtime ``linkml``. The file is parsed with
+    TVBO's loader so ``!include``/merge-key extensions and slot aliases resolve exactly as they do when the model is loaded.
     """
     import json
 
@@ -44,7 +56,7 @@ def schema(
     data = yaml_loader.load_as_dict(str(path))
 
     if target_class is None:
-        target_class = (data.get("class") if isinstance(data, dict) else None) or "SimulationExperiment"
+        target_class = _declared_class(data) or "SimulationExperiment"
 
     defs = full.get("$defs", {})
     if target_class not in defs:
@@ -69,18 +81,16 @@ def schema(
 # C5 stubs: bids / sedml / omex / all
 # ---------------------------------------------------------------------------
 
+
 @app.command("bids", help="Validate a BIDS dataset directory.")
 def bids(
-    path: Path = typer.Argument(..., exists=True, file_okay=False, dir_okay=True,
-                                readable=True, help="BIDS dataset root."),
+    path: Path = typer.Argument(..., exists=True, file_okay=False, dir_okay=True, readable=True, help="BIDS dataset root."),
 ) -> None:
     """Validate a BIDS dataset directory using the `bids_validator` package."""
     try:
         from bids_validator import BIDSValidator  # type: ignore
     except ImportError:
-        _common.die(
-            "bids_validator not installed. Install with: uv pip install bids-validator"
-        )
+        _common.die("bids_validator not installed. Install with: uv pip install bids-validator")
 
     v = BIDSValidator()
     bad: list[str] = []
@@ -125,6 +135,7 @@ def omex(
     Full COMBINE-archive validation is scheduled for the post-P3 milestone.
     """
     import zipfile
+
     if not zipfile.is_zipfile(path):
         _common.die(f"{path}: not a zip archive (OMEX must be a zip).")
     with zipfile.ZipFile(path) as zf:
@@ -139,10 +150,10 @@ def omex(
 
 @app.command("all", help="Recursively validate every YAML file under DIR via `validate schema`.")
 def all_(
-    directory: Path = typer.Argument(..., exists=True, file_okay=False, dir_okay=True,
-                                     readable=True, help="Directory to walk."),
-    pattern: str = typer.Option("*.yaml", "--pattern",
-                                help="Glob pattern, e.g. '*.yml' or '**/*.yaml'."),
+    directory: Path = typer.Argument(
+        ..., exists=True, file_okay=False, dir_okay=True, readable=True, help="Directory to walk."
+    ),
+    pattern: str = typer.Option("*.yaml", "--pattern", help="Glob pattern, e.g. '*.yml' or '**/*.yaml'."),
     fail_fast: bool = typer.Option(False, "--fail-fast", help="Stop at first failure."),
 ) -> None:
     """Recursively run `validate schema` on every YAML file under *directory* matching *pattern*."""
@@ -153,7 +164,7 @@ def all_(
     for fp in files:
         try:
             schema(path=fp, target_class=None)  # type: ignore[arg-type]
-        except SystemExit as exc:
+        except (typer.Exit, SystemExit) as exc:
             failures.append((fp, str(exc)))
             if fail_fast:
                 break

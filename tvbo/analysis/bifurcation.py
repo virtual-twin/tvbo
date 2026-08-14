@@ -50,63 +50,71 @@ _C = {
 
 
 # ── Unified style registry for bifurcation diagram elements ──────────
-# Single source of truth for branch lines (SFP/UFP/SLC/ULC) and special
-# points (LP/HB/BP/PD/TR/CP/GH/ZH/BT/HH). Used by plot_branch,
-# plot_special_points, plot_3d, and the BifLegend helper.
+# Single source of truth for branch lines (SFP/UFP/SLC/ULC) and special points (LP/HB/BP/PD/TR/CP/GH/ZH/BT/HH). Used by plot_branch, plot_special_points, plot_3d, and the BifLegend helper.
 
 _LINE_BASE = dict(marker="", lw=1.5, picker=True, pickradius=8, zorder=5)
-_MARK_BASE = dict(lw=0, linestyle="none", fillstyle="full",
-                  markeredgecolor="white", markeredgewidth=0.8,
-                  markersize=8, alpha=1, zorder=50)
+_MARK_BASE = dict(
+    lw=0, linestyle="none", fillstyle="full", markeredgecolor="white", markeredgewidth=0.8, markersize=8, alpha=1, zorder=50
+)
 
 BIF_STYLES = {
     # Branch lines
-    "SFP": dict(color=_C["stable"],   ls="-", lw=1.5, label="Stable FP",   zorder=5),
-    "UFP": dict(color=_C["stable"],   ls=":", lw=1.5, label="Unstable FP", zorder=5),
-    "SLC": dict(color=_C["po_line"],  ls="-", lw=1.5, label="Stable LC",   zorder=5),
-    "ULC": dict(color=_C["po_line"],  ls=":", lw=1.5, label="Unstable LC", zorder=5),
+    "SFP": dict(color=_C["stable"], ls="-", lw=1.5, label="Stable FP", zorder=5),
+    "UFP": dict(color=_C["stable"], ls=":", lw=1.5, label="Unstable FP", zorder=5),
+    "SLC": dict(color=_C["po_line"], ls="-", lw=1.5, label="Stable LC", zorder=5),
+    "ULC": dict(color=_C["po_line"], ls=":", lw=1.5, label="Unstable LC", zorder=5),
     # Codim-1 special points
-    "LP": dict(marker="o", color=_C["fold"], label="LP"),     # fold / saddle-node
-    "HB": dict(marker="o", color=_C["hopf"], label="Hopf"),   # Hopf
-    "BP": dict(marker="s", color=_C["bp"],   label="BP"),     # branch point
-    "PD": dict(marker="^", color=_C["pd"],   label="PD"),     # period doubling
-    "TR": dict(marker="*", color=_C["ns"],   label="Torus"),  # torus / Neimark-Sacker
+    "LP": dict(marker="o", color=_C["fold"], label="LP"),  # fold / saddle-node
+    "HB": dict(marker="o", color=_C["hopf"], label="Hopf"),  # Hopf
+    "BP": dict(marker="s", color=_C["bp"], label="BP"),  # branch point
+    "PD": dict(marker="^", color=_C["pd"], label="PD"),  # period doubling
+    "TR": dict(marker="*", color=_C["ns"], label="Torus"),  # torus / Neimark-Sacker
     # Codim-2 special points
     "CP": dict(marker="D", color=_C["cusp"], label="Cusp"),
-    "GH": dict(marker="d", color=_C["gh"],   label="GH"),
-    "BT": dict(marker="*", color=_C["bt"],   label="BT"),
-    "ZH": dict(marker="o", color=_C["zh"],   label="ZH"),
-    "HH": dict(marker="p", color=_C["gh"],   label="HH"),
+    "GH": dict(marker="d", color=_C["gh"], label="GH"),
+    "BT": dict(marker="*", color=_C["bt"], label="BT"),
+    "ZH": dict(marker="o", color=_C["zh"], label="ZH"),
+    "HH": dict(marker="p", color=_C["gh"], label="HH"),
     # PO-on-LC special points (prefix LC_)
-    "LC_LP": dict(marker="o", color="purple",     label="LC LP"),
-    "LC_PD": dict(marker="^", color="cyan",       label="LC PD"),
+    "LC_LP": dict(marker="o", color="purple", label="LC LP"),
+    "LC_PD": dict(marker="^", color="cyan", label="LC PD"),
     "LC_TR": dict(marker="*", color="yellowgreen", label="LC TR"),
-    "LC_BP": dict(marker="s", color=_C["bp"],     label="LC BP"),
+    "LC_BP": dict(marker="s", color=_C["bp"], label="LC BP"),
     "LC_EP": dict(marker="none", color=_C["po_line"], label="LC EP"),
 }
 
-# Canonical TY normalisation (backend special-point label → canonical short
-# code, e.g. "LP"/"HB"/"BP"). The AUTHORITATIVE source is the ontology's
-# bifurcation taxonomy (``ontology/tvb-o-bifurcation.ttl``, merged into
-# ``tvbo.owl``): each type carries a ``tvbo:canonicalCode`` plus ``skos:altLabel``
-# for every backend spelling (BifurcationKit ``:bp``/``:fold``, AUTO ``LP``/``HB``/
-# ``BP``, PyRates, ...). The map below is a built-in fallback, used verbatim only
-# when the ontology cannot be read (headless / minimal installs); the ontology is
-# layered on top of it so it stays the single source of truth.
+# Canonical TY normalisation (backend special-point label → canonical short code, e.g. "LP"/"HB"/"BP"). The AUTHORITATIVE source is the ontology's bifurcation taxonomy (``ontology/tvb-o-bifurcation.ttl``, merged into
+# ``tvbo.owl``): each type carries a ``tvbo:canonicalCode`` plus ``skos:altLabel`` for every backend spelling (BifurcationKit ``:bp``/``:fold``, AUTO ``LP``/``HB``/
+# ``BP``, PyRates, ...). The map below is a built-in fallback, used verbatim only when the ontology cannot be read (headless / minimal installs); the ontology is layered on top of it so it stays the single source of truth.
 _TY_ALIASES_FALLBACK = {
     # equilibria
-    "fold": "LP", "saddle-node": "LP", "sn": "LP", "lp": "LP",
-    "hopf": "HB", "hb": "HB",
-    "bp": "BP", "branchpoint": "BP", "branch-point": "BP",
+    "fold": "LP",
+    "saddle-node": "LP",
+    "sn": "LP",
+    "lp": "LP",
+    "hopf": "HB",
+    "hb": "HB",
+    "bp": "BP",
+    "branchpoint": "BP",
+    "branch-point": "BP",
     # PO codim-1
-    "pd": "PD", "period-doubling": "PD",
-    "ns": "TR", "tr": "TR", "neimark-sacker": "TR", "torus": "TR",
+    "pd": "PD",
+    "period-doubling": "PD",
+    "ns": "TR",
+    "tr": "TR",
+    "neimark-sacker": "TR",
+    "torus": "TR",
     # codim-2
-    "cusp": "CP", "cp": "CP",
-    "gh": "GH", "bautin": "GH",
-    "bt": "BT", "bogdanov-takens": "BT",
-    "zh": "ZH", "zero-hopf": "ZH",
-    "hh": "HH", "hopf-hopf": "HH",
+    "cusp": "CP",
+    "cp": "CP",
+    "gh": "GH",
+    "bautin": "GH",
+    "bt": "BT",
+    "bogdanov-takens": "BT",
+    "zh": "ZH",
+    "zero-hopf": "ZH",
+    "hh": "HH",
+    "hopf-hopf": "HH",
 }
 
 _TY_ALIASES_CACHE = None
@@ -115,8 +123,7 @@ _TY_ALIASES_CACHE = None
 def _derive_ty_aliases():
     """Build ``{backend-label(lower) → canonical code}`` from the ontology.
 
-    Reads ``tvbo:canonicalCode`` + ``skos:altLabel`` off the merged bifurcation
-    taxonomy so the label map tracks the ontology automatically. Falls back to
+    Reads ``tvbo:canonicalCode`` + ``skos:altLabel`` off the merged bifurcation taxonomy so the label map tracks the ontology automatically. Falls back to
     (and is layered over) ``_TY_ALIASES_FALLBACK`` if the ontology is missing.
     """
     aliases = dict(_TY_ALIASES_FALLBACK)
@@ -170,8 +177,7 @@ def canonical_ty(ty):
 def get_bif_style(ty, base=None):
     """Look up the merged style dict for a TY (e.g. 'LP', 'fold', 'SLC').
 
-    ``base`` defaults to the line/marker base style depending on whether
-    the entry is a branch (no marker) or a point (marker is present).
+    ``base`` defaults to the line/marker base style depending on whether the entry is a branch (no marker) or a point (marker is present).
     """
     key = canonical_ty(ty) or ty
     style = BIF_STYLES.get(key)
@@ -186,6 +192,7 @@ def get_bif_style(ty, base=None):
 
 # ── Coord DSL & PO orbit reductions ──────────────────────────────────
 # Reduce an orbit mesh (n_orbit, n_time) → (n_orbit,) per-step value.
+
 
 def _reduce_minmax(arr):
     return np.array([arr.min(axis=-1), arr.max(axis=-1)])
@@ -206,7 +213,7 @@ def _reduce_max(arr):
 
 
 def _reduce_norm(arr):
-    return np.sqrt((arr ** 2).mean(axis=-1))
+    return np.sqrt((arr**2).mean(axis=-1))
 
 
 PO_REDUCTIONS = {
@@ -237,7 +244,7 @@ def resolve_coord(df, expr, state_var_index=None, po_orbits=None):
     for name, fn in PO_REDUCTIONS.items():
         prefix = f"{name}("
         if s.startswith(prefix) and s.endswith(")"):
-            sv = s[len(prefix):-1].strip()
+            sv = s[len(prefix) : -1].strip()
             if po_orbits:
                 arr = np.array([np.asarray(o[sv]) for o in po_orbits])  # (n_orb, n_t)
                 if name == "avg":
@@ -249,8 +256,7 @@ def resolve_coord(df, expr, state_var_index=None, po_orbits=None):
     return compute_voi(df, s, state_var_index=state_var_index)
 
 
-def resolve_coords(coords, df, state_var_index=None, po_orbits=None,
-                   default_voi=None, default_param="param"):
+def resolve_coords(coords, df, state_var_index=None, po_orbits=None, default_voi=None, default_param="param"):
     """Normalise the user's ``coords`` argument to a tuple of arrays.
 
     ``coords`` accepts:
@@ -354,8 +360,7 @@ def continuation_kind(obj):
 def _extract_equilibrium_df(br):
     """Extract equilibrium continuation branch as a pandas DataFrame.
 
-    Converts Julia StructArrays to Python via JSON-like column extraction,
-    which is robust across juliacall versions.
+    Converts Julia StructArrays to Python via JSON-like column extraction, which is robust across juliacall versions.
     """
     from juliacall import Main
 
@@ -457,16 +462,13 @@ def compute_voi(df, VOI, prefix="", state_var_index=None):
 class BifurcationResult:
     """Backend-agnostic bifurcation result.
 
-    A single ``BifurcationResult`` represents one continuation branch
-    (equilibrium, periodic orbit, or codim-2 curve) regardless of the
+    A single ``BifurcationResult`` represents one continuation branch (equilibrium, periodic orbit, or codim-2 curve) regardless of the
     backend that produced it (BifurcationKit.jl, PyRates/PyCoBi,
-    AUTO-07p/numcont). Once the data lives in ``self.df`` and the
-    nested ``periodic_orbits`` / ``codim2_curves`` lists, *all* plotting,
+    AUTO-07p/numcont). Once the data lives in ``self.df`` and the nested ``periodic_orbits`` / ``codim2_curves`` lists, *all* plotting,
     legend, and export methods (``plot``, ``plot_3d``, ``bif_legend``,
     ``enable_picker``, ...) work uniformly across backends.
 
-    There are *no* backend-specific result subclasses. Each adapter
-    extracts a unified DataFrame and either calls the constructor
+    There are *no* backend-specific result subclasses. Each adapter extracts a unified DataFrame and either calls the constructor
     directly with ``df=...`` or one of the factory shortcuts:
 
     * ``BifurcationResult.from_bifkit(br, ...)`` — BifurcationKit.jl
@@ -516,8 +518,7 @@ class BifurcationResult:
         if not hasattr(self, "periodic_orbits"):
             self.periodic_orbits = []
 
-        # Annotate special points (BK path only — PyRates/NumCont
-        # already populate ``df['specialpoint']`` in their adapters)
+        # Annotate special points (BK path only — PyRates/NumCont already populate ``df['specialpoint']`` in their adapters)
         if sp_list:
             if "specialpoint" not in self.df.columns:
                 self.df["specialpoint"] = None
@@ -544,12 +545,9 @@ class BifurcationResult:
                     self.df.at[rix, "sp_norm"] = norm
                     self.df.at[rix, "sp_idx"] = idx_val
 
-        # Disambiguate BifurcationKit's overloaded ``:bp``. On an equilibrium
-        # branch it labels BOTH genuine branch points and saddle-node folds
+        # Disambiguate BifurcationKit's overloaded ``:bp``. On an equilibrium branch it labels BOTH genuine branch points and saddle-node folds
         # ``:bp``. The ontology distinguishes them by branch geometry (Fold ⇒
-        # LimitPointGeometry, BranchPoint ⇒ BranchCrossingGeometry); a fold is
-        # the one where the continuation parameter turns around. Relabel those
-        # to ``fold`` so ``canonical_ty`` resolves them to ``LP``.
+        # LimitPointGeometry, BranchPoint ⇒ BranchCrossingGeometry); a fold is the one where the continuation parameter turns around. Relabel those to ``fold`` so ``canonical_ty`` resolves them to ``LP``.
         if sp_list and kind == "EquilibriumCont":
             self._reclassify_folds()
 
@@ -558,14 +556,11 @@ class BifurcationResult:
     def _reclassify_folds(self):
         """Relabel a ``:bp`` as a fold when it sits at a parameter turning point.
 
-        Operationalises the ontology's ``LimitPointGeometry`` discriminator
-        (``ontology/tvb-o-bifurcation.ttl``): on an equilibrium branch, a
-        branch-point label whose continuation parameter is a local extremum is a
-        saddle-node fold, not a transversal branch crossing.
+        Operationalises the ontology's ``LimitPointGeometry`` discriminator (``ontology/tvb-o-bifurcation.ttl``): on an equilibrium branch, a
+        branch-point label whose continuation parameter is a local extremum is a saddle-node fold, not a transversal branch crossing.
         """
         df = self.df
-        if df is None or df.empty or "specialpoint" not in df.columns \
-                or "param" not in df.columns:
+        if df is None or df.empty or "specialpoint" not in df.columns or "param" not in df.columns:
             return
         p = df["param"].to_numpy(dtype=float)
         n = len(p)
@@ -589,16 +584,13 @@ class BifurcationResult:
                 continue
             # parameter reverses direction across the point ⇒ turning point ⇒ fold
             if (p[pos] - p[lo]) * (p[hi] - p[pos]) < 0:
-                df.iat[pos, sp_col] = ",".join(
-                    "fold" if t.lower() in bp_tokens else t for t in toks
-                )
+                df.iat[pos, sp_col] = ",".join("fold" if t.lower() in bp_tokens else t for t in toks)
 
     # ── Shared post-extraction bookkeeping ──────────────────────────────
     def _finalize(self):
         """Populate ``hopf_indices`` / ``bp_indices`` (+ matching steps).
 
-        Called once by ``__init__`` regardless of which adapter built
-        the DataFrame.
+        Called once by ``__init__`` regardless of which adapter built the DataFrame.
         """
         self.hopf_indices = []
         self.bp_indices = []
@@ -618,12 +610,9 @@ class BifurcationResult:
     def to_dataset(self):
         """Return the continuation branch as a native, self-describing xarray ``Dataset``.
 
-        The branch is a labelled table indexed by continuation ``step``; the
-        continuation parameter (``ICS``, e.g. ``G``) is a coordinate along it and
-        every recorded observable / stability flag becomes a data variable. This is
-        the same labelled container the rest of tvbo uses (``ExperimentResult`` holds
-        it under ``continuations``), so continuation results persist through the
-        standard result format instead of any ad-hoc per-figure array dump.
+        The branch is a labelled table indexed by continuation ``step``; the continuation parameter (``ICS``, e.g. ``G``) is a coordinate along it and
+        every recorded observable / stability flag becomes a data variable. This is the same labelled container the rest of tvbo uses (``ExperimentResult`` holds
+        it under ``continuations``), so continuation results persist through the standard result format instead of any ad-hoc per-figure array dump.
         """
         import xarray as xr
 
@@ -657,13 +646,22 @@ class BifurcationResult:
         return cls(br=br, **kwargs)
 
     @classmethod
-    def from_pycobi(cls, ode, cont_name, *, model=None, state_var_names=None,
-                    icp=1, fp_name="param", periodic_orbit_results=None,
-                    codim2_results=None, **kwargs):
+    def from_pycobi(
+        cls,
+        ode,
+        cont_name,
+        *,
+        model=None,
+        state_var_names=None,
+        icp=1,
+        fp_name="param",
+        periodic_orbit_results=None,
+        codim2_results=None,
+        **kwargs,
+    ):
         """Wrap a PyRates / PyCoBi continuation by name.
 
-        All visualisation/export logic lives on this class -- the
-        adapter just hands the extracted DataFrame straight to
+        All visualisation/export logic lives on this class -- the adapter just hands the extracted DataFrame straight to
         ``__init__``.
         """
         sv_names = list(state_var_names or [])
@@ -674,23 +672,27 @@ class BifurcationResult:
         for po_name, _po_cont in periodic_orbit_results or []:
             periodic_orbits.append(
                 cls.from_pycobi(
-                    ode, po_name,
-                    model=model, state_var_names=sv_names,
-                    icp=icp, fp_name=fp_name,
+                    ode,
+                    po_name,
+                    model=model,
+                    state_var_names=sv_names,
+                    icp=icp,
+                    fp_name=fp_name,
                 )
             )
 
-        # Codim-2 curves: existing BifurcationResult instances; just
-        # augment with their second-parameter trajectory.
+        # Codim-2 curves: existing BifurcationResult instances; just augment with their second-parameter trajectory.
         codim2_curves = []
         ICS2 = None
         for c2_res in codim2_results or []:
             icp2 = getattr(c2_res, "_icp2", None)
             if icp2 is not None and not c2_res.df.empty:
                 c2_res.df = _add_pycobi_param2(
-                    ode, c2_res.df,
+                    ode,
+                    c2_res.df,
                     getattr(c2_res, "_cont_name", None) or cont_name,
-                    sv_names, icp2,
+                    sv_names,
+                    icp2,
                 )
             codim2_curves.append(c2_res)
         if codim2_results:
@@ -712,9 +714,19 @@ class BifurcationResult:
         return result
 
     @classmethod
-    def from_auto(cls, bd, *, cont_name=None, model=None, continuation=None,
-                  ICS=None, periodic_orbits_raw=None, codim2_raw=None,
-                  workdir=None, **kwargs):
+    def from_auto(
+        cls,
+        bd,
+        *,
+        cont_name=None,
+        model=None,
+        continuation=None,
+        ICS=None,
+        periodic_orbits_raw=None,
+        codim2_raw=None,
+        workdir=None,
+        **kwargs,
+    ):
         """Wrap an AUTO-07p ``bifDiag`` (numcont backend).
 
         Parameters
@@ -736,17 +748,19 @@ class BifurcationResult:
         for po_name, po_bd in periodic_orbits_raw or []:
             periodic_orbits.append(
                 cls.from_auto(
-                    po_bd, cont_name=po_name,
-                    model=model, continuation=continuation,
-                    ICS=ICS, workdir=workdir,
+                    po_bd,
+                    cont_name=po_name,
+                    model=model,
+                    continuation=continuation,
+                    ICS=ICS,
+                    workdir=workdir,
                 )
             )
 
         codim2_curves = []
         for c2_name, c2_source_type, c2_fp1, c2_fp2, c2_bd in codim2_raw or []:
             # The codim-2 continuation tracks (fp1, fp2). ICS=fp1 makes the
-            # 'param' column carry fp1; the 'param2' column is fp2 (already
-            # resolved by _auto_branch_to_df from PAR(.) → parnames mapping).
+            # 'param' column carry fp1; the 'param2' column is fp2 (already resolved by _auto_branch_to_df from PAR(.) → parnames mapping).
             c2_df = _extract_auto_df(c2_bd, sv_names, c2_fp1)
             # Promote second-parameter column for _plot_codim2 ergonomics
             if c2_fp2 in c2_df.columns and "param2" not in c2_df.columns:
@@ -781,8 +795,6 @@ class BifurcationResult:
             workdir=workdir,
             **kwargs,
         )
-
-
 
     def plot_special_points(self, VOI, ax=None, types=None, **kwargs):
         """Mark codim-1 special points (LP/HB/BP/PD/TR/...) on ``ax``.
@@ -820,7 +832,8 @@ class BifurcationResult:
                 voi_val = compute_voi(self.df, VOI, state_var_index=self.state_var_index).loc[i]
                 lab = style.get("label")
                 ax.plot(
-                    [r.param], [voi_val],
+                    [r.param],
+                    [voi_val],
                     marker=style.get("marker", "o"),
                     color=style.get("color", "#333"),
                     markersize=style.get("markersize", 8),
@@ -837,8 +850,7 @@ class BifurcationResult:
         """Draw the continuation branch as stability-coded line segments.
 
         Splits the branch into contiguous stable/unstable runs (and, when a
-        `branch_id` column is present, per branch) and plots each segment with
-        the style from the central registry — `SFP`/`UFP` for equilibria or
+        `branch_id` column is present, per branch) and plots each segment with the style from the central registry — `SFP`/`UFP` for equilibria or
         `SLC`/`ULC` for periodic orbits. Does nothing when the branch is empty.
 
         Args:
@@ -857,11 +869,30 @@ class BifurcationResult:
         is_po = bool(getattr(self, "is_po", False))
         lw = kwargs.pop("linewidth", kwargs.pop("lw", None))
         _plot_ignore = {
-            "periodic_orbits", "verbose", "max_steps", "ds", "dsmin", "dsmax",
-            "p_min", "p_max", "quiet", "detect_bifurcation", "nev", "n_inversion",
-            "max_bisection_steps", "tol_stability", "bothside", "bifurcation_points",
-            "n_runs", "model", "state_var_index", "ICS", "types", "coords",
-            "po_orbits", "branch_id",
+            "periodic_orbits",
+            "verbose",
+            "max_steps",
+            "ds",
+            "dsmin",
+            "dsmax",
+            "p_min",
+            "p_max",
+            "quiet",
+            "detect_bifurcation",
+            "nev",
+            "n_inversion",
+            "max_bisection_steps",
+            "tol_stability",
+            "bothside",
+            "bifurcation_points",
+            "n_runs",
+            "model",
+            "state_var_index",
+            "ICS",
+            "types",
+            "coords",
+            "po_orbits",
+            "branch_id",
         }
         plot_kwargs = {k: v for k, v in kwargs.items() if k not in _plot_ignore}
         if "stable" not in self.df.columns:
@@ -899,8 +930,7 @@ class BifurcationResult:
     def bif_legend(self, ax, tys, labels=None, **lgd_kwargs):
         """Add a curated legend listing the selected TYs.
 
-        Mirrors ``ContinuationPlot.BifLegend``: draws an off-screen artist
-        per TY using the central style registry and feeds them to a single
+        Mirrors ``ContinuationPlot.BifLegend``: draws an off-screen artist per TY using the central style registry and feeds them to a single
         ``ax.legend`` call so the user can pin exactly which entries appear.
         """
         handles = []
@@ -912,13 +942,15 @@ class BifurcationResult:
             kw = dict(style)
             if labels and k < len(labels):
                 kw["label"] = labels[k]
-            h, = ax.plot([xlim[0]], [ylim[0]], **{
-                k_: v for k_, v in kw.items()
-                if k_ not in ("picker", "pickradius", "fillstyle", "zorder")
-            })
+            (h,) = ax.plot(
+                [xlim[0]],
+                [ylim[0]],
+                **{k_: v for k_, v in kw.items() if k_ not in ("picker", "pickradius", "fillstyle", "zorder")},
+            )
             h.remove()
             handles.append(h)
-        ax.set_xlim(*xlim); ax.set_ylim(*ylim)
+        ax.set_xlim(*xlim)
+        ax.set_ylim(*ylim)
         return ax.legend(handles=handles, **lgd_kwargs)
 
     def plot_equilibrium_branch(self, ax, ICS=None, VOI=None, **kwargs):
@@ -1031,9 +1063,7 @@ class BifurcationResult:
             pass
 
         # AUTO-07p backend: ``self.br`` is a ``bifDiag`` whose call returns a
-        # ``parseS`` of ``AUTOSolution`` objects. Each holds the full orbit
-        # mesh in ``coordarray`` (shape ``(ndim, ntst*ncol+1)``), ``indepvararray``
-        # (mesh times in [0, 1] times PERIOD) and ``PAR`` (parameter dict).
+        # ``parseS`` of ``AUTOSolution`` objects. Each holds the full orbit mesh in ``coordarray`` (shape ``(ndim, ntst*ncol+1)``), ``indepvararray`` (mesh times in [0, 1] times PERIOD) and ``PAR`` (parameter dict).
         try:
             sols = self.br()  # parseS
             n_sol = len(sols)
@@ -1042,19 +1072,6 @@ class BifurcationResult:
             sv_names = list(self.state_var_index.keys()) if self.state_var_index else []
             if not sv_names:
                 sv_names = list(sols[0].coordnames)
-            par_name = None
-            if not self.df.empty:
-                # Param-name guess: first ICP from continuation, else 'a'
-                par_name = sv_names[0]  # placeholder; overridden below
-            # Pick the parameter that varies in PO branch (matches df.param)
-            try:
-                p0 = float(sols[0].PAR[list(sols[0].PAR.coordnames)[0]])
-                pN = float(sols[-1].PAR[list(sols[-1].PAR.coordnames)[0]])
-                if abs(pN - p0) > 1e-9:
-                    par_name = list(sols[0].PAR.coordnames)[0]
-            except Exception:
-                pass
-            # Better: use df['param'] alignment via solution index
             indices = np.unique(np.round(np.linspace(0, n_sol - 1, min(n_samples, n_sol))).astype(int))
             result = []
             for idx in indices:
@@ -1086,10 +1103,8 @@ class BifurcationResult:
     def plot(self, ax=None, ICS=None, VOI=None, save=None, **kwargs):
         """Render the full bifurcation diagram for this branch.
 
-        Draws the equilibrium branch, its special points and any periodic-orbit
-        envelopes (a filled min/max region, or a `max` line when only maxima are
-        available), labels the axes, adds a legend and applies publication
-        styling. When nested continuation produced codim-2 curves, dispatches to
+        Draws the equilibrium branch, its special points and any periodic-orbit envelopes (a filled min/max region, or a `max` line when only maxima are
+        available), labels the axes, adds a legend and applies publication styling. When nested continuation produced codim-2 curves, dispatches to
         the codim-2 renderer instead.
 
         Args:
@@ -1129,8 +1144,7 @@ class BifurcationResult:
                 if max_col in po_br.df.columns:
                     params = po_br.df["param"].values
                     v_max = po_br.df[max_col].values
-                    v_min = (po_br.df[min_col].values
-                             if min_col in po_br.df.columns else None)
+                    v_min = po_br.df[min_col].values if min_col in po_br.df.columns else None
                     clabels = ax.get_legend_handles_labels()[1]
                     if v_min is not None:
                         ax.fill_between(
@@ -1145,8 +1159,11 @@ class BifurcationResult:
                         ax.plot(params, v_min, "-", color=_C["po_line"], linewidth=0.8, alpha=0.6)
                     else:
                         ax.plot(
-                            params, v_max, "-",
-                            color=_C["po_line"], linewidth=1.2,
+                            params,
+                            v_max,
+                            "-",
+                            color=_C["po_line"],
+                            linewidth=1.2,
                             label=("PO max" if "PO max" not in clabels else None),
                             zorder=0,
                         )
@@ -1380,8 +1397,7 @@ class BifurcationResult:
                 min_col = f"min_{VOI}"
                 if max_col in po_br.df.columns:
                     y_po = np.full(len(po_br.df), c2_default)
-                    cols_avail = [c for c in (max_col, min_col)
-                                  if c in po_br.df.columns]
+                    cols_avail = [c for c in (max_col, min_col) if c in po_br.df.columns]
                     for col in cols_avail:
                         clabels = ax.get_legend_handles_labels()[1]
                         ax.plot(
@@ -1432,9 +1448,7 @@ class BifurcationResult:
             Y = c2_default + W_scaled
             Z = V_mesh
 
-            # Per-orbit stability → split surface into stable/unstable
-            # contiguous segments (stable → plot_surface, unstable →
-            # plot_wireframe), mirroring ContinuationPlot.PlotBifCurve.
+            # Per-orbit stability → split surface into stable/unstable contiguous segments (stable → plot_surface, unstable → plot_wireframe), mirroring ContinuationPlot.PlotBifCurve.
             if "stable" in po_br.df.columns and len(po_br.df) >= n_orb:
                 # Sample stability at the same indices used for orbits
                 sample_idx = np.unique(np.round(np.linspace(0, len(po_br.df) - 1, n_orb)).astype(int))
@@ -1453,16 +1467,28 @@ class BifurcationResult:
                 color = slc_style["color"] if slc_style else _C["po_line"]
                 if seg_stable:
                     ax.plot_surface(
-                        Xs, Ys, Zs,
-                        alpha=0.25, color=color, edgecolor="none",
-                        shade=True, zorder=3, rasterized=True,
+                        Xs,
+                        Ys,
+                        Zs,
+                        alpha=0.25,
+                        color=color,
+                        edgecolor="none",
+                        shade=True,
+                        zorder=3,
+                        rasterized=True,
                     )
                 else:
                     ax.plot_wireframe(
-                        Xs, Ys, Zs,
-                        alpha=0.5, color=color, linewidth=0.6,
-                        rstride=max(1, (s_end - s_start) // 6), cstride=10,
-                        zorder=3, rasterized=True,
+                        Xs,
+                        Ys,
+                        Zs,
+                        alpha=0.5,
+                        color=color,
+                        linewidth=0.6,
+                        rstride=max(1, (s_end - s_start) // 6),
+                        cstride=10,
+                        zorder=3,
+                        rasterized=True,
                     )
 
             # Wireframe orbit loops (every ~5th) for visual cue
@@ -1492,8 +1518,7 @@ class BifurcationResult:
                 min_col = f"min_{VOI}"
                 if max_col in po_br.df.columns:
                     y_po = np.full(len(po_br.df), c2_default)
-                    cols_avail = [c for c in (max_col, min_col)
-                                  if c in po_br.df.columns]
+                    cols_avail = [c for c in (max_col, min_col) if c in po_br.df.columns]
                     for col in cols_avail:
                         clabels = ax.get_legend_handles_labels()[1]
                         ax.plot(
@@ -1593,8 +1618,7 @@ class BifurcationResult:
     def _lc_ring_at_param(self, val, VOI, sv2, y_center, n_theta=80):
         """Sample a closed periodic-orbit loop at ``param=val`` for 3D overlay.
 
-        Returns ``(X, Y, Z)`` arrays (length ``n_theta + 1``, last point
-        repeats the first) tracing the limit cycle in the same coordinates
+        Returns ``(X, Y, Z)`` arrays (length ``n_theta + 1``, last point repeats the first) tracing the limit cycle in the same coordinates
         used by :meth:`plot_3d` (``x = param``, ``y = y_center + sv2_disp``,
         ``z = VOI``), or ``None`` if no PO branch covers ``val``.
         """
@@ -1624,9 +1648,7 @@ class BifurcationResult:
                 z = np.interp(t_uni, t_norm, orb[VOI])
                 w = np.interp(t_uni, t_norm, orb[sv2])
 
-                # Replicate plot_3d's W-scaling: collect all sv2 samples to
-                # get the global W_range and use abs(y_center)*0.5 (or 5.0)
-                # as the y_range proxy when no codim-2 curves exist.
+                # Replicate plot_3d's W-scaling: collect all sv2 samples to get the global W_range and use abs(y_center)*0.5 (or 5.0) as the y_range proxy when no codim-2 curves exist.
                 all_w = []
                 for o in orbits:
                     if sv2 in o:
@@ -1644,8 +1666,7 @@ class BifurcationResult:
                 Z = np.append(z, z[0])
                 return X, Y, Z
 
-            # Fallback: AUTO-style envelope. Reconstruct an ellipse from
-            # max_<sv> radii in the (sv2, VOI) plane around the equilibrium.
+            # Fallback: AUTO-style envelope. Reconstruct an ellipse from max_<sv> radii in the (sv2, VOI) plane around the equilibrium.
             max_voi = f"max_{VOI}"
             if max_voi not in df.columns:
                 continue
@@ -1658,8 +1679,7 @@ class BifurcationResult:
             z_eq = 0.0
             if not self.df.empty and "param" in self.df.columns:
                 eq_params = self.df["param"].values
-                voi_eq = compute_voi(self.df, VOI,
-                                     state_var_index=self.state_var_index).values
+                voi_eq = compute_voi(self.df, VOI, state_var_index=self.state_var_index).values
                 z_eq = float(np.interp(val, eq_params, voi_eq))
 
             theta = np.linspace(0, 2 * np.pi, n_theta + 1)
@@ -1719,22 +1739,33 @@ class BifurcationResult:
 
         return None
 
-    def animate(self, dynamics, parameter, values, *dims,
-                kind="phaseplane", VOI=None, interval=80,
-                figsize=(11, 4.8), title_fmt="{name} = {value:+.2f}",
-                marker_kwargs=None, simulation=False,
-                simulation_duration=200.0, simulation_dt=0.01,
-                simulation_backend="tvboptim",
-                simulation_initial_values=None,
-                trajectory_kwargs=None, show_periodic_orbit=True,
-                orbit_kwargs=None, **plot_kwargs):
+    def animate(
+        self,
+        dynamics,
+        parameter,
+        values,
+        *dims,
+        kind="phaseplane",
+        VOI=None,
+        interval=80,
+        figsize=(11, 4.8),
+        title_fmt="{name} = {value:+.2f}",
+        marker_kwargs=None,
+        simulation=False,
+        simulation_duration=200.0,
+        simulation_dt=0.01,
+        simulation_backend="tvboptim",
+        simulation_initial_values=None,
+        trajectory_kwargs=None,
+        show_periodic_orbit=True,
+        orbit_kwargs=None,
+        **plot_kwargs,
+    ):
         """Animate ``dynamics`` alongside this 3D bifurcation diagram.
 
         For each value of ``parameter`` a left panel re-renders a
-        ``Dynamics`` plot (``kind`` forwarded to :func:`plot_dynamics`,
-        defaults to ``"phaseplane"``), while a right panel shows
-        :meth:`plot_3d` once with a moving marker that tracks the
-        current parameter value on the equilibrium backbone.
+        ``Dynamics`` plot (``kind`` forwarded to :func:`plot_dynamics`, defaults to ``"phaseplane"``), while a right panel shows
+        :meth:`plot_3d` once with a moving marker that tracks the current parameter value on the equilibrium backbone.
 
         Parameters
         ----------
@@ -1753,8 +1784,7 @@ class BifurcationResult:
             State variable plotted on the z-axis of the 3D diagram.
         interval : int
             Delay between frames in ms.
-        figsize : (float, float)
-        title_fmt : str
+        figsize : (float, float) title_fmt : str
             Title format with ``{name}`` and ``{value}`` placeholders.
         marker_kwargs : dict, optional
             Style overrides for the moving marker.
@@ -1791,10 +1821,7 @@ class BifurcationResult:
         values = list(values)
 
         if parameter not in dynamics.parameters:
-            raise ValueError(
-                f"parameter {parameter!r} not in dynamics "
-                f"(available: {list(dynamics.parameters)})"
-            )
+            raise ValueError(f"parameter {parameter!r} not in dynamics (available: {list(dynamics.parameters)})")
 
         dyn = copy.deepcopy(dynamics)
         VOI = self._resolve_voi(VOI)
@@ -1808,9 +1835,7 @@ class BifurcationResult:
 
             for val in values:
                 frame_initial_values = (
-                    simulation_initial_values(float(val))
-                    if callable(simulation_initial_values)
-                    else simulation_initial_values
+                    simulation_initial_values(float(val)) if callable(simulation_initial_values) else simulation_initial_values
                 )
                 if frame_initial_values is None:
                     trajectory_data.append(None)
@@ -1825,10 +1850,7 @@ class BifurcationResult:
                 exp.integration.duration = simulation_duration
                 exp.integration.step_size = simulation_dt
                 res = exp.run(simulation_backend).integration
-                trajectory_data.append({
-                    name: np.asarray(res.data.sel(variable=name)).squeeze()
-                    for name in phase_dims
-                })
+                trajectory_data.append({name: np.asarray(res.data.sel(variable=name)).squeeze() for name in phase_dims})
 
         fig = plt.figure(figsize=figsize)
         ax_left = fig.add_subplot(1, 2, 1)
@@ -1837,8 +1859,7 @@ class BifurcationResult:
 
         # Backbone position (param, c2_default, voi_eq) for marker lookup
         params = self.df["param"].values if not self.df.empty else np.array([])
-        voi_eq = (compute_voi(self.df, VOI, state_var_index=self.state_var_index).values
-                  if not self.df.empty else np.array([]))
+        voi_eq = compute_voi(self.df, VOI, state_var_index=self.state_var_index).values if not self.df.empty else np.array([])
         # y-coordinate matches plot_3d backbone (median of codim-2 if any, else 0)
         y_bb = 0.0
         if hasattr(ax_right, "lines") and ax_right.lines:
@@ -1850,13 +1871,10 @@ class BifurcationResult:
         sv_names = list(self.state_var_index.keys()) if self.state_var_index else []
         sv2 = next((s for s in sv_names if s != VOI), None)
 
-        mk = dict(marker="o", s=80, color="red", edgecolors="white",
-                  linewidths=1.0, zorder=20)
+        mk = dict(marker="o", s=80, color="red", edgecolors="white", linewidths=1.0, zorder=20)
         if marker_kwargs:
             mk.update(marker_kwargs)
-        marker = ax_right.scatter([params[0] if len(params) else 0.0],
-                                  [y_bb],
-                                  [voi_eq[0] if len(voi_eq) else 0.0], **mk)
+        marker = ax_right.scatter([params[0] if len(params) else 0.0], [y_bb], [voi_eq[0] if len(voi_eq) else 0.0], **mk)
         ring_artist = [None]  # boxed so the closure can rebind it
 
         traj_style = dict(color="red", lw=1.2, alpha=0.9, zorder=9)
@@ -1875,8 +1893,7 @@ class BifurcationResult:
                 traj = trajectory_data[frame_idx]
                 if traj is not None:
                     ax_left.plot(traj[phase_dims[0]], traj[phase_dims[1]], **traj_style)
-            ax_left.set_title(title_fmt.format(name=parameter, value=val),
-                              color="red")
+            ax_left.set_title(title_fmt.format(name=parameter, value=val), color="red")
             if len(params):
                 i = int(np.abs(params - val).argmin())
                 z_val = float(voi_eq[i]) if len(voi_eq) else 0.0
@@ -1892,9 +1909,15 @@ class BifurcationResult:
             ring = self._lc_ring_at_param(val, VOI, sv2, y_bb)
             if ring is not None:
                 X, Y, Z = ring
-                ring_artist[0], = ax_right.plot(
-                    X, Y, Z, "-", color="red", linewidth=2.0,
-                    zorder=21, alpha=0.95,
+                (ring_artist[0],) = ax_right.plot(
+                    X,
+                    Y,
+                    Z,
+                    "-",
+                    color="red",
+                    linewidth=2.0,
+                    zorder=21,
+                    alpha=0.95,
                 )
                 if show_periodic_orbit and len(phase_dims) >= 2:
                     orbit = self._lc_orbit_at_param(val, phase_dims[0], phase_dims[1])
@@ -1902,8 +1925,7 @@ class BifurcationResult:
                         ax_left.plot(*orbit, **orbit_style)
             return [ax_left, marker]
 
-        anim = FuncAnimation(fig, _update, frames=len(values),
-                             interval=interval, blit=False)
+        anim = FuncAnimation(fig, _update, frames=len(values), interval=interval, blit=False)
         plt.close(fig)
         return anim
 
@@ -1912,32 +1934,39 @@ class BifurcationResult:
 #
 # These functions convert backend-native objects (PyCoBi ``ODESystem``,
 # AUTO-07p ``bifDiag``) into the unified DataFrame schema consumed by
-# :class:`BifurcationResult`. Keeping them at module level (instead of
-# nested inside subclasses) makes the data flow explicit:
+# :class:`BifurcationResult`. Keeping them at module level (instead of nested inside subclasses) makes the data flow explicit:
 #
 #     backend_object → _extract_<backend>_df(...) → BifurcationResult(df=...)
 #
-# and lets the same plotting/legend/export code apply to *every*
-# backend without inheritance.
+# and lets the same plotting/legend/export code apply to *every* backend without inheritance.
 
 # Standard columns expected by all extractors
 _BIF_STANDARD_COLS = ["param", "stable", "step", "specialpoint", "n_unstable", "n_imag"]
 
 # AUTO label → canonical specialpoint name used by plotting layer
 _AUTO_LABEL_MAP = {
-    "HB": "hopf", "LP": "fold", "BP": "bp", "PD": "pd", "TR": "ns",
-    "EP": "endpoint", "MX": "mx", "UZ": "uz",
-    "BT": "bt", "CP": "cusp", "GH": "gh", "ZH": "zh",
+    "HB": "hopf",
+    "LP": "fold",
+    "BP": "bp",
+    "PD": "pd",
+    "TR": "ns",
+    "EP": "endpoint",
+    "MX": "mx",
+    "UZ": "uz",
+    "BT": "bt",
+    "CP": "cusp",
+    "GH": "gh",
+    "ZH": "zh",
 }
 
 
 # ── PyRates / PyCoBi extractor ──────────────────────────────────────────
 
+
 def _add_pycobi_param2(ode, df, cont_name, state_var_names, icp2):
     """Append a ``param2`` column to a codim-2 DataFrame.
 
-    Pulls the second free-parameter trajectory from PyCoBi's raw AUTO
-    branch (or, on failure, its summary).
+    Pulls the second free-parameter trajectory from PyCoBi's raw AUTO branch (or, on failure, its summary).
     """
     par2_col = f"PAR({icp2})"
     try:
@@ -1975,12 +2004,10 @@ def _add_pycobi_param2(ode, df, cont_name, state_var_names, icp2):
 def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
     """Convert a PyCoBi continuation result into the unified DataFrame.
 
-    Uses the full raw AUTO branch for equilibria (every continuation
-    step) and falls back to ``get_summary`` -- which provides min/max
+    Uses the full raw AUTO branch for equilibria (every continuation step) and falls back to ``get_summary`` -- which provides min/max
     envelopes -- for periodic-orbit branches.
     """
-    auto_to_bif = {k: v for k, v in _AUTO_LABEL_MAP.items()
-                   if k in {"LP", "HB", "BP", "PD", "TR", "BT", "CP", "GH", "ZH"}}
+    auto_to_bif = {k: v for k, v in _AUTO_LABEL_MAP.items() if k in {"LP", "HB", "BP", "PD", "TR", "BT", "CP", "GH", "ZH"}}
 
     def _empty_df():
         return pd.DataFrame(columns=list(state_var_names or []) + _BIF_STANDARD_COLS)
@@ -2109,9 +2136,7 @@ def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
     sv_keys = {}
     if state_var_names:
         for i, sv_name in enumerate(state_var_names):
-            sv_keys[sv_name] = next(
-                (k for k in (sv_name, f"U({i + 1})") if k in branch_data), None
-            )
+            sv_keys[sv_name] = next((k for k in (sv_name, f"U({i + 1})") if k in branch_data), None)
 
     rows = []
     for step in range(n_steps):
@@ -2169,6 +2194,7 @@ def _extract_pycobi_df(ode, cont_name, state_var_names, icp):
 
 # ── AUTO-07p (numcont) extractor ────────────────────────────────────────
 
+
 def _auto_branch_to_df(branch, sv_names, fp_name):
     """Convert one AUTO ``branch`` into the unified DataFrame."""
     coordnames = list(branch.coordnames)
@@ -2184,9 +2210,13 @@ def _auto_branch_to_df(branch, sv_names, fp_name):
     c = getattr(branch, "c", {}) or {}
     parnames_raw = c.get("parnames", {}) if isinstance(c, dict) else {}
     pname_by_idx = {}
-    items_iter = (parnames_raw.items() if isinstance(parnames_raw, dict)
-                  else parnames_raw if isinstance(parnames_raw, (list, tuple))
-                  else [])
+    items_iter = (
+        parnames_raw.items()
+        if isinstance(parnames_raw, dict)
+        else parnames_raw
+        if isinstance(parnames_raw, (list, tuple))
+        else []
+    )
     for k, v in items_iter:
         try:
             pname_by_idx[int(k)] = str(v)
@@ -2215,10 +2245,8 @@ def _auto_branch_to_df(branch, sv_names, fp_name):
         if ucol in df.columns:
             df[sv] = df[ucol]
 
-    # Periodic-orbit branches: AUTO writes ``MAX <sv>`` / ``MIN <sv>``
-    # (or ``MAX U(i)``) into the b-file. Map those to the canonical
-    # ``max_<sv>`` / ``min_<sv>`` columns the plot layer expects, and
-    # fall back to ``MAX`` as the SV column when no U(i) was emitted.
+    # Periodic-orbit branches: AUTO writes ``MAX <sv>`` / ``MIN <sv>`` (or ``MAX U(i)``) into the b-file. Map those to the canonical
+    # ``max_<sv>`` / ``min_<sv>`` columns the plot layer expects, and fall back to ``MAX`` as the SV column when no U(i) was emitted.
     for i, sv in enumerate(sv_names, start=1):
         for prefix, target in (("MAX", "max"), ("MIN", "min")):
             for src in (f"{prefix} {sv}", f"{prefix} U({i})"):
@@ -2245,8 +2273,7 @@ def _auto_branch_to_df(branch, sv_names, fp_name):
     labels = getattr(branch, "labels", None)
     if labels is not None:
         by_label = getattr(labels, "by_label", None)
-        label_iter = (by_label.items() if hasattr(by_label, "items")
-                      else labels.items() if hasattr(labels, "items") else [])
+        label_iter = by_label.items() if hasattr(by_label, "items") else labels.items() if hasattr(labels, "items") else []
         for label, points in label_iter:
             canon = _AUTO_LABEL_MAP.get(str(label).upper())
             if not canon:
@@ -2267,8 +2294,7 @@ def _extract_auto_df(bd, sv_names, fp_name):
     """Concatenate every branch in an AUTO ``bifDiag`` into one DataFrame.
 
     Adds a ``branch_id`` column so plotting can keep sub-branches distinct.
-    For periodic-orbit branches, augments missing ``min_<sv>`` columns by
-    scanning the orbit solutions in ``bd()`` (AUTO does not write MIN to
+    For periodic-orbit branches, augments missing ``min_<sv>`` columns by scanning the orbit solutions in ``bd()`` (AUTO does not write MIN to
     the b-file).
     """
     frames = []
@@ -2282,8 +2308,7 @@ def _extract_auto_df(bd, sv_names, fp_name):
     df = pd.concat(frames, ignore_index=True)
 
     # Fill missing min_<sv> by sampling orbit solutions when this is a PO bd.
-    needs_min = [sv for sv in sv_names
-                 if f"max_{sv}" in df.columns and f"min_{sv}" not in df.columns]
+    needs_min = [sv for sv in sv_names if f"max_{sv}" in df.columns and f"min_{sv}" not in df.columns]
     if needs_min:
         try:
             sols = bd()
@@ -2297,8 +2322,7 @@ def _extract_auto_df(bd, sv_names, fp_name):
                     s = sols[sidx]
                     arr = np.array(s.coordarray)
                     try:
-                        p_val = float(s.PAR[fp_name]) if fp_name else float(s.PAR[
-                            list(s.PAR.coordnames)[0]])
+                        p_val = float(s.PAR[fp_name]) if fp_name else float(s.PAR[list(s.PAR.coordnames)[0]])
                     except Exception:
                         continue
                     if params is None or len(params) == 0:
@@ -2333,12 +2357,12 @@ __all__ = [
 
 # ── Interactive curve picker (port of ContinuationPlot.CurvePicker) ──
 
+
 class CurvePicker:
     """Click any branch line to inspect the underlying point.
 
     Activated via ``BifurcationResult.enable_picker(ax, callback=...)``.
-    Each branch line drawn by ``plot_branch`` carries ``picker=True`` so
-    matplotlib raises a ``pick_event`` on click; the picker resolves the
+    Each branch line drawn by ``plot_branch`` carries ``picker=True`` so matplotlib raises a ``pick_event`` on click; the picker resolves the
     nearest df row and forwards it to ``callback(result, row_index)``.
     """
 
@@ -2368,9 +2392,9 @@ class CurvePicker:
                 self._marker.remove()
             except Exception:
                 pass
-        self._marker, = ax.plot([x[ind]], [y[ind]], "o",
-                                color="C0", zorder=100, ms=8,
-                                markeredgecolor="white", markeredgewidth=1)
+        (self._marker,) = ax.plot(
+            [x[ind]], [y[ind]], "o", color="C0", zorder=100, ms=8, markeredgecolor="white", markeredgewidth=1
+        )
         self.fig.canvas.draw_idle()
         # Resolve nearest df row by param value
         try:
@@ -2383,8 +2407,7 @@ class CurvePicker:
     def disconnect(self):
         """Detach the pick-event handler so clicks are no longer captured.
 
-        Safe to call more than once; the connection id is cleared after the
-        first disconnect.
+        Safe to call more than once; the connection id is cleared after the first disconnect.
         """
         if self.cid is not None:
             self.fig.canvas.mpl_disconnect(self.cid)

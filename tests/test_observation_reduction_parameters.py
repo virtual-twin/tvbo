@@ -138,6 +138,7 @@ def test_a_parameterless_observer_emits_no_constants_block():
 
 # --- lazy constants: sourced/produced operators emit a load, never the bytes ---------
 
+
 class _Experiment:
     """Minimal render context: only what resolve_reduction reads for materialisation."""
 
@@ -161,9 +162,7 @@ def test_a_sourced_operator_emits_a_lazy_load_not_its_bytes(tmp_path):
         {"A": Parameter(name="A", source="ops.h5", measure="grad_op")},
     )
     red = resolve_reduction(obs, _Experiment(tmp_path / "study.yaml"))
-    code = Template(filename=_TEMPLATE).get_def("render_reduction").render(
-        red=red, name="obs", s_idx=0, dt=0.1
-    )
+    code = Template(filename=_TEMPLATE).get_def("render_reduction").render(red=red, name="obs", s_idx=0, dt=0.1)
 
     assert "_load_constant(" in code
     assert "grad_op" in code
@@ -187,8 +186,8 @@ def test_the_existence_check_does_not_materialise(tmp_path, monkeypatch):
     )
     red = resolve_reduction(obs)  # bare: the predicate path
 
-    assert red is not None                       # still recognised as a reducer
-    assert called == []                          # but nothing materialised
+    assert red is not None  # still recognised as a reducer
+    assert called == []  # but nothing materialised
     assert red["parameters"]["A"]["lazy"] is None  # deferred, not resolved
 
 

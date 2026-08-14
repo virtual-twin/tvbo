@@ -28,14 +28,17 @@ def _experiment(bc_equation, tmp_path):
             "label": "Heat",
             "mesh": {"label": "m", "element_type": "triangle"},
             "parameters": {"D": {"name": "D", "value": 1.0}},
-            "state_variables": [{
-                "name": "u", "label": "u", "initial_value": 0.0,
-                "boundary_conditions": [condition],
-                "equation": {"lhs": "u_t", "rhs": "D * laplacian(u)"},
-            }],
+            "state_variables": [
+                {
+                    "name": "u",
+                    "label": "u",
+                    "initial_value": 0.0,
+                    "boundary_conditions": [condition],
+                    "equation": {"lhs": "u_t", "rhs": "D * laplacian(u)"},
+                }
+            ],
             "operators": [{"label": "Diff", "operator_type": "laplacian", "coefficient": "D"}],
-            "solver": {"label": "FEM", "discretization": "FEM",
-                       "method": "implicit Euler", "dt": 1.0},
+            "solver": {"label": "FEM", "discretization": "FEM", "method": "implicit Euler", "dt": 1.0},
         },
         "integration": {"duration": 10},
     }
@@ -44,12 +47,15 @@ def _experiment(bc_equation, tmp_path):
     return SimulationExperiment.from_file(str(path))
 
 
-@pytest.mark.parametrize("written", [
-    {"equation": "2.5"},
-    {"equation": {"rhs": "2.5"}},
-    {"value": "2.5"},
-    {"value": {"rhs": "2.5"}},
-])
+@pytest.mark.parametrize(
+    "written",
+    [
+        {"equation": "2.5"},
+        {"equation": {"rhs": "2.5"}},
+        {"value": "2.5"},
+        {"value": {"rhs": "2.5"}},
+    ],
+)
 def test_every_spelling_of_the_value_reaches_the_same_equation(written):
     """`equation` is canonical, `value` the older spelling, either bare or as a mapping.
 

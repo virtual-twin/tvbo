@@ -112,7 +112,7 @@ def extract_images(md_path: str) -> None:
     n_url = 0
 
     for match in pattern.finditer(content):
-        out_parts.append(content[pos:match.start()])
+        out_parts.append(content[pos : match.start()])
         pos = match.end()
 
         if match.group("b64") is not None:

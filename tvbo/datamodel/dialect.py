@@ -90,8 +90,7 @@ def normalize(cls_name: str, data: dict) -> dict:
         value = data.pop(alias)
         if canonical in data:
             warnings.warn(
-                f"{cls_name} got both {alias!r} and its canonical slot "
-                f"{canonical!r}; ignoring {alias!r}.",
+                f"{cls_name} got both {alias!r} and its canonical slot {canonical!r}; ignoring {alias!r}.",
                 stacklevel=3,
             )
         else:

@@ -6,6 +6,7 @@ Focused on round-trip correctness: write → read → compare.
 import numpy as np
 import pytest
 import tempfile
+import yaml as _yaml_mod
 from pathlib import Path
 
 
@@ -662,8 +663,7 @@ class TestMultiEdgeFreezeRoundtrip:
         # a sidecar naming the length edge ``tract_length`` must still drive delays
         rng = np.random.RandomState(2)
         L = rng.rand(6, 6) * 100.0
-        frozen, net = self._roundtrip({"tract_length": L, "streamlinecount": rng.rand(6, 6)},
-                                      primary="streamlinecount")
+        frozen, net = self._roundtrip({"tract_length": L, "streamlinecount": rng.rand(6, 6)}, primary="streamlinecount")
         assert "tract_length" in frozen
         np.testing.assert_allclose(np.asarray(net.lengths_matrix), L, atol=1e-4)
 
@@ -721,15 +721,15 @@ class TestRegionAliasMap:
         M = M + M.T  # symmetric so the check is unambiguous
 
         def align(labels, mat):
-            canon = [amap.get(l, l) for l in labels]
+            canon = [amap.get(lbl, lbl) for lbl in labels]
             da = xr.DataArray(mat, dims=("i", "j"), coords={"i": canon, "j": canon})
             return da.sel(i=model_labels, j=model_labels).values
 
         A = align(tlabels, M)
 
         # hemisphere parity: no L<->R crossing
-        def hemi(l):
-            return "L" if l[:2] == "L_" or l.endswith("_LEFT") else "R"
+        def hemi(lbl):
+            return "L" if lbl[:2] == "L_" or lbl.endswith("_LEFT") else "R"
 
         assert all(hemi(t) == hemi(amap[t]) for t in tlabels)
 
@@ -742,25 +742,44 @@ class TestRegionAliasMap:
 
 
 def _atlas_hemi(label):
-    """Hemisphere of a node label under any packaged-atlas convention, or None."""
-    if label in ("Brain-Stem", "BRAIN_STEM", "brain-stem"):
+    """Hemisphere of a node label under any packaged-atlas convention, or None.
+
+    Covers the CIFTI (``L_V1_ROI``, ``CEREBELLUM_LEFT``), FreeSurfer ``aseg``
+    (``Left-Cerebellum-Cortex``, ``lh-Accumbens-area``), FreeSurfer ``aparc``
+    (``ctx-lh-V1``) and abbreviated-BIDS (``L.V1``) spellings. Matching is
+    case-insensitive because the same tool emits ``Left-`` and ``lh-`` interchangeably.
+    """
+    lower = label.lower()
+    if "brainstem" in lower.replace("-", "").replace("_", ""):
         return None
-    if label[:2] == "L_" or label.endswith("_LEFT") or label.startswith(("ctx-lh-", "left-")):
-        return "L"
-    if label[:2] == "R_" or label.endswith("_RIGHT") or label.startswith(("ctx-rh-", "right-")):
-        return "R"
+    for hemi, short, long in (("L", "l", "left"), ("R", "r", "right")):
+        if (
+            lower[:2] in (f"{short}_", f"{short}.")
+            or lower.endswith(f"_{long}")
+            or lower.startswith((f"ctx-{short}h-", f"{short}h-", f"{long}-", f"{long}_"))
+        ):
+            return hemi
     return None
 
 
 class TestAtlasAliases:
     """Packaged atlas terminologies carry hemisphere-correct empirical aliases."""
 
-    @pytest.mark.parametrize("atlas,checks", [
-        ("hcpmmp1", {"L_Thalamus": "THALAMUS_LEFT", "R_Thalamus": "THALAMUS_RIGHT",
-                     "Brain-Stem": "BRAIN_STEM"}),
-        ("DesikanKilliany", {"left-thalamus": "THALAMUS_LEFT", "right-thalamus": "THALAMUS_RIGHT",
-                             "ctx-lh-bankssts": "L_bankssts", "brain-stem": "BRAIN_STEM"}),
-    ])
+    @pytest.mark.parametrize(
+        "atlas,checks",
+        [
+            ("hcpmmp1", {"L_Thalamus": "THALAMUS_LEFT", "R_Thalamus": "THALAMUS_RIGHT", "Brain-Stem": "BRAIN_STEM"}),
+            (
+                "DesikanKilliany",
+                {
+                    "left-thalamus": "THALAMUS_LEFT",
+                    "right-thalamus": "THALAMUS_RIGHT",
+                    "ctx-lh-bankssts": "L_bankssts",
+                    "brain-stem": "BRAIN_STEM",
+                },
+            ),
+        ],
+    )
     def test_atlas_aliases_present_and_hemisphere_consistent(self, atlas, checks):
         from tvbo.classes.atlas import Atlas
 
@@ -777,3 +796,306 @@ class TestAtlasAliases:
                 assert _atlas_hemi(canon) == _atlas_hemi(alt), f"hemisphere swap {canon} -> {alt}"
                 assert alt not in seen or seen[alt] == canon, f"alias {alt} on two regions"
                 seen[alt] = canon
+
+
+class TestAtlasAliasJoinIsNameBased:
+    """A network may label a region by any of the atlas's names and still inherit its crosswalk.
+
+    The atlas join used to key on the region's CANONICAL name only, so a network
+    spelling a region divergently (``Left-Thalamus-Proper`` where the packaged HCP-MMP1
+    atlas says ``L_Thalamus``) silently lost that region's entire alias set — which is how
+    a Glasser-379 fit whose cortex matched by exact string reconciled 360/379 and refused
+    its own subcortex.
+    """
+
+    @staticmethod
+    def _net(labels):
+        from tvbo.classes.network import Network
+
+        n = len(labels)
+        w = np.ones((n, n)) - np.eye(n)
+        net = Network.from_matrix(w, w, labels=list(labels))
+        net.parcellation = {"atlas": {"name": "hcpmmp1"}}
+        return net
+
+    def test_region_labelled_by_alternate_name_still_resolves(self):
+        net = self._net(["Left-Thalamus-Proper", "Right-Thalamus-Proper"])
+        m = net.region_alias_map()
+        assert m["THALAMUS_LEFT"] == "Left-Thalamus-Proper"
+        assert m["THALAMUS_RIGHT"] == "Right-Thalamus-Proper"
+        # the atlas's own canonical name is just another alias of the label in use
+        assert m["L_Thalamus"] == "Left-Thalamus-Proper"
+        assert m["Left-Thalamus-Proper"] == "Left-Thalamus-Proper"
+
+    def test_canonical_label_keeps_working(self):
+        net = self._net(["L_Thalamus", "R_Thalamus"])
+        m = net.region_alias_map()
+        assert m["THALAMUS_LEFT"] == "L_Thalamus"
+        assert m["Left-Thalamus-Proper"] == "L_Thalamus"
+
+    def test_mixed_spellings_across_regions(self):
+        net = self._net(["L_Thalamus", "Right-Thalamus-Proper", "BRAIN_STEM"])
+        m = net.region_alias_map()
+        assert m["THALAMUS_LEFT"] == "L_Thalamus"
+        assert m["THALAMUS_RIGHT"] == "Right-Thalamus-Proper"
+        assert m["Brain-Stem"] == "BRAIN_STEM"
+
+    def test_two_nodes_claiming_one_region_raises(self):
+        net = self._net(["L_Thalamus", "Left-Thalamus-Proper"])
+        with pytest.raises(ValueError, match="[Aa]mbiguous"):
+            net.region_alias_map()
+
+    def test_no_hemisphere_crossing(self):
+        net = self._net(["Left-Thalamus-Proper", "Right-Thalamus-Proper"])
+        for alias, canon in net.region_alias_map().items():
+            assert _atlas_hemi(alias) == _atlas_hemi(canon), f"hemisphere swap {alias} -> {canon}"
+
+
+class TestDataFileReference:
+    """The compact reference a frozen spec and a provenance sidecar both use.
+
+    These were two copies of the same logic, which is how one of them came to carry
+    ``parcellation`` while the other did not — and how the sidecar copy came to write a
+    ``Network.observations`` runtime view into a datamodel class that has no such slot,
+    crashing every provenance sidecar of a connectome-backed run.
+    """
+
+    @staticmethod
+    def _net():
+        from tvbo.classes.network import Network
+
+        w = np.array([[0.0, 0.4], [0.4, 0.0]])
+        net = Network.from_matrix(w, w, labels=["L_Thalamus", "R_Thalamus"])
+        net.parcellation = {"atlas": {"name": "hcpmmp1"}}
+        net.label = "two-node reference"
+        net.observational_measures = ["BoldCorrelation"]
+        return net
+
+    def test_carries_the_fields_that_make_it_the_same_network(self):
+        ref = self._net().as_data_file_reference("network.h5")
+        assert ref.data_file == "network.h5"
+        assert ref.number_of_nodes == 2
+        assert str(ref.label) == "two-node reference"
+        assert list(ref.observational_measures) == ["BoldCorrelation"]
+        assert ref.parcellation is not None and str(ref.parcellation.atlas.name) == "hcpmmp1"
+
+    def test_does_not_copy_the_runtime_observations_view(self):
+        """`observations` is derived from the measures, and the datamodel class has no such slot."""
+        ref = self._net().as_data_file_reference("network.h5")
+        assert not getattr(ref, "observations", None)
+
+    def test_freeze_yaml_writes_a_sidecar_for_a_connectome_backed_run(self, tmp_path):
+        """The crash this replaced was silent: the run finished and its provenance went missing.
+
+        It needed a network with a NON-EMPTY ``observations`` view, which is why the network here
+        carries an observational measure in its companion — a bare one leaves the view empty and
+        the old code never reached the line that crashed.
+        """
+        net = _network_with_observational_measure(tmp_path / "src")
+        assert dict(net.observations), "precondition lost: this no longer covers the crash"
+        exp = _experiment_with_network(net)
+        if exp is None:
+            pytest.skip("no minimal experiment constructor available here")
+        out = tmp_path / "frozen"
+        text = exp.freeze_yaml(out, network_stem="net")
+        assert "data_file: net.h5" in text
+        assert (out / "net.yaml").is_file() and (out / "net.h5").is_file()
+
+
+def _experiment_with_network(net):
+    """A minimal SimulationExperiment carrying *net*, or None when construction needs more."""
+    from tvbo.classes.experiment import SimulationExperiment
+
+    try:
+        return SimulationExperiment(network=net)
+    except Exception:
+        return None
+
+
+def _network_with_observational_measure(where):
+    """A companion-backed network whose ``observations`` view is populated, not empty."""
+    import h5py
+
+    from tvbo.classes.network import Network
+    from tvbo.data.matrix_io import write_matrix
+
+    n = 4
+    w = np.round(np.ones((n, n)) - np.eye(n), 6)
+    fc = np.round(np.eye(n) * 0.0 + 0.3, 6)
+    np.fill_diagonal(fc, 1.0)
+
+    where.mkdir(parents=True, exist_ok=True)
+    h5_path = where / "net.h5"
+    with h5py.File(h5_path, "w") as f:
+        edges = f.create_group("edges")
+        write_matrix(edges.create_group("weight"), w, fmt="dense")
+        write_matrix(edges.create_group("BoldCorrelation"), fc, fmt="dense")
+    meta = {
+        "tvbo_class": "tvbo:Network",
+        "label": "companion with an observational measure",
+        "number_of_nodes": n,
+        "data_file": h5_path.name,
+        "structural_measures": ["weight"],
+        "observational_measures": ["BoldCorrelation"],
+        "parcellation": {"atlas": {"name": "hcpmmp1"}},
+        "nodes": [{"id": i, "label": lbl} for i, lbl in enumerate(["L_Thalamus", "R_Thalamus", "L_Caudate", "R_Caudate"])],
+    }
+    yaml_path = where / "net.yaml"
+    with open(yaml_path, "w") as f:
+        _yaml_mod.safe_dump(meta, f, sort_keys=False)
+    return Network.load(str(yaml_path))
+
+
+class TestMaterialisedSaveKeepsCrosswalk:
+    """Re-saving a network must not cost it the atlas its labels are reconciled against.
+
+    ``tvbo workflow`` bakes each experiment's network into the kit by re-saving it, and the
+    writer used to drop ``parcellation`` alongside the directives that rebuild connectivity.
+    That left the baked network with an identity-only alias map, so a per-subject target
+    spelling a region differently could not reconcile on the target host — the visible symptom
+    being a partial-coverage refusal for exactly the regions that need a crosswalk.
+    """
+
+    @staticmethod
+    def _save_and_reload(tmp_path, labels):
+        from tvbo.classes.network import Network
+
+        n = len(labels)
+        w = np.ones((n, n)) - np.eye(n)
+        net = Network.from_matrix(w, w, labels=list(labels))
+        net.parcellation = {"atlas": {"name": "hcpmmp1"}}
+        out = tmp_path / "kit" / "network.yaml"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        net.save(str(out))
+        return net, Network.load(str(out))
+
+    def test_parcellation_survives_and_crosswalk_still_resolves(self, tmp_path):
+        labels = ["L_V1_ROI", "Left-Thalamus-Proper", "Right-Thalamus-Proper"]
+        _, back = self._save_and_reload(tmp_path, labels)
+
+        assert getattr(back, "parcellation", None) is not None, "the baked network lost its atlas identity"
+        m = back.region_alias_map()
+        assert m["THALAMUS_LEFT"] == "Left-Thalamus-Proper"
+        assert m["THALAMUS_RIGHT"] == "Right-Thalamus-Proper"
+
+    def test_node_set_and_weights_are_not_re_expanded(self, tmp_path):
+        """The property the strip was protecting: a kept parcellation must not re-resolve."""
+        labels = ["L_V1_ROI", "Left-Thalamus-Proper", "Right-Thalamus-Proper"]
+        net, back = self._save_and_reload(tmp_path, labels)
+
+        assert [str(x) for x in back.node_labels] == labels
+        np.testing.assert_array_equal(np.asarray(back.weights_matrix), np.asarray(net.weights_matrix))
+
+
+class TestCompanionWinsOverParcellation:
+    """A sidecar's own matrices must beat the atlas's normative connectome.
+
+    ``load_network`` must strip ``data_file`` before construction, because
+    ``_resolve_from_data_file`` treats it as an indirect reference to another network's
+    sidecar and would recurse into the load in progress. That used to leave the eager
+    ``_resolve`` in ``Network.__init__`` seeing no explicit source, so a sidecar declaring
+    BOTH ``data_file:`` and ``parcellation:`` fell through to the parcellation branch, cached
+    a normative database connectome, and served that forever — silently, because
+    ``_cached_weights`` is consulted ahead of ``_store``. The loader now defers connectivity
+    resolution until it has attached the store.
+    """
+
+    @staticmethod
+    def _write(tmp_path, weights, *, parcellation):
+        import h5py
+
+        from tvbo.data.matrix_io import write_matrix
+
+        n = weights.shape[0]
+        h5_path = tmp_path / "net.h5"
+        with h5py.File(h5_path, "w") as f:
+            write_matrix(f.create_group("edges").create_group("weight"), weights, fmt="dense")
+        meta = {
+            "tvbo_class": "tvbo:Network",
+            "label": "companion-vs-parcellation",
+            "number_of_nodes": n,
+            "data_file": h5_path.name,
+            "structural_measures": ["weight"],
+            "nodes": [{"id": i, "label": f"n{i}"} for i in range(n)],
+        }
+        if parcellation:
+            meta["parcellation"] = {"atlas": {"name": "DesikanKilliany"}}
+        yaml_path = tmp_path / "net.yaml"
+        with open(yaml_path, "w") as f:
+            _yaml_mod.safe_dump(meta, f, sort_keys=False)
+        return yaml_path, meta
+
+    @pytest.mark.parametrize("parcellation", [False, True])
+    def test_declared_companion_weights_are_served(self, tmp_path, parcellation):
+        from tvbo.classes.network import Network
+
+        rng = np.random.default_rng(0)
+        w = np.round(rng.random((87, 87)) * 0.01, 6)
+        np.fill_diagonal(w, 0.0)
+        yaml_path, _ = self._write(tmp_path, w, parcellation=parcellation)
+
+        loaded = np.asarray(Network.from_file(str(yaml_path)).weights)
+        assert loaded.shape == w.shape
+        np.testing.assert_allclose(loaded, w)
+
+    def test_deferred_resolve_still_materialises(self, tmp_path):
+        """Deferring connectivity must not skip the rest of `_resolve`."""
+        from tvbo.classes.network import Network
+
+        yaml_path, _ = self._write(tmp_path, np.eye(4), parcellation=True)
+        net = Network.from_file(str(yaml_path))
+        assert net.number_of_nodes == 4
+        assert getattr(net, "_resolved", False)
+
+
+class TestSelfDescribingCompanion:
+    """A companion carrying its own metadata loads with no sidecar file at all."""
+
+    def _write_single_file(self, tmp_path, weights):
+        import h5py
+
+        from tvbo.data.matrix_io import write_matrix
+        from tvbo.data.network_io import write_embedded_metadata
+
+        n = weights.shape[0]
+        h5_path = tmp_path / "tpl-X_atlas-DesikanKilliany_desc-SC_relmat.h5"
+        with h5py.File(h5_path, "w") as f:
+            write_matrix(f.create_group("edges").create_group("weight"), weights, fmt="dense")
+        write_embedded_metadata(
+            h5_path,
+            {
+                "tvbo_class": "tvbo:Network",
+                "label": "self-describing",
+                "number_of_nodes": n,
+                "structural_measures": ["weight"],
+                "parcellation": {"atlas": {"name": "DesikanKilliany"}},
+                "nodes": [{"id": i, "label": f"n{i}"} for i in range(n)],
+            },
+        )
+        return h5_path
+
+    def test_loads_without_a_sidecar(self, tmp_path):
+        from tvbo.classes.network import Network
+
+        rng = np.random.default_rng(1)
+        w = np.round(rng.random((87, 87)) * 0.01, 6)
+        np.fill_diagonal(w, 0.0)
+        h5_path = self._write_single_file(tmp_path, w)
+        assert not h5_path.with_suffix(".yaml").exists()
+
+        net = Network.from_file(str(h5_path))
+        assert net.number_of_nodes == 87
+        assert net.label == "self-describing"
+        np.testing.assert_allclose(np.asarray(net.weights), w)
+
+    def test_probe_returns_none_for_plain_companions(self, tmp_path):
+        import h5py
+
+        from tvbo.data.network_io import read_embedded_metadata
+
+        plain = tmp_path / "plain.h5"
+        with h5py.File(plain, "w") as f:
+            f.create_dataset("x", data=np.zeros(3))
+        assert read_embedded_metadata(plain) is None
+        assert read_embedded_metadata(tmp_path / "absent.h5") is None
+        assert read_embedded_metadata(tmp_path / "some.yaml") is None

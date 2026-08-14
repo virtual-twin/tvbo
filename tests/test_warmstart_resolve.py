@@ -10,6 +10,7 @@ Covers, against a source result `.h5`:
     (``observation__control_mask``, unlabelled) — the Taher `g` case, taken in model
     order with no reconcile.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -70,14 +71,14 @@ def _write_source_h5(dirpath, labels=("r0", "r1")):
     """A source result exposing tuned estimates (labelled) + a recorded observation."""
     xr = pytest.importorskip("xarray")
     labels = list(labels)
-    ds = xr.Dataset({
-        "estimate__J_i": xr.DataArray(_J_I, dims=["node"], coords={"node": labels}),
-        "estimate__wLRE": xr.DataArray(
-            _WLRE, dims=["node_i", "node_j"],
-            coords={"node_i": labels, "node_j": labels}),
-        # legacy: unlabelled observation (Taher control_mask)
-        "observation__control_mask": xr.DataArray(_MASK, dims=["control_mask_d0"]),
-    })
+    ds = xr.Dataset(
+        {
+            "estimate__J_i": xr.DataArray(_J_I, dims=["node"], coords={"node": labels}),
+            "estimate__wLRE": xr.DataArray(_WLRE, dims=["node_i", "node_j"], coords={"node_i": labels, "node_j": labels}),
+            # legacy: unlabelled observation (Taher control_mask)
+            "observation__control_mask": xr.DataArray(_MASK, dims=["control_mask_d0"]),
+        }
+    )
     path = dirpath / "exp-99_desc-test_result.h5"
     ds.to_netcdf(path, engine="h5netcdf")
     return path
@@ -109,7 +110,7 @@ def test_resolve_estimate_vector_matrix_and_legacy_observation(tmp_path):
 def test_reconcile_by_label_permuted_source(tmp_path):
     """Source records estimates in the OPPOSITE node order; reconcile must realign by
     label (never positional), so J_i/wLRE come back in the model's r0,r1 order."""
-    _write_source_h5(tmp_path, labels=("r1", "r0"))   # swapped source order
+    _write_source_h5(tmp_path, labels=("r1", "r0"))  # swapped source order
     # the source arrays are authored in [r1, r0] order:
     #   estimate__J_i = [1,2] means r1->1, r0->2  => model order [r0,r1] -> [2,1]
     exp = _consumer(tmp_path)
@@ -123,8 +124,8 @@ def test_no_measure_params_returns_none(tmp_path):
     """An experiment with no measure-sourced params resolves to None (no seed)."""
     _write_source_h5(tmp_path)
     spec = tmp_path / "plain.yaml"
-    spec.write_text(_CONSUMER.replace(", measure: J_i", "")
-                             .replace(", measure: control_mask", "")
-                             .replace(", measure: wLRE", ""))
+    spec.write_text(
+        _CONSUMER.replace(", measure: J_i", "").replace(", measure: control_mask", "").replace(", measure: wLRE", "")
+    )
     exp = SimulationExperiment.from_file(str(spec))
     assert exp._resolve_from_experiment_params(results_root=str(tmp_path)) is None

@@ -44,9 +44,7 @@ SPEC = {
             "equation": {"lhs": "dv/dt", "conditionals": list(_BRANCHES)},
         }
     },
-    "derived_variables": {
-        "gated": {"name": "gated", "equation": {"lhs": "gated", "conditionals": list(_BRANCHES)}}
-    },
+    "derived_variables": {"gated": {"name": "gated", "equation": {"lhs": "gated", "conditionals": list(_BRANCHES)}}},
     "derived_parameters": {
         "scale": {
             "name": "scale",

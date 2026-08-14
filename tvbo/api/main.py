@@ -1,7 +1,6 @@
 """FastAPI application exposing the TVBO ontology and simulation experiment endpoints.
 
-Defines the top-level `app`, wires in the network, dynamics, and experiment
-sub-routers, and provides ontology search/query endpoints plus routes to
+Defines the top-level `app`, wires in the network, dynamics, and experiment sub-routers, and provides ontology search/query endpoints plus routes to
 configure and run [`SimulationExperiment`](/api/classes/experiment.qmd) instances.
 """
 
@@ -55,8 +54,7 @@ class RunExperimentResponse(BaseModel):
 class SimulationMetadata(BaseModel):
     """Legacy request payload describing a simulation configuration.
 
-    Retained for backwards compatibility with clients that submit the model,
-    connectivity, coupling, and integration blocks separately rather than as a
+    Retained for backwards compatibility with clients that submit the model, connectivity, coupling, and integration blocks separately rather than as a
     single experiment dictionary.
 
     Args:
@@ -153,8 +151,7 @@ def get_parent_connections(node_id: int = Path(..., description="Node ID")):
 def configure_experiment(metadata: SimulationMetadata = Body(...)):
     """Configure a simulation experiment from legacy metadata.
 
-    Passes the submitted metadata to the ontology API to set up a simulation
-    experiment.
+    Passes the submitted metadata to the ontology API to set up a simulation experiment.
 
     Args:
         metadata: Legacy simulation configuration payload.
@@ -171,8 +168,7 @@ def run_experiment(request: RunExperimentRequest = Body(...)):
     """
     Run a simulation experiment and return the results.
 
-    The experiment dict should match the YAML schema and is passed
-    directly to SimulationExperiment for initialization.
+    The experiment dict should match the YAML schema and is passed directly to SimulationExperiment for initialization.
     """
     import logging
 

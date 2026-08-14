@@ -5,20 +5,17 @@
 #
 """The `SimulationExperiment` host object that ties a whole simulation together.
 
-A `SimulationExperiment` binds local [`Dynamics`](../classes/dynamics.qmd), a
-[`Network`](../classes/network.qmd), coupling, integration settings, monitors,
-and stimulation into a single, YAML-round-trippable object. It is the entry
-point for constructing an experiment (from YAML, a file, the platform, or a TVB
-simulator), configuring and resolving its coupling/delay metadata, rendering
-backend code, and running it on any of the supported backends (`tvb`,
+A `SimulationExperiment` binds local [`Dynamics`](../classes/dynamics.qmd), a [`Network`](../classes/network.qmd), coupling, integration settings, monitors,
+and stimulation into a single, YAML-round-trippable object. It is the entry point for constructing an experiment (from YAML, a file, the platform, or a TVB
+simulator), configuring and resolving its coupling/delay metadata, rendering backend code, and running it on any of the supported backends (`tvb`,
 `tvboptim`, `jax`, `pde`, `cuda`, `python`).
 """
+
 import copy as _copy
 import logging
 import os
 import re
 from collections import Counter
-from os.path import join
 from pathlib import Path
 from typing import Any
 
@@ -27,9 +24,7 @@ import jax.numpy as jnp
 import numpy as np
 import xarray as xr
 
-# Apply the JAX Metal-fallback guard before any simulation touches JAX. Idempotent
-# and cheap here (jax is already imported); kept out of ``import tvbo`` so the CLI
-# and bare imports stay fast. See tvbo.__init__._configure_jax_backend.
+# Apply the JAX Metal-fallback guard before any simulation touches JAX. Idempotent and cheap here (jax is already imported); kept out of ``import tvbo`` so the CLI and bare imports stay fast. See tvbo.__init__._configure_jax_backend.
 from tvbo import _configure_jax_backend as _cfg_jax
 
 _cfg_jax()
@@ -65,11 +60,9 @@ sessionid = 1
 
 def _strip_private_yaml_keys(text: str) -> str:
     """Drop private/runtime keys (``_source_file``, a codegen ``_coupling_key`` on a
-    Parameter, …) from a serialized YAML at any depth, so the spec round-trips
-    through ``from_file``. A private key line and its whole value block go too. The
+    Parameter, …) from a serialized YAML at any depth, so the spec round-trips through ``from_file``. A private key line and its whole value block go too. The
     value block includes deeper-indented lines and a block-sequence value whose
-    ``-`` items YAML writes at the key's own indentation (not deeper); without that
-    case a private list-valued cache (e.g. ``_model_labels_from_bids``) would leave
+    ``-`` items YAML writes at the key's own indentation (not deeper); without that case a private list-valued cache (e.g. ``_model_labels_from_bids``) would leave
     its items orphaned as a bare list at the document root.
     """
     import re as _re
@@ -80,9 +73,7 @@ def _strip_private_yaml_keys(text: str) -> str:
         if drop_indent is not None:
             stripped = line.strip()
             indent = len(line) - len(line.lstrip())
-            same_indent_seq_item = indent == drop_indent and (
-                stripped == "-" or stripped.startswith("- ")
-            )
+            same_indent_seq_item = indent == drop_indent and (stripped == "-" or stripped.startswith("- "))
             if stripped == "" or indent > drop_indent or same_indent_seq_item:
                 continue
             drop_indent = None
@@ -95,21 +86,27 @@ def _strip_private_yaml_keys(text: str) -> str:
 
 
 # Maps ``BidsEntities`` attribute names to the short entity keys that
-# ``tvbo.classes.network._parse_bids_entities`` emits from a filename. ``suffix``
-# is deliberately absent — it is the trailing filename component, not a key-value
-# entity, and is handled separately by its consumers.
+# ``tvbo.classes.network._parse_bids_entities`` emits from a filename. ``suffix`` is deliberately absent — it is the trailing filename component, not a key-value entity, and is handled separately by its consumers.
 _BIDS_ENTITY_SHORT_KEYS = {
-    "template": "tpl", "cohort": "cohort", "reconstruction": "rec",
-    "segmentation": "seg", "scale": "scale", "atlas": "atlas",
-    "acquisition": "acq", "hemi": "hemi", "desc": "desc",
+    "template": "tpl",
+    "cohort": "cohort",
+    "reconstruction": "rec",
+    "segmentation": "seg",
+    "scale": "scale",
+    "atlas": "atlas",
+    "acquisition": "acq",
+    "hemi": "hemi",
+    "desc": "desc",
 }
 
 
 def _bids_entities_to_short_dict(obj) -> dict:
     """Convert a ``BidsEntities`` object to ``{short_key: value}`` for the set entities."""
-    return {short: str(getattr(obj, attr))
-            for attr, short in _BIDS_ENTITY_SHORT_KEYS.items()
-            if getattr(obj, attr, None) is not None}
+    return {
+        short: str(getattr(obj, attr))
+        for attr, short in _BIDS_ENTITY_SHORT_KEYS.items()
+        if getattr(obj, attr, None) is not None
+    }
 
 
 def _sync_network_node_count(net):
@@ -130,13 +127,15 @@ def _sync_network_node_count(net):
 
 
 def _upgrade_network_couplings(network, coupling_types=None):
-    """Upgrade network.coupling entries to runtime Coupling instances and
-    apply ``type``-based database/ontology fill.
+    """Populate each ``network.coupling`` entry from the ontology and apply ``type``-based database fill.
+
+    A coupling that already states its ``pre_expression`` is left alone, so the call is idempotent. Only the two shapes the schema keys — a mapping and a list —
+    carry entries to populate; a single ``Coupling`` assigned straight to the slot has nothing to iterate and is returned untouched.
 
     Parameters
     ----------
     network : Network
-        The network whose coupling entries should be upgraded.
+        The network whose coupling entries should be populated.
     coupling_types : dict, optional
         Mapping ``{coupling_key: type_ref}`` extracted from the raw YAML
         before LinkML deserialization.  ``type_ref`` is a coupling function
@@ -200,23 +199,17 @@ def _resolve_coupling(experiment):
             experiment.coupling = func
         elif not getattr(func, "iri", None):
             func.iri = "tvbo:Linear"
-        # Ensure ontology-derived fields (pre/post expressions, parameters)
-        # are populated — backends require them at codegen time.
+        # Ensure ontology-derived fields (pre/post expressions, parameters) are populated — backends require them at codegen time.
         if not getattr(func, "pre_expression", None):
             func._populate_from_ontology()
         coup_name = str(getattr(func, "name", "Linear"))
         network.coupling[coup_name] = func
 
     if dyn:
-        cvars = [
-            str(sv.name)
-            for sv in dyn.state_variables.values()
-            if getattr(sv, "coupling_variable", False)
-        ]
+        cvars = [str(sv.name) for sv in dyn.state_variables.values() if getattr(sv, "coupling_variable", False)]
         if cvars:
             for coup in (getattr(network, "coupling", None) or {}).values():
-                if (not getattr(coup, "incoming_states", None)
-                        and not getattr(coup, "local_states", None)):
+                if not getattr(coup, "incoming_states", None) and not getattr(coup, "local_states", None):
                     coup.incoming_states = list(cvars)
 
 
@@ -331,12 +324,9 @@ def _backfill_name_from_iri(d):
 def _merge_from_registry(d, category: str):
     """Enrich an ``iri``-referenced spec from the registry, inline values winning.
 
-    If ``d`` is a dict carrying an ``iri`` CURIE, load the registry entry it
-    points to and deep-merge the inline dict on top: inline values supervene at
-    the *leaf* (e.g. ``parameters: {a: {value: 1}}`` overrides only ``a.value``
-    and keeps every other parameter from the registry entry), while the entry
-    fills everything ``d`` did not specify. Mutates ``d`` in place. Falls back to
-    a name-only backfill if the ``iri`` does not resolve to a DB entry.
+    If ``d`` is a dict carrying an ``iri`` CURIE, load the registry entry it points to and deep-merge the inline dict on top: inline values supervene at
+    the *leaf* (e.g. ``parameters: {a: {value: 1}}`` overrides only ``a.value`` and keeps every other parameter from the registry entry), while the entry
+    fills everything ``d`` did not specify. Mutates ``d`` in place. Falls back to a name-only backfill if the ``iri`` does not resolve to a DB entry.
     """
     if not isinstance(d, dict) or not d.get("iri"):
         return
@@ -345,7 +335,8 @@ def _merge_from_registry(d, category: str):
         from tvbo.data.registry import resolve
         from tvbo.utils import yaml_loader, deep_merge
 
-        loaded = yaml_loader.load_as_dict(str(resolve(category, local)))
+        # The entry is merged into constructor kwargs, so its file envelope has to go: `load_as_dict` keeps it for callers that dispatch on it.
+        loaded = yaml_loader.strip_envelope(yaml_loader.load_as_dict(str(resolve(category, local))))
         if isinstance(loaded, dict):
             merged = deep_merge(loaded, d)  # registry = base, inline `d` overrides
             d.clear()
@@ -359,8 +350,7 @@ def _merge_from_registry(d, category: str):
 class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     """The central runnable object in TVBO: a complete brain-network simulation spec.
 
-    Bundles `dynamics`, `coupling`, `network`, `integration`, `observations`,
-    and any analysis layers (stimulation, algorithms, explorations, …) into
+    Bundles `dynamics`, `coupling`, `network`, `integration`, `observations`, and any analysis layers (stimulation, algorithms, explorations, …) into
     one declarative specification. The same instance can be:
 
     - **executed** in any registered backend (`run("jax")`, `run("tvb")`, …)
@@ -368,8 +358,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     - **rendered** as code for inspection or external use (`render_code(...)`)
     - **reported** as Markdown or HTML (`report(...)`)
 
-    Construct via direct kwargs, from a `Dynamics` instance, by name from the
-    curated database (`from_db`), or by loading a YAML / BIDS export.
+    Construct via direct kwargs, from a `Dynamics` instance, by name from the curated database (`from_db`), or by loading a YAML / BIDS export.
 
     Examples:
         ```python
@@ -388,10 +377,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
         ```
 
-    See the [Simulation experiments](/Simulation/SimulationExperiments.qmd)
-    page for the full constructor surface and the
-    [`running-simulations`](../../../skills/running-simulations/SKILL.md) skill
-    for backend choices.
+    See the [Simulation experiments](/Simulation/SimulationExperiments.qmd) page for the full constructor surface and the
+    [`running-simulations`](../../../skills/running-simulations/SKILL.md) skill for backend choices.
     """
 
     def __init__(self, **kwargs):
@@ -444,16 +431,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             _cname = kwargs["coupling"]
             kwargs["coupling"] = {"name": _cname, "iri": f"tvbo:{_cname}"}
 
-        # Resolve Dynamics slot aliases (e.g. components → modes) before
-        # the parent __post_init__ constructs the base-class Dynamics.
+        # Resolve Dynamics slot aliases (e.g. components → modes) before the parent __post_init__ constructs the base-class Dynamics.
         dyn_kw = kwargs.get("dynamics")
         if isinstance(dyn_kw, dict):
             from tvbo.classes.dynamics import _resolve_dynamics_aliases
 
             _resolve_dynamics_aliases(dyn_kw)
 
-        # Also resolve aliases and iri-source the keyed network.dynamics entries
-        # (per-node dynamics), symmetrically with the top-level `dynamics` slot.
+        # Also resolve aliases and iri-source the keyed network.dynamics entries (per-node dynamics), symmetrically with the top-level `dynamics` slot.
         net_kw = kwargs.get("network")
         if isinstance(net_kw, dict):
             net_dyn = net_kw.get("dynamics")
@@ -465,13 +450,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                         _resolve_dynamics_aliases(_dv)
                         if _dv.get("iri"):
                             _merge_from_registry(_dv, "Dynamics")
-                            # Keyed collection: the population key is the
-                            # identifier, so it stays the `name` (model identity
-                            # is carried on `iri`).
+                            # Keyed collection: the population key is the identifier, so it stays the `name` (model identity is carried on `iri`).
                             _dv["name"] = _key
 
-        # Resolve iri-only refs by loading from the registry (full population
-        # for dynamics/coupling) or backfilling name (for parcellation/tractogram).
+        # Resolve iri-only refs by loading from the registry (full population for dynamics/coupling) or backfilling name (for parcellation/tractogram).
         _merge_from_registry(kwargs.get("dynamics"), "Dynamics")
         _merge_from_registry(kwargs.get("coupling"), "Coupling")
         net_kw = kwargs.get("network")
@@ -483,8 +465,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     parc["atlas"] = {"name": _iri_local(parc["iri"])}
                 _backfill_name_from_iri(parc.get("atlas"))
             _backfill_name_from_iri(net_kw.get("tractogram"))
-            # Eagerly construct the wrapper Network so its __init__ runs
-            # (loads normative connectivity from atlas/tractogram). The parent
+            # Eagerly construct the wrapper Network so its __init__ runs (loads normative connectivity from atlas/tractogram). The parent
             # __post_init__ accepts a Network instance as-is.
             kwargs["network"] = Network(**net_kw)
 
@@ -496,8 +477,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if isinstance(obj, cls):
                 return obj
             if isinstance(obj, YAMLRoot):
-                # Copy dataclass fields directly — _as_dict over-serializes
-                # enums and nested objects causing lossy round-trips.
+                # Copy dataclass fields directly — _as_dict over-serializes enums and nested objects causing lossy round-trips.
                 from dataclasses import fields as dc_fields
 
                 d = {}
@@ -505,8 +485,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     if f.name.startswith(("_", "class_")):
                         continue
                     val = getattr(obj, f.name, f.default)
-                    # Convert enums/PermissibleValues to plain text so
-                    # constructors can re-parse them via __post_init__.
+                    # Convert enums/PermissibleValues to plain text so constructors can re-parse them via __post_init__.
                     from linkml_runtime.linkml_model.meta import PermissibleValue
 
                     if isinstance(val, PermissibleValue):
@@ -545,31 +524,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if getattr(self, "integration", None) and not isinstance(self.integration, Integrator):
             self.integration = _coerce(Integrator, self.integration)
 
-        if getattr(self, "stimulation", None) and not isinstance(
-            self.stimulation, tvbo_datamodel.Stimulus
-        ):
+        if getattr(self, "stimulation", None) and not isinstance(self.stimulation, tvbo_datamodel.Stimulus):
             self.stimulation = _coerce(tvbo_datamodel.Stimulus, self.stimulation)
 
         # Resolve observations that reference a curated model by `iri` (e.g.
-        # `iri: tvbo:BOLD_TVB`): merge the model's pipeline/parameters/class_reference
-        # in non-destructively so locally declared source/period overrides still win.
+        # `iri: tvbo:BOLD_TVB`): merge the model's pipeline/parameters/class_reference in non-destructively so locally declared source/period overrides still win.
         obss = getattr(self, "observations", None)
         if obss and hasattr(obss, "values"):
             from tvbo.classes.observation import populate_observation_from_iri
-            # A curated model may ship the helper functions its pipeline calls; collect
-            # them into a fresh sink so an experiment with no iri-referenced model keeps
-            # its functions table untouched (reassigning it re-wraps the type downstream).
+
+            # A curated model may ship the helper functions its pipeline calls; collect them into a fresh sink so an experiment with no iri-referenced model keeps its functions table untouched (reassigning it re-wraps the type downstream).
             _iri_funcs: dict = {}
             for val in obss.values():
                 if val is not None and getattr(val, "iri", None):
                     populate_observation_from_iri(val, functions_sink=_iri_funcs)
             if _iri_funcs:
-                # Keep experiment.functions a plain name->Function dict (the YAML-loaded
-                # form). Assigning through the LinkML setter re-wraps it into a JsonObj
-                # that mangles the Function values and breaks `dict(experiment.functions)`
-                # in codegen — so mutate the existing dict in place, and for an
-                # experiment with none, install a plain dict via object.__setattr__
-                # (bypassing that setter). Add only functions the experiment lacks.
+                # Keep experiment.functions a plain name->Function dict (the YAML-loaded form). Assigning through the LinkML setter re-wraps it into a JsonObj that mangles the Function values and breaks `dict(experiment.functions)` in codegen — so mutate the existing dict in place, and for an experiment with none, install a plain dict via object.__setattr__ (bypassing that setter). Add only functions the experiment lacks.
                 funcs = getattr(self, "functions", None)
                 if funcs is None:
                     funcs = {}
@@ -595,18 +565,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Upgrade network.coupling entries to runtime Coupling + apply type fills
         _upgrade_network_couplings(self.network, _coupling_types)
-        # NOTE: coupling resolution (incoming_states / network.coupling seeding)
-        # is intentionally deferred to ``configure()`` so it runs lazily at the
-        # execution boundary across all backends and so the resolved state is
-        # observable in the spec only after the user explicitly prepared the
-        # experiment. See ``configure()``.
+        # NOTE: coupling resolution (incoming_states / network.coupling seeding) is intentionally deferred to ``configure()`` so it runs lazily at the execution boundary across all backends and so the resolved state is observable in the spec only after the user explicitly prepared the experiment. See ``configure()``.
 
         # Get source file path if loading from file (set by from_file classmethod)
         self._source_file = getattr(self.__class__, "_pending_source_file", None)
 
-        # Materialise the network from its declarative spec. All branching
-        # lives in Network._resolve; this hook only supplies the YAML
-        # source directory for relative-path resolution.
+        # Materialise the network from its declarative spec. All branching lives in Network._resolve; this hook only supplies the YAML source directory for relative-path resolution.
         if self.network is not None and not getattr(self.network, "_resolved", False):
             source_dir = Path(self._source_file).parent if self._source_file else None
             self.network._resolve(source_dir=source_dir)
@@ -619,8 +583,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Load network matrices from a companion data file (h5/zarr/yaml sidecar).
 
         Resolves ``network.data_file`` as an absolute path or relative to the
-        YAML source file / cwd.  The coupling and transforms defined inline in
-        the experiment YAML are preserved after loading.
+        YAML source file / cwd.  The coupling and transforms defined inline in the experiment YAML are preserved after loading.
         """
         from pathlib import Path
         from tvbo.classes.network import Network as _Network
@@ -633,8 +596,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             else:
                 data_file = (Path.cwd() / data_file).resolve()
 
-        # Accept .h5/.zarr → find sidecar, or direct .yaml sidecar path
-        if data_file.suffix in (".h5", ".zarr"):
+        # An .h5/.zarr describes itself when it carries embedded metadata, and otherwise names its sidecar; a .yaml path is already one.
+        from tvbo.data.network_io import read_embedded_metadata
+
+        if data_file.suffix in (".h5", ".zarr") and read_embedded_metadata(data_file) is None:
             sidecar = data_file.with_suffix(".yaml")
         else:
             sidecar = data_file
@@ -642,9 +607,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         loaded = _Network.from_file(sidecar)
 
         # Preserve inline experiment coupling / transforms.
-        # We must use indexing on the loaded network's containers rather than
-        # bulk-assigning a plain dict, because LinkML __setattr__ wraps plain
-        # dicts into JsonObj which breaks .items() downstream.
+        # We must use indexing on the loaded network's containers rather than bulk-assigning a plain dict, because LinkML __setattr__ wraps plain dicts into JsonObj which breaks .items() downstream.
         inline_coupling = dict(self.network.coupling) if self.network.coupling else {}
         inline_transforms = list(self.network.transforms) if self.network.transforms else []
 
@@ -652,8 +615,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         self.network.__class__ = Network
 
         if inline_coupling:
-            # Clear loaded network's coupling, then insert inline entries
-            # using indexing on the existing LinkML container.
+            # Clear loaded network's coupling, then insert inline entries using indexing on the existing LinkML container.
             if hasattr(self.network.coupling, "clear"):
                 self.network.coupling.clear()
             for k, v in inline_coupling.items():
@@ -665,8 +627,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _load_network_from_bids(self):
         """Load network matrices from BEP017 BIDS directory.
 
-        Uses network.bids_dir, network.structural_measures, and
-        network.observational_measures to load connectivity data.
+        Uses network.bids_dir, network.structural_measures, and network.observational_measures to load connectivity data.
         Relative paths are resolved relative to the YAML source file.
         """
         from pathlib import Path
@@ -698,19 +659,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     @classmethod
     def from_datamodel(cls, dm: tvbo_datamodel.SimulationExperiment) -> "SimulationExperiment":
-        """Create from a datamodel instance by copying its already-normalized
-        state.
+        """Create from a datamodel instance by copying its already-normalized state.
 
         This avoids the ``_as_dict`` → re-init round-trip which breaks on
-        ``inlined_as_dict`` fields (the keyed dict is not valid ``**kwargs``
-        for the inner class constructor).  Instead we directly copy the
-        ``__dict__`` from the fully-normalised LinkML object and then set
-        the convenience aliases that ``__init__`` would normally provide.
+        ``inlined_as_dict`` fields (the keyed dict is not valid ``**kwargs`` for the inner class constructor).  Instead we directly copy the
+        ``__dict__`` from the fully-normalised LinkML object and then set the convenience aliases that ``__init__`` would normally provide.
 
-        Ontology population for the integrator and the coupling runs here rather than at
-        construction, because the generated classes own their ``__init__``. Both calls are
-        idempotent and only fill what is missing; the lookup is by ``method`` / ``name``
-        when ``iri`` is unset.
+        Ontology population for the integrator and the coupling runs here rather than at construction, because the generated classes own their ``__init__``. Both calls are idempotent and only fill what is missing; the lookup is by ``method`` / ``name`` when ``iri`` is unset.
         """
         obj = cls.__new__(cls)
         # Copy all already-normalized state from the datamodel instance
@@ -773,23 +728,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         obj.__dict__["_source_file"] = getattr(cls, "_pending_source_file", None)
 
-        # Materialise the network from its declarative spec (data_file,
-        # bids_dir, parcellation, graph_generator). All branching logic lives
-        # in Network._resolve; this hook only supplies the YAML source
-        # directory for relative-path resolution.
+        # Materialise the network from its declarative spec (data_file, bids_dir, parcellation, graph_generator). All branching logic lives in Network._resolve; this hook only supplies the YAML source directory for relative-path resolution.
         net = obj.network
         if net is not None and not getattr(net, "_resolved", False):
             source_file = getattr(obj, "_source_file", None)
             source_dir = Path(source_file).parent if source_file else None
             net._resolve(source_dir=source_dir)
 
-        # Validate declarative network-observation sources against the
-        # network's declared observational_measures (names only, no data load).
+        # Validate declarative network-observation sources against the network's declared observational_measures (names only, no data load).
         obj._validate_network_observations()
 
-        # Lower declarative stimulus/stimulation Event fields (target_variable,
-        # target_regions, weight_distribution) into the legacy fields the shared
-        # codegen consumes — resolved here in Python, no template changes.
+        # Lower declarative stimulus/stimulation Event fields (target_variable, target_regions, weight_distribution) into the legacy fields the shared codegen consumes — resolved here in Python, no template changes.
         obj._resolve_events()
 
         return obj
@@ -798,8 +747,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def from_pyrates(cls, filepath: str) -> "SimulationExperiment":
         """Load a SimulationExperiment from a PyRates YAML template file.
 
-        Parses all OperatorTemplates in the file and creates a keyed dict
-        of Dynamics objects.
+        Parses all OperatorTemplates in the file and creates a keyed dict of Dynamics objects.
 
         Parameters
         ----------
@@ -868,8 +816,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def from_tvb_simulator(cls, tvb_simulator):
         """Build a `SimulationExperiment` from a configured TVB `Simulator`.
 
-        Delegates to the [TVB adapter](../adapters/tvb.qmd) to capture the
-        simulator's model, connectivity, coupling, integrator, and monitors,
+        Delegates to the [TVB adapter](../adapters/tvb.qmd) to capture the simulator's model, connectivity, coupling, integrator, and monitors,
         then constructs an equivalent experiment from that datamodel.
 
         Args:
@@ -899,14 +846,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         # Store source file path BEFORE loading so __init__ can use it
         cls._pending_source_file = str(Path(filepath).resolve())
-        # Make the recipe's code/ subdir importable, so custom builders/callables
-        # resolve by bare module name without a PYTHONPATH prefix. Before loading:
+        # Make the recipe's code/ subdir importable, so custom builders/callables resolve by bare module name without a PYTHONPATH prefix. Before loading:
         # construction resolves the network builder eagerly (see __init__).
         register_recipe_code_paths(cls._pending_source_file)
         try:
             data_as_dict = yaml_loader.load_as_dict(filepath) or {}
-            # Drop private/provenance keys (e.g. _source_file) — not schema slots,
-            # so a round-tripped render_yaml() spec reloads cleanly.
+            # Drop private/provenance keys (e.g. _source_file) — not schema slots, so a round-tripped render_yaml() spec reloads cleanly.
             if isinstance(data_as_dict, dict):
                 data_as_dict = {k: v for k, v in data_as_dict.items() if not str(k).startswith("_")}
             exp = yaml_loader.loads(yaml.safe_dump(data_as_dict), target_class=cls)
@@ -919,8 +864,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def from_string(cls, yaml_string: str) -> "SimulationExperiment":
         """Create a SimulationExperiment from a YAML string.
 
-        This is useful for defining experiments inline in notebooks or scripts
-        using human-readable YAML syntax.
+        This is useful for defining experiments inline in notebooks or scripts using human-readable YAML syntax.
 
         Parameters
         ----------
@@ -1227,9 +1171,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             # Compare shapes
             if ts_rerun.shape != timeseries.shape:
-                logger.warning(
-                    "Shape mismatch! Loaded: %s, Rerun: %s", timeseries.shape, ts_rerun.shape
-                )
+                logger.warning("Shape mismatch! Loaded: %s, Rerun: %s", timeseries.shape, ts_rerun.shape)
             else:
                 # Compare data
                 max_diff = np.max(np.abs(np.asarray(ts_rerun.data) - np.asarray(timeseries.data)))
@@ -1237,8 +1179,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     logger.info("Verification passed! Max difference: %.2e", max_diff)
                 else:
                     logger.warning(
-                        "Data differs. Max difference: %.2e "
-                        "(may be expected if noise was used or parameters differ).",
+                        "Data differs. Max difference: %.2e (may be expected if noise was used or parameters differ).",
                         max_diff,
                     )
 
@@ -1252,8 +1193,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def symbolic(self, integrate=False, indexed=False, delays=False):
         """Symbolic representation of the full experiment equations.
 
-        Produces different styles of mathematical output depending on the
-        combination of flags:
+        Produces different styles of mathematical output depending on the combination of flags:
 
         +----------+--------+-------+--------------------------------------------+
         | integrate| indexed| delays| Description                                |
@@ -1336,9 +1276,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if indexed:
             indexable = list(self.dynamics.state_variables) + list(self.dynamics.derived_variables)
             subs_index = {
-                scope[str(name)]: Function(f"{name}_i", **assumptions_of())(t)
-                for name in indexable
-                if str(name) in scope
+                scope[str(name)]: Function(f"{name}_i", **assumptions_of())(t) for name in indexable if str(name) in scope
             }
 
         # Coupling substitution: Symbol(ct_name) → Sum(...)
@@ -1522,7 +1460,6 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     filepath=filepath,
                 )
         else:
-            import re
             from pathlib import Path as _Path
             from tvbo.utils import to_yaml as _to_yaml
 
@@ -1559,15 +1496,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Resolve coupling declarations and normalize delay flags.
 
         Runs at the execution boundary and is backend-agnostic and idempotent:
-        the resolved state persists on the experiment so YAML re-serialization
-        and metadata export reflect what was actually executed. Delayed
-        integration/coupling is disabled when the connectome has no path
-        lengths or the conduction speed is infinite (all delays zero).
+        the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed
+        integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero).
         """
         # Reconcile experiment / network / dynamics coupling declarations.
-        # Runs at the execution boundary — backend-agnostic, idempotent, and
-        # the resolved state persists on the experiment so YAML re-serialization
-        # and metadata export reflect what was actually executed.
+        # Runs at the execution boundary — backend-agnostic, idempotent, and the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed.
         _resolve_coupling(self)
 
         # Lower declarative stimulus events (target_variable -> name, target_regions
@@ -1621,10 +1554,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def collect_state(self, initial_conditions: TimeSeries | None = None):
         """Assemble a `SimulationState` pytree for the JAX-style backends.
 
-        Gathers the parameter collection (expanding coupling parameters with
-        shape annotations and wrapping array-valued parameters as ndarrays so
-        the JAX backend receives real arrays), the network, integration
-        step/step-count, and the noise wrapper into a single state object.
+        Gathers the parameter collection (expanding coupling parameters with shape annotations and wrapping array-valued parameters as ndarrays so
+        the JAX backend receives real arrays), the network, integration step/step-count, and the noise wrapper into a single state object.
 
         Args:
             initial_conditions: History to seed the state with. When omitted,
@@ -1645,11 +1576,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
         # Expand coupling parameters with shape annotations like "(N, N)" or "(N,)"
         self._expand_coupling_parameter_shapes(parameters)
-        # Wrap array-valued (per-mode) parameters as ndarrays so the JAX backend
-        # receives jnp arrays. Bare Python lists would survive convert_dtype's
-        # tree_map (which descends into the list and only converts the scalar
-        # elements, leaving a list[Array]) and then break `scalar * param`
-        # arithmetic in the generated dfun. Mirrors render_jax_default (tvboptim).
+        # Wrap array-valued (per-mode) parameters as ndarrays so the JAX backend receives jnp arrays. Bare Python lists would survive convert_dtype's tree_map (which descends into the list and only converts the scalar elements, leaving a list[Array]) and then break `scalar * param` arithmetic in the generated dfun. Mirrors render_jax_default (tvboptim).
         self._arrayify_parameter_values(parameters)
 
         state = SimulationState(
@@ -1705,13 +1632,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _arrayify_parameter_values(self, parameters: Bunch) -> None:
         """Convert list/tuple-valued parameters in the collection to ``np.array``.
 
-        Array-valued constants (e.g. the Stefanescu-Jirsa per-mode coupling
-        vectors/matrices) arrive as nested Python lists from the metadata. The
+        Array-valued constants (e.g. the Stefanescu-Jirsa per-mode coupling vectors/matrices) arrive as nested Python lists from the metadata. The
         JAX backend evaluates the dfun with these values as ``_p`` leaves, and
-        ``scalar * list`` raises ``TypeError`` under JAX. Wrapping them as
-        ndarrays makes ``SimulationState.convert_dtype`` emit real ``jnp`` arrays
-        (an ndarray is a single pytree leaf, whereas a list is traversed
-        element-wise). Recurses through the nested ``dynamics``/``coupling``
+        ``scalar * list`` raises ``TypeError`` under JAX. Wrapping them as ndarrays makes ``SimulationState.convert_dtype`` emit real ``jnp`` arrays
+        (an ndarray is a single pytree leaf, whereas a list is traversed element-wise). Recurses through the nested ``dynamics``/``coupling``
         Bunches; scalars and existing arrays are left untouched.
         """
         from tvbo.utils import is_array_valued
@@ -1731,8 +1655,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def execute(self, format="tvb", rendered_code=None, **kwargs):
         """Render and build the executable object for a backend without running it.
 
-        Calls `configure` to normalize coupling/delay metadata, renders the
-        backend code, and executes it to produce a ready-to-run artefact. The
+        Calls `configure` to normalize coupling/delay metadata, renders the backend code, and executes it to produce a ready-to-run artefact. The
         return type depends on `format`:
 
         - `"tvb"`: a configured `tvb` `Simulator`.
@@ -1760,8 +1683,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         Raises:
             ValueError: If `format` is not one of the supported backends.
         """
-        # Ensure coupling resolution / delay flags are normalized before any
-        # backend code generation. Idempotent — safe if called twice via run().
+        # Ensure coupling resolution / delay flags are normalized before any backend code generation. Idempotent — safe if called twice via run().
         self.configure()
         if format.lower() == "tvb":
             code = rendered_code if rendered_code is not None else self.render_code(format=format)
@@ -1774,8 +1696,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         elif format.lower() in ["tvboptim", "tvb-optim"]:
             # Return namespace with all generated functions for tvboptim workflows
-            # This allows: ns = exp.execute('tvboptim')
-            #              spectrum, cauchy_pdf = ns.spectrum, ns.cauchy_pdf
+            # This allows: ns = exp.execute('tvboptim') spectrum, cauchy_pdf = ns.spectrum, ns.cauchy_pdf
             namespace = {}
             code = rendered_code if rendered_code is not None else self.render_code("tvboptim")
             exec(code, namespace)
@@ -1785,9 +1706,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             _return_namespace = kwargs.pop("_return_namespace", False)
             jit = kwargs.get("jit", True)
             code = rendered_code if rendered_code is not None else self.render_code(format=format, **kwargs)
-            # Use a fresh namespace each time to avoid JAX tracer leaks
-            # between repeated executions (stale tracers in shared globals
-            # cause UnexpectedTracerError on re-runs).
+            # Use a fresh namespace each time to avoid JAX tracer leaks between repeated executions (stale tracers in shared globals cause UnexpectedTracerError on re-runs).
             namespace = {"TimeSeries": TimeSeries}
             exec(code, namespace)
             jax_model = namespace["kernel"]
@@ -1809,10 +1728,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _locate_source_result(self, results_root, source_id):
         """Path to the ``from_experiment`` source run's saved result HDF5.
 
-        Delegates to the shared cross-experiment container locator
-        (:func:`tvbo.data.dataref.locate_exp_container`) — globs ``results_root``
-        (or cwd) by the ``exp-<id>_`` stem, skipping the network sidecar, and raises
-        if the source hasn't been run yet. Shared by the seed / branch / parameter
+        Delegates to the shared cross-experiment container locator (:func:`tvbo.data.dataref.locate_exp_container`) — globs ``results_root``
+        (or cwd) by the ``exp-<id>_`` stem, skipping the network sidecar, and raises if the source hasn't been run yet. Shared by the seed / branch / parameter
         resolvers and by every ``DataRef`` consumer, so all locate one code path.
         """
         from tvbo.data import dataref as _dref
@@ -1822,21 +1739,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _resolve_from_experiment_seed(self, results_root=None):
         """Load the operating point for ``initial_state.method == from_experiment``.
 
-        The source experiment exposes its settled per-node state as observations
-        named ``<state_variable>_final`` (e.g. ``theta_final``). This locates that
+        The source experiment exposes its settled per-node state as observations named ``<state_variable>_final`` (e.g. ``theta_final``). This locates that
         experiment's saved result under ``results_root`` — matched by the
         ``exp-<id>_`` file stem, so the output-directory layout (``results/2``,
-        ``output/nc/exp2``, …) does not matter — and reads one ``<sv>_final`` per
-        state variable of *this* experiment. Everything is keyed by name/dim, never
-        positional: the result is a ``{state_variable_name: (n_nodes,)}`` dict that
-        the generated code places into its own canonical rows. For a swept source
-        (an adiabatic ramp) the operating point is the last recorded point
-        (``source_point``; default ``'endpoint'``).
+        ``output/nc/exp2``, …) does not matter — and reads one ``<sv>_final`` per state variable of *this* experiment. Everything is keyed by name/dim, never
+        positional: the result is a ``{state_variable_name: (n_nodes,)}`` dict that the generated code places into its own canonical rows. For a swept source
+        (an adiabatic ramp) the operating point is the last recorded point (``source_point``; default ``'endpoint'``).
 
-        Returns the name-keyed IC dict, or ``None`` when this experiment does not
-        use ``from_experiment``.
-        For ``source_point == 'branch'`` this returns ``None`` — the whole
-        recorded branch is a per-cell seed, resolved by
+        Returns the name-keyed IC dict, or ``None`` when this experiment does not use ``from_experiment``.
+        For ``source_point == 'branch'`` this returns ``None`` — the whole recorded branch is a per-cell seed, resolved by
         :meth:`_resolve_from_experiment_branch`.
         """
         return self._read_source_final(results_root, branch=False)
@@ -1844,29 +1755,21 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _resolve_from_experiment_branch(self, results_root=None):
         """Load the WHOLE recorded branch for ``source_point == 'branch'``.
 
-        Where :meth:`_resolve_from_experiment_seed` picks one settled point, this
-        keeps the source run's swept dimension, so every ``<sv>_final`` observation
-        loads as ``(n_cells, n_nodes)`` and the swept-axis coordinate supplies the
-        per-cell parameter values ``(n_cells,)``. An independent exploration can then
-        restart an analysis (Lyapunov exponents, Jacobian/Floquet spectra, basin
-        sampling, perturbation kicks, first-passage, …) at every branch point in
-        parallel — the per-cell, cross-experiment counterpart of the single operating
-        point above. Returns ``{axis_name, axis_values, seeds, n_cells}`` (``seeds`` a
-        name-keyed ``{sv: (n_cells, n_nodes)}`` dict), or ``None`` when this experiment
-        does not use ``from_experiment`` with ``source_point='branch'``.
+        Where :meth:`_resolve_from_experiment_seed` picks one settled point, this keeps the source run's swept dimension, so every ``<sv>_final`` observation
+        loads as ``(n_cells, n_nodes)`` and the swept-axis coordinate supplies the per-cell parameter values ``(n_cells,)``. An independent exploration can then
+        restart an analysis (Lyapunov exponents, Jacobian/Floquet spectra, basin sampling, perturbation kicks, first-passage, …) at every branch point in
+        parallel — the per-cell, cross-experiment counterpart of the single operating point above. Returns ``{axis_name, axis_values, seeds, n_cells}`` (``seeds`` a
+        name-keyed ``{sv: (n_cells, n_nodes)}`` dict), or ``None`` when this experiment does not use ``from_experiment`` with ``source_point='branch'``.
         """
         return self._read_source_final(results_root, branch=True)
 
     def _read_source_final(self, results_root=None, *, branch: bool):
         """Shared loader behind the two ``from_experiment`` resolvers.
 
-        Locates the source run and reads the ``<sv>_final`` settled-state
-        observations, keyed by state-variable name (never positional). With
+        Locates the source run and reads the ``<sv>_final`` settled-state observations, keyed by state-variable name (never positional). With
         ``branch=False`` it selects a single point (``source_point``; default
-        ``endpoint``) → ``{sv: (n_nodes,)}``; with ``branch=True`` it keeps the
-        swept dimension → the branch dict described in
-        :meth:`_resolve_from_experiment_branch`. Returns ``None`` when the
-        experiment's ``source_point`` mode does not match ``branch``.
+        ``endpoint``) → ``{sv: (n_nodes,)}``; with ``branch=True`` it keeps the swept dimension → the branch dict described in
+        :meth:`_resolve_from_experiment_branch`. Returns ``None`` when the experiment's ``source_point`` mode does not match ``branch``.
         """
         ini = getattr(self, "initial_state", None)
         if ini is None or str(getattr(ini, "method", "") or "") != "from_experiment":
@@ -1880,8 +1783,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError("initial_state.method=from_experiment requires source_experiment")
         source_id = int(getattr(src, "id", src))
 
-        # State variables of THIS experiment → which <sv>_final observations to
-        # load. Keyed by name; the generated code places each into its own row.
+        # State variables of THIS experiment → which <sv>_final observations to load. Keyed by name; the generated code places each into its own row.
         svs = self.dynamics.state_variables
         sv_items = svs.items() if hasattr(svs, "items") else [(getattr(s, "name", None), s) for s in svs]
         sv_names = [getattr(sv, "name", None) or key for key, sv in sv_items]
@@ -1899,12 +1801,19 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     return d
             return da.dims[-1]
 
+        # Last-declared first: that is the algorithm whose endpoint the run actually finished at, and guessing would warm-start from an untuned state that looks tuned.
+        algs = getattr(self, "algorithms", None)
+        alg_names = list(algs.keys()) if hasattr(algs, "keys") else [getattr(a, "name", None) for a in (algs or [])]
+        seed_producers = [str(a) for a in reversed(alg_names) if a]
+
         def _final_key(ds, sv):
             from tvbo.data import dataref as _dref
 
             try:
-                return _dref.match_output(ds.data_vars, f"{sv}_final")
-            except KeyError:
+                return _dref.match_output(ds.data_vars, f"{sv}_final", prefer=seed_producers)
+            except KeyError as exc:
+                if "is recorded by" in str(exc):
+                    raise  # an ambiguity, not an absence — its own message names the candidates
                 raise KeyError(
                     f"initial_state.from_experiment: source experiment {source_id} does not "
                     f"record '{sv}_final'. The source must expose its settled state as an "
@@ -1935,7 +1844,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                         f"dims {tuple(da.dims)}. Only a single-axis branch can be restarted per cell."
                     )
                 sd = sweep[0]
-                da = da.transpose(sd, nd)                       # (n_cells, n_nodes), by name
+                da = da.transpose(sd, nd)  # (n_cells, n_nodes), by name
                 seeds[sv] = jnp.asarray(np.asarray(da.values))
                 if axis_values is None:
                     axis_name = str(sd)
@@ -1965,23 +1874,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _resolve_from_experiment_params(self, results_root=None):
         """Load model PARAMETERS sourced from another experiment.
 
-        A parameter (dynamics **or** coupling) obtains its value from a sibling run in
-        one of two spellings, both resolved through the one shared ``DataRef`` path
+        A parameter (dynamics **or** coupling) obtains its value from a sibling run in one of two spellings, both resolved through the one shared ``DataRef`` path
         (:mod:`tvbo.data.dataref`):
 
         * ``used: {experiment, output, sel, reconcile}`` — the explicit cross-container
-          reference: any experiment's recorded observation, a tuned free parameter it
-          persisted as ``estimate__<name>`` (warm-start / prior location, e.g. ``wLRE``),
-          optionally one swept point (``sel``) and label ``reconcile``. Self-contained,
-          so it resolves with or without ``initial_state.from_experiment``.
+          reference: any experiment's recorded observation, a tuned free parameter it persisted as ``estimate__<name>`` (warm-start / prior location, e.g. ``wLRE``),
+          optionally one swept point (``sel``) and label ``reconcile``. Self-contained, so it resolves with or without ``initial_state.from_experiment``.
         * ``measure: <name>`` in a ``method=from_experiment`` experiment — the no-``sel``
-          shorthand whose WHERE is the enclosing ``source_experiment`` and whose value is
-          the settled operating point (``source_point``).
+          shorthand whose WHERE is the enclosing ``source_experiment`` and whose value is the settled operating point (``source_point``).
 
-        Per-node **vectors and per-edge matrices** are both handled; a source array with
-        node-label coordinates is reconciled to THIS experiment's network **by label**
-        (alias-aware, on every node axis). An unlabelled source array is taken in model
-        order. Returns ``{param_name: ndarray}``, or ``None`` when nothing sources a value.
+        Per-node **vectors and per-edge matrices** are both handled; a source array with node-label coordinates is reconciled to THIS experiment's network **by label**
+        (alias-aware, on every node axis). An unlabelled source array is taken in model order. Returns ``{param_name: ndarray}``, or ``None`` when nothing sources a value.
         """
         from tvbo.data import dataref as _dref
 
@@ -1991,8 +1894,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         def _items(params):
             if params is None:
                 return []
-            return list(params.items()) if hasattr(params, "items") \
-                else [(getattr(p, "name", None), p) for p in params]
+            return list(params.items()) if hasattr(params, "items") else [(getattr(p, "name", None), p) for p in params]
 
         def _couplings(obj):
             if obj is None:
@@ -2001,9 +1903,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 return list(obj.values())
             return list(obj) if isinstance(obj, (list, tuple)) else [obj]
 
-        # Each sourced parameter -> ('used', DataRef) | ('measure', name). A ``used:``
-        # edge carries its own WHERE, so it resolves independently of from_experiment; a
-        # bare ``measure:`` needs the from_experiment source that supplies its WHERE.
+        # Each sourced parameter -> ('used', DataRef) | ('measure', name). A ``used:`` edge carries its own WHERE, so it resolves independently of from_experiment; a bare ``measure:`` needs the from_experiment source that supplies its WHERE.
         wanted: dict = {}
         param_sets = [getattr(getattr(self, "dynamics", None), "parameters", None)]
         net = getattr(self, "network", None)
@@ -2016,9 +1916,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     continue
                 used = getattr(p, "used", None)
                 # A cross-experiment ``used:`` carries its own WHERE (experiment/iri). A
-                # LOCAL ``used:`` (neither) names one of this experiment's own outputs and
-                # is resolved by the in-run machinery — skip it here so it never reaches
-                # locate_container, which raises on a WHERE-less reference.
+                # LOCAL ``used:`` (neither) names one of this experiment's own outputs and is resolved by the in-run machinery — skip it here so it never reaches locate_container, which raises on a WHERE-less reference.
                 if used is not None and not _dref.is_local_ref(used):
                     wanted[nm] = ("used", used)
                 elif is_from_exp:
@@ -2028,14 +1926,11 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if not wanted:
             return None
 
-        # WHERE fallback for a bare ``measure:`` (and a ``used:`` naming no experiment/
-        # iri): the enclosing from_experiment source, named once.
+        # WHERE fallback for a bare ``measure:`` (and a ``used:`` naming no experiment/ iri): the enclosing from_experiment source, named once.
         fallback = None
         if is_from_exp:
             src = getattr(ini, "source_experiment", None)
-            # Normalise the exp-id spelling (``exp-3``/``3``/an Experiment) to the int
-            # locate_container globs by, so a from_experiment source written ``exp-3``
-            # does not raise on ``int('exp-3')`` (matches _source_id_int in dataref).
+            # Normalise the exp-id spelling (``exp-3``/``3``/an Experiment) to the int locate_container globs by, so a from_experiment source written ``exp-3`` does not raise on ``int('exp-3')`` (matches _source_id_int in dataref).
             _sid = _dref.experiment_id(getattr(src, "id", src)) if src is not None else None
             fallback = int(_sid) if _sid is not None else None
 
@@ -2044,7 +1939,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # 'branch' has no single point for a parameter value; settle to the endpoint.
         settle = -1 if point in ("", "endpoint", "branch") else int(point)
 
-        _recon: dict = {}   # network-invariant alias map + model labels, computed lazily
+        _recon: dict = {}  # network-invariant alias map + model labels, computed lazily
+
         def _recon_ctx():
             if not _recon:
                 _recon["amap"] = self.network.region_alias_map()
@@ -2066,14 +1962,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if kind != "used":
                 continue
             amap, labels = _recon_ctx() if _dref.reconcile_mode(spec) == "by_label" else (None, None)
-            da = _dref.resolve_dataref(spec, results_root=results_root,
-                                       fallback_experiment=fallback,
-                                       alias_map=amap, model_labels=labels)
+            da = _dref.resolve_dataref(
+                spec, results_root=results_root, fallback_experiment=fallback, alias_map=amap, model_labels=labels
+            )
             out[pname] = jnp.asarray(np.asarray(da.values))
 
-        # Legacy ``measure:`` params all share the one from_experiment source — locate and
-        # open it ONCE, then settle each to the operating point and reconcile labelled node
-        # axes. WHERE is the source; the swept dims settle positionally (source_point).
+        # Legacy ``measure:`` params all share the one from_experiment source — locate and open it ONCE, then settle each to the operating point and reconcile labelled node axes. WHERE is the source; the swept dims settle positionally (source_point).
         measures = [(p, s) for p, (k, s) in wanted.items() if k == "measure"]
         if measures:
             if fallback is None:
@@ -2084,7 +1978,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     da = ds[_dref.match_output(ds.data_vars, measure)]
                     node_dims = _node_dims(da)
                     for d in [d for d in da.dims if d not in node_dims]:
-                        da = da.isel({d: settle})     # settle swept dims to the operating point
+                        da = da.isel({d: settle})  # settle swept dims to the operating point
                     da = da.load()
                     if any(d in da.coords for d in node_dims):
                         amap, labels = _recon_ctx()
@@ -2097,14 +1991,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _resolve_builder_datarefs(self, results_root=None):
         """Resolve exploration-builder ``Argument.used`` DataRefs to arrays, keyed for the run.
 
-        An ``ExplorationAxis.builder`` argument may source a labelled array from another
-        experiment with ``used:`` — e.g. a control-mask builder that needs the
-        operating-point Lyapunov vector a *different* experiment recorded. Each is
-        resolved here, on the Python side where ``results_root`` and the network are
-        available, through the one shared ``DataRef`` path (:mod:`tvbo.data.dataref`),
-        and handed to the generated run as ``builder_data={'<axis>::<arg>': array}``
-        (looked up at runtime by ``_bdv``). This mirrors how the from_experiment seeds
-        are pre-resolved and injected as data — the array is never inlined into the
+        An ``ExplorationAxis.builder`` argument may source a labelled array from another experiment with ``used:`` — e.g. a control-mask builder that needs the
+        operating-point Lyapunov vector a *different* experiment recorded. Each is resolved here, on the Python side where ``results_root`` and the network are
+        available, through the one shared ``DataRef`` path (:mod:`tvbo.data.dataref`), and handed to the generated run as ``builder_data={'<axis>::<arg>': array}``
+        (looked up at runtime by ``_bdv``). This mirrors how the from_experiment seeds are pre-resolved and injected as data — the array is never inlined into the
         emitted code. Returns ``None`` when no builder argument sources a value.
         """
         from tvbo.data import dataref as _dref
@@ -2124,8 +2014,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 args = getattr(builder, "arguments", None) if builder is not None else None
                 if not args:
                     continue
-                items = args.items() if hasattr(args, "items") \
-                    else [(getattr(a, "name", None), a) for a in args]
+                items = args.items() if hasattr(args, "items") else [(getattr(a, "name", None), a) for a in args]
                 for an, arg in items:
                     ref = getattr(arg, "used", None)
                     if ref is None:
@@ -2134,18 +2023,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     if _dref.reconcile_mode(ref) == "by_label":
                         amap = self.network.region_alias_map()
                         labels = self._resolve_model_node_labels()
-                    da = _dref.resolve_dataref(ref, results_root=results_root,
-                                               alias_map=amap, model_labels=labels)
+                    da = _dref.resolve_dataref(ref, results_root=results_root, alias_map=amap, model_labels=labels)
                     out[f"{getattr(axis, 'parameter', '')}::{an}"] = np.asarray(da.values)
         return out or None
 
-    def run(self, format=None, initial_conditions=None, results_root=None,
-            rendered_code=None, **kwargs):
+    def run(self, format=None, initial_conditions=None, results_root=None, rendered_code=None, **kwargs):
         """Configure, build, and run the experiment on a backend.
 
         Dispatches on `format` to the corresponding backend (`tvb`, `tvboptim`,
-        `jax`/`autodiff`, `cuda`, `python`, or `pde`), executes the simulation,
-        and wraps the output in an [`ExperimentResult`](../data/types.qmd).
+        `jax`/`autodiff`, `cuda`, `python`, or `pde`), executes the simulation, and wraps the output in an [`ExperimentResult`](../data/types.qmd).
 
         Args:
             format: Backend identifier selecting how to run the experiment. When
@@ -2175,18 +2061,13 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             An `ExperimentResult` holding the integrated time series and any
             observations, with `source` set to this experiment.
         """
-        # Make tvbo progress visible for interactive/script runs without
-        # clobbering an app's own logging — the same switch the CLI uses, so
-        # ``exp.run(...)`` and ``tvbo run`` log identically. No-op if the
-        # embedding application already configured logging.
+        # The switch the CLI uses, so ``exp.run(...)`` and ``tvbo run`` log identically; a no-op once the embedding application has configured logging itself.
         ensure_configured()
 
         if "duration" in kwargs:
             self.integration.duration = kwargs.pop("duration")
 
-        # The active subject (set by the per-subject workflow fan-out) selects
-        # which per-subject empirical target this run resolves. Popped here so it
-        # never leaks into a backend runner's kwargs.
+        # The active subject (set by the per-subject workflow fan-out) selects which per-subject empirical target this run resolves. Popped here so it never leaks into a backend runner's kwargs.
         active_subject = kwargs.pop("active_subject", None)
         if active_subject is None:
             active_subject = getattr(getattr(self, "dataset", None), "active_subject", None)
@@ -2195,9 +2076,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         self.configure()
         Bunch()
 
-        # Resolve the backend declaratively when the caller passed none: the
-        # experiment's own ``execution.backend`` selects the engine (a spiking
-        # network declares ``brian2``), defaulting to ``tvboptim``.
+        # Resolve the backend declaratively when the caller passed none: the experiment's own ``execution.backend`` selects the engine (a spiking network declares ``brian2``), defaulting to ``tvboptim``.
         if format is None:
             format = getattr(getattr(self, "execution", None), "backend", None) or "tvboptim"
 
@@ -2237,9 +2116,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if m_name == "Raw":
                     sim_result = SimulationResult(data=da)
                 else:
-                    # Key by the monitor's canonical name (its title's first
-                    # token already equals the observation name) so tvb results
-                    # expose the same keys as the jax/tvboptim backends, e.g.
+                    # Key by the monitor's canonical name (its title's first token already equals the observation name) so tvb results expose the same keys as the jax/tvboptim backends, e.g.
                     # result.observations.BOLD_TVB rather than a lower-cased key.
                     observations[m_name] = SimulationResult(data=da)
 
@@ -2258,10 +2135,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 da = xr.DataArray(data=data_np, dims=dims, coords=coords)
                 sim_result = SimulationResult(data=da)
 
-            # Wrap in Bunch so tvb results support dot-access
-            # (result.observations.BOLD_TVB), matching the jax/tvboptim backends;
-            # assigning after construction bypasses SimulationResult's own
-            # normalization.
+            # A Bunch so tvb results carry dot-access (result.observations.BOLD_TVB) like the jax/tvboptim backends; assigned after construction, which bypasses SimulationResult's own normalization.
             sim_result.observations = Bunch(observations)
             return ExperimentResult(
                 integration=sim_result,
@@ -2270,20 +2144,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             )
 
         elif format.lower() in ["tvboptim", "tvb-optim"]:
-            # Heterogeneous networks (different dynamics per node) run in process
-            # through the tvboptim HeterogeneousNetwork engine rather than the
-            # homogeneous codegen path below.
+            # Heterogeneous networks (different dynamics per node) run in process through the tvboptim HeterogeneousNetwork engine rather than the homogeneous codegen path below.
             from tvbo.adapters.tvboptim import (
                 is_heterogeneous,
                 run_heterogeneous_tvboptim,
             )
 
             if is_heterogeneous(self):
-                # The in-process HeterogeneousNetwork engine integrates from the
-                # network's own defaults; unlike the homogeneous path below it does
-                # not yet apply the cross-experiment seeds resolved from
-                # ``results_root``. Refuse loudly when the experiment declares one
-                # rather than silently returning a default-seeded (wrong) result.
+                # The in-process HeterogeneousNetwork engine integrates from the network's own defaults and does not yet apply the cross-experiment seeds resolved from ``results_root``, so a declared seed refuses loudly rather than returning a default-seeded (wrong) result.
                 _declared = [
                     label
                     for label, seed in (
@@ -2297,7 +2165,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 if _declared:
                     raise NotImplementedError(
                         "Heterogeneous tvboptim runs do not yet apply cross-experiment "
-                        "seeds, but this experiment declares: " + ", ".join(_declared)
+                        "seeds, but this experiment declares: "
+                        + ", ".join(_declared)
                         + ". Run the homogeneous tvboptim path, or remove the seed until "
                         "the HeterogeneousNetwork engine supports it."
                     )
@@ -2324,21 +2193,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             delay_matrix = self.network.calculate_delays() if getattr(self.coupling, "delayed", False) else None
 
             # Resolve network-sourced observations (e.g. fc_target <- empirical
-            # FC) to matrices and pass them alongside weights/distances. Only
-            # set when present, so experiments without network observations are
-            # unaffected.
+            # FC) to matrices and pass them alongside weights/distances. Only set when present, so experiments without network observations are unaffected.
             net_obs = self.resolve_network_observations()
             # Per-subject dataset-sourced targets (e.g. this subject's empirical
-            # FC), reconciled to the model's node labels, merge into the same
-            # network_observations injection.
+            # FC), reconciled to the model's node labels, merge into the same network_observations injection.
             if getattr(self, "_active_subject", None):
                 for obs_name, da in self.resolve_dataset_observations(self._active_subject).items():
                     net_obs = dict(net_obs or {})
                     net_obs[obs_name] = np.asarray(da.values)
             elif self.dataset_on_device():
-                # On-device cohort: stack the whole cohort into a leading subject
-                # axis (B, ...) so the generated vmap driver maps one lane per
-                # subject, instead of one workflow job per subject.
+                # On-device cohort: stack the whole cohort into a leading subject axis (B, ...) so the generated vmap driver maps one lane per subject, instead of one workflow job per subject.
                 _batched, _subj_ids = self.resolve_dataset_observations_batched()
                 for obs_name, arr in _batched.items():
                     net_obs = dict(net_obs or {})
@@ -2347,9 +2211,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if net_obs:
                 kwargs.setdefault("network_observations", net_obs)
 
-            # Resolve InitialState.from_experiment -> the operating point another
-            # experiment already reached, loaded from its saved run and handed to the
-            # generated code as seed_dynamics. No-op unless method == from_experiment.
+            # Resolve InitialState.from_experiment -> the operating point another experiment already reached, loaded from its saved run and handed to the generated code as seed_dynamics. No-op unless method == from_experiment.
             _seed = self._resolve_from_experiment_seed(results_root)
             if _seed is not None:
                 kwargs.setdefault("seed_dynamics", _seed)
@@ -2360,9 +2222,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if _pseed is not None:
                 kwargs.setdefault("seed_params", _pseed)
 
-            # source_point='branch': the source run's WHOLE branch is a per-cell seed
-            # (axis values + settled state per point), handed over as branch_seed so an
-            # independent exploration can restart an analysis at every branch point.
+            # source_point='branch': the source run's WHOLE branch is a per-cell seed (axis values + settled state per point), handed over as branch_seed so an independent exploration can restart an analysis at every branch point.
             _branch = self._resolve_from_experiment_branch(results_root)
             if _branch is not None:
                 kwargs.setdefault("branch_seed", _branch)
@@ -2412,8 +2272,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 jax.config.update("jax_enable_x64", False)
                 state = state.convert_dtype(target_dtype=jnp.float32)
 
-            jax_model, _jax_ns = self.execute(format="jax", _return_namespace=True,
-                                              rendered_code=rendered_code, **kwargs)
+            jax_model, _jax_ns = self.execute(format="jax", _return_namespace=True, rendered_code=rendered_code, **kwargs)
             _run_fn = _jax_ns.get("run_experiment")
             if _run_fn is not None:
                 # Template builds ExperimentResult directly (mirrors tvboptim backend).
@@ -2434,14 +2293,27 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return ExperimentResult(integration=cuda_result, source=self, name=self.label)
 
         elif format.lower() == "python":
-            bnm = _Network(Network(self.network))
+            duration = kwargs.get("duration", self.integration.duration)
+            net = self.network
+            # Every way a network can be declared, matching `to_yaml_with_network`: a matrix-only or parcellation-only connectome must not read as a single node.
+            declared = net is not None and bool(
+                (getattr(net, "number_of_nodes", None) or 0) > 1
+                or (getattr(net, "number_of_regions", None) or 0) > 1
+                or getattr(net, "nodes", None)
+                or getattr(net, "edges", None)
+                or getattr(net, "data_file", None)
+                or getattr(net, "parcellation", None)
+                or (getattr(net, "weights", None) is not None and np.asarray(net.weights).size > 1)
+            )
+            if not declared:
+                ts = self.dynamics.run(format="python", duration=duration, dt=self.integration.step_size)
+                return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
+            # normalize_weights=False: weight transforms are declared in the spec; the runner must not mutate the experiment's network in place.
+            bnm = _Network(net, normalize_weights=False)
             bnm.add_local_model(self.dynamics)
             bnm.add_coupling(self.coupling)
 
-            ts = bnm.run(
-                duration=kwargs.get("duration", self.integration.duration),
-                dt=self.integration.step_size,
-            )
+            ts = bnm.run(duration=duration, dt=self.integration.step_size)
             return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
 
         elif format.lower() in ["pde", "pde-fem", "pde-python"]:
@@ -2468,23 +2340,31 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if u0_kw is not None:
                 arr = np.asarray(u0_kw, dtype=float).ravel()
                 if meta and isinstance(meta, dict):
-                    ndofs = int(meta.get("ndofs", arr.size))
-                    if arr.size != ndofs:
-                        raise ValueError(f"u0 length {arr.size} != ndofs {ndofs}")
+                    ndofs = int(meta.get("ndofs", arr.size) or arr.size)
+                    n_vars = int(meta.get("n_vars", 1))
+                    # Either one variable's field, or the whole stacked state.
+                    if arr.size not in (ndofs, n_vars * ndofs):
+                        raise ValueError(
+                            f"u0 length {arr.size} != ndofs {ndofs} (or {n_vars * ndofs} for all {n_vars} variables)"
+                        )
                 u0_override = arr
             elif initial_conditions is not None:
-                # Support TimeSeries or ndarray as initial conditions
+                # A TimeSeries contributes its final sample across ALL variables (stacked variable-major, like u0).
                 if isinstance(initial_conditions, TimeSeries):
                     arr = np.asarray(
-                        initial_conditions.data.isel(time=-1, variable=0).values,
+                        initial_conditions.data.isel(time=-1).values,
                         dtype=float,
                     ).ravel()
                 else:
                     arr = np.asarray(initial_conditions, dtype=float).ravel()
                 if meta and isinstance(meta, dict):
-                    ndofs = int(meta.get("ndofs", arr.size))
-                    if arr.size != ndofs:
-                        raise ValueError(f"initial_conditions length {arr.size} != ndofs {ndofs}")
+                    ndofs = int(meta.get("ndofs", arr.size) or arr.size)
+                    n_vars = int(meta.get("n_vars", 1))
+                    if arr.size not in (ndofs, n_vars * ndofs):
+                        raise ValueError(
+                            f"initial_conditions length {arr.size} != ndofs {ndofs} "
+                            f"(or {n_vars * ndofs} for all {n_vars} variables)"
+                        )
                 u0_override = arr
 
             # Always compute and return a full TimeSeries (save_timeseries=True)
@@ -2506,18 +2386,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             T = U.shape[0] if U is not None else 1
             t = np.arange(T) * float(meta.get("dt", 1.0))
-            data_raw = U if U is not None else u[np.newaxis, :]
-            # Reshape: (time, 1_sv, region) — no singleton mode dim
-            n_region = data_raw.shape[-1] if data_raw.ndim >= 2 else data_raw.size
-            data_np = data_raw.reshape(T, 1, n_region)
+            n_vars = int(meta.get("n_vars", 1))
+            names = list(meta.get("variables") or [str(meta.get("unknown", "u"))])
+            data_raw = U if U is not None else np.asarray(u)[np.newaxis, ...]
+            data_np = np.asarray(data_raw, dtype=float).reshape(T, n_vars, -1)
+            n_region = data_np.shape[-1]
 
-            sv_name = str(meta.get("unknown", "u"))
             da = xr.DataArray(
                 data=data_np,
                 dims=["time", "variable", "node"],
                 coords={
                     "time": t,
-                    "variable": [sv_name],
+                    "variable": names[:n_vars],
                     "node": [str(i) for i in range(n_region)],
                 },
             )
@@ -2708,8 +2588,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 parameter = str(getattr(axis, "parameter"))
                 values = list(getattr(axis, "explored_values", None) or [])
                 if not values:
-                    # Fall back to the axis domain (lo/hi + n or step) so a
-                    # domain-based sweep works here too, not only explicit lists.
+                    # Fall back to the axis domain (lo/hi + n or step) so a domain-based sweep works here too, not only explicit lists.
                     dom = getattr(axis, "domain", None)
                     lo = getattr(dom, "lo", None) if dom is not None else None
                     hi = getattr(dom, "hi", None) if dom is not None else None
@@ -2718,20 +2597,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                         n = int(getattr(dom, "n", 0) or 0)
                         step = getattr(dom, "step", None)
                         if n >= 1:
-                            # n==1 -> linspace(lo, hi, 1) == [lo] (a single-point axis),
-                            # not the 11-point default below.
+                            # n==1 -> linspace(lo, hi, 1) == [lo] (a single-point axis), not the 11-point default below.
                             values = [float(v) for v in jnp.linspace(lo, hi, n)]
                         elif step:
                             values = [float(v) for v in jnp.arange(lo, hi + float(step) / 2, float(step))]
                         else:
                             values = [float(v) for v in jnp.linspace(lo, hi, 11)]
                 if not values:
-                    raise ValueError(
-                        f"Exploration {name!r} axis {parameter!r} needs explored_values or a domain (lo/hi)"
-                    )
+                    raise ValueError(f"Exploration {name!r} axis {parameter!r} needs explored_values or a domain (lo/hi)")
                 axis_values.append(values)
-                # Harmonized axis shape shared by every backend: Bunch(name,
-                # explored_values, n) — the coordinate source for ExplorationResult.as_grid().
+                # Harmonized axis shape shared by every backend: Bunch(name, explored_values, n) — the coordinate source for ExplorationResult.as_grid().
                 axis_info.append(Bunch(name=parameter, explored_values=jnp.asarray(values), n=len(values)))
 
             obs = getattr(exploration, "observable", None)
@@ -2779,8 +2654,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def plot(self, layout=None, panels=None, run_kwargs=None, auto=True, **kwargs):
         """Plot experiment outputs directly or compose multi-panel layouts.
 
-        By default (``auto=True``), this runs the experiment once, infers
-        task-aware panels, and renders a flexible subplot_mosaic layout.
+        By default (``auto=True``), this runs the experiment once, infers task-aware panels, and renders a flexible subplot_mosaic layout.
         """
         from tvbo.plot.experiment_layout import plot_experiment_layout
 
@@ -2815,19 +2689,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def freeze_yaml(self, out_dir, network_stem="network"):
         """Render a self-contained spec YAML with the connectome frozen alongside.
 
-        When the experiment has a resolved multi-node network, its matrices are
-        written as an HDF5 companion (``<network_stem>.h5`` + ``.yaml`` sidecar) in
+        When the experiment has a resolved multi-node network, its matrices are written as an HDF5 companion (``<network_stem>.h5`` + ``.yaml`` sidecar) in
         *out_dir* and the returned YAML references them via ``network.data_file``
-        (inline coupling / transforms / parameters preserved). This makes the spec
-        reproducible on reload without the original data sources — the same
-        mechanism the workflow emitter uses. Without such a network the plain
-        metadata YAML already round-trips and is returned unchanged.
+        (inline coupling / transforms / parameters preserved). This makes the spec reproducible on reload without the original data sources — the same
+        mechanism the workflow emitter uses. Without such a network the plain metadata YAML already round-trips and is returned unchanged.
         """
         from pathlib import Path as _Path
 
         import numpy as _np
 
-        from tvbo import datamodel as _dm
         from tvbo.classes.network import Network as _Network
 
         net = getattr(self, "network", None)
@@ -2845,22 +2715,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         self.bake_real_node_labels()
         sidecar = out_dir / f"{network_stem}.yaml"
         net.save(sidecar, binary_format="h5")
-        # The network sidecar goes through a different serializer; strip the same
-        # private runtime keys so the frozen connectome round-trips on reload.
+        # The network sidecar goes through a different serializer; strip the same private runtime keys so the frozen connectome round-trips on reload.
         sidecar.write_text(_strip_private_yaml_keys(sidecar.read_text()), encoding="utf-8")
 
-        ref = _dm.Network(data_file=f"{network_stem}.h5")
-        if getattr(net, "coupling", None):
-            for k, v in dict(net.coupling).items():
-                ref.coupling[k] = v
-        if getattr(net, "transforms", None):
-            ref.transforms = list(net.transforms)
-        if getattr(net, "parameters", None):
-            for k, v in dict(net.parameters).items():
-                ref.parameters[k] = v
-        if getattr(net, "observations", None):
-            for k, v in dict(net.observations).items():
-                ref.observations[k] = v
+        ref = net.as_data_file_reference(f"{network_stem}.h5")
 
         original = self.network
         self.network = ref
@@ -2872,10 +2730,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def get_result_stem(self):
         """BIDS result basename (no extension), generated with pybids ``build_path``.
 
-        Returns e.g. ``exp-<id>_desc-<label>_result`` — the shared stem for this
-        experiment's ``<stem>.h5`` data file and ``<stem>.yaml`` provenance sidecar,
-        identical whether written by a local run or the HPC gather pass. The naming
-        is driven by ``tvbo.adapters.bids.RESULT_PATTERNS`` (a pybids rule string),
+        Returns e.g. ``exp-<id>_desc-<label>_result`` — the shared stem for this experiment's ``<stem>.h5`` data file and ``<stem>.yaml`` provenance sidecar,
+        identical whether written by a local run or the HPC gather pass. The naming is driven by ``tvbo.adapters.bids.RESULT_PATTERNS`` (a pybids rule string),
         so it stays BIDS-compliant and customizable in one place.
         """
         from tvbo.adapters.bids import build_result_path
@@ -2891,7 +2747,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         try:
             delays = self.network.calculate_delays()
         except ValueError:
-            return 0.0        # the network declares neither tract lengths nor edge delays
+            return 0.0  # the network declares neither tract lengths nor edge delays
         # Use nanmax to ignore NaN values for non-existent edges
         max_val = np.nanmax(delays)
         return float(max_val) if not np.isnan(max_val) else 0.0
@@ -2908,11 +2764,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def network_observation_measures(self) -> dict:
         """Map each network-sourced observation to its network measure.
 
-        Resolves the declarative ``source: [network.observations.<measure>]``
-        (or ``network.edges.<measure>``) pointer once, in Python, so neither
+        Resolves the declarative ``source: [network.observations.<measure>]`` (or ``network.edges.<measure>``) pointer once, in Python, so neither
         the codegen template nor the runtime re-parse the string. Returns e.g.
-        ``{'fc_target': 'BoldCorrelation'}``; empty when no observation is
-        network-sourced.
+        ``{'fc_target': 'BoldCorrelation'}``; empty when no observation is network-sourced.
         """
         out: dict = {}
         for name, obs in (self.observations or {}).items():
@@ -2927,10 +2781,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         return out
 
     def _validate_network_observations(self) -> None:
-        """Load-time check: every ``network.observations.<measure>`` an
-        observation references must be declared in the network's
-        ``observational_measures``. Cheap (names only, no data load) and
-        turns a runtime ``NameError`` deep in generated JAX into a clear
+        """Load-time check: every ``network.observations.<measure>`` an observation references must be declared in the network's
+        ``observational_measures``. Cheap (names only, no data load) and turns a runtime ``NameError`` deep in generated JAX into a clear
         message at experiment-resolution time."""
         measures = self.network_observation_measures
         if not measures or self.network is None:
@@ -2948,11 +2800,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def resolve_network_observations(self) -> dict:
         """Resolve network-sourced observations to their matrices.
 
-        Pairs :attr:`network_observation_measures` with the data the network
-        carries (:attr:`Network.observations`), yielding ``{obs_name: matrix}``
+        Pairs :attr:`network_observation_measures` with the data the network carries (:attr:`Network.observations`), yielding ``{obs_name: matrix}``
         ready to pass into the generated
-        ``run_experiment(network_observations=...)``. Raises a clear error if
-        a declared measure's data is absent.
+        ``run_experiment(network_observations=...)``. Raises a clear error if a declared measure's data is absent.
         """
         measures = self.network_observation_measures
         if not measures:
@@ -2973,10 +2823,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def bake_real_node_labels(self) -> bool:
         """Replace the model network's placeholder labels with real ones in place.
 
-        A network sourced by a ``bids:`` entity block carries only ``region_N``
-        placeholders until run time; freezing drops that block, so the real labels
-        (hydrated from the db) are written onto the network's nodes here. This keeps
-        a frozen kit self-contained and label reconciliation (never positional)
+        A network sourced by a ``bids:`` entity block carries only ``region_N`` placeholders until run time; freezing drops that block, so the real labels
+        (hydrated from the db) are written onto the network's nodes here. This keeps a frozen kit self-contained and label reconciliation (never positional)
         working on reload. Returns True when labels were applied.
         """
         net = getattr(self, "network", None)
@@ -2993,12 +2841,9 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _resolve_model_node_labels(self) -> list:
         """Real node labels of the model network, hydrated if needed.
 
-        A network sourced by a ``bids:`` entity block loads its weights lazily,
-        so at parse time its node labels can be placeholders (``region_<i>``).
-        Label reconciliation needs the true labels, so when the current ones look
-        like placeholders this resolves the ``bids:`` entities against the tvbo
-        database and reads the matched connectome's labels. Returns the existing
-        labels unchanged when they are already real.
+        A network sourced by a ``bids:`` entity block loads its weights lazily, so at parse time its node labels can be placeholders (``region_<i>``).
+        Label reconciliation needs the true labels, so when the current ones look like placeholders this resolves the ``bids:`` entities against the tvbo
+        database and reads the matched connectome's labels. Returns the existing labels unchanged when they are already real.
         """
         net = getattr(self, "network", None)
         if net is None:
@@ -3007,8 +2852,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         placeholder = bool(labels) and all(re.fullmatch(r"region_\d+", lbl) for lbl in labels)
         if labels and not placeholder:
             return labels
-        # Placeholder path — resolving from the db is a directory glob + a sidecar
-        # parse, so cache it (the bids block + db are stable for the experiment).
+        # Placeholder path — resolving from the db is a directory glob + a sidecar parse, so cache it (the bids block + db are stable for the experiment).
         cached = getattr(self, "_model_labels_from_bids", None)
         if cached is not None:
             return cached
@@ -3029,8 +2873,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def dataset_observation_targets(self) -> dict:
         """Map each dataset-sourced observation to its measure name.
 
-        Recognises ``source: [dataset.subject.<measure>]`` pointers — the
-        per-subject empirical target selected by the observation's ``query``
+        Recognises ``source: [dataset.subject.<measure>]`` pointers — the per-subject empirical target selected by the observation's ``query``
         under ``dataset.bids_root``. Returns e.g. ``{'empirical_fc': 'fc'}``;
         empty when no observation is dataset-sourced.
         """
@@ -3051,8 +2894,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Split a ``BidsEntities`` query into (key-value entities, suffix).
 
         Maps the schema's attribute names to the short entity keys that
-        :func:`tvbo.classes.network._parse_bids_entities` emits. ``suffix`` is
-        returned separately because it is the trailing filename component, not a
+        :func:`tvbo.classes.network._parse_bids_entities` emits. ``suffix`` is returned separately because it is the trailing filename component, not a
         ``key-value`` entity.
         """
         if query is None:
@@ -3080,21 +2922,17 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         ents, suffix = self._bids_query_dict(query)
         return self._find_subject_file_by_entities(root, subject, ents, suffix)
 
-    def _find_subject_file_by_entities(self, root: Path, subject: str,
-                                       ents: dict, suffix: str | None) -> Path:
+    def _find_subject_file_by_entities(self, root: Path, subject: str, ents: dict, suffix: str | None) -> Path:
         """Resolve the single per-subject file under *root* matching *ents* + *suffix*.
 
-        The entity-level entry point behind :meth:`_find_subject_file`: callers that
-        need to tighten or override the query entities (a kit bundling one atlas
+        The entity-level entry point behind :meth:`_find_subject_file`: callers that need to tighten or override the query entities (a kit bundling one atlas
         variant out of several) build the ``(ents, suffix)`` pair themselves.
         """
         sub = str(subject).replace("sub-", "")
         files = sorted((Path(root) / f"sub-{sub}").glob("*.yaml"))
         matches = [f for s, f in self._match_subject_files(files, ents, suffix) if s == sub]
         if not matches:
-            raise ValueError(
-                f"No file for sub-{sub} matching query {ents} suffix={suffix!r} under {root}."
-            )
+            raise ValueError(f"No file for sub-{sub} matching query {ents} suffix={suffix!r} under {root}.")
         if len(matches) > 1:
             raise ValueError(
                 f"Query {ents} suffix={suffix!r} is ambiguous for sub-{sub}: "
@@ -3111,10 +2949,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _dataset_bids_root(self) -> Path:
         """``dataset.bids_root`` as a Path, or a clear error if a dataset target needs it.
 
-        A relative root resolves against the spec file's directory (exactly like a
-        network ``data_file``), so a kit that bundles its per-subject data under
-        ``spec/dataset`` and records ``bids_root: dataset`` resolves on any host
-        regardless of the working directory it is run from.
+        A relative root resolves against the spec file's directory (exactly like a network ``data_file``), so a kit that bundles its per-subject data under
+        ``spec/dataset`` and records ``bids_root: dataset`` resolves on any host regardless of the working directory it is run from.
         """
         ds = getattr(self, "dataset", None)
         root = getattr(ds, "bids_root", None) if ds is not None else None
@@ -3129,10 +2965,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Each target node's label mapped to the model's canonical label, target order.
 
         Alias-aware: a target label that equals a model node's ``label`` or any of its
-        ``alternateName`` entries maps to that node's canonical label; an unmatched
-        label is returned unchanged (it will not intersect the model set and so is
-        excluded from the reconciliation, counting against coverage). Mapping is by
-        name only — a target whose nodes are permuted still maps correctly.
+        ``alternateName`` entries maps to that node's canonical label; an unmatched label is returned unchanged (it will not intersect the model set and so is
+        excluded from the reconciliation, counting against coverage). Mapping is by name only — a target whose nodes are permuted still maps correctly.
         """
         amap = self.network.region_alias_map()
         return [amap.get(str(tl), str(tl)) for tl in target_net.node_labels]
@@ -3140,8 +2974,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _shared_labels(self, model_labels: list, target_net) -> list:
         """Canonical labels shared by the model network and a target, in model order.
 
-        Keyed and alias-aware (never positional): the target's labels are mapped to
-        the model's canonical labels first, so a divergent nomenclature reconciles.
+        Keyed and alias-aware (never positional): the target's labels are mapped to the model's canonical labels first, so a divergent nomenclature reconciles.
         """
         tset = set(self._target_canonical_labels(target_net))
         return [lbl for lbl in model_labels if lbl in tset]
@@ -3150,8 +2983,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _coverage_threshold(obs) -> float:
         """Minimum reconciliation coverage for a ``by_label`` dataset target.
 
-        Absent ``min_coverage`` means require full coverage (``1.0``): silently
-        fitting on a partial node subset must be an explicit opt-in.
+        Absent ``min_coverage`` means require full coverage (``1.0``): silently fitting on a partial node subset must be an explicit opt-in.
         """
         mc = getattr(obs, "min_coverage", None)
         return 1.0 if mc is None else float(mc)
@@ -3162,20 +2994,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         For each observation whose ``source`` is ``dataset.subject.<measure>``:
         query ``dataset.bids_root`` for the subject's matching file, load it as a
         Network, read ``<measure>``, and reconcile its nodes to the model network.
-        ``reconcile: by_label`` maps each target node to the model's canonical label
-        (alias-aware — a divergent nomenclature such as ``THALAMUS_LEFT`` for
-        ``L_Thalamus`` still matches via the atlas ``alternateName`` crosswalk), then
-        selects the shared labels in the model's order. Alignment is by name on both
-        the empirical target and the simulated observable — never by row index — so a
-        differing node count or order (or a swapped hemisphere block) cannot silently
-        misalign the comparison. The realised coverage is logged, and falls back to
-        requiring full coverage unless the observation sets ``min_coverage``.
+        ``reconcile: by_label`` maps each target node to the model's canonical label (alias-aware — a divergent nomenclature such as ``THALAMUS_LEFT`` for
+        ``L_Thalamus`` still matches via the atlas ``alternateName`` crosswalk), then selects the shared labels in the model's order. Alignment is by name on both
+        the empirical target and the simulated observable — never by row index — so a differing node count or order (or a swapped hemisphere block) cannot silently
+        misalign the comparison. The realised coverage is logged, and falls back to requiring full coverage unless the observation sets ``min_coverage``.
 
-        Returns ``{obs_name: xarray.DataArray}`` keyed by canonical node label on both
-        axes, restricted to the labels shared with the model network. The model-side
+        Returns ``{obs_name: xarray.DataArray}`` keyed by canonical node label on both axes, restricted to the labels shared with the model network. The model-side
         gather (which model nodes the shared labels are) is available via
-        :meth:`dataset_reconcile_index` so the simulated observation selects the same
-        sub-block.
+        :meth:`dataset_reconcile_index` so the simulated observation selects the same sub-block.
         """
         targets = self.dataset_observation_targets
         if not targets:
@@ -3190,10 +3016,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             target_net = Network.load(str(path))
             mat = np.asarray(target_net.matrix(measure))
             if mat.ndim != 2:
-                raise ValueError(
-                    f"Observation '{name}': measure '{measure}' is not a 2-D matrix "
-                    f"in {path.name}."
-                )
+                raise ValueError(f"Observation '{name}': measure '{measure}' is not a 2-D matrix in {path.name}.")
             tlabels = list(target_net.node_labels)
             if self._reconcile_mode(obs) == "by_label" and model_labels:
                 # Relabel the target's node axes to the model's canonical labels by
@@ -3211,9 +3034,12 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 shared = [lbl for lbl in model_labels if lbl in tcanon_set]
                 coverage = len(shared) / len(model_labels) if model_labels else 0.0
                 logger.info(
-                    "reconcile[%s] sub-%s: %d/%d model nodes matched (coverage %.3f) "
-                    "against %s",
-                    name, active_subject, len(shared), len(model_labels), coverage,
+                    "reconcile[%s] sub-%s: %d/%d model nodes matched (coverage %.3f) against %s",
+                    name,
+                    active_subject,
+                    len(shared),
+                    len(model_labels),
+                    coverage,
                     path.name,
                 )
                 if not shared:
@@ -3232,13 +3058,15 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                         f"Set observation.min_coverage to accept a partial subset."
                     )
                 da = xr.DataArray(
-                    mat, dims=("node_i", "node_j"),
+                    mat,
+                    dims=("node_i", "node_j"),
                     coords={"node_i": tcanon, "node_j": tcanon},
                 )
                 da = da.sel(node_i=shared, node_j=shared)
             else:
                 da = xr.DataArray(
-                    mat, dims=("node_i", "node_j"),
+                    mat,
+                    dims=("node_i", "node_j"),
                     coords={"node_i": tlabels, "node_j": tlabels},
                 )
             resolved[name] = da
@@ -3247,8 +3075,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def dataset_on_device(self) -> bool:
         """True when the cohort's per-subject fits run as one on-device vmap batch.
 
-        Driven by ``dataset.batch_mode == on_device`` (default ``fan_out`` keeps
-        the per-subject workflow fan-out). Only meaningful when the experiment
+        Driven by ``dataset.batch_mode == on_device`` (default ``fan_out`` keeps the per-subject workflow fan-out). Only meaningful when the experiment
         actually has a per-subject dataset-sourced target to batch over.
         """
         ds = getattr(self, "dataset", None)
@@ -3261,10 +3088,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def dataset_batch_size(self):
         """Subjects per on-device batch (``dataset.batch_size``), or ``None`` for auto.
 
-        Bounds how many subjects the cohort driver holds in one vectorised batch,
-        so a large cohort is chunked in-process instead of vmapped all at once.
-        ``None`` lets the driver size the batch against the working-memory budget
-        (as for exploration ``n_parallel: auto``). Only meaningful on-device.
+        Bounds how many subjects the cohort driver holds in one vectorised batch, so a large cohort is chunked in-process instead of vmapped all at once.
+        ``None`` lets the driver size the batch against the working-memory budget (as for exploration ``n_parallel: auto``). Only meaningful on-device.
         """
         ds = getattr(self, "dataset", None)
         bs = getattr(ds, "batch_size", None) if ds is not None else None
@@ -3273,29 +3098,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def resolve_dataset_observations_batched(self, subjects: list = None):
         """Resolve every cohort subject's dataset target and stack over subjects.
 
-        Returns ``({obs_name: ndarray (n_subjects, ...)}, subject_ids)``. Each
-        subject is reconciled by :meth:`resolve_dataset_observations`, so the
-        per-subject arrays already share one node-label set (identical across the
-        cohort) and stack cleanly along a leading subject axis. This batched
-        target feeds the on-device ``jax.vmap`` cohort driver; the shared network
-        stays in the model closure, only these per-subject targets vary per lane.
+        Returns ``({obs_name: ndarray (n_subjects, ...)}, subject_ids)``. Each subject is reconciled by :meth:`resolve_dataset_observations`, so the
+        per-subject arrays already share one node-label set (identical across the cohort) and stack cleanly along a leading subject axis. This batched
+        target feeds the on-device ``jax.vmap`` cohort driver; the shared network stays in the model closure, only these per-subject targets vary per lane.
         """
         subjects = subjects if subjects is not None else self.dataset_subject_ids()
         if not subjects:
             return {}, []
         per_subject = [self.resolve_dataset_observations(s) for s in subjects]
         names = list(per_subject[0].keys())
-        batched = {
-            name: np.stack([np.asarray(ps[name].values) for ps in per_subject], axis=0)
-            for name in names
-        }
+        batched = {name: np.stack([np.asarray(ps[name].values) for ps in per_subject], axis=0) for name in names}
         return batched, list(subjects)
 
     def dataset_reconcile_index(self, shared_labels: list, model_labels: list = None) -> np.ndarray:
         """Indices into the model network's nodes for *shared_labels* (keyed).
 
-        The simulated observation selects this sub-block so it aligns, label for
-        label, with a ``by_label``-reconciled empirical target. Pass *model_labels*
+        The simulated observation selects this sub-block so it aligns, label for label, with a ``by_label``-reconciled empirical target. Pass *model_labels*
         to avoid re-resolving them.
         """
         model_labels = model_labels if model_labels is not None else self._resolve_model_node_labels()
@@ -3306,14 +3124,10 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """Model-side gather index for each ``by_label`` dataset target (keyed).
 
         For every observation sourced from ``dataset.subject.<measure>`` with
-        ``reconcile: by_label``, returns the positions of the shared node labels
-        within the model network's node order — derived from the labels, never
-        from position. The shared label set is identical across the cohort, so it
-        is resolved once from the first cohort subject (reading only its node
-        labels, not its matrix). Codegen uses this to gather the simulated
-        observable onto the same shared labels as the reconciled empirical target
-        before comparing them. Returns ``{}`` (no gather) when nothing is
-        dataset-sourced or the data cannot be resolved.
+        ``reconcile: by_label``, returns the positions of the shared node labels within the model network's node order — derived from the labels, never
+        from position. The shared label set is identical across the cohort, so it is resolved once from the first cohort subject (reading only its node
+        labels, not its matrix). Codegen uses this to gather the simulated observable onto the same shared labels as the reconciled empirical target
+        before comparing them. Returns ``{}`` (no gather) when nothing is dataset-sourced or the data cannot be resolved.
         """
         targets = self.dataset_observation_targets
         subjects = self.dataset_subject_ids() if targets else []
@@ -3337,21 +3151,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def dataset_subject_ids(self) -> list:
         """Enumerate the cohort for the per-subject workflow fan-out.
 
-        An explicit ``dataset.subjects`` list wins (a curated subset). Otherwise
-        the subjects are discovered by querying ``dataset.bids_root`` with the
-        first dataset-sourced observation's ``query`` — the same filter that
-        resolves each shard's target, so discovery and resolution never diverge.
-        Returns sorted subject IDs without the ``sub-`` prefix; empty when the
-        experiment has no dataset-sourced observation.
+        An explicit ``dataset.subjects`` list wins (a curated subset). Otherwise the subjects are discovered by querying ``dataset.bids_root`` with the
+        first dataset-sourced observation's ``query`` — the same filter that resolves each shard's target, so discovery and resolution never diverge.
+        Returns sorted subject IDs without the ``sub-`` prefix; empty when the experiment has no dataset-sourced observation.
         """
         ds = getattr(self, "dataset", None)
         if ds is None:
             return []
         subs = getattr(ds, "subjects", None)
         if subs:
-            ids = list(subs.keys()) if hasattr(subs, "keys") else [
-                getattr(x, "subject_id", x) for x in subs
-            ]
+            ids = list(subs.keys()) if hasattr(subs, "keys") else [getattr(x, "subject_id", x) for x in subs]
             return [str(s).replace("sub-", "") for s in ids]
         targets = self.dataset_observation_targets
         root = getattr(ds, "bids_root", None)
@@ -3373,8 +3182,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
         A per-subject FC file is a YAML sidecar plus its payload (``data_file``, an
         HDF5 matrix); some networks instead reference ``nodes``/``edges`` tables or an
-        ``edge_matrix_files`` map. Return every companion the sidecar points at so a
-        bundle copies the sidecar together with the bytes it needs — nothing more.
+        ``edge_matrix_files`` map. Return every companion the sidecar points at so a bundle copies the sidecar together with the bytes it needs — nothing more.
         """
         import yaml
 
@@ -3382,7 +3190,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             meta = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
         except Exception:
             return []
-        if not isinstance(meta, dict):   # a malformed (non-mapping) sidecar has no companions
+        if not isinstance(meta, dict):  # a malformed (non-mapping) sidecar has no companions
             return []
         refs: list = []
         for key in ("data_file", "nodes", "edges"):
@@ -3399,19 +3207,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def dataset_bundle_files(self, entity_overrides: dict | None = None) -> dict:
         """Per enumerated subject, the source file(s) a self-contained kit must carry.
 
-        For each dataset-sourced observation, resolve the subject's matching sidecar
-        under ``dataset.bids_root`` and pair it with the payload(s) it references, so a
-        workflow kit can bundle exactly the empirical targets its fan-out consumes and
-        drop its dependence on a machine-specific data tree. *entity_overrides* pins or
+        For each dataset-sourced observation, resolve the subject's matching sidecar under ``dataset.bids_root`` and pair it with the payload(s) it references, so a
+        workflow kit can bundle exactly the empirical targets its fan-out consumes and drop its dependence on a machine-specific data tree. *entity_overrides* pins or
         tightens the BIDS entities used for selection (e.g. ``{'atlas': 'HCPMMP1',
-        'suffix': 'relmat'}``) — the exact variant is chosen when a subject directory
-        holds several. ``suffix`` overrides the trailing filename component; every
-        other key overrides a ``key-value`` entity. The overrides disambiguate among
-        the variants a subject already has; the cohort itself is still enumerated by
+        'suffix': 'relmat'}``) — the exact variant is chosen when a subject directory holds several. ``suffix`` overrides the trailing filename component; every
+        other key overrides a ``key-value`` entity. The overrides disambiguate among the variants a subject already has; the cohort itself is still enumerated by
         the observation's own query (:meth:`dataset_subject_ids`).
 
-        Returns ``{subject_id: [sidecar, payload, …]}`` (existing files, de-duplicated
-        in first-seen order); empty when the experiment has no dataset target.
+        Returns ``{subject_id: [sidecar, payload, …]}`` (existing files, de-duplicated in first-seen order); empty when the experiment has no dataset target.
         """
         targets = self.dataset_observation_targets
         if not targets:
@@ -3438,8 +3241,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                     continue
                 seen.add(f)
                 if not f.exists():
-                    # A referenced payload absent from the tree would bundle a sidecar
-                    # without its data — surface it now, not as a load failure on a node.
+                    # A referenced payload absent from the tree would bundle a sidecar without its data — surface it now, not as a load failure on a node.
                     raise FileNotFoundError(
                         f"sub-{subject}: dataset target references {f.name}, absent under "
                         f"{f.parent} — the source tree is incomplete."
@@ -3451,17 +3253,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
     def _propagate_event_names_to_dynamics(self) -> None:
         """Hand experiment-level event names down to the Dynamics before it parses.
 
-        An event's name is a symbol its dfun references, so the Dynamics needs it in its
-        symbolic scope at parse time or the name falls through to SymPy's global
-        namespace (see `Dynamics.get_symbolic_elements`). Only the names travel; the
-        events themselves are lowered later by `_resolve_events`.
+        An event's name is a symbol its dfun references, so the Dynamics needs it in its symbolic scope at parse time or the name falls through to SymPy's global
+        namespace (see `Dynamics.get_symbolic_elements`). Only the names travel; the events themselves are lowered later by `_resolve_events`.
         """
         events = getattr(self, "events", None)
         dynamics = getattr(self, "dynamics", None)
         if not events or dynamics is None:
             return
-        names = (list(events.keys()) if hasattr(events, "keys")
-                 else [getattr(e, "name", None) for e in events])
+        names = list(events.keys()) if hasattr(events, "keys") else [getattr(e, "name", None) for e in events]
         is_mapping = isinstance(dynamics, dict)
         existing = dynamics.get("events") if is_mapping else getattr(dynamics, "events", None)
         if existing:
@@ -3469,9 +3268,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if is_mapping:
             dynamics["events"] = {str(n): {"name": str(n)} for n in names if n}
             return
-        # A multivalued slot is coerced at construction only, so insert constructed Events
-        # into the container it already holds; assigning one would leave a bare JsonObj
-        # whose entries are never Events (writing-models: "Trust the slots").
+        # A multivalued slot is coerced at construction only, so insert constructed Events into the container it already holds; assigning one would leave a bare JsonObj whose entries are never Events (writing-models: "Trust the slots").
         from tvbo.datamodel.schema import Event
 
         for n in names:
@@ -3479,10 +3276,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 dynamics.events[str(n)] = Event(name=str(n))
 
     def _resolve_events(self) -> None:
-        """Lower declarative stimulus/stimulation Event fields into the form the
-        (shared) tvboptim codegen already consumes — done in Python at load
-        time, exactly like graph-generator resolution, so no template change is
-        needed and a sampled ``weight_distribution`` goes through the same
+        """Lower declarative stimulus/stimulation Event fields into the form the (shared) tvboptim codegen already consumes — done in Python at load
+        time, exactly like graph-generator resolution, so no template change is needed and a sampled ``weight_distribution`` goes through the same
         printer-backed sampler a graph generator's `sample` step does.
 
         Per stimulus-type event:
@@ -3491,8 +3286,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         - ``target_variable`` becomes the event's effective ``name`` — the
           codegen exposes ``external_input[name]`` as the dfun variable.
         - ``target_regions: all`` (or labels/indices) is lowered to integer
-          ``regions``; ``weight_distribution`` is sampled (seeded, reproducible)
-          into the ``weighting`` array via the canonical resolver. Both are the
+          ``regions``; ``weight_distribution`` is sampled (seeded, reproducible) into the ``weighting`` array via the canonical resolver. Both are the
           legacy fields the codegen reads.
         - equation-level ``parameters`` are merged onto the event so the
           stimulus equation's symbols (e.g. ``T_drive``) resolve.
@@ -3502,11 +3296,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return
         from tvbo.graph_generators.procedural import draw
 
-        n_nodes = (
-            getattr(self.network, "number_of_nodes", None)
-            or getattr(self.network, "number_of_regions", None)
-            or 1
-        )
+        n_nodes = getattr(self.network, "number_of_nodes", None) or getattr(self.network, "number_of_regions", None) or 1
         labels = {}
         try:
             for i, node in enumerate(getattr(self.network, "nodes", None) or []):
@@ -3536,8 +3326,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             weighting = list(getattr(ev, "weights", None) or getattr(ev, "weighting", None) or [])
 
-            # weight_parameter -> weights array: a derived weighting states WHERE it came
-            # from (`source:`/`producer:`) and is read here, never inlined into the spec.
+            # weight_parameter -> weights array: a derived weighting states WHERE it came from (`source:`/`producer:`) and is read here, never inlined into the spec.
             wp = getattr(ev, "weight_parameter", None)
             if wp is not None and not weighting:
                 from pathlib import Path as _Path
@@ -3573,12 +3362,8 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
                 try:
                     samples = draw(wd, (n,), seed=getattr(wd, "seed", None))
                 except ValueError as exc:
-                    # The sampler names a graph-generator step, which says nothing about
-                    # which stimulus is unresolvable. Fail — dropping the weighting
-                    # silently is the bug this replaced — but name the event and field.
-                    raise ValueError(
-                        f"event {_key!r}: `weight_distribution` cannot be sampled: {exc}"
-                    ) from exc
+                    # The sampler names a graph-generator step, which says nothing about which stimulus is unresolvable. Fail — dropping the weighting silently is the bug this replaced — but name the event and field.
+                    raise ValueError(f"event {_key!r}: `weight_distribution` cannot be sampled: {exc}") from exc
                 weighting = [float(x) for x in samples]
                 if not regions:
                     regions = list(range(int(n_nodes)))
@@ -3587,20 +3372,22 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if weighting:
                 ev.weights = weighting
 
-            # merge equation-level parameters onto the event (codegen reads ev.parameters)
+            # MUTATE the multivalued slot: assigning a dict re-coerces it to the list form and every later `dict(ev.parameters)` fails.
             eq = getattr(ev, "equation", None)
             eq_params = getattr(eq, "parameters", None) if eq is not None else None
             if eq_params:
-                merged = dict(getattr(ev, "parameters", None) or {})
-                for pk, pv in (eq_params.items() if hasattr(eq_params, "items") else []):
-                    merged.setdefault(pk, pv)
-                ev.parameters = merged
+                target = getattr(ev, "parameters", None)
+                if target is None:
+                    ev.parameters = {}
+                    target = ev.parameters
+                for pk, pv in eq_params.items() if hasattr(eq_params, "items") else []:
+                    if pk not in target:
+                        target[pk] = pv
 
     def collect_initial_conditions(self, random=False):
         """Build the initial-history `TimeSeries` for the simulation.
 
-        Constructs a history buffer of shape `(horizon, n_state_vars, n_nodes,
-        n_modes)` spanning the delay window `[-max_delay, 0]`. Values are drawn
+        Constructs a history buffer of shape `(horizon, n_state_vars, n_nodes, n_modes)` spanning the delay window `[-max_delay, 0]`. Values are drawn
         from each state variable's `distribution` when one is set (or when
         `random` is requested), otherwise from its scalar `initial_value`.
 
@@ -3740,11 +3527,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         )
         _ci = getattr(self.dynamics, "coupling_inputs", {}) or {}
         coupling_out_name = next(
-            (
-                str(name)
-                for name, ci in _ci.items()
-                if str(name) != "local_coupling" and not getattr(ci, "local", False)
-            ),
+            (str(name) for name, ci in _ci.items() if str(name) != "local_coupling" and not getattr(ci, "local", False)),
             "c_pop0",
         )
         coupling_ct.add(lems.DerivedParameter(name=coupling_out_name, value="post"))
@@ -3796,17 +3579,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
     def render_code(self, format="tvb", **kwargs):
         """Render generated code in *format* (back-compat shim around the registry)."""
-        # Backend codegen requires resolved coupling/delay/stimulus metadata (configure
-        # lowers coupling + stimulus events; idempotent).
+        # Backend codegen requires resolved coupling/delay/stimulus metadata (configure lowers coupling + stimulus events; idempotent).
         self.configure()
         from tvbo import export as _export
+
         return _export.render(self, format, **kwargs)
 
     def render(self, format="yaml", **kwargs) -> str:
         """Unified entry point for rendering the experiment in any output format.
 
-        Dispatches via the :mod:`tvbo.export.registry`.  All supported
-        formats (YAML, openMINDS, markdown/PDF report, TVB, JAX, tvboptim,
+        Dispatches via the :mod:`tvbo.export.registry`.  All supported formats (YAML, openMINDS, markdown/PDF report, TVB, JAX, tvboptim,
         Julia, NeuroML/LEMS, …) are looked up by canonical key or alias.
 
         Parameters
@@ -3822,12 +3604,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         str
         """
         from tvbo import export as _export
+
         return _export.render(self, format, **kwargs)
 
     @classmethod
     def supported_export_formats(cls) -> list[dict]:
         """Return metadata for API/UI export format dropdowns."""
         from tvbo import export as _export
+
         return _export.list_format_dicts()
 
     def save(
@@ -3861,11 +3645,16 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         # Infer format from suffix if not provided
         if format is None:
             suffix_to_key = {
-                ".yaml": "yaml", ".yml": "yaml",
-                ".jsonld": "openminds", ".json": "openminds",
-                ".nml": "neuroml", ".xml": "lems",
-                ".py": "tvb", ".jl": "julia",
-                ".md": "markdown", ".pdf": "pdf",
+                ".yaml": "yaml",
+                ".yml": "yaml",
+                ".jsonld": "openminds",
+                ".json": "openminds",
+                ".nml": "neuroml",
+                ".xml": "lems",
+                ".py": "tvb",
+                ".jl": "julia",
+                ".md": "markdown",
+                ".pdf": "pdf",
             }
             format = suffix_to_key.get(path.suffix.lower(), "yaml")
 
@@ -3881,8 +3670,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         if fmt.key == "pdf":
             fmt.renderer(self, outputfile=str(path), **kwargs)
         else:
-            # Through render(), not fmt.renderer: the file must carry the same
-            # formatting render_code() returns.
+            # Through render(), not fmt.renderer: the file must carry the same formatting render_code() returns.
             rendered = _export.render(self, fmt.key, **kwargs)
             with path.open("w", encoding="utf-8") as f:
                 f.write(rendered)
@@ -3911,14 +3699,14 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
         """
         if file_name is not None:
             from pathlib import Path as _Path
+
             return self.save(_Path(dir) / file_name, format="tvb")
         return self.save(dir, format="tvb")
 
     def get_parameters_collection(self, **kwargs):
         """Collect all experiment parameters into a nested `Bunch`.
 
-        Traverses the experiment metadata, gathering parameters from the
-        dynamics, coupling, network, and integration into a single container
+        Traverses the experiment metadata, gathering parameters from the dynamics, coupling, network, and integration into a single container
         keyed by component.
 
         Args:
@@ -3988,9 +3776,7 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             raise ValueError("format must be one of: markdown, pdf")
 
         md_template = templates.lookup.get_template(f"report/{template_name}.md.mako")
-        md_render = md_template.render(experiment=self,
-                                       derivative_notation=derivative_notation,
-                                       mul_symbol=mul_symbol)
+        md_render = md_template.render(experiment=self, derivative_notation=derivative_notation, mul_symbol=mul_symbol)
 
         render = md_render
 

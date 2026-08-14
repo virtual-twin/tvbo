@@ -98,8 +98,7 @@ def get_default_params():
     """Return the merged dictionary of all default plotting parameters.
 
     Combines the module-level `node_params`, `edge_params`, `figure_params`,
-    `color_params`, `logo_params`, `layout_params`, and `legend_params` into a
-    single dictionary.
+    `color_params`, `logo_params`, `layout_params`, and `legend_params` into a single dictionary.
 
     Returns:
         The combined default parameters, keyed by parameter name.
@@ -225,12 +224,9 @@ def compute_midpoint(start, end, rad):
 
 
 def add_arrow(line, ax, position=None, direction="right", color=None, label=""):
-    """
-    add an arrow to a line.
+    """add an arrow to a line.
 
-    line:       Line2D object
-    position:   x-position of the arrow. If None, mean of xdata is taken
-    direction:  'left' or 'right'
+    line:       Line2D object position:   x-position of the arrow. If None, mean of xdata is taken direction:  'left' or 'right'
     color:      if None, line color is taken.
     label:      label for arrow
     """
@@ -287,8 +283,7 @@ def plot_curve(
 ):
     """Draw a quadratic Bézier arrow from *start* to *end* on *ax*.
 
-    Used internally by the ontology-graph layout to render edges with smooth
-    curvature controlled by *rad*. Optional *annotate* renders a midpoint label.
+    Used internally by the ontology-graph layout to render edges with smooth curvature controlled by *rad*. Optional *annotate* renders a midpoint label.
 
     Args:
         ax: Target matplotlib axes.
@@ -326,8 +321,6 @@ def plot_curve(
         **kwargs,
     )
     line = line[0]
-    # ax.scatter(midpoint[0], midpoint[1], color="red", s=100)
-    # ax.scatter([x1, x2], [y1, y2], color="blue")
     if isinstance(annotate, str):
         ax.annotate(
             annotate,
@@ -339,16 +332,6 @@ def plot_curve(
             color="k",
             fontsize=font_size,
         )
-
-    # add_arrow(line, ax)
-    # arrow_head_length = arrow_size
-    # arrow_head_width = arrow_size / 2
-    # # Add arrow tip at the end of the line
-    # end_arrow_index = shrink_index_end - 1
-
-    # # Compute the derivative at the last point (dx/dy) for proper arrow tilt
-    # dx = xsupport[end_arrow_index] - xsupport[end_arrow_index - 1]
-    # dy = ysupport[end_arrow_index] - ysupport[end_arrow_index - 1]
 
     # # Normalize the direction (dx, dy) to ensure consistent arrow scaling
     # norm = (dx**2 + dy**2) ** 0.5
@@ -423,8 +406,7 @@ def get_unique_node_pairs(G):
     """Return the set of unordered node pairs that share at least one edge.
 
     Each pair is sorted so that `(a, b)` and `(b, a)` collapse to a single entry;
-    nodes are ordered by their string value or, for object nodes, their `name`
-    attribute.
+    nodes are ordered by their string value or, for object nodes, their `name` attribute.
 
     Args:
         G: A networkx graph to extract edges from.
@@ -452,8 +434,7 @@ def draw_custom_edges(
 ):
     """Draw curved Bézier edges between connected node pairs on an axes.
 
-    For every unique node pair, edges in each direction are fanned out with
-    distinct curvature so that parallel and bidirectional edges stay
+    For every unique node pair, edges in each direction are fanned out with distinct curvature so that parallel and bidirectional edges stay
     distinguishable. Colors may be a single color or resolved from a colormap.
 
     Args:
@@ -466,14 +447,6 @@ def draw_custom_edges(
         edge_radius: Curvature used when a pair has a single edge.
         **kwargs: Additional keyword arguments forwarded to `plot_curve`.
     """
-    # if "shrinkA" not in kwargs.keys():
-    #     kwargs["shrinkA"] = .1
-    # if "shrinkB" not in kwargs.keys():
-    #     kwargs["shrinkB"] = .3
-    # if "arrowstyle" not in kwargs.keys():
-    #     kwargs["arrowstyle"] = "-|>,head_length=0.4,head_width=0.2"
-    # if "mutation_scale" not in kwargs.keys():
-    #     kwargs["mutation_scale"] = 10.0
 
     if edge_colors in colormaps.keys():
         cmap = edge_colors if isinstance(edge_colors, str) and edge_colors in colormaps.keys() else "viridis"
@@ -712,8 +685,7 @@ def draw_custom_arrows(
 def get_actual_bounds(ax, axis="x"):
     """Compute the data-coordinate extent of all rendered text on an axes.
 
-    Iterates over the non-empty text artists, transforms each one's window extent
-    into data coordinates, and returns the min and max along the requested axis.
+    Iterates over the non-empty text artists, transforms each one's window extent into data coordinates, and returns the min and max along the requested axis.
     The axes must already be drawn so that text extents are available.
 
     Args:
@@ -922,12 +894,6 @@ def get_category_from_graph(G, node):
     if category == "unknown":
         category = G.nodes[node].get("type", "unknown")
 
-    # TODO: review
-    # if category == "unknown":
-    #     tvbocls = ontology.search_class(node)
-    #     if isinstance(tvbocls, owl.ThingClass):
-    #         tvbocls.is_a.first().label.first()
-
     category = category.replace("parameter", "Parameter")
     return category
 
@@ -1058,9 +1024,6 @@ def plot_ontology_graph(
         edge_color_dict = dict(zip(edge_types, edge_colors_list))
         edge_colors = [edge_color_dict[data["type"]] for _, _, data in G.edges(data=True)]
 
-    # else:
-    #     edge_legend = False
-
     labels = {}
     for node in G.nodes():
         # Get the symbol or label for the node
@@ -1159,8 +1122,7 @@ def plot_ontology_graph(
                         ),
                     )
             draw_labels = False
-        # TODO: review
-        # draw_custom_arrows(
+        # TODO: review draw_custom_arrows(
         #     G, pos, edge_colors="grey", edge_width=1, connectionstyle="bar"
         # )
         nx.draw_networkx_edges(G, pos, edge_color="grey", width=edge_width, alpha=0.8)
@@ -1256,14 +1218,9 @@ def hierarchy_pos(
     """
     If the graph is a DAG this will return the positions to plot this in a hierarchical layout.
 
-    G: the graph (must be a DAG)
-    root: the root node of current branch
-    width: horizontal space allocated for this branch
-    vert_gap: gap between levels of hierarchy
-    hor_gap: gap between nodes within the same level
-    vert_loc: vertical location of root
-    xcenter: horizontal location of root
-    direction: 'down' for top-down layout, 'up' for bottom-up layout
+    G: the graph (must be a DAG) root: the root node of current branch width: horizontal space allocated for this branch
+    vert_gap: gap between levels of hierarchy hor_gap: gap between nodes within the same level vert_loc: vertical location of root
+    xcenter: horizontal location of root direction: 'down' for top-down layout, 'up' for bottom-up layout
     vert_scatter: vertical scatter factor for nodes on the same level
     """
     vert_scatter /= 10
@@ -1515,8 +1472,6 @@ def get_node_size(g, params=None):
     if params["node_size_by"] == "degree":
         d = dict(g.degree)
         node_size = [v * params["node_size_factor"] for v in d.values()]
-    # elif params["node_size_by"] == "text":
-    #     node_size = [2 * 60 * params["font_size"] / 2 for i in pos]
     elif params["node_size_by"] == "factor":
         node_size = params["node_size_factor"]
     else:
@@ -1587,8 +1542,7 @@ def draw_nodes(g, pos, node_color, cmap, node_size, ax, params):
 
 def draw_edges(g, pos, ax, params):
     """
-    A function to draw the edges on the graph. Depending on the parameters, it can draw colored edges
-    and adjust the width of the edges.
+    A function to draw the edges on the graph. Depending on the parameters, it can draw colored edges and adjust the width of the edges.
 
     Parameters:
     g (networkx.Graph): The graph on which the edges are to be drawn.
@@ -1632,8 +1586,7 @@ def draw_edges(g, pos, ax, params):
 
 def draw_edge_labels(g, pos, ax, params):
     """
-    A function to draw the edge labels on the graph. The labels are extracted from the edge attributes
-    and can be customized using various parameters in the params dictionary.
+    A function to draw the edge labels on the graph. The labels are extracted from the edge attributes and can be customized using various parameters in the params dictionary.
 
     Parameters:
     g (networkx.Graph): The graph on which the edge labels are to be drawn.
@@ -1658,8 +1611,7 @@ def draw_edge_labels(g, pos, ax, params):
 
 def draw_legend(g, ax, params):
     """
-    A function to draw the legend on the graph. The legend is created based on the node types and
-    their respective colors, which are derived from the 'tvb_colors' parameter in the params dictionary.
+    A function to draw the legend on the graph. The legend is created based on the node types and their respective colors, which are derived from the 'tvb_colors' parameter in the params dictionary.
 
     Parameters:
     g (networkx.Graph): The graph on which the legend is to be drawn.
@@ -1878,8 +1830,7 @@ def plot_model(
 def plot_hierarchy(cls, hierarchy_type="ancestors", ax=None, **kwargs):
     """Plot the ontology class hierarchy around a given class as a tree.
 
-    Builds an `is_a` graph relating `cls` to the requested set of related classes
-    and lays it out top-down or bottom-up depending on the hierarchy direction.
+    Builds an `is_a` graph relating `cls` to the requested set of related classes and lays it out top-down or bottom-up depending on the hierarchy direction.
 
     Args:
         cls: The ontology class at the center of the hierarchy.
@@ -2196,8 +2147,7 @@ def get_node_color_mapping(G, node_colors="math_type", colors="tvb", return_cate
 def adjust_arrow_end(start, end, bbox_end):
     """Clip an arrow's endpoint to the edge of the target node's bounding box.
 
-    Computes where the line from `start` to `end` crosses the top or bottom edge
-    of `bbox_end` (chosen by arrow direction) and clamps the crossing to the box's
+    Computes where the line from `start` to `end` crosses the top or bottom edge of `bbox_end` (chosen by arrow direction) and clamps the crossing to the box's
     horizontal extent, so the arrow stops at the node border instead of its center.
 
     Args:
@@ -2214,8 +2164,7 @@ def adjust_arrow_end(start, end, bbox_end):
     x_min_end, y_min_end, width_end, height_end = bbox_end.bounds
     x_max_end, y_max_end = x_min_end + width_end, y_min_end + height_end
 
-    # x_min_end, y_min_end = bbox_end[0]
-    # x_max_end, y_max_end = bbox_end[1]
+    # x_min_end, y_min_end = bbox_end[0] x_max_end, y_max_end = bbox_end[1]
 
     # Determine which edge of the bounding box to intersect with
     if y_start > y_end:  # Arrow goes downward; intersect with top edge
@@ -2254,11 +2203,9 @@ def plot_edge(edge, pos, bbox_positions_data, ax, **kwargs):
     # bbox_start = bbox_positions_data[edge[0]].bounds
     bbox_end = bbox_positions_data[edge[1]]
 
-    # x_min_start, y_min_start = bbox_start[0]
-    # x_max_start, y_max_start = bbox_start[1]
+    # x_min_start, y_min_start = bbox_start[0] x_max_start, y_max_start = bbox_start[1]
 
-    # x_min_end, y_min_end = bbox_end[0]
-    # x_max_end, y_max_end = bbox_end[1]
+    # x_min_end, y_min_end = bbox_end[0] x_max_end, y_max_end = bbox_end[1]
 
     start = pos[edge[0]]
     end = pos[edge[1]]

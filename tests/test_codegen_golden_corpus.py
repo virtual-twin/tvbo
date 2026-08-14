@@ -122,8 +122,12 @@ def _diff(produced: str, expected: str) -> str | None:
         return None
     lines = list(
         difflib.unified_diff(
-            expected.splitlines(), produced.splitlines(),
-            fromfile="reference", tofile="rendered", lineterm="", n=2,
+            expected.splitlines(),
+            produced.splitlines(),
+            fromfile="reference",
+            tofile="rendered",
+            lineterm="",
+            n=2,
         )
     )
     if lines:
@@ -143,12 +147,7 @@ CORPUS = GoldenCorpus(
     compare=_diff,
 )
 
-CASES = [
-    (path, fmt)
-    for path in _model_paths()
-    for fmt in FORMATS
-    if _case_id(path, fmt) not in EXCLUDED
-]
+CASES = [(path, fmt) for path in _model_paths() for fmt in FORMATS if _case_id(path, fmt) not in EXCLUDED]
 
 
 def _render(model: Dynamics, fmt: str) -> str:
@@ -259,5 +258,3 @@ def test_corpus_covers_every_model_and_format(regenerate: bool):
         regenerate=regenerate,
         what="model/format pairs",
     )
-
-

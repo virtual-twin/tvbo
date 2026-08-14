@@ -6,8 +6,7 @@ Central mapping between TVBO's ``UnitEnum`` (QUDT-backed), a backend's own unit
 vocabulary, SymPy units, and legacy free-text unit strings found in older model
 YAMLs.
 
-The ``UnitEnum`` values use conventional abbreviations (ms, mV, nA, etc.)
-as defined in the LinkML schema (``schema/tvbo_datamodel.yaml``).
+The ``UnitEnum`` values use conventional abbreviations (ms, mV, nA, etc.) as defined in the LinkML schema (``schema/tvbo_datamodel.yaml``).
 
 * ``unit_to_lems_dimension(unit)`` — map a UnitEnum value to a LEMS dimension name
 * ``unit_to_lems_symbol(unit)`` — map a UnitEnum value to the LEMS unit symbol
@@ -242,8 +241,7 @@ def unit_to_lems_dimension(unit):
 def unit_to_lems_symbol(unit):
     """Return the LEMS unit symbol string for appending to numeric values.
 
-    For dimensioned parameters (e.g. ``pF``, ``nS``, ``mV``), returns the
-    matching LEMS unit symbol.  For dimensionless or unknown units, returns
+    For dimensioned parameters (e.g. ``pF``, ``nS``, ``mV``), returns the matching LEMS unit symbol.  For dimensionless or unknown units, returns
     ``""``.
     """
     tool = _tool("neuroml")
@@ -276,8 +274,7 @@ _TIME_UNITS = {
 def unit_has_time_dimension(unit):
     """Return True if the unit carries a time component (T or T⁻¹).
 
-    This is the key signal for NeuroML LEMS export: if any parameter
-    in the RHS equation has a time dimension, the equation already
+    This is the key signal for NeuroML LEMS export: if any parameter in the RHS equation has a time dimension, the equation already
     carries time normalisation and ``/ SEC`` is not needed.
     """
     if unit is None:

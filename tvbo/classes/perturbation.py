@@ -73,8 +73,7 @@ def load_acoustic_stimulus_from_audiofile(file_path, sampling_rate=1000, duratio
     """Load an audio file as a callable stimulus time course.
 
     Loads the waveform, resamples it to `sampling_rate`, normalises it to the
-    `[-1, 1]` range, optionally truncates it to `duration`, and fits a smoothing
-    spline over time (in milliseconds).
+    `[-1, 1]` range, optionally truncates it to `duration`, and fits a smoothing spline over time (in milliseconds).
 
     Args:
         file_path: Path to the audio file to read (any format `librosa`

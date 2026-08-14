@@ -34,36 +34,36 @@ jobs:
         name: Lint
         runs-on: ubuntu-latest
         steps:
+            # Full history: the diff-mode prose check needs a merge-base with the target branch.
             - uses: actions/checkout@v6
               with:
                   fetch-depth: 0
 
-            # `HEAD^1` is the base side of the merge checkout builds — the base as it is NOW.
-            - name: Comment style — no stacked '#' blocks (added lines)
-              if: github.event_name == 'pull_request'
-              run: python3 scripts/check_comment_blocks.py HEAD^1
-
-            # ruff: blocking syntax-error subset; `version` tracks the `lint` extra.
-            - name: Ruff — syntax errors (blocking)
+            # `version` tracks the `lint` extra in pyproject.toml.
+            - name: Ruff — lint
               uses: astral-sh/ruff-action@v4.1.0
               with:
                   version: "0.16.1"
-                  args: "check --select=E9,F63,F7,F82 --output-format=github ."
+                  args: "check --output-format=github ."
 
-            # ruff: full lint summary, non-blocking until codebase is clean.
-            - name: Ruff — full lint (non-blocking)
-              uses: astral-sh/ruff-action@v4.1.0
-              with:
-                  version: "0.16.1"
-                  args: "check --exit-zero ."
-
-            # ruff format: report files needing reformatting, non-blocking.
-            - name: Ruff format — check (non-blocking)
+            - name: Ruff — format
               uses: astral-sh/ruff-action@v4.1.0
               with:
                   version: "0.16.1"
                   args: "format --check --diff ."
-              continue-on-error: true
+
+            - name: Setup Python for the prose check
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+
+            # Reporting until the Stage C backlog clears, then drop `|| true`.
+            - name: Prose — comments and docstrings (reporting)
+              run: python scripts/check_prose.py || true
+
+            # `HEAD^1` is the base side of the merge ref CI checks out — the base as it is NOW, so the diff stays this PR's own work however far the base has moved. A branch ref would blame the PR for whatever the base gained meanwhile.
+            - name: Prose — no stacked '#' blocks added
+              run: python scripts/check_prose.py --diff "$(git rev-parse HEAD^1 2>/dev/null || echo origin/${{ github.base_ref || 'dev' }})"
 
             # mypy: type-check the source tree, non-blocking.
             - uses: astral-sh/setup-uv@v8.1.0

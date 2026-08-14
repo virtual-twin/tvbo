@@ -6,9 +6,9 @@ every resolution path the design enumerates: intra-study ``experiment`` id, ``ir
 no-WHERE guard, ``sel`` nearest on an indexed *and* a non-index coordinate, the
 ``output`` ``__``-suffix matcher, and ``by_label`` reconcile (identity + permuted).
 """
+
 from __future__ import annotations
 
-from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -37,11 +37,10 @@ def _sel(**pairs):
 def sweep_h5(tmp_path):
     """A swept container: dims (branch_point, node); K a non-index coord along branch_point."""
     K = np.array([700.0, 900.0, 1100.0, 1300.0, 1500.0])
-    xi = np.arange(5)[:, None] + np.array([0.0, 0.1, 0.2])[None, :]   # row r -> r + {0,.1,.2}
+    xi = np.arange(5)[:, None] + np.array([0.0, 0.1, 0.2])[None, :]  # row r -> r + {0,.1,.2}
     ds = xr.Dataset(
         {"observation__lyapunov_xi": (("branch_point", "node"), xi)},
-        coords={"KuramotoInertia.K": ("branch_point", K),
-                "node": ["A", "B", "C"]},
+        coords={"KuramotoInertia.K": ("branch_point", K), "node": ["A", "B", "C"]},
     )
     p = tmp_path / "sub" / "study_exp-32_result.h5"
     p.parent.mkdir(parents=True)
@@ -52,8 +51,7 @@ def sweep_h5(tmp_path):
 @pytest.fixture
 def vec_h5(tmp_path):
     """A per-node vector with string node labels, for reconcile tests."""
-    ds = xr.Dataset({"g": (("node",), np.array([10.0, 20.0, 30.0]))},
-                    coords={"node": ["A", "B", "C"]})
+    ds = xr.Dataset({"g": (("node",), np.array([10.0, 20.0, 30.0]))}, coords={"node": ["A", "B", "C"]})
     p = tmp_path / "out" / "nc" / "exp5" / "study_exp-5_result.h5"
     p.parent.mkdir(parents=True)
     ds.to_netcdf(p, engine="h5netcdf")
@@ -61,6 +59,7 @@ def vec_h5(tmp_path):
 
 
 # --------------------------------------------------------------------------- WHERE
+
 
 def test_experiment_id_from_iri():
     assert dr.experiment_id("tvbo:exp/Study/exp-32") == "32"
@@ -126,20 +125,21 @@ def test_is_local_ref():
 def test_skip_network_sidecar(tmp_path):
     (tmp_path / "study_exp-7_network.h5").write_bytes(b"")
     xr.Dataset({"g": (("node",), [1.0])}, coords={"node": ["A"]}).to_netcdf(
-        tmp_path / "study_exp-7_result.h5", engine="h5netcdf")
+        tmp_path / "study_exp-7_result.h5", engine="h5netcdf"
+    )
     got = dr.locate_container(_ref(experiment="7"), results_root=tmp_path)
     assert got.name == "study_exp-7_result.h5"
 
 
 # --------------------------------------------------------------------------- WHICH
 
+
 def test_match_output_exact():
     assert dr.match_output(["theta_final", "g"], "g") == "g"
 
 
 def test_match_output_suffix():
-    assert dr.match_output(["observation__lyapunov_xi", "theta"], "lyapunov_xi") \
-        == "observation__lyapunov_xi"
+    assert dr.match_output(["observation__lyapunov_xi", "theta"], "lyapunov_xi") == "observation__lyapunov_xi"
     assert dr.match_output(["estimate__wLRE"], "wLRE") == "estimate__wLRE"
 
 
@@ -148,12 +148,43 @@ def test_match_output_missing():
         dr.match_output(["a", "b"], "nope")
 
 
+# A run with two algorithms records every observation twice — `algorithm__fic__S_e_final` beside
+# `algorithm__fic_eib__S_e_final`. A caller that cannot tolerate an arbitrary pick passes `prefer`.
+_TWO_ALGORITHMS = [
+    "algorithm__fic__S_e_final",
+    "algorithm__fic_eib__S_e_final",
+    "estimate__wLRE",
+]
+
+
+def test_prefer_picks_the_named_producer():
+    assert dr.match_output(_TWO_ALGORITHMS, "S_e_final", prefer=["fic_eib", "fic"]) == "algorithm__fic_eib__S_e_final"
+    assert dr.match_output(_TWO_ALGORITHMS, "S_e_final", prefer=["fic", "fic_eib"]) == "algorithm__fic__S_e_final"
+
+
+def test_prefer_raises_rather_than_guess_when_none_matches():
+    with pytest.raises(KeyError, match="recorded by 2 producers"):
+        dr.match_output(_TWO_ALGORITHMS, "S_e_final", prefer=["nesterov"])
+
+
+def test_prefer_is_inert_when_unambiguous():
+    """One candidate needs no preference — and a preference must not turn it into a failure."""
+    assert dr.match_output(_TWO_ALGORITHMS, "wLRE", prefer=["fic_eib"]) == "estimate__wLRE"
+    assert dr.match_output(_TWO_ALGORITHMS, "wLRE", prefer=["nothing_like_it"]) == "estimate__wLRE"
+
+
+def test_without_prefer_behaviour_is_unchanged():
+    """Callers binding an author-written name keep the legacy first-match resolution."""
+    assert dr.match_output(_TWO_ALGORITHMS, "S_e_final") == "algorithm__fic__S_e_final"
+
+
 # --------------------------------------------------------------------------- SLICE
+
 
 def test_select_nearest_on_non_index_coord(sweep_h5):
     _, path = sweep_h5
     da = xr.open_dataset(path, engine="h5netcdf")["observation__lyapunov_xi"]
-    out = dr.select_labeled(da, {"KuramotoInertia.K": 1307})     # nearest -> K=1300 (row 3)
+    out = dr.select_labeled(da, {"KuramotoInertia.K": 1307})  # nearest -> K=1300 (row 3)
     np.testing.assert_allclose(out.values, [3.0, 3.1, 3.2])
 
 
@@ -170,9 +201,8 @@ def test_select_exact_label():
 def test_select_numeric_list_on_non_index_coord():
     # A numeric list on a non-dimension coordinate uses nearest per element (not exact isin,
     # which would silently miss on a continuous sweep).
-    da = xr.DataArray(np.arange(5.0), dims=["point"],
-                      coords={"K": ("point", [700.0, 900.0, 1100.0, 1300.0, 1500.0])})
-    out = dr.select_labeled(da, {"K": [817, 1307]})     # nearest -> 900 (idx1), 1300 (idx3)
+    da = xr.DataArray(np.arange(5.0), dims=["point"], coords={"K": ("point", [700.0, 900.0, 1100.0, 1300.0, 1500.0])})
+    out = dr.select_labeled(da, {"K": [817, 1307]})  # nearest -> 900 (idx1), 1300 (idx3)
     np.testing.assert_allclose(out.values, [1.0, 3.0])
 
 
@@ -189,6 +219,7 @@ def test_select_unknown_key_raises():
 
 # --------------------------------------------------------------------------- RECONCILE
 
+
 def test_reconcile_identity():
     da = xr.DataArray([10.0, 20.0, 30.0], dims=["node"], coords={"node": ["A", "B", "C"]})
     out = dr.reconcile_by_label(da, {"A": "A", "B": "B", "C": "C"}, ["A", "B", "C"])
@@ -204,30 +235,29 @@ def test_reconcile_permuted_and_aliased():
 
 def test_reconcile_matrix_both_axes():
     m = np.arange(9.0).reshape(3, 3)
-    da = xr.DataArray(m, dims=["node_i", "node_j"],
-                      coords={"node_i": ["A", "B", "C"], "node_j": ["A", "B", "C"]})
+    da = xr.DataArray(m, dims=["node_i", "node_j"], coords={"node_i": ["A", "B", "C"], "node_j": ["A", "B", "C"]})
     out = dr.reconcile_by_label(da, {k: k for k in "ABC"}, ["C", "B", "A"])
     # rows and cols both reversed -> element [i,j] becomes original [2-i, 2-j]
     np.testing.assert_allclose(out.values, m[::-1, ::-1])
 
 
 def test_reconcile_leaves_unlabelled_axis():
-    da = xr.DataArray([1.0, 2.0, 3.0], dims=["x"])       # no coords -> untouched
+    da = xr.DataArray([1.0, 2.0, 3.0], dims=["x"])  # no coords -> untouched
     out = dr.reconcile_by_label(da, {}, ["Z"])
     np.testing.assert_allclose(out.values, [1.0, 2.0, 3.0])
 
 
 def test_reconcile_skips_non_node_string_axis():
     # A labelled NON-node axis ('pop') must be left alone; only the node axis is reordered.
-    da = xr.DataArray(np.arange(6.0).reshape(2, 3), dims=["pop", "node"],
-                      coords={"pop": ["E", "I"], "node": ["A", "B", "C"]})
+    da = xr.DataArray(np.arange(6.0).reshape(2, 3), dims=["pop", "node"], coords={"pop": ["E", "I"], "node": ["A", "B", "C"]})
     out = dr.reconcile_by_label(da, {k: k for k in "ABC"}, ["C", "A", "B"])
-    assert list(out.coords["pop"].values) == ["E", "I"]          # untouched (no label overlap)
-    assert list(out.coords["node"].values) == ["C", "A", "B"]    # reconciled
+    assert list(out.coords["pop"].values) == ["E", "I"]  # untouched (no label overlap)
+    assert list(out.coords["node"].values) == ["C", "A", "B"]  # reconciled
     np.testing.assert_allclose(out.sel(node="A").values, [0.0, 3.0])
 
 
 # --------------------------------------------------------------------------- sel/mode helpers
+
 
 def test_sel_dict_and_reconcile_mode():
     ref = _ref(sel=_sel(**{"KuramotoInertia.K": 817}), reconcile="by_label")
@@ -240,12 +270,15 @@ def test_sel_dict_reads_the_keyed_dict_spelling():
     """A study writes ``sel: {variable: phi}`` — a NAME-KEYED collection, which is what the
     loader hands back. Reading only the list spelling silently dropped the selection, so a
     sourced argument arrived unsliced (whole trajectory instead of one state variable)."""
-    sel = {"variable": SimpleNamespace(name="variable", value="phi"),
-           "time": SimpleNamespace(name="time", value=[0.006, 0.016])}
+    sel = {
+        "variable": SimpleNamespace(name="variable", value="phi"),
+        "time": SimpleNamespace(name="time", value=[0.006, 0.016]),
+    }
     assert dr.sel_dict(_ref(sel=sel)) == {"variable": "phi", "time": [0.006, 0.016]}
 
 
 # --------------------------------------------------------------------------- full pipeline
+
 
 def test_resolve_dataref_end_to_end(sweep_h5):
     root, _ = sweep_h5
@@ -258,13 +291,13 @@ def test_resolve_dataref_end_to_end(sweep_h5):
 def test_resolve_dataref_with_reconcile(vec_h5):
     root, _ = vec_h5
     ref = _ref(experiment="5", output="g", reconcile="by_label")
-    out = dr.resolve_dataref(ref, results_root=root,
-                             alias_map={k: k for k in "ABC"}, model_labels=["C", "A", "B"])
+    out = dr.resolve_dataref(ref, results_root=root, alias_map={k: k for k in "ABC"}, model_labels=["C", "A", "B"])
     np.testing.assert_allclose(out.values, [30.0, 10.0, 20.0])
     assert list(out.coords["node"].values) == ["C", "A", "B"]
 
 
 # --------------------------------------------------------------------------- transform
+
 
 def test_apply_transform_and_none():
     from tvbo.adapters import bsplot
@@ -284,8 +317,8 @@ def test_resolve_dataref_with_transform(sweep_h5):
 
     @bsplot.register_transform("_xsrc_test_endpoint")
     def _endpoint(da):
-        return da.isel({da.dims[0]: -1})       # last branch point (the operating-point pattern)
+        return da.isel({da.dims[0]: -1})  # last branch point (the operating-point pattern)
 
     ref = _ref(experiment="32", output="lyapunov_xi", transform="_xsrc_test_endpoint")
     out = dr.resolve_dataref(ref, results_root=root)
-    np.testing.assert_allclose(out.values, [4.0, 4.1, 4.2])   # row 4 (last of 5 points)
+    np.testing.assert_allclose(out.values, [4.0, 4.1, 4.2])  # row 4 (last of 5 points)

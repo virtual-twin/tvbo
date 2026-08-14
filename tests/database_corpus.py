@@ -38,11 +38,7 @@ TARGETS = {
 
 def collect() -> list[tuple[Path, str]]:
     """Every database YAML with the class it should load as, in a stable order."""
-    return [
-        (path, cls)
-        for sub, cls in TARGETS.items()
-        for path in sorted((DB / sub).rglob("*.y*ml"))
-    ]
+    return [(path, cls) for sub, cls in TARGETS.items() for path in sorted((DB / sub).rglob("*.y*ml"))]
 
 
 def uncovered() -> list[str]:

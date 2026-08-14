@@ -145,9 +145,7 @@ class TestNetworkExport:
             tvbo_datamodel.Node(id=1, label="B", dynamics=osc.name),
         ]
         network.edges = [
-            tvbo_datamodel.Edge(
-                source=0, target=1, coupling=Coupling(name="Linear"), **edge_kwargs
-            ),
+            tvbo_datamodel.Edge(source=0, target=1, coupling=Coupling(name="Linear"), **edge_kwargs),
         ]
 
         yaml_output = to_pyrates_yaml_string(dynamics=osc, network=network)

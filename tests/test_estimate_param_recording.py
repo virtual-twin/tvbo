@@ -6,6 +6,7 @@ a prior location and reconciles by label with the existing `.sel` path.
 Source-side, additive, container-layer only (no codegen). Filtered to free params, so it
 never shadows a ``<sv>_final`` state observation.
 """
+
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -24,15 +25,19 @@ def _fake_source(labels):
     """A stand-in experiment: J_i (dynamics) + wLRE/wFFI (coupling) free; I_o/G fixed."""
     return SimpleNamespace(
         network=SimpleNamespace(node_labels=labels),
-        dynamics=SimpleNamespace(parameters={
-            "J_i": _param("J_i", True),
-            "I_o": _param("I_o", False),
-        }),
-        coupling=SimpleNamespace(parameters={
-            "wLRE": _param("wLRE", True),
-            "wFFI": _param("wFFI", True),
-            "G": _param("G", False),
-        }),
+        dynamics=SimpleNamespace(
+            parameters={
+                "J_i": _param("J_i", True),
+                "I_o": _param("I_o", False),
+            }
+        ),
+        coupling=SimpleNamespace(
+            parameters={
+                "wLRE": _param("wLRE", True),
+                "wFFI": _param("wFFI", True),
+                "G": _param("G", False),
+            }
+        ),
     )
 
 
@@ -49,11 +54,13 @@ class _JaxParam:
 
 def _algo_state(n):
     return SimpleNamespace(
-        coupling=SimpleNamespace(EIBLinearCoupling=SimpleNamespace(
-            wLRE=_JaxParam(np.full((n, n), 0.7)),
-            wFFI=_JaxParam(np.full((n, n), 0.3)),
-            G=_JaxParam(np.array(2.0)),        # fixed — not recorded
-        )),
+        coupling=SimpleNamespace(
+            EIBLinearCoupling=SimpleNamespace(
+                wLRE=_JaxParam(np.full((n, n), 0.7)),
+                wFFI=_JaxParam(np.full((n, n), 0.3)),
+                G=_JaxParam(np.array(2.0)),  # fixed — not recorded
+            )
+        ),
         dynamics=SimpleNamespace(
             J_i=_JaxParam(np.arange(n, dtype=float)),
             S_e=_JaxParam(np.full(n, 0.204)),  # state variable — not recorded
@@ -115,11 +122,9 @@ def test_save_records_bare_jax_array_params(tmp_path):
     labels = [f"R{i}" for i in range(n)]
     state = SimpleNamespace(
         dynamics=SimpleNamespace(J_i=jnp.arange(n, dtype=float)),
-        coupling=SimpleNamespace(EIBLinearCoupling=SimpleNamespace(
-            wLRE=jnp.full((n, n), 0.7), wFFI=jnp.full((n, n), 0.3))),
+        coupling=SimpleNamespace(EIBLinearCoupling=SimpleNamespace(wLRE=jnp.full((n, n), 0.7), wFFI=jnp.full((n, n), 0.3))),
     )
-    res = ExperimentResult(algorithms={"fic_eib": SimpleNamespace(state=state)},
-                           source=_fake_source(labels))
+    res = ExperimentResult(algorithms={"fic_eib": SimpleNamespace(state=state)}, source=_fake_source(labels))
     written = res.save(str(tmp_path), compress=False, record_only=False)
     ds = xr.open_dataset([p for p in written if p.endswith(".h5")][0], engine="h5netcdf")
     try:
@@ -139,15 +144,14 @@ def test_estimate_uses_resolved_not_placeholder_labels(tmp_path):
     xr = pytest.importorskip("xarray")
 
     class _Src:
-        network = SimpleNamespace(node_labels=["region_0", "region_1"])   # placeholders
+        network = SimpleNamespace(node_labels=["region_0", "region_1"])  # placeholders
         dynamics = SimpleNamespace(parameters={"J_i": _param("J_i", True)})
         coupling = None
 
         def _resolve_model_node_labels(self):
-            return ["L_V1", "R_V1"]   # hydrated real labels
+            return ["L_V1", "R_V1"]  # hydrated real labels
 
-    state = SimpleNamespace(dynamics=SimpleNamespace(J_i=_JaxParam([1.0, 2.0])),
-                            coupling=SimpleNamespace())
+    state = SimpleNamespace(dynamics=SimpleNamespace(J_i=_JaxParam([1.0, 2.0])), coupling=SimpleNamespace())
     res = ExperimentResult(algorithms={"a": SimpleNamespace(state=state)}, source=_Src())
     written = res.save(str(tmp_path), compress=False, record_only=False)
     ds = xr.open_dataset([p for p in written if p.endswith(".h5")][0], engine="h5netcdf")
@@ -177,10 +181,12 @@ def _source_with_algos(labels):
 
 def _state_with(n, wlre, wffi, ji):
     return SimpleNamespace(
-        coupling=SimpleNamespace(EIBLinearCoupling=SimpleNamespace(
-            wLRE=_JaxParam(np.full((n, n), wlre)),
-            wFFI=_JaxParam(np.full((n, n), wffi)),
-        )),
+        coupling=SimpleNamespace(
+            EIBLinearCoupling=SimpleNamespace(
+                wLRE=_JaxParam(np.full((n, n), wlre)),
+                wFFI=_JaxParam(np.full((n, n), wffi)),
+            )
+        ),
         dynamics=SimpleNamespace(J_i=_JaxParam(np.full(n, ji))),
     )
 
@@ -190,7 +196,7 @@ def test_algo_tuned_params_maps_rules_and_includes():
     tuned = _algo_tuned_params(src)
     assert tuned == {"fic": {"J_i"}, "fic_eib": {"J_i", "wLRE", "wFFI"}}
     assert _algo_tuned_params(None) == {}
-    assert _algo_tuned_params(_fake_source(["a"])) == {}   # no .algorithms → empty
+    assert _algo_tuned_params(_fake_source(["a"])) == {}  # no .algorithms → empty
 
 
 def test_estimate_prefers_fitting_algorithm_not_pre_pass(tmp_path):
@@ -201,19 +207,19 @@ def test_estimate_prefers_fitting_algorithm_not_pre_pass(tmp_path):
     n = 4
     labels = [f"R{i}" for i in range(n)]
     res = ExperimentResult(
-        algorithms={   # run order: fic (only J_i) then fic_eib (all three)
+        algorithms={  # run order: fic (only J_i) then fic_eib (all three)
             "fic": SimpleNamespace(state=_state_with(n, wlre=1.0, wffi=1.0, ji=0.5)),
             "fic_eib": SimpleNamespace(state=_state_with(n, wlre=0.7, wffi=0.3, ji=1.9)),
         },
         source=_source_with_algos(labels),
     )
     ds = xr.open_dataset(
-        [p for p in res.save(str(tmp_path), compress=False, record_only=False)
-         if p.endswith(".h5")][0], engine="h5netcdf")
+        [p for p in res.save(str(tmp_path), compress=False, record_only=False) if p.endswith(".h5")][0], engine="h5netcdf"
+    )
     try:
-        np.testing.assert_allclose(ds["estimate__wLRE"].values, 0.7)   # EIB, not 1.0
-        np.testing.assert_allclose(ds["estimate__wFFI"].values, 0.3)   # EIB, not 1.0
-        np.testing.assert_allclose(ds["estimate__J_i"].values, 1.9)    # EIB, not 0.5
+        np.testing.assert_allclose(ds["estimate__wLRE"].values, 0.7)  # EIB, not 1.0
+        np.testing.assert_allclose(ds["estimate__wFFI"].values, 0.3)  # EIB, not 1.0
+        np.testing.assert_allclose(ds["estimate__J_i"].values, 1.9)  # EIB, not 0.5
     finally:
         ds.close()
 
@@ -230,8 +236,8 @@ def test_save_persists_algorithm_post_tuning_fc_corr(tmp_path):
     )
     res = ExperimentResult(algorithms={"fic_eib": algo}, source=_source_with_algos(labels))
     ds = xr.open_dataset(
-        [p for p in res.save(str(tmp_path), compress=False, record_only=False)
-         if p.endswith(".h5")][0], engine="h5netcdf")
+        [p for p in res.save(str(tmp_path), compress=False, record_only=False) if p.endswith(".h5")][0], engine="h5netcdf"
+    )
     try:
         assert "algorithm__fic_eib__fc_corr" in set(ds.data_vars)
         np.testing.assert_allclose(float(ds["algorithm__fic_eib__fc_corr"].values), 0.87)
@@ -254,6 +260,6 @@ def test_unlabelled_source_falls_back_to_generic(tmp_path):
     ds = xr.open_dataset(h5[0], engine="h5netcdf")
     try:
         assert "estimate__J_i" in set(ds.data_vars)
-        assert "node" not in ds["estimate__J_i"].coords   # no label coords
+        assert "node" not in ds["estimate__J_i"].coords  # no label coords
     finally:
         ds.close()

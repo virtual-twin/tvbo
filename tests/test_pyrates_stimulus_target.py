@@ -83,10 +83,11 @@ def test_a_model_declaring_I_ext_keeps_the_legacy_path_through_build_inputs(tmp_
     so it always missed and a legacy `stimulation:`-only recipe raised instead of falling
     back — a regression the helper-only test could not see.
     """
-    recipe = (RECIPE
-              .replace("event_type: stimulus", "event_type: discrete")
-              .replace("{tau: {value: 10.0}}", "{tau: {value: 10.0}, I_ext: {value: 0.0}}")
-              .replace("(-v + P)/tau", "(-v + I_ext)/tau"))
+    recipe = (
+        RECIPE.replace("event_type: stimulus", "event_type: discrete")
+        .replace("{tau: {value: 10.0}}", "{tau: {value: 10.0}, I_ext: {value: 0.0}}")
+        .replace("(-v + P)/tau", "(-v + I_ext)/tau")
+    )
     inputs = PyRatesAdapter(_experiment(recipe, tmp_path))._build_inputs()
 
     assert inputs, "the legacy fallback produced no PyRates input at all"
@@ -97,10 +98,8 @@ def test_the_legacy_default_is_kept_only_where_the_model_declares_it(tmp_path):
     """`I_ext` stays available to models that really have it, and only to those."""
     from types import SimpleNamespace
 
-    with_it = SimpleNamespace(state_variables={}, parameters={"I_ext": object()},
-                              coupling_inputs={}, derived_variables={})
-    without = SimpleNamespace(state_variables={"v": object()}, parameters={},
-                              coupling_inputs={}, derived_variables={})
+    with_it = SimpleNamespace(state_variables={}, parameters={"I_ext": object()}, coupling_inputs={}, derived_variables={})
+    without = SimpleNamespace(state_variables={"v": object()}, parameters={}, coupling_inputs={}, derived_variables={})
 
     assert _legacy_input_variable(with_it) == "I_ext"
     assert _legacy_input_variable(without) is None

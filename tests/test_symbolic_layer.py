@@ -154,9 +154,7 @@ def test_every_group_is_keyed_by_the_name_it_defines(name: str):
     model = Dynamics.from_file(str(MODEL_ROOT / f"{name}.yaml"))
     form = model._symbolic_form()
 
-    assert list(form["state-equations"]) == [
-        key for key in model.state_variables if model.state_variables[key].equation
-    ]
+    assert list(form["state-equations"]) == [key for key in model.state_variables if model.state_variables[key].equation]
     assert list(form["derived-variables"]) == list(model.derived_variables)
     assert list(form["derived-parameters"]) == list(model.derived_parameters)
     assert list(form["functions"]) == list(model.functions)
@@ -301,7 +299,8 @@ def test_editing_a_domain_invalidates_the_cache():
     """
     model = Dynamics.from_file(str(MODEL_ROOT / "Generic2dOscillator.yaml"))
     name = next(
-        n for n, p in model.parameters.items()
+        n
+        for n, p in model.parameters.items()
         if getattr(p, "domain", None) is not None and p.domain.lo is not None and p.domain.lo < 0
     )
     assert model.get_symbolic_elements(time_dependent=True)[name].is_positive is not True

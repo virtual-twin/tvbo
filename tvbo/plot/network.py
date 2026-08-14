@@ -69,8 +69,7 @@ def _resolve_positions(G, pos, network=None, plot_brain=None):
 
     Parameters
     ----------
-    G : networkx graph
-    pos : str or dict
+    G : networkx graph pos : str or dict
         ``"spring"`` / ``"graphviz"`` / brain-view string / explicit dict.
     network : Network, optional
         Used to read explicit node positions or atlas centres.
@@ -89,8 +88,7 @@ def _resolve_positions(G, pos, network=None, plot_brain=None):
                     x = getattr(node_pos, "x", None)
                     y = getattr(node_pos, "y", None)
                     if x is not None and y is not None:
-                        # `or i` would discard a legitimate id of 0, silently
-                        # re-keying the first node; test for None explicitly.
+                        # `or i` would discard a legitimate id of 0, silently re-keying the first node; test for None explicitly.
                         node_id = getattr(node, "id", None)
                         if node_id is None:
                             node_id = i
@@ -440,8 +438,7 @@ def plot_graph_brain(
 ) -> Tuple[Figure, Axes, dict]:
     """Render a network on the cortical brain surface using ``bsplot``.
 
-    Nodes are rendered as coloured spheres at their MNI coordinates
-    (from the atlas metadata); edges as coloured tubes between them.
+    Nodes are rendered as coloured spheres at their MNI coordinates (from the atlas metadata); edges as coloured tubes between them.
 
     Parameters
     ----------
@@ -489,9 +486,7 @@ def plot_graph_brain(
 
     Returns
     -------
-    fig : Figure
-    ax : Axes
-    mappables : dict
+    fig : Figure ax : Axes mappables : dict
         ``ScalarMappable`` objects (keys ``"nodes"`` / ``"edges"``).
     """
     from bsplot.graph import create_network, plot_network_on_surface

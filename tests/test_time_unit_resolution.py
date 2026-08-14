@@ -98,7 +98,13 @@ def test_a_scale_that_needs_no_conversion_is_exactly_one():
 
 @pytest.mark.parametrize(
     ("source", "target", "expected"),
-    [("min", "ms", 60_000), ("h", "s", 3600), ("day", "h", 24), ("year", "day", Fraction(1461, 4)), ("ns", "us", Fraction(1, 1000))],
+    [
+        ("min", "ms", 60_000),
+        ("h", "s", 3600),
+        ("day", "h", 24),
+        ("year", "day", Fraction(1461, 4)),
+        ("ns", "us", Fraction(1, 1000)),
+    ],
 )
 def test_a_slow_network_can_state_its_own_scale(source: str, target: str, expected):
     """`ns`, `min`, `h`, `day` and `year` are curated, so a non-brain model can declare one.
@@ -130,8 +136,7 @@ def test_the_database_still_declares_one_non_default_scale():
     declared = {
         path.relative_to(DB).as_posix(): text
         for path in DB.rglob("*.yaml")
-        if (text := _declared_time_unit(yaml.safe_load(path.read_text()) or {}))
-        and text not in (DEFAULT_TIME_UNIT,)
+        if (text := _declared_time_unit(yaml.safe_load(path.read_text()) or {})) and text not in (DEFAULT_TIME_UNIT,)
     }
 
     assert declared, "no non-ms time unit in the database — see this test's docstring"

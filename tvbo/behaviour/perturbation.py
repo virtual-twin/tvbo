@@ -208,9 +208,7 @@ class StimulusBehaviour:
         import matplotlib.pyplot as plt
 
         t_ms = np.linspace(cut_transient, duration, int(duration / dt) + 1)
-        stim_func = self.execute(
-            format="python", duration=duration, sampling_rate=kwargs.pop("sampling_rate", 1000)
-        )
+        stim_func = self.execute(format="python", duration=duration, sampling_rate=kwargs.pop("sampling_rate", 1000))
         expr_values_ms = stim_func(t_ms)
 
         return_fig = ax is None
@@ -220,9 +218,7 @@ class StimulusBehaviour:
         ax.plot(t_ms, expr_values_ms, label="stimulus", **kwargs)
 
         if plot_onset and "onset" in self.parameters:
-            ax.axvline(
-                self.parameters["onset"].value, 0, 1, color="red", linestyle="--", label="onset"
-            )
+            ax.axvline(self.parameters["onset"].value, 0, 1, color="red", linestyle="--", label="onset")
 
         if return_fig:
             plt.close()

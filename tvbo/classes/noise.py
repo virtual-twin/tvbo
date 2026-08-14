@@ -179,8 +179,6 @@ class Noise(tvbo_datamodel.Noise):
         return self.tvb
 
 
-
-
 Integrator = tvbo_datamodel.Integrator
 """The generated class itself. Its behaviour lives in :mod:`tvbo.behaviour.integrator` and
 is attached where the class is generated, so an integrator carries it however it was

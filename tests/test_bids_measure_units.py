@@ -30,9 +30,7 @@ def bids_dir(tmp_path):
     ):
         stem = tmp_path / f"atlas-Probe_meas-{measure}_relmat"
         np.savetxt(f"{stem}.dense.tsv", matrix, delimiter="\t")
-        (tmp_path / f"{stem.name}.json").write_text(
-            json.dumps({"RelationshipMeasure": measure, "MeasureUnits": unit})
-        )
+        (tmp_path / f"{stem.name}.json").write_text(json.dumps({"RelationshipMeasure": measure, "MeasureUnits": unit}))
     return tmp_path
 
 
@@ -73,9 +71,7 @@ def test_a_non_length_unit_is_refused_rather_than_believed(bids_dir):
     produce delays in a unit that means nothing — worse than the `mm` default,
     which is at least wrong in a known direction.
     """
-    network = Network.from_bids(
-        bids_dir, atlas="Probe", structural_measures=["tractLength", "streamlineCount"]
-    )
+    network = Network.from_bids(bids_dir, atlas="Probe", structural_measures=["tractLength", "streamlineCount"])
 
     assert str(network.distance_unit) == "mm"
 

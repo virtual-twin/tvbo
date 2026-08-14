@@ -7,10 +7,10 @@
 #
 """Plotting helpers for analysing simulation output.
 
-This module provides Matplotlib-based plotting utilities for visualising
-derived signal analyses, such as power spectra with shaded canonical EEG
+This module provides Matplotlib-based plotting utilities for visualising derived signal analyses, such as power spectra with shaded canonical EEG
 frequency bands.
 """
+
 from typing import Any, Optional
 
 from matplotlib import colormaps

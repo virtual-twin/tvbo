@@ -62,6 +62,6 @@ def test_every_emitted_kernel_declares_c_linkage(experiment):
     """
     source = experiment.render_code("cuda")
 
-    assert _kernel_names(source), "no extern \"C\" kernel was emitted"
+    assert _kernel_names(source), 'no extern "C" kernel was emitted'
     assert "__global__" in source
     assert re.search(r'(?<!extern "C" )__global__ void', source) is None

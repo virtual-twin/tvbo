@@ -401,7 +401,7 @@ def test_network_conduction_speed_axis_sweeps(tmp_path):
 def test_rww_optimization_runs():
     exp = _load_landscape(2000.0, 500.0)
     for opt in (exp.optimizations or {}).values():
-        for stage in (getattr(opt, "stages", None) or []):
+        for stage in getattr(opt, "stages", None) or []:
             if getattr(stage, "max_iterations", None):
                 stage.max_iterations = 2
     exp.configure()
@@ -742,9 +742,24 @@ def test_ei_trajectory(eager):
         INITIAL_STATE = (0.001, 0.001)
         AUXILIARY_NAMES = ("H_e", "H_i")
         DEFAULT_PARAMS = Bunch(
-            a_e=310.0, b_e=125.0, d_e=0.160, gamma_e=0.641 / 1000, tau_e=100.0, w_p=1.4, W_e=1.0,
-            a_i=615.0, b_i=177.0, d_i=0.087, gamma_i=1.0 / 1000, tau_i=10.0, W_i=0.7,
-            J_N=0.15, J_i=1.0, I_o=0.382, I_ext=0.0, lamda=1.0,
+            a_e=310.0,
+            b_e=125.0,
+            d_e=0.160,
+            gamma_e=0.641 / 1000,
+            tau_e=100.0,
+            w_p=1.4,
+            W_e=1.0,
+            a_i=615.0,
+            b_i=177.0,
+            d_i=0.087,
+            gamma_i=1.0 / 1000,
+            tau_i=10.0,
+            W_i=0.7,
+            J_N=0.15,
+            J_i=1.0,
+            I_o=0.382,
+            I_ext=0.0,
+            lamda=1.0,
         )
         COUPLING_INPUTS = {"coupling": 2}
 
@@ -818,8 +833,9 @@ def _bayesian_reference_forward():
     from tvboptim.experimental.network_dynamics.external_input import PulseInput
 
     net = Network(
-        dynamics=Generic2dOscillator(a=-1.5, b=-15.0, c=0.0, d=0.015, e=3.0, f=1.0,
-                                      tau=4.0, I=0.1, VARIABLES_OF_INTEREST=("V",)),
+        dynamics=Generic2dOscillator(
+            a=-1.5, b=-15.0, c=0.0, d=0.015, e=3.0, f=1.0, tau=4.0, I=0.1, VARIABLES_OF_INTEREST=("V",)
+        ),
         coupling={"instant": LinearCoupling(incoming_states="V", G=0.0)},
         graph=DenseGraph(jnp.zeros((1, 1))),
         external_input={"stimulus": PulseInput(onset=10.0, duration=1.0, amplitude=0.4)},
@@ -841,6 +857,7 @@ def test_bayesian_inference_recovers_and_steers():
     """MCMC smoke (reduced samples): both params recovered near truth, the amplitude/I
     degeneracy ridge (negative correlation), and prior-steering across scenarios."""
     import jax
+
     exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "Stimulation_Bayesian_Inference.yaml"))
     for inf in exp.inferences.values():
         inf.num_warmup, inf.num_samples = 200, 400
@@ -849,8 +866,13 @@ def test_bayesian_inference_recovers_and_steers():
     observed = rec + 0.1 * np.asarray(jax.random.normal(jax.random.key(42), (rec.shape[0],)))
     r = exp.run("tvboptim", mode="inference", recorded_ts=observed)
 
-    post = {k: (np.asarray(r.inferences[k].posterior["stimulus.amplitude"]),
-                np.asarray(r.inferences[k].posterior["Generic2dOscillator.I"])) for k in r.inferences}
+    post = {
+        k: (
+            np.asarray(r.inferences[k].posterior["stimulus.amplitude"]),
+            np.asarray(r.inferences[k].posterior["Generic2dOscillator.I"]),
+        )
+        for k in r.inferences
+    }
     a_A, i_A = post["scenario_A"]
     assert abs(a_A.mean() - 0.4) < 0.15, f"amplitude not recovered: {a_A.mean():.3f}"
     assert abs(i_A.mean() - 0.1) < 0.15, f"I not recovered: {i_A.mean():.3f}"
@@ -1008,7 +1030,7 @@ def test_hopf_ga_pareto_and_refine():
         if transform in (None, "", "none", "identity"):
             return x
         if transform == "log10":
-            return 10.0 ** x
+            return 10.0**x
         raise ValueError(f"unhandled axis transform: {transform!r}")
 
     ga_axes = as_list(exp.explorations["ga_presearch"].space)
@@ -1044,8 +1066,11 @@ def test_hopf_ga_pareto_and_refine():
         s.dynamics.a = Parameter(jnp.asarray(s.dynamics.a) * jnp.ones(nn))
         s.dynamics.omega = BoundedParameter(jnp.asarray(s.dynamics.omega), 0.0, jnp.inf)
         fin, _ = opt.run(s, max_steps=2, chunk_size=2)
-        return {"G": jnp.asarray(fin.coupling.instant.G), "a": jnp.asarray(fin.dynamics.a),
-                "om": jnp.asarray(fin.dynamics.omega)}
+        return {
+            "G": jnp.asarray(fin.coupling.instant.G),
+            "a": jnp.asarray(fin.dynamics.a),
+            "om": jnp.asarray(fin.dynamics.omega),
+        }
 
     seed = _copy.deepcopy(base_state)
     _apply_axes(seed, ga_X)
@@ -1067,15 +1092,13 @@ def test_hopf_ga_pareto_and_refine():
 # `.data` (consumer). This test passes on either fix and pins the class.
 # =============================================================================
 def test_ei_optimization_runs():
-    exp = SimulationExperiment.from_file(
-        str(EXPERIMENTS_DIR / "EI_Tuning_FIC_EIB_Optimization.yaml")
-    )
+    exp = SimulationExperiment.from_file(str(EXPERIMENTS_DIR / "EI_Tuning_FIC_EIB_Optimization.yaml"))
     exp.integration.duration = 2000.0
     exp.integration.transient_time = 2000.0
     for _o in exp.optimizations.values():
         if hasattr(_o, "max_iterations"):
             _o.max_iterations = 2
-        for _st in (getattr(_o, "stages", None) or []):
+        for _st in getattr(_o, "stages", None) or []:
             _st.max_iterations = 2
     exp.configure()
 
@@ -1085,7 +1108,7 @@ def test_ei_optimization_runs():
     # Additionally assert the objective is a finite scalar (not NaN / not an object).
     def _final_loss(res):
         opts = getattr(res, "optimizations", None)
-        for _v in (opts.values() if opts else []):
+        for _v in opts.values() if opts else []:
             for _attr in ("loss", "final_loss", "loss_history"):
                 _val = getattr(_v, _attr, None)
                 if _val is None:
@@ -1126,7 +1149,7 @@ def test_delay_speed_trajectory(eager):
 
     # --- tvbo-native ---
     exp = _load_sim("Delay_Speed_Synchronization", T1, 0.0)
-    W = np.asarray(exp.network.weights_matrix)  # already W / W_max
+    W = np.asarray(exp.network.weights_matrix)  # already weight / max(weight)
     L = np.asarray(exp.network.lengths_matrix)
     labels = [n.label for n in exp.network.nodes]
     omega = float(exp.dynamics.parameters["omega"].value)
@@ -1138,7 +1161,10 @@ def test_delay_speed_trajectory(eager):
     # --- tvboptim-native reference over the same DenseLengthGraph ---
     Wj, Lj = jnp.asarray(W), jnp.asarray(L)
     graph = DenseLengthGraph(
-        Wj, Lj, speed=speed, region_labels=labels,
+        Wj,
+        Lj,
+        speed=speed,
+        region_labels=labels,
         max_delay_bound=float(jnp.max(Lj)) / speed,
     )
     net = Network(
@@ -1210,7 +1236,6 @@ def test_delay_only_graph_trajectory(eager, tmp_path):
     (not a length graph). The generated trajectory must be byte-identical to a
     native tvboptim ``DenseDelayGraph`` run with the same delays.
     """
-    import yaml
 
     import jax.numpy as jnp
 

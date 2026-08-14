@@ -137,9 +137,7 @@ class IntegratorBehaviour:
             self.number_of_stages = len(self.intermediate_expressions) + 1
 
         if getattr(self, "update_expression", None) is None and "dX_expr" in info:
-            self.update_expression = DerivedVariable(
-                name="dX", equation=Equation(lhs="X_{t+1}", rhs=info["dX_expr"])
-            )
+            self.update_expression = DerivedVariable(name="dX", equation=Equation(lhs="X_{t+1}", rhs=info["dX_expr"]))
 
     def render_code(self, format="tvb", **kwargs):
         """Render the integrator as source code for the requested backend.

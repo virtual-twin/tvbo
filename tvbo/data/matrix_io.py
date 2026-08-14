@@ -1,8 +1,7 @@
 """Low-level matrix read/write for HDF5 groups and Zarr groups.
 
 Supports dense, CSR, and COO formats. Both HDF5 (h5py.Group) and
-Zarr (zarr.Group) implement the same array-store interface, so a
-single pair of read/write functions handles both backends.
+Zarr (zarr.Group) implement the same array-store interface, so a single pair of read/write functions handles both backends.
 
 See §12.1 of the tvbo HDF5 format proposal v0.7.
 """
@@ -34,8 +33,7 @@ def auto_format(matrix) -> str:
     - N < 500 or fill > 30%: dense + gzip wins
     - Otherwise: CSR
 
-    Handles both dense arrays and scipy sparse matrices without
-    densifying the input.
+    Handles both dense arrays and scipy sparse matrices without densifying the input.
 
     Parameters
     ----------
@@ -67,10 +65,8 @@ def auto_format(matrix) -> str:
 def _at_precision(matrix, dtype):
     """The matrix as it goes to disk: its own precision unless one is declared.
 
-    A writer that picks the precision decides a numerical property of data it did
-    not compute. Narrowing a measured connectome is a fair trade for half the file;
-    narrowing a differential operator someone integrates at float64 is a different
-    operator, and nothing downstream can tell it happened. So the cast is opt-in.
+    A writer that picks the precision decides a numerical property of data it did not compute. Narrowing a measured connectome is a fair trade for half the file;
+    narrowing a differential operator someone integrates at float64 is a different operator, and nothing downstream can tell it happened. So the cast is opt-in.
     """
     return matrix if dtype is None else matrix.astype(dtype)
 
@@ -117,8 +113,7 @@ def write_matrix(grp, matrix, fmt: str = "dense", dtype=None):
         sparse formats are unaffected — they keep the width scipy chose, which is
         int64 exactly when the matrix is too large for int32 to address.
 
-    The shape is read off ``.shape`` directly, never via ``np.asarray`` — a scipy sparse
-    matrix survives that call as a 0-d object array, which would record an empty shape.
+    The shape is read off ``.shape`` directly, never via ``np.asarray`` — a scipy sparse matrix survives that call as a 0-d object array, which would record an empty shape.
     """
     grp.attrs["format"] = str(fmt)
     shape = matrix.shape if hasattr(matrix, "shape") else np.asarray(matrix).shape
@@ -232,6 +227,34 @@ class LazyArrayStore:
     def __getitem__(self, key: str) -> np.ndarray:
         self._ensure_loaded()
         return self._cache[key]
+
+    def dataset_keys(self, prefix: str = "") -> list[str]:
+        """Dataset paths under ``prefix`` (e.g. ``"nodes"``), empty when it holds none.
+
+        Lets a caller carry datasets across a re-save without modelling each one, which is
+        what keeps a companion's per-node arrays alive through ``save_network``.
+        """
+        out: list[str] = []
+        if self._ext in (".h5", ".hdf5"):
+            import h5py
+
+            with h5py.File(self._path, "r") as f:
+                grp = f.get(prefix) if prefix else f
+                if grp is None:
+                    return []
+                for name, obj in grp.items():
+                    if isinstance(obj, h5py.Dataset):
+                        out.append(f"{prefix}/{name}" if prefix else name)
+        elif self._ext == ".zarr" or self._path.is_dir():
+            import zarr
+
+            z = zarr.open(str(self._path), "r")
+            grp = z.get(prefix) if prefix else z
+            if grp is None:
+                return []
+            for name in getattr(grp, "array_keys", lambda: [])():
+                out.append(f"{prefix}/{name}" if prefix else name)
+        return out
 
     def read_dataset(self, key: str) -> np.ndarray:
         """Read an arbitrary dataset by path (e.g. ``"nodes/parent_index"``)."""

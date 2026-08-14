@@ -68,6 +68,7 @@ def keywords(call):
             pass
     return out
 
+
 # A self-contained Deco 2014 cortical column: 160 E + 40 I, all-to-all recurrent
 # AMPA (rec) + saturating NMDA (Mg block) + GABA-A, independent 2.4 kHz Poisson
 # background per neuron. Constants from Deco (2014) Table 2.
@@ -228,8 +229,8 @@ class TestBrian2Render:
 
     def test_has_the_expected_structure(self, script):
         assert "NeuronGroup(\n    160" in script  # E population
-        assert "NeuronGroup(\n    40" in script    # I population
-        assert "PoissonInput(" in script           # 2.4 kHz background
+        assert "NeuronGroup(\n    40" in script  # I population
+        assert "PoissonInput(" in script  # 2.4 kHz background
         assert "SpikeMonitor(" in script
         # NMDA Mg block is emitted through the shared Brian2 printer (bare exp()).
         assert "exp(-v/scalingVolt" in script
@@ -536,8 +537,12 @@ class TestBrian2DeltaPscAndNoise:
 
     def test_block_synapse_names_are_target_keyed(self, script):
         # The four block edges (AA, BB, AB, BA) must produce four distinctly-named Synapses.
-        for pair in ("ExcitatoryCell_10_to_ExcitatoryCell_10", "ExcitatoryCell_11_to_ExcitatoryCell_11",
-                     "ExcitatoryCell_10_to_ExcitatoryCell_11", "ExcitatoryCell_11_to_ExcitatoryCell_10"):
+        for pair in (
+            "ExcitatoryCell_10_to_ExcitatoryCell_10",
+            "ExcitatoryCell_11_to_ExcitatoryCell_11",
+            "ExcitatoryCell_10_to_ExcitatoryCell_11",
+            "ExcitatoryCell_11_to_ExcitatoryCell_10",
+        ):
             assert f"syn_STP_E_from_{pair}" in script
 
     @pytest.mark.backend_brian2
@@ -546,6 +551,7 @@ class TestBrian2DeltaPscAndNoise:
         # Loading population A elevates its presynaptic utilisation u and keeps it above baseline
         # into the delay (the activity-silent memory trace); B stays at baseline.
         import numpy as np
+
         res = net.run(format="brian2", seed=5)
         sp = res._extras["spikes"]
         U, tauF = 0.20, 1500.0
@@ -555,10 +561,16 @@ class TestBrian2DeltaPscAndNoise:
             acc = np.zeros_like(grid)
             ii, tt = sp[pop]["i"], sp[pop]["t_ms"]
             for j in range(n):
-                st = np.sort(tt[ii == j]); u = U; last = 0.0; k = 0
+                st = np.sort(tt[ii == j])
+                u = U
+                last = 0.0
+                k = 0
                 for gi, tnow in enumerate(grid):
                     while k < len(st) and st[k] <= tnow:
-                        u = U + (u - U) * np.exp(-(st[k] - last) / tauF); u += U * (1 - u); last = st[k]; k += 1
+                        u = U + (u - U) * np.exp(-(st[k] - last) / tauF)
+                        u += U * (1 - u)
+                        last = st[k]
+                        k += 1
                     acc[gi] += U + (u - U) * np.exp(-(tnow - last) / tauF)
             acc /= n
             m = (grid >= t0) & (grid < t1)
@@ -615,6 +627,7 @@ class TestBrian2ResultContainer:
 
     def _run_and_save(self, tmp_path):
         import xarray as xr
+
         path = tmp_path / "container.yaml"
         path.write_text(CONTAINER_YAML)
         exp = SimulationExperiment.from_file(str(path))
@@ -630,6 +643,7 @@ class TestBrian2ResultContainer:
         assert float(ds.attrs["duration_ms"]) == 500.0 and float(ds.attrs["dt_ms"]) == 0.05
         # per-population rasters present; sizes and rates on the shared population axis, in order.
         import numpy as np
+
         assert list(np.asarray(ds["population_size"])) == [15.0, 10.0]
         assert ds["firing_rate"].sizes["population"] == 2
         # the population axis is KEYED (never positional): the coord labels equal attrs and the
@@ -642,8 +656,7 @@ class TestBrian2ResultContainer:
         driven_t = np.asarray(ds["spikes__ExcitatoryCell_2__t"].values)
         assert driven_t.size > 0
         assert driven_t.size == res._extras["spikes"]["ExcitatoryCell_2"]["t_ms"].size
-        np.testing.assert_allclose(np.sort(driven_t),
-                                   np.sort(res._extras["spikes"]["ExcitatoryCell_2"]["t_ms"]), atol=1e-6)
+        np.testing.assert_allclose(np.sort(driven_t), np.sort(res._extras["spikes"]["ExcitatoryCell_2"]["t_ms"]), atol=1e-6)
         ds.close()
 
 
@@ -807,8 +820,9 @@ def test_delta_synapse_with_unit_valued_jump_is_rejected(tmp_path):
 def test_probe_sample_indices_are_evenly_spaced_and_never_divide_by_zero():
     """The probe sampler is safe at the k==1 edge and evenly spans the population otherwise."""
     from tvbo.adapters.brian2 import _sample_indices
-    assert _sample_indices(800, 1) == [0]          # k == 1: no (k-1) division-by-zero
-    assert _sample_indices(5, 10) == [0, 1, 2, 3, 4]   # k >= n: all indices
+
+    assert _sample_indices(800, 1) == [0]  # k == 1: no (k-1) division-by-zero
+    assert _sample_indices(5, 10) == [0, 1, 2, 3, 4]  # k >= n: all indices
     s = _sample_indices(800, 200)
     assert len(s) == 200 and s[0] == 0 and s[-1] == 799 and s == sorted(set(s))
 
@@ -891,6 +905,7 @@ class TestBrian2RecordedSynapseState:
     def test_probe_measures_ux_without_perturbing_the_network(self, net, tmp_path):
         import numpy as np
         import xarray as xr
+
         res = net.run(format="brian2", seed=3)
         res.save(str(tmp_path))
         ds = xr.open_dataset(str(next(tmp_path.glob("*result.h5"))), engine="h5netcdf")
@@ -912,8 +927,9 @@ class TestBrian2RecordedSynapseState:
         norec_path = tmp_path / "norec.yaml"
         norec_path.write_text(RECORDED_SYN_YAML.replace(", record: true}", "}"))
         r_rec = res._extras["rates"]["ExcitatoryCell"]
-        r_plain = SimulationExperiment.from_file(str(norec_path)).run(
-            format="brian2", seed=3)._extras["rates"]["ExcitatoryCell"]
+        r_plain = (
+            SimulationExperiment.from_file(str(norec_path)).run(format="brian2", seed=3)._extras["rates"]["ExcitatoryCell"]
+        )
         assert r_rec == pytest.approx(r_plain, abs=1e-9), "the probe perturbed the network"
 
 
@@ -980,7 +996,8 @@ class TestBrian2RandomSubsetPulse:
     @pytest.mark.slow
     def test_only_the_masked_fraction_fires_within_the_window(self, net):
         import numpy as np
+
         spk = net.run(format="brian2", seed=0)._extras["spikes"]["Cell"]
         i, t = np.asarray(spk["i"]), np.asarray(spk["t_ms"])
-        assert 0.20 < len(np.unique(i)) / 200 < 0.40       # ~30% of neurons driven (fraction 0.3)
-        assert np.all((t >= 100.0) & (t < 300.0))          # only within the pulse window
+        assert 0.20 < len(np.unique(i)) / 200 < 0.40  # ~30% of neurons driven (fraction 0.3)
+        assert np.all((t >= 100.0) & (t < 300.0))  # only within the pulse window

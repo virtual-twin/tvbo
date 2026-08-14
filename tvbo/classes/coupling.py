@@ -105,8 +105,7 @@ def _load_coupling_from_database(name, coupling):
         if pname in coupling.parameters:
             continue
         coupling.parameters[pname] = (
-            peer.Parameter(**{"name": pname, **pval}) if isinstance(pval, dict)
-            else peer.Parameter(name=pname, value=pval)
+            peer.Parameter(**{"name": pname, **pval}) if isinstance(pval, dict) else peer.Parameter(name=pname, value=pval)
         )
 
     return True
@@ -207,8 +206,5 @@ def get_global_coupling_functions():
     return list(CouplingFunctions)
 
 
-# NOTE: do NOT eagerly compute an ``available_coupling_functions`` set at import
-# time. It has no consumers, and traversing ``onto.Coupling.subclasses()`` forces
-# the (metadata-only) owlready2 ontology to fully load on every ``import tvbo`` —
-# including JAX/codegen processes that never query the ontology. Call
+# NOTE: do NOT eagerly compute an ``available_coupling_functions`` set at import time. It has no consumers, and traversing ``onto.Coupling.subclasses()`` forces the (metadata-only) owlready2 ontology to fully load on every ``import tvbo`` — including JAX/codegen processes that never query the ontology. Call
 # ``get_global_coupling_functions()`` on demand instead.

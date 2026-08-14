@@ -1,9 +1,7 @@
 """Reference simulation of network dynamics on a computational graph.
 
-Provides SciPy-based helpers that build per-node state and history buffers,
-propagate delayed coupling between nodes of a `networkx` graph, integrate each
-node's dynamics with `odeint`, and collect the results into a
-[TimeSeries](../data/types.qmd).
+Provides SciPy-based helpers that build per-node state and history buffers, propagate delayed coupling between nodes of a `networkx` graph, integrate each
+node's dynamics with `odeint`, and collect the results into a [TimeSeries](../data/types.qmd).
 """
 
 import numpy as np
@@ -24,25 +22,44 @@ from tvbo.data.types import TimeSeries
 
 
 def initialize_graph_states_with_history(G, delay_buffer=1000):
-    """Initialize states, time-series, and history buffer for each node."""
+    """Allocate the trace and delay-history buffers, keeping any state already set.
+
+    A node that already carries a ``"state"`` (``GraphRunner.setup_initial_conditions`` puts the
+    model's declared initial values there) keeps it — overwriting with zeros would start every
+    run from the origin whatever the model declares. The delay history is filled with that state
+    rather than zeros, so a delayed read before the trace exists sees the initial condition.
+    """
     for node in G.nodes:
         state_dim = len(G.nodes[node]["model"].state_variables)
-        G.nodes[node]["state"] = np.zeros(state_dim)
+        state = G.nodes[node].get("state")
+        state = np.zeros(state_dim) if state is None else np.asarray(state, dtype=float).ravel()
+        G.nodes[node]["state"] = state
         G.nodes[node]["time-series"] = np.empty((0, state_dim))
-        G.nodes[node]["history"] = np.zeros((delay_buffer, state_dim))
+        G.nodes[node]["history"] = np.tile(state, (delay_buffer, 1))
 
 
 def compute_delayed_input_signal(node, G, t, dt):
-    """Compute input signal using delayed states."""
-    neighbors = list(G.predecessors(node))
-    input_signal = np.zeros_like(G.nodes[node]["state"])
+    """Aggregate a node's delayed afferent input.
 
-    for neighbor in neighbors:
-        G[neighbor][node]["coupling"]
-        delay = G[neighbor][node]["delay"]
+    Graph edges point in signal direction, so the afferents are the node's
+    in-edges: each one pre-transforms the source's delayed state and weights
+    it, and the shared post-transform is applied once to the sum (also while
+    the delay history is still filling, matching the matrix backends). Mixed
+    post-transforms across one node's in-edges raise, and a node without
+    afferents receives zero input.
+    """
+    input_signal = np.zeros_like(G.nodes[node]["state"])
+    post = None
+
+    for neighbor in G.predecessors(node):
+        edge = G[neighbor][node]
+        if post is None:
+            post = (edge["post_src"], edge["postfun"])
+        elif post[0] != edge["post_src"]:
+            raise ValueError(f"node {node}: mixed post-transforms on incoming edges ({post[0]} vs {edge['post_src']})")
         time_series = G.nodes[neighbor]["time-series"]
         if len(time_series) > 1:
-            delayed_time = t - delay
+            delayed_time = t - edge["delay"]
             interp_func = interp1d(
                 np.arange(len(time_series)) * dt,
                 time_series,
@@ -50,10 +67,9 @@ def compute_delayed_input_signal(node, G, t, dt):
                 fill_value="extrapolate",
             )
             xj = interp_func(delayed_time)
-            pre = G[neighbor][node]["prefun"](xj)
-            input_signal += G[node][neighbor]["weight"] * pre
+            input_signal += edge["weight"] * edge["prefun"](xj)
 
-    return G[neighbor][node]["postfun"](input_signal)
+    return input_signal if post is None else post[1](input_signal)
 
 
 def update_node_state_with_delay(G, node, t, dt, input_signal):
@@ -101,8 +117,7 @@ def simulate_graph_dynamics_with_delay(G, T, dt):
 def collect_time_series(G, time_points):
     """Gather per-node simulation traces into a single `TimeSeries`.
 
-    Each node's recorded `"time-series"` is expanded to 4D and concatenated
-    along the node axis, then wrapped in a [TimeSeries](../data/types.qmd)
+    Each node's recorded `"time-series"` is expanded to 4D and concatenated along the node axis, then wrapped in a [TimeSeries](../data/types.qmd)
     labelled with the model's state-variable names.
 
     Args:

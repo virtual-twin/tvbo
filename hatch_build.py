@@ -16,6 +16,7 @@ This single file is used two ways so from-source and build-time codegen are byte
 Determinism: the Python generator emits a ``# Generation date:`` header line — we strip
 it so the generated modules are byte-reproducible across builds.
 """
+
 from __future__ import annotations
 
 import re
@@ -68,9 +69,7 @@ def generate_datamodel(root: str | Path) -> None:
     js = json.loads(JsonSchemaGenerator(str(schema)).serialize())
     _relax_additional_properties(js)
     _drop_redundant_anyof_type(js)
-    (out_dir / "tvbo_datamodel.schema.json").write_text(
-        json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    (out_dir / "tvbo_datamodel.schema.json").write_text(json.dumps(js, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 # `boundaries` also implies `enforce: clamp`; yaml_loader._fold_state_variable_domains owns it.
@@ -174,6 +173,7 @@ from tvbo.datamodel.dialect import install_on_dataclasses as _install_dialect
 _install_dialect(globals())
 """
 
+
 def _behaviour_mixins(root: Path, schema: Path) -> dict[str, str]:
     """``{class: dotted path of its behaviour mixin}``, discovered from ``tvbo/behaviour``.
 
@@ -205,8 +205,7 @@ def _behaviour_mixins(root: Path, schema: Path) -> dict[str, str]:
             target = node.name[: -len("Behaviour")]
             if target not in known:
                 raise RuntimeError(
-                    f"{module.name} defines {node.name}, but the schema has no class "
-                    f"{target!r} for it to attach to."
+                    f"{module.name} defines {node.name}, but the schema has no class {target!r} for it to attach to."
                 )
             mixins[target] = f"tvbo.behaviour.{module.stem}.{node.name}"
     return mixins
@@ -262,10 +261,7 @@ class _DialectBase(BaseModel):
 
 def _mixin_imports(mixins: dict[str, str]) -> str:
     """``from <module> import <Mixin>`` for each declared behaviour mixin."""
-    return "".join(
-        f"from {path.rsplit('.', 1)[0]} import {path.rsplit('.', 1)[1]}\n"
-        for path in sorted(set(mixins.values()))
-    )
+    return "".join(f"from {path.rsplit('.', 1)[0]} import {path.rsplit('.', 1)[1]}\n" for path in sorted(set(mixins.values())))
 
 
 def _with_behaviour(code: str, mixins: dict[str, str]) -> str:
@@ -278,9 +274,7 @@ def _with_behaviour(code: str, mixins: dict[str, str]) -> str:
     """
     if not mixins:
         return code
-    code = code.replace(
-        'metamodel_version = "', _mixin_imports(mixins) + '\nmetamodel_version = "', 1
-    )
+    code = code.replace('metamodel_version = "', _mixin_imports(mixins) + '\nmetamodel_version = "', 1)
     return _inject_bases(code, {cls: [path.rsplit(".", 1)[1]] for cls, path in mixins.items()})
 
 
@@ -337,11 +331,7 @@ def _drop_redundant_anyof_type(node) -> None:
 
 
 def _write(target: Path, code: str) -> None:
-    body = "".join(
-        line
-        for line in code.splitlines(keepends=True)
-        if not line.startswith(_NONDETERMINISTIC_PREFIX)
-    )
+    body = "".join(line for line in code.splitlines(keepends=True) if not line.startswith(_NONDETERMINISTIC_PREFIX))
     target.write_text(body, encoding="utf-8")
 
 

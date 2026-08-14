@@ -49,11 +49,7 @@ def _diff(produced: str, expected: str) -> str | None:
     """A unified diff of the two dumps, or ``None`` when they are identical."""
     if produced == expected:
         return None
-    lines = list(
-        difflib.unified_diff(
-            expected.splitlines(), produced.splitlines(), "frozen", "produced", lineterm="", n=2
-        )
-    )
+    lines = list(difflib.unified_diff(expected.splitlines(), produced.splitlines(), "frozen", "produced", lineterm="", n=2))
     head = lines[:40]
     if len(lines) > 40:
         head.append(f"... and {len(lines) - 40} more diff lines")

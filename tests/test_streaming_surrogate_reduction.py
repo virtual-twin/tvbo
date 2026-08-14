@@ -58,9 +58,7 @@ def _surrogate_observer(perms, w, *, family_wise=False, direction="greater_equal
                 "perms": Parameter(name="perms", value=[[int(j) for j in row] for row in perms]),
             },
             state_variables={
-                "acc": StateVariable(
-                    name="acc", equation=Equation(rhs="acc + pval"), equation_type="recurrence"
-                )
+                "acc": StateVariable(name="acc", equation=Equation(rhs="acc + pval"), equation_type="recurrence")
             },
             derived_variables={
                 "stat": DerivedVariable(name="stat", equation=Equation(rhs="w * x")),
@@ -82,9 +80,7 @@ def _surrogate_observer(perms, w, *, family_wise=False, direction="greater_equal
 
 
 def _render(red, name="obs"):
-    return Template(filename=_TEMPLATE).get_def("render_reduction").render(
-        red=red, name=name, s_idx=0, dt=1.0
-    )
+    return Template(filename=_TEMPLATE).get_def("render_reduction").render(red=red, name=name, s_idx=0, dt=1.0)
 
 
 def _factory(red, name="obs"):
@@ -98,13 +94,13 @@ def _factory(red, name="obs"):
 
 def _pvalue(x_t, w, perms, *, family=None, cmp="ge"):
     """Per-node exceedance p-value at one timepoint under the fixed table."""
-    stat = w * x_t                      # (n,) observed
-    null = w * x_t[perms]               # (n_perm, n) permuted statistic
+    stat = w * x_t  # (n,) observed
+    null = w * x_t[perms]  # (n_perm, n) permuted statistic
     if family is not None:
-        null = getattr(np, family)(null, axis=1)[:, None]   # (n_perm, 1) family-wise extremum
-        stat = stat[None]                                   # (1, n)
+        null = getattr(np, family)(null, axis=1)[:, None]  # (n_perm, 1) family-wise extremum
+        stat = stat[None]  # (1, n)
     comp = (null >= stat) if cmp == "ge" else (null <= stat)
-    return comp.mean(axis=0)            # (n,)
+    return comp.mean(axis=0)  # (n,)
 
 
 def _reference_over_time(traj_col, w, perms, *, family=None, cmp="ge"):
@@ -116,12 +112,12 @@ def _reference_over_time(traj_col, w, perms, *, family=None, cmp="ge"):
 
 def _trajectory(seed, T=64, n=6):
     rng = np.random.default_rng(seed)
-    return rng.standard_normal((T, 1, n))          # [T, n_states=1, n]
+    return rng.standard_normal((T, 1, n))  # [T, n_states=1, n]
 
 
 def _perm_table(seed, n_perm, n):
     rng = np.random.default_rng(seed)
-    return np.stack([rng.permutation(n) for _ in range(n_perm)])   # (n_perm, n) int
+    return np.stack([rng.permutation(n) for _ in range(n_perm)])  # (n_perm, n) int
 
 
 # ── resolver: payload + declaration-order interleave ────────────────────────────────────────
@@ -142,17 +138,13 @@ def test_surrogate_payload_is_resolved():
 def test_family_wise_derives_max_t():
     """`family_wise: true` on a positive (greater_equal) test resolves to a nan-aware max-T
     extremum — the schema stays intent-only; the resolver maps it to the backend reducer."""
-    red = resolve_reduction(
-        _surrogate_observer(_perm_table(0, 8, 6), np.ones(6), family_wise=True)
-    )
+    red = resolve_reduction(_surrogate_observer(_perm_table(0, 8, 6), np.ones(6), family_wise=True))
     surr = next(d for d in red["derived"] if d["name"] == "pval")["surrogate"]
     assert surr["family_reduce"] == "nanmax"
 
 
 def test_less_equal_direction():
-    red = resolve_reduction(
-        _surrogate_observer(_perm_table(0, 8, 6), np.ones(6), direction="less_equal")
-    )
+    red = resolve_reduction(_surrogate_observer(_perm_table(0, 8, 6), np.ones(6), direction="less_equal"))
     surr = next(d for d in red["derived"] if d["name"] == "pval")["surrogate"]
     assert surr["compare"] == "<="
 
@@ -202,10 +194,8 @@ def test_statistic_declared_after_surrogate_is_rejected():
             state_variables={
                 "acc": StateVariable(name="acc", equation=Equation(rhs="acc + pval"), equation_type="recurrence")
             },
-            derived_variables={   # surrogate declared BEFORE its statistic
-                "pval": DerivedVariable(
-                    name="pval", surrogate=Surrogate(statistic="stat", permute="x", permutations="perms")
-                ),
+            derived_variables={  # surrogate declared BEFORE its statistic
+                "pval": DerivedVariable(name="pval", surrogate=Surrogate(statistic="stat", permute="x", permutations="perms")),
                 "stat": DerivedVariable(name="stat", equation=Equation(rhs="w * x")),
                 "out": DerivedVariable(name="out", equation=Equation(rhs="acc / count")),
             },
@@ -228,9 +218,7 @@ def test_typo_direction_is_rejected():
 def test_family_wise_less_equal_derives_min_t():
     """A negative (less_equal) family-wise test resolves to min-T — the extremum tracks the
     sidedness, so an incoherent max-extremum/negative-test pairing cannot be expressed."""
-    red = resolve_reduction(
-        _surrogate_observer(_perm_table(0, 8, 6), np.ones(6), family_wise=True, direction="less_equal")
-    )
+    red = resolve_reduction(_surrogate_observer(_perm_table(0, 8, 6), np.ones(6), family_wise=True, direction="less_equal"))
     surr = next(d for d in red["derived"] if d["name"] == "pval")["surrogate"]
     assert surr["family_reduce"] == "nanmin"
     assert surr["compare"] == "<="
@@ -291,4 +279,4 @@ def test_emitted_fold_binds_the_permutation_table_by_name():
     code = _render(red)
     assert "jax.vmap(_surrstat_pval)(x[perms])" in code
     assert "jnp.nanmax(_null_pval" in code
-    assert "_obs_pval = stat" in code       # observed reuses the already-computed statistic DV
+    assert "_obs_pval = stat" in code  # observed reuses the already-computed statistic DV

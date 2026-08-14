@@ -107,8 +107,7 @@ def _read(path: Path) -> dict:
             "values": ref["values"],
             "time": ref["time"],
             "dims": [str(d) for d in ref["dims"]],
-            "labels": {k[len("coord__"):]: [str(v) for v in ref[k]] for k in ref.files
-                       if k.startswith("coord__")},
+            "labels": {k[len("coord__") :]: [str(v) for v in ref[k]] for k in ref.files if k.startswith("coord__")},
         }
 
 
@@ -117,10 +116,7 @@ def _compare(produced: dict, expected: dict, tol: dict) -> str | None:
     if produced["dims"] != expected["dims"]:
         return f"  dimension names changed — {expected['dims']} → {produced['dims']}"
     if set(produced["labels"]) != set(expected["labels"]):
-        return (
-            f"  coordinate set changed — {sorted(expected['labels'])} → "
-            f"{sorted(produced['labels'])}"
-        )
+        return f"  coordinate set changed — {sorted(expected['labels'])} → {sorted(produced['labels'])}"
     for key, want in expected["labels"].items():
         if produced["labels"][key] != want:
             return f"  '{key}' coordinate labels changed — {want} → {produced['labels'][key]}"
@@ -128,10 +124,7 @@ def _compare(produced: dict, expected: dict, tol: dict) -> str | None:
         return f"  sample count changed — {expected['time'].shape} → {produced['time'].shape}"
     if not np.allclose(produced["time"], expected["time"], **tol):
         first = int(np.argmax(np.abs(produced["time"] - expected["time"])))
-        return (
-            f"  time base changed — sample {first} was {expected['time'][first]!r}, "
-            f"now {produced['time'][first]!r}"
-        )
+        return f"  time base changed — sample {first} was {expected['time'][first]!r}, now {produced['time'][first]!r}"
     values, reference = produced["values"], expected["values"]
     if values.shape != reference.shape:
         return f"  output shape changed — {reference.shape} → {values.shape}"
@@ -173,12 +166,8 @@ def test_simulation_output_matches_golden(spec: Path, regenerate: bool):
     """
     pytest.importorskip("tvboptim")
     produced = _capture(spec)
-    assert produced["values"].tobytes() == _capture(spec)["values"].tobytes(), (
-        f"{spec.stem} does not run reproducibly"
-    )
-    _corpus_for(spec.stem).check(
-        spec.stem, produced, regenerate=regenerate, what="simulation output"
-    )
+    assert produced["values"].tobytes() == _capture(spec)["values"].tobytes(), f"{spec.stem} does not run reproducibly"
+    _corpus_for(spec.stem).check(spec.stem, produced, regenerate=regenerate, what="simulation output")
 
 
 @pytest.mark.backend_core

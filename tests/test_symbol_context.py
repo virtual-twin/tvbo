@@ -12,7 +12,6 @@ import subprocess
 import sys
 
 import pytest
-import sympy.abc
 from sympy import Function, Symbol, pi, srepr
 
 from tvbo.parse.symbols import AUTO, BUILTIN_SHADOW, SymbolContext

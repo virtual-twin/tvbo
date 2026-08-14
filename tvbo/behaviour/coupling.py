@@ -284,8 +284,7 @@ class CouplingBehaviour:
 
         return templater.format_code(rendered_code)
 
-    def report(self, format: str = "markdown", outputfile: str | None = None,
-               parameters: bool = True, equations=None) -> str:
+    def report(self, format: str = "markdown", outputfile: str | None = None, parameters: bool = True, equations=None) -> str:
         """Render a human-readable markdown (or pdf) report for this coupling.
 
         Includes pre/post expressions, the full assembled coupling equation
@@ -569,10 +568,7 @@ class CouplingBehaviour:
         for sn in states:
             subs[Symbol(sn)] = _incoming(sn)
             subs[Symbol(f"{sn}_j")] = _incoming(sn)
-        return [
-            (Symbol(f"gx_{k}"), Sum(w[i, j] * comp.subs(subs), (j, 0, N - 1)))
-            for k, comp in enumerate(pre)
-        ]
+        return [(Symbol(f"gx_{k}"), Sum(w[i, j] * comp.subs(subs), (j, 0, N - 1))) for k, comp in enumerate(pre)]
 
     def plot(self, weights=None, node_idx=0, xs=None, ax=None, **kwargs):
         """Plot the coupling output against a single input state component.
@@ -611,9 +607,7 @@ class CouplingBehaviour:
         x = sp.IndexedBase("x")
         g = sp.IndexedBase("g")
 
-        used_param_names = sorted(
-            name for name in self.parameters if sp.Symbol(name) in self.equation.free_symbols
-        )
+        used_param_names = sorted(name for name in self.parameters if sp.Symbol(name) in self.equation.free_symbols)
         param_syms = tuple(sp.symbols(used_param_names))
         f = sp.lambdify((x, g, i, N) + param_syms, self.equation, modules="numpy")
 

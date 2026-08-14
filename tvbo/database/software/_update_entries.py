@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 """One-shot script to enrich all software database YAML entries.
 
-Adds: date_created, development_status, reference_publication, author, funder,
-keywords, same_as, issue_tracker, is_accessible_for_free, operating_system.
+Adds: date_created, development_status, reference_publication, author, funder, keywords, same_as, issue_tracker, is_accessible_for_free, operating_system.
 Converts ecosystem from string to list, programming_language to enum values.
 """
-import os
+
 import yaml
 from pathlib import Path
 
 DB_DIR = Path(__file__).parent
 
 # ─── Enrichment data keyed by tool name ───
-# Fields: date_created, development_status, reference_publication, author,
-#         funder, keywords, same_as, issue_tracker
+# Fields: date_created, development_status, reference_publication, author, funder, keywords, same_as, issue_tracker
 ENRICHMENT = {
     "TVB": {
         "date_created": "2013-01-01",
@@ -584,8 +582,16 @@ def enrich_entry(filepath):
         data["ecosystem"] = [data["ecosystem"]]
 
     # Add new fields
-    for key in ["date_created", "development_status", "reference_publication",
-                "author", "funder", "keywords", "same_as", "issue_tracker"]:
+    for key in [
+        "date_created",
+        "development_status",
+        "reference_publication",
+        "author",
+        "funder",
+        "keywords",
+        "same_as",
+        "issue_tracker",
+    ]:
         if key in enrich:
             data[key] = enrich[key]
 
@@ -597,16 +603,33 @@ def enrich_entry(filepath):
 def write_yaml(filepath, data):
     """Write YAML preserving our preferred field order."""
     field_order = [
-        "name", "description", "homepage", "repository",
-        "doi", "reference_publication", "citation",
-        "license", "is_accessible_for_free",
-        "ecosystem", "application_category",
-        "date_created", "date_modified", "development_status",
-        "scale", "model_paradigm", "tool_role",
-        "programming_language", "runtime_platform", "operating_system",
+        "name",
+        "description",
+        "homepage",
+        "repository",
+        "doi",
+        "reference_publication",
+        "citation",
+        "license",
+        "is_accessible_for_free",
+        "ecosystem",
+        "application_category",
+        "date_created",
+        "date_modified",
+        "development_status",
+        "scale",
+        "model_paradigm",
+        "tool_role",
+        "programming_language",
+        "runtime_platform",
+        "operating_system",
         "interoperates_with",
-        "author", "maintainer", "funder",
-        "keywords", "same_as", "issue_tracker",
+        "author",
+        "maintainer",
+        "funder",
+        "keywords",
+        "same_as",
+        "issue_tracker",
     ]
 
     ordered = {}
@@ -618,9 +641,8 @@ def write_yaml(filepath, data):
         if key not in ordered:
             ordered[key] = data[key]
 
-    with open(filepath, 'w') as f:
-        yaml.dump(ordered, f, default_flow_style=False, allow_unicode=True,
-                  sort_keys=False, width=80)
+    with open(filepath, "w") as f:
+        yaml.dump(ordered, f, default_flow_style=False, allow_unicode=True, sort_keys=False, width=80)
 
 
 if __name__ == "__main__":

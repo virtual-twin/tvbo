@@ -46,8 +46,7 @@ CASES = {
     "negated condition": sp.Piecewise((a, sp.Not(x > 0)), (b, True)),
 }
 
-_LEMS_RELATIONS = ((".geq.", ">="), (".leq.", "<="), (".neq.", "!="),
-                   (".gt.", ">"), (".lt.", "<"), (".eq.", "=="))
+_LEMS_RELATIONS = ((".geq.", ">="), (".leq.", "<="), (".neq.", "!="), (".gt.", ">"), (".lt.", "<"), (".eq.", "=="))
 
 
 def _lems_as_python(text: str) -> str:

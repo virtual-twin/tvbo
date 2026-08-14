@@ -9,24 +9,17 @@
 """
 Linear response
 ================
-Symbolic linear-response machinery derived entirely from a model's declarative
-metadata — the network Jacobian ``A`` at an operating point, and the noise input
-matrix ``Q`` — from which fixed-point observables follow (stationary covariance
-via the Lyapunov equation, power spectra, Fisher information; Deco 2014 Figs 5/6).
+Symbolic linear-response machinery derived entirely from a model's declarative metadata — the network Jacobian ``A`` at an operating point, and the noise input
+matrix ``Q`` — from which fixed-point observables follow (stationary covariance via the Lyapunov equation, power spectra, Fisher information; Deco 2014 Figs 5/6).
 
-Everything model-specific is **symbolic** and backend-independent: :func:`jacobian_terms`
-differentiates the dfun metadata with ``sympy`` (derived-variable chain unfolded) and
-returns the symbolic per-node Jacobians, which the **code generator renders to any
-backend** through ``render_expression``. The network assembly (block-diagonal local
-Jacobian + connectome-scattered coupling Jacobian) is likewise **emitted by codegen
-per backend** — a ``vmap``/scatter on JAX, a loop on Julia — exactly as the network RHS
+Everything model-specific is **symbolic** and backend-independent: :func:`jacobian_terms` differentiates the dfun metadata with ``sympy`` (derived-variable chain unfolded) and
+returns the symbolic per-node Jacobians, which the **code generator renders to any backend** through ``render_expression``. The network assembly (block-diagonal local
+Jacobian + connectome-scattered coupling Jacobian) is likewise **emitted by codegen per backend** — a ``vmap``/scatter on JAX, a loop on Julia — exactly as the network RHS
 is emitted (one metadata source, every backend); ideally through the backend-abstracted
 ``arrayops`` structural primitives so the assembly, too, is one handler.
 
-:func:`network_jacobian` below is a **NumPy reference oracle only** — it assembles ``A``
-numerically so the symbolic terms can be verified against a finite-difference Jacobian in
-tests. It is NOT the runtime path (the runtime path is the codegen described above); do
-not call it from generated code.
+:func:`network_jacobian` below is a **NumPy reference oracle only** — it assembles ``A`` numerically so the symbolic terms can be verified against a finite-difference Jacobian in
+tests. It is NOT the runtime path (the runtime path is the codegen described above); do not call it from generated code.
 
 The full network Jacobian is
 
@@ -52,8 +45,7 @@ from tvbo.parse.expression import parse_eq
 def _dfun_symbols(model):
     """Return (state_syms, net_coupling_names, source_var, per-node f expressions).
 
-    ``f`` are the state-variable RHS with the derived-variable chain fully
-    unfolded and local (non-network) coupling inputs zeroed — so each ``f_k`` is
+    ``f`` are the state-variable RHS with the derived-variable chain fully unfolded and local (non-network) coupling inputs zeroed — so each ``f_k`` is
     expressed in state variables, network-coupling inputs, and parameters only.
     """
     svs = list(model.state_variables)
@@ -71,13 +63,10 @@ def _dfun_symbols(model):
     # Dynamics) so parameter names that collide with sympy builtins — e.g. `gamma`,
     # `beta` — resolve to Symbols, not functions.
     scope = model.get_symbolic_elements()
-    dvars = {n: parse_eq(dv.equation, local_dict=scope)
-             for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
+    dvars = {n: parse_eq(dv.equation, local_dict=scope) for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
     zero_local = {sp.Symbol(c): 0 for c in local_cpls}
 
-    # Inline the derived-variable chain into the state equations with the codebase's
-    # canonical inliner, iterated to unfold nested references (a derived var may
-    # reference another), then zero local (non-network) coupling inputs.
+    # Inline the derived-variable chain into the state equations with the codebase's canonical inliner, iterated to unfold nested references (a derived var may reference another), then zero local (non-network) coupling inputs.
     sv_eqs = {v: parse_eq(model.state_variables[v].equation, local_dict=scope) for v in svs}
     for _ in range(len(dvars) + 1):
         substitute_function_in_state_equations(sv_eqs, dvars)
@@ -90,8 +79,7 @@ def jacobian_terms(model):
     """Symbolic per-node Jacobian terms of the metadata dfun.
 
     Returns a dict with the symbolic ``Jloc`` (∂f/∂state, ``n_sv × n_sv``) and
-    ``Jcpl`` (∂f/∂net-coupling, ``n_sv × n_cpl``) sympy matrices plus the symbol
-    ordering needed to lower them (state vars, network coupling names, the coupling
+    ``Jcpl`` (∂f/∂net-coupling, ``n_sv × n_cpl``) sympy matrices plus the symbol ordering needed to lower them (state vars, network coupling names, the coupling
     source variable). Backend-independent — a printer turns these into code.
     """
     svs, state_syms, net_cpls, source_var, f = _dfun_symbols(model)
@@ -112,10 +100,8 @@ def jacobian_terms(model):
 def constraint_expr(model, var_name):
     """Unfolded symbolic expression of a derived variable (e.g. the FIC constraint variable
     ``I_E``), in state variables, network-coupling inputs and parameters — same unfolding as
-    :func:`_dfun_symbols` uses for the RHS (derived-variable chain inlined, local coupling
-    zeroed), so it prints against the same symbol set (``ctx['syms']``). Used to emit the
-    constraint residual of a constraint-defined operating point (Deco FIC: ``I_E = target``,
-    with ``J_i`` the free parameter), solved deterministically alongside the fixed point.
+    :func:`_dfun_symbols` uses for the RHS (derived-variable chain inlined, local coupling zeroed), so it prints against the same symbol set (``ctx['syms']``). Used to emit the
+    constraint residual of a constraint-defined operating point (Deco FIC: ``I_E = target``, with ``J_i`` the free parameter), solved deterministically alongside the fixed point.
     """
     from tvbo.classes.equation import substitute_function_in_state_equations
 
@@ -123,8 +109,7 @@ def constraint_expr(model, var_name):
     local_cpls = [c for c, ci in cpl_inputs.items() if getattr(ci, "local", False)]
     # Parse against the model scope (canonical path) — builtin-colliding names stay Symbols.
     scope = model.get_symbolic_elements()
-    dvars = {n: parse_eq(dv.equation, local_dict=scope)
-             for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
+    dvars = {n: parse_eq(dv.equation, local_dict=scope) for n, dv in (getattr(model, "derived_variables", {}) or {}).items()}
     if var_name not in dvars:
         raise KeyError(f"constraint variable '{var_name}' is not a derived variable of the model")
     expr = {var_name: dvars[var_name]}
@@ -136,13 +121,10 @@ def constraint_expr(model, var_name):
 def observable_terms(model, name):
     """Symbolic observation row ``∂y/∂x`` of a declared observable ``y``.
 
-    ``y`` is either a state variable (the row is a selector) or a derived variable —
-    a BOLD signal, a firing rate, any declared readout — unfolded through the same
-    derived-variable chain the RHS uses, so the linear response can be carried through
-    whatever cascade the model declares rather than stopping at the state vector.
+    ``y`` is either a state variable (the row is a selector) or a derived variable — a BOLD signal, a firing rate, any declared readout — unfolded through the same
+    derived-variable chain the RHS uses, so the linear response can be carried through whatever cascade the model declares rather than stopping at the state vector.
 
-    Returns the per-node Jacobian of ``y`` with respect to the state variables
-    (``Hloc``, ``1 × n_sv``) and with respect to the network coupling inputs
+    Returns the per-node Jacobian of ``y`` with respect to the state variables (``Hloc``, ``1 × n_sv``) and with respect to the network coupling inputs
     (``Hcpl``, ``1 × n_cpl``); the latter scatters through the connectome exactly as
     ``Jcpl`` does, so an observable reading a coupling term stays correct.
     """
@@ -162,14 +144,11 @@ def observable_terms(model, name):
 def noise_terms(model):
     """Per-state-variable noise standard deviations declared on the model, or ``None``.
 
-    The Lyapunov equation's input matrix ``Q`` is ``diag(σ_k²)`` over the state blocks,
-    which is only ``σ² I`` when every state variable is driven. A model whose noise
-    enters two of six equations — two synaptic gating variables and a four-state
-    haemodynamic cascade that is driven, not forced — needs the declared per-state
+    The Lyapunov equation's input matrix ``Q`` is ``diag(σ_k²)`` over the state blocks, which is only ``σ² I`` when every state variable is driven. A model whose noise
+    enters two of six equations — two synaptic gating variables and a four-state haemodynamic cascade that is driven, not forced — needs the declared per-state
     amplitudes, and a uniform ``Q`` would put noise into the haemodynamics.
 
-    Returns ``None`` when no state variable declares noise at all, which is the signal
-    to fall back to a uniform amplitude supplied by the analysis observation.
+    Returns ``None`` when no state variable declares noise at all, which is the signal to fall back to a uniform amplitude supplied by the analysis observation.
     """
     from tvbo.utils import noise_sigma
 
@@ -182,15 +161,11 @@ def noise_terms(model):
 def linear_response_context(model):
     """Resolution for the linear-response codegen: symbolic terms + layout, NO code.
 
-    Keeps *resolution* in Python and *code structure* in the template, per the codegen
-    convention. The Mako ``<%def>`` partials in ``_linear_response.py.mako`` consume this
-    and emit the vector-field / Jacobian / covariance structure, rendering each symbolic
-    entry with ``render_expression`` (so any backend prints it) — no Python string-emit.
+    Keeps *resolution* in Python and *code structure* in the template, per the codegen convention. The Mako ``<%def>`` partials in ``_linear_response.py.mako`` consume this
+    and emit the vector-field / Jacobian / covariance structure, rendering each symbolic entry with ``render_expression`` (so any backend prints it) — no Python string-emit.
 
-    Returns the state / coupling / parameter layout — including which parameters are
-    per-node (``pernode``: heterogeneous, gathered by node index) and the symbol set the
-    printer must treat as plain symbols (``syms``) — plus the symbolic per-node RHS
-    (``rhs``), local Jacobian (``Jloc``), coupling Jacobian (``Jcpl``) and the declared
+    Returns the state / coupling / parameter layout — including which parameters are per-node (``pernode``: heterogeneous, gathered by node index) and the symbol set the
+    printer must treat as plain symbols (``syms``) — plus the symbolic per-node RHS (``rhs``), local Jacobian (``Jloc``), coupling Jacobian (``Jcpl``) and the declared
     per-state noise amplitudes (``noise``, or ``None`` when the model declares none).
     """
     t = jacobian_terms(model)
@@ -216,11 +191,9 @@ def linear_response_context(model):
 def network_jacobian(model, weights: Any, state: Any, params: dict) -> np.ndarray:
     """NumPy **reference oracle** — assemble ``A`` numerically for verification only.
 
-    Used by tests to check the symbolic :func:`jacobian_terms` against a
-    finite-difference Jacobian. The runtime path renders those symbolic terms to the
+    Used by tests to check the symbolic :func:`jacobian_terms` against a finite-difference Jacobian. The runtime path renders those symbolic terms to the
     target backend and assembles ``A`` in codegen (``vmap``/scatter on JAX, loop on
-    Julia); this function is deliberately NumPy and must not be called from generated
-    code.
+    Julia); this function is deliberately NumPy and must not be called from generated code.
 
     Parameters
     ----------
@@ -263,8 +236,8 @@ def network_jacobian(model, weights: Any, state: Any, params: dict) -> np.ndarra
         jl = np.asarray(Jloc(*Y[:, i], *ci, *pvals_i), float).reshape(n_sv, n_sv)
         jc = np.asarray(Jcpl(*Y[:, i], *ci, *pvals_i), float).reshape(n_sv, len(net_cpls))
         for k in range(n_sv):
-            for l in range(n_sv):
-                A[k * N + i, l * N + i] += jl[k, l]  # local block (node-diagonal)
+            for m in range(n_sv):
+                A[k * N + i, m * N + i] += jl[k, m]  # local block (node-diagonal)
             for cix in range(len(net_cpls)):
                 # ∂f_k/∂c · ∂c_i/∂s_src,j = jc[k]·W_ij  (source variable's column block)
                 A[k * N + i, src_k * N : src_k * N + N] += jc[k, cix] * W[i, :]

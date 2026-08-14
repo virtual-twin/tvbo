@@ -51,7 +51,9 @@ def list_units(
             shown += 1
         elif not uncurated:
             numerator, denominator = facts["multiplier"]
-            dimensions = " ".join(f"{b}^{n}/{d}" if d != 1 else f"{b}^{n}" for b, (n, d) in sorted(facts["dimensions"].items()))
+            dimensions = " ".join(
+                f"{b}^{n}/{d}" if d != 1 else f"{b}^{n}" for b, (n, d) in sorted(facts["dimensions"].items())
+            )
             typer.echo(f"{name:24s} x{numerator}/{denominator:<18} {dimensions or 'dimensionless'}")
             shown += 1
     typer.echo(f"\n{shown} unit(s)")
@@ -106,7 +108,9 @@ def add(
             generator.fetch_qudt(qudt)
         except generator.VendorError as error:
             raise typer.BadParameter(f"{error}. An IRI that resolves to nothing is worse than none.") from error
-        entry = f'            {unit}:\n                meaning: qudt:{qudt}\n                description: "TODO — describe {unit}"'
+        entry = (
+            f'            {unit}:\n                meaning: qudt:{qudt}\n                description: "TODO — describe {unit}"'
+        )
         where = "schema/units.yaml, under the matching section"
         recipe = f"add `{unit}` to UnitEnum with that meaning"
     else:

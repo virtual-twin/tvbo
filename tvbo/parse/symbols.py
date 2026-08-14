@@ -174,15 +174,19 @@ class SymbolContext(dict):
 
 
 for _method in (
-    "__setitem__", "__delitem__", "__ior__",
-    "clear", "pop", "popitem", "setdefault", "update",
+    "__setitem__",
+    "__delitem__",
+    "__ior__",
+    "clear",
+    "pop",
+    "popitem",
+    "setdefault",
+    "update",
 ):
     setattr(SymbolContext, _method, _rejects_mutation(_method))
 
 
-BUILTIN_SHADOW = SymbolContext.auto(
-    sorted(set(sympy.abc._clash1) | (set(sympy.abc._clash2) - {"pi"}))
-)
+BUILTIN_SHADOW = SymbolContext.auto(sorted(set(sympy.abc._clash1) | (set(sympy.abc._clash2) - {"pi"})))
 """Names SymPy binds to its own objects, declared as the caller's instead.
 
 `E`, `I`, `N`, `O`, `Q` and `S` are Euler's number, the imaginary unit, `evalf`, big-O, the

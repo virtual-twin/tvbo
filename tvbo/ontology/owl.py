@@ -7,8 +7,7 @@
 #
 """
 ---
-title: "Ontology Module for TVB-O"
-author: Leon Martin
+title: "Ontology Module for TVB-O" author: Leon Martin
 ---
 
 This module provides a set of functions to interact with the ontology of TVB-O.
@@ -127,16 +126,12 @@ def find_version() -> str:
 
 DATA_DIR = realpath(join(ROOT_DIR, "data"))
 ONTO_DIR = join(DATA_DIR, "ontology")
+
+
 # %% Load Ontology (lazily)
 #
-# The TVB-O ontology is metadata only: it is consulted to retrieve specifications for
-# missing fields or to build a model from the ontology, and is NOT needed to generate or
-# run code. Parsing it eagerly at import made every ``import tvbo`` (through the class
-# modules that import this one) load the .owl file — an expensive step that also collided
-# with JAX's GC callback and could crash the kernel. We defer the parse to first actual
-# use behind a lazy proxy, so importing tvbo / generating / running code never triggers it.
-# The public surface is unchanged: ``onto`` still behaves like the loaded ontology
-# (attribute and item access, iteration, ``with onto:``), ``get_onto()`` returns it, and
+# The TVB-O ontology is metadata only: it is consulted to retrieve specifications for missing fields or to build a model from the ontology, and is NOT needed to generate or run code. Parsing it eagerly at import made every ``import tvbo`` (through the class modules that import this one) load the .owl file — an expensive step that also collided with JAX's GC callback and could crash the kernel. We defer the parse to first actual use behind a lazy proxy, so importing tvbo / generating / running code never triggers it.
+# The public surface is unchanged: ``onto`` still behaves like the loaded ontology (attribute and item access, iteration, ``with onto:``), ``get_onto()`` returns it, and
 # ``iri`` / ``namespace`` remain importable module attributes (resolved lazily via PEP 562).
 @functools.cache
 def _load_ontology():
@@ -159,8 +154,7 @@ def _load_ontology():
 class _LazyOntologyProxy:
     """Stand-in for the TVB-O ontology that loads it on first use.
 
-    Keeps the ``onto`` API intact — attribute access (``onto.JansenRit``), item access
-    (``onto[iri]``), iteration and ``with onto:`` all forward to the real ontology and
+    Keeps the ``onto`` API intact — attribute access (``onto.JansenRit``), item access (``onto[iri]``), iteration and ``with onto:`` all forward to the real ontology and
     trigger the parse only when first touched.
     """
 
@@ -272,8 +266,7 @@ def disintersection(lst1, lst2) -> list:
 
 def get_sorted_dict(class_list) -> dict:
     """
-    Creates a dictionary from a list of ontology classes. The dictionary's keys are the class labels
-    and its values are the class objects. The dictionary is sorted alphabetically based on its keys.
+    Creates a dictionary from a list of ontology classes. The dictionary's keys are the class labels and its values are the class objects. The dictionary is sorted alphabetically based on its keys.
 
     Parameters:
         class_list (list): The list of ontology classes.
@@ -302,8 +295,7 @@ set_render_func(render_using_label)
 # NMM name must match label of model in TVBO
 def wrap_text(text, line_length=100, line_breaks="\n") -> str:
     """
-    Pretty print a string with automatic line breaks at specified intervals,
-    while preserving existing new lines.
+    Pretty print a string with automatic line breaks at specified intervals, while preserving existing new lines.
 
     Parameters:
         text (str): The text to be printed.
@@ -834,8 +826,7 @@ def get_model_suffix(NMM) -> str:
 def replace_suffix(cls) -> str:
     """Strip the model-specific suffix from an ontology class's label.
 
-    The suffix is derived from the acronyms of the class's neural-mass-model,
-    coupling, or data-type ancestors.
+    The suffix is derived from the acronyms of the class's neural-mass-model, coupling, or data-type ancestors.
 
     Args:
         cls: The ontology class, or its label string to look up in the ontology.
@@ -1092,13 +1083,6 @@ def get_model_functions(NMM) -> Dict[str, owlready2.ThingClass]:
     )
     functions = get_sorted_dict(functions)
 
-    # drop = list()
-    # for k, v in functions.items():
-    #     if "c_0" == k or "coupling" in k or "lrc" in k:
-    #         drop.append(k)
-    # for k in drop:
-    #     del functions[k]
-
     return {k.replace(suffix, ""): f for k, f in functions.items()}
 
 
@@ -1182,12 +1166,8 @@ def get_model_cvars(NMM, return_as_dict=True) -> Union[Dict[str, owlready2.Thing
     if isinstance(NMM, str):
         NMM = get_model(NMM)
     cvars = NMM.has_cvar
-    # A state variable is a coupling variable if its derivative consumes a
-    # global coupling term.  Match the model's actual coupling-term names
-    # rather than a hard-coded prefix, so any naming (c_glob, c_pop, …) works.
-    global_coupling_names = [
-        c for c in get_model_coupling_terms(NMM, return_as_dict=True).keys() if c != "local_coupling"
-    ]
+    # A state variable is a coupling variable if its derivative consumes a global coupling term.  Match the model's actual coupling-term names rather than a hard-coded prefix, so any naming (c_glob, c_pop, …) works.
+    global_coupling_names = [c for c in get_model_coupling_terms(NMM, return_as_dict=True).keys() if c != "local_coupling"]
     for k, v in get_model_derivatives(NMM).items():
         rhs = v.value.first() or ""
         if any(cn in rhs for cn in global_coupling_names):
@@ -1287,8 +1267,7 @@ def add_spaces_around_math_chars(s) -> str:
 def get_model_vois(model) -> Tuple[str]:
     """Retrieve the variables of interest (VOIs) for a given TVB model.
 
-    Combines the model's default VOIs with any extra VOIs listed on the model,
-    spacing out operator-based expressions.
+    Combines the model's default VOIs with any extra VOIs listed on the model, spacing out operator-based expressions.
 
     Args:
         model: The TVB model to retrieve the VOIs for, or its label string.
@@ -1317,11 +1296,6 @@ def get_model_vois(model) -> Tuple[str]:
     if len(vois) == 0:
         vois = list(get_model_statevariables(model).keys())
     return tuple(sorted(set([v.replace('"', "").replace("'", "").strip() for v in vois])))
-
-
-# TODO: integrate biological surrogates in TVB-O
-# def get_biological_surrogates(tvbo_class):
-#     return tvbo_class.RDzVqsqT7POi88UbtfVuBH1
 
 
 def get_definition(tvbo_class) -> str:
@@ -1600,8 +1574,7 @@ def get_range(variable, return_array=False) -> Union[Tuple, np.ndarray]:
 
 def find_best_fuzzy_match(target, cls_list) -> owlready2.ThingClass:
     """
-    Find the best fuzzy match for a target string in a list of strings,
-    prioritizing strings that start with the target followed by an underscore.
+    Find the best fuzzy match for a target string in a list of strings, prioritizing strings that start with the target followed by an underscore.
 
     Parameters:
         target (str): The target string to match.
@@ -1684,8 +1657,7 @@ def get_all_annotations(prop) -> List[str]:
 def create_acronym(text) -> str:
     """Generate a unique upper-case acronym from a camel-case name.
 
-    Letters are taken from each capitalised word, extending the acronym until it
-    no longer collides with an existing acronym in the ontology.
+    Letters are taken from each capitalised word, extending the acronym until it no longer collides with an existing acronym in the ontology.
 
     Args:
         text: The camel-case text (e.g. a model name) to build an acronym from.
@@ -1779,8 +1751,7 @@ def import_model(
 ) -> owlready2.ThingClass:
     """Import a model from metadata into the ontology.
 
-    Creates ontology subclasses for state variables, parameters,
-    derived variables, and output transforms.
+    Creates ontology subclasses for state variables, parameters, derived variables, and output transforms.
 
     Args:
         model_metadata: A Dynamics, SimulationExperiment, dict, or path to a YAML file.
@@ -1857,8 +1828,7 @@ def import_model(
             "symbol": str(sv.name),
             "stateVariableRange": (f"lo={sv.domain.lo}, hi={sv.domain.hi}" if sv.domain else ""),
         }
-        # A clamped domain (enforce='clamp') is the modern equivalent of the
-        # former dedicated boundaries slot; export it as stateVariableBoundaries.
+        # A clamped domain (enforce='clamp') is the modern equivalent of the former dedicated boundaries slot; export it as stateVariableBoundaries.
         from tvbo.utils import domain_enforcement
 
         _dom = sv.domain
@@ -1881,8 +1851,7 @@ def import_model(
                 },
                 sv_class,
             )
-            # Link the state variable to its time derivative so consumers that
-            # read sv.has_derivative (e.g. class2metadata / from_ontology) work.
+            # Link the state variable to its time derivative so consumers that read sv.has_derivative (e.g. class2metadata / from_ontology) work.
             with onto:
                 sv_class.has_derivative.append(td_class)
 
@@ -1897,8 +1866,7 @@ def import_model(
             "label": k + model_suffix,
             "symbol": getattr(p, "symbol", str(k)),
             "definition": str(p.description),
-            # Array-valued constants (list/tuple/ndarray) have no scalar default —
-            # fall back to p.default rather than float()-ing the array.
+            # Array-valued constants (list/tuple/ndarray) have no scalar default — fall back to p.default rather than float()-ing the array.
             "defaultValue": (p.default if is_array_valued(p.value) else float(p.value)),
             "range": (f"lo={p.domain.lo}, hi={p.domain.hi}, step={p.domain.step}" if p.domain else ""),
         }

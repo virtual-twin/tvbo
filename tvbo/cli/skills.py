@@ -3,8 +3,7 @@
 Three subcommands:
 
 * ``tvbo skills sync``       — repo-side: regenerate ``.claude/skills/``,
-  ``.github/instructions/`` and the index region of ``AGENTS.md`` from the
-  canonical sources in ``skills/`` and ``tvbo/skills/canonical/``.
+  ``.github/instructions/`` and the index region of ``AGENTS.md`` from the canonical sources in ``skills/`` and ``tvbo/skills/canonical/``.
 * ``tvbo skills install``    — user-side: render canonical user skills onto
   a user's machine (``~/.claude/skills/``, ``./.cursor/rules/``, stdout, …).
 * ``tvbo skills uninstall``  — user-side: remove files previously written by
@@ -12,6 +11,7 @@ Three subcommands:
 
 See :mod:`tvbo.skills._render` for the canonical schema.
 """
+
 from __future__ import annotations
 
 import re
@@ -61,8 +61,7 @@ class Audience(str, Enum):
     """Intended reader of a skill, used to filter which skills apply.
 
     A skill declares an `audience` of `user`, `maintainer`, or `both`;
-    this enum selects the subset to act on, where `all` keeps every skill
-    regardless of its declared audience.
+    this enum selects the subset to act on, where `all` keeps every skill regardless of its declared audience.
     """
 
     user = "user"
@@ -73,8 +72,7 @@ class Audience(str, Enum):
 class Scope(str, Enum):
     """Install location for rendered skill files.
 
-    `user` writes to the per-user config directory (e.g. `~/.claude/skills`),
-    while `project` writes to the current working directory (e.g.
+    `user` writes to the per-user config directory (e.g. `~/.claude/skills`), while `project` writes to the current working directory (e.g.
     `./.claude/skills`).
     """
 
@@ -125,12 +123,8 @@ def _existing_blocks_install(path: Path, force: bool) -> bool:
 
 @app.command("sync", help="Regenerate adapter files from canonical sources (maintainer).")
 def sync(
-    check: bool = typer.Option(
-        False, "--check", help="Exit non-zero if any adapter file would change. CI guard."
-    ),
-    repo_root: Path = typer.Option(
-        Path.cwd(), "--repo-root", help="Repo root containing skills/ and AGENTS.md."
-    ),
+    check: bool = typer.Option(False, "--check", help="Exit non-zero if any adapter file would change. CI guard."),
+    repo_root: Path = typer.Option(Path.cwd(), "--repo-root", help="Repo root containing skills/ and AGENTS.md."),
 ) -> None:
     """Regenerate ``.claude/skills/``, ``.github/instructions/`` and ``AGENTS.md``."""
     skills = load_canonical([repo_root / CANONICAL_REPO_DIR, CANONICAL_PACKAGE_DIR])
@@ -155,30 +149,24 @@ def sync(
 
     typer.echo(f"synced {len(skills)} skills → {len(written)} files")
 
-    # Warn, never repair: an unrecognised file may be someone's local work, and
-    # a bad reference or extra is a content decision the maintainer has to make.
+    # Warn, never repair: an unrecognised file may be someone's local work, and a bad reference or extra is a content decision the maintainer has to make.
     _report(_lint(skills, claude_dir, copilot_dir, repo_root))
 
 
 def _references(body: str, name: str) -> bool:
     """True if *body* points at the skill *name*.
 
-    Matches the three forms the corpus actually uses — ``**name**``, ``/name``,
-    and ``` `name` skill ``` — rather than a bare substring, so a skill named
+    Matches the three forms the corpus actually uses — ``**name**``, ``/name``, and ``` `name` skill ``` — rather than a bare substring, so a skill named
     ``git`` is not matched by every mention of ``gitignore``.
     """
     n = re.escape(name)
-    return any(
-        re.search(p, body)
-        for p in (rf"\*\*{n}\*\*", rf"/{n}\b", rf"`{n}`\s+skill")
-    )
+    return any(re.search(p, body) for p in (rf"\*\*{n}\*\*", rf"/{n}\b", rf"`{n}`\s+skill"))
 
 
 def _find_leaked_refs(skills: list[Skill]) -> list[str]:
     """Shipped user skills that point at maintainer skills.
 
-    ``install`` renders only the user root, so a maintainer skill named in a
-    shipped body is a dead pointer for everyone outside this repo. It looks
+    ``install`` renders only the user root, so a maintainer skill named in a shipped body is a dead pointer for everyone outside this repo. It looks
     fine here because ``sync`` renders both audiences side by side.
     """
     maintainer = {s.name for s in skills if s.audience == "maintainer"}
@@ -194,10 +182,8 @@ def _find_leaked_refs(skills: list[Skill]) -> list[str]:
 def _find_dead_asset_refs(skills: list[Skill]) -> list[str]:
     """``assets/…`` paths a body points at that do not exist on disk.
 
-    Same class as :func:`_find_leaked_refs`: a pointer the reader cannot
-    follow. It matters most for a body that *defers* detail to a reference
-    chapter, where a dead pointer silently drops that content instead of
-    erroring.
+    Same class as :func:`_find_leaked_refs`: a pointer the reader cannot follow. It matters most for a body that *defers* detail to a reference
+    chapter, where a dead pointer silently drops that content instead of erroring.
     """
     return [
         f"{skill.source}: references missing asset {ref!r}"
@@ -216,53 +202,56 @@ def _find_bad_extras(skills: list[Skill], repo_root: Path) -> list[str]:
         data = tomllib.load(fh)
     real = set((data.get("project") or {}).get("optional-dependencies") or {})
     return [
-        f"{skill.source}: requires_extras {extra!r} is not a group in "
-        f"[project.optional-dependencies]"
+        f"{skill.source}: requires_extras {extra!r} is not a group in [project.optional-dependencies]"
         for skill in skills
         for extra in skill.requires_extras
         if extra not in real
     ]
 
 
-def _lint(
-    skills: list[Skill], claude_dir: Path, copilot_dir: Path, repo_root: Path
-) -> list[tuple[str, list[str], str]]:
+def _lint(skills: list[Skill], claude_dir: Path, copilot_dir: Path, repo_root: Path) -> list[tuple[str, list[str], str]]:
     """Content problems that re-rendering cannot fix, as (title, items, hint).
 
-    Distinct from drift: these live in the canonical sources, or in what
-    surrounds the rendered output, so they are reported for a human to resolve
+    Distinct from drift: these live in the canonical sources, or in what surrounds the rendered output, so they are reported for a human to resolve
     rather than silently repaired.
     """
     findings: list[tuple[str, list[str], str]] = []
     if stray := _find_orphans(skills, claude_dir, copilot_dir):
-        findings.append((
-            "orphaned rendered skills (no canonical source):",
-            stray,
-            "Either add a canonical source under skills/ (maintainer) or "
-            "tvbo/skills/canonical/ (user), or delete the rendered file. "
-            "Personal skills belong in ~/.claude/skills/, not the project dir.",
-        ))
+        findings.append(
+            (
+                "orphaned rendered skills (no canonical source):",
+                stray,
+                "Either add a canonical source under skills/ (maintainer) or "
+                "tvbo/skills/canonical/ (user), or delete the rendered file. "
+                "Personal skills belong in ~/.claude/skills/, not the project dir.",
+            )
+        )
     if leaks := _find_leaked_refs(skills):
-        findings.append((
-            "shipped user skills referencing maintainer skills:",
-            leaks,
-            "`tvbo skills install` ships only the user root, so these pointers are "
-            "dead outside this repo. Inline the guidance, or drop the reference.",
-        ))
+        findings.append(
+            (
+                "shipped user skills referencing maintainer skills:",
+                leaks,
+                "`tvbo skills install` ships only the user root, so these pointers are "
+                "dead outside this repo. Inline the guidance, or drop the reference.",
+            )
+        )
     if dead := _find_dead_asset_refs(skills):
-        findings.append((
-            "skills referencing assets that do not exist:",
-            dead,
-            "Add the file under the skill's assets/, or drop the reference. A body that "
-            "defers detail to a missing chapter loses it silently.",
-        ))
+        findings.append(
+            (
+                "skills referencing assets that do not exist:",
+                dead,
+                "Add the file under the skill's assets/, or drop the reference. A body that "
+                "defers detail to a missing chapter loses it silently.",
+            )
+        )
     if bad := _find_bad_extras(skills, repo_root):
-        findings.append((
-            "requires_extras naming no real optional-dependency group:",
-            bad,
-            "Name a group from [project.optional-dependencies] in pyproject.toml, "
-            "or use [] if the skill needs no extra.",
-        ))
+        findings.append(
+            (
+                "requires_extras naming no real optional-dependency group:",
+                bad,
+                "Name a group from [project.optional-dependencies] in pyproject.toml, or use [] if the skill needs no extra.",
+            )
+        )
     return findings
 
 
@@ -278,10 +267,8 @@ def _report(findings: list[tuple[str, list[str], str]]) -> None:
 def _find_orphans(skills: list[Skill], claude_dir: Path, copilot_dir: Path) -> list[str]:
     """Rendered skill files that no canonical source accounts for.
 
-    The rendered directories hold generated output only, so anything in them
-    without a canonical source behind it is a stray — typically a personal
-    skill committed by accident. Those belong in a user-scope directory
-    (``~/.claude/skills/``) instead.
+    The rendered directories hold generated output only, so anything in them without a canonical source behind it is a stray — typically a personal
+    skill committed by accident. Those belong in a user-scope directory (``~/.claude/skills/``) instead.
     """
     claude_known = {s.name for s in skills}
     copilot_known = {s.name for s in skills if s.audience in {"maintainer", "both"}}
@@ -308,13 +295,11 @@ def _sync_check(
 ) -> None:
     """Render in-memory, compare to on-disk; non-zero exit if anything differs.
 
-    Two independent failure modes: *drift*, where a committed copy no longer
-    matches what its canonical source renders to (fix by re-running sync), and
+    Two independent failure modes: *drift*, where a committed copy no longer matches what its canonical source renders to (fix by re-running sync), and
     the :func:`_lint` findings, which sync cannot fix.
 
     ``.claude/skills/`` is a local render and is not committed — the skills live in
-    ``skills/`` and ``tvbo/skills/canonical/`` — so it is gated only where it exists,
-    which is exactly where a stale copy could mislead someone.
+    ``skills/`` and ``tvbo/skills/canonical/`` — so it is gated only where it exists, which is exactly where a stale copy could mislead someone.
     """
     import tempfile
 
@@ -339,9 +324,9 @@ def _sync_check(
         def _cmp_tree(a: Path, b: Path, label: str) -> None:
             """Compare two directory trees byte-for-byte, recording per-file drift.
 
-            Byte-compiled and OS-noise files are ignored on both sides (they are
-            never rendered), so a locally-run asset script cannot spoof drift.
+            Byte-compiled and OS-noise files are ignored on both sides (they are never rendered), so a locally-run asset script cannot spoof drift.
             """
+
             def _files(root: Path) -> dict[Path, bytes]:
                 if not root.exists():
                     return {}
@@ -350,6 +335,7 @@ def _sync_check(
                     for p in root.rglob("*")
                     if p.is_file() and not is_asset_noise(rel := p.relative_to(root))
                 }
+
             af, bf = _files(a), _files(b)
             for rel in sorted(set(af) | set(bf), key=str):
                 if af.get(rel) != bf.get(rel):
@@ -394,23 +380,13 @@ def _sync_check(
 @app.command("install", help="Install user skills onto your machine.")
 def install(
     target: Target = typer.Option(Target.claude_code, "--target", "-t", help="Adapter format."),
-    audience: Audience = typer.Option(
-        Audience.user, "--audience", help="Which skills to install."
-    ),
-    scope: Scope = typer.Option(
-        Scope.user, "--scope", help="user (~/.claude/) or project (./.claude/)."
-    ),
-    skill: list[str] = typer.Option(
-        None, "--skill", "-s", help="Limit to specific skill(s). Repeatable."
-    ),
-    out: Path = typer.Option(
-        None, "--out", "-o", help="Override the install directory or output path."
-    ),
+    audience: Audience = typer.Option(Audience.user, "--audience", help="Which skills to install."),
+    scope: Scope = typer.Option(Scope.user, "--scope", help="user (~/.claude/) or project (./.claude/)."),
+    skill: list[str] = typer.Option(None, "--skill", "-s", help="Limit to specific skill(s). Repeatable."),
+    out: Path = typer.Option(None, "--out", "-o", help="Override the install directory or output path."),
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite unmanaged files."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would happen; write nothing."),
-    strict: bool = typer.Option(
-        False, "--strict", help="Exit non-zero if any skill is refused/skipped."
-    ),
+    strict: bool = typer.Option(False, "--strict", help="Exit non-zero if any skill is refused/skipped."),
 ) -> None:
     """Render user skills to ``--target`` and write them to disk (or stdout)."""
     skills = load_canonical([CANONICAL_PACKAGE_DIR])
@@ -495,13 +471,9 @@ def _target_path(target: Target, dest_dir: Path, skill: Skill) -> Path:
 
 def _render_target(target: Target, skill: Skill, dest_dir: Path, version: str) -> Path:
     if target is Target.claude_code:
-        return render_claude_code(
-            skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True
-        )
+        return render_claude_code(skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True)
     if target is Target.cursor:
-        return render_cursor(
-            skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True
-        )
+        return render_cursor(skill, dest_dir, managed=True, tvbo_version=version, use_install_name=True)
     raise typer.BadParameter(f"cannot render to {target.value!r}")
 
 

@@ -19,17 +19,18 @@ working-tree mtime drift as a soft hint for local, not-yet-committed edits.
 Exit 0 = current; non-zero = stale (suitable as a CI gate alongside the existing
 "committed artifact must match regenerated output" checks).
 """
+
 import os
 import subprocess
 import sys
 
 RUNTIME = "tvbo/data/ontology/tvbo.owl"
 SOURCES = [
-    "ontology/tvb-o-struct.owl",       # gen-owl  (LinkML T-box)
-    "ontology/tvb-o-axioms.ttl",       # hand-authored OWL axioms
-    "ontology/tvb-o-coupling.ttl",     # coupling-evaluation scheme enrichment
-    "ontology/tvb-o-data.ttl",         # gen-abox (A-box)
-    "ontology/tvb-o-clinical.ttl",     # clinical addon
+    "ontology/tvb-o-struct.owl",  # gen-owl  (LinkML T-box)
+    "ontology/tvb-o-axioms.ttl",  # hand-authored OWL axioms
+    "ontology/tvb-o-coupling.ttl",  # coupling-evaluation scheme enrichment
+    "ontology/tvb-o-data.ttl",  # gen-abox (A-box)
+    "ontology/tvb-o-clinical.ttl",  # clinical addon
     "ontology/tvb-o-clinical-nmm.ttl",
     "ontology/clinical-postmerge.ru",  # SPARQL updates applied on merge
     "ontology/fix-punning.ru",
@@ -39,8 +40,8 @@ SOURCES = [
 def _git_commit_time(path):
     try:
         out = subprocess.run(
-            ["git", "log", "-1", "--format=%ct", "--", path],
-            capture_output=True, text=True, check=True).stdout.strip()
+            ["git", "log", "-1", "--format=%ct", "--", path], capture_output=True, text=True, check=True
+        ).stdout.strip()
         return int(out) if out else None
     except Exception:  # noqa: BLE001
         return None
@@ -65,8 +66,7 @@ def main():
             newer_uncommitted.append(src)
 
     if newer_uncommitted:
-        print("~ working-tree hint: newer than %s by mtime: %s"
-              % (RUNTIME, ", ".join(newer_uncommitted)))
+        print("~ working-tree hint: newer than %s by mtime: %s" % (RUNTIME, ", ".join(newer_uncommitted)))
 
     if stale_committed:
         print("✗ runtime ontology is STALE — committed after %s:" % RUNTIME)

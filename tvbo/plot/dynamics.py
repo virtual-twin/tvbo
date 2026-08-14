@@ -7,10 +7,8 @@
 #
 """General-purpose plotting for ``Dynamics`` objects.
 
-A single entry point ``plot_dynamics`` (also exposed as ``Dynamics.plot``)
-that selects between several ``kind`` of representations: time series,
-1D/2D/3D phase portraits, and 2D vector fields. Dimensions can be
-state-variable names, derived-variable names, or arbitrary
+A single entry point ``plot_dynamics`` (also exposed as ``Dynamics.plot``) that selects between several ``kind`` of representations: time series,
+1D/2D/3D phase portraits, and 2D vector fields. Dimensions can be state-variable names, derived-variable names, or arbitrary
 sympy-parseable expressions over them. Labels are rendered as LaTeX via
 ``sympy.latex``. Styling and colormaps come from ``bsplot``.
 """
@@ -66,16 +64,12 @@ def _resolve(dim, dynamics):
     }
     for name, dp in (getattr(dynamics, "derived_parameters", {}) or {}).items():
         if getattr(dp, "equation", None) is not None:
-            param_subs[sp.Symbol(name)] = parse_expr(
-                str(dp.equation.rhs), local_dict=scope
-            ).xreplace(param_subs)
+            param_subs[sp.Symbol(name)] = parse_expr(str(dp.equation.rhs), local_dict=scope).xreplace(param_subs)
     expr = expr.xreplace(param_subs)
 
     extras = expr.free_symbols - {sp.Symbol(n) for n in state_names} - {sp.Symbol("t")}
     if extras:
-        raise ValueError(
-            f"Expression {dim!r} has unresolved symbols: {sorted(map(str, extras))}"
-        )
+        raise ValueError(f"Expression {dim!r} has unresolved symbols: {sorted(map(str, extras))}")
 
     return _latex_label(dim, dynamics), expr
 
@@ -206,8 +200,7 @@ def plot_experiment_layout(
 def _kind_timeseries(dynamics, resolved, trials, time, ax, cmap, alpha, lw):
     n_dims = len(resolved)
     if ax is None:
-        fig, axes = plt.subplots(n_dims, 1, sharex=True, squeeze=False,
-                                 figsize=(6, 1.8 * n_dims))
+        fig, axes = plt.subplots(n_dims, 1, sharex=True, squeeze=False, figsize=(6, 1.8 * n_dims))
         axes = axes[:, 0]
     else:
         axes = np.atleast_1d(ax)
@@ -218,9 +211,13 @@ def _kind_timeseries(dynamics, resolved, trials, time, ax, cmap, alpha, lw):
         evaluator = _evaluator(expr, dynamics)
         for t_idx, traj in enumerate(trials):
             bsplot.timeseries.plot_ts(
-                axes[d_idx], time, evaluator(traj, time),
+                axes[d_idx],
+                time,
+                evaluator(traj, time),
                 label=f"trial {t_idx}" if d_idx == 0 and len(trials) > 1 else None,
-                data_label=label, time_unit="ms", box_aspect=None,
+                data_label=label,
+                time_unit="ms",
+                box_aspect=None,
             )
             line = axes[d_idx].lines[-1]
             if colors[t_idx] is not None:
@@ -234,8 +231,7 @@ def _kind_timeseries(dynamics, resolved, trials, time, ax, cmap, alpha, lw):
     return fig
 
 
-def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
-                show_ic, color_by, ax_given=False):
+def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw, show_ic, color_by, ax_given=False):
     n_dims = len(resolved)
     if ax is None:
         if n_dims == 3:
@@ -267,7 +263,7 @@ def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
         lo, hi = float(color_vals.min()), float(color_vals.max())
         norm = plt.Normalize(lo, hi if hi != lo else lo + 1)
 
-    single_traj_time_color = (n_trials == 1 and color_by is None and n_dims >= 2)
+    single_traj_time_color = n_trials == 1 and color_by is None and n_dims >= 2
 
     for i, traj in enumerate(trials):
         ys = [evaluators[d](traj, time) for d in range(n_dims)]
@@ -291,8 +287,9 @@ def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
                 # Color a 3D line by time using a LineCollection-like trick via segments
                 t_norm = plt.Normalize(time.min(), time.max())
                 for k in range(len(time) - 1):
-                    ax.plot(ys[0][k:k + 2], ys[1][k:k + 2], ys[2][k:k + 2],
-                            color=cm(t_norm(time[k])), lw=lw, alpha=alpha)
+                    ax.plot(
+                        ys[0][k : k + 2], ys[1][k : k + 2], ys[2][k : k + 2], color=cm(t_norm(time[k])), lw=lw, alpha=alpha
+                    )
                 if not ax_given:
                     sm_t = plt.cm.ScalarMappable(cmap=cmap, norm=t_norm)
                     sm_t.set_array([])
@@ -301,8 +298,7 @@ def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
             else:
                 ax.plot(ys[0], ys[1], ys[2], color=color, lw=lw, alpha=alpha)
             if show_ic:
-                ax.scatter(ys[0][0], ys[1][0], ys[2][0],
-                           color=color or "k", s=20, zorder=5)
+                ax.scatter(ys[0][0], ys[1][0], ys[2][0], color=color or "k", s=20, zorder=5)
 
     if color_vals is not None and not single_traj_time_color and not ax_given:
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
@@ -311,19 +307,35 @@ def _kind_phase(dynamics, resolved, trials, time, ax, cmap, alpha, lw,
         cb.set_label(color_label)
 
     if n_dims == 1:
-        ax.set_xlabel("time [ms]"); ax.set_ylabel(labels[0])
+        ax.set_xlabel("time [ms]")
+        ax.set_ylabel(labels[0])
     elif n_dims == 2:
-        ax.set_xlabel(labels[0]); ax.set_ylabel(labels[1])
+        ax.set_xlabel(labels[0])
+        ax.set_ylabel(labels[1])
         ax.set_box_aspect(1)
     else:
-        ax.set_xlabel(labels[0]); ax.set_ylabel(labels[1]); ax.set_zlabel(labels[2])
+        ax.set_xlabel(labels[0])
+        ax.set_ylabel(labels[1])
+        ax.set_zlabel(labels[2])
     return fig
 
 
-def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=False,
-                      alpha=0.8, lw=1.5, quiver_scale=None,
-                      quiver_width=None, stream_density=1.2,
-                      stream_arrowsize=1.0, _return_axes_only=False):
+def _kind_vectorfield(
+    dynamics,
+    resolved,
+    ax,
+    grid_n,
+    cmap,
+    stream,
+    ax_given=False,
+    alpha=0.8,
+    lw=1.5,
+    quiver_scale=None,
+    quiver_width=None,
+    stream_density=1.2,
+    stream_arrowsize=1.0,
+    _return_axes_only=False,
+):
     if len(resolved) != 2:
         raise ValueError("vectorfield requires exactly 2 dims (state variables)")
     state_names = list(dynamics.state_variables)
@@ -372,9 +384,9 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
 
     speed = np.hypot(U, V)
     if stream:
-        strm = ax.streamplot(X, Y, U, V, color=speed, cmap=cmap,
-                             density=stream_density,
-                             arrowsize=stream_arrowsize, linewidth=lw)
+        strm = ax.streamplot(
+            X, Y, U, V, color=speed, cmap=cmap, density=stream_density, arrowsize=stream_arrowsize, linewidth=lw
+        )
         strm.lines.set_alpha(alpha)
         if not ax_given and not _return_axes_only:
             cb = fig.colorbar(strm.lines, ax=ax, shrink=0.8)
@@ -389,43 +401,62 @@ def _kind_vectorfield(dynamics, resolved, ax, grid_n, cmap, stream, ax_given=Fal
         if not ax_given and not _return_axes_only:
             cb = fig.colorbar(q, ax=ax, shrink=0.8)
             cb.set_label("|f|")
-    ax.set_xlabel(resolved[0][0]); ax.set_ylabel(resolved[1][0])
-    ax.set_xlim(lo_x, hi_x); ax.set_ylim(lo_y, hi_y)
+    ax.set_xlabel(resolved[0][0])
+    ax.set_ylabel(resolved[1][0])
+    ax.set_xlim(lo_x, hi_x)
+    ax.set_ylim(lo_y, hi_y)
     ax.set_box_aspect(1)
     if _return_axes_only:
         return fig, (X, Y, U, V)
     return fig
 
 
-def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
-                     alpha, lw, n_trajectories=0, traj_duration=200, traj_dt=0.01,
-                     show_nullclines=True, show_fixed_points=True,
-                     show_limit_cycle=True, trajectory_color="red"):
+def _kind_phaseplane(
+    dynamics,
+    resolved,
+    ax,
+    grid_n,
+    cmap,
+    stream,
+    ax_given,
+    alpha,
+    lw,
+    n_trajectories=0,
+    traj_duration=200,
+    traj_dt=0.01,
+    show_nullclines=True,
+    show_fixed_points=True,
+    show_limit_cycle=True,
+    trajectory_color="red",
+):
     """Vector field + nullclines + (optional) sample trajectories.
 
-    Nullclines are the zero-level contours of each component of the vector
-    field (``\\dot x_i = 0``). Their intersections are equilibria.
+    Nullclines are the zero-level contours of each component of the vector field (``\\dot x_i = 0``). Their intersections are equilibria.
     """
     fig, (X, Y, U, V) = _kind_vectorfield(
-        dynamics, resolved, ax=ax, grid_n=max(grid_n, 30),
-        cmap=cmap, stream=stream, ax_given=ax_given,
-        alpha=alpha * 0.6, lw=lw * 0.6, _return_axes_only=True,
+        dynamics,
+        resolved,
+        ax=ax,
+        grid_n=max(grid_n, 30),
+        cmap=cmap,
+        stream=stream,
+        ax_given=ax_given,
+        alpha=alpha * 0.6,
+        lw=lw * 0.6,
+        _return_axes_only=True,
     )
     if ax is None:
         ax = fig.axes[0]
 
     if show_nullclines:
-        ax.contour(X, Y, U, levels=[0], colors="C0", linewidths=1.5,
-                   linestyles="-", alpha=0.9)
-        ax.contour(X, Y, V, levels=[0], colors="C3", linewidths=1.5,
-                   linestyles="-", alpha=0.9)
+        ax.contour(X, Y, U, levels=[0], colors="C0", linewidths=1.5, linestyles="-", alpha=0.9)
+        ax.contour(X, Y, V, levels=[0], colors="C3", linewidths=1.5, linestyles="-", alpha=0.9)
         # Legend proxies
         from matplotlib.lines import Line2D
+
         proxies = [
-            Line2D([0], [0], color="C0", lw=1.5,
-                   label=f"$\\dot {{{resolved[0][0].strip('$')}}} = 0$"),
-            Line2D([0], [0], color="C3", lw=1.5,
-                   label=f"$\\dot {{{resolved[1][0].strip('$')}}} = 0$"),
+            Line2D([0], [0], color="C0", lw=1.5, label=f"$\\dot {{{resolved[0][0].strip('$')}}} = 0$"),
+            Line2D([0], [0], color="C3", lw=1.5, label=f"$\\dot {{{resolved[1][0].strip('$')}}} = 0$"),
         ]
         ax.legend(handles=proxies, loc="best", fontsize="small", frameon=False)
 
@@ -433,6 +464,7 @@ def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
         # Detect fixed points by sign-change crossings in both U and V.
         # Robust grid-based heuristic: cells where U and V both straddle 0.
         from scipy.optimize import fsolve
+
         f = dynamics.execute(format="python")
         state_names = list(dynamics.state_variables)
         sv_idx = [state_names.index(str(expr)) for _, expr in resolved]
@@ -440,38 +472,35 @@ def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
 
         def _rhs(xy):
             u = base_ic.copy()
-            u[sv_idx[0]] = xy[0]; u[sv_idx[1]] = xy[1]
+            u[sv_idx[0]] = xy[0]
+            u[sv_idx[1]] = xy[1]
             du = np.asarray(f(u, 0.0))
             return [du[sv_idx[0]], du[sv_idx[1]]]
 
         seen = []
         for i in range(X.shape[0] - 1):
             for j in range(X.shape[1] - 1):
-                u_box = U[i:i + 2, j:j + 2]
-                v_box = V[i:i + 2, j:j + 2]
+                u_box = U[i : i + 2, j : j + 2]
+                v_box = V[i : i + 2, j : j + 2]
                 if (u_box.min() <= 0 <= u_box.max()) and (v_box.min() <= 0 <= v_box.max()):
-                    sol, _, ier, _ = fsolve(
-                        _rhs, [X[i, j], Y[i, j]], full_output=True
-                    )
+                    sol, _, ier, _ = fsolve(_rhs, [X[i, j], Y[i, j]], full_output=True)
                     if ier == 1 and not any(np.allclose(sol, s, atol=1e-3) for s in seen):
                         seen.append(sol)
         for x_fp, y_fp in seen:
             ax.plot(x_fp, y_fp, "ko", ms=7, mec="white", mew=1.2, zorder=10)
 
     if show_limit_cycle:
-        # Integrate one long trajectory from a small offset, discard
-        # transient, and check if the tail forms a closed loop. If yes,
-        # draw it as a red ring (and mark the inner unstable focus).
+        # Integrate one long trajectory from a small offset, discard transient, and check if the tail forms a closed loop. If yes, draw it as a red ring (and mark the inner unstable focus).
         state_names = list(dynamics.state_variables)
         sv_idx = [state_names.index(str(expr)) for _, expr in resolved]
         base_ic = np.asarray(dynamics.get_initial_values(), dtype=float).reshape(-1)
         u0 = base_ic.copy()
         u0[sv_idx[0]] += 0.05
         u0[sv_idx[1]] += 0.05
-        ts = dynamics.run(duration=max(traj_duration * 4, 200),
-                          dt=traj_dt, u_0=u0, save=False)
+        ts = dynamics.run(duration=max(traj_duration * 4, 200), dt=traj_dt, u_0=u0, save=False)
         traj = ts.data[:, :, 0, 0]
-        x = traj[:, sv_idx[0]]; y = traj[:, sv_idx[1]]
+        x = traj[:, sv_idx[0]]
+        y = traj[:, sv_idx[1]]
         n = len(x)
         tail = slice(int(n * 0.7), n)
         xt, yt = x[tail], y[tail]
@@ -482,8 +511,10 @@ def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
 
     if n_trajectories > 0:
         from numpy.random import default_rng
+
         rng = default_rng(0)
-        lo_x, hi_x = ax.get_xlim(); lo_y, hi_y = ax.get_ylim()
+        lo_x, hi_x = ax.get_xlim()
+        lo_y, hi_y = ax.get_ylim()
         state_names = list(dynamics.state_variables)
         sv_idx = [state_names.index(str(expr)) for _, expr in resolved]
         base_ic = np.asarray(dynamics.get_initial_values(), dtype=float).reshape(-1)
@@ -493,8 +524,7 @@ def _kind_phaseplane(dynamics, resolved, ax, grid_n, cmap, stream, ax_given,
             u0[sv_idx[1]] = rng.uniform(lo_y, hi_y)
             ts = dynamics.run(duration=traj_duration, dt=traj_dt, u_0=u0, save=False)
             traj = ts.data[:, :, 0, 0]
-            ax.plot(traj[:, sv_idx[0]], traj[:, sv_idx[1]],
-                    color=trajectory_color, lw=0.8, alpha=0.7)
+            ax.plot(traj[:, sv_idx[0]], traj[:, sv_idx[1]], color=trajectory_color, lw=0.8, alpha=0.7)
     return fig
 
 
@@ -561,10 +591,7 @@ def plot_dynamics(
         Matplotlib / bsplot colormap name.
     transient : float
         Discard this many ms from the start of each trajectory.
-    ax : matplotlib.axes.Axes, optional
-    show_ic : bool
-    lw, alpha : float
-    grid_n : int
+    ax : matplotlib.axes.Axes, optional show_ic : bool lw, alpha : float grid_n : int
         Grid resolution for ``kind="vectorfield"`` / ``"phaseplane"``.
     stream : bool
         Stream- vs quiver-plot for vectorfield / phaseplane.
@@ -604,31 +631,57 @@ def plot_dynamics(
     resolved = [_resolve(d, dynamics) for d in dims]
 
     if kind == "vectorfield":
-        fig = _kind_vectorfield(dynamics, resolved, ax=ax, grid_n=grid_n,
-                                cmap=cmap, stream=stream, ax_given=ax_given,
-                                alpha=alpha, lw=lw,
-                                quiver_scale=quiver_scale,
-                                quiver_width=quiver_width,
-                                stream_density=stream_density,
-                                stream_arrowsize=stream_arrowsize)
+        fig = _kind_vectorfield(
+            dynamics,
+            resolved,
+            ax=ax,
+            grid_n=grid_n,
+            cmap=cmap,
+            stream=stream,
+            ax_given=ax_given,
+            alpha=alpha,
+            lw=lw,
+            quiver_scale=quiver_scale,
+            quiver_width=quiver_width,
+            stream_density=stream_density,
+            stream_arrowsize=stream_arrowsize,
+        )
     elif kind == "phaseplane":
-        fig = _kind_phaseplane(dynamics, resolved, ax=ax, grid_n=grid_n,
-                               cmap=cmap, stream=stream, ax_given=ax_given,
-                               alpha=alpha, lw=lw,
-                               n_trajectories=n_trajectories,
-                               traj_duration=duration, traj_dt=dt,
-                               show_nullclines=show_nullclines,
-                               show_fixed_points=show_fixed_points,
-                               trajectory_color=trajectory_color)
+        fig = _kind_phaseplane(
+            dynamics,
+            resolved,
+            ax=ax,
+            grid_n=grid_n,
+            cmap=cmap,
+            stream=stream,
+            ax_given=ax_given,
+            alpha=alpha,
+            lw=lw,
+            n_trajectories=n_trajectories,
+            traj_duration=duration,
+            traj_dt=dt,
+            show_nullclines=show_nullclines,
+            show_fixed_points=show_fixed_points,
+            trajectory_color=trajectory_color,
+        )
     else:
         trials, time = _run_trials(dynamics, n_trials, duration, dt, u_0, transient)
         if kind == "timeseries":
-            fig = _kind_timeseries(dynamics, resolved, trials, time, ax=ax,
-                                   cmap=cmap, alpha=alpha, lw=lw)
+            fig = _kind_timeseries(dynamics, resolved, trials, time, ax=ax, cmap=cmap, alpha=alpha, lw=lw)
         else:
-            fig = _kind_phase(dynamics, resolved, trials, time, ax=ax, cmap=cmap,
-                              alpha=alpha, lw=lw, show_ic=show_ic, color_by=color_by,
-                              ax_given=ax_given)
+            fig = _kind_phase(
+                dynamics,
+                resolved,
+                trials,
+                time,
+                ax=ax,
+                cmap=cmap,
+                alpha=alpha,
+                lw=lw,
+                show_ic=show_ic,
+                color_by=color_by,
+                ax_given=ax_given,
+            )
 
     if not ax_given:
         plt.close(fig)
@@ -649,16 +702,13 @@ def animate_dynamics(
 ):
     """Animate a :class:`Dynamics` by sweeping one parameter through ``values``.
 
-    For each frame the parameter is set, the chosen ``kind`` of plot is drawn
-    on the same axes (cleared between frames), and a title shows the current
-    value. Returns a :class:`matplotlib.animation.FuncAnimation` that you can
-    display with ``anim.to_jshtml()`` (Quarto / notebooks) or save with
+    For each frame the parameter is set, the chosen ``kind`` of plot is drawn on the same axes (cleared between frames), and a title shows the current
+    value. Returns a :class:`matplotlib.animation.FuncAnimation` that you can display with ``anim.to_jshtml()`` (Quarto / notebooks) or save with
     ``anim.save("foo.mp4")``.
 
     Parameters
     ----------
-    dynamics : Dynamics
-    parameter : str
+    dynamics : Dynamics parameter : str
         Name of the parameter to sweep (must be in ``dynamics.parameters``).
     values : sequence of float
         Parameter values, one per frame.
@@ -666,18 +716,14 @@ def animate_dynamics(
         Forwarded to :func:`plot_dynamics`.
     interval : int
         Delay between frames in ms.
-    figsize : (float, float)
-    title_fmt : str
+    figsize : (float, float) title_fmt : str
         Format string with ``{name}`` and ``{value}`` placeholders.
     """
     import copy
     from matplotlib.animation import FuncAnimation
 
     if parameter not in dynamics.parameters:
-        raise ValueError(
-            f"parameter {parameter!r} not in dynamics "
-            f"(available: {list(dynamics.parameters)})"
-        )
+        raise ValueError(f"parameter {parameter!r} not in dynamics (available: {list(dynamics.parameters)})")
 
     dyn = copy.deepcopy(dynamics)
     fig, ax = plt.subplots(figsize=figsize)
@@ -690,7 +736,6 @@ def animate_dynamics(
         ax.set_title(title_fmt.format(name=parameter, value=val))
         return ax.get_children()
 
-    anim = FuncAnimation(fig, _update, frames=len(values),
-                         interval=interval, blit=False)
+    anim = FuncAnimation(fig, _update, frames=len(values), interval=interval, blit=False)
     plt.close(fig)
     return anim
