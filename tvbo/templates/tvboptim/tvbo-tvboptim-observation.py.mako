@@ -4,7 +4,7 @@
 from tvbo.codegen import render_expression
 from tvbo.templates.tvboptim.utils import (
     get_attr, to_numeric, get_recorded_variable_names,
-    adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values,
+    adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values, resolve_tail_samples,
     edge_label as _edge_label, edge_const as _edge_const, collect_network_edge_arrays,
     node_label as _node_label, node_const as _node_const, collect_network_node_arrays,
 )
@@ -471,7 +471,7 @@ for obs_name, obs in observations.items():
         'pipeline': [],
         'class_reference': None,  # New: direct class reference
         'period': get_attr(obs, 'period'),  # Sampling period (ms) for time computation
-        'tail_samples': get_attr(obs, 'tail_samples'),  # Last N samples before aggregation
+        'tail_samples': resolve_tail_samples(obs, dt),  # Last N samples before aggregation; a `tail_duration` is converted here
         'aggregation': get_attr(obs, 'aggregation'),  # Aggregation type (mean, last, first, etc.)
         # Aggregation knobs, resolved once from the observation's generic
         # `parameters` slot so any parametric aggregation (e.g. first_passage's

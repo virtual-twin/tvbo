@@ -26,12 +26,27 @@ def _q(p):
 # engine schedules it after those experiments' rules (used-edge == dep-edge).
 # ------------------------------------------------------------------
 % if include_all:
+<%
+    in_kit = [f for f in figures if f.get("kit_satisfiable", True)]
+    stranded = [f for f in figures if not f.get("kit_satisfiable", True)]
+%>\
 
+# Only figures whose every input this kit produces are aggregated here. One reading a
+# container that stayed on the author's machine has a rule but no place in a target that
+# must be satisfiable — see the note below it.
 rule all_figures:
     input:
-% for f in figures:
+% for f in in_kit:
         ${_q(f["output"])}${"," if not loop.last else ""}
 % endfor
+% if stranded:
+
+# Not in `all_figures` — each of these reads a container this kit does not produce:
+% for f in stranded:
+#   ${f["rule_name"]}: ${", ".join(str(i["value"]) for i in f["inputs"] if not i["raw"])}
+% endfor
+# Stage those files at the paths above and run the rule by name.
+% endif
 % endif
 
 % for f in figures:

@@ -46,7 +46,7 @@ def _figure_block(workflow, overrides, engine: str = "snakemake"):
     block = dict(spec.get(engine) or {})
     shared = ["cpus_per_task", "mem", "time", "modules", "venv", "env", "setup"]
     if engine == "snakemake":
-        shared += ["partition", "account", "gres"]
+        shared += ["partition", "account"]       # NOT gres: it is accelerator-scoped, and a figure render is CPU — an inherited GPU gres lands on a `medium`-partition rule the plugin then rejects
     slurm = spec.get("slurm") or {}
     for k in shared:
         if k not in block and k in slurm:
@@ -64,8 +64,9 @@ def _rule_resources(block: dict) -> dict:
     """Lower a merged engine block into a Snakemake ``resources:`` map.
 
     Returns ``{key: python-literal-string}`` (already repr'd so the template emits
-    ``key=<literal>`` verbatim). ``cpus_per_task``/``mem_mb``/``runtime`` map across engines; the SLURM scheduler identity (partition/account/gres) is surfaced as the
-    executor's ``slurm_partition``/``slurm_account``/``slurm_extra`` resources so a per-figure override lands on the rule itself. ``options`` pass through verbatim.
+    ``key=<literal>`` verbatim). ``cpus_per_task``/``mem_mb``/``runtime`` map across engines; the SLURM scheduler identity (partition/account) is surfaced as the
+    executor's ``slurm_partition``/``slurm_account`` resources, and a per-figure ``gres`` as the executor's NATIVE ``gres`` resource (never ``slurm_extra='--gres='``, which the
+    modern slurm executor plugin rejects — it manages GRES itself). ``options`` pass through verbatim.
     """
     r: dict = {}
     if block.get("cpus_per_task"):
@@ -82,7 +83,7 @@ def _rule_resources(block: dict) -> dict:
     if block.get("account"):
         r["slurm_account"] = repr(str(block["account"]))
     if block.get("gres"):
-        r["slurm_extra"] = repr("--gres=" + str(block["gres"]))
+        r["gres"] = repr(str(block["gres"]))
     for opt in block.get("options") or []:
         v = str(opt["value"])
         # numeric -> bare int literal; else a repr'd (safely escaped) string literal
@@ -145,10 +146,16 @@ def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) 
     name = figure.name or "figure"
     fmt = (figure.format or "png").lstrip(".")
     _spec, block = _figure_block(workflow, getattr(figure, "workflow_overrides", None))
+    inputs = _figure_inputs(figure, base_dir, exp_plans_by_key)
     return {
         "name": name,
         "rule_name": "fig_" + sanitize_name(name),
-        "inputs": _figure_inputs(figure, base_dir, exp_plans_by_key),
+        "inputs": inputs,
+        # A `raw` input is an expand() over a kit experiment's own outputs; anything else
+        # is a container resolved against the AUTHOR's tree, which the kit neither produces
+        # nor ships. Such a figure keeps its rule but leaves every default target, because a
+        # target that cannot be satisfied on the target host reads as a broken kit.
+        "kit_satisfiable": all(i["raw"] for i in inputs),
         "output": f"figures/{name}.{fmt}",
         "figures_dir": "figures",
         "script": f"figures/scripts/plot_{sanitize_name(name)}.py",
@@ -214,6 +221,30 @@ def emit_figure_rules(
     return lookup.get_template(_RULE_TEMPLATE).render(figures=fig_ctxs, now=now, include_all=include_all)
 
 
+def _rebase_containers_to_kit(code: str, figure, base_dir, exp_plans_by_key: dict, out_dir: str) -> str:
+    """Rewrite each layer's author-time container path to the KIT path the render rule uses.
+
+    ``bsplot.render_code`` bakes each ``used`` edge as its author-time resolved container
+    (``<base_dir>/output/nc/<file>``), but the kit stores that experiment's result at
+    ``<out_dir>/<key>/<stem>`` — the SAME path ``_figure_inputs`` puts in the rule's ``input:``.
+    Left unrewritten, the frozen ``plot.py`` reads an absolute laptop path that does not exist on
+    the compute node. Only a single-file (group / on-device-vectorized grid) experiment is
+    rebased; a workflow-FANNED experiment resolves to an ``expand()`` with no single container a
+    plot could point at, so it is left alone."""
+    for panel in as_list(getattr(figure, "panels", None)):
+        layers = getattr(panel, "layers", None) or []
+        annotations = getattr(panel, "annotations", None) or []
+        for holder in (*layers, *annotations):
+            iri = bsplot._used_ref(getattr(holder, "used", None))
+            key = _exp_key_of(iri, exp_plans_by_key)
+            if key is None or exp_plans_by_key[key].get("axes"):
+                continue
+            author = str(bsplot._container_path(iri, Path(base_dir)))
+            kit = "%s/%s/%s" % (out_dir, key, _wf.cell_out_relpath(exp_plans_by_key[key]))
+            code = code.replace(author, kit)
+    return code
+
+
 def write_figure_kit(
     figures, base_dir=".", out_dir="kit", workflow=None, include_all: bool = True, exp_plans=None, bundled_code: bool = False
 ) -> Path:
@@ -233,11 +264,14 @@ def write_figure_kit(
     """
     out_dir = Path(out_dir)
     (out_dir / "figures" / "scripts").mkdir(parents=True, exist_ok=True)
+    keys = {ep["key"]: ep for ep in (exp_plans or [])}
+    kit_out = (exp_plans[0].get("out_dir") if exp_plans else None) or "results"
     for figure in figures:
         name = figure.name or "figure"
         fmt = (figure.format or "png").lstrip(".")
         script = out_dir / "figures" / "scripts" / f"plot_{sanitize_name(name)}.py"
         code = bsplot.render_code(figure, base_dir=base_dir, outfile=f"figures/{name}.{fmt}")
+        code = _rebase_containers_to_kit(code, figure, base_dir, keys, kit_out)
         script.write_text(code, encoding="utf-8")
     rules = emit_figure_rules(
         figures,

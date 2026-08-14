@@ -330,6 +330,12 @@ def _write_nodes(store, network):
     Persists:
     - ``nodes/parent_index``: hierarchical node mapping (if present)
     - ``nodes/coordinates``: (N,3) float32 array from Node.position (if present)
+    - every other ``nodes/<name>`` dataset the network was loaded from, copied through
+
+    The copy-through is what makes a re-save lossless. A companion may carry per-node arrays
+    this writer knows nothing about — a study's own fitted intervals, a per-region scaling —
+    and an observation may reference one as ``network.nodes.<name>``. Dropping them here turns
+    a packed kit into a spec whose references cannot resolve on the target host.
 
     Called after ``_write_edges`` during ``save_network``.
     """
@@ -370,6 +376,19 @@ def _write_nodes(store, network):
             "coordinates",
             data=_np.array(coords, dtype="float32"),
         )
+
+    src = getattr(network, "_store", None)
+    if src is None or not hasattr(src, "dataset_keys"):
+        return
+    written = {"nodes/coordinates", (getattr(network, "node_mapping", None) or "/nodes/parent_index").lstrip("/")}
+    for key in src.dataset_keys("nodes"):
+        if key in written:
+            continue
+        try:
+            array = src.read_dataset(key)
+        except (KeyError, OSError):
+            continue
+        _create_ds(store.require_group("nodes"), key.split("/", 1)[1], data=array)
 
 
 def _write_mesh(store, network):

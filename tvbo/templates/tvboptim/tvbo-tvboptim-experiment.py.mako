@@ -815,6 +815,40 @@ for expl in exploration_list:
                 'reduce': _reduce_stat,
             })
             continue
+        # A seed axis needs its integers at CODEGEN (they are baked into the grid), so a
+        # builder on it is resolved here rather than at run time — and must therefore be a
+        # pure callable. Placed before the builder branch below, which would otherwise claim
+        # this axis and route it through the generic parameter path, where `execution` has no
+        # consumer: every cell would come out identical while the container still reported a
+        # genuine-looking ensemble dimension. That is the exact failure the check further
+        # down exists to prevent, and a builder used to walk straight past it.
+        if source_key == 'execution' and pname == 'random_seed' and _builder is not None:
+            _bc = getattr(_builder, 'callable', None)
+            _bargs = dict(_builder.arguments.items()) if getattr(_builder, 'arguments', None) else {}
+            _deferred = [str(_n) for _n, _a in _bargs.items()
+                         if getattr(_a, 'used', None) is not None
+                         or (isinstance(getattr(_a, 'value', _a), str)
+                             and 'observations.' in str(getattr(_a, 'value', _a)))]
+            if _deferred:
+                raise ValueError(
+                    "exploration axis 'execution.random_seed' has a builder whose "
+                    "argument(s) %s resolve at run time, but the seed values are baked "
+                    "into the grid at codegen. Give the builder literal arguments, or "
+                    "state the seeds with `explored_values:`/`domain:`." % _deferred
+                )
+            import importlib as _importlib
+            import json as _json
+            _bkwargs = {}
+            for _an, _arg in _bargs.items():
+                _av = _arg.value if hasattr(_arg, 'value') else _arg
+                try:
+                    _bkwargs[str(_an)] = _json.loads(_json.dumps(_av))
+                except Exception:
+                    _bkwargs[str(_an)] = _av
+            explored_values = [int(_v) for _v in
+                               getattr(_importlib.import_module(_bc.module), _bc.name)(**_bkwargs)]
+            _builder = None
+
         # Builder axis: values materialized at runtime by a callable (ExplorationAxis.builder) —
         # e.g. per-count control-gain vectors chosen from a runtime solitary-node ordering. The
         # callable returns the stacked sweep values (leading axis = points); each value may be a
@@ -2259,7 +2293,7 @@ else:
 # with the derived-variable/parameter dependency graph — the template only calls it.
 # toposort_observations emits any observation that lists another as a `source` AFTER
 # that source; independents keep their input order.
-from tvbo.templates.tvboptim.utils import toposort_observations
+from tvbo.templates.tvboptim.utils import toposort_observations, derived_equation_sample_period
 
 sorted_observation_names = list(observation_names)
 sorted_derived_obs_names = toposort_observations(sorted(derived_observation_names), derived_observations_dict, _all_observations)
@@ -2363,10 +2397,16 @@ def compute_all_observations(result, state, result_transient=None, only=None, ne
     # Source names of this derived observation, filtered to entries that
     # name another observation in the experiment.
     src_obs_list = []
+    src_node_arrays = {}   # equation symbol -> embedded per-node constant (network.nodes.<attr>)
     for so in (dobs.source or []):
         _so_name = str(so) if not hasattr(so, 'name') else str(so.name)
         if _so_name in _all_observations:
             src_obs_list.append(_so_name)
+        elif node_label(_so_name):
+            # A per-node array carried by the network, embedded as a module constant by
+            # collect_network_node_arrays. Bound under its bare attribute name so the equation
+            # reads `(I_E - I_E_range_lo)` rather than a generated constant identifier.
+            src_node_arrays[node_label(_so_name)] = node_const(node_label(_so_name))
 
     # Get pipeline callable
     pipeline_call = None
@@ -2397,6 +2437,9 @@ def compute_all_observations(result, state, result_transient=None, only=None, ne
             if _eq is not None:
                 pipeline_equation = getattr(_eq, 'rhs', None)
                 pipeline_equation_params = dict(iter_parameter_values(getattr(_eq, 'parameters', None)))
+                _sample_dt = derived_equation_sample_period(dobs, _all_observations, dt)
+                if _sample_dt is not None and 'dt' not in pipeline_equation_params:
+                    pipeline_equation_params['dt'] = _sample_dt
         # Extract arguments from pipeline stage (callable/function path only; the
         # equation path binds its source observations directly at emit time below).
         if pipeline_call and hasattr(first_stage, 'arguments') and first_stage.arguments:
@@ -2465,10 +2508,13 @@ def compute_all_observations(result, state, result_transient=None, only=None, ne
     if (only is None or '${dobs_name}' in only) and all(hasattr(obs, _src) for _src in [${', '.join(f"'{s}'" for s in src_obs_list)}]):
         obs.${dobs_name} = ${_pipeline_emit}
 % elif pipeline_equation and src_obs_list:
-    # ${dobs_name}: equation over ${', '.join(src_obs_list)}
+    # ${dobs_name}: equation over ${', '.join(list(src_obs_list) + sorted(src_node_arrays))}
     if (only is None or '${dobs_name}' in only) and all(hasattr(obs, _src) for _src in [${', '.join(f"'{s}'" for s in src_obs_list)}]):
 % for _src in src_obs_list:
         ${_src} = _obs_data(obs.${_src})
+% endfor
+% for _sym, _const in sorted(src_node_arrays.items()):
+        ${_sym} = ${_const}    # per-node array carried by the network
 % endfor
         obs.${dobs_name} = ${jaxcode(pipeline_equation, pipeline_equation_params)}
 % endif
@@ -4123,10 +4169,41 @@ def run_experiment(
         _over = {}
         for _arg in (getattr(_st, 'arguments', None) or []):
             _over[str(_arg.name)] = _arg.value
-        _sd = {'n_iterations': int(_st.n_iterations)}
+        _sd = {'n_iterations': int(_st.n_iterations),
+               'reset_state': bool(getattr(_st, 'reset_state', False) or False)}
         for _hp_name, _hp_val in hyperparams_dict.items():
             _sd[_hp_name] = _over.get(_hp_name, _hp_val)
         stage_defs.append(_sd)
+    any_stage_resets = any(sd.get('reset_state') for sd in stage_defs)
+
+    # reset_state carries the update rules' tuned targets across the boundary and resets
+    # everything else, so resolve those targets here: own rules plus combined includes
+    # (nested inners tune inside the outer call, not across stages). Each entry is
+    # (param_name, coupling_key or None) — the None case lives on state.dynamics.
+    reset_targets = []
+    if any_stage_resets:
+        _cp2k = {}
+        _net_r = experiment.network
+        if _net_r and getattr(_net_r, 'coupling', None):
+            for _ck_r, _co_r in _net_r.coupling.items():
+                for _pn_r in ((getattr(_co_r, 'parameters', None) or {})).keys():
+                    _cp2k[str(_pn_r)] = _to_ci_key(_ck_r)
+        _rule_algos = [algo]
+        for inc in (getattr(algo, 'includes', None) or []):
+            if str(getattr(inc, 'mode', 'combined') or 'combined') == 'nested':
+                continue
+            _inc_name, _ = get_include_info(inc)
+            _inc_algo = algorithms_dict.get(_inc_name)
+            if _inc_algo is not None:
+                _rule_algos.append(_inc_algo)
+        _seen_t = set()
+        for _ra in _rule_algos:
+            for _rule in (getattr(_ra, 'update_rules', None) or []):
+                _tp = getattr(_rule, 'target_parameter', None)
+                _tn_r = str(getattr(_tp, 'name', _tp))
+                if _tn_r and _tn_r not in _seen_t:
+                    _seen_t.add(_tn_r)
+                    reset_targets.append((_tn_r, _cp2k.get(_tn_r)))
 
     # Max-window ring: when the schedule's window_size VARIES, size the tuning buffer at
     # the largest stage window so the scan compiles once across stages (masked ring in
@@ -4191,13 +4268,55 @@ def run_experiment(
                 algo_result = None
                 _stage_post_fc = []   # per-stage post-tuning FC matrices (r-trajectory)
                 _stage_conv = []      # per-stage convergence Bunch (working-point trajectory)
+% if any_stage_resets:
+                _stage_monitors0 = _stage_monitors
+% if algo_needs_buffers:
+% for src_obs in algo_source_obs_needed:
+                _stage_${src_obs}_buffer0 = _stage_${src_obs}_buffer
+% endfor
+% endif
+
+                def _carry_tuned_${algo_name}(_base, _tuned):
+                    """Rebuild the stage's start state: the run's initial conditions, carrying only the tuned parameters.
+
+                    AlgorithmStage.reset_state restarts the simulation each stage, so the state
+                    variables, delay history and observation buffers come from ``_base`` (the
+                    algorithm's entry state) while every update rule's target is taken from
+                    ``_tuned`` (the previous stage's endpoint).
+                    """
+                    _out = _base
+% for _tn, _gk in reset_targets:
+% if _gk is not None:
+                    _out = eqx.tree_at(lambda _s: _s.coupling.${_gk}.${_tn}, _out, _tuned.coupling.${_gk}.${_tn})
+% else:
+                    _out = eqx.tree_at(lambda _s: _s.dynamics.${_tn}, _out, _tuned.dynamics.${_tn})
+% endif
+% endfor
+                    return _out
+% endif
                 for _si, _sd in enumerate(_stage_defs):
                     if algo_verbose:
                         _log(f"  [{algorithm_name} stage {_si+1}/{len(_stage_defs)}] {_sd}")
+% if any_stage_resets:
+                    if _si > 0 and _sd.get('reset_state'):
+                        _stage_state = _carry_tuned_${algo_name}(algo_state, _stage_state)
+                        _stage_monitors = _stage_monitors0
+% if algo_needs_buffers:
+% for src_obs in algo_source_obs_needed:
+                        _stage_${src_obs}_buffer = _stage_${src_obs}_buffer0
+% endfor
+% endif
+                        if algo_verbose:
+                            _log(f"    reset_state: restarted from the initial conditions, carrying the tuned parameters")
+% endif
                     algo_result = run_${algo_name}(
                         state=_stage_state,
                         model_fn=algo_model_fn,
+% if any_stage_resets:
+                        key=(algo_key if _sd.get('reset_state') else jax.random.fold_in(algo_key, _si)),
+% else:
                         key=jax.random.fold_in(algo_key, _si),
+% endif
                         n_iterations=_sd['n_iterations'],
 % for hp_name in hyperparams_dict.keys():
                         ${hp_name}=_sd['${hp_name}'],

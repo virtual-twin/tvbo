@@ -2227,14 +2227,24 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             return ExperimentResult(integration=cuda_result, source=self, name=self.label)
 
         elif format.lower() == "python":
-            bnm = _Network(Network(self.network))
+            duration = kwargs.get("duration", self.integration.duration)
+            net = self.network
+            # Declared-network check on cheap fields only; a declared network that fails to resolve raises downstream instead of silently degrading to a single node.
+            declared = net is not None and bool(
+                (getattr(net, "number_of_nodes", None) or 0) > 1
+                or getattr(net, "nodes", None)
+                or getattr(net, "edges", None)
+                or getattr(net, "data_file", None)
+            )
+            if not declared:
+                ts = self.dynamics.run(format="python", duration=duration, dt=self.integration.step_size)
+                return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
+            # normalize_weights=False: weight transforms are declared in the spec; the runner must not mutate the experiment's network in place.
+            bnm = _Network(net, normalize_weights=False)
             bnm.add_local_model(self.dynamics)
             bnm.add_coupling(self.coupling)
 
-            ts = bnm.run(
-                duration=kwargs.get("duration", self.integration.duration),
-                dt=self.integration.step_size,
-            )
+            ts = bnm.run(duration=duration, dt=self.integration.step_size)
             return ExperimentResult.from_timeseries(ts, source=self, name=self.label)
 
         elif format.lower() in ["pde", "pde-fem", "pde-python"]:
@@ -2261,23 +2271,30 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if u0_kw is not None:
                 arr = np.asarray(u0_kw, dtype=float).ravel()
                 if meta and isinstance(meta, dict):
-                    ndofs = int(meta.get("ndofs", arr.size))
-                    if arr.size != ndofs:
-                        raise ValueError(f"u0 length {arr.size} != ndofs {ndofs}")
+                    ndofs = int(meta.get("ndofs", arr.size) or arr.size)
+                    n_vars = int(meta.get("n_vars", 1))
+                    # Either one variable's field, or the whole stacked state.
+                    if arr.size not in (ndofs, n_vars * ndofs):
+                        raise ValueError(
+                            f"u0 length {arr.size} != ndofs {ndofs} "
+                            f"(or {n_vars * ndofs} for all {n_vars} variables)")
                 u0_override = arr
             elif initial_conditions is not None:
-                # Support TimeSeries or ndarray as initial conditions
+                # A TimeSeries contributes its final sample across ALL variables (stacked variable-major, like u0).
                 if isinstance(initial_conditions, TimeSeries):
                     arr = np.asarray(
-                        initial_conditions.data.isel(time=-1, variable=0).values,
+                        initial_conditions.data.isel(time=-1).values,
                         dtype=float,
                     ).ravel()
                 else:
                     arr = np.asarray(initial_conditions, dtype=float).ravel()
                 if meta and isinstance(meta, dict):
-                    ndofs = int(meta.get("ndofs", arr.size))
-                    if arr.size != ndofs:
-                        raise ValueError(f"initial_conditions length {arr.size} != ndofs {ndofs}")
+                    ndofs = int(meta.get("ndofs", arr.size) or arr.size)
+                    n_vars = int(meta.get("n_vars", 1))
+                    if arr.size not in (ndofs, n_vars * ndofs):
+                        raise ValueError(
+                            f"initial_conditions length {arr.size} != ndofs {ndofs} "
+                            f"(or {n_vars * ndofs} for all {n_vars} variables)")
                 u0_override = arr
 
             # Always compute and return a full TimeSeries (save_timeseries=True)
@@ -2299,18 +2316,18 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
 
             T = U.shape[0] if U is not None else 1
             t = np.arange(T) * float(meta.get("dt", 1.0))
-            data_raw = U if U is not None else u[np.newaxis, :]
-            # Reshape: (time, 1_sv, region) — no singleton mode dim
-            n_region = data_raw.shape[-1] if data_raw.ndim >= 2 else data_raw.size
-            data_np = data_raw.reshape(T, 1, n_region)
+            n_vars = int(meta.get("n_vars", 1))
+            names = list(meta.get("variables") or [str(meta.get("unknown", "u"))])
+            data_raw = U if U is not None else np.asarray(u)[np.newaxis, ...]
+            data_np = np.asarray(data_raw, dtype=float).reshape(T, n_vars, -1)
+            n_region = data_np.shape[-1]
 
-            sv_name = str(meta.get("unknown", "u"))
             da = xr.DataArray(
                 data=data_np,
                 dims=["time", "variable", "node"],
                 coords={
                     "time": t,
-                    "variable": [sv_name],
+                    "variable": names[:n_vars],
                     "node": [str(i) for i in range(n_region)],
                 },
             )
@@ -3297,14 +3314,20 @@ class SimulationExperiment(tvbo_datamodel.SimulationExperiment):
             if weighting:
                 ev.weights = weighting
 
-            # merge equation-level parameters onto the event (codegen reads ev.parameters)
+            # Merge equation-level parameters onto the event (codegen reads ev.parameters), by
+            # MUTATING the multivalued slot: assigning a dict to it re-coerces to the list form
+            # and every later `dict(ev.parameters)` then fails with an opaque "dictionary update
+            # sequence element" error (see reference-linkml-assignment-jsonobj).
             eq = getattr(ev, "equation", None)
             eq_params = getattr(eq, "parameters", None) if eq is not None else None
             if eq_params:
-                merged = dict(getattr(ev, "parameters", None) or {})
+                target = getattr(ev, "parameters", None)
+                if target is None:
+                    ev.parameters = {}
+                    target = ev.parameters
                 for pk, pv in eq_params.items() if hasattr(eq_params, "items") else []:
-                    merged.setdefault(pk, pv)
-                ev.parameters = merged
+                    if pk not in target:
+                        target[pk] = pv
 
     def collect_initial_conditions(self, random=False):
         """Build the initial-history `TimeSeries` for the simulation.

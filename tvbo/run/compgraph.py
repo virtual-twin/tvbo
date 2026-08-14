@@ -31,16 +31,29 @@ def initialize_graph_states_with_history(G, delay_buffer=1000):
 
 
 def compute_delayed_input_signal(node, G, t, dt):
-    """Compute input signal using delayed states."""
-    neighbors = list(G.predecessors(node))
-    input_signal = np.zeros_like(G.nodes[node]["state"])
+    """Aggregate a node's delayed afferent input.
 
-    for neighbor in neighbors:
-        G[neighbor][node]["coupling"]
-        delay = G[neighbor][node]["delay"]
+    Graph edges point in signal direction, so the afferents are the node's
+    in-edges: each one pre-transforms the source's delayed state and weights
+    it, and the shared post-transform is applied once to the sum (also while
+    the delay history is still filling, matching the matrix backends). Mixed
+    post-transforms across one node's in-edges raise, and a node without
+    afferents receives zero input.
+    """
+    input_signal = np.zeros_like(G.nodes[node]["state"])
+    post = None
+
+    for neighbor in G.predecessors(node):
+        edge = G[neighbor][node]
+        if post is None:
+            post = (edge["post_src"], edge["postfun"])
+        elif post[0] != edge["post_src"]:
+            raise ValueError(
+                f"node {node}: mixed post-transforms on incoming edges ({post[0]} vs {edge['post_src']})"
+            )
         time_series = G.nodes[neighbor]["time-series"]
         if len(time_series) > 1:
-            delayed_time = t - delay
+            delayed_time = t - edge["delay"]
             interp_func = interp1d(
                 np.arange(len(time_series)) * dt,
                 time_series,
@@ -48,10 +61,9 @@ def compute_delayed_input_signal(node, G, t, dt):
                 fill_value="extrapolate",
             )
             xj = interp_func(delayed_time)
-            pre = G[neighbor][node]["prefun"](xj)
-            input_signal += G[node][neighbor]["weight"] * pre
+            input_signal += edge["weight"] * edge["prefun"](xj)
 
-    return G[neighbor][node]["postfun"](input_signal)
+    return input_signal if post is None else post[1](input_signal)
 
 
 def update_node_state_with_delay(G, node, t, dt, input_signal):

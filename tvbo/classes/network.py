@@ -2975,10 +2975,10 @@ class Network(tvbo_datamodel.Network):
                                     (v for v in edge_attrs.values() if isinstance(v, float) and v != 0),
                                     1.0,
                                 )
-                            # Matrix rows/columns are positional; the nodes added above are keyed by ``node.id``. Map so both live in one key space (see index_to_id above).
+                            # Receiver-row matrices: emit j -> i (signal direction, matching create_graph); index_to_id maps positions onto node ids.
                             G.add_edge(
-                                index_to_id.get(i, i),
                                 index_to_id.get(j, j),
+                                index_to_id.get(i, i),
                                 **edge_attrs,
                             )
 
@@ -3494,6 +3494,13 @@ class Network(tvbo_datamodel.Network):
             Directed multigraph with 'weight' and 'delay' edge attributes.
             Nodes have 'label' and 'dynamics' attributes when available.
             Edges have 'source_var', 'target_var' attributes when available.
+            Edges point in signal direction (source to target). Stored
+            matrices are receiver-row (``W[i, j]`` couples node ``j`` into
+            node ``i``), so matrix entries are emitted as edges ``j -> i``.
+            Explicit pair edges declared with ``directed: false`` (the schema
+            default) are mirrored into both directions, matching their
+            expansion in ``_edge_matrix``; an explicitly declared reverse
+            edge takes precedence over the mirror.
 
         Examples
         --------
@@ -3510,11 +3517,13 @@ class Network(tvbo_datamodel.Network):
         """
         G = nx.MultiDiGraph()
 
-        # Priority 1: Use explicit nodes/edges if available
+        # Priority 1: explicit nodes, unless the edges are only matrix descriptors (no source/target).
         nodes = getattr(self, "nodes", None)
-        edges = getattr(self, "edges", None)
+        edges = getattr(self, "edges", None) or []
+        pair_edges = [e for e in edges if getattr(e, "source", None) is not None and getattr(e, "target", None) is not None]
+        matrix_only_edges = bool(edges) and not pair_edges
 
-        if nodes and len(nodes) > 0:
+        if nodes and len(nodes) > 0 and not matrix_only_edges:
             # Build graph from explicit node/edge representation
             for node in nodes:
                 node_id = getattr(node, "id", None)
@@ -3531,30 +3540,28 @@ class Network(tvbo_datamodel.Network):
             # ``KeyError: 0`` because the layout has no entry for index 0.
             index_to_id = {i: getattr(node, "id", i) for i, node in enumerate(nodes)}
 
-            if edges:
-                for edge in edges:
-                    source = getattr(edge, "source", None)
-                    target = getattr(edge, "target", None)
+            declared_pairs = {
+                (index_to_id.get(e.source, e.source), index_to_id.get(e.target, e.target)) for e in pair_edges
+            }
+            for edge in pair_edges:
+                source = index_to_id.get(edge.source, edge.source)
+                target = index_to_id.get(edge.target, edge.target)
 
-                    if source is None or target is None:
-                        continue
+                weight = edge_param(edge, "weight") or 0.0
+                if weight <= weight_threshold:
+                    continue
 
-                    source = index_to_id.get(source, source)
-                    target = index_to_id.get(target, target)
-
-                    weight = edge_param(edge, "weight") or 0.0
-                    if weight <= weight_threshold:
-                        continue
-
-                    edge_attrs = {
-                        "weight": weight,
-                        "delay": edge_param(edge, "delay") or 0.0,
-                        "distance": edge_param(edge, "distance") or 0.0,
-                        "directed": edge.directed,
-                        "source_var": edge.source_var,
-                        "target_var": edge.target_var,
-                    }
-                    G.add_edge(source, target, **edge_attrs)
+                edge_attrs = {
+                    "weight": weight,
+                    "delay": edge_param(edge, "delay") or 0.0,
+                    "distance": edge_param(edge, "distance") or 0.0,
+                    "directed": edge.directed,
+                    "source_var": edge.source_var,
+                    "target_var": edge.target_var,
+                }
+                G.add_edge(source, target, **edge_attrs)
+                if not edge.directed and source != target and (target, source) not in declared_pairs:
+                    G.add_edge(target, source, **edge_attrs)
 
             return G
 
@@ -3566,18 +3573,19 @@ class Network(tvbo_datamodel.Network):
         if N_regions is None or W is None:
             return G
 
-        # Get node labels if available
         labels = self.labels if hasattr(self, "labels") and self.labels else None
+        label_list = list(labels.values()) if isinstance(labels, dict) else labels
 
         for i in range(N_regions):
-            node_attrs = {"label": labels[i] if labels else f"node_{i}"}
-            G.add_node(i, **node_attrs)
+            lab = label_list[i] if label_list and i < len(label_list) else f"node_{i}"
+            G.add_node(i, label=lab)
 
+        # Receiver-row W: emit j -> i so edges point in signal direction (see docstring).
         for i in range(N_regions):
             for j in range(N_regions):
                 if W[i, j] > weight_threshold:
                     delay = D[i, j] if D is not None else 0.0
-                    G.add_edge(i, j, weight=W[i, j], delay=delay)
+                    G.add_edge(j, i, weight=W[i, j], delay=delay)
 
         return G
 

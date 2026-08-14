@@ -68,6 +68,45 @@ def _isolate_tvbo_logging():
         logger.setLevel(level)
 
 
+@pytest.fixture(scope="session")
+def icosphere():
+    """``fn(subdivisions, radius)`` -> a closed triangulated sphere ``(vertices, faces)``.
+
+    The reference geometry for surface work: closed, so it has no boundary at all, and the
+    only curved surface whose Laplace-Beltrami spectrum is known in closed form
+    (``l(l+1)/R**2`` with multiplicity ``2l+1``). A fixture rather than an importable
+    helper because ``tests/`` is not a package.
+    """
+    import numpy as np
+
+    def build(subdivisions: int = 3, radius: float = 1.0):
+        t = (1 + 5 ** 0.5) / 2
+        vertices = np.array(
+            [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t],
+             [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]], float)
+        faces = np.array(
+            [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4],
+             [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8],
+             [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]])
+        for _ in range(subdivisions):
+            midpoints, split, points = {}, [], list(vertices)
+
+            def midpoint(a, b):
+                key = (min(a, b), max(a, b))
+                if key not in midpoints:
+                    midpoints[key] = len(points)
+                    points.append((np.asarray(points[a]) + points[b]) / 2)
+                return midpoints[key]
+
+            for a, b, c in faces:
+                ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
+                split += [[a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]]
+            vertices, faces = np.array(points), np.array(split)
+        return radius * vertices / np.linalg.norm(vertices, axis=1, keepdims=True), faces
+
+    return build
+
+
 @pytest.fixture
 def unwrapped():
     """``fn(code)`` -> *code* with all whitespace removed, for substring checks on codegen.
