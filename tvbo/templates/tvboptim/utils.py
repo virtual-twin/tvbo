@@ -24,7 +24,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from tvbo.utils import as_list
+from tvbo.utils import _NETWORK_EDGE_ALIASES, as_list, edge_label  # noqa: F401  re-exported for the mako templates
 
 # Basic Helpers
 
@@ -696,43 +696,87 @@ def _callable_wants(ref, argument: str, source_dir=None) -> bool:
     return argument == "network" and any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
 
 
-def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list[str]]:
+_KIT_EDGE_ARRAYS = {"weight": "weights", "length": "distances"}
+"""Edge attributes a generated kit holds, and the `create_network` argument holding each.
+
+A kit is self-contained, so it can only bind the matrices it is handed. The runtime can
+resolve any label through `Network.matrix()`; a transform naming one of the others is
+refused at render time rather than emitted as a name the kit lacks.
+"""
+
+
+def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list[str], bool]:
     """Render `transforms:` targeting weight to JAX for inlining in the generated script.
 
-    A transform is a `Function`, so both of its forms are lowered: an `equation:` renders through the same expression resolver and primitive table the runtime evaluates (`Network.transform_expression`, `tvbo.codegen.transforms`), and a `callable:` renders as an import of that callable plus a call. The kit therefore applies the declared transform exactly as the runtime does, but visibly, on the RAW weights the generated `create_network` is handed — raw SC stays in the network file, the transform stays declared in the spec, and the operation is in the script rather than hidden in the tvbo runtime. This helper runs only at render time, inside the tvbo environment.
+    A transform is a `Function`, so both of its forms are lowered: an `equation:` renders through the very expression the runtime evaluates (`Network.transform_expression`, which folds any mask into the reductions it scopes), and a `callable:` renders as an import of that callable plus a call. The kit therefore applies the declared transform exactly as the runtime does, but visibly, on the RAW weights the generated `create_network` is handed — raw SC stays in the network file, the transform stays declared in the spec, and the operation is in the script rather than hidden in the tvbo runtime. This helper runs only at render time, inside the tvbo environment.
 
     Args:
         network: The `Network` whose transforms are being lowered.
 
     Returns:
-        A `(transforms, const_env)` pair. `transforms` is a list of
-        `(jax_expr, matrix_env)`; `matrix_env` rebinds matrix-derived primitives from the
-        current `weights` so a chain of transforms composes. `const_env` binds
-        data-derived symbols — `L`, per-node parameter vectors, imported callables — once.
+        A `(transforms, const_env, needs_lengths)` triple. `transforms` is a list of
+        `(jax_expr, chained_env)`; `chained_env` rebinds the transform's own target from
+        the current `weights`, so a chain composes. `const_env` binds everything bound
+        once — other edge matrices, per-node parameter vectors, imported callables.
+        `needs_lengths` reports whether `create_network` has to be handed real lengths.
 
     Raises:
-        ValueError: If a transform equation names a symbol that is neither a primitive,
-            a declared per-node parameter, nor a substituted argument. Failing here beats
-            emitting an undefined name into a kit that only dies once it reaches a cluster.
-            Symbols are checked by base identifier, so a masked expression such as
-            `mean(W[W > 0])` is validated — and bound — as `W`. Also if a callable
-            transform takes the `network` the runtime injects, which a kit cannot supply.
+        ValueError: If a transform equation names a symbol that is neither an edge
+            attribute this kit holds, a declared per-node parameter, nor a substituted
+            argument. Failing here beats emitting an undefined name into a kit that only
+            dies once it reaches a cluster. Also if a callable transform takes the
+            `network` the runtime injects, which a kit has no object to supply.
     """
     import numpy as np
 
     from tvbo.codegen.code import render_expression
-    from tvbo.codegen.transforms import PRIMITIVES, emit_env
+    from tvbo.codegen.transforms import edge_symbols, emit_env
+    from tvbo.utils import edge_label, transform_target
 
     _source_dir = getattr(network, "_source_dir", None)
     node_vectors = getattr(network, "node_parameter_vectors", {}) or {}
+    raw = getattr(network, "raw_weights_matrix", None)
+    n_nodes = None if raw is None else np.asarray(raw).shape[0]
     transforms: list[tuple[str, list[str]]] = []
     const_env: list[str] = []
     const_seen: set[str] = set()
+    labels_used: set[str] = set()
 
     def _add_const(name: str, line: str) -> None:
         if name not in const_seen:
             const_env.append(line)
             const_seen.add(name)
+
+    def _resolver(t):
+        def resolve(name: str) -> str:
+            label = edge_label(name) or name
+            source = _KIT_EDGE_ARRAYS.get(label)
+            if source is not None:
+                labels_used.add(label)
+                return source
+            if name in node_vectors:
+                vec = np.asarray(node_vectors[name]).ravel()
+                if n_nodes is not None and vec.shape[0] != n_nodes:
+                    raise ValueError(
+                        f"weight transform {transform_target(t)!r} uses per-node parameter "
+                        f"{name!r} with {vec.shape[0]} values, but the network has {n_nodes} "
+                        f"nodes. The runtime skips a mismatched vector; a kit would embed it "
+                        f"and broadcast it against another subject's connectome."
+                    )
+                return f"jnp.asarray([{', '.join(repr(float(v)) for v in vec)}]).reshape(-1, 1)"
+            if network.matrix(label) is not None:
+                raise ValueError(
+                    f"weight transform {transform_target(t)!r} reads edge attribute {label!r}, "
+                    f"which a self-contained kit is not handed. A kit holds "
+                    f"{', '.join(sorted(_KIT_EDGE_ARRAYS))}; the runtime can read any label."
+                )
+            raise ValueError(
+                f"weight transform {transform_target(t)!r} references {name!r}, which is "
+                f"neither an edge attribute nor a declared per-node parameter of this network. "
+                f"Declare it as a Function argument, or add it to the network."
+            )
+
+        return resolve
 
     for t in network.transforms_for("weight"):
         c = getattr(t, "callable", None)
@@ -747,34 +791,24 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
                     f"Give it a signature over the matrix (and `L`) alone."
                 )
             if _callable_wants(c, "L", _source_dir):
-                for line in emit_env(["L"], "weights", "distances")[1]:
-                    _add_const(line.split(" = ", 1)[0], line)
+                labels_used.add("length")
+                _add_const("L", f"L = {_KIT_EDGE_ARRAYS['length']}")
                 args += ", L=L"
             transforms.append((f"{alias}(weights{args})", []))
             continue
 
-        exp = network.transform_expression(t)
+        exp, masks = network.transform_expression(t)
         if exp is None:
             continue
         expr = render_expression(exp, format="jax")
-        if "jsp." in expr:
+        mask_lines = [f"{symbol} = {render_expression(mask, format='jax')}" for symbol, mask in masks.items()]
+        if any("jsp." in line for line in [expr, *mask_lines]):
             _add_const("jsp", "import jax.scipy as jsp")
-        symbols = sorted({str(sym).split("[", 1)[0] for sym in exp.free_symbols})
-        matrix_env, data_env = emit_env(symbols, "weights", "distances")
-        for line in data_env:
+        chained, constant = emit_env(edge_symbols(exp, masks), _resolver(t), target="weight")
+        for line in constant:
             _add_const(line.split(" = ", 1)[0], line)
-        for s in symbols:
-            if s in node_vectors:
-                vals = ", ".join(repr(float(v)) for v in np.asarray(node_vectors[s]).ravel())
-                _add_const(s, f"{s} = jnp.asarray([{vals}]).reshape(-1, 1)")
-            elif s not in PRIMITIVES:
-                raise ValueError(
-                    f"weight transform {getattr(t, 'name', '?')!r} references {s!r}, which is "
-                    f"neither a transform primitive nor a declared per-node parameter of this "
-                    f"network. Declare it as a Function argument, or add it to the network."
-                )
-        transforms.append((expr, matrix_env))
-    return transforms, const_env
+        transforms.append((expr, chained + mask_lines))
+    return transforms, const_env, "length" in labels_used
 
 
 def to_numeric(val: Any) -> int | float | Any:
@@ -1066,10 +1100,12 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
 
 
 def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
-    """Synthesize a cumulative streaming mean/std/variance reducer from ``aggregation``.
+    """Synthesize a cumulative streaming reducer from ``aggregation``.
 
-    An observation marked ``reduce: streaming`` whose ``aggregation`` is ``mean``, ``std`` or ``variance`` — and which has no HRF/BOLD ``pipeline`` — folds into the integrator carry as a running-moment accumulator instead of materialising the source trajectory.
-    ``mean`` carries one accumulator (a running sum, divided by the sample count at finalize); ``std``/``variance`` add a sum-of-squares and read ``sqrt(E[x^2] - E[x]^2)`` (variance without the ``sqrt``) — the ddof=0 form that matches the host ``jnp.std`` / ``jnp.var``. The returned dict is shaped exactly as the recurrence resolver's, with no ``kind`` tag, so a stat stream reuses :func:`render_recurrence_reduction` unchanged.
+    An observation marked ``reduce: streaming`` whose ``aggregation`` is ``mean``, ``std``, ``variance`` or ``first_passage`` — and which has no HRF/BOLD ``pipeline`` — folds into the integrator carry as an accumulator instead of materialising the source trajectory.
+    ``mean`` carries one accumulator (a running sum, divided by the sample count at finalize); ``std``/``variance`` add a sum-of-squares and read ``sqrt(E[x^2] - E[x]^2)`` (variance without the ``sqrt``) — the ddof=0 form that matches the host ``jnp.std`` / ``jnp.var``. ``first_passage`` carries a latch and a counter, giving the same crossing index the post-scan ``argmax`` form returns; streaming it is what lets a first-passage sweep reach production size, since the host form needs every cell's whole trajectory. The returned dict is shaped exactly as the recurrence resolver's, with no ``kind`` tag, so a stat stream reuses :func:`render_recurrence_reduction` unchanged.
+
+    ``last`` carries a memory state rather than an accumulator: it overwrites instead of reading itself, so the carry holds the newest folded sample and the readout is that sample. In ``first_passage``, ``_fp_hit`` latches at the first crossing while ``_fp_idx`` counts the samples before it and then stops, landing on the crossing index and saturating at the sample count when the source never crosses. The latch is inlined into the counter rather than read from the state because both update from the previous carry, and a crossing on the very first sample has to yield 0.
 
     ``skip_inclusive`` marks the reduction a pure accumulator with no per-sample memory dependency, so the emitter folds the sample AT ``skip`` (``_gstep >= skip``) rather than the step after it — a running mean must not silently drop its first sample, unlike a phase-difference observer whose first step has no predecessor. Every RHS is parsed to a sympy ``Expr`` against {source, the accumulators, ``count``, ``dt``}, exactly as the recurrence path resolves its updates. Takes no ``experiment`` — the full dict resolves unconditionally, so the bare ``resolve_reduction(obs)`` streaming predicate stays truthy.
     """
@@ -1083,7 +1119,7 @@ def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
     agg = get_attr(obs, "aggregation", None)
     agg = str(getattr(agg, "value", agg) or "mean").lower()
 
-    allowed = {source, "_s_sum", "_s_sq", "count", "dt"}
+    allowed = {source, "_s_sum", "_s_sq", "_s_last", "_fp_hit", "_fp_idx", "count", "dt"}
     loc = {n: sp.Symbol(n) for n in allowed}
 
     def _parse(rhs: str) -> Any:
@@ -1097,7 +1133,28 @@ def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
             )
         return expr
 
-    if agg == "mean":
+    if agg == "last":
+        states = [{"name": "_s_last", "init": 0.0, "update": _parse(source), "evict": None, "is_accumulator": False}]
+        output = _parse("_s_last")
+    elif agg == "first_passage":
+        threshold = (dict(iter_parameter_values(get_attr(obs, "parameters"))) or {}).get("threshold")
+        if threshold is None:
+            raise ValueError(
+                f"Observation {name!r} streams aggregation: first_passage but has no parameters.threshold to cross."
+            )
+        _hit = f"Max(_fp_hit, Piecewise((1, {source} >= {threshold}), (0, True)))"
+        states = [
+            {"name": "_fp_hit", "init": 0.0, "update": _parse(_hit), "evict": None, "is_accumulator": True},
+            {
+                "name": "_fp_idx",
+                "init": 0.0,
+                "update": _parse(f"_fp_idx + 1 - ({_hit})"),
+                "evict": None,
+                "is_accumulator": True,
+            },
+        ]
+        output = _parse("_fp_idx")
+    elif agg == "mean":
         states = [
             {
                 "name": "_s_sum",
@@ -1348,7 +1405,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         _agg = get_attr(obs, "aggregation", None)
         _agg = str(getattr(_agg, "value", _agg) or "").lower()
         _pipe = as_list(get_attr(obs, "pipeline"))
-        if not _pipe and _agg in {"mean", "std", "variance"}:
+        if not _pipe and _agg in {"mean", "std", "variance", "last", "first_passage"}:
             return _resolve_stat_stream(obs)
         # A compute_fc (windowed-correlation) pipeline streams as a cumulative co-moment FC reducer (add-only Welford), NOT the HRF/BOLD convolution reducer; fall through to the BOLD path only when the pipeline is not a registered windowed reducer.
         if _pipe:
@@ -2489,6 +2546,56 @@ def format_bounds_array(bounds: list, format: str = "jax") -> str:
 # Observation Helpers
 
 
+def resolve_tail_samples(obs: Any, step_size: float) -> int | None:
+    """Trailing-window length of ``obs`` in samples, from ``tail_samples`` or ``tail_duration``.
+
+    ``tail_duration`` states the window as a length of simulated time and is divided here by the observation's own sample period — its ``period``/``downsample_period``, else the integration ``step_size`` — so the window covers the same duration at any step. ``tail_samples`` states the count directly and is returned unchanged.
+
+    Raises:
+        ValueError: if both slots are set (the two would disagree the moment the step changes), or if ``tail_duration`` is shorter than one sample.
+    """
+    count = get_attr(obs, "tail_samples", None)
+    duration = get_attr(obs, "tail_duration", None)
+    if duration is None:
+        return count
+    if count is not None:
+        raise ValueError(
+            f"Observation '{get_attr(obs, 'name', '?')}' sets both tail_samples ({count}) and tail_duration ({duration}); declare one."
+        )
+    period = get_attr(obs, "period", None) or get_attr(obs, "downsample_period", None) or step_size
+    samples = int(round(float(duration) / float(period)))
+    if samples < 1:
+        raise ValueError(
+            f"Observation '{get_attr(obs, 'name', '?')}' has tail_duration {duration} shorter than its {period} sample period, so the window holds no samples."
+        )
+    return samples
+
+
+def derived_equation_sample_period(dobs: Any, all_observations: Any, step_size: float) -> float | None:
+    """Sample period to bind as ``dt`` inside a derived observation's ``equation``.
+
+    A sample-indexed aggregation (``first_passage``) returns an index, so any equation turning it into a time has to multiply by the spacing of those samples. Binding that spacing here is what keeps the step size out of the recipe: ``Min(t_A, t_B) * dt`` stays correct when the experiment's ``step_size`` changes, where a literal silently rescales the result.
+
+    The spacing is the integration ``step_size`` when no source declares a recording ``period``, or that period when every source declares the same one. Sources that disagree return None, leaving ``dt`` unbound so the render fails on the unknown symbol rather than picking one source's clock for all of them.
+
+    Substituted as a render-time constant, which is what the emitted module does with the step everywhere else (the solver call carries a literal ``dt=``, not a runtime argument), so the equation cannot drift from the step the rest of the module integrates at.
+    """
+    periods = set()
+    for so in getattr(dobs, "source", None) or []:
+        name = str(getattr(so, "name", so))
+        src = (all_observations or {}).get(name)
+        if src is None:
+            continue
+        period = get_attr(src, "period", None) or get_attr(src, "downsample_period", None)
+        try:
+            periods.add(float(period) if period is not None else float(step_size))
+        except (TypeError, ValueError):
+            return None
+    if len(periods) > 1:
+        return None
+    return periods.pop() if periods else float(step_size)
+
+
 def is_network_observation(obs: Any) -> bool:
     """Check if observation is bound from data rather than the simulation state.
 
@@ -3176,23 +3283,6 @@ def get_all_hyperparams(algo: Any, algorithms_dict: dict) -> dict:
     return all_hp
 
 
-# Network edge references (network.weight(s)/length(s) → connectome matrices) `weight`/`weights`/`length`/`lengths` are ergonomic shortcuts for the canonical `network.edges.<label>`; both resolve to a connectome matrix via Network.matrix().
-_NETWORK_EDGE_ALIASES = {"weight": "weight", "weights": "weight", "length": "length", "lengths": "length"}
-
-
-def edge_label(ref: Any) -> str | None:
-    """Canonical ``Network.matrix()`` label for a network reference, else None.
-
-    Accepts the fully-qualified form (``network.weight``, ``network.edges.length``), the explicit ``edges.<label>`` form (any label), and the bare ``weight(s)``/``length(s)`` shortcut. Returns None for anything that is not a connectome-matrix reference (state variables, ``network.observations.*``, ...), which callers route through their normal path.
-    """
-    if not isinstance(ref, str):
-        return None
-    r = ref[len("network.") :] if ref.startswith("network.") else ref
-    if r.startswith("edges."):
-        return r.split("edges.", 1)[1] or None
-    return _NETWORK_EDGE_ALIASES.get(r)
-
-
 def edge_const(label: str) -> str:
     """Module-constant identifier holding the embedded matrix for ``label``."""
     import re
@@ -3311,11 +3401,17 @@ def node_label(ref: Any) -> str | None:
     """Canonical per-node vector name for a ``network.<measure>`` reference, else None.
 
     Recognises ``network.positions`` (region centroids, ``(n_nodes, 3)``) and ``network.instrength`` (weighted in-degree, ``(n_nodes,)``). Accepts BOTH the fully-qualified ``network.positions`` form (observation source / collect scan) and the bare ``positions`` key that ``parse_reference`` hands ``ref_to_code`` (it splits ``network.X`` into ``('network', 'X')``) — mirroring ``edge_label``, so the emitted constant name and the resolved reference cannot disagree.
+    Also accepts the explicit ``nodes.<attr>`` form for any attribute name — the node-side twin of ``edges.<label>`` — which resolves to a named per-node array carried by the network (node ``parameters``, or a ``nodes/<attr>`` dataset in the companion store).
+
     Returns None for everything else (edge matrices, state variables, ``network.observations.*``), which callers route through their normal path.
     """
     if not isinstance(ref, str):
         return None
     measure = ref[len("network.") :] if ref.startswith("network.") else ref
+    if measure == "nodes.position":
+        return "positions"  # legacy spelling, as in param_io._resolve_ref
+    if measure.startswith("nodes."):
+        return measure.split("nodes.", 1)[1] or None
     return measure if measure in _NETWORK_NODE_MEASURES else None
 
 
@@ -3350,8 +3446,9 @@ def collect_network_node_arrays(experiment: Any) -> dict[str, list]:
         vec = _resolve(lab)
         if vec is None:
             raise ValueError(
-                f"An observation references network.{lab} but it cannot be built from "
-                f"the network (node positions absent, or Network.matrix('weight') is None)."
+                f"An observation references network.{lab} but it cannot be built from the network: "
+                f"'positions' needs node positions, 'instrength' needs Network.matrix('weight'), and a "
+                f"named per-node attribute needs either that node parameter or a nodes/{lab} dataset in the companion file."
             )
         arrays[lab] = vec.tolist()
 

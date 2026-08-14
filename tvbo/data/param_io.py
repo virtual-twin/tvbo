@@ -124,14 +124,43 @@ _NODE_MEASURES = ("positions", "instrength")
 def resolve_network_node(net: Any, measure: str) -> np.ndarray | None:
     """Per-node vector for a ``network.<measure>`` reference.
 
-    The single definition shared by the producer-argument path (``_resolve_ref``) and the observation-embedding path (``utils.collect_network_node_arrays``), so both resolve ``network.positions`` / ``network.instrength`` identically. ``positions`` → region centroids ``(n_nodes, 3)``; ``instrength`` → weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention). Returns None when the measure is unknown or unbuildable.
+    The single definition shared by the producer-argument path (``_resolve_ref``) and the observation-embedding path (``utils.collect_network_node_arrays``), so both resolve ``network.positions`` / ``network.instrength`` identically. ``positions`` → region centroids ``(n_nodes, 3)``; ``instrength`` → weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention).
+
+    Anything else is read as a **named per-node attribute**, the node-side twin of ``network.edges.<attr>``: first from the nodes' own ``parameters`` (in node order), then from a ``nodes/<attr>`` dataset in the companion store. That is what lets a study carry a measured per-region array — a per-node current range, a region size — in the network file and reference it from a spec instead of pasting it into code. Returns None when the measure is unknown or unbuildable.
     """
     if measure == "positions" and hasattr(net, "node_positions"):
         return np.asarray(net.node_positions(), dtype=float)
     if measure == "instrength" and hasattr(net, "matrix"):
         w = net.matrix("weight")
         return np.asarray(w, dtype=float).sum(axis=1) if w is not None else None
-    return None
+    return _resolve_node_attribute(net, measure)
+
+
+def _resolve_node_attribute(net: Any, name: str) -> np.ndarray | None:
+    """Named per-node array from the nodes' ``parameters``, else from ``nodes/<name>`` in the companion store.
+
+    Node parameters win, so a spec can override what the file carries. A parameter that is not a per-node SCALAR — set on some nodes only, or carrying a vector value — is not a per-node vector and returns None rather than a silently zero-filled or ragged array.
+    """
+    nodes = getattr(net, "nodes", None) or []
+    vals = []
+    for n in nodes:
+        params = getattr(n, "parameters", None) or {}
+        p = params.get(name) if hasattr(params, "get") else None
+        val = getattr(p, "value", None) if p is not None else None
+        try:
+            vals.append(float(val))
+        except (TypeError, ValueError):
+            vals = []
+            break
+    if vals:
+        return np.asarray(vals, dtype=float)
+    store = getattr(net, "_store", None)
+    if store is None:
+        return None
+    try:
+        return np.asarray(store.read_dataset(f"nodes/{name}"), dtype=float)
+    except Exception:  # noqa: BLE001 — absent dataset or unreadable store: not a node attribute
+        return None
 
 
 def is_reference(value: Any) -> bool:
@@ -154,6 +183,15 @@ def _resolve_ref(ref: str, context: Any, where: str) -> Any:
     rest = ref[len(_REF_PREFIX) :]
     if rest == "nodes.position":
         rest = "positions"  # legacy spelling of network.positions
+    if rest.startswith("nodes."):
+        # Resolved before the bare-name fallback below, so an edge alias of the same name can never shadow it.
+        attr = rest.split("nodes.", 1)[1]
+        vec = resolve_network_node(net, attr)
+        if vec is None:
+            raise ValueError(
+                f"{where}: {ref!r} names no per-node attribute of this network (no node parameter and no nodes/{attr} dataset)."
+            )
+        return vec
     if rest in _NODE_MEASURES:
         vec = resolve_network_node(net, rest)
         if vec is None:
@@ -169,7 +207,7 @@ def _resolve_ref(ref: str, context: Any, where: str) -> Any:
         return np.asarray(mat, dtype=float)
     raise ValueError(
         f"{where}: unsupported reference {ref!r}; supported are network.positions, "
-        f"network.instrength, network.mesh.<vertices|elements|normals>, network.edges.<label>."
+        f"network.instrength, network.nodes.<attribute>, network.mesh.<vertices|elements|normals>, network.edges.<label>."
     )
 
 

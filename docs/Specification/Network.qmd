@@ -1103,6 +1103,6 @@ tractogram:                # Source tractography dataset
   name: dTOR
 
 normalization:             # Weight normalization equation
-  rhs: "(W - W_min) / (W_max - W_min)"
+  rhs: "(weight - min(weight)) / (max(weight) - min(weight))"
 ```
 

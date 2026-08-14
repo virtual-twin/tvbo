@@ -507,7 +507,7 @@ parc_atlas = _p(parcellation, 'atlas', '')
 % endif
 % if transforms:
 % for t in transforms:
-| Transform (${t.name}) | $M_{\text{out}} = ${safe_latex(str(t.equation.rhs), ['W', 'M', 'W_max', 'W_min', 'M_max', 'M_min', 'max', 'min'])}$ |
+| Transform (${t.name}) | $M_{\text{out}} = ${safe_latex(str(t.equation.rhs), ['weight', 'length', 'max', 'min', 'mean', 'sum'])}$ |
 % endfor
 % endif
 % if structural:

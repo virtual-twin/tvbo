@@ -126,18 +126,35 @@ def locate_container(ref, *, results_root=None, fallback_experiment=None) -> Pat
 # --------------------------------------------------------------------------- WHICH
 
 
-def match_output(keys: Iterable[str], output: str) -> str:
+def match_output(keys: Iterable[str], output: str, prefer: Iterable[str] = ()) -> str:
     """Container data-var key for ``output`` — exact, or the ``<producer>__<name>`` suffix.
 
     A recorded state variable matches by name; a declared observation / estimate is stored ``observation__<name>`` / ``estimate__<name>``, so the trailing-``__`` suffix matches too. An EXACT match always wins: a container holding both a recorded ``power`` and an ``observation__power`` would otherwise resolve by dict iteration order, so one spec could bind different arrays in different containers. Shared by every consumer (figure layers, warm-start parameters, state seeds) so ``output`` addresses them all identically.
+
+    *prefer* names producers in priority order and is how a caller that CANNOT tolerate an
+    arbitrary choice says so. A run with several algorithms records one copy of every observation per algorithm (``algorithm__fic__mean_H_e`` and ``algorithm__fic_eib__mean_H_e``), so a bare name has more than one suffix match and the first by iteration order is not meaningfully "the" one — for a state seed that silently picks the wrong endpoint. With
+    *prefer* the first matching producer wins, and an ambiguity none of them resolves raises
+    instead of guessing. Without it the first suffix match is returned as before, so a caller binding an author-written name (a figure layer, which can spell the producer itself) is unaffected.
     """
     keys = [str(k) for k in keys]
     for k in keys:
         if k == output:
             return k
-    for k in keys:
-        if k.endswith(f"__{output}"):
-            return k
+    candidates = [k for k in keys if k.endswith(f"__{output}")]
+    if len(candidates) == 1:
+        return candidates[0]
+    if candidates:
+        for producer in prefer:
+            hit = [k for k in candidates if f"__{producer}__" in k or k.startswith(f"{producer}__")]
+            if hit:
+                return hit[0]
+        if prefer:
+            raise KeyError(
+                f"cross-experiment sourcing: '{output}' is recorded by {len(candidates)} "
+                f"producers ({sorted(candidates)}) and none of them is one of {list(prefer)}. "
+                f"Qualify the output with its producer so the choice is declared, not guessed."
+            )
+        return candidates[0]
     raise KeyError(
         f"cross-experiment sourcing: source container does not hold '{output}' "
         f"(looked for an exact match or a '*__{output}' observation/estimate; "

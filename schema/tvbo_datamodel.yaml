@@ -1208,6 +1208,52 @@ classes:
                 range: string
                 description: "SHA-256 hex digest of the file at fingerprinting (recomputed lazily when mtime/size differ)."
 
+    CachedArray:
+        class_uri: tvbo:CachedArray
+        description: >-
+            One numeric array inside a cached-result ``.h5`` companion, described by name,
+            shape and dtype so a reader can check the layout it expects without opening the
+            file.
+        slots:
+            - name
+        attributes:
+            shape:
+                multivalued: true
+                range: integer
+                description: "Array shape, outermost axis first."
+            dtype:
+                range: string
+                description: "NumPy dtype name of the stored array (e.g. ``float64``)."
+
+    ExperimentResultSidecar:
+        class_uri: tvbo:ExperimentResultSidecar
+        description: >-
+            Descriptor for a cached ``ExperimentResult``: the ``.h5`` companion holding the
+            fitted parameter arrays, one ``CachedArray`` entry per array, and the provenance a
+            downstream cache needs to decide whether the result is still valid. Written by
+            ``tvbo.data.experiment_result_io.save_sidecar``, so it is generated rather than
+            authored — but it is self-describing (it carries a ``tvbo_class`` envelope naming
+            this class), which is what lets ``tvbo validate schema`` check a generated sidecar
+            instead of falling back to some unrelated class and failing on its required slots.
+        attributes:
+            data_file:
+                range: string
+                required: true
+                description: "Path to the h5 companion (relative to the yaml)."
+            parameters:
+                multivalued: true
+                range: CachedArray
+                inlined_as_list: true
+                description: "One entry per array in the ``.h5`` companion's ``parameters`` group."
+            provenance:
+                range: Provenance
+                inlined: true
+                description: "Producing experiment's YAML hash, its input fingerprints and the writing agent."
+            metadata:
+                range: ScalarValue
+                inlined: true
+                description: "Free-form extra metadata passed through by the writer's caller, so any value shape (``linkml:Any``) rather than a declared one."
+
     Phenotype:
         class_uri: tvbo:Phenotype
         description: >-
@@ -1497,11 +1543,13 @@ classes:
                 multivalued: true
                 inlined_as_list: true
                 description: >-
-                    Ordered list of transforms applied to edge property matrices.
-                    Each Function's name identifies the target edge property
-                    (e.g. 'weight', 'length'). Supports equation-based (symbolic)
-                    or callable-based (software) transforms. Multiple transforms
-                    on the same target are applied sequentially.
+                    Ordered list of transforms applied to edge property matrices. Each
+                    entry's `name:` is the edge property it rewrites (e.g. 'weight',
+                    'length'), and that property is also the value under transform inside
+                    the entry's own equation, which is written over the network's edge
+                    attributes. Supports equation-based (symbolic) or callable-based
+                    (software) transforms. Multiple transforms on the same target are
+                    applied sequentially, each seeing the previous one's output.
 
             # BIDS integration (BEP017)
             data_file:
@@ -2160,7 +2208,15 @@ classes:
                 description: "Number of samples to skip at the start (transient removal). For FC: typically 10-20 TRs."
             tail_samples:
                 range: integer
-                description: "Number of samples from the end to use. Takes the last N samples before aggregation. E.g., tail_samples: 500 means use data[-500:]."
+                description: "Number of samples from the end to use. Takes the last N samples before aggregation. E.g., tail_samples: 500 means use data[-500:]. Prefer `tail_duration` when the window means a duration — a sample count silently rescales when the step size changes."
+            tail_duration:
+                range: float
+                description: >-
+                    Length of the trailing window as a duration, in the same time unit as the
+                    integration step. Converted to a sample count against this observation's own
+                    sample period (its `period`/`downsample_period`, else the integration
+                    `step_size`), so the window stays the same length of simulated time at any
+                    step. Mutually exclusive with `tail_samples`.
             aggregation:
                 range: AggregationType
                 description: "How to aggregate over time"
@@ -3891,12 +3947,10 @@ classes:
     AlgorithmStage:
         class_uri: tvbo:AlgorithmStage
         description: >-
-            One stage of a multi-stage tuning schedule. The algorithm body is run
-            once per stage, in order, carrying the trajectory state, FC window
-            buffer, and monitors forward — so the stages form one continuous online
-            tuning run. Each stage overrides n_iterations and selected
-            hyperparameters (e.g. Schirner 2023's 6 stages: eta halves and the FC
-            window doubles per stage, sharpening the per-edge gradient over time).
+            One stage of a multi-stage tuning schedule. The algorithm body runs once
+            per stage, in order, each stage overriding n_iterations and selected
+            hyperparameters — so a schedule can anneal a learning rate or widen an
+            estimation window as tuning proceeds.
         slots:
             - label
             - description
@@ -3905,6 +3959,19 @@ classes:
                 range: integer
                 required: true
                 description: Number of outer iterations to run in this stage.
+            reset_state:
+                range: boolean
+                ifabsent: 'False'
+                description: >-
+                    Start this stage from the model's declared initial conditions
+                    rather than the previous stage's endpoint. The update rules'
+                    tuned targets always cross the stage boundary; what resets is the
+                    dynamical state — state variables, delay and coupling history,
+                    observation window buffers and monitors — and the noise stream,
+                    which restarts from the run's seed so each stage samples the same
+                    realisation. False, the default, makes the schedule one continuous
+                    trajectory; true makes each stage an independent simulation
+                    warm-started from the parameters learned so far.
             arguments:
                 multivalued: true
                 range: Parameter

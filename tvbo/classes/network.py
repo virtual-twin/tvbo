@@ -29,7 +29,7 @@ _cfg_jax()
 
 from tvbo.data.registry import database_dir
 from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.utils import edge_param
+from tvbo.utils import edge_param, transform_target
 from tvbo.utils.yaml_loader import resolve_edge_var_aliases
 
 # HDF5+YAML network files — resolved via registry (works for pip & editable installs)
@@ -2455,7 +2455,7 @@ class Network(tvbo_datamodel.Network):
     def _atlas_terminology_entities(self) -> dict:
         """Parcellation-terminology entities for this network's atlas, or ``{}``.
 
-        Resolves ``parcellation.atlas.name`` (case-insensitively — networks may declare ``HCPMMP1`` while the packaged atlas is keyed ``hcpmmp1``) and reads its SANDS ``terminology.entities``. Returns ``{}`` when the network declares no atlas or the atlas has no terminology.
+        Resolves ``parcellation.atlas.name`` (case-insensitively — networks may declare ``HCPMMP1`` while the packaged atlas is keyed ``hcpmmp1``) and reads its SANDS ``terminology.entities``. Returns ``{}`` when the network declares no atlas or the atlas has no terminology. A network that DOES declare an atlas this installation cannot resolve still returns ``{}`` (a custom parcellation is entitled to have no crosswalk) but warns, because the visible symptom is otherwise a reconciliation that silently matches only the labels that happen to agree verbatim.
         """
         parc = getattr(self, "parcellation", None)
         atlas = getattr(parc, "atlas", None) if parc is not None else None
@@ -2471,6 +2471,14 @@ class Network(tvbo_datamodel.Network):
                 else next((a for a in available_atlases if a.lower() == str(name).lower()), None)
             )
             if not resolved:
+                import logging
+
+                logging.getLogger(__name__).warning(
+                    "Network declares atlas %r, which is not among the available atlases %s — region aliases unavailable, "
+                    "so a by_label reconciliation will match only labels that agree verbatim.",
+                    name,
+                    sorted(available_atlases),
+                )
                 return {}
             term = getattr(Atlas(resolved), "terminology", None)
             return getattr(term, "entities", None) or {}
@@ -2487,9 +2495,9 @@ class Network(tvbo_datamodel.Network):
     def region_alias_map(self) -> dict[str, str]:
         """Map each node's canonical label AND every known alias -> canonical label.
 
-        Aliases are alternative label strings that denote the SAME region under a different nomenclature. They come from two sources, unioned: each node's own ``alternateName`` (inline on the network) and, when the network declares a parcellation atlas, that atlas terminology's ``alternateName`` per region (joined to nodes by canonical label — never by position). The identity ``label -> label`` is always included so exact matches still resolve.
+        Aliases are alternative label strings that denote the SAME region under a different nomenclature. They come from two sources, unioned: each node's own ``alternateName`` (inline on the network) and, when the network declares a parcellation atlas, that atlas terminology's names per region. The atlas join is by NAME, never by position, and matches a region to a node whose label is either the region's canonical name or any of its ``alternateName`` entries — so a network that spells a region divergently (``Left-Thalamus-Proper`` where the atlas says ``L_Thalamus``) still inherits that region's whole crosswalk, keyed on the label the network itself uses. The identity ``label -> label`` is always included so exact matches still resolve.
 
-        Used by ``by_label`` node reconciliation so a dataset-sourced target whose nodes carry a divergent convention (e.g. ``THALAMUS_LEFT`` for ``L_Thalamus``) aligns by name. Raises when one alias would map to two different canonical labels — an ambiguous crosswalk must fail loudly rather than silently mis-assign a region (and, in particular, a hemisphere).
+        Used by ``by_label`` node reconciliation so a dataset-sourced target whose nodes carry a divergent convention (e.g. ``THALAMUS_LEFT`` for ``L_Thalamus``) aligns by name. Raises when one alias would map to two different canonical labels, or when one atlas region's names match several nodes — an ambiguous crosswalk must fail loudly rather than silently mis-assign a region (and, in particular, a hemisphere).
         """
         labels = self.node_labels
         canon_set = set(labels)
@@ -2511,12 +2519,52 @@ class Network(tvbo_datamodel.Network):
             for alias in getattr(node, "alternateName", None) or []:
                 _add(str(alias), canonical)
         for key, ent in self._atlas_terminology_entities().items():
-            canonical = str(getattr(ent, "name", None) or key)
-            if canonical not in canon_set:
+            names = {str(getattr(ent, "name", None) or key)}
+            names.update(str(alias) for alias in getattr(ent, "alternateName", None) or [])
+            hits = sorted(names & canon_set)
+            if not hits:
                 continue  # atlas region not present in this (sub)network
-            for alias in getattr(ent, "alternateName", None) or []:
-                _add(str(alias), canonical)
+            if len(hits) > 1:
+                raise ValueError(
+                    f"Ambiguous atlas region {key!r}: its names {hits} match more than "
+                    f"one node of this network. A region must identify exactly one node."
+                )
+            for alias in sorted(names - {hits[0]}):
+                _add(alias, hits[0])
         return index
+
+    def as_data_file_reference(self, data_file: str):
+        """A compact datamodel ``Network`` that points at *data_file* and still IS this network.
+
+        Freezing a connectome writes its matrices to a companion file and replaces the network in the rendered spec with this reference, so what travels beside ``data_file`` has to be everything the reloaded network needs in order to behave identically: the inline coupling / transforms / parameters, the scalar identity, the measure declarations — ``Network.observations`` and the structural resolution gate on those, so a companion holding ``BoldCorrelation`` data is invisible unless the reference also declares ``observational_measures: [BoldCorrelation]`` — and the ``parcellation``, which names the atlas that a ``by_label`` node crosswalk resolves against. Carrying the parcellation cannot re-expand the node set, because ``data_file`` makes the loader defer connectivity to the companion store.
+
+        Note that ``observations`` is deliberately NOT copied: it is a runtime view over the companion's measures, not a schema slot, and ``observational_measures`` is what reconstructs it.
+        """
+        from tvbo import datamodel as dm
+
+        ref = dm.Network(data_file=data_file)
+        if getattr(self, "coupling", None):
+            for key, value in dict(self.coupling).items():
+                ref.coupling[key] = value
+        if getattr(self, "transforms", None):
+            ref.transforms = list(self.transforms)
+        if getattr(self, "parameters", None):
+            for key, value in dict(self.parameters).items():
+                ref.parameters[key] = value
+        for field in (
+            "label",
+            "descriptor",
+            "number_of_nodes",
+            "distance_unit",
+            "time_unit",
+            "structural_measures",
+            "observational_measures",
+            "parcellation",
+        ):
+            value = getattr(self, field, None)
+            if value is not None:
+                setattr(ref, field, list(value) if isinstance(value, (list, tuple)) else value)
+        return ref
 
     @property
     def weights_matrix(self) -> np.ndarray | JaxArray | None:
@@ -2809,7 +2857,7 @@ class Network(tvbo_datamodel.Network):
 
         # Step 2: Add edges (prefer explicit edges, fall back to matrix) Filter out template edges (no source/target) — those represent matrix measures stored in the HDF5 companion, not graph edges.
         explicit_edges = [e for e in (self.edges or []) if getattr(e, "source", None) is not None]
-        # Nodes above are keyed by ``node.id``, but ``edge.source`` / ``edge.target`` are positional indices into ``self.nodes``. Mapping between them keeps the graph in one key space; without it the graph gains a phantom set of index-keyed nodes (N+1 nodes for N regions) and any lookup by node key fails — e.g. plot_graph raising ``KeyError: 0``.
+        # Only the matrix fallback needs this: there ``i``/``j`` really are positions, whereas an explicit ``edge.source`` is already a ``Node.id`` (see :meth:`node_index_map`).
         index_to_id = {i: (node.id if node.id is not None else i) for i, node in enumerate(self.nodes or [])}
         if explicit_edges:
             # Use explicit edges
@@ -2826,13 +2874,8 @@ class Network(tvbo_datamodel.Network):
                         if param.unit:
                             edge_attrs[f"{name}_unit"] = param.unit
 
-                G.add_edge(
-                    index_to_id.get(edge.source, edge.source),
-                    index_to_id.get(edge.target, edge.target),
-                    **edge_attrs,
-                )
+                G.add_edge(edge.source, edge.target, **edge_attrs)
 
-                # If undirected, add reverse edge
                 if not edge_attrs["directed"]:
                     G.add_edge(edge.target, edge.source, **edge_attrs)
 
@@ -2880,10 +2923,10 @@ class Network(tvbo_datamodel.Network):
                                     (v for v in edge_attrs.values() if isinstance(v, float) and v != 0),
                                     1.0,
                                 )
-                            # Matrix rows/columns are positional; the nodes added above are keyed by ``node.id``. Map so both live in one key space (see index_to_id above).
+                            # Receiver-row matrices: emit j -> i (signal direction, matching create_graph); index_to_id maps positions onto node ids.
                             G.add_edge(
-                                index_to_id.get(i, i),
                                 index_to_id.get(j, j),
+                                index_to_id.get(i, i),
                                 **edge_attrs,
                             )
 
@@ -3136,22 +3179,22 @@ class Network(tvbo_datamodel.Network):
 
         return G
 
-    def normalize_weights(self, equation_rhs: str = "(M - M_min) / (M_max - M_min)") -> None:
+    def normalize_weights(self, equation_rhs: str | None = None) -> None:
         """Add a normalization transform for connection weights.
 
         Convenience wrapper for ``add_transform("weight", ...)``.
 
         Parameters
         ----------
-        equation_rhs : str, default="(M - M_min) / (M_max - M_min)"
-            Right-hand side of normalization equation. Can reference
-            M (matrix), M_min, M_max.
+        equation_rhs : str, optional
+            Right-hand side of the normalization equation, written over the network's
+            edge attributes. Defaults to min-max normalisation of ``weight``.
 
         Examples:
         --------
         ```python
         sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        sc.normalize_weights("M / M_max")  # Normalize to [0, 1]
+        sc.normalize_weights("weight / max(weight)")  # Normalize to [0, 1]
         normalized = sc.weights_matrix  # Returns normalized weights
         ```
 
@@ -3396,6 +3439,13 @@ class Network(tvbo_datamodel.Network):
             Directed multigraph with 'weight' and 'delay' edge attributes.
             Nodes have 'label' and 'dynamics' attributes when available.
             Edges have 'source_var', 'target_var' attributes when available.
+            Edges point in signal direction (source to target). Stored
+            matrices are receiver-row (``W[i, j]`` couples node ``j`` into
+            node ``i``), so matrix entries are emitted as edges ``j -> i``.
+            Explicit pair edges declared with ``directed: false`` (the schema
+            default) are mirrored into both directions, matching their
+            expansion in ``_edge_matrix``; an explicitly declared reverse
+            edge takes precedence over the mirror.
 
         Examples:
         --------
@@ -3412,11 +3462,13 @@ class Network(tvbo_datamodel.Network):
         """
         G = nx.MultiDiGraph()
 
-        # Priority 1: Use explicit nodes/edges if available
+        # Priority 1: explicit nodes, unless the edges are only matrix descriptors (no source/target).
         nodes = getattr(self, "nodes", None)
-        edges = getattr(self, "edges", None)
+        edges = getattr(self, "edges", None) or []
+        pair_edges = [e for e in edges if getattr(e, "source", None) is not None and getattr(e, "target", None) is not None]
+        matrix_only_edges = bool(edges) and not pair_edges
 
-        if nodes and len(nodes) > 0:
+        if nodes and len(nodes) > 0 and not matrix_only_edges:
             # Build graph from explicit node/edge representation
             for node in nodes:
                 node_id = getattr(node, "id", None)
@@ -3428,33 +3480,25 @@ class Network(tvbo_datamodel.Network):
                 }
                 G.add_node(node_id, **node_attrs)
 
-            # Nodes are keyed in the graph by ``node.id``, but ``edge.source`` / ``edge.target`` are positional indices into ``nodes``. Without this mapping the graph ends up with two disjoint key spaces (ids 1..N and indices 0..N-1), which silently produces N+1 nodes and breaks any consumer that looks a node up by key — e.g. plot_graph raising ``KeyError: 0`` because the layout has no entry for index 0.
-            index_to_id = {i: getattr(node, "id", i) for i, node in enumerate(nodes)}
+            # Only surviving edges count as declared: a reverse edge dropped for being too weak must not suppress the mirror and leave the pair one-directional.
+            kept = [e for e in pair_edges if (edge_param(e, "weight") or 0.0) > weight_threshold]
+            declared_pairs = {(e.source, e.target) for e in kept}
+            for edge in kept:
+                source = edge.source
+                target = edge.target
+                weight = edge_param(edge, "weight") or 0.0
 
-            if edges:
-                for edge in edges:
-                    source = getattr(edge, "source", None)
-                    target = getattr(edge, "target", None)
-
-                    if source is None or target is None:
-                        continue
-
-                    source = index_to_id.get(source, source)
-                    target = index_to_id.get(target, target)
-
-                    weight = edge_param(edge, "weight") or 0.0
-                    if weight <= weight_threshold:
-                        continue
-
-                    edge_attrs = {
-                        "weight": weight,
-                        "delay": edge_param(edge, "delay") or 0.0,
-                        "distance": edge_param(edge, "distance") or 0.0,
-                        "directed": edge.directed,
-                        "source_var": edge.source_var,
-                        "target_var": edge.target_var,
-                    }
-                    G.add_edge(source, target, **edge_attrs)
+                edge_attrs = {
+                    "weight": weight,
+                    "delay": edge_param(edge, "delay") or 0.0,
+                    "distance": edge_param(edge, "distance") or 0.0,
+                    "directed": edge.directed,
+                    "source_var": edge.source_var,
+                    "target_var": edge.target_var,
+                }
+                G.add_edge(source, target, **edge_attrs)
+                if not edge.directed and source != target and (target, source) not in declared_pairs:
+                    G.add_edge(target, source, **edge_attrs)
 
             return G
 
@@ -3466,18 +3510,19 @@ class Network(tvbo_datamodel.Network):
         if N_regions is None or W is None:
             return G
 
-        # Get node labels if available
         labels = self.labels if hasattr(self, "labels") and self.labels else None
+        label_list = list(labels.values()) if isinstance(labels, dict) else labels
 
         for i in range(N_regions):
-            node_attrs = {"label": labels[i] if labels else f"node_{i}"}
-            G.add_node(i, **node_attrs)
+            lab = label_list[i] if label_list and i < len(label_list) else f"node_{i}"
+            G.add_node(i, label=lab)
 
+        # Receiver-row W: emit j -> i so edges point in signal direction (see docstring).
         for i in range(N_regions):
             for j in range(N_regions):
                 if W[i, j] > weight_threshold:
                     delay = D[i, j] if D is not None else 0.0
-                    G.add_edge(i, j, weight=W[i, j], delay=delay)
+                    G.add_edge(j, i, weight=W[i, j], delay=delay)
 
         return G
 
@@ -4042,7 +4087,7 @@ class Network(tvbo_datamodel.Network):
         """Add min-max normalization of connection weights.
 
         Appends a transform to scale weights to [0, 1] range.
-        Equivalent to ``add_transform("weight", "(M - M_min) / (M_max - M_min)")``.
+        Equivalent to ``add_transform("weight")``, whose default is that normalisation.
 
         Examples:
         --------
@@ -4056,7 +4101,7 @@ class Network(tvbo_datamodel.Network):
         --------
         add_transform : Add a transform on any edge property normalize_weights : Set custom normalization equation
         """
-        self.add_transform("weight", "(M - M_min) / (M_max - M_min)")
+        self.add_transform("weight")
 
     # ── Node mapping (hierarchical composition) ─────────────────────
 
@@ -4415,7 +4460,7 @@ class Network(tvbo_datamodel.Network):
             List of `Function` transforms declared against *target*.
         """
         names = next((a for a in _TRANSFORM_TARGET_ALIASES if target in a), (target,))
-        return [t for t in (self.transforms or []) if getattr(t, "name", None) in names]
+        return [t for t in (self.transforms or []) if transform_target(t) in names]
 
     def transform_expression(self, func):
         """A transform's equation as a sympy expression, with its arguments substituted.
@@ -4428,12 +4473,13 @@ class Network(tvbo_datamodel.Network):
             func: The `Function` transform.
 
         Returns:
-            The substituted expression, or `None` when *func* declares no equation
-            (a callable-based transform) or the equation does not parse.
+            A `(expression, mask_bindings)` pair; the expression is `None` when *func*
+            declares no equation (a callable-based transform) or it does not parse. Each
+            mask binding is evaluated once, before the expression that reads it.
         """
         eq = getattr(func, "equation", None)
         if eq is None:
-            return None
+            return None, {}
         from tvbo.codegen.code import parse_eq
 
         arg_values: dict = {}
@@ -4443,11 +4489,39 @@ class Network(tvbo_datamodel.Network):
             for pname, pval in eq.parameters.items():
                 arg_values.setdefault(pname, getattr(pval, "value", pval))
 
-        exp = parse_eq(eq)
+        from tvbo.codegen.transforms import prepare, subscript_locals
+
+        rhs = str(getattr(eq, "rhs", eq) or "")
+        exp = parse_eq(eq, local_dict=subscript_locals(rhs))
         if exp is None:
-            return None
+            return None, {}
         subs_map = {s: arg_values[str(s)] for s in exp.free_symbols if arg_values.get(str(s)) is not None}
-        return exp.subs(subs_map) if subs_map else exp
+        exp = exp.subs(subs_map) if subs_map else exp
+
+        return prepare(exp, what=f"transform {transform_target(func) or '?'!r}")
+
+    def _transform_operand(self, func, M):
+        """A resolver from a transform symbol to the live array it names.
+
+        The transform's own target binds to *M*, the value flowing through the chain, so a second transform in a chain sees the first one's output — and so a length-target transform does not re-enter itself by asking the network for the matrix it is busy producing. Every other edge attribute binds to the network's stored matrix through the same :func:`tvbo.utils.edge_label` the emitters use, and a declared per-node parameter binds as an ``(n, 1)`` column, so ``weight / roi_size`` divides each target row by that region's size and broadcasts across the source axis.
+        """
+        from tvbo.utils import edge_label
+
+        target = edge_label(transform_target(func)) or transform_target(func)
+
+        def resolve(name):
+            label = edge_label(name) or name
+            if label == target:
+                return M
+            stored = self.matrix(label)
+            if stored is not None:
+                return stored
+            vec = self.node_parameter_vectors.get(name)
+            if vec is None or vec.shape[0] != M.shape[0]:
+                return None
+            return jnp.asarray(vec).reshape(-1, 1)
+
+        return resolve
 
     def _apply_transform(self, M, func):
         """Apply a Function transform to matrix *M*.
@@ -4473,33 +4547,26 @@ class Network(tvbo_datamodel.Network):
                     kwargs.setdefault("network", self)
                 # Inject L only when asked. For a length-target transform ``M`` IS the lengths, so use it directly — reading ``self.lengths_matrix`` here would re-enter this same transform (infinite recursion).
                 if "L" in sig.parameters:
-                    _is_length = getattr(func, "name", None) in _LENGTH_TARGETS
+                    _is_length = transform_target(func) in _LENGTH_TARGETS
                     kwargs.setdefault("L", M if _is_length else self.lengths_matrix)
                 return fn(M, **kwargs)
 
         # Equation-based transform
-        exp = self.transform_expression(func)
+        exp, masks = self.transform_expression(func)
         if exp is None:
             return M
         from tvbo.codegen.code import render_expression
-        from tvbo.codegen.transforms import runtime_env
+        from tvbo.codegen.transforms import edge_symbols, runtime_env
 
-        _is_length = getattr(func, "name", None) in _LENGTH_TARGETS
-        env = runtime_env(M, M if _is_length else self.lengths_matrix, jnp, jsp)
-        # Expose declared per-node parameters as (n, 1) column vectors, so a symbolic weight transform can normalise per target region — e.g. ``W / roi_size`` divides each target row by that region's size (Deco's fibers-per-neuron SC). Column shape mirrors ``W_rowsum`` and broadcasts across the source axis.
-        for _pn, _vec in self.node_parameter_vectors.items():
-            if _pn not in env and _vec.shape[0] == M.shape[0]:
-                env[_pn] = jnp.asarray(_vec).reshape(-1, 1)
+        env = runtime_env(self._transform_operand(func, M), edge_symbols(exp, masks), jnp, jsp)
+        for symbol, mask in masks.items():
+            env[str(symbol)] = eval(render_expression(mask, format="jax"), env)
         code_str = render_expression(exp, format="jax")
         if isinstance(code_str, str):
             M = eval(code_str, env)
         return M
 
-    def add_transform(
-        self,
-        target: str,
-        equation_rhs: str = "(M - M_min) / (M_max - M_min)",
-    ) -> None:
+    def add_transform(self, target: str, equation_rhs: str | None = None) -> None:
         """Append a matrix transform for a named edge property.
 
         Transforms are applied in order when the matrix is accessed via ``matrix()`` or ``weights_matrix``.
@@ -4508,17 +4575,24 @@ class Network(tvbo_datamodel.Network):
         ----------
         target : str
             Edge property name (e.g. ``"weight"``, ``"length"``, ``"fc"``).
-        equation_rhs : str, default="(M - M_min) / (M_max - M_min)"
-            Right-hand side of the transform equation. Can reference
-            M (matrix), M_min, M_max.
+        equation_rhs : str, optional
+            Right-hand side of the transform equation, written over the network's own
+            edge attributes — ``weight``, ``length``, or ``network.edges.<label>``. The
+            attribute named by *target* is the value under transform. Defaults to
+            min-max normalisation of *target*. A reduction may be scoped by a boolean
+            predicate, written either as a subscript or as a second argument.
 
         Examples:
         --------
         ```python
         sc = Network(parcellation={"atlas": {"name": "DesikanKilliany"}})
-        sc.add_transform("weight", "M / M_max")
+        sc.add_transform("weight", "weight / max(weight)")
+        sc.add_transform("weight", "weight / mean(weight[weight > 0])")
+        sc.add_transform("weight", "weight / mean(weight, weight > 0)")
         ```
         """
+        if equation_rhs is None:
+            equation_rhs = f"({target} - min({target})) / (max({target}) - min({target}))"
         if self.transforms is None:
             self.transforms = []
         self.transforms.append(

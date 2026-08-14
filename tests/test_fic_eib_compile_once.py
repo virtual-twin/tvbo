@@ -150,3 +150,35 @@ def test_multistage_tuning_core_compiles_once():
     core = [k for k in compiles if "fic_eib_tuning_core" in k]
     assert core, f"tuning core never jitted; saw {sorted(compiles)}"
     assert compiles[core[0]] == 1, f"tuning core recompiled per stage ({compiles[core[0]]}x)"
+
+
+def test_stage_reset_absent_by_default():
+    """A schedule that does not declare reset_state stays one continuous trajectory."""
+    code = _multistage_experiment().render_code("tvboptim")
+    assert "_carry_tuned_" not in code
+    assert '_sd.get("reset_state")' not in code
+    assert "_stage_monitors0" not in code
+
+
+def test_stage_reset_carries_only_tuned_targets():
+    """reset_state restarts each stage from the entry state, carrying every update-rule target.
+
+    The dynamical state, window buffer and monitors must come from the algorithm's entry state, the noise key must restart from the run seed (so each stage samples the same realisation), and each tuned parameter must be grafted from the previous endpoint.
+    """
+    exp = _multistage_experiment()
+    for stage in exp.algorithms["fic_eib"].stages:
+        stage.reset_state = True
+    code = exp.render_code("tvboptim")
+
+    assert "def _carry_tuned_fic_eib(" in code
+    # every update-rule target crosses the boundary: the two coupling matrices + J_i
+    assert "_tuned.coupling.EIBLinearCoupling.wLRE" in code
+    assert "_tuned.coupling.EIBLinearCoupling.wFFI" in code
+    assert "_tuned.dynamics.J_i" in code
+    # ...and everything else is restored from the entry state / initial buffers
+    assert "_carry_tuned_fic_eib(algo_state, _stage_state)" in code
+    assert "_stage_monitors = _stage_monitors0" in code
+    assert "_stage_bold_buffer = _stage_bold_buffer0" in code
+    # noise restarts from the run seed rather than being folded per stage
+    assert 'if _sd.get("reset_state")' in code
+    assert "jax.random.fold_in(algo_key, _si)" in code

@@ -170,9 +170,8 @@ artifacts = [
 ]
 exclude = [
     "tvbo/database/networks/*.h5",
-    # Atlas volumes and parcellation yamls stay out of the wheel for size; they are used from source.
+    # Volumes only: the parcellation yamls beside them ship, carrying the terminology every node-label crosswalk resolves against.
     "tvbo/database/atlases/**/*.nii.gz",
-    "tvbo/database/atlases/**/*.yaml",
     "tvbo/data/go-basic.obo",
     "tvbo/data/ontology/_tvb-o.owl",
     "tvbo/data/NeuroMMSig_abeta_subgraph.dill",

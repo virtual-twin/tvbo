@@ -22,6 +22,15 @@ repos:
         language: system
         types: [python]
 
+      # Templates and config still carry a backlog, so there the comment rule is diff-only.
+      - id: check-prose-diff
+        name: No stacked '#' blocks added to templates or config
+        entry: python scripts/check_prose.py --diff
+        language: system
+        pass_filenames: false
+        # `files` alone: `types_or` is ANDed with it, and mako and julia have no identify tag.
+        files: \.(py|mako|ya?ml|toml|jl|sh)$
+
       - id: database-validation
         name: Validate tvbo/database/*.yaml against LinkML schema
         entry: pytest tests/test_database_validation.py -q --no-header

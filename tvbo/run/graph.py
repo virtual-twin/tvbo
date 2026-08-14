@@ -21,6 +21,8 @@ class GraphRunner:
     A `GraphRunner` holds a `networkx` graph snapshot built from a connectome.
     Node attributes carry the local dynamics model, its integrated state and optional stimulus; edge attributes carry the coupling. After the local models, couplings and stimuli have been attached, [`run`](/api/run/graph.qmd#GraphRunner.run) compiles per-node and per-edge functions and integrates the network in time.
 
+    The integrator reads one edge per node pair: a multigraph snapshot is flattened to a simple digraph at construction, and true parallel edges (typed projections between the same pair) are rejected with a `ValueError`.
+
     Args:
         connectome: Connectome whose weights and node/edge structure define the
             network. Its `create_graph` method supplies the graph snapshot.
@@ -36,8 +38,12 @@ class GraphRunner:
                 connectome.normalize_weights()
             except Exception:
                 pass
-        # Build a graph snapshot from current connectome
-        self.graph = connectome.create_graph()
+        graph = connectome.create_graph()
+        if isinstance(graph, (nx.MultiDiGraph, nx.MultiGraph)):
+            if any(key > 0 for _, _, key in graph.edges(keys=True)):
+                raise ValueError("GraphRunner integrates one edge per node pair; collapse parallel edges before running.")
+            graph = nx.DiGraph(graph) if graph.is_directed() else nx.Graph(graph)
+        self.graph = graph
 
     def add_local_model(self, model):
         """Attach a local dynamics model to the graph nodes.
@@ -57,47 +63,27 @@ class GraphRunner:
     def add_coupling(self, coupling):
         """Attach a coupling function to the graph edges.
 
-        Handles both simple graphs and multigraphs.
+        The snapshot is a simple digraph (see `__init__`), so edges are keyed by `(source, target)`.
 
         Args:
             coupling: A [`Coupling`](../classes/coupling.qmd#Coupling) instance, a
                 deep copy of which is assigned to every edge; a bare
                 datamodel `Coupling`, which is wrapped in a `Coupling` and then
-                copied to every edge; or a dict mapping edges to per-edge
-                couplings. For a dict on a multigraph, edges are looked up by
-                `(src, tgt, key)` with fallback to `(src, tgt)`; on a simple
-                graph, by `(src, tgt)`.
+                copied to every edge; or a dict mapping `(source, target)` pairs
+                to per-edge couplings.
         """
-        is_multi = isinstance(self.graph, (nx.MultiDiGraph, nx.MultiGraph))
-
         if isinstance(coupling, Coupling):
-            # Copy same coupling instance to all edges
-            if is_multi:
-                for src, tgt, key in self.graph.edges(keys=True):
-                    self.graph[src][tgt][key]["coupling"] = copy.deepcopy(coupling)
-            else:
-                for src, tgt in self.graph.edges:
-                    self.graph[src][tgt]["coupling"] = copy.deepcopy(coupling)
+            for src, tgt in self.graph.edges:
+                self.graph[src][tgt]["coupling"] = copy.deepcopy(coupling)
 
         elif isinstance(coupling, tvbo_datamodel.Coupling):
-            # Wrap a pure datamodel instance
             wrapped = Coupling(metadata=coupling)
-            if is_multi:
-                for src, tgt, key in self.graph.edges(keys=True):
-                    self.graph[src][tgt][key]["coupling"] = copy.deepcopy(wrapped)
-            else:
-                for src, tgt in self.graph.edges:
-                    self.graph[src][tgt]["coupling"] = copy.deepcopy(wrapped)
+            for src, tgt in self.graph.edges:
+                self.graph[src][tgt]["coupling"] = copy.deepcopy(wrapped)
 
         elif isinstance(coupling, dict):
-            if is_multi:
-                for src, tgt, key in self.graph.edges(keys=True):
-                    # Support mapping by (src,tgt,key) with fallback to (src,tgt)
-                    val = coupling.get((src, tgt, key), coupling.get((src, tgt)))
-                    self.graph[src][tgt][key]["coupling"] = val
-            else:
-                for src, tgt in self.graph.edges:
-                    self.graph[src][tgt]["coupling"] = coupling[src, tgt]
+            for src, tgt in self.graph.edges:
+                self.graph[src][tgt]["coupling"] = coupling[src, tgt]
 
     def to_yaml(self, format: str = "tvbo", filepath: str | None = None) -> str:
         """Export Network to YAML format.
@@ -157,36 +143,18 @@ class GraphRunner:
     def setup_cfuns(self):
         """Compile each edge's coupling into callable coupling functions.
 
-        For every edge, stores the compiled `python` coupling function under `"cfun"`, together with `"prefun"` and `"postfun"` lambdas obtained by substituting the coupling's parameter values into its pre- and post-summation expressions. Handles both simple graphs and multigraphs.
+        For every edge, stores the compiled `python` coupling function under `"cfun"`, `"prefun"` and `"postfun"` lambdas obtained by substituting the coupling's parameter values into its pre- and post-summation expressions, and `"post_src"`, the substituted post expression the integrator compares to reject mixed post-transforms on one node.
         """
         from sympy import Symbol, lambdify
 
-        is_multi = isinstance(self.graph, (nx.MultiDiGraph, nx.MultiGraph))
-
-        if is_multi:
-            for src, tgt, key in self.graph.edges(keys=True):
-                coup = self.graph[src][tgt][key]["coupling"]
-                self.graph[src][tgt][key]["cfun"] = coup.execute("python")
-                self.graph[src][tgt][key]["prefun"] = lambdify(
-                    [Symbol("x_j")],
-                    coup.pre.subs({k: p.value for k, p in coup.parameters.items()}),
-                )
-                self.graph[src][tgt][key]["postfun"] = lambdify(
-                    [Symbol("gx")],
-                    coup.post.subs({k: p.value for k, p in coup.parameters.items()}),
-                )
-        else:
-            for src, tgt in self.graph.edges:
-                coup = self.graph[src][tgt]["coupling"]
-                self.graph[src][tgt]["cfun"] = coup.execute("python")
-                self.graph[src][tgt]["prefun"] = lambdify(
-                    [Symbol("x_j")],
-                    coup.pre.subs({k: p.value for k, p in coup.parameters.items()}),
-                )
-                self.graph[src][tgt]["postfun"] = lambdify(
-                    [Symbol("gx")],
-                    coup.post.subs({k: p.value for k, p in coup.parameters.items()}),
-                )
+        for src, tgt in self.graph.edges:
+            coup = self.graph[src][tgt]["coupling"]
+            subs = {k: p.value for k, p in coup.parameters.items()}
+            post_expr = coup.post.subs(subs)
+            self.graph[src][tgt]["cfun"] = coup.execute("python")
+            self.graph[src][tgt]["prefun"] = lambdify([Symbol("x_j")], coup.pre.subs(subs))
+            self.graph[src][tgt]["postfun"] = lambdify([Symbol("gx")], post_expr)
+            self.graph[src][tgt]["post_src"] = str(post_expr)
 
     def setup_initial_conditions(self):
         """Initialize each node's state from its model's initial values.
